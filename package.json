@@ -1,0 +1,26 @@
+{
+  "name": "tbot-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ tests/",
+    "test": "jest"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-native": "0.75.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.6.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0",
+    "react-test-renderer": "18.3.1",
+    "eslint": "^9.0.0"
+  }
+}
