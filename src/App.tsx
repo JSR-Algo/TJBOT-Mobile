@@ -1,20 +1,31 @@
 import React from 'react';
-import { SafeAreaView, Text, StyleSheet, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
+import { AuthProvider } from './contexts/AuthContext';
+import { HouseholdProvider } from './contexts/HouseholdContext';
+import { InteractionProvider } from './contexts/InteractionContext';
+import { RootNavigator } from './navigation/RootNavigator';
 
 export default function App(): React.JSX.Element {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>TBot Parent App</Text>
-        <Text style={styles.subtitle}>Control your TBot device</Text>
-      </View>
-    </SafeAreaView>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <HouseholdProvider>
+            <InteractionProvider>
+              <NavigationContainer>
+                <RootNavigator />
+              </NavigationContainer>
+            </InteractionProvider>
+          </HouseholdProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#666' },
+  root: { flex: 1 },
 });
