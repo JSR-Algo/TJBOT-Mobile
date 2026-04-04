@@ -297,6 +297,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
         {messages.map((msg, i) => (
           <View
             key={i}
+            testID={msg.role === 'assistant' ? 'assistant-bubble' : 'user-bubble'}
             style={[styles.bubble, msg.role === 'user' ? styles.userBubble : styles.assistantBubble]}
           >
             <Text style={[styles.bubbleText, msg.role === 'assistant' && styles.assistantText]}>
@@ -317,6 +318,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
       <View style={styles.micContainer}>
         <Animated.View style={[styles.micRing, { transform: [{ scale: pulseAnim }] }]} />
         <TouchableOpacity
+          testID="mic-button"
           style={[styles.micButton, state === 'RECORDING' && styles.micButtonActive]}
           onPress={handleMicPress}
           disabled={state === 'THINKING'}

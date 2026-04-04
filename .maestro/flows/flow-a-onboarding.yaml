@@ -1,0 +1,40 @@
+appId: com.tbot.app
+name: "Flow A — Onboarding: signup, create household, add child"
+---
+# Launch fresh
+- clearState
+- launchApp
+
+# --- Sign Up ---
+- assertVisible: "Create Account"
+- tapOn: "Create Account"
+- inputText:
+    id: "email-input"
+    text: "e2e_test@tbot.dev"
+- inputText:
+    id: "password-input"
+    text: "TestPass123!"
+- tapOn: "Sign Up"
+- assertVisible: "Welcome"
+
+# --- Create Household ---
+- tapOn: "Create Household"
+- inputText:
+    id: "household-name-input"
+    text: "E2E Test Family"
+- tapOn: "Continue"
+- assertVisible: "Household created"
+
+# --- Add Child Profile ---
+- tapOn: "Add Child"
+- inputText:
+    id: "child-name-input"
+    text: "Test Child"
+- tapOn: "Age 5"
+- tapOn: "Animals"
+- tapOn: "Save Child"
+- assertVisible: "Test Child"
+
+# --- Verify home screen loads ---
+- assertVisible: "Home"
+- assertNotVisible: "Error"

@@ -1,0 +1,29 @@
+appId: com.tbot.app
+name: "Flow C — Progress Tracking: KPIs visible after session"
+---
+- launchApp
+
+# Navigate to Progress tab
+- tapOn: "Progress"
+
+# Verify KPI cards visible
+- assertVisible: "Daily Streak"
+- assertVisible: "Words This Week"
+- assertVisible: "Speaking Confidence"
+
+# Verify no blank/error states
+- assertNotVisible: "Error"
+- assertNotVisible: "undefined"
+- assertNotVisible: "NaN"
+
+# Navigate all main tabs — verify no crashes
+- tapOn: "Home"
+- assertVisible: "Home"
+- tapOn: "Learn"
+- assertVisible: "Learn"
+- tapOn: "Activity"
+- assertVisible: "Activity"
+- tapOn: "Settings"
+- assertVisible: "Settings"
+- tapOn: "Progress"
+- assertVisible: "Progress"

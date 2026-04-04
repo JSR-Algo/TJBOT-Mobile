@@ -1,0 +1,31 @@
+appId: com.tbot.app
+name: "Flow B — Learning Session: mic → AI response"
+---
+- launchApp
+
+# Navigate to Learn tab
+- tapOn: "Learn"
+- assertVisible: "Tap to speak"
+
+# Tap mic button (testID used in component)
+- tapOn:
+    id: "mic-button"
+- assertVisible: "Listening..."
+
+# Simulate brief recording then stop
+- wait: 2000
+- tapOn:
+    id: "mic-button"
+
+# Wait for AI to process (max 10s for demo/mock backend)
+- waitForAnimationToEnd:
+    timeout: 10000
+- assertVisible: "TBOT says"
+
+# Verify response text appeared (assistant bubble)
+- assertVisible:
+    id: "assistant-bubble"
+
+# Verify no crash or blank screen
+- assertNotVisible: "Error"
+- assertNotVisible: "undefined"
