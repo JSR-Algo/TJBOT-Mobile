@@ -1,0 +1,224 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775471186050,
+  "projectRoot": "/Users/manhhodinh/Documents/TBOT/tbot-mobile",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "19.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "jest",
+        "version": "29.7.0",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run start",
+    "scripts": {
+      "start": "react-native start",
+      "android": "react-native run-android",
+      "ios": "react-native run-ios",
+      "build": "tsc --noEmit",
+      "typecheck": "tsc --noEmit",
+      "lint": "eslint src/ tests/",
+      "test": "jest",
+      "e2e:mobile": "node scripts/e2e-mobile.js",
+      "e2e:mobile:local": "TBOT_API_URL=http://localhost:3000 node scripts/e2e-mobile.js"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "scripts",
+      "src",
+      "tests"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "android": {
+      "path": "android",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1775471186029,
+      "keyFiles": [
+        "build.gradle",
+        "gradle.properties",
+        "gradlew",
+        "gradlew.bat",
+        "settings.gradle"
+      ]
+    },
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 0,
+      "lastAccessed": 1775471186029,
+      "keyFiles": []
+    },
+    "ios": {
+      "path": "ios",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1775471186029,
+      "keyFiles": [
+        "Podfile",
+        "Podfile.lock",
+        "Podfile.properties.json"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1775471186030,
+      "keyFiles": [
+        "e2e-mobile.js"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 3,
+      "lastAccessed": 1775471186030,
+      "keyFiles": [
+        "App.tsx",
+        "__env__.ts",
+        "config.ts"
+      ]
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 2,
+      "lastAccessed": 1775471186030,
+      "keyFiles": [
+        "App.test.tsx",
+        "setup.ts"
+      ]
+    },
+    "android/app": {
+      "path": "android/app",
+      "purpose": "Application code",
+      "fileCount": 3,
+      "lastAccessed": 1775471186030,
+      "keyFiles": [
+        "build.gradle",
+        "debug.keystore",
+        "proguard-rules.pro"
+      ]
+    },
+    "dist/assets": {
+      "path": "dist/assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1775471186030,
+      "keyFiles": []
+    },
+    "src/api": {
+      "path": "src/api",
+      "purpose": "API routes",
+      "fileCount": 11,
+      "lastAccessed": 1775471186031,
+      "keyFiles": [
+        "account.ts",
+        "ai.ts",
+        "auth.ts"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 7,
+      "lastAccessed": 1775471186031,
+      "keyFiles": [
+        "Button.tsx",
+        "Card.tsx",
+        "EmptyState.tsx"
+      ]
+    },
+    "tests/utils": {
+      "path": "tests/utils",
+      "purpose": "Utility functions",
+      "fileCount": 1,
+      "lastAccessed": 1775471186032,
+      "keyFiles": [
+        "errors.test.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/screens/interaction/InteractionScreen.tsx",
+      "accessCount": 21,
+      "lastAccessed": 1775543483058,
+      "type": "file"
+    },
+    {
+      "path": "src/api/learning.ts",
+      "accessCount": 5,
+      "lastAccessed": 1775488976626,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 2,
+      "lastAccessed": 1775488580276,
+      "type": "directory"
+    },
+    {
+      "path": ".env",
+      "accessCount": 2,
+      "lastAccessed": 1775532915487,
+      "type": "file"
+    },
+    {
+      "path": "src/navigation/MainTabs.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775488618566,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/dashboard/ParentDashboardScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775488643878,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

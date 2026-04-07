@@ -1,0 +1,8 @@
+{
+  "name": "TbotMobile",
+  "displayName": "TBOT",
+  "expo": {
+    "name": "TbotMobile",
+    "slug": "tbot-mobile"
+  }
+}

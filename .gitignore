@@ -10,3 +10,6 @@ android/app/build/
 *.log
 .DS_Store
 coverage/
+.omc/sessions/
+.omc/state/
+ios/.omc/

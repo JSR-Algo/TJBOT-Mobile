@@ -21,8 +21,11 @@
     "axios": "^1.7.9",
     "expo": "^55.0.11",
     "expo-audio": "~55.0.11",
+    "expo-device": "~55.0.12",
     "expo-haptics": "~55.0.11",
+    "expo-notifications": "~55.0.16",
     "expo-secure-store": "~55.0.11",
+    "expo-server-sdk": "^6.1.0",
     "react": "19.2.0",
     "react-native": "0.83.4",
     "react-native-gesture-handler": "~2.30.0",
@@ -52,7 +55,9 @@
       "expo-secure-store": "<rootDir>/tests/__mocks__/expo-secure-store.ts",
       "expo-av": "<rootDir>/tests/__mocks__/expo-av.ts",
       "expo-haptics": "<rootDir>/tests/__mocks__/expo-haptics.ts",
-      "expo-audio": "<rootDir>/tests/__mocks__/expo-audio.ts"
+      "expo-audio": "<rootDir>/tests/__mocks__/expo-audio.ts",
+      "expo-notifications": "<rootDir>/tests/__mocks__/expo-notifications.ts",
+      "expo-device": "<rootDir>/tests/__mocks__/expo-device.ts"
     },
     "testMatch": [
       "**/tests/**/*.test.{ts,tsx}"

@@ -7,19 +7,27 @@ import { AuthProvider } from './contexts/AuthContext';
 import { HouseholdProvider } from './contexts/HouseholdContext';
 import { InteractionProvider } from './contexts/InteractionContext';
 import { RootNavigator } from './navigation/RootNavigator';
+import { usePushNotifications } from './hooks/usePushNotifications';
+
+function AppInner(): React.JSX.Element {
+  usePushNotifications();
+  return (
+    <HouseholdProvider>
+      <InteractionProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </InteractionProvider>
+    </HouseholdProvider>
+  );
+}
 
 export default function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <AuthProvider>
-          <HouseholdProvider>
-            <InteractionProvider>
-              <NavigationContainer>
-                <RootNavigator />
-              </NavigationContainer>
-            </InteractionProvider>
-          </HouseholdProvider>
+          <AppInner />
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
