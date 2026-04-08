@@ -333,35 +333,47 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
       silenceTimerRef.current = null;
 
       // VAD + metering: poll every 100ms
-      // After 800ms of detected speech, start silence timer.
-      // If silent for 1500ms → auto-send.
+      const SILENCE_THRESHOLD = 0.30;
+      const SPEECH_GRACE_MS  = 300;
+      const SILENCE_TIMEOUT_MS = 500;
       let speechDetectedMs = 0;
-      const SILENCE_THRESHOLD = 0.30;   // normalized level below = silence
-      const SPEECH_GRACE_MS  = 300;     // must hear speech first
-      const SILENCE_TIMEOUT_MS = 500;   // 0.5s silence → auto-send
+      let nullMeteringMs = 0; // track if no metering data (simulator fallback)
+
+      const autoSend = async () => {
+        if (recorderRef.current === rec && rec.isRecording) {
+          if (meteringIntervalRef.current) { clearInterval(meteringIntervalRef.current); meteringIntervalRef.current = null; }
+          if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+          const audioUri = await stopRecordingAndTranscribe();
+          await processTranscription(audioUri);
+        }
+      };
 
       meteringIntervalRef.current = setInterval(() => {
         const state = rec.getStatus();
-        if (state.metering == null) return;
+
+        // Simulator fallback: no metering → auto-send after 3s
+        if (state.metering == null) {
+          nullMeteringMs += 100;
+          if (nullMeteringMs >= 3000 && !silenceTimerRef.current) {
+            silenceTimerRef.current = setTimeout(() => {
+              silenceTimerRef.current = null;
+              void autoSend();
+            }, 0);
+          }
+          return;
+        }
+
+        nullMeteringMs = 0; // reset if real metering available
         const normalized = Math.max(0, Math.min(1, (state.metering + 80) / 80));
         setAudioLevel(normalized);
 
         if (normalized >= SILENCE_THRESHOLD) {
           speechDetectedMs += 100;
-          // Cancel any pending silence timer when voice detected
-          if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-            silenceTimerRef.current = null;
-          }
+          if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
         } else if (speechDetectedMs >= SPEECH_GRACE_MS && !silenceTimerRef.current) {
-          // Start silence countdown only after enough speech has been detected
-          silenceTimerRef.current = setTimeout(async () => {
+          silenceTimerRef.current = setTimeout(() => {
             silenceTimerRef.current = null;
-            if (recorderRef.current === rec && rec.isRecording) {
-              if (meteringIntervalRef.current) { clearInterval(meteringIntervalRef.current); meteringIntervalRef.current = null; }
-              const audioUri = await stopRecordingAndTranscribe();
-              await processTranscription(audioUri);
-            }
+            void autoSend();
           }, SILENCE_TIMEOUT_MS);
         }
       }, 100);
