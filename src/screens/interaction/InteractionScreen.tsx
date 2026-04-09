@@ -23,6 +23,7 @@ import * as aiApi from '../../api/ai';
 import * as learningApi from '../../api/learning';
 import { RealtimeClient } from '../../api/realtime.client';
 import { useAudioStreamer } from '../../hooks/use-audio-streamer';
+import { getAccessToken } from '../../api/tokens';
 import { Config } from '../../config';
 import { useInteractions } from '../../contexts/InteractionContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
@@ -185,40 +186,47 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
 
   useEffect(() => {
     const wsUrl = (Config.API_BASE_URL || '').replace(/\/v1$/, '').replace(/^http/, 'ws') + '/device';
-    const client = new RealtimeClient({ url: wsUrl });
-    client.setHandlers({
-      onConnected: () => { wsConnectedRef.current = true; },
-      onDisconnected: () => { wsConnectedRef.current = false; },
-      onTranscriptPartial: (ev) => {
-        setLiveTranscript(ev.text);
-        setInteractionState('PROCESSING_STT');
-      },
-      onTranscriptFinal: (ev) => {
-        setLiveTranscript('');
-        if (ev.text.trim()) {
-          setMessages((prev) => [...prev, { role: 'user', text: ev.text.trim(), ts: Date.now() }]);
-        }
-        setInteractionState('PROCESSING_LLM');
-      },
-      onNoSpeech: () => {
-        setLiveTranscript('');
-        setInteractionState('NO_SPEECH');
-        setTimeout(() => setInteractionState('IDLE'), 1500);
-      },
-      onTtsChunk: () => { setInteractionState('RESPONDING'); },
-      onTurnComplete: () => {
-        setInteractionState('DONE');
-        setTimeout(() => setInteractionState('IDLE'), 500);
-      },
-      onError: (err) => {
-        setError(err instanceof Error ? err.message : String(err));
-        setInteractionState('ERROR');
-        setTimeout(() => setInteractionState('IDLE'), 3000);
-      },
-    });
-    client.connect();
-    realtimeRef.current = client;
-    return () => { client.disconnect(); };
+    let mounted = true;
+
+    (async () => {
+      const token = await getAccessToken() ?? '';
+      if (!mounted) return;
+      const client = new RealtimeClient({ url: wsUrl, authToken: token });
+      client.setHandlers({
+        onConnected: () => { wsConnectedRef.current = true; },
+        onDisconnected: () => { wsConnectedRef.current = false; },
+        onTranscriptPartial: (ev) => {
+          setLiveTranscript(ev.text);
+          setInteractionState('PROCESSING_STT');
+        },
+        onTranscriptFinal: (ev) => {
+          setLiveTranscript('');
+          if (ev.text.trim()) {
+            setMessages((prev) => [...prev, { role: 'user', text: ev.text.trim(), ts: Date.now() }]);
+          }
+          setInteractionState('PROCESSING_LLM');
+        },
+        onNoSpeech: () => {
+          setLiveTranscript('');
+          setInteractionState('NO_SPEECH');
+          setTimeout(() => setInteractionState('IDLE'), 1500);
+        },
+        onTtsChunk: () => { setInteractionState('RESPONDING'); },
+        onTurnComplete: () => {
+          setInteractionState('DONE');
+          setTimeout(() => setInteractionState('IDLE'), 500);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : String(err));
+          setInteractionState('ERROR');
+          setTimeout(() => setInteractionState('IDLE'), 3000);
+        },
+      });
+      client.connect();
+      realtimeRef.current = client;
+    })();
+
+    return () => { mounted = false; realtimeRef.current?.disconnect(); };
   }, []);
 
   // ─ Robot & audio
