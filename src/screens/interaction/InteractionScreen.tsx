@@ -22,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import * as aiApi from '../../api/ai';
 import * as learningApi from '../../api/learning';
 import { RealtimeClient } from '../../api/realtime.client';
+import { useAudioStreamer } from '../../hooks/use-audio-streamer';
 import { Config } from '../../config';
 import { useInteractions } from '../../contexts/InteractionContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
@@ -225,6 +226,24 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   const feedback = useRobotFeedback();
   const recorderRef = useRef<AudioRecorder | null>(null);
   const currentTheme = getModeTheme(robotMode);
+  const streamingActiveRef = useRef(false);
+
+  // Audio streamer for realtime WebSocket path
+  const streamer = useAudioStreamer({
+    client: realtimeRef.current!,
+    onSpeechStart: () => {
+      setInteractionState('RECORDING');
+      setLiveTranscript('Listening...');
+    },
+    onSilence: () => {
+      streamingActiveRef.current = false;
+      setInteractionState('PROCESSING_STT');
+    },
+    onError: (err) => {
+      setError(err.message);
+      setInteractionState('ERROR');
+    },
+  });
 
   // Create a fresh recorder for each recording session
   const createFreshRecorder = () => {
@@ -382,6 +401,32 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
     if (isPreparingRef.current) return;
     setError(null);
     setQaStats(null);
+
+    // REALTIME STREAMING PATH: use LiveAudioStream + WebSocket
+    if (wsConnectedRef.current && realtimeRef.current) {
+      try {
+        const { granted } = await requestRecordingPermissionsAsync();
+        if (!granted) { setError('Microphone permission required.'); return; }
+        streamingActiveRef.current = true;
+        setInteractionState('LISTENING');
+        setLiveTranscript('Listening...');
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        streamer.startStreaming();
+        // Hard 30s cap
+        setTimeout(() => {
+          if (streamingActiveRef.current) {
+            streamer.stopStreaming();
+            streamingActiveRef.current = false;
+          }
+        }, 30000);
+        return;
+      } catch (err: unknown) {
+        // Fall through to REST path
+        streamingActiveRef.current = false;
+      }
+    }
+
+    // REST FALLBACK PATH: record to file then upload
     try {
       const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) { setError('Microphone permission required. Please allow in Settings.'); return; }
@@ -467,8 +512,14 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
 
   const handleMicPress = async () => {
     void feedback.onMicPress();
-    if (interactionState === 'RECORDING') {
-      // Manual stop
+    if (interactionState === 'RECORDING' || interactionState === 'LISTENING') {
+      // Manual stop - streaming or file-based
+      if (streamingActiveRef.current) {
+        streamer.stopStreaming();
+        streamingActiveRef.current = false;
+        setInteractionState('PROCESSING_STT');
+        return;
+      }
       const audioUri = await stopRecordingAndTranscribe();
       await processTranscription(audioUri);
       return;

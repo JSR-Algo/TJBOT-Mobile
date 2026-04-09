@@ -120,6 +120,15 @@ export class RealtimeClient {
    * Send a base64-encoded PCM audio chunk.
    * If the socket is not open (e.g. reconnecting), buffers the chunk for resend.
    */
+  sendAudioStart(sessionId: string): void {
+    const msg = JSON.stringify({ type: 'AUDIO_START', sessionId });
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(msg);
+    } else {
+      this.reconnectBuffer.push(msg);
+    }
+  }
+
   sendAudioChunk(base64: string): void {
     const msg = JSON.stringify({ type: 'AUDIO_CHUNK', audio: base64 });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {

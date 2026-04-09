@@ -160,6 +160,9 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
 
       vad.startListening();
       stream.start();
+
+      // Signal backend that audio streaming has started
+      clientRef.current.sendAudioStart('');
     } catch (err) {
       onError?.(err instanceof Error ? err : new Error(String(err)));
     }
