@@ -3,8 +3,12 @@ import { useState, useCallback } from 'react';
 export type RobotState =
   | 'idle'
   | 'listening'
-  | 'thinking'
+  | 'recording'
+  | 'processing_stt'
+  | 'processing_llm'
+  | 'processing_tts'
   | 'speaking'
+  | 'no_speech'
   | 'error'
   | 'low_battery'
   | 'charging'
@@ -19,14 +23,18 @@ export type RobotMode =
 
 // Allowed transitions: from state -> set of valid next states
 const TRANSITIONS: Record<RobotState, ReadonlySet<RobotState>> = {
-  idle: new Set<RobotState>(['listening', 'low_battery', 'charging', 'offline', 'error']),
-  listening: new Set<RobotState>(['thinking', 'idle', 'error', 'offline']),
-  thinking: new Set<RobotState>(['speaking', 'idle', 'error', 'offline']),
-  speaking: new Set<RobotState>(['idle', 'listening', 'error', 'offline']),
-  error: new Set<RobotState>(['idle', 'offline']),
-  low_battery: new Set<RobotState>(['charging', 'idle', 'offline']),
-  charging: new Set<RobotState>(['idle', 'low_battery']),
-  offline: new Set<RobotState>(['idle']),
+  idle:           new Set<RobotState>(['listening', 'recording', 'low_battery', 'charging', 'offline', 'error']),
+  listening:      new Set<RobotState>(['recording', 'idle', 'error', 'offline']),
+  recording:      new Set<RobotState>(['processing_stt', 'no_speech', 'idle', 'error', 'offline']),
+  processing_stt: new Set<RobotState>(['processing_llm', 'no_speech', 'idle', 'error', 'offline']),
+  processing_llm: new Set<RobotState>(['processing_tts', 'idle', 'error', 'offline']),
+  processing_tts: new Set<RobotState>(['speaking', 'idle', 'error', 'offline']),
+  speaking:       new Set<RobotState>(['idle', 'listening', 'recording', 'error', 'offline']),
+  no_speech:      new Set<RobotState>(['idle', 'listening', 'recording', 'error', 'offline']),
+  error:          new Set<RobotState>(['idle', 'offline']),
+  low_battery:    new Set<RobotState>(['charging', 'idle', 'offline']),
+  charging:       new Set<RobotState>(['idle', 'low_battery']),
+  offline:        new Set<RobotState>(['idle']),
 };
 
 export interface RobotStateMachineReturn {

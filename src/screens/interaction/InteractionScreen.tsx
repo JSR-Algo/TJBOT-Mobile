@@ -21,6 +21,8 @@ import type { AudioPlayer, AudioRecorder } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import * as aiApi from '../../api/ai';
 import * as learningApi from '../../api/learning';
+import { RealtimeClient } from '../../api/realtime.client';
+import { Config } from '../../config';
 import { useInteractions } from '../../contexts/InteractionContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import type { MainStackScreenProps } from '../../navigation/types';
@@ -33,7 +35,20 @@ import type { RobotMode } from './RobotStateMachine';
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 // ─── Types ─────────────────────────────────────────────────────────────────
-type InteractionState = 'IDLE' | 'RECORDING' | 'THINKING' | 'RESPONDING' | 'DONE';
+// Maps to all 12 RobotStateMachine states.
+type InteractionState =
+  | 'IDLE'
+  | 'LISTENING'
+  | 'RECORDING'
+  | 'PROCESSING_STT'
+  | 'PROCESSING_LLM'
+  | 'PROCESSING_TTS'
+  | 'RESPONDING'
+  | 'NO_SPEECH'
+  | 'ERROR'
+  | 'DONE';
+// Note: low_battery, charging, offline are device states set externally, not
+// driven by InteractionState; they can be triggered via robot.transition() directly.
 type AppMode = 'demo' | 'live' | 'qa';
 
 interface Message {
@@ -110,11 +125,16 @@ const ROBOT_MODES: RobotMode[] = ['learning', 'playful', 'focus', 'parent_mode',
 
 // ─── Status messages ─────────────────────────────────────────────────────────
 const STATUS: Record<InteractionState, string> = {
-  IDLE:       'Ready…',
-  RECORDING:  'Listening…',
-  THINKING:   'Thinking…',
-  RESPONDING: 'Speaking…',
-  DONE:       'Ready…',
+  IDLE:            'Readyu2026',
+  LISTENING:       'Listeningu2026',
+  RECORDING:       'Recordingu2026',
+  PROCESSING_STT:  'Transcribingu2026',
+  PROCESSING_LLM:  'Thinkingu2026',
+  PROCESSING_TTS:  'Preparing voiceu2026',
+  RESPONDING:      'Speakingu2026',
+  NO_SPEECH:       'No speech detected',
+  ERROR:           'Something went wrong',
+  DONE:            'Readyu2026',
 };
 
 // ─── Main component ──────────────────────────────────────────────────────────
@@ -158,6 +178,48 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   const llmStartRef = useRef(0);
   const ttsStartRef = useRef(0);
 
+  // Realtime WebSocket client
+  const realtimeRef = useRef<RealtimeClient | null>(null);
+  const wsConnectedRef = useRef(false);
+
+  useEffect(() => {
+    const wsUrl = (Config.API_BASE_URL || '').replace(/\/v1$/, '').replace(/^http/, 'ws') + '/device';
+    const client = new RealtimeClient({ url: wsUrl });
+    client.setHandlers({
+      onConnected: () => { wsConnectedRef.current = true; },
+      onDisconnected: () => { wsConnectedRef.current = false; },
+      onTranscriptPartial: (ev) => {
+        setLiveTranscript(ev.text);
+        setInteractionState('PROCESSING_STT');
+      },
+      onTranscriptFinal: (ev) => {
+        setLiveTranscript('');
+        if (ev.text.trim()) {
+          setMessages((prev) => [...prev, { role: 'user', text: ev.text.trim(), ts: Date.now() }]);
+        }
+        setInteractionState('PROCESSING_LLM');
+      },
+      onNoSpeech: () => {
+        setLiveTranscript('');
+        setInteractionState('NO_SPEECH');
+        setTimeout(() => setInteractionState('IDLE'), 1500);
+      },
+      onTtsChunk: () => { setInteractionState('RESPONDING'); },
+      onTurnComplete: () => {
+        setInteractionState('DONE');
+        setTimeout(() => setInteractionState('IDLE'), 500);
+      },
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : String(err));
+        setInteractionState('ERROR');
+        setTimeout(() => setInteractionState('IDLE'), 3000);
+      },
+    });
+    client.connect();
+    realtimeRef.current = client;
+    return () => { client.disconnect(); };
+  }, []);
+
   // ─ Robot & audio
   const robot = useRobotStateMachine('idle', robotMode);
   const feedback = useRobotFeedback();
@@ -182,10 +244,15 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   useEffect(() => {
     switch (interactionState) {
       case 'IDLE':
-      case 'DONE':       robot.transition('idle'); break;
-      case 'RECORDING':  robot.transition('listening'); void feedback.onListening(); break;
-      case 'THINKING':   robot.transition('thinking');  void feedback.onThinking();  break;
-      case 'RESPONDING': robot.transition('speaking');  void feedback.onSpeaking();  break;
+      case 'DONE':            robot.transition('idle'); break;
+      case 'LISTENING':       robot.transition('listening'); void feedback.onListening(); break;
+      case 'RECORDING':       robot.transition('recording'); void feedback.onListening(); break;
+      case 'PROCESSING_STT':  robot.transition('processing_stt'); break;
+      case 'PROCESSING_LLM':  robot.transition('processing_llm'); break;
+      case 'PROCESSING_TTS':  robot.transition('processing_tts'); break;
+      case 'RESPONDING':      robot.transition('speaking');  void feedback.onSpeaking();  break;
+      case 'NO_SPEECH':       robot.transition('no_speech'); break;
+      case 'ERROR':           robot.transition('error'); break;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactionState]);
@@ -295,7 +362,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
     if (meteringIntervalRef.current) { clearInterval(meteringIntervalRef.current); meteringIntervalRef.current = null; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setAudioLevel(0);
-    setInteractionState('THINKING');
+    setInteractionState('PROCESSING_STT');
     let audioUri: string | undefined;
     const rec = recorderRef.current;
     if (rec && rec.isRecording) {
@@ -434,8 +501,35 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
       return;
     }
     const totalStart = Date.now();
+
+    // WebSocket realtime path: send audio via WS, responses stream back via event handlers
+    if (wsConnectedRef.current && realtimeRef.current) {
+      try {
+        setInteractionState('PROCESSING_STT');
+        setProcessingStep('Sending audio...');
+        const response = await fetch(audioUri);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1] || '');
+          };
+          reader.readAsDataURL(blob);
+        });
+        // Send via WebSocket: AUDIO_START -> AUDIO_CHUNK -> AUDIO_END
+        realtimeRef.current.sendAudioChunk(base64);
+        realtimeRef.current.sendAudioEnd();
+        // Response handled by onTranscriptPartial, onTtsChunk, onTurnComplete handlers
+        return;
+      } catch (wsErr) {
+        // Fall through to REST path on WS failure
+        setError(null);
+      }
+    }
+
     try {
-      // STT
+      // STT (REST fallback)
       sttStartRef.current = Date.now();
       setProcessingStep('Transcribing…');
       setLiveTranscript('Recognizing your voice…');
@@ -545,7 +639,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   };
 
   const micActive = interactionState === 'RECORDING';
-  const micDisabled = interactionState === 'THINKING' || interactionState === 'RESPONDING';
+  const micDisabled = interactionState === 'PROCESSING_STT' || interactionState === 'PROCESSING_LLM' || interactionState === 'PROCESSING_TTS' || interactionState === 'RESPONDING';
 
   // ─── Mic button pulse animation ──────────────────────────────────────────
   const micPulse = useRef(new Animated.Value(1)).current;

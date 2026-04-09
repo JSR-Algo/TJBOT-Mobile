@@ -22,8 +22,12 @@ interface RobotFaceProps {
 function getStateColor(state: RobotState, theme: ModeTheme): string {
   switch (state) {
     case 'listening': return '#00E5FF';
-    case 'thinking':  return '#FFD700';
+    case 'recording':  return '#00E5FF';
+    case 'processing_stt': return '#FFD700';
+    case 'processing_llm': return '#FFD700';
+    case 'processing_tts': return '#FFD700';
     case 'speaking':  return theme.accent;
+    case 'no_speech': return '#546E7A';
     case 'error':     return '#FF4444';
     case 'low_battery': return '#FF6D00';
     case 'charging':  return '#69FF47';
@@ -37,7 +41,7 @@ function LEDRing({ size, color, state }: { size: number; color: string; state: R
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    const active = state === 'listening' || state === 'speaking' || state === 'thinking';
+    const active = state === 'listening' || state === 'recording' || state === 'speaking' || state === 'processing_stt' || state === 'processing_llm' || state === 'processing_tts';
     if (!active) {
       Animated.timing(opacity, { toValue: 0.25, duration: 400, useNativeDriver: true }).start();
       return;
@@ -243,7 +247,7 @@ function Eye({
     );
   }
 
-  if (state === 'thinking') {
+  if (state === 'processing_llm') {
     // Scanning eye — squinted rectangle
     return (
       <Animated.View
@@ -445,7 +449,7 @@ export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: Rob
           </View>
 
           {/* ── Thinking spinner overlay ── */}
-          {robotState === 'thinking' && (
+          {robotState === 'processing_llm' && (
             <Animated.View
               style={[
                 styles.thinkingRing,
@@ -466,7 +470,7 @@ export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: Rob
           <View style={{ marginTop: size * 0.08, alignItems: 'center' }}>
             {robotState === 'speaking' ? (
               <SpeakingWaveform size={size} color={stateColor} audioLevel={audioLevel} />
-            ) : robotState === 'thinking' ? (
+            ) : robotState === 'processing_llm' ? (
               <ThinkingDots size={size} color={stateColor} />
             ) : robotState === 'listening' ? (
               <AudioLevelBars size={size} color={stateColor} audioLevel={audioLevel} />
