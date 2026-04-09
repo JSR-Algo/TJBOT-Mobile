@@ -185,7 +185,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   const wsConnectedRef = useRef(false);
 
   useEffect(() => {
-    const wsUrl = (Config.API_BASE_URL || '').replace(/\/v1$/, '').replace(/^http/, 'ws') + '/device';
+    const wsUrl = (Config.API_BASE_URL || '').replace(/\/v1$/, '').replace(/^http/, 'ws');
     let mounted = true;
 
     (async () => {
