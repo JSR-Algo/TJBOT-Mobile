@@ -216,9 +216,8 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
           setTimeout(() => setInteractionState('IDLE'), 500);
         },
         onError: (err) => {
-          setError(err instanceof Error ? err.message : String(err));
-          setInteractionState('ERROR');
-          setTimeout(() => setInteractionState('IDLE'), 3000);
+          // Silently handle WS errors - fall back to REST path
+          wsConnectedRef.current = false;
         },
       });
       client.connect();
