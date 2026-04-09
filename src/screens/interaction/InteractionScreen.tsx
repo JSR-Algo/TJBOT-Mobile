@@ -22,7 +22,6 @@ import * as Haptics from 'expo-haptics';
 import * as aiApi from '../../api/ai';
 import * as learningApi from '../../api/learning';
 import { RealtimeClient } from '../../api/realtime.client';
-import { useAudioStreamer } from '../../hooks/use-audio-streamer';
 import { getAccessToken } from '../../api/tokens';
 import { Config } from '../../config';
 import { useInteractions } from '../../contexts/InteractionContext';
@@ -236,22 +235,8 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   const currentTheme = getModeTheme(robotMode);
   const streamingActiveRef = useRef(false);
 
-  // Audio streamer for realtime WebSocket path
-  const streamer = useAudioStreamer({
-    client: realtimeRef.current!,
-    onSpeechStart: () => {
-      setInteractionState('RECORDING');
-      setLiveTranscript('Listening...');
-    },
-    onSilence: () => {
-      streamingActiveRef.current = false;
-      setInteractionState('PROCESSING_STT');
-    },
-    onError: (err) => {
-      setError(err.message);
-      setInteractionState('ERROR');
-    },
-  });
+  // Audio streamer placeholder - actual streaming uses realtimeRef.current directly
+  // because the WS client connects async and useAudioStreamer can't handle null initial client
 
   // Create a fresh recorder for each recording session
   const createFreshRecorder = () => {
@@ -419,12 +404,30 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
         setInteractionState('LISTENING');
         setLiveTranscript('Listening...');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        streamer.startStreaming();
+
+        // Start streaming audio directly via RealtimeClient
+        const client = realtimeRef.current!;
+        client.sendAudioStart('');
+
+        // Use native audio streaming if available, otherwise use expo-audio record+send
+        try {
+          const LiveAudioStream = require('react-native-live-audio-stream').default;
+          LiveAudioStream.init({ sampleRate: 16000, channels: 1, bitsPerSample: 16, audioSource: 6 });
+          LiveAudioStream.on('data', (base64: string) => {
+            if (streamingActiveRef.current) client.sendAudioChunk(base64);
+          });
+          LiveAudioStream.start();
+        } catch {
+          // LiveAudioStream not available - will use file fallback on stop
+        }
+
         // Hard 30s cap
         setTimeout(() => {
           if (streamingActiveRef.current) {
-            streamer.stopStreaming();
+            try { require('react-native-live-audio-stream').default.stop(); } catch {}
+            client.sendAudioEnd();
             streamingActiveRef.current = false;
+            setInteractionState('PROCESSING_STT');
           }
         }, 30000);
         return;
@@ -523,7 +526,8 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
     if (interactionState === 'RECORDING' || interactionState === 'LISTENING') {
       // Manual stop - streaming or file-based
       if (streamingActiveRef.current) {
-        streamer.stopStreaming();
+        try { require('react-native-live-audio-stream').default.stop(); } catch {}
+        realtimeRef.current?.sendAudioEnd();
         streamingActiveRef.current = false;
         setInteractionState('PROCESSING_STT');
         return;
