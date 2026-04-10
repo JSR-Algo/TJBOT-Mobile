@@ -30,6 +30,11 @@
 - Conversation summaries (read-only display from backend)
 - Push notification receipt and display
 - Auth token management
+- Realtime voice interaction via WebSocket (Google Live Flash 3.1 API backend)
+  - Audio capture: PCM 16kHz mono via expo-audio
+  - Voice Activity Detection (VAD): local, pre-stream filtering
+  - Audio playback: unified response stream from Google Live (no separate TTS chunks)
+  - State machine: idle u2192 listening u2192 recording u2192 processing u2192 speaking u2192 idle
 
 ## SECURITY REQUIREMENTS
 - Auth tokens: ONLY via expo-secure-store (Keychain/Keystore)
