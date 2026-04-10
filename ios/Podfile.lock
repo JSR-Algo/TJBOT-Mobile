@@ -2656,6 +2656,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNLiveAudioStream (1.1.1):
+    - React
   - RNScreens (4.23.0):
     - boost
     - DoubleConversion
@@ -2814,6 +2816,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios/ReactCodegen`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
+  - RNLiveAudioStream (from `../node_modules/react-native-live-audio-stream`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -3012,6 +3015,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
+  RNLiveAudioStream:
+    :path: "../node_modules/react-native-live-audio-stream"
   RNScreens:
     :path: "../node_modules/react-native-screens"
   Yoga:
@@ -3112,6 +3117,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 53a01767e04b3a23f128b5a3c6542b4ab24fb921
   ReactCommon: 5901ef412ae35cc727b9584d4f7e3e1f7f17c251
   RNGestureHandler: b407c25a3f51d22dd7430e6b530f753f112b7e77
+  RNLiveAudioStream: 93ac2bb6065be9018d0b00157b220f11cebc1513
   RNScreens: afaf526a9c804c3b4503f950cf3e67ed81e29ada
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: b669e79fa0f8d3f6f5e35372345f54b99e06b13c

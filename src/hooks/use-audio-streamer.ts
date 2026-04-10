@@ -12,7 +12,8 @@
  * without npm install), we access it via a lazy require with a fallback stub
  * so the module can be tested and compiled without the native dep present.
  */
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
+import type React from 'react';
 import { useVoiceActivity } from './use-voice-activity';
 import type { RealtimeClient } from '../api/realtime.client';
 
@@ -52,8 +53,8 @@ function getLiveAudioStream(): LiveAudioStreamStatic | null {
 // ─── Hook types ───────────────────────────────────────────────────────────────
 
 export interface AudioStreamerOptions {
-  /** RealtimeClient instance to stream audio to */
-  client: RealtimeClient;
+  /** Ref to RealtimeClient instance (supports async creation) */
+  clientRef: React.RefObject<RealtimeClient | null>;
   /** RMS energy threshold for VAD (default: 0.015) */
   energyThreshold?: number;
   /** ZCR noise rejection threshold (default: 0.4) */
@@ -81,7 +82,7 @@ export interface AudioStreamerResult {
 
 export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerResult {
   const {
-    client,
+    clientRef,
     energyThreshold,
     zcrNoiseMax,
     silenceHoldMs,
@@ -91,16 +92,17 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
   } = options;
 
   const isStreamingRef = useRef(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const isSpeakingRef = useRef(false);
   const audioEndSentRef = useRef(false);
 
   const handleSilence = useCallback(() => {
     if (isSpeakingRef.current && !audioEndSentRef.current) {
       audioEndSentRef.current = true;
-      client.sendAudioEnd();
+      clientRef.current?.sendAudioEnd();
       onSilence?.();
     }
-  }, [client, onSilence]);
+  }, [clientRef, onSilence]);
 
   const handleSpeechStart = useCallback(() => {
     isSpeakingRef.current = true;
@@ -121,11 +123,6 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
   useEffect(() => {
     vadProcessFrameRef.current = vad.processFrame;
   }, [vad.processFrame]);
-
-  const clientRef = useRef(client);
-  useEffect(() => {
-    clientRef.current = client;
-  }, [client]);
 
   const startStreaming = useCallback(() => {
     if (isStreamingRef.current) return;
@@ -150,11 +147,12 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
 
         // Stream frame to backend only while speech is active
         if (isSpeakingRef.current && !audioEndSentRef.current) {
-          clientRef.current.sendAudioChunk(base64);
+          clientRef.current?.sendAudioChunk(base64);
         }
       });
 
       isStreamingRef.current = true;
+      setIsStreaming(true);
       isSpeakingRef.current = false;
       audioEndSentRef.current = false;
 
@@ -162,7 +160,7 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
       stream.start();
 
       // Signal backend that audio streaming has started
-      clientRef.current.sendAudioStart('');
+      clientRef.current?.sendAudioStart('');
     } catch (err) {
       onError?.(err instanceof Error ? err : new Error(String(err)));
     }
@@ -180,6 +178,7 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
 
     vad.stopListening();
     isStreamingRef.current = false;
+    setIsStreaming(false);
     isSpeakingRef.current = false;
   // vad.stopListening is stable
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,6 +197,6 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
   return {
     startStreaming,
     stopStreaming,
-    isStreaming: isStreamingRef.current,
+    isStreaming,  // reactive useState value, not stale ref
   };
 }

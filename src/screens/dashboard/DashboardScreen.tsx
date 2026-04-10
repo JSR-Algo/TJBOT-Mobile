@@ -100,6 +100,16 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Home'>): Rea
         <Text style={styles.startButtonText}>Start conversation</Text>
       </TouchableOpacity>
 
+      {/* Gemini Live Voice */}
+      <TouchableOpacity
+        style={[styles.startButton, { backgroundColor: '#6C5CE7' }]}
+        onPress={() => navigation.navigate('GeminiConversation')}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.startButtonEmoji}>uD83EuDD16</Text>
+        <Text style={styles.startButtonText}>Gemini Live Voice</Text>
+      </TouchableOpacity>
+
       {/* Recent activity */}
       <Text style={styles.sectionTitle}>Recent activity</Text>
 

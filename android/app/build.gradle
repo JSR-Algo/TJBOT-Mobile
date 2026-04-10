@@ -2,11 +2,22 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
  */
 react {
+    entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", projectRoot, "android", "absolute"].execute(null, rootDir).text.trim())
+    reactNativeDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
+    hermesCommand = new File(["node", "--print", "require.resolve('hermes-compiler/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/hermesc/%OS-BIN%/hermesc"
+    codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
+
+    enableBundleCompression = (findProperty('android.enableBundleCompression') ?: false).toBoolean()
+    cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
+    bundleCommand = "export:embed"
+
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '../..'
     // root = file("../../")
@@ -73,7 +84,6 @@ def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
@@ -84,6 +94,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
+        buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
+        manifestPlaceholders = [usesCleartextTraffic: "true"]
     }
     signingConfigs {
         debug {
@@ -96,14 +109,27 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            multiDexKeepFile file('multidex-keep.txt')
+            multiDexKeepProguard file('multidex-config.pro')
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
+            multiDexKeepFile file('multidex-keep.txt')
+            multiDexKeepProguard file('multidex-config.pro')
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
+    }
+    packagingOptions {
+        jniLibs {
+            def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
+            useLegacyPackaging enableLegacyPackaging.toBoolean()
+        }
+    }
+    androidResources {
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
 }
 
@@ -115,5 +141,43 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+if (!providers.gradleProperty("disablePackageDexOverride").present) {
+    afterEvaluate {
+        ["Debug", "DebugOptimized"].each { variantSuffix ->
+            def packageTaskName = "package${variantSuffix}"
+            def dexTaskNames = [
+                "mergeProjectDex${variantSuffix}",
+                "mergeLibDex${variantSuffix}",
+                "mergeExtDex${variantSuffix}",
+            ]
+
+            tasks.matching { it.name == packageTaskName }.configureEach { task ->
+                task.dependsOn(dexTaskNames.collect { tasks.named(it) })
+                task.dexFolders.setFrom(
+                    files(dexTaskNames.collect { dexTaskName ->
+                        tasks.named(dexTaskName).map { dexTask ->
+                            def dexFolders = [] as LinkedHashSet<File>
+
+                            if (dexTask.hasProperty("dexDirs")) {
+                                dexTask.dexDirs.files.each { file ->
+                                    dexFolders << file
+                                }
+                            }
+
+                            dexTask.outputs.files.asFileTree.matching {
+                                include("**/*.dex")
+                            }.files.each { file ->
+                                dexFolders << file.parentFile
+                            }
+
+                            dexFolders
+                        }
+                    })
+                )
+            }
+        }
     }
 }

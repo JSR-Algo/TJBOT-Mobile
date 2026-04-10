@@ -1,0 +1,5 @@
+-keep class com.tbotmobile.MainApplication { *; }
+-keep class com.tbotmobile.MainActivity { *; }
+-keep class androidx.core.app.CoreComponentFactory { *; }
+-keep class com.facebook.react.ReactApplication { *; }
+-keep class com.facebook.react.ReactActivity { *; }

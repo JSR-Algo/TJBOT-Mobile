@@ -31,6 +31,8 @@ import { RobotFace } from '../../components/robot/RobotFace';
 import { useRobotStateMachine } from './RobotStateMachine';
 import { getModeTheme } from '../../components/robot/RobotModeTheme';
 import { useRobotFeedback } from '../../hooks/useRobotFeedback';
+import { useStreamingTranscript } from '../../hooks/use-streaming-transcript';
+import { useAudioStreamer } from '../../hooks/use-audio-streamer';
 import type { RobotMode } from './RobotStateMachine';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -154,7 +156,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   const [correctResponses, setCorrectResponses] = useState(0);
   const [expectedVocab, setExpectedVocab] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [liveTranscript, setLiveTranscript] = useState<string>('');
+  const [transcript, transcriptActions] = useStreamingTranscript();
   const [isTyping, setIsTyping] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [appMode, setAppMode] = useState<AppMode>('live');
@@ -182,6 +184,12 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   // Realtime WebSocket client
   const realtimeRef = useRef<RealtimeClient | null>(null);
   const wsConnectedRef = useRef(false);
+  const awaitingWsTurnRef = useRef(false);
+
+  // Streaming STT latency tracking (QA mode)
+  const streamingStartRef = useRef(0);
+  const firstPartialRef = useRef(0);
+  const finalTranscriptRef = useRef(0);
 
   useEffect(() => {
     const wsUrl = (Config.API_BASE_URL || '').replace(/\/v1$/, '').replace(/^http/, 'ws');
@@ -195,28 +203,38 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
         onConnected: () => { wsConnectedRef.current = true; },
         onDisconnected: () => { wsConnectedRef.current = false; },
         onTranscriptPartial: (ev) => {
-          setLiveTranscript(ev.text);
-          setInteractionState('PROCESSING_STT');
+          transcriptActions.onPartial(ev.text);
+          if (!firstPartialRef.current) firstPartialRef.current = Date.now();
+          // Stay in LISTENING u2014 do NOT change state
         },
         onTranscriptFinal: (ev) => {
-          setLiveTranscript('');
-          if (ev.text.trim()) {
-            setMessages((prev) => [...prev, { role: 'user', text: ev.text.trim(), ts: Date.now() }]);
-          }
-          setInteractionState('PROCESSING_LLM');
+          transcriptActions.onFinal(ev.text);
+          finalTranscriptRef.current = Date.now();
+          // Stay in LISTENING u2014 more segments may follow
+          // Message creation happens on mic stop (handleMicPress / VAD silence)
         },
         onNoSpeech: () => {
-          setLiveTranscript('');
+          transcriptActions.reset();
           setInteractionState('NO_SPEECH');
           setTimeout(() => setInteractionState('IDLE'), 1500);
         },
         onTtsChunk: () => { setInteractionState('RESPONDING'); },
         onTurnComplete: () => {
+          if (awaitingWsTurnRef.current) {
+            // File-upload-over-WS path: create user message now
+            const fullTranscript = transcriptActions.finalize();
+            if (fullTranscript) {
+              setMessages((prev) => [...prev, { role: 'user', text: fullTranscript, ts: Date.now() }]);
+            }
+            awaitingWsTurnRef.current = false;
+          }
+          transcriptActions.reset();
           setInteractionState('DONE');
           setTimeout(() => setInteractionState('IDLE'), 500);
         },
         onError: (err) => {
-          // Silently handle WS errors - fall back to REST path
+          transcriptActions.reset();
+          awaitingWsTurnRef.current = false;
           wsConnectedRef.current = false;
         },
       });
@@ -232,10 +250,26 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   const feedback = useRobotFeedback();
   const recorderRef = useRef<AudioRecorder | null>(null);
   const currentTheme = getModeTheme(robotMode);
-  const streamingActiveRef = useRef(false);
-
-  // Audio streamer placeholder - actual streaming uses realtimeRef.current directly
-  // because the WS client connects async and useAudioStreamer can't handle null initial client
+  // Wire useAudioStreamer with VAD for streaming path
+  const audioStreamer = useAudioStreamer({
+    clientRef: realtimeRef,
+    onSpeechStart: () => {
+      // VAD detected speech onset u2014 audio streaming begins
+    },
+    onSilence: () => {
+      // VAD detected sustained silence u2014 AUDIO_END sent by hook
+      const fullTranscript = transcriptActions.finalize();
+      if (fullTranscript) {
+        setMessages((prev) => [...prev, { role: 'user', text: fullTranscript, ts: Date.now() }]);
+      }
+      setInteractionState('PROCESSING_LLM');
+    },
+    onError: (err) => {
+      transcriptActions.reset();
+      setError(err.message);
+      setInteractionState('ERROR');
+    },
+  });
 
   // Create a fresh recorder for each recording session
   const createFreshRecorder = () => {
@@ -276,7 +310,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
 
   // ─ Auto-scroll
   const scrollToBottom = () => setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
-  useEffect(() => { if (isTyping || liveTranscript) scrollToBottom(); }, [isTyping, liveTranscript]);
+  useEffect(() => { if (isTyping || transcript.hasText) scrollToBottom(); }, [isTyping, transcript.hasText]);
 
   // ─ Request permissions on mount (mic + speaker)
   useEffect(() => {
@@ -394,45 +428,21 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
     setError(null);
     setQaStats(null);
 
-    // REALTIME STREAMING PATH: use LiveAudioStream + WebSocket
+    // REALTIME STREAMING PATH: use useAudioStreamer with VAD
     if (wsConnectedRef.current && realtimeRef.current) {
       try {
         const { granted } = await requestRecordingPermissionsAsync();
         if (!granted) { setError('Microphone permission required.'); return; }
-        streamingActiveRef.current = true;
+        transcriptActions.reset();
+        streamingStartRef.current = Date.now();
+        firstPartialRef.current = 0;
+        finalTranscriptRef.current = 0;
+        audioStreamer.startStreaming();
         setInteractionState('LISTENING');
-        setLiveTranscript('Listening...');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-        // Start streaming audio directly via RealtimeClient
-        const client = realtimeRef.current!;
-        client.sendAudioStart('');
-
-        // Use native audio streaming if available, otherwise use expo-audio record+send
-        try {
-          const LiveAudioStream = require('react-native-live-audio-stream').default;
-          LiveAudioStream.init({ sampleRate: 16000, channels: 1, bitsPerSample: 16, audioSource: 6 });
-          LiveAudioStream.on('data', (base64: string) => {
-            if (streamingActiveRef.current) client.sendAudioChunk(base64);
-          });
-          LiveAudioStream.start();
-        } catch {
-          // LiveAudioStream not available - will use file fallback on stop
-        }
-
-        // Hard 30s cap
-        setTimeout(() => {
-          if (streamingActiveRef.current) {
-            try { require('react-native-live-audio-stream').default.stop(); } catch {}
-            client.sendAudioEnd();
-            streamingActiveRef.current = false;
-            setInteractionState('PROCESSING_STT');
-          }
-        }, 30000);
         return;
       } catch (err: unknown) {
         // Fall through to REST path
-        streamingActiveRef.current = false;
       }
     }
 
@@ -524,11 +534,13 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
     void feedback.onMicPress();
     if (interactionState === 'RECORDING' || interactionState === 'LISTENING') {
       // Manual stop - streaming or file-based
-      if (streamingActiveRef.current) {
-        try { require('react-native-live-audio-stream').default.stop(); } catch {}
-        realtimeRef.current?.sendAudioEnd();
-        streamingActiveRef.current = false;
-        setInteractionState('PROCESSING_STT');
+      if (audioStreamer.isStreaming) {
+        audioStreamer.stopStreaming();
+        const fullTranscript = transcriptActions.finalize();
+        if (fullTranscript) {
+          setMessages((prev) => [...prev, { role: 'user', text: fullTranscript, ts: Date.now() }]);
+        }
+        setInteractionState('PROCESSING_LLM');
         return;
       }
       const audioUri = await stopRecordingAndTranscribe();
@@ -556,7 +568,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   const processTranscription = async (audioUri: string | undefined) => {
     if (!audioUri) {
       setInteractionState('IDLE');
-      setLiveTranscript('');
+      transcriptActions.reset();
       setError("Couldn't capture audio. Tap mic and try again.");
       robot.transition('error');
       void feedback.onError();
@@ -582,7 +594,8 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
         // Send via WebSocket: AUDIO_START -> AUDIO_CHUNK -> AUDIO_END
         realtimeRef.current.sendAudioChunk(base64);
         realtimeRef.current.sendAudioEnd();
-        // Response handled by onTranscriptPartial, onTtsChunk, onTurnComplete handlers
+        // File-upload-over-WS: message created in onTurnComplete via awaitingWsTurnRef
+        awaitingWsTurnRef.current = true;
         return;
       } catch (wsErr) {
         // Fall through to REST path on WS failure
@@ -594,7 +607,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
       // STT (REST fallback)
       sttStartRef.current = Date.now();
       setProcessingStep('Transcribing…');
-      setLiveTranscript('Recognizing your voice…');
+      transcriptActions.onPartial('Recognizing your voice…');
       const transcription = await aiApi.transcribe(audioUri);
       const sttMs = Date.now() - sttStartRef.current;
       const rawText = transcription.text?.trim() ?? '';
@@ -606,7 +619,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
         ? '[SILENCE] The child did not respond. Gently encourage them to try again. Keep it very short and friendly.'
         : rawText;
 
-      setLiveTranscript('');
+      transcriptActions.reset();
 
       // Only add to visible transcript if child actually said something
       if (!isSilent) {
@@ -688,7 +701,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
       setInteractionState('DONE');
     } catch (err: unknown) {
       setIsTyping(false);
-      setLiveTranscript('');
+      transcriptActions.reset();
       setProcessingStep('');
       setInteractionState('IDLE');
       robot.transition('error');
@@ -700,7 +713,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
     }
   };
 
-  const micActive = interactionState === 'RECORDING';
+  const micActive = interactionState === 'RECORDING' || interactionState === 'LISTENING';
   const micDisabled = interactionState === 'PROCESSING_STT' || interactionState === 'PROCESSING_LLM' || interactionState === 'PROCESSING_TTS' || interactionState === 'RESPONDING';
 
   // ─── Mic button pulse animation ──────────────────────────────────────────
@@ -803,6 +816,25 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
           </View>
         )}
 
+        {/* ── Streaming STT QA stats ── */}
+        {appMode === 'qa' && firstPartialRef.current > 0 && (
+          <View style={[styles.qaPanel, { borderColor: currentTheme.primary + '40' }]}>
+            <Text style={[styles.qaTitle, { color: currentTheme.primary }]}>Streaming STT</Text>
+            <View style={styles.qaRow}>
+              {[
+                { label: '1st Partial', value: String(firstPartialRef.current - streamingStartRef.current) + 'ms' },
+                { label: 'Final', value: finalTranscriptRef.current ? String(finalTranscriptRef.current - streamingStartRef.current) + 'ms' : '-' },
+                { label: 'Mode', value: 'WS' },
+              ].map(({ label, value }) => (
+                <View key={label} style={styles.qaItem}>
+                  <Text style={[styles.qaLabel, { color: currentTheme.accent + '99' }]}>{label}</Text>
+                  <Text style={[styles.qaValue, { color: currentTheme.primary }]}>{value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* ── Error banner ── */}
         {error && (
           <TouchableOpacity
@@ -847,12 +879,28 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
               </View>
             ))}
 
-            {/* Live transcript */}
-            {liveTranscript ? (
+            {/* Live transcript — confirmed segments + current partial */}
+            {transcript.hasText ? (
               <View style={[styles.bubble, styles.userBubble, { backgroundColor: currentTheme.primary + '50' }]}>
-                <Text style={[styles.bubbleText, { fontStyle: 'italic', opacity: 0.75 }]}>
-                  🎙 {liveTranscript}
-                </Text>
+                {transcript.confirmedText ? (
+                  <Text style={[styles.bubbleText, { opacity: 0.9 }]}>
+                    {transcript.confirmedText}
+                  </Text>
+                ) : null}
+                {transcript.partialText ? (
+                  <Text style={[styles.bubbleText, { fontStyle: 'italic', opacity: 0.55 }]}>
+                    {transcript.partialText}
+                  </Text>
+                ) : null}
+              </View>
+            ) : interactionState === 'LISTENING' ? (
+              <View style={[styles.bubble, styles.aiBubble, { borderColor: currentTheme.primary + '30' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={[styles.statusDot, { backgroundColor: '#FF4444' }]} />
+                  <Text style={[styles.bubbleText, { color: currentTheme.accent + '60', fontSize: 12 }]}>
+                    Listening…
+                  </Text>
+                </View>
               </View>
             ) : null}
 
@@ -908,13 +956,13 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
                 },
               ]}
             >
-              <Text style={styles.micIcon}>{micActive ? '⏹' : '🎙'}</Text>
+              <Text style={styles.micIcon}>{micActive ? '🔊' : '🎙'}</Text>
             </TouchableOpacity>
           </Animated.View>
 
           {/* Mic label */}
           <Text style={[styles.micLabel, { color: currentTheme.primary + '80' }]}>
-            {micActive ? 'Tap ⏹ to send' : micDisabled ? processingStep || '…' : 'Tap 🎙 to speak'}
+            {micActive ? 'Auto-send khi ngưng nói' : micDisabled ? processingStep || '…' : 'Tap 🎙 to speak'}
           </Text>
 
           {/* Auto-listen toggle */}

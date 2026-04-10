@@ -35,6 +35,7 @@ export type MainStackParamList = {
   Interaction: { childId?: string } | undefined;
   ParentControls: { deviceId: string };
   NotificationPrefs: undefined;
+  GeminiConversation: undefined;
 };
 
 export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<AuthStackParamList, T>;

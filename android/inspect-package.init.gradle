@@ -1,0 +1,55 @@
+gradle.projectsEvaluated {
+    def app = rootProject.findProject(":app")
+    if (app == null) return
+
+    ["mergeProjectDexDebug", "mergeLibDexDebug", "mergeExtDexDebug", "packageDebug"].each { taskName ->
+        def task = app.tasks.findByName(taskName)
+        if (task == null) {
+            println("TASK ${taskName} missing")
+            return
+        }
+
+        println("TASK ${taskName} class=${task.class.name}")
+        println("TASK ${taskName} outputs=${task.outputs.files.files}")
+
+        ["dexFolders", "appMetadata", "javaResourceFiles", "jniFolders", "assets", "resourceFiles"].each { prop ->
+            if (!task.hasProperty(prop)) return
+            try {
+                def value = task."${prop}"
+                println("TASK ${taskName} ${prop}.class=${value?.class?.name}")
+                if (value?.respondsTo("isPresent")) {
+                    println("TASK ${taskName} ${prop}.present=${value.present}")
+                }
+                if (value?.respondsTo("getFrom")) {
+                    println("TASK ${taskName} ${prop}.from=${value.from}")
+                }
+                if (value?.respondsTo("getFiles")) {
+                    println("TASK ${taskName} ${prop}.files=${value.files}")
+                } else {
+                    println("TASK ${taskName} ${prop}=${value}")
+                }
+            } catch (Throwable t) {
+                println("TASK ${taskName} ${prop}.error=${t.class.name}: ${t.message}")
+            }
+        }
+    }
+
+    def mergeLib = app.tasks.findByName("mergeLibDexDebug")
+    if (mergeLib != null) {
+        println("TASK mergeLibDexDebug propertyKeys=${mergeLib.properties.keySet().sort()}")
+        ["inputFiles", "libraries", "projectClasses", "externalLibs", "subProjectClasses", "mixedScopeClasses", "dexDirs", "inputDir", "dexingArtifactConfig"].each { prop ->
+            if (!mergeLib.hasProperty(prop)) return
+            try {
+                def value = mergeLib."${prop}"
+                println("TASK mergeLibDexDebug ${prop}.class=${value?.class?.name}")
+                if (value?.respondsTo("getFiles")) {
+                    println("TASK mergeLibDexDebug ${prop}.files=${value.files}")
+                } else {
+                    println("TASK mergeLibDexDebug ${prop}=${value}")
+                }
+            } catch (Throwable t) {
+                println("TASK mergeLibDexDebug ${prop}.error=${t.class.name}: ${t.message}")
+            }
+        }
+    }
+}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ViewStyle, Pressable } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
 
 interface InputProps {
@@ -30,29 +30,41 @@ export function Input({
   editable = true,
 }: InputProps): React.JSX.Element {
   const [focused, setFocused] = useState(false);
+  const [hidePassword, setHidePassword] = useState(true);
 
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[
-          styles.input,
-          focused && styles.inputFocused,
-          error ? styles.inputError : null,
-          !editable && styles.inputDisabled,
-        ]}
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={secureTextEntry}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize={autoCapitalize}
-        keyboardType={keyboardType}
-        maxLength={maxLength}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        editable={editable}
-      />
+      <View style={[
+        styles.inputWrapper,
+        focused && styles.inputFocused,
+        error ? styles.inputError : null,
+        !editable && styles.inputDisabled,
+      ]}>
+        <TextInput
+          style={[styles.input, secureTextEntry && styles.inputWithToggle]}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={secureTextEntry && hidePassword}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize={secureTextEntry ? 'none' : autoCapitalize}
+          keyboardType={keyboardType}
+          maxLength={maxLength}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          editable={editable}
+        />
+        {secureTextEntry && (
+          <Pressable
+            onPress={() => setHidePassword(!hidePassword)}
+            style={styles.eyeButton}
+            hitSlop={8}
+          >
+            <Text style={styles.eyeIcon}>{hidePassword ? '\u{1F441}' : '\u{1F648}'}</Text>
+          </Pressable>
+        )}
+      </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
@@ -68,15 +80,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: spacing.xs,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
+    backgroundColor: colors.surface,
+  },
+  input: {
+    flex: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 4,
     ...typography.body1,
     color: colors.textPrimary,
-    backgroundColor: colors.surface,
+  },
+  inputWithToggle: {
+    paddingRight: spacing.xs,
   },
   inputFocused: {
     borderColor: colors.primary,
@@ -86,7 +106,13 @@ const styles = StyleSheet.create({
   },
   inputDisabled: {
     backgroundColor: colors.divider,
-    color: colors.textMuted,
+  },
+  eyeButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  eyeIcon: {
+    fontSize: 18,
   },
   errorText: {
     ...typography.caption,
