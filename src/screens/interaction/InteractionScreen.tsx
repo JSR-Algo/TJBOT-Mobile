@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   Animated,
   ScrollView,
   Dimensions,
@@ -284,6 +285,49 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
   };
 
   // ─ VAD disabled — user taps ⏹ to send, no auto-send on silence
+
+  // ─ Tap-to-interrupt (RM-05) ───────────────────────────────────────────────
+  // The child (or parent) can tap the robot face — or long-press anywhere on
+  // the speaking screen — to abort the in-flight TTS. The contract for what
+  // "abort" means lives in `tbot-infra/contracts/realtime-events.{d.ts,js}`
+  // (`InterruptEvent`, RM-05 + ADR-006). Two things MUST happen on the same
+  // tick so we hit the ADR-011 `interrupt_to_stop_ms` p95 ≤ 200 ms budget:
+  //   1. Stop local audio output immediately (no draining the AudioPlayer).
+  //   2. Emit `INTERRUPT` to the backend so the orchestrator drops the
+  //      AbortSignal across STT/LLM/TTS (worker-1 slice RB-01..06).
+  // Order matters: local stop is synchronous and unblocks the child's ear
+  // even if the WebSocket is mid-reconnect.
+  const handleBargeIn = useCallback(() => {
+    // Only act while the robot is actually speaking — taps in other states
+    // belong to whichever child control is rendered there.
+    if (interactionState !== 'RESPONDING') return;
+
+    // 1. Hard-stop local playback. We pause + remove instead of letting the
+    //    player drain so audio is silent in well under the 120 ms client
+    //    budget (RM-05 acceptance criterion).
+    const player = playerRef.current;
+    if (player) {
+      try { player.pause(); } catch {}
+      try { player.remove(); } catch {}
+      playerRef.current = null;
+    }
+
+    // 2. Emit INTERRUPT to the backend with `USER_TAP` reason so the server
+    //    metric `tbot/session/interrupt_to_stop_ms` (worker-2, RB-07) tags
+    //    this turn correctly.
+    realtimeRef.current?.sendInterrupt({
+      sessionId: sessionId ?? '',
+      reason: 'USER_TAP',
+    });
+
+    // 3. Snap the local FSM out of RESPONDING so the auto-listen effect
+    //    re-arms the mic. We do not transition through INTERRUPTED because
+    //    the canonical FSM lives server-side; the mobile screen is a
+    //    projection and DONE → IDLE → LISTENING is the existing path that
+    //    already wires `audioStreamer.startStreaming()`.
+    setProcessingStep('');
+    setInteractionState('DONE');
+  }, [interactionState, sessionId]);
 
   // ─ Sync interaction → robot state
   useEffect(() => {
@@ -778,8 +822,24 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
           </View>
         </View>
 
-        {/* ── Robot face ── */}
-        <View style={styles.faceContainer}>
+        {/* ── Robot face (RM-05 tap-to-interrupt target) ── */}
+        {/*
+          Tap or long-press during RESPONDING fires `handleBargeIn`. The
+          Pressable is a no-op outside of RESPONDING so the rest of the
+          screen behaves unchanged. `accessibilityLabel` exists so the
+          screen-reader announces the gesture for parents.
+        */}
+        <Pressable
+          onPress={handleBargeIn}
+          onLongPress={handleBargeIn}
+          delayLongPress={300}
+          disabled={interactionState !== 'RESPONDING'}
+          accessibilityRole="button"
+          accessibilityLabel="Tap to interrupt the robot"
+          accessibilityHint="Stops the robot mid-sentence and listens"
+          testID="barge-in-target"
+          style={styles.faceContainer}
+        >
           <RobotFace
             robotState={robot.state}
             theme={currentTheme}
@@ -794,7 +854,7 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
               {processingStep || STATUS[interactionState]}
             </Text>
           </View>
-        </View>
+        </Pressable>
 
         {/* ── QA stats ── */}
         {appMode === 'qa' && qaStats && (

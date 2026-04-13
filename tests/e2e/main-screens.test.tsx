@@ -14,11 +14,12 @@ import { ParentControlsScreen } from '../../src/screens/controls/ParentControlsS
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockNavigate = jest.fn();
-const mockNavigation = { navigate: mockNavigate, goBack: jest.fn() } as any;
+const mockPopToTop = jest.fn();
+const mockNavigation = { navigate: mockNavigate, goBack: jest.fn(), popToTop: mockPopToTop } as any;
 const mockLogout = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
+  useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn(), popToTop: mockPopToTop }),
   useFocusEffect: (cb: () => void) => { cb(); },
 }));
 
@@ -130,17 +131,18 @@ describe('DeviceListScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('DeviceSetup');
   });
 
-  it('shows demo device banner in demo mode', async () => {
+  it('shows empty-state onboarding copy when no devices exist', async () => {
     const { getByText } = render(<DeviceListScreen />);
     await waitFor(() => {
-      expect(getByText(/Demo mode/)).toBeTruthy();
+      expect(getByText('Set up your TBOT')).toBeTruthy();
+      expect(getByText('Tap + below to register your device.')).toBeTruthy();
     });
   });
 
-  it('navigates to DeviceSetup when demo device card is pressed', async () => {
+  it('uses the FAB as the primary path to DeviceSetup when no devices exist', async () => {
     const { getByText } = render(<DeviceListScreen />);
-    await waitFor(() => expect(getByText('TBOT-DEMO-001')).toBeTruthy());
-    fireEvent.press(getByText('TBOT-DEMO-001'));
+    await waitFor(() => expect(getByText('+')).toBeTruthy());
+    fireEvent.press(getByText('+'));
     expect(mockNavigate).toHaveBeenCalledWith('DeviceSetup');
   });
 
@@ -246,7 +248,7 @@ describe('DeviceSetupScreen', () => {
     });
   });
 
-  it('navigates to MainTabs when "Go to Home" is pressed after success', async () => {
+  it('returns to the home stack when "Go to Home" is pressed after success', async () => {
     devicesApi.register.mockResolvedValueOnce({});
     const { getByText, getByPlaceholderText } = render(
       <DeviceSetupScreen navigation={mockNavigation} route={mockRoute} />
@@ -255,10 +257,10 @@ describe('DeviceSetupScreen', () => {
     fireEvent.press(getByText('Register Device'));
     await waitFor(() => expect(getByText('Go to Home')).toBeTruthy());
     fireEvent.press(getByText('Go to Home'));
-    expect(mockNavigate).toHaveBeenCalledWith('MainTabs');
+    expect(mockPopToTop).toHaveBeenCalled();
   });
 
-  it('shows error on API failure', async () => {
+  it('shows the normalized API failure message', async () => {
     devicesApi.register.mockRejectedValueOnce(new Error('Device already registered'));
     const { getByText, getByPlaceholderText } = render(
       <DeviceSetupScreen navigation={mockNavigation} route={mockRoute} />
@@ -266,8 +268,7 @@ describe('DeviceSetupScreen', () => {
     fireEvent.changeText(getByPlaceholderText('e.g. TBOT-2024-XXXX'), 'TBOT-2024-0001');
     fireEvent.press(getByText('Register Device'));
     await waitFor(() => {
-      // normalizeError maps plain Error → UNKNOWN_ERROR message
-      expect(getByText(/unexpected error/i)).toBeTruthy();
+      expect(getByText(/device already registered/i)).toBeTruthy();
     });
   });
 });
@@ -365,8 +366,7 @@ describe('ParentControlsScreen', () => {
     await waitFor(() => expect(getByLabelText('Save changes')).toBeTruthy());
     fireEvent.press(getByLabelText('Save changes'));
     await waitFor(() => {
-      // normalizeError maps plain Error → UNKNOWN_ERROR message
-      expect(getByText(/unexpected error/i)).toBeTruthy();
+      expect(getByText(/server error/i)).toBeTruthy();
     });
   });
 

@@ -152,6 +152,45 @@ export class RealtimeClient {
   }
 
   /**
+   * Tap-to-interrupt — emit a canonical `INTERRUPT` event so the backend
+   * orchestrator aborts the in-flight STT/LLM/TTS pipeline (RB-01..06) and
+   * the session/turn FSM transitions into INTERRUPTED → LISTENING.
+   *
+   * Mirrors the contract from `tbot-infra/contracts/realtime-events.{d.ts,js}`
+   * — a Wave 1 deliverable. Field names match `InterruptEvent` exactly:
+   * `{ type, session_id, timestamp_ms, payload: { reason, source } }`.
+   *
+   * `reason` defaults to `USER_TAP` because RM-05 wires the tap-anywhere
+   * gesture during SPEAKING. `source` is hard-coded to `mobile` because this
+   * client only ever runs on the parent app.
+   *
+   * If the socket is mid-reconnect the message is buffered alongside the
+   * AUDIO_* family — interrupts MUST never be silently dropped.
+   */
+  sendInterrupt(opts: {
+    sessionId?: string;
+    reason?: 'USER_TAP' | 'USER_VOICE' | 'SERVER_ABORT' | 'SYSTEM_ERROR';
+    turnId?: string;
+  } = {}): void {
+    const envelope = {
+      type: 'INTERRUPT' as const,
+      session_id: opts.sessionId ?? '',
+      ...(opts.turnId ? { turn_id: opts.turnId } : {}),
+      timestamp_ms: Date.now(),
+      payload: {
+        reason: opts.reason ?? ('USER_TAP' as const),
+        source: 'mobile' as const,
+      },
+    };
+    const msg = JSON.stringify(envelope);
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(msg);
+    } else {
+      this.reconnectBuffer.push(msg);
+    }
+  }
+
+  /**
    * Gracefully close the WebSocket and stop reconnection attempts.
    */
   disconnect(): void {

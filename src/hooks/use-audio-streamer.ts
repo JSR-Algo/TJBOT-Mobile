@@ -59,10 +59,15 @@ export interface AudioStreamerOptions {
   energyThreshold?: number;
   /** ZCR noise rejection threshold (default: 0.4) */
   zcrNoiseMax?: number;
-  /** Post-speech silence hold in ms before sendAudioEnd (default: 600) */
+  /** Post-speech silence hold in ms before sendAudioEnd (default: 350, RM-06) */
   silenceHoldMs?: number;
   /** Called when speech starts */
   onSpeechStart?: () => void;
+  /**
+   * Called the instant speech frames stop, BEFORE the silence hold-off.
+   * Use to drive the perceived-reaction face animation (RM-06, ADR-011).
+   */
+  onSpeechEnd?: () => void;
   /** Called when silence is detected and AUDIO_END is sent */
   onSilence?: () => void;
   /** Called on permission or init error */
@@ -87,6 +92,7 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
     zcrNoiseMax,
     silenceHoldMs,
     onSpeechStart,
+    onSpeechEnd,
     onSilence,
     onError,
   } = options;
@@ -115,6 +121,7 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
     zcrNoiseMax,
     silenceHoldMs,
     onSpeechStart: handleSpeechStart,
+    onSpeechEnd,
     onSilence: handleSilence,
   });
 

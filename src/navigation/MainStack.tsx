@@ -8,11 +8,20 @@ import { InteractionScreen } from '../screens/interaction/InteractionScreen';
 import { ParentControlsScreen } from '../screens/controls/ParentControlsScreen';
 import { NotificationPrefsScreen } from '../screens/profile/NotificationPrefsScreen';
 import { GeminiConversationScreen } from '../screens/gemini/GeminiConversationScreen';
+import {
+  RobotDemoScreen,
+  isRobotDemoScreenEnabled,
+} from '../screens/robot-demo/RobotDemoScreen';
 import { colors } from '../theme';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
 export function MainStack(): React.JSX.Element {
+  // RM-01: RobotDemoScreen is registered only when EXPO_PUBLIC_DEMO_SCREEN=true.
+  // React Navigation accepts conditional children; the route is simply absent
+  // from the param list at runtime when the flag is off.
+  const demoEnabled = isRobotDemoScreenEnabled();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -28,6 +37,13 @@ export function MainStack(): React.JSX.Element {
       <Stack.Screen name="GeminiConversation" component={GeminiConversationScreen} options={{ title: 'AI Voice Chat', headerShown: false }} />
       <Stack.Screen name="ParentControls" component={ParentControlsScreen} options={{ title: 'Parental Controls' }} />
       <Stack.Screen name="NotificationPrefs" component={NotificationPrefsScreen} options={{ title: 'Notification Settings' }} />
+      {demoEnabled ? (
+        <Stack.Screen
+          name="RobotDemo"
+          component={RobotDemoScreen}
+          options={{ title: 'Robot Demo (twin)' }}
+        />
+      ) : null}
     </Stack.Navigator>
   );
 }

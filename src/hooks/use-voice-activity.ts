@@ -27,8 +27,16 @@ const DEFAULT_ZCR_NOISE_MAX = 0.4;
 /** Number of consecutive speech frames required to confirm speech onset */
 const SPEECH_ONSET_FRAMES = 2;
 
-/** Default post-speech silence duration in ms before silenceDetected fires */
-const DEFAULT_SILENCE_HOLD_MS = 600;
+/**
+ * Default post-speech silence duration in ms before `silenceDetected` fires
+ * and `AUDIO_END` is sent to the backend.
+ *
+ * Lowered from 600 → 350 ms by RM-06 (`.omc/plans/expressive-robot-companion-rewrite.md`
+ * §6, gap M7). 350 ms keeps the perceived-reaction budget under the ADR-011
+ * `transcript_ms` p50 ≤ 350 ms target while still rejecting natural breath-pauses
+ * inside a child sentence. Do not raise without re-running the latency-budget audit.
+ */
+const DEFAULT_SILENCE_HOLD_MS = 350;
 
 // u2500u2500u2500 Helpers u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
 
@@ -96,6 +104,19 @@ export interface VoiceActivityOptions {
   zcrNoiseMax?: number;
   silenceHoldMs?: number;
   onSpeechStart?: () => void;
+  /**
+   * Fires the moment we transition from "speech frames" → "non-speech frames"
+   * for an active utterance — BEFORE the `silenceHoldMs` hold-off completes.
+   *
+   * Use this to drive the "speaking ended" perceived-reaction face animation
+   * (RM-06): the face flips to a thinking/listening expression instantly so
+   * the child sees a reaction inside the ADR-011 `perceived_reaction_ms`
+   * p50 ≤ 150 ms budget while we wait for the partial transcript and AUDIO_END.
+   *
+   * May fire multiple times per utterance if the child pauses and resumes
+   * within `silenceHoldMs` — consumers should treat it as idempotent.
+   */
+  onSpeechEnd?: () => void;
   onSilence?: () => void;
 }
 
@@ -117,6 +138,7 @@ export function useVoiceActivity(options: VoiceActivityOptions = {}): VoiceActiv
     zcrNoiseMax = DEFAULT_ZCR_NOISE_MAX,
     silenceHoldMs = DEFAULT_SILENCE_HOLD_MS,
     onSpeechStart,
+    onSpeechEnd,
     onSilence,
   } = options;
 
@@ -176,7 +198,11 @@ export function useVoiceActivity(options: VoiceActivityOptions = {}): VoiceActiv
         speechFrameCountRef.current = 0;
 
         if (hasSpeechRef.current && silenceTimerRef.current === null) {
-          // Start silence hold-off timer
+          // RM-06: fire perceived-reaction trigger BEFORE the hold-off so the
+          // face can flip to a thinking state inside the ADR-011 budget.
+          onSpeechEnd?.();
+
+          // Start silence hold-off timer (gates AUDIO_END at silenceHoldMs).
           silenceTimerRef.current = setTimeout(() => {
             silenceTimerRef.current = null;
             setIsSpeaking(false);
@@ -186,7 +212,15 @@ export function useVoiceActivity(options: VoiceActivityOptions = {}): VoiceActiv
         }
       }
     },
-    [energyThreshold, zcrNoiseMax, silenceHoldMs, onSpeechStart, onSilence, clearSilenceTimer],
+    [
+      energyThreshold,
+      zcrNoiseMax,
+      silenceHoldMs,
+      onSpeechStart,
+      onSpeechEnd,
+      onSilence,
+      clearSilenceTimer,
+    ],
   );
 
   return {

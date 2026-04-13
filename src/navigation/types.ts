@@ -36,6 +36,9 @@ export type MainStackParamList = {
   ParentControls: { deviceId: string };
   NotificationPrefs: undefined;
   GeminiConversation: undefined;
+  // Software-twin demo screen — registered only when EXPO_PUBLIC_DEMO_SCREEN=true.
+  // Plan: expressive-robot-companion-rewrite §6 RM-01.
+  RobotDemo: undefined;
 };
 
 export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<AuthStackParamList, T>;

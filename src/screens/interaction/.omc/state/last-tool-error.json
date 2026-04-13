@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"sed -n '863,870p' /Users/manhhodinh/Documents/TBOT/tbot-mobile/src/screens/interaction/InteractionScreen.tsx | cat -A\",\"description\":\"Show exact bytes for live transcript section\"}",
+  "error": "Exit code 1\ncat: illegal option -- A\nusage: cat [-belnstuv] [file ...]",
+  "timestamp": "2026-04-09T09:09:50.690Z",
+  "retry_count": 1
+}

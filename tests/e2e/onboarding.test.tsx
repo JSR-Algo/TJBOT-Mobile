@@ -86,9 +86,9 @@ describe('HouseholdCreateScreen', () => {
     fireEvent.changeText(getByPlaceholderText('e.g. The Smith Family'), 'The Smiths');
     fireEvent.press(getByText('Create Household'));
     await waitFor(() => {
-      // normalizeError maps plain Error → UNKNOWN_ERROR message
-      // Input + ErrorMessage both render it, so use getAllByText
-      expect(getAllByText(/unexpected error/i).length).toBeGreaterThan(0);
+      // normalizeError maps a plain network-like Error to the user-facing
+      // NETWORK_ERROR message. Input + ErrorMessage both render it.
+      expect(getAllByText(/network error/i).length).toBeGreaterThan(0);
     });
   });
 });
