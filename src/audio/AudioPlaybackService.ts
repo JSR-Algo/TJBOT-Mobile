@@ -73,7 +73,6 @@ export class AudioPlaybackService {
   private chunks: Uint8Array[] = [];
   private totalSize = 0;
   private ready: Uint8Array[] = [];       // Segments ready to play
-  private nextPlayer: AudioPlayer | null = null;  // Pre-loaded player
   private currentPlayer: AudioPlayer | null = null;
   private _isPlaying = false;
   private _audioLevel = 0;
@@ -132,10 +131,6 @@ export class AudioPlaybackService {
       try { this.currentPlayer.pause(); this.currentPlayer.remove(); } catch {}
       this.currentPlayer = null;
     }
-    if (this.nextPlayer) {
-      try { this.nextPlayer.remove(); } catch {}
-      this.nextPlayer = null;
-    }
   }
 
   dispose(): void { this.disposed = true; this.interrupt(); }
@@ -176,58 +171,38 @@ export class AudioPlaybackService {
       } catch {}
     }
 
-    while ((this.ready.length > 0 || this.nextPlayer) && !this.disposed) {
-      let player: AudioPlayer;
+    // Single-player approach: reuse one player via replace() to eliminate gaps
+    while (!this.disposed) {
+      // Get next segment (from ready queue or flush pending chunks)
+      if (this.ready.length === 0 && this.chunks.length > 0) {
+        this._flushToReady();
+      }
+      if (this.ready.length === 0) break;
 
-      if (this.nextPlayer) {
-        // Use pre-loaded player (no gap!)
-        player = this.nextPlayer;
-        this.nextPlayer = null;
+      const seg = this.ready.shift()!;
+      const source = pcmToWavBase64(seg);
+
+      if (!this.currentPlayer) {
+        // First segment: create player
+        this.currentPlayer = createAudioPlayer(source);
       } else {
-        const seg = this.ready.shift()!;
-        player = createAudioPlayer(pcmToWavBase64(seg));
+        // Subsequent segments: replace source (no native alloc/dealloc)
+        this.currentPlayer.replace(source);
       }
 
-      this.currentPlayer = player;
-
-      // Pre-load next player while current plays
-      if (this.ready.length > 0) {
-        const nextSeg = this.ready.shift()!;
-        this.nextPlayer = createAudioPlayer(pcmToWavBase64(nextSeg));
-      }
-
-      // Play and wait for finish, pre-load next segment at 70%
+      // Play and wait for finish
       await new Promise<void>((resolve) => {
-        let preloaded = false;
-        player.addListener('playbackStatusUpdate', (status) => {
-          // Pre-load next segment when current is 70% done
-          if (!preloaded && status.duration > 0 && status.currentTime > status.duration * 0.7) {
-            preloaded = true;
-            if (this.chunks.length > 0 && !this.nextPlayer && !this.disposed) {
-              this._flushToReady();
-              if (this.ready.length > 0) {
-                const nextSeg = this.ready.shift()!;
-                this.nextPlayer = createAudioPlayer(pcmToWavBase64(nextSeg));
-              }
-            }
-          }
-          if (status.didJustFinish) {
-            try { player.remove(); } catch {}
-            resolve();
-          }
+        this.currentPlayer!.addListener('playbackStatusUpdate', (status) => {
+          if (status.didJustFinish) resolve();
         });
-        player.play();
+        this.currentPlayer!.play();
       });
     }
 
-    // Check if more segments or chunks arrived during playback
-    if (!this.disposed && (this.ready.length > 0 || this.chunks.length > 0)) {
-      if (this.chunks.length > 0) this._flushToReady();
-      if (this.ready.length > 0) {
-        this.processing = false;
-        this._process();
-        return;
-      }
+    // Cleanup player
+    if (this.currentPlayer) {
+      try { this.currentPlayer.remove(); } catch {}
+      this.currentPlayer = null;
     }
 
     // All done - restore recording mode
