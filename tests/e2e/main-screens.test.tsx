@@ -11,6 +11,11 @@ import { ProfileScreen } from '../../src/screens/profile/ProfileScreen';
 import { DeviceSetupScreen } from '../../src/screens/device/DeviceSetupScreen';
 import { ParentControlsScreen } from '../../src/screens/controls/ParentControlsScreen';
 
+jest.mock('../../src/ble/service', () => ({
+  initializeBle: jest.fn(async () => ({ permission: 'granted', available: true })),
+  scanForTbotDevices: jest.fn(async () => ({ allowed: [], blocked: [] })),
+}));
+
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockNavigate = jest.fn();
@@ -212,10 +217,11 @@ describe('DeviceSetupScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('renders Register Device button and inputs', () => {
+  it('renders Register Device button and inputs', async () => {
     const { getByText, getByPlaceholderText } = render(
       <DeviceSetupScreen navigation={mockNavigation} route={mockRoute} />
     );
+    await waitFor(() => expect(getByText('Bluetooth pairing')).toBeTruthy());
     expect(getByText('Register Device')).toBeTruthy();
     expect(getByPlaceholderText('e.g. TBOT-2024-XXXX')).toBeTruthy();
     expect(getByPlaceholderText('e.g. 1.0')).toBeTruthy();
@@ -225,6 +231,7 @@ describe('DeviceSetupScreen', () => {
     const { getByText } = render(
       <DeviceSetupScreen navigation={mockNavigation} route={mockRoute} />
     );
+    await waitFor(() => expect(getByText('Bluetooth pairing')).toBeTruthy());
     fireEvent.press(getByText('Register Device'));
     await waitFor(() => {
       expect(getByText(/Serial number is required/)).toBeTruthy();
@@ -236,6 +243,7 @@ describe('DeviceSetupScreen', () => {
     const { getByText, getByPlaceholderText } = render(
       <DeviceSetupScreen navigation={mockNavigation} route={mockRoute} />
     );
+    await waitFor(() => expect(getByText('Bluetooth pairing')).toBeTruthy());
     fireEvent.changeText(getByPlaceholderText('e.g. TBOT-2024-XXXX'), 'TBOT-2024-0001');
     fireEvent.press(getByText('Register Device'));
     await waitFor(() => {
@@ -253,6 +261,7 @@ describe('DeviceSetupScreen', () => {
     const { getByText, getByPlaceholderText } = render(
       <DeviceSetupScreen navigation={mockNavigation} route={mockRoute} />
     );
+    await waitFor(() => expect(getByText('Bluetooth pairing')).toBeTruthy());
     fireEvent.changeText(getByPlaceholderText('e.g. TBOT-2024-XXXX'), 'TBOT-2024-0001');
     fireEvent.press(getByText('Register Device'));
     await waitFor(() => expect(getByText('Go to Home')).toBeTruthy());
@@ -265,6 +274,7 @@ describe('DeviceSetupScreen', () => {
     const { getByText, getByPlaceholderText } = render(
       <DeviceSetupScreen navigation={mockNavigation} route={mockRoute} />
     );
+    await waitFor(() => expect(getByText('Bluetooth pairing')).toBeTruthy());
     fireEvent.changeText(getByPlaceholderText('e.g. TBOT-2024-XXXX'), 'TBOT-2024-0001');
     fireEvent.press(getByText('Register Device'));
     await waitFor(() => {
