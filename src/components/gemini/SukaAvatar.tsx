@@ -39,7 +39,7 @@ interface Expression {
 const EXPRESSIONS: Record<string, Expression> = {
   // Core states
   idle:        { eyeScaleY: 1,    eyeOffsetY: 0,  mouthWidth: 28, mouthHeight: 4,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.15, glowPulse: false, cheekOpacity: 0.3 },
-  listening:   { eyeScaleY: 1.2,  eyeOffsetY: 0,  mouthWidth: 24, mouthHeight: 3,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.3,  glowPulse: false, cheekOpacity: 0.4 },
+  listening:   { eyeScaleY: 1.25, eyeOffsetY: 0,  mouthWidth: 22, mouthHeight: 4,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.35, glowPulse: false, cheekOpacity: 0.5 },
   streaming:   { eyeScaleY: 1.2,  eyeOffsetY: 0,  mouthWidth: 20, mouthHeight: 12, mouthBorderRadius: 10, mouthCurve: 'open',    glowOpacity: 0.35, glowPulse: false, cheekOpacity: 0.3 },
   thinking:    { eyeScaleY: 0.9,  eyeOffsetY: -3, mouthWidth: 16, mouthHeight: 14, mouthBorderRadius: 8,  mouthCurve: 'open',    glowOpacity: 0.25, glowPulse: true,  cheekOpacity: 0.2 },
   speaking:    { eyeScaleY: 1,    eyeOffsetY: 0,  mouthWidth: 26, mouthHeight: 16, mouthBorderRadius: 13, mouthCurve: 'open',    glowOpacity: 0.4,  glowPulse: false, cheekOpacity: 0.5 },
@@ -58,10 +58,10 @@ const EXPRESSIONS: Record<string, Expression> = {
 
 // Expressions that trigger cute bounce
 const BOUNCY_EXPRESSIONS = ['happy', 'celebrating', 'laugh'];
-// Expressions that show eye sparkle
-const SPARKLE_EXPRESSIONS = ['happy', 'celebrating', 'laugh', 'curious'];
+// Expressions that show eye sparkle (includes speaking for always-on liveliness)
+const SPARKLE_EXPRESSIONS = ['happy', 'celebrating', 'laugh', 'curious', 'speaking', 'listening'];
 // Head tilt angles per expression
-const TILT_MAP: Record<string, number> = { curious: 5, shy: -5 };
+const TILT_MAP: Record<string, number> = { curious: 5, shy: -5, thinking: 3, listening: -2 };
 
 function voiceStateToExpression(state: VoiceState): string {
   switch (state) {
@@ -183,6 +183,15 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
       );
       bounce.start();
       return () => bounce.stop();
+    } else if (expressionKey === 'listening') {
+      const sway = Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, { toValue: -3, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(bounceAnim, { toValue: 3, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ]),
+      );
+      sway.start();
+      return () => sway.stop();
     } else {
       bounceAnim.setValue(0);
     }
