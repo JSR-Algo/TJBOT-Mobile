@@ -1,0 +1,29 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "preview": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "staging-device": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "env": {
+        "TBOT_API_URL": "http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com/v1",
+        "TBOT_AI_URL": "http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com/api/ai"
+      },
+      "ios": {},
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

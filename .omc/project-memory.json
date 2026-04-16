@@ -190,21 +190,171 @@
       "type": "file"
     },
     {
+      "path": "src/audio/AudioPlaybackService.ts",
+      "accessCount": 20,
+      "lastAccessed": 1776323670301,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/gemini/GeminiConversationScreen.tsx",
+      "accessCount": 16,
+      "lastAccessed": 1776322471037,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 13,
+      "lastAccessed": 1776309616005,
+      "type": "directory"
+    },
+    {
+      "path": "src/hooks/useGeminiConversation.ts",
+      "accessCount": 13,
+      "lastAccessed": 1776323158308,
+      "type": "directory"
+    },
+    {
+      "path": "src/contexts/AuthContext.tsx",
+      "accessCount": 12,
+      "lastAccessed": 1776309281313,
+      "type": "file"
+    },
+    {
+      "path": "src/components/gemini/ControlBar.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1776322463636,
+      "type": "file"
+    },
+    {
+      "path": "tests/e2e/main-screens.test.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1776162270434,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/device/DeviceSetupScreen.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1776246347567,
+      "type": "file"
+    },
+    {
+      "path": "src/components/gemini/TranscriptPanel.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1776322603722,
+      "type": "file"
+    },
+    {
       "path": "src/api/learning.ts",
       "accessCount": 5,
       "lastAccessed": 1775488976626,
       "type": "file"
     },
     {
-      "path": "src",
-      "accessCount": 2,
-      "lastAccessed": 1775488580276,
-      "type": "directory"
+      "path": "tests/ble/permissions.test.ts",
+      "accessCount": 5,
+      "lastAccessed": 1776162120947,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/Info.plist",
+      "accessCount": 5,
+      "lastAccessed": 1776229280008,
+      "type": "file"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "accessCount": 5,
+      "lastAccessed": 1776309009448,
+      "type": "file"
+    },
+    {
+      "path": "eas.json",
+      "accessCount": 4,
+      "lastAccessed": 1776247780733,
+      "type": "file"
+    },
+    {
+      "path": "src/api/client.ts",
+      "accessCount": 4,
+      "lastAccessed": 1776255473625,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/dashboard/DashboardScreen.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776253233892,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 3,
+      "lastAccessed": 1776253310430,
+      "type": "file"
+    },
+    {
+      "path": "android/gradle.properties",
+      "accessCount": 3,
+      "lastAccessed": 1776254444403,
+      "type": "file"
     },
     {
       "path": ".env",
       "accessCount": 2,
       "lastAccessed": 1775532915487,
+      "type": "file"
+    },
+    {
+      "path": "src/api/tokens.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776161068416,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1776162103528,
+      "type": "directory"
+    },
+    {
+      "path": "src/ble/service.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776246290928,
+      "type": "file"
+    },
+    {
+      "path": "src/components/gemini/BigMicButton.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776246359455,
+      "type": "file"
+    },
+    {
+      "path": "app.json",
+      "accessCount": 2,
+      "lastAccessed": 1776247777257,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/suka-prompt.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776251560208,
+      "type": "file"
+    },
+    {
+      "path": "src/contexts/HouseholdContext.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776254937150,
+      "type": "file"
+    },
+    {
+      "path": "src/config.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776254938824,
+      "type": "file"
+    },
+    {
+      "path": "src/api/auth.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776309245448,
       "type": "file"
     },
     {
@@ -217,6 +367,66 @@
       "path": "src/screens/dashboard/ParentDashboardScreen.tsx",
       "accessCount": 1,
       "lastAccessed": 1775488643878,
+      "type": "file"
+    },
+    {
+      "path": "src/ble/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776161210512,
+      "type": "file"
+    },
+    {
+      "path": "src/ble/config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776161210786,
+      "type": "file"
+    },
+    {
+      "path": "src/ble/permissions.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776161211004,
+      "type": "file"
+    },
+    {
+      "path": "tests/__mocks__/expo-secure-store.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776161316247,
+      "type": "file"
+    },
+    {
+      "path": "tests/__mocks__/react-native-ble-plx.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776161316709,
+      "type": "file"
+    },
+    {
+      "path": "tests/ble/service.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776161318084,
+      "type": "file"
+    },
+    {
+      "path": "src/__env__.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776229142342,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/dashboard",
+      "accessCount": 1,
+      "lastAccessed": 1776253207664,
+      "type": "directory"
+    },
+    {
+      "path": "react-native.config.js",
+      "accessCount": 1,
+      "lastAccessed": 1776254566230,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/onboarding/HouseholdCreateScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776254937848,
       "type": "file"
     }
   ],
