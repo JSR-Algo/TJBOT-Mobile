@@ -42,6 +42,7 @@ interface VoiceAssistantStore {
   audioLevel: number;
   error: string | null;
   sessionStartTime: number | null;
+  expressionOverride: string | null;
 
   // Actions
   transition: (to: VoiceState) => boolean;
@@ -50,6 +51,7 @@ interface VoiceAssistantStore {
   addMessage: (role: 'user' | 'ai', text: string, interrupted?: boolean) => void;
   setAudioLevel: (level: number) => void;
   setError: (error: string | null) => void;
+  setExpressionOverride: (expr: string | null) => void;
   stopSession: () => void;
   reset: () => void;
 }
@@ -62,6 +64,7 @@ const INITIAL_STATE = {
   audioLevel: 0,
   error: null as string | null,
   sessionStartTime: null as number | null,
+  expressionOverride: null as string | null,
 };
 
 export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => ({
@@ -106,6 +109,8 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
 
   setError: (error: string | null) => set({ error }),
 
+  setExpressionOverride: (expr: string | null) => set({ expressionOverride: expr }),
+
   stopSession: () => set((s) => ({
     state: 'IDLE',
     userTranscript: '',
@@ -113,6 +118,7 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
     audioLevel: 0,
     error: null,
     sessionStartTime: null,
+    expressionOverride: null,
     messages: s.messages,
   })),
 

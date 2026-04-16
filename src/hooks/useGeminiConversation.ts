@@ -11,6 +11,7 @@ import { GoogleGenAI, Modality } from '@google/genai/web';
 import { AudioPlaybackService } from '../audio/AudioPlaybackService';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import * as Haptics from 'expo-haptics';
+import { detectExpression } from '../utils/expressionDetector';
 import { Config } from '../config';
 import { chat as chatWithAI } from '../api/ai';
 import { getAccessToken } from '../api/tokens';
@@ -260,6 +261,16 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             // Handle AI output transcription (append chunks)
             const outputTranscription = message.serverContent?.outputTranscription;
             if (outputTranscription?.text) {
+              // Detect expression from action tags (presentation-only)
+              const expr = detectExpression(outputTranscription.text);
+              if (expr) {
+                store.getState().setExpressionOverride(expr);
+                setTimeout(() => {
+                  if (store.getState().expressionOverride === expr) {
+                    store.getState().setExpressionOverride(null);
+                  }
+                }, 2500);
+              }
               const s = store.getState();
               const newText = s.aiTranscript + outputTranscription.text;
               s.setAiTranscript(newText);

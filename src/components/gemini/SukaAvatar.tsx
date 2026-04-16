@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, Easing } from 'react-native';
 import type { VoiceState } from '../../state/voiceAssistantStore';
+import { useVoiceAssistantStore } from '../../state/voiceAssistantStore';
+import { ParticleEffect } from './ParticleEffect';
 
 // ── Design tokens ────────────────────────────────────────────────────
 const AVATAR_SIZE = 180;
 const GLOW_SIZE = AVATAR_SIZE + 40;
 const EYE_W = 18;
 const EYE_H = 22;
-const MOUTH_W = 32;
 
 const C = {
   head: '#E9D5FF',
@@ -15,19 +16,19 @@ const C = {
   glow: '#8B5CF6',
   eye: '#374151',
   eyeHighlight: '#FFFFFF',
+  eyeSparkle: '#FFFFFF',
   mouth: '#6B21A8',
   mouthOpen: '#7C3AED',
   cheek: '#FBCFE8',
-  error: '#FCA5A5',
   bg: 'transparent',
 };
 
-// ── Expression config per VoiceState ─────────────────────────────────
+// ── Expression config ───────────────────────────────────────────────
 interface Expression {
-  eyeScaleY: number;       // 1 = normal, 0.1 = blink/closed, 1.3 = wide
-  eyeOffsetY: number;      // shift eyes up (thinking)
-  mouthWidth: number;      // relative width
-  mouthHeight: number;     // 0 = line, 1 = full open
+  eyeScaleY: number;
+  eyeOffsetY: number;
+  mouthWidth: number;
+  mouthHeight: number;
   mouthBorderRadius: number;
   mouthCurve: 'smile' | 'neutral' | 'open' | 'sad';
   glowOpacity: number;
@@ -36,17 +37,31 @@ interface Expression {
 }
 
 const EXPRESSIONS: Record<string, Expression> = {
-  idle:       { eyeScaleY: 1,   eyeOffsetY: 0, mouthWidth: 28, mouthHeight: 4,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.15, glowPulse: false, cheekOpacity: 0.3 },
-  listening:  { eyeScaleY: 1.2, eyeOffsetY: 0, mouthWidth: 24, mouthHeight: 3,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.3,  glowPulse: false, cheekOpacity: 0.4 },
-  streaming:  { eyeScaleY: 1.2, eyeOffsetY: 0, mouthWidth: 20, mouthHeight: 12, mouthBorderRadius: 10, mouthCurve: 'open',    glowOpacity: 0.35, glowPulse: false, cheekOpacity: 0.3 },
-  thinking:   { eyeScaleY: 0.9, eyeOffsetY: -3, mouthWidth: 16, mouthHeight: 14, mouthBorderRadius: 8, mouthCurve: 'open',    glowOpacity: 0.25, glowPulse: true,  cheekOpacity: 0.2 },
-  speaking:   { eyeScaleY: 1,   eyeOffsetY: 0, mouthWidth: 26, mouthHeight: 16, mouthBorderRadius: 13, mouthCurve: 'open',    glowOpacity: 0.4,  glowPulse: false, cheekOpacity: 0.5 },
-  happy:      { eyeScaleY: 0.6, eyeOffsetY: 0, mouthWidth: 34, mouthHeight: 6,  mouthBorderRadius: 3,  mouthCurve: 'smile',   glowOpacity: 0.35, glowPulse: false, cheekOpacity: 0.7 },
-  sad:        { eyeScaleY: 0.8, eyeOffsetY: 2, mouthWidth: 22, mouthHeight: 4,  mouthBorderRadius: 2,  mouthCurve: 'sad',     glowOpacity: 0.1,  glowPulse: false, cheekOpacity: 0 },
-  connecting:  { eyeScaleY: 1,   eyeOffsetY: 0, mouthWidth: 24, mouthHeight: 3,  mouthBorderRadius: 2,  mouthCurve: 'neutral', glowOpacity: 0.3,  glowPulse: true,  cheekOpacity: 0.2 },
-  interrupted: { eyeScaleY: 1.3, eyeOffsetY: 0, mouthWidth: 18, mouthHeight: 10, mouthBorderRadius: 9,  mouthCurve: 'open',    glowOpacity: 0.2,  glowPulse: false, cheekOpacity: 0.2 },
-  blink:       { eyeScaleY: 0.08, eyeOffsetY: 0, mouthWidth: 28, mouthHeight: 4, mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.15, glowPulse: false, cheekOpacity: 0.3 },
+  // Core states
+  idle:        { eyeScaleY: 1,    eyeOffsetY: 0,  mouthWidth: 28, mouthHeight: 4,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.15, glowPulse: false, cheekOpacity: 0.3 },
+  listening:   { eyeScaleY: 1.2,  eyeOffsetY: 0,  mouthWidth: 24, mouthHeight: 3,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.3,  glowPulse: false, cheekOpacity: 0.4 },
+  streaming:   { eyeScaleY: 1.2,  eyeOffsetY: 0,  mouthWidth: 20, mouthHeight: 12, mouthBorderRadius: 10, mouthCurve: 'open',    glowOpacity: 0.35, glowPulse: false, cheekOpacity: 0.3 },
+  thinking:    { eyeScaleY: 0.9,  eyeOffsetY: -3, mouthWidth: 16, mouthHeight: 14, mouthBorderRadius: 8,  mouthCurve: 'open',    glowOpacity: 0.25, glowPulse: true,  cheekOpacity: 0.2 },
+  speaking:    { eyeScaleY: 1,    eyeOffsetY: 0,  mouthWidth: 26, mouthHeight: 16, mouthBorderRadius: 13, mouthCurve: 'open',    glowOpacity: 0.4,  glowPulse: false, cheekOpacity: 0.5 },
+  connecting:  { eyeScaleY: 1,    eyeOffsetY: 0,  mouthWidth: 24, mouthHeight: 3,  mouthBorderRadius: 2,  mouthCurve: 'neutral', glowOpacity: 0.3,  glowPulse: true,  cheekOpacity: 0.2 },
+  interrupted: { eyeScaleY: 1.3,  eyeOffsetY: 0,  mouthWidth: 18, mouthHeight: 10, mouthBorderRadius: 9,  mouthCurve: 'open',    glowOpacity: 0.2,  glowPulse: false, cheekOpacity: 0.2 },
+  blink:       { eyeScaleY: 0.08, eyeOffsetY: 0,  mouthWidth: 28, mouthHeight: 4,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.15, glowPulse: false, cheekOpacity: 0.3 },
+  // Emotion states
+  happy:       { eyeScaleY: 0.6,  eyeOffsetY: 0,  mouthWidth: 34, mouthHeight: 6,  mouthBorderRadius: 3,  mouthCurve: 'smile',   glowOpacity: 0.35, glowPulse: false, cheekOpacity: 0.7 },
+  sad:         { eyeScaleY: 0.8,  eyeOffsetY: 2,  mouthWidth: 22, mouthHeight: 4,  mouthBorderRadius: 2,  mouthCurve: 'sad',     glowOpacity: 0.1,  glowPulse: false, cheekOpacity: 0 },
+  laugh:       { eyeScaleY: 0.4,  eyeOffsetY: 0,  mouthWidth: 36, mouthHeight: 8,  mouthBorderRadius: 4,  mouthCurve: 'smile',   glowOpacity: 0.4,  glowPulse: false, cheekOpacity: 0.8 },
+  shy:         { eyeScaleY: 0.5,  eyeOffsetY: 2,  mouthWidth: 16, mouthHeight: 3,  mouthBorderRadius: 2,  mouthCurve: 'smile',   glowOpacity: 0.15, glowPulse: false, cheekOpacity: 0.9 },
+  curious:     { eyeScaleY: 1.3,  eyeOffsetY: -2, mouthWidth: 14, mouthHeight: 8,  mouthBorderRadius: 7,  mouthCurve: 'open',    glowOpacity: 0.3,  glowPulse: false, cheekOpacity: 0.3 },
+  celebrating: { eyeScaleY: 0.5,  eyeOffsetY: 0,  mouthWidth: 38, mouthHeight: 10, mouthBorderRadius: 5,  mouthCurve: 'smile',   glowOpacity: 0.5,  glowPulse: true,  cheekOpacity: 0.8 },
+  sleepy:      { eyeScaleY: 0.15, eyeOffsetY: 2,  mouthWidth: 18, mouthHeight: 3,  mouthBorderRadius: 2,  mouthCurve: 'neutral', glowOpacity: 0.08, glowPulse: false, cheekOpacity: 0.2 },
 };
+
+// Expressions that trigger cute bounce
+const BOUNCY_EXPRESSIONS = ['happy', 'celebrating', 'laugh'];
+// Expressions that show eye sparkle
+const SPARKLE_EXPRESSIONS = ['happy', 'celebrating', 'laugh', 'curious'];
+// Head tilt angles per expression
+const TILT_MAP: Record<string, number> = { curious: 5, shy: -5 };
 
 function voiceStateToExpression(state: VoiceState): string {
   switch (state) {
@@ -71,7 +86,9 @@ interface SukaAvatarProps {
 }
 
 export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
-  const expressionKey = voiceStateToExpression(voiceState);
+  // Expression override from action tags (presentation-only)
+  const expressionOverride = useVoiceAssistantStore((s) => s.expressionOverride);
+  const expressionKey = expressionOverride ?? voiceStateToExpression(voiceState);
   const expr = EXPRESSIONS[expressionKey] ?? EXPRESSIONS.idle;
 
   // ── Animated values ──────────────────────────────────────────────
@@ -83,6 +100,9 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
   const glowOpacity = useRef(new Animated.Value(expr.glowOpacity)).current;
   const glowScale = useRef(new Animated.Value(1)).current;
   const cheekOpacity = useRef(new Animated.Value(expr.cheekOpacity)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const headTilt = useRef(new Animated.Value(0)).current;
+  const sparkleOpacity = useRef(new Animated.Value(0)).current;
 
   // ── Idle breathing loop ──────────────────────────────────────────
   useEffect(() => {
@@ -123,7 +143,7 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
     ]).start();
   }, [expressionKey, expr, eyeScaleY, eyeOffsetY, mouthHeight, mouthWidth, glowOpacity, cheekOpacity]);
 
-  // ── Glow pulse for connecting states ─────────────────────────────
+  // ── Glow pulse for connecting/celebrating states ─────────────────
   useEffect(() => {
     if (expr.glowPulse) {
       const loop = Animated.loop(
@@ -139,7 +159,7 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
     }
   }, [expr.glowPulse, glowScale]);
 
-  // ── Speaking: mouth follows audio level ──────────────────────────
+  // ── Speaking: mouth + glow follow audio level ────────────────────
   useEffect(() => {
     if (expressionKey === 'speaking') {
       const targetMouth = 8 + audioLevel * 20;
@@ -150,6 +170,45 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
       ]).start();
     }
   }, [audioLevel, expressionKey, mouthHeight, glowOpacity]);
+
+  // ── Cute bounce for happy/celebrating/laugh ──────────────────────
+  useEffect(() => {
+    if (BOUNCY_EXPRESSIONS.includes(expressionKey)) {
+      const bounce = Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, { toValue: -8, duration: 300, useNativeDriver: true }),
+          Animated.timing(bounceAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]),
+        { iterations: 3 },
+      );
+      bounce.start();
+      return () => bounce.stop();
+    } else {
+      bounceAnim.setValue(0);
+    }
+  }, [expressionKey, bounceAnim]);
+
+  // ── Head tilt for curious/shy ────────────────────────────────────
+  useEffect(() => {
+    const target = TILT_MAP[expressionKey] ?? 0;
+    Animated.spring(headTilt, { toValue: target, useNativeDriver: true, friction: 8 }).start();
+  }, [expressionKey, headTilt]);
+
+  // ── Eye sparkle for happy states ─────────────────────────────────
+  useEffect(() => {
+    if (SPARKLE_EXPRESSIONS.includes(expressionKey)) {
+      const sparkle = Animated.loop(
+        Animated.sequence([
+          Animated.timing(sparkleOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.timing(sparkleOpacity, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+        ]),
+      );
+      sparkle.start();
+      return () => sparkle.stop();
+    } else {
+      sparkleOpacity.setValue(0);
+    }
+  }, [expressionKey, sparkleOpacity]);
 
   // ── Mouth style (curve direction) ───────────────────────────────
   const getMouthStyle = () => {
@@ -168,8 +227,16 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
     return { ...base, borderRadius: 2 };
   };
 
+  const headRotation = headTilt.interpolate({
+    inputRange: [-10, 10],
+    outputRange: ['-10deg', '10deg'],
+  });
+
   return (
     <View style={styles.wrapper}>
+      {/* Celebrating particles */}
+      <ParticleEffect active={expressionKey === 'celebrating'} />
+
       {/* Glow ring */}
       <Animated.View
         style={[
@@ -181,8 +248,19 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
         ]}
       />
 
-      {/* Head with breathing */}
-      <Animated.View style={[styles.head, { transform: [{ scale: breatheAnim }] }]}>
+      {/* Head with breathing + bounce + tilt */}
+      <Animated.View
+        style={[
+          styles.head,
+          {
+            transform: [
+              { scale: breatheAnim },
+              { translateY: bounceAnim },
+              { rotate: headRotation },
+            ],
+          },
+        ]}
+      >
         {/* Inner highlight */}
         <View style={styles.headInner} />
 
@@ -191,10 +269,14 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
           {/* Left eye */}
           <Animated.View style={[styles.eye, { transform: [{ scaleY: eyeScaleY }] }]}>
             <View style={styles.eyeHighlight} />
+            {/* Sparkle */}
+            <Animated.View style={[styles.eyeSparkle, { opacity: sparkleOpacity }]} />
           </Animated.View>
           {/* Right eye */}
           <Animated.View style={[styles.eye, { transform: [{ scaleY: eyeScaleY }] }]}>
             <View style={styles.eyeHighlight} />
+            {/* Sparkle */}
+            <Animated.View style={[styles.eyeSparkle, { opacity: sparkleOpacity }]} />
           </Animated.View>
         </Animated.View>
 
@@ -276,6 +358,15 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: C.eyeHighlight,
+  },
+  eyeSparkle: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: C.eyeSparkle,
   },
   cheekLeft: {
     position: 'absolute',
