@@ -60,9 +60,13 @@ function pcmToWavBase64(pcmBytes: Uint8Array): string {
   const wavBytes = new Uint8Array(buffer);
   wavBytes.set(pcmBytes, headerSize);
 
-  let binary = '';
-  for (let i = 0; i < wavBytes.length; i++) binary += String.fromCharCode(wavBytes[i]);
-  return `data:audio/wav;base64,${btoa(binary)}`;
+  // Fast O(n) base64 encoding using chunked String.fromCharCode
+  const CHUNK = 0x8000;
+  const parts: string[] = [];
+  for (let i = 0; i < wavBytes.length; i += CHUNK) {
+    parts.push(String.fromCharCode.apply(null, Array.from(wavBytes.subarray(i, i + CHUNK))));
+  }
+  return `data:audio/wav;base64,${btoa(parts.join(''))}`;
 }
 
 export class AudioPlaybackService {
