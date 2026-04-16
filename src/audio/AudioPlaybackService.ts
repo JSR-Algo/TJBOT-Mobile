@@ -20,15 +20,15 @@ import type { AudioPlayer } from 'expo-audio';
 
 const SAMPLE_RATE = 24000;
 /**
- * First-chunk pre-buffer in ms. 0 = the first arriving chunk flushes immediately
- * (ring-buffer semantics). Do not raise this without re-running the
- * `first_audio_ms` budget — anything > ~100 ms regresses ADR-011.
+ * First-chunk pre-buffer in ms. Accumulate this much audio before starting
+ * playback to avoid a choppy initial blip. Higher = smoother start, more latency.
  */
-const FIRST_BUFFER_MS = 0;
-/** Subsequent-chunk accumulation window in ms. Small enough to stay inside the ADR-011 budget. */
-const NEXT_BUFFER_MS = 200;
+const FIRST_BUFFER_MS = 600;
+/** Subsequent-chunk accumulation: set very high so segments only flush
+ *  when the current player finishes or on silence timeout. */
+const NEXT_BUFFER_MS = 10000;
 /** Flush remaining tail after this much silence on the input side. */
-const FLUSH_DELAY_MS = 200;
+const FLUSH_DELAY_MS = 800;
 
 function pcmToWavBase64(pcmBytes: Uint8Array): string {
   const numChannels = 1;
@@ -92,24 +92,21 @@ export class AudioPlaybackService {
     this.chunks.push(bytes);
     this.totalSize += bytes.length;
     this._isPlaying = true;
-    this._audioLevel = 0.6;
+    this._audioLevel = Math.min(1, this._computeRms(bytes) * 4);
 
     // Ring-buffer rule: the FIRST chunk of a session fires playback immediately
     // (RM-04 / ADR-011). We do not wait for an arbitrary fill threshold.
-    if (this.isFirstSegment) {
-      this._flushToReady();
-      return;
-    }
-
-    // Subsequent chunks: accumulate up to NEXT_BUFFER_MS for smoother playback.
-    const targetBytes = SAMPLE_RATE * 2 * (NEXT_BUFFER_MS / 1000);
+    // Accumulate before flushing: fewer, longer segments = fewer gaps
+    const bufferMs = this.isFirstSegment ? FIRST_BUFFER_MS : NEXT_BUFFER_MS;
+    const targetBytes = SAMPLE_RATE * 2 * (bufferMs / 1000);
     if (this.totalSize >= targetBytes) {
       this._flushToReady();
     }
 
     // Reset flush timer for remaining data — guarantees the tail is never stuck.
     if (this.flushTimer) clearTimeout(this.flushTimer);
-    this.flushTimer = setTimeout(() => this._flushToReady(), FLUSH_DELAY_MS);
+    const flushMs = this.isFirstSegment ? FIRST_BUFFER_MS : FLUSH_DELAY_MS;
+    this.flushTimer = setTimeout(() => this._flushToReady(), flushMs);
   }
 
   flush(): void {
@@ -139,6 +136,15 @@ export class AudioPlaybackService {
 
   dispose(): void { this.disposed = true; this.interrupt(); }
 
+  private _computeRms(pcm: Uint8Array): number {
+    let sum = 0;
+    for (let i = 0; i < pcm.length; i += 2) {
+      const sample = (pcm[i] | (pcm[i + 1] << 8)) / 32768;
+      sum += sample * sample;
+    }
+    return Math.sqrt(sum / (pcm.length / 2));
+  }
+
   private _flushToReady(): void {
     if (this.chunks.length === 0) return;
     if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
@@ -158,7 +164,7 @@ export class AudioPlaybackService {
     if (this.processing || this.disposed || this.ready.length === 0) return;
     this.processing = true;
 
-    // Set audio mode ONCE for entire playback session
+    // Switch to playback mode once per session
     if (!this.audioModeReady) {
       try {
         await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
@@ -186,10 +192,22 @@ export class AudioPlaybackService {
         this.nextPlayer = createAudioPlayer(pcmToWavBase64(nextSeg));
       }
 
-      // Play and wait for finish
+      // Play and wait for finish, pre-load next segment at 70%
       await new Promise<void>((resolve) => {
-        player.addListener('playbackStatusUpdate', (s) => {
-          if (s.didJustFinish) {
+        let preloaded = false;
+        player.addListener('playbackStatusUpdate', (status) => {
+          // Pre-load next segment when current is 70% done
+          if (!preloaded && status.duration > 0 && status.currentTime > status.duration * 0.7) {
+            preloaded = true;
+            if (this.chunks.length > 0 && !this.nextPlayer && !this.disposed) {
+              this._flushToReady();
+              if (this.ready.length > 0) {
+                const nextSeg = this.ready.shift()!;
+                this.nextPlayer = createAudioPlayer(pcmToWavBase64(nextSeg));
+              }
+            }
+          }
+          if (status.didJustFinish) {
             try { player.remove(); } catch {}
             resolve();
           }
@@ -198,11 +216,14 @@ export class AudioPlaybackService {
       });
     }
 
-    // Check if more segments arrived during playback
-    if (this.ready.length > 0 && !this.disposed) {
-      this.processing = false;
-      this._process();
-      return;
+    // Check if more segments or chunks arrived during playback
+    if (!this.disposed && (this.ready.length > 0 || this.chunks.length > 0)) {
+      if (this.chunks.length > 0) this._flushToReady();
+      if (this.ready.length > 0) {
+        this.processing = false;
+        this._process();
+        return;
+      }
     }
 
     // All done - restore recording mode
@@ -212,10 +233,7 @@ export class AudioPlaybackService {
     this.audioModeReady = false;
     this.isFirstSegment = true;
 
-    try {
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-    } catch {}
-
     if (this.onFinishCallback) this.onFinishCallback();
+    setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true }).catch(() => {});
   }
 }

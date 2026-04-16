@@ -2,9 +2,16 @@ import client from './client';
 import { setTokens, clearTokens } from './tokens';
 import { AuthTokens, User } from '../types';
 
-export async function signup(name: string, email: string, password: string): Promise<{ partial: boolean }> {
+export async function signup(name: string, email: string, password: string): Promise<{ access_token?: string; partial: boolean }> {
   const response = await client.post('/auth/signup', { name, email, password });
-  return response.data.data ?? response.data;
+  const data = response.data.data ?? response.data;
+  // The backend returns an access_token on signup (even before email verification).
+  // Store it so the user can proceed through onboarding (consent, household, etc.)
+  // without needing a separate login step.
+  if (data.access_token) {
+    await setTokens(data.access_token, data.refresh_token ?? '');
+  }
+  return data;
 }
 
 export async function login(email: string, password: string): Promise<AuthTokens & { user: User }> {

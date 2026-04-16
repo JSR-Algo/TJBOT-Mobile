@@ -2,25 +2,47 @@ import * as SecureStore from 'expo-secure-store';
 
 const ACCESS_TOKEN_KEY = 'tbot_access_token';
 const REFRESH_TOKEN_KEY = 'tbot_refresh_token';
+export const SECURE_STORE_OPTIONS = {
+  keychainAccessible: SecureStore.WHEN_UNLOCKED,
+} as const;
 
 export async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY, SECURE_STORE_OPTIONS);
 }
 
 export async function getRefreshToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+  return SecureStore.getItemAsync(REFRESH_TOKEN_KEY, SECURE_STORE_OPTIONS);
 }
 
 export async function setTokens(accessToken: string, refreshToken: string): Promise<void> {
   await Promise.all([
-    SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
-    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
+    SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken, SECURE_STORE_OPTIONS),
+    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken, SECURE_STORE_OPTIONS),
   ]);
 }
 
 export async function clearTokens(): Promise<void> {
   await Promise.all([
-    SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
-    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+    SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY, SECURE_STORE_OPTIONS),
+    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY, SECURE_STORE_OPTIONS),
   ]);
 }
+
+export async function getSecureJson<T>(key: string): Promise<T | null> {
+  const raw = await SecureStore.getItemAsync(key, SECURE_STORE_OPTIONS);
+  return raw ? (JSON.parse(raw) as T) : null;
+}
+
+export async function setSecureJson(key: string, value: unknown): Promise<void> {
+  await SecureStore.setItemAsync(key, JSON.stringify(value), SECURE_STORE_OPTIONS);
+}
+
+export async function deleteSecureItem(key: string): Promise<void> {
+  await SecureStore.deleteItemAsync(key, SECURE_STORE_OPTIONS);
+}
+
+export const SECURE_STORE_KEYS = {
+  accessToken: ACCESS_TOKEN_KEY,
+  refreshToken: REFRESH_TOKEN_KEY,
+  user: 'tbot_user',
+} as const;

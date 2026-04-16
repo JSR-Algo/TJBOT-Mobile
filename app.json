@@ -3,6 +3,12 @@
   "displayName": "TBOT",
   "expo": {
     "name": "TbotMobile",
-    "slug": "tbot-mobile"
+    "slug": "tbot-mobile",
+    "ios": {
+      "bundleIdentifier": "com.tbot.app"
+    },
+    "android": {
+      "package": "com.tbot.app"
+    }
   }
 }

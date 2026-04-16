@@ -11,6 +11,16 @@ const client: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Global hook that AuthContext can register to force a logout when token
+// refresh fails. Without this, `clearTokens()` wipes SecureStore but the
+// in-memory `isAuthenticated` flag stays true and `RootNavigator` keeps the
+// user stranded on the Main stack. See the Round 4 stale-token fix.
+let onAuthInvalidated: (() => void) | null = null;
+
+export function setAuthInvalidatedHandler(handler: (() => void) | null): void {
+  onAuthInvalidated = handler;
+}
+
 client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   const token = await getAccessToken();
   if (token) {
@@ -70,6 +80,15 @@ client.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await clearTokens();
+        // Kick the UI back to the Auth stack so the user isn't stranded on
+        // an authenticated screen with invalid tokens.
+        if (onAuthInvalidated) {
+          try {
+            onAuthInvalidated();
+          } catch {
+            // swallow — handler is best-effort
+          }
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

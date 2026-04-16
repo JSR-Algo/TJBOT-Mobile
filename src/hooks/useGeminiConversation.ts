@@ -10,6 +10,7 @@ import * as Device from 'expo-device';
 import { GoogleGenAI, Modality } from '@google/genai/web';
 import { AudioPlaybackService } from '../audio/AudioPlaybackService';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
+import * as Haptics from 'expo-haptics';
 import { Config } from '../config';
 import { chat as chatWithAI } from '../api/ai';
 import { getAccessToken } from '../api/tokens';
@@ -210,12 +211,14 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             if (base64Audio && playbackRef.current) {
               const s = store.getState();
               if (s.state !== 'PLAYING_AI_AUDIO') {
-                if (s.state === 'STREAMING_INPUT' && s.userTranscript) {
+                if ((s.state === 'STREAMING_INPUT' || s.state === 'WAITING_AI') && s.userTranscript) {
                   s.addMessage('user', s.userTranscript);
                 }
                 s.transition('PLAYING_AI_AUDIO');
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
               playbackRef.current.enqueue(base64Audio);
+              s.setAudioLevel(playbackRef.current.audioLevel);
             }
 
             // Handle interruption from server
@@ -223,17 +226,23 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               logTelemetry('live_interrupted');
               playbackRef.current.interrupt();
               const s = store.getState();
-              if (s.aiTranscript) s.addMessage('ai', s.aiTranscript);
+              if (s.aiTranscript) s.addMessage('ai', s.aiTranscript, true);
               s.setAiTranscript('');
               if (s.state === 'PLAYING_AI_AUDIO') {
                 s.transition('INTERRUPTED');
-                s.transition('LISTENING');
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setTimeout(() => {
+                  if (store.getState().state === 'INTERRUPTED') {
+                    store.getState().transition('LISTENING');
+                  }
+                }, 400);
               }
             }
 
             // Handle user input transcription (append chunks)
+            // Suppress during AI playback to prevent late transcription from appearing after AI response
             const inputTranscription = message.serverContent?.inputTranscription;
-            if (inputTranscription?.text) {
+            if (inputTranscription?.text && store.getState().state !== 'PLAYING_AI_AUDIO') {
               const s = store.getState();
               const newText = s.userTranscript + inputTranscription.text;
               s.setUserTranscript(newText);
@@ -265,6 +274,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               // Flush remaining audio for smooth playback
               playbackRef.current?.flush();
               const s = store.getState();
+              // Archive user transcript BEFORE AI to maintain correct order
+              if (s.userTranscript) s.addMessage('user', s.userTranscript);
               if (s.aiTranscript) s.addMessage('ai', s.aiTranscript);
               s.setAiTranscript('');
               isUserTalkingRef.current = false;
@@ -388,7 +399,11 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             silenceTimerRef.current = setTimeout(() => {
               isUserTalkingRef.current = false;
               silenceTimerRef.current = null;
-            }, 1000);
+              const s = store.getState();
+              if (s.state === 'STREAMING_INPUT') {
+                s.transition('WAITING_AI');
+              }
+            }, 600);
           }
         }
       });

@@ -29,6 +29,7 @@
     "expo-server-sdk": "^6.1.0",
     "react": "19.2.0",
     "react-native": "0.83.4",
+    "react-native-ble-plx": "^3.5.1",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-live-audio-stream": "^1.1.1",
     "react-native-safe-area-context": "~5.6.2",
@@ -60,7 +61,8 @@
       "expo-haptics": "<rootDir>/tests/__mocks__/expo-haptics.ts",
       "expo-audio": "<rootDir>/tests/__mocks__/expo-audio.ts",
       "expo-notifications": "<rootDir>/tests/__mocks__/expo-notifications.ts",
-      "expo-device": "<rootDir>/tests/__mocks__/expo-device.ts"
+      "expo-device": "<rootDir>/tests/__mocks__/expo-device.ts",
+      "react-native-ble-plx": "<rootDir>/tests/__mocks__/react-native-ble-plx.ts"
     },
     "testMatch": [
       "**/tests/**/*.test.{ts,tsx}"

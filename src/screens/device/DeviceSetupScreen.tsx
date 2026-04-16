@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,69 @@ import {
 } from 'react-native';
 import * as devicesApi from '../../api/devices';
 import { Button, Input, ErrorMessage } from '../../components';
+import { initializeBle, scanForTbotDevices } from '../../ble/service';
+import type { BleBootstrapResult, BleDeviceCandidate } from '../../ble/types';
 import { normalizeError } from '../../utils/errors';
 import theme from '../../theme';
 import type { MainStackScreenProps } from '../../navigation/types';
 
 export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSetup'>): React.JSX.Element {
-  // navigation is typed to MainStackParamList, pop back to MainTabs after success
   const [serialNumber, setSerialNumber] = useState('');
   const [hardwareRevision, setHardwareRevision] = useState('');
   const [loading, setLoading] = useState(false);
+  const [bleLoading, setBleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bleStatus, setBleStatus] = useState<BleBootstrapResult | null>(null);
+  const [bleDevices, setBleDevices] = useState<BleDeviceCandidate[]>([]);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void (async () => {
+      try {
+        const status = await initializeBle();
+        if (!mounted) return;
+        setBleStatus(status);
+        if (!status.available && status.reason) {
+          setError(status.reason);
+        }
+      } catch (err) {
+        // Native BLE module may throw an "Invariant Violation" on devices
+        // without the native module linked (simulator builds, older devices,
+        // or when Expo Go is used). Catch here so the screen renders cleanly
+        // with a disabled BLE section instead of surfacing a global toast.
+        if (!mounted) return;
+        const normalized = normalizeError(err);
+        setBleStatus({ available: false, permission: 'unavailable', reason: normalized.message });
+        setError(normalized.message);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleScan = async () => {
+    setBleLoading(true);
+    setError(null);
+    try {
+      const result = await scanForTbotDevices();
+      setBleDevices(result.allowed);
+      if (result.allowed[0]?.id) {
+        setSerialNumber(result.allowed[0].id);
+      }
+      if (!result.allowed.length) {
+        setError('No allowlisted TBOT devices were found nearby.');
+      }
+    } catch (err) {
+      const normalized = normalizeError(err);
+      setError(normalized.message);
+    } finally {
+      setBleLoading(false);
+    }
+  };
 
   const handleRegister = async () => {
     if (!serialNumber.trim()) {
@@ -64,8 +116,32 @@ export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSe
         <Text style={styles.emoji}>🤖</Text>
         <Text style={styles.title}>Register your TBOT</Text>
         <Text style={styles.subtitle}>
-          Enter the serial number found on the bottom of your device.
+          Scan for a nearby TBOT over Bluetooth or enter the serial number manually.
         </Text>
+
+        <View style={styles.bleCard}>
+          <Text style={styles.bleTitle}>Bluetooth pairing</Text>
+          <Text style={styles.bleText}>
+            {bleStatus?.available
+              ? 'Bluetooth is ready. Scan for an allowlisted TBOT device to prefill the serial number.'
+              : 'Bluetooth is unavailable or permission was denied. You can still enter the serial number manually.'}
+          </Text>
+          <Button
+            label={bleLoading ? 'Scanning...' : 'Scan for TBOT'}
+            onPress={handleScan}
+            loading={bleLoading}
+            disabled={bleLoading || !bleStatus?.available}
+          />
+          {bleDevices.length ? (
+            <View style={styles.bleResults}>
+              {bleDevices.map((device) => (
+                <Text key={device.id} style={styles.bleResultText}>
+                  • {device.name ?? device.localName ?? 'Unnamed TBOT'} ({device.id})
+                </Text>
+              ))}
+            </View>
+          ) : null}
+        </View>
 
         <Input
           label="Serial number"
@@ -121,6 +197,32 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
+  },
+  bleCard: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  bleTitle: {
+    ...theme.typography.body1,
+    color: theme.colors.textPrimary,
+    fontWeight: '600',
+    marginBottom: theme.spacing.xs,
+  },
+  bleText: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
+  },
+  bleResults: {
+    marginTop: theme.spacing.md,
+  },
+  bleResultText: {
+    ...theme.typography.caption,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
   },
   successContainer: {
     flex: 1,

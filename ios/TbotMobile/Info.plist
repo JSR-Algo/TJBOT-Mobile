@@ -29,10 +29,24 @@
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
-		<false/>
+		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
 	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>TBOT uses Bluetooth to scan for and pair with your child's device during setup.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>TBOT uses Bluetooth to scan for and pair with your child's device during setup.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>TBOT uses the microphone to listen to your child's voice and provide AI-powered responses.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

@@ -1,15 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
   SafeAreaView,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  TextInput,
   StatusBar,
-  Animated,
-  Dimensions,
   Modal,
   FlatList,
 } from 'react-native';
@@ -17,126 +13,76 @@ import * as Haptics from 'expo-haptics';
 import { useVoiceAssistantStore } from '../../state/voiceAssistantStore';
 import { useGeminiConversation } from '../../hooks/useGeminiConversation';
 import { buildSukaPrompt, AgeGroup, PersonalityStyle } from '../../lib/suka-prompt';
+import { SukaAvatar } from '../../components/gemini/SukaAvatar';
+import { ControlBar } from '../../components/gemini/ControlBar';
 import { TranscriptPanel } from '../../components/gemini/TranscriptPanel';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// u2500u2500 Config u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
 
-// ── Constants from web app ──────────────────────────────────────────
-
-const AGE_OPTIONS: { id: AgeGroup; label: string; emoji: string; desc: string }[] = [
-  { id: '3-5', label: '3-5 tuổi', emoji: '\uD83D\uDC76', desc: 'Bé mẫu giáo' },
-  { id: '6-8', label: '6-8 tuổi', emoji: '\uD83E\uDDD2', desc: 'Lớp 1-3' },
-  { id: '9-12', label: '9-12 tuổi', emoji: '\uD83D\uDC66', desc: 'Lớp 4-6' },
+const AGE_OPTIONS: { id: AgeGroup; label: string; emoji: string }[] = [
+  { id: '3-5', label: '3-5 tu\u1ed5i', emoji: '\ud83d\udc76' },
+  { id: '6-8', label: '6-8 tu\u1ed5i', emoji: '\ud83e\uddd2' },
+  { id: '9-12', label: '9-12 tu\u1ed5i', emoji: '\ud83d\udc66' },
 ];
 
 const STYLE_OPTIONS: { id: PersonalityStyle; label: string; emoji: string }[] = [
-  { id: 'vui-ve', label: 'Vui vẻ', emoji: '\uD83D\uDE04' },
-  { id: 'diu-dang', label: 'Dịu dàng', emoji: '\uD83E\uDD70' },
-  { id: 'nang-dong', label: 'Năng động', emoji: '\u26A1' },
-  { id: 'dang-yeu', label: 'Đáng yêu', emoji: '\uD83D\uDC96' },
+  { id: 'vui-ve', label: 'Vui v\u1ebb', emoji: '\ud83d\ude04' },
+  { id: 'diu-dang', label: 'D\u1ecbu d\u00e0ng', emoji: '\ud83e\udd70' },
+  { id: 'nang-dong', label: 'N\u0103ng \u0111\u1ed9ng', emoji: '\⚡' },
+  { id: 'dang-yeu', label: '\u0110\u00e1ng y\u00eau', emoji: '\ud83d\udc96' },
 ];
 
 const GEMINI_VOICES = [
-  { id: 'Puck', label: 'Puck', desc: 'Vui vẻ, năng động' },
-  { id: 'Kore', label: 'Kore', desc: 'Dịu dàng, ấm áp' },
-  { id: 'Aoede', label: 'Aoede', desc: 'Trong trẻo' },
-  { id: 'Charon', label: 'Charon', desc: 'Trầm ấm' },
-  { id: 'Fenrir', label: 'Fenrir', desc: 'Mạnh mẽ' },
-  { id: 'Leda', label: 'Leda', desc: 'Trầm tĩnh' },
+  { id: 'Puck', label: 'Puck', desc: 'Vui v\u1ebb, n\u0103ng \u0111\u1ed9ng' },
+  { id: 'Kore', label: 'Kore', desc: 'D\u1ecbu d\u00e0ng, \u1ea5m \u00e1p' },
+  { id: 'Aoede', label: 'Aoede', desc: 'Trong tr\u1ebb' },
+  { id: 'Charon', label: 'Charon', desc: 'Tr\u1ea7m \u1ea5m' },
+  { id: 'Fenrir', label: 'Fenrir', desc: 'M\u1ea1nh m\u1ebd' },
+  { id: 'Leda', label: 'Leda', desc: 'Tr\u1ea7m t\u0129nh' },
 ];
 
-// ── Colors ──────────────────────────────────────────────────────────
-
-const COLORS = {
-  background: '#FAF5FF',
-  headerBg: 'rgba(255,255,255,0.85)',
+const C = {
+  bg: '#F8F5FF',
+  headerBg: 'rgba(255,255,255,0.92)',
   primary: '#8B5CF6',
-  secondary: '#EC4899',
-  userBubble: '#3B82F6',
-  aiBubbleBg: '#FAF0FF',
-  aiBubbleBorder: '#E9D5FF',
   text: '#374151',
   muted: '#9CA3AF',
-  selectedAgeBorder: '#A78BFA',
-  selectedAgeBg: '#F5F3FF',
-  selectedStyleBorder: '#F472B6',
-  selectedStyleBg: '#FDF2F8',
   white: '#FFFFFF',
-  cardBorder: '#E5E7EB',
-  cardBg: '#FFFFFF',
-  micActive: '#EF4444',
   onlineGreen: '#22C55E',
   onlineBg: '#DCFCE7',
   onlineText: '#16A34A',
-  purpleLight: '#E9D5FF',
+  selectedBorder: '#A78BFA',
+  selectedBg: '#F5F3FF',
+  cardBg: '#FFFFFF',
+  cardBorder: '#E5E7EB',
 };
 
+// u2500u2500 Screen u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
+
 export function GeminiConversationScreen() {
-  // ── State ────────────────────────────────────────────────────────
+  // u2500u2500 Settings state u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
   const [selectedVoice, setSelectedVoice] = useState('Kore');
   const [selectedAge, setSelectedAge] = useState<AgeGroup>('3-5');
   const [selectedStyle, setSelectedStyle] = useState<PersonalityStyle>('dang-yeu');
-  const [inputText, setInputText] = useState('');
-  const [voicePickerVisible, setVoicePickerVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
-  // ── Store ────────────────────────────────────────────────────────
+  // u2500u2500 Voice store u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
   const voiceState = useVoiceAssistantStore((s) => s.state);
   const audioLevel = useVoiceAssistantStore((s) => s.audioLevel);
   const error = useVoiceAssistantStore((s) => s.error);
 
-  // ── Hook ─────────────────────────────────────────────────────────
+  // u2500u2500 Conversation hook u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
   const { startConversation, stopConversation } = useGeminiConversation({
     voiceName: selectedVoice,
     systemInstruction: buildSukaPrompt(selectedAge, selectedStyle),
   });
 
-  // ── Derived state ───────────────────────────────────────────────
+  // u2500u2500 Derived u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
   const isConnected = voiceState !== 'IDLE' && voiceState !== 'ERROR';
   const isConnecting = voiceState === 'CONNECTING' || voiceState === 'REQUESTING_MIC_PERMISSION';
-  const isListening = voiceState === 'LISTENING' || voiceState === 'STREAMING_INPUT';
-  const isAISpeaking = voiceState === 'PLAYING_AI_AUDIO';
   const micDisabled = isConnecting || voiceState === 'RECONNECTING';
 
-  // ── Animation ───────────────────────────────────────────────────
-  const volumeAnim = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (isConnected) {
-      const scale = 1 + Math.min(audioLevel * 3, 0.4);
-      Animated.spring(volumeAnim, {
-        toValue: scale,
-        useNativeDriver: true,
-        friction: 5,
-        tension: 100,
-      }).start();
-    } else {
-      volumeAnim.setValue(1);
-    }
-  }, [audioLevel, isConnected, volumeAnim]);
-
-  useEffect(() => {
-    if (isConnecting) {
-      const loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.15, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ]),
-      );
-      loop.start();
-      return () => loop.stop();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [isConnecting, pulseAnim]);
-
-  // ── Scroll ref ──────────────────────────────────────────────────
-  const scrollRef = useRef<ScrollView>(null);
-  useEffect(() => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-  }, [voiceState]);
-
-  // ── Handlers ────────────────────────────────────────────────────
+  // u2500u2500 Handlers u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
   const handleMicPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (isConnected) {
@@ -146,662 +92,331 @@ export function GeminiConversationScreen() {
     }
   };
 
-  const handleSendText = () => {
-    if (!inputText.trim()) return;
-    // Text sending is handled by the store/hook in the future
-    // For now we just clear
-    setInputText('');
-  };
-
-  // ── Status text (Vietnamese) ────────────────────────────────────
-  const getStatusTitle = (): string => {
-    if (isConnecting) return 'Đang kết nối Suka...';
-    if (isAISpeaking) return 'Suka đang nói...';
-    if (isListening) return 'Suka đang nghe...';
-    if (isConnected) return 'Suka sẵn sàng!';
-    return 'Bắt đầu học cùng Suka!';
-  };
-
-  const getStatusSubtitle = (): string => {
-    if (isConnected) return 'Hãy nói chuyện với Suka nhé!';
-    return 'Bấm nút để bắt đầu';
-  };
-
-  // ── Render helpers ──────────────────────────────────────────────
-  const selectedVoiceData = GEMINI_VOICES.find((v) => v.id === selectedVoice) || GEMINI_VOICES[1];
-
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <SafeAreaView style={styles.safe}>
-        <ScrollView
-          ref={scrollRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* ── Header ───────────────────────────────────────── */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={styles.headerIcon}>
-                <Text style={styles.headerIconText}>\u2728</Text>
-              </View>
-              <View>
-                <Text style={styles.headerTitle}>Suka</Text>
-                <Text style={styles.headerSubtitle}>English buddy for kids</Text>
-              </View>
-            </View>
 
-            <View style={styles.headerRight}>
-              {/* Voice selector button */}
-              <TouchableOpacity
-                style={[styles.voiceSelector, isConnected && styles.voiceSelectorDisabled]}
-                onPress={() => !isConnected && setVoicePickerVisible(true)}
-                disabled={isConnected}
-              >
-                <Text style={styles.voiceSelectorText}>
-                  {selectedVoiceData.label}
-                </Text>
-                <Text style={styles.voiceSelectorArrow}>\u25BE</Text>
-              </TouchableOpacity>
-
-              {/* Online badge */}
-              {isConnected && (
-                <View style={styles.onlineBadge}>
-                  <View style={styles.onlineDot} />
-                  <Text style={styles.onlineText}>Online</Text>
-                </View>
-              )}
-            </View>
+        {/* u2500u2500 Header (minimal) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerDot} />
+            <Text style={styles.headerTitle}>Suka</Text>
           </View>
-
-          {/* ── Setup Panel (hidden when connected) ──────────── */}
-          {!isConnected && !isConnecting && (
-            <View style={styles.setupPanel}>
-              {/* Age Selection */}
-              <View style={styles.setupSection}>
-                <Text style={styles.setupSectionTitle}>\uD83D\uDCD6  Chọn độ tuổi</Text>
-                <View style={styles.ageGrid}>
-                  {AGE_OPTIONS.map((opt) => (
-                    <TouchableOpacity
-                      key={opt.id}
-                      style={[
-                        styles.ageCard,
-                        selectedAge === opt.id && styles.ageCardSelected,
-                      ]}
-                      onPress={() => setSelectedAge(opt.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.ageEmoji}>{opt.emoji}</Text>
-                      <Text style={[
-                        styles.ageLabel,
-                        selectedAge === opt.id && styles.ageLabelSelected,
-                      ]}>{opt.label}</Text>
-                      <Text style={styles.ageDesc}>{opt.desc}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Style Selection */}
-              <View style={styles.setupSection}>
-                <Text style={styles.setupSectionTitle}>\u2B50  Phong cách Suka</Text>
-                <View style={styles.styleGrid}>
-                  {STYLE_OPTIONS.map((opt) => (
-                    <TouchableOpacity
-                      key={opt.id}
-                      style={[
-                        styles.styleCard,
-                        selectedStyle === opt.id && styles.styleCardSelected,
-                      ]}
-                      onPress={() => setSelectedStyle(opt.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.styleEmoji}>{opt.emoji}</Text>
-                      <Text style={[
-                        styles.styleLabel,
-                        selectedStyle === opt.id && styles.styleLabelSelected,
-                      ]}>{opt.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
+          {isConnected && (
+            <View style={styles.onlineBadge}>
+              <View style={styles.onlineDot} />
+              <Text style={styles.onlineLabel}>Online</Text>
             </View>
           )}
+        </View>
 
-          {/* ── Visualizer Area ───────────────────────────────── */}
-          <View style={styles.visualizerArea}>
-            {/* Glow when AI speaking */}
-            {isAISpeaking && <View style={styles.speakingGlow} />}
+        {/* u2500u2500 Avatar zone (center, flex-weighted) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
+        <View style={styles.avatarZone}>
+          <SukaAvatar voiceState={voiceState} audioLevel={audioLevel} />
 
-            <View style={styles.micContainer}>
-              {/* Volume ring */}
-              {isConnected && (
-                <Animated.View
-                  style={[
-                    styles.volumeRing,
-                    {
-                      transform: [{ scale: volumeAnim }],
-                      opacity: Math.min(audioLevel * 8, 0.7),
-                    },
-                  ]}
-                />
-              )}
-
-              {/* Pulse ring when connecting */}
-              {isConnecting && (
-                <Animated.View
-                  style={[
-                    styles.pulseRing,
-                    { transform: [{ scale: pulseAnim }] },
-                  ]}
-                />
-              )}
-
-              {/* Mic button */}
-              <TouchableOpacity
-                style={[
-                  styles.micButton,
-                  isConnecting && styles.micButtonConnecting,
-                  isConnected && styles.micButtonActive,
-                  isConnected && audioLevel < 0.05 && styles.micButtonStop,
-                ]}
-                onPress={handleMicPress}
-                disabled={micDisabled}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.micIcon}>
-                  {isConnecting
-                    ? '\u23F3'
-                    : isConnected
-                      ? audioLevel > 0.05
-                        ? '\uD83C\uDFA4'
-                        : '\uD83C\uDFA4'
-                      : '\uD83C\uDFA4'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Status text */}
-            <View style={styles.statusContainer}>
-              <Text style={styles.statusTitle}>{getStatusTitle()}</Text>
-              <Text style={styles.statusSubtitle}>{getStatusSubtitle()}</Text>
-            </View>
-          </View>
-
-          {/* ── Error Banner ──────────────────────────────────── */}
+          {/* Error banner (overlaid below avatar) */}
           {error && (
             <TouchableOpacity
               style={styles.errorBanner}
               onPress={() => useVoiceAssistantStore.getState().setError(null)}
             >
-              <Text style={styles.errorText}>\u26A0 {error}</Text>
+              <Text style={styles.errorText}>{error}</Text>
             </TouchableOpacity>
           )}
+        </View>
 
-        </ScrollView>
+        {/* u2500u2500 Transcript (compact, flex-weighted) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
+        <View style={styles.transcriptZone}>
+          <TranscriptPanel />
+        </View>
 
-        {/* ── Transcripts (outside ScrollView to avoid nesting) ── */}
-        <TranscriptPanel />
+        {/* u2500u2500 Control bar (bottom) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
+        <ControlBar
+          voiceState={voiceState}
+          onMicPress={handleMicPress}
+          onSettingsPress={() => setSettingsVisible(true)}
+          micDisabled={micDisabled}
+        />
 
-        {/* ── Text Input (shown when connected) ──────────────── */}
-        {isConnected && (
-          <View style={styles.textInputContainer}>
-            <TextInput
-              style={styles.textInput}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Nhập tin nhắn cho Suka..."
-              placeholderTextColor={COLORS.muted}
-              returnKeyType="send"
-              onSubmitEditing={handleSendText}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                !inputText.trim() && styles.sendButtonDisabled,
-              ]}
-              onPress={handleSendText}
-              disabled={!inputText.trim()}
-            >
-              <Text style={styles.sendButtonText}>\u27A4</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* ── Voice Picker Modal ──────────────────────────────── */}
+        {/* u2500u2500 Settings modal u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
         <Modal
-          visible={voicePickerVisible}
+          visible={settingsVisible}
           transparent
-          animationType="fade"
-          onRequestClose={() => setVoicePickerVisible(false)}
+          animationType="slide"
+          onRequestClose={() => setSettingsVisible(false)}
         >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setVoicePickerVisible(false)}
-          >
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Chọn giọng nói</Text>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Cài đặt Suka</Text>
+
+              {/* Age */}
+              <Text style={styles.sectionLabel}>Độ tuổi</Text>
+              <View style={styles.chipRow}>
+                {AGE_OPTIONS.map((opt) => (
+                  <TouchableOpacity
+                    key={opt.id}
+                    style={[styles.chip, selectedAge === opt.id && styles.chipSelected]}
+                    onPress={() => setSelectedAge(opt.id)}
+                  >
+                    <Text style={styles.chipEmoji}>{opt.emoji}</Text>
+                    <Text style={[styles.chipLabel, selectedAge === opt.id && styles.chipLabelSelected]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Style */}
+              <Text style={styles.sectionLabel}>Phong cách</Text>
+              <View style={styles.chipRow}>
+                {STYLE_OPTIONS.map((opt) => (
+                  <TouchableOpacity
+                    key={opt.id}
+                    style={[styles.chip, selectedStyle === opt.id && styles.chipSelected]}
+                    onPress={() => setSelectedStyle(opt.id)}
+                  >
+                    <Text style={styles.chipEmoji}>{opt.emoji}</Text>
+                    <Text style={[styles.chipLabel, selectedStyle === opt.id && styles.chipLabelSelected]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Voice */}
+              <Text style={styles.sectionLabel}>Giọng nói</Text>
               <FlatList
                 data={GEMINI_VOICES}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(v) => v.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.voiceList}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={[
-                      styles.voiceOption,
-                      selectedVoice === item.id && styles.voiceOptionSelected,
-                    ]}
-                    onPress={() => {
-                      setSelectedVoice(item.id);
-                      setVoicePickerVisible(false);
-                    }}
+                    style={[styles.voiceChip, selectedVoice === item.id && styles.voiceChipSelected]}
+                    onPress={() => setSelectedVoice(item.id)}
                   >
-                    <Text style={[
-                      styles.voiceOptionLabel,
-                      selectedVoice === item.id && styles.voiceOptionLabelSelected,
-                    ]}>{item.label}</Text>
-                    <Text style={styles.voiceOptionDesc}>{item.desc}</Text>
+                    <Text style={[styles.voiceLabel, selectedVoice === item.id && styles.voiceLabelSelected]}>
+                      {item.label}
+                    </Text>
+                    <Text style={styles.voiceDesc}>{item.desc}</Text>
                   </TouchableOpacity>
                 )}
               />
+
+              {/* Done button */}
+              <TouchableOpacity
+                style={styles.doneButton}
+                onPress={() => setSettingsVisible(false)}
+              >
+                <Text style={styles.doneText}>Xong</Text>
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          </View>
         </Modal>
+
       </SafeAreaView>
     </View>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────
+// u2500u2500 Styles u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.bg,
   },
   safe: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
 
-  // ── Header ──────────────────────────────────────────────────────
+  // u2500u2500 Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: COLORS.headerBg,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139,92,246,0.1)',
+    paddingVertical: 10,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerIconText: {
-    fontSize: 22,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.primary,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    color: COLORS.muted,
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
   },
-
-  // ── Voice selector ──────────────────────────────────────────────
-  voiceSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+  headerDot: {
+    width: 32,
+    height: 32,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 4,
+    backgroundColor: C.primary,
   },
-  voiceSelectorDisabled: {
-    opacity: 0.5,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: C.primary,
+    letterSpacing: -0.3,
   },
-  voiceSelectorText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  voiceSelectorArrow: {
-    fontSize: 10,
-    color: COLORS.muted,
-  },
-
-  // ── Online badge ────────────────────────────────────────────────
   onlineBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.onlineBg,
-    borderRadius: 20,
+    backgroundColor: C.onlineBg,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
+    borderRadius: 12,
     gap: 5,
   },
   onlineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.onlineGreen,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: C.onlineGreen,
   },
-  onlineText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.onlineText,
-  },
-
-  // ── Setup panel ─────────────────────────────────────────────────
-  setupPanel: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    gap: 24,
-  },
-  setupSection: {
-    gap: 10,
-  },
-  setupSectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-
-  // ── Age cards ───────────────────────────────────────────────────
-  ageGrid: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  ageCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: COLORS.cardBorder,
-    backgroundColor: COLORS.cardBg,
-  },
-  ageCardSelected: {
-    borderColor: COLORS.selectedAgeBorder,
-    backgroundColor: COLORS.selectedAgeBg,
-  },
-  ageEmoji: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
-  ageLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  ageLabelSelected: {
-    color: COLORS.primary,
-  },
-  ageDesc: {
-    fontSize: 10,
-    color: COLORS.muted,
-    marginTop: 2,
-  },
-
-  // ── Style cards ─────────────────────────────────────────────────
-  styleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  styleCard: {
-    width: (SCREEN_WIDTH - 70) / 4,
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: COLORS.cardBorder,
-    backgroundColor: COLORS.cardBg,
-  },
-  styleCardSelected: {
-    borderColor: COLORS.selectedStyleBorder,
-    backgroundColor: COLORS.selectedStyleBg,
-  },
-  styleEmoji: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  styleLabel: {
+  onlineLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.text,
-  },
-  styleLabelSelected: {
-    color: COLORS.secondary,
+    color: C.onlineText,
   },
 
-  // ── Visualizer area ─────────────────────────────────────────────
-  visualizerArea: {
+  // u2500u2500 Avatar zone
+  avatarZone: {
+    flex: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 260,
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: 'rgba(139,92,246,0.15)',
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    overflow: 'hidden',
-    paddingVertical: 30,
+    paddingTop: 8,
   },
-  speakingGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(139,92,246,0.08)',
-  },
-
-  // ── Mic button ──────────────────────────────────────────────────
-  micContainer: {
-    width: 112,
-    height: 112,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  volumeRing: {
-    position: 'absolute',
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    borderWidth: 3,
-    borderColor: COLORS.primary,
-  },
-  pulseRing: {
-    position: 'absolute',
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    borderWidth: 2,
-    borderColor: COLORS.muted,
-    opacity: 0.4,
-  },
-  micButton: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-  },
-  micButtonConnecting: {
-    backgroundColor: '#D1D5DB',
-  },
-  micButtonActive: {
-    backgroundColor: COLORS.primary,
-  },
-  micButtonStop: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 2,
-    borderColor: '#FECACA',
-  },
-  micIcon: {
-    fontSize: 36,
-  },
-
-  // ── Status text ─────────────────────────────────────────────────
-  statusContainer: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  statusTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  statusSubtitle: {
-    fontSize: 13,
-    color: COLORS.muted,
-  },
-
-  // ── Error banner ────────────────────────────────────────────────
   errorBanner: {
-    marginHorizontal: 20,
     marginTop: 12,
-    borderRadius: 12,
-    padding: 12,
     backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginHorizontal: 40,
   },
   errorText: {
-    color: '#DC2626',
-    fontSize: 13,
+    fontSize: 12,
+    color: '#EF4444',
     textAlign: 'center',
+    fontWeight: '500',
   },
 
-  // ── Text input ──────────────────────────────────────────────────
-  textInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(139,92,246,0.1)',
-    backgroundColor: COLORS.white,
-  },
-  textInput: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.purpleLight,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: COLORS.text,
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-  },
-  sendButtonDisabled: {
-    opacity: 0.4,
-  },
-  sendButtonText: {
-    fontSize: 18,
-    color: COLORS.white,
+  // u2500u2500 Transcript zone
+  transcriptZone: {
+    flex: 2,
+    paddingBottom: 4,
   },
 
-  // ── Voice picker modal ──────────────────────────────────────────
+  // u2500u2500 Settings modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  modalContent: {
-    width: SCREEN_WIDTH - 60,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 20,
-    maxHeight: 400,
+  modalSheet: {
+    backgroundColor: C.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 16,
+    color: C.text,
+    marginBottom: 20,
     textAlign: 'center',
   },
-  voiceOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 6,
-    backgroundColor: '#F9FAFB',
-  },
-  voiceOptionSelected: {
-    backgroundColor: COLORS.selectedAgeBg,
-    borderWidth: 1,
-    borderColor: COLORS.selectedAgeBorder,
-  },
-  voiceOptionLabel: {
-    fontSize: 15,
+  sectionLabel: {
+    fontSize: 13,
     fontWeight: '600',
-    color: COLORS.text,
+    color: C.muted,
+    marginBottom: 8,
+    marginTop: 12,
   },
-  voiceOptionLabelSelected: {
-    color: COLORS.primary,
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  voiceOptionDesc: {
-    fontSize: 12,
-    color: COLORS.muted,
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  chipSelected: {
+    backgroundColor: C.selectedBg,
+    borderColor: C.selectedBorder,
+  },
+  chipEmoji: {
+    fontSize: 16,
+  },
+  chipLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: C.text,
+  },
+  chipLabelSelected: {
+    color: C.primary,
+    fontWeight: '600',
+  },
+  voiceList: {
+    gap: 8,
+    paddingVertical: 4,
+  },
+  voiceChip: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    minWidth: 90,
+    alignItems: 'center',
+  },
+  voiceChipSelected: {
+    backgroundColor: C.selectedBg,
+    borderColor: C.selectedBorder,
+  },
+  voiceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: C.text,
+  },
+  voiceLabelSelected: {
+    color: C.primary,
+  },
+  voiceDesc: {
+    fontSize: 11,
+    color: C.muted,
+    marginTop: 2,
+  },
+  doneButton: {
+    marginTop: 24,
+    backgroundColor: C.primary,
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  doneText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: C.white,
   },
 });

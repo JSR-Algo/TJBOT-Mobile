@@ -48,7 +48,7 @@ export function BigMicButton({ isActive, disabled, onPress, color }: BigMicButto
           },
         ]}
       >
-        <Text style={styles.icon}>{isActive ? '\u23F9' : '\uD83C\uDF99'}</Text>
+        <Text style={styles.icon}>{isActive ? '⏹' : '🎙'}</Text>
       </TouchableOpacity>
     </Animated.View>
   );

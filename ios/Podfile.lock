@@ -100,6 +100,7 @@ PODS:
   - hermes-engine (0.14.1):
     - hermes-engine/Pre-built (= 0.14.1)
   - hermes-engine/Pre-built (0.14.1)
+  - MultiplatformBleAdapter (0.2.0)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -1984,6 +1985,35 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - SocketRocket
+  - react-native-ble-plx (3.5.1):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - MultiplatformBleAdapter (= 0.2.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-safe-area-context (5.6.2):
     - boost
     - DoubleConversion
@@ -2781,6 +2811,7 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - react-native-ble-plx (from `../node_modules/react-native-ble-plx`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-networking (from `../node_modules/react-native/ReactCommon/react/networking`)
@@ -2823,6 +2854,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - MultiplatformBleAdapter
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -2945,6 +2977,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-ble-plx:
+    :path: "../node_modules/react-native-ble-plx"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   React-NativeModulesApple:
@@ -3046,6 +3080,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: f823c0490f2a543fde75496d0e1accff45066d25
+  MultiplatformBleAdapter: b1fddd0d499b96b607e00f0faa8e60648343dc1d
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: 9da1d0cf93db23ca8b41e8efe9ae558fd9c0077f
   RCTRequired: 92a63c7041031a131fa5206eb082d53f95729b79
@@ -3082,6 +3117,7 @@ SPEC CHECKSUMS:
   React-logger: 993e4b9793768764e0fdd379ad1d6582f7905463
   React-Mapbuffer: 3a5f700ed673820ab4b1b35ba0cf8476400bc4c5
   React-microtasksnativemodule: 094677e625f12276a8f871844a5ee6a945a90221
+  react-native-ble-plx: 152b07bdf772c95e30c0251649d462b5154a0e13
   react-native-safe-area-context: c00143b4823773bba23f2f19f85663ae89ceb460
   React-NativeModulesApple: 29290351acc118784e158aa7b23c42719dc57617
   React-networking: d01f94f15d1a6fce689a8c57d2397a5a40b0b5aa

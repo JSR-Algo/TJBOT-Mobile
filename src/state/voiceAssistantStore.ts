@@ -30,6 +30,7 @@ interface Message {
   role: 'user' | 'ai';
   text: string;
   ts: number;
+  interrupted?: boolean;
 }
 
 interface VoiceAssistantStore {
@@ -46,7 +47,7 @@ interface VoiceAssistantStore {
   transition: (to: VoiceState) => boolean;
   setUserTranscript: (text: string) => void;
   setAiTranscript: (text: string) => void;
-  addMessage: (role: 'user' | 'ai', text: string) => void;
+  addMessage: (role: 'user' | 'ai', text: string, interrupted?: boolean) => void;
   setAudioLevel: (level: number) => void;
   setError: (error: string | null) => void;
   stopSession: () => void;
@@ -93,11 +94,10 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
   setUserTranscript: (text: string) => set({ userTranscript: text }),
   setAiTranscript: (text: string) => set({ aiTranscript: text }),
 
-  addMessage: (role: 'user' | 'ai', text: string) => {
+  addMessage: (role: 'user' | 'ai', text: string, interrupted?: boolean) => {
     if (!text.trim()) return;
     set((s) => ({
-      messages: [...s.messages, { role, text: text.trim(), ts: Date.now() }],
-      // Clear live transcript for this role
+      messages: [...s.messages, { role, text: text.trim(), ts: Date.now(), ...(interrupted ? { interrupted } : {}) }],
       ...(role === 'user' ? { userTranscript: '' } : { aiTranscript: '' }),
     }));
   },

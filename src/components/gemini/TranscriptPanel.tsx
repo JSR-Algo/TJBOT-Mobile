@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useVoiceAssistantStore } from '../../state/voiceAssistantStore';
+import { stripActionTags } from '../../utils/stripActionTags';
 
 const COLORS = {
   userBubble: '#3B82F6',
@@ -59,24 +60,21 @@ export function TranscriptPanel() {
   const scrollRef = useRef<ScrollView>(null);
 
   // Typewriter effect for live AI transcript
-  const typedAiText = useTypewriter(aiTranscript, 25);
-
-  useEffect(() => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
-  }, [messages.length, userTranscript, typedAiText]);
+  const typedAiText = useTypewriter(stripActionTags(aiTranscript), 8);
 
   const hasContent = messages.length > 0 || !!userTranscript || !!typedAiText;
   if (!hasContent) return null;
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.sectionTitle}>\uD83D\uDCD6  Cu\u1ED9c tr\u00F2 chuy\u1EC7n</Text>
+      <Text style={styles.sectionTitle}>📖  Cuộc trò chuyện</Text>
       <ScrollView
         ref={scrollRef}
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
+        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
       >
         {messages.map((msg, i) => (
           <View
@@ -91,7 +89,7 @@ export function TranscriptPanel() {
                 styles.roleLabel,
                 msg.role === 'user' ? styles.roleLabelUser : styles.roleLabelAi,
               ]}>
-                {msg.role === 'user' ? 'B\u1EA1n' : 'Suka'}
+                {msg.role === 'user' ? 'Bạn' : 'Suka'}
               </Text>
               <View
                 style={[
@@ -103,7 +101,10 @@ export function TranscriptPanel() {
                   styles.bubbleText,
                   msg.role === 'user' ? styles.userText : styles.aiText,
                 ]}>
-                  {msg.text}
+                  {msg.role === 'ai' ? stripActionTags(msg.text) : msg.text}
+                  {msg.role === 'ai' && msg.interrupted && (
+                    <Text style={styles.interruptedTag}> u2026</Text>
+                  )}
                 </Text>
               </View>
             </View>
@@ -114,7 +115,7 @@ export function TranscriptPanel() {
         {userTranscript ? (
           <View style={[styles.bubbleRow, styles.bubbleRowRight]}>
             <View>
-              <Text style={[styles.roleLabel, styles.roleLabelUser]}>B\u1EA1n</Text>
+              <Text style={[styles.roleLabel, styles.roleLabelUser]}>Bạn</Text>
               <View style={[styles.bubble, styles.userBubble, styles.liveBubble]}>
                 <Text style={[styles.bubbleText, styles.userText, styles.liveText]}>
                   {userTranscript}
@@ -238,5 +239,10 @@ const styles = StyleSheet.create({
   cursor: {
     color: COLORS.cursor,
     fontWeight: '300',
+  },
+  interruptedTag: {
+    color: '#9CA3AF',
+    fontStyle: 'italic' as const,
+    fontSize: 13,
   },
 });
