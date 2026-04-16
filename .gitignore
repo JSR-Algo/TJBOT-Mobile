@@ -12,4 +12,12 @@ android/app/build/
 coverage/
 .omc/sessions/
 .omc/state/
+.omc/prd.json
+.omc/progress.txt
 ios/.omc/
+android/.omc/
+android/app/.cxx/
+.claude/worktrees/
+RALPH.md
+ios/main.jsbundle
+android/app/src/main/assets/index.android.bundle
