@@ -1,6 +1,6 @@
 /**
  * E2E tests for Auth flow — covers all buttons in:
- * LoginScreen, SignupScreen, ForgotPasswordScreen, EmailVerifyScreen, CoppaScreen
+ * LoginScreen, SignupScreen, ForgotPasswordScreen, CoppaScreen
  *
  * Note: ErrorMessage renders as "⚠️ {message}" — use regex for text matching.
  */
@@ -9,8 +9,8 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import LoginScreen from '../../src/screens/auth/LoginScreen';
 import SignupScreen from '../../src/screens/auth/SignupScreen';
 import ForgotPasswordScreen from '../../src/screens/auth/ForgotPasswordScreen';
-import EmailVerifyScreen from '../../src/screens/auth/EmailVerifyScreen';
 import CoppaScreen from '../../src/screens/auth/CoppaScreen';
+import { mockToastShow } from '../setup';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -38,7 +38,6 @@ jest.mock('../../src/contexts/AuthContext', () => ({
 
 jest.mock('../../src/api/auth', () => ({
   forgotPassword: jest.fn().mockResolvedValue({}),
-  resendVerification: jest.fn().mockResolvedValue({}),
   sendConsent: jest.fn().mockResolvedValue({}),
 }));
 
@@ -83,14 +82,17 @@ describe('LoginScreen', () => {
     });
   });
 
-  it('shows error on login failure', async () => {
-    mockLogin.mockRejectedValueOnce(new Error('Invalid credentials'));
+  it('shows a toast on login network failure', async () => {
+    mockLogin.mockRejectedValueOnce(new Error('Network error'));
     const { getByText, getByPlaceholderText } = render(<LoginScreen />);
     fireEvent.changeText(getByPlaceholderText('parent@email.com'), 'wrong@test.com');
     fireEvent.changeText(getByPlaceholderText('Your password'), 'wrongpass');
     fireEvent.press(getByText('Sign In'));
     await waitFor(() => {
-      expect(getByText(/Incorrect email or password/)).toBeTruthy();
+      expect(mockToastShow).toHaveBeenCalledWith({
+        severity: 'error',
+        text: 'Network error. Please try again.',
+      });
     });
   });
 
@@ -168,6 +170,22 @@ describe('SignupScreen', () => {
     });
   });
 
+  it('shows a toast on signup server failure', async () => {
+    mockSignup.mockRejectedValueOnce({ status: 500 });
+    const { getByText, getByPlaceholderText } = render(<SignupScreen />);
+    fireEvent.changeText(getByPlaceholderText('Jane Smith'), 'Jane Smith');
+    fireEvent.changeText(getByPlaceholderText('jane@email.com'), 'jane@test.com');
+    fireEvent.changeText(getByPlaceholderText('Min. 8 characters'), 'password123');
+    fireEvent.changeText(getByPlaceholderText('Repeat password'), 'password123');
+    fireEvent.press(getByText('Create Account'));
+    await waitFor(() => {
+      expect(mockToastShow).toHaveBeenCalledWith({
+        severity: 'error',
+        text: 'Server error. Please try again.',
+      });
+    });
+  });
+
   it('navigates back when "Sign in" is pressed', () => {
     const { getByText } = render(<SignupScreen />);
     fireEvent.press(getByText('Sign in'));
@@ -218,54 +236,17 @@ describe('ForgotPasswordScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Login');
   });
 
-  it('shows error on API failure', async () => {
-    authApi.forgotPassword.mockRejectedValueOnce(new Error('Network error'));
+  it('shows a toast on server failure', async () => {
+    authApi.forgotPassword.mockRejectedValueOnce({ status: 500 });
     const { getByText, getByPlaceholderText } = render(<ForgotPasswordScreen />);
     fireEvent.changeText(getByPlaceholderText('your@email.com'), 'test@test.com');
     fireEvent.press(getByText('Send Reset Link'));
     await waitFor(() => {
-      expect(getByText(/Could not send reset email/)).toBeTruthy();
+      expect(mockToastShow).toHaveBeenCalledWith({
+        severity: 'error',
+        text: 'Server error. Please try again.',
+      });
     });
-  });
-});
-
-// ─── EmailVerifyScreen ────────────────────────────────────────────────────────
-
-describe('EmailVerifyScreen', () => {
-  const authApi = require('../../src/api/auth');
-  const mockRoute = { params: { email: 'test@test.com' }, key: 'EmailVerify', name: 'EmailVerify' as const };
-  const mockNav = { navigate: mockNavigate, goBack: mockGoBack } as any;
-
-  beforeEach(() => jest.clearAllMocks());
-
-  it('renders Resend Email and verify later buttons', () => {
-    const { getByText } = render(<EmailVerifyScreen route={mockRoute} navigation={mockNav} />);
-    expect(getByText('Resend Email')).toBeTruthy();
-    expect(getByText("I'll verify later")).toBeTruthy();
-  });
-
-  it('calls resendVerification and shows success', async () => {
-    authApi.resendVerification.mockResolvedValueOnce({});
-    const { getByText } = render(<EmailVerifyScreen route={mockRoute} navigation={mockNav} />);
-    fireEvent.press(getByText('Resend Email'));
-    await waitFor(() => {
-      expect(authApi.resendVerification).toHaveBeenCalledWith('test@test.com');
-      expect(getByText(/Email resent successfully/)).toBeTruthy();
-    });
-  });
-
-  it('shows error on resend failure', async () => {
-    authApi.resendVerification.mockRejectedValueOnce(new Error('Network error'));
-    const { getByText } = render(<EmailVerifyScreen route={mockRoute} navigation={mockNav} />);
-    fireEvent.press(getByText('Resend Email'));
-    await waitFor(() => {
-      expect(getByText(/Could not resend email/)).toBeTruthy();
-    });
-  });
-
-  it('"I\'ll verify later" button is pressable (no-op)', () => {
-    const { getByText } = render(<EmailVerifyScreen route={mockRoute} navigation={mockNav} />);
-    expect(() => fireEvent.press(getByText("I'll verify later"))).not.toThrow();
   });
 });
 

@@ -14,6 +14,7 @@ interface InputProps {
   maxLength?: number;
   style?: ViewStyle;
   editable?: boolean;
+  testID?: string;
 }
 
 export function Input({
@@ -28,6 +29,7 @@ export function Input({
   maxLength,
   style,
   editable = true,
+  testID,
 }: InputProps): React.JSX.Element {
   const [focused, setFocused] = useState(false);
   const [hidePassword, setHidePassword] = useState(true);
@@ -54,6 +56,18 @@ export function Input({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           editable={editable}
+          testID={testID}
+          autoCorrect={false}
+          spellCheck={false}
+          autoComplete={
+            secureTextEntry
+              ? 'off'
+              : keyboardType === 'email-address'
+                ? 'email'
+                : 'off'
+          }
+          textContentType={secureTextEntry ? 'oneTimeCode' : 'none'}
+          importantForAutofill="no"
         />
         {secureTextEntry && (
           <Pressable

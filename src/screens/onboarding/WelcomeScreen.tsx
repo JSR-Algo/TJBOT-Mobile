@@ -1,38 +1,40 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Bot, Mic, ShieldCheck, TrendingUp } from 'lucide-react-native';
 import { Button } from '../../components';
 import theme from '../../theme';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
+const FEATURES: Array<{ Icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>; text: string }> = [
+  { Icon: Mic, text: 'Voice-first conversations built for kids' },
+  { Icon: ShieldCheck, text: 'COPPA-compliant parental controls' },
+  { Icon: TrendingUp, text: 'Learning progress you can track' },
+];
+
 export function WelcomeScreen({ navigation }: OnboardingScreenProps<'Welcome'>): React.JSX.Element {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.hero}>🤖</Text>
-      <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
-        Step 1 of 5
-      </Text>
+      <View style={styles.heroCircle}>
+        <Bot size={56} color={theme.colors.primary} strokeWidth={2} />
+      </View>
+      <Text style={styles.stepLabel}>Step 1 of 5</Text>
       <Text style={styles.title}>Welcome to TBOT</Text>
       <Text style={styles.subtitle}>
         Your child's friendly AI companion — designed to learn, grow, and have fun together.
       </Text>
 
       <View style={styles.features}>
-        {[
-          { icon: '🎤', text: 'Voice-first conversations built for kids' },
-          { icon: '🔒', text: 'COPPA-compliant parental controls' },
-          { icon: '📈', text: 'Learning progress you can track' },
-        ].map((f, i) => (
+        {FEATURES.map((f, i) => (
           <View key={i} style={styles.featureRow}>
-            <Text style={styles.featureIcon}>{f.icon}</Text>
+            <View style={styles.featureIconBg}>
+              <f.Icon size={22} color={theme.colors.primary} strokeWidth={2} />
+            </View>
             <Text style={styles.featureText}>{f.text}</Text>
           </View>
         ))}
       </View>
 
-      <Button
-        label="Get Started"
-        onPress={() => navigation.navigate('CoppaConsent')}
-      />
+      <Button label="Get Started" onPress={() => navigation.navigate('CoppaConsent')} />
     </ScrollView>
   );
 }
@@ -45,9 +47,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hero: {
-    fontSize: 80,
+  heroCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.md,
+  },
+  stepLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
   },
   title: {
     ...theme.typography.h1,
@@ -73,8 +86,13 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
-  featureIcon: {
-    fontSize: 24,
+  featureIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: theme.spacing.md,
   },
   featureText: {

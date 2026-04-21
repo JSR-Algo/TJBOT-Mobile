@@ -12,6 +12,8 @@ export const useAudioRecorder = jest.fn(() => ({
 
 export const createAudioPlayer = jest.fn(() => ({
   play: jest.fn(),
+  pause: jest.fn(),
+  replace: jest.fn(),
   remove: jest.fn(),
   addListener: jest.fn(),
 }));

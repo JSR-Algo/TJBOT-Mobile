@@ -1,33 +1,31 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Bot, Power, Wifi, Link2, Mic } from 'lucide-react-native';
 import { Button } from '../../components';
 import theme from '../../theme';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { useHousehold } from '../../contexts/HouseholdContext';
 
+type StepIcon = React.ComponentType<{ size: number; color: string; strokeWidth?: number }>;
 
-const STEPS = [
-  { icon: '🔌', text: 'Power on your TBOT device' },
-  { icon: '📶', text: 'Connect TBOT to your Wi-Fi' },
-  { icon: '🔗', text: 'Pair via the app — takes under a minute' },
-  { icon: '🤖', text: "Start talking — your child's companion is ready" },
+const STEPS: Array<{ Icon: StepIcon; text: string }> = [
+  { Icon: Power, text: 'Power on your TBOT device' },
+  { Icon: Wifi, text: 'Connect TBOT to your Wi-Fi' },
+  { Icon: Link2, text: 'Pair via the app — takes under a minute' },
+  { Icon: Mic, text: "Start talking — your child's companion is ready" },
 ];
 
 export function DeviceSetupIntroScreen({ navigation }: OnboardingScreenProps<'DeviceSetupIntro'>): React.JSX.Element {
   const { completeOnboarding } = useHousehold();
 
-  const handleSkip = () => {
-    completeOnboarding(false);
-  };
-
-  const handlePair = () => {
-    completeOnboarding(true);
-    navigation.navigate('VoiceTest');
-  };
+  const handleSkip = () => { completeOnboarding(false); };
+  const handlePair = () => { completeOnboarding(true); navigation.navigate('VoiceTest'); };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.emoji}>🤖</Text>
+      <View style={styles.heroCircle}>
+        <Bot size={52} color={theme.colors.primary} strokeWidth={2} />
+      </View>
       <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
         Step 4 of 5
       </Text>
@@ -39,21 +37,16 @@ export function DeviceSetupIntroScreen({ navigation }: OnboardingScreenProps<'De
       <View style={styles.steps}>
         {STEPS.map((step, i) => (
           <View key={i} style={styles.step}>
-            <Text style={styles.stepIcon}>{step.icon}</Text>
+            <View style={styles.stepIconBg}>
+              <step.Icon size={22} color={theme.colors.primary} strokeWidth={2} />
+            </View>
             <Text style={styles.stepText}>{step.text}</Text>
           </View>
         ))}
       </View>
 
-      <Button
-        label="I'm ready, let's pair"
-        onPress={handlePair}
-      />
-      <Button
-        label="Skip for now"
-        variant="ghost"
-        onPress={handleSkip}
-      />
+      <Button label="I'm ready, let's pair" onPress={handlePair} />
+      <Button label="Skip for now" variant="ghost" onPress={handleSkip} />
     </ScrollView>
   );
 }
@@ -66,8 +59,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: {
-    fontSize: 72,
+  heroCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.md,
   },
   title: {
@@ -94,8 +92,13 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
-  stepIcon: {
-    fontSize: 28,
+  stepIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: theme.spacing.md,
   },
   stepText: {

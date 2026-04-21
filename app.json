@@ -4,11 +4,14 @@
   "expo": {
     "name": "TbotMobile",
     "slug": "tbot-mobile",
+    "version": "1.0.1",
     "ios": {
-      "bundleIdentifier": "com.tbot.app"
+      "bundleIdentifier": "com.tbot.app",
+      "buildNumber": "2"
     },
     "android": {
-      "package": "com.tbot.app"
+      "package": "com.tbot.app",
+      "versionCode": 2
     }
   }
 }

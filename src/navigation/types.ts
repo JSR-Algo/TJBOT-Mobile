@@ -6,7 +6,6 @@ export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   ForgotPassword: undefined;
-  EmailVerify: { email?: string };
   Coppa: undefined;
 };
 
@@ -32,10 +31,12 @@ export type MainStackParamList = {
   MainTabs: undefined;
   DeviceSetup: undefined;
   DeviceDetail: { deviceId: string };
-  Interaction: { childId?: string } | undefined;
   ParentControls: { deviceId: string };
   NotificationPrefs: undefined;
   GeminiConversation: undefined;
+  // Reused from OnboardingStack so a post-onboarded user with 0 children
+  // can still reach the add-child flow from the Home dashboard CTA.
+  AddChild: { householdId: string };
   // Software-twin demo screen — registered only when EXPO_PUBLIC_DEMO_SCREEN=true.
   // Plan: expressive-robot-companion-rewrite §6 RM-01.
   RobotDemo: undefined;

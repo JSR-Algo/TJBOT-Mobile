@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Bot } from 'lucide-react-native';
 import { EmptyState, Card } from '../../components';
 import { Device } from '../../types';
 import { MainStackParamList } from '../../navigation/types';
@@ -73,7 +74,9 @@ export function DeviceListScreen(): React.JSX.Element {
         renderItem={({ item }) => (
           <Card onPress={() => navigation.navigate('DeviceDetail', { deviceId: item.id })}>
             <View style={styles.deviceRow}>
-              <Text style={styles.deviceEmoji}>🤖</Text>
+              <View style={styles.deviceIconBg}>
+                <Bot size={26} color={theme.colors.primary} strokeWidth={2} />
+              </View>
               <View style={styles.deviceInfo}>
                 <Text style={styles.deviceSerial}>{item.serial_number}</Text>
                 <Text style={styles.deviceRevision}>Rev {item.hardware_revision}</Text>
@@ -114,8 +117,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  deviceEmoji: {
-    fontSize: 32,
+  deviceIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: theme.spacing.md,
   },
   deviceInfo: {

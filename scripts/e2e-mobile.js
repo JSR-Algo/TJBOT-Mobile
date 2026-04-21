@@ -13,7 +13,7 @@ const https = require('https');
 
 const RAW_URL = process.argv.find((a) => a.startsWith('--url='))?.split('=')[1]
   || process.env.TBOT_API_URL
-  || 'http://tbot-dev-alb-1875222172.ap-southeast-1.elb.amazonaws.com';
+  || 'http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com';
 
 // Backend uses global prefix /v1
 const BASE_URL = RAW_URL.endsWith('/v1') ? RAW_URL.slice(0, -3) : RAW_URL;
@@ -122,7 +122,8 @@ async function run() {
     assert(res.status === 201, `Expected 201, got ${res.status}: ${JSON.stringify(res.body)}`);
     const data = res.body.data ?? res.body;
     assert(data.access_token, 'No access_token in signup response');
-    assert(data.partial === true, 'Expected partial=true (pre-consent token)');
+    // OBSOLETE 2026-04-17: `partial:true` field removed from signup response
+    // (post-email-verification-removal contract). Do not re-add this assertion.
     accessToken = data.access_token;
     return data;
   });

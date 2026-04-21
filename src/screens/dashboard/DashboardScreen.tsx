@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import { Home, Mic, Flame, Plus } from 'lucide-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { useInteractions } from '../../contexts/InteractionContext';
@@ -23,16 +24,17 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Home'>): Rea
   const [dailyStreak, setDailyStreak] = useState(0);
   const recentActivities = interactions.slice(0, 3);
 
-  const firstName = user?.name?.split(' ')[0] ?? 'there';
+  const firstName = user?.name?.split(' ')[0];
+  const greeting = firstName ? `Hi, ${firstName}` : 'Welcome to TBOT';
+  const greetingSubtitle = firstName ? 'Welcome back to TBOT' : "Let's get started";
   const activeChild = children[0];
 
   useEffect(() => {
     if (!pendingDeviceSetup) return;
+    if (isLoading) return;
     clearPendingDeviceSetup();
-    // Defer navigation to next frame so the stack navigator is fully mounted
-    const t = setTimeout(() => navigation.navigate('DeviceSetup'), 0);
-    return () => clearTimeout(t);
-  }, [pendingDeviceSetup, clearPendingDeviceSetup, navigation]);
+    navigation.navigate('DeviceSetup');
+  }, [pendingDeviceSetup, isLoading, clearPendingDeviceSetup, navigation]);
 
   useEffect(() => {
     if (!activeChild) return;
@@ -65,13 +67,14 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Home'>): Rea
       }
     >
       {/* Greeting */}
-      <Text style={styles.greeting}>Hi, {firstName} 👋</Text>
-      <Text style={styles.greetingSubtitle}>Welcome back to TBOT</Text>
+      <Text style={styles.greeting}>{greeting}</Text>
+      <Text style={styles.greetingSubtitle}>{greetingSubtitle}</Text>
 
       {/* Streak badge */}
       {dailyStreak > 0 && (
         <View style={styles.streakBadge}>
-          <Text style={styles.streakText}>🔥 {dailyStreak}-day streak!</Text>
+          <Flame size={16} color={'#FF6B00'} strokeWidth={2.5} />
+          <Text style={styles.streakText}>{dailyStreak}-day streak!</Text>
         </View>
       )}
 
@@ -79,35 +82,37 @@ export function DashboardScreen({ navigation }: MainTabScreenProps<'Home'>): Rea
       {activeHousehold && (
         <Card style={styles.householdCard}>
           <View style={styles.householdRow}>
-            <Text style={styles.householdEmoji}>🏠</Text>
+            <View style={styles.householdIconBg}>
+              <Home size={26} color={theme.colors.primary} strokeWidth={2} />
+            </View>
             <View style={styles.householdInfo}>
               <Text style={styles.householdName}>{activeHousehold.name}</Text>
               <Text style={styles.householdChildren}>
                 {children.length} {children.length === 1 ? 'child' : 'children'}
               </Text>
             </View>
+            {children.length === 0 && (
+              <TouchableOpacity
+                style={styles.addChildBtn}
+                onPress={() => navigation.navigate('AddChild', { householdId: activeHousehold.id })}
+                activeOpacity={0.85}
+              >
+                <Plus size={16} color={theme.colors.primary} strokeWidth={2.5} />
+                <Text style={styles.addChildText}>Add child</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </Card>
       )}
 
-      {/* Start conversation */}
+      {/* Primary CTA: Start conversation (Gemini Live) */}
       <TouchableOpacity
-        style={styles.startButton}
-        onPress={() => navigation.navigate('Interaction')}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.startButtonEmoji}>🎙️</Text>
-        <Text style={styles.startButtonText}>Start conversation</Text>
-      </TouchableOpacity>
-
-      {/* Gemini Live Voice */}
-      <TouchableOpacity
-        style={[styles.startButton, { backgroundColor: '#6C5CE7' }]}
+        style={styles.primaryButton}
         onPress={() => navigation.navigate('GeminiConversation')}
         activeOpacity={0.85}
       >
-        <Text style={styles.startButtonEmoji}>🤖</Text>
-        <Text style={styles.startButtonText}>Gemini Live Voice</Text>
+        <Mic size={22} color={'#FFFFFF'} strokeWidth={2.5} />
+        <Text style={styles.primaryButtonText}>Start conversation</Text>
       </TouchableOpacity>
 
       {/* Recent activity */}
@@ -160,10 +165,15 @@ const styles = StyleSheet.create({
   householdRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: theme.spacing.md,
   },
-  householdEmoji: {
-    fontSize: 32,
-    marginRight: theme.spacing.md,
+  householdIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   householdInfo: {
     flex: 1,
@@ -176,22 +186,49 @@ const styles = StyleSheet.create({
     ...theme.typography.body2,
     color: theme.colors.textSecondary,
   },
-  startButton: {
+  addChildBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primary + '15',
+  },
+  addChildText: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    fontWeight: '700',
+  },
+  primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.primary,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.sm,
     gap: theme.spacing.sm,
   },
-  startButtonEmoji: {
-    fontSize: 22,
-  },
-  startButtonText: {
+  primaryButtonText: {
     ...theme.typography.button,
     color: '#FFFFFF',
+  },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary + '12',
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '30',
+  },
+  secondaryButtonText: {
+    ...theme.typography.button,
+    color: theme.colors.primary,
   },
   sectionTitle: {
     ...theme.typography.h3,
@@ -199,6 +236,9 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     alignSelf: 'center',
     backgroundColor: '#FF6B0020',
     borderRadius: theme.radius.full,

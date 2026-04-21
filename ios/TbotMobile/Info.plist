@@ -28,13 +28,21 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
+		<!-- NSAllowsLocalNetworking MUST remain true: required for Metro bundler
+		     (localhost:8081) and simulator loopback (127.0.0.1:3000).
+		     HTTPS migration for staging ALB tracked in task-s5-mobile-https-staging-alb. -->
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>tbot-dev-alb-1875222172.ap-southeast-1.elb.amazonaws.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>

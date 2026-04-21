@@ -7,6 +7,10 @@ import { colors, spacing, typography } from '../../theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
 import { pendingCredentials } from '../../auth/pendingCredentials';
+import { useToast } from '../../components/Toast';
+
+// Error pattern: ErrorMessage for field-scoped validation errors.
+// useToast for network/transport/5xx failures (transient).
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -19,6 +23,7 @@ export default function SignupScreen(): React.JSX.Element {
   const [error, setError] = useState('');
   const { signup } = useAuth();
   const navigation = useNavigation<Nav>();
+  const { show: showToast } = useToast();
 
   const handleSignup = async () => {
     if (!name || !email || !password) { setError('Please fill in all fields.'); return; }
@@ -32,9 +37,11 @@ export default function SignupScreen(): React.JSX.Element {
       setError('');
       navigation.navigate('Coppa');
     } catch (err: unknown) {
-      const e = err as { code?: string };
+      const e = err as { code?: string; status?: number };
       if (e?.code === 'USER_EXISTS') {
         setError('An account with this email already exists.');
+      } else if (e?.status && e.status >= 500) {
+        showToast({ severity: 'error', text: 'Server error. Please try again.' });
       } else {
         setError('Could not create account. Please try again.');
       }

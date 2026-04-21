@@ -12,6 +12,8 @@ export type VoiceState =
   | 'RECONNECTING'
   | 'ERROR';
 
+export type AudioMode = 'unknown' | 'fast' | 'cautious' | 'full_buffer';
+
 /** Valid state transitions map */
 const VALID_TRANSITIONS: Record<VoiceState, VoiceState[]> = {
   IDLE: ['REQUESTING_MIC_PERMISSION', 'CONNECTING'],
@@ -43,6 +45,19 @@ interface VoiceAssistantStore {
   error: string | null;
   sessionStartTime: number | null;
   expressionOverride: string | null;
+  audioMode: AudioMode;
+  /**
+   * True while the playback service is refilling after an underrun (plan §2.5).
+   * UI flag only — not an FSM state. Drives subtle buffering cues without
+   * widening the 10-state transition matrix.
+   */
+  isBuffering: boolean;
+  /**
+   * True once {@link AudioPlaybackService#onPoorNetwork} has fired for the
+   * current turn (iter 2 §2.5). Drives the "mạng yếu" banner. Cleared on
+   * endTurn / interrupt / stopSession. UI flag only — never an FSM state.
+   */
+  isPoorNetwork: boolean;
 
   // Actions
   transition: (to: VoiceState) => boolean;
@@ -52,6 +67,9 @@ interface VoiceAssistantStore {
   setAudioLevel: (level: number) => void;
   setError: (error: string | null) => void;
   setExpressionOverride: (expr: string | null) => void;
+  setAudioMode: (mode: AudioMode) => void;
+  setIsBuffering: (buffering: boolean) => void;
+  setIsPoorNetwork: (poor: boolean) => void;
   stopSession: () => void;
   reset: () => void;
 }
@@ -65,6 +83,9 @@ const INITIAL_STATE = {
   error: null as string | null,
   sessionStartTime: null as number | null,
   expressionOverride: null as string | null,
+  audioMode: 'unknown' as AudioMode,
+  isBuffering: false,
+  isPoorNetwork: false,
 };
 
 export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => ({
@@ -111,6 +132,12 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
 
   setExpressionOverride: (expr: string | null) => set({ expressionOverride: expr }),
 
+  setAudioMode: (mode: AudioMode) => set({ audioMode: mode }),
+
+  setIsBuffering: (buffering: boolean) => set({ isBuffering: buffering }),
+
+  setIsPoorNetwork: (poor: boolean) => set({ isPoorNetwork: poor }),
+
   stopSession: () => set((s) => ({
     state: 'IDLE',
     userTranscript: '',
@@ -119,6 +146,9 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
     error: null,
     sessionStartTime: null,
     expressionOverride: null,
+    audioMode: 'unknown',
+    isBuffering: false,
+    isPoorNetwork: false,
     messages: s.messages,
   })),
 

@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { Bot, CheckCircle2 } from 'lucide-react-native';
 import * as devicesApi from '../../api/devices';
 import { Button, Input, ErrorMessage } from '../../components';
 import { initializeBle, scanForTbotDevices } from '../../ble/service';
@@ -14,6 +15,7 @@ import type { BleBootstrapResult, BleDeviceCandidate } from '../../ble/types';
 import { normalizeError } from '../../utils/errors';
 import theme from '../../theme';
 import type { MainStackScreenProps } from '../../navigation/types';
+import { trackEvent } from '../../observability/analytics';
 
 export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSetup'>): React.JSX.Element {
   const [serialNumber, setSerialNumber] = useState('');
@@ -85,6 +87,9 @@ export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSe
         serial_number: serialNumber.trim(),
         hardware_revision: hardwareRevision.trim() || '1.0',
       });
+      trackEvent('mobile.device_setup.success', {
+        connection_method: bleDevices.length ? 'bluetooth' : 'manual',
+      });
       setSuccess(true);
     } catch (err) {
       const normalized = normalizeError(err);
@@ -97,7 +102,9 @@ export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSe
   if (success) {
     return (
       <View style={styles.successContainer}>
-        <Text style={styles.successEmoji}>✅</Text>
+        <View style={styles.successIconBg}>
+          <CheckCircle2 size={56} color={theme.colors.success ?? '#22C55E'} strokeWidth={2} />
+        </View>
         <Text style={styles.successTitle}>Your TBOT is registered!</Text>
         <Text style={styles.successSubtitle}>
           Your device is ready to use. Head to the Home tab to start a conversation.
@@ -113,7 +120,9 @@ export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSe
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.emoji}>🤖</Text>
+        <View style={styles.heroCircle}>
+          <Bot size={48} color={theme.colors.primary} strokeWidth={2} />
+        </View>
         <Text style={styles.title}>Register your TBOT</Text>
         <Text style={styles.subtitle}>
           Scan for a nearby TBOT over Bluetooth or enter the serial number manually.
@@ -181,9 +190,14 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     justifyContent: 'center',
   },
-  emoji: {
-    fontSize: 56,
-    textAlign: 'center',
+  heroCircle: {
+    alignSelf: 'center',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.md,
   },
   title: {
@@ -231,8 +245,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  successEmoji: {
-    fontSize: 72,
+  successIconBg: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: (theme.colors.success ?? '#22C55E') + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.md,
   },
   successTitle: {

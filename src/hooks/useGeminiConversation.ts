@@ -9,6 +9,7 @@ import { requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio'
 import * as Device from 'expo-device';
 import { GoogleGenAI, Modality } from '@google/genai/web';
 import { AudioPlaybackService } from '../audio/AudioPlaybackService';
+import { hydrateAudioSeedOnce } from '../audio/JitterSeedStore';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import * as Haptics from 'expo-haptics';
 import { detectExpression } from '../utils/expressionDetector';
@@ -17,6 +18,30 @@ import { chat as chatWithAI } from '../api/ai';
 import { getAccessToken } from '../api/tokens';
 
 const AUDIO_ACTIVITY_THRESHOLD = 0.01;
+
+/** Merge an array of base64-encoded PCM16 chunks into one base64 blob. */
+function concatBase64Pcm(chunks: string[]): string {
+  if (chunks.length === 1) return chunks[0];
+  let total = 0;
+  const decoded: string[] = new Array(chunks.length);
+  for (let i = 0; i < chunks.length; i++) {
+    decoded[i] = globalThis.atob(chunks[i]);
+    total += decoded[i].length;
+  }
+  const bytes = new Uint8Array(total);
+  let off = 0;
+  for (const d of decoded) {
+    for (let i = 0; i < d.length; i++) bytes[off + i] = d.charCodeAt(i);
+    off += d.length;
+  }
+  // Encode back to base64 in 32KB slices to avoid argument-limit issues.
+  const CHUNK = 0x8000;
+  const parts: string[] = [];
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    parts.push(String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK))));
+  }
+  return globalThis.btoa(parts.join(''));
+}
 const TOKEN_FETCH_TIMEOUT_MS = 8000;
 const SIMULATOR_CHAT_TIMEOUT_MS = 1500;
 const SIMULATOR_TEST_PROMPT = 'Xin ch\u00e0o! T\u1edb l\u00e0 b\u1ea1n m\u1edbi.';
@@ -42,6 +67,12 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   const sessionIdRef = useRef(0);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isUserTalkingRef = useRef(false);
+  // Turn-buffered playback: accumulate every PCM chunk Gemini sends during
+  // a turn and hand it to AudioPlaybackService as a single enqueue at
+  // turnComplete. One WAV → one createAudioPlayer → zero segment-boundary
+  // clicks (the main remaining source of "rè" on MIUI + SD 7-series).
+  // Tradeoff: the user hears nothing until the AI finishes its response.
+  const turnAudioChunksRef = useRef<string[]>([]);
 
   const store = useVoiceAssistantStore;
 
@@ -168,16 +199,50 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       if (timeoutId !== null) clearTimeout(timeoutId);
     }
 
+    try {
+      await hydrateAudioSeedOnce();
+    } catch {
+      if (__DEV__) logTelemetry('audio_seed_hydrate_failed');
+    }
+
     // 3. Init playback service
     if (!playbackRef.current) {
       playbackRef.current = new AudioPlaybackService();
     }
     playbackRef.current.onPlaybackFinish(() => {
       const s = store.getState();
+      const metrics = playbackRef.current?.getTurnMetrics();
+      if (metrics) logTelemetry('turn_metrics', { ...metrics });
       if (s.state === 'PLAYING_AI_AUDIO') {
         s.transition('LISTENING');
         logTelemetry('playback_finished_to_listening');
       }
+    });
+    // Fire FSM transition on first *played* sample (plan §2.7 item 1):
+    // the prebuffer window is represented as WAITING_AI so the avatar shows
+    // "thinking" with no silent-mouth gap.
+    playbackRef.current.onPlaybackStart(() => {
+      const s = store.getState();
+      if (s.state === 'WAITING_AI' || s.state === 'STREAMING_INPUT' || s.state === 'LISTENING') {
+        s.transition('PLAYING_AI_AUDIO');
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        logTelemetry('playback_started_to_playing');
+      }
+    });
+    // Surface buffering state to the UI (subtle glow dim in SukaAvatar).
+    playbackRef.current.onBufferingChange((buffering) => {
+      store.getState().setIsBuffering(buffering);
+      if (__DEV__) logTelemetry('buffering_change', { buffering });
+    });
+    // iter 2 §2.5 — one-shot poor-network hint. Drives the "mạng yếu"
+    // banner; clears on endTurn / interrupt.
+    playbackRef.current.onPoorNetwork((poor) => {
+      store.getState().setIsPoorNetwork(poor);
+      if (__DEV__) logTelemetry('poor_network_change', { poor });
+    });
+    playbackRef.current.onAudioModeChange((mode) => {
+      store.getState().setAudioMode(mode);
+      if (__DEV__) logTelemetry('audio_mode_change', { mode });
     });
 
     // 4. Connect using @google/genai SDK (same as web app)
@@ -207,24 +272,26 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             _startAudioCapture();
           },
           onmessage: (message: any) => {
-            // Handle audio chunks from AI
+            // Handle audio chunks from AI. FSM transition to PLAYING_AI_AUDIO
+            // is deferred to `onPlaybackStart` (fires on first *played*
+            // sample, not first received) — avoids the silent-mouth gap
+            // during the adaptive prebuffer window. See plan §2.7.
             const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (base64Audio && playbackRef.current) {
               const s = store.getState();
-              if (s.state !== 'PLAYING_AI_AUDIO') {
-                if ((s.state === 'STREAMING_INPUT' || s.state === 'WAITING_AI') && s.userTranscript) {
-                  s.addMessage('user', s.userTranscript);
-                }
-                s.transition('PLAYING_AI_AUDIO');
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              if (s.state === 'STREAMING_INPUT') {
+                if (s.userTranscript) s.addMessage('user', s.userTranscript);
+                s.transition('WAITING_AI');
               }
-              playbackRef.current.enqueue(base64Audio);
-              s.setAudioLevel(playbackRef.current.audioLevel);
+              // Buffer the chunk instead of playing it now — we'll flush the
+              // concatenation at turnComplete.
+              turnAudioChunksRef.current.push(base64Audio);
             }
 
             // Handle interruption from server
             if (message.serverContent?.interrupted && playbackRef.current) {
               logTelemetry('live_interrupted');
+              turnAudioChunksRef.current = [];
               playbackRef.current.interrupt();
               const s = store.getState();
               if (s.aiTranscript) s.addMessage('ai', s.aiTranscript, true);
@@ -271,6 +338,14 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
                   }
                 }, 2500);
               }
+              // iter 2 §2.3 — phrase-aware flush hint. When the transcript
+              // delivers a sentence terminator, let the playback service
+              // try to land the next segment boundary at that phrase end.
+              // Safe: the service is a no-op when the policy flag is off
+              // and when there is no pending buffered audio to flush.
+              if (/[.!?。？！\n]/.test(outputTranscription.text)) {
+                playbackRef.current?.markSentenceBoundary();
+              }
               const s = store.getState();
               const newText = s.aiTranscript + outputTranscription.text;
               s.setAiTranscript(newText);
@@ -281,17 +356,24 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             if (message.serverContent?.turnComplete) {
               logTelemetry('live_turn_complete', {
                 aiTranscriptChars: store.getState().aiTranscript.length,
+                chunks: turnAudioChunksRef.current.length,
               });
-              // Flush remaining audio for smooth playback
-              playbackRef.current?.flush();
+              // Concatenate every buffered chunk into ONE PCM buffer, encode
+              // to base64 once, and enqueue as a single segment. The
+              // AudioPlaybackService minSegment policy will then emit just
+              // one WAV, so there are no inter-segment boundaries to click on.
+              if (playbackRef.current && turnAudioChunksRef.current.length > 0) {
+                const merged = concatBase64Pcm(turnAudioChunksRef.current);
+                turnAudioChunksRef.current = [];
+                playbackRef.current.enqueue(merged);
+                store.getState().setAudioLevel(playbackRef.current.audioLevel);
+              }
+              playbackRef.current?.endTurn();
               const s = store.getState();
-              // Archive user transcript BEFORE AI to maintain correct order
               if (s.userTranscript) s.addMessage('user', s.userTranscript);
               if (s.aiTranscript) s.addMessage('ai', s.aiTranscript);
               s.setAiTranscript('');
               isUserTalkingRef.current = false;
-              // Don't transition to LISTENING yet - wait for audio to finish
-              // The playback service will handle that via onPlaybackFinish
               if (!playbackRef.current?.isPlaying) {
                 s.transition('LISTENING');
               }
@@ -347,6 +429,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     const s = store.getState();
     if (s.userTranscript) s.addMessage('user', s.userTranscript);
     if (s.aiTranscript) s.addMessage('ai', s.aiTranscript);
+    s.setAudioMode('unknown');
     s.stopSession();
     logTelemetry('session_stopped');
   }, [logTelemetry]);
@@ -362,37 +445,67 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         sampleRate: 16000,
         channels: 1,
         bitsPerSample: 16,
-        audioSource: 7, // VOICE_COMMUNICATION - enables hardware echo cancellation
+        // VOICE_RECOGNITION (6). Was VOICE_COMMUNICATION (7) but that forces
+        // Android audio session into phone-call profile, so AI playback was
+        // being routed to the earpiece + downsampled to 16 kHz — the
+        // distortion you hear as "rè". VOICE_RECOGNITION still applies
+        // speech-optimised gain/noise processing for the mic but leaves the
+        // output path on the media profile (speaker, 48 kHz DAC).
+        audioSource: 6,
       });
+
+      // Perf: native stream emits audio chunks at ~50 Hz. Pushing every chunk
+      // through a zustand setter floods the JS thread and makes the AI audio
+      // stutter. We sample the RMS cheaply (every 16th byte, unchanged
+      // accuracy for VAD) and only update the visualizer at 10 Hz.
+      let chunkCount = 0;
+      let lastLevelUpdate = 0;
+      const LEVEL_UPDATE_INTERVAL_MS = 100;
 
       LiveAudioStream.on('data', (base64: string) => {
         if (!isCapturingRef.current) return;
 
-        // Mute during AI playback to prevent echo
+        // Mute during AI playback to prevent echo.
         const currentState = store.getState().state;
         if (currentState === 'PLAYING_AI_AUDIO' || currentState === 'INTERRUPTED') {
-          store.getState().setAudioLevel(0);
+          const now = Date.now();
+          if (now - lastLevelUpdate > LEVEL_UPDATE_INTERVAL_MS) {
+            store.getState().setAudioLevel(0);
+            lastLevelUpdate = now;
+          }
           return;
         }
 
-        // Send audio to Gemini via SDK
+        // Send audio to Gemini via SDK.
         try {
           sessionRef.current?.sendRealtimeInput({
             audio: { data: base64, mimeType: 'audio/pcm;rate=16000' },
           });
         } catch {}
 
-        // Update audio level for visualizer
+        // Cheap RMS: sample every 16th byte (8 samples at 16kHz PCM16 → ~32
+        // samples per 20ms chunk is still enough for VAD).
+        chunkCount += 1;
         const bytes = atob(base64);
         let sum = 0;
-        for (let i = 0; i < bytes.length; i += 2) {
+        let count = 0;
+        for (let i = 0; i < bytes.length; i += 16) {
           const sample = (bytes.charCodeAt(i) | (bytes.charCodeAt(i + 1) << 8)) / 32768;
           sum += sample * sample;
+          count += 1;
         }
-        const rms = Math.sqrt(sum / (bytes.length / 2));
-        store.getState().setAudioLevel(Math.min(1, rms * 5));
+        const rms = count > 0 ? Math.sqrt(sum / count) : 0;
 
-        // Track user talking state
+        // Update the visualizer at ~10 Hz to keep the UI animated without
+        // flooding zustand subscribers on every native tick.
+        const now = Date.now();
+        if (now - lastLevelUpdate > LEVEL_UPDATE_INTERVAL_MS) {
+          store.getState().setAudioLevel(Math.min(1, rms * 5));
+          lastLevelUpdate = now;
+        }
+
+        // Track user talking state (unchanged — runs every chunk for fast
+        // turn-taking response).
         if (rms > AUDIO_ACTIVITY_THRESHOLD) {
           if (!isUserTalkingRef.current) {
             isUserTalkingRef.current = true;

@@ -184,39 +184,75 @@
   },
   "hotPaths": [
     {
-      "path": "src/screens/interaction/InteractionScreen.tsx",
-      "accessCount": 21,
-      "lastAccessed": 1775543483058,
+      "path": "src/audio/AudioPlaybackService.ts",
+      "accessCount": 91,
+      "lastAccessed": 1776756979059,
       "type": "file"
     },
     {
-      "path": "src/audio/AudioPlaybackService.ts",
-      "accessCount": 20,
-      "lastAccessed": 1776323670301,
-      "type": "file"
+      "path": "src/hooks/useGeminiConversation.ts",
+      "accessCount": 49,
+      "lastAccessed": 1776757635365,
+      "type": "directory"
     },
     {
       "path": "src/screens/gemini/GeminiConversationScreen.tsx",
-      "accessCount": 16,
-      "lastAccessed": 1776322471037,
+      "accessCount": 33,
+      "lastAccessed": 1776689250313,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/interaction/InteractionScreen.tsx",
+      "accessCount": 32,
+      "lastAccessed": 1776411544001,
       "type": "file"
     },
     {
       "path": "src",
-      "accessCount": 13,
-      "lastAccessed": 1776309616005,
-      "type": "directory"
-    },
-    {
-      "path": "src/hooks/useGeminiConversation.ts",
-      "accessCount": 13,
-      "lastAccessed": 1776323158308,
+      "accessCount": 25,
+      "lastAccessed": 1776694853584,
       "type": "directory"
     },
     {
       "path": "src/contexts/AuthContext.tsx",
+      "accessCount": 22,
+      "lastAccessed": 1776691180364,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/device/DeviceSetupScreen.tsx",
+      "accessCount": 21,
+      "lastAccessed": 1776414645592,
+      "type": "file"
+    },
+    {
+      "path": "tests/setup.ts",
+      "accessCount": 17,
+      "lastAccessed": 1776582367899,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 14,
+      "lastAccessed": 1776690704159,
+      "type": "directory"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 13,
+      "lastAccessed": 1776575761048,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/dashboard/DashboardScreen.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1776665383190,
+      "type": "file"
+    },
+    {
+      "path": "src/state/voiceAssistantStore.ts",
       "accessCount": 12,
-      "lastAccessed": 1776309281313,
+      "lastAccessed": 1776682773347,
       "type": "file"
     },
     {
@@ -226,21 +262,57 @@
       "type": "file"
     },
     {
+      "path": "src/screens/auth/LoginScreen.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1776413207742,
+      "type": "file"
+    },
+    {
+      "path": "src/components/gemini/SukaAvatar.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1776415149906,
+      "type": "file"
+    },
+    {
       "path": "tests/e2e/main-screens.test.tsx",
       "accessCount": 9,
       "lastAccessed": 1776162270434,
       "type": "file"
     },
     {
-      "path": "src/screens/device/DeviceSetupScreen.tsx",
+      "path": "src/contexts/HouseholdContext.tsx",
       "accessCount": 8,
-      "lastAccessed": 1776246347567,
+      "lastAccessed": 1776691195429,
       "type": "file"
     },
     {
       "path": "src/components/gemini/TranscriptPanel.tsx",
       "accessCount": 7,
       "lastAccessed": 1776322603722,
+      "type": "file"
+    },
+    {
+      "path": "src/navigation/MainTabs.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1776412402045,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/suka-prompt.ts",
+      "accessCount": 7,
+      "lastAccessed": 1776665489195,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/onboarding/HouseholdCreateScreen.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1776414549644,
+      "type": "file"
+    },
+    {
+      "path": "src/api/client.ts",
+      "accessCount": 6,
+      "lastAccessed": 1776693332098,
       "type": "file"
     },
     {
@@ -268,27 +340,27 @@
       "type": "file"
     },
     {
+      "path": "src/__env__.ts",
+      "accessCount": 5,
+      "lastAccessed": 1776413352799,
+      "type": "file"
+    },
+    {
       "path": "eas.json",
       "accessCount": 4,
       "lastAccessed": 1776247780733,
       "type": "file"
     },
     {
-      "path": "src/api/client.ts",
+      "path": "app.json",
       "accessCount": 4,
-      "lastAccessed": 1776255473625,
+      "lastAccessed": 1776411228370,
       "type": "file"
     },
     {
-      "path": "src/screens/dashboard/DashboardScreen.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1776253233892,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 3,
-      "lastAccessed": 1776253310430,
+      "path": "src/config.ts",
+      "accessCount": 4,
+      "lastAccessed": 1776690713007,
       "type": "file"
     },
     {
@@ -298,22 +370,34 @@
       "type": "file"
     },
     {
-      "path": ".env",
-      "accessCount": 2,
-      "lastAccessed": 1775532915487,
+      "path": "src/api/realtime.client.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776410623772,
+      "type": "directory"
+    },
+    {
+      "path": "src/api/auth.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776411277758,
+      "type": "file"
+    },
+    {
+      "path": "src/components/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776417440769,
       "type": "file"
     },
     {
       "path": "src/api/tokens.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776161068416,
+      "accessCount": 3,
+      "lastAccessed": 1776692046929,
       "type": "file"
     },
     {
-      "path": "",
+      "path": ".env",
       "accessCount": 2,
-      "lastAccessed": 1776162103528,
-      "type": "directory"
+      "lastAccessed": 1775532915487,
+      "type": "file"
     },
     {
       "path": "src/ble/service.ts",
@@ -328,45 +412,21 @@
       "type": "file"
     },
     {
-      "path": "app.json",
+      "path": "src/utils/stripActionTags.ts",
       "accessCount": 2,
-      "lastAccessed": 1776247777257,
-      "type": "file"
-    },
-    {
-      "path": "src/lib/suka-prompt.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776251560208,
-      "type": "file"
-    },
-    {
-      "path": "src/contexts/HouseholdContext.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776254937150,
-      "type": "file"
-    },
-    {
-      "path": "src/config.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776254938824,
-      "type": "file"
-    },
-    {
-      "path": "src/api/auth.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776309245448,
-      "type": "file"
-    },
-    {
-      "path": "src/navigation/MainTabs.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1775488618566,
+      "lastAccessed": 1776328215417,
       "type": "file"
     },
     {
       "path": "src/screens/dashboard/ParentDashboardScreen.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1775488643878,
+      "accessCount": 2,
+      "lastAccessed": 1776409146700,
+      "type": "file"
+    },
+    {
+      "path": "tests/__mocks__/expo-secure-store.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776682520115,
       "type": "file"
     },
     {
@@ -388,12 +448,6 @@
       "type": "file"
     },
     {
-      "path": "tests/__mocks__/expo-secure-store.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776161316247,
-      "type": "file"
-    },
-    {
       "path": "tests/__mocks__/react-native-ble-plx.ts",
       "accessCount": 1,
       "lastAccessed": 1776161316709,
@@ -403,12 +457,6 @@
       "path": "tests/ble/service.test.ts",
       "accessCount": 1,
       "lastAccessed": 1776161318084,
-      "type": "file"
-    },
-    {
-      "path": "src/__env__.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776229142342,
       "type": "file"
     },
     {
@@ -424,9 +472,15 @@
       "type": "file"
     },
     {
-      "path": "src/screens/onboarding/HouseholdCreateScreen.tsx",
+      "path": "src/utils/expressionDetector.ts",
       "accessCount": 1,
-      "lastAccessed": 1776254937848,
+      "lastAccessed": 1776328150578,
+      "type": "file"
+    },
+    {
+      "path": "src/components/gemini/ParticleEffect.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1776328264600,
       "type": "file"
     }
   ],

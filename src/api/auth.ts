@@ -2,12 +2,9 @@ import client from './client';
 import { setTokens, clearTokens } from './tokens';
 import { AuthTokens, User } from '../types';
 
-export async function signup(name: string, email: string, password: string): Promise<{ access_token?: string; partial: boolean }> {
+export async function signup(name: string, email: string, password: string): Promise<{ access_token?: string }> {
   const response = await client.post('/auth/signup', { name, email, password });
   const data = response.data.data ?? response.data;
-  // The backend returns an access_token on signup (even before email verification).
-  // Store it so the user can proceed through onboarding (consent, household, etc.)
-  // without needing a separate login step.
   if (data.access_token) {
     await setTokens(data.access_token, data.refresh_token ?? '');
   }
@@ -38,14 +35,6 @@ export async function logout(): Promise<void> {
 
 export async function forgotPassword(email: string): Promise<void> {
   await client.post('/auth/forgot-password', { email });
-}
-
-export async function verifyEmail(token: string): Promise<void> {
-  await client.get(`/auth/verify-email?token=${token}`);
-}
-
-export async function resendVerification(email: string): Promise<void> {
-  await client.post('/auth/resend-verification', { email });
 }
 
 export async function sendConsent(stripeToken?: string): Promise<void> {

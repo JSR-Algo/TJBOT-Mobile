@@ -6,6 +6,10 @@ import { Button, Input, ErrorMessage } from '../../components';
 import { colors, spacing, typography } from '../../theme';
 import * as authApi from '../../api/auth';
 import { AuthStackParamList } from '../../navigation/types';
+import { useToast } from '../../components/Toast';
+
+// Error pattern: ErrorMessage for field-scoped validation errors.
+// useToast for network/transport/5xx failures (transient).
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
@@ -15,6 +19,7 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+  const { show: showToast } = useToast();
 
   const handleSend = async () => {
     if (!email) { setError('Please enter your email.'); return; }
@@ -23,8 +28,13 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
     try {
       await authApi.forgotPassword(email);
       setSent(true);
-    } catch {
-      setError('Could not send reset email. Please try again.');
+    } catch (err: unknown) {
+      const e = err as { status?: number };
+      if (e?.status && e.status >= 500) {
+        showToast({ severity: 'error', text: 'Server error. Please try again.' });
+      } else {
+        setError('Could not send reset email. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

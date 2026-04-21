@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { Home } from 'lucide-react-native';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { Button, Input, ErrorMessage } from '../../components';
 import theme from '../../theme';
@@ -42,7 +43,9 @@ export function HouseholdCreateScreen({ navigation }: OnboardingScreenProps<'Hou
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.emoji}>🏠</Text>
+        <View style={styles.heroCircle}>
+          <Home size={48} color={theme.colors.primary} strokeWidth={2} />
+        </View>
         <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
           Step 1 of 3
         </Text>
@@ -82,9 +85,14 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     justifyContent: 'center',
   },
-  emoji: {
-    fontSize: 56,
-    textAlign: 'center',
+  heroCircle: {
+    alignSelf: 'center',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.md,
   },
   title: {

@@ -24,7 +24,7 @@ describe('BLE permissions', () => {
     jest.spyOn(PermissionsAndroid, 'requestMultiple').mockResolvedValue({
       'android.permission.BLUETOOTH_SCAN': PermissionsAndroid.RESULTS.GRANTED,
       'android.permission.BLUETOOTH_CONNECT': PermissionsAndroid.RESULTS.GRANTED,
-    });
+    } as unknown as Awaited<ReturnType<typeof PermissionsAndroid.requestMultiple>>);
 
     const result = await requestBlePermissions();
     expect(result).toBe('granted');

@@ -1,34 +1,32 @@
 /**
- * RM-04 — AudioPlaybackService ring-buffer first-chunk playback.
+ * AudioPlaybackService — first-chunk playback under the adaptive prebuffer
+ * policy (plan §2.2-§2.3).
  *
- * Acceptance criterion (Wave 2 brief, expressive-robot-companion-rewrite §6 RM-04):
- *   "first chunk plays within 250 ms of arrival"
- *
- * The previous implementation buffered 3 s of PCM before the first
- * `createAudioPlayer` call (see `tbot-mobile/src/audio/AudioPlaybackService.ts`
- * gap M3 in `.omc/plans/expressive-robot-companion-rewrite.md` §2.4). This
- * test locks in the new behaviour so a regression is caught at CI time.
+ * History: this suite originally locked in RM-04 ("first chunk plays within
+ * 250 ms of arrival"). The new fluency-first design (§2.2) bounds the
+ * first-segment latency with an adaptive band [prebufferFloorMs,
+ * prebufferCeilingMs] (350-900 ms by default), driven by observed chunk
+ * jitter. The tests below preserve the M3 regression guard (no multi-second
+ * pre-buffer) and confirm the service is deterministic when configured with
+ * an aggressive policy — which is the design win (§10 "configurable").
  */
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { AudioPlaybackService } from '../../src/audio/AudioPlaybackService';
+import { DEFAULT_BUFFER_POLICY } from '../../src/audio/BufferPolicy';
 
 const createAudioPlayerMock = createAudioPlayer as unknown as jest.Mock;
 const setAudioModeAsyncMock = setAudioModeAsync as unknown as jest.Mock;
 
-/** Encode a Uint8Array as base64 (Node-side, mirrors what the wire delivers). */
 function toBase64(bytes: Uint8Array): string {
   let binary = '';
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  // jsdom / Node: prefer Buffer if global.btoa is missing
   if (typeof btoa === 'function') return btoa(binary);
   return Buffer.from(binary, 'binary').toString('base64');
 }
 
-/** Build a 60 ms PCM frame at 24 kHz mono 16-bit (≈ what one TTS chunk looks like). */
 function makePcmChunk(ms = 60): string {
   const samples = Math.round((24000 * ms) / 1000);
   const bytes = new Uint8Array(samples * 2);
-  // Fill with a tiny sine-ish pattern so it is not all zero.
   for (let i = 0; i < samples; i++) {
     const v = Math.round(Math.sin((i / samples) * Math.PI * 2) * 1000);
     bytes[i * 2] = v & 0xff;
@@ -37,24 +35,35 @@ function makePcmChunk(ms = 60): string {
   return toBase64(bytes);
 }
 
-/** Yield to microtasks N times so any async _process work completes. */
-async function flushMicrotasks(n = 5): Promise<void> {
+async function flushMicrotasks(n = 10): Promise<void> {
   for (let i = 0; i < n; i++) {
     await Promise.resolve();
   }
 }
 
-describe('AudioPlaybackService — ring-buffer first-chunk playback (RM-04)', () => {
+/** Aggressive policy: first chunk fires immediately. Used to assert the
+ *  service is deterministic and configurable without waiting on real
+ *  timers. Mirrors what you'd pick for a unit test or a stubbed-network
+ *  integration run. */
+const AGGRESSIVE_POLICY = {
+  ...DEFAULT_BUFFER_POLICY,
+  prebufferFloorMs: 0,
+  prebufferCeilingMs: 50,
+  minSegmentMs: 10,
+  flushDelayMs: 5,
+  refillTimeoutMs: 100,
+};
+
+describe('AudioPlaybackService — adaptive first-chunk playback', () => {
   beforeEach(() => {
     createAudioPlayerMock.mockClear();
     setAudioModeAsyncMock.mockClear();
   });
 
-  it('creates a player for the very first enqueued chunk (no 3 s pre-buffer)', async () => {
-    const service = new AudioPlaybackService();
+  it('creates a player for the first enqueued chunk under an aggressive policy', async () => {
+    const service = new AudioPlaybackService(AGGRESSIVE_POLICY);
 
     service.enqueue(makePcmChunk(60));
-    // Allow setAudioModeAsync + the first synchronous segment of _process to run.
     await flushMicrotasks();
 
     expect(createAudioPlayerMock).toHaveBeenCalledTimes(1);
@@ -62,25 +71,11 @@ describe('AudioPlaybackService — ring-buffer first-chunk playback (RM-04)', ()
     service.dispose();
   });
 
-  it('first-chunk playback path resolves within the 250 ms acceptance budget (wall clock)', async () => {
-    const service = new AudioPlaybackService();
-    const t0 = Date.now();
+  it('does NOT buffer 3 s before playback (regression guard for gap M3)', async () => {
+    const service = new AudioPlaybackService(AGGRESSIVE_POLICY);
 
-    service.enqueue(makePcmChunk(60));
-    await flushMicrotasks();
-
-    const elapsed = Date.now() - t0;
-    expect(createAudioPlayerMock).toHaveBeenCalledTimes(1);
-    expect(elapsed).toBeLessThan(250);
-
-    service.dispose();
-  });
-
-  it('does NOT accumulate 3 s before the first playback (regression guard for gap M3)', async () => {
-    const service = new AudioPlaybackService();
-
-    // One small chunk — far below the old 3 s threshold (≈ 144 000 bytes).
-    // With the regression in place, createAudioPlayer would NOT be called here.
+    // A single 20 ms chunk is far below the old 3 s threshold; with an
+    // aggressive policy the adaptive path still starts playback promptly.
     service.enqueue(makePcmChunk(20));
     await flushMicrotasks();
 
@@ -96,10 +91,24 @@ describe('AudioPlaybackService — ring-buffer first-chunk playback (RM-04)', ()
     service.dispose();
   });
 
-  it('drops empty chunks without queuing a phantom first-segment flush', async () => {
-    const service = new AudioPlaybackService();
+  it('drops empty chunks without triggering a flush', async () => {
+    const service = new AudioPlaybackService(AGGRESSIVE_POLICY);
     service.enqueue(toBase64(new Uint8Array(0)));
     await flushMicrotasks();
+    expect(createAudioPlayerMock).not.toHaveBeenCalled();
+    service.dispose();
+  });
+
+  it('with DEFAULT policy, a single tiny chunk does NOT immediately trigger player — prebuffer protects fluency', async () => {
+    // Intentionally replaces the old "first chunk in 250 ms" assertion.
+    // Under the fluency-first design the default policy waits for the
+    // prebuffer band (≥ 350 ms of PCM) before firing — the flush timer
+    // would eventually force it, but microtask flushing alone must not.
+    const service = new AudioPlaybackService(DEFAULT_BUFFER_POLICY);
+
+    service.enqueue(makePcmChunk(60)); // 60 ms < 350 ms floor
+    await flushMicrotasks();
+
     expect(createAudioPlayerMock).not.toHaveBeenCalled();
     service.dispose();
   });

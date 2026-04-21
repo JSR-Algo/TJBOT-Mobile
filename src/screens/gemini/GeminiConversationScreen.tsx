@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,12 @@ import {
   StatusBar,
   Modal,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useVoiceAssistantStore } from '../../state/voiceAssistantStore';
 import { useGeminiConversation } from '../../hooks/useGeminiConversation';
+import { useToast } from '../../components/Toast';
 import { buildSukaPrompt, AgeGroup, PersonalityStyle } from '../../lib/suka-prompt';
 import { SukaAvatar } from '../../components/gemini/SukaAvatar';
 import { ControlBar } from '../../components/gemini/ControlBar';
@@ -60,16 +62,28 @@ const C = {
 // u2500u2500 Screen u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
 
 export function GeminiConversationScreen() {
-  // u2500u2500 Settings state u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
+  // Settings state
   const [selectedVoice, setSelectedVoice] = useState('Kore');
   const [selectedAge, setSelectedAge] = useState<AgeGroup>('3-5');
   const [selectedStyle, setSelectedStyle] = useState<PersonalityStyle>('dang-yeu');
   const [settingsVisible, setSettingsVisible] = useState(false);
 
-  // u2500u2500 Voice store u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
+  // Voice store
   const voiceState = useVoiceAssistantStore((s) => s.state);
   const audioLevel = useVoiceAssistantStore((s) => s.audioLevel);
   const error = useVoiceAssistantStore((s) => s.error);
+  const isPoorNetwork = useVoiceAssistantStore((s) => s.isPoorNetwork);
+  const audioMode = useVoiceAssistantStore((s) => s.audioMode);
+
+  // Toast for transient/transport errors; field errors use ErrorMessage
+  const { show: showToast } = useToast();
+
+  useEffect(() => {
+    if (error) {
+      showToast({ severity: 'error', text: error });
+      useVoiceAssistantStore.getState().setError(null);
+    }
+  }, [error, showToast]);
 
   // u2500u2500 Conversation hook u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
   const { startConversation, stopConversation } = useGeminiConversation({
@@ -111,19 +125,23 @@ export function GeminiConversationScreen() {
           )}
         </View>
 
+        {/* Poor-network banner (iter 2 §2.5) — store-driven, non-FSM. */}
+        {(audioMode === 'cautious' || audioMode === 'full_buffer' || isPoorNetwork) && (
+          <View style={styles.poorNetworkBanner} accessibilityRole="alert">
+            {audioMode === 'full_buffer' && <ActivityIndicator size="small" color={C.primary} />}
+            <Text style={styles.poorNetworkText}>
+              {audioMode === 'full_buffer'
+                ? 'Tớ đang gom đủ tiếng rồi mới nói, chờ xíu nhé!'
+                : 'Mạng hơi yếu — tớ đang cố nghe mượt cho cậu'}
+            </Text>
+          </View>
+        )}
+
         {/* u2500u2500 Avatar zone (center, flex-weighted) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
         <View style={styles.avatarZone}>
           <SukaAvatar voiceState={voiceState} audioLevel={audioLevel} />
 
-          {/* Error banner (overlaid below avatar) */}
-          {error && (
-            <TouchableOpacity
-              style={styles.errorBanner}
-              onPress={() => useVoiceAssistantStore.getState().setError(null)}
-            >
-              <Text style={styles.errorText}>{error}</Text>
-            </TouchableOpacity>
-          )}
+          {/* Errors surface via Toast (transient transport errors) */}
         </View>
 
         {/* u2500u2500 Transcript (compact, flex-weighted) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
@@ -279,6 +297,25 @@ const styles = StyleSheet.create({
     color: C.onlineText,
   },
 
+  // iter 2 §2.5 — poor-network banner
+  poorNetworkBanner: {
+    marginHorizontal: 12,
+    marginTop: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(251, 191, 36, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.35)',
+    opacity: 0.92,
+  },
+  poorNetworkText: {
+    fontSize: 12,
+    color: '#92400E',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
   // u2500u2500 Avatar zone
   avatarZone: {
     flex: 3,
@@ -286,21 +323,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 8,
   },
-  errorBanner: {
-    marginTop: 12,
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 40,
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#EF4444',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-
   // u2500u2500 Transcript zone
   transcriptZone: {
     flex: 2,

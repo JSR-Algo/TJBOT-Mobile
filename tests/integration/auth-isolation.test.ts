@@ -35,10 +35,8 @@ describe('Auth isolation: learning endpoints', () => {
       headers: { Authorization: `Bearer ${partialToken}` },
     });
 
-    // Current backend contract requires email_verified=true before login
-    // (`tbot-backend/src/identity/auth.service.ts`). The live mobile suite does
-    // not own email verification, so it reuses the signup-issued token instead
-    // of asserting the backend's email-verification flow here.
+    // Backend no longer gates login on email verification (removed 2026-04-17).
+    // The signup-issued token is used directly for subsequent requests.
     const token = partialToken;
 
     const household = await http.post('/households', { name: `${email} Family` }, {

@@ -1,13 +1,24 @@
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './tokens';
+import { getAccessToken } from './tokens';
 import { normalizeError } from '../utils/errors';
 import { Config } from '../config';
+import {
+  isRefreshing,
+  setRefreshing,
+  enqueue,
+  processQueue,
+  refreshAuthTokens,
+  clearAuthTokens,
+} from './refresh-queue';
 
 const BASE_URL = Config.API_BASE_URL;
 
 const client: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  // 30s timeout: Render free-tier cold starts can take 10-20s after idle.
+  // 15s was too tight — users on first request after backend sleep hit
+  // ECONNABORTED and saw "Network Error" even though the backend was alive.
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -29,29 +40,15 @@ client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value: string) => void; reject: (reason: unknown) => void }> = [];
-
-function processQueue(error: unknown, token: string | null = null): void {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token ?? '');
-    }
-  });
-  failedQueue = [];
-}
-
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
+      if (isRefreshing()) {
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
+          enqueue({ resolve, reject });
         }).then((token) => {
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${token}`;
@@ -61,17 +58,10 @@ client.interceptors.response.use(
       }
 
       originalRequest._retry = true;
-      isRefreshing = true;
+      setRefreshing(true);
 
       try {
-        const refreshToken = await getRefreshToken();
-        if (!refreshToken) throw new Error('No refresh token');
-
-        const response = await axios.post(`${BASE_URL}/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
-        const { access_token, refresh_token: newRefreshToken } = response.data.data ?? response.data;
-        await setTokens(access_token, newRefreshToken ?? refreshToken);
+        const access_token = await refreshAuthTokens(BASE_URL);
         processQueue(null, access_token);
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
@@ -79,7 +69,7 @@ client.interceptors.response.use(
         return client(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        await clearTokens();
+        await clearAuthTokens();
         // Kick the UI back to the Auth stack so the user isn't stranded on
         // an authenticated screen with invalid tokens.
         if (onAuthInvalidated) {
@@ -91,7 +81,7 @@ client.interceptors.response.use(
         }
         return Promise.reject(refreshError);
       } finally {
-        isRefreshing = false;
+        setRefreshing(false);
       }
     }
 

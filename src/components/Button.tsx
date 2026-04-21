@@ -18,6 +18,7 @@ interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export function Button({
@@ -27,6 +28,7 @@ export function Button({
   loading = false,
   disabled = false,
   style,
+  testID,
 }: ButtonProps): React.JSX.Element {
   const isDisabled = disabled || loading;
 
@@ -45,6 +47,7 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator

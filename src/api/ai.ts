@@ -1,22 +1,77 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken } from './tokens';
 import { Config } from '../config';
+import {
+  isRefreshing,
+  setRefreshing,
+  enqueue,
+  processQueue,
+  refreshAuthTokens,
+  clearAuthTokens,
+} from './refresh-queue';
 
 const AI_BASE_URL = Config.AI_BASE_URL;
 
-// Singleton instance — reuse across calls so interceptors work correctly
+let onAuthInvalidated: (() => void) | null = null;
+
+export function setAiAuthInvalidatedHandler(handler: (() => void) | null): void {
+  onAuthInvalidated = handler;
+}
+
 const _aiClient = axios.create({
   baseURL: AI_BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach auth token dynamically per request
-_aiClient.interceptors.request.use(async (config) => {
+_aiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   const token = await getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+_aiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const status = error.response?.status;
+
+    if (status === 401 && originalRequest && !originalRequest._retry) {
+      if (isRefreshing()) {
+        return new Promise<string>((resolve, reject) => {
+          enqueue({ resolve, reject });
+        }).then((token) => {
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
+          return _aiClient(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      setRefreshing(true);
+      try {
+        const access_token = await refreshAuthTokens();
+        processQueue(null, access_token);
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        }
+        return _aiClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        await clearAuthTokens();
+        if (onAuthInvalidated) {
+          try { onAuthInvalidated(); } catch { /* best-effort */ }
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        setRefreshing(false);
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export async function transcribe(audioUri: string): Promise<{ text: string; confidence: number; confidence_signal?: number; phoneme_confidence?: number }> {
   const form = new FormData();

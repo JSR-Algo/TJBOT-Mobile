@@ -88,6 +88,9 @@ interface SukaAvatarProps {
 export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
   // Expression override from action tags (presentation-only)
   const expressionOverride = useVoiceAssistantStore((s) => s.expressionOverride);
+  // Subtle buffering cue while speaking (plan §2.7). UI flag only; does not
+  // change the FSM-driven expression.
+  const isBuffering = useVoiceAssistantStore((s) => s.isBuffering);
   const expressionKey = expressionOverride ?? voiceStateToExpression(voiceState);
   const expr = EXPRESSIONS[expressionKey] ?? EXPRESSIONS.idle;
 
@@ -160,16 +163,20 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
   }, [expr.glowPulse, glowScale]);
 
   // ── Speaking: mouth + glow follow audio level ────────────────────
+  // While the playback service is refilling after an underrun, dim the glow
+  // by ~15% to communicate "catching breath" without alarming the user.
+  // Mouth animation is left untouched so the avatar still appears lively.
   useEffect(() => {
     if (expressionKey === 'speaking') {
+      const dim = isBuffering ? 0.85 : 1;
       const targetMouth = 8 + audioLevel * 20;
-      const targetGlow = 0.25 + audioLevel * 0.3;
+      const targetGlow = (0.25 + audioLevel * 0.3) * dim;
       Animated.parallel([
         Animated.spring(mouthHeight, { toValue: targetMouth, useNativeDriver: false, friction: 6, tension: 120 }),
         Animated.timing(glowOpacity, { toValue: targetGlow, duration: 100, useNativeDriver: true }),
       ]).start();
     }
-  }, [audioLevel, expressionKey, mouthHeight, glowOpacity]);
+  }, [audioLevel, expressionKey, isBuffering, mouthHeight, glowOpacity]);
 
   // ── Cute bounce for happy/celebrating/laugh ──────────────────────
   useEffect(() => {

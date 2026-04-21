@@ -14,11 +14,10 @@
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
-      android:theme="@style/AppTheme"
       android:usesCleartextTraffic="true"
+      android:theme="@style/AppTheme"
       android:networkSecurityConfig="@xml/network_security_config"
-      android:supportsRtl="true"
-      tools:replace="android:usesCleartextTraffic">
+      android:supportsRtl="true">
 
       <!-- Remove Firebase provider since google-services.json is not configured -->
       <provider

@@ -92,7 +92,7 @@ describe('GeminiLiveClient', () => {
 
     const ws = MockWebSocket.instances[0];
     ws.onopen?.();
-    ws.onmessage?.({ data: new Blob([JSON.stringify({ setupComplete: {} })]) });
+    ws.onmessage?.({ data: new Blob([JSON.stringify({ setupComplete: {} })]) as unknown as string });
     await flushAsync();
 
     expect(onConnected).toHaveBeenCalledTimes(1);
