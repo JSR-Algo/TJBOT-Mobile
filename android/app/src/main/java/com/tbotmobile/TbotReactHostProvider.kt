@@ -5,6 +5,7 @@ import com.facebook.react.PackageList
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import com.tbotmobile.pcmstream.PcmStreamPackage
 
 object TbotReactHostProvider {
   @Volatile private var application: Application? = null
@@ -16,7 +17,8 @@ object TbotReactHostProvider {
         context = app.applicationContext,
         packageList =
             PackageList(app).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here.
+              // Local native PCM streaming module — see android/.../pcmstream/
+              add(PcmStreamPackage())
             },
     )
   }

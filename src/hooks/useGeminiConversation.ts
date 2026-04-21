@@ -8,7 +8,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import * as Device from 'expo-device';
 import { GoogleGenAI, Modality } from '@google/genai/web';
-import { AudioPlaybackService } from '../audio/AudioPlaybackService';
+import { PcmStreamPlayer as AudioPlaybackService } from '../audio/PcmStreamPlayer';
 import { hydrateAudioSeedOnce } from '../audio/JitterSeedStore';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import * as Haptics from 'expo-haptics';
@@ -18,30 +18,6 @@ import { chat as chatWithAI } from '../api/ai';
 import { getAccessToken } from '../api/tokens';
 
 const AUDIO_ACTIVITY_THRESHOLD = 0.01;
-
-/** Merge an array of base64-encoded PCM16 chunks into one base64 blob. */
-function concatBase64Pcm(chunks: string[]): string {
-  if (chunks.length === 1) return chunks[0];
-  let total = 0;
-  const decoded: string[] = new Array(chunks.length);
-  for (let i = 0; i < chunks.length; i++) {
-    decoded[i] = globalThis.atob(chunks[i]);
-    total += decoded[i].length;
-  }
-  const bytes = new Uint8Array(total);
-  let off = 0;
-  for (const d of decoded) {
-    for (let i = 0; i < d.length; i++) bytes[off + i] = d.charCodeAt(i);
-    off += d.length;
-  }
-  // Encode back to base64 in 32KB slices to avoid argument-limit issues.
-  const CHUNK = 0x8000;
-  const parts: string[] = [];
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    parts.push(String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK))));
-  }
-  return globalThis.btoa(parts.join(''));
-}
 const TOKEN_FETCH_TIMEOUT_MS = 8000;
 const SIMULATOR_CHAT_TIMEOUT_MS = 1500;
 const SIMULATOR_TEST_PROMPT = 'Xin ch\u00e0o! T\u1edb l\u00e0 b\u1ea1n m\u1edbi.';
@@ -67,12 +43,6 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   const sessionIdRef = useRef(0);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isUserTalkingRef = useRef(false);
-  // Turn-buffered playback: accumulate every PCM chunk Gemini sends during
-  // a turn and hand it to AudioPlaybackService as a single enqueue at
-  // turnComplete. One WAV → one createAudioPlayer → zero segment-boundary
-  // clicks (the main remaining source of "rè" on MIUI + SD 7-series).
-  // Tradeoff: the user hears nothing until the AI finishes its response.
-  const turnAudioChunksRef = useRef<string[]>([]);
 
   const store = useVoiceAssistantStore;
 
@@ -283,15 +253,16 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
                 if (s.userTranscript) s.addMessage('user', s.userTranscript);
                 s.transition('WAITING_AI');
               }
-              // Buffer the chunk instead of playing it now — we'll flush the
-              // concatenation at turnComplete.
-              turnAudioChunksRef.current.push(base64Audio);
+              // Feed straight into the native AudioTrack — no buffering, no
+              // WAV wrapping. The native module keeps one continuous PCM
+              // stream open so chunk boundaries are inaudible.
+              playbackRef.current.enqueue(base64Audio);
+              store.getState().setAudioLevel(playbackRef.current.audioLevel);
             }
 
             // Handle interruption from server
             if (message.serverContent?.interrupted && playbackRef.current) {
               logTelemetry('live_interrupted');
-              turnAudioChunksRef.current = [];
               playbackRef.current.interrupt();
               const s = store.getState();
               if (s.aiTranscript) s.addMessage('ai', s.aiTranscript, true);
@@ -356,18 +327,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             if (message.serverContent?.turnComplete) {
               logTelemetry('live_turn_complete', {
                 aiTranscriptChars: store.getState().aiTranscript.length,
-                chunks: turnAudioChunksRef.current.length,
               });
-              // Concatenate every buffered chunk into ONE PCM buffer, encode
-              // to base64 once, and enqueue as a single segment. The
-              // AudioPlaybackService minSegment policy will then emit just
-              // one WAV, so there are no inter-segment boundaries to click on.
-              if (playbackRef.current && turnAudioChunksRef.current.length > 0) {
-                const merged = concatBase64Pcm(turnAudioChunksRef.current);
-                turnAudioChunksRef.current = [];
-                playbackRef.current.enqueue(merged);
-                store.getState().setAudioLevel(playbackRef.current.audioLevel);
-              }
               playbackRef.current?.endTurn();
               const s = store.getState();
               if (s.userTranscript) s.addMessage('user', s.userTranscript);
