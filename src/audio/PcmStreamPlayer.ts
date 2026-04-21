@@ -96,18 +96,30 @@ export class PcmStreamPlayer {
     const approxFrames = Math.floor((base64.length * 3) / 4 / BYTES_PER_SAMPLE);
     this.fedFrames += approxFrames;
 
-    try {
-      await Native!.feed(base64);
-    } catch (err) {
+    // Fire-and-forget: the native writer thread owns WRITE_BLOCKING and the
+    // only useful signal back here was the byte count, which we don't need.
+    // Awaiting cost us ~one bridge round-trip per 20 ms chunk (~50 Hz) and
+    // serialized enqueue() under a Promise chain whenever JS was busy.
+    Native!.feed(base64).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn('[PcmStreamPlayer] feed failed', err);
-      return;
-    }
+    });
 
     if (!this.firstPlayFired) {
       this.firstPlayFired = true;
       this.callbacks.onPlaybackStart?.();
     }
+  }
+
+  /**
+   * Pre-warm the native AudioTrack before the first chunk arrives. Saves the
+   * 40–80 ms that AudioTrack.Builder + play() would otherwise tack onto the
+   * first-audio latency. Safe to call multiple times — ensureReady() is
+   * idempotent.
+   */
+  async prewarm(): Promise<void> {
+    if (this.disposed) return;
+    await this.ensureReady();
   }
 
   endTurn(): void {

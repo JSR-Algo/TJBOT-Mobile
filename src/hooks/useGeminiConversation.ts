@@ -215,6 +215,14 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       if (__DEV__) logTelemetry('audio_mode_change', { mode });
     });
 
+    // Pre-warm the native AudioTrack while we're negotiating the WSS so the
+    // first Gemini audio chunk just needs one write(), not Builder + play().
+    // Swallow errors — prewarm failures only mean the first chunk pays the
+    // usual init cost, they don't break playback.
+    playbackRef.current.prewarm?.().catch(() => {
+      /* non-fatal */
+    });
+
     // 4. Connect using @google/genai SDK (same as web app)
     try {
       const ai = new GoogleGenAI({ apiKey });

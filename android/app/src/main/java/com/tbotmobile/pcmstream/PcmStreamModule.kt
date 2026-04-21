@@ -10,6 +10,9 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -32,6 +35,18 @@ class PcmStreamModule(
   private var track: AudioTrack? = null
   private var sampleRate: Int = 24_000
   private val fedBytes = AtomicLong(0)
+
+  // Dedicated writer drains this queue into AudioTrack.write(WRITE_BLOCKING).
+  // Decouples WebSocket/bridge jitter from the audio HAL clock: feed() never
+  // blocks the RN native-module thread, so a brief JS/WS stall can't ripple
+  // into the speaker. 64 slots ≈ 1.3 s of 20 ms chunks at 24 kHz — comfortable
+  // headroom. If the queue ever saturates we drop the oldest chunk rather than
+  // stall the bridge (stutter is worse than a sub-20 ms gap).
+  private val writeQueue: BlockingQueue<ByteArray> = ArrayBlockingQueue(64)
+
+  @Volatile
+  private var writerRunning = false
+  private var writerThread: Thread? = null
 
   @ReactMethod
   fun init(
@@ -86,6 +101,7 @@ class PcmStreamModule(
       t.play()
       track = t
       fedBytes.set(0)
+      startWriter()
       Log.i(TAG, "init ok sr=$sampleRate bufferBytes=$bufferSize")
       promise.resolve(null)
     } catch (e: Throwable) {
@@ -110,18 +126,17 @@ class PcmStreamModule(
         promise.resolve(0)
         return
       }
-      // WRITE_BLOCKING guarantees every sample from Gemini ends up in the
-      // AudioTrack buffer — NON_BLOCKING would silently drop the tail of the
-      // chunk when the 120 ms ring fills up, and that's what made the AI's
-      // speech sound cut off mid-sentence.
-      val written = t.write(bytes, 0, bytes.size, AudioTrack.WRITE_BLOCKING)
-      if (written < 0) {
-        Log.w(TAG, "write returned $written (error)")
-        promise.reject("E_WRITE", "AudioTrack.write returned $written")
-        return
+      // Non-blocking handoff to the writer thread. The bridge never waits on
+      // AudioTrack.write; a WebSocket burst or brief HAL stall stays isolated
+      // from JS. Drop-oldest on saturation keeps the stream live — a stale
+      // chunk from 1 s ago is worse than a <20 ms gap.
+      if (!writeQueue.offer(bytes)) {
+        writeQueue.poll()
+        writeQueue.offer(bytes)
+        Log.w(TAG, "write queue saturated — dropped oldest chunk")
       }
-      fedBytes.addAndGet(written.toLong())
-      promise.resolve(written)
+      fedBytes.addAndGet(bytes.size.toLong())
+      promise.resolve(bytes.size)
     } catch (e: Throwable) {
       Log.e(TAG, "feed failed", e)
       promise.reject("E_FEED", e.message, e)
@@ -156,8 +171,10 @@ class PcmStreamModule(
       return
     }
     try {
-      // pause + flush drops queued samples for barge-in; play() after so the
-      // next feed() starts streaming again without a re-init.
+      // Barge-in path: drop pending bytes from BOTH layers before resuming.
+      // Skipping the writer-queue clear would let stale chunks continue to
+      // trickle into the HAL after the user interrupts.
+      writeQueue.clear()
       t.pause()
       t.flush()
       t.play()
@@ -200,7 +217,51 @@ class PcmStreamModule(
     }
   }
 
+  private fun startWriter() {
+    if (writerThread != null) return
+    writerRunning = true
+    val t =
+      Thread({
+        try {
+          android.os.Process.setThreadPriority(
+            android.os.Process.THREAD_PRIORITY_URGENT_AUDIO,
+          )
+        } catch (_: Throwable) {
+          // priority bump is best-effort — URGENT_AUDIO is rejected on some OEM
+          // kernels; the writer still runs correctly at the default priority.
+        }
+        while (writerRunning) {
+          val chunk =
+            try {
+              writeQueue.poll(50, TimeUnit.MILLISECONDS)
+            } catch (_: InterruptedException) {
+              if (!writerRunning) break else continue
+            } ?: continue
+          val audio = track ?: continue
+          try {
+            val written = audio.write(chunk, 0, chunk.size, AudioTrack.WRITE_BLOCKING)
+            if (written < 0) {
+              Log.w(TAG, "writer: write returned $written (HAL error)")
+            }
+          } catch (e: Throwable) {
+            Log.w(TAG, "writer exception", e)
+          }
+        }
+      }, "PcmStreamWriter")
+    t.isDaemon = true
+    t.start()
+    writerThread = t
+  }
+
+  private fun stopWriter() {
+    writerRunning = false
+    writerThread?.interrupt()
+    writerThread = null
+    writeQueue.clear()
+  }
+
   private fun releaseInternal() {
+    stopWriter()
     val t = track ?: return
     try {
       t.pause()
