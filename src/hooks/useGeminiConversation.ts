@@ -9,6 +9,7 @@ import { requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio'
 import * as Device from 'expo-device';
 import { GoogleGenAI, Modality } from '@google/genai/web';
 import { PcmStreamPlayer as AudioPlaybackService } from '../audio/PcmStreamPlayer';
+import { VoiceSession } from '../native/VoiceSession';
 import { hydrateAudioSeedOnce } from '../audio/JitterSeedStore';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import * as Haptics from 'expo-haptics';
@@ -43,6 +44,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   const sessionIdRef = useRef(0);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isUserTalkingRef = useRef(false);
+  const voiceSessionUnsubsRef = useRef<Array<() => void>>([]);
+  const voiceSessionStartedRef = useRef(false);
 
   const store = useVoiceAssistantStore;
 
@@ -173,6 +176,35 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       await hydrateAudioSeedOnce();
     } catch {
       if (__DEV__) logTelemetry('audio_seed_hydrate_failed');
+    }
+
+    // 2b. Claim the native audio session before any playback / mic capture
+    // touches AudioManager. Sets MODE_IN_COMMUNICATION, requests exclusive
+    // focus, forces the speaker route. Silent no-op if the native module
+    // isn't linked (iOS today) — expo-audio's setAudioModeAsync still runs
+    // further down as the fallback path.
+    if (VoiceSession.isAvailable) {
+      try {
+        await VoiceSession.start();
+        voiceSessionStartedRef.current = true;
+        voiceSessionUnsubsRef.current.push(
+          VoiceSession.onStateChange((evt) => {
+            logTelemetry('voice_session_state', { state: evt.state, reason: evt.reason, route: evt.route });
+            if (evt.state === 'transientLoss' || evt.state === 'lost') {
+              // Pause playback so the ducked-under-us burst doesn't pile up;
+              // native writer thread will resume on AUDIOFOCUS_GAIN.
+              playbackRef.current?.interrupt();
+            }
+          }),
+          VoiceSession.onRouteChange((evt) => {
+            logTelemetry('voice_route', { route: evt.route, device: evt.deviceName });
+          }),
+        );
+      } catch (err) {
+        logTelemetry('voice_session_start_failed', {
+          message: err instanceof Error ? err.message : 'unknown',
+        });
+      }
     }
 
     // 3. Init playback service
@@ -393,6 +425,24 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       sessionRef.current?.close();
     } catch {}
     sessionRef.current = null;
+
+    // Release the native audio session last — after mic + WS are down so the
+    // OS sees a clean ordered teardown (avoids a brief moment where we still
+    // hold focus while nothing plays, which MIUI misinterprets as a hang).
+    for (const unsub of voiceSessionUnsubsRef.current) {
+      try {
+        unsub();
+      } catch {
+        /* ignore */
+      }
+    }
+    voiceSessionUnsubsRef.current = [];
+    if (voiceSessionStartedRef.current) {
+      voiceSessionStartedRef.current = false;
+      VoiceSession.end().catch(() => {
+        /* best-effort teardown */
+      });
+    }
 
     const s = store.getState();
     if (s.userTranscript) s.addMessage('user', s.userTranscript);
