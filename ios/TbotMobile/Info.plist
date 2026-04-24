@@ -28,21 +28,18 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- NSAllowsLocalNetworking MUST remain true: required for Metro bundler
-		     (localhost:8081) and simulator loopback (127.0.0.1:3000).
-		     HTTPS migration for staging ALB tracked in task-s5-mobile-https-staging-alb. -->
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com</key>
+			<key>tbot-dev-alb-1875222172.ap-southeast-1.elb.amazonaws.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
-			<key>tbot-dev-alb-1875222172.ap-southeast-1.elb.amazonaws.com</key>
+			<key>tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
@@ -55,14 +52,18 @@
 	<string>TBOT uses Bluetooth to scan for and pair with your child's device during setup.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>TBOT uses Bluetooth to scan for and pair with your child's device during setup.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TBOT uses your location to provide localised content for your child.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>TBOT uses the microphone to listen to your child's voice and provide AI-powered responses.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>TBOT uses speech recognition to understand your child's voice and personalise their learning experience.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>TBOT uses your location to provide localised content for your child.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

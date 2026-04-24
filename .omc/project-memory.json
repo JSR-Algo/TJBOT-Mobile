@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775471186050,
+  "lastScanned": 1776762707957,
   "projectRoot": "/Users/manhhodinh/Documents/TBOT/tbot-mobile",
   "techStack": {
     "languages": [
@@ -48,21 +48,27 @@
       "build": "tsc --noEmit",
       "typecheck": "tsc --noEmit",
       "lint": "eslint src/ tests/",
-      "test": "jest",
+      "test": "jest --selectProjects unit",
+      "test:integration": "jest --selectProjects integration",
       "e2e:mobile": "node scripts/e2e-mobile.js",
-      "e2e:mobile:local": "TBOT_API_URL=http://localhost:3000 node scripts/e2e-mobile.js"
+      "e2e:mobile:local": "TBOT_API_URL=http://localhost:3000 node scripts/e2e-mobile.js",
+      "detox:build:ios": "detox build --configuration ios.sim.debug",
+      "detox:test:ios": "detox test --configuration ios.sim.debug",
+      "detox:build:android": "detox build --configuration android.emu.debug",
+      "detox:test:android": "detox test --configuration android.emu.debug"
     }
   },
   "conventions": {
     "namingStyle": null,
     "importStyle": null,
-    "testPattern": null,
+    "testPattern": "*.test.ts",
     "fileOrganization": "type-based"
   },
   "structure": {
     "isMonorepo": false,
     "workspaces": [],
     "mainDirectories": [
+      "docs",
       "scripts",
       "src",
       "tests"
@@ -74,39 +80,63 @@
     "android": {
       "path": "android",
       "purpose": null,
-      "fileCount": 5,
-      "lastAccessed": 1775471186029,
+      "fileCount": 7,
+      "lastAccessed": 1776762707935,
       "keyFiles": [
         "build.gradle",
         "gradle.properties",
         "gradlew",
         "gradlew.bat",
-        "settings.gradle"
+        "inspect-package.init.gradle"
       ]
     },
     "dist": {
       "path": "dist",
       "purpose": "Distribution/build output",
-      "fileCount": 0,
-      "lastAccessed": 1775471186029,
-      "keyFiles": []
+      "fileCount": 2,
+      "lastAccessed": 1776762707935,
+      "keyFiles": [
+        "metadata.json"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1776762707938,
+      "keyFiles": [
+        "env-reference.md"
+      ]
+    },
+    "e2e": {
+      "path": "e2e",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1776762707939,
+      "keyFiles": [
+        "README.md",
+        "init.ts",
+        "jest.config.js",
+        "smoke.test.ts"
+      ]
     },
     "ios": {
       "path": "ios",
       "purpose": null,
-      "fileCount": 6,
-      "lastAccessed": 1775471186029,
+      "fileCount": 7,
+      "lastAccessed": 1776762707939,
       "keyFiles": [
         "Podfile",
         "Podfile.lock",
-        "Podfile.properties.json"
+        "Podfile.properties.json",
+        "main.jsbundle"
       ]
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 1,
-      "lastAccessed": 1775471186030,
+      "lastAccessed": 1776762707939,
       "keyFiles": [
         "e2e-mobile.js"
       ]
@@ -114,8 +144,8 @@
     "src": {
       "path": "src",
       "purpose": "Source code",
-      "fileCount": 3,
-      "lastAccessed": 1775471186030,
+      "fileCount": 4,
+      "lastAccessed": 1776762707939,
       "keyFiles": [
         "App.tsx",
         "__env__.ts",
@@ -125,36 +155,48 @@
     "tests": {
       "path": "tests",
       "purpose": "Test files",
-      "fileCount": 2,
-      "lastAccessed": 1775471186030,
+      "fileCount": 4,
+      "lastAccessed": 1776762707940,
       "keyFiles": [
         "App.test.tsx",
+        "gemini-live-client.test.ts",
         "setup.ts"
       ]
     },
     "android/app": {
       "path": "android/app",
       "purpose": "Application code",
-      "fileCount": 3,
-      "lastAccessed": 1775471186030,
+      "fileCount": 6,
+      "lastAccessed": 1776762707940,
       "keyFiles": [
         "build.gradle",
         "debug.keystore",
-        "proguard-rules.pro"
+        "multidex-config.pro"
       ]
+    },
+    "android/build": {
+      "path": "android/build",
+      "purpose": "Build output",
+      "fileCount": 1,
+      "lastAccessed": 1776762707940,
+      "keyFiles": []
     },
     "dist/assets": {
       "path": "dist/assets",
       "purpose": "Static assets",
-      "fileCount": 0,
-      "lastAccessed": 1775471186030,
-      "keyFiles": []
+      "fileCount": 22,
+      "lastAccessed": 1776762707941,
+      "keyFiles": [
+        "02bc1fa7c0313217bde2d65ccbff40c9",
+        "069d99eb1fa6712c0b9034a58c6b57dd",
+        "0747a1317bbe9c6fc340b889ef8ab3ae"
+      ]
     },
     "src/api": {
       "path": "src/api",
       "purpose": "API routes",
-      "fileCount": 11,
-      "lastAccessed": 1775471186031,
+      "fileCount": 12,
+      "lastAccessed": 1776762707942,
       "keyFiles": [
         "account.ts",
         "ai.ts",
@@ -164,323 +206,332 @@
     "src/components": {
       "path": "src/components",
       "purpose": "UI components",
-      "fileCount": 7,
-      "lastAccessed": 1775471186031,
+      "fileCount": 10,
+      "lastAccessed": 1776762707943,
       "keyFiles": [
         "Button.tsx",
         "Card.tsx",
         "EmptyState.tsx"
       ]
     },
-    "tests/utils": {
-      "path": "tests/utils",
-      "purpose": "Utility functions",
+    "tests/api": {
+      "path": "tests/api",
+      "purpose": "API routes",
       "fileCount": 1,
-      "lastAccessed": 1775471186032,
+      "lastAccessed": 1776762707943,
       "keyFiles": [
-        "errors.test.ts"
+        "refresh-queue.test.ts"
+      ]
+    },
+    "tests/components": {
+      "path": "tests/components",
+      "purpose": "UI components",
+      "fileCount": 1,
+      "lastAccessed": 1776762707943,
+      "keyFiles": [
+        "robot-body.test.tsx"
       ]
     }
   },
   "hotPaths": [
     {
-      "path": "src/audio/AudioPlaybackService.ts",
-      "accessCount": 91,
-      "lastAccessed": 1776756979059,
-      "type": "file"
-    },
-    {
       "path": "src/hooks/useGeminiConversation.ts",
-      "accessCount": 49,
-      "lastAccessed": 1776757635365,
-      "type": "directory"
-    },
-    {
-      "path": "src/screens/gemini/GeminiConversationScreen.tsx",
-      "accessCount": 33,
-      "lastAccessed": 1776689250313,
+      "accessCount": 126,
+      "lastAccessed": 1777001443241,
       "type": "file"
     },
     {
-      "path": "src/screens/interaction/InteractionScreen.tsx",
-      "accessCount": 32,
-      "lastAccessed": 1776411544001,
+      "path": "ios/TbotMobile/PcmStream/PcmStreamModule.swift",
+      "accessCount": 29,
+      "lastAccessed": 1777003819553,
+      "type": "file"
+    },
+    {
+      "path": "tests/observability/voice-telemetry.test.ts",
+      "accessCount": 21,
+      "lastAccessed": 1776839288931,
+      "type": "file"
+    },
+    {
+      "path": "tests/native/voice-session-events.test.ts",
+      "accessCount": 12,
+      "lastAccessed": 1776934726919,
+      "type": "file"
+    },
+    {
+      "path": "src/audio/PcmStreamPlayer.ts",
+      "accessCount": 11,
+      "lastAccessed": 1776916339772,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/SharedVoiceEngine.swift",
+      "accessCount": 11,
+      "lastAccessed": 1776941579683,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/VoiceSession/VoiceSessionModule.swift",
+      "accessCount": 10,
+      "lastAccessed": 1777001941696,
+      "type": "file"
+    },
+    {
+      "path": "android/app/src/main/java/com/tbotmobile/voicesession/VoiceSessionModule.kt",
+      "accessCount": 9,
+      "lastAccessed": 1776768956583,
+      "type": "file"
+    },
+    {
+      "path": "android/app/src/main/java/com/tbotmobile/pcmstream/PcmStreamModule.kt",
+      "accessCount": 8,
+      "lastAccessed": 1776767256418,
+      "type": "file"
+    },
+    {
+      "path": "src/observability/voice-telemetry.ts",
+      "accessCount": 8,
+      "lastAccessed": 1776916583028,
+      "type": "file"
+    },
+    {
+      "path": "src/audio/AudioPlaybackService.ts",
+      "accessCount": 6,
+      "lastAccessed": 1776846109511,
       "type": "file"
     },
     {
       "path": "src",
-      "accessCount": 25,
-      "lastAccessed": 1776694853584,
+      "accessCount": 6,
+      "lastAccessed": 1776849865604,
       "type": "directory"
     },
     {
-      "path": "src/contexts/AuthContext.tsx",
-      "accessCount": 22,
-      "lastAccessed": 1776691180364,
-      "type": "file"
-    },
-    {
-      "path": "src/screens/device/DeviceSetupScreen.tsx",
-      "accessCount": 21,
-      "lastAccessed": 1776414645592,
-      "type": "file"
-    },
-    {
-      "path": "tests/setup.ts",
-      "accessCount": 17,
-      "lastAccessed": 1776582367899,
-      "type": "file"
-    },
-    {
-      "path": "",
-      "accessCount": 14,
-      "lastAccessed": 1776690704159,
+      "path": "ios/TbotMobile",
+      "accessCount": 5,
+      "lastAccessed": 1776839185251,
       "type": "directory"
     },
     {
-      "path": "package.json",
-      "accessCount": 13,
-      "lastAccessed": 1776575761048,
-      "type": "file"
-    },
-    {
-      "path": "src/screens/dashboard/DashboardScreen.tsx",
-      "accessCount": 13,
-      "lastAccessed": 1776665383190,
-      "type": "file"
-    },
-    {
-      "path": "src/state/voiceAssistantStore.ts",
-      "accessCount": 12,
-      "lastAccessed": 1776682773347,
-      "type": "file"
-    },
-    {
-      "path": "src/components/gemini/ControlBar.tsx",
-      "accessCount": 10,
-      "lastAccessed": 1776322463636,
-      "type": "file"
-    },
-    {
-      "path": "src/screens/auth/LoginScreen.tsx",
-      "accessCount": 10,
-      "lastAccessed": 1776413207742,
-      "type": "file"
-    },
-    {
-      "path": "src/components/gemini/SukaAvatar.tsx",
-      "accessCount": 10,
-      "lastAccessed": 1776415149906,
-      "type": "file"
-    },
-    {
-      "path": "tests/e2e/main-screens.test.tsx",
-      "accessCount": 9,
-      "lastAccessed": 1776162270434,
-      "type": "file"
-    },
-    {
-      "path": "src/contexts/HouseholdContext.tsx",
-      "accessCount": 8,
-      "lastAccessed": 1776691195429,
-      "type": "file"
-    },
-    {
-      "path": "src/components/gemini/TranscriptPanel.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1776322603722,
-      "type": "file"
-    },
-    {
-      "path": "src/navigation/MainTabs.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1776412402045,
-      "type": "file"
-    },
-    {
-      "path": "src/lib/suka-prompt.ts",
-      "accessCount": 7,
-      "lastAccessed": 1776665489195,
-      "type": "file"
-    },
-    {
-      "path": "src/screens/onboarding/HouseholdCreateScreen.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1776414549644,
-      "type": "file"
-    },
-    {
-      "path": "src/api/client.ts",
-      "accessCount": 6,
-      "lastAccessed": 1776693332098,
-      "type": "file"
-    },
-    {
-      "path": "src/api/learning.ts",
+      "path": "src/App.tsx",
       "accessCount": 5,
-      "lastAccessed": 1775488976626,
+      "lastAccessed": 1776919072727,
       "type": "file"
     },
     {
-      "path": "tests/ble/permissions.test.ts",
+      "path": "ios/TbotMobile.xcodeproj/project.pbxproj",
       "accessCount": 5,
-      "lastAccessed": 1776162120947,
-      "type": "file"
+      "lastAccessed": 1777001909927,
+      "type": "directory"
     },
     {
-      "path": "ios/TbotMobile/Info.plist",
+      "path": ".agent/SYSTEM_CONTRACTS.md",
       "accessCount": 5,
-      "lastAccessed": 1776229280008,
+      "lastAccessed": 1777021814235,
       "type": "file"
     },
     {
       "path": "android/app/src/main/AndroidManifest.xml",
-      "accessCount": 5,
-      "lastAccessed": 1776309009448,
-      "type": "file"
-    },
-    {
-      "path": "src/__env__.ts",
-      "accessCount": 5,
-      "lastAccessed": 1776413352799,
-      "type": "file"
-    },
-    {
-      "path": "eas.json",
       "accessCount": 4,
-      "lastAccessed": 1776247780733,
+      "lastAccessed": 1776768974096,
       "type": "file"
     },
     {
-      "path": "app.json",
+      "path": "src/native/voice-session-events.ts",
       "accessCount": 4,
-      "lastAccessed": 1776411228370,
+      "lastAccessed": 1776916543543,
       "type": "file"
     },
     {
-      "path": "src/config.ts",
+      "path": "src/native/VoiceSession.ts",
       "accessCount": 4,
-      "lastAccessed": 1776690713007,
+      "lastAccessed": 1776929255652,
       "type": "file"
     },
     {
-      "path": "android/gradle.properties",
+      "path": "android/app/src/main/java/com/tbotmobile/MainApplication.kt",
       "accessCount": 3,
-      "lastAccessed": 1776254444403,
+      "lastAccessed": 1776767257555,
       "type": "file"
     },
     {
-      "path": "src/api/realtime.client.ts",
+      "path": "android/app/src/main/java/com/tbotmobile/TbotReactHostProvider.kt",
       "accessCount": 3,
-      "lastAccessed": 1776410623772,
+      "lastAccessed": 1776767286181,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/VoiceSession/VoiceSessionModule.m",
+      "accessCount": 3,
+      "lastAccessed": 1776929246639,
+      "type": "file"
+    },
+    {
+      "path": "src/ai/GeminiLiveClient.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776935067427,
+      "type": "file"
+    },
+    {
+      "path": "src/state/voiceAssistantStore.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776938935476,
+      "type": "file"
+    },
+    {
+      "path": "android/app/src/main/java/com/tbotmobile/voicesession/VoiceSessionPackage.kt",
+      "accessCount": 2,
+      "lastAccessed": 1776767255726,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/AppDelegate.mm",
+      "accessCount": 2,
+      "lastAccessed": 1776767286546,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/Info.plist",
+      "accessCount": 2,
+      "lastAccessed": 1776768683682,
+      "type": "file"
+    },
+    {
+      "path": "modules/voice-native/withVoiceNative.js",
+      "accessCount": 2,
+      "lastAccessed": 1776837281383,
+      "type": "file"
+    },
+    {
+      "path": "modules/voice-native/app.plugin.js",
+      "accessCount": 2,
+      "lastAccessed": 1776837281758,
+      "type": "file"
+    },
+    {
+      "path": "modules/voice-native/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1776837282396,
+      "type": "file"
+    },
+    {
+      "path": "modules/voice-native/README.md",
+      "accessCount": 2,
+      "lastAccessed": 1776837282817,
+      "type": "file"
+    },
+    {
+      "path": "tests/native/VoiceMic.test.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776837304852,
+      "type": "file"
+    },
+    {
+      "path": "tests/modules/voice-native.test.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776837305277,
+      "type": "file"
+    },
+    {
+      "path": "android/app/src/main/java/com/tbotmobile/voicesession/VoiceSessionService.kt",
+      "accessCount": 2,
+      "lastAccessed": 1776839403024,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1776767240442,
       "type": "directory"
     },
     {
-      "path": "src/api/auth.ts",
-      "accessCount": 3,
-      "lastAccessed": 1776411277758,
-      "type": "file"
-    },
-    {
-      "path": "src/components/index.ts",
-      "accessCount": 3,
-      "lastAccessed": 1776417440769,
-      "type": "file"
-    },
-    {
-      "path": "src/api/tokens.ts",
-      "accessCount": 3,
-      "lastAccessed": 1776692046929,
-      "type": "file"
-    },
-    {
-      "path": ".env",
-      "accessCount": 2,
-      "lastAccessed": 1775532915487,
-      "type": "file"
-    },
-    {
-      "path": "src/ble/service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776246290928,
-      "type": "file"
-    },
-    {
-      "path": "src/components/gemini/BigMicButton.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776246359455,
-      "type": "file"
-    },
-    {
-      "path": "src/utils/stripActionTags.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776328215417,
-      "type": "file"
-    },
-    {
-      "path": "src/screens/dashboard/ParentDashboardScreen.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776409146700,
-      "type": "file"
-    },
-    {
-      "path": "tests/__mocks__/expo-secure-store.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776682520115,
-      "type": "file"
-    },
-    {
-      "path": "src/ble/types.ts",
+      "path": "android/app/src/main/java/com/tbotmobile/pcmstream/PcmStreamPackage.kt",
       "accessCount": 1,
-      "lastAccessed": 1776161210512,
+      "lastAccessed": 1776767256919,
       "type": "file"
     },
     {
-      "path": "src/ble/config.ts",
+      "path": "android/app/src/main/java/com/tbotmobile/MainActivity.kt",
       "accessCount": 1,
-      "lastAccessed": 1776161210786,
+      "lastAccessed": 1776767258364,
       "type": "file"
     },
     {
-      "path": "src/ble/permissions.ts",
+      "path": "android/app/src",
       "accessCount": 1,
-      "lastAccessed": 1776161211004,
-      "type": "file"
-    },
-    {
-      "path": "tests/__mocks__/react-native-ble-plx.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776161316709,
-      "type": "file"
-    },
-    {
-      "path": "tests/ble/service.test.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776161318084,
-      "type": "file"
-    },
-    {
-      "path": "src/screens/dashboard",
-      "accessCount": 1,
-      "lastAccessed": 1776253207664,
+      "lastAccessed": 1776767284773,
       "type": "directory"
     },
     {
-      "path": "react-native.config.js",
+      "path": "android/app/src/main/java/com/tbotmobile/BootstrapApplication.kt",
       "accessCount": 1,
-      "lastAccessed": 1776254566230,
+      "lastAccessed": 1776767285619,
       "type": "file"
     },
     {
-      "path": "src/utils/expressionDetector.ts",
+      "path": "ios/TbotMobile/AppDelegate.h",
       "accessCount": 1,
-      "lastAccessed": 1776328150578,
+      "lastAccessed": 1776767287312,
       "type": "file"
     },
     {
-      "path": "src/components/gemini/ParticleEffect.tsx",
+      "path": "ios/Podfile",
       "accessCount": 1,
-      "lastAccessed": 1776328264600,
+      "lastAccessed": 1776767288494,
+      "type": "file"
+    },
+    {
+      "path": ".agent/AGENT_CONTEXT.md",
+      "accessCount": 1,
+      "lastAccessed": 1776767288849,
+      "type": "file"
+    },
+    {
+      "path": ".agent/TASK_EXECUTION.md",
+      "accessCount": 1,
+      "lastAccessed": 1776767290382,
+      "type": "file"
+    },
+    {
+      "path": ".agent/VALIDATION_CHECKLIST.md",
+      "accessCount": 1,
+      "lastAccessed": 1776767290778,
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/use-voice-activity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776767324037,
+      "type": "file"
+    },
+    {
+      "path": ".agent/AGENT_ENTRYPOINT.md",
+      "accessCount": 1,
+      "lastAccessed": 1776767325432,
+      "type": "file"
+    },
+    {
+      "path": "src/native/VoiceMic.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776768717664,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/VoiceSession/TbotMobile-Bridging-Header.h",
+      "accessCount": 1,
+      "lastAccessed": 1776770465744,
+      "type": "file"
+    },
+    {
+      "path": "ios/TbotMobile/VoiceSession/README.md",
+      "accessCount": 1,
+      "lastAccessed": 1776770502568,
+      "type": "file"
+    },
+    {
+      "path": "scripts/activate-voice-native.rb",
+      "accessCount": 1,
+      "lastAccessed": 1776837441666,
       "type": "file"
     }
   ],

@@ -19,12 +19,15 @@ const VALID_TRANSITIONS: Record<VoiceState, VoiceState[]> = {
   IDLE: ['REQUESTING_MIC_PERMISSION', 'CONNECTING'],
   REQUESTING_MIC_PERMISSION: ['CONNECTING', 'ERROR'],
   CONNECTING: ['LISTENING', 'ERROR', 'RECONNECTING'],
-  LISTENING: ['STREAMING_INPUT', 'PLAYING_AI_AUDIO', 'IDLE', 'ERROR'],
-  STREAMING_INPUT: ['WAITING_AI', 'PLAYING_AI_AUDIO', 'INTERRUPTED', 'IDLE', 'ERROR'],
-  WAITING_AI: ['STREAMING_INPUT', 'PLAYING_AI_AUDIO', 'LISTENING', 'IDLE', 'ERROR'],
-  PLAYING_AI_AUDIO: ['INTERRUPTED', 'STREAMING_INPUT', 'LISTENING', 'IDLE', 'ERROR'],
-  INTERRUPTED: ['STREAMING_INPUT', 'LISTENING', 'IDLE', 'ERROR'],
-  RECONNECTING: ['CONNECTING', 'IDLE', 'ERROR'],
+  // A5: goAway can arrive mid-turn from any active state — allow the
+  // RECONNECTING handoff so the goAway handler doesn't have to short-circuit
+  // through IDLE and lose the resumption handle.
+  LISTENING: ['STREAMING_INPUT', 'PLAYING_AI_AUDIO', 'RECONNECTING', 'IDLE', 'ERROR'],
+  STREAMING_INPUT: ['WAITING_AI', 'PLAYING_AI_AUDIO', 'INTERRUPTED', 'RECONNECTING', 'IDLE', 'ERROR'],
+  WAITING_AI: ['STREAMING_INPUT', 'PLAYING_AI_AUDIO', 'LISTENING', 'RECONNECTING', 'IDLE', 'ERROR'],
+  PLAYING_AI_AUDIO: ['INTERRUPTED', 'STREAMING_INPUT', 'LISTENING', 'RECONNECTING', 'IDLE', 'ERROR'],
+  INTERRUPTED: ['STREAMING_INPUT', 'LISTENING', 'RECONNECTING', 'IDLE', 'ERROR'],
+  RECONNECTING: ['CONNECTING', 'LISTENING', 'IDLE', 'ERROR'],
   ERROR: ['IDLE', 'CONNECTING'],
 };
 
@@ -53,9 +56,12 @@ interface VoiceAssistantStore {
    */
   isBuffering: boolean;
   /**
-   * True once {@link AudioPlaybackService#onPoorNetwork} has fired for the
-   * current turn (iter 2 §2.5). Drives the "mạng yếu" banner. Cleared on
-   * endTurn / interrupt / stopSession. UI flag only — never an FSM state.
+   * True when the playback layer reports a sustained underrun.
+   * Drives the "mạng yếu" banner. Cleared on endTurn / interrupt /
+   * stopSession. UI flag only — never an FSM state. Currently wired
+   * through {@link PcmStreamPlayer#onPoorNetwork}, which is a no-op on
+   * the continuous-streaming path; retained so a future real poor-network
+   * detector in the native pipeline can drive it without UI refactor.
    */
   isPoorNetwork: boolean;
 
@@ -107,7 +113,6 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
       set({ sessionStartTime: Date.now() });
     }
     if (to === 'ERROR') {
-      // Auto-reset after 5 seconds
       setTimeout(() => {
         if (get().state === 'ERROR') set({ state: 'IDLE' });
       }, 5000);

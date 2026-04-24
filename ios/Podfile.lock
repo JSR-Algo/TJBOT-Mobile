@@ -2775,6 +2775,36 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNSentry (7.13.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Sentry/HybridSDK (= 8.58.0)
+    - SocketRocket
+    - Yoga
   - RNSVG (15.15.4):
     - boost
     - DoubleConversion
@@ -2832,6 +2862,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - Sentry/HybridSDK (8.58.0)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
 
@@ -2935,6 +2966,7 @@ DEPENDENCIES:
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNLiveAudioStream (from `../node_modules/react-native-live-audio-stream`)
   - RNScreens (from `../node_modules/react-native-screens`)
+  - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNSVG (from `../node_modules/react-native-svg`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -2942,6 +2974,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - MultiplatformBleAdapter
+    - Sentry
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -3142,6 +3175,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-live-audio-stream"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  RNSentry:
+    :path: "../node_modules/@sentry/react-native"
   RNSVG:
     :path: "../node_modules/react-native-svg"
   Yoga:
@@ -3247,7 +3282,9 @@ SPEC CHECKSUMS:
   RNGestureHandler: b407c25a3f51d22dd7430e6b530f753f112b7e77
   RNLiveAudioStream: 93ac2bb6065be9018d0b00157b220f11cebc1513
   RNScreens: afaf526a9c804c3b4503f950cf3e67ed81e29ada
+  RNSentry: 820c733b229b86dc8153305a9d5a96ec46147469
   RNSVG: 3405336c4507ee0bafb02b08058d57216daa2c50
+  Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: b669e79fa0f8d3f6f5e35372345f54b99e06b13c
 

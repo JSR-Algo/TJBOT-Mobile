@@ -9,6 +9,7 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useVoiceAssistantStore } from '../../state/voiceAssistantStore';
@@ -86,7 +87,7 @@ export function GeminiConversationScreen() {
   }, [error, showToast]);
 
   // u2500u2500 Conversation hook u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
-  const { startConversation, stopConversation } = useGeminiConversation({
+  const { startConversation, stopConversation, interruptPlayback } = useGeminiConversation({
     voiceName: selectedVoice,
     systemInstruction: buildSukaPrompt(selectedAge, selectedStyle),
   });
@@ -138,11 +139,22 @@ export function GeminiConversationScreen() {
         )}
 
         {/* u2500u2500 Avatar zone (center, flex-weighted) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
-        <View style={styles.avatarZone}>
+        {/* T3.1: Pressable wraps the avatar as a tap-to-interrupt surface. */}
+        {/* `disabled` gates the gesture handler so non-PLAYING states pass */}
+        {/* taps through to any underlying targets (none today). */}
+        <Pressable
+          style={styles.avatarZone}
+          onPress={interruptPlayback}
+          disabled={voiceState !== 'PLAYING_AI_AUDIO'}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: voiceState !== 'PLAYING_AI_AUDIO' }}
+          accessibilityLabel="Ngắt lời Suka"
+          accessibilityHint="Chạm để dừng Suka đang nói"
+        >
           <SukaAvatar voiceState={voiceState} audioLevel={audioLevel} />
 
           {/* Errors surface via Toast (transient transport errors) */}
-        </View>
+        </Pressable>
 
         {/* u2500u2500 Transcript (compact, flex-weighted) u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500 */}
         <View style={styles.transcriptZone}>

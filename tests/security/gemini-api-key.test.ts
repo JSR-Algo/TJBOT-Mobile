@@ -9,8 +9,6 @@
  *   3. The single `GoogleGenAI({ apiKey })` caller sources its `apiKey`
  *      from a backend-issued ephemeral token, NOT from an env var or
  *      hardcoded string.
- *   4. `GeminiLiveClient._buildUrl` still branches on received token
- *      shape — that is expected and is the defensive detection path.
  *
  * Rationale: mobile is a COPPA app; a leaked raw Gemini API key bundled
  * into the client binary is billing fraud + compliance exposure. The
@@ -54,8 +52,8 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
   });
 
   it('no raw AIza literals outside defensive detection branches', () => {
-    // AIza* detection at `GeminiLiveClient.ts:62,129` and `useGeminiConversation.ts:158`
-    // is defensive parsing of a runtime token — NOT a key literal. The test allows
+    // AIza* detection at `useGeminiConversation.ts:158` is defensive parsing
+    // of a runtime token — NOT a key literal. The test allows
     // `.startsWith('AIza')` and `'AIza'` as a bare prefix check, but bans any
     // embedded alphanumeric suffix that would indicate a real key was pasted.
     //
@@ -79,11 +77,14 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
     const src = fs.readFileSync(hookPath, 'utf8');
 
     // Confirm that apiKey is assigned from data.token (backend response), not
-    // from an env/literal. The assignment happens at line 156 in rev-2.
+    // from an env/literal.
     expect(src).toMatch(/apiKey\s*=\s*data\.token/);
 
-    // Confirm the token is fetched from /v1/gemini/token (backend mint path).
-    expect(src).toMatch(/\/v1\/gemini\/token/);
+    // Confirm the token is fetched from the backend's gemini/token endpoint.
+    // The path in source is '/gemini/token' — the /v1 prefix is supplied by
+    // apiClient's base URL (see src/api/client.ts). Asserting the literal
+    // path the source uses keeps the test resilient to baseURL changes.
+    expect(src).toMatch(/apiClient\.post[^(]*\(\s*['"]\/gemini\/token['"]/);
 
     // Confirm `new GoogleGenAI({ apiKey })` uses the variable, not a literal.
     expect(src).toMatch(/new\s+GoogleGenAI\(\s*\{\s*apiKey\s*\}\s*\)/);
@@ -93,18 +94,4 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
     expect(src).not.toMatch(/process\.env\.\s*(GEMINI|GOOGLE)/);
   });
 
-  it('GeminiLiveClient defensive-branch detection is the only AIza reference shape', () => {
-    const clientPath = path.join(SRC_ROOT, 'ai', 'GeminiLiveClient.ts');
-    const src = fs.readFileSync(clientPath, 'utf8');
-
-    // The file MAY branch on `startsWith('AIza')` for defensive detection.
-    // It MUST NOT contain a full-length key literal.
-    const realKeyShape = /AIza[A-Za-z0-9_\-]{10,}/;
-    expect(src).not.toMatch(realKeyShape);
-
-    // Defensive branch is present (documents the dual-path support that the
-    // plan explicitly calls out — it must continue to exist so received
-    // ephemeral tokens route through v1alpha, not v1beta).
-    expect(src).toMatch(/startsWith\(['"]AIza['"]\)/);
-  });
 });

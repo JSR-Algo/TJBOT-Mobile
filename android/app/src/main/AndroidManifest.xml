@@ -2,6 +2,18 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Gemini Live realtime voice (sys-16). RECORD_AUDIO is the actual mic capability.
+         MODIFY_AUDIO_SETTINGS lets VoiceSessionModule set communication mode + routing.
+         FOREGROUND_SERVICE + FOREGROUND_SERVICE_MICROPHONE are required on Android 14+
+         (API 34) for mic capture to survive backgrounding — without them, AudioRecord
+         silently returns 0 bytes once the process priority drops. The service class
+         itself is declared below inside <application>. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
@@ -37,5 +49,15 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Foreground service that keeps Gemini Live voice sessions alive
+           while backgrounded on Android 14+. Type MUST match the call to
+           startForeground(id, notification, FOREGROUND_SERVICE_TYPE_MICROPHONE)
+           in VoiceSessionService.onStartCommand. -->
+      <service
+        android:name=".voicesession.VoiceSessionService"
+        android:foregroundServiceType="microphone"
+        android:exported="false"
+        android:enabled="true" />
     </application>
 </manifest>

@@ -12,7 +12,7 @@ import { ToastProvider } from './components/Toast';
 import { RootErrorBoundary } from './observability/RootErrorBoundary';
 import { initAnalytics } from './observability/analytics';
 import { initSentry } from './observability/sentry';
-import { hydrateAudioSeedOnce } from './audio/JitterSeedStore';
+import { startVoiceTelemetry } from './observability/voice-telemetry';
 
 initSentry();
 initAnalytics();
@@ -21,7 +21,11 @@ function AppInner(): React.JSX.Element {
   usePushNotifications();
 
   useEffect(() => {
-    hydrateAudioSeedOnce().catch(() => {});
+    // Subscribe native voice-stack events to Sentry breadcrumbs (sys-16).
+    // Safe in dev/sim where the native modules are absent — idempotent
+    // and tears down its listeners on unmount.
+    const stop = startVoiceTelemetry();
+    return stop;
   }, []);
 
   return (

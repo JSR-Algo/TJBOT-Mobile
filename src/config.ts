@@ -12,7 +12,7 @@ import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import { ENV } from './__env__';
 
-const HOSTED_API_ROOT = 'http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com';
+const HOSTED_API_ROOT = 'https://tbot-backend-8wmh.onrender.com';
 const HOSTED_API = `${HOSTED_API_ROOT}/v1`;
 const HOSTED_AI = `${HOSTED_API_ROOT}/api/ai`;
 const IOS_SIMULATOR_API = 'http://127.0.0.1:3000/v1';
@@ -41,10 +41,20 @@ export function getAiBaseUrl(): string {
   return HOSTED_AI;
 }
 
+// Canonical repo/live-guide model. Keep env-overridable for hotfixes, but the
+// default must match the backend/docs contract.
 const DEFAULT_GEMINI_LIVE_MODEL = 'models/gemini-3.1-flash-live-preview';
 
 export const Config = {
   API_BASE_URL: getApiBaseUrl(),
   AI_BASE_URL: getAiBaseUrl(),
   GEMINI_LIVE_MODEL: ENV.EXPO_PUBLIC_GEMINI_LIVE_MODEL || DEFAULT_GEMINI_LIVE_MODEL,
+  // DEBUG diagnostic flag: force iOS to use the native VoiceMicModule path
+  // instead of the RNLAS fallback. Default false — matches the 2026-04-23
+  // decision to hold the native path disabled on iOS until the on-device
+  // "start() throws / taps stop delivering" issue is root-caused
+  // (useGeminiConversation.ts `useNative` gate). When true, iOS takes the
+  // same path as Android so we can capture native stall events + engine
+  // diagnostics against the live repro.
+  VOICE_FORCE_NATIVE_IOS: ENV.EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS === 'true',
 } as const;

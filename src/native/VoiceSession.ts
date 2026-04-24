@@ -24,12 +24,28 @@ export interface VoiceRouteEvent {
   deviceName: string;
 }
 
+export interface VoiceSessionDiagnostics {
+  sessionActive: boolean;
+  category: string;
+  mode: string;
+  sampleRate: number;
+  ioBufferDuration: number;
+  inputLatency: number;
+  outputLatency: number;
+  route: VoiceRoute;
+  isOtherAudioPlaying: boolean;
+  preferredSampleRate: number;
+  preferredIOBufferDuration: number;
+}
+
 interface NativeVoiceSession {
   startSession(): Promise<void>;
   endSession(): Promise<void>;
   setRoute(route: VoiceRoute): Promise<VoiceRoute>;
   getRoute(): Promise<VoiceRoute>;
   forceRecover(): Promise<boolean>;
+  reapplyCategory(): Promise<boolean>;
+  getDiagnostics(): Promise<VoiceSessionDiagnostics>;
 }
 
 const Native = NativeModules.VoiceSessionModule as NativeVoiceSession | undefined;
@@ -87,6 +103,39 @@ export const VoiceSession = {
     }
   },
 
+  /**
+   * Returns the AVAudioSession state AS ACTIVATED — not the requested values.
+   * iOS HAL commonly rejects preferred sample rate / buffer duration when
+   * BT SCO is active; this method exposes what the hardware actually gave
+   * us so downstream converters and telemetry can work from reality rather
+   * than assumption. Plan §7 P0-8.
+   *
+   * Returns null when the native module is not linked.
+   */
+  async getDiagnostics(): Promise<VoiceSessionDiagnostics | null> {
+    if (!Native?.getDiagnostics) return null;
+    try {
+      return await Native.getDiagnostics();
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Re-apply category/mode/options without deactivating the session.
+   * Safe to call while another audio library (e.g. RNLAS) is actively
+   * capturing — unlike {@link forceRecover}, which tears the session
+   * down and would stall that library's AudioQueue.
+   */
+  async reapplyCategory(): Promise<boolean> {
+    if (!Native?.reapplyCategory) return false;
+    try {
+      return await Native.reapplyCategory();
+    } catch {
+      return false;
+    }
+  },
+
   onStateChange(cb: (e: VoiceSessionStateEvent) => void): () => void {
     if (!emitter) return () => {};
     const sub = emitter.addListener('voiceSessionStateChange', cb);
@@ -96,6 +145,20 @@ export const VoiceSession = {
   onRouteChange(cb: (e: VoiceRouteEvent) => void): () => void {
     if (!emitter) return () => {};
     const sub = emitter.addListener('voiceRouteChange', cb);
+    return () => sub.remove();
+  },
+
+  /**
+   * Fires after the native session recovers from a destructive event
+   * (media-services reset today; interruption-end and foreground-resume
+   * wiring later). Listeners SHOULD tear down + re-init their audio
+   * resources — the underlying AVAudioEngine units were invalidated by
+   * the system and any stale handles will produce silent output.
+   * Plan §3.3 P0-5b.
+   */
+  onSessionRecovered(cb: (e: { reason: string }) => void): () => void {
+    if (!emitter) return () => {};
+    const sub = emitter.addListener('voiceSessionRecovered', cb);
     return () => sub.remove();
   },
 

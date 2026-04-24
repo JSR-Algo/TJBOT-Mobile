@@ -7,28 +7,63 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		010B5248DA4085DBB2E5B208 /* SharedEngineSpikeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740C598C8420036FD3FD8B81 /* SharedEngineSpikeTests.swift */; };
+		03E3943FC7F44A617C578611 /* PcmStreamModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1749F12F36CED817179A8157 /* PcmStreamModuleTests.swift */; };
+		0D71015AB31EEE51B0DC8719 /* VoiceSessionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 9931D7340BCEDF165A264606 /* VoiceSessionModule.m */; };
+		10B6FD8D772368862E15C177 /* SharedVoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		30C75F94A94B4C7CA075FEF1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5861300E3222BB3753E3A0C0 /* Foundation.framework */; };
+		50E1E75E41D9734678B670F3 /* PcmStreamModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E133BB36BFE1597E6CFEB9F /* PcmStreamModule.swift */; };
 		71ECCB3B23D5183E13C7072C /* libPods-TbotMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D783AF6183CE806AE0D29295 /* libPods-TbotMobile.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.mm */; };
 		761780F02CA45674006654EE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 761780EF2CA45674006654EE /* main.m */; };
+		8105F3091EF12F5F18AC2074 /* VoiceSessionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		9475E8F4DFB7471291FC40B8 /* VoiceMicModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66995590EE4FB9CD11B21587 /* VoiceMicModule.swift */; };
 		949E32A97359AC868382A1CC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641093E933E3175931169B50 /* ExpoModulesProvider.swift */; };
+		AFC3D3FEF28D45C081262290 /* VoiceMicModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */; };
+		D5D4243715E85F02397B186D /* VoiceSessionModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC442A2893028AD18D950524 /* VoiceSessionModuleTests.swift */; };
 		E9F771B944F96C6F72141DCD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */; };
+		F2CEF5C6B9C5FA9EBC000578 /* PcmStreamModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 536EF3757A90E484408046CC /* PcmStreamModule.m */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		3479138144E653A08E0E80FA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
+			remoteInfo = TbotMobile;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceMicModule.m; path = TbotMobile/VoiceMic/VoiceMicModule.m; sourceTree = "<group>"; };
+		12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedVoiceEngine.swift; path = TbotMobile/SharedVoiceEngine.swift; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* TbotMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TbotMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = TbotMobile/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = TbotMobile/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = TbotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		1749F12F36CED817179A8157 /* PcmStreamModuleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PcmStreamModuleTests.swift; sourceTree = "<group>"; };
+		2CB91DD0495C02B6E65CA09C /* VoiceMicModuleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceMicModuleTests.swift; sourceTree = "<group>"; };
 		37730A1DCA2ACE18350A27C3 /* Pods-TbotMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TbotMobile.release.xcconfig"; path = "Target Support Files/Pods-TbotMobile/Pods-TbotMobile.release.xcconfig"; sourceTree = "<group>"; };
+		4E133BB36BFE1597E6CFEB9F /* PcmStreamModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PcmStreamModule.swift; path = TbotMobile/PcmStream/PcmStreamModule.swift; sourceTree = "<group>"; };
+		536EF3757A90E484408046CC /* PcmStreamModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = PcmStreamModule.m; path = TbotMobile/PcmStream/PcmStreamModule.m; sourceTree = "<group>"; };
+		5861300E3222BB3753E3A0C0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		641093E933E3175931169B50 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-TbotMobile/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		66995590EE4FB9CD11B21587 /* VoiceMicModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceMicModule.swift; path = TbotMobile/VoiceMic/VoiceMicModule.swift; sourceTree = "<group>"; };
+		68D9AC995198378B11828573 /* TbotMobileTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TbotMobileTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		740C598C8420036FD3FD8B81 /* SharedEngineSpikeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedEngineSpikeTests.swift; sourceTree = "<group>"; };
 		761780EB2CA45674006654EE /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = TbotMobile/AppDelegate.h; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = TbotMobile/AppDelegate.mm; sourceTree = "<group>"; };
 		761780EF2CA45674006654EE /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = TbotMobile/main.m; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = TbotMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		9931D7340BCEDF165A264606 /* VoiceSessionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceSessionModule.m; path = TbotMobile/VoiceSession/VoiceSessionModule.m; sourceTree = "<group>"; };
+		B3B47F9F1C2E046CC0542C3E /* TbotMobile-Bridging-Header.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = "TbotMobile-Bridging-Header.h"; path = "TbotMobile/TbotMobile-Bridging-Header.h"; sourceTree = "<group>"; };
+		C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSessionModule.swift; path = TbotMobile/VoiceSession/VoiceSessionModule.swift; sourceTree = "<group>"; };
 		D783AF6183CE806AE0D29295 /* libPods-TbotMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TbotMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = TbotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = TbotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		DC442A2893028AD18D950524 /* VoiceSessionModuleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceSessionModuleTests.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FA914E762E8D05863FED5624 /* Pods-TbotMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TbotMobile.debug.xcconfig"; path = "Target Support Files/Pods-TbotMobile/Pods-TbotMobile.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -39,6 +74,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				71ECCB3B23D5183E13C7072C /* libPods-TbotMobile.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3363CEF072CF281158DA684D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				30C75F94A94B4C7CA075FEF1 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -56,8 +99,21 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */,
+				8B657F34CA0440D18046280F /* VoiceSession */,
+				B3B47F9F1C2E046CC0542C3E /* TbotMobile-Bridging-Header.h */,
+				12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */,
+				96EA55884C1DA82D0CEA71AD /* VoiceMic */,
+				373454D9219514033F7FA62A /* PcmStream */,
 			);
 			name = TbotMobile;
+			sourceTree = "<group>";
+		};
+		2137DE2E6CF018CA0454504C /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				5861300E3222BB3753E3A0C0 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
@@ -65,8 +121,18 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				D783AF6183CE806AE0D29295 /* libPods-TbotMobile.a */,
+				2137DE2E6CF018CA0454504C /* iOS */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		373454D9219514033F7FA62A /* PcmStream */ = {
+			isa = PBXGroup;
+			children = (
+				4E133BB36BFE1597E6CFEB9F /* PcmStreamModule.swift */,
+				536EF3757A90E484408046CC /* PcmStreamModule.m */,
+			);
+			name = PcmStream;
 			sourceTree = "<group>";
 		};
 		7B819AFD9DB2B2A47BC6E0DC /* TbotMobile */ = {
@@ -101,6 +167,7 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
 				7FEFB5C977DF13C6634B9750 /* ExpoModulesProviders */,
+				FE43B14E8714B3BFD44C88FB /* TbotMobileTests */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -111,8 +178,27 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* TbotMobile.app */,
+				68D9AC995198378B11828573 /* TbotMobileTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8B657F34CA0440D18046280F /* VoiceSession */ = {
+			isa = PBXGroup;
+			children = (
+				C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */,
+				9931D7340BCEDF165A264606 /* VoiceSessionModule.m */,
+			);
+			name = VoiceSession;
+			sourceTree = "<group>";
+		};
+		96EA55884C1DA82D0CEA71AD /* VoiceMic */ = {
+			isa = PBXGroup;
+			children = (
+				66995590EE4FB9CD11B21587 /* VoiceMicModule.swift */,
+				0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */,
+			);
+			name = VoiceMic;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -122,6 +208,18 @@
 				37730A1DCA2ACE18350A27C3 /* Pods-TbotMobile.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		FE43B14E8714B3BFD44C88FB /* TbotMobileTests */ = {
+			isa = PBXGroup;
+			children = (
+				740C598C8420036FD3FD8B81 /* SharedEngineSpikeTests.swift */,
+				DC442A2893028AD18D950524 /* VoiceSessionModuleTests.swift */,
+				2CB91DD0495C02B6E65CA09C /* VoiceMicModuleTests.swift */,
+				1749F12F36CED817179A8157 /* PcmStreamModuleTests.swift */,
+			);
+			name = TbotMobileTests;
+			path = TbotMobileTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -148,6 +246,24 @@
 			productName = TbotMobile;
 			productReference = 13B07F961A680F5B00A75B9A /* TbotMobile.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B979707E9AB4F2C4FA94A2E5 /* TbotMobileTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54339EC2E36F99A5D6174522 /* Build configuration list for PBXNativeTarget "TbotMobileTests" */;
+			buildPhases = (
+				269D9FFFCFB81E2B8020BE09 /* Sources */,
+				3363CEF072CF281158DA684D /* Frameworks */,
+				101A9559A645E6387ABFAD6D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CDEE6D10E63EEC8142D7EA32 /* PBXTargetDependency */,
+			);
+			name = TbotMobileTests;
+			productName = TbotMobileTests;
+			productReference = 68D9AC995198378B11828573 /* TbotMobileTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -176,11 +292,19 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* TbotMobile */,
+				B979707E9AB4F2C4FA94A2E5 /* TbotMobileTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		101A9559A645E6387ABFAD6D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F8E1A680F5B00A75B9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -299,10 +423,36 @@
 				761780ED2CA45674006654EE /* AppDelegate.mm in Sources */,
 				761780F02CA45674006654EE /* main.m in Sources */,
 				949E32A97359AC868382A1CC /* ExpoModulesProvider.swift in Sources */,
+				8105F3091EF12F5F18AC2074 /* VoiceSessionModule.swift in Sources */,
+				0D71015AB31EEE51B0DC8719 /* VoiceSessionModule.m in Sources */,
+				10B6FD8D772368862E15C177 /* SharedVoiceEngine.swift in Sources */,
+				9475E8F4DFB7471291FC40B8 /* VoiceMicModule.swift in Sources */,
+				AFC3D3FEF28D45C081262290 /* VoiceMicModule.m in Sources */,
+				50E1E75E41D9734678B670F3 /* PcmStreamModule.swift in Sources */,
+				F2CEF5C6B9C5FA9EBC000578 /* PcmStreamModule.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		269D9FFFCFB81E2B8020BE09 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				010B5248DA4085DBB2E5B208 /* SharedEngineSpikeTests.swift in Sources */,
+				D5D4243715E85F02397B186D /* VoiceSessionModuleTests.swift in Sources */,
+				03E3943FC7F44A617C578611 /* PcmStreamModuleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CDEE6D10E63EEC8142D7EA32 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TbotMobile;
+			target = 13B07F861A680F5B00A75B9A /* TbotMobile */;
+			targetProxy = 3479138144E653A08E0E80FA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -312,6 +462,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 7Q65CFWBG8;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = TbotMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -327,8 +478,10 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.manhhodinh.tbot;
 				PRODUCT_NAME = TbotMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OBJC_BRIDGING_HEADER = "TbotMobile/TbotMobile-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -343,6 +496,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 7Q65CFWBG8;
 				INFOPLIST_FILE = TbotMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -357,11 +511,39 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.manhhodinh.tbot;
 				PRODUCT_NAME = TbotMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OBJC_BRIDGING_HEADER = "TbotMobile/TbotMobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		5EF6230A5998DC7DBC57A237 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7Q65CFWBG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.manhhodinh.tbot.TbotMobileTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TbotMobile.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TbotMobile";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -395,7 +577,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				COPY_PHASE_STRIP = NO;
 				CXX = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -480,7 +662,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				COPY_PHASE_STRIP = YES;
 				CXX = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -527,6 +709,31 @@
 			};
 			name = Release;
 		};
+		ABF5D23D8659FCE0695E0677 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7Q65CFWBG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.manhhodinh.tbot.TbotMobileTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TbotMobile.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TbotMobile";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -535,6 +742,15 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		54339EC2E36F99A5D6174522 /* Build configuration list for PBXNativeTarget "TbotMobileTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5EF6230A5998DC7DBC57A237 /* Release */,
+				ABF5D23D8659FCE0695E0677 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

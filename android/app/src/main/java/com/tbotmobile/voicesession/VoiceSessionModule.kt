@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -51,6 +52,12 @@ class VoiceSessionModule(
   private var previousMode: Int = AudioManager.MODE_NORMAL
   private var focusRequest: AudioFocusRequest? = null
   private var currentRoute: String = ROUTE_SPEAKER
+
+  // Tracks whether we successfully called startForegroundService, so
+  // endSession / invalidate know whether there's anything to tear down.
+  // The service itself is resilient to double-stop via stopService, but
+  // this avoids logging spurious "stopped an un-started service" lines.
+  @Volatile private var foregroundServiceStarted = false
 
   private val focusListener =
     AudioManager.OnAudioFocusChangeListener { change ->
@@ -112,6 +119,13 @@ class VoiceSessionModule(
         return
       }
 
+      // Start the FG service FIRST so the process is elevated before we
+      // grab audio focus and (eventually) AudioRecord. On Android 14+
+      // without this, the mic silently stops capturing once the user
+      // backgrounds the app. Start failure is non-fatal — the session
+      // still works in the foreground and recovers if user returns.
+      startForegroundServiceSafe()
+
       previousMode = audioManager.mode
       audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
 
@@ -169,6 +183,7 @@ class VoiceSessionModule(
 
       audioManager.mode = previousMode
       sessionActive = false
+      stopForegroundServiceSafe()
       emitState(STATE_INACTIVE, reason = "end")
       promise.resolve(null)
     } catch (e: Throwable) {
@@ -428,6 +443,42 @@ class VoiceSessionModule(
     }
   }
 
+  private fun startForegroundServiceSafe() {
+    if (foregroundServiceStarted) return
+    try {
+      val intent = Intent(reactContext.applicationContext, VoiceSessionService::class.java)
+      ContextCompat.startForegroundService(reactContext.applicationContext, intent)
+      foregroundServiceStarted = true
+      structLog("fg_service_start_requested", emptyMap())
+    } catch (e: Throwable) {
+      // Typically BackgroundServiceStartNotAllowedException on API 31+
+      // when the RN bridge called startSession from a non-foreground
+      // context (e.g. in-app notification handler). Session proceeds
+      // without the FG boost — Android 14+ may later cut the mic when
+      // the app backgrounds, but foreground use works.
+      structLog(
+        "fg_service_start_err",
+        mapOf("err" to e.javaClass.simpleName, "msg" to (e.message ?: "unknown")),
+      )
+    }
+  }
+
+  private fun stopForegroundServiceSafe() {
+    if (!foregroundServiceStarted) return
+    try {
+      val intent = Intent(reactContext.applicationContext, VoiceSessionService::class.java)
+      reactContext.applicationContext.stopService(intent)
+      structLog("fg_service_stop_requested", emptyMap())
+    } catch (e: Throwable) {
+      structLog(
+        "fg_service_stop_err",
+        mapOf("err" to e.javaClass.simpleName, "msg" to (e.message ?: "unknown")),
+      )
+    } finally {
+      foregroundServiceStarted = false
+    }
+  }
+
   private fun structLog(
     event: String,
     fields: Map<String, Any?>,
@@ -461,6 +512,10 @@ class VoiceSessionModule(
       }
       sessionActive = false
     }
+    // Always stop the FG service on invalidate, even if sessionActive was
+    // false — covers the case where startForegroundServiceSafe succeeded
+    // but the rest of startSession threw before sessionActive latched.
+    stopForegroundServiceSafe()
   }
 
   companion object {

@@ -33,6 +33,7 @@ export const ENV = {
   EXPO_PUBLIC_SENTRY_DSN: ${JSON.stringify(env.EXPO_PUBLIC_SENTRY_DSN || '')},
   EXPO_PUBLIC_POSTHOG_API_KEY: ${JSON.stringify(env.EXPO_PUBLIC_POSTHOG_API_KEY || '')},
   EXPO_PUBLIC_POSTHOG_HOST: ${JSON.stringify(env.EXPO_PUBLIC_POSTHOG_HOST || '')},
+  EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS: ${JSON.stringify(env.EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS || '')},
 };
 `;
 const envTsPath = path.resolve(__dirname, 'src/__env__.ts');
