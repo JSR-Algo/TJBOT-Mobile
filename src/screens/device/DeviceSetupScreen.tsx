@@ -119,7 +119,11 @@ export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSe
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.heroCircle}>
           <Bot size={48} color={theme.colors.primary} strokeWidth={2} />
         </View>
@@ -188,7 +192,8 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     padding: theme.spacing.lg,
-    justifyContent: 'center',
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl,
   },
   heroCircle: {
     alignSelf: 'center',

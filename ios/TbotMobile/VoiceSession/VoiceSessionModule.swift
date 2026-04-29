@@ -92,6 +92,20 @@ final class VoiceSessionModule: RCTEventEmitter {
       )
       try session.setActive(true, options: .notifyOthersOnDeactivation)
 
+      // Pre-arm SharedVoiceEngine's voiceProcessing flag immediately after
+      // the AVAudioSession is live. Any concurrent PcmStreamModule prewarm
+      // that calls ensureStarted(voiceProcessing: false) will hit the sticky-
+      // flag conflict guard and throw, discarding the prewarm, rather than
+      // silently winning the flag and leaving the mic tap unable to use
+      // voiceProcessingIO. See SharedVoiceEngine.preflight for invariant docs.
+      do {
+        try SharedVoiceEngine.shared.preflight(voiceProcessing: true)
+      } catch {
+        structLog(event: "preflight_failed", details: ["err": error.localizedDescription])
+        // Non-fatal: engine may already be running from a prior session or the
+        // prewarm already started with the correct flag. Log and continue.
+      }
+
       // Force-override output to speaker right after activation.
       // `.defaultToSpeaker` in options is advisory — some device states
       // still route to earpiece. This explicit override guarantees loa
@@ -234,41 +248,6 @@ final class VoiceSessionModule: RCTEventEmitter {
       "preferredSampleRate": session.preferredSampleRate,
       "preferredIOBufferDuration": session.preferredIOBufferDuration,
     ])
-  }
-
-  /// Re-apply the session category/mode/options and speaker override
-  /// WITHOUT deactivating+reactivating the session. Designed for the
-  /// RNLAS-coexistence case: when another audio library flips the
-  /// session to `.voiceChat` (which mutes AVAudioPlayerNode output),
-  /// we need to flip it back to `.default` without tearing down the
-  /// other library's in-flight AudioQueue capture — `forceRecover`
-  /// does setActive(false)/setActive(true) which stalls that AudioQueue
-  /// and kills mic delivery. This variant touches only the category
-  /// surface, which the system can change on an already-active session.
-  @objc(reapplyCategory:rejecter:)
-  func reapplyCategory(
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    guard sessionActive else {
-      resolve(false)
-      return
-    }
-    let session = AVAudioSession.sharedInstance()
-    do {
-      try session.setCategory(
-        .playAndRecord,
-        mode: .default,
-        options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker]
-      )
-      try? session.overrideOutputAudioPort(.speaker)
-      currentRoute = routeForCurrentOutput()
-      structLog(event: "reapply_category", details: ["route": currentRoute])
-      resolve(true)
-    } catch {
-      structLog(event: "reapply_err", details: ["err": error.localizedDescription])
-      reject("E_REAPPLY", error.localizedDescription, error)
-    }
   }
 
   @objc(forceRecover:rejecter:)

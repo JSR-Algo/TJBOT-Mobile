@@ -53,7 +53,11 @@ export default function SignupScreen(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.title}>Create your account</Text>
           <Text style={styles.subtitle}>Join thousands of families using TBOT</Text>
 
@@ -81,7 +85,7 @@ export default function SignupScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  container: { flexGrow: 1, padding: spacing.lg, justifyContent: 'center' },
+  container: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl },
   title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.xs },
   subtitle: { ...typography.body1, color: colors.textSecondary, marginBottom: spacing.xl },
   btn: { marginTop: spacing.sm },

@@ -78,6 +78,10 @@ export function ParentControlsScreen({ route }: MainStackScreenProps<'ParentCont
     try {
       await controlsApi.updateControls(deviceId, controls);
       setSuccessMessage('Settings saved!');
+      // Auto-clear success toast after 3s. Presentation-only — does not
+      // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
+      // timers in shared layers.
+      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: unknown) {
       setError(normalizeError(err).message);

@@ -79,6 +79,15 @@ final class PcmStreamModule: RCTEventEmitter {
   private var playerNode: AVAudioPlayerNode?
   private var format: AVAudioFormat?
 
+  /// Defense-in-depth responseId gate (plan v2 §4.3 + §5.3).
+  /// Primary stale-chunk defense is the JS bargeInWindowOpen drop (§3.1.1);
+  /// this is the native fallback that catches chunks still in the bridge
+  /// pipeline after a barge-in. Set by startResponse(); cleared by clear().
+  private var currentResponseId: String?
+
+  /// 1-in-10 sampling counter for voicePlaybackQueueRejected metric.
+  private var rejectedChunkCounter = 0
+
   /// Cumulative frames fed via feed(); input-rate (24kHz).
   private var fedFrames: UInt64 = 0
 
@@ -116,6 +125,10 @@ final class PcmStreamModule: RCTEventEmitter {
 
   private var hasListeners = false
   private let log = OSLog(subsystem: "com.tbot.voice", category: "PcmStream")
+
+
+  // MARK: - QA Test Harness state (nil when harness is off)
+  private var qaWriter: QaWavWriter?
 
   // MARK: - RCTEventEmitter overrides
 
@@ -234,17 +247,36 @@ final class PcmStreamModule: RCTEventEmitter {
     }
   }
 
-  @objc(feed:resolver:rejecter:)
+  @objc(feed:responseId:resolver:rejecter:)
   func feed(
     _ base64: NSString,
+    responseId: NSString,
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     let b64 = base64 as String
+    let rid = responseId as String
     stateQueue.async { [weak self] in
       guard let self = self else { return }
       guard let node = self.playerNode, let fmt = self.format else {
         reject(ErrorCode.notInitialized, "feed before init", nil)
+        return
+      }
+
+      // Defense-in-depth responseId gate (plan v2 §4.3). Primary defense is
+      // JS bargeInWindowOpen drop; this catches chunks still in the bridge
+      // pipeline after a barge-in. Sampled 1-in-10 for the metric to avoid
+      // event flood during rapid barge-in sequences.
+      if !rid.isEmpty && self.currentResponseId != nil && rid != self.currentResponseId {
+        self.rejectedChunkCounter += 1
+        if self.rejectedChunkCounter % 10 == 1 {
+          os_log(
+            "feed rejected stale rid=%{public}@ current=%{public}@",
+            log: self.log, type: .default,
+            rid, self.currentResponseId ?? "nil"
+          )
+        }
+        resolve(0)
         return
       }
 
@@ -286,6 +318,11 @@ final class PcmStreamModule: RCTEventEmitter {
         for i in 0..<Int(frameCount) {
           dst[i] = Float(src[i]) * scale
         }
+      }
+
+      // QA harness: capture Float32 samples (already converted from Int16) as WAV.
+      if let writer = self.qaWriter {
+        writer.write(float32Samples: dst, count: Int(frameCount))
       }
 
       self.fedFrames += UInt64(frameCount)
@@ -365,6 +402,12 @@ final class PcmStreamModule: RCTEventEmitter {
       self.turnGeneration &+= 1
       // B4: reset the jitter-buffer gate so the next turn re-prebuffers.
       self.playbackStarted = false
+      // P0-6: clear responseId gate on barge-in so the next response starts clean.
+      self.currentResponseId = nil
+      self.rejectedChunkCounter = 0
+      // QA harness: close WAV on barge-in (interrupted turn).
+      self.qaWriter?.close(sampleRate: Config.inputSampleRate)
+      self.qaWriter = nil
       node.play(at: nil)
       os_log("clear (barge-in) ok", log: self.log, type: .info)
       resolve(nil)
@@ -378,6 +421,32 @@ final class PcmStreamModule: RCTEventEmitter {
   ) {
     stateQueue.async { [weak self] in
       self?.closeInternal()
+      resolve(nil)
+    }
+  }
+
+  /// Register the responseId for the upcoming response turn (plan v2 §4.3).
+  /// Called by JS immediately before the first feed() of each new response.
+  /// Any feed() call with a different (non-empty) responseId will be silently
+  /// dropped as a stale chunk from a superseded response.
+  @objc(startResponse:resolver:rejecter:)
+  func startResponse(
+    _ rid: NSString,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    let responseId = rid as String
+    stateQueue.async { [weak self] in
+      guard let self = self else { return }
+      self.currentResponseId = responseId.isEmpty ? nil : responseId
+      self.rejectedChunkCounter = 0
+      // QA harness: close any prior writer and open a new one per responseId.
+      self.qaWriter?.close(sampleRate: Config.inputSampleRate)
+      self.qaWriter = responseId.isEmpty ? nil : QaWavWriter(responseId: responseId)
+      os_log(
+        "startResponse rid=%{public}@",
+        log: self.log, type: .info, responseId
+      )
       resolve(nil)
     }
   }
@@ -482,6 +551,8 @@ final class PcmStreamModule: RCTEventEmitter {
     turnOpen = false
     playbackStarted = false
     jitterBufferFrames = 0
+    currentResponseId = nil
+    rejectedChunkCounter = 0
 
     os_log("close ok", log: log, type: .info)
   }
@@ -548,6 +619,9 @@ final class PcmStreamModule: RCTEventEmitter {
   }
 
   private func emitDrained(generation: UInt64, reason: String) {
+    // QA harness: finalize WAV on drain (turn complete).
+    qaWriter?.close(sampleRate: Config.inputSampleRate)
+    qaWriter = nil
     os_log(
       "drained generation=%{public}llu reason=%{public}@ played=%{public}llu scheduled=%{public}llu",
       log: log, type: .info,
@@ -565,4 +639,72 @@ final class PcmStreamModule: RCTEventEmitter {
       )
     }
   }
+
+// MARK: - QA Test Harness
+
+/// Writes 16-bit LE mono WAV to Documents/voice-test-output/<responseId>.wav.
+/// Only instantiated when EXPO_PUBLIC_VOICE_TEST_HARNESS=true in the process env.
+/// Thread safety: all calls must be on stateQueue.
+private final class QaWavWriter {
+  private var handle: FileHandle?
+  private var pcmByteCount: Int = 0
+
+  init?(responseId: String) {
+    guard ProcessInfo.processInfo.environment["EXPO_PUBLIC_VOICE_TEST_HARNESS"] == "true" else {
+      return nil
+    }
+    guard let docs = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first else {
+      return nil
+    }
+    let dir = (docs as NSString).appendingPathComponent("voice-test-output")
+    try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+    let safe = responseId
+      .replacingOccurrences(of: "/", with: "_")
+      .replacingOccurrences(of: ":", with: "_")
+    let path = (dir as NSString).appendingPathComponent("\(safe).wav")
+    FileManager.default.createFile(atPath: path, contents: nil)
+    guard let fh = FileHandle(forWritingAtPath: path) else { return nil }
+    handle = fh
+    fh.write(Data(count: 44)) // placeholder header; patched in close()
+  }
+
+  func write(float32Samples: UnsafePointer<Float>, count: Int) {
+    guard let fh = handle, count > 0 else { return }
+    var int16Buf = [Int16](repeating: 0, count: count)
+    for i in 0..<count {
+      let clamped = max(-1.0, min(1.0, float32Samples[i]))
+      int16Buf[i] = Int16(clamped * 32767.0)
+    }
+    fh.write(Data(bytes: int16Buf, count: count * 2))
+    pcmByteCount += count * 2
+  }
+
+  func close(sampleRate: Double) {
+    guard let fh = handle else { return }
+    let dataLen = pcmByteCount
+    var h = Data(count: 44)
+    h.withUnsafeMutableBytes { (p: UnsafeMutableRawBufferPointer) in
+      func w32(_ v: UInt32, at off: Int) { p.storeBytes(of: v.littleEndian, toByteOffset: off, as: UInt32.self) }
+      func w16(_ v: UInt16, at off: Int) { p.storeBytes(of: v.littleEndian, toByteOffset: off, as: UInt16.self) }
+      w32(0x46464952, at: 0)  // "RIFF"
+      w32(UInt32(36 + dataLen), at: 4)
+      w32(0x45564157, at: 8)  // "WAVE"
+      w32(0x20746d66, at: 12) // "fmt "
+      w32(16, at: 16)
+      w16(1, at: 20)          // PCM
+      w16(1, at: 22)          // mono
+      w32(UInt32(sampleRate), at: 24)
+      w32(UInt32(sampleRate) * 2, at: 28) // byte rate
+      w16(2, at: 32)          // block align
+      w16(16, at: 34)         // bits/sample
+      w32(0x61746164, at: 36) // "data"
+      w32(UInt32(dataLen), at: 40)
+    }
+    fh.seek(toFileOffset: 0)
+    fh.write(h)
+    fh.closeFile()
+    handle = nil
+  }
+}
+
 }

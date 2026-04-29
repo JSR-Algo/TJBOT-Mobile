@@ -51,6 +51,10 @@ final class VoiceMicModule: RCTEventEmitter {
   private enum Event {
     static let data = "voiceMicData"
     static let stalled = "voiceMicStalled"
+    /// Fires AT MOST ONCE per `start()` cycle on the first frame the tap
+    /// actually delivers. JS hook uses this as the trigger for the FSM
+    /// `ready → listening` transition (plan §3.2 row `ready`, §6.3 row 3).
+    static let engineReady = "voiceMicEngineReady"
   }
 
   private enum ErrorCode {
@@ -84,10 +88,27 @@ final class VoiceMicModule: RCTEventEmitter {
   private var seq: UInt64 = 0
   private var framesDelivered: UInt64 = 0
   private var lastFrameAt: Date?
+  /// Stamped at the end of `start()`. The first frame's age is measured
+  /// against this so JS gets a meaningful "tap warm-up" duration in the
+  /// voiceMicEngineReady event. Reset to nil on stop() so the next start
+  /// cycle's first frame fires the event again.
+  private var engineStartAt: Date?
   private var stallTimer: DispatchSourceTimer?
   private var stallNoAdvanceTicks = 0
   private var lastStallCheckFrames: UInt64 = 0
   private var fatalStall = false
+
+  // P0-7: Energy + ZCR VAD (plan §5.6). Constants from env or defaults.
+  private let vadEnergyThresholdDb: Double
+  private let vadZcrLow: Double
+  private let vadZcrHigh: Double
+  private let vadHangoverMs: Int
+  // Pre-roll ring buffer: [Int16] arrays per chunk, max 10 chunks (~200ms)
+  private var preRollBuffer: [[Int16]] = []
+  private var preRollFilled = false
+  private var vadSpeechActive = false
+  private var vadHangoverFramesLeft = 0
+
   // Diagnostic ticker piggybacked on the stall timer (500 ms cadence). Emits
   // a line to Console.app every 2 s with the state tuple needed to triage
   // the 2026-04-23 "mic auto-turns-off" investigation — `running`,
@@ -101,13 +122,25 @@ final class VoiceMicModule: RCTEventEmitter {
   // MARK: - RCTEventEmitter overrides
 
   override init() {
+    func envDouble(_ key: String, _ def: Double) -> Double {
+      if let v = ProcessInfo.processInfo.environment[key], let d = Double(v) { return d }
+      return def
+    }
+    func envInt(_ key: String, _ def: Int) -> Int {
+      if let v = ProcessInfo.processInfo.environment[key], let i = Int(v) { return i }
+      return def
+    }
+    vadEnergyThresholdDb = envDouble("EXPO_PUBLIC_VOICE_VAD_ENERGY_DB", -42.0)
+    vadZcrLow = envDouble("EXPO_PUBLIC_VOICE_VAD_ZCR_LOW", 0.05)
+    vadZcrHigh = envDouble("EXPO_PUBLIC_VOICE_VAD_ZCR_HIGH", 0.45)
+    vadHangoverMs = envInt("EXPO_PUBLIC_VOICE_VAD_HANGOVER_MS", 400)
     super.init()
   }
 
   override static func requiresMainQueueSetup() -> Bool { false }
 
   override func supportedEvents() -> [String]! {
-    return [Event.data, Event.stalled]
+    return [Event.data, Event.stalled, Event.engineReady, "voiceMicVadStart", "voiceMicVadEnd"]
   }
 
   override func startObserving() { hasListeners = true }
@@ -240,6 +273,7 @@ final class VoiceMicModule: RCTEventEmitter {
       self.seq = 0
       self.framesDelivered = 0
       self.lastFrameAt = nil
+      self.engineStartAt = Date()
       self.stallNoAdvanceTicks = 0
       self.lastStallCheckFrames = 0
       self.fatalStall = false
@@ -315,6 +349,19 @@ final class VoiceMicModule: RCTEventEmitter {
     }
   }
 
+  /// P0-8: iOS stub — voiceProcessingIO provides sufficient AEC on iOS so
+  /// the software RMS fallback gate is not needed. Resolves immediately so
+  /// the JS hook can call unconditionally without Platform.OS branching.
+  @objc(setAecFallbackGate:threshold:resolver:rejecter:)
+  func setAecFallbackGate(
+    _ enabled: NSNumber,
+    threshold: NSNumber,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter _: @escaping RCTPromiseRejectBlock
+  ) {
+    resolve(nil)
+  }
+
   // NativeEventEmitter requires these methods to exist, but listener
   // accounting still has to flow through RCTEventEmitter so
   // startObserving()/stopObserving() flip `hasListeners` correctly.
@@ -345,9 +392,14 @@ final class VoiceMicModule: RCTEventEmitter {
     seq = 0
     framesDelivered = 0
     lastFrameAt = nil
+    engineStartAt = nil
     stallNoAdvanceTicks = 0
     lastStallCheckFrames = 0
     fatalStall = false
+    preRollBuffer.removeAll()
+    preRollFilled = false
+    vadSpeechActive = false
+    vadHangoverFramesLeft = 0
   }
 
   // Debug counter — bump on every tap; log via print (safe on arm64).
@@ -443,6 +495,24 @@ final class VoiceMicModule: RCTEventEmitter {
     let nsData = Data(bytes: src, count: outLen)
     let b64 = nsData.base64EncodedString()
 
+    // P0-7: VAD computed on tap thread where `src` is valid.
+    let vadSampleCount = outLen / 2
+    var energySum = 0.0
+    var zeroCrossings = 0
+    var prevSample: Double = 0
+    for vi in 0..<vadSampleCount {
+      let norm = Double(src[vi]) / 32768.0
+      energySum += norm * norm
+      if vi > 0 && prevSample * norm < 0 { zeroCrossings += 1 }
+      prevSample = norm
+    }
+    let energyDb = energySum > 0 ? 10.0 * log10(energySum / Double(vadSampleCount)) : -100.0
+    let zcr = vadSampleCount > 1 ? Double(zeroCrossings) / Double(max(1, vadSampleCount - 1)) : 0.0
+    // Capture as value so stateQueue.async closure does not need self.vadEnergyThresholdDb etc.
+    let isSpeechFrame = energyDb > self.vadEnergyThresholdDb && zcr >= self.vadZcrLow && zcr <= self.vadZcrHigh
+    // Snapshot samples for pre-roll (copied before tap buffer is reused)
+    let vadSamples = Array(UnsafeBufferPointer(start: src, count: vadSampleCount))
+
     let frameCount = UInt64(outBuffer.frameLength)
     let timestampMs = Date().timeIntervalSince1970 * 1000.0
 
@@ -456,6 +526,53 @@ final class VoiceMicModule: RCTEventEmitter {
       if seqNow == 0 || seqNow % 50 == 0 {
         NSLog("[TbotVoice-debug] emit #%llu hasListeners=%@ outBytes=%d",
               seqNow, self.hasListeners ? "true" : "false", b64.count)
+      }
+
+      // Plan §3.2 row `ready`, §6.3 row 3 — the FSM's `ready → listening`
+      // trigger is "first frame actually delivered", not "start() resolved".
+      // Fire AT MOST ONCE per start() cycle (seq == 0 is reset by start()
+      // and stop() so the next session re-emits).
+      if seqNow == 0 && self.hasListeners {
+        let ageMs: Double = self.engineStartAt
+          .map { Date().timeIntervalSince($0) * 1000.0 } ?? 0
+        self.sendEvent(
+          withName: Event.engineReady,
+          body: [
+            "firstFrameAgeMs": ageMs,
+            "sampleRate": self.configuredSampleRate,
+          ]
+        )
+      }
+
+      // P0-7: VAD state machine on stateQueue (serialised).
+      let maxPreRoll = max(1, self.vadHangoverMs / 20)
+      self.preRollBuffer.append(vadSamples)
+      while self.preRollBuffer.count > maxPreRoll { self.preRollBuffer.removeFirst() }
+      if !self.preRollFilled && self.preRollBuffer.count >= maxPreRoll { self.preRollFilled = true }
+
+      if isSpeechFrame {
+        self.vadHangoverFramesLeft = self.vadHangoverMs / 20
+        if !self.vadSpeechActive {
+          self.vadSpeechActive = true
+          if self.hasListeners {
+            for preChunk in self.preRollBuffer {
+              let preData = Data(bytes: preChunk, count: preChunk.count * MemoryLayout<Int16>.size)
+              self.sendEvent(withName: Event.data, body: ["data": preData.base64EncodedString(), "seq": -1, "timestampMs": timestampMs])
+            }
+            self.sendEvent(withName: "voiceMicVadStart", body: [String: Any]())
+          }
+        }
+      } else {
+        if self.vadSpeechActive {
+          if self.vadHangoverFramesLeft > 0 {
+            self.vadHangoverFramesLeft -= 1
+          } else {
+            self.vadSpeechActive = false
+            if self.hasListeners {
+              self.sendEvent(withName: "voiceMicVadEnd", body: ["hangoverMs": self.vadHangoverMs])
+            }
+          }
+        }
       }
 
       if self.hasListeners {

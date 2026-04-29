@@ -22,6 +22,11 @@ RCT_EXTERN_METHOD(mute:(nonnull NSNumber *)muted
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(setAecFallbackGate:(nonnull NSNumber *)enabled
+                  threshold:(nonnull NSNumber *)threshold
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(getDiagnostics:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 

@@ -12,6 +12,10 @@ import type {
   VoiceSessionStateChangeEvent,
   VoiceSessionRecoveredEvent,
   VoiceMicStalledEvent,
+  VoiceMicEngineReadyEvent,
+  VoiceAecAttachFailedEvent,
+  VoiceMicVadStartEvent,
+  VoiceMicVadEndEvent,
   VoicePlaybackStalledEvent,
   VoicePlaybackDrainedEvent,
 } from '../../src/native/voice-session-events';
@@ -31,10 +35,18 @@ function routeEvent(e: VoiceTelemetryEvent): string {
       return `session_recovered:${e.reason}`;
     case 'voiceMicStalled':
       return `mic_stalled:${e.fatal}:${e.lastFrameAgeMs}`;
+    case 'voiceMicEngineReady':
+      return `mic_engine_ready:${e.firstFrameAgeMs}:${e.sampleRate}`;
+    case 'voiceAecAttachFailed':
+      return `aec_attach_failed:${e.reason}:${e.modelCode}:${e.deviceCode}`;
     case 'voicePlaybackStalled':
       return `playback_stalled:${e.bufferedMs}:${e.framesSinceLastAdvance}`;
     case 'voicePlaybackDrained':
       return `playback_drained:${e.turnGeneration}:${e.framesPlayed}/${e.framesScheduled}:${e.reason}`;
+    case 'voiceMicVadStart':
+      return 'vad_start';
+    case 'voiceMicVadEnd':
+      return `vad_end:${e.hangoverMs}`;
     default:
       return assertExhaustive(e);
   }
@@ -97,6 +109,25 @@ describe('VoiceTelemetryEvent discriminated union', () => {
     };
     expect(routeEvent(e)).toBe('session_recovered:mediaServicesReset');
   });
+
+  it('routes voiceAecAttachFailed', () => {
+    const e: VoiceAecAttachFailedEvent = {
+      event: 'voiceAecAttachFailed',
+      reason: 'create_returned_null',
+      modelCode: 42,
+      deviceCode: 'Pixel 7',
+    };
+    expect(routeEvent(e)).toBe('aec_attach_failed:create_returned_null:42:Pixel 7');
+  });
+
+  it('routes voiceMicEngineReady', () => {
+    const e: VoiceMicEngineReadyEvent = {
+      event: 'voiceMicEngineReady',
+      firstFrameAgeMs: 0,
+      sampleRate: 16_000,
+    };
+    expect(routeEvent(e)).toBe('mic_engine_ready:0:16000');
+  });
 });
 
 describe('VOICE_EVENT_NAMES', () => {
@@ -105,7 +136,149 @@ describe('VOICE_EVENT_NAMES', () => {
     expect(VOICE_EVENT_NAMES.routeChange).toBe('voiceRouteChange');
     expect(VOICE_EVENT_NAMES.sessionRecovered).toBe('voiceSessionRecovered');
     expect(VOICE_EVENT_NAMES.micStalled).toBe('voiceMicStalled');
+    expect(VOICE_EVENT_NAMES.micEngineReady).toBe('voiceMicEngineReady');
+    expect(VOICE_EVENT_NAMES.aecAttachFailed).toBe('voiceAecAttachFailed');
     expect(VOICE_EVENT_NAMES.playbackStalled).toBe('voicePlaybackStalled');
     expect(VOICE_EVENT_NAMES.playbackDrained).toBe('voicePlaybackDrained');
+  });
+});
+
+describe('P0-7 — voiceMicVadStart / voiceMicVadEnd routing', () => {
+  it('routes voiceMicVadStart', () => {
+    const e: VoiceMicVadStartEvent = { event: 'voiceMicVadStart' };
+    expect(routeEvent(e)).toBe('vad_start');
+  });
+
+  it('routes voiceMicVadEnd', () => {
+    const e: VoiceMicVadEndEvent = { event: 'voiceMicVadEnd', hangoverMs: 400 };
+    expect(routeEvent(e)).toBe('vad_end:400');
+  });
+
+  it('VOICE_EVENT_NAMES has vadStart and vadEnd', () => {
+    expect(VOICE_EVENT_NAMES.vadStart).toBe('voiceMicVadStart');
+    expect(VOICE_EVENT_NAMES.vadEnd).toBe('voiceMicVadEnd');
+  });
+
+  it('VoiceMic.ts declares onVadStart and onVadEnd methods', () => {
+    const fs = require('fs');
+    const ts = fs.readFileSync(require('path').join(__dirname, '../../src/native/VoiceMic.ts'), 'utf8');
+    expect(ts).toMatch(/onVadStart/);
+    expect(ts).toMatch(/onVadEnd/);
+  });
+});
+
+describe('P0-15 — voiceSessionRecovered reason variants', () => {
+  it('routes mediaServicesReset reason', () => {
+    const e: VoiceSessionRecoveredEvent = {
+      event: 'voiceSessionRecovered',
+      reason: 'mediaServicesReset',
+    };
+    expect(routeEvent(e)).toBe('session_recovered:mediaServicesReset');
+  });
+
+  it('routes interruptionEnded reason', () => {
+    const e: VoiceSessionRecoveredEvent = {
+      event: 'voiceSessionRecovered',
+      reason: 'interruptionEnded',
+    };
+    expect(routeEvent(e)).toBe('session_recovered:interruptionEnded');
+  });
+
+  it('routes foregroundResume reason', () => {
+    const e: VoiceSessionRecoveredEvent = {
+      event: 'voiceSessionRecovered',
+      reason: 'foregroundResume',
+    };
+    expect(routeEvent(e)).toBe('session_recovered:foregroundResume');
+  });
+});
+
+describe('P0-15 — VoiceMicDiagnostics.tapInstalled surface', () => {
+  it('VoiceMic.ts declares tapInstalled: boolean in VoiceMicDiagnostics', () => {
+    const fs = require('fs');
+    const ts = fs.readFileSync(require('path').join(__dirname, '../../src/native/VoiceMic.ts'), 'utf8');
+    expect(ts).toMatch(/tapInstalled\s*:\s*boolean/);
+  });
+
+  it('SharedVoiceEngine.swift snapshot uses tapInstalled key (not inputTapInstalled)', () => {
+    const fs = require('fs');
+    const swift = fs.readFileSync(
+      require('path').join(__dirname, '../../ios/TbotMobile/SharedVoiceEngine.swift'),
+      'utf8',
+    );
+    expect(swift).toMatch(/["']tapInstalled["']/);
+    expect(swift).not.toMatch(/["']inputTapInstalled["']/);
+  });
+
+  it('Android VoiceMicModule.kt getDiagnostics emits tapInstalled', () => {
+    const fs = require('fs');
+    const kt = fs.readFileSync(
+      require('path').join(
+        __dirname,
+        '../../android/app/src/main/java/com/tbotmobile/voicemic/VoiceMicModule.kt',
+      ),
+      'utf8',
+    );
+    expect(kt).toMatch(/putBoolean\s*\(\s*["']tapInstalled["']/);
+  });
+});
+
+describe('P0-11 — drain-event drives ASSISTANT_SPEAKING → LISTENING', () => {
+  it('turnComplete handler in hook does NOT use racy isPlaying poll to transition', () => {
+    const fs = require('fs');
+    const hook = fs.readFileSync(
+      require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
+      'utf8',
+    );
+    // The old racy pattern must be gone: isPlaying check + transition in turnComplete block
+    expect(hook).not.toMatch(/isPlaying[\s\S]{0,60}transition\(['"]LISTENING['"]\)/);
+  });
+
+  it('turnComplete handler stamps responseTurnCompleteAtMsRef and calls endTurn()', () => {
+    const fs = require('fs');
+    const hook = fs.readFileSync(
+      require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
+      'utf8',
+    );
+    expect(hook).toMatch(/responseTurnCompleteAtMsRef\.current\s*=\s*Date\.now\(\)/);
+    expect(hook).toMatch(/turnComplete[\s\S]{0,400}endTurn\(\)/);
+  });
+
+  it('silent-server-response: hook transitions WAITING_AI → LISTENING on turnComplete', () => {
+    const fs = require('fs');
+    const hook = fs.readFileSync(
+      require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
+      'utf8',
+    );
+    expect(hook).toMatch(/state\s*===\s*['"]WAITING_AI['"]\s*\)[\s\S]{0,200}transition\(['"]LISTENING['"]\)/);
+  });
+
+  it('onPlaybackFinish is the authoritative ASSISTANT_SPEAKING → LISTENING driver', () => {
+    const fs = require('fs');
+    const hook = fs.readFileSync(
+      require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
+      'utf8',
+    );
+    expect(hook).toMatch(/playbackRef\.current\.onPlaybackFinish[\s\S]{0,800}ASSISTANT_SPEAKING[\s\S]{0,800}transition\(['"]LISTENING['"]\)/);
+  });
+
+  it('5s drain-timeout safety useEffect exists for ASSISTANT_SPEAKING state', () => {
+    const fs = require('fs');
+    const hook = fs.readFileSync(
+      require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
+      'utf8',
+    );
+    expect(hook).toMatch(/fsmState\s*!==\s*['"]ASSISTANT_SPEAKING['"][\s\S]{0,200}5000/);
+    expect(hook).toMatch(/voice\.assistant\.drain_timeout/);
+  });
+
+  it('onPlaybackFinish clears drain-timeout anchor (responseTurnCompleteAtMsRef = null)', () => {
+    const fs = require('fs');
+    const hook = fs.readFileSync(
+      require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
+      'utf8',
+    );
+    // Inside onPlaybackFinish, the ref must be nulled to cancel the safety net
+    expect(hook).toMatch(/onPlaybackFinish[\s\S]{0,500}responseTurnCompleteAtMsRef\.current\s*=\s*null/);
   });
 });

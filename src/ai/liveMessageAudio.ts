@@ -10,15 +10,20 @@ interface LiveServerContentLike {
   } | null;
 }
 
-export function extractInlineAudioParts(serverContent: LiveServerContentLike | null | undefined): string[] {
+export interface InlineAudioPart {
+  data: string;
+  index: number;
+}
+
+export function extractInlineAudioParts(serverContent: LiveServerContentLike | null | undefined): InlineAudioPart[] {
   const parts = serverContent?.modelTurn?.parts;
   if (!Array.isArray(parts)) return [];
 
-  const audioParts: string[] = [];
-  for (const part of parts) {
-    const data = part?.inlineData?.data;
+  const audioParts: InlineAudioPart[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    const data = parts[i]?.inlineData?.data;
     if (typeof data === 'string' && data.length > 0) {
-      audioParts.push(data);
+      audioParts.push({ data, index: i });
     }
   }
 

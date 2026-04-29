@@ -44,7 +44,7 @@ interface NativeVoiceSession {
   setRoute(route: VoiceRoute): Promise<VoiceRoute>;
   getRoute(): Promise<VoiceRoute>;
   forceRecover(): Promise<boolean>;
-  reapplyCategory(): Promise<boolean>;
+
   getDiagnostics(): Promise<VoiceSessionDiagnostics>;
 }
 
@@ -118,21 +118,6 @@ export const VoiceSession = {
       return await Native.getDiagnostics();
     } catch {
       return null;
-    }
-  },
-
-  /**
-   * Re-apply category/mode/options without deactivating the session.
-   * Safe to call while another audio library (e.g. RNLAS) is actively
-   * capturing — unlike {@link forceRecover}, which tears the session
-   * down and would stall that library's AudioQueue.
-   */
-  async reapplyCategory(): Promise<boolean> {
-    if (!Native?.reapplyCategory) return false;
-    try {
-      return await Native.reapplyCategory();
-    } catch {
-      return false;
     }
   },
 

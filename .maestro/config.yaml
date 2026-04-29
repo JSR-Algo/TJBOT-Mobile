@@ -2,3 +2,4 @@ flows:
   - flows/flow-a-onboarding.yaml
   - flows/flow-b-learning-session.yaml
   - flows/flow-c-progress-tracking.yaml
+  - flows/flow-d-voice-smoke.yaml

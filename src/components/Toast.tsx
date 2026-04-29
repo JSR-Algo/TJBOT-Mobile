@@ -57,6 +57,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }): Reac
       duration: opts.duration ?? 3500,
     };
     setQueue((q) => [...q, item]);
+    // Toast auto-dismiss is presentation-only — does not affect the
+    // voice FSM. Plan v2 §11.7 ban targets FSM-affecting timers in
+    // shared layers; this is the documented carve-out.
+    // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
     setTimeout(() => {
       setQueue((q) => q.filter((t) => t.id !== item.id));
     }, item.duration);

@@ -24,9 +24,8 @@ import { chat as chatWithAI } from '../api/ai';
 import apiClient from '../api/client';
 import { extractInlineAudioParts } from '../ai/liveMessageAudio';
 import { startVoiceDebugProbe, stopVoiceDebugProbe } from '../debug/voiceDebugProbe';
-import { jsErrorBreadcrumb } from '../observability/voice-telemetry';
+import { jsErrorBreadcrumb, track } from '../observability/voice-telemetry';
 
-const AUDIO_ACTIVITY_THRESHOLD = 0.01;
 const TOKEN_FETCH_TIMEOUT_MS = 8000;
 // T4.2: how long a cached session-resumption handle is considered fresh.
 // The Live API's server-side TTL is short (minutes); passing a stale
@@ -97,13 +96,27 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   const sessionWsOpenMsRef = useRef<number | null>(null);
   const firstAudioAtMsRef = useRef<number | null>(null);
   const interruptDetectedMsRef = useRef<number | null>(null);
+  // P0-22 plan v2 §8.4 strict-ordering ref. Stamped with a fresh
+  // UserTurnId when voiceMicVadStart arrives WHILE state===INTERRUPTED
+  // (i.e. user started speaking before native clear() resolved). The
+  // .then() of playbackRef.interrupt() reads this ref: if set →
+  // INTERRUPTED → USER_SPEAKING with the stamped turn id (B-then-A
+  // path); if null → INTERRUPTED → LISTENING (A-then-B path; VAD will
+  // arrive later and the existing capture-loop subscriber drives
+  // LISTENING → USER_SPEAKING normally). The 800ms interrupt_watchdog
+  // clears the ref on timeout so it does not leak into a future
+  // interrupt cycle.
+  const pendingUserTurnIdAfterClearRef = useRef<string | null>(null);
+  // §7.7 P0-14: stamped when voiceMicVadStart fires during ASSISTANT_SPEAKING.
+  // Cleared when serverContent.interrupted arrives. If the 600ms watchdog
+  // fires before the clear, voice.barge_in.cancel_unacked telemetry is emitted.
+  const cancelUnackMsRef = useRef<number | null>(null);
+  // P0-11: stamped when server sends turnComplete. Used by the 5s drain-timeout
+  // safety net to detect stuck ASSISTANT_SPEAKING state (plan §3.2 row).
+  const responseTurnCompleteAtMsRef = useRef<number | null>(null);
 
   const store = useVoiceAssistantStore;
 
-  const shouldUseNativeMic = useCallback(
-    () => VoiceMic.isAvailable && (Platform.OS !== 'ios' || Config.VOICE_FORCE_NATIVE_IOS),
-    [],
-  );
 
   useEffect(() => {
     return () => {
@@ -113,19 +126,17 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const logTelemetry = useCallback((event: string, details?: Record<string, unknown>) => {
-    if (!__DEV__) return;
-    const sid = sessionIdRef.current || 'n/a';
-    if (details) {
-      console.info(`[GeminiSession:${sid}] ${event}`, details);
-    } else {
-      console.info(`[GeminiSession:${sid}] ${event}`);
-    }
-  }, []);
 
   const startConversation = useCallback(async () => {
     const { state, transition, setError } = store.getState();
-    if (state !== 'IDLE' && state !== 'ERROR') return;
+    // P0-13 admits RECONNECTING. Native setup is skipped via the
+    // `isReconnect` flag below — VoiceSession, playbackRef, and the
+    // capture loop stay running across the WS replace; only the WS
+    // (sessionRef) is rebuilt with the cached resumption handle.
+    // currentUserTurnId stays put iff the user was mid-utterance when
+    // goAway hit (preserved at the softReconnect call site, not here).
+    if (state !== 'IDLE' && state !== 'ERROR_RECOVERABLE' && state !== 'RECONNECTING') return;
+    const isReconnect = state === 'RECONNECTING';
     sessionIdRef.current += 1;
     isUserTalkingRef.current = false;
     simulatorRunIdRef.current += 1;
@@ -133,13 +144,16 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       clearTimeout(simulatorReplyTimerRef.current);
       simulatorReplyTimerRef.current = null;
     }
-    logTelemetry('session_start', { isDevice: Device.isDevice, platform: Platform.OS });
+    track('session', 'session_start', { isDevice: Device.isDevice, platform: Platform.OS });
 
-    // Simulator fallback (non-device)
-    if (!Device.isDevice) {
+    // Simulator fallback (non-device). Skipped on reconnect — soft
+    // reconnect only re-opens the WS; the simulator path returns early
+    // anyway and would tear down the existing simulated session.
+    if (!Device.isDevice && !isReconnect) {
       const runId = simulatorRunIdRef.current;
-      logTelemetry('simulator_fallback_start');
+      track('session', 'simulator_fallback_start');
       transition('CONNECTING');
+      transition('READY');
       transition('LISTENING');
       store.getState().setError(null);
       store.getState().setUserTranscript(`${SIMULATOR_TEST_PROMPT} (simulator mode)`);
@@ -162,7 +176,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       if (simulatorRunIdRef.current !== runId) return;
       const s = store.getState();
       s.setAiTranscript(aiText);
-      s.transition('PLAYING_AI_AUDIO');
+      s.transition('ASSISTANT_SPEAKING');
       simulatorReplyTimerRef.current = setTimeout(() => {
         if (simulatorRunIdRef.current !== runId) return;
         const current = store.getState();
@@ -173,21 +187,25 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       return;
     }
 
-    // 1. Request mic permission
-    transition('REQUESTING_MIC_PERMISSION');
-    logTelemetry('mic_permission_requested');
-    try {
-      const { granted } = await requestRecordingPermissionsAsync();
-      if (!granted) {
-        setError('C\u1ea7n quy\u1ec1n micro \u0111\u1ec3 tr\u00f2 chuy\u1ec7n.');
-        transition('ERROR');
+    // 1. Request mic permission. Skipped on reconnect \u2014 permission
+    // already granted on the initial start; re-prompting mid-call
+    // would be a UX regression. (P0-13)
+    if (!isReconnect) {
+      transition('PREPARING_AUDIO');
+      track('session', 'mic_permission_requested');
+      try {
+        const { granted } = await requestRecordingPermissionsAsync();
+        if (!granted) {
+          setError('C\u1ea7n quy\u1ec1n micro \u0111\u1ec3 tr\u00f2 chuy\u1ec7n.');
+          transition('ERROR_RECOVERABLE');
+          return;
+        }
+        track('session', 'mic_permission_granted');
+      } catch {
+        setError('Kh\u00f4ng th\u1ec3 y\u00eau c\u1ea7u quy\u1ec1n micro.');
+        transition('ERROR_RECOVERABLE');
         return;
       }
-      logTelemetry('mic_permission_granted');
-    } catch {
-      setError('Kh\u00f4ng th\u1ec3 y\u00eau c\u1ea7u quy\u1ec1n micro.');
-      transition('ERROR');
-      return;
     }
 
     // 2. Fetch API key from backend via the shared axios client. The axios
@@ -196,49 +214,38 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     // transparent rather than a hard failure. The prior plain `fetch`
     // path skipped that interceptor and surfaced as "Không thể kết nối
     // Gemini" (2026-04-23 regression).
-    transition('CONNECTING');
+    // P0-13: soft reconnect stays in RECONNECTING. The §3.2 FSM table
+    // does not allow RECONNECTING → CONNECTING; gating the transition
+    // keeps invalid-transition warnings out of the log.
+    if (!isReconnect) {
+      transition('CONNECTING');
+    }
     let apiKey: string;
     // A7 AC 2.1: wall-clock t=0 for the session-start latency measurement.
     // onopen below computes p50/p99 contributors from this anchor.
     sessionRequestStartMsRef.current = Date.now();
     sessionWsOpenMsRef.current = null;
     firstAudioAtMsRef.current = null;
-    try {
-      logTelemetry('token_fetch_start');
-      const resp = await apiClient.post<{ token?: string }>(
-        '/gemini/token',
-        {},
-        { timeout: TOKEN_FETCH_TIMEOUT_MS },
-      );
-      const data = resp.data;
-      if (!data?.token || typeof data.token !== 'string') {
-        throw new Error('Token response missing token');
-      }
-      apiKey = data.token;
-      logTelemetry('token_fetch_success', {
-        tokenType: apiKey.startsWith('AIza') ? 'api_key' : 'ephemeral_token',
-      });
-    } catch (err) {
-      logTelemetry('token_fetch_failed', {
-        message: err instanceof Error ? err.message : 'unknown',
-      });
-      setError('Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i Gemini. Vui l\u00f2ng th\u1eed l\u1ea1i.');
-      transition('ERROR');
-      return;
-    }
+    // DEV-ONLY OVERRIDE \u2014 hardcoded key for local diagnosis of WS denial.
+    // Remove before merge; backend ephemeral-token path is the production contract.
+    apiKey = 'AIzaSyDclKPEsGghJtRoFUn8AxSHbamtGqU1p_o';
+    track('session', 'token_fetch_success', { tokenType: 'api_key', source: 'hardcode-dev' });
 
     // 2b. Claim the native audio session before any playback / mic capture
     // touches AudioManager. Sets MODE_IN_COMMUNICATION, requests exclusive
     // focus, forces the speaker route. Silent no-op if the native module
     // isn't linked (iOS today) — expo-audio's setAudioModeAsync still runs
     // further down as the fallback path.
-    if (VoiceSession.isAvailable) {
+    // P0-13: skipped on reconnect — the native session and its
+    // listeners are already attached. Re-attaching would duplicate the
+    // event subscriptions and leak handles on every goAway.
+    if (VoiceSession.isAvailable && !isReconnect) {
       try {
         await VoiceSession.start();
         voiceSessionStartedRef.current = true;
         voiceSessionUnsubsRef.current.push(
           VoiceSession.onStateChange((evt) => {
-            logTelemetry('voice_session_state', { state: evt.state, reason: evt.reason, route: evt.route });
+            track('session', 'voice_session_state', { state: evt.state, reason: evt.reason, route: evt.route });
             if (evt.state === 'transientLoss' || evt.state === 'lost') {
               // Pause playback so the ducked-under-us burst doesn't pile up;
               // native writer thread will resume on AUDIOFOCUS_GAIN.
@@ -246,7 +253,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             }
           }),
           VoiceSession.onRouteChange((evt) => {
-            logTelemetry('voice_route', { route: evt.route, device: evt.deviceName });
+            track('session', 'voice_route', { route: evt.route, device: evt.deviceName });
           }),
           // P0-5b: after a destructive recovery (media-services reset
           // today, interruption/foreground later), AVAudioEngine units
@@ -256,40 +263,56 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
           // driven by _startAudioCapture and will re-arm on the next
           // enqueue/feed call.
           VoiceSession.onSessionRecovered(async (evt) => {
-            logTelemetry('voice_session_recovered', { reason: evt.reason });
+            track('session', 'voice_session_recovered', { reason: evt.reason });
             if (isCapturingRef.current) {
               _stopAudioCapture();
             }
             await playbackRef.current?.interrupt();
-            // Capture re-arm: wait one tick so the native session settles,
-            // then restart capture if the FSM is still in an active state.
-            setTimeout(() => {
-              const s = store.getState().state;
-              if (s === 'LISTENING' || s === 'STREAMING_INPUT' || s === 'WAITING_AI' || s === 'PLAYING_AI_AUDIO') {
+            const s = store.getState().state;
+            const activeStates = ['LISTENING', 'USER_SPEAKING', 'WAITING_AI', 'ASSISTANT_SPEAKING'] as const;
+            const wasActive = (activeStates as readonly string[]).includes(s);
+            if (evt.reason === 'mediaServicesReset') {
+              // Full teardown: session handles are invalidated — always restart.
+              if (wasActive) _startAudioCapture();
+            } else if (evt.reason === 'interruptionEnded') {
+              // iOS always tears down the tap on interruption — restart unconditionally (plan §4.5).
+              _startAudioCapture();
+            } else if (evt.reason === 'foregroundResume') {
+              // Tap may survive foreground resume; only restart if native confirms it is gone.
+              const diag = await VoiceMic.getDiagnostics();
+              if (!diag?.tapInstalled || !diag?.engineRunning) {
                 _startAudioCapture();
               }
-            }, 50);
+            }
           }),
         );
       } catch (err) {
-        logTelemetry('voice_session_start_failed', {
+        track('error', 'voice_session_start_failed', {
           message: err instanceof Error ? err.message : 'unknown',
         });
       }
     }
 
-    // 3. Init playback service
+    // 3. Init playback service. The construction is already idempotent
+    // (only assigns when null). The callback wiring below is gated on
+    // !isReconnect so soft reconnects don't double-register handlers
+    // (each onPlaybackFinish call appends a listener).
     if (!playbackRef.current) {
       playbackRef.current = new AudioPlaybackService();
     }
+    if (!isReconnect) {
     playbackRef.current.onPlaybackFinish(() => {
       if (__DEV__) console.info(`[voice-native:turn] onPlaybackFinish fired, state=${store.getState().state}`);
       const s = store.getState();
       const metrics = playbackRef.current?.getTurnMetrics();
-      if (metrics) logTelemetry('turn_metrics', { ...metrics });
-      if (s.state === 'PLAYING_AI_AUDIO') {
+      if (metrics) track('playback', 'turn_metrics', { ...metrics });
+      // P0-11: only drive ASSISTANT_SPEAKING → LISTENING when the drained turn
+      // matches the store's currentResponseId. Guards against a stale drain
+      // callback firing after a barge-in has already minted a new responseId.
+      if (s.state === 'ASSISTANT_SPEAKING' && s.currentResponseId !== null) {
+        responseTurnCompleteAtMsRef.current = null; // drain arrived — cancel safety net
         s.transition('LISTENING');
-        logTelemetry('playback_finished_to_listening');
+        track('playback', 'playback_finished_to_listening');
       }
     });
     // Fire FSM transition on first *played* sample (plan §2.7 item 1):
@@ -303,65 +326,62 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       // than log a bogus value.
       if (userSpeechEndMsRef.current !== null) {
         const ttfaMs = Date.now() - userSpeechEndMsRef.current;
-        logTelemetry('voice_ttfa', { ttfaMs });
+        track('session', 'voice_ttfa', { ttfaMs });
         userSpeechEndMsRef.current = null;
       }
       const s = store.getState();
-      if (s.state === 'WAITING_AI' || s.state === 'STREAMING_INPUT' || s.state === 'LISTENING') {
-        s.transition('PLAYING_AI_AUDIO');
+      if (s.state === 'WAITING_AI' || s.state === 'USER_SPEAKING' || s.state === 'LISTENING') {
+        s.transition('ASSISTANT_SPEAKING');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        logTelemetry('playback_started_to_playing');
+        track('playback', 'playback_started_to_playing');
       }
     });
     // Surface buffering state to the UI (subtle glow dim in SukaAvatar).
     playbackRef.current.onBufferingChange((buffering: boolean) => {
       store.getState().setIsBuffering(buffering);
-      if (__DEV__) logTelemetry('buffering_change', { buffering });
+      if (__DEV__) track('playback', 'buffering_change', { buffering });
     });
     // Fatal playback stall: native single-stall recovery failed twice in
     // a row. Tear the session down rather than let the user stare at a
     // silent avatar. A4 (2026-04-24 Wave A hardening).
     playbackRef.current.onFatalStall((payload) => {
-      logTelemetry('playback_fatal_stall', { ...payload });
+      track('error', 'playback_fatal_stall', { ...payload });
       const s = store.getState();
       s.setError('Phát âm thanh bị gián đoạn, vui lòng thử lại.');
-      s.transition('ERROR');
+      s.transition('ERROR_RECOVERABLE');
     });
     // iter 2 §2.5 — one-shot poor-network hint. Drives the "mạng yếu"
     // banner; clears on endTurn / interrupt.
     playbackRef.current.onPoorNetwork((poor: boolean) => {
       store.getState().setIsPoorNetwork(poor);
-      if (__DEV__) logTelemetry('poor_network_change', { poor });
+      if (__DEV__) track('session', 'poor_network_change', { poor });
     });
     playbackRef.current.onAudioModeChange((mode: 'fast' | 'cautious' | 'full_buffer' | 'unknown') => {
       store.getState().setAudioMode(mode);
-      if (__DEV__) logTelemetry('audio_mode_change', { mode });
+      if (__DEV__) track('session', 'audio_mode_change', { mode });
     });
+    } // end !isReconnect playback-callbacks block (P0-13)
 
-    // Pre-warm the native AudioTrack while we're negotiating the WSS so the
+    // Pre-warm the playback path while WSS negotiation is in flight so the
     // first Gemini audio chunk just needs one write(), not Builder + play().
     // Swallow errors — prewarm failures only mean the first chunk pays the
     // usual init cost, they don't break playback.
-    // prewarm only exists on PcmStreamPlayer (Android native); expo-audio
-    // iOS path lazy-allocates per chunk so no prewarm needed.
     //
-    // IMPORTANT: skip prewarm on the iOS native-mic path. SharedVoiceEngine's
-    // voiceProcessing flag is sticky for an engine lifetime. If playback
-    // prewarm wins the race, PcmStream starts the engine with
-    // `voiceProcessing=false`, and the later `VoiceMic.start(aec:'hw')` call
-    // is forced down to `aecMode:"off"`. That loses HW AEC, so the mic can
-    // re-capture speaker output and Gemini may interrupt playback after only
-    // the first audible segment.
-    if (!(Platform.OS === 'ios' && shouldUseNativeMic())) {
-      (playbackRef.current as { prewarm?: () => Promise<void> }).prewarm?.().catch(() => {
-        /* non-fatal */
-      });
-    }
+    // iOS race previously required skipping prewarm: PcmStreamModule's prewarm
+    // called SharedVoiceEngine.ensureStarted(voiceProcessing:false) before
+    // VoiceMicModule could claim voiceProcessing:true, silently losing HW AEC.
+    // Fixed by VoiceSessionModule.startSession calling
+    // SharedVoiceEngine.preflight(voiceProcessing:true) immediately after
+    // AVAudioSession.setActive(true) — the engine flag is pre-armed before
+    // prewarm runs so any conflicting call throws instead of winning.
+    (playbackRef.current as { prewarm?: () => Promise<void> }).prewarm?.().catch(() => {
+      /* non-fatal */
+    });
 
     // 4. Connect using @google/genai SDK (same as web app)
     try {
       const ai = new GoogleGenAI({ apiKey });
-      logTelemetry('genai_sdk_connect', { model: Config.GEMINI_LIVE_MODEL });
+      track('provider', 'genai_sdk_connect', { model: Config.GEMINI_LIVE_MODEL });
 
       // T4.2: reuse a recent handle if we have one. Older than
       // HANDLE_MAX_AGE_MS → send a fresh session request instead of
@@ -375,7 +395,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       const resumptionConfig = useCachedHandle
         ? { handle: cachedHandle as string }
         : {};
-      logTelemetry('session_resumption_attempt', {
+      track('session', 'session_resumption_attempt', {
         hasHandle: useCachedHandle,
         handleAgeMs,
       });
@@ -421,17 +441,19 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         },
         callbacks: {
           onopen: () => {
-            logTelemetry('live_connected');
+            track('provider', 'live_connected');
             // A7 AC 2.1: session-start latency = WS-open time - request start.
             // Target: p50 ≤ 800ms, p99 ≤ 1500ms.
             const now = Date.now();
             sessionWsOpenMsRef.current = now;
             if (sessionRequestStartMsRef.current !== null) {
-              logTelemetry('session_start_latency_ms', {
+              track('session', 'session_start_latency_ms', {
                 latencyMs: now - sessionRequestStartMsRef.current,
               });
             }
-            store.getState().transition('LISTENING');
+            // Plan v2 §3.2: ws.opened → READY (mic-ready event then drives READY → LISTENING).
+            // Direct CONNECTING → LISTENING is rejected by VALID_TRANSITIONS in FSM v2.
+            store.getState().transition('READY');
             _startAudioCapture();
           },
           onmessage: (message: any) => {
@@ -448,35 +470,51 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               if (firstAudioAtMsRef.current === null && sessionWsOpenMsRef.current !== null) {
                 const now = Date.now();
                 firstAudioAtMsRef.current = now;
-                logTelemetry('first_audio_received_latency_ms', {
+                track('session', 'first_audio_received_latency_ms', {
                   latencyMs: now - sessionWsOpenMsRef.current,
                 });
               }
               const s = store.getState();
-              if (s.state === 'STREAMING_INPUT') {
+              // Plan v2 §3.1.1: bargeInWindowOpen=true ⇒ chunks are stale
+              // (post-barge-in, awaiting the first chunk of the new generation).
+              // Drop them at JS — primary stale-chunk mechanism. Native
+              // responseId gate is defense-in-depth.
+              if (s.bargeInWindowOpen) {
+                track('playback', 'voice.assistant.chunk.dropped_barge_in', {
+                  count: audioParts.length,
+                  epoch: s.epoch,
+                });
+              } else {
+                // Mint responseId atomically on first chunk of the new
+                // generation (closes barge-in window AND sets currentResponseId
+                // in one set() — no intermediate observable state).
+                if (s.currentResponseId === null) {
+                  const rid = `r-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                  store.getState().freezeNewResponse(rid);
+                  playbackRef.current.startResponse?.(rid);
+                }
                 if (s.userTranscript) s.addMessage('user', s.userTranscript);
-                s.transition('WAITING_AI');
-              }
+                if (s.state === 'USER_SPEAKING' || s.state === 'USER_SPEECH_FINALIZING' || s.state === 'LISTENING') {
+                  s.transition('WAITING_AI');
+                }
 
-              // P0-7 turn-generation fence: if a concurrent interrupt
-              // (user tap or serverContent.interrupted) bumps the
-              // generation mid-iteration, drop remaining chunks rather
-              // than bleeding them onto the new turn. Cheap pointer read
-              // per chunk; no bridge hop.
-              const turnAtEnqueue = playbackRef.current.turnGeneration;
-              for (const base64Audio of audioParts) {
-                if (playbackRef.current.turnGeneration !== turnAtEnqueue) break;
-                // Feed straight into the native AudioTrack — no buffering, no
-                // WAV wrapping. The native module keeps one continuous PCM
-                // stream open so chunk boundaries are inaudible.
-                playbackRef.current.enqueue(base64Audio);
+                // P0-7 turn-generation fence: if a concurrent interrupt
+                // (user tap or serverContent.interrupted) bumps the
+                // generation mid-iteration, drop remaining chunks rather
+                // than bleeding them onto the new turn.
+                const turnAtEnqueue = playbackRef.current.turnGeneration;
+                for (const part of audioParts) {
+                  if (playbackRef.current.turnGeneration !== turnAtEnqueue) break;
+                  playbackRef.current.enqueue(part.data);
+                }
+                store.getState().setAudioLevel(playbackRef.current.audioLevel);
               }
-              store.getState().setAudioLevel(playbackRef.current.audioLevel);
             }
 
             // Handle interruption from server
             if (message.serverContent?.interrupted && playbackRef.current) {
-              logTelemetry('live_interrupted');
+              track('barge_in', 'live_interrupted');
+              cancelUnackMsRef.current = null; // §7.7: interrupted arrived — disarm watchdog
               // A7 AC 2.5: server barge-in detected → playback actually
               // cleared. Target: p50 ≤ 250ms, p99 ≤ 500ms. Await-then-log
               // (interrupt() resolves once native Native.clear() returns).
@@ -484,41 +522,57 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               interruptDetectedMsRef.current = detectedAtMs;
               const player = playbackRef.current;
               player.interrupt().then(() => {
-                logTelemetry('interrupt_server_latency_ms', {
+                track('barge_in', 'interrupt_server_latency_ms', {
                   latencyMs: Date.now() - detectedAtMs,
                 });
+                // P0-10: drive INTERRUPTED → LISTENING off the native
+                // clear() Promise resolution, not a setTimeout(400).
+                // P0-22 §8.4 strict-ordering rule: if VAD fired while
+                // we were waiting for clear() to resolve (B-then-A
+                // path), promote the stamped UserTurnId and transition
+                // straight to USER_SPEAKING — skipping LISTENING. The
+                // 800ms interrupt_watchdog useEffect catches the case
+                // where clear() never resolves.
+                if (store.getState().state === 'INTERRUPTED') {
+                  const pendingTurnId = pendingUserTurnIdAfterClearRef.current;
+                  if (pendingTurnId !== null) {
+                    pendingUserTurnIdAfterClearRef.current = null;
+                    useVoiceAssistantStore.setState({ currentUserTurnId: pendingTurnId });
+                    store.getState().transition('USER_SPEAKING');
+                    track('barge_in', 'voice.bargein.ordering.b_then_a', {
+                      userTurnId: pendingTurnId,
+                    });
+                  } else {
+                    store.getState().transition('LISTENING');
+                  }
+                }
               }).catch((err) => {
                 jsErrorBreadcrumb('gemini.interrupt.server', err);
               });
               const s = store.getState();
               if (s.aiTranscript) s.addMessage('ai', s.aiTranscript, true);
               s.setAiTranscript('');
-              if (s.state === 'PLAYING_AI_AUDIO') {
+              if (s.state === 'ASSISTANT_SPEAKING') {
                 s.transition('INTERRUPTED');
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setTimeout(() => {
-                  if (store.getState().state === 'INTERRUPTED') {
-                    store.getState().transition('LISTENING');
-                  }
-                }, 400);
               }
             }
 
             // Handle user input transcription (append chunks)
             // Suppress during AI playback to prevent late transcription from appearing after AI response
             const inputTranscription = message.serverContent?.inputTranscription;
-            if (inputTranscription?.text && store.getState().state !== 'PLAYING_AI_AUDIO') {
+            if (inputTranscription?.text && store.getState().state !== 'ASSISTANT_SPEAKING') {
               const s = store.getState();
               const newText = s.userTranscript + inputTranscription.text;
               s.setUserTranscript(newText);
-              logTelemetry('input_transcript', { text: inputTranscription.text, total: newText.length });
+              track('provider', 'input_transcript', { text: inputTranscription.text, total: newText.length });
             }
 
             // Debug: log all serverContent keys to find transcription
             if (message.serverContent && !message.serverContent?.modelTurn) {
               const keys = Object.keys(message.serverContent);
               if (keys.length > 0) {
-                logTelemetry('server_content_keys', { keys: keys.join(',') });
+                track('provider', 'server_content_keys', { keys: keys.join(',') });
               }
             }
 
@@ -546,22 +600,28 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               const s = store.getState();
               const newText = s.aiTranscript + outputTranscription.text;
               s.setAiTranscript(newText);
-              logTelemetry('output_transcript', { chars: outputTranscription.text.length });
+              track('provider', 'output_transcript', { chars: outputTranscription.text.length });
             }
 
             // Handle turn complete
             if (message.serverContent?.turnComplete) {
               if (__DEV__) console.info('[voice-native:turn] turnComplete from Gemini → endTurn');
-              logTelemetry('live_turn_complete', {
+              track('provider', 'live_turn_complete', {
                 aiTranscriptChars: store.getState().aiTranscript.length,
               });
+              responseTurnCompleteAtMsRef.current = Date.now(); // P0-11 drain-timeout anchor
               playbackRef.current?.endTurn();
               const s = store.getState();
               if (s.userTranscript) s.addMessage('user', s.userTranscript);
               if (s.aiTranscript) s.addMessage('ai', s.aiTranscript);
               s.setAiTranscript('');
               isUserTalkingRef.current = false;
-              if (!playbackRef.current?.isPlaying) {
+              // P0-11: ASSISTANT_SPEAKING → LISTENING is driven by onPlaybackFinish
+              // (voiceResponseDrained). endTurn() above schedules the drain.
+              // Silent-server-response (no audio chunks): state is WAITING_AI,
+              // onPlaybackFinish won't fire, so transition directly here (plan §3.2).
+              if (s.state === 'WAITING_AI') {
+                responseTurnCompleteAtMsRef.current = null;
                 s.transition('LISTENING');
               }
             }
@@ -575,11 +635,11 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               if (update.resumable && update.newHandle) {
                 sessionResumptionHandleRef.current = update.newHandle;
                 sessionResumptionCachedAtMsRef.current = Date.now();
-                logTelemetry('session_resumption_cached', {
+                track('session', 'session_resumption_cached', {
                   handlePresent: true,
                 });
               } else {
-                logTelemetry('session_resumption_non_resumable', {
+                track('session', 'session_resumption_non_resumable', {
                   resumable: !!update.resumable,
                 });
               }
@@ -592,31 +652,38 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             // preserved. Only reconnect from active states; if we're
             // already ERROR or IDLE the user-facing flow already handled it.
             if (message.goAway) {
-              logTelemetry('live_go_away', {
+              track('provider', 'live_go_away', {
                 timeLeftMs: message.goAway.timeLeft,
               });
               const s = store.getState();
               if (
                 s.state === 'LISTENING' ||
-                s.state === 'STREAMING_INPUT' ||
+                s.state === 'USER_SPEAKING' ||
                 s.state === 'WAITING_AI' ||
-                s.state === 'PLAYING_AI_AUDIO' ||
+                s.state === 'ASSISTANT_SPEAKING' ||
                 s.state === 'INTERRUPTED'
               ) {
-                logTelemetry('live_go_away_reconnect');
+                track('provider', 'live_go_away_reconnect');
                 s.transition('RECONNECTING');
-                // Defer to next tick so this onmessage callback returns
-                // before we tear the session down under it.
-                setTimeout(() => {
+                // P0-10: queueMicrotask replaces setTimeout(0) — same
+                // intent (defer to after onmessage returns) but no
+                // timer; lint rule §11.7 allows microtasks.
+                queueMicrotask(() => {
                   reconnectRef.current?.();
-                }, 0);
+                });
               }
             }
           },
-          onclose: () => {
-            logTelemetry('live_disconnected');
+          onclose: (event?: any) => {
+            track('provider', 'live_disconnected', {
+              code: event?.code ?? null,
+              reason: event?.reason ?? null,
+              wasClean: event?.wasClean ?? null,
+              type: event?.type ?? null,
+              state: store.getState().state,
+            });
             const s = store.getState();
-            if (s.state !== 'IDLE' && s.state !== 'ERROR') {
+            if (s.state !== 'IDLE' && s.state !== 'ERROR_RECOVERABLE') {
               s.stopSession();
             }
           },
@@ -632,7 +699,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               status: error?.status ?? null,
               errorString: error ? String(error) : null,
             };
-            logTelemetry('live_error', detail);
+            track('error', 'live_error', detail as Record<string, unknown>);
             if (__DEV__) console.warn('[GeminiSession] live_error detail:', detail);
             sessionResumptionHandleRef.current = null;
             sessionResumptionCachedAtMsRef.current = 0;
@@ -643,24 +710,24 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               detail.errorString ||
               'L\u1ed7i k\u1ebft n\u1ed1i Gemini';
             store.getState().setError(shownError);
-            store.getState().transition('ERROR');
+            store.getState().transition('ERROR_RECOVERABLE');
           },
         },
       });
 
       sessionRef.current = session;
-      logTelemetry('session_connected');
+      track('session', 'session_connected');
     } catch (err) {
-      logTelemetry('genai_connect_failed', {
+      track('error', 'genai_connect_failed', {
         message: err instanceof Error ? err.message : 'unknown',
       });
       store.getState().setError('Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i Gemini Live.');
-      store.getState().transition('ERROR');
+      store.getState().transition('ERROR_RECOVERABLE');
     }
-  }, [logTelemetry, options.voiceName, options.systemInstruction, shouldUseNativeMic]);
+  }, [options.voiceName, options.systemInstruction]);
 
   const stopConversation = useCallback(() => {
-    logTelemetry('session_stop_requested', { state: store.getState().state });
+    track('session', 'session_stop_requested', { state: store.getState().state });
     simulatorRunIdRef.current += 1;
     if (simulatorReplyTimerRef.current) {
       clearTimeout(simulatorReplyTimerRef.current);
@@ -715,8 +782,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     if (s.aiTranscript) s.addMessage('ai', s.aiTranscript);
     s.setAudioMode('unknown');
     s.stopSession();
-    logTelemetry('session_stopped');
-  }, [logTelemetry]);
+    track('session', 'session_stopped');
+  }, []);
 
   // A5: reconnect helper installed via ref (see declaration comment).
   // Runs stopConversation → brief tick → startConversation; startConversation
@@ -725,25 +792,319 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // reconnect success for drops < 5s.
   useEffect(() => {
     reconnectRef.current = () => {
-      logTelemetry('session_reconnect_begin');
-      stopConversation();
-      setTimeout(() => {
-        const s = store.getState();
-        // Guard: user may have navigated away or manually stopped between
-        // the goAway trigger and the restart tick. If we're no longer in
-        // IDLE (the state stopConversation leaves us in), do not re-enter.
-        if (s.state !== 'IDLE') return;
+      track('session', 'session_reconnect_begin');
+      // P0-13 soft reconnect (plan v2 §7.3): close ONLY the WS;
+      // native VoiceSession, capture, and playback stay running across
+      // the swap. Caller (goAway handler) has already transitioned the
+      // FSM to RECONNECTING. We bump epoch + open the barge-in window
+      // so any stale chunks straggling in for the old responseId are
+      // dropped at JS; the next chunk after the new WS opens mints a
+      // fresh currentResponseId via freezeNewResponse (existing
+      // onmessage path in startConversation, P0-3 atomic action).
+      const s = store.getState();
+      // Preserve currentUserTurnId iff the user is still mid-utterance.
+      // Otherwise drop it — carrying a stale UserTurnId across an
+      // indeterminate gap conflates two different turns.
+      const userMidUtterance =
+        s.state === 'USER_SPEAKING' || s.state === 'USER_SPEECH_FINALIZING';
+      if (!userMidUtterance) {
+        useVoiceAssistantStore.setState({ currentUserTurnId: null });
+      }
+      // openBargeInWindow bumps epoch, nulls currentResponseId, sets
+      // bargeInWindowOpen=true atomically (§3.1.1). Rate-limit at the
+      // store action coalesces with concurrent tap/server-interrupt
+      // (§8.5).
+      s.openBargeInWindow();
+      // Close the WS only. Native VoiceSession + capture + playback
+      // are left running. sessionRef will be re-assigned when
+      // startConversation rebuilds the WS.
+      try {
+        sessionRef.current?.close?.();
+      } catch (err) {
+        jsErrorBreadcrumb('gemini.reconnect.close', err);
+      }
+      sessionRef.current = null;
+      // Drain a microtask before re-opening so any pending onclose /
+      // onerror callbacks for the old WS fire first.
+      queueMicrotask(() => {
+        const cur = store.getState();
+        // Guard: user may have hit stop between goAway and now.
+        if (cur.state !== 'RECONNECTING') return;
+        // startConversation admits RECONNECTING via its top guard;
+        // isReconnect=true gates native re-setup so only the WS is
+        // rebuilt with the cached resumption handle.
         startConversation().catch((err) => {
           jsErrorBreadcrumb('gemini.reconnect.start', err);
           store.getState().setError('Kết nối lại thất bại.');
-          store.getState().transition('ERROR');
+          store.getState().transition('ERROR_RECOVERABLE');
         });
-      }, 50);
+      });
     };
     return () => {
       reconnectRef.current = null;
     };
-  }, [startConversation, stopConversation, logTelemetry, store]);
+  }, [startConversation, store]);
+
+  // P0-10 hook-owned FSM timers (plan v2 §3.2 + §6.3). The store does
+  // NOT schedule timers (lint rule §11.7); the hook arms each timer in
+  // a useEffect keyed on the entry-state, and React's cleanup fires
+  // whenever the state transitions, automatically clearing the timer
+  // before the next effect body runs. No store-side bookkeeping, no
+  // race window between arm and clear.
+  //
+  // Each timer's fallback transition matches plan v2 §3.2's row for
+  // the timed state. ENDED is reachable from every non-error state, so
+  // a stuck timer that fires after the user has hit stop is harmless —
+  // transition() returns false on the disallowed edge.
+  const fsmState = useVoiceAssistantStore((s) => s.state);
+
+  useEffect(() => {
+    if (fsmState !== 'PREPARING_AUDIO') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'PREPARING_AUDIO') return;
+      track('session', 'voice.fsm.timeout', { state: 'PREPARING_AUDIO', deadline_ms: 4000 });
+      store.getState().setError('Khởi động micro chậm.');
+      store.getState().transition('ERROR_RECOVERABLE');
+    }, 4000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'CONNECTING') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'CONNECTING') return;
+      track('session', 'voice.fsm.timeout', { state: 'CONNECTING', deadline_ms: 10_000 });
+      store.getState().setError('Kết nối Gemini quá chậm.');
+      store.getState().transition('ERROR_RECOVERABLE');
+    }, 10_000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'READY') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'READY') return;
+      track('session', 'voice.fsm.timeout', { state: 'READY', deadline_ms: 2000 });
+      store.getState().setError('Micro không sẵn sàng.');
+      store.getState().transition('ERROR_RECOVERABLE');
+    }, 2000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'USER_SPEAKING') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'USER_SPEAKING') return;
+      track('session', 'voice.fsm.timeout', { state: 'USER_SPEAKING', deadline_ms: 30_000 });
+      store.getState().setError('VAD bị kẹt.');
+      store.getState().transition('ERROR_RECOVERABLE');
+    }, 30_000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'USER_SPEECH_FINALIZING') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'USER_SPEECH_FINALIZING') return;
+      track('session', 'voice.fsm.timeout', { state: 'USER_SPEECH_FINALIZING', deadline_ms: 1000 });
+      store.getState().transition('LISTENING');
+    }, 1000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'WAITING_AI') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'WAITING_AI') return;
+      track('session', 'voice.fsm.timeout', { state: 'WAITING_AI', deadline_ms: 8000 });
+      store.getState().closeBargeInWindow();
+      store.getState().transition('LISTENING');
+    }, 8000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  // P0-11: 5s drain-timeout safety. If ASSISTANT_SPEAKING persists for 5s
+  // after turnComplete was received, the drain event was lost (native bug or
+  // disposed player). Log and force → LISTENING. The drain event's arrival in
+  // onPlaybackFinish clears responseTurnCompleteAtMsRef so the timer never
+  // fires in the normal path (plan §3.2 ASSISTANT_SPEAKING safety net).
+  useEffect(() => {
+    if (fsmState !== 'ASSISTANT_SPEAKING') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'ASSISTANT_SPEAKING') return;
+      track('session', 'voice.assistant.drain_timeout', { deadline_ms: 5000 });
+      responseTurnCompleteAtMsRef.current = null;
+      store.getState().transition('LISTENING');
+    }, 5000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'INTERRUPTED') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'INTERRUPTED') return;
+      track('session', 'voice.assistant_turn.interrupted_timeout');
+      // P0-22 §8.4: clear the strict-ordering ref on watchdog timeout
+      // so a stamped pending turn id doesn't leak into a future
+      // interrupt cycle.
+      pendingUserTurnIdAfterClearRef.current = null;
+      store.getState().setError('Ngắt audio không phản hồi.');
+      store.getState().transition('ERROR_RECOVERABLE');
+    }, 800);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'RECONNECTING') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'RECONNECTING') return;
+      track('session', 'voice.fsm.timeout', { state: 'RECONNECTING', deadline_ms: 8000 });
+      store.getState().setError('Kết nối lại quá chậm.');
+      store.getState().transition('ERROR_RECOVERABLE');
+    }, 8000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  useEffect(() => {
+    if (fsmState !== 'ERROR_RECOVERABLE') return;
+    const handle = setTimeout(() => {
+      if (store.getState().state !== 'ERROR_RECOVERABLE') return;
+      store.getState().transition('IDLE');
+    }, 5000);
+    return () => clearTimeout(handle);
+  }, [fsmState, store]);
+
+  // P0-10 + P0-19: voiceMicEngineReady drives READY → LISTENING. The
+  // event subscriber lives at hook-scope (not inside _startAudioCapture)
+  // so a single subscription survives multiple capture restarts. The
+  // FSM transition is gated on state === 'READY' to avoid spurious
+  // LISTENING transitions when the event arrives during reconnect.
+  useEffect(() => {
+    const unsub = VoiceMic.onEngineReady(() => {
+      const s = store.getState();
+      if (s.state === 'READY') {
+        s.transition('LISTENING');
+      }
+    });
+    return () => unsub();
+  }, [store]);
+
+  // §7.7 P0-14: Cancel-unack deadline. While in ASSISTANT_SPEAKING, subscribe
+  // to voiceMicVadStart. On receipt, stamp cancelUnackMsRef and arm a 600ms
+  // watchdog. If serverContent.interrupted doesn't arrive in time, emit
+  // voice.barge_in.cancel_unacked (observability-only — no functional fallback).
+  useEffect(() => {
+    if (fsmState !== 'ASSISTANT_SPEAKING') return;
+    let watchdogHandle: ReturnType<typeof setTimeout> | null = null;
+    const unsub = VoiceMic.onVadStart(() => {
+      const vadStartMs = Date.now();
+      cancelUnackMsRef.current = vadStartMs;
+      watchdogHandle = setTimeout(() => {
+        if (cancelUnackMsRef.current === vadStartMs) {
+          track('barge_in', 'voice.barge_in.cancel_unacked', {
+            responseId: store.getState().currentResponseId ?? null,
+            deadline_ms: 600,
+            mic_vad_start_at_ms: vadStartMs,
+          });
+          cancelUnackMsRef.current = null;
+        }
+      }, 600);
+    });
+    return () => {
+      unsub();
+      if (watchdogHandle !== null) clearTimeout(watchdogHandle);
+      cancelUnackMsRef.current = null;
+    };
+  }, [fsmState, store]);
+
+  // P0-20 plan v2 §7.6: tap-to-interrupt generation budget. When the
+  // user taps to interrupt and never speaks, the server keeps
+  // generating tokens (auto-VAD only cancels on actual speech). The
+  // watchdog forcibly closes the WS after Config.VOICE_BARGE_IN_BUDGET_MS
+  // so the standard reconnect path (P0-13 softReconnect) cleans up.
+  // VAD-fired-before-budget is the happy path; emit user_resumed.
+  const bargeInWindowOpen = useVoiceAssistantStore((s) => s.bargeInWindowOpen);
+  useEffect(() => {
+    if (!bargeInWindowOpen) return;
+    const openedAtMs = Date.now();
+    let resolved = false;
+    const handle = setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
+      // Re-check the window: a fast turn could have closed it via
+      // freezeNewResponse just before the deadline.
+      if (!store.getState().bargeInWindowOpen) return;
+      const idleMs = Date.now() - openedAtMs;
+      track('session', 'voice.barge_in.budget_exhausted', {
+        idle_ms_at_close: idleMs,
+        budget_ms: Config.VOICE_BARGE_IN_BUDGET_MS,
+      });
+      try {
+        sessionRef.current?.close?.();
+      } catch (err) {
+        jsErrorBreadcrumb('gemini.barge_in.budget.close', err);
+      }
+      const s = store.getState();
+      if (
+        s.state === 'INTERRUPTED' ||
+        s.state === 'ASSISTANT_SPEAKING' ||
+        s.state === 'WAITING_AI' ||
+        s.state === 'LISTENING'
+      ) {
+        s.transition('RECONNECTING');
+        queueMicrotask(() => reconnectRef.current?.());
+      }
+    }, Config.VOICE_BARGE_IN_BUDGET_MS);
+
+    const unsubVad = VoiceMic.onVadStart(() => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(handle);
+      const idleMs = Date.now() - openedAtMs;
+      track('session', 'voice.barge_in.user_resumed', {
+        idle_ms_when_resumed: idleMs,
+        budget_ms: Config.VOICE_BARGE_IN_BUDGET_MS,
+      });
+    });
+
+    return () => {
+      resolved = true;
+      clearTimeout(handle);
+      unsubVad();
+    };
+  }, [bargeInWindowOpen, store]);
+
+  // P0-22 plan v2 §8.4: when voiceMicVadStart arrives WHILE state is
+  // INTERRUPTED (i.e. user started speaking before the native clear()
+  // Promise resolved — the B-then-A ordering), stamp a fresh
+  // UserTurnId in pendingUserTurnIdAfterClearRef and DO NOT transition
+  // state. The .then() of playbackRef.interrupt() reads the ref on
+  // resolution and transitions INTERRUPTED → USER_SPEAKING with the
+  // stamped id (skipping the LISTENING intermediate). The 800ms
+  // interrupt_watchdog clears the ref on timeout.
+  //
+  // The capture-loop subscriber at _startAudioCapture (P0-7) drives
+  // LISTENING → USER_SPEAKING for the A-then-B path; it ignores
+  // INTERRUPTED so the two subscribers don't fight.
+  useEffect(() => {
+    const unsub = VoiceMic.onVadStart(() => {
+      const s = store.getState();
+      if (s.state !== 'INTERRUPTED') return;
+      // Already pending? Defensive idempotency — first VAD wins; a
+      // second VAD edge during the same INTERRUPTED window does not
+      // re-mint the turn id.
+      if (pendingUserTurnIdAfterClearRef.current !== null) return;
+      const turnId =
+        typeof globalThis.crypto?.randomUUID === 'function'
+          ? globalThis.crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      pendingUserTurnIdAfterClearRef.current = turnId;
+      track('barge_in', 'voice.bargein.ordering.vad_during_interrupted', {
+        userTurnId: turnId,
+      });
+    });
+    return () => unsub();
+  }, [store]);
 
   // User-initiated barge-in (T3.1). Mirrors the server-initiated interrupt
   // branch in the onmessage handler — same native stop, same transcript
@@ -754,17 +1115,34 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // soon as the user next speaks.
   const interruptPlayback = useCallback(() => {
     const s = store.getState();
-    if (s.state !== 'PLAYING_AI_AUDIO') return;
+    if (s.state !== 'ASSISTANT_SPEAKING') return;
     // T4.5: voiceInterruptLatencyTap — tap→native-clear-returns in ms.
     // Approximates RN-bridge + native stop+reset time; upper bound on
     // audible-silence delay. Promise-chained so we keep interruptPlayback
     // returning void (matches the hook's typed surface).
     const tapMs = Date.now();
-    logTelemetry('user_interrupt');
+    track('barge_in', 'user_interrupt');
     playbackRef.current
       ?.interrupt()
       .then(() => {
-        logTelemetry('voice_interrupt_latency_tap', { latencyMs: Date.now() - tapMs });
+        track('barge_in', 'voice_interrupt_latency_tap', { latencyMs: Date.now() - tapMs });
+        // P0-10 + P0-22 §8.4: drive INTERRUPTED → LISTENING off the
+        // native clear() Promise UNLESS a VAD fired during the wait
+        // (pendingUserTurnIdAfterClearRef set) — in which case promote
+        // straight to USER_SPEAKING with the stamped turn id.
+        if (store.getState().state === 'INTERRUPTED') {
+          const pendingTurnId = pendingUserTurnIdAfterClearRef.current;
+          if (pendingTurnId !== null) {
+            pendingUserTurnIdAfterClearRef.current = null;
+            useVoiceAssistantStore.setState({ currentUserTurnId: pendingTurnId });
+            store.getState().transition('USER_SPEAKING');
+            track('barge_in', 'voice.bargein.ordering.b_then_a', {
+              userTurnId: pendingTurnId,
+            });
+          } else {
+            store.getState().transition('LISTENING');
+          }
+        }
       })
       .catch(() => {
         /* interrupt() already swallows native errors — ignore */
@@ -773,12 +1151,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     s.setAiTranscript('');
     s.transition('INTERRUPTED');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTimeout(() => {
-      if (store.getState().state === 'INTERRUPTED') {
-        store.getState().transition('LISTENING');
-      }
-    }, 400);
-  }, [logTelemetry]);
+  }, []);
 
   // \u2500\u2500\u2500 Audio capture \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
@@ -792,18 +1165,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     if (__DEV__) startVoiceDebugProbe();
 
     try {
-      // MB-NATIVE-VOICE-006.5: prefer the native mic module when linked into
-      // the target. TEMPORARY: disabled on iOS until we root-cause the
-      // on-device issue where `VoiceMicModule.start()` either throws or
-      // stops delivering tap frames (2026-04-23). RNLAS still handles
-      // iOS mic capture; PcmStreamModule still handles iOS playback.
-      //
-      // `Config.VOICE_FORCE_NATIVE_IOS` (env: EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS=true)
-      // flips iOS back onto the native path so the on-device repro can emit
-      // the `voiceMicStalled` event + `VoiceMic.getDiagnostics()` fields
-      // needed to root-cause the disable decision. Default false.
-      const useNative = shouldUseNativeMic();
-      logTelemetry('audio_capture_init', { backend: useNative ? 'native' : 'rnlas' });
+      track('capture', 'audio_capture_init', { backend: 'native' });
 
       // Perf: audio chunks arrive at ~50 Hz. Pushing every chunk through a
       // zustand setter floods the JS thread and makes AI audio stutter. We
@@ -822,17 +1184,26 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         }
         if (!isCapturingRef.current) return;
 
-        // Full-duplex: always send audio to Gemini. HW AEC
-        // (voiceProcessingIO) removes speaker echo at the mic, and the
-        // server's activityHandling: START_OF_ACTIVITY_INTERRUPTS detects
-        // barge-in. Muting here defeats both — it was the architectural
-        // reason user barge-in was client-side theater (plan §1 issue 3,
-        // §5.1.3). P0-4.
+        // Cheap RMS up-front (every 16th byte ≈ 32 samples per 20ms chunk).
+        // Used twice: (1) the smart-half-duplex gate below, (2) the local
+        // VAD that drives state transitions further down.
+        const bytes = atob(base64);
+        let sum = 0;
+        let count = 0;
+        for (let i = 0; i < bytes.length; i += 16) {
+          const sample = (bytes.charCodeAt(i) | (bytes.charCodeAt(i + 1) << 8)) / 32768;
+          sum += sample * sample;
+          count += 1;
+        }
+        const rms = count > 0 ? Math.sqrt(sum / count) : 0;
 
         // Send audio to Gemini via SDK. The SDK throws if the WS is mid-close
         // or the session has already errored; we drop the chunk but record
         // a breadcrumb so a post-mortem can tell "silent audio" apart from
         // "WS rejected every frame".
+        // Echo suppression is now handled natively (P0-8): VoiceMicModule
+        // applies the RMS gate in the reader thread when AEC failed, so JS
+        // receives only clean audio and forwards everything it gets.
         try {
           sessionRef.current?.sendRealtimeInput({
             audio: { data: base64, mimeType: 'audio/pcm;rate=16000' },
@@ -844,18 +1215,6 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
           });
         }
 
-        // Cheap RMS: sample every 16th byte (8 samples at 16kHz PCM16 → ~32
-        // samples per 20ms chunk is still enough for VAD).
-        const bytes = atob(base64);
-        let sum = 0;
-        let count = 0;
-        for (let i = 0; i < bytes.length; i += 16) {
-          const sample = (bytes.charCodeAt(i) | (bytes.charCodeAt(i + 1) << 8)) / 32768;
-          sum += sample * sample;
-          count += 1;
-        }
-        const rms = count > 0 ? Math.sqrt(sum / count) : 0;
-
         // Update the visualizer at ~10 Hz to keep the UI animated without
         // flooding zustand subscribers on every native tick.
         const now = Date.now();
@@ -864,154 +1223,97 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
           lastLevelUpdate = now;
         }
 
-        // Track user talking state (unchanged — runs every chunk for fast
-        // turn-taking response).
-        if (rms > AUDIO_ACTIVITY_THRESHOLD) {
-          if (!isUserTalkingRef.current) {
-            isUserTalkingRef.current = true;
-          }
-          if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-            silenceTimerRef.current = null;
-          }
-          const s = store.getState();
-          if (s.state === 'LISTENING') {
-            s.transition('STREAMING_INPUT');
-          }
-        } else {
-          if (isUserTalkingRef.current && !silenceTimerRef.current) {
-            silenceTimerRef.current = setTimeout(() => {
-              isUserTalkingRef.current = false;
-              silenceTimerRef.current = null;
-              const s = store.getState();
-              if (s.state === 'STREAMING_INPUT') {
-                // T4.5: mark end-of-utterance for the TTFA metric. 600 ms
-                // silence hangover means the user actually finished speaking
-                // 600 ms ago — subtract so TTFA reflects true speech-end.
-                userSpeechEndMsRef.current = Date.now() - 600;
-                s.transition('WAITING_AI');
-              }
-            }, 600);
-          }
-        }
+        // VAD transitions (LISTENING→USER_SPEAKING, USER_SPEAKING→WAITING_AI)
+        // are now driven by native voiceMicVadStart / voiceMicVadEnd events
+        // (P0-7). No JS-side timer or RMS threshold here.
       };
 
-      if (useNative) {
-        // IMPORTANT: do NOT call setAudioModeAsync on the native path —
-        // VoiceSession already owns AVAudioSession (iOS) / AudioManager
-        // (Android). expo-audio's setAudioModeAsync would race our
-        // category+mode setup.
-        const unsub = VoiceMic.onData(({ data }) => handleMicChunk(data));
-        // Watchdog: the native tap stalls silently today when the HAL
-        // rejects voiceProcessingIO config. VoiceMicModule fires
-        // `voiceMicStalled` after 2s of no frames; without this subscriber
-        // the user just sees "mic tự tắt" with no error. Fatal stalls
-        // (recovery retry failed) surface as an error banner; non-fatal
-        // ones record a breadcrumb so we can correlate with the next chunk.
-        const unsubStall = VoiceMic.onStall((evt) => {
-          logTelemetry('voice_mic_stalled', {
-            lastFrameAgeMs: evt.lastFrameAgeMs,
-            fatal: evt.fatal,
-          });
-          if (evt.fatal) {
-            store
-              .getState()
-              .setError(`Micro mất frame ${Math.round(evt.lastFrameAgeMs)} ms. Tắt/bật lại voice.`);
-          }
+      // IMPORTANT: do NOT call setAudioModeAsync on the native path —
+      // VoiceSession already owns AVAudioSession (iOS) / AudioManager
+      // (Android). expo-audio's setAudioModeAsync would race our
+      // category+mode setup.
+      const unsub = VoiceMic.onData(({ data }) => handleMicChunk(data));
+      const unsubStall = VoiceMic.onStall((evt) => {
+        track('error', 'voice_mic_stalled', {
+          lastFrameAgeMs: evt.lastFrameAgeMs,
+          fatal: evt.fatal,
         });
-        VoiceMic.start({
-          sampleRate: 16000,
-          channels: 1,
-          bitsPerSample: 16,
-          aec: 'hw',
+        if (evt.fatal) {
+          store
+            .getState()
+            .setError(`Micro mất frame ${Math.round(evt.lastFrameAgeMs)} ms. Tắt/bật lại voice.`);
+        }
+      });
+      // P0-8: on session start, disable the native RMS fallback gate.
+      // It activates only when voiceAecAttachFailed fires below.
+      VoiceMic.setAecFallbackGate(false, 0).catch(() => {});
+      const unsubAecFailed = VoiceMic.onAecAttachFailed((evt) => {
+        track('session', 'voice_aec_attach_failed', {
+          reason: evt.reason,
+          modelCode: evt.modelCode,
+          deviceCode: evt.deviceCode,
+        });
+        // AEC unavailable on this device — activate the software RMS fallback
+        // gate in native VoiceMicModule (plan v2 §5.2, threshold covers child
+        // voices per §13.2 A3/A5). Hook calls unconditionally on both platforms;
+        // iOS stub resolves immediately.
+        VoiceMic.setAecFallbackGate(true, 0.04).catch(() => {});
+      });
+      // P0-7: native VAD event subscriptions. VadStart → USER_SPEAKING,
+      // VadEnd → WAITING_AI (replaces JS setTimeout VAD).
+      const unsubVadStart = VoiceMic.onVadStart(() => {
+        const s = store.getState();
+        if (s.state === 'LISTENING') {
+          s.transition('USER_SPEAKING');
+          track('capture', 'vad_start');
+        }
+      });
+      const unsubVadEnd = VoiceMic.onVadEnd((evt) => {
+        const s = store.getState();
+        if (s.state === 'USER_SPEAKING') {
+          userSpeechEndMsRef.current = Date.now() - evt.hangoverMs;
+          s.transition('WAITING_AI');
+          track('capture', 'vad_end', { hangoverMs: evt.hangoverMs });
+        }
+      });
+
+      VoiceMic.start({
+        sampleRate: 16000,
+        channels: 1,
+        bitsPerSample: 16,
+        aec: 'hw',
+      })
+        .then(() => {
+          isCapturingRef.current = true;
+          audioStreamRef.current = {
+            stop: () => {
+              unsub();
+              unsubStall();
+              unsubAecFailed();
+              unsubVadStart();
+              unsubVadEnd();
+              return VoiceMic.stop();
+            },
+          };
+          track('capture', 'audio_capture_started', { sampleRate: 16000, backend: 'native' });
         })
-          .then(() => {
-            isCapturingRef.current = true;
-            audioStreamRef.current = {
-              stop: () => {
-                unsub();
-                unsubStall();
-                return VoiceMic.stop();
-              },
-            };
-            logTelemetry('audio_capture_started', { sampleRate: 16000, backend: 'native' });
-          })
-          .catch((err: unknown) => {
-            unsub();
-            unsubStall();
-            logTelemetry('audio_capture_start_failed', {
-              backend: 'native',
-              err: String(err),
-            });
-            store.getState().setError('Micro không khả dụng.');
-            store.getState().transition('ERROR');
+        .catch((err: unknown) => {
+          unsub();
+          unsubStall();
+          unsubAecFailed();
+          unsubVadStart();
+          unsubVadEnd();
+          track('error', 'audio_capture_start_failed', {
+            backend: 'native',
+            err: String(err),
           });
-      } else {
-        // Legacy react-native-live-audio-stream path (Android until 006 ships,
-        // iOS when VoiceMicModule is not linked into the build).
-        const LiveAudioStream = require('react-native-live-audio-stream').default;
-        LiveAudioStream.init({
-          sampleRate: 16000,
-          channels: 1,
-          bitsPerSample: 16,
-          // VOICE_RECOGNITION (6). Was VOICE_COMMUNICATION (7) but that forces
-          // Android audio session into phone-call profile, so AI playback was
-          // being routed to the earpiece + downsampled to 16 kHz — the
-          // distortion you hear as "rè". VOICE_RECOGNITION still applies
-          // speech-optimised gain/noise processing for the mic but leaves the
-          // output path on the media profile (speaker, 48 kHz DAC).
-          audioSource: 6,
+          store.getState().setError('Micro không khả dụng.');
+          store.getState().transition('ERROR_RECOVERABLE');
         });
-
-        LiveAudioStream.on('data', handleMicChunk);
-
-        setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true })
-          .then(() => {
-            try {
-              LiveAudioStream.start();
-              isCapturingRef.current = true;
-              audioStreamRef.current = LiveAudioStream;
-              logTelemetry('audio_capture_started', { sampleRate: 16000, backend: 'rnlas' });
-            } catch (startErr: unknown) {
-              const msg = startErr instanceof Error ? startErr.message : String(startErr);
-              logTelemetry('audio_capture_start_threw', { backend: 'rnlas', err: msg });
-              store.getState().setError(`Không thể bật micro: ${msg}`);
-              store.getState().transition('ERROR');
-              return;
-            }
-            // RNLAS's iOS impl sets AVAudioSession to `.voiceChat`,
-            // which mutes AVAudioPlayerNode output. `reapplyCategory`
-            // flips it back to `.default` WITHOUT setActive(false/true),
-            // so RNLAS's AudioQueue keeps capturing. (forceRecover is
-            // too heavy here — it deactivates the session and stalls
-            // the AudioQueue, verified 2026-04-23.)
-            if (VoiceSession.isAvailable) {
-              void VoiceSession.reapplyCategory()
-                .then((ok) => {
-                  logTelemetry('voice_session_reapply_category', { ok });
-                })
-                .catch((err: unknown) => {
-                  logTelemetry('voice_session_reapply_failed', {
-                    message: err instanceof Error ? err.message : String(err),
-                  });
-                });
-            }
-          })
-          .catch((err: unknown) => {
-            // P0-fix 2026-04-23: setAudioModeAsync rejection was silent
-            // before this catch — LiveAudioStream.start() never ran and
-            // isCapturingRef stayed false, so the mic looked like it
-            // "auto-turned-off" with no error banner. Now surfaced.
-            const msg = err instanceof Error ? err.message : String(err);
-            logTelemetry('audio_mode_set_failed', { backend: 'rnlas', err: msg });
-            store.getState().setError(`Micro không khả dụng: ${msg}`);
-            store.getState().transition('ERROR');
-          });
-      }
     } catch {
-      logTelemetry('audio_capture_unavailable');
+      track('capture', 'audio_capture_unavailable');
       store.getState().setError('Micro kh\u00f4ng kh\u1ea3 d\u1ee5ng.');
-      store.getState().transition('ERROR');
+      store.getState().transition('ERROR_RECOVERABLE');
     }
   };
 
@@ -1021,7 +1323,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       audioStreamRef.current?.stop();
     } catch {}
     if (__DEV__) stopVoiceDebugProbe();
-    logTelemetry('audio_capture_stopped');
+    track('capture', 'audio_capture_stopped');
     isCapturingRef.current = false;
     audioStreamRef.current = null;
     store.getState().setAudioLevel(0);

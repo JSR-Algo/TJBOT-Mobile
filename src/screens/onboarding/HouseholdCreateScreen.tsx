@@ -31,6 +31,15 @@ export function HouseholdCreateScreen({ navigation }: OnboardingScreenProps<'Hou
       const household = await createHousehold(name.trim());
       navigation.navigate('AddChild', { householdId: household.id });
     } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: unknown }; message?: string; code?: string; config?: { baseURL?: string; url?: string } };
+      console.warn('[HOUSEHOLD_CREATE_DEBUG]', JSON.stringify({
+        msg: e?.message,
+        code: e?.code,
+        status: e?.response?.status,
+        data: e?.response?.data,
+        baseURL: e?.config?.baseURL,
+        url: e?.config?.url,
+      }));
       setError(normalizeError(err).message);
     } finally {
       setLoading(false);
@@ -42,7 +51,11 @@ export function HouseholdCreateScreen({ navigation }: OnboardingScreenProps<'Hou
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.heroCircle}>
           <Home size={48} color={theme.colors.primary} strokeWidth={2} />
         </View>
@@ -83,7 +96,8 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     padding: theme.spacing.lg,
-    justifyContent: 'center',
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl,
   },
   heroCircle: {
     alignSelf: 'center',

@@ -11,19 +11,26 @@ interface ControlBarProps {
 
 const STATUS_LABEL: Partial<Record<VoiceState, string>> = {
   IDLE: 'Bấm để bắt đầu',
+  PREPARING_AUDIO: 'Xin quyền micro...',
   CONNECTING: 'Đang kết nối...',
-  REQUESTING_MIC_PERMISSION: 'Xin quyền micro...',
+  READY: 'Đang chuẩn bị...',
   LISTENING: 'Đang nghe...',
-  STREAMING_INPUT: 'Đang nghe...',
+  USER_SPEAKING: 'Đang nghe...',
+  USER_SPEECH_FINALIZING: 'Đang nghĩ...',
   WAITING_AI: 'Đang nghĩ...',
-  PLAYING_AI_AUDIO: 'Suka đang nói...',
+  ASSISTANT_SPEAKING: 'Suka đang nói...',
   RECONNECTING: 'Đang kết nối lại...',
-  ERROR: 'Lỗi kết nối',
   INTERRUPTED: 'Đã ngắt',
+  ERROR_RECOVERABLE: 'Lỗi kết nối',
+  ERROR_FATAL: 'Lỗi nghiêm trọng',
+  ENDED: 'Đã kết thúc',
 };
 
 export function ControlBar({ voiceState, onMicPress, onSettingsPress, micDisabled }: ControlBarProps) {
-  const isConnected = voiceState !== 'IDLE' && voiceState !== 'ERROR';
+  const isError =
+    voiceState === 'ERROR_RECOVERABLE' || voiceState === 'ERROR_FATAL';
+  const isConnected =
+    voiceState !== 'IDLE' && voiceState !== 'ENDED' && !isError;
   const isActive = isConnected;
   const label = STATUS_LABEL[voiceState] ?? '';
 
@@ -37,7 +44,7 @@ export function ControlBar({ voiceState, onMicPress, onSettingsPress, micDisable
         disabled={isConnected}
       >
         <View style={[styles.gearIcon, isConnected && styles.gearDisabled]}>
-          <Text style={styles.gearText}>{"\u2699"}</Text>
+          <Text style={styles.gearText}>{"⚙"}</Text>
         </View>
       </TouchableOpacity>
 
@@ -47,7 +54,7 @@ export function ControlBar({ voiceState, onMicPress, onSettingsPress, micDisable
           style={[
             styles.micButton,
             isActive && styles.micButtonActive,
-            voiceState === 'ERROR' && styles.micButtonError,
+            isError && styles.micButtonError,
           ]}
           onPress={onMicPress}
           disabled={micDisabled}
@@ -58,7 +65,7 @@ export function ControlBar({ voiceState, onMicPress, onSettingsPress, micDisable
           <View style={[styles.micStand, isActive && styles.micStandActive]} />
           <View style={[styles.micBase, isActive && styles.micBaseActive]} />
         </TouchableOpacity>
-        <Text style={[styles.label, voiceState === 'ERROR' && styles.labelError]}>
+        <Text style={[styles.label, isError && styles.labelError]}>
           {label}
         </Text>
       </View>

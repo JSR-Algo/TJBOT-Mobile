@@ -124,6 +124,9 @@ export function useBlinkAnimation() {
   useEffect(() => {
     const scheduleNextBlink = () => {
       const delay = 2000 + Math.random() * 4000; // 2–6 s random interval
+      // Robot blink animation; presentation-only, no FSM impact.
+      // Plan v2 §11.7 ban targets FSM-affecting timers in shared layers.
+      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
       return setTimeout(() => {
         Animated.sequence([
           Animated.timing(opacity, { toValue: 0, duration: 80, useNativeDriver: true }),

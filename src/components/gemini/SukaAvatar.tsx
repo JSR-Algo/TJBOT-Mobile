@@ -66,15 +66,19 @@ const TILT_MAP: Record<string, number> = { curious: 5, shy: -5, thinking: 3, lis
 function voiceStateToExpression(state: VoiceState): string {
   switch (state) {
     case 'IDLE': return 'idle';
-    case 'REQUESTING_MIC_PERMISSION':
+    case 'ENDED': return 'idle';
+    case 'PREPARING_AUDIO':
     case 'CONNECTING':
+    case 'READY':
     case 'RECONNECTING': return 'connecting';
     case 'LISTENING': return 'listening';
-    case 'STREAMING_INPUT': return 'streaming';
+    case 'USER_SPEAKING': return 'streaming';
+    case 'USER_SPEECH_FINALIZING': return 'thinking';
     case 'WAITING_AI': return 'thinking';
-    case 'PLAYING_AI_AUDIO': return 'speaking';
+    case 'ASSISTANT_SPEAKING': return 'speaking';
     case 'INTERRUPTED': return 'interrupted';
-    case 'ERROR': return 'sad';
+    case 'ERROR_RECOVERABLE':
+    case 'ERROR_FATAL': return 'sad';
     default: return 'idle';
   }
 }
@@ -121,15 +125,20 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
 
   // ── Periodic blink ───────────────────────────────────────────────
   useEffect(() => {
-    if (voiceState === 'ERROR') return;
+    if (voiceState === 'ERROR_RECOVERABLE' || voiceState === 'ERROR_FATAL') return;
     let timeout: ReturnType<typeof setTimeout>;
     const doBlink = () => {
       Animated.sequence([
         Animated.timing(eyeScaleY, { toValue: 0.08, duration: 80, useNativeDriver: true }),
         Animated.timing(eyeScaleY, { toValue: expr.eyeScaleY, duration: 120, useNativeDriver: true }),
       ]).start();
+      // Blink scheduling is presentation-only animation — does not
+      // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
+      // timers; this is the documented carve-out.
+      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
       timeout = setTimeout(doBlink, 3000 + Math.random() * 3000);
     };
+    // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
     timeout = setTimeout(doBlink, 2000 + Math.random() * 2000);
     return () => clearTimeout(timeout);
   }, [voiceState, expr.eyeScaleY, eyeScaleY]);

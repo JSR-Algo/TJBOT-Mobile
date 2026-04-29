@@ -24,6 +24,11 @@ RCT_EXTERN_METHOD(initWithRate:(nonnull NSNumber *)rate
                   rejecter:(RCTPromiseRejectBlock)reject)
 
 RCT_EXTERN_METHOD(feed:(nonnull NSString *)base64
+                  responseId:(nonnull NSString *)responseId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(startResponse:(nonnull NSString *)rid
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 

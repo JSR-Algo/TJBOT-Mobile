@@ -45,16 +45,33 @@ export function getAiBaseUrl(): string {
 // default must match the backend/docs contract.
 const DEFAULT_GEMINI_LIVE_MODEL = 'models/gemini-3.1-flash-live-preview';
 
+// P0-20 plan v2 §7.6 — generation-budget watchdog. If the barge-in
+// window stays open longer than this without voiceMicVadStart firing
+// (i.e. the user tapped to interrupt but never spoke), the hook closes
+// the WS to forcibly cancel the in-flight server generation. 5 s is
+// the starting heuristic per §7.6 calibration plan; staging telemetry
+// will tune it once collected.
+const DEFAULT_BARGE_IN_BUDGET_MS = 5_000;
+function parseBargeInBudgetMs(): number {
+  const raw = ENV.EXPO_PUBLIC_VOICE_BARGE_IN_BUDGET_MS;
+  if (!raw) return DEFAULT_BARGE_IN_BUDGET_MS;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_BARGE_IN_BUDGET_MS;
+  return n;
+}
+
 export const Config = {
   API_BASE_URL: getApiBaseUrl(),
   AI_BASE_URL: getAiBaseUrl(),
   GEMINI_LIVE_MODEL: ENV.EXPO_PUBLIC_GEMINI_LIVE_MODEL || DEFAULT_GEMINI_LIVE_MODEL,
-  // DEBUG diagnostic flag: force iOS to use the native VoiceMicModule path
-  // instead of the RNLAS fallback. Default false — matches the 2026-04-23
-  // decision to hold the native path disabled on iOS until the on-device
-  // "start() throws / taps stop delivering" issue is root-caused
-  // (useGeminiConversation.ts `useNative` gate). When true, iOS takes the
-  // same path as Android so we can capture native stall events + engine
-  // diagnostics against the live repro.
-  VOICE_FORCE_NATIVE_IOS: ENV.EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS === 'true',
+  // True when EXPO_PUBLIC_VOICE_TEST_HARNESS=true — enables QA-only paths such
+  // as the voice-telemetry POST to /v1/qa/voice-events and native PCM recording.
+  QA_MODE: ENV.EXPO_PUBLIC_VOICE_TEST_HARNESS === 'true',
+  /**
+   * Tap-to-interrupt budget (plan v2 §7.6). If the user taps to
+   * interrupt but does not speak within this many ms, the hook closes
+   * the WS to forcibly cancel server generation (token blast-radius
+   * cap). Override via EXPO_PUBLIC_VOICE_BARGE_IN_BUDGET_MS.
+   */
+  VOICE_BARGE_IN_BUDGET_MS: parseBargeInBudgetMs(),
 } as const;

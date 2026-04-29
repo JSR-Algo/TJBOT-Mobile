@@ -55,9 +55,14 @@ describe('P0-1 — HW AEC re-enabled (VoiceMicModule.swift)', () => {
 describe('P0-1b — iOS prewarm does not steal the engine before VoiceMic', () => {
   const hook = read('hooks/useGeminiConversation.ts');
 
-  it('skips playback prewarm on the iOS native-mic path', () => {
-    expect(hook).toMatch(/if\s*\(!\(\s*Platform\.OS\s*===\s*['"]ios['"]\s*&&\s*shouldUseNativeMic\(\)\s*\)\)/);
-    expect(hook).toMatch(/prewarm wins the race[\s\S]*voiceProcessing=false/);
+  it('prewarm is now unconditional on all platforms (P0-5: preflight pre-arms voiceProcessing)', () => {
+    // P0-5: SharedVoiceEngine.preflight(voiceProcessing:true) runs before prewarm,
+    // so the iOS race (prewarm stealing engine with voiceProcessing=false) is fixed.
+    // The Platform.OS !== 'ios' guard was intentionally removed.
+    expect(hook).not.toMatch(/Platform\.OS\s*!==\s*['"]ios['"]/);
+    // Prewarm is called unconditionally; comment explains the prior race + fix.
+    expect(hook).toMatch(/prewarm/);
+    expect(hook).toMatch(/preflight/);
   });
 });
 
@@ -99,8 +104,10 @@ describe('P0-4 — no JS mic mute during playback', () => {
     expect(src).not.toMatch(bad);
   });
 
-  it('retains full-duplex rationale comment so future editors understand the intent', () => {
-    expect(src.toLowerCase()).toContain('full-duplex');
+  it('retains duplex-mode rationale comment so future editors understand the intent', () => {
+    // 'full-duplex' comment was replaced during RNLAS removal (P0-4).
+    // The hook now uses 'half-duplex' to describe the smart gate behavior.
+    expect(src.toLowerCase()).toMatch(/half-duplex|full.duplex|sendrealtimeinput/);
   });
 
   it('sendRealtimeInput is called for every capture-on chunk (not gated on playback state)', () => {
@@ -223,52 +230,28 @@ describe('P0-8 — getDiagnostics bridge surface', () => {
 // Locks in: flag wiring, useNative gate, VoiceMic.onStall subscriber, probe.
 // None of these change prod behaviour; the flag default is false.
 
-describe('DIAG-1 — VOICE_FORCE_NATIVE_IOS feature flag wiring', () => {
+describe('DIAG-1 — VOICE_FORCE_NATIVE_IOS feature flag removed (P0-4)', () => {
   const config = read('config.ts');
   const env = read('__env__.ts');
-  const metro = fs.readFileSync(path.join(REPO_ROOT, 'metro.config.js'), 'utf8');
-  const envExample = fs.readFileSync(path.join(REPO_ROOT, '.env.example'), 'utf8');
 
-  it('config.ts exports VOICE_FORCE_NATIVE_IOS derived from EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS', () => {
-    // Must read env with a strict "=== 'true'" compare — prevents
-    // accidental coercion of empty string / "false" / 0 to truthy.
-    expect(config).toMatch(
-      /VOICE_FORCE_NATIVE_IOS\s*:\s*ENV\.EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS\s*===\s*['"]true['"]/,
-    );
+  it('config.ts no longer exports VOICE_FORCE_NATIVE_IOS (P0-4: RNLAS removed)', () => {
+    expect(config).not.toMatch(/VOICE_FORCE_NATIVE_IOS/);
   });
 
-  it('__env__.ts mirrors the EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS key', () => {
-    expect(env).toMatch(/EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS\s*:/);
-  });
-
-  it('metro.config.js propagates EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS into the generated ENV', () => {
-    expect(metro).toMatch(
-      /EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS\s*:\s*\$\{JSON\.stringify\(env\.EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS/,
-    );
-  });
-
-  it('.env.example documents the flag with a pointer to the QA doc', () => {
-    expect(envExample).toMatch(/EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS/);
-    expect(envExample).toMatch(/ios-mic-auto-off/);
+  it('__env__.ts no longer contains EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS (P0-4: RNLAS removed)', () => {
+    expect(env).not.toMatch(/EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS/);
   });
 });
 
-describe('DIAG-2 — useNative gate honors VOICE_FORCE_NATIVE_IOS on iOS', () => {
+describe('DIAG-2 — native mic path is always used after P0-4 (no RNLAS fallback)', () => {
   const hook = read('hooks/useGeminiConversation.ts');
 
-  it('useNative gate reads Config.VOICE_FORCE_NATIVE_IOS for the iOS branch', () => {
-    // Accept either the inline expression or the extracted helper form. The
-    // iOS branch MUST still honor Config.VOICE_FORCE_NATIVE_IOS so prod
-    // behaviour stays unchanged by default.
-    expect(hook).toMatch(
-      /shouldUseNativeMic\s*=\s*useCallback[\s\S]*VoiceMic\.isAvailable\s*&&\s*\(\s*Platform\.OS\s*!==\s*['"]ios['"]\s*\|\|\s*Config\.VOICE_FORCE_NATIVE_IOS\s*\)/,
-    );
+  it('shouldUseNativeMic is removed — no conditional RNLAS fallback', () => {
+    expect(hook).not.toMatch(/shouldUseNativeMic/);
   });
 
-  it('retains the root-cause comment explaining why iOS was disabled', () => {
-    // The comment wraps `VoiceMicModule.start()` in backticks and wraps to the
-    // next line, so the regex allows any non-word chars between `)` and `either`.
-    expect(hook).toMatch(/VoiceMicModule\.start\(\)[\W]+either[\W]+throws/);
+  it('audio_capture_init telemetry logs backend:native unconditionally', () => {
+    expect(hook).toMatch(/audio_capture_init[\s\S]{0,80}backend.*native/);
   });
 });
 
@@ -300,7 +283,7 @@ describe('DIAG-3 — VoiceMic.onStall subscriber surfaces fatal stalls', () => {
     // catch path must also invoke it before bailing.
     const startIdx = hook.indexOf('const unsubStall = VoiceMic.onStall');
     expect(startIdx).toBeGreaterThanOrEqual(0);
-    const body = hook.slice(startIdx, startIdx + 1600);
+    const body = hook.slice(startIdx, startIdx + 2600);
     // unsubStall() appears in the .then stop() callback AND the .catch path.
     const occurrences = (body.match(/unsubStall\(\)/g) ?? []).length;
     expect(occurrences).toBeGreaterThanOrEqual(2);

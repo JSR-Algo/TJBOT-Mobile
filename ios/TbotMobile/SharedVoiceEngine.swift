@@ -92,6 +92,41 @@ final class SharedVoiceEngine {
     }
   }
 
+  /// Pre-arm the voiceProcessing flag before any tap or player-node is
+  /// attached. VoiceSessionModule calls this immediately after
+  /// AVAudioSession.setActive(true) so that a concurrent PcmStreamModule
+  /// prewarm (which calls ensureStarted(voiceProcessing: false)) races
+  /// against an engine that is already marked for voice-processing — the
+  /// conflicting call throws voiceProcessingTogglePostStart and the prewarm
+  /// is safely discarded rather than silently winning the flag.
+  ///
+  /// If the engine is already started with the matching flag this is a no-op.
+  /// If it is started with a conflicting flag (should not happen in normal
+  /// flows — means a prior session was not torn down) this throws
+  /// voiceProcessingTogglePostStart, which VoiceSessionModule logs and treats
+  /// as a non-fatal session-start failure.
+  func preflight(voiceProcessing: Bool) throws {
+    lock.lock()
+    defer { lock.unlock() }
+
+    if started {
+      if voiceProcessingEnabled != voiceProcessing {
+        throw SharedVoiceEngineError.voiceProcessingTogglePostStart
+      }
+      return
+    }
+
+    try engine.inputNode.setVoiceProcessingEnabled(voiceProcessing)
+    voiceProcessingEnabled = voiceProcessing
+    // Apple's setVoiceProcessingEnabled is only durable once the engine is
+    // running — the HAL can silently revert it if the engine is stopped.
+    // Start the engine here so the flag is committed at the HAL level before
+    // any concurrent ensureStarted(voiceProcessing:false) prewarm call runs.
+    _ = engine.mainMixerNode
+    try engine.start()
+    started = true
+  }
+
   func isVoiceProcessingEnabled() -> Bool {
     lock.lock(); defer { lock.unlock() }
     return voiceProcessingEnabled
@@ -209,7 +244,7 @@ final class SharedVoiceEngine {
       "voiceProcessingEnabled": voiceProcessingEnabled,
       "micUsers": micUsers,
       "playerUsers": playerUsers,
-      "inputTapInstalled": inputTapInstalled,
+      "tapInstalled": inputTapInstalled,
       "playerNodes": playerNodes.count,
     ]
   }

@@ -58,6 +58,42 @@ export interface VoiceMicStalledEvent {
   fatal: boolean;
 }
 
+/**
+ * Android-only. Emitted when AcousticEchoCanceler.create() fails or .enabled
+ * stays false after attach. iOS never emits this — iOS uses voiceProcessingIO
+ * which has no equivalent failure mode. Hook responds by calling
+ * VoiceMic.setAecFallbackGate(true, 0.04) (plan §5.1).
+ */
+export interface VoiceAecAttachFailedEvent {
+  event: 'voiceAecAttachFailed';
+  /** Human-readable failure reason from the AEC attach site */
+  reason: string;
+  /** Android audio session ID at time of failure (for diagnostics) */
+  modelCode: number;
+  /** Build.MODEL of the device (for AEC allowlist tuning) */
+  deviceCode: string;
+}
+
+/**
+ * Fired by VoiceMicModule (iOS + Android) the FIRST time a frame is actually
+ * delivered for a given start() cycle. `start()` resolving only proves the
+ * engine *began* configuration; this event proves the audio path is *live*
+ * (tap installed on iOS, AudioRecord.read returned a positive count on
+ * Android). It is the only sound trigger for the FSM `ready → listening`
+ * transition (plan §3.2 row `ready`, §3.5 frozen wire, §6.3 row 3 — replaces
+ * the old `setTimeout(50)` re-arm).
+ *
+ * Fires AT MOST ONCE per start() / stop() cycle. The native module resets
+ * its "first-frame" latch on stop and on next start.
+ */
+export interface VoiceMicEngineReadyEvent {
+  event: 'voiceMicEngineReady';
+  /** ms since stream start (native monotonic clock); 0 on the very first frame */
+  firstFrameAgeMs: number;
+  /** Effective sample rate the engine actually delivered (post-resample on iOS, native on Android) */
+  sampleRate: number;
+}
+
 // ─── Events emitted by PcmStreamModule (future) ─────────────────────────
 
 export interface VoicePlaybackStalledEvent {
@@ -80,6 +116,24 @@ export interface VoicePlaybackDrainedEvent {
   reason: string;
 }
 
+/**
+ * Fired by VoiceMicModule (iOS + Android) when native energy+ZCR VAD detects
+ * speech onset (plan §5.6). The first voiceMicData events after this carry
+ * seq=-1 (pre-roll frames) to restore the 200ms leading the detection.
+ */
+export interface VoiceMicVadStartEvent {
+  event: 'voiceMicVadStart';
+}
+
+/**
+ * Fired when VAD hangover expires — speech ended. `hangoverMs` is the
+ * hangover window that just elapsed (mirrors EXPO_PUBLIC_VOICE_VAD_HANGOVER_MS).
+ */
+export interface VoiceMicVadEndEvent {
+  event: 'voiceMicVadEnd';
+  hangoverMs: number;
+}
+
 // ─── Exhaustive union ────────────────────────────────────────────────────
 
 export type VoiceTelemetryEvent =
@@ -87,6 +141,10 @@ export type VoiceTelemetryEvent =
   | VoiceRouteChangeEvent
   | VoiceSessionRecoveredEvent
   | VoiceMicStalledEvent
+  | VoiceMicEngineReadyEvent
+  | VoiceAecAttachFailedEvent
+  | VoiceMicVadStartEvent
+  | VoiceMicVadEndEvent
   | VoicePlaybackStalledEvent
   | VoicePlaybackDrainedEvent;
 
@@ -97,8 +155,13 @@ export const VOICE_EVENT_NAMES = {
   routeChange: 'voiceRouteChange',
   sessionRecovered: 'voiceSessionRecovered',
   micStalled: 'voiceMicStalled',
+  micEngineReady: 'voiceMicEngineReady',
+  micVadStart: 'voiceMicVadStart',
+  aecAttachFailed: 'voiceAecAttachFailed',
   playbackStalled: 'voicePlaybackStalled',
   playbackDrained: 'voicePlaybackDrained',
+  vadStart: 'voiceMicVadStart',
+  vadEnd: 'voiceMicVadEnd',
 } as const;
 
 export type VoiceEventName = (typeof VOICE_EVENT_NAMES)[keyof typeof VOICE_EVENT_NAMES];

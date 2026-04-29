@@ -93,8 +93,14 @@ export function GeminiConversationScreen() {
   });
 
   // u2500u2500 Derived u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
-  const isConnected = voiceState !== 'IDLE' && voiceState !== 'ERROR';
-  const isConnecting = voiceState === 'CONNECTING' || voiceState === 'REQUESTING_MIC_PERMISSION';
+  const isError =
+    voiceState === 'ERROR_RECOVERABLE' || voiceState === 'ERROR_FATAL';
+  const isConnected =
+    voiceState !== 'IDLE' && voiceState !== 'ENDED' && !isError;
+  const isConnecting =
+    voiceState === 'CONNECTING' ||
+    voiceState === 'PREPARING_AUDIO' ||
+    voiceState === 'READY';
   const micDisabled = isConnecting || voiceState === 'RECONNECTING';
 
   // u2500u2500 Handlers u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500u2500
@@ -145,9 +151,9 @@ export function GeminiConversationScreen() {
         <Pressable
           style={styles.avatarZone}
           onPress={interruptPlayback}
-          disabled={voiceState !== 'PLAYING_AI_AUDIO'}
+          disabled={voiceState !== 'ASSISTANT_SPEAKING'}
           accessibilityRole="button"
-          accessibilityState={{ disabled: voiceState !== 'PLAYING_AI_AUDIO' }}
+          accessibilityState={{ disabled: voiceState !== 'ASSISTANT_SPEAKING' }}
           accessibilityLabel="Ngắt lời Suka"
           accessibilityHint="Chạm để dừng Suka đang nói"
         >

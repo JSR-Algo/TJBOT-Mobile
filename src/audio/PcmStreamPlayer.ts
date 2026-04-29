@@ -29,7 +29,7 @@ interface NativePcmStreamModule {
   // `callInit` below.
   init?(rate: number): Promise<void>;
   initWithRate?(rate: number): Promise<void>;
-  feed(base64: string): Promise<number>;
+  feed(base64: string, responseId: string): Promise<number>;
   pause(): Promise<void>;
   resume(): Promise<void>;
   clear(): Promise<void>;
@@ -40,6 +40,10 @@ interface NativePcmStreamModule {
   // can probe for it with `typeof Native.endTurn === 'function'` without
   // breaking Android's native module contract.
   endTurn?(): Promise<void>;
+  // P0-6: native responseId gate. Called before the first feed() of each
+  // response turn. Optional so existing code paths that haven't wired up
+  // responseId yet degrade gracefully (feed passes empty string → gate skips).
+  startResponse?(rid: string): Promise<void>;
 }
 
 interface DrainedEvent {
@@ -83,6 +87,9 @@ export class PcmStreamPlayer {
   private firstPlayFired = false;
   private disposed = false;
   private fedFrames = 0;
+  // P0-6: current responseId to thread into every feed() call. Empty string
+  // means "no gate" (old code paths that haven't called startResponse yet).
+  private currentRid = '';
   private drainTimer: ReturnType<typeof setTimeout> | null = null;
   private drainDeadlineTimer: ReturnType<typeof setTimeout> | null = null;
   private lastAudioLevel = 0;
@@ -199,7 +206,9 @@ export class PcmStreamPlayer {
     // only useful signal back here was the byte count, which we don't need.
     // Awaiting cost us ~one bridge round-trip per 20 ms chunk (~50 Hz) and
     // serialized enqueue() under a Promise chain whenever JS was busy.
-    Native!.feed(base64).catch((err) => {
+    // P0-6: pass currentRid so native can gate stale chunks. Empty string
+    // disables the gate (callers that haven't called startResponse yet).
+    Native!.feed(base64, this.currentRid).catch((err) => {
       jsErrorBreadcrumb('pcmStream.feed', err, { fedFrames: this.fedFrames });
       if (__DEV__) {
         // eslint-disable-next-line no-console
@@ -222,6 +231,24 @@ export class PcmStreamPlayer {
   async prewarm(): Promise<void> {
     if (this.disposed) return;
     await this.ensureReady();
+  }
+
+  /**
+   * Register the responseId for the upcoming response turn (plan v2 §4.3).
+   * Call this before the first enqueue() of each new Gemini response. Any
+   * feed() carrying a different responseId will be silently dropped by native
+   * as a stale chunk from a superseded response. Clears currentRid on
+   * interrupt() so old in-flight chunks are rejected by default.
+   */
+  async startResponse(rid: string): Promise<void> {
+    if (this.disposed) return;
+    this.currentRid = rid;
+    if (!Native || !(await this.ensureReady())) return;
+    if (typeof Native.startResponse === 'function') {
+      await Native.startResponse(rid).catch(() => {
+        /* non-fatal — native gate degrades gracefully to no-op */
+      });
+    }
   }
 
   endTurn(): void {
@@ -302,6 +329,10 @@ export class PcmStreamPlayer {
     this.firstPlayFired = false;
     this.fedFrames = 0;
     this.lastAudioLevel = 0;
+    // P0-6: clear rid so any in-flight bridge chunks for the old response
+    // are rejected by native (feed passes empty string → gate skips for
+    // chunks already submitted before barge-in wins).
+    this.currentRid = '';
     this.clearDrainTimer();
     if (Native && this.ready) {
       try {
@@ -352,6 +383,7 @@ export class PcmStreamPlayer {
     this.fedFrames = 0;
     this._turnGeneration++;
     this.lastAudioLevel = 0;
+    this.currentRid = '';
     if (Native && this.ready) {
       try {
         await Native.close();
