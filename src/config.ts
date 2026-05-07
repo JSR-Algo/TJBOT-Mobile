@@ -1,14 +1,15 @@
 /**
  * Runtime configuration — generated from .env by metro.config.js
  *
- * For local development on a physical phone:
- *   1. Find your Mac's local IP: `ipconfig getifaddr en0`
- *   2. Create tbot-mobile/.env:
- *      TBOT_API_URL=http://192.168.x.x:3000
- *      TBOT_AI_URL=http://192.168.x.x:3001/api/ai
- *   3. Run: npx react-native start --reset-cache
+ * Backend URL resolution order (see getApiBaseUrl):
+ *   1. ENV.TBOT_API_URL if set to anything except literal http://localhost:3000
+ *   2. (real device + __DEV__) auto-derive http://<metro-host>:3000 from the
+ *      JS bundle URL — works on iPhone/Android over LAN with zero per-network
+ *      .env edits. Set TBOT_API_URL explicitly to override.
+ *   3. iOS Simulator / Android Emulator hardcoded loopbacks
+ *   4. Hosted Render URL as final fallback (production builds)
  */
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 import * as Device from 'expo-device';
 import { ENV } from './__env__';
 
@@ -20,14 +21,43 @@ const ANDROID_EMULATOR_API = 'http://10.0.2.2:3000/v1';
 const IOS_SIMULATOR_AI = 'http://127.0.0.1:3001/api/ai';
 const ANDROID_EMULATOR_AI = 'http://10.0.2.2:3001/api/ai';
 
+const LOOPBACK_TBOT_API = 'http://localhost:3000';
+
 function ensureV1(url: string): string {
   const trimmed = url.replace(/\/+$/, '');
   return /\/v\d+$/.test(trimmed) ? trimmed : `${trimmed}/v1`;
 }
 
+// Parse the Metro bundle URL to extract the dev host's IP. On a physical
+// device, scriptURL looks like "http://192.168.1.50:8081/index.bundle?...".
+// Returns null in production (no scriptURL), Jest (no NativeModules), or
+// when the URL doesn't have a parseable host.
+export function deriveDevHostFromBundleUrl(): string | null {
+  try {
+    const scriptURL: unknown = NativeModules?.SourceCode?.scriptURL;
+    if (typeof scriptURL !== 'string' || scriptURL.length === 0) return null;
+    const match = scriptURL.match(/^https?:\/\/([^/:]+)(?::\d+)?\//);
+    if (!match) return null;
+    const host = match[1];
+    if (host === 'localhost' || host === '127.0.0.1') return null;
+    return host;
+  } catch {
+    return null;
+  }
+}
+
 export function getApiBaseUrl(): string {
-  if (ENV.TBOT_API_URL) {
-    return ensureV1(ENV.TBOT_API_URL);
+  const explicit = ENV.TBOT_API_URL?.trim();
+  // A literal `http://localhost:3000` in .env is treated as "user forgot to
+  // set their LAN IP" because that value is unreachable on a real device.
+  // The Simulator/Emulator branches below already cover those paths
+  // explicitly with 127.0.0.1 / 10.0.2.2.
+  if (explicit && explicit !== LOOPBACK_TBOT_API) {
+    return ensureV1(explicit);
+  }
+  if (Device.isDevice && __DEV__) {
+    const derived = deriveDevHostFromBundleUrl();
+    if (derived) return ensureV1(`http://${derived}:3000`);
   }
   if (!Device.isDevice && Platform.OS === 'ios') return IOS_SIMULATOR_API;
   if (!Device.isDevice && Platform.OS === 'android') return ANDROID_EMULATOR_API;
@@ -35,7 +65,14 @@ export function getApiBaseUrl(): string {
 }
 
 export function getAiBaseUrl(): string {
-  if (ENV.TBOT_AI_URL) return ENV.TBOT_AI_URL.replace(/\/+$/, '');
+  const explicit = ENV.TBOT_AI_URL?.trim();
+  if (explicit && explicit !== `${LOOPBACK_TBOT_API}/api/ai`) {
+    return explicit.replace(/\/+$/, '');
+  }
+  if (Device.isDevice && __DEV__) {
+    const derived = deriveDevHostFromBundleUrl();
+    if (derived) return `http://${derived}:3001/api/ai`;
+  }
   if (!Device.isDevice && Platform.OS === 'ios') return IOS_SIMULATOR_AI;
   if (!Device.isDevice && Platform.OS === 'android') return ANDROID_EMULATOR_AI;
   return HOSTED_AI;

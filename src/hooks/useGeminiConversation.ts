@@ -114,6 +114,16 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // P0-11: stamped when server sends turnComplete. Used by the 5s drain-timeout
   // safety net to detect stuck ASSISTANT_SPEAKING state (plan §3.2 row).
   const responseTurnCompleteAtMsRef = useRef<number | null>(null);
+  // Latches voiceMicEngineReady when it fires before the FSM has reached
+  // READY. Native VoiceMicModule emits the event exactly once per start()
+  // cycle (firstFrameEmitted latch in VoiceMicModule.kt:80). On fast
+  // hardware-AEC devices (Xiaomi/Redmi) the first frame arrives in
+  // <100 ms — well before the Render-cold-start WS handshake (≈400-1500 ms)
+  // moves the FSM into READY. The original gate-only listener silently
+  // dropped that early event, leaving READY waiting for an event that
+  // never re-fires and tripping the 2 s deadline → ERROR_RECOVERABLE.
+  // The replay useEffect below catches up when state finally hits READY.
+  const engineReadyRef = useRef(false);
 
   const store = useVoiceAssistantStore;
 
@@ -226,10 +236,29 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     sessionRequestStartMsRef.current = Date.now();
     sessionWsOpenMsRef.current = null;
     firstAudioAtMsRef.current = null;
-    // DEV-ONLY OVERRIDE \u2014 hardcoded key for local diagnosis of WS denial.
-    // Remove before merge; backend ephemeral-token path is the production contract.
-    apiKey = 'AIzaSyDclKPEsGghJtRoFUn8AxSHbamtGqU1p_o';
-    track('session', 'token_fetch_success', { tokenType: 'api_key', source: 'hardcode-dev' });
+    // Fetch ephemeral token from tbot-backend `POST /v1/gemini/token`. The
+    // shared axios client adds the Bearer JWT (from SecureStore) and runs
+    // 401-refresh through refreshAuthTokens, so an expired access token is
+    // transparent here. Returning to the production contract \u2014 the prior
+    // hardcoded `AIzaSy...` was a dev-diagnostic that Google then revoked
+    // for being a leaked key.
+    try {
+      const { data } = await apiClient.post<{ token: string }>('/gemini/token', {});
+      if (!data?.token || typeof data.token !== 'string') {
+        throw new Error('Token response missing token');
+      }
+      apiKey = data.token;
+      track('session', 'token_fetch_success', {
+        tokenType: apiKey.startsWith('AIza') ? 'api_key' : 'ephemeral_token',
+      });
+    } catch (err) {
+      track('session', 'token_fetch_failed', {
+        message: err instanceof Error ? err.message : 'unknown',
+      });
+      setError('Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i Gemini. Vui l\u00f2ng th\u1eed l\u1ea1i.');
+      transition('ERROR_RECOVERABLE');
+      return;
+    }
 
     // 2b. Claim the native audio session before any playback / mic capture
     // touches AudioManager. Sets MODE_IN_COMMUNICATION, requests exclusive
@@ -979,15 +1008,48 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // so a single subscription survives multiple capture restarts. The
   // FSM transition is gated on state === 'READY' to avoid spurious
   // LISTENING transitions when the event arrives during reconnect.
+  // Race fix (adhoc-2026-05-03): also latch into engineReadyRef so an
+  // early event (state still CONNECTING) is replayed by the useEffect
+  // below once state catches up to READY.
   useEffect(() => {
     const unsub = VoiceMic.onEngineReady(() => {
+      engineReadyRef.current = true;
       const s = store.getState();
-      if (s.state === 'READY') {
-        s.transition('LISTENING');
-      }
+      if (s.state === 'READY') { s.transition('LISTENING'); }
     });
     return () => unsub();
   }, [store]);
+
+  // Replay path for the early-event/late-READY race: when the FSM
+  // finally reaches READY and the engine-ready event already fired,
+  // drive the LISTENING transition immediately instead of waiting for
+  // the deadline-timer to bounce us into ERROR_RECOVERABLE.
+  useEffect(() => {
+    if (fsmState === 'READY' && engineReadyRef.current) {
+      engineReadyRef.current = false;
+      store.getState().transition('LISTENING');
+    }
+  }, [fsmState, store]);
+
+  // Clear the latch on every new session attempt so a stale flag from a
+  // previous cycle cannot fire as soon as state reaches READY this cycle.
+  // Native VoiceMicModule resets its own first-frame latch on stop()/start()
+  // (VoiceMicModule.kt:228, :459); this keeps the JS mirror in sync.
+  //
+  // Reconnect path (adhoc-2026-05-03 follow-up): on RECONNECTING entry the
+  // native mic engine is still running and `firstFrameEmitted` is already
+  // true on the native side, so no fresh `voiceMicEngineReady` event will
+  // ever arrive — yet the FSM is allowed to route RECONNECTING → READY
+  // (voiceAssistantStore.ts:136-142) and would then trip the 2 s READY
+  // deadline. Pre-set the JS latch so the replay useEffect drives
+  // READY → LISTENING immediately when reconnect WS reopens.
+  useEffect(() => {
+    if (fsmState === 'PREPARING_AUDIO' || fsmState === 'IDLE') {
+      engineReadyRef.current = false;
+    } else if (fsmState === 'RECONNECTING') {
+      engineReadyRef.current = true;
+    }
+  }, [fsmState]);
 
   // §7.7 P0-14: Cancel-unack deadline. While in ASSISTANT_SPEAKING, subscribe
   // to voiceMicVadStart. On receipt, stamp cancelUnackMsRef and arm a 600ms

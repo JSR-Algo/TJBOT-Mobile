@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Bot, Mic, ShieldCheck, TrendingUp } from 'lucide-react-native';
-import { Button } from '../../components';
+import { Button, OnboardingHeader } from '../../components';
 import theme from '../../theme';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
@@ -14,14 +14,13 @@ const FEATURES: Array<{ Icon: React.ComponentType<{ size: number; color: string;
 export function WelcomeScreen({ navigation }: OnboardingScreenProps<'Welcome'>): React.JSX.Element {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.heroCircle}>
-        <Bot size={56} color={theme.colors.primary} strokeWidth={2} />
-      </View>
-      <Text style={styles.stepLabel}>Step 1 of 5</Text>
-      <Text style={styles.title}>Welcome to TBOT</Text>
-      <Text style={styles.subtitle}>
-        Your child's friendly AI companion — designed to learn, grow, and have fun together.
-      </Text>
+      <OnboardingHeader
+        currentStep={1}
+        totalSteps={7}
+        hero={<Bot size={56} color={theme.colors.primary} strokeWidth={2} />}
+        title="Welcome to TBOT"
+        subtitle="Your child's friendly AI companion — designed to feel safe, calm, and easy for parents to set up."
+      />
 
       <View style={styles.features}>
         {FEATURES.map((f, i) => (
@@ -46,33 +45,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  heroCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: theme.colors.primary + '18',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  stepLabel: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    ...theme.typography.body1,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl,
   },
   features: {
     width: '100%',

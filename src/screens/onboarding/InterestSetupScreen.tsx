@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import * as learningApi from '../../api/learning';
-import { Button, ErrorMessage } from '../../components';
+import { Button, ErrorMessage, OnboardingHeader } from '../../components';
 import theme from '../../theme';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
@@ -55,14 +55,13 @@ export function InterestSetupScreen({ route, navigation }: OnboardingScreenProps
       contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.emoji}>🌟</Text>
-      <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
-        Step 3 of 4
-      </Text>
-      <Text style={styles.title}>What does your child love?</Text>
-      <Text style={styles.subtitle}>
-        Pick topics TBOT will use to make learning more fun.
-      </Text>
+      <OnboardingHeader
+        currentStep={5}
+        totalSteps={7}
+        hero={<Text style={styles.heroEmoji}>🌟</Text>}
+        title="What does your child love?"
+        subtitle="Choose a few interests so TBOT starts with topics that already feel familiar and fun."
+      />
 
       <View style={styles.grid}>
         {INTERESTS.map((item) => {
@@ -73,6 +72,8 @@ export function InterestSetupScreen({ route, navigation }: OnboardingScreenProps
               style={[styles.chip, isSelected && styles.chipSelected]}
               onPress={() => toggleInterest(item.key)}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.label}${isSelected ? ', selected' : ''}`}
             >
               <Text style={styles.chipEmoji}>{item.emoji}</Text>
               <Text style={[styles.chipLabel, isSelected && styles.chipLabelSelected]}>
@@ -102,24 +103,11 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: theme.spacing.lg,
+    paddingTop: theme.spacing.xxl,
     paddingBottom: theme.spacing.xxl,
   },
-  emoji: {
+  heroEmoji: {
     fontSize: 56,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    ...theme.typography.body1,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
   },
   grid: {
     flexDirection: 'row',

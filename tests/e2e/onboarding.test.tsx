@@ -12,6 +12,7 @@ import { HouseholdCreateScreen } from '../../src/screens/onboarding/HouseholdCre
 import { AddChildScreen } from '../../src/screens/onboarding/AddChildScreen';
 import { InterestSetupScreen } from '../../src/screens/onboarding/InterestSetupScreen';
 import { DeviceSetupIntroScreen } from '../../src/screens/onboarding/DeviceSetupIntroScreen';
+import { VoiceTestScreen } from '../../src/screens/onboarding/VoiceTestScreen';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ const mockNavigation = { navigate: mockNavigate, goBack: jest.fn() } as any;
 const mockCreateHousehold = jest.fn();
 const mockAddChild = jest.fn();
 const mockCompleteOnboarding = jest.fn();
+const mockShowToast = jest.fn();
 
 jest.mock('../../src/contexts/HouseholdContext', () => ({
   useHousehold: () => ({
@@ -40,6 +42,12 @@ jest.mock('../../src/api/learning', () => ({
   updateChildProfile: jest.fn().mockResolvedValue({}),
 }));
 
+jest.mock('../../src/components/Toast', () => ({
+  useToast: () => ({
+    show: mockShowToast,
+  }),
+}));
+
 // ─── HouseholdCreateScreen ────────────────────────────────────────────────────
 
 describe('HouseholdCreateScreen', () => {
@@ -52,6 +60,7 @@ describe('HouseholdCreateScreen', () => {
       <HouseholdCreateScreen navigation={mockNavigation} route={mockRoute} />
     );
     expect(getByText('Create Household')).toBeTruthy();
+    expect(getByText('Step 3 of 7')).toBeTruthy();
   });
 
   it('shows error when name is empty', async () => {
@@ -106,6 +115,7 @@ describe('AddChildScreen', () => {
     );
     expect(getByText('Add Child')).toBeTruthy();
     expect(getByText('Skip for now')).toBeTruthy();
+    expect(getByText('Step 4 of 7')).toBeTruthy();
   });
 
   it('shows error when name is empty', async () => {
@@ -152,6 +162,7 @@ describe('AddChildScreen', () => {
     fireEvent.press(getByText('Add Child'));
     await waitFor(() => {
       expect(mockAddChild).toHaveBeenCalledWith({ name: 'Emma', date_of_birth: '2018-01-01' });
+      expect(mockShowToast).toHaveBeenCalledWith({ severity: 'info', text: 'Emma đã được thêm!' });
     });
   });
 
@@ -180,6 +191,7 @@ describe('InterestSetupScreen', () => {
     const { getByText } = render(
       <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
     );
+    expect(getByText('Step 5 of 7')).toBeTruthy();
     ['Animals', 'Cars', 'Princess', 'Space', 'Dinosaurs', 'Music', 'Cooking', 'Sports', 'Art'].forEach(
       (label) => expect(getByText(label)).toBeTruthy()
     );
@@ -254,16 +266,18 @@ describe('DeviceSetupIntroScreen', () => {
     const { getByText } = render(
       <DeviceSetupIntroScreen navigation={mockNavigation} route={mockRoute} />
     );
-    expect(getByText("I'm ready, let's pair")).toBeTruthy();
+    expect(getByText('Continue to voice check')).toBeTruthy();
     expect(getByText('Skip for now')).toBeTruthy();
+    expect(getByText('Step 6 of 7')).toBeTruthy();
   });
 
-  it('calls completeOnboarding(true) when pair button is pressed', () => {
+  it('navigates to VoiceTest without completing onboarding when pair button is pressed', () => {
     const { getByText } = render(
       <DeviceSetupIntroScreen navigation={mockNavigation} route={mockRoute} />
     );
-    fireEvent.press(getByText("I'm ready, let's pair"));
-    expect(mockCompleteOnboarding).toHaveBeenCalledWith(true);
+    fireEvent.press(getByText('Continue to voice check'));
+    expect(mockNavigate).toHaveBeenCalledWith('VoiceTest');
+    expect(mockCompleteOnboarding).not.toHaveBeenCalled();
   });
 
   it('calls completeOnboarding(false) when Skip is pressed', () => {
@@ -272,5 +286,49 @@ describe('DeviceSetupIntroScreen', () => {
     );
     fireEvent.press(getByText('Skip for now'));
     expect(mockCompleteOnboarding).toHaveBeenCalledWith(false);
+  });
+});
+
+describe('VoiceTestScreen', () => {
+  const mockRoute = { params: undefined, key: 'VoiceTest', name: 'VoiceTest' as const };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
+
+  it('renders the final onboarding step', () => {
+    const { getByText } = render(
+      <VoiceTestScreen navigation={mockNavigation} route={mockRoute} />
+    );
+    expect(getByText('Step 7 of 7')).toBeTruthy();
+    expect(getByText('Allow Microphone Access')).toBeTruthy();
+  });
+
+  it('completes onboarding only after the voice check finishes', async () => {
+    const { getByText } = render(
+      <VoiceTestScreen navigation={mockNavigation} route={mockRoute} />
+    );
+
+    fireEvent.press(getByText('Allow Microphone Access'));
+    await waitFor(() => {
+      expect(getByText('Tap to speak')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Tap to speak'));
+    jest.advanceTimersByTime(1000);
+
+    await waitFor(() => {
+      expect(getByText('Finish setup')).toBeTruthy();
+    });
+
+    expect(mockCompleteOnboarding).not.toHaveBeenCalled();
+    fireEvent.press(getByText('Finish setup'));
+    expect(mockCompleteOnboarding).toHaveBeenCalledWith(true);
   });
 });

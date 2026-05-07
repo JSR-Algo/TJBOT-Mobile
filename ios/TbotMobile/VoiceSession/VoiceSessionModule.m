@@ -27,8 +27,14 @@ RCT_EXTERN_METHOD(setRoute:(NSString *)route
 RCT_EXTERN_METHOD(getRoute:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(reapplyCategory:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+// `reapplyCategory` was previously declared here but the Swift class
+// never implemented it, so RN logged a "method signature can not be
+// found" warning at every bridge registration. No JS caller depends on
+// it (debug-probe only mentions it in a doc comment), so the cleanest
+// fix is to drop the declaration. If the symptom this method was
+// intended to recover from (sampleRate / ioBufferDuration mid-session
+// shift, plan B race) reappears, re-add the bridge AND the Swift impl
+// in lockstep.
 
 RCT_EXTERN_METHOD(forceRecover:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)

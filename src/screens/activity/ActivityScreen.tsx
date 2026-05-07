@@ -74,7 +74,15 @@ export function ActivityScreen(_props: MainTabScreenProps<'Activity'>): React.JS
 
   // Load device on mount
   useEffect(() => {
-    if (!activeHousehold) return;
+    if (!activeHousehold) {
+      // Without a household there is no device to fetch — render the empty
+      // state instead of an indefinite spinner. The early-return previously
+      // skipped the .finally() that would have cleared loadingDevice.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when the household precondition is unmet; clears the initial loading flag so EmptyState renders, mirrors HouseholdContext load/clear pattern.
+      setDeviceId(null);
+      setLoadingDevice(false);
+      return;
+    }
     setLoadingDevice(true);
     devicesApi.listByHousehold(activeHousehold.id)
       .then((devices) => { setDeviceId(devices[0]?.id ?? null); })

@@ -6,16 +6,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { useHousehold } from '../../contexts/HouseholdContext';
-import { Button, Input, ErrorMessage } from '../../components';
+import { Button, Input, ErrorMessage, OnboardingHeader } from '../../components';
+import { useToast } from '../../components/Toast';
 import theme from '../../theme';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
 
 export function AddChildScreen({ navigation }: OnboardingScreenProps<'AddChild'>): React.JSX.Element {
   const { addChild } = useHousehold();
+  const { show: showToast } = useToast();
   const [name, setName] = useState('');
   const [birthYear, setBirthYear] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,15 +46,17 @@ export function AddChildScreen({ navigation }: OnboardingScreenProps<'AddChild'>
       const year = parseInt(birthYear, 10);
       // API expects date_of_birth; we construct a representative date from year
       const addedChild = await addChild({ name: name.trim(), date_of_birth: `${year}-01-01` });
-      Alert.alert('', `${name.trim()} is added!`, [
-        {
-          text: 'Continue',
-          onPress: () => navigation.navigate('InterestSetup', {
-            childId: addedChild.id,
-            householdId: addedChild.household_id,
-          }),
-        },
-      ]);
+      // Was: native Alert.alert dialog with a "Continue" button — looked
+      // unbranded and, more importantly, the user could only proceed via the
+      // alert callback, during which the navigator's parent stack could
+      // unmount mid-flow (the "NAVIGATE InterestSetup not handled" bug).
+      // Direct navigation in the same microtask as the API success keeps the
+      // navigator state stable, and a non-blocking toast confirms the action.
+      showToast({ severity: 'info', text: `${name.trim()} đã được thêm!` });
+      navigation.navigate('InterestSetup', {
+        childId: addedChild.id,
+        householdId: addedChild.household_id,
+      });
     } catch (err: unknown) {
       setError(normalizeError(err).message);
     } finally {
@@ -64,21 +67,20 @@ export function AddChildScreen({ navigation }: OnboardingScreenProps<'AddChild'>
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.emoji}>👶</Text>
-        <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
-          Step 2 of 3
-        </Text>
-        <Text style={styles.title}>Add a child</Text>
-        <Text style={styles.subtitle}>
-          We need their name and birth year to personalise the experience.
-        </Text>
+        <OnboardingHeader
+          currentStep={4}
+          totalSteps={7}
+          hero={<Text style={styles.heroEmoji}>👶</Text>}
+          title="Add a child"
+          subtitle="We only ask for the basics we need to personalise the experience and keep the account organised."
+        />
 
         <Input
           label="Child's name"
@@ -127,21 +129,7 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.xxl,
     paddingBottom: theme.spacing.xxl,
   },
-  emoji: {
+  heroEmoji: {
     fontSize: 56,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    ...theme.typography.body1,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
   },
 });

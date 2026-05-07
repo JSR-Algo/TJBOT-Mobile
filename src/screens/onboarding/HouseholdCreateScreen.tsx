@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Home } from 'lucide-react-native';
 import { useHousehold } from '../../contexts/HouseholdContext';
-import { Button, Input, ErrorMessage } from '../../components';
+import { Button, Input, ErrorMessage, OnboardingHeader } from '../../components';
 import theme from '../../theme';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
@@ -49,23 +49,20 @@ export function HouseholdCreateScreen({ navigation }: OnboardingScreenProps<'Hou
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroCircle}>
-          <Home size={48} color={theme.colors.primary} strokeWidth={2} />
-        </View>
-        <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
-          Step 1 of 3
-        </Text>
-        <Text style={styles.title}>Create your household</Text>
-        <Text style={styles.subtitle}>
-          Give your family a name — you can always change it later.
-        </Text>
+        <OnboardingHeader
+          currentStep={3}
+          totalSteps={7}
+          hero={<Home size={48} color={theme.colors.primary} strokeWidth={2} />}
+          title="Create your household"
+          subtitle="Give your family a name so the rest of setup feels organised from the start."
+        />
 
         <Input
           label="Household name"
@@ -98,27 +95,5 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     paddingTop: theme.spacing.xxl,
     paddingBottom: theme.spacing.xxl,
-  },
-  heroCircle: {
-    alignSelf: 'center',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: theme.colors.primary + '18',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    ...theme.typography.body1,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
   },
 });

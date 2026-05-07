@@ -46,7 +46,7 @@ interface HouseholdContextValue extends HouseholdState {
 const HouseholdContext = createContext<HouseholdContextValue | undefined>(undefined);
 
 export function HouseholdProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [state, setState] = useState<HouseholdState>({
     households: [],
     activeHousehold: null,
@@ -108,7 +108,14 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
   }, []);
 
   useEffect(() => {
+    // Wait for AuthContext to finish hydrating SecureStore before deciding
+    // whether to refresh or clear. Without this guard, the cold-start
+    // window where isAuthenticated is briefly false (initial state, before
+    // getAccessToken() resolves) would wipe a returning user's persisted
+    // onboarding_complete_v1 flag and bounce them back into OnboardingStack.
+    if (authLoading) return;
     if (isAuthenticated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- refresh() and the else-branch setState are the intentional side-effects of the auth state changing; the load-on-login / clear-on-logout pattern predates this rule.
       refresh();
     } else {
       // On logout / 401 force-logout, clear persisted onboarding flag too.
@@ -124,10 +131,19 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
         pendingDeviceSetup: false,
       }));
     }
-  }, [isAuthenticated, refresh]);
+  }, [isAuthenticated, authLoading, refresh]);
 
   const createHousehold = async (name: string): Promise<Household> => {
     const household = await householdsApi.create(name);
+    // NOTE: Do NOT flip `onboardingComplete=true` here. The RootNavigator
+    // gates OnboardingStack vs MainStack on this flag, so toggling it
+    // mid-flow unmounts OnboardingStack and leaves the user unable to
+    // navigate forward to AddChild → InterestSetup → DeviceSetupIntro.
+    // The flag is intentionally set only by `completeOnboarding()` at
+    // DeviceSetupIntroScreen (Skip / Pair). Cold-start protection for
+    // returning users comes from the persisted-hydrate effect (line 104)
+    // plus refresh()'s own write-on-success at line 82 — the auth-loading
+    // guard at line 116 prevents the original B2 race that wiped the flag.
     setState((s) => ({
       ...s,
       households: [...s.households, household],

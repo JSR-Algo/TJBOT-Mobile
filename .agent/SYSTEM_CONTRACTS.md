@@ -157,25 +157,58 @@ Resumable handles:
 
 ### State machine (`src/state/voiceAssistantStore.ts`)
 
-Canonical states: `IDLE → REQUESTING_MIC_PERMISSION → CONNECTING →
-LISTENING → STREAMING_INPUT → WAITING_AI → PLAYING_AI_AUDIO → INTERRUPTED
-→ (LISTENING | STREAMING_INPUT) …`. Error / recovery:
-- `RECONNECTING` reachable from every active state (A5, 2026-04-24).
-- `ERROR` ↔ `IDLE` auto-reset at 5 s (A3, reverted from 60 s debug value).
+Canonical states — FSM v2, plan §3.2 (14 states, defined at
+`voiceAssistantStore.ts:40-54`, semantics docstring at lines 10-27):
 
-### Audio path (iOS)
+```
+IDLE → PREPARING_AUDIO → CONNECTING → READY → LISTENING →
+USER_SPEAKING → USER_SPEECH_FINALIZING → WAITING_AI →
+ASSISTANT_SPEAKING → (LISTENING | INTERRUPTED) → …
+```
 
-- Capture: RNLAS (`react-native-live-audio-stream`) today; native
-  `VoiceMicModule` gated off pending A1 root-cause. PCM 16 kHz Int16 mono,
-  streamed via `session.sendRealtimeInput({audio: {data: base64, mimeType}})`.
-- Playback: native `PcmStreamModule` (`ios/TbotMobile/PcmStream/`). 24 kHz
-  Float32 mono via `AVAudioEngine` + `AVAudioPlayerNode` on the shared
-  `SharedVoiceEngine`. 50 ms jitter buffer (B4, 2026-04-24, configurable
-  via UserDefaults `voicePlaybackJitterBufferMs`).
-- `AVAudioSession` config: `.playAndRecord` + `.default` mode + `[.allowBluetooth,
-  .allowBluetoothA2DP, .defaultToSpeaker]`. `.voiceChat` mode is NOT SAFE on
-  iOS 18.7.7 per B1 spike verdict (ADR mb-native-voice-003).
-- HW AEC: capture-side only via `inputNode.setVoiceProcessingEnabled(true)`.
+Error / recovery edges:
+- `RECONNECTING` reachable from every active LISTENING / USER_SPEAKING /
+  USER_SPEECH_FINALIZING / WAITING_AI / ASSISTANT_SPEAKING; allowed
+  successors are READY, LISTENING, ERROR_RECOVERABLE, ERROR_FATAL, ENDED
+  (transitions table at `voiceAssistantStore.ts:69-146`).
+- `ERROR_RECOVERABLE` auto-resets to `IDLE` after 5 s via the hook timer
+  (lint rule §11.7: store does not own timers; the test
+  `tests/hooks/useGeminiConversation-timers.test.ts` locks the deadlines).
+- `ERROR_FATAL` exits only to `ENDED` (no auto-reset; user must acknowledge).
+
+Legacy state names that previously appeared in this section have been
+renamed by the v1 → v2 cut and are NOT in the contract anymore:
+`REQUESTING_MIC_PERMISSION` → `PREPARING_AUDIO`,
+`STREAMING_INPUT` → covered by `LISTENING` / `USER_SPEAKING` (mic always
+streams once it is up; there is no separate streaming state),
+`PLAYING_AI_AUDIO` → `ASSISTANT_SPEAKING`,
+`ERROR` (single state) → split into `ERROR_RECOVERABLE` / `ERROR_FATAL`.
+
+### Audio path (both platforms)
+
+- Capture: native `VoiceMic` (Android `VoiceMicModule.kt` + iOS
+  `VoiceMicModule.swift`) via the JS bridge `src/native/VoiceMic.ts`. RNLAS
+  was retired (2026-04-28) along with the `VOICE_FORCE_NATIVE_IOS` flag.
+  PCM 16 kHz Int16 mono, base64-encoded chunks streamed via
+  `session.sendRealtimeInput({audio: {data, mimeType}})`. Native module
+  emits `voiceMicEngineReady` on first frame (one-shot per `start()`),
+  consumed by the hook to drive READY → LISTENING (with a JS-side latch
+  to absorb the early-fire race on fast hardware-AEC devices, see
+  `docs/qa/ad-hoc/2026-05-03-adhoc-mic-engine-ready-race.md`).
+- Playback: native `PcmStreamModule` on both platforms (`ios/TbotMobile/PcmStream/`,
+  Android in `android/app/src/main/java/com/tbotmobile/pcmstream/`). 24 kHz
+  Float32 mono via `AVAudioEngine` + `AVAudioPlayerNode` on iOS (shared
+  `SharedVoiceEngine`); native `AudioTrack` writer thread on Android. 50 ms
+  jitter buffer (B4, 2026-04-24, configurable via UserDefaults
+  `voicePlaybackJitterBufferMs` on iOS).
+- iOS `AVAudioSession` config: `.playAndRecord` + `.default` mode +
+  `[.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker]`. `.voiceChat`
+  mode is NOT SAFE on iOS 18.7.7 per B1 spike verdict (ADR
+  mb-native-voice-003).
+- iOS HW AEC: capture-side only via `inputNode.setVoiceProcessingEnabled(true)`.
+  Android HW AEC: `AcousticEchoCanceler` attached via shared `audioSessionId`
+  between `AudioRecord` and `AudioTrack` (memory observation 574;
+  `VoiceMicModule.kt` line 451-457 release path).
 
 ### Telemetry (AC 2.1/2.4/2.5 evidence)
 

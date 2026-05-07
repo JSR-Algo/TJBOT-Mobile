@@ -10,10 +10,9 @@ android/app/build/
 *.log
 .DS_Store
 coverage/
-.omc/sessions/
-.omc/state/
-.omc/prd.json
-.omc/progress.txt
+.omc/
+.omx/
+.code-review-graph/
 ios/.omc/
 android/.omc/
 android/app/.cxx/

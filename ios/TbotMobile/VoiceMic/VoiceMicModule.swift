@@ -93,6 +93,19 @@ final class VoiceMicModule: RCTEventEmitter {
   /// voiceMicEngineReady event. Reset to nil on stop() so the next start
   /// cycle's first frame fires the event again.
   private var engineStartAt: Date?
+  /// One-shot latch — set true the first time a frame triggers the
+  /// voiceMicEngineReady emit, reset to false in stopInternal() so each
+  /// new start() cycle re-emits. Mirrors Android's `firstFrameEmitted`
+  /// in VoiceMicModule.kt so the FSM `READY → LISTENING` transition
+  /// fires reliably on both platforms regardless of `seq` accounting.
+  private var firstFrameEmitted = false
+  /// Buffered engineReady payload for the case where the first frame
+  /// arrives before any JS listener has registered. RCTEventEmitter
+  /// silently drops `sendEvent` when `_listenerCount == 0`, which on
+  /// new-arch iOS can race with the hook's onEngineReady useEffect and
+  /// strand the FSM in READY for >2s ("Micro không sẵn sàng"). When
+  /// `startObserving` finally runs, the buffered body is delivered.
+  private var pendingEngineReadyBody: [String: Any]?
   private var stallTimer: DispatchSourceTimer?
   private var stallNoAdvanceTicks = 0
   private var lastStallCheckFrames: UInt64 = 0
@@ -140,11 +153,28 @@ final class VoiceMicModule: RCTEventEmitter {
   override static func requiresMainQueueSetup() -> Bool { false }
 
   override func supportedEvents() -> [String]! {
-    return [Event.data, Event.stalled, Event.engineReady, "voiceMicVadStart", "voiceMicVadEnd"]
+    return [Event.data, Event.stalled, Event.engineReady, "voiceMicVadStart", "voiceMicVadEnd", "voiceAecAttachFailed"]
   }
 
-  override func startObserving() { hasListeners = true }
-  override func stopObserving() { hasListeners = false }
+  override func startObserving() {
+    // RN bridge thread. Hop to stateQueue so the buffered-engineReady
+    // replay observes a consistent (`hasListeners`, `pendingEngineReadyBody`)
+    // pair with the tap-callback writer, and so the replay's `sendEvent`
+    // is serialised after any in-flight first-frame logic.
+    stateQueue.async { [weak self] in
+      guard let self = self else { return }
+      self.hasListeners = true
+      if let body = self.pendingEngineReadyBody {
+        self.pendingEngineReadyBody = nil
+        self.sendEvent(withName: Event.engineReady, body: body)
+        os_log("[A1] engineReady replayed on listener attach",
+               log: self.log, type: .default)
+      }
+    }
+  }
+  override func stopObserving() {
+    stateQueue.async { [weak self] in self?.hasListeners = false }
+  }
 
   override func invalidate() {
     // stateQueue.async (not .sync) — invalidate is called by the RN bridge
@@ -194,6 +224,27 @@ final class VoiceMicModule: RCTEventEmitter {
       NSLog("[TbotVoice-debug] VoiceMic.start aecRequested=%@ useHwAec=%@ model=%@",
             aecRequested, useHwAec ? "true" : "false", modelCode)
 
+      // Cross-platform parity with Android's emitter (VoiceMicModule.kt
+      // line 511): when the caller asked for HW AEC but the device is
+      // on the fallback allowlist, fire `voiceAecAttachFailed` so the
+      // JS hook activates the software RMS gate instead of letting
+      // echo bleed through. iOS previously emitted nothing on this path
+      // because voiceProcessingIO is "usually" sufficient; that
+      // assumption breaks on the allowlisted models (iPhone 12 mini
+      // today, more in future). The hook is a no-op when no listener
+      // is attached, so this is safe to fire unconditionally on
+      // downgrade.
+      if aecRequested == "hw" && !useHwAec && self.hasListeners {
+        self.sendEvent(
+          withName: "voiceAecAttachFailed",
+          body: [
+            "reason": "device_fallback_allowlist",
+            "modelCode": 0,
+            "deviceCode": modelCode,
+          ]
+        )
+      }
+
       os_log("[A1] pre-ensureStarted voiceProcessing=%{public}@ model=%{public}@",
              log: self.log, type: .default,
              useHwAec ? "true" : "false", modelCode)
@@ -211,6 +262,42 @@ final class VoiceMicModule: RCTEventEmitter {
           "[A1] aec conflict — engine already started with voiceProcessing=%{public}@",
           log: self.log, type: .default, actual ? "true" : "false"
         )
+        // If the engine is locked to voiceProcessing=false but the
+        // caller asked for `hw`, the effective mode is a downgrade —
+        // notify JS so the software fallback gate activates. Same
+        // contract as the device-fallback path above.
+        if aecRequested == "hw" && !actual && self.hasListeners {
+          self.sendEvent(
+            withName: "voiceAecAttachFailed",
+            body: [
+              "reason": "engine_conflict_voice_processing_off",
+              "modelCode": 0,
+              "deviceCode": Self.deviceModelCode(),
+            ]
+          )
+        }
+      } catch SharedVoiceEngineError.engineDidNotStart {
+        // engine.start() returned without throwing but the engine is
+        // not running. Most common cause on physical iOS devices is a
+        // denied microphone permission — iOS does not raise an error
+        // there; the call silently no-ops, the FSM strands at READY,
+        // and the user sees "Micro không sẵn sàng" with no clue what
+        // to do. Surface a precise, user-actionable rejection so the
+        // hook can render a meaningful message and a triage breadcrumb
+        // is left in os_log.
+        NSLog(
+          "[TbotVoice-debug] engine.start() silent no-op — likely mic permission denied or AVAudioSession interrupted"
+        )
+        os_log(
+          "[A1] engineDidNotStart — engine.start() returned but isRunning=false (mic permission?)",
+          log: self.log, type: .error
+        )
+        reject(
+          "E_MIC_PERMISSION_OR_AUDIO_SESSION",
+          "Microphone unavailable — check Settings → TbotMobile → Microphone, then reopen the app",
+          nil
+        )
+        return
       } catch {
         os_log("[A1] ensureStarted FAILED err=%{public}@",
                log: self.log, type: .error, String(describing: error))
@@ -242,6 +329,24 @@ final class VoiceMicModule: RCTEventEmitter {
         os_log("[A1] post-installInputTap nativeRate=%{public}f channels=%{public}d",
                log: self.log, type: .default,
                nativeFormat.sampleRate, Int(nativeFormat.channelCount))
+      } catch SharedVoiceEngineError.engineDidNotStart {
+        // engine.start() returned success but the audio unit died
+        // before installInputTap ran (Apple bug, most often denied mic
+        // permission). Same actionable error as the ensureStarted-time
+        // catch — same code path the FSM expects.
+        NSLog(
+          "[TbotVoice-debug] installInputTap rejected — engine died between start() and tap install"
+        )
+        os_log(
+          "[A1] installInputTap engineDidNotStart — engine flipped to isRunning=false post-start",
+          log: self.log, type: .error
+        )
+        reject(
+          "E_MIC_PERMISSION_OR_AUDIO_SESSION",
+          "Microphone unavailable — check Settings → TbotMobile → Microphone, then reopen the app",
+          nil
+        )
+        return
       } catch {
         os_log("[A1] installInputTap FAILED err=%{public}@",
                log: self.log, type: .error, String(describing: error))
@@ -393,6 +498,8 @@ final class VoiceMicModule: RCTEventEmitter {
     framesDelivered = 0
     lastFrameAt = nil
     engineStartAt = nil
+    firstFrameEmitted = false
+    pendingEngineReadyBody = nil
     stallNoAdvanceTicks = 0
     lastStallCheckFrames = 0
     fatalStall = false
@@ -530,18 +637,36 @@ final class VoiceMicModule: RCTEventEmitter {
 
       // Plan §3.2 row `ready`, §6.3 row 3 — the FSM's `ready → listening`
       // trigger is "first frame actually delivered", not "start() resolved".
-      // Fire AT MOST ONCE per start() cycle (seq == 0 is reset by start()
-      // and stop() so the next session re-emits).
-      if seqNow == 0 && self.hasListeners {
+      // Fires AT MOST ONCE per start() cycle. Latch resets in stopInternal()
+      // so the next session re-emits.
+      //
+      // Parity note: Android's reader thread emits unconditionally
+      // (VoiceMicModule.kt:352). iOS used to gate on `seqNow == 0 &&
+      // hasListeners`, which silently dropped the event when the first
+      // frame raced ahead of the hook's onEngineReady subscription —
+      // RN's RCTEventEmitter drops `sendEvent` when `_listenerCount == 0`,
+      // and `seq` increments to 1 so retry never occurs. Symptom: FSM
+      // strands at READY → 2 s deadline → "Micro không sẵn sàng".
+      // The fix uses an explicit `firstFrameEmitted` latch and buffers
+      // the payload when no listeners exist, replaying it from
+      // `startObserving()` once a JS listener attaches.
+      if !self.firstFrameEmitted {
+        self.firstFrameEmitted = true
         let ageMs: Double = self.engineStartAt
           .map { Date().timeIntervalSince($0) * 1000.0 } ?? 0
-        self.sendEvent(
-          withName: Event.engineReady,
-          body: [
-            "firstFrameAgeMs": ageMs,
-            "sampleRate": self.configuredSampleRate,
-          ]
-        )
+        let body: [String: Any] = [
+          "firstFrameAgeMs": ageMs,
+          "sampleRate": self.configuredSampleRate,
+        ]
+        if self.hasListeners {
+          self.sendEvent(withName: Event.engineReady, body: body)
+        } else {
+          self.pendingEngineReadyBody = body
+          os_log(
+            "[A1] engineReady deferred — no listeners yet ageMs=%{public}f",
+            log: self.log, type: .default, ageMs
+          )
+        }
       }
 
       // P0-7: VAD state machine on stateQueue (serialised).

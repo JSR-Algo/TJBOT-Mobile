@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { Button } from '../../components';
+import { Button, OnboardingHeader } from '../../components';
+import { useHousehold } from '../../contexts/HouseholdContext';
 import theme from '../../theme';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
@@ -16,6 +17,7 @@ const BAR_MIN_HEIGHT = 6;
 const BAR_MAX_HEIGHT = 48;
 
 export function VoiceTestScreen({ navigation }: OnboardingScreenProps<'VoiceTest'>): React.JSX.Element {
+  const { completeOnboarding } = useHousehold();
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [testPassed, setTestPassed] = useState(false);
@@ -118,18 +120,23 @@ export function VoiceTestScreen({ navigation }: OnboardingScreenProps<'VoiceTest
     };
   }, []);
 
+  const finishSetup = () => {
+    completeOnboarding(true);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>{testPassed ? '✅' : '🎤'}</Text>
-      <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
-        Step 5 of 5
-      </Text>
-      <Text style={styles.title}>Voice Test</Text>
-      <Text style={styles.subtitle}>
-        {testPassed
-          ? "Great job! Your microphone is working perfectly."
-          : "Say hello to test your device"}
-      </Text>
+      <OnboardingHeader
+        currentStep={7}
+        totalSteps={7}
+        hero={<Text style={styles.heroEmoji}>{testPassed ? '✅' : '🎤'}</Text>}
+        title="Quick voice check"
+        subtitle={
+          testPassed
+            ? 'Nice. Your app is ready for the final device registration step.'
+            : 'Test the microphone once so the first conversation flow feels predictable.'
+        }
+      />
 
       {/* Waveform visualiser */}
       <View style={styles.waveform}>
@@ -163,7 +170,7 @@ export function VoiceTestScreen({ navigation }: OnboardingScreenProps<'VoiceTest
           <Text style={styles.errorText}>
             Microphone permission denied. Please enable it in your device settings.
           </Text>
-          <Button label="Skip Voice Test" variant="ghost" onPress={() => navigation.getParent()?.navigate('MainTabs' as never)} />
+          <Button label="Continue without voice test" variant="ghost" onPress={finishSetup} />
         </>
       )}
 
@@ -182,8 +189,8 @@ export function VoiceTestScreen({ navigation }: OnboardingScreenProps<'VoiceTest
 
       {testPassed && (
         <Button
-          label="All Done! Let's Go"
-          onPress={() => navigation.getParent()?.navigate('MainTabs' as never)}
+          label="Finish setup"
+          onPress={finishSetup}
         />
       )}
     </View>
@@ -198,21 +205,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: {
+  heroEmoji: {
     fontSize: 64,
-    marginBottom: theme.spacing.md,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    ...theme.typography.body1,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
   },
   waveform: {
     flexDirection: 'row',

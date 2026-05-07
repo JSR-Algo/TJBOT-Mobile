@@ -17,6 +17,7 @@ interface ButtonProps {
   variant?: ButtonVariant;
   loading?: boolean;
   disabled?: boolean;
+  accessibilityLabel?: string;
   style?: ViewStyle;
   testID?: string;
 }
@@ -27,6 +28,7 @@ export function Button({
   variant = 'primary',
   loading = false,
   disabled = false,
+  accessibilityLabel,
   style,
   testID,
 }: ButtonProps): React.JSX.Element {
@@ -47,6 +49,8 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       testID={testID}
     >
       {loading ? (

@@ -29,6 +29,14 @@ export default function SignupScreen(): React.JSX.Element {
     if (!name || !email || !password) { setError('Please fill in all fields.'); return; }
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    // Mirror tbot-backend signup contract (DTO at tbot-backend src/auth/dto/signup.dto.ts):
+    // password must contain ≥1 uppercase, ≥1 digit, and ≥1 from !@#$%^&*. Without this
+    // local guard the user round-trips to Render only to see a generic "Could not create
+    // account" toast (the swallowed server message used to live behind that fallback).
+    if (!/[A-Z]/.test(password) || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
+      setError('Password must include at least one uppercase letter, one number, and one special character (!@#$%^&*).');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -37,11 +45,23 @@ export default function SignupScreen(): React.JSX.Element {
       setError('');
       navigation.navigate('Coppa');
     } catch (err: unknown) {
-      const e = err as { code?: string; status?: number };
+      // The axios response interceptor (api/client.ts) hands us a normalized
+      // AppError (utils/errors.ts: { code, message, retryable }) — the raw
+      // axios `status` is dropped during normalization, so the previous
+      // `e.status === 400` check never matched and the user only ever saw
+      // the generic "Could not create account" toast even when the server
+      // had returned a precise message (e.g. password-rule failure).
+      // We branch on `code` instead and surface `message` for any other
+      // server-side validation failure.
+      const e = err as { code?: string; message?: string };
       if (e?.code === 'USER_EXISTS') {
         setError('An account with this email already exists.');
-      } else if (e?.status && e.status >= 500) {
-        showToast({ severity: 'error', text: 'Server error. Please try again.' });
+      } else if (e?.code === 'INTERNAL_ERROR' || e?.code === 'NETWORK_ERROR') {
+        showToast({ severity: 'error', text: e.message ?? 'Server error. Please try again.' });
+      } else if (e?.message && e.message !== 'An unexpected error occurred. Please try again.') {
+        // SERVER_ERROR with status 400 (validation), or any other normalized
+        // error with a real message attached — surface it directly.
+        setError(e.message);
       } else {
         setError('Could not create account. Please try again.');
       }
@@ -52,7 +72,7 @@ export default function SignupScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
