@@ -1,0 +1,3131 @@
+{
+  "count": 521,
+  "findings": [
+    {
+      "file": "index.html",
+      "line": 6,
+      "kind": "jsx-text",
+      "text": "TBOT — Voice Lesson Player"
+    },
+    {
+      "file": "index.html",
+      "line": 142,
+      "kind": "jsx-text",
+      "text": "Jump to"
+    },
+    {
+      "file": "index.html",
+      "line": 166,
+      "kind": "jsx-text",
+      "text": "All Frames"
+    },
+    {
+      "file": "index.html",
+      "line": 169,
+      "kind": "jsx-text",
+      "text": "Design System"
+    },
+    {
+      "file": "index.html",
+      "line": 170,
+      "kind": "jsx-text",
+      "text": "LCD Faces"
+    },
+    {
+      "file": "index.html",
+      "line": 171,
+      "kind": "jsx-text",
+      "text": "LCD Lesson"
+    },
+    {
+      "file": "index.html",
+      "line": 172,
+      "kind": "jsx-text",
+      "text": "LCD v2 ★"
+    },
+    {
+      "file": "index.html",
+      "line": 173,
+      "kind": "jsx-text",
+      "text": "VN ★"
+    },
+    {
+      "file": "index.html",
+      "line": 176,
+      "kind": "jsx-text",
+      "text": ": t.view === 'ds' ?"
+    },
+    {
+      "file": "index.html",
+      "line": 176,
+      "kind": "jsx-text",
+      "text": ": t.view === 'lcd' ?"
+    },
+    {
+      "file": "index.html",
+      "line": 176,
+      "kind": "jsx-text",
+      "text": ": t.view === 'lesson' ?"
+    },
+    {
+      "file": "index.html",
+      "line": 176,
+      "kind": "jsx-text",
+      "text": ": t.view === 'lcdv2' ?"
+    },
+    {
+      "file": "index.html",
+      "line": 176,
+      "kind": "jsx-text",
+      "text": ": t.view === 'vn' ?"
+    },
+    {
+      "file": "index.html",
+      "line": 176,
+      "kind": "jsx-text",
+      "text": ": t.view === 'paths' ?"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 224,
+      "kind": "jsx-text",
+      "text": "Hi friend! 👋"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 224,
+      "kind": "jsx-text",
+      "text": "Ready to play with words?"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 268,
+      "kind": "jsx-text",
+      "text": "This is a"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 288,
+      "kind": "jsx-text",
+      "text": "Say:"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 288,
+      "kind": "jsx-text",
+      "text": "\"cat\""
+    },
+    {
+      "file": "screens.jsx",
+      "line": 343,
+      "kind": "jsx-text",
+      "text": "You said \"cat\" 🐱"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 362,
+      "kind": "jsx-text",
+      "text": "\"cat\""
+    },
+    {
+      "file": "screens.jsx",
+      "line": 380,
+      "kind": "jsx-text",
+      "text": "I heard you trying."
+    },
+    {
+      "file": "screens.jsx",
+      "line": 380,
+      "kind": "jsx-text",
+      "text": "One more time?"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 381,
+      "kind": "jsx-text",
+      "text": "Say:"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 381,
+      "kind": "jsx-text",
+      "text": "\"cat\""
+    },
+    {
+      "file": "screens.jsx",
+      "line": 396,
+      "kind": "jsx-text",
+      "text": "Hmm, I didn't hear that clearly."
+    },
+    {
+      "file": "screens.jsx",
+      "line": 396,
+      "kind": "jsx-text",
+      "text": "Let's try again."
+    },
+    {
+      "file": "screens.jsx",
+      "line": 415,
+      "kind": "jsx-text",
+      "text": "Oh fun! 🐱"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 415,
+      "kind": "jsx-text",
+      "text": "Let's stay with the cat for now."
+    },
+    {
+      "file": "screens.jsx",
+      "line": 521,
+      "kind": "jsx-text",
+      "text": "I can't hear my microphone."
+    },
+    {
+      "file": "screens.jsx",
+      "line": 521,
+      "kind": "jsx-text",
+      "text": "Let's check it together."
+    },
+    {
+      "file": "screens.jsx",
+      "line": 547,
+      "kind": "jsx-text",
+      "text": "Let's pause for a moment."
+    },
+    {
+      "file": "screens.jsx",
+      "line": 608,
+      "kind": "jsx-text",
+      "text": "Hi, Mai!"
+    },
+    {
+      "file": "screens.jsx",
+      "line": 295,
+      "kind": "attr:label",
+      "text": "speak now"
+    },
+    {
+      "file": "course.jsx",
+      "line": 121,
+      "kind": "jsx-text",
+      "text": "Level 1"
+    },
+    {
+      "file": "course.jsx",
+      "line": 474,
+      "kind": "jsx-text",
+      "text": "🔥 5 day"
+    },
+    {
+      "file": "course.jsx",
+      "line": 187,
+      "kind": "attr:subtitle",
+      "text": "Level 1"
+    },
+    {
+      "file": "course.jsx",
+      "line": 251,
+      "kind": "attr:subtitle",
+      "text": "Unit 3"
+    },
+    {
+      "file": "course.jsx",
+      "line": 252,
+      "kind": "attr:title",
+      "text": "How are you?"
+    },
+    {
+      "file": "course.jsx",
+      "line": 320,
+      "kind": "attr:subtitle",
+      "text": "Lesson 3"
+    },
+    {
+      "file": "course.jsx",
+      "line": 321,
+      "kind": "attr:title",
+      "text": "How are you?"
+    },
+    {
+      "file": "parent.jsx",
+      "line": 144,
+      "kind": "jsx-text",
+      "text": "Today · Tuesday, Mar 12"
+    },
+    {
+      "file": "parent.jsx",
+      "line": 199,
+      "kind": "jsx-text",
+      "text": "Tuesday, Mar 12 · 4:12 PM"
+    },
+    {
+      "file": "parent.jsx",
+      "line": 265,
+      "kind": "jsx-text",
+      "text": "2h 48m"
+    },
+    {
+      "file": "parent.jsx",
+      "line": 206,
+      "kind": "attr:label",
+      "text": "How are you?"
+    },
+    {
+      "file": "fallback.jsx",
+      "line": 368,
+      "kind": "jsx-text",
+      "text": "How are you?"
+    },
+    {
+      "file": "onboarding.jsx",
+      "line": 178,
+      "kind": "jsx-text",
+      "text": "\"Hello!\""
+    },
+    {
+      "file": "onboarding.jsx",
+      "line": 264,
+      "kind": "jsx-text",
+      "text": "Parent Space → Safety & Privacy"
+    },
+    {
+      "file": "onboarding.jsx",
+      "line": 488,
+      "kind": "jsx-text",
+      "text": "Robot will say:"
+    },
+    {
+      "file": "device.jsx",
+      "line": 82,
+      "kind": "jsx-text",
+      "text": "Robot · LCD face system"
+    },
+    {
+      "file": "device.jsx",
+      "line": 133,
+      "kind": "jsx-text",
+      "text": "Animation."
+    },
+    {
+      "file": "device.jsx",
+      "line": 136,
+      "kind": "jsx-text",
+      "text": "Use."
+    },
+    {
+      "file": "device.jsx",
+      "line": 148,
+      "kind": "jsx-text",
+      "text": "Never do this"
+    },
+    {
+      "file": "device.jsx",
+      "line": 188,
+      "kind": "jsx-text",
+      "text": "One lesson turn"
+    },
+    {
+      "file": "device.jsx",
+      "line": 276,
+      "kind": "jsx-text",
+      "text": "Parent app"
+    },
+    {
+      "file": "device.jsx",
+      "line": 278,
+      "kind": "jsx-text",
+      "text": "Today: 1 lesson · 4 min"
+    },
+    {
+      "file": "device.jsx",
+      "line": 279,
+      "kind": "jsx-text",
+      "text": "Robot is online ●"
+    },
+    {
+      "file": "device.jsx",
+      "line": 280,
+      "kind": "jsx-text",
+      "text": "Unit 2 unlocked"
+    },
+    {
+      "file": "device.jsx",
+      "line": 321,
+      "kind": "jsx-text",
+      "text": "Why a device, not a screen"
+    },
+    {
+      "file": "device.jsx",
+      "line": 341,
+      "kind": "jsx-text",
+      "text": "Set up your Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 357,
+      "kind": "jsx-text",
+      "text": "on the Robot itself"
+    },
+    {
+      "file": "device.jsx",
+      "line": 366,
+      "kind": "jsx-text",
+      "text": "I have a new Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 367,
+      "kind": "jsx-text",
+      "text": "About 3 minutes — needs Wi-Fi"
+    },
+    {
+      "file": "device.jsx",
+      "line": 378,
+      "kind": "jsx-text",
+      "text": "My Robot is offline"
+    },
+    {
+      "file": "device.jsx",
+      "line": 379,
+      "kind": "jsx-text",
+      "text": "Reconnect or move to new Wi-Fi"
+    },
+    {
+      "file": "device.jsx",
+      "line": 417,
+      "kind": "jsx-text",
+      "text": "My Robot is on"
+    },
+    {
+      "file": "device.jsx",
+      "line": 435,
+      "kind": "jsx-text",
+      "text": "Looking nearby…"
+    },
+    {
+      "file": "device.jsx",
+      "line": 436,
+      "kind": "jsx-text",
+      "text": "Make sure Robot is within 3 meters and showing a face."
+    },
+    {
+      "file": "device.jsx",
+      "line": 437,
+      "kind": "jsx-text",
+      "text": "I don't see my Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 452,
+      "kind": "jsx-text",
+      "text": "Robot · ROB-2A8F"
+    },
+    {
+      "file": "device.jsx",
+      "line": 457,
+      "kind": "jsx-text",
+      "text": "Signal: strong · Battery: 78%"
+    },
+    {
+      "file": "device.jsx",
+      "line": 465,
+      "kind": "jsx-text",
+      "text": "This is my Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 466,
+      "kind": "jsx-text",
+      "text": "Search again"
+    },
+    {
+      "file": "device.jsx",
+      "line": 486,
+      "kind": "jsx-text",
+      "text": "On Robot's face"
+    },
+    {
+      "file": "device.jsx",
+      "line": 490,
+      "kind": "jsx-text",
+      "text": "Type the code"
+    },
+    {
+      "file": "device.jsx",
+      "line": 499,
+      "kind": "jsx-text",
+      "text": "Confirm & continue"
+    },
+    {
+      "file": "device.jsx",
+      "line": 500,
+      "kind": "jsx-text",
+      "text": "Codes don't match"
+    },
+    {
+      "file": "device.jsx",
+      "line": 512,
+      "kind": "jsx-text",
+      "text": "Why Wi-Fi?"
+    },
+    {
+      "file": "device.jsx",
+      "line": 516,
+      "kind": "jsx-text",
+      "text": "Networks nearby"
+    },
+    {
+      "file": "device.jsx",
+      "line": 542,
+      "kind": "jsx-text",
+      "text": "Other network…"
+    },
+    {
+      "file": "device.jsx",
+      "line": 569,
+      "kind": "jsx-text",
+      "text": "Connect Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 620,
+      "kind": "jsx-text",
+      "text": "on the Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 641,
+      "kind": "jsx-text",
+      "text": "Choose a Buddy & name"
+    },
+    {
+      "file": "device.jsx",
+      "line": 696,
+      "kind": "jsx-text",
+      "text": "2 hours ago"
+    },
+    {
+      "file": "device.jsx",
+      "line": 700,
+      "kind": "jsx-text",
+      "text": "Try this"
+    },
+    {
+      "file": "device.jsx",
+      "line": 708,
+      "kind": "jsx-text",
+      "text": "Reconnect now"
+    },
+    {
+      "file": "device.jsx",
+      "line": 725,
+      "kind": "jsx-text",
+      "text": "We don't ask for your child's name or photo."
+    },
+    {
+      "file": "device.jsx",
+      "line": 742,
+      "kind": "jsx-text",
+      "text": "Robot's name (optional)"
+    },
+    {
+      "file": "device.jsx",
+      "line": 745,
+      "kind": "jsx-text",
+      "text": "Living-room Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 747,
+      "kind": "jsx-text",
+      "text": "Helpful if you have more than one Robot in the house."
+    },
+    {
+      "file": "device.jsx",
+      "line": 750,
+      "kind": "jsx-text",
+      "text": "Save & continue"
+    },
+    {
+      "file": "device.jsx",
+      "line": 766,
+      "kind": "jsx-text",
+      "text": "Place Robot on the table. Hand it over when you're ready."
+    },
+    {
+      "file": "device.jsx",
+      "line": 782,
+      "kind": "jsx-text",
+      "text": "What happens next"
+    },
+    {
+      "file": "device.jsx",
+      "line": 801,
+      "kind": "jsx-text",
+      "text": "Hand it to your child"
+    },
+    {
+      "file": "device.jsx",
+      "line": 825,
+      "kind": "jsx-text",
+      "text": "Ready for today"
+    },
+    {
+      "file": "device.jsx",
+      "line": 855,
+      "kind": "jsx-text",
+      "text": "This Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 886,
+      "kind": "jsx-text",
+      "text": "Live · what Robot sees"
+    },
+    {
+      "file": "device.jsx",
+      "line": 894,
+      "kind": "jsx-text",
+      "text": "Now playing"
+    },
+    {
+      "file": "device.jsx",
+      "line": 895,
+      "kind": "jsx-text",
+      "text": "Unit 2 · Animals"
+    },
+    {
+      "file": "device.jsx",
+      "line": 896,
+      "kind": "jsx-text",
+      "text": "Lesson 4 · about 2 minutes left"
+    },
+    {
+      "file": "device.jsx",
+      "line": 946,
+      "kind": "jsx-text",
+      "text": "the living room"
+    },
+    {
+      "file": "device.jsx",
+      "line": 966,
+      "kind": "jsx-text",
+      "text": "Update available"
+    },
+    {
+      "file": "device.jsx",
+      "line": 967,
+      "kind": "jsx-text",
+      "text": "v1.5.0 · 24 MB"
+    },
+    {
+      "file": "device.jsx",
+      "line": 968,
+      "kind": "jsx-text",
+      "text": "About 4 minutes · Robot will be unavailable"
+    },
+    {
+      "file": "device.jsx",
+      "line": 973,
+      "kind": "jsx-text",
+      "text": "What's new"
+    },
+    {
+      "file": "device.jsx",
+      "line": 990,
+      "kind": "jsx-text",
+      "text": "Update tonight (recommended)"
+    },
+    {
+      "file": "device.jsx",
+      "line": 991,
+      "kind": "jsx-text",
+      "text": "Update now"
+    },
+    {
+      "file": "device.jsx",
+      "line": 354,
+      "kind": "attr:title",
+      "text": "Add a Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 394,
+      "kind": "attr:title",
+      "text": "Turn on Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 427,
+      "kind": "attr:title",
+      "text": "Looking for Robot…"
+    },
+    {
+      "file": "device.jsx",
+      "line": 447,
+      "kind": "attr:title",
+      "text": "We found your Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 475,
+      "kind": "attr:title",
+      "text": "Confirm it's yours"
+    },
+    {
+      "file": "device.jsx",
+      "line": 509,
+      "kind": "attr:title",
+      "text": "Connect to Wi-Fi"
+    },
+    {
+      "file": "device.jsx",
+      "line": 585,
+      "kind": "attr:title",
+      "text": "Connecting Robot…"
+    },
+    {
+      "file": "device.jsx",
+      "line": 613,
+      "kind": "attr:title",
+      "text": "Robot is ready"
+    },
+    {
+      "file": "device.jsx",
+      "line": 650,
+      "kind": "attr:title",
+      "text": "Pairing didn't work"
+    },
+    {
+      "file": "device.jsx",
+      "line": 689,
+      "kind": "attr:title",
+      "text": "Robot is offline"
+    },
+    {
+      "file": "device.jsx",
+      "line": 702,
+      "kind": "attr:title",
+      "text": "Check Robot is plugged in"
+    },
+    {
+      "file": "device.jsx",
+      "line": 702,
+      "kind": "attr:body",
+      "text": "Or has at least 20% battery"
+    },
+    {
+      "file": "device.jsx",
+      "line": 703,
+      "kind": "attr:title",
+      "text": "Update Wi-Fi"
+    },
+    {
+      "file": "device.jsx",
+      "line": 703,
+      "kind": "attr:body",
+      "text": "If your network changed or password rotated"
+    },
+    {
+      "file": "device.jsx",
+      "line": 704,
+      "kind": "attr:title",
+      "text": "Restart Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 704,
+      "kind": "attr:body",
+      "text": "Hold the top button for 5 seconds"
+    },
+    {
+      "file": "device.jsx",
+      "line": 723,
+      "kind": "attr:title",
+      "text": "Choose a Buddy"
+    },
+    {
+      "file": "device.jsx",
+      "line": 815,
+      "kind": "attr:title",
+      "text": "Robot · ROB-2A8F"
+    },
+    {
+      "file": "device.jsx",
+      "line": 837,
+      "kind": "attr:title",
+      "text": "Unit 2 · Animals"
+    },
+    {
+      "file": "device.jsx",
+      "line": 837,
+      "kind": "attr:body",
+      "text": "Lesson 4 of 6 · about 4 minutes"
+    },
+    {
+      "file": "device.jsx",
+      "line": 838,
+      "kind": "attr:title",
+      "text": "3 words to revisit"
+    },
+    {
+      "file": "device.jsx",
+      "line": 838,
+      "kind": "attr:body",
+      "text": "Robot will sneak these in tomorrow"
+    },
+    {
+      "file": "device.jsx",
+      "line": 839,
+      "kind": "attr:title",
+      "text": "Yesterday: 1 lesson · 4 min"
+    },
+    {
+      "file": "device.jsx",
+      "line": 839,
+      "kind": "attr:body",
+      "text": "Tap to see what your child practiced"
+    },
+    {
+      "file": "device.jsx",
+      "line": 847,
+      "kind": "attr:title",
+      "text": "Make Robot chime"
+    },
+    {
+      "file": "device.jsx",
+      "line": 847,
+      "kind": "attr:body",
+      "text": "Find Robot if it's misplaced"
+    },
+    {
+      "file": "device.jsx",
+      "line": 848,
+      "kind": "attr:title",
+      "text": "Quiet hours"
+    },
+    {
+      "file": "device.jsx",
+      "line": 848,
+      "kind": "attr:body",
+      "text": "9:00 PM – 7:00 AM"
+    },
+    {
+      "file": "device.jsx",
+      "line": 849,
+      "kind": "attr:title",
+      "text": "Sync content"
+    },
+    {
+      "file": "device.jsx",
+      "line": 849,
+      "kind": "attr:body",
+      "text": "Up to date · 2 minutes ago"
+    },
+    {
+      "file": "device.jsx",
+      "line": 850,
+      "kind": "attr:body",
+      "text": "v1.4.2 · update available"
+    },
+    {
+      "file": "device.jsx",
+      "line": 857,
+      "kind": "attr:title",
+      "text": "Buddy: Panda · Just starting"
+    },
+    {
+      "file": "device.jsx",
+      "line": 857,
+      "kind": "attr:body",
+      "text": "Tap to change avatar or level"
+    },
+    {
+      "file": "device.jsx",
+      "line": 858,
+      "kind": "attr:title",
+      "text": "Safety & privacy"
+    },
+    {
+      "file": "device.jsx",
+      "line": 859,
+      "kind": "attr:title",
+      "text": "Unpair this Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 883,
+      "kind": "attr:title",
+      "text": "Lesson in progress"
+    },
+    {
+      "file": "device.jsx",
+      "line": 905,
+      "kind": "attr:title",
+      "text": "Lower volume"
+    },
+    {
+      "file": "device.jsx",
+      "line": 905,
+      "kind": "attr:body",
+      "text": "Currently: 6 of 10"
+    },
+    {
+      "file": "device.jsx",
+      "line": 906,
+      "kind": "attr:title",
+      "text": "Pause Robot"
+    },
+    {
+      "file": "device.jsx",
+      "line": 906,
+      "kind": "attr:body",
+      "text": "Robot will wait until you resume"
+    },
+    {
+      "file": "device.jsx",
+      "line": 907,
+      "kind": "attr:title",
+      "text": "End lesson"
+    },
+    {
+      "file": "device.jsx",
+      "line": 907,
+      "kind": "attr:body",
+      "text": "Robot will say goodbye"
+    },
+    {
+      "file": "device.jsx",
+      "line": 961,
+      "kind": "attr:title",
+      "text": "Software update"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 46,
+      "kind": "jsx-text",
+      "text": "A gentle English buddy"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 74,
+      "kind": "jsx-text",
+      "text": "See how it works"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 75,
+      "kind": "jsx-text",
+      "text": "Privacy & safety first"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 116,
+      "kind": "jsx-text",
+      "text": "What's included"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 162,
+      "kind": "jsx-text",
+      "text": "Choose a bundle"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 294,
+      "kind": "jsx-text",
+      "text": "Privacy first · always"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 315,
+      "kind": "jsx-text",
+      "text": "I'm ready · go to checkout"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 332,
+      "kind": "jsx-text",
+      "text": "Your order"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 348,
+      "kind": "jsx-text",
+      "text": "Today's total"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 359,
+      "kind": "jsx-text",
+      "text": "Ship to"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 362,
+      "kind": "jsx-text",
+      "text": "Sarah Chen"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 363,
+      "kind": "jsx-text",
+      "text": "247 Linden St · Apt 3B"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 363,
+      "kind": "jsx-text",
+      "text": "Brooklyn, NY 11215"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 383,
+      "kind": "jsx-text",
+      "text": "Place order · $149.00"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 411,
+      "kind": "jsx-text",
+      "text": "Order #TB-48217"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 412,
+      "kind": "jsx-text",
+      "text": "Robot · Cream"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 413,
+      "kind": "jsx-text",
+      "text": "Hello Friends starter course"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 414,
+      "kind": "jsx-text",
+      "text": "$149.00 · paid with Apple Pay"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 431,
+      "kind": "jsx-text",
+      "text": "sarah@example.com"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 436,
+      "kind": "jsx-text",
+      "text": "Track delivery"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 437,
+      "kind": "jsx-text",
+      "text": "Back to home"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 460,
+      "kind": "jsx-text",
+      "text": "Arriving Wed, Apr 24"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 461,
+      "kind": "jsx-text",
+      "text": "Order #TB-48217"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 462,
+      "kind": "jsx-text",
+      "text": "247 Linden St · Apt 3B"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 499,
+      "kind": "jsx-text",
+      "text": "Mark as arrived (demo)"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 500,
+      "kind": "jsx-text",
+      "text": "Back to home"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 515,
+      "kind": "jsx-text",
+      "text": "📦 Delivered today"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 539,
+      "kind": "jsx-text",
+      "text": "Set up Robot now"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 540,
+      "kind": "jsx-text",
+      "text": "Later tonight"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 559,
+      "kind": "jsx-text",
+      "text": "Enter activation code"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 611,
+      "kind": "jsx-text",
+      "text": "Robot · activated"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 628,
+      "kind": "jsx-text",
+      "text": "Free with Robot"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 629,
+      "kind": "jsx-text",
+      "text": "Ages 4–6"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 651,
+      "kind": "jsx-text",
+      "text": "Send Hello Friends to Robot"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 652,
+      "kind": "jsx-text",
+      "text": "Explore the library first"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 43,
+      "kind": "attr:title",
+      "text": "Meet Robot"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 90,
+      "kind": "attr:title",
+      "text": "How it works"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 135,
+      "kind": "attr:title",
+      "text": "In the box"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 177,
+      "kind": "attr:title",
+      "text": "Pick your bundle"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 233,
+      "kind": "attr:title",
+      "text": "Add courses?"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 292,
+      "kind": "attr:title",
+      "text": "What we promise parents"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 373,
+      "kind": "attr:title",
+      "text": "Apple Pay"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 373,
+      "kind": "attr:body",
+      "text": "Touch ID · default"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 374,
+      "kind": "attr:title",
+      "text": "Card ending 4421"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 374,
+      "kind": "attr:body",
+      "text": "Visa · expires 12/27"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 393,
+      "kind": "attr:title",
+      "text": "Order placed"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 423,
+      "kind": "attr:body",
+      "text": "We're packing your order"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 424,
+      "kind": "attr:title",
+      "text": "Tue – Thu"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 424,
+      "kind": "attr:body",
+      "text": "Arrives at 247 Linden St · free shipping"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 425,
+      "kind": "attr:title",
+      "text": "When it arrives"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 425,
+      "kind": "attr:body",
+      "text": "Open the app — we'll guide setup in 5 minutes"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 454,
+      "kind": "attr:title",
+      "text": "Robot is on its way"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 493,
+      "kind": "attr:title",
+      "text": "Track with carrier"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 493,
+      "kind": "attr:body",
+      "text": "USPS · 9405 5113 1234 5678 9012 34"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 494,
+      "kind": "attr:title",
+      "text": "Change delivery address"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 494,
+      "kind": "attr:body",
+      "text": "Until Tuesday at 6 PM"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 512,
+      "kind": "attr:title",
+      "text": "Robot is here"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 526,
+      "kind": "attr:title",
+      "text": "1. Open the box"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 526,
+      "kind": "attr:body",
+      "text": "Robot, charging dock, USB-C cable"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 527,
+      "kind": "attr:title",
+      "text": "2. Plug in the dock"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 527,
+      "kind": "attr:body",
+      "text": "Place Robot on it — a soft chime means hello"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 528,
+      "kind": "attr:title",
+      "text": "3. Connect to your Wi-Fi"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 528,
+      "kind": "attr:body",
+      "text": "We'll guide you screen-by-screen"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 551,
+      "kind": "attr:title",
+      "text": "Activate your Robot"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 589,
+      "kind": "attr:title",
+      "text": "Can't find the code?"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 589,
+      "kind": "attr:body",
+      "text": "It's printed on the inside flap of the box"
+    },
+    {
+      "file": "purchase.jsx",
+      "line": 603,
+      "kind": "attr:title",
+      "text": "One more step"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 112,
+      "kind": "jsx-text",
+      "text": "on the Robot"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 157,
+      "kind": "jsx-text",
+      "text": "What Robot will teach"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 188,
+      "kind": "jsx-text",
+      "text": "A note for parents."
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 194,
+      "kind": "jsx-text",
+      "text": "Add to Robot"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 195,
+      "kind": "jsx-text",
+      "text": "Back to library"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 232,
+      "kind": "jsx-text",
+      "text": "Choose a plan"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 263,
+      "kind": "jsx-text",
+      "text": "never sees prices or buy buttons"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 268,
+      "kind": "jsx-text",
+      "text": "Confirm & continue"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 289,
+      "kind": "jsx-text",
+      "text": "Type the number below"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 369,
+      "kind": "jsx-text",
+      "text": "On Robot now"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 370,
+      "kind": "jsx-text",
+      "text": "Lesson 1 · Hello, food!"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 371,
+      "kind": "jsx-text",
+      "text": "4 minutes · ready to play"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 385,
+      "kind": "jsx-text",
+      "text": "Send today's lesson now"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 386,
+      "kind": "jsx-text",
+      "text": "Back to Robot home"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 441,
+      "kind": "jsx-text",
+      "text": "Send to Robot"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 492,
+      "kind": "jsx-text",
+      "text": "Hand it to your child"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 493,
+      "kind": "jsx-text",
+      "text": "Pick a different lesson"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 530,
+      "kind": "jsx-text",
+      "text": "Audio is never saved."
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 535,
+      "kind": "jsx-text",
+      "text": "See what's happening"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 536,
+      "kind": "jsx-text",
+      "text": "Done for now"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 569,
+      "kind": "jsx-text",
+      "text": "No transcript"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 589,
+      "kind": "jsx-text",
+      "text": "Animals at home"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 590,
+      "kind": "jsx-text",
+      "text": "3 / 8 turns"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 596,
+      "kind": "jsx-text",
+      "text": "About 2 minutes left"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 597,
+      "kind": "jsx-text",
+      "text": "Words: 4 of 10"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 604,
+      "kind": "jsx-text",
+      "text": "If you need to"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 653,
+      "kind": "jsx-text",
+      "text": "What Robot taught"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 669,
+      "kind": "jsx-text",
+      "text": "= practiced confidently ·"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 675,
+      "kind": "jsx-text",
+      "text": "Plan tomorrow's lesson"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 704,
+      "kind": "jsx-text",
+      "text": "Waiting to send"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 709,
+      "kind": "jsx-text",
+      "text": "Yummy Words · full course"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 710,
+      "kind": "jsx-text",
+      "text": "28 lessons · added 2 minutes ago"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 716,
+      "kind": "jsx-text",
+      "text": "Today's lesson · Animals at home"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 717,
+      "kind": "jsx-text",
+      "text": "Will play once Robot is back online"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 725,
+      "kind": "jsx-text",
+      "text": "Try this"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 738,
+      "kind": "jsx-text",
+      "text": "Reconnect Robot now"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 739,
+      "kind": "jsx-text",
+      "text": "I'll do it later"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 777,
+      "kind": "jsx-text",
+      "text": "Why is this locked?"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 786,
+      "kind": "jsx-text",
+      "text": "Try first"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 791,
+      "kind": "jsx-text",
+      "text": "Unlock anyway"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 792,
+      "kind": "jsx-text",
+      "text": "Back to library"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 137,
+      "kind": "attr:title",
+      "text": "Course details"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 209,
+      "kind": "attr:title",
+      "text": "Add Yummy Words"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 284,
+      "kind": "attr:title",
+      "text": "Quick parent check"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 352,
+      "kind": "attr:title",
+      "text": "Added to Robot"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 379,
+      "kind": "attr:title",
+      "text": "First lesson tomorrow"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 379,
+      "kind": "attr:body",
+      "text": "Robot will gently invite your child after breakfast"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 380,
+      "kind": "attr:title",
+      "text": "Mix into current course"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 380,
+      "kind": "attr:body",
+      "text": "Robot will alternate between Hello Friends and Yummy Words"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 435,
+      "kind": "attr:title",
+      "text": "Send now"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 435,
+      "kind": "attr:body",
+      "text": "Robot will be ready as soon as your child taps it"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 436,
+      "kind": "attr:title",
+      "text": "Tomorrow morning"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 436,
+      "kind": "attr:body",
+      "text": "Robot will wake up gently after 8:00 AM"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 453,
+      "kind": "attr:title",
+      "text": "Robot is ready"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 505,
+      "kind": "attr:title",
+      "text": "Lesson is on Robot"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 567,
+      "kind": "attr:title",
+      "text": "What Robot sees"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 606,
+      "kind": "attr:title",
+      "text": "Turn volume down"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 606,
+      "kind": "attr:body",
+      "text": "Currently at 6 of 10"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 607,
+      "kind": "attr:title",
+      "text": "Pause Robot gently"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 607,
+      "kind": "attr:body",
+      "text": "Robot will say 'Let's take a quick break'"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 688,
+      "kind": "attr:title",
+      "text": "Robot needs to catch up"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 727,
+      "kind": "attr:title",
+      "text": "Check Robot is plugged in"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 727,
+      "kind": "attr:body",
+      "text": "Or has at least 20% battery"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 728,
+      "kind": "attr:title",
+      "text": "Update Wi-Fi"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 728,
+      "kind": "attr:body",
+      "text": "If your network changed or password rotated"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 729,
+      "kind": "attr:title",
+      "text": "Restart Robot"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 729,
+      "kind": "attr:body",
+      "text": "Hold the top button for 5 seconds"
+    },
+    {
+      "file": "course-library.jsx",
+      "line": 752,
+      "kind": "attr:title",
+      "text": "Locked for now"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 42,
+      "kind": "jsx-text",
+      "text": "Paired Robot"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 43,
+      "kind": "jsx-text",
+      "text": "Buddy Panda"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 44,
+      "kind": "jsx-text",
+      "text": "ROB-2A8F · Cream"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 45,
+      "kind": "jsx-text",
+      "text": "● Online · all good"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 106,
+      "kind": "jsx-text",
+      "text": "● Everything is working"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 157,
+      "kind": "jsx-text",
+      "text": "⚡ On dock · 32 min to full"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 171,
+      "kind": "jsx-text",
+      "text": "To keep the battery healthy"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 173,
+      "kind": "jsx-text",
+      "text": "Use the included dock — third-party chargers can run hot"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 174,
+      "kind": "jsx-text",
+      "text": "Robot is happiest between 10°C and 30°C"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 175,
+      "kind": "jsx-text",
+      "text": "If you'll be away a week, leave Robot at about 50%"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 197,
+      "kind": "jsx-text",
+      "text": "Connected to"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 199,
+      "kind": "jsx-text",
+      "text": "Strong signal · 5 GHz"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 222,
+      "kind": "jsx-text",
+      "text": "Other networks nearby"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 266,
+      "kind": "jsx-text",
+      "text": "Yummy Words"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 315,
+      "kind": "jsx-text",
+      "text": "New version available"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 330,
+      "kind": "jsx-text",
+      "text": "v1.4.2"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 335,
+      "kind": "jsx-text",
+      "text": "v1.5.0"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 339,
+      "kind": "jsx-text",
+      "text": "What's new"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 341,
+      "kind": "jsx-text",
+      "text": "Robot waits a little longer before nudging"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 342,
+      "kind": "jsx-text",
+      "text": "Better hearing in noisier rooms"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 343,
+      "kind": "jsx-text",
+      "text": "3 new gentle celebration sounds"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 359,
+      "kind": "jsx-text",
+      "text": "Update Robot now"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 360,
+      "kind": "jsx-text",
+      "text": "Remind me tomorrow"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 387,
+      "kind": "jsx-text",
+      "text": "Robot's voice volume"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 407,
+      "kind": "jsx-text",
+      "text": "Robot's voice"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 506,
+      "kind": "jsx-text",
+      "text": "Start test"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 507,
+      "kind": "jsx-text",
+      "text": "Listening…"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 510,
+      "kind": "jsx-text",
+      "text": "Looks good"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 511,
+      "kind": "jsx-text",
+      "text": "Test again"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 546,
+      "kind": "jsx-text",
+      "text": "Soft chime"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 547,
+      "kind": "jsx-text",
+      "text": "Robot's \"lesson starting\" sound"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 559,
+      "kind": "jsx-text",
+      "text": "Robot's voice"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 560,
+      "kind": "jsx-text",
+      "text": "\"Hello! I'm so glad you're here.\""
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 575,
+      "kind": "jsx-text",
+      "text": "I can hear Robot"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 576,
+      "kind": "jsx-text",
+      "text": "Robot sounds quiet or muffled"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 616,
+      "kind": "jsx-text",
+      "text": "Have you tried smaller fixes?"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 621,
+      "kind": "jsx-text",
+      "text": "Try smaller fixes first"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 622,
+      "kind": "jsx-text",
+      "text": "I understand · continue"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 694,
+      "kind": "jsx-text",
+      "text": "Yes, erase Robot"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 708,
+      "kind": "jsx-text",
+      "text": "⚠️ Robot is offline"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 738,
+      "kind": "jsx-text",
+      "text": "Try connecting again"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 739,
+      "kind": "jsx-text",
+      "text": "Still stuck · contact support"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 767,
+      "kind": "jsx-text",
+      "text": "Online now"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 775,
+      "kind": "jsx-text",
+      "text": "Or send us a note"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 777,
+      "kind": "jsx-text",
+      "text": "What's it about?"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 791,
+      "kind": "jsx-text",
+      "text": "Tell us what's happening"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 804,
+      "kind": "jsx-text",
+      "text": "Will be attached"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 813,
+      "kind": "jsx-text",
+      "text": "Send to support"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 65,
+      "kind": "attr:title",
+      "text": "Sound & volume"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 65,
+      "kind": "attr:body",
+      "text": "Volume 6 · Quiet hours on"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 66,
+      "kind": "attr:title",
+      "text": "Microphone test"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 66,
+      "kind": "attr:body",
+      "text": "Check Robot can hear"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 67,
+      "kind": "attr:title",
+      "text": "Speaker test"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 67,
+      "kind": "attr:body",
+      "text": "Play a chime to check audio"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 68,
+      "kind": "attr:title",
+      "text": "Robot software"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 68,
+      "kind": "attr:body",
+      "text": "v1.4.2 · update available"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 78,
+      "kind": "attr:title",
+      "text": "Robot offline help"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 78,
+      "kind": "attr:body",
+      "text": "Tips when Robot won't connect"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 79,
+      "kind": "attr:body",
+      "text": "We usually reply in under a day"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 80,
+      "kind": "attr:title",
+      "text": "Detailed status"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 80,
+      "kind": "attr:body",
+      "text": "Battery, Wi-Fi, sync, sensors"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 87,
+      "kind": "attr:title",
+      "text": "Factory reset"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 87,
+      "kind": "attr:body",
+      "text": "Erase data and start fresh · parent gate"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 100,
+      "kind": "attr:title",
+      "text": "Robot status"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 117,
+      "kind": "attr:body",
+      "text": "78% · charging on dock"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 118,
+      "kind": "attr:body",
+      "text": "Casa-Familia · strong signal"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 119,
+      "kind": "attr:title",
+      "text": "Courses on Robot"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 119,
+      "kind": "attr:body",
+      "text": "3 installed · 1.2 GB used"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 120,
+      "kind": "attr:body",
+      "text": "Working · last test today"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 121,
+      "kind": "attr:body",
+      "text": "Working · volume 6"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 122,
+      "kind": "attr:body",
+      "text": "v1.4.2 · update available"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 123,
+      "kind": "attr:body",
+      "text": "Normal · 28°C"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 124,
+      "kind": "attr:body",
+      "text": "3 days · last started Sunday"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 162,
+      "kind": "attr:title",
+      "text": "Power source"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 162,
+      "kind": "attr:body",
+      "text": "Charging dock"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 163,
+      "kind": "attr:title",
+      "text": "Estimated lesson time"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 163,
+      "kind": "attr:body",
+      "text": "About 5 hours of talking"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 164,
+      "kind": "attr:title",
+      "text": "Sleeps when idle"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 164,
+      "kind": "attr:body",
+      "text": "After 30 minutes off the dock"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 165,
+      "kind": "attr:title",
+      "text": "Battery health"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 165,
+      "kind": "attr:body",
+      "text": "100% · like new"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 206,
+      "kind": "attr:title",
+      "text": "Signal strength"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 206,
+      "kind": "attr:body",
+      "text": "Excellent · −48 dBm"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 207,
+      "kind": "attr:body",
+      "text": "Plenty for lessons"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 208,
+      "kind": "attr:title",
+      "text": "Robot's IP"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 214,
+      "kind": "attr:title",
+      "text": "Switch network"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 214,
+      "kind": "attr:body",
+      "text": "Pick a different Wi-Fi"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 215,
+      "kind": "attr:title",
+      "text": "Update password"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 215,
+      "kind": "attr:body",
+      "text": "If your Wi-Fi password changed"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 216,
+      "kind": "attr:title",
+      "text": "Forget this network"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 250,
+      "kind": "attr:title",
+      "text": "Courses on Robot"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 296,
+      "kind": "attr:title",
+      "text": "Sync now"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 296,
+      "kind": "attr:body",
+      "text": "Check for new lessons in your courses"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 297,
+      "kind": "attr:title",
+      "text": "Browse Course Library"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 297,
+      "kind": "attr:body",
+      "text": "Add or remove courses"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 310,
+      "kind": "attr:title",
+      "text": "Robot software"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 352,
+      "kind": "attr:title",
+      "text": "Safe to update"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 352,
+      "kind": "attr:body",
+      "text": "Your child's progress and courses are kept"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 353,
+      "kind": "attr:title",
+      "text": "Takes about 6 minutes"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 353,
+      "kind": "attr:body",
+      "text": "Plug Robot in. We'll let you know when done."
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 354,
+      "kind": "attr:title",
+      "text": "Don't unplug Robot"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 354,
+      "kind": "attr:body",
+      "text": "Wait until the soft chime. We handle the rest."
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 382,
+      "kind": "attr:title",
+      "text": "Sound & volume"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 431,
+      "kind": "attr:title",
+      "text": "Soft chimes"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 431,
+      "kind": "attr:body",
+      "text": "When a lesson starts and ends"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 432,
+      "kind": "attr:title",
+      "text": "Quiet hours"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 432,
+      "kind": "attr:body",
+      "text": "9:00 PM – 7:00 AM · half volume"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 433,
+      "kind": "attr:title",
+      "text": "Play test sound"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 433,
+      "kind": "attr:body",
+      "text": "A 2-second chime, at current volume"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 464,
+      "kind": "attr:title",
+      "text": "Microphone test"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 500,
+      "kind": "attr:title",
+      "text": "Where Robot listens best"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 500,
+      "kind": "attr:body",
+      "text": "Within 6 feet, away from TVs and fans"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 501,
+      "kind": "attr:title",
+      "text": "Background noise"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 524,
+      "kind": "attr:title",
+      "text": "Speaker test"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 569,
+      "kind": "attr:title",
+      "text": "Adjust volume"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 569,
+      "kind": "attr:body",
+      "text": "Currently 6 of 10"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 570,
+      "kind": "attr:title",
+      "text": "Place Robot in the open"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 570,
+      "kind": "attr:body",
+      "text": "Not in a drawer or under a blanket"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 592,
+      "kind": "attr:title",
+      "text": "Factory reset"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 607,
+      "kind": "attr:title",
+      "text": "Robot will forget your Wi-Fi"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 607,
+      "kind": "attr:body",
+      "text": "And the pairing with this app"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 608,
+      "kind": "attr:title",
+      "text": "Courses will be removed"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 608,
+      "kind": "attr:body",
+      "text": "They stay in your library and re-download anytime"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 609,
+      "kind": "attr:title",
+      "text": "Your child's progress is safe"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 609,
+      "kind": "attr:body",
+      "text": "Stored in your account, not on the device"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 610,
+      "kind": "attr:title",
+      "text": "Robot will restart"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 610,
+      "kind": "attr:body",
+      "text": "Setup takes about 5 minutes"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 639,
+      "kind": "attr:title",
+      "text": "Parent gate"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 677,
+      "kind": "attr:title",
+      "text": "Last check"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 689,
+      "kind": "attr:title",
+      "text": "Account & progress kept"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 689,
+      "kind": "attr:body",
+      "text": "Sign in again to restore everything"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 690,
+      "kind": "attr:title",
+      "text": "Takes about 90 seconds"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 705,
+      "kind": "attr:title",
+      "text": "Robot offline help"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 767,
+      "kind": "attr:title",
+      "text": "Chat with us"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 767,
+      "kind": "attr:body",
+      "text": "Mon–Fri · 9 AM – 6 PM ET"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 768,
+      "kind": "attr:title",
+      "text": "Email support"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 768,
+      "kind": "attr:body",
+      "text": "hello@robotbuddy.app · reply in ~1 day"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 769,
+      "kind": "attr:title",
+      "text": "Help articles"
+    },
+    {
+      "file": "robot-mgmt.jsx",
+      "line": 769,
+      "kind": "attr:body",
+      "text": "Setup, sounds, accounts, more"
+    },
+    {
+      "file": "paths.jsx",
+      "line": 137,
+      "kind": "jsx-text",
+      "text": "Prototype Paths"
+    },
+    {
+      "file": "paths.jsx",
+      "line": 155,
+      "kind": "jsx-text",
+      "text": "Tip:"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 153,
+      "kind": "jsx-text",
+      "text": "Listening…"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 190,
+      "kind": "jsx-text",
+      "text": "Lesson 3"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 191,
+      "kind": "jsx-text",
+      "text": "How are you?"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 206,
+      "kind": "jsx-text",
+      "text": "Unit 3"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 207,
+      "kind": "jsx-text",
+      "text": "Family & Friends"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 329,
+      "kind": "jsx-text",
+      "text": "Allow microphone?"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 346,
+      "kind": "jsx-text",
+      "text": "We'll save where you stopped."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 378,
+      "kind": "jsx-text",
+      "text": "Robot English · Design System"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 379,
+      "kind": "jsx-text",
+      "text": "Components & tokens"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 431,
+      "kind": "jsx-text",
+      "text": "Hi friend!"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 432,
+      "kind": "jsx-text",
+      "text": "Lesson Title 32/Bold"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 433,
+      "kind": "jsx-text",
+      "text": "Subtitle 22/Semi"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 438,
+      "kind": "jsx-text",
+      "text": "Body 18/Bold — kid copy"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 439,
+      "kind": "jsx-text",
+      "text": "Body 15/Semi — parent rows"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 440,
+      "kind": "jsx-text",
+      "text": "Caption 13/Eyebrow"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 441,
+      "kind": "jsx-text",
+      "text": "Mono 12 — values, IDs"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 527,
+      "kind": "jsx-text",
+      "text": "48×48 hit target. Soft shadow, no border."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 639,
+      "kind": "jsx-text",
+      "text": "Robot bob"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 639,
+      "kind": "jsx-text",
+      "text": "— 3.6s ease-in-out infinite, 4–6px Y. Idle and happy only."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 640,
+      "kind": "jsx-text",
+      "text": "Pulse rings"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 640,
+      "kind": "jsx-text",
+      "text": "— 2s ease-out, opacity 0.4→0. Listening only."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 641,
+      "kind": "jsx-text",
+      "text": "Wave bars"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 641,
+      "kind": "jsx-text",
+      "text": "— 1.2s scaleY 0.6↔1.4, 0.05s stagger."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 642,
+      "kind": "jsx-text",
+      "text": "Thinking dots"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 642,
+      "kind": "jsx-text",
+      "text": "— 1.4s, 0.18s stagger, plum."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 643,
+      "kind": "jsx-text",
+      "text": "— single one-shot burst on celebration only."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 644,
+      "kind": "jsx-text",
+      "text": ": disable bob, pulse, confetti; keep state colors."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 649,
+      "kind": "jsx-text",
+      "text": "Min hit target"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 649,
+      "kind": "jsx-text",
+      "text": "(kid CTAs are 56+)."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 650,
+      "kind": "jsx-text",
+      "text": "Body text"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 650,
+      "kind": "jsx-text",
+      "text": "Ink on Cream"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 650,
+      "kind": "jsx-text",
+      "text": "— AA at 14px+."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 651,
+      "kind": "jsx-text",
+      "text": "White text on Coral / Plum / Mint passes AA at 18px bold."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 652,
+      "kind": "jsx-text",
+      "text": "Never communicate state with color alone — pair with copy and motion."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 653,
+      "kind": "jsx-text",
+      "text": "All robot states have a written label for screen readers."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 654,
+      "kind": "jsx-text",
+      "text": "Parent space supports system Dynamic Type up to 130%."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 349,
+      "kind": "attr:label",
+      "text": "Yes, stop"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 386,
+      "kind": "attr:title",
+      "text": "Tokens · Color"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 386,
+      "kind": "attr:subtitle",
+      "text": "Sunny core palette for the child app, neutral slate for parent space."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 387,
+      "kind": "attr:title",
+      "text": "Brand & accents"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 397,
+      "kind": "attr:title",
+      "text": "Surfaces (kid)"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 404,
+      "kind": "attr:title",
+      "text": "Ink & text"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 411,
+      "kind": "attr:title",
+      "text": "Parent (slate)"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 428,
+      "kind": "attr:title",
+      "text": "Tokens · Type"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 428,
+      "kind": "attr:subtitle",
+      "text": "Fraunces for warmth and headlines (kid + key parent moments). Nunito + system stack for body and dense parent UI."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 429,
+      "kind": "attr:title",
+      "text": "Display · Fraunces"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 436,
+      "kind": "attr:title",
+      "text": "Body · Nunito / system"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 447,
+      "kind": "attr:title",
+      "text": "Tokens · Space, radius & shadow"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 447,
+      "kind": "attr:subtitle",
+      "text": "Generous radii in the child app (cards 24, buttons 999). Tighter, more conventional in parent space (cards 14)."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 448,
+      "kind": "attr:title",
+      "text": "Spacing scale"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 468,
+      "kind": "attr:title",
+      "text": "Shadow / elevation"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 486,
+      "kind": "attr:title",
+      "text": "Robot character"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 486,
+      "kind": "attr:subtitle",
+      "text": "Single character, ten emotional states. Drives all child-facing feedback. Animations are CSS-only."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 504,
+      "kind": "attr:subtitle",
+      "text": "Primary CTA in coral with sticker shadow; secondary as outlined pill; icon button as floating circle."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 505,
+      "kind": "attr:title",
+      "text": "Primary CTA · states"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 510,
+      "kind": "attr:label",
+      "text": "Connecting…"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 514,
+      "kind": "attr:title",
+      "text": "Secondary · states"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 521,
+      "kind": "attr:title",
+      "text": "Icon button"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 532,
+      "kind": "attr:title",
+      "text": "Voice components"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 532,
+      "kind": "attr:subtitle",
+      "text": "The microphone is the heart of the app. Color and motion communicate state without words."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 533,
+      "kind": "attr:title",
+      "text": "Microphone · 7 states"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 544,
+      "kind": "attr:title",
+      "text": "Listening indicator"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 547,
+      "kind": "attr:title",
+      "text": "Speaking waveform"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 550,
+      "kind": "attr:title",
+      "text": "Robot thinking"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 556,
+      "kind": "attr:title",
+      "text": "Content components"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 557,
+      "kind": "attr:title",
+      "text": "Lesson card"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 560,
+      "kind": "attr:title",
+      "text": "Unit card · open + locked"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 566,
+      "kind": "attr:title",
+      "text": "Word tile"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 572,
+      "kind": "attr:title",
+      "text": "Progress pill"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 579,
+      "kind": "attr:title",
+      "text": "Celebration badge"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 585,
+      "kind": "attr:title",
+      "text": "Parent components"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 585,
+      "kind": "attr:subtitle",
+      "text": "Slate tones, denser type, clear rows."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 586,
+      "kind": "attr:title",
+      "text": "Summary row"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 590,
+      "kind": "attr:label",
+      "text": "Lessons today"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 593,
+      "kind": "attr:title",
+      "text": "Settings row"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 597,
+      "kind": "attr:label",
+      "text": "Anonymous analytics"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 600,
+      "kind": "attr:title",
+      "text": "Permission prompt"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 606,
+      "kind": "attr:title",
+      "text": "Alerts & overlays"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 607,
+      "kind": "attr:title",
+      "text": "Error banner · warn / info / error"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 614,
+      "kind": "attr:title",
+      "text": "Reconnecting overlay"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 617,
+      "kind": "attr:title",
+      "text": "Modal · confirmation"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 625,
+      "kind": "attr:title",
+      "text": "Parent gate"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 625,
+      "kind": "attr:subtitle",
+      "text": "Speed-bump pattern. Type-the-shown number — not authentication."
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 626,
+      "kind": "attr:title",
+      "text": "Type-the-number control"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 636,
+      "kind": "attr:title",
+      "text": "Motion & accessibility"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 637,
+      "kind": "attr:title",
+      "text": "Motion notes"
+    },
+    {
+      "file": "design-system.jsx",
+      "line": 647,
+      "kind": "attr:title",
+      "text": "Accessibility & contrast"
+    },
+    {
+      "file": "tb-components.jsx",
+      "line": 204,
+      "kind": "jsx-text",
+      "text": "0 && progress"
+    },
+    {
+      "file": "vn-features.jsx",
+      "line": 238,
+      "kind": "jsx-text",
+      "text": "Khi nhận mạng mới, mặt Robot hiển thị trạng thái"
+    },
+    {
+      "file": "vn-features.jsx",
+      "line": 238,
+      "kind": "jsx-text",
+      "text": "đang kết nối lại"
+    },
+    {
+      "file": "vn-features.jsx",
+      "line": 238,
+      "kind": "jsx-text",
+      "text": "trong vài giây, sau đó về trạng thái nghỉ. Không cần thao tác từ trẻ."
+    },
+    {
+      "file": "vn-features.jsx",
+      "line": 239,
+      "kind": "jsx-text",
+      "text": "While reconnecting, the Robot face shows a"
+    },
+    {
+      "file": "vn-features.jsx",
+      "line": 239,
+      "kind": "jsx-text",
+      "text": "state for a few seconds, then returns to idle. No action needed from the child."
+    },
+    {
+      "file": "vn-features.jsx",
+      "line": 286,
+      "kind": "jsx-text",
+      "text": "Đổi sang"
+    },
+    {
+      "file": "vn-features.jsx",
+      "line": 287,
+      "kind": "jsx-text",
+      "text": "Toggle to"
+    }
+  ]
+}

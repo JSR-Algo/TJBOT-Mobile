@@ -1,0 +1,35 @@
+# Allowlist for scan-hardcoded.mjs
+# One literal per line. Lines starting with # are ignored.
+# These strings are intentionally not translated (proper nouns, brand,
+# content-strings owned by curriculum, etc.)
+
+# Brand
+TBOT
+Robot
+Mira
+Mai
+
+# Tech / proper nouns
+Wi-Fi
+Apple
+Google
+
+# Sample/placeholder content owned by curriculum (not UI strings)
+Animal Friends
+Hello Friends
+I like apples.
+This is a cat.
+cat
+apple
+apples
+
+# Sticker names (content)
+Brave Speaker
+Word Hunter
+Daily Star
+
+# UI separators / mathematical glyphs
+·
+—
+–
+…

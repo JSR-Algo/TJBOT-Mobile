@@ -1,0 +1,107 @@
+{
+  "run_at": "2026-05-08T10:30:07.319Z",
+  "git_commit": "abad958",
+  "en_keys": 519,
+  "vi_keys": 235,
+  "vi_strings": 235,
+  "vi_persona_objects": 0,
+  "vi_empty": 0,
+  "case_folded_duplicates": 12,
+  "hardcoded_total": 521,
+  "hardcoded_per_file": {
+    "index.html": 14,
+    "screens.jsx": 20,
+    "course.jsx": 7,
+    "parent.jsx": 4,
+    "fallback.jsx": 1,
+    "onboarding.jsx": 3,
+    "device.jsx": 101,
+    "purchase.jsx": 67,
+    "course-library.jsx": 68,
+    "robot-mgmt.jsx": 139,
+    "paths.jsx": 2,
+    "design-system.jsx": 87,
+    "tb-components.jsx": 1,
+    "vn-features.jsx": 7
+  },
+  "persona_per_file": {
+    "screens.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "home.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "onboarding.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "course.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "progress.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "parent.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "fallback.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "device.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "purchase.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "course-library.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "robot-mgmt.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "paths.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "vn-features.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "tb-components.jsx": {
+      "child": 0,
+      "parent": 0
+    },
+    "design-system.jsx": {
+      "child": 0,
+      "parent": 0
+    }
+  },
+  "allowlist_size": 21,
+  "data_i18n_key_sites": [],
+  "locale_files_loaded": [
+    "vi",
+    "en"
+  ],
+  "fixture_pass_count": null,
+  "fixture_total": null,
+  "register_lint": {
+    "persona_objects": 0,
+    "warnings": 0,
+    "failures": 0
+  },
+  "format_leaks": {
+    "dollar_jsx": null,
+    "undef_locale_calls": null
+  },
+  "phase_status": {}
+}
