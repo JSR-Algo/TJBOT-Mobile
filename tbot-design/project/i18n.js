@@ -417,6 +417,12 @@
   // get replayed once the catalog resolves and applyLang re-walks.
   function init() {
     applyGender(getGender());
+    // Default every prototype root to parent persona. JSX subtrees that need
+    // child persona (lesson player, course/progress kid screens, first-hello)
+    // override via [data-persona] further down the tree.
+    if (document.body && !document.body.hasAttribute('data-persona')) {
+      document.body.setAttribute('data-persona', 'parent');
+    }
     mountControl();
     ensureObserver();
     loadCatalog().then(() => {
