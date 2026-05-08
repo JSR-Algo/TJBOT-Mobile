@@ -1,12 +1,12 @@
 {
-  "run_at": "2026-05-08T10:45:30.225Z",
-  "git_commit": "e565808",
-  "en_keys": 607,
-  "vi_keys": 391,
-  "vi_strings": 322,
+  "run_at": "2026-05-08T10:51:08.851Z",
+  "git_commit": "08dd62c",
+  "en_keys": 843,
+  "vi_keys": 722,
+  "vi_strings": 653,
   "vi_persona_objects": 69,
   "vi_empty": 0,
-  "case_folded_duplicates": 13,
+  "case_folded_duplicates": 18,
   "hardcoded_total": 521,
   "hardcoded_per_file": {
     "index.html": 14,
@@ -86,7 +86,7 @@
       "parent": 1
     }
   },
-  "allowlist_size": 74,
+  "allowlist_size": 137,
   "data_i18n_key_sites": [],
   "locale_files_loaded": [
     "vi",
@@ -96,7 +96,7 @@
   "fixture_total": null,
   "register_lint": {
     "persona_objects": 69,
-    "warnings": 10,
+    "warnings": 1,
     "failures": 0
   },
   "format_leaks": {
