@@ -56,11 +56,11 @@
   },
   "OK": "OK",
   "Got it": {
-    "child": "Hiểu rồi",
+    "child": "Hiểu rồi nè",
     "parent": "Đã rõ"
   },
   "Got it!": {
-    "child": "Hiểu rồi!",
+    "child": "Hiểu rồi nè!",
     "parent": "Đã rõ!"
   },
   "Yes": {
@@ -146,7 +146,7 @@
   "Review needed": "Cần ôn tập",
   "Review Needed": "Cần ôn tập",
   "Locked": {
-    "child": "Chưa mở",
+    "child": "Chưa mở nha",
     "parent": "Đã khóa"
   },
   "Unlock": "Mở khóa",
@@ -185,7 +185,7 @@
   },
   "My turn": "Đến lượt mình",
   "Great!": {
-    "child": "Tuyệt lắm!",
+    "child": "Tuyệt lắm con!",
     "parent": "Tuyệt!"
   },
   "Great job!": {
@@ -209,7 +209,7 @@
     "parent": "Tiếp tục"
   },
   "Keep going!": {
-    "child": "Cố lên!",
+    "child": "Cố lên nào!",
     "parent": "Tiếp tục!"
   },
   "Once more": {
@@ -717,5 +717,8 @@
   "Can my child play offline?": "Con tôi có chơi ngoại tuyến được không?",
   "Voice lessons need a connection. Review games for known words work offline.": "Bài học giọng nói cần kết nối mạng. Trò ôn từ đã biết hoạt động ngoại tuyến.",
   "How do I cancel my subscription?": "Làm sao để hủy đăng ký?",
-  "Open Parent Space → Settings → Subscription → Manage billing.": "Mở Khu vực Phụ huynh → Cài đặt → Gói đăng ký → Quản lý thanh toán."
+  "Open Parent Space → Settings → Subscription → Manage billing.": "Mở Khu vực Phụ huynh → Cài đặt → Gói đăng ký → Quản lý thanh toán.",
+  "\"Hello!\"": "\"Xin chào!\"",
+  "Parent Space → Safety & Privacy": "Khu vực phụ huynh → An toàn & Riêng tư",
+  "Robot will say:": "Robot sẽ nói:"
 }
