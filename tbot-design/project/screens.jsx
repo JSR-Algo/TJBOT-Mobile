@@ -63,9 +63,9 @@ function CircleBtn({ children, bg='#fff', onClick, size=48, ariaLabel }){
   );
 }
 
-function PrimaryCTA({ children, onClick, color='var(--coral)', icon }){
+function PrimaryCTA({ children, onClick, color='var(--coral)', icon, long=false }){
   return (
-    <button onClick={(e)=>{e.stopPropagation(); onClick && onClick();}} style={{
+    <button data-tbot={long ? 'cta-long' : 'cta'} onClick={(e)=>{e.stopPropagation(); onClick && onClick();}} style={{
       width:'100%', minHeight:72, borderRadius:'var(--r-button)', border:'none',
       background: color, color:'#fff',
       fontFamily:'var(--display)', fontWeight:700, fontSize:26, letterSpacing:.2,
@@ -95,7 +95,7 @@ function ProgressDots({ total=5, current=2 }){
 function SpeechBubble({ children, dark, color }){
   const bg = color || (dark ? 'rgba(255,255,255,.95)' : '#fff');
   return (
-    <div style={{
+    <div data-tbot="bubble" style={{
       background: bg, padding:'18px 24px', borderRadius:24,
       fontFamily:'var(--display)', fontWeight:700, fontSize:'var(--t-body)',
       lineHeight:1.25, color:'var(--ink)', textWrap:'pretty', textAlign:'center',

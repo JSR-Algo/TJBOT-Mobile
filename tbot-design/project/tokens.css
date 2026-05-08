@@ -1,0 +1,124 @@
+/* TBOT — Robot English design tokens */
+:root{
+  /* Sunny palette */
+  --cream: #FFF5E6;
+  --cream-2: #FFEAC9;
+  --coral: #FF6F61;
+  --coral-soft: #FFB3A8;
+  --sky: #6FC1FF;
+  --sky-soft: #BFE2FF;
+  --mint: #6CE2B6;
+  --mint-soft: #C5F1DD;
+  --sun: #FFC857;
+  --plum: #6B4A9B;
+  --ink: #2B2140;
+  --ink-soft: #5C4F77;
+  --paper: #FFFCF6;
+  --paper-2: #FFF1DA;
+  --danger-soft: #FFD2B8;
+
+  /* Robot */
+  --bot-body: #E8F4FF;
+  --bot-body-2: #C5E0FA;
+  --bot-shadow: #8FB6E0;
+  --bot-eye: #2B2140;
+  --bot-cheek: #FFB6A8;
+
+  /* Type */
+  --kid-font: "Fraunces", "Nunito", "Quicksand", system-ui, -apple-system, sans-serif;
+  --display: "Fraunces", Georgia, serif;
+  --body: "Nunito", "Quicksand", system-ui, -apple-system, sans-serif;
+
+  /* Kid scale (large + chunky) */
+  --t-hero: 44px;
+  --t-title: 32px;
+  --t-body: 22px;
+  --t-cap: 18px;
+
+  /* Radii */
+  --r-card: 28px;
+  --r-button: 999px;
+  --r-chip: 18px;
+}
+
+/* ─── Gender theme overrides — apply globally ─── */
+:root[data-gender="girl"]{
+  --coral: #FF8FB1;
+  --coral-soft: #FFD8E5;
+  --bot-cheek: #FFB3CB;
+  --bot-body: #FFEEF4;
+  --bot-body-2: #FFD2E2;
+  --bot-shadow: #E08AAB;
+  --sky: #FFA6C2;
+  --sky-soft: #FFE2EC;
+  --sun: #FFB6CF;
+  --plum: #C25E8A;
+  --paper-2: #FFEEF4;
+  --danger-soft: #FFD2E2;
+}
+:root[data-gender="boy"]{
+  --coral: #5DAEFF;
+  --coral-soft: #DCEEFF;
+  --bot-cheek: #B3D9F5;
+  --bot-body: #E8F4FF;
+  --bot-body-2: #C5E0FA;
+  --bot-shadow: #6FA8DC;
+  --sky: #5DAEFF;
+  --sky-soft: #DCEEFF;
+  --sun: #8AC6FF;
+  --plum: #4878B0;
+  --paper-2: #E8F4FF;
+  --danger-soft: #DCEEFF;
+}
+
+/* ─── i18n layout fixes (Phase 9, audit § f) ───
+   VN copy is +15-35% longer than EN. Apply targeted relaxations under the
+   active VI locale so EN renders identically while VI gets headroom.
+   - PrimaryCTA: allow 2-line balanced wrap; nudge font down on the longest CTAs.
+   - SpeechBubble: bigger max-width so kid speech translations aren't clipped.
+   - Status pills: prevent text truncation; let content wrap before hiding overflow.
+   - Course list cards: 2-line title under VI.
+   - Parent gate body: 2 stacked sentences (handled in parent.jsx).            */
+
+:root[lang="vi"] .tbot-cta,
+:root[lang="vi"] [data-tbot="cta"]{
+  text-wrap: balance;
+  line-height: 1.15;
+  white-space: normal;
+}
+:root[lang="vi"] .tbot-cta--long,
+:root[lang="vi"] [data-tbot="cta-long"]{
+  font-size: 16px !important;
+}
+:root[lang="vi"] .tbot-bubble,
+:root[lang="vi"] [data-tbot="bubble"]{
+  max-width: 320px !important;
+  text-wrap: pretty;
+  line-height: 1.35;
+}
+:root[lang="vi"] .tbot-pill,
+:root[lang="vi"] [data-tbot="pill"]{
+  white-space: normal;
+  text-overflow: clip;
+  overflow: visible;
+  word-break: keep-all;
+}
+:root[lang="vi"] .tbot-card-title,
+:root[lang="vi"] [data-tbot="card-title"]{
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* vi-stretched mirrors vi for layout testing — same rules apply */
+:root[lang="vi-stretched"] .tbot-cta,
+:root[lang="vi-stretched"] [data-tbot="cta"]{ text-wrap: balance; line-height: 1.15; white-space: normal; }
+:root[lang="vi-stretched"] .tbot-bubble,
+:root[lang="vi-stretched"] [data-tbot="bubble"]{ max-width: 320px !important; text-wrap: pretty; line-height: 1.35; }
+:root[lang="vi-stretched"] .tbot-pill,
+:root[lang="vi-stretched"] [data-tbot="pill"]{ white-space: normal; text-overflow: clip; overflow: visible; word-break: keep-all; }
+:root[lang="vi-stretched"] .tbot-card-title,
+:root[lang="vi-stretched"] [data-tbot="card-title"]{ white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
