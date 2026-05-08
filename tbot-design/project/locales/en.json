@@ -218,7 +218,6 @@
   "Age": "Age",
   "Name": "Name",
   "Avatar": "Avatar",
-
   "_P0_lesson_player": "↓ Step 2 P0 — voice path",
   "Wear headphones if you can": "Wear headphones if you can",
   "Hi friend! 👋 Ready to play with words?": "Hi friend! 👋 Ready to play with words?",
@@ -240,7 +239,6 @@
   "I can't hear my microphone. Let's check it together.": "I can't hear my microphone. Let's check it together.",
   "Let's pause for a moment. A grown-up can help if you need.": "Let's pause for a moment. A grown-up can help if you need.",
   "Get a grown-up": "Get a grown-up",
-
   "_P0_screens_extra": "↓ Step 2 P0 — voice path · additional screens.jsx strings",
   "I'm ready!": "I'm ready!",
   "Tuning in…": "Tuning in…",
@@ -269,7 +267,6 @@
   "Activity 1 of 5": "Activity 1 of 5",
   "Let's name some animals!": "Let's name some animals!",
   "🤖 Robot is talking…": "🤖 Robot is talking…",
-
   "_P1_onboarding": "↓ Step 2 P1 — onboarding (splash · welcome · trust · permission · login · profile · first hello)",
   "Voice English for kids": "Voice English for kids",
   "Hi there!": "Hi there!",
@@ -340,7 +337,6 @@
   "If a word is tricky, Robot says it once more — slowly, with no pressure.": "If a word is tricky, Robot says it once more — slowly, with no pressure.",
   "Small wins, every day": "Small wins, every day",
   "Each lesson is short and ends with a celebration. Built for 3–5 minutes a day.": "Each lesson is short and ends with a celebration. Built for 3–5 minutes a day.",
-
   "_P1_home": "↓ Step 2 P1 — home hub",
   "Hi, friend!": "Hi, friend!",
   "Hi again!": "Hi again!",
@@ -353,7 +349,6 @@
   "Tap me to say hi": "Tap me to say hi",
   "Progress": "Progress",
   "Reconnecting…": "Reconnecting…",
-
   "_P2_course": "↓ Step 2 P2 — course nav (overview · level · unit · lesson detail · lesson list · review · daily mission)",
   "My adventure": "My adventure",
   "English with Robot": "English with Robot",
@@ -389,7 +384,6 @@
   "NOW": "NOW",
   "Replay": "Replay",
   "~5 min": "~5 min",
-
   "_P2_progress": "↓ Step 2 P2 — progress (today · words · summary · review needed · celebration)",
   "You practiced speaking!": "You practiced speaking!",
   "speaking turns": "speaking turns",
@@ -421,7 +415,6 @@
   "New sticker": "New sticker",
   "Back to Robot Home": "Back to Robot Home",
   "Practice review words": "Practice review words",
-
   "_P3_parent": "↓ Step 2 P3 — parent surface (gate · summary · today · 30 days · safety & privacy · settings)",
   "Back to play": "Back to play",
   "To continue, please type the number below. This keeps the parent area separate from the play area.": "To continue, please type the number below. This keeps the parent area separate from the play area.",
@@ -485,7 +478,6 @@
   "Contact support": "Contact support",
   "About Robot English": "About Robot English",
   "Sign out": "Sign out",
-
   "_P4_fallback": "↓ Step 2 P4 — fallback errors (kid settings · mic · network · voice · safety · reconnect · login error · help · audio recovery · resume)",
   "Sounds": "Sounds",
   "Grown-up area": "Grown-up area",
@@ -537,5 +529,7 @@
   "Can my child play offline?": "Can my child play offline?",
   "Voice lessons need a connection. Review games for known words work offline.": "Voice lessons need a connection. Review games for known words work offline.",
   "How do I cancel my subscription?": "How do I cancel my subscription?",
-  "Open Parent Space → Settings → Subscription → Manage billing.": "Open Parent Space → Settings → Subscription → Manage billing."
+  "Open Parent Space → Settings → Subscription → Manage billing.": "Open Parent Space → Settings → Subscription → Manage billing.",
+  "Prototype Paths": "Prototype Paths",
+  "Tip:": "Tip:"
 }

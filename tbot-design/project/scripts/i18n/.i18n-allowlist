@@ -38,3 +38,15 @@ Daily Star
 # Phase 6 — fallback.jsx error subset
 # Lesson title from "Where we stopped" card; curriculum content, not chrome
 How are you?
+
+# Phase 7 — vn-features.jsx (already inline-bilingual via local T dict)
+Khi nhận mạng mới, mặt Robot hiển thị trạng thái
+đang kết nối lại
+trong vài giây, sau đó về trạng thái nghỉ. Không cần thao tác từ trẻ.
+While reconnecting, the Robot face shows a
+state for a few seconds, then returns to idle. No action needed from the child.
+Đổi sang
+Toggle to
+
+# Phase 7 — tb-components.jsx (false-positive: JSX expression `progress > 0 && progress`)
+0 && progress

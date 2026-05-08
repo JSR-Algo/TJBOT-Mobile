@@ -222,7 +222,6 @@
   "Age": "Tuổi",
   "Name": "Tên",
   "Avatar": "Ảnh đại diện",
-
   "_P0_lesson_player": "↓ Step 2 P0 — voice path · child persona (con/mình + nhé/nha/nào)",
   "Wear headphones if you can": "Đeo tai nghe nếu được con nhé",
   "Hi friend! 👋 Ready to play with words?": "Chào con! 👋 Sẵn sàng chơi với từ chưa?",
@@ -243,5 +242,7 @@
   "Wait with Robot": "Ở lại với Robot",
   "I can't hear my microphone. Let's check it together.": "Mình chưa nghe được micro. Cùng kiểm tra nha.",
   "Let's pause for a moment. A grown-up can help if you need.": "Mình tạm dừng một chút nhé. Có gì con gọi người lớn giúp nha.",
-  "Get a grown-up": "Gọi người lớn giúp nha"
+  "Get a grown-up": "Gọi người lớn giúp nha",
+  "Prototype Paths": "Đường dẫn mẫu",
+  "Tip:": "Mẹo:"
 }
