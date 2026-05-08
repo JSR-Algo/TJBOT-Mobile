@@ -89,12 +89,12 @@ describe('DashboardScreen', () => {
     expect(getByText('Start conversation')).toBeTruthy();
   });
 
-  it('navigates to Interaction when Start conversation is pressed', () => {
+  it('navigates to GeminiConversation when Start conversation is pressed', () => {
     const { getByText } = render(
       <DashboardScreen navigation={mockNavigation} route={mockRoute} />
     );
     fireEvent.press(getByText('Start conversation'));
-    expect(mockNavigate).toHaveBeenCalledWith('Interaction');
+    expect(mockNavigate).toHaveBeenCalledWith('GeminiConversation');
   });
 
   it('shows household name', () => {

@@ -9,7 +9,8 @@ import {
 import { useHousehold } from '../../contexts/HouseholdContext';
 import * as learningApi from '../../api/learning';
 import type { PronunciationTrend } from '../../api/learning';
-import { Card, LoadingSpinner, ErrorMessage } from '../../components';
+import { FeatureUnavailableError } from '../../api/learning';
+import { Card, LoadingSpinner, EmptyState } from '../../components';
 import theme from '../../theme';
 import type { MainTabScreenProps } from '../../navigation/types';
 import type { KPIs } from '../../types';
@@ -28,6 +29,7 @@ interface ChildKPIs {
   vocabularyLevel?: string;
   kpis: KPIs | null;
   pronunciationTrend: PronunciationTrend | null;
+  pronunciationUnavailable: boolean;
   error: string | null;
 }
 
@@ -143,8 +145,15 @@ function KPICard({ data }: { data: ChildKPIs }) {
           <Text style={styles.weakWordsText}>{kpis.weak_words.join(', ')}</Text>
         </View>
       )}
-      {data.pronunciationTrend && data.pronunciationTrend.points.length > 0 && (
+      {data.pronunciationTrend && data.pronunciationTrend.points.length > 0 ? (
         <PronunciationTrendChart trend={data.pronunciationTrend} />
+      ) : (
+        <View style={styles.trendBox}>
+          <EmptyState
+            title="Coming soon"
+            subtitle="Pronunciation trends will appear after your child's first session"
+          />
+        </View>
       )}
     </Card>
   );
@@ -158,7 +167,15 @@ export function ParentDashboardScreen(_props: MainTabScreenProps<'Progress'>): R
   const loadKPIs = useCallback(async () => {
     if (children.length === 0) return;
 
-    const initial = children.map((c) => ({ childId: c.id, childName: c.name, vocabularyLevel: c.vocabulary_level, kpis: null, pronunciationTrend: null, error: null }));
+    const initial = children.map((c) => ({
+      childId: c.id,
+      childName: c.name,
+      vocabularyLevel: c.vocabulary_level,
+      kpis: null,
+      pronunciationTrend: null,
+      pronunciationUnavailable: false,
+      error: null,
+    }));
     setChildKPIs(initial);
 
     await Promise.all(
@@ -172,8 +189,14 @@ export function ParentDashboardScreen(_props: MainTabScreenProps<'Progress'>): R
             if (d.childId !== child.id) return d;
             const kpis = kpisResult.status === 'fulfilled' ? kpisResult.value : null;
             const error = kpisResult.status === 'rejected' ? normalizeError(kpisResult.reason).message : null;
-            const pronunciationTrend = trendResult.status === 'fulfilled' ? trendResult.value : null;
-            return { ...d, kpis, pronunciationTrend, error };
+            let pronunciationTrend: PronunciationTrend | null = null;
+            let pronunciationUnavailable = false;
+            if (trendResult.status === 'fulfilled') {
+              pronunciationTrend = trendResult.value;
+            } else if (trendResult.reason instanceof FeatureUnavailableError) {
+              pronunciationUnavailable = true;
+            }
+            return { ...d, kpis, pronunciationTrend, pronunciationUnavailable, error };
           }),
         );
       }),

@@ -253,6 +253,10 @@ export function RobotDemoScreen(): React.JSX.Element {
       let delay = 0;
       scenario.script.forEach((turn, idx) => {
         const at = delay;
+        // Robot demo scripted-event scheduler. Presentation-only —
+        // does not affect the production voice FSM (this screen is a
+        // demo runner that synthesizes events, not consumes them).
+        // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
         setTimeout(() => {
           scripted.push({
             type: "ROBOT_STATE",
@@ -297,6 +301,8 @@ export function RobotDemoScreen(): React.JSX.Element {
         }, at);
         delay += 700; // ~700 ms per turn for a watchable demo
       });
+      // Robot demo scenario-end hook. Presentation-only.
+      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
       setTimeout(() => setPlayingScenario(null), delay + 300);
     },
     [hal, latency, scripted],

@@ -101,7 +101,10 @@ export function VoiceTestScreen({ navigation }: OnboardingScreenProps<'VoiceTest
     setIsListening(true);
     startWaveAnimation();
 
-    // Simulate a brief voice capture then mark as passed
+    // Simulate a brief voice capture then mark as passed.
+    // Presentation-only onboarding gate; does not affect the voice FSM.
+    // Plan v2 §11.7 ban targets FSM-affecting timers in shared layers.
+    // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
     setTimeout(() => {
       stopWaveAnimation();
       setIsListening(false);

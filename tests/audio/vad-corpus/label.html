@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAD Corpus Labeler</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 16px; color: #f7fafc; }
+    h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card {
+      background: #1a202c;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    label { font-size: 0.875rem; color: #a0aec0; min-width: 90px; }
+    input[type="file"], select, input[type="text"], input[type="number"], textarea {
+      background: #2d3748;
+      border: 1px solid #4a5568;
+      border-radius: 4px;
+      color: #e2e8f0;
+      padding: 6px 10px;
+      font-size: 0.875rem;
+      outline: none;
+    }
+    input[type="file"] { cursor: pointer; }
+    input[type="text"], input[type="number"] { width: 160px; }
+    textarea { width: 100%; min-height: 60px; resize: vertical; }
+    button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #3182ce; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #2b6cb0; }
+    .btn-danger  { background: #c53030; color: #fff; }
+    .btn-danger:hover:not(:disabled)  { background: #9b2c2c; }
+    .btn-success { background: #276749; color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #22543d; }
+    .btn-neutral { background: #4a5568; color: #fff; }
+    .btn-neutral:hover:not(:disabled) { background: #2d3748; }
+    #waveform-container {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      cursor: crosshair;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    #waveform-canvas { display: block; width: 100%; height: 100%; }
+    .marker-line {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      pointer-events: none;
+    }
+    #onset-marker  { background: #48bb78; display: none; }
+    #offset-marker { background: #fc8181; display: none; }
+    #region-overlay {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      background: rgba(72,187,120,0.15);
+      border: 1px solid rgba(72,187,120,0.4);
+      pointer-events: none;
+      display: none;
+    }
+    #playhead {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: #ecc94b;
+      pointer-events: none;
+      display: none;
+    }
+    .time-label {
+      font-size: 0.75rem;
+      color: #68d391;
+      font-variant-numeric: tabular-nums;
+    }
+    #status { font-size: 0.8rem; color: #68d391; min-height: 1.2em; }
+    #status.error { color: #fc8181; }
+    .marker-list { list-style: none; }
+    .marker-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background: #2d3748;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+    }
+    .marker-list .onset  { color: #68d391; font-weight: 600; }
+    .marker-list .offset { color: #fc8181; font-weight: 600; }
+    .remove-btn { margin-left: auto; font-size: 0.75rem; background: #c53030; border: none; color: #fff; border-radius: 3px; padding: 2px 7px; cursor: pointer; }
+    #sidecar-preview {
+      font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+      font-size: 0.78rem;
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      padding: 12px;
+      white-space: pre;
+      overflow-x: auto;
+      color: #a0aec0;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+    .tag-unlabeled { background: #4a5568; color: #e2e8f0; }
+    .tag-labeled   { background: #276749; color: #9ae6b4; }
+    .tag-rejected  { background: #742a2a; color: #fed7d7; }
+    #mode-hint { font-size: 0.78rem; color: #a0aec0; margin-top: 4px; }
+  </style>
+</head>
+<body>
+<h1>VAD Corpus Labeler</h1>
+
+<div class="card">
+  <h2>Load Files</h2>
+  <div class="row">
+    <label>WAV file</label>
+    <input type="file" id="wav-input" accept=".wav">
+  </div>
+  <div class="row">
+    <label>JSON sidecar</label>
+    <input type="file" id="json-input" accept=".json">
+  </div>
+  <div id="status"></div>
+</div>
+
+<div class="card">
+  <h2>Waveform <span id="duration-label" class="time-label"></span></h2>
+  <div id="waveform-container">
+    <canvas id="waveform-canvas"></canvas>
+    <div class="marker-line" id="onset-marker"></div>
+    <div class="marker-line" id="offset-marker"></div>
+    <div id="region-overlay"></div>
+    <div id="playhead"></div>
+  </div>
+  <div class="row">
+    <button class="btn-neutral" id="play-btn" disabled>&#9654; Play</button>
+    <button class="btn-neutral" id="stop-btn" disabled>&#9632; Stop</button>
+    <span id="mode-hint">Click waveform: 1st click = onset (green), 2nd click = offset (red). Repeat to add more markers.</span>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Add Marker</h2>
+    <div class="row">
+      <label>Onset (s)</label>
+      <input type="number" id="onset-input" step="0.001" min="0" placeholder="0.000">
+    </div>
+    <div class="row">
+      <label>Offset (s)</label>
+      <input type="number" id="offset-input" step="0.001" min="0" placeholder="0.000">
+    </div>
+    <div class="row">
+      <label>Confidence</label>
+      <select id="confidence-select">
+        <option value="high">high</option>
+        <option value="medium">medium</option>
+        <option value="low">low</option>
+      </select>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <label>Notes</label>
+      <textarea id="marker-notes" placeholder="Optional reviewer note"></textarea>
+    </div>
+    <div class="row">
+      <button class="btn-primary" id="add-marker-btn" disabled>Add Marker</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Sidecar Metadata</h2>
+    <div class="row">
+      <label>Label state</label>
+      <select id="label-state-select">
+        <option value="unlabeled">unlabeled</option>
+        <option value="labeled">labeled</option>
+        <option value="rejected">rejected</option>
+      </select>
+      <span id="label-state-tag" class="tag tag-unlabeled">unlabeled</span>
+    </div>
+    <div class="row">
+      <label>Environment</label>
+      <input type="text" id="environment-input" placeholder="e.g. quiet bedroom">
+    </div>
+    <div class="row">
+      <button class="btn-success" id="export-btn" disabled>Export JSON</button>
+      <button class="btn-danger" id="clear-markers-btn" disabled>Clear Markers</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Markers</h2>
+  <ul class="marker-list" id="marker-list"><li style="color:#4a5568;font-size:0.8rem">No markers yet.</li></ul>
+</div>
+
+<div class="card">
+  <h2>JSON Preview</h2>
+  <pre id="sidecar-preview">Load a JSON sidecar to see preview.</pre>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── State ─────────────────────────────────────────────────────────────
+  let sidecar = null;
+  let audioBuffer = null;
+  let audioCtx = null;
+  let sourceNode = null;
+  let startedAt = 0;
+  let clickPhase = 0; // 0 = next click sets onset, 1 = next click sets offset
+  let pendingOnset = null;
+
+  const markers = [];
+
+  // ── Elements ──────────────────────────────────────────────────────────
+  const wavInput      = document.getElementById('wav-input');
+  const jsonInput     = document.getElementById('json-input');
+  const statusEl      = document.getElementById('status');
+  const canvas        = document.getElementById('waveform-canvas');
+  const onsetMarker   = document.getElementById('onset-marker');
+  const offsetMarker  = document.getElementById('offset-marker');
+  const regionOverlay = document.getElementById('region-overlay');
+  const playhead      = document.getElementById('playhead');
+  const playBtn       = document.getElementById('play-btn');
+  const stopBtn       = document.getElementById('stop-btn');
+  const durationLabel = document.getElementById('duration-label');
+  const onsetInput    = document.getElementById('onset-input');
+  const offsetInput   = document.getElementById('offset-input');
+  const confSelect    = document.getElementById('confidence-select');
+  const notesInput    = document.getElementById('marker-notes');
+  const addMarkerBtn  = document.getElementById('add-marker-btn');
+  const labelStateSelect = document.getElementById('label-state-select');
+  const labelStateTag = document.getElementById('label-state-tag');
+  const envInput      = document.getElementById('environment-input');
+  const exportBtn     = document.getElementById('export-btn');
+  const clearBtn      = document.getElementById('clear-markers-btn');
+  const markerList    = document.getElementById('marker-list');
+  const preview       = document.getElementById('sidecar-preview');
+
+  // ── Helpers ───────────────────────────────────────────────────────────
+  function setStatus(msg, isError = false) {
+    statusEl.textContent = msg;
+    statusEl.className = isError ? 'error' : '';
+  }
+
+  function fmt(sec) {
+    return Number(sec).toFixed(3) + 's';
+  }
+
+  function pct(sec) {
+    if (!audioBuffer) return 0;
+    return Math.max(0, Math.min(1, sec / audioBuffer.duration));
+  }
+
+  // ── Waveform rendering ────────────────────────────────────────────────
+  function drawWaveform() {
+    if (!audioBuffer) return;
+    const data = audioBuffer.getChannelData(0);
+    const ctx2d = canvas.getContext('2d');
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    canvas.width = W;
+    canvas.height = H;
+    ctx2d.clearRect(0, 0, W, H);
+    ctx2d.fillStyle = '#0d1117';
+    ctx2d.fillRect(0, 0, W, H);
+    const step = Math.ceil(data.length / W);
+    ctx2d.strokeStyle = '#4299e1';
+    ctx2d.lineWidth = 1;
+    ctx2d.beginPath();
+    for (let x = 0; x < W; x++) {
+      let min = 1, max = -1;
+      for (let i = x * step; i < (x + 1) * step && i < data.length; i++) {
+        if (data[i] < min) min = data[i];
+        if (data[i] > max) max = data[i];
+      }
+      const yMin = ((1 - min) / 2) * H;
+      const yMax = ((1 - max) / 2) * H;
+      if (x === 0) ctx2d.moveTo(x, yMin);
+      else ctx2d.lineTo(x, yMin);
+      ctx2d.lineTo(x, yMax);
+    }
+    ctx2d.stroke();
+  }
+
+  function updateMarkerUI() {
+    if (!audioBuffer) return;
+    const W = canvas.clientWidth || canvas.width;
+    // Show pending onset temp marker
+    if (pendingOnset !== null) {
+      onsetMarker.style.left = (pct(pendingOnset) * W) + 'px';
+      onsetMarker.style.display = 'block';
+      offsetMarker.style.display = 'none';
+      regionOverlay.style.display = 'none';
+    } else {
+      onsetMarker.style.display = 'none';
+    }
+    // Refresh marker list display
+    renderMarkerList();
+    updatePreview();
+  }
+
+  function renderMarkerList() {
+    if (markers.length === 0) {
+      markerList.innerHTML = '<li style="color:#4a5568;font-size:0.8rem">No markers yet.</li>';
+      return;
+    }
+    markerList.innerHTML = '';
+    markers.forEach((m, i) => {
+      const li = document.createElement('li');
+      li.innerHTML =
+        `<span class="onset">onset: ${fmt(m.onsetSec)}</span>` +
+        `<span class="offset">offset: ${fmt(m.offsetSec)}</span>` +
+        `<span>[${m.confidence}]</span>` +
+        (m.notes ? `<span>${m.notes}</span>` : '') +
+        `<button class="remove-btn" data-i="${i}">Remove</button>`;
+      markerList.appendChild(li);
+    });
+    // Remove buttons
+    markerList.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        markers.splice(Number(btn.dataset.i), 1);
+        renderMarkerList();
+        updatePreview();
+      });
+    });
+  }
+
+  // ── JSON sidecar preview ──────────────────────────────────────────────
+  function buildSidecar() {
+    if (!sidecar) return null;
+    return Object.assign({}, sidecar, {
+      environment: envInput.value || sidecar.environment,
+      labelState: labelStateSelect.value,
+      markers: markers.slice(),
+      labeledAt: labelStateSelect.value !== 'unlabeled'
+        ? new Date().toISOString()
+        : null,
+    });
+  }
+
+  function updatePreview() {
+    const s = buildSidecar();
+    preview.textContent = s ? JSON.stringify(s, null, 2) : 'Load a JSON sidecar to see preview.';
+  }
+
+  // ── Label state tag ───────────────────────────────────────────────────
+  labelStateSelect.addEventListener('change', () => {
+    const v = labelStateSelect.value;
+    labelStateTag.textContent = v;
+    labelStateTag.className = 'tag tag-' + v;
+    updatePreview();
+  });
+
+  // ── WAV loading ───────────────────────────────────────────────────────
+  wavInput.addEventListener('change', async () => {
+    const file = wavInput.files[0];
+    if (!file) return;
+    setStatus('Loading WAV…');
+    try {
+      const ab = await file.arrayBuffer();
+      audioCtx = audioCtx || new AudioContext();
+      audioBuffer = await audioCtx.decodeAudioData(ab);
+      durationLabel.textContent = '— ' + fmt(audioBuffer.duration);
+      drawWaveform();
+      playBtn.disabled = false;
+      stopBtn.disabled = false;
+      addMarkerBtn.disabled = false;
+      clearBtn.disabled = false;
+      setStatus('WAV loaded: ' + file.name + ' (' + fmt(audioBuffer.duration) + ')');
+    } catch (e) {
+      setStatus('Failed to decode WAV: ' + e.message, true);
+    }
+  });
+
+  // ── JSON loading ──────────────────────────────────────────────────────
+  jsonInput.addEventListener('change', async () => {
+    const file = jsonInput.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      sidecar = JSON.parse(text);
+      envInput.value = sidecar.environment || '';
+      labelStateSelect.value = sidecar.labelState || 'unlabeled';
+      labelStateSelect.dispatchEvent(new Event('change'));
+      // Load existing markers
+      markers.length = 0;
+      if (Array.isArray(sidecar.markers)) {
+        markers.push(...sidecar.markers);
+      }
+      renderMarkerList();
+      exportBtn.disabled = false;
+      updatePreview();
+      setStatus('JSON loaded: ' + file.name);
+    } catch (e) {
+      setStatus('Failed to parse JSON: ' + e.message, true);
+    }
+  });
+
+  // ── Waveform click — onset/offset picker ─────────────────────────────
+  document.getElementById('waveform-container').addEventListener('click', (e) => {
+    if (!audioBuffer) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const ratio = x / rect.width;
+    const timeSec = +(ratio * audioBuffer.duration).toFixed(3);
+
+    if (clickPhase === 0) {
+      // First click: set onset
+      pendingOnset = timeSec;
+      onsetInput.value = timeSec;
+      clickPhase = 1;
+      onsetMarker.style.left = (ratio * 100) + '%';
+      onsetMarker.style.display = 'block';
+      offsetMarker.style.display = 'none';
+      regionOverlay.style.display = 'none';
+    } else {
+      // Second click: set offset
+      const onset = pendingOnset;
+      const offset = timeSec;
+      offsetInput.value = offset;
+      clickPhase = 0;
+      pendingOnset = null;
+
+      const W = rect.width;
+      const oStart = pct(Math.min(onset, offset)) * W;
+      const oWidth = Math.abs(pct(offset) - pct(onset)) * W;
+      onsetMarker.style.left = (pct(Math.min(onset, offset)) * 100) + '%';
+      onsetMarker.style.display = 'block';
+      offsetMarker.style.left = (pct(Math.max(onset, offset)) * 100) + '%';
+      offsetMarker.style.display = 'block';
+      regionOverlay.style.left = oStart + 'px';
+      regionOverlay.style.width = oWidth + 'px';
+      regionOverlay.style.display = 'block';
+    }
+  });
+
+  // ── Add marker button ─────────────────────────────────────────────────
+  addMarkerBtn.addEventListener('click', () => {
+    const onset = parseFloat(onsetInput.value);
+    const offset = parseFloat(offsetInput.value);
+    if (isNaN(onset) || isNaN(offset)) {
+      setStatus('Set onset and offset times first (click the waveform twice).', true);
+      return;
+    }
+    if (offset <= onset) {
+      setStatus('Offset must be after onset.', true);
+      return;
+    }
+    markers.push({
+      onsetSec: +onset.toFixed(3),
+      offsetSec: +offset.toFixed(3),
+      confidence: confSelect.value,
+      notes: notesInput.value.trim(),
+    });
+    onsetInput.value = '';
+    offsetInput.value = '';
+    notesInput.value = '';
+    pendingOnset = null;
+    clickPhase = 0;
+    onsetMarker.style.display = 'none';
+    offsetMarker.style.display = 'none';
+    regionOverlay.style.display = 'none';
+    renderMarkerList();
+    updatePreview();
+    setStatus('Marker added. Total: ' + markers.length);
+  });
+
+  // ── Clear markers ─────────────────────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    markers.length = 0;
+    pendingOnset = null;
+    clickPhase = 0;
+    onsetMarker.style.display = 'none';
+    offsetMarker.style.display = 'none';
+    regionOverlay.style.display = 'none';
+    renderMarkerList();
+    updatePreview();
+    setStatus('All markers cleared.');
+  });
+
+  // ── Playback ──────────────────────────────────────────────────────────
+  function stopPlayback() {
+    if (sourceNode) {
+      try { sourceNode.stop(); } catch (_) {}
+      sourceNode = null;
+    }
+    playhead.style.display = 'none';
+    cancelAnimationFrame(window._vadRafId);
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (!audioBuffer || !audioCtx) return;
+    stopPlayback();
+    sourceNode = audioCtx.createBufferSource();
+    sourceNode.buffer = audioBuffer;
+    sourceNode.connect(audioCtx.destination);
+    startedAt = audioCtx.currentTime;
+    sourceNode.start(0);
+    playhead.style.display = 'block';
+    function animatePlayhead() {
+      const elapsed = audioCtx.currentTime - startedAt;
+      const ratio = Math.min(1, elapsed / audioBuffer.duration);
+      const W = canvas.clientWidth;
+      playhead.style.left = (ratio * W) + 'px';
+      if (ratio < 1) window._vadRafId = requestAnimationFrame(animatePlayhead);
+      else { playhead.style.display = 'none'; }
+    }
+    window._vadRafId = requestAnimationFrame(animatePlayhead);
+    sourceNode.onended = () => { playhead.style.display = 'none'; };
+  });
+
+  stopBtn.addEventListener('click', stopPlayback);
+
+  // ── Export JSON ───────────────────────────────────────────────────────
+  exportBtn.addEventListener('click', () => {
+    const s = buildSidecar();
+    if (!s) { setStatus('No sidecar loaded.', true); return; }
+    const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (s.baseName || 'sidecar') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus('Exported: ' + a.download);
+  });
+
+  // ── Resize ────────────────────────────────────────────────────────────
+  window.addEventListener('resize', drawWaveform);
+})();
+</script>
+</body>
+</html>

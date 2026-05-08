@@ -12,6 +12,7 @@ import {
   setSecureJson,
 } from '../api/tokens';
 import { normalizeError } from '../utils/errors';
+import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../observability/analytics';
 
 interface AuthState {
   user: User | null;
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     } catch {
       // non-blocking
     }
+    resetAnalytics();
     setState({ user: null, isLoading: false, isAuthenticated: false, error: null });
   }, []);
 
@@ -88,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         let user: User | null = null;
         let authRejected = false;
         try {
-          user = await accountApi.fetchCurrentUser();
+          user = await accountApi.getAccountSummary();
         } catch (err: unknown) {
           const status = (err as { status?: number })?.status;
           authRejected = status === 401;
@@ -139,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       let user: User | null = data.user ?? null;
       if (!user) {
         try {
-          user = await accountApi.fetchCurrentUser();
+          user = await accountApi.getAccountSummary();
         } catch {
           user = null;
         }
@@ -150,7 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         } catch {
           // non-blocking
         }
+        identifyAnalyticsUser(user.id, user.email);
       }
+      trackEvent('mobile.login.success');
       setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
     } catch (err) {
       const normalized = normalizeError(err);
@@ -181,9 +185,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       if (data.access_token) {
         let user: User | null = null;
         try {
-          user = await accountApi.fetchCurrentUser();
+          user = await accountApi.getAccountSummary();
         } catch {
-          user = { id: '', email, name, email_verified: false };
+          user = { id: '', email, name };
         }
         if (user) {
           try {
@@ -191,7 +195,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           } catch {
             // non-blocking
           }
+          identifyAnalyticsUser(user.id, user.email);
         }
+        trackEvent('mobile.signup.success');
         setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
       }
     } catch (err) {

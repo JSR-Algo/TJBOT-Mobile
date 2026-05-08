@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { Home } from 'lucide-react-native';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { Button, Input, ErrorMessage } from '../../components';
 import theme from '../../theme';
@@ -30,6 +31,15 @@ export function HouseholdCreateScreen({ navigation }: OnboardingScreenProps<'Hou
       const household = await createHousehold(name.trim());
       navigation.navigate('AddChild', { householdId: household.id });
     } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: unknown }; message?: string; code?: string; config?: { baseURL?: string; url?: string } };
+      console.warn('[HOUSEHOLD_CREATE_DEBUG]', JSON.stringify({
+        msg: e?.message,
+        code: e?.code,
+        status: e?.response?.status,
+        data: e?.response?.data,
+        baseURL: e?.config?.baseURL,
+        url: e?.config?.url,
+      }));
       setError(normalizeError(err).message);
     } finally {
       setLoading(false);
@@ -41,8 +51,14 @@ export function HouseholdCreateScreen({ navigation }: OnboardingScreenProps<'Hou
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.emoji}>🏠</Text>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.heroCircle}>
+          <Home size={48} color={theme.colors.primary} strokeWidth={2} />
+        </View>
         <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
           Step 1 of 3
         </Text>
@@ -80,11 +96,17 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     padding: theme.spacing.lg,
-    justifyContent: 'center',
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl,
   },
-  emoji: {
-    fontSize: 56,
-    textAlign: 'center',
+  heroCircle: {
+    alignSelf: 'center',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.md,
   },
   title: {

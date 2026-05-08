@@ -67,6 +67,9 @@ export function NotificationPrefsScreen(
         safety_alerts_enabled: safetyEnabled,
       });
       setSuccessBanner(true);
+      // Auto-clear notification-prefs success banner after 3s.
+      // Presentation-only — does not affect the voice FSM.
+      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
       setTimeout(() => setSuccessBanner(false), 3000);
     } catch (err: unknown) {
       Alert.alert('Error', normalizeError(err).message);

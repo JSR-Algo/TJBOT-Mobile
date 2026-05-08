@@ -11,19 +11,15 @@ export async function exportData(): Promise<object> {
 }
 
 /**
- * Fetch the current user's profile by reusing the existing account export
- * endpoint. The staging backend does not yet expose a `/v1/me` route, so we
- * extract the user fields from `account/export` instead.
+ * Fetch the current user's account summary.
+ *
+ * TODO(backend): replace with /v1/me when deployed — see task-s5-backend-v1-me-endpoint.
+ * Until then, we piggy-back on /v1/account/export and project out the user fields.
  */
-export async function fetchCurrentUser(): Promise<User | null> {
+export async function getAccountSummary(): Promise<User | null> {
   const response = await client.get('/v1/account/export');
   const data = (response.data.data ?? response.data) as {
-    account?: {
-      id?: string;
-      email?: string;
-      name?: string;
-      email_verified?: boolean;
-    };
+    account?: { id?: string; email?: string; name?: string };
   };
   const account = data?.account;
   if (!account?.id || !account.email) return null;
@@ -31,6 +27,5 @@ export async function fetchCurrentUser(): Promise<User | null> {
     id: account.id,
     email: account.email,
     name: account.name ?? '',
-    email_verified: Boolean(account.email_verified),
   };
 }

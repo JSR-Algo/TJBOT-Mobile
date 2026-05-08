@@ -5,6 +5,9 @@ import com.facebook.react.PackageList
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import com.tbotmobile.pcmstream.PcmStreamPackage
+import com.tbotmobile.voicemic.VoiceMicPackage
+import com.tbotmobile.voicesession.VoiceSessionPackage
 
 object TbotReactHostProvider {
   @Volatile private var application: Application? = null
@@ -16,7 +19,13 @@ object TbotReactHostProvider {
         context = app.applicationContext,
         packageList =
             PackageList(app).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here.
+              // Local native PCM streaming module — see android/.../pcmstream/
+              add(PcmStreamPackage())
+              // App-level voice session owner (mode, focus, routing).
+              add(VoiceSessionPackage())
+              // Native AudioRecord + AcousticEchoCanceler — Android twin of
+              // iOS VoiceMicModule. Replaces RNLAS path (which had no AEC).
+              add(VoiceMicPackage())
             },
     )
   }

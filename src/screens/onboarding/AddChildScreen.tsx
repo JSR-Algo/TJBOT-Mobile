@@ -66,7 +66,11 @@ export function AddChildScreen({ navigation }: OnboardingScreenProps<'AddChild'>
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.emoji}>👶</Text>
         <Text style={{ ...theme.typography.caption, color: theme.colors.textSecondary, textAlign: 'center', marginBottom: theme.spacing.sm }}>
           Step 2 of 3
@@ -120,7 +124,8 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     padding: theme.spacing.lg,
-    justifyContent: 'center',
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl,
   },
   emoji: {
     fontSize: 56,

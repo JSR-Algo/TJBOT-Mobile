@@ -66,15 +66,19 @@ const TILT_MAP: Record<string, number> = { curious: 5, shy: -5, thinking: 3, lis
 function voiceStateToExpression(state: VoiceState): string {
   switch (state) {
     case 'IDLE': return 'idle';
-    case 'REQUESTING_MIC_PERMISSION':
+    case 'ENDED': return 'idle';
+    case 'PREPARING_AUDIO':
     case 'CONNECTING':
+    case 'READY':
     case 'RECONNECTING': return 'connecting';
     case 'LISTENING': return 'listening';
-    case 'STREAMING_INPUT': return 'streaming';
+    case 'USER_SPEAKING': return 'streaming';
+    case 'USER_SPEECH_FINALIZING': return 'thinking';
     case 'WAITING_AI': return 'thinking';
-    case 'PLAYING_AI_AUDIO': return 'speaking';
+    case 'ASSISTANT_SPEAKING': return 'speaking';
     case 'INTERRUPTED': return 'interrupted';
-    case 'ERROR': return 'sad';
+    case 'ERROR_RECOVERABLE':
+    case 'ERROR_FATAL': return 'sad';
     default: return 'idle';
   }
 }
@@ -88,6 +92,9 @@ interface SukaAvatarProps {
 export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
   // Expression override from action tags (presentation-only)
   const expressionOverride = useVoiceAssistantStore((s) => s.expressionOverride);
+  // Subtle buffering cue while speaking (plan §2.7). UI flag only; does not
+  // change the FSM-driven expression.
+  const isBuffering = useVoiceAssistantStore((s) => s.isBuffering);
   const expressionKey = expressionOverride ?? voiceStateToExpression(voiceState);
   const expr = EXPRESSIONS[expressionKey] ?? EXPRESSIONS.idle;
 
@@ -118,15 +125,20 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
 
   // ── Periodic blink ───────────────────────────────────────────────
   useEffect(() => {
-    if (voiceState === 'ERROR') return;
+    if (voiceState === 'ERROR_RECOVERABLE' || voiceState === 'ERROR_FATAL') return;
     let timeout: ReturnType<typeof setTimeout>;
     const doBlink = () => {
       Animated.sequence([
         Animated.timing(eyeScaleY, { toValue: 0.08, duration: 80, useNativeDriver: true }),
         Animated.timing(eyeScaleY, { toValue: expr.eyeScaleY, duration: 120, useNativeDriver: true }),
       ]).start();
+      // Blink scheduling is presentation-only animation — does not
+      // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
+      // timers; this is the documented carve-out.
+      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
       timeout = setTimeout(doBlink, 3000 + Math.random() * 3000);
     };
+    // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
     timeout = setTimeout(doBlink, 2000 + Math.random() * 2000);
     return () => clearTimeout(timeout);
   }, [voiceState, expr.eyeScaleY, eyeScaleY]);
@@ -160,16 +172,20 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
   }, [expr.glowPulse, glowScale]);
 
   // ── Speaking: mouth + glow follow audio level ────────────────────
+  // While the playback service is refilling after an underrun, dim the glow
+  // by ~15% to communicate "catching breath" without alarming the user.
+  // Mouth animation is left untouched so the avatar still appears lively.
   useEffect(() => {
     if (expressionKey === 'speaking') {
+      const dim = isBuffering ? 0.85 : 1;
       const targetMouth = 8 + audioLevel * 20;
-      const targetGlow = 0.25 + audioLevel * 0.3;
+      const targetGlow = (0.25 + audioLevel * 0.3) * dim;
       Animated.parallel([
         Animated.spring(mouthHeight, { toValue: targetMouth, useNativeDriver: false, friction: 6, tension: 120 }),
         Animated.timing(glowOpacity, { toValue: targetGlow, duration: 100, useNativeDriver: true }),
       ]).start();
     }
-  }, [audioLevel, expressionKey, mouthHeight, glowOpacity]);
+  }, [audioLevel, expressionKey, isBuffering, mouthHeight, glowOpacity]);
 
   // ── Cute bounce for happy/celebrating/laugh ──────────────────────
   useEffect(() => {

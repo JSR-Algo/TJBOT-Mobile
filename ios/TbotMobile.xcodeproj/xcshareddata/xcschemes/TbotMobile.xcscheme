@@ -32,7 +32,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "00E356ED1AD99517003FC87E"
+               BlueprintIdentifier = "B979707E9AB4F2C4FA94A2E5"
                BuildableName = "TbotMobileTests.xctest"
                BlueprintName = "TbotMobileTests"
                ReferencedContainer = "container:TbotMobile.xcodeproj">

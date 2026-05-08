@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import { Bot } from 'lucide-react-native';
 import * as devicesApi from '../../api/devices';
 import { LoadingSpinner, Card, ErrorMessage } from '../../components';
 import { Device } from '../../types';
@@ -66,7 +67,9 @@ export function DeviceDetailScreen({ route }: MainStackScreenProps<'DeviceDetail
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.emoji}>🤖</Text>
+        <View style={styles.heroCircle}>
+          <Bot size={40} color={theme.colors.primary} strokeWidth={2} />
+        </View>
         <Text style={styles.serialNumber}>{device.serial_number}</Text>
         <StatusBadge status={device.status} />
       </View>
@@ -110,8 +113,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.xl,
   },
-  emoji: {
-    fontSize: 72,
+  heroCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.primary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.sm,
   },
   serialNumber: {

@@ -1,5 +1,14 @@
 export type AgeGroup = '3-5' | '6-8' | '9-12';
 export type PersonalityStyle = 'vui-ve' | 'diu-dang' | 'nang-dong' | 'dang-yeu';
+/**
+ * Only 'vi' and 'en' are user-facing; 'bilingual' is the default and makes
+ * TBOT auto-mirror whatever language the child speaks. Per user 2026-04-24
+ * ("Chỉ tiếng việt và tiếng anh, không cần pick, có thể giao tiếp được cả
+ * tiếng anh và tiếng việt"), the app does NOT expose a picker — bilingual is
+ * the only shipping mode. The explicit-mode API is kept for tests + future
+ * per-profile override but no UI binds to it today.
+ */
+export type LanguageMode = 'vi' | 'en' | 'bilingual';
 
 /**
  * Mobile realtime voice assistant master prompt.
@@ -37,9 +46,22 @@ const AGE_ADJUSTMENTS: Record<AgeGroup, string> = {
     'Trẻ 9-12 tuổi. Câu dài hơn một chút nhưng vẫn ngắn gọn, tối đa 2-3 ý nếu thật sự cần.',
 };
 
+// Phase 3d (2026-04-24 bilingual pivot): language-strategy block selected by
+// the child-profile language mode. Mirrors tbot-ai-services llm.py 3-mode
+// pattern so mobile + REST-fallback agree on vocab.
+const LANGUAGE_DIRECTIVES: Record<LanguageMode, string> = {
+  vi:
+    'NGÔN NGỮ: Nói tiếng Việt là chính. Nếu trẻ nói tiếng Anh, trả lời tiếng Anh ngắn rồi quay lại tiếng Việt tự nhiên. Không ép trẻ nói tiếng Anh.',
+  en:
+    'LANGUAGE: Speak English primarily. If the child uses Vietnamese, respond briefly in English using simple words the child likely knows; do not translate full sentences to Vietnamese.',
+  bilingual:
+    'NGÔN NGỮ / LANGUAGE: Match the language the child uses in each turn. Vietnamese → Vietnamese, English → English, mixed → mirror the mix naturally. Do not force either language.',
+};
+
 export function buildSukaPrompt(
   age: AgeGroup,
   style: PersonalityStyle,
+  language: LanguageMode = 'bilingual',
   /**
    * Optional deterministic seed (e.g. child profile id). Not used by this
    * realtime prompt directly, but kept for API compatibility with the
@@ -49,8 +71,12 @@ export function buildSukaPrompt(
 ): string {
   const styleLabel = STYLE_LABELS[style];
   const ageNote = AGE_ADJUSTMENTS[age];
+  const languageDirective = LANGUAGE_DIRECTIVES[language];
 
   return `Bạn là một trợ lý giọng nói realtime trên mobile, có avatar, có tính cách rõ ràng, thân thiện, tự nhiên, nhanh nhạy và lành mạnh cho trẻ em.
+
+# 0) Ngôn ngữ (CRITICAL)
+${languageDirective}
 
 # 1) Danh tính & tính cách
 - Bạn nói chuyện như một người bạn đồng hành thông minh, ấm áp, bình tĩnh, nhanh gọn.

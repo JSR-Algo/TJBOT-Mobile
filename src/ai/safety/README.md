@@ -6,6 +6,11 @@
 
 This README is the **contract that agents must implement** for the safety shim. Do not deviate without updating the system-design doc first.
 
+> **Integration-point update (2026-04-24):** The earlier custom `GeminiLiveClient` WebSocket wrapper has been removed. The Gemini Live integration now runs through `@google/genai` SDK in `src/hooks/useGeminiConversation.ts`. When implementing §8.3 below, map:
+> - `GeminiLiveClient._sendSetup()` → the `systemInstruction` field passed to `GoogleGenAI.live.connect({ config })` in `useGeminiConversation.ts`.
+> - `GeminiLiveClient.sendAudio` → `session.sendRealtimeInput({ audio: { data, mimeType } })` called from `handleMicChunk` in `useGeminiConversation.ts`.
+> - `GeminiLiveClient._handleMessage` → the inbound-message handler driven by `session.on('message', ...)` in the same hook.
+
 ---
 
 ## 1. Why this exists (in one paragraph)

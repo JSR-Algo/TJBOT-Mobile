@@ -7,6 +7,10 @@ import { colors, spacing, typography } from '../../theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
 import { pendingCredentials } from '../../auth/pendingCredentials';
+import { useToast } from '../../components/Toast';
+
+// Error pattern: ErrorMessage for field-scoped validation errors.
+// useToast for network/transport/5xx failures (transient).
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -19,6 +23,7 @@ export default function SignupScreen(): React.JSX.Element {
   const [error, setError] = useState('');
   const { signup } = useAuth();
   const navigation = useNavigation<Nav>();
+  const { show: showToast } = useToast();
 
   const handleSignup = async () => {
     if (!name || !email || !password) { setError('Please fill in all fields.'); return; }
@@ -32,9 +37,11 @@ export default function SignupScreen(): React.JSX.Element {
       setError('');
       navigation.navigate('Coppa');
     } catch (err: unknown) {
-      const e = err as { code?: string };
+      const e = err as { code?: string; status?: number };
       if (e?.code === 'USER_EXISTS') {
         setError('An account with this email already exists.');
+      } else if (e?.status && e.status >= 500) {
+        showToast({ severity: 'error', text: 'Server error. Please try again.' });
       } else {
         setError('Could not create account. Please try again.');
       }
@@ -46,7 +53,11 @@ export default function SignupScreen(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.title}>Create your account</Text>
           <Text style={styles.subtitle}>Join thousands of families using TBOT</Text>
 
@@ -74,7 +85,7 @@ export default function SignupScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  container: { flexGrow: 1, padding: spacing.lg, justifyContent: 'center' },
+  container: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl },
   title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.xs },
   subtitle: { ...typography.body1, color: colors.textSecondary, marginBottom: spacing.xl },
   btn: { marginTop: spacing.sm },
