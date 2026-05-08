@@ -244,5 +244,211 @@
   "Let's pause for a moment. A grown-up can help if you need.": "Mình tạm dừng một chút nhé. Có gì con gọi người lớn giúp nha.",
   "Get a grown-up": "Gọi người lớn giúp nha",
   "Prototype Paths": "Đường dẫn mẫu",
-  "Tip:": "Mẹo:"
+  "Tip:": "Mẹo:",
+  "Progress": "Tiến độ",
+  "My adventure": {
+    "child": "Cuộc phiêu lưu của con",
+    "parent": "Cuộc phiêu lưu"
+  },
+  "English with Robot": "Tiếng Anh cùng Robot",
+  "4 of 10 lessons": "4/10 bài",
+  "You're on Unit 3 — let's go!": {
+    "child": "Con đang ở Phần 3 — đi thôi nào!",
+    "parent": "Bạn đang ở Phần 3 — bắt đầu thôi."
+  },
+  "2 of 5 done": "2/5 đã xong",
+  "3 words": "3 từ",
+  "2 phrases": "2 cụm từ",
+  "We'll learn to ask and answer \"How are you?\"": {
+    "child": "Mình sẽ học hỏi và trả lời \"How are you?\" nhé",
+    "parent": "Chúng ta sẽ học hỏi và trả lời \"How are you?\"."
+  },
+  "Today you'll practice": {
+    "child": "Hôm nay con sẽ luyện",
+    "parent": "Hôm nay sẽ luyện"
+  },
+  "Listen to Robot": {
+    "child": "Nghe Robot nha",
+    "parent": "Nghe Robot"
+  },
+  "Say it back": {
+    "child": "Nói lại theo nhé",
+    "parent": "Nói lại theo"
+  },
+  "Play a word game": {
+    "child": "Chơi trò chơi từ vựng nhé",
+    "parent": "Trò chơi từ vựng"
+  },
+  "+20 stars": "+20 sao",
+  "All lessons": "Tất cả bài",
+  "Let's review!": {
+    "child": "Cùng ôn lại nhé!",
+    "parent": "Cùng ôn lại!"
+  },
+  "Up next": "Tiếp theo",
+  "Coming soon": "Sắp mở",
+  "Quick review": "Ôn nhanh",
+  "Words to revisit": "Từ cần ôn lại",
+  "4 words want to say hi again!": {
+    "child": "4 từ đang muốn chào con lần nữa đó!",
+    "parent": "4 từ muốn chào lại bạn."
+  },
+  "Practice": "Luyện tập",
+  "Start Review": "Bắt đầu ôn",
+  "Today's mission": "Nhiệm vụ hôm nay",
+  "Make Robot smile": {
+    "child": "Làm Robot cười nào",
+    "parent": "Làm Robot cười"
+  },
+  "Review 4 words": "Ôn 4 từ",
+  "Quick 2-min refresh": "Ôn nhanh 2 phút",
+  "1 mini-game": "1 trò mini",
+  "Finish all 3": {
+    "child": "Xong cả 3 nào",
+    "parent": "Hoàn tất cả 3"
+  },
+  "+50 stars · new sticker": "+50 sao · sticker mới",
+  "Continue Mission": {
+    "child": "Tiếp tục nhiệm vụ nhé",
+    "parent": "Tiếp tục nhiệm vụ"
+  },
+  "Start Lesson": {
+    "child": "Bắt đầu bài nào",
+    "parent": "Bắt đầu bài học"
+  },
+  "NOW": "BÂY GIỜ",
+  "Replay": {
+    "child": "Học lại nhé",
+    "parent": "Học lại"
+  },
+  "~5 min": "~5 phút",
+  "Words": "Từ",
+  "lessons": "bài",
+  "Keep going →": {
+    "child": "Tiếp tục nào →",
+    "parent": "Tiếp tục →"
+  },
+  "You practiced speaking!": {
+    "child": "Con đã luyện nói rồi đó!",
+    "parent": "Bạn đã luyện nói."
+  },
+  "speaking turns": "lượt nói",
+  "lesson done": "bài đã xong",
+  "stars today": "sao hôm nay",
+  "🔥 5-day streak — nice!": {
+    "child": "🔥 5 ngày liên tục — giỏi lắm con!",
+    "parent": "🔥 Liên tục 5 ngày — tuyệt."
+  },
+  "These words got stronger today.": {
+    "child": "Mấy từ này hôm nay khỏe hơn rồi nhé.",
+    "parent": "Những từ này khỏe hơn hôm nay."
+  },
+  "Stronger 💪": "Khỏe hơn 💪",
+  "Visit again soon 🌱": "Sớm ghé lại 🌱",
+  "stronger": "khỏe hơn",
+  "visit again": "ghé lại",
+  "Practice 2 words": {
+    "child": "Luyện 2 từ nhé",
+    "parent": "Luyện 2 từ"
+  },
+  "Lesson done": "Xong bài",
+  "Great effort!": {
+    "child": "Con cố gắng tuyệt lắm!",
+    "parent": "Cố gắng tuyệt vời!"
+  },
+  "You tried": {
+    "child": "Con đã thử",
+    "parent": "Đã thử"
+  },
+  "8 English turns": "8 lượt tiếng Anh",
+  "Earned": "Nhận được",
+  "12 stars": "12 sao",
+  "3 new friends": {
+    "child": "3 bạn mới của con",
+    "parent": "3 từ mới"
+  },
+  "Stop for today": {
+    "child": "Dừng hôm nay nhé",
+    "parent": "Dừng hôm nay"
+  },
+  "A friendly nudge": "Lời nhắc nhẹ",
+  "Let's visit again": {
+    "child": "Cùng ghé lại nào",
+    "parent": "Hãy ghé lại"
+  },
+  "3 words miss you!": {
+    "child": "3 từ đang nhớ con đó!",
+    "parent": "3 từ muốn gặp lại bạn."
+  },
+  "Practice together": {
+    "child": "Cùng luyện nào",
+    "parent": "Cùng luyện"
+  },
+  "Maybe later": {
+    "child": "Để sau nhé",
+    "parent": "Để sau"
+  },
+  "You finished today's lesson.": {
+    "child": "Con đã xong bài hôm nay.",
+    "parent": "Bạn đã xong bài hôm nay."
+  },
+  "Great effort speaking out loud!": {
+    "child": "Tuyệt vời, con đã nói lớn nhé!",
+    "parent": "Tuyệt vời khi nói lớn!"
+  },
+  "New sticker": "Sticker mới",
+  "Back to Robot Home": {
+    "child": "Về nhà Robot nào",
+    "parent": "Về nhà Robot"
+  },
+  "Practice review words": {
+    "child": "Luyện từ ôn lại nhé",
+    "parent": "Luyện từ ôn"
+  },
+  "Level 1": "Cấp 1",
+  "Level 2": "Cấp 2",
+  "Level 3": "Cấp 3",
+  "Level 4": "Cấp 4",
+  "Level 5": "Cấp 5",
+  "Unit 1": "Phần 1",
+  "Unit 2": "Phần 2",
+  "Unit 3": "Phần 3",
+  "Unit 4": "Phần 4",
+  "Unit 5": "Phần 5",
+  "Lesson 1": "Bài 1",
+  "Lesson 2": "Bài 2",
+  "Lesson 3": "Bài 3",
+  "Lesson 4": "Bài 4",
+  "Lesson 5": "Bài 5",
+  "Lesson 6": "Bài 6",
+  "🔥 5 day": "🔥 5 ngày",
+  "Greetings & me": "Chào hỏi & bản thân",
+  "Animals & sounds": "Con vật & âm thanh",
+  "Daily routines": "Thói quen hằng ngày",
+  "Food & drinks": "Đồ ăn & nước uống",
+  "Lesson List": "Danh sách bài",
+  "Review Entry": "Vào phần ôn",
+  "No practice": "Không luyện tập",
+  "Last seen 2 days ago": "Lần cuối 2 ngày trước",
+  "Last seen 3 days ago": "Lần cuối 3 ngày trước",
+  "Last seen 5 days ago": "Lần cuối 5 ngày trước",
+  "2 days ago": "2 ngày trước",
+  "3 days ago": "3 ngày trước",
+  "5 days ago": "5 ngày trước",
+  "Hi friend! 👋": "Chào bạn ơi! 👋",
+  "Ready to play with words?": "Sẵn sàng chơi với từ mới chưa nào?",
+  "This is a": "Đây là",
+  "Say:": "Nói:",
+  "You said \"cat\" 🐱": "Con vừa nói \"cat\" 🐱",
+  "I heard you trying.": "Mình nghe con đang cố đó.",
+  "One more time?": "Thử thêm lần nữa nhé?",
+  "Hmm, I didn't hear that clearly.": "Hmm, mình chưa nghe rõ lắm.",
+  "Let's try again.": "Mình thử lại nha.",
+  "Oh fun! 🐱": "Vui ghê! 🐱",
+  "Let's stay with the cat for now.": "Mình học \"cat\" thêm chút nha.",
+  "I can't hear my microphone.": "Mình không nghe được micro.",
+  "Let's check it together.": "Mình kiểm tra cùng nhau nha.",
+  "Let's pause for a moment.": "Mình nghỉ một xíu nha.",
+  "Hi, Mai!": "Chào Mai!",
+  "speak now": "nói ngay"
 }
