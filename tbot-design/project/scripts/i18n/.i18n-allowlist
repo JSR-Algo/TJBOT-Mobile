@@ -168,3 +168,26 @@ Currently 6 of 10
 Mon–Fri · 9 AM – 6 PM ET
 hello@robotbuddy.app · reply in ~1 day
 9:00 PM – 7:00 AM · half volume
+
+# Phase 7 — design-system.jsx (typography specs, demo placeholders, motion timing fragments)
+Lesson 3
+Unit 3
+Family & Friends
+Hi friend!
+Robot English · Design System
+Lesson Title 32/Bold
+Subtitle 22/Semi
+Body 18/Bold — kid copy
+Body 15/Semi — parent rows
+Caption 13/Eyebrow
+Mono 12 — values, IDs
+48×48 hit target. Soft shadow, no border.
+— 3.6s ease-in-out infinite, 4–6px Y. Idle and happy only.
+— 2s ease-out, opacity 0.4→0. Listening only.
+— 1.2s scaleY 0.6↔1.4, 0.05s stagger.
+— 1.4s, 0.18s stagger, plum.
+— single one-shot burst on celebration only.
+: disable bob, pulse, confetti; keep state colors.
+(kid CTAs are 56+).
+Ink on Cream
+— AA at 14px+.
