@@ -5,25 +5,72 @@
     "personaConventions": {
       "child": "uses con / mình + soft particles nhé / nha / nào; warm, age 5-9 voice",
       "parent": "uses bạn or no addressing; neutral, professional register"
+    },
+    "persona_migration": {
+      "annex": "Annex F",
+      "applied_at": "2026-05-08T10:45:09.246Z",
+      "flips": 38,
+      "rewrites": 14,
+      "skipped_flip": 0,
+      "skipped_rewrite": 0
     }
   },
   "Start": "Bắt đầu",
-  "Continue": "Tiếp tục",
-  "Back": "Quay lại",
-  "Next": "Tiếp",
-  "Done": "Xong",
-  "Skip": "Bỏ qua",
-  "Cancel": "Hủy",
+  "Continue": {
+    "child": "Tiếp tục nào",
+    "parent": "Tiếp tục"
+  },
+  "Back": {
+    "child": "Quay lại nhé",
+    "parent": "Quay lại"
+  },
+  "Next": {
+    "child": "Tiếp nào",
+    "parent": "Tiếp"
+  },
+  "Done": {
+    "child": "Xong rồi nè",
+    "parent": "Xong"
+  },
+  "Skip": {
+    "child": "Bỏ qua nhé",
+    "parent": "Bỏ qua"
+  },
+  "Cancel": {
+    "child": "Bỏ qua nhé",
+    "parent": "Hủy"
+  },
   "Save": "Lưu",
   "Confirm": "Xác nhận",
-  "Try again": "Thử lại",
-  "Try Again": "Thử lại",
-  "Retry": "Thử lại",
+  "Try again": {
+    "child": "Thử lại nhé",
+    "parent": "Thử lại"
+  },
+  "Try Again": {
+    "child": "Thử lại nhé",
+    "parent": "Thử lại"
+  },
+  "Retry": {
+    "child": "Thử lại nhé",
+    "parent": "Thử lại"
+  },
   "OK": "OK",
-  "Got it": "Đã hiểu",
-  "Got it!": "Đã hiểu!",
-  "Yes": "Có",
-  "No": "Không",
+  "Got it": {
+    "child": "Hiểu rồi",
+    "parent": "Đã rõ"
+  },
+  "Got it!": {
+    "child": "Hiểu rồi!",
+    "parent": "Đã rõ!"
+  },
+  "Yes": {
+    "child": "Có nè",
+    "parent": "Có"
+  },
+  "No": {
+    "child": "Chưa nè",
+    "parent": "Không"
+  },
   "Allow": "Cho phép",
   "Deny": "Từ chối",
   "Settings": "Cài đặt",
@@ -37,7 +84,10 @@
   "Sign up": "Đăng ký",
   "Log in": "Đăng nhập",
   "Log out": "Đăng xuất",
-  "Get started": "Bắt đầu",
+  "Get started": {
+    "child": "Bắt đầu nào",
+    "parent": "Bắt đầu"
+  },
   "Continue with Apple": "Tiếp tục với Apple",
   "Continue with Google": "Tiếp tục với Google",
   "Continue with Email": "Tiếp tục bằng Email",
@@ -51,10 +101,22 @@
   "Profile": "Hồ sơ",
   "Parent": "Phụ huynh",
   "Parent Space": "Khu vực phụ huynh",
-  "Hi!": "Xin chào!",
-  "Hello!": "Xin chào!",
-  "Welcome": "Chào mừng",
-  "Welcome back": "Chào mừng trở lại",
+  "Hi!": {
+    "child": "Chào con!",
+    "parent": "Xin chào!"
+  },
+  "Hello!": {
+    "child": "Chào con!",
+    "parent": "Xin chào!"
+  },
+  "Welcome": {
+    "child": "Chào mừng con",
+    "parent": "Chào mừng bạn"
+  },
+  "Welcome back": {
+    "child": "Mừng con quay lại",
+    "parent": "Chào mừng trở lại"
+  },
   "Today's lesson": "Bài học hôm nay",
   "Daily Mission": "Nhiệm vụ hôm nay",
   "Start lesson": "Bắt đầu học",
@@ -83,39 +145,99 @@
   "Review": "Ôn tập",
   "Review needed": "Cần ôn tập",
   "Review Needed": "Cần ôn tập",
-  "Locked": "Chưa mở",
+  "Locked": {
+    "child": "Chưa mở",
+    "parent": "Đã khóa"
+  },
   "Unlock": "Mở khóa",
   "Available": "Có sẵn",
   "Installed": "Đã cài",
   "Lesson Ready": "Sẵn sàng học",
-  "Tap to start": "Chạm để bắt đầu",
+  "Tap to start": {
+    "child": "Chạm để bắt đầu nhé",
+    "parent": "Chạm để bắt đầu"
+  },
   "Connecting voice": "Đang kết nối giọng nói",
   "Connecting...": "Đang kết nối…",
-  "Listening": "Đang nghe",
-  "Listening...": "Đang nghe…",
-  "Speak": "Nói",
-  "Listen": "Nghe",
-  "Say it": "Nói nào",
-  "Your turn": "Đến lượt con",
+  "Listening": {
+    "child": "Đang nghe con",
+    "parent": "Đang nghe"
+  },
+  "Listening...": {
+    "child": "Đang nghe con…",
+    "parent": "Đang nghe…"
+  },
+  "Speak": {
+    "child": "Nói đi nào",
+    "parent": "Nói"
+  },
+  "Listen": {
+    "child": "Lắng nghe nào",
+    "parent": "Nghe"
+  },
+  "Say it": {
+    "child": "Nói nào",
+    "parent": "Nói thử"
+  },
+  "Your turn": {
+    "child": "Đến lượt con",
+    "parent": "Đến lượt bạn"
+  },
   "My turn": "Đến lượt mình",
-  "Great!": "Tuyệt!",
-  "Great job!": "Làm tốt lắm!",
-  "Awesome!": "Tuyệt vời!",
-  "Nice!": "Hay quá!",
-  "Almost!": "Sắp được rồi!",
-  "Keep going": "Cố lên",
-  "Keep going!": "Cố lên!",
-  "Once more": "Thêm lần nữa nhé",
-  "One more time": "Thêm một lần nữa nhé",
-  "Let's try again": "Cùng thử lại nha",
+  "Great!": {
+    "child": "Tuyệt lắm!",
+    "parent": "Tuyệt!"
+  },
+  "Great job!": {
+    "child": "Con làm tốt lắm!",
+    "parent": "Làm tốt lắm!"
+  },
+  "Awesome!": {
+    "child": "Siêu lắm con!",
+    "parent": "Tuyệt vời!"
+  },
+  "Nice!": {
+    "child": "Hay quá nè!",
+    "parent": "Hay quá!"
+  },
+  "Almost!": {
+    "child": "Sắp được rồi nhé!",
+    "parent": "Sắp được rồi!"
+  },
+  "Keep going": {
+    "child": "Tiếp tục nào",
+    "parent": "Tiếp tục"
+  },
+  "Keep going!": {
+    "child": "Cố lên!",
+    "parent": "Tiếp tục!"
+  },
+  "Once more": {
+    "child": "Một lần nữa nhé",
+    "parent": "Một lần nữa"
+  },
+  "One more time": {
+    "child": "Thêm một lần nữa nhé",
+    "parent": "Một lần nữa"
+  },
+  "Let's try again": {
+    "child": "Cùng thử lại nha",
+    "parent": "Cùng thử lại"
+  },
   "Today's Progress": "Tiến độ hôm nay",
   "Words Practiced": "Từ đã luyện tập",
   "Lesson Summary": "Tổng kết bài học",
   "Lesson Completion Summary": "Tổng kết bài học",
   "Celebration": "Chúc mừng",
   "Congratulations!": "Xin chúc mừng!",
-  "Well done!": "Làm tốt lắm!",
-  "You did it!": "Con làm được rồi!",
+  "Well done!": {
+    "child": "Con giỏi quá!",
+    "parent": "Làm tốt lắm!"
+  },
+  "You did it!": {
+    "child": "Con làm được rồi!",
+    "parent": "Bạn làm được rồi!"
+  },
   "New": "Mới",
   "Total": "Tổng",
   "Today total": "Hôm nay",
@@ -450,5 +572,46 @@
   "Let's check it together.": "Mình kiểm tra cùng nhau nha.",
   "Let's pause for a moment.": "Mình nghỉ một xíu nha.",
   "Hi, Mai!": "Chào Mai!",
-  "speak now": "nói ngay"
+  "speak now": "nói ngay",
+  "Meet Robot": "Gặp Robot",
+  "A gentle English buddy": "Người bạn Anh ngữ nhẹ nhàng",
+  "See how it works": "Xem cách hoạt động",
+  "Privacy & safety first": "Quyền riêng tư & an toàn là ưu tiên",
+  "How it works": "Cách hoạt động",
+  "In the box": "Trong hộp",
+  "What's included": "Bao gồm những gì",
+  "Pick your bundle": "Chọn gói",
+  "Choose a bundle": "Chọn gói",
+  "Add courses?": "Thêm khóa học?",
+  "What we promise parents": "Cam kết với phụ huynh",
+  "Privacy first · always": "Riêng tư · luôn luôn",
+  "I'm ready · go to checkout": "Sẵn sàng · đến thanh toán",
+  "Your order": "Đơn hàng của bạn",
+  "Today's total": "Tổng hôm nay",
+  "Ship to": "Giao đến",
+  "Order placed": "Đã đặt hàng",
+  "We're packing your order": "Đang đóng gói đơn hàng",
+  "When it arrives": "Khi hàng đến",
+  "Open the app — we'll guide setup in 5 minutes": "Mở ứng dụng — chúng tôi sẽ hướng dẫn cài đặt trong 5 phút",
+  "Robot is on its way": "Robot đang trên đường đến",
+  "Track with carrier": "Theo dõi qua đơn vị vận chuyển",
+  "Change delivery address": "Đổi địa chỉ giao hàng",
+  "Robot is here": "Robot đã đến",
+  "1. Open the box": "1. Mở hộp",
+  "Robot, charging dock, USB-C cable": "Robot, đế sạc, cáp USB-C",
+  "2. Plug in the dock": "2. Cắm đế sạc",
+  "Place Robot on it — a soft chime means hello": "Đặt Robot lên đế — chuông nhẹ là lời chào",
+  "3. Connect to your Wi-Fi": "3. Kết nối Wi-Fi nhà bạn",
+  "We'll guide you screen-by-screen": "Chúng tôi hướng dẫn từng bước",
+  "Activate your Robot": "Kích hoạt Robot",
+  "Can't find the code?": "Không tìm thấy mã?",
+  "It's printed on the inside flap of the box": "Mã in trên nắp trong của hộp",
+  "One more step": "Một bước nữa",
+  "Set up Robot now": "Cài đặt Robot ngay",
+  "Later tonight": "Tối nay",
+  "Enter activation code": "Nhập mã kích hoạt",
+  "Send Hello Friends to Robot": "Gửi Hello Friends đến Robot",
+  "Explore the library first": "Khám phá thư viện trước",
+  "Track delivery": "Theo dõi giao hàng",
+  "Back to home": "Về trang chủ"
 }
