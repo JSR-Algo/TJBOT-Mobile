@@ -1,12 +1,12 @@
 {
-  "run_at": "2026-05-08T10:30:07.319Z",
-  "git_commit": "abad958",
-  "en_keys": 519,
-  "vi_keys": 235,
-  "vi_strings": 235,
-  "vi_persona_objects": 0,
+  "run_at": "2026-05-08T10:45:30.225Z",
+  "git_commit": "e565808",
+  "en_keys": 607,
+  "vi_keys": 391,
+  "vi_strings": 322,
+  "vi_persona_objects": 69,
   "vi_empty": 0,
-  "case_folded_duplicates": 12,
+  "case_folded_duplicates": 13,
   "hardcoded_total": 521,
   "hardcoded_per_file": {
     "index.html": 14,
@@ -71,11 +71,11 @@
     },
     "paths.jsx": {
       "child": 0,
-      "parent": 0
+      "parent": 1
     },
     "vn-features.jsx": {
       "child": 0,
-      "parent": 0
+      "parent": 1
     },
     "tb-components.jsx": {
       "child": 0,
@@ -83,10 +83,10 @@
     },
     "design-system.jsx": {
       "child": 0,
-      "parent": 0
+      "parent": 1
     }
   },
-  "allowlist_size": 21,
+  "allowlist_size": 74,
   "data_i18n_key_sites": [],
   "locale_files_loaded": [
     "vi",
@@ -95,8 +95,8 @@
   "fixture_pass_count": null,
   "fixture_total": null,
   "register_lint": {
-    "persona_objects": 0,
-    "warnings": 0,
+    "persona_objects": 69,
+    "warnings": 10,
     "failures": 0
   },
   "format_leaks": {

@@ -89,7 +89,7 @@ const localeFilesLoaded = ['vi', 'en']
   .concat(['vi-pseudo', 'vi-stretched'].filter(v => fs.existsSync(path.join(ROOT, 'locales', v + '.json'))));
 
 // register lint quick scan (mirrors check-register.mjs without invoking it)
-const CHILD_PARTICLES = ['nhé', 'nha', 'nào', ' con ', ' mình '];
+const CHILD_PARTICLES = ['nhé', 'nha', 'nào', ' nè ', ' nè!', ' nè?', ' con ', ' mình '];
 let regWarn = 0, regFail = 0;
 for (const k of viKeys) {
   const v = vi[k];

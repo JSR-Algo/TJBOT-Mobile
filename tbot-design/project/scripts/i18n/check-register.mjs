@@ -18,9 +18,13 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const vi = JSON.parse(fs.readFileSync(path.join(ROOT, 'locales/vi.json'), 'utf8'));
 
-const CHILD_PARTICLES = ['nhé', 'nha', 'nào', ' con ', ' mình '];
+// Soft kid-register particles. `nè` is colloquial-warm (Southern VN, common
+// in kids' content); `nhé`/`nha`/`nào` are Northern/Central; `con`/`mình`
+// are addressing pronouns. Surrounding spaces guard against substring hits
+// inside other words (e.g. `con` matching `con người`).
+const CHILD_PARTICLES = ['nhé', 'nha', 'nào', ' nè ', ' nè!', ' nè?', ' con ', ' mình '];
 function hasChildParticle(s) {
-  const lower = (' ' + s.toLowerCase() + ' ').replace(/[!?.,;:]/g, ' ');
+  const lower = (' ' + s.toLowerCase() + ' ').replace(/[!?.,;:…·]/g, ' ');
   return CHILD_PARTICLES.some(p => lower.includes(p));
 }
 
