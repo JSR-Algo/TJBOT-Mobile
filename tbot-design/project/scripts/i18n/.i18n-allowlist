@@ -20,6 +20,7 @@ Hello Friends
 I like apples.
 This is a cat.
 cat
+"cat"
 apple
 apples
 
@@ -33,3 +34,7 @@ Daily Star
 —
 –
 …
+
+# Phase 6 — fallback.jsx error subset
+# Lesson title from "Where we stopped" card; curriculum content, not chrome
+How are you?
