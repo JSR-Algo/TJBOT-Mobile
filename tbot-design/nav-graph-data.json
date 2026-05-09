@@ -1,0 +1,2348 @@
+{
+  "states": {
+    "onb_splash": {
+      "f": "onboarding.jsx",
+      "title": "1 · Splash",
+      "g": "Onboarding"
+    },
+    "onb_welcome": {
+      "f": "onboarding.jsx",
+      "title": "2 · Welcome",
+      "g": "Onboarding"
+    },
+    "onb_intro_listen": {
+      "f": "onboarding.jsx",
+      "title": "3 · Intro · Listen",
+      "g": "Onboarding"
+    },
+    "onb_intro_speak": {
+      "f": "onboarding.jsx",
+      "title": "4 · Intro · Speak",
+      "g": "Onboarding"
+    },
+    "onb_intro_retry": {
+      "f": "onboarding.jsx",
+      "title": "5 · Intro · Try Again",
+      "g": "Onboarding"
+    },
+    "onb_intro_celebrate": {
+      "f": "onboarding.jsx",
+      "title": "6 · Intro · Celebrate",
+      "g": "Onboarding"
+    },
+    "onb_trust": {
+      "f": "onboarding.jsx",
+      "title": "7 · Parent Trust Intro",
+      "g": "Onboarding"
+    },
+    "onb_mic": {
+      "f": "onboarding.jsx",
+      "title": "8 · Voice Permission",
+      "g": "Onboarding"
+    },
+    "onb_login": {
+      "f": "onboarding.jsx",
+      "title": "9 · Login / Sign Up",
+      "g": "Onboarding"
+    },
+    "onb_login_error": {
+      "f": "onboarding.jsx",
+      "title": "10 · Login Error",
+      "g": "Onboarding"
+    },
+    "onb_child": {
+      "f": "onboarding.jsx",
+      "title": "11 · Child Profile",
+      "g": "Onboarding"
+    },
+    "onb_first_lesson": {
+      "f": "onboarding.jsx",
+      "title": "12 · First Lesson Entry",
+      "g": "Onboarding"
+    },
+    "home_hub_idle": {
+      "f": "home.jsx",
+      "title": "Home · Idle happy",
+      "g": "Home"
+    },
+    "home_hub_greet": {
+      "f": "home.jsx",
+      "title": "Home · Robot greeting",
+      "g": "Home"
+    },
+    "home_hub_daily": {
+      "f": "home.jsx",
+      "title": "Home · Today",
+      "g": "Home"
+    },
+    "home_hub_done": {
+      "f": "home.jsx",
+      "title": "Home · Lesson done today",
+      "g": "Home"
+    },
+    "home_hub_mic": {
+      "f": "home.jsx",
+      "title": "Home · Needs microphone",
+      "g": "Home"
+    },
+    "home_hub_offline": {
+      "f": "home.jsx",
+      "title": "Home · Reconnecting",
+      "g": "Home"
+    },
+    "lesson_ready": {
+      "f": "screens.jsx",
+      "title": "Lesson Ready",
+      "g": "Start"
+    },
+    "connecting": {
+      "f": "screens.jsx",
+      "title": "Connecting Voice",
+      "g": "Start"
+    },
+    "greeting": {
+      "f": "screens.jsx",
+      "title": "Robot Greeting",
+      "g": "Start"
+    },
+    "activity_intro": {
+      "f": "screens.jsx",
+      "title": "Activity Intro",
+      "g": "Activity"
+    },
+    "robot_speaking": {
+      "f": "screens.jsx",
+      "title": "Robot Speaking",
+      "g": "Activity"
+    },
+    "robot_listening": {
+      "f": "screens.jsx",
+      "title": "Robot Listening",
+      "g": "Activity"
+    },
+    "user_speaking": {
+      "f": "screens.jsx",
+      "title": "User Speaking",
+      "g": "Activity"
+    },
+    "thinking": {
+      "f": "screens.jsx",
+      "title": "Robot Thinking",
+      "g": "Activity"
+    },
+    "success": {
+      "f": "screens.jsx",
+      "title": "Success Moment",
+      "g": "Feedback"
+    },
+    "gentle": {
+      "f": "screens.jsx",
+      "title": "Gentle Correction",
+      "g": "Feedback"
+    },
+    "retry": {
+      "f": "screens.jsx",
+      "title": "Retry Prompt",
+      "g": "Feedback"
+    },
+    "silence": {
+      "f": "screens.jsx",
+      "title": "Silence Prompt",
+      "g": "Feedback"
+    },
+    "offtopic": {
+      "f": "screens.jsx",
+      "title": "Off-topic Redirect",
+      "g": "Feedback"
+    },
+    "bargein": {
+      "f": "screens.jsx",
+      "title": "Interrupted (Barge-in)",
+      "g": "Feedback"
+    },
+    "activity_done": {
+      "f": "screens.jsx",
+      "title": "Activity Complete",
+      "g": "Done"
+    },
+    "lesson_done": {
+      "f": "screens.jsx",
+      "title": "Lesson Complete",
+      "g": "Done"
+    },
+    "reconnecting": {
+      "f": "screens.jsx",
+      "title": "Reconnecting",
+      "g": "Edge"
+    },
+    "audio_error": {
+      "f": "screens.jsx",
+      "title": "Audio Error",
+      "g": "Edge"
+    },
+    "safety": {
+      "f": "screens.jsx",
+      "title": "Safety Fallback",
+      "g": "Edge"
+    },
+    "exit_confirm": {
+      "f": "screens.jsx",
+      "title": "Exit Confirmation",
+      "g": "Edge"
+    },
+    "course": {
+      "f": "course.jsx",
+      "title": "Course Overview",
+      "g": "Course"
+    },
+    "level": {
+      "f": "course.jsx",
+      "title": "Level Overview",
+      "g": "Course"
+    },
+    "unit": {
+      "f": "course.jsx",
+      "title": "Unit Detail",
+      "g": "Course"
+    },
+    "lesson_list": {
+      "f": "course.jsx",
+      "title": "Lesson List",
+      "g": "Course"
+    },
+    "lesson_detail": {
+      "f": "course.jsx",
+      "title": "Lesson Detail",
+      "g": "Course"
+    },
+    "review_entry": {
+      "f": "course.jsx",
+      "title": "Review Entry",
+      "g": "Course"
+    },
+    "daily_mission": {
+      "f": "course.jsx",
+      "title": "Daily Mission",
+      "g": "Course"
+    },
+    "today_progress": {
+      "f": "progress.jsx",
+      "title": "Today",
+      "g": "Progress"
+    },
+    "words_practiced": {
+      "f": "progress.jsx",
+      "title": "Words Practiced",
+      "g": "Progress"
+    },
+    "lesson_summary": {
+      "f": "progress.jsx",
+      "title": "Lesson Summary",
+      "g": "Progress"
+    },
+    "review_needed": {
+      "f": "progress.jsx",
+      "title": "Review Needed",
+      "g": "Progress"
+    },
+    "celebration": {
+      "f": "progress.jsx",
+      "title": "Celebration",
+      "g": "Progress"
+    },
+    "parent_gate": {
+      "f": "parent.jsx",
+      "title": "Parent Gate",
+      "g": "Parent"
+    },
+    "parent_summary": {
+      "f": "parent.jsx",
+      "title": "Parent Summary",
+      "g": "Parent"
+    },
+    "parent_today": {
+      "f": "parent.jsx",
+      "title": "Practiced Today",
+      "g": "Parent"
+    },
+    "parent_history": {
+      "f": "parent.jsx",
+      "title": "Past 30 Days",
+      "g": "Parent"
+    },
+    "parent_safety": {
+      "f": "parent.jsx",
+      "title": "Safety & Privacy",
+      "g": "Parent"
+    },
+    "parent_settings": {
+      "f": "parent.jsx",
+      "title": "Parent Settings",
+      "g": "Parent"
+    },
+    "kid_settings": {
+      "f": "fallback.jsx",
+      "title": "Settings",
+      "g": "Fallback"
+    },
+    "mic_missing": {
+      "f": "fallback.jsx",
+      "title": "Mic Permission Missing",
+      "g": "Fallback"
+    },
+    "network_error": {
+      "f": "fallback.jsx",
+      "title": "Network Error",
+      "g": "Fallback"
+    },
+    "voice_failed": {
+      "f": "fallback.jsx",
+      "title": "Voice Session Failed",
+      "g": "Fallback"
+    },
+    "login_error": {
+      "f": "fallback.jsx",
+      "title": "Login Error",
+      "g": "Fallback"
+    },
+    "safety_redirect": {
+      "f": "fallback.jsx",
+      "title": "Safety Redirect",
+      "g": "Fallback"
+    },
+    "help_faq": {
+      "f": "fallback.jsx",
+      "title": "Help & FAQ",
+      "g": "Fallback"
+    },
+    "reconnecting_overlay": {
+      "f": "fallback.jsx",
+      "title": "Reconnecting Overlay",
+      "g": "Fallback"
+    },
+    "audio_recovery": {
+      "f": "fallback.jsx",
+      "title": "Audio Permission Recovery",
+      "g": "Fallback"
+    },
+    "lesson_resume": {
+      "f": "fallback.jsx",
+      "title": "Lesson Resume",
+      "g": "Fallback"
+    },
+    "dv_overview": {
+      "f": "device.jsx",
+      "title": "Robot · How it works together",
+      "g": "Robot Device"
+    },
+    "dv_pair_add": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · add",
+      "g": "Robot Device"
+    },
+    "dv_pair_intro": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · turn on",
+      "g": "Robot Device"
+    },
+    "dv_pair_search": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · searching",
+      "g": "Robot Device"
+    },
+    "dv_pair_found": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · found",
+      "g": "Robot Device"
+    },
+    "dv_pair_code": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · confirm code",
+      "g": "Robot Device"
+    },
+    "dv_pair_wifi": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · Wi-Fi pick",
+      "g": "Robot Device"
+    },
+    "dv_pair_wifi_pw": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · Wi-Fi password",
+      "g": "Robot Device"
+    },
+    "dv_pair_connecting": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · connecting",
+      "g": "Robot Device"
+    },
+    "dv_pair_success": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · success",
+      "g": "Robot Device"
+    },
+    "dv_pair_failed": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · failed",
+      "g": "Robot Device"
+    },
+    "dv_pair_offline": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · offline",
+      "g": "Robot Device"
+    },
+    "dv_pair_rename": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · rename & buddy",
+      "g": "Robot Device"
+    },
+    "dv_pair_first_lesson": {
+      "f": "device.jsx",
+      "title": "Robot · Pair · first lesson",
+      "g": "Robot Device"
+    },
+    "dv_home": {
+      "f": "device.jsx",
+      "title": "Robot · Device home",
+      "g": "Robot Device"
+    },
+    "dv_session": {
+      "f": "device.jsx",
+      "title": "Robot · Live session monitor",
+      "g": "Robot Device"
+    },
+    "dv_lost": {
+      "f": "device.jsx",
+      "title": "Robot · Find my Robot",
+      "g": "Robot Device"
+    },
+    "dv_firmware": {
+      "f": "device.jsx",
+      "title": "Robot · Firmware update",
+      "g": "Robot Device"
+    },
+    "dv_lcd": {
+      "f": "device.jsx",
+      "title": "Robot · LCD face library",
+      "g": "Robot Device"
+    },
+    "dv_lcd_turn": {
+      "f": "device.jsx",
+      "title": "Robot · One lesson turn",
+      "g": "Robot Device"
+    },
+    "cl_library": {
+      "f": "course-library.jsx",
+      "title": "Course · Library",
+      "g": "Course Library"
+    },
+    "cl_detail": {
+      "f": "course-library.jsx",
+      "title": "Course · Detail",
+      "g": "Course Library"
+    },
+    "cl_buy": {
+      "f": "course-library.jsx",
+      "title": "Course · Buy / Unlock",
+      "g": "Course Library"
+    },
+    "cl_unlock_confirm": {
+      "f": "course-library.jsx",
+      "title": "Course · Parent unlock confirmation",
+      "g": "Course Library"
+    },
+    "cl_added": {
+      "f": "course-library.jsx",
+      "title": "Course · Added to Robot",
+      "g": "Course Library"
+    },
+    "cl_send": {
+      "f": "course-library.jsx",
+      "title": "Course · Send lesson to Robot",
+      "g": "Course Library"
+    },
+    "cl_robot_ready": {
+      "f": "course-library.jsx",
+      "title": "Course · Robot ready for today",
+      "g": "Course Library"
+    },
+    "cl_running": {
+      "f": "course-library.jsx",
+      "title": "Course · Lesson running on Robot",
+      "g": "Course Library"
+    },
+    "cl_companion": {
+      "f": "course-library.jsx",
+      "title": "Course · App companion view",
+      "g": "Course Library"
+    },
+    "cl_complete": {
+      "f": "course-library.jsx",
+      "title": "Course · Lesson complete (synced)",
+      "g": "Course Library"
+    },
+    "cl_needs_sync": {
+      "f": "course-library.jsx",
+      "title": "Course · Robot needs sync",
+      "g": "Course Library"
+    },
+    "cl_locked": {
+      "f": "course-library.jsx",
+      "title": "Course · Locked",
+      "g": "Course Library"
+    },
+    "pr_intro": {
+      "f": "purchase.jsx",
+      "title": "Buy · Robot overview",
+      "g": "Purchase"
+    },
+    "pr_how": {
+      "f": "purchase.jsx",
+      "title": "Buy · How lessons work",
+      "g": "Purchase"
+    },
+    "pr_included": {
+      "f": "purchase.jsx",
+      "title": "Buy · What",
+      "g": "Purchase"
+    },
+    "pr_bundle": {
+      "f": "purchase.jsx",
+      "title": "Buy · Bundle picker",
+      "g": "Purchase"
+    },
+    "pr_subs": {
+      "f": "purchase.jsx",
+      "title": "Buy · Course subscription",
+      "g": "Purchase"
+    },
+    "pr_privacy": {
+      "f": "purchase.jsx",
+      "title": "Buy · Parent trust & privacy",
+      "g": "Purchase"
+    },
+    "pr_checkout": {
+      "f": "purchase.jsx",
+      "title": "Buy · Checkout",
+      "g": "Purchase"
+    },
+    "pr_confirm": {
+      "f": "purchase.jsx",
+      "title": "Buy · Order confirmed",
+      "g": "Purchase"
+    },
+    "pr_shipping": {
+      "f": "purchase.jsx",
+      "title": "Buy · Shipping & delivery",
+      "g": "Purchase"
+    },
+    "pr_arrived": {
+      "f": "purchase.jsx",
+      "title": "Buy · Robot arrived · setup",
+      "g": "Purchase"
+    },
+    "pr_activate": {
+      "f": "purchase.jsx",
+      "title": "Buy · Activate Robot",
+      "g": "Purchase"
+    },
+    "pr_first_course": {
+      "f": "purchase.jsx",
+      "title": "Buy · Add first course",
+      "g": "Purchase"
+    },
+    "rm_my_robot": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · My Robot",
+      "g": "Robot Mgmt"
+    },
+    "rm_status": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Status",
+      "g": "Robot Mgmt"
+    },
+    "rm_battery": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Battery",
+      "g": "Robot Mgmt"
+    },
+    "rm_wifi": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Wi-Fi",
+      "g": "Robot Mgmt"
+    },
+    "rm_storage": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Courses installed",
+      "g": "Robot Mgmt"
+    },
+    "rm_firmware": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Software update",
+      "g": "Robot Mgmt"
+    },
+    "rm_sound": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Sound & volume",
+      "g": "Robot Mgmt"
+    },
+    "rm_mic_test": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Microphone test",
+      "g": "Robot Mgmt"
+    },
+    "rm_speaker_test": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Speaker test",
+      "g": "Robot Mgmt"
+    },
+    "rm_factory": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Factory reset",
+      "g": "Robot Mgmt"
+    },
+    "rm_offline_help": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Offline help",
+      "g": "Robot Mgmt"
+    },
+    "rm_support": {
+      "f": "robot-mgmt.jsx",
+      "title": "Robot · Contact support",
+      "g": "Robot Mgmt"
+    }
+  },
+  "edges": [
+    {
+      "from": "onb_splash",
+      "to": "onb_welcome",
+      "file": "onboarding.jsx",
+      "line": 62
+    },
+    {
+      "from": "onb_welcome",
+      "to": "onb_intro_listen",
+      "file": "onboarding.jsx",
+      "line": 101
+    },
+    {
+      "from": "onb_welcome",
+      "to": "onb_login",
+      "file": "onboarding.jsx",
+      "line": 102
+    },
+    {
+      "from": "onb_welcome",
+      "to": "onb_trust",
+      "file": "onboarding.jsx",
+      "line": 133
+    },
+    {
+      "from": "onb_trust",
+      "to": "onb_intro_celebrate",
+      "file": "onboarding.jsx",
+      "line": 241
+    },
+    {
+      "from": "onb_trust",
+      "to": "onb_mic",
+      "file": "onboarding.jsx",
+      "line": 267
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_trust",
+      "file": "onboarding.jsx",
+      "line": 279
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_login",
+      "file": "onboarding.jsx",
+      "line": 309
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_login",
+      "file": "onboarding.jsx",
+      "line": 320
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_login",
+      "file": "onboarding.jsx",
+      "line": 324
+    },
+    {
+      "from": "onb_login",
+      "to": "onb_mic",
+      "file": "onboarding.jsx",
+      "line": 342
+    },
+    {
+      "from": "onb_login",
+      "to": "onb_child",
+      "file": "onboarding.jsx",
+      "line": 364
+    },
+    {
+      "from": "onb_login",
+      "to": "onb_child",
+      "file": "onboarding.jsx",
+      "line": 372
+    },
+    {
+      "from": "onb_login_error",
+      "to": "onb_login",
+      "file": "onboarding.jsx",
+      "line": 404
+    },
+    {
+      "from": "onb_login_error",
+      "to": "onb_child",
+      "file": "onboarding.jsx",
+      "line": 435
+    },
+    {
+      "from": "onb_login_error",
+      "to": "onb_login",
+      "file": "onboarding.jsx",
+      "line": 436
+    },
+    {
+      "from": "onb_child",
+      "to": "onb_login",
+      "file": "onboarding.jsx",
+      "line": 466
+    },
+    {
+      "from": "onb_child",
+      "to": "onb_first_lesson",
+      "file": "onboarding.jsx",
+      "line": 524
+    },
+    {
+      "from": "onb_first_lesson",
+      "to": "lesson_ready",
+      "file": "onboarding.jsx",
+      "line": 561
+    },
+    {
+      "from": "lesson_ready",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 186
+    },
+    {
+      "from": "lesson_ready",
+      "to": "home",
+      "file": "screens.jsx",
+      "line": 187
+    },
+    {
+      "from": "lesson_ready",
+      "to": "connecting",
+      "file": "screens.jsx",
+      "line": 199
+    },
+    {
+      "from": "connecting",
+      "to": "greeting",
+      "file": "screens.jsx",
+      "line": 206
+    },
+    {
+      "from": "greeting",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 221
+    },
+    {
+      "from": "greeting",
+      "to": "activity_intro",
+      "file": "screens.jsx",
+      "line": 227
+    },
+    {
+      "from": "activity_intro",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 236
+    },
+    {
+      "from": "activity_intro",
+      "to": "robot_speaking",
+      "file": "screens.jsx",
+      "line": 255
+    },
+    {
+      "from": "robot_speaking",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 264
+    },
+    {
+      "from": "robot_speaking",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 272
+    },
+    {
+      "from": "robot_listening",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 285
+    },
+    {
+      "from": "robot_listening",
+      "to": "user_speaking",
+      "file": "screens.jsx",
+      "line": 295
+    },
+    {
+      "from": "user_speaking",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 305
+    },
+    {
+      "from": "user_speaking",
+      "to": "thinking",
+      "file": "screens.jsx",
+      "line": 315
+    },
+    {
+      "from": "thinking",
+      "to": "success",
+      "file": "screens.jsx",
+      "line": 323
+    },
+    {
+      "from": "thinking",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 326
+    },
+    {
+      "from": "success",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 338
+    },
+    {
+      "from": "success",
+      "to": "robot_speaking",
+      "file": "screens.jsx",
+      "line": 350
+    },
+    {
+      "from": "gentle",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 359
+    },
+    {
+      "from": "gentle",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 365
+    },
+    {
+      "from": "gentle",
+      "to": "robot_speaking",
+      "file": "screens.jsx",
+      "line": 366
+    },
+    {
+      "from": "retry",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 377
+    },
+    {
+      "from": "retry",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 384
+    },
+    {
+      "from": "silence",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 393
+    },
+    {
+      "from": "silence",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 403
+    },
+    {
+      "from": "offtopic",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 412
+    },
+    {
+      "from": "offtopic",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 418
+    },
+    {
+      "from": "bargein",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 427
+    },
+    {
+      "from": "bargein",
+      "to": "thinking",
+      "file": "screens.jsx",
+      "line": 437
+    },
+    {
+      "from": "activity_done",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 446
+    },
+    {
+      "from": "activity_done",
+      "to": "robot_speaking",
+      "file": "screens.jsx",
+      "line": 463
+    },
+    {
+      "from": "lesson_done",
+      "to": "lesson_summary",
+      "file": "screens.jsx",
+      "line": 487
+    },
+    {
+      "from": "lesson_done",
+      "to": "home",
+      "file": "screens.jsx",
+      "line": 488
+    },
+    {
+      "from": "reconnecting",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 500
+    },
+    {
+      "from": "reconnecting",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 509
+    },
+    {
+      "from": "audio_error",
+      "to": "exit_confirm",
+      "file": "screens.jsx",
+      "line": 522
+    },
+    {
+      "from": "audio_error",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 537
+    },
+    {
+      "from": "audio_error",
+      "to": "home",
+      "file": "screens.jsx",
+      "line": 538
+    },
+    {
+      "from": "safety",
+      "to": "home",
+      "file": "screens.jsx",
+      "line": 566
+    },
+    {
+      "from": "safety",
+      "to": "home",
+      "file": "screens.jsx",
+      "line": 567
+    },
+    {
+      "from": "exit_confirm",
+      "to": "robot_listening",
+      "file": "screens.jsx",
+      "line": 591
+    },
+    {
+      "from": "exit_confirm",
+      "to": "home",
+      "file": "screens.jsx",
+      "line": 592
+    },
+    {
+      "from": "home",
+      "to": "lesson_ready",
+      "file": "screens.jsx",
+      "line": 617
+    },
+    {
+      "from": "course",
+      "to": "home",
+      "file": "course.jsx",
+      "line": 107
+    },
+    {
+      "from": "course",
+      "to": "level",
+      "file": "course.jsx",
+      "line": 133
+    },
+    {
+      "from": "level",
+      "to": "course",
+      "file": "course.jsx",
+      "line": 185
+    },
+    {
+      "from": "level",
+      "to": "unit",
+      "file": "course.jsx",
+      "line": 219
+    },
+    {
+      "from": "unit",
+      "to": "level",
+      "file": "course.jsx",
+      "line": 250
+    },
+    {
+      "from": "unit",
+      "to": "lesson_detail",
+      "file": "course.jsx",
+      "line": 274
+    },
+    {
+      "from": "unit",
+      "to": "review_entry",
+      "file": "course.jsx",
+      "line": 302
+    },
+    {
+      "from": "lesson_detail",
+      "to": "unit",
+      "file": "course.jsx",
+      "line": 319
+    },
+    {
+      "from": "lesson_detail",
+      "to": "lesson_ready",
+      "file": "course.jsx",
+      "line": 364
+    },
+    {
+      "from": "lesson_list",
+      "to": "unit",
+      "file": "course.jsx",
+      "line": 383
+    },
+    {
+      "from": "lesson_list",
+      "to": "lesson_detail",
+      "file": "course.jsx",
+      "line": 394
+    },
+    {
+      "from": "review_entry",
+      "to": "home",
+      "file": "course.jsx",
+      "line": 436
+    },
+    {
+      "from": "review_entry",
+      "to": "lesson_ready",
+      "file": "course.jsx",
+      "line": 462
+    },
+    {
+      "from": "daily_mission",
+      "to": "home",
+      "file": "course.jsx",
+      "line": 473
+    },
+    {
+      "from": "daily_mission",
+      "to": "lesson_ready",
+      "file": "course.jsx",
+      "line": 529
+    },
+    {
+      "from": "today_progress",
+      "to": "home",
+      "file": "progress.jsx",
+      "line": 26
+    },
+    {
+      "from": "today_progress",
+      "to": "home",
+      "file": "progress.jsx",
+      "line": 63
+    },
+    {
+      "from": "words_practiced",
+      "to": "today_progress",
+      "file": "progress.jsx",
+      "line": 107
+    },
+    {
+      "from": "words_practiced",
+      "to": "review_needed",
+      "file": "progress.jsx",
+      "line": 127
+    },
+    {
+      "from": "lesson_summary",
+      "to": "lesson_ready",
+      "file": "progress.jsx",
+      "line": 162
+    },
+    {
+      "from": "lesson_summary",
+      "to": "home",
+      "file": "progress.jsx",
+      "line": 163
+    },
+    {
+      "from": "review_needed",
+      "to": "home",
+      "file": "progress.jsx",
+      "line": 182
+    },
+    {
+      "from": "review_needed",
+      "to": "lesson_ready",
+      "file": "progress.jsx",
+      "line": 206
+    },
+    {
+      "from": "review_needed",
+      "to": "home",
+      "file": "progress.jsx",
+      "line": 207
+    },
+    {
+      "from": "celebration",
+      "to": "home",
+      "file": "progress.jsx",
+      "line": 265
+    },
+    {
+      "from": "celebration",
+      "to": "review_needed",
+      "file": "progress.jsx",
+      "line": 266
+    },
+    {
+      "from": "parent_gate",
+      "to": "parent_summary",
+      "file": "parent.jsx",
+      "line": 85
+    },
+    {
+      "from": "parent_gate",
+      "to": "home",
+      "file": "parent.jsx",
+      "line": 91
+    },
+    {
+      "from": "parent_summary",
+      "to": "parent_settings",
+      "file": "parent.jsx",
+      "line": 140
+    },
+    {
+      "from": "parent_summary",
+      "to": "parent_today",
+      "file": "parent.jsx",
+      "line": 163
+    },
+    {
+      "from": "parent_summary",
+      "to": "parent_history",
+      "file": "parent.jsx",
+      "line": 176
+    },
+    {
+      "from": "parent_summary",
+      "to": "parent_safety",
+      "file": "parent.jsx",
+      "line": 181
+    },
+    {
+      "from": "parent_summary",
+      "to": "parent_settings",
+      "file": "parent.jsx",
+      "line": 182
+    },
+    {
+      "from": "parent_summary",
+      "to": "home",
+      "file": "parent.jsx",
+      "line": 186
+    },
+    {
+      "from": "parent_today",
+      "to": "parent_summary",
+      "file": "parent.jsx",
+      "line": 197
+    },
+    {
+      "from": "parent_history",
+      "to": "parent_summary",
+      "file": "parent.jsx",
+      "line": 260
+    },
+    {
+      "from": "parent_safety",
+      "to": "parent_summary",
+      "file": "parent.jsx",
+      "line": 327
+    },
+    {
+      "from": "parent_settings",
+      "to": "parent_summary",
+      "file": "parent.jsx",
+      "line": 380
+    },
+    {
+      "from": "parent_settings",
+      "to": "parent_safety",
+      "file": "parent.jsx",
+      "line": 423
+    },
+    {
+      "from": "kid_settings",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 28
+    },
+    {
+      "from": "kid_settings",
+      "to": "parent_gate",
+      "file": "fallback.jsx",
+      "line": 37
+    },
+    {
+      "from": "kid_settings",
+      "to": "help_faq",
+      "file": "fallback.jsx",
+      "line": 50
+    },
+    {
+      "from": "mic_missing",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 63
+    },
+    {
+      "from": "mic_missing",
+      "to": "audio_recovery",
+      "file": "fallback.jsx",
+      "line": 76
+    },
+    {
+      "from": "mic_missing",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 77
+    },
+    {
+      "from": "network_error",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 90
+    },
+    {
+      "from": "network_error",
+      "to": "reconnecting_overlay",
+      "file": "fallback.jsx",
+      "line": 100
+    },
+    {
+      "from": "network_error",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 101
+    },
+    {
+      "from": "voice_failed",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 114
+    },
+    {
+      "from": "voice_failed",
+      "to": "lesson_resume",
+      "file": "fallback.jsx",
+      "line": 120
+    },
+    {
+      "from": "voice_failed",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 121
+    },
+    {
+      "from": "login_error",
+      "to": "parent_summary",
+      "file": "fallback.jsx",
+      "line": 133
+    },
+    {
+      "from": "safety_redirect",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 187
+    },
+    {
+      "from": "safety_redirect",
+      "to": "parent_gate",
+      "file": "fallback.jsx",
+      "line": 188
+    },
+    {
+      "from": "help_faq",
+      "to": "parent_summary",
+      "file": "fallback.jsx",
+      "line": 209
+    },
+    {
+      "from": "reconnecting_overlay",
+      "to": "robot_listening",
+      "file": "fallback.jsx",
+      "line": 249
+    },
+    {
+      "from": "reconnecting_overlay",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 282
+    },
+    {
+      "from": "audio_recovery",
+      "to": "mic_missing",
+      "file": "fallback.jsx",
+      "line": 307
+    },
+    {
+      "from": "audio_recovery",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 338
+    },
+    {
+      "from": "lesson_resume",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 355
+    },
+    {
+      "from": "lesson_resume",
+      "to": "robot_speaking",
+      "file": "fallback.jsx",
+      "line": 376
+    },
+    {
+      "from": "lesson_resume",
+      "to": "home",
+      "file": "fallback.jsx",
+      "line": 377
+    },
+    {
+      "from": "dv_overview",
+      "to": "dv_pair_intro",
+      "file": "device.jsx",
+      "line": 341
+    },
+    {
+      "from": "dv_pair_add",
+      "to": "dv_overview",
+      "file": "device.jsx",
+      "line": 354
+    },
+    {
+      "from": "dv_pair_add",
+      "to": "dv_pair_intro",
+      "file": "device.jsx",
+      "line": 361
+    },
+    {
+      "from": "dv_pair_add",
+      "to": "dv_pair_offline",
+      "file": "device.jsx",
+      "line": 371
+    },
+    {
+      "from": "dv_pair_intro",
+      "to": "dv_pair_add",
+      "file": "device.jsx",
+      "line": 394
+    },
+    {
+      "from": "dv_pair_intro",
+      "to": "dv_pair_search",
+      "file": "device.jsx",
+      "line": 417
+    },
+    {
+      "from": "dv_pair_search",
+      "to": "dv_pair_found",
+      "file": "device.jsx",
+      "line": 425
+    },
+    {
+      "from": "dv_pair_search",
+      "to": "dv_pair_intro",
+      "file": "device.jsx",
+      "line": 427
+    },
+    {
+      "from": "dv_pair_search",
+      "to": "dv_pair_failed",
+      "file": "device.jsx",
+      "line": 437
+    },
+    {
+      "from": "dv_pair_found",
+      "to": "dv_pair_intro",
+      "file": "device.jsx",
+      "line": 447
+    },
+    {
+      "from": "dv_pair_found",
+      "to": "dv_pair_code",
+      "file": "device.jsx",
+      "line": 465
+    },
+    {
+      "from": "dv_pair_found",
+      "to": "dv_pair_search",
+      "file": "device.jsx",
+      "line": 466
+    },
+    {
+      "from": "dv_pair_code",
+      "to": "dv_pair_found",
+      "file": "device.jsx",
+      "line": 475
+    },
+    {
+      "from": "dv_pair_code",
+      "to": "dv_pair_wifi",
+      "file": "device.jsx",
+      "line": 499
+    },
+    {
+      "from": "dv_pair_code",
+      "to": "dv_pair_search",
+      "file": "device.jsx",
+      "line": 500
+    },
+    {
+      "from": "dv_pair_wifi",
+      "to": "dv_pair_code",
+      "file": "device.jsx",
+      "line": 509
+    },
+    {
+      "from": "dv_pair_wifi",
+      "to": "dv_pair_wifi_pw",
+      "file": "device.jsx",
+      "line": 524
+    },
+    {
+      "from": "dv_pair_wifi_pw",
+      "to": "dv_pair_wifi",
+      "file": "device.jsx",
+      "line": 552
+    },
+    {
+      "from": "dv_pair_wifi_pw",
+      "to": "dv_pair_connecting",
+      "file": "device.jsx",
+      "line": 569
+    },
+    {
+      "from": "dv_pair_connecting",
+      "to": "dv_pair_success",
+      "file": "device.jsx",
+      "line": 581
+    },
+    {
+      "from": "dv_pair_success",
+      "to": "dv_pair_rename",
+      "file": "device.jsx",
+      "line": 641
+    },
+    {
+      "from": "dv_pair_failed",
+      "to": "dv_pair_intro",
+      "file": "device.jsx",
+      "line": 650
+    },
+    {
+      "from": "dv_pair_failed",
+      "to": "dv_pair_search",
+      "file": "device.jsx",
+      "line": 680
+    },
+    {
+      "from": "dv_pair_offline",
+      "to": "dv_pair_add",
+      "file": "device.jsx",
+      "line": 689
+    },
+    {
+      "from": "dv_pair_offline",
+      "to": "dv_pair_wifi",
+      "file": "device.jsx",
+      "line": 703
+    },
+    {
+      "from": "dv_pair_offline",
+      "to": "dv_pair_search",
+      "file": "device.jsx",
+      "line": 708
+    },
+    {
+      "from": "dv_pair_rename",
+      "to": "dv_pair_first_lesson",
+      "file": "device.jsx",
+      "line": 750
+    },
+    {
+      "from": "dv_pair_first_lesson",
+      "to": "dv_home",
+      "file": "device.jsx",
+      "line": 801
+    },
+    {
+      "from": "dv_home",
+      "to": "dv_session",
+      "file": "device.jsx",
+      "line": 837
+    },
+    {
+      "from": "dv_home",
+      "to": "progress_today",
+      "file": "device.jsx",
+      "line": 839
+    },
+    {
+      "from": "dv_home",
+      "to": "dv_lost",
+      "file": "device.jsx",
+      "line": 847
+    },
+    {
+      "from": "dv_home",
+      "to": "dv_firmware",
+      "file": "device.jsx",
+      "line": 850
+    },
+    {
+      "from": "dv_session",
+      "to": "dv_home",
+      "file": "device.jsx",
+      "line": 883
+    },
+    {
+      "from": "dv_lost",
+      "to": "dv_home",
+      "file": "device.jsx",
+      "line": 924
+    },
+    {
+      "from": "dv_firmware",
+      "to": "dv_home",
+      "file": "device.jsx",
+      "line": 961
+    },
+    {
+      "from": "dv_firmware",
+      "to": "dv_home",
+      "file": "device.jsx",
+      "line": 990
+    },
+    {
+      "from": "dv_firmware",
+      "to": "dv_home",
+      "file": "device.jsx",
+      "line": 991
+    },
+    {
+      "from": "cl_library",
+      "to": "dv_home",
+      "file": "course-library.jsx",
+      "line": 110
+    },
+    {
+      "from": "cl_library",
+      "to": "cl_detail",
+      "file": "course-library.jsx",
+      "line": 119
+    },
+    {
+      "from": "cl_detail",
+      "to": "cl_library",
+      "file": "course-library.jsx",
+      "line": 137
+    },
+    {
+      "from": "cl_detail",
+      "to": "cl_buy",
+      "file": "course-library.jsx",
+      "line": 194
+    },
+    {
+      "from": "cl_detail",
+      "to": "cl_library",
+      "file": "course-library.jsx",
+      "line": 195
+    },
+    {
+      "from": "cl_buy",
+      "to": "cl_detail",
+      "file": "course-library.jsx",
+      "line": 209
+    },
+    {
+      "from": "cl_buy",
+      "to": "cl_unlock_confirm",
+      "file": "course-library.jsx",
+      "line": 268
+    },
+    {
+      "from": "cl_buy",
+      "to": "cl_detail",
+      "file": "course-library.jsx",
+      "line": 269
+    },
+    {
+      "from": "cl_unlock_confirm",
+      "to": "cl_buy",
+      "file": "course-library.jsx",
+      "line": 284
+    },
+    {
+      "from": "cl_unlock_confirm",
+      "to": "cl_added",
+      "file": "course-library.jsx",
+      "line": 337
+    },
+    {
+      "from": "cl_added",
+      "to": "cl_send",
+      "file": "course-library.jsx",
+      "line": 385
+    },
+    {
+      "from": "cl_added",
+      "to": "dv_home",
+      "file": "course-library.jsx",
+      "line": 386
+    },
+    {
+      "from": "cl_send",
+      "to": "dv_home",
+      "file": "course-library.jsx",
+      "line": 404
+    },
+    {
+      "from": "cl_send",
+      "to": "cl_robot_ready",
+      "file": "course-library.jsx",
+      "line": 441
+    },
+    {
+      "from": "cl_robot_ready",
+      "to": "cl_running",
+      "file": "course-library.jsx",
+      "line": 492
+    },
+    {
+      "from": "cl_robot_ready",
+      "to": "cl_send",
+      "file": "course-library.jsx",
+      "line": 493
+    },
+    {
+      "from": "cl_running",
+      "to": "cl_companion",
+      "file": "course-library.jsx",
+      "line": 535
+    },
+    {
+      "from": "cl_running",
+      "to": "dv_home",
+      "file": "course-library.jsx",
+      "line": 536
+    },
+    {
+      "from": "cl_companion",
+      "to": "cl_running",
+      "file": "course-library.jsx",
+      "line": 567
+    },
+    {
+      "from": "cl_complete",
+      "to": "cl_send",
+      "file": "course-library.jsx",
+      "line": 675
+    },
+    {
+      "from": "cl_complete",
+      "to": "dv_home",
+      "file": "course-library.jsx",
+      "line": 676
+    },
+    {
+      "from": "cl_needs_sync",
+      "to": "dv_pair_wifi",
+      "file": "course-library.jsx",
+      "line": 728
+    },
+    {
+      "from": "cl_needs_sync",
+      "to": "cl_added",
+      "file": "course-library.jsx",
+      "line": 738
+    },
+    {
+      "from": "cl_needs_sync",
+      "to": "dv_home",
+      "file": "course-library.jsx",
+      "line": 739
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_library",
+      "file": "course-library.jsx",
+      "line": 752
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_detail",
+      "file": "course-library.jsx",
+      "line": 787
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_unlock_confirm",
+      "file": "course-library.jsx",
+      "line": 791
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_library",
+      "file": "course-library.jsx",
+      "line": 792
+    },
+    {
+      "from": "pr_intro",
+      "to": "dv_home",
+      "file": "purchase.jsx",
+      "line": 43
+    },
+    {
+      "from": "pr_intro",
+      "to": "pr_how",
+      "file": "purchase.jsx",
+      "line": 74
+    },
+    {
+      "from": "pr_intro",
+      "to": "pr_privacy",
+      "file": "purchase.jsx",
+      "line": 75
+    },
+    {
+      "from": "pr_how",
+      "to": "pr_intro",
+      "file": "purchase.jsx",
+      "line": 90
+    },
+    {
+      "from": "pr_how",
+      "to": "pr_included",
+      "file": "purchase.jsx",
+      "line": 116
+    },
+    {
+      "from": "pr_how",
+      "to": "pr_intro",
+      "file": "purchase.jsx",
+      "line": 117
+    },
+    {
+      "from": "pr_included",
+      "to": "pr_how",
+      "file": "purchase.jsx",
+      "line": 135
+    },
+    {
+      "from": "pr_included",
+      "to": "pr_bundle",
+      "file": "purchase.jsx",
+      "line": 162
+    },
+    {
+      "from": "pr_bundle",
+      "to": "pr_included",
+      "file": "purchase.jsx",
+      "line": 177
+    },
+    {
+      "from": "pr_bundle",
+      "to": "pr_subs",
+      "file": "purchase.jsx",
+      "line": 216
+    },
+    {
+      "from": "pr_bundle",
+      "to": "pr_included",
+      "file": "purchase.jsx",
+      "line": 217
+    },
+    {
+      "from": "pr_subs",
+      "to": "pr_bundle",
+      "file": "purchase.jsx",
+      "line": 233
+    },
+    {
+      "from": "pr_subs",
+      "to": "pr_privacy",
+      "file": "purchase.jsx",
+      "line": 274
+    },
+    {
+      "from": "pr_subs",
+      "to": "pr_bundle",
+      "file": "purchase.jsx",
+      "line": 275
+    },
+    {
+      "from": "pr_privacy",
+      "to": "pr_subs",
+      "file": "purchase.jsx",
+      "line": 292
+    },
+    {
+      "from": "pr_privacy",
+      "to": "pr_checkout",
+      "file": "purchase.jsx",
+      "line": 315
+    },
+    {
+      "from": "pr_privacy",
+      "to": "pr_subs",
+      "file": "purchase.jsx",
+      "line": 316
+    },
+    {
+      "from": "pr_checkout",
+      "to": "pr_privacy",
+      "file": "purchase.jsx",
+      "line": 325
+    },
+    {
+      "from": "pr_checkout",
+      "to": "pr_confirm",
+      "file": "purchase.jsx",
+      "line": 383
+    },
+    {
+      "from": "pr_confirm",
+      "to": "pr_shipping",
+      "file": "purchase.jsx",
+      "line": 436
+    },
+    {
+      "from": "pr_confirm",
+      "to": "dv_home",
+      "file": "purchase.jsx",
+      "line": 437
+    },
+    {
+      "from": "pr_shipping",
+      "to": "pr_confirm",
+      "file": "purchase.jsx",
+      "line": 454
+    },
+    {
+      "from": "pr_shipping",
+      "to": "pr_arrived",
+      "file": "purchase.jsx",
+      "line": 499
+    },
+    {
+      "from": "pr_shipping",
+      "to": "dv_home",
+      "file": "purchase.jsx",
+      "line": 500
+    },
+    {
+      "from": "pr_arrived",
+      "to": "pr_activate",
+      "file": "purchase.jsx",
+      "line": 539
+    },
+    {
+      "from": "pr_arrived",
+      "to": "dv_home",
+      "file": "purchase.jsx",
+      "line": 540
+    },
+    {
+      "from": "pr_activate",
+      "to": "pr_arrived",
+      "file": "purchase.jsx",
+      "line": 551
+    },
+    {
+      "from": "pr_activate",
+      "to": "pr_first_course",
+      "file": "purchase.jsx",
+      "line": 593
+    },
+    {
+      "from": "pr_first_course",
+      "to": "cl_added",
+      "file": "purchase.jsx",
+      "line": 651
+    },
+    {
+      "from": "pr_first_course",
+      "to": "cl_library",
+      "file": "purchase.jsx",
+      "line": 652
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "parent_settings",
+      "file": "robot-mgmt.jsx",
+      "line": 35
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_battery",
+      "file": "robot-mgmt.jsx",
+      "line": 54
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_wifi",
+      "file": "robot-mgmt.jsx",
+      "line": 55
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_storage",
+      "file": "robot-mgmt.jsx",
+      "line": 56
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_mic_test",
+      "file": "robot-mgmt.jsx",
+      "line": 57
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_sound",
+      "file": "robot-mgmt.jsx",
+      "line": 65
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_mic_test",
+      "file": "robot-mgmt.jsx",
+      "line": 66
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_speaker_test",
+      "file": "robot-mgmt.jsx",
+      "line": 67
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_firmware",
+      "file": "robot-mgmt.jsx",
+      "line": 69
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_offline_help",
+      "file": "robot-mgmt.jsx",
+      "line": 78
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_support",
+      "file": "robot-mgmt.jsx",
+      "line": 79
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_status",
+      "file": "robot-mgmt.jsx",
+      "line": 80
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_factory",
+      "file": "robot-mgmt.jsx",
+      "line": 87
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 100
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_battery",
+      "file": "robot-mgmt.jsx",
+      "line": 117
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_wifi",
+      "file": "robot-mgmt.jsx",
+      "line": 118
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_storage",
+      "file": "robot-mgmt.jsx",
+      "line": 119
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_mic_test",
+      "file": "robot-mgmt.jsx",
+      "line": 120
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_speaker_test",
+      "file": "robot-mgmt.jsx",
+      "line": 121
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_firmware",
+      "file": "robot-mgmt.jsx",
+      "line": 122
+    },
+    {
+      "from": "rm_battery",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 142
+    },
+    {
+      "from": "rm_wifi",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 189
+    },
+    {
+      "from": "rm_storage",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 250
+    },
+    {
+      "from": "rm_storage",
+      "to": "cl_library",
+      "file": "robot-mgmt.jsx",
+      "line": 297
+    },
+    {
+      "from": "rm_firmware",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 310
+    },
+    {
+      "from": "rm_firmware",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 359
+    },
+    {
+      "from": "rm_firmware",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 360
+    },
+    {
+      "from": "rm_sound",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 382
+    },
+    {
+      "from": "rm_mic_test",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 464
+    },
+    {
+      "from": "rm_mic_test",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 510
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 524
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_sound",
+      "file": "robot-mgmt.jsx",
+      "line": 569
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 575
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_support",
+      "file": "robot-mgmt.jsx",
+      "line": 576
+    },
+    {
+      "from": "rm_factory",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 592
+    },
+    {
+      "from": "rm_factory",
+      "to": "rm_offline_help",
+      "file": "robot-mgmt.jsx",
+      "line": 621
+    },
+    {
+      "from": "rm_factory",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 694
+    },
+    {
+      "from": "rm_factory",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 695
+    },
+    {
+      "from": "rm_offline_help",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 705
+    },
+    {
+      "from": "rm_offline_help",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 738
+    },
+    {
+      "from": "rm_offline_help",
+      "to": "rm_support",
+      "file": "robot-mgmt.jsx",
+      "line": 739
+    },
+    {
+      "from": "rm_support",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 757
+    },
+    {
+      "from": "rm_support",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 813
+    },
+    {
+      "from": "rm_support",
+      "to": "rm_my_robot",
+      "file": "robot-mgmt.jsx",
+      "line": 814
+    }
+  ],
+  "groups": {
+    "Onboarding": [
+      "onb_splash",
+      "onb_welcome",
+      "onb_intro_listen",
+      "onb_intro_speak",
+      "onb_intro_retry",
+      "onb_intro_celebrate",
+      "onb_trust",
+      "onb_mic",
+      "onb_login",
+      "onb_login_error",
+      "onb_child",
+      "onb_first_lesson"
+    ],
+    "Home": [
+      "home_hub_idle",
+      "home_hub_greet",
+      "home_hub_daily",
+      "home_hub_done",
+      "home_hub_mic",
+      "home_hub_offline"
+    ],
+    "Start": [
+      "lesson_ready",
+      "connecting",
+      "greeting"
+    ],
+    "Activity": [
+      "activity_intro",
+      "robot_speaking",
+      "robot_listening",
+      "user_speaking",
+      "thinking"
+    ],
+    "Feedback": [
+      "success",
+      "gentle",
+      "retry",
+      "silence",
+      "offtopic",
+      "bargein"
+    ],
+    "Done": [
+      "activity_done",
+      "lesson_done"
+    ],
+    "Edge": [
+      "reconnecting",
+      "audio_error",
+      "safety",
+      "exit_confirm"
+    ],
+    "Course": [
+      "course",
+      "level",
+      "unit",
+      "lesson_list",
+      "lesson_detail",
+      "review_entry",
+      "daily_mission"
+    ],
+    "Progress": [
+      "today_progress",
+      "words_practiced",
+      "lesson_summary",
+      "review_needed",
+      "celebration"
+    ],
+    "Parent": [
+      "parent_gate",
+      "parent_summary",
+      "parent_today",
+      "parent_history",
+      "parent_safety",
+      "parent_settings"
+    ],
+    "Fallback": [
+      "kid_settings",
+      "mic_missing",
+      "network_error",
+      "voice_failed",
+      "login_error",
+      "safety_redirect",
+      "help_faq",
+      "reconnecting_overlay",
+      "audio_recovery",
+      "lesson_resume"
+    ],
+    "Robot Device": [
+      "dv_overview",
+      "dv_pair_add",
+      "dv_pair_intro",
+      "dv_pair_search",
+      "dv_pair_found",
+      "dv_pair_code",
+      "dv_pair_wifi",
+      "dv_pair_wifi_pw",
+      "dv_pair_connecting",
+      "dv_pair_success",
+      "dv_pair_failed",
+      "dv_pair_offline",
+      "dv_pair_rename",
+      "dv_pair_first_lesson",
+      "dv_home",
+      "dv_session",
+      "dv_lost",
+      "dv_firmware",
+      "dv_lcd",
+      "dv_lcd_turn"
+    ],
+    "Course Library": [
+      "cl_library",
+      "cl_detail",
+      "cl_buy",
+      "cl_unlock_confirm",
+      "cl_added",
+      "cl_send",
+      "cl_robot_ready",
+      "cl_running",
+      "cl_companion",
+      "cl_complete",
+      "cl_needs_sync",
+      "cl_locked"
+    ],
+    "Purchase": [
+      "pr_intro",
+      "pr_how",
+      "pr_included",
+      "pr_bundle",
+      "pr_subs",
+      "pr_privacy",
+      "pr_checkout",
+      "pr_confirm",
+      "pr_shipping",
+      "pr_arrived",
+      "pr_activate",
+      "pr_first_course"
+    ],
+    "Robot Mgmt": [
+      "rm_my_robot",
+      "rm_status",
+      "rm_battery",
+      "rm_wifi",
+      "rm_storage",
+      "rm_firmware",
+      "rm_sound",
+      "rm_mic_test",
+      "rm_speaker_test",
+      "rm_factory",
+      "rm_offline_help",
+      "rm_support"
+    ]
+  }
+}

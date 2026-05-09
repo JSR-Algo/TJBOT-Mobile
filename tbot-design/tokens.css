@@ -1,0 +1,72 @@
+/* TBOT — Robot English design tokens */
+:root{
+  /* Sunny palette */
+  --cream: #FFF5E6;
+  --cream-2: #FFEAC9;
+  --coral: #FF6F61;
+  --coral-soft: #FFB3A8;
+  --sky: #6FC1FF;
+  --sky-soft: #BFE2FF;
+  --mint: #6CE2B6;
+  --mint-soft: #C5F1DD;
+  --sun: #FFC857;
+  --plum: #6B4A9B;
+  --ink: #2B2140;
+  --ink-soft: #5C4F77;
+  --paper: #FFFCF6;
+  --paper-2: #FFF1DA;
+  --danger-soft: #FFD2B8;
+
+  /* Robot */
+  --bot-body: #E8F4FF;
+  --bot-body-2: #C5E0FA;
+  --bot-shadow: #8FB6E0;
+  --bot-eye: #2B2140;
+  --bot-cheek: #FFB6A8;
+
+  /* Type */
+  --kid-font: "Fraunces", "Nunito", "Quicksand", system-ui, -apple-system, sans-serif;
+  --display: "Fraunces", Georgia, serif;
+  --body: "Nunito", "Quicksand", system-ui, -apple-system, sans-serif;
+
+  /* Kid scale (large + chunky) */
+  --t-hero: 44px;
+  --t-title: 32px;
+  --t-body: 22px;
+  --t-cap: 18px;
+
+  /* Radii */
+  --r-card: 28px;
+  --r-button: 999px;
+  --r-chip: 18px;
+}
+
+/* ─── Gender theme overrides — apply globally ─── */
+:root[data-gender="girl"]{
+  --coral: #FF8FB1;
+  --coral-soft: #FFD8E5;
+  --bot-cheek: #FFB3CB;
+  --bot-body: #FFEEF4;
+  --bot-body-2: #FFD2E2;
+  --bot-shadow: #E08AAB;
+  --sky: #FFA6C2;
+  --sky-soft: #FFE2EC;
+  --sun: #FFB6CF;
+  --plum: #C25E8A;
+  --paper-2: #FFEEF4;
+  --danger-soft: #FFD2E2;
+}
+:root[data-gender="boy"]{
+  --coral: #5DAEFF;
+  --coral-soft: #DCEEFF;
+  --bot-cheek: #B3D9F5;
+  --bot-body: #E8F4FF;
+  --bot-body-2: #C5E0FA;
+  --bot-shadow: #6FA8DC;
+  --sky: #5DAEFF;
+  --sky-soft: #DCEEFF;
+  --sun: #8AC6FF;
+  --plum: #4878B0;
+  --paper-2: #E8F4FF;
+  --danger-soft: #DCEEFF;
+}

@@ -1,0 +1,14 @@
+{
+  "name": "tbot-design-prototype",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "i18n:scan": "node scripts/i18n/scan-hardcoded.mjs",
+    "i18n:parity": "node scripts/i18n/check-key-parity.mjs",
+    "i18n:bundle": "node scripts/i18n/build-locales-bundle.mjs",
+    "i18n:bundle:check": "node scripts/i18n/check-bundle-freshness.mjs",
+    "i18n:walker:test": "node scripts/i18n/test-walker-smoke.mjs",
+    "i18n:check": "npm run i18n:scan && npm run i18n:parity && npm run i18n:bundle:check && npm run i18n:walker:test"
+  }
+}
