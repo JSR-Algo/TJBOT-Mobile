@@ -29,20 +29,30 @@ class MockWebSocket {
 describe('GeminiLiveClient', () => {
   const originalWebSocket = global.WebSocket;
   const flushAsync = () => new Promise((resolve) => setTimeout(resolve, 0));
+  let clients: GeminiLiveClient[] = [];
+  const createClient = () => {
+    const client = new GeminiLiveClient();
+    clients.push(client);
+    return client;
+  };
 
   beforeEach(() => {
     MockWebSocket.instances = [];
+    clients = [];
     // @ts-expect-error test double
     global.WebSocket = MockWebSocket;
   });
 
   afterEach(() => {
+    for (const client of clients) {
+      client.disconnect();
+    }
     global.WebSocket = originalWebSocket;
   });
 
   it('waits for setupComplete before reporting connected', async () => {
     const onConnected = jest.fn();
-    const client = new GeminiLiveClient();
+    const client = createClient();
 
     client.connect({
       token: 'ephemeral-token',
@@ -74,7 +84,7 @@ describe('GeminiLiveClient', () => {
 
   it('accepts setupComplete delivered as a Blob payload', async () => {
     const onConnected = jest.fn();
-    const client = new GeminiLiveClient();
+    const client = createClient();
 
     client.connect({
       token: 'api-key-token',
@@ -99,7 +109,7 @@ describe('GeminiLiveClient', () => {
   });
 
   it('sends audioStreamEnd when requested', () => {
-    const client = new GeminiLiveClient();
+    const client = createClient();
 
     client.connect({
       token: 'ephemeral-token',

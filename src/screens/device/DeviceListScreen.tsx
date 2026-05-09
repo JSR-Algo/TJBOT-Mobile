@@ -44,10 +44,13 @@ export function DeviceListScreen(): React.JSX.Element {
     setRefreshing(false);
   }, [loadDevices]);
 
-  const statusColor = (status: Device['status']) => {
-    if (status === 'online') return theme.colors.success;
-    if (status === 'pairing') return theme.colors.secondary;
-    return theme.colors.textSecondary;
+  const wifiStatus = (status: Device['status']) => {
+    const connected = status === 'online';
+    const color = connected ? theme.colors.success : theme.colors.primary;
+    return {
+      color,
+      label: connected ? '✓ Wi-Fi' : 'Wi-Fi',
+    };
   };
 
   return (
@@ -70,22 +73,25 @@ export function DeviceListScreen(): React.JSX.Element {
             subtitle="Tap + below to register your device."
           />
         }
-        renderItem={({ item }) => (
-          <Card onPress={() => navigation.navigate('DeviceDetail', { deviceId: item.id })}>
-            <View style={styles.deviceRow}>
-              <Text style={styles.deviceEmoji}>🤖</Text>
-              <View style={styles.deviceInfo}>
-                <Text style={styles.deviceSerial}>{item.serial_number}</Text>
-                <Text style={styles.deviceRevision}>Rev {item.hardware_revision}</Text>
+        renderItem={({ item }) => {
+          const wifi = wifiStatus(item.status);
+          return (
+            <Card onPress={() => navigation.navigate('DeviceDetail', { deviceId: item.id })}>
+              <View style={styles.deviceRow}>
+                <Text style={styles.deviceEmoji}>🤖</Text>
+                <View style={styles.deviceInfo}>
+                  <Text style={styles.deviceSerial}>{item.serial_number}</Text>
+                  <Text style={styles.deviceRevision}>Rev {item.hardware_revision}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: wifi.color + '20', borderColor: wifi.color + '40' }]}>
+                  <Text style={[styles.statusText, { color: wifi.color }]}>
+                    {wifi.label}
+                  </Text>
+                </View>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: statusColor(item.status) + '20' }]}>
-                <Text style={[styles.statusText, { color: statusColor(item.status) }]}>
-                  {item.status}
-                </Text>
-              </View>
-            </View>
-          </Card>
-        )}
+            </Card>
+          );
+        }}
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('DeviceSetup')}>
@@ -134,11 +140,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.radius.full,
+    borderWidth: 1,
   },
   statusText: {
     ...theme.typography.caption,
     fontWeight: '600',
-    textTransform: 'capitalize',
   },
   errorBanner: {
     backgroundColor: theme.colors.error + '20',

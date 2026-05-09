@@ -7,8 +7,9 @@
 import axios from 'axios';
 
 const API_URL = process.env.TBOT_API_URL ?? 'http://localhost:3000/v1';
+const describeLiveBackend = process.env.TBOT_RUN_LIVE_AUTH_ISOLATION === '1' ? describe : describe.skip;
 
-describe('Auth isolation: learning endpoints', () => {
+describeLiveBackend('Auth isolation: learning endpoints', () => {
   const http = axios.create({ baseURL: API_URL, validateStatus: () => true });
 
   const uniqueEmail = () => `mobile-test-${Date.now()}-${Math.random().toString(36).slice(2)}@tbot-e2e.test`;

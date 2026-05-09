@@ -18,15 +18,12 @@ function formatTimestamp(ts?: string): string {
 }
 
 function StatusBadge({ status }: { status: Device['status'] }) {
-  const colors: Record<Device['status'], string> = {
-    online: theme.colors.success,
-    offline: theme.colors.textSecondary,
-    pairing: theme.colors.secondary,
-  };
-  const color = colors[status];
+  const connected = status === 'online';
+  const color = connected ? theme.colors.success : theme.colors.primary;
+  const label = connected ? '✓ Wi-Fi connected' : 'Wi-Fi not connected';
   return (
-    <View style={[styles.badge, { backgroundColor: color + '20' }]}>
-      <Text style={[styles.badgeText, { color }]}>{status}</Text>
+    <View style={[styles.badge, { backgroundColor: color + '20', borderColor: color + '40' }]}>
+      <Text style={[styles.badgeText, { color }]}>{label}</Text>
     </View>
   );
 }
@@ -123,11 +120,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.radius.full,
+    borderWidth: 1,
   },
   badgeText: {
     ...theme.typography.caption,
     fontWeight: '600',
-    textTransform: 'capitalize',
   },
   detailsCard: {
     gap: 0,

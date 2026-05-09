@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240" role="img" aria-label="Love">
+  <title>Love</title>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#10183A"/><stop offset="100%" stop-color="#05081C"/>
+    </radialGradient>
+    <linearGradient id="heart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF99B8"/><stop offset="60%" stop-color="#FF5C8A"/><stop offset="100%" stop-color="#D63B68"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="240" fill="url(#bg)"/>
+  <g filter="url(#glow)">
+    <path d="M140 78 C120 50 80 60 80 92 C80 116 110 138 140 168 C170 138 200 116 200 92 C200 60 160 50 140 78 Z" fill="url(#heart)"/>
+    <path d="M260 78 C240 50 200 60 200 92 C200 116 230 138 260 168 C290 138 320 116 320 92 C320 60 280 50 260 78 Z" fill="url(#heart)"/>
+  </g>
+  <ellipse cx="118" cy="84" rx="10" ry="6" fill="#FFFFFF" opacity="0.7"/>
+  <ellipse cx="238" cy="84" rx="10" ry="6" fill="#FFFFFF" opacity="0.7"/>
+  <g fill="#FF5C8A" opacity="0.7">
+    <path d="M40 60 c-4 -6 -12 -4 -12 4 c0 6 6 10 12 16 c6 -6 12 -10 12 -16 c0 -8 -8 -10 -12 -4 z"/>
+    <path d="M360 180 c-3 -4 -8 -2 -8 3 c0 4 4 7 8 11 c4 -4 8 -7 8 -11 c0 -5 -5 -7 -8 -3 z"/>
+  </g>
+</svg>

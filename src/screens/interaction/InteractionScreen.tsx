@@ -129,16 +129,16 @@ const ROBOT_MODES: RobotMode[] = ['learning', 'playful', 'focus', 'parent_mode',
 
 // ─── Status messages ─────────────────────────────────────────────────────────
 const STATUS: Record<InteractionState, string> = {
-  IDLE:            'Readyu2026',
-  LISTENING:       'Listeningu2026',
-  RECORDING:       'Recordingu2026',
-  PROCESSING_STT:  'Transcribingu2026',
-  PROCESSING_LLM:  'Thinkingu2026',
-  PROCESSING_TTS:  'Preparing voiceu2026',
-  RESPONDING:      'Speakingu2026',
+  IDLE:            'Ready...',
+  LISTENING:       'Listening...',
+  RECORDING:       'Recording...',
+  PROCESSING_STT:  'Transcribing...',
+  PROCESSING_LLM:  'Thinking...',
+  PROCESSING_TTS:  'Preparing voice...',
+  RESPONDING:      'Speaking...',
   NO_SPEECH:       'No speech detected',
   ERROR:           'Something went wrong',
-  DONE:            'Readyu2026',
+  DONE:            'Ready...',
 };
 
 // ─── Main component ──────────────────────────────────────────────────────────
@@ -481,10 +481,13 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
         streamingStartRef.current = Date.now();
         firstPartialRef.current = 0;
         finalTranscriptRef.current = 0;
-        audioStreamer.startStreaming();
-        setInteractionState('LISTENING');
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        return;
+        const streamingStarted = audioStreamer.startStreaming();
+        if (streamingStarted) {
+          setInteractionState('LISTENING');
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          return;
+        }
+        setError(null);
       } catch (err: unknown) {
         // Fall through to REST path
       }
@@ -725,14 +728,26 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
           }
           if (tts.audio_url) {
             if (playerRef.current) { try { playerRef.current.remove(); } catch {} playerRef.current = null; }
+            await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
             const player = createAudioPlayer(tts.audio_url);
             playerRef.current = player;
-            player.play();
-            player.addListener('playbackStatusUpdate', (status) => {
-              if (status.didJustFinish) {
-                player.remove();
+            await new Promise<void>((resolve) => {
+              let settled = false;
+              const finish = () => {
+                if (settled) return;
+                settled = true;
+                try { player.remove(); } catch {}
                 if (playerRef.current === player) playerRef.current = null;
-              }
+                resolve();
+              };
+              const timeout = setTimeout(finish, 30000);
+              player.addListener('playbackStatusUpdate', (status) => {
+                if (status.didJustFinish) {
+                  clearTimeout(timeout);
+                  finish();
+                }
+              });
+              player.play();
             });
           }
         } catch {
@@ -1016,13 +1031,13 @@ export function InteractionScreen({ route }: MainStackScreenProps<'Interaction'>
                 },
               ]}
             >
-              <Text style={styles.micIcon}>{micActive ? '🔊' : '🎙'}</Text>
+              <Text style={styles.micIcon}>{micActive ? '⏹' : '🎙'}</Text>
             </TouchableOpacity>
           </Animated.View>
 
           {/* Mic label */}
           <Text style={[styles.micLabel, { color: currentTheme.primary + '80' }]}>
-            {micActive ? 'Auto-send khi ngưng nói' : micDisabled ? processingStep || '…' : 'Tap 🎙 to speak'}
+            {micActive ? 'Listening... tap to send' : micDisabled ? processingStep || '...' : 'Tap 🎙 to speak'}
           </Text>
 
           {/* Auto-listen toggle */}

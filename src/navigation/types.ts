@@ -33,6 +33,8 @@ export type MainStackParamList = {
   DeviceSetup: undefined;
   DeviceDetail: { deviceId: string };
   Interaction: { childId?: string } | undefined;
+  LessonPlanner: { childId?: string } | undefined;
+  ChildPractice: { childId: string; sessionId?: string };
   ParentControls: { deviceId: string };
   NotificationPrefs: undefined;
   GeminiConversation: undefined;

@@ -10,6 +10,7 @@ import { useHousehold } from '../../contexts/HouseholdContext';
 import * as learningApi from '../../api/learning';
 import type { PronunciationTrend } from '../../api/learning';
 import { Card, LoadingSpinner, ErrorMessage } from '../../components';
+import { Button } from '../../components/Button';
 import theme from '../../theme';
 import type { MainTabScreenProps } from '../../navigation/types';
 import type { KPIs } from '../../types';
@@ -83,12 +84,18 @@ function PronunciationTrendChart({ trend }: { trend: PronunciationTrend }) {
   );
 }
 
-function KPICard({ data }: { data: ChildKPIs }) {
+function KPICard({ data, onOpenLesson }: { data: ChildKPIs; onOpenLesson: (childId: string) => void }) {
   if (data.error) {
     return (
       <Card style={styles.kpiCard}>
         <Text style={styles.childName}>{data.childName}</Text>
         <Text style={styles.errorText}>{data.error}</Text>
+        <Button
+          label="View today's lesson"
+          variant="secondary"
+          onPress={() => onOpenLesson(data.childId)}
+          style={styles.lessonButton}
+        />
       </Card>
     );
   }
@@ -146,11 +153,17 @@ function KPICard({ data }: { data: ChildKPIs }) {
       {data.pronunciationTrend && data.pronunciationTrend.points.length > 0 && (
         <PronunciationTrendChart trend={data.pronunciationTrend} />
       )}
+      <Button
+        label="View today's lesson"
+        variant="secondary"
+        onPress={() => onOpenLesson(data.childId)}
+        style={styles.lessonButton}
+      />
     </Card>
   );
 }
 
-export function ParentDashboardScreen(_props: MainTabScreenProps<'Progress'>): React.JSX.Element {
+export function ParentDashboardScreen({ navigation }: MainTabScreenProps<'Progress'>): React.JSX.Element {
   const { children } = useHousehold();
   const [childKPIs, setChildKPIs] = useState<ChildKPIs[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -210,7 +223,13 @@ export function ParentDashboardScreen(_props: MainTabScreenProps<'Progress'>): R
           <Text style={styles.emptySubtext}>Loading progress…</Text>
         </View>
       ) : (
-        childKPIs.map((data) => <KPICard key={data.childId} data={data} />)
+        childKPIs.map((data) => (
+          <KPICard
+            key={data.childId}
+            data={data}
+            onOpenLesson={(childId) => navigation.navigate('LessonPlanner', { childId })}
+          />
+        ))
       )}
     </ScrollView>
   );
@@ -251,4 +270,5 @@ const styles = StyleSheet.create({
   trendBarCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   trendBar: { width: '100%', borderRadius: 2 },
   trendBarLabel: { ...theme.typography.caption, color: theme.colors.textMuted, marginTop: 2, fontSize: 9 },
+  lessonButton: { marginTop: theme.spacing.md },
 });

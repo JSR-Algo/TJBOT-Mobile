@@ -76,7 +76,7 @@ export interface AudioStreamerOptions {
 
 export interface AudioStreamerResult {
   /** Start capturing and streaming audio */
-  startStreaming: () => void;
+  startStreaming: () => boolean;
   /** Stop capturing and streaming audio */
   stopStreaming: () => void;
   /** True while LiveAudioStream is active */
@@ -131,13 +131,13 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
     vadProcessFrameRef.current = vad.processFrame;
   }, [vad.processFrame]);
 
-  const startStreaming = useCallback(() => {
-    if (isStreamingRef.current) return;
+  const startStreaming = useCallback((): boolean => {
+    if (isStreamingRef.current) return true;
 
     const stream = getLiveAudioStream();
     if (!stream) {
       onError?.(new Error('react-native-live-audio-stream is not available'));
-      return;
+      return false;
     }
 
     try {
@@ -168,12 +168,14 @@ export function useAudioStreamer(options: AudioStreamerOptions): AudioStreamerRe
 
       // Signal backend that audio streaming has started
       clientRef.current?.sendAudioStart('');
+      return true;
     } catch (err) {
       onError?.(err instanceof Error ? err : new Error(String(err)));
+      return false;
     }
   // vad.startListening is stable (useCallback with no deps)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onError]);
+  }, [clientRef, onError]);
 
   const stopStreaming = useCallback(() => {
     if (!isStreamingRef.current) return;

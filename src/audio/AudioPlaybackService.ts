@@ -19,11 +19,8 @@ import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
 
 const SAMPLE_RATE = 24000;
-/**
- * First-chunk pre-buffer in ms. Accumulate this much audio before starting
- * playback to avoid a choppy initial blip. Higher = smoother start, more latency.
- */
-const FIRST_BUFFER_MS = 600;
+/** First-chunk playback starts as soon as the first PCM chunk arrives. */
+const FIRST_BUFFER_MS = 0;
 /** Subsequent-chunk accumulation: set very high so segments only flush
  *  when the current player finishes or on silence timeout. */
 const NEXT_BUFFER_MS = 10000;

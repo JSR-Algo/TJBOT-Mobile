@@ -8,6 +8,8 @@ import { InteractionScreen } from '../screens/interaction/InteractionScreen';
 import { ParentControlsScreen } from '../screens/controls/ParentControlsScreen';
 import { NotificationPrefsScreen } from '../screens/profile/NotificationPrefsScreen';
 import { GeminiConversationScreen } from '../screens/gemini/GeminiConversationScreen';
+import { LessonPlannerScreen } from '../screens/learning/LessonPlannerScreen';
+import { ChildPracticeScreen } from '../screens/learning/ChildPracticeScreen';
 import {
   RobotDemoScreen,
   isRobotDemoScreenEnabled,
@@ -34,6 +36,8 @@ export function MainStack(): React.JSX.Element {
       <Stack.Screen name="DeviceSetup" component={DeviceSetupScreen} options={{ title: 'Register Device' }} />
       <Stack.Screen name="DeviceDetail" component={DeviceDetailScreen} options={{ title: 'Device' }} />
       <Stack.Screen name="Interaction" component={InteractionScreen} options={{ title: 'Talk to TBOT' }} />
+      <Stack.Screen name="LessonPlanner" component={LessonPlannerScreen} options={{ title: "Today's Lesson" }} />
+      <Stack.Screen name="ChildPractice" component={ChildPracticeScreen} options={{ title: 'Practice' }} />
       <Stack.Screen name="GeminiConversation" component={GeminiConversationScreen} options={{ title: 'AI Voice Chat', headerShown: false }} />
       <Stack.Screen name="ParentControls" component={ParentControlsScreen} options={{ title: 'Parental Controls' }} />
       <Stack.Screen name="NotificationPrefs" component={NotificationPrefsScreen} options={{ title: 'Notification Settings' }} />

@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ tests/",
     "test": "jest",
+    "test:integration:auth-isolation": "TBOT_RUN_LIVE_AUTH_ISOLATION=1 jest tests/integration/auth-isolation.test.ts --runInBand",
     "e2e:mobile": "node scripts/e2e-mobile.js",
     "e2e:mobile:local": "TBOT_API_URL=http://localhost:3000 node scripts/e2e-mobile.js"
   },
