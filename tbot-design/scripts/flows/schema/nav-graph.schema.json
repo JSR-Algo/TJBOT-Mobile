@@ -18,7 +18,8 @@
         "properties": {
           "f": {
             "type": "string",
-            "description": "Source file (relative to src/ or repo root) where the state's page component lives."
+            "description": "Source file (relative to src/ or repo root) where the state's page component lives. Accepts the `(undeclared)` sentinel for soft-fail bootstrap (extractor synthesizes; T10-style fix is required to clear). Allows nested subdirs (e.g. src/features/device/pairing/PairFoundPage.jsx).",
+            "pattern": "^(\\(undeclared\\)|src/features/[a-z][a-z0-9-]*/(?:[a-z][a-z0-9-]*/)*[A-Z][A-Za-z0-9]*\\.jsx|src/features/[a-z][a-z0-9-]*/states\\.js)$"
           },
           "title": {
             "type": "string",

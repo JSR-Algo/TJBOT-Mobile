@@ -46,6 +46,16 @@ if (ALL || FLAGS.has('--schema-only')) {
     const obj = readJsonFile(metaP);
     const e2 = validate(dmSchema, obj);
     if (e2.length) e2.forEach(e => fail('schema(domain-meta)', `${d}: ${e}`));
+    // C8 fix 2026-05-11: cross-check `id` matches dir name + `flow` path matches `id`.
+    if (obj.id && obj.id !== d) {
+      fail('schema(domain-meta)', `${d}: id="${obj.id}" does not match dir name "${d}"`);
+    }
+    if (obj.flow && obj.id) {
+      const expected = `docs/flows/domains/${obj.id}/flow.mmd`;
+      if (obj.flow !== expected) {
+        fail('schema(domain-meta)', `${d}: flow="${obj.flow}" does not match expected "${expected}"`);
+      }
+    }
   }
   ok('schema(domain-meta)');
 }
@@ -242,33 +252,48 @@ if (ALL || FLAGS.has('--check-backend-leak')) {
   if (!errors.some(e => e.startsWith('[backend-leak]'))) ok(`backend-leak(${flowMds.length} flow.md files scanned)`);
 }
 
-// ─── (g) lane-write protocol — WARN-ONLY (no auto gate per 2026-05-11 decision) ──
-// Prints to stderr if a lane-A/B/C/D branch stages forbidden files; never exits non-zero.
-// Trunk safety is the lane-z Phase 1.5 re-extract, not this check.
+// ─── (g) single-writer diagnostic — WARN-ONLY (C5 fix 2026-05-11) ─────────────
+// Original branch-name gate was dead code (no lane-* branches ever existed; the
+// real protocol violation (lane-c 8b29223) staged Lane-Z-exclusive files from
+// `new-design`, evading the check entirely). Replaced with a branch-agnostic
+// diagnostic: if ANY staged file is Lane-Z-exclusive AND the commit message
+// suggests lane-A/B/C/D authorship, warn. Still warn-only; trunk safety is
+// Phase 1.5 re-extract.
 if (ALL) {
   const branch = gitHeadShortBranch();
   const laneWarnings = [];
-  if (/^lane-[A-Da-d]-/.test(branch)) {
-    const prefix = projectPrefixWithinGit();
-    const guardedTargets = [
-      `${prefix}nav-graph-data.json`,
-      `${prefix}docs/flows/domains/`,
-      `${prefix}docs/flows/global.flow.mmd`,
-      `${prefix}docs/flows/shared/cross-domain.flow.mmd`,
-      `${prefix}docs/flows/user-flow.md`,
-      `${prefix}docs/flows/user-flow.html`,
-    ];
+  const prefix = projectPrefixWithinGit();
+  const guardedTargets = [
+    `${prefix}nav-graph-data.json`,
+    `${prefix}docs/flows/domains/`,
+    `${prefix}docs/flows/global.flow.mmd`,
+    `${prefix}docs/flows/shared/cross-domain.flow.mmd`,
+    `${prefix}docs/flows/user-flow.md`,
+    `${prefix}docs/flows/user-flow.html`,
+  ];
+  // Trigger if branch matches lane-* OR commit message subject mentions lane-<letter>.
+  // Reads .git/COMMIT_EDITMSG if present (post-`git commit -m` pre-finalize) or
+  // inspects HEAD message if amending. Best-effort; warn-only.
+  let suspectsLaneCommit = /^lane-[A-Da-d]-/.test(branch);
+  try {
+    const editMsgPath = path.join(PROJECT_ROOT, '..', '.git', 'COMMIT_EDITMSG');
+    if (fs.existsSync(editMsgPath)) {
+      const subj = (fs.readFileSync(editMsgPath, 'utf8').split(/\r?\n/)[0] || '');
+      if (/\blane-[a-d]\b|\(lane-[a-d]\b/i.test(subj)) suspectsLaneCommit = true;
+    }
+  } catch { /* best-effort */ }
+  if (suspectsLaneCommit) {
     const staged = gitStagedFiles();
     for (const f of staged) {
       // generated files inside docs/flows/domains/<d>/ are flow.mmd and go-calls.json only;
-      // flow.md is hand-curated and IS allowed on lane branches.
+      // flow.md is hand-curated and IS allowed on lane commits.
       if (f.startsWith(`${prefix}docs/flows/domains/`)) {
         const base = path.basename(f);
         if (base === 'flow.md') continue;
       }
       if (f === guardedTargets[0] || f.startsWith(guardedTargets[1]) ||
           guardedTargets.slice(2).includes(f)) {
-        laneWarnings.push(`branch "${branch}" stages "${f}" — Lane Z exclusive. Unstage before push (process discipline; lane-z Phase 1.5 will overwrite).`);
+        laneWarnings.push(`lane commit staging "${f}" — Lane Z exclusive. Unstage before push (process discipline; Phase 1.5 will overwrite if not unstaged).`);
       }
     }
   }
@@ -276,7 +301,7 @@ if (ALL) {
     console.error('[validate] lane-write WARNINGS (process-discipline only; not blocking):');
     for (const w of laneWarnings) console.error('  ' + w);
   } else {
-    ok(`lane-write(branch=${branch || 'unknown'})`);
+    ok(`single-writer(branch=${branch || 'unknown'}${suspectsLaneCommit ? ', lane-commit-detected' : ''})`);
   }
 }
 
