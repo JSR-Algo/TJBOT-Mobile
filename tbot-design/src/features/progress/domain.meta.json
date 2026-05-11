@@ -1,0 +1,6 @@
+{
+  "id": "progress",
+  "owner_lane": "C",
+  "flow": "docs/flows/domains/progress/flow.mmd",
+  "edge_cases": {}
+}

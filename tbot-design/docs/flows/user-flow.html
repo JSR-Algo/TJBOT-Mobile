@@ -1,0 +1,470 @@
+Wrote 19524 bytes
+tml lang="en">
+<head>
+<meta charset="utf-8">
+<title>TBOT — User Flow</title>
+<style>
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #fafaf7; }
+  header { position: sticky; top: 0; background: #fff; padding: 14px 20px; border-bottom: 1px solid #ddd; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; gap: 12px; align-items: center; z-index: 10; }
+  header h1 { margin: 0; font-size: 16px; font-weight: 700; }
+  header .stat { color: #666; font-size: 13px; }
+  header .controls { margin-left: auto; display: flex; gap: 8px; }
+  header button { padding: 6px 12px; border: 1px solid #ccc; background: #fff; border-radius: 6px; cursor: pointer; font: inherit; font-size: 13px; }
+  header button:hover { background: #f0f0f0; }
+  #pan { overflow: auto; height: calc(100vh - 56px); padding: 24px; }
+  #diagram { display: inline-block; transform-origin: 0 0; transition: transform 0.15s ease; }
+  #err { color: #c00; padding: 20px; font-family: monospace; white-space: pre-wrap; display: none; max-height: 60vh; overflow: auto; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>TBOT — User Flow</h1>
+  <span class="stat">121 screens · 266 edges · 12 domains</span>
+  <div class="controls">
+    <button onclick="zoom(0.8)">−</button>
+    <button onclick="zoom(1.25)">+</button>
+    <button onclick="resetZoom()">100%</button>
+    <button onclick="fit()">Fit</button>
+  </div>
+</header>
+<div id="err"></div>
+<div id="pan">
+  <div id="diagram">
+    <pre class="mermaid" id="src">
+flowchart TD
+  subgraph dom_device["device"]
+    dv_firmware["Robot · Firmware update"]
+    dv_home["Robot · Device home"]
+    dv_lcd["Robot · LCD face library"]
+    dv_lcd_turn["Robot · One lesson turn"]
+    dv_lost["Robot · Find my Robot"]
+    dv_overview["Robot · How it works together"]
+    dv_pair_add["Robot · Pair · add"]
+    dv_pair_code["Robot · Pair · confirm code"]
+    dv_pair_connecting["Robot · Pair · connecting"]
+    dv_pair_failed["Robot · Pair · failed"]
+    dv_pair_first_lesson["Robot · Pair · first lesson"]
+    dv_pair_found["Robot · Pair · found"]
+    dv_pair_intro["Robot · Pair · turn on"]
+    dv_pair_offline["Robot · Pair · offline"]
+    dv_pair_rename["Robot · Pair · rename and buddy"]
+    dv_pair_search["Robot · Pair · searching"]
+    dv_pair_success["Robot · Pair · success"]
+    dv_pair_wifi["Robot · Pair · Wi-Fi pick"]
+    dv_pair_wifi_pw["Robot · Pair · Wi-Fi password"]
+    dv_session["Robot · Live session monitor"]
+  end
+  subgraph dom_lesson_session["lesson-session"]
+    activity_done["Activity Complete"]
+    activity_intro["Activity Intro"]
+    audio_error["Audio Error"]
+    bargein["Interrupted (Barge-in)"]
+    connecting["Connecting Voice"]
+    exit_confirm["Exit Confirmation"]
+    gentle["Gentle Correction"]
+    greeting["Robot Greeting"]
+    lesson_done["Lesson Complete"]
+    lesson_ready["Lesson Ready"]
+    offtopic["Off-topic Redirect"]
+    reconnecting["Reconnecting"]
+    retry["Retry Prompt"]
+    robot_listening["Robot Listening"]
+    robot_speaking["Robot Speaking"]
+    safety["Safety Fallback"]
+    silence["Silence Prompt"]
+    success["Success Moment"]
+    thinking["Robot Thinking"]
+    user_speaking["User Speaking"]
+  end
+  subgraph dom_course_library["course-library"]
+    cl_added["Course · Added to Robot"]
+    cl_buy["Course · Buy / Unlock"]
+    cl_companion["Course · App companion view"]
+    cl_complete["Course · Lesson complete (synced)"]
+    cl_detail["Course · Detail"]
+    cl_library["Course · Library"]
+    cl_locked["Course · Locked"]
+    cl_needs_sync["Course · Robot needs sync"]
+    cl_robot_ready["Course · Robot ready for today"]
+    cl_running["Course · Lesson running on Robot"]
+    cl_send["Course · Send lesson to Robot"]
+    cl_unlock_confirm["Course · Parent unlock confirmation"]
+  end
+  subgraph dom_purchase["purchase"]
+    pr_activate["Buy · Activate Robot"]
+    pr_arrived["Buy · Robot arrived · setup"]
+    pr_bundle["Buy · Bundle picker"]
+    pr_checkout["Buy · Checkout"]
+    pr_confirm["Buy · Order confirmed"]
+    pr_first_course["Buy · Add first course"]
+    pr_how["Buy · How lessons work"]
+    pr_included["Buy · What"]
+    pr_intro["Buy · Robot overview"]
+    pr_privacy["Buy · Parent trust and privacy"]
+    pr_shipping["Buy · Shipping and delivery"]
+    pr_subs["Buy · Course subscription"]
+  end
+  subgraph dom_robot_mgmt["robot-mgmt"]
+    rm_battery["Robot · Battery"]
+    rm_factory["Robot · Factory reset"]
+    rm_firmware["Robot · Software update"]
+    rm_mic_test["Robot · Microphone test"]
+    rm_my_robot["Robot · My Robot"]
+    rm_offline_help["Robot · Offline help"]
+    rm_sound["Robot · Sound and volume"]
+    rm_speaker_test["Robot · Speaker test"]
+    rm_status["Robot · Status"]
+    rm_storage["Robot · Courses installed"]
+    rm_support["Robot · Contact support"]
+    rm_wifi["Robot · Wi-Fi"]
+  end
+  subgraph dom_fallback["fallback"]
+    audio_recovery["Audio Permission Recovery"]
+    help_faq["Help and FAQ"]
+    kid_settings["Settings"]
+    lesson_resume["Lesson Resume"]
+    mic_missing["Mic Permission Missing"]
+    network_error["Network Error"]
+    reconnecting_overlay["Reconnecting Overlay"]
+    safety_redirect["Safety Redirect"]
+    voice_failed["Voice Session Failed"]
+  end
+  subgraph dom_onboarding["onboarding"]
+    onb_first_lesson["12 · First Lesson Entry"]
+    onb_intro_celebrate["6 · Intro · Celebrate"]
+    onb_intro_listen["3 · Intro · Listen"]
+    onb_intro_retry["5 · Intro · Try Again"]
+    onb_intro_speak["4 · Intro · Speak"]
+    onb_mic["8 · Voice Permission"]
+    onb_splash["1 · Splash"]
+    onb_trust["7 · Parent Trust Intro"]
+    onb_welcome["2 · Welcome"]
+  end
+  subgraph dom_course["course"]
+    course["Course Overview"]
+    daily_mission["Daily Mission"]
+    lesson_detail["Lesson Detail"]
+    lesson_list["Lesson List"]
+    level["Level Overview"]
+    review_entry["Review Entry"]
+    unit["Unit Detail"]
+  end
+  subgraph dom_home["home"]
+    home_hub_daily["Home · Today"]
+    home_hub_done["Home · Lesson done today"]
+    home_hub_greet["Home · Robot greeting"]
+    home_hub_idle["Home · Idle happy"]
+    home_hub_mic["Home · Needs microphone"]
+    home_hub_offline["Home · Reconnecting"]
+  end
+  subgraph dom_parent["parent"]
+    parent_gate["Parent Gate"]
+    parent_history["Past 30 Days"]
+    parent_safety["Safety and Privacy"]
+    parent_settings["Parent Settings"]
+    parent_summary["Parent Summary"]
+    parent_today["Practiced Today"]
+  end
+  subgraph dom_progress["progress"]
+    celebration["Celebration"]
+    lesson_summary["Lesson Summary"]
+    review_needed["Review Needed"]
+    today_progress["Today"]
+    words_practiced["Words Practiced"]
+  end
+  subgraph dom_auth["auth"]
+    onb_child["11 · Child Profile"]
+    onb_login["9 · Login / Sign Up"]
+    onb_login_error["10 · Login Error"]
+  end
+  subgraph dom_undeclared["undeclared"]
+    home[["⚠ home"]]
+    progress_today[["⚠ progress_today"]]
+    settings[["⚠ settings"]]
+  end
+  home_hub_default -->|"Parent area"| parent_gate
+  home_hub_default -->|"Settings"| settings
+  home_hub_default -->|"Course"| course
+  home_hub_default -->|"Review"| review_entry
+  home_hub_default -->|"Progress"| today_progress
+  level -->|"course"| course
+  level -->|"unit"| unit
+  lesson_list -->|"unit"| unit
+  lesson_list -->|"lesson_detail"| lesson_detail
+  daily_mission -->|"home"| home
+  daily_mission -->|"Continue Mission"| lesson_ready
+  unit -->|"level"| level
+  unit -->|"lesson_detail"| lesson_detail
+  unit -->|"review_entry"| review_entry
+  course -->|"home"| home
+  course -->|"level"| level
+  lesson_detail -->|"unit"| unit
+  lesson_detail -->|"Start Lesson"| lesson_ready
+  review_entry -->|"home"| home
+  review_entry -->|"Start Review"| lesson_ready
+  rm_wifi -->|"rm_my_robot"| rm_my_robot
+  rm_sound -->|"rm_my_robot"| rm_my_robot
+  rm_offline_help -->|"rm_my_robot"| rm_my_robot
+  rm_offline_help -->|"Try connecting again"| rm_my_robot
+  rm_offline_help -->|"Still stuck · contact support"| rm_support
+  rm_support -->|"rm_my_robot"| rm_my_robot
+  rm_support -->|"Send to support"| rm_my_robot
+  rm_support -->|"Cancel"| rm_my_robot
+  rm_status -->|"rm_my_robot"| rm_my_robot
+  rm_status -->|"rm_battery"| rm_battery
+  rm_status -->|"rm_wifi"| rm_wifi
+  rm_status -->|"rm_storage"| rm_storage
+  rm_status -->|"rm_mic_test"| rm_mic_test
+  rm_status -->|"rm_speaker_test"| rm_speaker_test
+  rm_status -->|"rm_firmware"| rm_firmware
+  rm_factory -->|"rm_my_robot"| rm_my_robot
+  rm_factory -->|"Try smaller fixes first"| rm_offline_help
+  rm_factory -->|"Yes, erase Robot"| rm_my_robot
+  rm_factory -->|"Cancel"| rm_my_robot
+  rm_firmware -->|"rm_my_robot"| rm_my_robot
+  rm_firmware -->|"Update Robot now"| rm_my_robot
+  rm_firmware -->|"Remind me tomorrow"| rm_my_robot
+  rm_my_robot -->|"parent_settings"| parent_settings
+  rm_my_robot -->|"Battery"| rm_battery
+  rm_my_robot -->|"Wi-Fi"| rm_wifi
+  rm_my_robot -->|"Courses"| rm_storage
+  rm_my_robot -->|"Microphone"| rm_mic_test
+  rm_my_robot -->|"rm_sound"| rm_sound
+  rm_my_robot -->|"rm_mic_test"| rm_mic_test
+  rm_my_robot -->|"rm_speaker_test"| rm_speaker_test
+  rm_my_robot -->|"rm_firmware"| rm_firmware
+  rm_my_robot -->|"rm_offline_help"| rm_offline_help
+  rm_my_robot -->|"rm_support"| rm_support
+  rm_my_robot -->|"rm_status"| rm_status
+  rm_my_robot -->|"rm_factory"| rm_factory
+  words_practiced -->|"today_progress"| today_progress
+  words_practiced -->|"Practice 2 words"| review_needed
+  review_needed -->|"home"| home
+  review_needed -->|"Practice together"| lesson_ready
+  rm_storage -->|"rm_my_robot"| rm_my_robot
+  rm_storage -->|"cl_library"| cl_library
+  audio_recovery -->|"mic_missing"| mic_missing
+  audio_recovery -->|"home"| home
+  today_progress -->|"home"| home
+  today_progress -->|"Back home"| home
+  rm_speaker_test -->|"rm_my_robot"| rm_my_robot
+  rm_speaker_test -->|"rm_sound"| rm_sound
+  rm_speaker_test -->|"I can hear Robot"| rm_my_robot
+  rm_speaker_test -->|"Robot sounds quiet or muffled"| rm_support
+  rm_mic_test -->|"rm_my_robot"| rm_my_robot
+  rm_mic_test -->|"Looks good"| rm_my_robot
+  voice_failed -->|"home"| home
+  voice_failed -->|"Pick up where we left off"| lesson_resume
+  network_error -->|"home"| home
+  network_error -->|"Try again"| reconnecting_overlay
+  rm_battery -->|"rm_my_robot"| rm_my_robot
+  lesson_summary -->|"Keep going →"| lesson_ready
+  lesson_summary -->|"home"| home
+  help_faq -->|"parent_summary"| parent_summary
+  reconnecting_overlay -->|"robot_listening"| robot_listening
+  reconnecting_overlay -->|"home"| home
+  celebration -->|"Back to Robot Home"| home
+  celebration -->|"review_needed"| review_needed
+  onb_login_error -->|"onb_login"| onb_login
+  onb_login_error -->|"Try again"| onb_child
+  onb_login_error -->|"Reset password"| onb_login
+  kid_settings -->|"home"| home
+  kid_settings -->|"parent_gate"| parent_gate
+  kid_settings -->|"help_faq"| help_faq
+  robot_listening -->|"exit_confirm"| exit_confirm
+  robot_listening -->|"speak now"| user_speaking
+  mic_missing -->|"home"| home
+  mic_missing -->|"Get a grown-up"| audio_recovery
+  lesson_resume -->|"home"| home
+  lesson_resume -->|"Keep going"| robot_speaking
+  gentle -->|"exit_confirm"| exit_confirm
+  gentle -->|"Try again"| robot_listening
+  gentle -->|"robot_speaking"| robot_speaking
+  onb_child -->|"onb_login"| onb_login
+  onb_child -->|"Save and meet Robot"| onb_first_lesson
+  safety_redirect -->|"Take a break"| home
+  safety_redirect -->|"parent_gate"| parent_gate
+  onb_login -->|"onb_mic"| onb_mic
+  onb_login -->|"onb_child"| onb_child
+  activity_done -->|"exit_confirm"| exit_confirm
+  activity_done -->|"Keep going →"| robot_speaking
+  lesson_ready -->|"exit"| exit_confirm
+  lesson_ready -->|"home"| home
+  lesson_ready -->|"I'm ready!"| connecting
+  robot_speaking -->|"exit_confirm"| exit_confirm
+  robot_speaking -->|"robot_listening"| robot_listening
+  bargein -->|"exit_confirm"| exit_confirm
+  bargein -->|"thinking"| thinking
+  activity_intro -->|"exit_confirm"| exit_confirm
+  activity_intro -->|"Start"| robot_speaking
+  silence -->|"exit_confirm"| exit_confirm
+  silence -->|"I'm here!"| robot_listening
+  exit_confirm -->|"Keep playing"| robot_listening
+  exit_confirm -->|"home"| home
+  greeting -->|"exit_confirm"| exit_confirm
+  greeting -->|"Yes, let's go!"| activity_intro
+  safety -->|"Take a break"| home
+  safety -->|"home"| home
+  user_speaking -->|"exit_confirm"| exit_confirm
+  user_speaking -->|"stop"| thinking
+  lesson_done -->|"See what you did"| lesson_summary
+  lesson_done -->|"home"| home
+  reconnecting -->|"exit_confirm"| exit_confirm
+  reconnecting -->|"robot_listening"| robot_listening
+  connecting -->|"greeting"| greeting
+  audio_error -->|"exit_confirm"| exit_confirm
+  audio_error -->|"Try again"| robot_listening
+  audio_error -->|"home"| home
+  success -->|"exit_confirm"| exit_confirm
+  success -->|"Next →"| robot_speaking
+  thinking -->|"success"| success
+  thinking -->|"exit_confirm"| exit_confirm
+  cl_needs_sync -->|"dv_pair_wifi"| dv_pair_wifi
+  cl_needs_sync -->|"Reconnect Robot now"| cl_added
+  cl_needs_sync -->|"I'll do it later"| dv_home
+  retry -->|"exit_confirm"| exit_confirm
+  retry -->|"I'll try!"| robot_listening
+  offtopic -->|"exit_confirm"| exit_confirm
+  offtopic -->|"Back to the cat"| robot_listening
+  cl_running -->|"See what's happening"| cl_companion
+  cl_running -->|"Done for now"| dv_home
+  cl_complete -->|"Plan tomorrow's lesson"| cl_send
+  cl_complete -->|"Done"| dv_home
+  cl_library -->|"dv_home"| dv_home
+  cl_library -->|"cl_detail"| cl_detail
+  cl_locked -->|"cl_library"| cl_library
+  cl_locked -->|"cl_detail"| cl_detail
+  cl_locked -->|"Unlock anyway"| cl_unlock_confirm
+  cl_locked -->|"Back to library"| cl_library
+  cl_robot_ready -->|"Hand it to your child"| cl_running
+  cl_robot_ready -->|"Pick a different lesson"| cl_send
+  cl_detail -->|"cl_library"| cl_library
+  cl_detail -->|"Add to Robot"| cl_buy
+  cl_detail -->|"Back to library"| cl_library
+  cl_added -->|"Send today's lesson now"| cl_send
+  cl_added -->|"Back to Robot home"| dv_home
+  cl_companion -->|"cl_running"| cl_running
+  cl_unlock_confirm -->|"cl_buy"| cl_buy
+  cl_unlock_confirm -->|"cl_added"| cl_added
+  parent_today -->|"parent_summary"| parent_summary
+  parent_history -->|"parent_summary"| parent_summary
+  cl_send -->|"dv_home"| dv_home
+  cl_send -->|"Send to Robot"| cl_robot_ready
+  parent_safety -->|"parent_summary"| parent_summary
+  pr_shipping -->|"pr_confirm"| pr_confirm
+  pr_shipping -->|"Mark as arrived (demo)"| pr_arrived
+  pr_shipping -->|"Back to home"| dv_home
+  parent_gate -->|"parent_summary"| parent_summary
+  parent_gate -->|"home"| home
+  cl_buy -->|"cl_detail"| cl_detail
+  cl_buy -->|"Confirm and continue"| cl_unlock_confirm
+  cl_buy -->|"Not now"| cl_detail
+  pr_included -->|"pr_how"| pr_how
+  pr_included -->|"Choose a bundle"| pr_bundle
+  parent_summary -->|"Settings"| parent_settings
+  parent_summary -->|"parent_today"| parent_today
+  parent_summary -->|"Past 30 days"| parent_history
+  parent_summary -->|"Safety and Privacy"| parent_safety
+  parent_summary -->|"home"| home
+  pr_arrived -->|"Set up Robot now"| pr_activate
+  pr_arrived -->|"Later tonight"| dv_home
+  pr_intro -->|"dv_home"| dv_home
+  pr_intro -->|"See how it works"| pr_how
+  pr_intro -->|"Privacy and safety first"| pr_privacy
+  parent_settings -->|"parent_summary"| parent_summary
+  parent_settings -->|"Safety and Privacy details"| parent_safety
+  pr_privacy -->|"pr_subs"| pr_subs
+  pr_privacy -->|"I'm ready · go to checkout"| pr_checkout
+  pr_privacy -->|"Back"| pr_subs
+  pr_activate -->|"pr_arrived"| pr_arrived
+  pr_activate -->|"pr_first_course"| pr_first_course
+  dv_firmware -->|"dv_home"| dv_home
+  dv_firmware -->|"Update tonight (recommended)"| dv_home
+  dv_firmware -->|"Update now"| dv_home
+  pr_subs -->|"pr_bundle"| pr_bundle
+  pr_subs -->|"Continue"| pr_privacy
+  pr_subs -->|"Back"| pr_bundle
+  pr_checkout -->|"pr_privacy"| pr_privacy
+  pr_checkout -->|"Place order · $149.00"| pr_confirm
+  pr_bundle -->|"pr_included"| pr_included
+  pr_bundle -->|"Continue"| pr_subs
+  pr_bundle -->|"Back"| pr_included
+  dv_session -->|"dv_home"| dv_home
+  dv_home -->|"Start"| dv_session
+  dv_home -->|"progress_today"| progress_today
+  dv_home -->|"dv_lost"| dv_lost
+  dv_home -->|"UPDATE"| dv_firmware
+  pr_how -->|"pr_intro"| pr_intro
+  pr_how -->|"What's included"| pr_included
+  pr_how -->|"Back"| pr_intro
+  dv_pair_wifi_pw -->|"dv_pair_wifi"| dv_pair_wifi
+  dv_pair_wifi_pw -->|"Connect Robot"| dv_pair_connecting
+  dv_overview -->|"Set up your Robot"| dv_pair_intro
+  pr_first_course -->|"Send Hello Friends to Robot"| cl_added
+  pr_first_course -->|"Explore the library first"| cl_library
+  dv_pair_offline -->|"dv_pair_add"| dv_pair_add
+  dv_pair_offline -->|"dv_pair_wifi"| dv_pair_wifi
+  dv_pair_offline -->|"Reconnect now"| dv_pair_search
+  dv_pair_connecting -->|"dv_pair_success"| dv_pair_success
+  pr_confirm -->|"Track delivery"| pr_shipping
+  pr_confirm -->|"Back to home"| dv_home
+  dv_pair_failed -->|"dv_pair_intro"| dv_pair_intro
+  dv_pair_failed -->|"Try again"| dv_pair_search
+  dv_pair_wifi -->|"dv_pair_code"| dv_pair_code
+  dv_pair_wifi -->|"dv_pair_wifi_pw"| dv_pair_wifi_pw
+  dv_pair_code -->|"dv_pair_found"| dv_pair_found
+  dv_pair_code -->|"Confirm and continue"| dv_pair_wifi
+  dv_pair_code -->|"Codes don't match"| dv_pair_search
+  dv_pair_rename -->|"Save and continue"| dv_pair_first_lesson
+  dv_lost -->|"dv_home"| dv_home
+  dv_pair_search -->|"dv_pair_found"| dv_pair_found
+  dv_pair_search -->|"dv_pair_intro"| dv_pair_intro
+  dv_pair_search -->|"I don't see my Robot"| dv_pair_failed
+  onb_trust -->|"onb_intro_celebrate"| onb_intro_celebrate
+  onb_trust -->|"Continue"| onb_mic
+  onb_splash -->|"onb_welcome"| onb_welcome
+  dv_pair_first_lesson -->|"Hand it to your child"| dv_home
+  dv_pair_intro -->|"dv_pair_add"| dv_pair_add
+  dv_pair_intro -->|"My Robot is on"| dv_pair_search
+  dv_pair_success -->|"Choose a Buddy and name"| dv_pair_rename
+  onb_welcome -->|"Get started"| onb_intro_listen
+  onb_welcome -->|"onb_login"| onb_login
+  dv_pair_add -->|"dv_overview"| dv_overview
+  dv_pair_add -->|"dv_pair_intro"| dv_pair_intro
+  dv_pair_add -->|"dv_pair_offline"| dv_pair_offline
+  onb_first_lesson -->|"Yes!"| lesson_ready
+  onb_mic -->|"onb_trust"| onb_trust
+  onb_mic -->|"Not now"| onb_login
+  onb_mic -->|"onb_login"| onb_login
+  dv_pair_found -->|"dv_pair_intro"| dv_pair_intro
+  dv_pair_found -->|"This is my Robot"| dv_pair_code
+  dv_pair_found -->|"Search again"| dv_pair_search
+    </pre>
+  </div>
+</div>
+<script>
+mermaid.initialize({ startOnLoad: false, theme: 'default', flowchart: { useMaxWidth: false, htmlLabels: false }, maxTextSize: 1000000, securityLevel: 'loose' });
+window.addEventListener('load', async () => {
+  try { await mermaid.run({ querySelector: '.mermaid' }); }
+  catch (e) {
+    const el = document.getElementById('err');
+    el.style.display = 'block';
+    el.textContent = 'Mermaid error:\n' + (e.message || e);
+  }
+});
+let scale = 1;
+function applyZoom() { document.getElementById('diagram').style.transform = `scale(${scale})`; }
+function zoom(f) { scale *= f; applyZoom(); }
+function resetZoom() { scale = 1; applyZoom(); }
+function fit() {
+  const pan = document.getElementById('pan');
+  const svg = document.querySelector('#diagram svg');
+  if (!svg) return;
+  const sw = svg.getBoundingClientRect().width / scale;
+  scale = Math.min(pan.clientWidth / sw, 1);
+  applyZoom();
+}
+</script>
+</body>
+</html>

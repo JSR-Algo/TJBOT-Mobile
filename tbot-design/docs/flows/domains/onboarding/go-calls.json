@@ -1,0 +1,119 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "onboarding",
+  "count": 14,
+  "calls": [
+    {
+      "from": "onb_first_lesson",
+      "to": "lesson_ready",
+      "file": "src/features/onboarding/FirstLessonEntryPage.jsx",
+      "line": 33,
+      "cross_domain": true,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_trust",
+      "file": "src/features/onboarding/MicAskPage.jsx",
+      "line": 8,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_login",
+      "file": "src/features/onboarding/MicAskPage.jsx",
+      "line": 38,
+      "cross_domain": true,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_login",
+      "file": "src/features/onboarding/MicAskPage.jsx",
+      "line": 49,
+      "cross_domain": true,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_mic",
+      "to": "onb_login",
+      "file": "src/features/onboarding/MicAskPage.jsx",
+      "line": 53,
+      "cross_domain": true,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_splash",
+      "to": "onb_welcome",
+      "file": "src/features/onboarding/SplashPage.jsx",
+      "line": 6,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_trust",
+      "to": "onb_intro_celebrate",
+      "file": "src/features/onboarding/TrustPage.jsx",
+      "line": 17,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_trust",
+      "to": "onb_mic",
+      "file": "src/features/onboarding/TrustPage.jsx",
+      "line": 43,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_welcome",
+      "to": "onb_intro_listen",
+      "file": "src/features/onboarding/WelcomePage.jsx",
+      "line": 23,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_welcome",
+      "to": "onb_login",
+      "file": "src/features/onboarding/WelcomePage.jsx",
+      "line": 24,
+      "cross_domain": true,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_intro_celebrate",
+      "to": "onb_trust",
+      "file": "src/features/onboarding/components/IntroFrame.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_intro_listen",
+      "to": "onb_trust",
+      "file": "src/features/onboarding/components/IntroFrame.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_intro_retry",
+      "to": "onb_trust",
+      "file": "src/features/onboarding/components/IntroFrame.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_intro_speak",
+      "to": "onb_trust",
+      "file": "src/features/onboarding/components/IntroFrame.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "onboarding"
+    }
+  ]
+}

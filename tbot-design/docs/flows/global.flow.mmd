@@ -1,0 +1,32 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% Domain-level overview only — intra-domain detail lives under domains/<d>/flow.mmd
+flowchart TD
+  auth["auth"]
+  course["course"]
+  course_library["course-library"]
+  device["device"]
+  fallback["fallback"]
+  home["home"]
+  lesson_session["lesson-session"]
+  onboarding["onboarding"]
+  parent["parent"]
+  progress["progress"]
+  purchase["purchase"]
+  robot_mgmt["robot-mgmt"]
+  auth -->|2| onboarding
+  course_library -->|7| device
+  course -->|3| lesson_session
+  device -->|1| progress
+  fallback -->|2| lesson_session
+  fallback -->|3| parent
+  home -->|2| course
+  home -->|2| parent
+  home -->|1| progress
+  lesson_session -->|1| progress
+  onboarding -->|4| auth
+  onboarding -->|1| lesson_session
+  progress -->|2| lesson_session
+  purchase -->|2| course_library
+  purchase -->|4| device
+  robot_mgmt -->|1| course_library
+  robot_mgmt -->|1| parent

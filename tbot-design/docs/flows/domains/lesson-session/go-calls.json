@@ -1,0 +1,343 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "lesson-session",
+  "count": 42,
+  "calls": [
+    {
+      "from": "activity_done",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/ActivityDonePage.jsx",
+      "line": 10,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "activity_done",
+      "to": "robot_speaking",
+      "file": "src/features/lesson-session/ActivityDonePage.jsx",
+      "line": 27,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "activity_intro",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/ActivityIntroPage.jsx",
+      "line": 24,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "activity_intro",
+      "to": "robot_speaking",
+      "file": "src/features/lesson-session/ActivityIntroPage.jsx",
+      "line": 43,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "audio_error",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "audio_error",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "line": 26,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "audio_error",
+      "to": "home",
+      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "line": 27,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "bargein",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/BargeinPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "bargein",
+      "to": "thinking",
+      "file": "src/features/lesson-session/BargeinPage.jsx",
+      "line": 21,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "connecting",
+      "to": "greeting",
+      "file": "src/features/lesson-session/ConnectingPage.jsx",
+      "line": 7,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "exit_confirm",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/ExitConfirmPage.jsx",
+      "line": 23,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "exit_confirm",
+      "to": "home",
+      "file": "src/features/lesson-session/ExitConfirmPage.jsx",
+      "line": 24,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "gentle",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/GentlePage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "gentle",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/GentlePage.jsx",
+      "line": 17,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "gentle",
+      "to": "robot_speaking",
+      "file": "src/features/lesson-session/GentlePage.jsx",
+      "line": 18,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "greeting",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/GreetingPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "greeting",
+      "to": "activity_intro",
+      "file": "src/features/lesson-session/GreetingPage.jsx",
+      "line": 17,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "lesson_done",
+      "to": "lesson_summary",
+      "file": "src/features/lesson-session/LessonDonePage.jsx",
+      "line": 24,
+      "cross_domain": true,
+      "target_domain": "progress"
+    },
+    {
+      "from": "lesson_done",
+      "to": "home",
+      "file": "src/features/lesson-session/LessonDonePage.jsx",
+      "line": 25,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "lesson_ready",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "lesson_ready",
+      "to": "home",
+      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "line": 13,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "lesson_ready",
+      "to": "connecting",
+      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "line": 25,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "offtopic",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/OfftopicPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "offtopic",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/OfftopicPage.jsx",
+      "line": 17,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "reconnecting",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/ReconnectingPage.jsx",
+      "line": 10,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "reconnecting",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/ReconnectingPage.jsx",
+      "line": 19,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "retry",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/RetryPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "retry",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/RetryPage.jsx",
+      "line": 18,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "robot_listening",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/RobotListeningPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "robot_listening",
+      "to": "user_speaking",
+      "file": "src/features/lesson-session/RobotListeningPage.jsx",
+      "line": 21,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "robot_speaking",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/RobotSpeakingPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "robot_speaking",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/RobotSpeakingPage.jsx",
+      "line": 19,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "safety",
+      "to": "home",
+      "file": "src/features/lesson-session/SafetyPage.jsx",
+      "line": 27,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "safety",
+      "to": "home",
+      "file": "src/features/lesson-session/SafetyPage.jsx",
+      "line": 28,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "silence",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/SilencePage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "silence",
+      "to": "robot_listening",
+      "file": "src/features/lesson-session/SilencePage.jsx",
+      "line": 21,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "success",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/SuccessPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "success",
+      "to": "robot_speaking",
+      "file": "src/features/lesson-session/SuccessPage.jsx",
+      "line": 23,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "thinking",
+      "to": "success",
+      "file": "src/features/lesson-session/ThinkingPage.jsx",
+      "line": 7,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "thinking",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/ThinkingPage.jsx",
+      "line": 10,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "user_speaking",
+      "to": "exit_confirm",
+      "file": "src/features/lesson-session/UserSpeakingPage.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "user_speaking",
+      "to": "thinking",
+      "file": "src/features/lesson-session/UserSpeakingPage.jsx",
+      "line": 22,
+      "cross_domain": false,
+      "target_domain": "lesson-session"
+    }
+  ]
+}

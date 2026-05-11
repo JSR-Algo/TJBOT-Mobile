@@ -1,0 +1,39 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% domain: fallback
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Fallback["Fallback"]
+    app_error["Generic App Error"]
+    audio_recovery["Audio Permission Recovery"]
+    help_faq["Help & FAQ"]
+    kid_settings["Settings"]
+    lesson_resume["Lesson Resume"]
+    mic_missing["Mic Permission Missing"]
+    network_error["Network Error"]
+    reconnecting_overlay["Reconnecting Overlay"]
+    safety_redirect["Safety Redirect"]
+    voice_failed["Voice Session Failed"]
+  end
+  audio_recovery --> mic_missing
+  kid_settings --> help_faq
+  mic_missing --> audio_recovery
+  network_error --> reconnecting_overlay
+  voice_failed --> lesson_resume
+  class app_error,audio_recovery,help_faq,kid_settings,lesson_resume,mic_missing,network_error,reconnecting_overlay,safety_redirect,voice_failed happy
+
+%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   lesson_resume -> robot_speaking (lesson-session)
+%%   reconnecting_overlay -> robot_listening (lesson-session)
+%%   help_faq -> parent_summary (parent)
+%%   kid_settings -> parent_gate (parent)
+%%   safety_redirect -> parent_gate (parent)
+%%   app_error -> home (undeclared)
+%%   audio_recovery -> home (undeclared)
+%%   kid_settings -> home (undeclared)
+%%   lesson_resume -> home (undeclared)
+%%   mic_missing -> home (undeclared)
+%%   network_error -> home (undeclared)
+%%   reconnecting_overlay -> home (undeclared)
+%%   safety_redirect -> home (undeclared)
+%%   voice_failed -> home (undeclared)

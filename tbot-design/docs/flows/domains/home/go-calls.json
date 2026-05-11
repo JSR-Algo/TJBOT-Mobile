@@ -1,0 +1,47 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "home",
+  "count": 5,
+  "calls": [
+    {
+      "from": "home_hub_offline",
+      "to": "parent_gate",
+      "file": "src/features/home/HomeHubPage.jsx",
+      "line": 85,
+      "cross_domain": true,
+      "target_domain": "parent"
+    },
+    {
+      "from": "home_hub_offline",
+      "to": "parent_settings",
+      "file": "src/features/home/HomeHubPage.jsx",
+      "line": 92,
+      "cross_domain": true,
+      "target_domain": "parent"
+    },
+    {
+      "from": "home_hub_offline",
+      "to": "course",
+      "file": "src/features/home/HomeHubPage.jsx",
+      "line": 158,
+      "cross_domain": true,
+      "target_domain": "course"
+    },
+    {
+      "from": "home_hub_offline",
+      "to": "review_entry",
+      "file": "src/features/home/HomeHubPage.jsx",
+      "line": 159,
+      "cross_domain": true,
+      "target_domain": "course"
+    },
+    {
+      "from": "home_hub_offline",
+      "to": "today_progress",
+      "file": "src/features/home/HomeHubPage.jsx",
+      "line": 160,
+      "cross_domain": true,
+      "target_domain": "progress"
+    }
+  ]
+}

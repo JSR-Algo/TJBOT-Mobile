@@ -1,0 +1,115 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% Cross-domain edges only. Intra-domain edges live in domains/<d>/flow.mmd.
+flowchart LR
+  app_error["Generic App Error"]
+  audio_error["Audio Error"]
+  audio_recovery["Audio Permission Recovery"]
+  celebration["Celebration"]
+  cl_added["Course · Added to Robot"]
+  cl_complete["Course · Lesson complete (synced)"]
+  cl_library["Course · Library"]
+  cl_needs_sync["Course · Robot needs sync"]
+  cl_running["Course · Lesson running on Robot"]
+  cl_send["Course · Send lesson to Robot"]
+  course["Course Overview"]
+  daily_mission["Daily Mission"]
+  dv_home["Robot · Device home"]
+  dv_pair_wifi["Robot · Pair · Wi-Fi pick"]
+  exit_confirm["Exit Confirmation"]
+  help_faq["Help & FAQ"]
+  home["(undeclared) home"]
+  home_hub_offline["Home · Reconnecting"]
+  kid_settings["Settings"]
+  lesson_detail["Lesson Detail"]
+  lesson_done["Lesson Complete"]
+  lesson_ready["Lesson Ready"]
+  lesson_resume["Lesson Resume"]
+  lesson_summary["Lesson Summary"]
+  mic_missing["Mic Permission Missing"]
+  network_error["Network Error"]
+  onb_child["11 · Child Profile"]
+  onb_first_lesson["12 · First Lesson Entry"]
+  onb_login["9 · Login / Sign Up"]
+  onb_mic["8 · Voice Permission"]
+  onb_welcome["2 · Welcome"]
+  parent_gate["Parent Gate"]
+  parent_settings["Parent Settings"]
+  parent_summary["Parent Summary"]
+  pr_arrived["Buy · Robot arrived · setup"]
+  pr_confirm["Buy · Order confirmed"]
+  pr_first_course["Buy · Add first course"]
+  pr_intro["Buy · Robot overview"]
+  pr_shipping["Buy · Shipping & delivery"]
+  reconnecting_overlay["Reconnecting Overlay"]
+  review_entry["Review Entry"]
+  review_needed["Review Needed"]
+  rm_my_robot["Robot · My Robot"]
+  rm_storage["Robot · Courses installed"]
+  robot_listening["Robot Listening"]
+  robot_speaking["Robot Speaking"]
+  safety["Safety Fallback"]
+  safety_redirect["Safety Redirect"]
+  today_progress["Today"]
+  voice_failed["Voice Session Failed"]
+  onb_child -->|auth→onboarding| onb_first_lesson
+  onb_login -->|auth→onboarding| onb_mic
+  daily_mission -->|course→lesson-session| lesson_ready
+  lesson_detail -->|course→lesson-session| lesson_ready
+  review_entry -->|course→lesson-session| lesson_ready
+  course -->|course→undeclared| home
+  daily_mission -->|course→undeclared| home
+  review_entry -->|course→undeclared| home
+  cl_added -->|course-library→device| dv_home
+  cl_complete -->|course-library→device| dv_home
+  cl_library -->|course-library→device| dv_home
+  cl_needs_sync -->|course-library→device| dv_home
+  cl_needs_sync -->|course-library→device| dv_pair_wifi
+  cl_running -->|course-library→device| dv_home
+  cl_send -->|course-library→device| dv_home
+  dv_home -->|device→progress| today_progress
+  lesson_resume -->|fallback→lesson-session| robot_speaking
+  reconnecting_overlay -->|fallback→lesson-session| robot_listening
+  help_faq -->|fallback→parent| parent_summary
+  kid_settings -->|fallback→parent| parent_gate
+  safety_redirect -->|fallback→parent| parent_gate
+  app_error -->|fallback→undeclared| home
+  audio_recovery -->|fallback→undeclared| home
+  kid_settings -->|fallback→undeclared| home
+  lesson_resume -->|fallback→undeclared| home
+  mic_missing -->|fallback→undeclared| home
+  network_error -->|fallback→undeclared| home
+  reconnecting_overlay -->|fallback→undeclared| home
+  safety_redirect -->|fallback→undeclared| home
+  voice_failed -->|fallback→undeclared| home
+  home_hub_offline -->|home→course| course
+  home_hub_offline -->|home→course| review_entry
+  home_hub_offline -->|home→parent| parent_gate
+  home_hub_offline -->|home→parent| parent_settings
+  home_hub_offline -->|home→progress| today_progress
+  lesson_done -->|lesson-session→progress| lesson_summary
+  audio_error -->|lesson-session→undeclared| home
+  exit_confirm -->|lesson-session→undeclared| home
+  lesson_done -->|lesson-session→undeclared| home
+  lesson_ready -->|lesson-session→undeclared| home
+  safety -->|lesson-session→undeclared| home
+  onb_mic -->|onboarding→auth| onb_login
+  onb_welcome -->|onboarding→auth| onb_login
+  onb_first_lesson -->|onboarding→lesson-session| lesson_ready
+  parent_gate -->|parent→undeclared| home
+  parent_summary -->|parent→undeclared| home
+  lesson_summary -->|progress→lesson-session| lesson_ready
+  review_needed -->|progress→lesson-session| lesson_ready
+  celebration -->|progress→undeclared| home
+  lesson_summary -->|progress→undeclared| home
+  review_needed -->|progress→undeclared| home
+  today_progress -->|progress→undeclared| home
+  pr_first_course -->|purchase→course-library| cl_added
+  pr_first_course -->|purchase→course-library| cl_library
+  pr_arrived -->|purchase→device| dv_home
+  pr_confirm -->|purchase→device| dv_home
+  pr_intro -->|purchase→device| dv_home
+  pr_shipping -->|purchase→device| dv_home
+  rm_storage -->|robot-mgmt→course-library| cl_library
+  rm_my_robot -->|robot-mgmt→parent| parent_settings
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b

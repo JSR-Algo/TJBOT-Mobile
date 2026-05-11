@@ -1,0 +1,47 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% domain: course-library
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Course_Library["Course Library"]
+    cl_added["Course · Added to Robot"]
+    cl_buy["Course · Buy / Unlock"]
+    cl_companion["Course · App companion view"]
+    cl_complete["Course · Lesson complete (synced)"]
+    cl_detail["Course · Detail"]
+    cl_library["Course · Library"]
+    cl_locked["Course · Locked"]
+    cl_needs_sync["Course · Robot needs sync"]
+    cl_robot_ready["Course · Robot ready for today"]
+    cl_running["Course · Lesson running on Robot"]
+    cl_send["Course · Send lesson to Robot"]
+    cl_unlock_confirm["Course · Parent unlock confirmation"]
+  end
+  cl_added --> cl_send
+  cl_buy --> cl_detail
+  cl_buy --> cl_unlock_confirm
+  cl_companion --> cl_running
+  cl_complete --> cl_send
+  cl_detail --> cl_buy
+  cl_detail --> cl_library
+  cl_library --> cl_detail
+  cl_locked --> cl_detail
+  cl_locked --> cl_library
+  cl_locked --> cl_unlock_confirm
+  cl_needs_sync --> cl_added
+  cl_robot_ready --> cl_running
+  cl_robot_ready --> cl_send
+  cl_running --> cl_companion
+  cl_send --> cl_robot_ready
+  cl_unlock_confirm --> cl_added
+  cl_unlock_confirm --> cl_buy
+  class cl_added,cl_buy,cl_companion,cl_complete,cl_detail,cl_library,cl_locked,cl_needs_sync,cl_robot_ready,cl_running,cl_send,cl_unlock_confirm happy
+
+%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   cl_added -> dv_home (device)
+%%   cl_complete -> dv_home (device)
+%%   cl_library -> dv_home (device)
+%%   cl_needs_sync -> dv_home (device)
+%%   cl_needs_sync -> dv_pair_wifi (device)
+%%   cl_running -> dv_home (device)
+%%   cl_send -> dv_home (device)

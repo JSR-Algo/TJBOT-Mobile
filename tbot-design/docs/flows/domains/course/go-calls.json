@@ -1,0 +1,127 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "course",
+  "count": 15,
+  "calls": [
+    {
+      "from": "course",
+      "to": "home",
+      "file": "src/features/course/CoursePage.jsx",
+      "line": 18,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "course",
+      "to": "level",
+      "file": "src/features/course/CoursePage.jsx",
+      "line": 44,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "daily_mission",
+      "to": "home",
+      "file": "src/features/course/DailyMissionPage.jsx",
+      "line": 11,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "daily_mission",
+      "to": "lesson_ready",
+      "file": "src/features/course/DailyMissionPage.jsx",
+      "line": 67,
+      "cross_domain": true,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "lesson_detail",
+      "to": "unit",
+      "file": "src/features/course/LessonDetailPage.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "lesson_detail",
+      "to": "lesson_ready",
+      "file": "src/features/course/LessonDetailPage.jsx",
+      "line": 57,
+      "cross_domain": true,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "lesson_list",
+      "to": "unit",
+      "file": "src/features/course/LessonListPage.jsx",
+      "line": 17,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "lesson_list",
+      "to": "lesson_detail",
+      "file": "src/features/course/LessonListPage.jsx",
+      "line": 28,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "level",
+      "to": "course",
+      "file": "src/features/course/LevelPage.jsx",
+      "line": 64,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "level",
+      "to": "unit",
+      "file": "src/features/course/LevelPage.jsx",
+      "line": 98,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "review_entry",
+      "to": "home",
+      "file": "src/features/course/ReviewEntryPage.jsx",
+      "line": 13,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "review_entry",
+      "to": "lesson_ready",
+      "file": "src/features/course/ReviewEntryPage.jsx",
+      "line": 39,
+      "cross_domain": true,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "unit",
+      "to": "level",
+      "file": "src/features/course/UnitPage.jsx",
+      "line": 18,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "unit",
+      "to": "lesson_detail",
+      "file": "src/features/course/UnitPage.jsx",
+      "line": 42,
+      "cross_domain": false,
+      "target_domain": "course"
+    },
+    {
+      "from": "unit",
+      "to": "review_entry",
+      "file": "src/features/course/UnitPage.jsx",
+      "line": 70,
+      "cross_domain": false,
+      "target_domain": "course"
+    }
+  ]
+}

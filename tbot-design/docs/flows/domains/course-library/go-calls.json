@@ -1,0 +1,231 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "course-library",
+  "count": 28,
+  "calls": [
+    {
+      "from": "cl_buy",
+      "to": "cl_detail",
+      "file": "src/features/course-library/BuyCoursePage.jsx",
+      "line": 13,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_buy",
+      "to": "cl_unlock_confirm",
+      "file": "src/features/course-library/BuyCoursePage.jsx",
+      "line": 72,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_buy",
+      "to": "cl_detail",
+      "file": "src/features/course-library/BuyCoursePage.jsx",
+      "line": 73,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_companion",
+      "to": "cl_running",
+      "file": "src/features/course-library/CompanionPage.jsx",
+      "line": 24,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_added",
+      "to": "cl_send",
+      "file": "src/features/course-library/CourseAddedPage.jsx",
+      "line": 47,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_added",
+      "to": "dv_home",
+      "file": "src/features/course-library/CourseAddedPage.jsx",
+      "line": 48,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "cl_complete",
+      "to": "cl_send",
+      "file": "src/features/course-library/CourseCompletePage.jsx",
+      "line": 64,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_complete",
+      "to": "dv_home",
+      "file": "src/features/course-library/CourseCompletePage.jsx",
+      "line": 65,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "cl_detail",
+      "to": "cl_library",
+      "file": "src/features/course-library/CourseDetailPage.jsx",
+      "line": 13,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_detail",
+      "to": "cl_buy",
+      "file": "src/features/course-library/CourseDetailPage.jsx",
+      "line": 70,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_detail",
+      "to": "cl_library",
+      "file": "src/features/course-library/CourseDetailPage.jsx",
+      "line": 71,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_library",
+      "to": "dv_home",
+      "file": "src/features/course-library/CourseLibraryPage.jsx",
+      "line": 15,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "cl_library",
+      "to": "cl_detail",
+      "file": "src/features/course-library/CourseLibraryPage.jsx",
+      "line": 24,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_library",
+      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "line": 14,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_detail",
+      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "line": 49,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_unlock_confirm",
+      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "line": 53,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_locked",
+      "to": "cl_library",
+      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "line": 54,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_needs_sync",
+      "to": "dv_pair_wifi",
+      "file": "src/features/course-library/NeedsSyncPage.jsx",
+      "line": 53,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "cl_needs_sync",
+      "to": "cl_added",
+      "file": "src/features/course-library/NeedsSyncPage.jsx",
+      "line": 63,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_needs_sync",
+      "to": "dv_home",
+      "file": "src/features/course-library/NeedsSyncPage.jsx",
+      "line": 64,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "cl_robot_ready",
+      "to": "cl_running",
+      "file": "src/features/course-library/RobotReadyPage.jsx",
+      "line": 50,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_robot_ready",
+      "to": "cl_send",
+      "file": "src/features/course-library/RobotReadyPage.jsx",
+      "line": 51,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_running",
+      "to": "cl_companion",
+      "file": "src/features/course-library/RunningPage.jsx",
+      "line": 40,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_running",
+      "to": "dv_home",
+      "file": "src/features/course-library/RunningPage.jsx",
+      "line": 41,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "cl_send",
+      "to": "dv_home",
+      "file": "src/features/course-library/SendToRobotPage.jsx",
+      "line": 17,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "cl_send",
+      "to": "cl_robot_ready",
+      "file": "src/features/course-library/SendToRobotPage.jsx",
+      "line": 54,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_unlock_confirm",
+      "to": "cl_buy",
+      "file": "src/features/course-library/UnlockConfirmModal.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "cl_unlock_confirm",
+      "to": "cl_added",
+      "file": "src/features/course-library/UnlockConfirmModal.jsx",
+      "line": 65,
+      "cross_domain": false,
+      "target_domain": "course-library"
+    }
+  ]
+}

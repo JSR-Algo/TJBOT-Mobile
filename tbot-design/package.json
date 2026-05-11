@@ -4,11 +4,30 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "i18n:scan": "node scripts/i18n/scan-hardcoded.mjs",
     "i18n:parity": "node scripts/i18n/check-key-parity.mjs",
     "i18n:bundle": "node scripts/i18n/build-locales-bundle.mjs",
     "i18n:bundle:check": "node scripts/i18n/check-bundle-freshness.mjs",
     "i18n:walker:test": "node scripts/i18n/test-walker-smoke.mjs",
-    "i18n:check": "npm run i18n:scan && npm run i18n:parity && npm run i18n:bundle:check && npm run i18n:walker:test"
+    "i18n:check": "npm run i18n:scan && npm run i18n:parity && npm run i18n:bundle:check && npm run i18n:walker:test",
+    "flows:extract": "node scripts/flows/extract-go-calls.mjs",
+    "flows:validate": "node scripts/flows/validate-go-calls.mjs",
+    "flows:generate": "node scripts/flows/generate-domain-flows.mjs",
+    "flows:render": "node scripts/flows/render-html.mjs",
+    "flows:fast": "npm run flows:extract && npm run flows:generate && npm run flows:validate",
+    "flows:all": "npm run flows:fast && npm run flows:render"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.14.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.13"
   }
 }

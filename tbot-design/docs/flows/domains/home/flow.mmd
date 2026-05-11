@@ -1,0 +1,21 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% domain: home
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Home["Home"]
+    home_hub_daily["Home · Today"]
+    home_hub_done["Home · Lesson done today"]
+    home_hub_greet["Home · Robot greeting"]
+    home_hub_idle["Home · Idle happy"]
+    home_hub_mic["Home · Needs microphone"]
+    home_hub_offline["Home · Reconnecting"]
+  end
+  class home_hub_daily,home_hub_done,home_hub_greet,home_hub_idle,home_hub_mic,home_hub_offline happy
+
+%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   home_hub_offline -> course (course)
+%%   home_hub_offline -> review_entry (course)
+%%   home_hub_offline -> parent_gate (parent)
+%%   home_hub_offline -> parent_settings (parent)
+%%   home_hub_offline -> today_progress (progress)

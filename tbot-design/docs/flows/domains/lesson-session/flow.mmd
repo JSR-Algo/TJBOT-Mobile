@@ -1,0 +1,79 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% domain: lesson-session
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Activity["Activity"]
+    activity_intro["Activity Intro"]
+    robot_listening["Robot Listening"]
+    robot_speaking["Robot Speaking"]
+    thinking["Robot Thinking"]
+    user_speaking["User Speaking"]
+  end
+  subgraph Done["Done"]
+    activity_done["Activity Complete"]
+    lesson_done["Lesson Complete"]
+  end
+  subgraph Edge["Edge"]
+    audio_error["Audio Error"]
+    exit_confirm["Exit Confirmation"]
+    reconnecting["Reconnecting"]
+    safety["Safety Fallback"]
+  end
+  subgraph Feedback["Feedback"]
+    bargein["Interrupted (Barge-in)"]
+    gentle["Gentle Correction"]
+    offtopic["Off-topic Redirect"]
+    retry["Retry Prompt"]
+    silence["Silence Prompt"]
+    success["Success Moment"]
+  end
+  subgraph Start["Start"]
+    connecting["Connecting Voice"]
+    greeting["Robot Greeting"]
+    lesson_ready["Lesson Ready"]
+  end
+  activity_done --> exit_confirm
+  activity_done --> robot_speaking
+  activity_intro --> exit_confirm
+  activity_intro --> robot_speaking
+  audio_error --> exit_confirm
+  audio_error --> robot_listening
+  bargein --> exit_confirm
+  bargein --> thinking
+  connecting --> greeting
+  exit_confirm --> robot_listening
+  gentle --> exit_confirm
+  gentle --> robot_listening
+  gentle --> robot_speaking
+  greeting --> activity_intro
+  greeting --> exit_confirm
+  lesson_ready --> connecting
+  lesson_ready --> exit_confirm
+  offtopic --> exit_confirm
+  offtopic --> robot_listening
+  reconnecting --> exit_confirm
+  reconnecting --> robot_listening
+  retry --> exit_confirm
+  retry --> robot_listening
+  robot_listening --> exit_confirm
+  robot_listening --> user_speaking
+  robot_speaking --> exit_confirm
+  robot_speaking --> robot_listening
+  silence --> exit_confirm
+  silence --> robot_listening
+  success --> exit_confirm
+  success --> robot_speaking
+  thinking --> exit_confirm
+  thinking --> success
+  user_speaking --> exit_confirm
+  user_speaking --> thinking
+  class activity_intro,robot_listening,robot_speaking,thinking,user_speaking,activity_done,lesson_done,audio_error,exit_confirm,reconnecting,safety,bargein,gentle,offtopic,retry,silence,success,connecting,greeting,lesson_ready happy
+
+%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   lesson_done -> lesson_summary (progress)
+%%   audio_error -> home (undeclared)
+%%   exit_confirm -> home (undeclared)
+%%   lesson_done -> home (undeclared)
+%%   lesson_ready -> home (undeclared)
+%%   safety -> home (undeclared)

@@ -1,0 +1,71 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "auth",
+  "count": 8,
+  "calls": [
+    {
+      "from": "onb_child",
+      "to": "onb_login",
+      "file": "src/features/auth/ChildProfilePage.jsx",
+      "line": 26,
+      "cross_domain": false,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_child",
+      "to": "onb_first_lesson",
+      "file": "src/features/auth/ChildProfilePage.jsx",
+      "line": 84,
+      "cross_domain": true,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_login_error",
+      "to": "onb_login",
+      "file": "src/features/auth/LoginErrorPage.jsx",
+      "line": 7,
+      "cross_domain": false,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_login_error",
+      "to": "onb_child",
+      "file": "src/features/auth/LoginErrorPage.jsx",
+      "line": 38,
+      "cross_domain": false,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_login_error",
+      "to": "onb_login",
+      "file": "src/features/auth/LoginErrorPage.jsx",
+      "line": 39,
+      "cross_domain": false,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_login",
+      "to": "onb_mic",
+      "file": "src/features/auth/LoginPage.jsx",
+      "line": 8,
+      "cross_domain": true,
+      "target_domain": "onboarding"
+    },
+    {
+      "from": "onb_login",
+      "to": "onb_child",
+      "file": "src/features/auth/LoginPage.jsx",
+      "line": 30,
+      "cross_domain": false,
+      "target_domain": "auth"
+    },
+    {
+      "from": "onb_login",
+      "to": "onb_child",
+      "file": "src/features/auth/LoginPage.jsx",
+      "line": 38,
+      "cross_domain": false,
+      "target_domain": "auth"
+    }
+  ]
+}

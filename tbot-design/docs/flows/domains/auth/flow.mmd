@@ -1,0 +1,19 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% domain: auth
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Onboarding["Onboarding"]
+    onb_child["11 · Child Profile"]
+    onb_login["9 · Login / Sign Up"]
+    onb_login_error["10 · Login Error"]
+  end
+  onb_child --> onb_login
+  onb_login --> onb_child
+  onb_login_error --> onb_child
+  onb_login_error --> onb_login
+  class onb_child,onb_login,onb_login_error happy
+
+%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   onb_child -> onb_first_lesson (onboarding)
+%%   onb_login -> onb_mic (onboarding)

@@ -1,0 +1,12 @@
+<!-- HAND-CURATED. -->
+%% Edge-case template: long-running operation timeout.
+%% Apply to: device pairing (dv_pair_connecting), firmware (dv_firmware/rm_firmware),
+%% checkout (pr_checkout). Reference from edge_cases[<state-id>] = ["timeout"].
+flowchart TD
+  classDef edge fill:#fee2e2,stroke:#991b1b
+
+  long_op(["caller_state (long-running op in flight)"])
+  long_op -->|completes < deadline| success_state["happy_next_state"]
+  long_op -->|deadline exceeded| timeout_alert(["timeout_alert"]):::edge
+  timeout_alert -->|"Try again"| long_op
+  timeout_alert -->|"Cancel"| failed_state(["domain_failed (or fallback.network_error)"]):::edge

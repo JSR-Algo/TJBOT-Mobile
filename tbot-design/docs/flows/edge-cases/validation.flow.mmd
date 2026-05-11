@@ -1,0 +1,13 @@
+<!-- HAND-CURATED. -->
+%% Edge-case template: form-validation error.
+%% Apply to forms: onb_login (auth), pr_shipping/pr_checkout (purchase),
+%% dv_pair_wifi_pw/dv_pair_rename (device). Pattern: inline error + focus first invalid.
+flowchart TD
+  classDef edge fill:#fee2e2,stroke:#991b1b
+
+  form_state(["caller_state (form screen)"])
+  form_state -->|"Submit"| submit_check{"all fields valid?"}
+  submit_check -->|yes| next_state["happy_next_state"]
+  submit_check -->|no| inline_error(["inline_error_render"]):::edge
+  inline_error --> focus_first["focus first invalid field"]
+  focus_first --> form_state

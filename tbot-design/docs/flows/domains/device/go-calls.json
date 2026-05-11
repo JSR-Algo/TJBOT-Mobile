@@ -1,0 +1,303 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "device",
+  "count": 37,
+  "calls": [
+    {
+      "from": "dv_firmware",
+      "to": "dv_home",
+      "file": "src/features/device/DeviceFirmwarePage.jsx",
+      "line": 9,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_firmware",
+      "to": "dv_home",
+      "file": "src/features/device/DeviceFirmwarePage.jsx",
+      "line": 38,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_firmware",
+      "to": "dv_home",
+      "file": "src/features/device/DeviceFirmwarePage.jsx",
+      "line": 39,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_home",
+      "to": "dv_session",
+      "file": "src/features/device/DeviceHomePage.jsx",
+      "line": 31,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_home",
+      "to": "today_progress",
+      "file": "src/features/device/DeviceHomePage.jsx",
+      "line": 33,
+      "cross_domain": true,
+      "target_domain": "progress"
+    },
+    {
+      "from": "dv_home",
+      "to": "dv_lost",
+      "file": "src/features/device/DeviceHomePage.jsx",
+      "line": 41,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_home",
+      "to": "dv_firmware",
+      "file": "src/features/device/DeviceHomePage.jsx",
+      "line": 44,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_lost",
+      "to": "dv_home",
+      "file": "src/features/device/DeviceLostPage.jsx",
+      "line": 10,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_overview",
+      "to": "dv_pair_intro",
+      "file": "src/features/device/DeviceOverviewPage.jsx",
+      "line": 90,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_session",
+      "to": "dv_home",
+      "file": "src/features/device/DeviceSessionPage.jsx",
+      "line": 19,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_add",
+      "to": "dv_overview",
+      "file": "src/features/device/pairing/PairAddPage.jsx",
+      "line": 8,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_add",
+      "to": "dv_pair_intro",
+      "file": "src/features/device/pairing/PairAddPage.jsx",
+      "line": 15,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_add",
+      "to": "dv_pair_offline",
+      "file": "src/features/device/pairing/PairAddPage.jsx",
+      "line": 25,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_code",
+      "to": "dv_pair_found",
+      "file": "src/features/device/pairing/PairCodePage.jsx",
+      "line": 8,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_code",
+      "to": "dv_pair_wifi",
+      "file": "src/features/device/pairing/PairCodePage.jsx",
+      "line": 32,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_code",
+      "to": "dv_pair_search",
+      "file": "src/features/device/pairing/PairCodePage.jsx",
+      "line": 33,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_connecting",
+      "to": "dv_pair_success",
+      "file": "src/features/device/pairing/PairConnectingPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_failed",
+      "to": "dv_pair_intro",
+      "file": "src/features/device/pairing/PairFailedPage.jsx",
+      "line": 9,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_failed",
+      "to": "dv_pair_search",
+      "file": "src/features/device/pairing/PairFailedPage.jsx",
+      "line": 39,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_first_lesson",
+      "to": "dv_home",
+      "file": "src/features/device/pairing/PairFirstLessonPage.jsx",
+      "line": 49,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_found",
+      "to": "dv_pair_intro",
+      "file": "src/features/device/pairing/PairFoundPage.jsx",
+      "line": 9,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_found",
+      "to": "dv_pair_code",
+      "file": "src/features/device/pairing/PairFoundPage.jsx",
+      "line": 27,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_found",
+      "to": "dv_pair_search",
+      "file": "src/features/device/pairing/PairFoundPage.jsx",
+      "line": 28,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_intro",
+      "to": "dv_pair_add",
+      "file": "src/features/device/pairing/PairIntroPage.jsx",
+      "line": 9,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_intro",
+      "to": "dv_pair_search",
+      "file": "src/features/device/pairing/PairIntroPage.jsx",
+      "line": 32,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_offline",
+      "to": "dv_pair_add",
+      "file": "src/features/device/pairing/PairOfflinePage.jsx",
+      "line": 10,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_offline",
+      "to": "dv_pair_wifi",
+      "file": "src/features/device/pairing/PairOfflinePage.jsx",
+      "line": 24,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_offline",
+      "to": "dv_pair_search",
+      "file": "src/features/device/pairing/PairOfflinePage.jsx",
+      "line": 29,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_rename",
+      "to": "dv_pair_first_lesson",
+      "file": "src/features/device/pairing/PairRenamePage.jsx",
+      "line": 41,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_search",
+      "to": "dv_pair_found",
+      "file": "src/features/device/pairing/PairSearchPage.jsx",
+      "line": 6,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_search",
+      "to": "dv_pair_intro",
+      "file": "src/features/device/pairing/PairSearchPage.jsx",
+      "line": 8,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_search",
+      "to": "dv_pair_failed",
+      "file": "src/features/device/pairing/PairSearchPage.jsx",
+      "line": 18,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_success",
+      "to": "dv_pair_rename",
+      "file": "src/features/device/pairing/PairSuccessPage.jsx",
+      "line": 37,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_wifi",
+      "to": "dv_pair_code",
+      "file": "src/features/device/pairing/PairWifiPage.jsx",
+      "line": 7,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_wifi",
+      "to": "dv_pair_wifi_pw",
+      "file": "src/features/device/pairing/PairWifiPage.jsx",
+      "line": 22,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_wifi_pw",
+      "to": "dv_pair_wifi",
+      "file": "src/features/device/pairing/PairWifiPasswordPage.jsx",
+      "line": 8,
+      "cross_domain": false,
+      "target_domain": "device"
+    },
+    {
+      "from": "dv_pair_wifi_pw",
+      "to": "dv_pair_connecting",
+      "file": "src/features/device/pairing/PairWifiPasswordPage.jsx",
+      "line": 25,
+      "cross_domain": false,
+      "target_domain": "device"
+    }
+  ]
+}

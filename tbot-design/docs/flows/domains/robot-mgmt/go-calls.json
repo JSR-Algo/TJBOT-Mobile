@@ -1,0 +1,359 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "robot-mgmt",
+  "count": 44,
+  "calls": [
+    {
+      "from": "rm_factory",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "line": 17,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_factory",
+      "to": "rm_offline_help",
+      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "line": 46,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_factory",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "line": 119,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_factory",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "line": 120,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_mic_test",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/MicTestPage.jsx",
+      "line": 27,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_mic_test",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/MicTestPage.jsx",
+      "line": 73,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "parent_settings",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 12,
+      "cross_domain": true,
+      "target_domain": "parent"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_battery",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 31,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_wifi",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 32,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_storage",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 33,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_mic_test",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 34,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_sound",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 42,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_mic_test",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 43,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_speaker_test",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 44,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_firmware",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 46,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_offline_help",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 55,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_support",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 56,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_status",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 57,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_my_robot",
+      "to": "rm_factory",
+      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "line": 64,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_offline_help",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_offline_help",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "line": 44,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_offline_help",
+      "to": "rm_support",
+      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "line": 45,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_battery",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotBatteryPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_firmware",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_firmware",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "line": 61,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_firmware",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "line": 62,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_sound",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotSoundPage.jsx",
+      "line": 21,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "line": 11,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_battery",
+      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "line": 28,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_wifi",
+      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "line": 29,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_storage",
+      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "line": 30,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_mic_test",
+      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "line": 31,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_speaker_test",
+      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "line": 32,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_status",
+      "to": "rm_firmware",
+      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "line": 33,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_storage",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotStoragePage.jsx",
+      "line": 16,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_storage",
+      "to": "cl_library",
+      "file": "src/features/robot-mgmt/RobotStoragePage.jsx",
+      "line": 63,
+      "cross_domain": true,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "rm_wifi",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/RobotWifiPage.jsx",
+      "line": 9,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "line": 12,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_sound",
+      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "line": 57,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "line": 63,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_speaker_test",
+      "to": "rm_support",
+      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "line": 64,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_support",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "line": 18,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_support",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "line": 74,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    },
+    {
+      "from": "rm_support",
+      "to": "rm_my_robot",
+      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "line": 75,
+      "cross_domain": false,
+      "target_domain": "robot-mgmt"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+<!-- HAND-CURATED. -->
+%% Edge-case template: bounded retry with attempt counter.
+%% Default max attempts = 3 (convention; override in domain narrative if needed).
+%% Reference from edge_cases[<state-id>] = ["retry"].
+flowchart TD
+  classDef edge fill:#fee2e2,stroke:#991b1b
+
+  action(["caller_state attempts an action"])
+  action -->|success| success_state["happy_next_state"]
+  action -->|failure, attempts < 3| retry_prompt(["retry_prompt — 'Try again?'"]):::edge
+  retry_prompt -->|"Retry"| action
+  retry_prompt -->|"Cancel"| prior_state["prior_state"]
+  action -->|failure, attempts == 3| exhausted(["retries_exhausted"]):::edge
+  exhausted --> network_error["fallback.network_error"]
+  exhausted --> domain_failed["domain_specific_failed (e.g. dv_pair_failed)"]

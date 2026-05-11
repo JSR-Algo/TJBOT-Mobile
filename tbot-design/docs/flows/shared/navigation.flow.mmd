@@ -1,0 +1,40 @@
+<!-- HAND-CURATED. -->
+%% Lane Z owns this file. Documents global navigation conventions that cut across
+%% every domain. Not auto-generated. Update when introducing a new global pattern
+%% (e.g. a second gate type, a new deep-link scheme).
+flowchart TD
+  classDef rule fill:#fef9c3,stroke:#854d0e
+  classDef edge fill:#fee2e2,stroke:#991b1b
+
+  %% ── Back-button rules ────────────────────────────────────────────────────
+  back_btn(["Hardware / system back"]):::rule
+  back_btn -->|onb_*| back_to_prev_state["pop to previous onboarding state"]
+  back_btn -->|home_hub_*| back_no_op["no-op (root) — splash/exit prompt only"]
+  back_btn -->|lesson session active| exit_confirm_intercept["intercept → exit_confirm sheet"]
+  back_btn -->|in parent_* tree| pop_to_parent_summary["pop to parent_summary"]
+  back_btn -->|in pr_* checkout| pop_to_cl_buy["pop to cl_buy / cl_library if cancelled"]
+
+  %% ── Parent-gate interception ─────────────────────────────────────────────
+  any_parent_entry(["any go('parent_*') target"]):::rule
+  any_parent_entry --> gate_check{"parent_gate already passed this session?"}
+  gate_check -->|yes| direct_target["proceed to requested parent_* state"]
+  gate_check -->|no| parent_gate["redirect via parent_gate"]
+  parent_gate -->|pin ok| direct_target
+  parent_gate -->|pin fail| gate_fail(["parent_gate fail toast"]):::edge
+  gate_fail -->|retry| parent_gate
+  gate_fail -->|exit| home_hub_idle["home_hub_idle"]
+
+  %% ── Splash bypass ────────────────────────────────────────────────────────
+  app_boot(["App boot"]):::rule
+  app_boot --> first_run{"first-run sentinel?"}
+  first_run -->|yes| onb_splash["onb_splash"]
+  first_run -->|no, returning user| home_hub_idle
+
+  %% ── Deep-link entry contract ────────────────────────────────────────────
+  deep_link(["Deep-link / push notification"]):::rule
+  deep_link --> dl_validate{"target state exists in nav-graph?"}
+  dl_validate -->|no| dl_404(["404 → app_error"]):::edge
+  dl_validate -->|yes, parent_*| any_parent_entry
+  dl_validate -->|yes, pr_*| pr_intro["pr_intro (re-enter purchase from start)"]
+  dl_validate -->|yes, lesson_*| lesson_resume["lesson_resume (never deep-link mid-activity)"]
+  dl_validate -->|yes, other| direct_dl_target["go(target) directly"]

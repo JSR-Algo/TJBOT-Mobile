@@ -1,0 +1,22 @@
+<!-- HAND-CURATED. -->
+%% Edge-case template: unauthorized access.
+%% Two patterns: (a) login-required → onb_login; (b) parent-gate → parent_gate.
+%% Reference from edge_cases[<state-id>] = ["unauthorized"].
+flowchart TD
+  classDef edge fill:#fee2e2,stroke:#991b1b
+
+  %% Pattern (a) login required
+  protected_a(["caller_state requires login"])
+  protected_a --> login_check_a{"session has child profile?"}
+  login_check_a -->|yes| protected_a_render["render protected state"]
+  login_check_a -->|no| onb_login["auth.onb_login"]
+  onb_login -->|success| protected_a_render
+  onb_login -->|cancel| onb_splash["onboarding.onb_splash"]
+
+  %% Pattern (b) parent gate required
+  protected_b(["caller_state requires parent gate"])
+  protected_b --> gate_check_b{"parent_gate passed this session?"}
+  gate_check_b -->|yes| protected_b_render["render protected state"]
+  gate_check_b -->|no| parent_gate["parent.parent_gate"]
+  parent_gate -->|pin ok| protected_b_render
+  parent_gate -->|pin fail / cancel| home_hub_idle["home.home_hub_idle"]

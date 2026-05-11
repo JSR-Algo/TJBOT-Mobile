@@ -1,0 +1,8 @@
+{
+  "id": "parent",
+  "owner_lane": "C",
+  "flow": "docs/flows/domains/parent/flow.mmd",
+  "edge_cases": {
+    "parent_gate": ["unauthorized"]
+  }
+}

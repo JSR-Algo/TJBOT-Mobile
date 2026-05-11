@@ -1,0 +1,8 @@
+{
+  "id": "purchase",
+  "owner_lane": "C",
+  "flow": "docs/flows/domains/purchase/flow.mmd",
+  "edge_cases": {
+    "pr_checkout": ["cancel", "timeout"]
+  }
+}
