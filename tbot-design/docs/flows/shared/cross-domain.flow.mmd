@@ -1,9 +1,9 @@
-%% GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=9cfd302d222f. Do not edit by hand.
 %% Cross-domain edges only. Intra-domain edges live in domains/<d>/flow.mmd.
 flowchart LR
-  app_error["Generic App Error"]
-  audio_error["Audio Error"]
-  audio_recovery["Audio Permission Recovery"]
+  app_error(["Generic App Error"])
+  audio_error(["Audio Error"])
+  audio_recovery(["Audio Permission Recovery"])
   celebration["Celebration"]
   cl_added["Course · Added to Robot"]
   cl_complete["Course · Lesson complete (synced)"]
@@ -15,24 +15,24 @@ flowchart LR
   daily_mission["Daily Mission"]
   dv_home["Robot · Device home"]
   dv_pair_wifi["Robot · Pair · Wi-Fi pick"]
-  exit_confirm["Exit Confirmation"]
+  exit_confirm(["Exit Confirmation"])
   help_faq["Help & FAQ"]
   home_hub_idle["Home · Idle happy"]
-  home_hub_offline["Home · Reconnecting"]
+  home_hub_offline(["Home · Reconnecting"])
   kid_settings["Settings"]
   lesson_detail["Lesson Detail"]
   lesson_done["Lesson Complete"]
   lesson_ready["Lesson Ready"]
   lesson_resume["Lesson Resume"]
   lesson_summary["Lesson Summary"]
-  mic_missing["Mic Permission Missing"]
-  network_error["Network Error"]
+  mic_missing(["Mic Permission Missing"])
+  network_error(["Network Error"])
   onb_child["11 · Child Profile"]
   onb_first_lesson["12 · First Lesson Entry"]
   onb_login["9 · Login / Sign Up"]
   onb_mic["8 · Voice Permission"]
   onb_welcome["2 · Welcome"]
-  parent_gate["Parent Gate"]
+  parent_gate(["Parent Gate"])
   parent_settings["Parent Settings"]
   parent_summary["Parent Summary"]
   pr_arrived["Buy · Robot arrived · setup"]
@@ -40,17 +40,17 @@ flowchart LR
   pr_first_course["Buy · Add first course"]
   pr_intro["Buy · Robot overview"]
   pr_shipping["Buy · Shipping & delivery"]
-  reconnecting_overlay["Reconnecting Overlay"]
+  reconnecting_overlay(["Reconnecting Overlay"])
   review_entry["Review Entry"]
   review_needed["Review Needed"]
   rm_my_robot["Robot · My Robot"]
   rm_storage["Robot · Courses installed"]
   robot_listening["Robot Listening"]
   robot_speaking["Robot Speaking"]
-  safety["Safety Fallback"]
+  safety(["Safety Fallback"])
   safety_redirect["Safety Redirect"]
   today_progress["Today"]
-  voice_failed["Voice Session Failed"]
+  voice_failed(["Voice Session Failed"])
   onb_child -->|auth→onboarding| onb_first_lesson
   onb_login -->|auth→onboarding| onb_mic
   course -->|course→home| home_hub_idle

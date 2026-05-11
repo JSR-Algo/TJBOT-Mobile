@@ -167,7 +167,11 @@ export function buildPageMaps() {
   return { stateToPage, pageToState, stateToDomain };
 }
 
-// Read all states.js into { stateId -> {title, group, domain} }.
+// Read all states.js into { stateId -> {title, group, domain, kind} }.
+// C1 fix 2026-05-11: include `kind` so extract-go-calls.mjs can propagate
+// happy/edge classification from src/features/<d>/states.js (canonical source)
+// into nav-graph-data.json. Without this, kind silently drops and the entire
+// edge-classification system passes vacuously.
 export async function readAllStates() {
   const out = new Map();
   for (const domain of listDomains()) {
@@ -176,7 +180,7 @@ export async function readAllStates() {
     const mod = await import(`file://${statesJs}?t=${Date.now()}`);
     if (!mod.STATES) continue;
     for (const s of mod.STATES) {
-      out.set(s.id, { title: s.title, group: s.group, domain });
+      out.set(s.id, { title: s.title, group: s.group, domain, kind: s.kind });
     }
   }
   return out;

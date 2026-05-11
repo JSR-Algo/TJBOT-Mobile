@@ -62,3 +62,25 @@ If a new undeclared target appears in a future run of `npm run flows:extract`, t
 The fix path is the same as T10's: either (a) register a real state in `src/features/<d>/states.js` + wire the Page in `index.js`, or (b) redirect the call site in `*Page.jsx` to an existing state.
 
 > **Plan reconciliation:** original plan §10.3 step 16 referenced "the 3 currently-undeclared target IDs" from the stale `user-flow-review.md`. Live extractor scan found exactly **1** (`home`). Plan AC14 amended count-agnostic by team-lead.
+
+---
+
+## Untracked-files policy (C6 — added 2026-05-11)
+
+**Pre-existing prototype state**: `src/features/<d>/*Page.jsx` (127 files across 12 domains) + `src/App.jsx` + `src/devtools/` + `src/design-system/` + `src/config/` are intentionally **untracked** in this branch (`new-design`). They predate this flow restructure; the team's plan did not bring them under version control because (a) it was out of scope, (b) lane workers only needed to touch `src/features/<d>/states.js` + `domain.meta.json` (both tracked + committed).
+
+**Implications:**
+
+- T10's `go('home')` → `go('home_hub_idle')` redirect (30 call sites across 23 Page.jsx files) was applied to **untracked** files. The redirect lives on disk but not in git.
+- A future `git clean -df` or `git checkout .` could lose the redirect.
+- An external import of the prototype repo would re-introduce the `home` undeclared target if it brings back the original Page.jsx contents.
+
+**Mitigations:**
+
+1. **Phase 1.5 re-extract catches regressions.** Lane Z's `npm run flows:fast` rescans `src/features/**/*.jsx` and flags any reappearance of `go('home')` as an undeclared target (`flows:validate` exits 1). This is the trunk-safety mechanism.
+2. **Document, don't gate.** Flow validator's `undeclared-targets` check is the runtime gate; this section is the human-readable contract.
+3. **When the prototype gets committed in a future branch**, the Page.jsx redirects MUST be preserved (run `grep -rn "go('home')" src/features --include='*.jsx'` before committing — should return zero). Add a commit message note acknowledging T10's redirect work.
+
+**Sanctioned exceptions to AC15** ("no Page.jsx body edits"):
+- T10's `home` redirect (one-time, documented in plan §10.3 step 16).
+- Any future undeclared-target resolution following the (a)/(b) fix path above.

@@ -3,612 +3,734 @@
     "activity_done": {
       "f": "src/features/lesson-session/ActivityDonePage.jsx",
       "title": "Activity Complete",
-      "g": "Done"
+      "g": "Done",
+      "kind": "happy"
     },
     "activity_intro": {
       "f": "src/features/lesson-session/ActivityIntroPage.jsx",
       "title": "Activity Intro",
-      "g": "Activity"
+      "g": "Activity",
+      "kind": "happy"
     },
     "app_error": {
       "f": "src/features/fallback/AppErrorPage.jsx",
       "title": "Generic App Error",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "edge"
     },
     "audio_error": {
       "f": "src/features/lesson-session/AudioErrorPage.jsx",
       "title": "Audio Error",
-      "g": "Edge"
+      "g": "Edge",
+      "kind": "edge"
     },
     "audio_recovery": {
       "f": "src/features/fallback/AudioRecoveryPage.jsx",
       "title": "Audio Permission Recovery",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "edge"
     },
     "bargein": {
       "f": "src/features/lesson-session/BargeinPage.jsx",
       "title": "Interrupted (Barge-in)",
-      "g": "Feedback"
+      "g": "Feedback",
+      "kind": "edge"
     },
     "celebration": {
       "f": "src/features/progress/CelebrationPage.jsx",
       "title": "Celebration",
-      "g": "Progress"
+      "g": "Progress",
+      "kind": "happy"
     },
     "cl_added": {
       "f": "src/features/course-library/CourseAddedPage.jsx",
       "title": "Course · Added to Robot",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_buy": {
       "f": "src/features/course-library/BuyCoursePage.jsx",
       "title": "Course · Buy / Unlock",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_companion": {
       "f": "src/features/course-library/CompanionPage.jsx",
       "title": "Course · App companion view",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_complete": {
       "f": "src/features/course-library/CourseCompletePage.jsx",
       "title": "Course · Lesson complete (synced)",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_detail": {
       "f": "src/features/course-library/CourseDetailPage.jsx",
       "title": "Course · Detail",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_library": {
       "f": "src/features/course-library/CourseLibraryPage.jsx",
       "title": "Course · Library",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_locked": {
       "f": "src/features/course-library/CourseLockedPage.jsx",
       "title": "Course · Locked",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "edge"
     },
     "cl_needs_sync": {
       "f": "src/features/course-library/NeedsSyncPage.jsx",
       "title": "Course · Robot needs sync",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_robot_ready": {
       "f": "src/features/course-library/RobotReadyPage.jsx",
       "title": "Course · Robot ready for today",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_running": {
       "f": "src/features/course-library/RunningPage.jsx",
       "title": "Course · Lesson running on Robot",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_send": {
       "f": "src/features/course-library/SendToRobotPage.jsx",
       "title": "Course · Send lesson to Robot",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "cl_unlock_confirm": {
       "f": "src/features/course-library/UnlockConfirmModal.jsx",
       "title": "Course · Parent unlock confirmation",
-      "g": "Course Library"
+      "g": "Course Library",
+      "kind": "happy"
     },
     "connecting": {
       "f": "src/features/lesson-session/ConnectingPage.jsx",
       "title": "Connecting Voice",
-      "g": "Start"
+      "g": "Start",
+      "kind": "happy"
     },
     "course": {
       "f": "src/features/course/CoursePage.jsx",
       "title": "Course Overview",
-      "g": "Course"
+      "g": "Course",
+      "kind": "happy"
     },
     "daily_mission": {
       "f": "src/features/course/DailyMissionPage.jsx",
       "title": "Daily Mission",
-      "g": "Course"
+      "g": "Course",
+      "kind": "happy"
     },
     "dv_firmware": {
       "f": "src/features/device/DeviceFirmwarePage.jsx",
       "title": "Robot · Firmware update",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "edge"
     },
     "dv_home": {
       "f": "src/features/device/DeviceHomePage.jsx",
       "title": "Robot · Device home",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_lcd": {
       "f": "src/features/device/LCDLibraryPage.jsx",
       "title": "Robot · LCD face library",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_lcd_turn": {
       "f": "src/features/device/LCDLessonTurnPage.jsx",
       "title": "Robot · One lesson turn",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_lost": {
       "f": "src/features/device/DeviceLostPage.jsx",
       "title": "Robot · Find my Robot",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "edge"
     },
     "dv_overview": {
       "f": "src/features/device/DeviceOverviewPage.jsx",
       "title": "Robot · How it works together",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_add": {
       "f": "src/features/device/pairing/PairAddPage.jsx",
       "title": "Robot · Pair · add",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_code": {
       "f": "src/features/device/pairing/PairCodePage.jsx",
       "title": "Robot · Pair · confirm code",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_connecting": {
       "f": "src/features/device/pairing/PairConnectingPage.jsx",
       "title": "Robot · Pair · connecting",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "edge"
     },
     "dv_pair_failed": {
       "f": "src/features/device/pairing/PairFailedPage.jsx",
       "title": "Robot · Pair · failed",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "edge"
     },
     "dv_pair_first_lesson": {
       "f": "src/features/device/pairing/PairFirstLessonPage.jsx",
       "title": "Robot · Pair · first lesson",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_found": {
       "f": "src/features/device/pairing/PairFoundPage.jsx",
       "title": "Robot · Pair · found",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_intro": {
       "f": "src/features/device/pairing/PairIntroPage.jsx",
       "title": "Robot · Pair · turn on",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_offline": {
       "f": "src/features/device/pairing/PairOfflinePage.jsx",
       "title": "Robot · Pair · offline",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "edge"
     },
     "dv_pair_rename": {
       "f": "src/features/device/pairing/PairRenamePage.jsx",
       "title": "Robot · Pair · rename & buddy",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_search": {
       "f": "src/features/device/pairing/PairSearchPage.jsx",
       "title": "Robot · Pair · searching",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_success": {
       "f": "src/features/device/pairing/PairSuccessPage.jsx",
       "title": "Robot · Pair · success",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_wifi": {
       "f": "src/features/device/pairing/PairWifiPage.jsx",
       "title": "Robot · Pair · Wi-Fi pick",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_wifi_pw": {
       "f": "src/features/device/pairing/PairWifiPasswordPage.jsx",
       "title": "Robot · Pair · Wi-Fi password",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_session": {
       "f": "src/features/device/DeviceSessionPage.jsx",
       "title": "Robot · Live session monitor",
-      "g": "Robot Device"
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "exit_confirm": {
       "f": "src/features/lesson-session/ExitConfirmPage.jsx",
       "title": "Exit Confirmation",
-      "g": "Edge"
+      "g": "Edge",
+      "kind": "edge"
     },
     "gentle": {
       "f": "src/features/lesson-session/GentlePage.jsx",
       "title": "Gentle Correction",
-      "g": "Feedback"
+      "g": "Feedback",
+      "kind": "edge"
     },
     "greeting": {
       "f": "src/features/lesson-session/GreetingPage.jsx",
       "title": "Robot Greeting",
-      "g": "Start"
+      "g": "Start",
+      "kind": "happy"
     },
     "help_faq": {
       "f": "src/features/fallback/HelpFaqPage.jsx",
       "title": "Help & FAQ",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "happy"
     },
     "home_hub_daily": {
       "f": "src/features/home/HomeHubPage.jsx",
       "title": "Home · Today",
-      "g": "Home"
+      "g": "Home",
+      "kind": "happy"
     },
     "home_hub_done": {
       "f": "src/features/home/HomeHubPage.jsx",
       "title": "Home · Lesson done today",
-      "g": "Home"
+      "g": "Home",
+      "kind": "happy"
     },
     "home_hub_greet": {
       "f": "src/features/home/HomeHubPage.jsx",
       "title": "Home · Robot greeting",
-      "g": "Home"
+      "g": "Home",
+      "kind": "happy"
     },
     "home_hub_idle": {
       "f": "src/features/home/HomeHubPage.jsx",
       "title": "Home · Idle happy",
-      "g": "Home"
+      "g": "Home",
+      "kind": "happy"
     },
     "home_hub_mic": {
       "f": "src/features/home/HomeHubPage.jsx",
       "title": "Home · Needs microphone",
-      "g": "Home"
+      "g": "Home",
+      "kind": "edge"
     },
     "home_hub_offline": {
       "f": "src/features/home/HomeHubPage.jsx",
       "title": "Home · Reconnecting",
-      "g": "Home"
+      "g": "Home",
+      "kind": "edge"
     },
     "kid_settings": {
       "f": "src/features/fallback/KidSettingsPage.jsx",
       "title": "Settings",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "happy"
     },
     "lesson_detail": {
       "f": "src/features/course/LessonDetailPage.jsx",
       "title": "Lesson Detail",
-      "g": "Course"
+      "g": "Course",
+      "kind": "happy"
     },
     "lesson_done": {
       "f": "src/features/lesson-session/LessonDonePage.jsx",
       "title": "Lesson Complete",
-      "g": "Done"
+      "g": "Done",
+      "kind": "happy"
     },
     "lesson_list": {
       "f": "src/features/course/LessonListPage.jsx",
       "title": "Lesson List",
-      "g": "Course"
+      "g": "Course",
+      "kind": "happy"
     },
     "lesson_ready": {
       "f": "src/features/lesson-session/LessonReadyPage.jsx",
       "title": "Lesson Ready",
-      "g": "Start"
+      "g": "Start",
+      "kind": "happy"
     },
     "lesson_resume": {
       "f": "src/features/fallback/LessonResumePage.jsx",
       "title": "Lesson Resume",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "happy"
     },
     "lesson_summary": {
       "f": "src/features/progress/LessonSummaryPage.jsx",
       "title": "Lesson Summary",
-      "g": "Progress"
+      "g": "Progress",
+      "kind": "happy"
     },
     "level": {
       "f": "src/features/course/LevelPage.jsx",
       "title": "Level Overview",
-      "g": "Course"
+      "g": "Course",
+      "kind": "happy"
     },
     "mic_missing": {
       "f": "src/features/fallback/MicMissingPage.jsx",
       "title": "Mic Permission Missing",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "edge"
     },
     "network_error": {
       "f": "src/features/fallback/NetworkErrorPage.jsx",
       "title": "Network Error",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "edge"
     },
     "offtopic": {
       "f": "src/features/lesson-session/OfftopicPage.jsx",
       "title": "Off-topic Redirect",
-      "g": "Feedback"
+      "g": "Feedback",
+      "kind": "edge"
     },
     "onb_child": {
       "f": "src/features/auth/ChildProfilePage.jsx",
       "title": "11 · Child Profile",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_first_lesson": {
       "f": "src/features/onboarding/FirstLessonEntryPage.jsx",
       "title": "12 · First Lesson Entry",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_intro_celebrate": {
       "f": "src/features/onboarding/IntroCelebratePage.jsx",
       "title": "6 · Intro · Celebrate",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_intro_listen": {
       "f": "src/features/onboarding/IntroListenPage.jsx",
       "title": "3 · Intro · Listen",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_intro_retry": {
       "f": "src/features/onboarding/IntroRetryPage.jsx",
       "title": "5 · Intro · Try Again",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_intro_speak": {
       "f": "src/features/onboarding/IntroSpeakPage.jsx",
       "title": "4 · Intro · Speak",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_login": {
       "f": "src/features/auth/LoginPage.jsx",
       "title": "9 · Login / Sign Up",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_login_error": {
       "f": "src/features/auth/LoginErrorPage.jsx",
       "title": "10 · Login Error",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "edge"
     },
     "onb_mic": {
       "f": "src/features/onboarding/MicAskPage.jsx",
       "title": "8 · Voice Permission",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_splash": {
       "f": "src/features/onboarding/SplashPage.jsx",
       "title": "1 · Splash",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_trust": {
       "f": "src/features/onboarding/TrustPage.jsx",
       "title": "7 · Parent Trust Intro",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "onb_welcome": {
       "f": "src/features/onboarding/WelcomePage.jsx",
       "title": "2 · Welcome",
-      "g": "Onboarding"
+      "g": "Onboarding",
+      "kind": "happy"
     },
     "parent_gate": {
       "f": "src/features/parent/ParentGatePage.jsx",
       "title": "Parent Gate",
-      "g": "Parent"
+      "g": "Parent",
+      "kind": "edge"
     },
     "parent_history": {
       "f": "src/features/parent/ParentHistoryPage.jsx",
       "title": "Past 30 Days",
-      "g": "Parent"
+      "g": "Parent",
+      "kind": "happy"
     },
     "parent_safety": {
       "f": "src/features/parent/ParentSafetyPage.jsx",
       "title": "Safety & Privacy",
-      "g": "Parent"
+      "g": "Parent",
+      "kind": "happy"
     },
     "parent_settings": {
       "f": "src/features/parent/ParentSettingsPage.jsx",
       "title": "Parent Settings",
-      "g": "Parent"
+      "g": "Parent",
+      "kind": "happy"
     },
     "parent_summary": {
       "f": "src/features/parent/ParentSummaryPage.jsx",
       "title": "Parent Summary",
-      "g": "Parent"
+      "g": "Parent",
+      "kind": "happy"
     },
     "parent_today": {
       "f": "src/features/parent/ParentTodayPage.jsx",
       "title": "Practiced Today",
-      "g": "Parent"
+      "g": "Parent",
+      "kind": "happy"
     },
     "pr_activate": {
       "f": "src/features/purchase/ActivatePage.jsx",
       "title": "Buy · Activate Robot",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_arrived": {
       "f": "src/features/purchase/ArrivedPage.jsx",
       "title": "Buy · Robot arrived · setup",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_bundle": {
       "f": "src/features/purchase/BundlePage.jsx",
       "title": "Buy · Bundle picker",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_checkout": {
       "f": "src/features/purchase/CheckoutPage.jsx",
       "title": "Buy · Checkout",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "edge"
     },
     "pr_confirm": {
       "f": "src/features/purchase/OrderConfirmPage.jsx",
       "title": "Buy · Order confirmed",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_first_course": {
       "f": "src/features/purchase/FirstCoursePage.jsx",
       "title": "Buy · Add first course",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_how": {
       "f": "src/features/purchase/HowItWorksPage.jsx",
       "title": "Buy · How lessons work",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_included": {
       "f": "src/features/purchase/IncludedPage.jsx",
       "title": "Buy · What",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_intro": {
       "f": "src/features/purchase/PurchaseIntroPage.jsx",
       "title": "Buy · Robot overview",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_privacy": {
       "f": "src/features/purchase/PrivacyPage.jsx",
       "title": "Buy · Parent trust & privacy",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_shipping": {
       "f": "src/features/purchase/ShippingPage.jsx",
       "title": "Buy · Shipping & delivery",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "pr_subs": {
       "f": "src/features/purchase/SubscriptionsPage.jsx",
       "title": "Buy · Course subscription",
-      "g": "Purchase"
+      "g": "Purchase",
+      "kind": "happy"
     },
     "reconnecting": {
       "f": "src/features/lesson-session/ReconnectingPage.jsx",
       "title": "Reconnecting",
-      "g": "Edge"
+      "g": "Edge",
+      "kind": "edge"
     },
     "reconnecting_overlay": {
       "f": "src/features/fallback/ReconnectingOverlay.jsx",
       "title": "Reconnecting Overlay",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "edge"
     },
     "retry": {
       "f": "src/features/lesson-session/RetryPage.jsx",
       "title": "Retry Prompt",
-      "g": "Feedback"
+      "g": "Feedback",
+      "kind": "edge"
     },
     "review_entry": {
       "f": "src/features/course/ReviewEntryPage.jsx",
       "title": "Review Entry",
-      "g": "Course"
+      "g": "Course",
+      "kind": "happy"
     },
     "review_needed": {
       "f": "src/features/progress/ReviewNeededPage.jsx",
       "title": "Review Needed",
-      "g": "Progress"
+      "g": "Progress",
+      "kind": "happy"
     },
     "rm_battery": {
       "f": "src/features/robot-mgmt/RobotBatteryPage.jsx",
       "title": "Robot · Battery",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_factory": {
       "f": "src/features/robot-mgmt/FactoryResetPage.jsx",
       "title": "Robot · Factory reset",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "edge"
     },
     "rm_firmware": {
       "f": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
       "title": "Robot · Software update",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_mic_test": {
       "f": "src/features/robot-mgmt/MicTestPage.jsx",
       "title": "Robot · Microphone test",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_my_robot": {
       "f": "src/features/robot-mgmt/MyRobotPage.jsx",
       "title": "Robot · My Robot",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_offline_help": {
       "f": "src/features/robot-mgmt/OfflineHelpPage.jsx",
       "title": "Robot · Offline help",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "edge"
     },
     "rm_sound": {
       "f": "src/features/robot-mgmt/RobotSoundPage.jsx",
       "title": "Robot · Sound & volume",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_speaker_test": {
       "f": "src/features/robot-mgmt/SpeakerTestPage.jsx",
       "title": "Robot · Speaker test",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_status": {
       "f": "src/features/robot-mgmt/RobotStatusPage.jsx",
       "title": "Robot · Status",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_storage": {
       "f": "src/features/robot-mgmt/RobotStoragePage.jsx",
       "title": "Robot · Courses installed",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_support": {
       "f": "src/features/robot-mgmt/SupportPage.jsx",
       "title": "Robot · Contact support",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "rm_wifi": {
       "f": "src/features/robot-mgmt/RobotWifiPage.jsx",
       "title": "Robot · Wi-Fi",
-      "g": "Robot Mgmt"
+      "g": "Robot Mgmt",
+      "kind": "happy"
     },
     "robot_listening": {
       "f": "src/features/lesson-session/RobotListeningPage.jsx",
       "title": "Robot Listening",
-      "g": "Activity"
+      "g": "Activity",
+      "kind": "happy"
     },
     "robot_speaking": {
       "f": "src/features/lesson-session/RobotSpeakingPage.jsx",
       "title": "Robot Speaking",
-      "g": "Activity"
+      "g": "Activity",
+      "kind": "happy"
     },
     "safety": {
       "f": "src/features/lesson-session/SafetyPage.jsx",
       "title": "Safety Fallback",
-      "g": "Edge"
+      "g": "Edge",
+      "kind": "edge"
     },
     "safety_redirect": {
       "f": "src/features/fallback/SafetyRedirectPage.jsx",
       "title": "Safety Redirect",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "happy"
     },
     "silence": {
       "f": "src/features/lesson-session/SilencePage.jsx",
       "title": "Silence Prompt",
-      "g": "Feedback"
+      "g": "Feedback",
+      "kind": "happy"
     },
     "success": {
       "f": "src/features/lesson-session/SuccessPage.jsx",
       "title": "Success Moment",
-      "g": "Feedback"
+      "g": "Feedback",
+      "kind": "happy"
     },
     "thinking": {
       "f": "src/features/lesson-session/ThinkingPage.jsx",
       "title": "Robot Thinking",
-      "g": "Activity"
+      "g": "Activity",
+      "kind": "happy"
     },
     "today_progress": {
       "f": "src/features/progress/TodayProgressPage.jsx",
       "title": "Today",
-      "g": "Progress"
+      "g": "Progress",
+      "kind": "happy"
     },
     "unit": {
       "f": "src/features/course/UnitPage.jsx",
       "title": "Unit Detail",
-      "g": "Course"
+      "g": "Course",
+      "kind": "happy"
     },
     "user_speaking": {
       "f": "src/features/lesson-session/UserSpeakingPage.jsx",
       "title": "User Speaking",
-      "g": "Activity"
+      "g": "Activity",
+      "kind": "happy"
     },
     "voice_failed": {
       "f": "src/features/fallback/VoiceFailedPage.jsx",
       "title": "Voice Session Failed",
-      "g": "Fallback"
+      "g": "Fallback",
+      "kind": "edge"
     },
     "words_practiced": {
       "f": "src/features/progress/WordsPracticedPage.jsx",
       "title": "Words Practiced",
-      "g": "Progress"
+      "g": "Progress",
+      "kind": "happy"
     }
   },
   "edges": [
@@ -2389,7 +2511,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-05-11T07:33:28Z",
-    "sourceCommit": "9acafb5f82f09c247eb6978ff4d70f3be7e599ef"
+    "generatedAt": "2026-05-11T09:00:11Z",
+    "sourceCommit": "8900c649486c8d35466f99779d991e81ac2d91f5"
   }
 }

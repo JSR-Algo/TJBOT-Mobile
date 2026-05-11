@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=9cfd302d222f. Do not edit by hand.
 %% domain: home
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -8,10 +8,11 @@ flowchart TD
     home_hub_done["Home · Lesson done today"]
     home_hub_greet["Home · Robot greeting"]
     home_hub_idle["Home · Idle happy"]
-    home_hub_mic["Home · Needs microphone"]
-    home_hub_offline["Home · Reconnecting"]
+    home_hub_mic(["Home · Needs microphone"])
+    home_hub_offline(["Home · Reconnecting"])
   end
-  class home_hub_daily,home_hub_done,home_hub_greet,home_hub_idle,home_hub_mic,home_hub_offline happy
+  class home_hub_daily,home_hub_done,home_hub_greet,home_hub_idle happy
+  class home_hub_mic,home_hub_offline edge
 
 %% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
 %%   home_hub_offline -> course (course)

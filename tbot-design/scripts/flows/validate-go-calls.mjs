@@ -224,6 +224,24 @@ if (ALL || FLAGS.has('--check-edge-exemptions')) {
   if (!errors.some(e => e.startsWith('[edge-exemptions]'))) ok('edge-exemptions');
 }
 
+// ─── (j) backend-leak linter (R8 — added 2026-05-11) ────────────────────────
+// Per plan D2 backend mapping is skipped. flow.md narratives must NOT carry
+// invented API/DB references; defer to a future backend.md generator + ADR.
+// Hard-fail if any hand-curated flow.md contains forbidden prefixes.
+if (ALL || FLAGS.has('--check-backend-leak')) {
+  const BAD_LINE = /^(endpoint:|POST |GET |PUT |DELETE |db:|table:|schema:)\s/m;
+  const flowMds = walkFiles(DOCS_FLOWS_DIR, p => p.endsWith('flow.md'));
+  for (const md of flowMds) {
+    const src = fs.readFileSync(md, 'utf8');
+    if (BAD_LINE.test(src)) {
+      const rel = path.relative(PROJECT_ROOT, md);
+      const m = src.match(BAD_LINE);
+      fail('backend-leak', `${rel} contains forbidden backend reference: "${m?.[0]?.trim()}". Backend mapping is deferred (plan D2); use a future backend.md instead.`);
+    }
+  }
+  if (!errors.some(e => e.startsWith('[backend-leak]'))) ok(`backend-leak(${flowMds.length} flow.md files scanned)`);
+}
+
 // ─── (g) lane-write protocol — WARN-ONLY (no auto gate per 2026-05-11 decision) ──
 // Prints to stderr if a lane-A/B/C/D branch stages forbidden files; never exits non-zero.
 // Trunk safety is the lane-z Phase 1.5 re-extract, not this check.

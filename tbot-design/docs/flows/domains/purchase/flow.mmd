@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=9cfd302d222f. Do not edit by hand.
 %% domain: purchase
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -7,7 +7,7 @@ flowchart TD
     pr_activate["Buy · Activate Robot"]
     pr_arrived["Buy · Robot arrived · setup"]
     pr_bundle["Buy · Bundle picker"]
-    pr_checkout["Buy · Checkout"]
+    pr_checkout(["Buy · Checkout"])
     pr_confirm["Buy · Order confirmed"]
     pr_first_course["Buy · Add first course"]
     pr_how["Buy · How lessons work"]
@@ -37,7 +37,8 @@ flowchart TD
   pr_shipping --> pr_confirm
   pr_subs --> pr_bundle
   pr_subs --> pr_privacy
-  class pr_activate,pr_arrived,pr_bundle,pr_checkout,pr_confirm,pr_first_course,pr_how,pr_included,pr_intro,pr_privacy,pr_shipping,pr_subs happy
+  class pr_activate,pr_arrived,pr_bundle,pr_confirm,pr_first_course,pr_how,pr_included,pr_intro,pr_privacy,pr_shipping,pr_subs happy
+  class pr_checkout edge
 
 %% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
 %%   pr_first_course -> cl_added (course-library)

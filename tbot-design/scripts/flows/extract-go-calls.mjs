@@ -42,9 +42,11 @@ async function main() {
       title: prev.title ?? info.title,        // preserve manual title overrides
       g: prev.g ?? info.group,                 // preserve manual g overrides
     };
-    if (prev.kind && (prev.kind === 'happy' || prev.kind === 'edge')) {
-      rec.kind = prev.kind;                    // preserve manual kind tag
-    }
+    // C1 fix 2026-05-11: states.js is the canonical source of `kind`.
+    // Prefer info.kind (from states.js) so lane edits propagate; fall back to
+    // prev.kind only if states.js doesn't tag the state.
+    const kind = info.kind ?? prev.kind;
+    if (kind === 'happy' || kind === 'edge') rec.kind = kind;
     newStates[id] = rec;
   }
 

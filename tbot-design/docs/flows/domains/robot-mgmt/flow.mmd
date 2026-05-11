@@ -1,15 +1,15 @@
-%% GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=9cfd302d222f. Do not edit by hand.
 %% domain: robot-mgmt
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
   classDef edge  fill:#fee2e2,stroke:#991b1b
   subgraph Robot_Mgmt["Robot Mgmt"]
     rm_battery["Robot · Battery"]
-    rm_factory["Robot · Factory reset"]
+    rm_factory(["Robot · Factory reset"])
     rm_firmware["Robot · Software update"]
     rm_mic_test["Robot · Microphone test"]
     rm_my_robot["Robot · My Robot"]
-    rm_offline_help["Robot · Offline help"]
+    rm_offline_help(["Robot · Offline help"])
     rm_sound["Robot · Sound & volume"]
     rm_speaker_test["Robot · Speaker test"]
     rm_status["Robot · Status"]
@@ -49,7 +49,8 @@ flowchart TD
   rm_storage --> rm_my_robot
   rm_support --> rm_my_robot
   rm_wifi --> rm_my_robot
-  class rm_battery,rm_factory,rm_firmware,rm_mic_test,rm_my_robot,rm_offline_help,rm_sound,rm_speaker_test,rm_status,rm_storage,rm_support,rm_wifi happy
+  class rm_battery,rm_firmware,rm_mic_test,rm_my_robot,rm_sound,rm_speaker_test,rm_status,rm_storage,rm_support,rm_wifi happy
+  class rm_factory,rm_offline_help edge
 
 %% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
 %%   rm_storage -> cl_library (course-library)
