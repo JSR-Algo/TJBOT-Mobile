@@ -37,14 +37,15 @@ async function main() {
   for (const [id, info] of [...allStates.entries()].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0)) {
     const pageRel = stateToPage.get(id) || `src/features/${info.domain}/states.js`;
     const prev = prevStates[id] || {};
+    // states.js is canonical (consistent with C1 fix 2026-05-11).
+    // title, g, kind all prefer info.* (states.js) over prev.* (nav-graph snapshot)
+    // so lane edits propagate on re-extract. Manual nav-graph overrides are
+    // forbidden (single-writer + extractor is the only writer).
     const rec = {
       f: pageRel,
-      title: prev.title ?? info.title,        // preserve manual title overrides
-      g: prev.g ?? info.group,                 // preserve manual g overrides
+      title: info.title ?? prev.title,
+      g: info.group ?? prev.g,
     };
-    // C1 fix 2026-05-11: states.js is the canonical source of `kind`.
-    // Prefer info.kind (from states.js) so lane edits propagate; fall back to
-    // prev.kind only if states.js doesn't tag the state.
     const kind = info.kind ?? prev.kind;
     if (kind === 'happy' || kind === 'edge') rec.kind = kind;
     newStates[id] = rec;

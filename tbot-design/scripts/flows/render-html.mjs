@@ -57,7 +57,7 @@ const html = [
   '</style>',
   '</head>',
   '<body>',
-  `<!-- ${HEADER.slice(4, -3)} -->`,
+  HEADER,  // already HTML-comment-formatted via generatedHeader()
   '<h1>tbot-design · user flow</h1>',
   `<div class="meta">Generated from <code>nav-graph-data.json</code> (sha <code>${navGraphSha}</code>) at ${new Date().toISOString()}.</div>`,
   '<nav class="nav">',

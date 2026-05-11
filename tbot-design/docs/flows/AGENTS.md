@@ -13,8 +13,10 @@
 |---|---|---|---|---|
 | Lane A — onboarding + auth | onboarding, auth | `src/features/onboarding/`, `src/features/auth/` | `docs/flows/domains/onboarding/flow.md`, `docs/flows/domains/auth/flow.md` | 2 |
 | Lane B — learn loop | home, lesson-session, course | `src/features/home/`, `src/features/lesson-session/`, `src/features/course/` | `docs/flows/domains/home/flow.md`, `docs/flows/domains/lesson-session/flow.md`, `docs/flows/domains/course/flow.md` | 3 |
-| Lane C — parent + commerce | progress, parent, purchase | `src/features/progress/`, `src/features/parent/`, `src/features/purchase/` | `docs/flows/domains/progress/flow.md`, `docs/flows/domains/parent/flow.md`, `docs/flows/domains/purchase/flow.md` | 3 |
-| Lane D — robot + edges | device, robot-mgmt, fallback, course-library | `src/features/device/`, `src/features/robot-mgmt/`, `src/features/fallback/`, `src/features/course-library/` | `docs/flows/domains/device/flow.md`, `docs/flows/domains/robot-mgmt/flow.md`, `docs/flows/domains/fallback/flow.md`, `docs/flows/domains/course-library/flow.md` | 4 |
+| Lane C — parent + commerce | progress, parent, purchase, course-library | `src/features/progress/`, `src/features/parent/`, `src/features/purchase/`, `src/features/course-library/` | `docs/flows/domains/progress/flow.md`, `docs/flows/domains/parent/flow.md`, `docs/flows/domains/purchase/flow.md`, `docs/flows/domains/course-library/flow.md` | 4 |
+| Lane D — robot + edges | device, robot-mgmt, fallback | `src/features/device/`, `src/features/robot-mgmt/`, `src/features/fallback/` | `docs/flows/domains/device/flow.md`, `docs/flows/domains/robot-mgmt/flow.md`, `docs/flows/domains/fallback/flow.md` | 3 |
+
+> **Re-balanced 2026-05-11**: `course-library` moved D→C (architect's recommendation). Rationale: course-library is commerce-adjacent and pairs naturally with purchase (which already lives in C). Result: A=2, B=3, C=4, D=3 — load is more even, and the C cluster (commerce: purchase + course-library) + Lane A (entry: onboarding + auth) read as coherent user-journey units.
 | Lane Z — infra + integration | (cross-cutting) | `scripts/flows/**`, `App.jsx`, `nav-graph-data.json` (sole writer) | `docs/flows/AGENTS.md`, `docs/flows/README.md`, `docs/flows/global.flow.md`, `docs/flows/shared/navigation.flow.mmd`, `docs/flows/edge-cases/*.flow.mmd`, every GENERATED file under `docs/flows/` | — |
 
 `grep -c "^| Lane [A-DZ] " docs/flows/AGENTS.md` MUST return 5.

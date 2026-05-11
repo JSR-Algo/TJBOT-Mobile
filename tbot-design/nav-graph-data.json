@@ -21,7 +21,7 @@
     "audio_error": {
       "f": "src/features/lesson-session/AudioErrorPage.jsx",
       "title": "Audio Error",
-      "g": "Edge",
+      "g": "Recovery",
       "kind": "edge"
     },
     "audio_recovery": {
@@ -255,7 +255,7 @@
     "exit_confirm": {
       "f": "src/features/lesson-session/ExitConfirmPage.jsx",
       "title": "Exit Confirmation",
-      "g": "Edge",
+      "g": "Recovery",
       "kind": "edge"
     },
     "gentle": {
@@ -278,7 +278,7 @@
     },
     "home_hub_daily": {
       "f": "src/features/home/HomeHubPage.jsx",
-      "title": "Home · Today",
+      "title": "Home · Today's lesson",
       "g": "Home",
       "kind": "happy"
     },
@@ -530,7 +530,7 @@
     },
     "pr_included": {
       "f": "src/features/purchase/IncludedPage.jsx",
-      "title": "Buy · What",
+      "title": "Buy · What's included",
       "g": "Purchase",
       "kind": "happy"
     },
@@ -561,7 +561,7 @@
     "reconnecting": {
       "f": "src/features/lesson-session/ReconnectingPage.jsx",
       "title": "Reconnecting",
-      "g": "Edge",
+      "g": "Recovery",
       "kind": "edge"
     },
     "reconnecting_overlay": {
@@ -675,7 +675,7 @@
     "safety": {
       "f": "src/features/lesson-session/SafetyPage.jsx",
       "title": "Safety Fallback",
-      "g": "Edge",
+      "g": "Recovery",
       "kind": "edge"
     },
     "safety_redirect": {
@@ -704,7 +704,7 @@
     },
     "today_progress": {
       "f": "src/features/progress/TodayProgressPage.jsx",
-      "title": "Today",
+      "title": "Today's Progress",
       "g": "Progress",
       "kind": "happy"
     },
@@ -2390,12 +2390,6 @@
       "activity_done",
       "lesson_done"
     ],
-    "Edge": [
-      "audio_error",
-      "exit_confirm",
-      "reconnecting",
-      "safety"
-    ],
     "Fallback": [
       "app_error",
       "audio_recovery",
@@ -2467,6 +2461,12 @@
       "pr_shipping",
       "pr_subs"
     ],
+    "Recovery": [
+      "audio_error",
+      "exit_confirm",
+      "reconnecting",
+      "safety"
+    ],
     "Robot Device": [
       "dv_firmware",
       "dv_home",
@@ -2511,7 +2511,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-05-11T09:00:11Z",
-    "sourceCommit": "8900c649486c8d35466f99779d991e81ac2d91f5"
+    "generatedAt": "2026-05-11T09:10:05Z",
+    "sourceCommit": "bb92c96f3a0fd319279a08ad1048ecfc12a0ec44"
   }
 }

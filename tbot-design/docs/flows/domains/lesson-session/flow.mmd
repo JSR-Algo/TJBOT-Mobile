@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=9cfd302d222f. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=376473248fcb. Do not edit by hand.
 %% domain: lesson-session
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -14,12 +14,6 @@ flowchart TD
     activity_done["Activity Complete"]
     lesson_done["Lesson Complete"]
   end
-  subgraph Edge["Edge"]
-    audio_error(["Audio Error"])
-    exit_confirm(["Exit Confirmation"])
-    reconnecting(["Reconnecting"])
-    safety(["Safety Fallback"])
-  end
   subgraph Feedback["Feedback"]
     bargein(["Interrupted (Barge-in)"])
     gentle(["Gentle Correction"])
@@ -27,6 +21,12 @@ flowchart TD
     retry(["Retry Prompt"])
     silence["Silence Prompt"]
     success["Success Moment"]
+  end
+  subgraph Recovery["Recovery"]
+    audio_error(["Audio Error"])
+    exit_confirm(["Exit Confirmation"])
+    reconnecting(["Reconnecting"])
+    safety(["Safety Fallback"])
   end
   subgraph Start["Start"]
     connecting["Connecting Voice"]
@@ -69,7 +69,7 @@ flowchart TD
   user_speaking --> exit_confirm
   user_speaking --> thinking
   class activity_intro,robot_listening,robot_speaking,thinking,user_speaking,activity_done,lesson_done,silence,success,connecting,greeting,lesson_ready happy
-  class audio_error,exit_confirm,reconnecting,safety,bargein,gentle,offtopic,retry edge
+  class bargein,gentle,offtopic,retry,audio_error,exit_confirm,reconnecting,safety edge
 
 %% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
 %%   audio_error -> home_hub_idle (home)

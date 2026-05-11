@@ -15,8 +15,8 @@ export const STATES = [
   { id: 'bargein',         title: 'Interrupted (Barge-in)', group: 'Feedback', kind: 'edge'  },
   { id: 'activity_done',   title: 'Activity Complete',      group: 'Done',     kind: 'happy' },
   { id: 'lesson_done',     title: 'Lesson Complete',        group: 'Done',     kind: 'happy' },
-  { id: 'reconnecting',    title: 'Reconnecting',           group: 'Edge',     kind: 'edge'  },
-  { id: 'audio_error',     title: 'Audio Error',            group: 'Edge',     kind: 'edge'  },
-  { id: 'safety',          title: 'Safety Fallback',        group: 'Edge',     kind: 'edge'  },
-  { id: 'exit_confirm',    title: 'Exit Confirmation',      group: 'Edge',     kind: 'edge'  },
+  { id: 'reconnecting',    title: 'Reconnecting',           group: 'Recovery',     kind: 'edge'  },
+  { id: 'audio_error',     title: 'Audio Error',            group: 'Recovery',     kind: 'edge'  },
+  { id: 'safety',          title: 'Safety Fallback',        group: 'Recovery',     kind: 'edge'  },
+  { id: 'exit_confirm',    title: 'Exit Confirmation',      group: 'Recovery',     kind: 'edge'  },
 ];

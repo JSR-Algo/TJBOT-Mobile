@@ -42,11 +42,15 @@ function buildStateDomainMap() {
 const stateToDomain = buildStateDomainMap();
 
 // Group states by (domain, subgroup g).
+// C9 fix 2026-05-11: skipped state count is exported so callers can fail loud.
+// Used to silently drop foreign/undeclared states — a footgun if the
+// `undeclared-targets` validator check is ever bypassed (e.g. --schema-only run).
 function partitionStates() {
   const out = new Map(); // domain -> Map<g, stateIds[]>
+  const skipped = [];    // C9: state ids that have no domain mapping
   for (const [id, rec] of Object.entries(navGraph.states)) {
     const d = stateToDomain.get(id);
-    if (!d) continue;  // Foreign / undeclared
+    if (!d) { skipped.push(id); continue; }
     if (!out.has(d)) out.set(d, new Map());
     const sub = out.get(d);
     if (!sub.has(rec.g)) sub.set(rec.g, []);
@@ -56,6 +60,7 @@ function partitionStates() {
   for (const sub of out.values()) {
     for (const arr of sub.values()) arr.sort();
   }
+  out._skipped = skipped;  // attach for caller diagnostics
   return out;
 }
 
@@ -279,12 +284,25 @@ function emitUserFlowIndex() {
 }
 
 // ─── Emit pipeline ──────────────────────────────────────────────────────────
+// C9 fix 2026-05-11: partitionStates() is expensive (called per-domain). Compute
+// once, share, and fail loud on any skipped state. Skipped = state has no
+// owning src/features/<d>/ dir (foreign or undeclared). Validator's
+// `undeclared-targets` check normally catches this earlier, but if someone
+// bypasses with --schema-only, we still want loud failure at generate time.
+const partitioned = partitionStates();
+if (partitioned._skipped && partitioned._skipped.length) {
+  console.error(`[flows:generate] FATAL: ${partitioned._skipped.length} state(s) without owning domain — refusing to silently drop:`);
+  for (const id of partitioned._skipped) console.error(`  - ${id}`);
+  console.error('Fix by registering each state in src/features/<d>/states.js or removing from nav-graph-data.json.');
+  process.exit(1);
+}
+
 const writes = []; // {p, content}
 for (const d of listDomains()) {
   const dir = path.join(DOCS_FLOWS_DIR, 'domains', d);
   writes.push({
     p: path.join(dir, 'flow.mmd'),
-    content: emitDomainMmd(d, partitionStates()),
+    content: emitDomainMmd(d, partitioned),
   });
   writes.push({
     p: path.join(dir, 'go-calls.json'),
