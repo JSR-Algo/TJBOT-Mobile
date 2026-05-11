@@ -1,5 +1,5 @@
 {
-  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
+  "_generated": "from nav-graph-data.json sha=a64610b0bee3",
   "domain": "parent",
   "count": 13,
   "calls": [
@@ -39,7 +39,7 @@
       "from": "parent_settings",
       "to": "parent_summary",
       "file": "src/features/parent/screens/ParentSettingsScreen.jsx",
-      "line": 18,
+      "line": 19,
       "cross_domain": false,
       "target_domain": "parent"
     },
@@ -47,7 +47,7 @@
       "from": "parent_settings",
       "to": "parent_safety",
       "file": "src/features/parent/screens/ParentSettingsScreen.jsx",
-      "line": 61,
+      "line": 62,
       "cross_domain": false,
       "target_domain": "parent"
     },

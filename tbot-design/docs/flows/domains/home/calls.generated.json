@@ -1,5 +1,5 @@
 {
-  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
+  "_generated": "from nav-graph-data.json sha=a64610b0bee3",
   "domain": "home",
   "count": 5,
   "calls": [
@@ -7,7 +7,7 @@
       "from": "home_hub_offline",
       "to": "parent_gate",
       "file": "src/features/home/screens/HomeHubScreen.jsx",
-      "line": 85,
+      "line": 90,
       "cross_domain": true,
       "target_domain": "parent"
     },
@@ -15,7 +15,7 @@
       "from": "home_hub_offline",
       "to": "parent_settings",
       "file": "src/features/home/screens/HomeHubScreen.jsx",
-      "line": 92,
+      "line": 97,
       "cross_domain": true,
       "target_domain": "parent"
     },
@@ -23,7 +23,7 @@
       "from": "home_hub_offline",
       "to": "course",
       "file": "src/features/home/screens/HomeHubScreen.jsx",
-      "line": 158,
+      "line": 163,
       "cross_domain": true,
       "target_domain": "course"
     },
@@ -31,7 +31,7 @@
       "from": "home_hub_offline",
       "to": "review_entry",
       "file": "src/features/home/screens/HomeHubScreen.jsx",
-      "line": 159,
+      "line": 164,
       "cross_domain": true,
       "target_domain": "course"
     },
@@ -39,7 +39,7 @@
       "from": "home_hub_offline",
       "to": "today_progress",
       "file": "src/features/home/screens/HomeHubScreen.jsx",
-      "line": 160,
+      "line": 165,
       "cross_domain": true,
       "target_domain": "progress"
     }

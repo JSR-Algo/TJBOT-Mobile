@@ -1,5 +1,5 @@
 {
-  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
+  "_generated": "from nav-graph-data.json sha=a64610b0bee3",
   "domain": "onboarding",
   "count": 14,
   "calls": [
@@ -7,7 +7,7 @@
       "from": "onb_intro_celebrate",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12,
+      "line": 14,
       "cross_domain": false,
       "target_domain": "onboarding"
     },
@@ -15,7 +15,7 @@
       "from": "onb_intro_listen",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12,
+      "line": 14,
       "cross_domain": false,
       "target_domain": "onboarding"
     },
@@ -23,7 +23,7 @@
       "from": "onb_intro_retry",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12,
+      "line": 14,
       "cross_domain": false,
       "target_domain": "onboarding"
     },
@@ -31,7 +31,7 @@
       "from": "onb_intro_speak",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12,
+      "line": 14,
       "cross_domain": false,
       "target_domain": "onboarding"
     },
@@ -39,7 +39,7 @@
       "from": "onb_first_lesson",
       "to": "lesson_ready",
       "file": "src/features/onboarding/screens/FirstLessonEntryScreen.jsx",
-      "line": 33,
+      "line": 35,
       "cross_domain": true,
       "target_domain": "lesson-session"
     },
@@ -103,7 +103,7 @@
       "from": "onb_welcome",
       "to": "onb_intro_listen",
       "file": "src/features/onboarding/screens/WelcomeScreen.jsx",
-      "line": 23,
+      "line": 24,
       "cross_domain": false,
       "target_domain": "onboarding"
     },
@@ -111,7 +111,7 @@
       "from": "onb_welcome",
       "to": "onb_login",
       "file": "src/features/onboarding/screens/WelcomeScreen.jsx",
-      "line": 24,
+      "line": 25,
       "cross_domain": true,
       "target_domain": "auth"
     }

@@ -1,109 +1,109 @@
 {
   "states": {
     "activity_done": {
-      "f": "src/features/lesson-session/ActivityDonePage.jsx",
+      "f": "src/features/lesson-session/screens/ActivityDoneScreen.jsx",
       "title": "Activity Complete",
       "g": "Done",
       "kind": "happy"
     },
     "activity_intro": {
-      "f": "src/features/lesson-session/ActivityIntroPage.jsx",
+      "f": "src/features/lesson-session/screens/ActivityIntroScreen.jsx",
       "title": "Activity Intro",
       "g": "Activity",
       "kind": "happy"
     },
     "app_error": {
-      "f": "src/features/fallback/AppErrorPage.jsx",
+      "f": "src/features/fallback/screens/AppErrorScreen.jsx",
       "title": "Generic App Error",
       "g": "Fallback",
       "kind": "edge"
     },
     "audio_error": {
-      "f": "src/features/lesson-session/AudioErrorPage.jsx",
+      "f": "src/features/lesson-session/screens/AudioErrorScreen.jsx",
       "title": "Audio Error",
       "g": "Recovery",
       "kind": "edge"
     },
     "audio_recovery": {
-      "f": "src/features/fallback/AudioRecoveryPage.jsx",
+      "f": "src/features/fallback/screens/AudioRecoveryScreen.jsx",
       "title": "Audio Permission Recovery",
       "g": "Fallback",
       "kind": "edge"
     },
     "bargein": {
-      "f": "src/features/lesson-session/BargeinPage.jsx",
+      "f": "src/features/lesson-session/screens/BargeinScreen.jsx",
       "title": "Interrupted (Barge-in)",
       "g": "Feedback",
       "kind": "edge"
     },
     "celebration": {
-      "f": "src/features/progress/CelebrationPage.jsx",
+      "f": "src/features/progress/screens/CelebrationScreen.jsx",
       "title": "Celebration",
       "g": "Progress",
       "kind": "happy"
     },
     "cl_added": {
-      "f": "src/features/course-library/CourseAddedPage.jsx",
+      "f": "src/features/course-library/screens/CourseAddedScreen.jsx",
       "title": "Course · Added to Robot",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_buy": {
-      "f": "src/features/course-library/BuyCoursePage.jsx",
+      "f": "src/features/course-library/screens/BuyCourseScreen.jsx",
       "title": "Course · Buy / Unlock",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_companion": {
-      "f": "src/features/course-library/CompanionPage.jsx",
+      "f": "src/features/course-library/screens/CompanionScreen.jsx",
       "title": "Course · App companion view",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_complete": {
-      "f": "src/features/course-library/CourseCompletePage.jsx",
+      "f": "src/features/course-library/screens/CourseCompleteScreen.jsx",
       "title": "Course · Lesson complete (synced)",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_detail": {
-      "f": "src/features/course-library/CourseDetailPage.jsx",
+      "f": "src/features/course-library/screens/CourseDetailScreen.jsx",
       "title": "Course · Detail",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_library": {
-      "f": "src/features/course-library/CourseLibraryPage.jsx",
+      "f": "src/features/course-library/screens/CourseLibraryScreen.jsx",
       "title": "Course · Library",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_locked": {
-      "f": "src/features/course-library/CourseLockedPage.jsx",
+      "f": "src/features/course-library/screens/CourseLockedScreen.jsx",
       "title": "Course · Locked",
       "g": "Course Library",
       "kind": "edge"
     },
     "cl_needs_sync": {
-      "f": "src/features/course-library/NeedsSyncPage.jsx",
+      "f": "src/features/course-library/screens/NeedsSyncScreen.jsx",
       "title": "Course · Robot needs sync",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_robot_ready": {
-      "f": "src/features/course-library/RobotReadyPage.jsx",
+      "f": "src/features/course-library/screens/RobotReadyScreen.jsx",
       "title": "Course · Robot ready for today",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_running": {
-      "f": "src/features/course-library/RunningPage.jsx",
+      "f": "src/features/course-library/screens/RunningScreen.jsx",
       "title": "Course · Lesson running on Robot",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_send": {
-      "f": "src/features/course-library/SendToRobotPage.jsx",
+      "f": "src/features/course-library/screens/SendToRobotScreen.jsx",
       "title": "Course · Send lesson to Robot",
       "g": "Course Library",
       "kind": "happy"
@@ -115,451 +115,451 @@
       "kind": "happy"
     },
     "connecting": {
-      "f": "src/features/lesson-session/ConnectingPage.jsx",
+      "f": "src/features/lesson-session/screens/ConnectingScreen.jsx",
       "title": "Connecting Voice",
       "g": "Start",
       "kind": "happy"
     },
     "course": {
-      "f": "src/features/course/CoursePage.jsx",
+      "f": "src/features/course/screens/CourseScreen.jsx",
       "title": "Course Overview",
       "g": "Course",
       "kind": "happy"
     },
     "daily_mission": {
-      "f": "src/features/course/DailyMissionPage.jsx",
+      "f": "src/features/course/screens/DailyMissionScreen.jsx",
       "title": "Daily Mission",
       "g": "Course",
       "kind": "happy"
     },
     "dv_firmware": {
-      "f": "src/features/device/DeviceFirmwarePage.jsx",
+      "f": "src/features/device/screens/DeviceFirmwareScreen.jsx",
       "title": "Robot · Firmware update",
       "g": "Robot Device",
       "kind": "edge"
     },
     "dv_home": {
-      "f": "src/features/device/DeviceHomePage.jsx",
+      "f": "src/features/device/screens/DeviceHomeScreen.jsx",
       "title": "Robot · Device home",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_lcd": {
-      "f": "src/features/device/LCDLibraryPage.jsx",
+      "f": "src/features/device/screens/LCDLibraryScreen.jsx",
       "title": "Robot · LCD face library",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_lcd_turn": {
-      "f": "src/features/device/LCDLessonTurnPage.jsx",
+      "f": "src/features/device/screens/LCDLessonTurnScreen.jsx",
       "title": "Robot · One lesson turn",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_lost": {
-      "f": "src/features/device/DeviceLostPage.jsx",
+      "f": "src/features/device/screens/DeviceLostScreen.jsx",
       "title": "Robot · Find my Robot",
       "g": "Robot Device",
       "kind": "edge"
     },
     "dv_overview": {
-      "f": "src/features/device/DeviceOverviewPage.jsx",
+      "f": "src/features/device/screens/DeviceOverviewScreen.jsx",
       "title": "Robot · How it works together",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_add": {
-      "f": "src/features/device/pairing/PairAddPage.jsx",
+      "f": "src/features/device/pairing/screens/PairAddScreen.jsx",
       "title": "Robot · Pair · add",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_code": {
-      "f": "src/features/device/pairing/PairCodePage.jsx",
+      "f": "src/features/device/pairing/screens/PairCodeScreen.jsx",
       "title": "Robot · Pair · confirm code",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_connecting": {
-      "f": "src/features/device/pairing/PairConnectingPage.jsx",
+      "f": "src/features/device/pairing/screens/PairConnectingScreen.jsx",
       "title": "Robot · Pair · connecting",
       "g": "Robot Device",
       "kind": "edge"
     },
     "dv_pair_failed": {
-      "f": "src/features/device/pairing/PairFailedPage.jsx",
+      "f": "src/features/device/pairing/screens/PairFailedScreen.jsx",
       "title": "Robot · Pair · failed",
       "g": "Robot Device",
       "kind": "edge"
     },
     "dv_pair_first_lesson": {
-      "f": "src/features/device/pairing/PairFirstLessonPage.jsx",
+      "f": "src/features/device/pairing/screens/PairFirstLessonScreen.jsx",
       "title": "Robot · Pair · first lesson",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_found": {
-      "f": "src/features/device/pairing/PairFoundPage.jsx",
+      "f": "src/features/device/pairing/screens/PairFoundScreen.jsx",
       "title": "Robot · Pair · found",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_intro": {
-      "f": "src/features/device/pairing/PairIntroPage.jsx",
+      "f": "src/features/device/pairing/screens/PairIntroScreen.jsx",
       "title": "Robot · Pair · turn on",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_offline": {
-      "f": "src/features/device/pairing/PairOfflinePage.jsx",
+      "f": "src/features/device/pairing/screens/PairOfflineScreen.jsx",
       "title": "Robot · Pair · offline",
       "g": "Robot Device",
       "kind": "edge"
     },
     "dv_pair_rename": {
-      "f": "src/features/device/pairing/PairRenamePage.jsx",
+      "f": "src/features/device/pairing/screens/PairRenameScreen.jsx",
       "title": "Robot · Pair · rename & buddy",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_search": {
-      "f": "src/features/device/pairing/PairSearchPage.jsx",
+      "f": "src/features/device/pairing/screens/PairSearchScreen.jsx",
       "title": "Robot · Pair · searching",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_success": {
-      "f": "src/features/device/pairing/PairSuccessPage.jsx",
+      "f": "src/features/device/pairing/screens/PairSuccessScreen.jsx",
       "title": "Robot · Pair · success",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_wifi": {
-      "f": "src/features/device/pairing/PairWifiPage.jsx",
+      "f": "src/features/device/pairing/screens/PairWifiScreen.jsx",
       "title": "Robot · Pair · Wi-Fi pick",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_pair_wifi_pw": {
-      "f": "src/features/device/pairing/PairWifiPasswordPage.jsx",
+      "f": "src/features/device/pairing/screens/PairWifiPasswordScreen.jsx",
       "title": "Robot · Pair · Wi-Fi password",
       "g": "Robot Device",
       "kind": "happy"
     },
     "dv_session": {
-      "f": "src/features/device/DeviceSessionPage.jsx",
+      "f": "src/features/device/screens/DeviceSessionScreen.jsx",
       "title": "Robot · Live session monitor",
       "g": "Robot Device",
       "kind": "happy"
     },
     "exit_confirm": {
-      "f": "src/features/lesson-session/ExitConfirmPage.jsx",
+      "f": "src/features/lesson-session/screens/ExitConfirmScreen.jsx",
       "title": "Exit Confirmation",
       "g": "Recovery",
       "kind": "edge"
     },
     "gentle": {
-      "f": "src/features/lesson-session/GentlePage.jsx",
+      "f": "src/features/lesson-session/screens/GentleScreen.jsx",
       "title": "Gentle Correction",
       "g": "Feedback",
       "kind": "edge"
     },
     "greeting": {
-      "f": "src/features/lesson-session/GreetingPage.jsx",
+      "f": "src/features/lesson-session/screens/GreetingScreen.jsx",
       "title": "Robot Greeting",
       "g": "Start",
       "kind": "happy"
     },
     "help_faq": {
-      "f": "src/features/fallback/HelpFaqPage.jsx",
+      "f": "src/features/fallback/screens/HelpFaqScreen.jsx",
       "title": "Help & FAQ",
       "g": "Fallback",
       "kind": "happy"
     },
     "home_hub_daily": {
-      "f": "src/features/home/HomeHubPage.jsx",
+      "f": "src/features/home/screens/HomeHubScreen.jsx",
       "title": "Home · Today's lesson",
       "g": "Home",
       "kind": "happy"
     },
     "home_hub_done": {
-      "f": "src/features/home/HomeHubPage.jsx",
+      "f": "src/features/home/screens/HomeHubScreen.jsx",
       "title": "Home · Lesson done today",
       "g": "Home",
       "kind": "happy"
     },
     "home_hub_greet": {
-      "f": "src/features/home/HomeHubPage.jsx",
+      "f": "src/features/home/screens/HomeHubScreen.jsx",
       "title": "Home · Robot greeting",
       "g": "Home",
       "kind": "happy"
     },
     "home_hub_idle": {
-      "f": "src/features/home/HomeHubPage.jsx",
+      "f": "src/features/home/screens/HomeHubScreen.jsx",
       "title": "Home · Idle happy",
       "g": "Home",
       "kind": "happy"
     },
     "home_hub_mic": {
-      "f": "src/features/home/HomeHubPage.jsx",
+      "f": "src/features/home/screens/HomeHubScreen.jsx",
       "title": "Home · Needs microphone",
       "g": "Home",
       "kind": "edge"
     },
     "home_hub_offline": {
-      "f": "src/features/home/HomeHubPage.jsx",
+      "f": "src/features/home/screens/HomeHubScreen.jsx",
       "title": "Home · Reconnecting",
       "g": "Home",
       "kind": "edge"
     },
     "kid_settings": {
-      "f": "src/features/fallback/KidSettingsPage.jsx",
+      "f": "src/features/fallback/screens/KidSettingsScreen.jsx",
       "title": "Settings",
       "g": "Fallback",
       "kind": "happy"
     },
     "lesson_detail": {
-      "f": "src/features/course/LessonDetailPage.jsx",
+      "f": "src/features/course/screens/LessonDetailScreen.jsx",
       "title": "Lesson Detail",
       "g": "Course",
       "kind": "happy"
     },
     "lesson_done": {
-      "f": "src/features/lesson-session/LessonDonePage.jsx",
+      "f": "src/features/lesson-session/screens/LessonDoneScreen.jsx",
       "title": "Lesson Complete",
       "g": "Done",
       "kind": "happy"
     },
     "lesson_list": {
-      "f": "src/features/course/LessonListPage.jsx",
+      "f": "src/features/course/screens/LessonListScreen.jsx",
       "title": "Lesson List",
       "g": "Course",
       "kind": "happy"
     },
     "lesson_ready": {
-      "f": "src/features/lesson-session/LessonReadyPage.jsx",
+      "f": "src/features/lesson-session/screens/LessonReadyScreen.jsx",
       "title": "Lesson Ready",
       "g": "Start",
       "kind": "happy"
     },
     "lesson_resume": {
-      "f": "src/features/fallback/LessonResumePage.jsx",
+      "f": "src/features/fallback/screens/LessonResumeScreen.jsx",
       "title": "Lesson Resume",
       "g": "Fallback",
       "kind": "happy"
     },
     "lesson_summary": {
-      "f": "src/features/progress/LessonSummaryPage.jsx",
+      "f": "src/features/progress/screens/LessonSummaryScreen.jsx",
       "title": "Lesson Summary",
       "g": "Progress",
       "kind": "happy"
     },
     "level": {
-      "f": "src/features/course/LevelPage.jsx",
+      "f": "src/features/course/screens/LevelScreen.jsx",
       "title": "Level Overview",
       "g": "Course",
       "kind": "happy"
     },
     "mic_missing": {
-      "f": "src/features/fallback/MicMissingPage.jsx",
+      "f": "src/features/fallback/screens/MicMissingScreen.jsx",
       "title": "Mic Permission Missing",
       "g": "Fallback",
       "kind": "edge"
     },
     "network_error": {
-      "f": "src/features/fallback/NetworkErrorPage.jsx",
+      "f": "src/features/fallback/screens/NetworkErrorScreen.jsx",
       "title": "Network Error",
       "g": "Fallback",
       "kind": "edge"
     },
     "offtopic": {
-      "f": "src/features/lesson-session/OfftopicPage.jsx",
+      "f": "src/features/lesson-session/screens/OfftopicScreen.jsx",
       "title": "Off-topic Redirect",
       "g": "Feedback",
       "kind": "edge"
     },
     "onb_child": {
-      "f": "src/features/auth/ChildProfilePage.jsx",
+      "f": "src/features/auth/screens/ChildProfileScreen.jsx",
       "title": "11 · Child Profile",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_first_lesson": {
-      "f": "src/features/onboarding/FirstLessonEntryPage.jsx",
+      "f": "src/features/onboarding/screens/FirstLessonEntryScreen.jsx",
       "title": "12 · First Lesson Entry",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_intro_celebrate": {
-      "f": "src/features/onboarding/IntroCelebratePage.jsx",
+      "f": "src/features/onboarding/screens/IntroCelebrateScreen.jsx",
       "title": "6 · Intro · Celebrate",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_intro_listen": {
-      "f": "src/features/onboarding/IntroListenPage.jsx",
+      "f": "src/features/onboarding/screens/IntroListenScreen.jsx",
       "title": "3 · Intro · Listen",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_intro_retry": {
-      "f": "src/features/onboarding/IntroRetryPage.jsx",
+      "f": "src/features/onboarding/screens/IntroRetryScreen.jsx",
       "title": "5 · Intro · Try Again",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_intro_speak": {
-      "f": "src/features/onboarding/IntroSpeakPage.jsx",
+      "f": "src/features/onboarding/screens/IntroSpeakScreen.jsx",
       "title": "4 · Intro · Speak",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_login": {
-      "f": "src/features/auth/LoginPage.jsx",
+      "f": "src/features/auth/screens/LoginScreen.jsx",
       "title": "9 · Login / Sign Up",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_login_error": {
-      "f": "src/features/auth/LoginErrorPage.jsx",
+      "f": "src/features/auth/screens/LoginErrorScreen.jsx",
       "title": "10 · Login Error",
       "g": "Onboarding",
       "kind": "edge"
     },
     "onb_mic": {
-      "f": "src/features/onboarding/MicAskPage.jsx",
+      "f": "src/features/onboarding/screens/MicAskScreen.jsx",
       "title": "8 · Voice Permission",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_splash": {
-      "f": "src/features/onboarding/SplashPage.jsx",
+      "f": "src/features/onboarding/screens/SplashScreen.jsx",
       "title": "1 · Splash",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_trust": {
-      "f": "src/features/onboarding/TrustPage.jsx",
+      "f": "src/features/onboarding/screens/TrustScreen.jsx",
       "title": "7 · Parent Trust Intro",
       "g": "Onboarding",
       "kind": "happy"
     },
     "onb_welcome": {
-      "f": "src/features/onboarding/WelcomePage.jsx",
+      "f": "src/features/onboarding/screens/WelcomeScreen.jsx",
       "title": "2 · Welcome",
       "g": "Onboarding",
       "kind": "happy"
     },
     "parent_gate": {
-      "f": "src/features/parent/ParentGatePage.jsx",
+      "f": "src/features/parent/screens/ParentGateScreen.jsx",
       "title": "Parent Gate",
       "g": "Parent",
       "kind": "edge"
     },
     "parent_history": {
-      "f": "src/features/parent/ParentHistoryPage.jsx",
+      "f": "src/features/parent/screens/ParentHistoryScreen.jsx",
       "title": "Past 30 Days",
       "g": "Parent",
       "kind": "happy"
     },
     "parent_safety": {
-      "f": "src/features/parent/ParentSafetyPage.jsx",
+      "f": "src/features/parent/screens/ParentSafetyScreen.jsx",
       "title": "Safety & Privacy",
       "g": "Parent",
       "kind": "happy"
     },
     "parent_settings": {
-      "f": "src/features/parent/ParentSettingsPage.jsx",
+      "f": "src/features/parent/screens/ParentSettingsScreen.jsx",
       "title": "Parent Settings",
       "g": "Parent",
       "kind": "happy"
     },
     "parent_summary": {
-      "f": "src/features/parent/ParentSummaryPage.jsx",
+      "f": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "title": "Parent Summary",
       "g": "Parent",
       "kind": "happy"
     },
     "parent_today": {
-      "f": "src/features/parent/ParentTodayPage.jsx",
+      "f": "src/features/parent/screens/ParentTodayScreen.jsx",
       "title": "Practiced Today",
       "g": "Parent",
       "kind": "happy"
     },
     "pr_activate": {
-      "f": "src/features/purchase/ActivatePage.jsx",
+      "f": "src/features/purchase/screens/ActivateScreen.jsx",
       "title": "Buy · Activate Robot",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_arrived": {
-      "f": "src/features/purchase/ArrivedPage.jsx",
+      "f": "src/features/purchase/screens/ArrivedScreen.jsx",
       "title": "Buy · Robot arrived · setup",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_bundle": {
-      "f": "src/features/purchase/BundlePage.jsx",
+      "f": "src/features/purchase/screens/BundleScreen.jsx",
       "title": "Buy · Bundle picker",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_checkout": {
-      "f": "src/features/purchase/CheckoutPage.jsx",
+      "f": "src/features/purchase/screens/CheckoutScreen.jsx",
       "title": "Buy · Checkout",
       "g": "Purchase",
       "kind": "edge"
     },
     "pr_confirm": {
-      "f": "src/features/purchase/OrderConfirmPage.jsx",
+      "f": "src/features/purchase/screens/OrderConfirmScreen.jsx",
       "title": "Buy · Order confirmed",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_first_course": {
-      "f": "src/features/purchase/FirstCoursePage.jsx",
+      "f": "src/features/purchase/screens/FirstCourseScreen.jsx",
       "title": "Buy · Add first course",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_how": {
-      "f": "src/features/purchase/HowItWorksPage.jsx",
+      "f": "src/features/purchase/screens/HowItWorksScreen.jsx",
       "title": "Buy · How lessons work",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_included": {
-      "f": "src/features/purchase/IncludedPage.jsx",
+      "f": "src/features/purchase/screens/IncludedScreen.jsx",
       "title": "Buy · What's included",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_intro": {
-      "f": "src/features/purchase/PurchaseIntroPage.jsx",
+      "f": "src/features/purchase/screens/PurchaseIntroScreen.jsx",
       "title": "Buy · Robot overview",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_privacy": {
-      "f": "src/features/purchase/PrivacyPage.jsx",
+      "f": "src/features/purchase/screens/PrivacyScreen.jsx",
       "title": "Buy · Parent trust & privacy",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_shipping": {
-      "f": "src/features/purchase/ShippingPage.jsx",
+      "f": "src/features/purchase/screens/ShippingScreen.jsx",
       "title": "Buy · Shipping & delivery",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_subs": {
-      "f": "src/features/purchase/SubscriptionsPage.jsx",
+      "f": "src/features/purchase/screens/SubscriptionsScreen.jsx",
       "title": "Buy · Course subscription",
       "g": "Purchase",
       "kind": "happy"
     },
     "reconnecting": {
-      "f": "src/features/lesson-session/ReconnectingPage.jsx",
+      "f": "src/features/lesson-session/screens/ReconnectingScreen.jsx",
       "title": "Reconnecting",
       "g": "Recovery",
       "kind": "edge"
@@ -571,163 +571,163 @@
       "kind": "edge"
     },
     "retry": {
-      "f": "src/features/lesson-session/RetryPage.jsx",
+      "f": "src/features/lesson-session/screens/RetryScreen.jsx",
       "title": "Retry Prompt",
       "g": "Feedback",
       "kind": "edge"
     },
     "review_entry": {
-      "f": "src/features/course/ReviewEntryPage.jsx",
+      "f": "src/features/course/screens/ReviewEntryScreen.jsx",
       "title": "Review Entry",
       "g": "Course",
       "kind": "happy"
     },
     "review_needed": {
-      "f": "src/features/progress/ReviewNeededPage.jsx",
+      "f": "src/features/progress/screens/ReviewNeededScreen.jsx",
       "title": "Review Needed",
       "g": "Progress",
       "kind": "happy"
     },
     "rm_battery": {
-      "f": "src/features/robot-mgmt/RobotBatteryPage.jsx",
+      "f": "src/features/robot-mgmt/screens/RobotBatteryScreen.jsx",
       "title": "Robot · Battery",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_factory": {
-      "f": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "f": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "title": "Robot · Factory reset",
       "g": "Robot Mgmt",
       "kind": "edge"
     },
     "rm_firmware": {
-      "f": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "f": "src/features/robot-mgmt/screens/RobotFirmwareScreen.jsx",
       "title": "Robot · Software update",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_mic_test": {
-      "f": "src/features/robot-mgmt/MicTestPage.jsx",
+      "f": "src/features/robot-mgmt/screens/MicTestScreen.jsx",
       "title": "Robot · Microphone test",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_my_robot": {
-      "f": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "f": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "title": "Robot · My Robot",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_offline_help": {
-      "f": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "f": "src/features/robot-mgmt/screens/OfflineHelpScreen.jsx",
       "title": "Robot · Offline help",
       "g": "Robot Mgmt",
       "kind": "edge"
     },
     "rm_sound": {
-      "f": "src/features/robot-mgmt/RobotSoundPage.jsx",
+      "f": "src/features/robot-mgmt/screens/RobotSoundScreen.jsx",
       "title": "Robot · Sound & volume",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_speaker_test": {
-      "f": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "f": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "title": "Robot · Speaker test",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_status": {
-      "f": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "f": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "title": "Robot · Status",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_storage": {
-      "f": "src/features/robot-mgmt/RobotStoragePage.jsx",
+      "f": "src/features/robot-mgmt/screens/RobotStorageScreen.jsx",
       "title": "Robot · Courses installed",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_support": {
-      "f": "src/features/robot-mgmt/SupportPage.jsx",
+      "f": "src/features/robot-mgmt/screens/SupportScreen.jsx",
       "title": "Robot · Contact support",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "rm_wifi": {
-      "f": "src/features/robot-mgmt/RobotWifiPage.jsx",
+      "f": "src/features/robot-mgmt/screens/RobotWifiScreen.jsx",
       "title": "Robot · Wi-Fi",
       "g": "Robot Mgmt",
       "kind": "happy"
     },
     "robot_listening": {
-      "f": "src/features/lesson-session/RobotListeningPage.jsx",
+      "f": "src/features/lesson-session/screens/RobotListeningScreen.jsx",
       "title": "Robot Listening",
       "g": "Activity",
       "kind": "happy"
     },
     "robot_speaking": {
-      "f": "src/features/lesson-session/RobotSpeakingPage.jsx",
+      "f": "src/features/lesson-session/screens/RobotSpeakingScreen.jsx",
       "title": "Robot Speaking",
       "g": "Activity",
       "kind": "happy"
     },
     "safety": {
-      "f": "src/features/lesson-session/SafetyPage.jsx",
+      "f": "src/features/lesson-session/screens/SafetyScreen.jsx",
       "title": "Safety Fallback",
       "g": "Recovery",
       "kind": "edge"
     },
     "safety_redirect": {
-      "f": "src/features/fallback/SafetyRedirectPage.jsx",
+      "f": "src/features/fallback/screens/SafetyRedirectScreen.jsx",
       "title": "Safety Redirect",
       "g": "Fallback",
       "kind": "happy"
     },
     "silence": {
-      "f": "src/features/lesson-session/SilencePage.jsx",
+      "f": "src/features/lesson-session/screens/SilenceScreen.jsx",
       "title": "Silence Prompt",
       "g": "Feedback",
       "kind": "happy"
     },
     "success": {
-      "f": "src/features/lesson-session/SuccessPage.jsx",
+      "f": "src/features/lesson-session/screens/SuccessScreen.jsx",
       "title": "Success Moment",
       "g": "Feedback",
       "kind": "happy"
     },
     "thinking": {
-      "f": "src/features/lesson-session/ThinkingPage.jsx",
+      "f": "src/features/lesson-session/screens/ThinkingScreen.jsx",
       "title": "Robot Thinking",
       "g": "Activity",
       "kind": "happy"
     },
     "today_progress": {
-      "f": "src/features/progress/TodayProgressPage.jsx",
+      "f": "src/features/progress/screens/TodayProgressScreen.jsx",
       "title": "Today's Progress",
       "g": "Progress",
       "kind": "happy"
     },
     "unit": {
-      "f": "src/features/course/UnitPage.jsx",
+      "f": "src/features/course/screens/UnitScreen.jsx",
       "title": "Unit Detail",
       "g": "Course",
       "kind": "happy"
     },
     "user_speaking": {
-      "f": "src/features/lesson-session/UserSpeakingPage.jsx",
+      "f": "src/features/lesson-session/screens/UserSpeakingScreen.jsx",
       "title": "User Speaking",
       "g": "Activity",
       "kind": "happy"
     },
     "voice_failed": {
-      "f": "src/features/fallback/VoiceFailedPage.jsx",
+      "f": "src/features/fallback/screens/VoiceFailedScreen.jsx",
       "title": "Voice Session Failed",
       "g": "Fallback",
       "kind": "edge"
     },
     "words_practiced": {
-      "f": "src/features/progress/WordsPracticedPage.jsx",
+      "f": "src/features/progress/screens/WordsPracticedScreen.jsx",
       "title": "Words Practiced",
       "g": "Progress",
       "kind": "happy"
@@ -737,241 +737,241 @@
     {
       "from": "activity_done",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ActivityDonePage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityDoneScreen.jsx",
       "line": 10
     },
     {
       "from": "activity_done",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/ActivityDonePage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityDoneScreen.jsx",
       "line": 27
     },
     {
       "from": "activity_intro",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ActivityIntroPage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityIntroScreen.jsx",
       "line": 24
     },
     {
       "from": "activity_intro",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/ActivityIntroPage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityIntroScreen.jsx",
       "line": 43
     },
     {
       "from": "app_error",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/AppErrorPage.jsx",
-      "line": 29
+      "file": "src/features/fallback/screens/AppErrorScreen.jsx",
+      "line": 30
     },
     {
       "from": "audio_error",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "file": "src/features/lesson-session/screens/AudioErrorScreen.jsx",
       "line": 11
     },
     {
       "from": "audio_error",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "file": "src/features/lesson-session/screens/AudioErrorScreen.jsx",
       "line": 27
     },
     {
       "from": "audio_error",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "file": "src/features/lesson-session/screens/AudioErrorScreen.jsx",
       "line": 26
     },
     {
       "from": "audio_recovery",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/AudioRecoveryPage.jsx",
+      "file": "src/features/fallback/screens/AudioRecoveryScreen.jsx",
       "line": 49
     },
     {
       "from": "audio_recovery",
       "to": "mic_missing",
-      "file": "src/features/fallback/AudioRecoveryPage.jsx",
+      "file": "src/features/fallback/screens/AudioRecoveryScreen.jsx",
       "line": 18
     },
     {
       "from": "bargein",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/BargeinPage.jsx",
+      "file": "src/features/lesson-session/screens/BargeinScreen.jsx",
       "line": 11
     },
     {
       "from": "bargein",
       "to": "thinking",
-      "file": "src/features/lesson-session/BargeinPage.jsx",
+      "file": "src/features/lesson-session/screens/BargeinScreen.jsx",
       "line": 21
     },
     {
       "from": "celebration",
       "to": "home_hub_idle",
-      "file": "src/features/progress/CelebrationPage.jsx",
+      "file": "src/features/progress/screens/CelebrationScreen.jsx",
       "line": 54
     },
     {
       "from": "celebration",
       "to": "review_needed",
-      "file": "src/features/progress/CelebrationPage.jsx",
+      "file": "src/features/progress/screens/CelebrationScreen.jsx",
       "line": 55
     },
     {
       "from": "cl_added",
       "to": "cl_send",
-      "file": "src/features/course-library/CourseAddedPage.jsx",
+      "file": "src/features/course-library/screens/CourseAddedScreen.jsx",
       "line": 47
     },
     {
       "from": "cl_added",
       "to": "dv_home",
-      "file": "src/features/course-library/CourseAddedPage.jsx",
+      "file": "src/features/course-library/screens/CourseAddedScreen.jsx",
       "line": 48
     },
     {
       "from": "cl_buy",
       "to": "cl_detail",
-      "file": "src/features/course-library/BuyCoursePage.jsx",
+      "file": "src/features/course-library/screens/BuyCourseScreen.jsx",
       "line": 13
     },
     {
       "from": "cl_buy",
       "to": "cl_detail",
-      "file": "src/features/course-library/BuyCoursePage.jsx",
+      "file": "src/features/course-library/screens/BuyCourseScreen.jsx",
       "line": 73
     },
     {
       "from": "cl_buy",
       "to": "cl_unlock_confirm",
-      "file": "src/features/course-library/BuyCoursePage.jsx",
+      "file": "src/features/course-library/screens/BuyCourseScreen.jsx",
       "line": 72
     },
     {
       "from": "cl_companion",
       "to": "cl_running",
-      "file": "src/features/course-library/CompanionPage.jsx",
+      "file": "src/features/course-library/screens/CompanionScreen.jsx",
       "line": 24
     },
     {
       "from": "cl_complete",
       "to": "cl_send",
-      "file": "src/features/course-library/CourseCompletePage.jsx",
+      "file": "src/features/course-library/screens/CourseCompleteScreen.jsx",
       "line": 64
     },
     {
       "from": "cl_complete",
       "to": "dv_home",
-      "file": "src/features/course-library/CourseCompletePage.jsx",
+      "file": "src/features/course-library/screens/CourseCompleteScreen.jsx",
       "line": 65
     },
     {
       "from": "cl_detail",
       "to": "cl_buy",
-      "file": "src/features/course-library/CourseDetailPage.jsx",
+      "file": "src/features/course-library/screens/CourseDetailScreen.jsx",
       "line": 70
     },
     {
       "from": "cl_detail",
       "to": "cl_library",
-      "file": "src/features/course-library/CourseDetailPage.jsx",
+      "file": "src/features/course-library/screens/CourseDetailScreen.jsx",
       "line": 13
     },
     {
       "from": "cl_detail",
       "to": "cl_library",
-      "file": "src/features/course-library/CourseDetailPage.jsx",
+      "file": "src/features/course-library/screens/CourseDetailScreen.jsx",
       "line": 71
     },
     {
       "from": "cl_library",
       "to": "cl_detail",
-      "file": "src/features/course-library/CourseLibraryPage.jsx",
+      "file": "src/features/course-library/screens/CourseLibraryScreen.jsx",
       "line": 24
     },
     {
       "from": "cl_library",
       "to": "dv_home",
-      "file": "src/features/course-library/CourseLibraryPage.jsx",
+      "file": "src/features/course-library/screens/CourseLibraryScreen.jsx",
       "line": 15
     },
     {
       "from": "cl_locked",
       "to": "cl_detail",
-      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "file": "src/features/course-library/screens/CourseLockedScreen.jsx",
       "line": 49
     },
     {
       "from": "cl_locked",
       "to": "cl_library",
-      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "file": "src/features/course-library/screens/CourseLockedScreen.jsx",
       "line": 14
     },
     {
       "from": "cl_locked",
       "to": "cl_library",
-      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "file": "src/features/course-library/screens/CourseLockedScreen.jsx",
       "line": 54
     },
     {
       "from": "cl_locked",
       "to": "cl_unlock_confirm",
-      "file": "src/features/course-library/CourseLockedPage.jsx",
+      "file": "src/features/course-library/screens/CourseLockedScreen.jsx",
       "line": 53
     },
     {
       "from": "cl_needs_sync",
       "to": "cl_added",
-      "file": "src/features/course-library/NeedsSyncPage.jsx",
+      "file": "src/features/course-library/screens/NeedsSyncScreen.jsx",
       "line": 63
     },
     {
       "from": "cl_needs_sync",
       "to": "dv_home",
-      "file": "src/features/course-library/NeedsSyncPage.jsx",
+      "file": "src/features/course-library/screens/NeedsSyncScreen.jsx",
       "line": 64
     },
     {
       "from": "cl_needs_sync",
       "to": "dv_pair_wifi",
-      "file": "src/features/course-library/NeedsSyncPage.jsx",
+      "file": "src/features/course-library/screens/NeedsSyncScreen.jsx",
       "line": 53
     },
     {
       "from": "cl_robot_ready",
       "to": "cl_running",
-      "file": "src/features/course-library/RobotReadyPage.jsx",
+      "file": "src/features/course-library/screens/RobotReadyScreen.jsx",
       "line": 50
     },
     {
       "from": "cl_robot_ready",
       "to": "cl_send",
-      "file": "src/features/course-library/RobotReadyPage.jsx",
+      "file": "src/features/course-library/screens/RobotReadyScreen.jsx",
       "line": 51
     },
     {
       "from": "cl_running",
       "to": "cl_companion",
-      "file": "src/features/course-library/RunningPage.jsx",
+      "file": "src/features/course-library/screens/RunningScreen.jsx",
       "line": 40
     },
     {
       "from": "cl_running",
       "to": "dv_home",
-      "file": "src/features/course-library/RunningPage.jsx",
+      "file": "src/features/course-library/screens/RunningScreen.jsx",
       "line": 41
     },
     {
       "from": "cl_send",
       "to": "cl_robot_ready",
-      "file": "src/features/course-library/SendToRobotPage.jsx",
+      "file": "src/features/course-library/screens/SendToRobotScreen.jsx",
       "line": 54
     },
     {
       "from": "cl_send",
       "to": "dv_home",
-      "file": "src/features/course-library/SendToRobotPage.jsx",
+      "file": "src/features/course-library/screens/SendToRobotScreen.jsx",
       "line": 17
     },
     {
@@ -989,895 +989,895 @@
     {
       "from": "connecting",
       "to": "greeting",
-      "file": "src/features/lesson-session/ConnectingPage.jsx",
+      "file": "src/features/lesson-session/screens/ConnectingScreen.jsx",
       "line": 7
     },
     {
       "from": "course",
       "to": "home_hub_idle",
-      "file": "src/features/course/CoursePage.jsx",
+      "file": "src/features/course/screens/CourseScreen.jsx",
       "line": 18
     },
     {
       "from": "course",
       "to": "level",
-      "file": "src/features/course/CoursePage.jsx",
+      "file": "src/features/course/screens/CourseScreen.jsx",
       "line": 44
     },
     {
       "from": "daily_mission",
       "to": "home_hub_idle",
-      "file": "src/features/course/DailyMissionPage.jsx",
+      "file": "src/features/course/screens/DailyMissionScreen.jsx",
       "line": 11
     },
     {
       "from": "daily_mission",
       "to": "lesson_ready",
-      "file": "src/features/course/DailyMissionPage.jsx",
+      "file": "src/features/course/screens/DailyMissionScreen.jsx",
       "line": 67
     },
     {
       "from": "dv_firmware",
       "to": "dv_home",
-      "file": "src/features/device/DeviceFirmwarePage.jsx",
+      "file": "src/features/device/screens/DeviceFirmwareScreen.jsx",
       "line": 9
     },
     {
       "from": "dv_firmware",
       "to": "dv_home",
-      "file": "src/features/device/DeviceFirmwarePage.jsx",
+      "file": "src/features/device/screens/DeviceFirmwareScreen.jsx",
       "line": 38
     },
     {
       "from": "dv_firmware",
       "to": "dv_home",
-      "file": "src/features/device/DeviceFirmwarePage.jsx",
+      "file": "src/features/device/screens/DeviceFirmwareScreen.jsx",
       "line": 39
     },
     {
       "from": "dv_home",
       "to": "dv_firmware",
-      "file": "src/features/device/DeviceHomePage.jsx",
+      "file": "src/features/device/screens/DeviceHomeScreen.jsx",
       "line": 44
     },
     {
       "from": "dv_home",
       "to": "dv_lost",
-      "file": "src/features/device/DeviceHomePage.jsx",
+      "file": "src/features/device/screens/DeviceHomeScreen.jsx",
       "line": 41
     },
     {
       "from": "dv_home",
       "to": "dv_session",
-      "file": "src/features/device/DeviceHomePage.jsx",
+      "file": "src/features/device/screens/DeviceHomeScreen.jsx",
       "line": 31
     },
     {
       "from": "dv_home",
       "to": "today_progress",
-      "file": "src/features/device/DeviceHomePage.jsx",
+      "file": "src/features/device/screens/DeviceHomeScreen.jsx",
       "line": 33
     },
     {
       "from": "dv_lost",
       "to": "dv_home",
-      "file": "src/features/device/DeviceLostPage.jsx",
+      "file": "src/features/device/screens/DeviceLostScreen.jsx",
       "line": 10
     },
     {
       "from": "dv_overview",
       "to": "dv_pair_intro",
-      "file": "src/features/device/DeviceOverviewPage.jsx",
+      "file": "src/features/device/screens/DeviceOverviewScreen.jsx",
       "line": 90
     },
     {
       "from": "dv_pair_add",
       "to": "dv_overview",
-      "file": "src/features/device/pairing/PairAddPage.jsx",
+      "file": "src/features/device/pairing/screens/PairAddScreen.jsx",
       "line": 8
     },
     {
       "from": "dv_pair_add",
       "to": "dv_pair_intro",
-      "file": "src/features/device/pairing/PairAddPage.jsx",
+      "file": "src/features/device/pairing/screens/PairAddScreen.jsx",
       "line": 15
     },
     {
       "from": "dv_pair_add",
       "to": "dv_pair_offline",
-      "file": "src/features/device/pairing/PairAddPage.jsx",
+      "file": "src/features/device/pairing/screens/PairAddScreen.jsx",
       "line": 25
     },
     {
       "from": "dv_pair_code",
       "to": "dv_pair_found",
-      "file": "src/features/device/pairing/PairCodePage.jsx",
+      "file": "src/features/device/pairing/screens/PairCodeScreen.jsx",
       "line": 8
     },
     {
       "from": "dv_pair_code",
       "to": "dv_pair_search",
-      "file": "src/features/device/pairing/PairCodePage.jsx",
+      "file": "src/features/device/pairing/screens/PairCodeScreen.jsx",
       "line": 33
     },
     {
       "from": "dv_pair_code",
       "to": "dv_pair_wifi",
-      "file": "src/features/device/pairing/PairCodePage.jsx",
+      "file": "src/features/device/pairing/screens/PairCodeScreen.jsx",
       "line": 32
     },
     {
       "from": "dv_pair_connecting",
       "to": "dv_pair_success",
-      "file": "src/features/device/pairing/PairConnectingPage.jsx",
+      "file": "src/features/device/pairing/screens/PairConnectingScreen.jsx",
       "line": 11
     },
     {
       "from": "dv_pair_failed",
       "to": "dv_pair_intro",
-      "file": "src/features/device/pairing/PairFailedPage.jsx",
+      "file": "src/features/device/pairing/screens/PairFailedScreen.jsx",
       "line": 9
     },
     {
       "from": "dv_pair_failed",
       "to": "dv_pair_search",
-      "file": "src/features/device/pairing/PairFailedPage.jsx",
+      "file": "src/features/device/pairing/screens/PairFailedScreen.jsx",
       "line": 39
     },
     {
       "from": "dv_pair_first_lesson",
       "to": "dv_home",
-      "file": "src/features/device/pairing/PairFirstLessonPage.jsx",
+      "file": "src/features/device/pairing/screens/PairFirstLessonScreen.jsx",
       "line": 49
     },
     {
       "from": "dv_pair_found",
       "to": "dv_pair_code",
-      "file": "src/features/device/pairing/PairFoundPage.jsx",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.jsx",
       "line": 27
     },
     {
       "from": "dv_pair_found",
       "to": "dv_pair_intro",
-      "file": "src/features/device/pairing/PairFoundPage.jsx",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.jsx",
       "line": 9
     },
     {
       "from": "dv_pair_found",
       "to": "dv_pair_search",
-      "file": "src/features/device/pairing/PairFoundPage.jsx",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.jsx",
       "line": 28
     },
     {
       "from": "dv_pair_intro",
       "to": "dv_pair_add",
-      "file": "src/features/device/pairing/PairIntroPage.jsx",
+      "file": "src/features/device/pairing/screens/PairIntroScreen.jsx",
       "line": 9
     },
     {
       "from": "dv_pair_intro",
       "to": "dv_pair_search",
-      "file": "src/features/device/pairing/PairIntroPage.jsx",
+      "file": "src/features/device/pairing/screens/PairIntroScreen.jsx",
       "line": 32
     },
     {
       "from": "dv_pair_offline",
       "to": "dv_pair_add",
-      "file": "src/features/device/pairing/PairOfflinePage.jsx",
+      "file": "src/features/device/pairing/screens/PairOfflineScreen.jsx",
       "line": 10
     },
     {
       "from": "dv_pair_offline",
       "to": "dv_pair_search",
-      "file": "src/features/device/pairing/PairOfflinePage.jsx",
+      "file": "src/features/device/pairing/screens/PairOfflineScreen.jsx",
       "line": 29
     },
     {
       "from": "dv_pair_offline",
       "to": "dv_pair_wifi",
-      "file": "src/features/device/pairing/PairOfflinePage.jsx",
+      "file": "src/features/device/pairing/screens/PairOfflineScreen.jsx",
       "line": 24
     },
     {
       "from": "dv_pair_rename",
       "to": "dv_pair_first_lesson",
-      "file": "src/features/device/pairing/PairRenamePage.jsx",
+      "file": "src/features/device/pairing/screens/PairRenameScreen.jsx",
       "line": 41
     },
     {
       "from": "dv_pair_search",
       "to": "dv_pair_failed",
-      "file": "src/features/device/pairing/PairSearchPage.jsx",
+      "file": "src/features/device/pairing/screens/PairSearchScreen.jsx",
       "line": 18
     },
     {
       "from": "dv_pair_search",
       "to": "dv_pair_found",
-      "file": "src/features/device/pairing/PairSearchPage.jsx",
+      "file": "src/features/device/pairing/screens/PairSearchScreen.jsx",
       "line": 6
     },
     {
       "from": "dv_pair_search",
       "to": "dv_pair_intro",
-      "file": "src/features/device/pairing/PairSearchPage.jsx",
+      "file": "src/features/device/pairing/screens/PairSearchScreen.jsx",
       "line": 8
     },
     {
       "from": "dv_pair_success",
       "to": "dv_pair_rename",
-      "file": "src/features/device/pairing/PairSuccessPage.jsx",
+      "file": "src/features/device/pairing/screens/PairSuccessScreen.jsx",
       "line": 37
     },
     {
       "from": "dv_pair_wifi",
       "to": "dv_pair_code",
-      "file": "src/features/device/pairing/PairWifiPage.jsx",
+      "file": "src/features/device/pairing/screens/PairWifiScreen.jsx",
       "line": 7
     },
     {
       "from": "dv_pair_wifi",
       "to": "dv_pair_wifi_pw",
-      "file": "src/features/device/pairing/PairWifiPage.jsx",
+      "file": "src/features/device/pairing/screens/PairWifiScreen.jsx",
       "line": 22
     },
     {
       "from": "dv_pair_wifi_pw",
       "to": "dv_pair_connecting",
-      "file": "src/features/device/pairing/PairWifiPasswordPage.jsx",
+      "file": "src/features/device/pairing/screens/PairWifiPasswordScreen.jsx",
       "line": 25
     },
     {
       "from": "dv_pair_wifi_pw",
       "to": "dv_pair_wifi",
-      "file": "src/features/device/pairing/PairWifiPasswordPage.jsx",
+      "file": "src/features/device/pairing/screens/PairWifiPasswordScreen.jsx",
       "line": 8
     },
     {
       "from": "dv_session",
       "to": "dv_home",
-      "file": "src/features/device/DeviceSessionPage.jsx",
+      "file": "src/features/device/screens/DeviceSessionScreen.jsx",
       "line": 19
     },
     {
       "from": "exit_confirm",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/ExitConfirmPage.jsx",
+      "file": "src/features/lesson-session/screens/ExitConfirmScreen.jsx",
       "line": 24
     },
     {
       "from": "exit_confirm",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/ExitConfirmPage.jsx",
+      "file": "src/features/lesson-session/screens/ExitConfirmScreen.jsx",
       "line": 23
     },
     {
       "from": "gentle",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/GentlePage.jsx",
+      "file": "src/features/lesson-session/screens/GentleScreen.jsx",
       "line": 11
     },
     {
       "from": "gentle",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/GentlePage.jsx",
+      "file": "src/features/lesson-session/screens/GentleScreen.jsx",
       "line": 17
     },
     {
       "from": "gentle",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/GentlePage.jsx",
+      "file": "src/features/lesson-session/screens/GentleScreen.jsx",
       "line": 18
     },
     {
       "from": "greeting",
       "to": "activity_intro",
-      "file": "src/features/lesson-session/GreetingPage.jsx",
+      "file": "src/features/lesson-session/screens/GreetingScreen.jsx",
       "line": 17
     },
     {
       "from": "greeting",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/GreetingPage.jsx",
+      "file": "src/features/lesson-session/screens/GreetingScreen.jsx",
       "line": 11
     },
     {
       "from": "help_faq",
       "to": "parent_summary",
-      "file": "src/features/fallback/HelpFaqPage.jsx",
+      "file": "src/features/fallback/screens/HelpFaqScreen.jsx",
       "line": 14
     },
     {
       "from": "home_hub_offline",
       "to": "course",
-      "file": "src/features/home/HomeHubPage.jsx",
-      "line": 158
+      "file": "src/features/home/screens/HomeHubScreen.jsx",
+      "line": 163
     },
     {
       "from": "home_hub_offline",
       "to": "parent_gate",
-      "file": "src/features/home/HomeHubPage.jsx",
-      "line": 85
+      "file": "src/features/home/screens/HomeHubScreen.jsx",
+      "line": 90
     },
     {
       "from": "home_hub_offline",
       "to": "parent_settings",
-      "file": "src/features/home/HomeHubPage.jsx",
-      "line": 92
+      "file": "src/features/home/screens/HomeHubScreen.jsx",
+      "line": 97
     },
     {
       "from": "home_hub_offline",
       "to": "review_entry",
-      "file": "src/features/home/HomeHubPage.jsx",
-      "line": 159
+      "file": "src/features/home/screens/HomeHubScreen.jsx",
+      "line": 164
     },
     {
       "from": "home_hub_offline",
       "to": "today_progress",
-      "file": "src/features/home/HomeHubPage.jsx",
-      "line": 160
+      "file": "src/features/home/screens/HomeHubScreen.jsx",
+      "line": 165
     },
     {
       "from": "kid_settings",
       "to": "help_faq",
-      "file": "src/features/fallback/KidSettingsPage.jsx",
+      "file": "src/features/fallback/screens/KidSettingsScreen.jsx",
       "line": 46
     },
     {
       "from": "kid_settings",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/KidSettingsPage.jsx",
+      "file": "src/features/fallback/screens/KidSettingsScreen.jsx",
       "line": 24
     },
     {
       "from": "kid_settings",
       "to": "parent_gate",
-      "file": "src/features/fallback/KidSettingsPage.jsx",
+      "file": "src/features/fallback/screens/KidSettingsScreen.jsx",
       "line": 33
     },
     {
       "from": "lesson_detail",
       "to": "lesson_ready",
-      "file": "src/features/course/LessonDetailPage.jsx",
+      "file": "src/features/course/screens/LessonDetailScreen.jsx",
       "line": 57
     },
     {
       "from": "lesson_detail",
       "to": "unit",
-      "file": "src/features/course/LessonDetailPage.jsx",
+      "file": "src/features/course/screens/LessonDetailScreen.jsx",
       "line": 12
     },
     {
       "from": "lesson_done",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/LessonDonePage.jsx",
+      "file": "src/features/lesson-session/screens/LessonDoneScreen.jsx",
       "line": 25
     },
     {
       "from": "lesson_done",
       "to": "lesson_summary",
-      "file": "src/features/lesson-session/LessonDonePage.jsx",
+      "file": "src/features/lesson-session/screens/LessonDoneScreen.jsx",
       "line": 24
     },
     {
       "from": "lesson_list",
       "to": "lesson_detail",
-      "file": "src/features/course/LessonListPage.jsx",
+      "file": "src/features/course/screens/LessonListScreen.jsx",
       "line": 28
     },
     {
       "from": "lesson_list",
       "to": "unit",
-      "file": "src/features/course/LessonListPage.jsx",
+      "file": "src/features/course/screens/LessonListScreen.jsx",
       "line": 17
     },
     {
       "from": "lesson_ready",
       "to": "connecting",
-      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "file": "src/features/lesson-session/screens/LessonReadyScreen.jsx",
       "line": 25
     },
     {
       "from": "lesson_ready",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "file": "src/features/lesson-session/screens/LessonReadyScreen.jsx",
       "line": 12
     },
     {
       "from": "lesson_ready",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "file": "src/features/lesson-session/screens/LessonReadyScreen.jsx",
       "line": 13
     },
     {
       "from": "lesson_resume",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/LessonResumePage.jsx",
+      "file": "src/features/fallback/screens/LessonResumeScreen.jsx",
       "line": 7
     },
     {
       "from": "lesson_resume",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/LessonResumePage.jsx",
+      "file": "src/features/fallback/screens/LessonResumeScreen.jsx",
       "line": 29
     },
     {
       "from": "lesson_resume",
       "to": "robot_speaking",
-      "file": "src/features/fallback/LessonResumePage.jsx",
+      "file": "src/features/fallback/screens/LessonResumeScreen.jsx",
       "line": 28
     },
     {
       "from": "lesson_summary",
       "to": "home_hub_idle",
-      "file": "src/features/progress/LessonSummaryPage.jsx",
+      "file": "src/features/progress/screens/LessonSummaryScreen.jsx",
       "line": 35
     },
     {
       "from": "lesson_summary",
       "to": "lesson_ready",
-      "file": "src/features/progress/LessonSummaryPage.jsx",
+      "file": "src/features/progress/screens/LessonSummaryScreen.jsx",
       "line": 34
     },
     {
       "from": "level",
       "to": "course",
-      "file": "src/features/course/LevelPage.jsx",
+      "file": "src/features/course/screens/LevelScreen.jsx",
       "line": 64
     },
     {
       "from": "level",
       "to": "unit",
-      "file": "src/features/course/LevelPage.jsx",
+      "file": "src/features/course/screens/LevelScreen.jsx",
       "line": 98
     },
     {
       "from": "mic_missing",
       "to": "audio_recovery",
-      "file": "src/features/fallback/MicMissingPage.jsx",
+      "file": "src/features/fallback/screens/MicMissingScreen.jsx",
       "line": 20
     },
     {
       "from": "mic_missing",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/MicMissingPage.jsx",
+      "file": "src/features/fallback/screens/MicMissingScreen.jsx",
       "line": 7
     },
     {
       "from": "mic_missing",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/MicMissingPage.jsx",
+      "file": "src/features/fallback/screens/MicMissingScreen.jsx",
       "line": 21
     },
     {
       "from": "network_error",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/NetworkErrorPage.jsx",
+      "file": "src/features/fallback/screens/NetworkErrorScreen.jsx",
       "line": 7
     },
     {
       "from": "network_error",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/NetworkErrorPage.jsx",
+      "file": "src/features/fallback/screens/NetworkErrorScreen.jsx",
       "line": 18
     },
     {
       "from": "network_error",
       "to": "reconnecting_overlay",
-      "file": "src/features/fallback/NetworkErrorPage.jsx",
+      "file": "src/features/fallback/screens/NetworkErrorScreen.jsx",
       "line": 17
     },
     {
       "from": "offtopic",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/OfftopicPage.jsx",
+      "file": "src/features/lesson-session/screens/OfftopicScreen.jsx",
       "line": 11
     },
     {
       "from": "offtopic",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/OfftopicPage.jsx",
+      "file": "src/features/lesson-session/screens/OfftopicScreen.jsx",
       "line": 17
     },
     {
       "from": "onb_child",
       "to": "onb_first_lesson",
-      "file": "src/features/auth/ChildProfilePage.jsx",
+      "file": "src/features/auth/screens/ChildProfileScreen.jsx",
       "line": 84
     },
     {
       "from": "onb_child",
       "to": "onb_login",
-      "file": "src/features/auth/ChildProfilePage.jsx",
+      "file": "src/features/auth/screens/ChildProfileScreen.jsx",
       "line": 26
     },
     {
       "from": "onb_first_lesson",
       "to": "lesson_ready",
-      "file": "src/features/onboarding/FirstLessonEntryPage.jsx",
-      "line": 33
+      "file": "src/features/onboarding/screens/FirstLessonEntryScreen.jsx",
+      "line": 35
     },
     {
       "from": "onb_intro_celebrate",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12
+      "line": 14
     },
     {
       "from": "onb_intro_listen",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12
+      "line": 14
     },
     {
       "from": "onb_intro_retry",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12
+      "line": 14
     },
     {
       "from": "onb_intro_speak",
       "to": "onb_trust",
       "file": "src/features/onboarding/components/IntroFrame.jsx",
-      "line": 12
+      "line": 14
     },
     {
       "from": "onb_login",
       "to": "onb_child",
-      "file": "src/features/auth/LoginPage.jsx",
+      "file": "src/features/auth/screens/LoginScreen.jsx",
       "line": 30
     },
     {
       "from": "onb_login",
       "to": "onb_child",
-      "file": "src/features/auth/LoginPage.jsx",
+      "file": "src/features/auth/screens/LoginScreen.jsx",
       "line": 38
     },
     {
       "from": "onb_login",
       "to": "onb_mic",
-      "file": "src/features/auth/LoginPage.jsx",
+      "file": "src/features/auth/screens/LoginScreen.jsx",
       "line": 8
     },
     {
       "from": "onb_login_error",
       "to": "onb_child",
-      "file": "src/features/auth/LoginErrorPage.jsx",
+      "file": "src/features/auth/screens/LoginErrorScreen.jsx",
       "line": 38
     },
     {
       "from": "onb_login_error",
       "to": "onb_login",
-      "file": "src/features/auth/LoginErrorPage.jsx",
+      "file": "src/features/auth/screens/LoginErrorScreen.jsx",
       "line": 7
     },
     {
       "from": "onb_login_error",
       "to": "onb_login",
-      "file": "src/features/auth/LoginErrorPage.jsx",
+      "file": "src/features/auth/screens/LoginErrorScreen.jsx",
       "line": 39
     },
     {
       "from": "onb_mic",
       "to": "onb_login",
-      "file": "src/features/onboarding/MicAskPage.jsx",
+      "file": "src/features/onboarding/screens/MicAskScreen.jsx",
       "line": 38
     },
     {
       "from": "onb_mic",
       "to": "onb_login",
-      "file": "src/features/onboarding/MicAskPage.jsx",
+      "file": "src/features/onboarding/screens/MicAskScreen.jsx",
       "line": 49
     },
     {
       "from": "onb_mic",
       "to": "onb_login",
-      "file": "src/features/onboarding/MicAskPage.jsx",
+      "file": "src/features/onboarding/screens/MicAskScreen.jsx",
       "line": 53
     },
     {
       "from": "onb_mic",
       "to": "onb_trust",
-      "file": "src/features/onboarding/MicAskPage.jsx",
+      "file": "src/features/onboarding/screens/MicAskScreen.jsx",
       "line": 8
     },
     {
       "from": "onb_splash",
       "to": "onb_welcome",
-      "file": "src/features/onboarding/SplashPage.jsx",
+      "file": "src/features/onboarding/screens/SplashScreen.jsx",
       "line": 6
     },
     {
       "from": "onb_trust",
       "to": "onb_intro_celebrate",
-      "file": "src/features/onboarding/TrustPage.jsx",
+      "file": "src/features/onboarding/screens/TrustScreen.jsx",
       "line": 17
     },
     {
       "from": "onb_trust",
       "to": "onb_mic",
-      "file": "src/features/onboarding/TrustPage.jsx",
+      "file": "src/features/onboarding/screens/TrustScreen.jsx",
       "line": 43
     },
     {
       "from": "onb_welcome",
       "to": "onb_intro_listen",
-      "file": "src/features/onboarding/WelcomePage.jsx",
-      "line": 23
+      "file": "src/features/onboarding/screens/WelcomeScreen.jsx",
+      "line": 24
     },
     {
       "from": "onb_welcome",
       "to": "onb_login",
-      "file": "src/features/onboarding/WelcomePage.jsx",
-      "line": 24
+      "file": "src/features/onboarding/screens/WelcomeScreen.jsx",
+      "line": 25
     },
     {
       "from": "parent_gate",
       "to": "home_hub_idle",
-      "file": "src/features/parent/ParentGatePage.jsx",
+      "file": "src/features/parent/screens/ParentGateScreen.jsx",
       "line": 17
     },
     {
       "from": "parent_gate",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentGatePage.jsx",
+      "file": "src/features/parent/screens/ParentGateScreen.jsx",
       "line": 11
     },
     {
       "from": "parent_history",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentHistoryPage.jsx",
+      "file": "src/features/parent/screens/ParentHistoryScreen.jsx",
       "line": 31
     },
     {
       "from": "parent_safety",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentSafetyPage.jsx",
+      "file": "src/features/parent/screens/ParentSafetyScreen.jsx",
       "line": 20
     },
     {
       "from": "parent_settings",
       "to": "parent_safety",
-      "file": "src/features/parent/ParentSettingsPage.jsx",
-      "line": 61
+      "file": "src/features/parent/screens/ParentSettingsScreen.jsx",
+      "line": 62
     },
     {
       "from": "parent_settings",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentSettingsPage.jsx",
-      "line": 18
+      "file": "src/features/parent/screens/ParentSettingsScreen.jsx",
+      "line": 19
     },
     {
       "from": "parent_summary",
       "to": "home_hub_idle",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 57
     },
     {
       "from": "parent_summary",
       "to": "parent_history",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 47
     },
     {
       "from": "parent_summary",
       "to": "parent_safety",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 52
     },
     {
       "from": "parent_summary",
       "to": "parent_settings",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 11
     },
     {
       "from": "parent_summary",
       "to": "parent_settings",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 53
     },
     {
       "from": "parent_summary",
       "to": "parent_today",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 34
     },
     {
       "from": "parent_today",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentTodayPage.jsx",
+      "file": "src/features/parent/screens/ParentTodayScreen.jsx",
       "line": 9
     },
     {
       "from": "pr_activate",
       "to": "pr_arrived",
-      "file": "src/features/purchase/ActivatePage.jsx",
+      "file": "src/features/purchase/screens/ActivateScreen.jsx",
       "line": 9
     },
     {
       "from": "pr_activate",
       "to": "pr_first_course",
-      "file": "src/features/purchase/ActivatePage.jsx",
+      "file": "src/features/purchase/screens/ActivateScreen.jsx",
       "line": 51
     },
     {
       "from": "pr_arrived",
       "to": "dv_home",
-      "file": "src/features/purchase/ArrivedPage.jsx",
+      "file": "src/features/purchase/screens/ArrivedScreen.jsx",
       "line": 37
     },
     {
       "from": "pr_arrived",
       "to": "pr_activate",
-      "file": "src/features/purchase/ArrivedPage.jsx",
+      "file": "src/features/purchase/screens/ArrivedScreen.jsx",
       "line": 36
     },
     {
       "from": "pr_bundle",
       "to": "pr_included",
-      "file": "src/features/purchase/BundlePage.jsx",
+      "file": "src/features/purchase/screens/BundleScreen.jsx",
       "line": 13
     },
     {
       "from": "pr_bundle",
       "to": "pr_included",
-      "file": "src/features/purchase/BundlePage.jsx",
+      "file": "src/features/purchase/screens/BundleScreen.jsx",
       "line": 53
     },
     {
       "from": "pr_bundle",
       "to": "pr_subs",
-      "file": "src/features/purchase/BundlePage.jsx",
+      "file": "src/features/purchase/screens/BundleScreen.jsx",
       "line": 52
     },
     {
       "from": "pr_checkout",
       "to": "pr_confirm",
-      "file": "src/features/purchase/CheckoutPage.jsx",
+      "file": "src/features/purchase/screens/CheckoutScreen.jsx",
       "line": 65
     },
     {
       "from": "pr_checkout",
       "to": "pr_privacy",
-      "file": "src/features/purchase/CheckoutPage.jsx",
+      "file": "src/features/purchase/screens/CheckoutScreen.jsx",
       "line": 7
     },
     {
       "from": "pr_confirm",
       "to": "dv_home",
-      "file": "src/features/purchase/OrderConfirmPage.jsx",
+      "file": "src/features/purchase/screens/OrderConfirmScreen.jsx",
       "line": 52
     },
     {
       "from": "pr_confirm",
       "to": "pr_shipping",
-      "file": "src/features/purchase/OrderConfirmPage.jsx",
+      "file": "src/features/purchase/screens/OrderConfirmScreen.jsx",
       "line": 51
     },
     {
       "from": "pr_first_course",
       "to": "cl_added",
-      "file": "src/features/purchase/FirstCoursePage.jsx",
+      "file": "src/features/purchase/screens/FirstCourseScreen.jsx",
       "line": 58
     },
     {
       "from": "pr_first_course",
       "to": "cl_library",
-      "file": "src/features/purchase/FirstCoursePage.jsx",
+      "file": "src/features/purchase/screens/FirstCourseScreen.jsx",
       "line": 59
     },
     {
       "from": "pr_how",
       "to": "pr_included",
-      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "file": "src/features/purchase/screens/HowItWorksScreen.jsx",
       "line": 40
     },
     {
       "from": "pr_how",
       "to": "pr_intro",
-      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "file": "src/features/purchase/screens/HowItWorksScreen.jsx",
       "line": 14
     },
     {
       "from": "pr_how",
       "to": "pr_intro",
-      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "file": "src/features/purchase/screens/HowItWorksScreen.jsx",
       "line": 41
     },
     {
       "from": "pr_included",
       "to": "pr_bundle",
-      "file": "src/features/purchase/IncludedPage.jsx",
+      "file": "src/features/purchase/screens/IncludedScreen.jsx",
       "line": 43
     },
     {
       "from": "pr_included",
       "to": "pr_how",
-      "file": "src/features/purchase/IncludedPage.jsx",
+      "file": "src/features/purchase/screens/IncludedScreen.jsx",
       "line": 16
     },
     {
       "from": "pr_intro",
       "to": "dv_home",
-      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "file": "src/features/purchase/screens/PurchaseIntroScreen.jsx",
       "line": 9
     },
     {
       "from": "pr_intro",
       "to": "pr_how",
-      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "file": "src/features/purchase/screens/PurchaseIntroScreen.jsx",
       "line": 40
     },
     {
       "from": "pr_intro",
       "to": "pr_privacy",
-      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "file": "src/features/purchase/screens/PurchaseIntroScreen.jsx",
       "line": 41
     },
     {
       "from": "pr_privacy",
       "to": "pr_checkout",
-      "file": "src/features/purchase/PrivacyPage.jsx",
+      "file": "src/features/purchase/screens/PrivacyScreen.jsx",
       "line": 38
     },
     {
       "from": "pr_privacy",
       "to": "pr_subs",
-      "file": "src/features/purchase/PrivacyPage.jsx",
+      "file": "src/features/purchase/screens/PrivacyScreen.jsx",
       "line": 15
     },
     {
       "from": "pr_privacy",
       "to": "pr_subs",
-      "file": "src/features/purchase/PrivacyPage.jsx",
+      "file": "src/features/purchase/screens/PrivacyScreen.jsx",
       "line": 39
     },
     {
       "from": "pr_shipping",
       "to": "dv_home",
-      "file": "src/features/purchase/ShippingPage.jsx",
+      "file": "src/features/purchase/screens/ShippingScreen.jsx",
       "line": 62
     },
     {
       "from": "pr_shipping",
       "to": "pr_arrived",
-      "file": "src/features/purchase/ShippingPage.jsx",
+      "file": "src/features/purchase/screens/ShippingScreen.jsx",
       "line": 61
     },
     {
       "from": "pr_shipping",
       "to": "pr_confirm",
-      "file": "src/features/purchase/ShippingPage.jsx",
+      "file": "src/features/purchase/screens/ShippingScreen.jsx",
       "line": 16
     },
     {
       "from": "pr_subs",
       "to": "pr_bundle",
-      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "file": "src/features/purchase/screens/SubscriptionsScreen.jsx",
       "line": 14
     },
     {
       "from": "pr_subs",
       "to": "pr_bundle",
-      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "file": "src/features/purchase/screens/SubscriptionsScreen.jsx",
       "line": 56
     },
     {
       "from": "pr_subs",
       "to": "pr_privacy",
-      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "file": "src/features/purchase/screens/SubscriptionsScreen.jsx",
       "line": 55
     },
     {
       "from": "reconnecting",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ReconnectingPage.jsx",
+      "file": "src/features/lesson-session/screens/ReconnectingScreen.jsx",
       "line": 10
     },
     {
       "from": "reconnecting",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/ReconnectingPage.jsx",
+      "file": "src/features/lesson-session/screens/ReconnectingScreen.jsx",
       "line": 19
     },
     {
@@ -1895,463 +1895,463 @@
     {
       "from": "retry",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/RetryPage.jsx",
+      "file": "src/features/lesson-session/screens/RetryScreen.jsx",
       "line": 11
     },
     {
       "from": "retry",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/RetryPage.jsx",
+      "file": "src/features/lesson-session/screens/RetryScreen.jsx",
       "line": 18
     },
     {
       "from": "review_entry",
       "to": "home_hub_idle",
-      "file": "src/features/course/ReviewEntryPage.jsx",
+      "file": "src/features/course/screens/ReviewEntryScreen.jsx",
       "line": 13
     },
     {
       "from": "review_entry",
       "to": "lesson_ready",
-      "file": "src/features/course/ReviewEntryPage.jsx",
+      "file": "src/features/course/screens/ReviewEntryScreen.jsx",
       "line": 39
     },
     {
       "from": "review_needed",
       "to": "home_hub_idle",
-      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "file": "src/features/progress/screens/ReviewNeededScreen.jsx",
       "line": 16
     },
     {
       "from": "review_needed",
       "to": "home_hub_idle",
-      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "file": "src/features/progress/screens/ReviewNeededScreen.jsx",
       "line": 41
     },
     {
       "from": "review_needed",
       "to": "lesson_ready",
-      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "file": "src/features/progress/screens/ReviewNeededScreen.jsx",
       "line": 40
     },
     {
       "from": "rm_battery",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotBatteryPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotBatteryScreen.jsx",
       "line": 11
     },
     {
       "from": "rm_factory",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 17
     },
     {
       "from": "rm_factory",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 119
     },
     {
       "from": "rm_factory",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 120
     },
     {
       "from": "rm_factory",
       "to": "rm_offline_help",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 46
     },
     {
       "from": "rm_firmware",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotFirmwareScreen.jsx",
       "line": 12
     },
     {
       "from": "rm_firmware",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotFirmwareScreen.jsx",
       "line": 61
     },
     {
       "from": "rm_firmware",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotFirmwareScreen.jsx",
       "line": 62
     },
     {
       "from": "rm_mic_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/MicTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MicTestScreen.jsx",
       "line": 27
     },
     {
       "from": "rm_mic_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/MicTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MicTestScreen.jsx",
       "line": 73
     },
     {
       "from": "rm_my_robot",
       "to": "parent_settings",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 12
     },
     {
       "from": "rm_my_robot",
       "to": "rm_battery",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 31
     },
     {
       "from": "rm_my_robot",
       "to": "rm_factory",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 64
     },
     {
       "from": "rm_my_robot",
       "to": "rm_firmware",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 46
     },
     {
       "from": "rm_my_robot",
       "to": "rm_mic_test",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 34
     },
     {
       "from": "rm_my_robot",
       "to": "rm_mic_test",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 43
     },
     {
       "from": "rm_my_robot",
       "to": "rm_offline_help",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 55
     },
     {
       "from": "rm_my_robot",
       "to": "rm_sound",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 42
     },
     {
       "from": "rm_my_robot",
       "to": "rm_speaker_test",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 44
     },
     {
       "from": "rm_my_robot",
       "to": "rm_status",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 57
     },
     {
       "from": "rm_my_robot",
       "to": "rm_storage",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 33
     },
     {
       "from": "rm_my_robot",
       "to": "rm_support",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 56
     },
     {
       "from": "rm_my_robot",
       "to": "rm_wifi",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 32
     },
     {
       "from": "rm_offline_help",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "file": "src/features/robot-mgmt/screens/OfflineHelpScreen.jsx",
       "line": 11
     },
     {
       "from": "rm_offline_help",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "file": "src/features/robot-mgmt/screens/OfflineHelpScreen.jsx",
       "line": 44
     },
     {
       "from": "rm_offline_help",
       "to": "rm_support",
-      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "file": "src/features/robot-mgmt/screens/OfflineHelpScreen.jsx",
       "line": 45
     },
     {
       "from": "rm_sound",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotSoundPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotSoundScreen.jsx",
       "line": 21
     },
     {
       "from": "rm_speaker_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 12
     },
     {
       "from": "rm_speaker_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 63
     },
     {
       "from": "rm_speaker_test",
       "to": "rm_sound",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 57
     },
     {
       "from": "rm_speaker_test",
       "to": "rm_support",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 64
     },
     {
       "from": "rm_status",
       "to": "rm_battery",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 28
     },
     {
       "from": "rm_status",
       "to": "rm_firmware",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 33
     },
     {
       "from": "rm_status",
       "to": "rm_mic_test",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 31
     },
     {
       "from": "rm_status",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 11
     },
     {
       "from": "rm_status",
       "to": "rm_speaker_test",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 32
     },
     {
       "from": "rm_status",
       "to": "rm_storage",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 30
     },
     {
       "from": "rm_status",
       "to": "rm_wifi",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 29
     },
     {
       "from": "rm_storage",
       "to": "cl_library",
-      "file": "src/features/robot-mgmt/RobotStoragePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStorageScreen.jsx",
       "line": 63
     },
     {
       "from": "rm_storage",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotStoragePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStorageScreen.jsx",
       "line": 16
     },
     {
       "from": "rm_support",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SupportScreen.jsx",
       "line": 18
     },
     {
       "from": "rm_support",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SupportScreen.jsx",
       "line": 74
     },
     {
       "from": "rm_support",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SupportScreen.jsx",
       "line": 75
     },
     {
       "from": "rm_wifi",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotWifiPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotWifiScreen.jsx",
       "line": 9
     },
     {
       "from": "robot_listening",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/RobotListeningPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotListeningScreen.jsx",
       "line": 11
     },
     {
       "from": "robot_listening",
       "to": "user_speaking",
-      "file": "src/features/lesson-session/RobotListeningPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotListeningScreen.jsx",
       "line": 21
     },
     {
       "from": "robot_speaking",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/RobotSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotSpeakingScreen.jsx",
       "line": 11
     },
     {
       "from": "robot_speaking",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/RobotSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotSpeakingScreen.jsx",
       "line": 19
     },
     {
       "from": "safety",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/SafetyPage.jsx",
+      "file": "src/features/lesson-session/screens/SafetyScreen.jsx",
       "line": 27
     },
     {
       "from": "safety",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/SafetyPage.jsx",
+      "file": "src/features/lesson-session/screens/SafetyScreen.jsx",
       "line": 28
     },
     {
       "from": "safety_redirect",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/SafetyRedirectPage.jsx",
+      "file": "src/features/fallback/screens/SafetyRedirectScreen.jsx",
       "line": 19
     },
     {
       "from": "safety_redirect",
       "to": "parent_gate",
-      "file": "src/features/fallback/SafetyRedirectPage.jsx",
+      "file": "src/features/fallback/screens/SafetyRedirectScreen.jsx",
       "line": 20
     },
     {
       "from": "silence",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/SilencePage.jsx",
+      "file": "src/features/lesson-session/screens/SilenceScreen.jsx",
       "line": 11
     },
     {
       "from": "silence",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/SilencePage.jsx",
+      "file": "src/features/lesson-session/screens/SilenceScreen.jsx",
       "line": 21
     },
     {
       "from": "success",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/SuccessPage.jsx",
+      "file": "src/features/lesson-session/screens/SuccessScreen.jsx",
       "line": 11
     },
     {
       "from": "success",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/SuccessPage.jsx",
+      "file": "src/features/lesson-session/screens/SuccessScreen.jsx",
       "line": 23
     },
     {
       "from": "thinking",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ThinkingPage.jsx",
+      "file": "src/features/lesson-session/screens/ThinkingScreen.jsx",
       "line": 10
     },
     {
       "from": "thinking",
       "to": "success",
-      "file": "src/features/lesson-session/ThinkingPage.jsx",
+      "file": "src/features/lesson-session/screens/ThinkingScreen.jsx",
       "line": 7
     },
     {
       "from": "today_progress",
       "to": "home_hub_idle",
-      "file": "src/features/progress/TodayProgressPage.jsx",
+      "file": "src/features/progress/screens/TodayProgressScreen.jsx",
       "line": 28
     },
     {
       "from": "today_progress",
       "to": "home_hub_idle",
-      "file": "src/features/progress/TodayProgressPage.jsx",
+      "file": "src/features/progress/screens/TodayProgressScreen.jsx",
       "line": 65
     },
     {
       "from": "unit",
       "to": "lesson_detail",
-      "file": "src/features/course/UnitPage.jsx",
+      "file": "src/features/course/screens/UnitScreen.jsx",
       "line": 42
     },
     {
       "from": "unit",
       "to": "level",
-      "file": "src/features/course/UnitPage.jsx",
+      "file": "src/features/course/screens/UnitScreen.jsx",
       "line": 18
     },
     {
       "from": "unit",
       "to": "review_entry",
-      "file": "src/features/course/UnitPage.jsx",
+      "file": "src/features/course/screens/UnitScreen.jsx",
       "line": 70
     },
     {
       "from": "user_speaking",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/UserSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/UserSpeakingScreen.jsx",
       "line": 12
     },
     {
       "from": "user_speaking",
       "to": "thinking",
-      "file": "src/features/lesson-session/UserSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/UserSpeakingScreen.jsx",
       "line": 22
     },
     {
       "from": "voice_failed",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/VoiceFailedPage.jsx",
+      "file": "src/features/fallback/screens/VoiceFailedScreen.jsx",
       "line": 7
     },
     {
       "from": "voice_failed",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/VoiceFailedPage.jsx",
+      "file": "src/features/fallback/screens/VoiceFailedScreen.jsx",
       "line": 14
     },
     {
       "from": "voice_failed",
       "to": "lesson_resume",
-      "file": "src/features/fallback/VoiceFailedPage.jsx",
+      "file": "src/features/fallback/screens/VoiceFailedScreen.jsx",
       "line": 13
     },
     {
       "from": "words_practiced",
       "to": "review_needed",
-      "file": "src/features/progress/WordsPracticedPage.jsx",
+      "file": "src/features/progress/screens/WordsPracticedScreen.jsx",
       "line": 64
     },
     {
       "from": "words_practiced",
       "to": "today_progress",
-      "file": "src/features/progress/WordsPracticedPage.jsx",
+      "file": "src/features/progress/screens/WordsPracticedScreen.jsx",
       "line": 44
     }
   ],
@@ -2511,7 +2511,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-05-11T09:10:05Z",
-    "sourceCommit": "bb92c96f3a0fd319279a08ad1048ecfc12a0ec44"
+    "generatedAt": "2026-05-11T09:22:54Z",
+    "sourceCommit": "f558b906010445c5695333715635c9249410abda"
   }
 }

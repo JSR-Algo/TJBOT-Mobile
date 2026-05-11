@@ -151,8 +151,8 @@ export function buildPageMaps() {
     // Pattern B: Object.fromEntries(STATES.map(... XPage ...))
     const fanout = src.match(/SCREEN_MAP\s*=\s*Object\.fromEntries\s*\(\s*STATES\.map[\s\S]*?\)\s*\)/);
     if (fanout) {
-      // Find a Page identifier referenced inside the lambda body.
-      const pageIdentMatch = fanout[0].match(/\b([A-Z]\w*Page)\b/);
+      // Find a Screen identifier referenced inside the lambda body.
+      const pageIdentMatch = fanout[0].match(/\b([A-Z]\w*Screen)\b/);
       if (pageIdentMatch) {
         const ident = pageIdentMatch[1];
         for (const id of statesIdsFromFeature(domain)) record(id, ident);

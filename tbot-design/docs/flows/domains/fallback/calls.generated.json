@@ -1,5 +1,5 @@
 {
-  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
+  "_generated": "from nav-graph-data.json sha=a64610b0bee3",
   "domain": "fallback",
   "count": 23,
   "calls": [
@@ -23,7 +23,7 @@
       "from": "app_error",
       "to": "home_hub_idle",
       "file": "src/features/fallback/screens/AppErrorScreen.jsx",
-      "line": 29,
+      "line": 30,
       "cross_domain": true,
       "target_domain": "home"
     },

@@ -1,0 +1,43 @@
+@startuml TBOT-Auth
+title Domain · auth — identity & session
+left to right direction
+
+actor Guest
+actor "Authenticated User" as AuthUser
+actor "Google OAuth" as Google <<external>>
+actor "Apple Sign-In" as Apple <<external>>
+
+package "auth" {
+  usecase "Sign Up (email)"          as UC_AUTH_SIGNUP
+  usecase "Log In (email)"           as UC_AUTH_LOGIN
+  usecase "Continue with Google"     as UC_AUTH_GOOGLE
+  usecase "Continue with Apple"      as UC_AUTH_APPLE
+  usecase "Reset Password"           as UC_AUTH_RESET <<UNDEFINED>>
+  usecase "Recover Login Error"      as UC_AUTH_ERR
+  usecase "Set Up Child Profile"     as UC_AUTH_CHILD
+  usecase "Refresh Token"            as UC_AUTH_REFRESH <<UNDEFINED>>
+  usecase "Logout"                   as UC_AUTH_LOGOUT <<UNDEFINED>>
+}
+
+Guest    --> UC_AUTH_SIGNUP
+Guest    --> UC_AUTH_LOGIN
+Guest    --> UC_AUTH_GOOGLE
+Guest    --> UC_AUTH_APPLE
+Guest    --> UC_AUTH_RESET
+Guest    --> UC_AUTH_ERR
+Guest    --> UC_AUTH_CHILD
+AuthUser --> UC_AUTH_REFRESH
+AuthUser --> UC_AUTH_LOGOUT
+
+UC_AUTH_GOOGLE ..> Google : <<delegate>>
+UC_AUTH_APPLE  ..> Apple  : <<delegate>>
+
+note bottom of UC_AUTH_RESET
+  Button only — target = onb_login.
+  No reset API observed in source.
+end note
+
+' [exit] success → kid-hub (UC_HUB_VIEW)
+' Files: src/features/auth/LoginPage.jsx, src/features/auth/ChildProfilePage.jsx
+' Store: src/store/auth.store.js
+@enduml

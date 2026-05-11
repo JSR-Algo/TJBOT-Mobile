@@ -21,8 +21,11 @@
     "flows:all": "npm run flows:fast && npm run flows:render"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@mermaid-js/mermaid-cli": "^11.14.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
     "vite": "^5.0.0"
   },
   "dependencies": {
