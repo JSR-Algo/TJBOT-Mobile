@@ -1,0 +1,9 @@
+{
+  "id": "home",
+  "owner_lane": "B",
+  "flow": "docs/flows/domains/home/flow.mmd",
+  "edge_cases": {
+    "home_hub_mic":     ["error"],
+    "home_hub_offline": ["retry", "error"]
+  }
+}

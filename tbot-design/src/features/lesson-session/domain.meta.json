@@ -1,0 +1,15 @@
+{
+  "id": "lesson-session",
+  "owner_lane": "B",
+  "flow": "docs/flows/domains/lesson-session/flow.mmd",
+  "edge_cases": {
+    "gentle":       ["retry"],
+    "retry":        ["retry"],
+    "offtopic":     ["retry"],
+    "bargein":      ["error"],
+    "reconnecting": ["retry", "timeout"],
+    "audio_error":  ["error", "retry"],
+    "safety":       ["error"],
+    "exit_confirm": ["cancel"]
+  }
+}

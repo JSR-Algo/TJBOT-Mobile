@@ -1,0 +1,6 @@
+{
+  "id": "course",
+  "owner_lane": "B",
+  "flow": "docs/flows/domains/course/flow.mmd",
+  "edge_cases": {}
+}
