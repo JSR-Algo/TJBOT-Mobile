@@ -1,0 +1,12 @@
+{
+  "id": "device",
+  "owner_lane": "D",
+  "flow": "docs/flows/domains/device/flow.mmd",
+  "edge_cases": {
+    "dv_pair_failed":     ["error", "retry"],
+    "dv_pair_offline":    ["error", "retry"],
+    "dv_pair_connecting": ["timeout"],
+    "dv_lost":            ["timeout"],
+    "dv_firmware":        ["timeout"]
+  }
+}
