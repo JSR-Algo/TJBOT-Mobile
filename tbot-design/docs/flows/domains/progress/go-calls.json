@@ -1,0 +1,95 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "progress",
+  "count": 11,
+  "calls": [
+    {
+      "from": "celebration",
+      "to": "home",
+      "file": "src/features/progress/CelebrationPage.jsx",
+      "line": 54,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "celebration",
+      "to": "review_needed",
+      "file": "src/features/progress/CelebrationPage.jsx",
+      "line": 55,
+      "cross_domain": false,
+      "target_domain": "progress"
+    },
+    {
+      "from": "lesson_summary",
+      "to": "lesson_ready",
+      "file": "src/features/progress/LessonSummaryPage.jsx",
+      "line": 34,
+      "cross_domain": true,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "lesson_summary",
+      "to": "home",
+      "file": "src/features/progress/LessonSummaryPage.jsx",
+      "line": 35,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "review_needed",
+      "to": "home",
+      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "line": 16,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "review_needed",
+      "to": "lesson_ready",
+      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "line": 40,
+      "cross_domain": true,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "review_needed",
+      "to": "home",
+      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "line": 41,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "today_progress",
+      "to": "home",
+      "file": "src/features/progress/TodayProgressPage.jsx",
+      "line": 28,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "today_progress",
+      "to": "home",
+      "file": "src/features/progress/TodayProgressPage.jsx",
+      "line": 65,
+      "cross_domain": true,
+      "target_domain": null
+    },
+    {
+      "from": "words_practiced",
+      "to": "today_progress",
+      "file": "src/features/progress/WordsPracticedPage.jsx",
+      "line": 44,
+      "cross_domain": false,
+      "target_domain": "progress"
+    },
+    {
+      "from": "words_practiced",
+      "to": "review_needed",
+      "file": "src/features/progress/WordsPracticedPage.jsx",
+      "line": 64,
+      "cross_domain": false,
+      "target_domain": "progress"
+    }
+  ]
+}

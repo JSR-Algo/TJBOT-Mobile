@@ -1,0 +1,48 @@
+<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+%% domain: purchase
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Purchase["Purchase"]
+    pr_activate["Buy · Activate Robot"]
+    pr_arrived["Buy · Robot arrived · setup"]
+    pr_bundle["Buy · Bundle picker"]
+    pr_checkout["Buy · Checkout"]
+    pr_confirm["Buy · Order confirmed"]
+    pr_first_course["Buy · Add first course"]
+    pr_how["Buy · How lessons work"]
+    pr_included["Buy · What"]
+    pr_intro["Buy · Robot overview"]
+    pr_privacy["Buy · Parent trust & privacy"]
+    pr_shipping["Buy · Shipping & delivery"]
+    pr_subs["Buy · Course subscription"]
+  end
+  pr_activate --> pr_arrived
+  pr_activate --> pr_first_course
+  pr_arrived --> pr_activate
+  pr_bundle --> pr_included
+  pr_bundle --> pr_subs
+  pr_checkout --> pr_confirm
+  pr_checkout --> pr_privacy
+  pr_confirm --> pr_shipping
+  pr_how --> pr_included
+  pr_how --> pr_intro
+  pr_included --> pr_bundle
+  pr_included --> pr_how
+  pr_intro --> pr_how
+  pr_intro --> pr_privacy
+  pr_privacy --> pr_checkout
+  pr_privacy --> pr_subs
+  pr_shipping --> pr_arrived
+  pr_shipping --> pr_confirm
+  pr_subs --> pr_bundle
+  pr_subs --> pr_privacy
+  class pr_activate,pr_arrived,pr_bundle,pr_checkout,pr_confirm,pr_first_course,pr_how,pr_included,pr_intro,pr_privacy,pr_shipping,pr_subs happy
+
+%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   pr_first_course -> cl_added (course-library)
+%%   pr_first_course -> cl_library (course-library)
+%%   pr_arrived -> dv_home (device)
+%%   pr_confirm -> dv_home (device)
+%%   pr_intro -> dv_home (device)
+%%   pr_shipping -> dv_home (device)

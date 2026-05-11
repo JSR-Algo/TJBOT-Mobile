@@ -1,0 +1,247 @@
+{
+  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "domain": "purchase",
+  "count": 30,
+  "calls": [
+    {
+      "from": "pr_activate",
+      "to": "pr_arrived",
+      "file": "src/features/purchase/ActivatePage.jsx",
+      "line": 9,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_activate",
+      "to": "pr_first_course",
+      "file": "src/features/purchase/ActivatePage.jsx",
+      "line": 51,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_arrived",
+      "to": "pr_activate",
+      "file": "src/features/purchase/ArrivedPage.jsx",
+      "line": 36,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_arrived",
+      "to": "dv_home",
+      "file": "src/features/purchase/ArrivedPage.jsx",
+      "line": 37,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "pr_bundle",
+      "to": "pr_included",
+      "file": "src/features/purchase/BundlePage.jsx",
+      "line": 13,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_bundle",
+      "to": "pr_subs",
+      "file": "src/features/purchase/BundlePage.jsx",
+      "line": 52,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_bundle",
+      "to": "pr_included",
+      "file": "src/features/purchase/BundlePage.jsx",
+      "line": 53,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_checkout",
+      "to": "pr_privacy",
+      "file": "src/features/purchase/CheckoutPage.jsx",
+      "line": 7,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_checkout",
+      "to": "pr_confirm",
+      "file": "src/features/purchase/CheckoutPage.jsx",
+      "line": 65,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_first_course",
+      "to": "cl_added",
+      "file": "src/features/purchase/FirstCoursePage.jsx",
+      "line": 58,
+      "cross_domain": true,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "pr_first_course",
+      "to": "cl_library",
+      "file": "src/features/purchase/FirstCoursePage.jsx",
+      "line": 59,
+      "cross_domain": true,
+      "target_domain": "course-library"
+    },
+    {
+      "from": "pr_how",
+      "to": "pr_intro",
+      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "line": 14,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_how",
+      "to": "pr_included",
+      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "line": 40,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_how",
+      "to": "pr_intro",
+      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "line": 41,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_included",
+      "to": "pr_how",
+      "file": "src/features/purchase/IncludedPage.jsx",
+      "line": 16,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_included",
+      "to": "pr_bundle",
+      "file": "src/features/purchase/IncludedPage.jsx",
+      "line": 43,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_confirm",
+      "to": "pr_shipping",
+      "file": "src/features/purchase/OrderConfirmPage.jsx",
+      "line": 51,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_confirm",
+      "to": "dv_home",
+      "file": "src/features/purchase/OrderConfirmPage.jsx",
+      "line": 52,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "pr_privacy",
+      "to": "pr_subs",
+      "file": "src/features/purchase/PrivacyPage.jsx",
+      "line": 15,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_privacy",
+      "to": "pr_checkout",
+      "file": "src/features/purchase/PrivacyPage.jsx",
+      "line": 38,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_privacy",
+      "to": "pr_subs",
+      "file": "src/features/purchase/PrivacyPage.jsx",
+      "line": 39,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_intro",
+      "to": "dv_home",
+      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "line": 9,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "pr_intro",
+      "to": "pr_how",
+      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "line": 40,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_intro",
+      "to": "pr_privacy",
+      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "line": 41,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_shipping",
+      "to": "pr_confirm",
+      "file": "src/features/purchase/ShippingPage.jsx",
+      "line": 16,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_shipping",
+      "to": "pr_arrived",
+      "file": "src/features/purchase/ShippingPage.jsx",
+      "line": 61,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_shipping",
+      "to": "dv_home",
+      "file": "src/features/purchase/ShippingPage.jsx",
+      "line": 62,
+      "cross_domain": true,
+      "target_domain": "device"
+    },
+    {
+      "from": "pr_subs",
+      "to": "pr_bundle",
+      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "line": 14,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_subs",
+      "to": "pr_privacy",
+      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "line": 55,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    },
+    {
+      "from": "pr_subs",
+      "to": "pr_bundle",
+      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "line": 56,
+      "cross_domain": false,
+      "target_domain": "purchase"
+    }
+  ]
+}
