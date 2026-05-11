@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   PROJECT_ROOT, NAV_GRAPH_PATH, FEATURES_DIR, DOCS_FLOWS_DIR,
-  listDomains, readNavGraph, sha256OfFile, generatedHeader,
+  listDomains, readNavGraph, sha256OfFile, generatedHeader, mermaidGeneratedHeader,
   buildPageMaps,
 } from './lib/repo.mjs';
 
@@ -22,7 +22,8 @@ const CHECK = process.argv.includes('--check');
 
 const navGraph = readNavGraph();
 const navGraphSha = sha256OfFile(NAV_GRAPH_PATH).slice(0, 12);
-const HEADER = generatedHeader(navGraphSha);
+const HEADER     = generatedHeader(navGraphSha);          // for .md outputs
+const MMD_HEADER = mermaidGeneratedHeader(navGraphSha);   // for .mmd outputs
 
 // Build state -> domain map from src/features/<d>/states.js (canonical).
 function buildStateDomainMap() {
@@ -70,7 +71,7 @@ function nodeShape(id, rec) {
 function emitDomainMmd(domain, partitioned) {
   const sub = partitioned.get(domain) || new Map();
   const lines = [];
-  lines.push(HEADER);
+  lines.push(MMD_HEADER);
   lines.push(`%% domain: ${domain}`);
   lines.push('flowchart TD');
   lines.push('  classDef happy fill:#dcfce7,stroke:#166534');
@@ -161,7 +162,7 @@ function emitGoCallsJson(domain) {
 
 function emitCrossDomain() {
   const lines = [];
-  lines.push(HEADER);
+  lines.push(MMD_HEADER);
   lines.push('%% Cross-domain edges only. Intra-domain edges live in domains/<d>/flow.mmd.');
   lines.push('flowchart LR');
   const cross = navGraph.edges
@@ -209,7 +210,7 @@ function emitCrossDomain() {
 
 function emitGlobalMmd() {
   const lines = [];
-  lines.push(HEADER);
+  lines.push(MMD_HEADER);
   lines.push('%% Domain-level overview only — intra-domain detail lives under domains/<d>/flow.mmd');
   lines.push('flowchart TD');
   for (const d of listDomains()) {

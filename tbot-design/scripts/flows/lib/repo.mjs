@@ -24,9 +24,16 @@ export const HAPPY_PATH_EXEMPTIONS = new Set([
   'dv_pair_first_lesson',
 ]);
 
+// Markdown variants (HTML comments) — used in .md files only.
 export const GENERATED_HEADER_PREFIX = '<!-- GENERATED FROM nav-graph-data.json sha=';
 export const GENERATED_HEADER_SUFFIX = '. Do not edit by hand. -->';
 export const HAND_CURATED_HEADER = '<!-- HAND-CURATED. -->';
+
+// Mermaid variants (%% comments) — used in .mmd files because mmdc rejects
+// HTML comments before the diagram declaration (UnknownDiagramError).
+export const MERMAID_GENERATED_HEADER_PREFIX = '%% GENERATED FROM nav-graph-data.json sha=';
+export const MERMAID_GENERATED_HEADER_SUFFIX = '. Do not edit by hand.';
+export const MERMAID_HAND_CURATED_HEADER = '%% HAND-CURATED.';
 
 export function listDomains() {
   return fs.readdirSync(FEATURES_DIR, { withFileTypes: true })
@@ -60,8 +67,14 @@ export function sha256OfBuffer(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex');
 }
 
+// Header for generated MARKDOWN files (HTML comment, parsed by markdown renderers).
 export function generatedHeader(sha) {
   return `${GENERATED_HEADER_PREFIX}${sha}${GENERATED_HEADER_SUFFIX}`;
+}
+
+// Header for generated MERMAID files (%% comment, valid mermaid pre-diagram).
+export function mermaidGeneratedHeader(sha) {
+  return `${MERMAID_GENERATED_HEADER_PREFIX}${sha}${MERMAID_GENERATED_HEADER_SUFFIX}`;
 }
 
 export function walkFiles(root, predicate) {

@@ -15,7 +15,7 @@ import path from 'node:path';
 import {
   PROJECT_ROOT, NAV_GRAPH_PATH, FEATURES_DIR, DOCS_FLOWS_DIR, SCHEMA_DIR,
   listDomains, readNavGraph, readJsonFile, walkFiles, sha256OfFile,
-  generatedHeader, EDGE_CASE_TEMPLATES, HAPPY_PATH_EXEMPTIONS,
+  generatedHeader, mermaidGeneratedHeader, EDGE_CASE_TEMPLATES, HAPPY_PATH_EXEMPTIONS,
   buildPageMaps, gitHeadShortBranch, gitStagedFiles, projectPrefixWithinGit,
 } from './lib/repo.mjs';
 import { validate } from './lib/json-validate.mjs';
@@ -82,16 +82,20 @@ if (ALL || FLAGS.has('--check-generated')) {
     walkFiles(r, p => p.endsWith('.mmd') || p.endsWith('.md') || p.endsWith('.html'))
   );
   let checked = 0, headerErrors = 0;
+  const expectedMd  = generatedHeader(navGraphSha);
+  const expectedMmd = mermaidGeneratedHeader(navGraphSha);
   for (const p of mmds) {
     const first = fs.readFileSync(p, 'utf8').split('\n', 2)[0];
-    // Allow hand-curated files to skip the generated-sha header.
-    if (first.includes('<!-- HAND-CURATED.')) continue;
-    if (!first.startsWith('<!-- GENERATED FROM nav-graph-data.json sha=')) {
+    // Allow hand-curated files (either marker syntax) to skip the sha check.
+    if (first.includes('<!-- HAND-CURATED.') || first.startsWith('%% HAND-CURATED.')) continue;
+    const isMdHeader  = first.startsWith('<!-- GENERATED FROM nav-graph-data.json sha=');
+    const isMmdHeader = first.startsWith('%% GENERATED FROM nav-graph-data.json sha=');
+    if (!isMdHeader && !isMmdHeader) {
       // Files that aren't part of the generated set are silently skipped.
       continue;
     }
     checked++;
-    const expected = generatedHeader(navGraphSha);
+    const expected = isMmdHeader ? expectedMmd : expectedMd;
     if (first.trim() !== expected) {
       fail('generated-sha', `${path.relative(PROJECT_ROOT, p)}: header sha mismatch (expected ${navGraphSha})`);
       headerErrors++;
