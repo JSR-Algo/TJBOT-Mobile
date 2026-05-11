@@ -51,7 +51,7 @@ if (ALL || FLAGS.has('--schema-only')) {
       fail('schema(domain-meta)', `${d}: id="${obj.id}" does not match dir name "${d}"`);
     }
     if (obj.flow && obj.id) {
-      const expected = `docs/flows/domains/${obj.id}/flow.mmd`;
+      const expected = `docs/flows/domains/${obj.id}/flow.generated.mmd`;
       if (obj.flow !== expected) {
         fail('schema(domain-meta)', `${d}: flow="${obj.flow}" does not match expected "${expected}"`);
       }
@@ -145,11 +145,11 @@ if (ALL || FLAGS.has('--check-cross-domain')) {
     }
   }
 
-  // Verify each domain flow.mmd does not reference states outside its domain
+  // Verify each domain flow.generated.mmd does not reference states outside its domain
   // outside the cross-domain stub block. Identifier match: surrounded by chars
   // outside [A-Za-z0-9_] (treats hyphens like 'course-library' as separators).
   for (const d of listDomains()) {
-    const mmdP = path.join(DOCS_FLOWS_DIR, 'domains', d, 'flow.mmd');
+    const mmdP = path.join(DOCS_FLOWS_DIR, 'domains', d, 'flow.generated.mmd');
     if (!fs.existsSync(mmdP)) continue;
     const src = fs.readFileSync(mmdP, 'utf8');
     // Strip cross-domain stub block (everything after '%% cross-domain' line).
@@ -168,7 +168,7 @@ if (ALL || FLAGS.has('--check-cross-domain')) {
       if (!owner) continue;  // synthesized/undeclared state — skip; flagged separately
       // Identifier-aware boundary: previous + next chars must not be [A-Za-z0-9_].
       const re = new RegExp(`(^|[^A-Za-z0-9_])${stateId}([^A-Za-z0-9_]|$)`);
-      if (re.test(body)) fail('cross-domain', `${d}/flow.mmd references foreign state "${stateId}" (owner=${owner}) outside cross-domain stub`);
+      if (re.test(body)) fail('cross-domain', `${d}/flow.generated.mmd references foreign state "${stateId}" (owner=${owner}) outside cross-domain stub`);
     }
   }
   if (!errors.some(e => e.startsWith('[cross-domain]'))) ok('cross-domain');
@@ -235,13 +235,17 @@ if (ALL || FLAGS.has('--check-edge-exemptions')) {
 }
 
 // ─── (j) backend-leak linter (R8 — added 2026-05-11) ────────────────────────
-// Per plan D2 backend mapping is skipped. flow.md narratives must NOT carry
-// invented API/DB references; defer to a future backend.md generator + ADR.
-// Hard-fail if any hand-curated flow.md contains forbidden prefixes.
+// Per plan D2 backend mapping is skipped. Per-domain README.md narratives must
+// NOT carry invented API/DB references; defer to a future backend.md generator + ADR.
+// Hard-fail if any hand-curated domain README.md contains forbidden prefixes.
+// (Renamed 2026-05-11: domain narratives moved flow.md → README.md.)
 if (ALL || FLAGS.has('--check-backend-leak')) {
   const BAD_LINE = /^(endpoint:|POST |GET |PUT |DELETE |db:|table:|schema:)\s/m;
-  const flowMds = walkFiles(DOCS_FLOWS_DIR, p => p.endsWith('flow.md'));
-  for (const md of flowMds) {
+  // Only scan per-domain READMEs, not docs/flows/README.md (workflow doc).
+  const domainReadmes = walkFiles(DOCS_FLOWS_DIR, p =>
+    p.includes(`${path.sep}domains${path.sep}`) && p.endsWith(`${path.sep}README.md`)
+  );
+  for (const md of domainReadmes) {
     const src = fs.readFileSync(md, 'utf8');
     if (BAD_LINE.test(src)) {
       const rel = path.relative(PROJECT_ROOT, md);
@@ -249,7 +253,7 @@ if (ALL || FLAGS.has('--check-backend-leak')) {
       fail('backend-leak', `${rel} contains forbidden backend reference: "${m?.[0]?.trim()}". Backend mapping is deferred (plan D2); use a future backend.md instead.`);
     }
   }
-  if (!errors.some(e => e.startsWith('[backend-leak]'))) ok(`backend-leak(${flowMds.length} flow.md files scanned)`);
+  if (!errors.some(e => e.startsWith('[backend-leak]'))) ok(`backend-leak(${domainReadmes.length} domain README.md files scanned)`);
 }
 
 // ─── (g) single-writer diagnostic — WARN-ONLY (C5 fix 2026-05-11) ─────────────
@@ -266,7 +270,7 @@ if (ALL) {
   const guardedTargets = [
     `${prefix}nav-graph-data.json`,
     `${prefix}docs/flows/domains/`,
-    `${prefix}docs/flows/global.flow.mmd`,
+    `${prefix}docs/flows/global.generated.mmd`,
     `${prefix}docs/flows/shared/cross-domain.flow.mmd`,
     `${prefix}docs/flows/user-flow.md`,
     `${prefix}docs/flows/user-flow.html`,
@@ -285,11 +289,12 @@ if (ALL) {
   if (suspectsLaneCommit) {
     const staged = gitStagedFiles();
     for (const f of staged) {
-      // generated files inside docs/flows/domains/<d>/ are flow.mmd and go-calls.json only;
-      // flow.md is hand-curated and IS allowed on lane commits.
+      // Generated files inside docs/flows/domains/<d>/ are flow.generated.mmd
+      // and calls.generated.json only; README.md is hand-curated and IS allowed
+      // on lane commits.
       if (f.startsWith(`${prefix}docs/flows/domains/`)) {
         const base = path.basename(f);
-        if (base === 'flow.md') continue;
+        if (base === 'README.md') continue;
       }
       if (f === guardedTargets[0] || f.startsWith(guardedTargets[1]) ||
           guardedTargets.slice(2).includes(f)) {

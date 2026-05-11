@@ -1,7 +1,7 @@
 {
   "id": "fallback",
   "owner_lane": "D",
-  "flow": "docs/flows/domains/fallback/flow.mmd",
+  "flow": "docs/flows/domains/fallback/flow.generated.mmd",
   "edge_cases": {
     "network_error":        ["error", "retry"],
     "audio_recovery":       ["error", "retry"],

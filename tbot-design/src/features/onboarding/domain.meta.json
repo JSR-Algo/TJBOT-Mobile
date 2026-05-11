@@ -1,6 +1,6 @@
 {
   "id": "onboarding",
   "owner_lane": "A",
-  "flow": "docs/flows/domains/onboarding/flow.mmd",
+  "flow": "docs/flows/domains/onboarding/flow.generated.mmd",
   "edge_cases": {}
 }

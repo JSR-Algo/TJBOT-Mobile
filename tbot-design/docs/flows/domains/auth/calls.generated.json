@@ -1,12 +1,12 @@
 {
-  "_generated": "from nav-graph-data.json sha=9cfd302d222f",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "auth",
   "count": 8,
   "calls": [
     {
       "from": "onb_child",
       "to": "onb_login",
-      "file": "src/features/auth/ChildProfilePage.jsx",
+      "file": "src/features/auth/screens/ChildProfileScreen.jsx",
       "line": 26,
       "cross_domain": false,
       "target_domain": "auth"
@@ -14,7 +14,7 @@
     {
       "from": "onb_child",
       "to": "onb_first_lesson",
-      "file": "src/features/auth/ChildProfilePage.jsx",
+      "file": "src/features/auth/screens/ChildProfileScreen.jsx",
       "line": 84,
       "cross_domain": true,
       "target_domain": "onboarding"
@@ -22,7 +22,7 @@
     {
       "from": "onb_login_error",
       "to": "onb_login",
-      "file": "src/features/auth/LoginErrorPage.jsx",
+      "file": "src/features/auth/screens/LoginErrorScreen.jsx",
       "line": 7,
       "cross_domain": false,
       "target_domain": "auth"
@@ -30,7 +30,7 @@
     {
       "from": "onb_login_error",
       "to": "onb_child",
-      "file": "src/features/auth/LoginErrorPage.jsx",
+      "file": "src/features/auth/screens/LoginErrorScreen.jsx",
       "line": 38,
       "cross_domain": false,
       "target_domain": "auth"
@@ -38,7 +38,7 @@
     {
       "from": "onb_login_error",
       "to": "onb_login",
-      "file": "src/features/auth/LoginErrorPage.jsx",
+      "file": "src/features/auth/screens/LoginErrorScreen.jsx",
       "line": 39,
       "cross_domain": false,
       "target_domain": "auth"
@@ -46,7 +46,7 @@
     {
       "from": "onb_login",
       "to": "onb_mic",
-      "file": "src/features/auth/LoginPage.jsx",
+      "file": "src/features/auth/screens/LoginScreen.jsx",
       "line": 8,
       "cross_domain": true,
       "target_domain": "onboarding"
@@ -54,7 +54,7 @@
     {
       "from": "onb_login",
       "to": "onb_child",
-      "file": "src/features/auth/LoginPage.jsx",
+      "file": "src/features/auth/screens/LoginScreen.jsx",
       "line": 30,
       "cross_domain": false,
       "target_domain": "auth"
@@ -62,7 +62,7 @@
     {
       "from": "onb_login",
       "to": "onb_child",
-      "file": "src/features/auth/LoginPage.jsx",
+      "file": "src/features/auth/screens/LoginScreen.jsx",
       "line": 38,
       "cross_domain": false,
       "target_domain": "auth"

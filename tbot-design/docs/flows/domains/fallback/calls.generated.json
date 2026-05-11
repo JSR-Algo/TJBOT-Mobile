@@ -1,136 +1,8 @@
 {
-  "_generated": "from nav-graph-data.json sha=9cfd302d222f",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "fallback",
   "count": 23,
   "calls": [
-    {
-      "from": "app_error",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/AppErrorPage.jsx",
-      "line": 29,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "audio_recovery",
-      "to": "mic_missing",
-      "file": "src/features/fallback/AudioRecoveryPage.jsx",
-      "line": 18,
-      "cross_domain": false,
-      "target_domain": "fallback"
-    },
-    {
-      "from": "audio_recovery",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/AudioRecoveryPage.jsx",
-      "line": 49,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "help_faq",
-      "to": "parent_summary",
-      "file": "src/features/fallback/HelpFaqPage.jsx",
-      "line": 14,
-      "cross_domain": true,
-      "target_domain": "parent"
-    },
-    {
-      "from": "kid_settings",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/KidSettingsPage.jsx",
-      "line": 24,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "kid_settings",
-      "to": "parent_gate",
-      "file": "src/features/fallback/KidSettingsPage.jsx",
-      "line": 33,
-      "cross_domain": true,
-      "target_domain": "parent"
-    },
-    {
-      "from": "kid_settings",
-      "to": "help_faq",
-      "file": "src/features/fallback/KidSettingsPage.jsx",
-      "line": 46,
-      "cross_domain": false,
-      "target_domain": "fallback"
-    },
-    {
-      "from": "lesson_resume",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/LessonResumePage.jsx",
-      "line": 7,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "lesson_resume",
-      "to": "robot_speaking",
-      "file": "src/features/fallback/LessonResumePage.jsx",
-      "line": 28,
-      "cross_domain": true,
-      "target_domain": "lesson-session"
-    },
-    {
-      "from": "lesson_resume",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/LessonResumePage.jsx",
-      "line": 29,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "mic_missing",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/MicMissingPage.jsx",
-      "line": 7,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "mic_missing",
-      "to": "audio_recovery",
-      "file": "src/features/fallback/MicMissingPage.jsx",
-      "line": 20,
-      "cross_domain": false,
-      "target_domain": "fallback"
-    },
-    {
-      "from": "mic_missing",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/MicMissingPage.jsx",
-      "line": 21,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "network_error",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/NetworkErrorPage.jsx",
-      "line": 7,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
-    {
-      "from": "network_error",
-      "to": "reconnecting_overlay",
-      "file": "src/features/fallback/NetworkErrorPage.jsx",
-      "line": 17,
-      "cross_domain": false,
-      "target_domain": "fallback"
-    },
-    {
-      "from": "network_error",
-      "to": "home_hub_idle",
-      "file": "src/features/fallback/NetworkErrorPage.jsx",
-      "line": 18,
-      "cross_domain": true,
-      "target_domain": "home"
-    },
     {
       "from": "reconnecting_overlay",
       "to": "robot_listening",
@@ -148,9 +20,137 @@
       "target_domain": "home"
     },
     {
+      "from": "app_error",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/AppErrorScreen.jsx",
+      "line": 29,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "audio_recovery",
+      "to": "mic_missing",
+      "file": "src/features/fallback/screens/AudioRecoveryScreen.jsx",
+      "line": 18,
+      "cross_domain": false,
+      "target_domain": "fallback"
+    },
+    {
+      "from": "audio_recovery",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/AudioRecoveryScreen.jsx",
+      "line": 49,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "help_faq",
+      "to": "parent_summary",
+      "file": "src/features/fallback/screens/HelpFaqScreen.jsx",
+      "line": 14,
+      "cross_domain": true,
+      "target_domain": "parent"
+    },
+    {
+      "from": "kid_settings",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/KidSettingsScreen.jsx",
+      "line": 24,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "kid_settings",
+      "to": "parent_gate",
+      "file": "src/features/fallback/screens/KidSettingsScreen.jsx",
+      "line": 33,
+      "cross_domain": true,
+      "target_domain": "parent"
+    },
+    {
+      "from": "kid_settings",
+      "to": "help_faq",
+      "file": "src/features/fallback/screens/KidSettingsScreen.jsx",
+      "line": 46,
+      "cross_domain": false,
+      "target_domain": "fallback"
+    },
+    {
+      "from": "lesson_resume",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/LessonResumeScreen.jsx",
+      "line": 7,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "lesson_resume",
+      "to": "robot_speaking",
+      "file": "src/features/fallback/screens/LessonResumeScreen.jsx",
+      "line": 28,
+      "cross_domain": true,
+      "target_domain": "lesson-session"
+    },
+    {
+      "from": "lesson_resume",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/LessonResumeScreen.jsx",
+      "line": 29,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "mic_missing",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/MicMissingScreen.jsx",
+      "line": 7,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "mic_missing",
+      "to": "audio_recovery",
+      "file": "src/features/fallback/screens/MicMissingScreen.jsx",
+      "line": 20,
+      "cross_domain": false,
+      "target_domain": "fallback"
+    },
+    {
+      "from": "mic_missing",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/MicMissingScreen.jsx",
+      "line": 21,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "network_error",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/NetworkErrorScreen.jsx",
+      "line": 7,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
+      "from": "network_error",
+      "to": "reconnecting_overlay",
+      "file": "src/features/fallback/screens/NetworkErrorScreen.jsx",
+      "line": 17,
+      "cross_domain": false,
+      "target_domain": "fallback"
+    },
+    {
+      "from": "network_error",
+      "to": "home_hub_idle",
+      "file": "src/features/fallback/screens/NetworkErrorScreen.jsx",
+      "line": 18,
+      "cross_domain": true,
+      "target_domain": "home"
+    },
+    {
       "from": "safety_redirect",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/SafetyRedirectPage.jsx",
+      "file": "src/features/fallback/screens/SafetyRedirectScreen.jsx",
       "line": 19,
       "cross_domain": true,
       "target_domain": "home"
@@ -158,7 +158,7 @@
     {
       "from": "safety_redirect",
       "to": "parent_gate",
-      "file": "src/features/fallback/SafetyRedirectPage.jsx",
+      "file": "src/features/fallback/screens/SafetyRedirectScreen.jsx",
       "line": 20,
       "cross_domain": true,
       "target_domain": "parent"
@@ -166,7 +166,7 @@
     {
       "from": "voice_failed",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/VoiceFailedPage.jsx",
+      "file": "src/features/fallback/screens/VoiceFailedScreen.jsx",
       "line": 7,
       "cross_domain": true,
       "target_domain": "home"
@@ -174,7 +174,7 @@
     {
       "from": "voice_failed",
       "to": "lesson_resume",
-      "file": "src/features/fallback/VoiceFailedPage.jsx",
+      "file": "src/features/fallback/screens/VoiceFailedScreen.jsx",
       "line": 13,
       "cross_domain": false,
       "target_domain": "fallback"
@@ -182,7 +182,7 @@
     {
       "from": "voice_failed",
       "to": "home_hub_idle",
-      "file": "src/features/fallback/VoiceFailedPage.jsx",
+      "file": "src/features/fallback/screens/VoiceFailedScreen.jsx",
       "line": 14,
       "cross_domain": true,
       "target_domain": "home"

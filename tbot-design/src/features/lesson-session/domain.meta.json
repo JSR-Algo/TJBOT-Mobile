@@ -1,7 +1,7 @@
 {
   "id": "lesson-session",
   "owner_lane": "B",
-  "flow": "docs/flows/domains/lesson-session/flow.mmd",
+  "flow": "docs/flows/domains/lesson-session/flow.generated.mmd",
   "edge_cases": {
     "gentle":       ["retry"],
     "retry":        ["retry"],

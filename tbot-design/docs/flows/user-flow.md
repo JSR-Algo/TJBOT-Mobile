@@ -1,29 +1,29 @@
-<!-- GENERATED FROM nav-graph-data.json sha=376473248fcb. Do not edit by hand. -->
+<!-- GENERATED FROM nav-graph-data.json sha=4924e8de57f5. Do not edit by hand. -->
 # User Flow — Index
 
-> Generated from `nav-graph-data.json` (sha `376473248fcb`). DO NOT EDIT.
+> Generated from `nav-graph-data.json` (sha `4924e8de57f5`). DO NOT EDIT.
 
 ## Global overview
 
-- [Domain-level mermaid](./global.flow.mmd)
-- [Hand-curated narrative](./global.flow.md)
+- [Domain-level mermaid](./global.generated.mmd)
+- [Hand-curated narrative](./global.md)
 
 ## Domains
 
 | Domain | Lane | States | Mermaid | Narrative | Generated calls |
 |---|---|---|---|---|---|
-| `auth` | A | 3 | [flow.mmd](./domains/auth/flow.mmd) | [flow.md](./domains/auth/flow.md) | [go-calls.json](./domains/auth/go-calls.json) |
-| `course` | B | 7 | [flow.mmd](./domains/course/flow.mmd) | [flow.md](./domains/course/flow.md) | [go-calls.json](./domains/course/go-calls.json) |
-| `course-library` | C | 12 | [flow.mmd](./domains/course-library/flow.mmd) | [flow.md](./domains/course-library/flow.md) | [go-calls.json](./domains/course-library/go-calls.json) |
-| `device` | D | 20 | [flow.mmd](./domains/device/flow.mmd) | [flow.md](./domains/device/flow.md) | [go-calls.json](./domains/device/go-calls.json) |
-| `fallback` | D | 10 | [flow.mmd](./domains/fallback/flow.mmd) | [flow.md](./domains/fallback/flow.md) | [go-calls.json](./domains/fallback/go-calls.json) |
-| `home` | B | 6 | [flow.mmd](./domains/home/flow.mmd) | [flow.md](./domains/home/flow.md) | [go-calls.json](./domains/home/go-calls.json) |
-| `lesson-session` | B | 20 | [flow.mmd](./domains/lesson-session/flow.mmd) | [flow.md](./domains/lesson-session/flow.md) | [go-calls.json](./domains/lesson-session/go-calls.json) |
-| `onboarding` | A | 9 | [flow.mmd](./domains/onboarding/flow.mmd) | [flow.md](./domains/onboarding/flow.md) | [go-calls.json](./domains/onboarding/go-calls.json) |
-| `parent` | C | 6 | [flow.mmd](./domains/parent/flow.mmd) | [flow.md](./domains/parent/flow.md) | [go-calls.json](./domains/parent/go-calls.json) |
-| `progress` | C | 5 | [flow.mmd](./domains/progress/flow.mmd) | [flow.md](./domains/progress/flow.md) | [go-calls.json](./domains/progress/go-calls.json) |
-| `purchase` | C | 12 | [flow.mmd](./domains/purchase/flow.mmd) | [flow.md](./domains/purchase/flow.md) | [go-calls.json](./domains/purchase/go-calls.json) |
-| `robot-mgmt` | D | 12 | [flow.mmd](./domains/robot-mgmt/flow.mmd) | [flow.md](./domains/robot-mgmt/flow.md) | [go-calls.json](./domains/robot-mgmt/go-calls.json) |
+| `auth` | A | 3 | [flow.generated.mmd](./domains/auth/flow.generated.mmd) | [README.md](./domains/auth/README.md) | [calls.generated.json](./domains/auth/calls.generated.json) |
+| `course` | B | 7 | [flow.generated.mmd](./domains/course/flow.generated.mmd) | [README.md](./domains/course/README.md) | [calls.generated.json](./domains/course/calls.generated.json) |
+| `course-library` | C | 12 | [flow.generated.mmd](./domains/course-library/flow.generated.mmd) | [README.md](./domains/course-library/README.md) | [calls.generated.json](./domains/course-library/calls.generated.json) |
+| `device` | D | 20 | [flow.generated.mmd](./domains/device/flow.generated.mmd) | [README.md](./domains/device/README.md) | [calls.generated.json](./domains/device/calls.generated.json) |
+| `fallback` | D | 10 | [flow.generated.mmd](./domains/fallback/flow.generated.mmd) | [README.md](./domains/fallback/README.md) | [calls.generated.json](./domains/fallback/calls.generated.json) |
+| `home` | B | 6 | [flow.generated.mmd](./domains/home/flow.generated.mmd) | [README.md](./domains/home/README.md) | [calls.generated.json](./domains/home/calls.generated.json) |
+| `lesson-session` | B | 20 | [flow.generated.mmd](./domains/lesson-session/flow.generated.mmd) | [README.md](./domains/lesson-session/README.md) | [calls.generated.json](./domains/lesson-session/calls.generated.json) |
+| `onboarding` | A | 9 | [flow.generated.mmd](./domains/onboarding/flow.generated.mmd) | [README.md](./domains/onboarding/README.md) | [calls.generated.json](./domains/onboarding/calls.generated.json) |
+| `parent` | C | 6 | [flow.generated.mmd](./domains/parent/flow.generated.mmd) | [README.md](./domains/parent/README.md) | [calls.generated.json](./domains/parent/calls.generated.json) |
+| `progress` | C | 5 | [flow.generated.mmd](./domains/progress/flow.generated.mmd) | [README.md](./domains/progress/README.md) | [calls.generated.json](./domains/progress/calls.generated.json) |
+| `purchase` | C | 12 | [flow.generated.mmd](./domains/purchase/flow.generated.mmd) | [README.md](./domains/purchase/README.md) | [calls.generated.json](./domains/purchase/calls.generated.json) |
+| `robot-mgmt` | D | 12 | [flow.generated.mmd](./domains/robot-mgmt/flow.generated.mmd) | [README.md](./domains/robot-mgmt/README.md) | [calls.generated.json](./domains/robot-mgmt/calls.generated.json) |
 
 ## Cross-domain & shared
 

@@ -168,7 +168,7 @@ function emitGoCallsJson(domain) {
 function emitCrossDomain() {
   const lines = [];
   lines.push(MMD_HEADER);
-  lines.push('%% Cross-domain edges only. Intra-domain edges live in domains/<d>/flow.mmd.');
+  lines.push('%% Cross-domain edges only. Intra-domain edges live in domains/<d>/flow.generated.mmd.');
   lines.push('flowchart LR');
   const cross = navGraph.edges
     .filter(e => stateToDomain.get(e.from) !== stateToDomain.get(e.to))
@@ -216,7 +216,7 @@ function emitCrossDomain() {
 function emitGlobalMmd() {
   const lines = [];
   lines.push(MMD_HEADER);
-  lines.push('%% Domain-level overview only — intra-domain detail lives under domains/<d>/flow.mmd');
+  lines.push('%% Domain-level overview only — intra-domain detail lives under domains/<d>/flow.generated.mmd');
   lines.push('flowchart TD');
   for (const d of listDomains()) {
     const safeId = d.replace(/-/g, '_');
@@ -250,8 +250,8 @@ function emitUserFlowIndex() {
   lines.push('');
   lines.push('## Global overview');
   lines.push('');
-  lines.push('- [Domain-level mermaid](./global.flow.mmd)');
-  lines.push('- [Hand-curated narrative](./global.flow.md)');
+  lines.push('- [Domain-level mermaid](./global.generated.mmd)');
+  lines.push('- [Hand-curated narrative](./global.md)');
   lines.push('');
   lines.push('## Domains');
   lines.push('');
@@ -265,7 +265,7 @@ function emitUserFlowIndex() {
     if (fs.existsSync(metaP)) {
       try { lane = JSON.parse(fs.readFileSync(metaP, 'utf8')).owner_lane || '?'; } catch {}
     }
-    lines.push(`| \`${d}\` | ${lane} | ${stateCount} | [flow.mmd](./domains/${d}/flow.mmd) | [flow.md](./domains/${d}/flow.md) | [go-calls.json](./domains/${d}/go-calls.json) |`);
+    lines.push(`| \`${d}\` | ${lane} | ${stateCount} | [flow.generated.mmd](./domains/${d}/flow.generated.mmd) | [README.md](./domains/${d}/README.md) | [calls.generated.json](./domains/${d}/calls.generated.json) |`);
   }
   lines.push('');
   lines.push('## Cross-domain & shared');
@@ -301,11 +301,11 @@ const writes = []; // {p, content}
 for (const d of listDomains()) {
   const dir = path.join(DOCS_FLOWS_DIR, 'domains', d);
   writes.push({
-    p: path.join(dir, 'flow.mmd'),
+    p: path.join(dir, 'flow.generated.mmd'),
     content: emitDomainMmd(d, partitioned),
   });
   writes.push({
-    p: path.join(dir, 'go-calls.json'),
+    p: path.join(dir, 'calls.generated.json'),
     content: JSON.stringify(emitGoCallsJson(d), null, 2) + '\n',
   });
 }
@@ -314,7 +314,7 @@ writes.push({
   content: emitCrossDomain(),
 });
 writes.push({
-  p: path.join(DOCS_FLOWS_DIR, 'global.flow.mmd'),
+  p: path.join(DOCS_FLOWS_DIR, 'global.generated.mmd'),
   content: emitGlobalMmd(),
 });
 writes.push({

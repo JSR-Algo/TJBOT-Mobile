@@ -20,7 +20,7 @@
     "flow": {
       "type": "string",
       "description": "Path (repo-relative) to the generated mermaid flow file for this domain.",
-      "pattern": "^docs/flows/domains/[a-z][a-z0-9-]*/flow\\.mmd$"
+      "pattern": "^docs/flows/domains/[a-z][a-z0-9-]*/flow\\.generated\\.mmd$"
     },
     "edge_cases": {
       "type": "object",

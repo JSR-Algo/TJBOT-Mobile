@@ -1,7 +1,7 @@
 {
   "id": "course-library",
   "owner_lane": "C",
-  "flow": "docs/flows/domains/course-library/flow.mmd",
+  "flow": "docs/flows/domains/course-library/flow.generated.mmd",
   "edge_cases": {
     "cl_locked": ["unauthorized"]
   }

@@ -1,12 +1,12 @@
 {
-  "_generated": "from nav-graph-data.json sha=376473248fcb",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "lesson-session",
   "count": 42,
   "calls": [
     {
       "from": "activity_done",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ActivityDonePage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityDoneScreen.jsx",
       "line": 10,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -14,7 +14,7 @@
     {
       "from": "activity_done",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/ActivityDonePage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityDoneScreen.jsx",
       "line": 27,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -22,7 +22,7 @@
     {
       "from": "activity_intro",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ActivityIntroPage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityIntroScreen.jsx",
       "line": 24,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -30,7 +30,7 @@
     {
       "from": "activity_intro",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/ActivityIntroPage.jsx",
+      "file": "src/features/lesson-session/screens/ActivityIntroScreen.jsx",
       "line": 43,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -38,7 +38,7 @@
     {
       "from": "audio_error",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "file": "src/features/lesson-session/screens/AudioErrorScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -46,7 +46,7 @@
     {
       "from": "audio_error",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "file": "src/features/lesson-session/screens/AudioErrorScreen.jsx",
       "line": 26,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -54,7 +54,7 @@
     {
       "from": "audio_error",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/AudioErrorPage.jsx",
+      "file": "src/features/lesson-session/screens/AudioErrorScreen.jsx",
       "line": 27,
       "cross_domain": true,
       "target_domain": "home"
@@ -62,7 +62,7 @@
     {
       "from": "bargein",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/BargeinPage.jsx",
+      "file": "src/features/lesson-session/screens/BargeinScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -70,7 +70,7 @@
     {
       "from": "bargein",
       "to": "thinking",
-      "file": "src/features/lesson-session/BargeinPage.jsx",
+      "file": "src/features/lesson-session/screens/BargeinScreen.jsx",
       "line": 21,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -78,7 +78,7 @@
     {
       "from": "connecting",
       "to": "greeting",
-      "file": "src/features/lesson-session/ConnectingPage.jsx",
+      "file": "src/features/lesson-session/screens/ConnectingScreen.jsx",
       "line": 7,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -86,7 +86,7 @@
     {
       "from": "exit_confirm",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/ExitConfirmPage.jsx",
+      "file": "src/features/lesson-session/screens/ExitConfirmScreen.jsx",
       "line": 23,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -94,7 +94,7 @@
     {
       "from": "exit_confirm",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/ExitConfirmPage.jsx",
+      "file": "src/features/lesson-session/screens/ExitConfirmScreen.jsx",
       "line": 24,
       "cross_domain": true,
       "target_domain": "home"
@@ -102,7 +102,7 @@
     {
       "from": "gentle",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/GentlePage.jsx",
+      "file": "src/features/lesson-session/screens/GentleScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -110,7 +110,7 @@
     {
       "from": "gentle",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/GentlePage.jsx",
+      "file": "src/features/lesson-session/screens/GentleScreen.jsx",
       "line": 17,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -118,7 +118,7 @@
     {
       "from": "gentle",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/GentlePage.jsx",
+      "file": "src/features/lesson-session/screens/GentleScreen.jsx",
       "line": 18,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -126,7 +126,7 @@
     {
       "from": "greeting",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/GreetingPage.jsx",
+      "file": "src/features/lesson-session/screens/GreetingScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -134,7 +134,7 @@
     {
       "from": "greeting",
       "to": "activity_intro",
-      "file": "src/features/lesson-session/GreetingPage.jsx",
+      "file": "src/features/lesson-session/screens/GreetingScreen.jsx",
       "line": 17,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -142,7 +142,7 @@
     {
       "from": "lesson_done",
       "to": "lesson_summary",
-      "file": "src/features/lesson-session/LessonDonePage.jsx",
+      "file": "src/features/lesson-session/screens/LessonDoneScreen.jsx",
       "line": 24,
       "cross_domain": true,
       "target_domain": "progress"
@@ -150,7 +150,7 @@
     {
       "from": "lesson_done",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/LessonDonePage.jsx",
+      "file": "src/features/lesson-session/screens/LessonDoneScreen.jsx",
       "line": 25,
       "cross_domain": true,
       "target_domain": "home"
@@ -158,7 +158,7 @@
     {
       "from": "lesson_ready",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "file": "src/features/lesson-session/screens/LessonReadyScreen.jsx",
       "line": 12,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -166,7 +166,7 @@
     {
       "from": "lesson_ready",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "file": "src/features/lesson-session/screens/LessonReadyScreen.jsx",
       "line": 13,
       "cross_domain": true,
       "target_domain": "home"
@@ -174,7 +174,7 @@
     {
       "from": "lesson_ready",
       "to": "connecting",
-      "file": "src/features/lesson-session/LessonReadyPage.jsx",
+      "file": "src/features/lesson-session/screens/LessonReadyScreen.jsx",
       "line": 25,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -182,7 +182,7 @@
     {
       "from": "offtopic",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/OfftopicPage.jsx",
+      "file": "src/features/lesson-session/screens/OfftopicScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -190,7 +190,7 @@
     {
       "from": "offtopic",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/OfftopicPage.jsx",
+      "file": "src/features/lesson-session/screens/OfftopicScreen.jsx",
       "line": 17,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -198,7 +198,7 @@
     {
       "from": "reconnecting",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ReconnectingPage.jsx",
+      "file": "src/features/lesson-session/screens/ReconnectingScreen.jsx",
       "line": 10,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -206,7 +206,7 @@
     {
       "from": "reconnecting",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/ReconnectingPage.jsx",
+      "file": "src/features/lesson-session/screens/ReconnectingScreen.jsx",
       "line": 19,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -214,7 +214,7 @@
     {
       "from": "retry",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/RetryPage.jsx",
+      "file": "src/features/lesson-session/screens/RetryScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -222,7 +222,7 @@
     {
       "from": "retry",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/RetryPage.jsx",
+      "file": "src/features/lesson-session/screens/RetryScreen.jsx",
       "line": 18,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -230,7 +230,7 @@
     {
       "from": "robot_listening",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/RobotListeningPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotListeningScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -238,7 +238,7 @@
     {
       "from": "robot_listening",
       "to": "user_speaking",
-      "file": "src/features/lesson-session/RobotListeningPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotListeningScreen.jsx",
       "line": 21,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -246,7 +246,7 @@
     {
       "from": "robot_speaking",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/RobotSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotSpeakingScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -254,7 +254,7 @@
     {
       "from": "robot_speaking",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/RobotSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/RobotSpeakingScreen.jsx",
       "line": 19,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -262,7 +262,7 @@
     {
       "from": "safety",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/SafetyPage.jsx",
+      "file": "src/features/lesson-session/screens/SafetyScreen.jsx",
       "line": 27,
       "cross_domain": true,
       "target_domain": "home"
@@ -270,7 +270,7 @@
     {
       "from": "safety",
       "to": "home_hub_idle",
-      "file": "src/features/lesson-session/SafetyPage.jsx",
+      "file": "src/features/lesson-session/screens/SafetyScreen.jsx",
       "line": 28,
       "cross_domain": true,
       "target_domain": "home"
@@ -278,7 +278,7 @@
     {
       "from": "silence",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/SilencePage.jsx",
+      "file": "src/features/lesson-session/screens/SilenceScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -286,7 +286,7 @@
     {
       "from": "silence",
       "to": "robot_listening",
-      "file": "src/features/lesson-session/SilencePage.jsx",
+      "file": "src/features/lesson-session/screens/SilenceScreen.jsx",
       "line": 21,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -294,7 +294,7 @@
     {
       "from": "success",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/SuccessPage.jsx",
+      "file": "src/features/lesson-session/screens/SuccessScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -302,7 +302,7 @@
     {
       "from": "success",
       "to": "robot_speaking",
-      "file": "src/features/lesson-session/SuccessPage.jsx",
+      "file": "src/features/lesson-session/screens/SuccessScreen.jsx",
       "line": 23,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -310,7 +310,7 @@
     {
       "from": "thinking",
       "to": "success",
-      "file": "src/features/lesson-session/ThinkingPage.jsx",
+      "file": "src/features/lesson-session/screens/ThinkingScreen.jsx",
       "line": 7,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -318,7 +318,7 @@
     {
       "from": "thinking",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/ThinkingPage.jsx",
+      "file": "src/features/lesson-session/screens/ThinkingScreen.jsx",
       "line": 10,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -326,7 +326,7 @@
     {
       "from": "user_speaking",
       "to": "exit_confirm",
-      "file": "src/features/lesson-session/UserSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/UserSpeakingScreen.jsx",
       "line": 12,
       "cross_domain": false,
       "target_domain": "lesson-session"
@@ -334,7 +334,7 @@
     {
       "from": "user_speaking",
       "to": "thinking",
-      "file": "src/features/lesson-session/UserSpeakingPage.jsx",
+      "file": "src/features/lesson-session/screens/UserSpeakingScreen.jsx",
       "line": 22,
       "cross_domain": false,
       "target_domain": "lesson-session"

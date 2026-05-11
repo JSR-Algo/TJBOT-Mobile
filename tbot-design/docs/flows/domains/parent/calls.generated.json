@@ -1,12 +1,12 @@
 {
-  "_generated": "from nav-graph-data.json sha=9cfd302d222f",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "parent",
   "count": 13,
   "calls": [
     {
       "from": "parent_gate",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentGatePage.jsx",
+      "file": "src/features/parent/screens/ParentGateScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "parent"
@@ -14,7 +14,7 @@
     {
       "from": "parent_gate",
       "to": "home_hub_idle",
-      "file": "src/features/parent/ParentGatePage.jsx",
+      "file": "src/features/parent/screens/ParentGateScreen.jsx",
       "line": 17,
       "cross_domain": true,
       "target_domain": "home"
@@ -22,7 +22,7 @@
     {
       "from": "parent_history",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentHistoryPage.jsx",
+      "file": "src/features/parent/screens/ParentHistoryScreen.jsx",
       "line": 31,
       "cross_domain": false,
       "target_domain": "parent"
@@ -30,7 +30,7 @@
     {
       "from": "parent_safety",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentSafetyPage.jsx",
+      "file": "src/features/parent/screens/ParentSafetyScreen.jsx",
       "line": 20,
       "cross_domain": false,
       "target_domain": "parent"
@@ -38,7 +38,7 @@
     {
       "from": "parent_settings",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentSettingsPage.jsx",
+      "file": "src/features/parent/screens/ParentSettingsScreen.jsx",
       "line": 18,
       "cross_domain": false,
       "target_domain": "parent"
@@ -46,7 +46,7 @@
     {
       "from": "parent_settings",
       "to": "parent_safety",
-      "file": "src/features/parent/ParentSettingsPage.jsx",
+      "file": "src/features/parent/screens/ParentSettingsScreen.jsx",
       "line": 61,
       "cross_domain": false,
       "target_domain": "parent"
@@ -54,7 +54,7 @@
     {
       "from": "parent_summary",
       "to": "parent_settings",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "parent"
@@ -62,7 +62,7 @@
     {
       "from": "parent_summary",
       "to": "parent_today",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 34,
       "cross_domain": false,
       "target_domain": "parent"
@@ -70,7 +70,7 @@
     {
       "from": "parent_summary",
       "to": "parent_history",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 47,
       "cross_domain": false,
       "target_domain": "parent"
@@ -78,7 +78,7 @@
     {
       "from": "parent_summary",
       "to": "parent_safety",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 52,
       "cross_domain": false,
       "target_domain": "parent"
@@ -86,7 +86,7 @@
     {
       "from": "parent_summary",
       "to": "parent_settings",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 53,
       "cross_domain": false,
       "target_domain": "parent"
@@ -94,7 +94,7 @@
     {
       "from": "parent_summary",
       "to": "home_hub_idle",
-      "file": "src/features/parent/ParentSummaryPage.jsx",
+      "file": "src/features/parent/screens/ParentSummaryScreen.jsx",
       "line": 57,
       "cross_domain": true,
       "target_domain": "home"
@@ -102,7 +102,7 @@
     {
       "from": "parent_today",
       "to": "parent_summary",
-      "file": "src/features/parent/ParentTodayPage.jsx",
+      "file": "src/features/parent/screens/ParentTodayScreen.jsx",
       "line": 9,
       "cross_domain": false,
       "target_domain": "parent"

@@ -1,12 +1,12 @@
 {
-  "_generated": "from nav-graph-data.json sha=9cfd302d222f",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "course",
   "count": 15,
   "calls": [
     {
       "from": "course",
       "to": "home_hub_idle",
-      "file": "src/features/course/CoursePage.jsx",
+      "file": "src/features/course/screens/CourseScreen.jsx",
       "line": 18,
       "cross_domain": true,
       "target_domain": "home"
@@ -14,7 +14,7 @@
     {
       "from": "course",
       "to": "level",
-      "file": "src/features/course/CoursePage.jsx",
+      "file": "src/features/course/screens/CourseScreen.jsx",
       "line": 44,
       "cross_domain": false,
       "target_domain": "course"
@@ -22,7 +22,7 @@
     {
       "from": "daily_mission",
       "to": "home_hub_idle",
-      "file": "src/features/course/DailyMissionPage.jsx",
+      "file": "src/features/course/screens/DailyMissionScreen.jsx",
       "line": 11,
       "cross_domain": true,
       "target_domain": "home"
@@ -30,7 +30,7 @@
     {
       "from": "daily_mission",
       "to": "lesson_ready",
-      "file": "src/features/course/DailyMissionPage.jsx",
+      "file": "src/features/course/screens/DailyMissionScreen.jsx",
       "line": 67,
       "cross_domain": true,
       "target_domain": "lesson-session"
@@ -38,7 +38,7 @@
     {
       "from": "lesson_detail",
       "to": "unit",
-      "file": "src/features/course/LessonDetailPage.jsx",
+      "file": "src/features/course/screens/LessonDetailScreen.jsx",
       "line": 12,
       "cross_domain": false,
       "target_domain": "course"
@@ -46,7 +46,7 @@
     {
       "from": "lesson_detail",
       "to": "lesson_ready",
-      "file": "src/features/course/LessonDetailPage.jsx",
+      "file": "src/features/course/screens/LessonDetailScreen.jsx",
       "line": 57,
       "cross_domain": true,
       "target_domain": "lesson-session"
@@ -54,7 +54,7 @@
     {
       "from": "lesson_list",
       "to": "unit",
-      "file": "src/features/course/LessonListPage.jsx",
+      "file": "src/features/course/screens/LessonListScreen.jsx",
       "line": 17,
       "cross_domain": false,
       "target_domain": "course"
@@ -62,7 +62,7 @@
     {
       "from": "lesson_list",
       "to": "lesson_detail",
-      "file": "src/features/course/LessonListPage.jsx",
+      "file": "src/features/course/screens/LessonListScreen.jsx",
       "line": 28,
       "cross_domain": false,
       "target_domain": "course"
@@ -70,7 +70,7 @@
     {
       "from": "level",
       "to": "course",
-      "file": "src/features/course/LevelPage.jsx",
+      "file": "src/features/course/screens/LevelScreen.jsx",
       "line": 64,
       "cross_domain": false,
       "target_domain": "course"
@@ -78,7 +78,7 @@
     {
       "from": "level",
       "to": "unit",
-      "file": "src/features/course/LevelPage.jsx",
+      "file": "src/features/course/screens/LevelScreen.jsx",
       "line": 98,
       "cross_domain": false,
       "target_domain": "course"
@@ -86,7 +86,7 @@
     {
       "from": "review_entry",
       "to": "home_hub_idle",
-      "file": "src/features/course/ReviewEntryPage.jsx",
+      "file": "src/features/course/screens/ReviewEntryScreen.jsx",
       "line": 13,
       "cross_domain": true,
       "target_domain": "home"
@@ -94,7 +94,7 @@
     {
       "from": "review_entry",
       "to": "lesson_ready",
-      "file": "src/features/course/ReviewEntryPage.jsx",
+      "file": "src/features/course/screens/ReviewEntryScreen.jsx",
       "line": 39,
       "cross_domain": true,
       "target_domain": "lesson-session"
@@ -102,7 +102,7 @@
     {
       "from": "unit",
       "to": "level",
-      "file": "src/features/course/UnitPage.jsx",
+      "file": "src/features/course/screens/UnitScreen.jsx",
       "line": 18,
       "cross_domain": false,
       "target_domain": "course"
@@ -110,7 +110,7 @@
     {
       "from": "unit",
       "to": "lesson_detail",
-      "file": "src/features/course/UnitPage.jsx",
+      "file": "src/features/course/screens/UnitScreen.jsx",
       "line": 42,
       "cross_domain": false,
       "target_domain": "course"
@@ -118,7 +118,7 @@
     {
       "from": "unit",
       "to": "review_entry",
-      "file": "src/features/course/UnitPage.jsx",
+      "file": "src/features/course/screens/UnitScreen.jsx",
       "line": 70,
       "cross_domain": false,
       "target_domain": "course"

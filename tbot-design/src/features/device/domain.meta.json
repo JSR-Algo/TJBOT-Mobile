@@ -1,7 +1,7 @@
 {
   "id": "device",
   "owner_lane": "D",
-  "flow": "docs/flows/domains/device/flow.mmd",
+  "flow": "docs/flows/domains/device/flow.generated.mmd",
   "edge_cases": {
     "dv_pair_failed":     ["error", "retry"],
     "dv_pair_offline":    ["error", "retry"],

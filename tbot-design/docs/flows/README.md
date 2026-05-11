@@ -46,7 +46,7 @@ Scripts (all node-only, no runtime deps; mermaid-cli is devDep used only by
 | Step | Script | Effect |
 |---|---|---|
 | extract  | `scripts/flows/extract-go-calls.mjs`     | walk `src/features/**` for `go('literal')` calls; rebuild `edges` deterministically; preserve `title` + `kind` |
-| generate | `scripts/flows/generate-domain-flows.mjs`| emit `docs/flows/{domains/<d>/{flow.mmd,go-calls.json}, shared/cross-domain.flow.mmd, global.flow.mmd, user-flow.md}` |
+| generate | `scripts/flows/generate-domain-flows.mjs`| emit `docs/flows/{domains/<d>/{flow.generated.mmd,calls.generated.json}, shared/cross-domain.flow.mmd, global.generated.mmd, user-flow.md}` |
 | validate | `scripts/flows/validate-go-calls.mjs`    | schema check + edge target resolves + src-coverage + generated-sha + cross-domain exclusivity + edge-meta + happy-path exemptions + lane-write protocol |
 | render   | `scripts/flows/render-html.mjs`          | mmd → SVG → combined `docs/flows/user-flow.html` (chromium, slow) |
 
@@ -70,14 +70,18 @@ CI / manual review).
 
 ```
 docs/flows/domains/<domain>/
-├─ flow.mmd        GENERATED (overwritten by flows:generate)
-├─ go-calls.json   GENERATED (overwritten by flows:generate)
-└─ flow.md         HAND-CURATED — owned by the lane that owns <domain>;
-                   generator NEVER reads or writes this file.
+├─ flow.generated.mmd     GENERATED (overwritten by flows:generate)
+├─ calls.generated.json   GENERATED (overwritten by flows:generate)
+└─ README.md              HAND-CURATED — owned by the lane that owns <domain>;
+                          generator NEVER reads or writes this file.
 ```
 
-Generated files start with `<!-- GENERATED FROM nav-graph-data.json sha=<hex>. Do not edit by hand. -->`.
-Hand-curated files start with `<!-- HAND-CURATED. -->`.
+The `.generated.*` suffix makes generated artefacts visually distinct from hand-curated files (renamed 2026-05-11 from `flow.mmd`/`go-calls.json`/`flow.md` to eliminate the `flow.mmd` vs `flow.md` 1-char-distance confusion that mis-led tab-completion).
+
+Generated `.mmd` files start with `%% GENERATED FROM nav-graph-data.json sha=<hex>. Do not edit by hand.` (mermaid line comment so mmdc parses cleanly).
+Generated `.md`/`.json`/`.html` files start with `<!-- GENERATED FROM nav-graph-data.json sha=<hex>. Do not edit by hand. -->` (HTML comment).
+Hand-curated `.mmd` files start with `%% HAND-CURATED.`.
+Hand-curated `.md` files start with `<!-- HAND-CURATED. -->`.
 
 ---
 
@@ -89,7 +93,7 @@ restructure relies on PROCESS DISCIPLINE:
 1. **Lanes A–D MUST NOT stage `nav-graph-data.json` or any generated file
    under `docs/flows/`.** They run `npm run flows:fast` locally to preview, but
    commit only `src/features/<their-domain>/**` and
-   `docs/flows/domains/<their-domain>/flow.md`.
+   `docs/flows/domains/<their-domain>/README.md`.
 2. **Lane Z is the sole writer of `nav-graph-data.json` and every generated
    artefact.** After lanes A–D land on trunk, Lane Z runs `npm run flows:all`
    on the merged trunk and commits the deterministic result in a single
@@ -114,8 +118,8 @@ git status                # confirm only your owned files are staged
 ```
 
 If you are on a lane branch, re-check your stage:
-- allowed: `src/features/<your-domain>/**`, `docs/flows/domains/<your-domain>/flow.md`
-- forbidden: `nav-graph-data.json`, `docs/flows/domains/*/{flow.mmd,go-calls.json}`, `global.flow.mmd`, `shared/cross-domain.flow.mmd`, `user-flow.md`, `user-flow.html`
+- allowed: `src/features/<your-domain>/**`, `docs/flows/domains/<your-domain>/README.md`
+- forbidden: `nav-graph-data.json`, `docs/flows/domains/*/{flow.generated.mmd,calls.generated.json}`, `global.generated.mmd`, `shared/cross-domain.flow.mmd`, `user-flow.md`, `user-flow.html`
 
 ---
 
@@ -138,8 +142,8 @@ during Phase 1.5 integration.
 - `scripts/flows/*` — extractor, validator, generator, renderer, schemas
 - `scripts/flows/schema/{nav-graph,domain-meta}.schema.json` — JSON Schemas
 - `scripts/flows/lib/{repo,json-validate}.mjs` — shared helpers
-- `docs/flows/global.flow.mmd` — GENERATED domain-level overview
-- `docs/flows/global.flow.md` — HAND-CURATED narrative wrapping `global.flow.mmd`
+- `docs/flows/global.generated.mmd` — GENERATED domain-level overview
+- `docs/flows/global.md` — HAND-CURATED narrative wrapping `global.generated.mmd`
 - `docs/flows/user-flow.md` — GENERATED INDEX linking to per-domain docs
 - `docs/flows/user-flow.md.archive-2026-05-09` — frozen pre-restructure snapshot
 - `docs/flows/shared/cross-domain.flow.mmd` — GENERATED cross-domain edges

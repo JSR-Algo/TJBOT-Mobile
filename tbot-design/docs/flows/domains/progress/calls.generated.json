@@ -1,12 +1,12 @@
 {
-  "_generated": "from nav-graph-data.json sha=9cfd302d222f",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "progress",
   "count": 11,
   "calls": [
     {
       "from": "celebration",
       "to": "home_hub_idle",
-      "file": "src/features/progress/CelebrationPage.jsx",
+      "file": "src/features/progress/screens/CelebrationScreen.jsx",
       "line": 54,
       "cross_domain": true,
       "target_domain": "home"
@@ -14,7 +14,7 @@
     {
       "from": "celebration",
       "to": "review_needed",
-      "file": "src/features/progress/CelebrationPage.jsx",
+      "file": "src/features/progress/screens/CelebrationScreen.jsx",
       "line": 55,
       "cross_domain": false,
       "target_domain": "progress"
@@ -22,7 +22,7 @@
     {
       "from": "lesson_summary",
       "to": "lesson_ready",
-      "file": "src/features/progress/LessonSummaryPage.jsx",
+      "file": "src/features/progress/screens/LessonSummaryScreen.jsx",
       "line": 34,
       "cross_domain": true,
       "target_domain": "lesson-session"
@@ -30,7 +30,7 @@
     {
       "from": "lesson_summary",
       "to": "home_hub_idle",
-      "file": "src/features/progress/LessonSummaryPage.jsx",
+      "file": "src/features/progress/screens/LessonSummaryScreen.jsx",
       "line": 35,
       "cross_domain": true,
       "target_domain": "home"
@@ -38,7 +38,7 @@
     {
       "from": "review_needed",
       "to": "home_hub_idle",
-      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "file": "src/features/progress/screens/ReviewNeededScreen.jsx",
       "line": 16,
       "cross_domain": true,
       "target_domain": "home"
@@ -46,7 +46,7 @@
     {
       "from": "review_needed",
       "to": "lesson_ready",
-      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "file": "src/features/progress/screens/ReviewNeededScreen.jsx",
       "line": 40,
       "cross_domain": true,
       "target_domain": "lesson-session"
@@ -54,7 +54,7 @@
     {
       "from": "review_needed",
       "to": "home_hub_idle",
-      "file": "src/features/progress/ReviewNeededPage.jsx",
+      "file": "src/features/progress/screens/ReviewNeededScreen.jsx",
       "line": 41,
       "cross_domain": true,
       "target_domain": "home"
@@ -62,7 +62,7 @@
     {
       "from": "today_progress",
       "to": "home_hub_idle",
-      "file": "src/features/progress/TodayProgressPage.jsx",
+      "file": "src/features/progress/screens/TodayProgressScreen.jsx",
       "line": 28,
       "cross_domain": true,
       "target_domain": "home"
@@ -70,7 +70,7 @@
     {
       "from": "today_progress",
       "to": "home_hub_idle",
-      "file": "src/features/progress/TodayProgressPage.jsx",
+      "file": "src/features/progress/screens/TodayProgressScreen.jsx",
       "line": 65,
       "cross_domain": true,
       "target_domain": "home"
@@ -78,7 +78,7 @@
     {
       "from": "words_practiced",
       "to": "today_progress",
-      "file": "src/features/progress/WordsPracticedPage.jsx",
+      "file": "src/features/progress/screens/WordsPracticedScreen.jsx",
       "line": 44,
       "cross_domain": false,
       "target_domain": "progress"
@@ -86,7 +86,7 @@
     {
       "from": "words_practiced",
       "to": "review_needed",
-      "file": "src/features/progress/WordsPracticedPage.jsx",
+      "file": "src/features/progress/screens/WordsPracticedScreen.jsx",
       "line": 64,
       "cross_domain": false,
       "target_domain": "progress"

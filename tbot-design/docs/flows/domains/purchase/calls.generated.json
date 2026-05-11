@@ -1,12 +1,12 @@
 {
-  "_generated": "from nav-graph-data.json sha=9cfd302d222f",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "purchase",
   "count": 30,
   "calls": [
     {
       "from": "pr_activate",
       "to": "pr_arrived",
-      "file": "src/features/purchase/ActivatePage.jsx",
+      "file": "src/features/purchase/screens/ActivateScreen.jsx",
       "line": 9,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -14,7 +14,7 @@
     {
       "from": "pr_activate",
       "to": "pr_first_course",
-      "file": "src/features/purchase/ActivatePage.jsx",
+      "file": "src/features/purchase/screens/ActivateScreen.jsx",
       "line": 51,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -22,7 +22,7 @@
     {
       "from": "pr_arrived",
       "to": "pr_activate",
-      "file": "src/features/purchase/ArrivedPage.jsx",
+      "file": "src/features/purchase/screens/ArrivedScreen.jsx",
       "line": 36,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -30,7 +30,7 @@
     {
       "from": "pr_arrived",
       "to": "dv_home",
-      "file": "src/features/purchase/ArrivedPage.jsx",
+      "file": "src/features/purchase/screens/ArrivedScreen.jsx",
       "line": 37,
       "cross_domain": true,
       "target_domain": "device"
@@ -38,7 +38,7 @@
     {
       "from": "pr_bundle",
       "to": "pr_included",
-      "file": "src/features/purchase/BundlePage.jsx",
+      "file": "src/features/purchase/screens/BundleScreen.jsx",
       "line": 13,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -46,7 +46,7 @@
     {
       "from": "pr_bundle",
       "to": "pr_subs",
-      "file": "src/features/purchase/BundlePage.jsx",
+      "file": "src/features/purchase/screens/BundleScreen.jsx",
       "line": 52,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -54,7 +54,7 @@
     {
       "from": "pr_bundle",
       "to": "pr_included",
-      "file": "src/features/purchase/BundlePage.jsx",
+      "file": "src/features/purchase/screens/BundleScreen.jsx",
       "line": 53,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -62,7 +62,7 @@
     {
       "from": "pr_checkout",
       "to": "pr_privacy",
-      "file": "src/features/purchase/CheckoutPage.jsx",
+      "file": "src/features/purchase/screens/CheckoutScreen.jsx",
       "line": 7,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -70,7 +70,7 @@
     {
       "from": "pr_checkout",
       "to": "pr_confirm",
-      "file": "src/features/purchase/CheckoutPage.jsx",
+      "file": "src/features/purchase/screens/CheckoutScreen.jsx",
       "line": 65,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -78,7 +78,7 @@
     {
       "from": "pr_first_course",
       "to": "cl_added",
-      "file": "src/features/purchase/FirstCoursePage.jsx",
+      "file": "src/features/purchase/screens/FirstCourseScreen.jsx",
       "line": 58,
       "cross_domain": true,
       "target_domain": "course-library"
@@ -86,7 +86,7 @@
     {
       "from": "pr_first_course",
       "to": "cl_library",
-      "file": "src/features/purchase/FirstCoursePage.jsx",
+      "file": "src/features/purchase/screens/FirstCourseScreen.jsx",
       "line": 59,
       "cross_domain": true,
       "target_domain": "course-library"
@@ -94,7 +94,7 @@
     {
       "from": "pr_how",
       "to": "pr_intro",
-      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "file": "src/features/purchase/screens/HowItWorksScreen.jsx",
       "line": 14,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -102,7 +102,7 @@
     {
       "from": "pr_how",
       "to": "pr_included",
-      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "file": "src/features/purchase/screens/HowItWorksScreen.jsx",
       "line": 40,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -110,7 +110,7 @@
     {
       "from": "pr_how",
       "to": "pr_intro",
-      "file": "src/features/purchase/HowItWorksPage.jsx",
+      "file": "src/features/purchase/screens/HowItWorksScreen.jsx",
       "line": 41,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -118,7 +118,7 @@
     {
       "from": "pr_included",
       "to": "pr_how",
-      "file": "src/features/purchase/IncludedPage.jsx",
+      "file": "src/features/purchase/screens/IncludedScreen.jsx",
       "line": 16,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -126,7 +126,7 @@
     {
       "from": "pr_included",
       "to": "pr_bundle",
-      "file": "src/features/purchase/IncludedPage.jsx",
+      "file": "src/features/purchase/screens/IncludedScreen.jsx",
       "line": 43,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -134,7 +134,7 @@
     {
       "from": "pr_confirm",
       "to": "pr_shipping",
-      "file": "src/features/purchase/OrderConfirmPage.jsx",
+      "file": "src/features/purchase/screens/OrderConfirmScreen.jsx",
       "line": 51,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -142,7 +142,7 @@
     {
       "from": "pr_confirm",
       "to": "dv_home",
-      "file": "src/features/purchase/OrderConfirmPage.jsx",
+      "file": "src/features/purchase/screens/OrderConfirmScreen.jsx",
       "line": 52,
       "cross_domain": true,
       "target_domain": "device"
@@ -150,7 +150,7 @@
     {
       "from": "pr_privacy",
       "to": "pr_subs",
-      "file": "src/features/purchase/PrivacyPage.jsx",
+      "file": "src/features/purchase/screens/PrivacyScreen.jsx",
       "line": 15,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -158,7 +158,7 @@
     {
       "from": "pr_privacy",
       "to": "pr_checkout",
-      "file": "src/features/purchase/PrivacyPage.jsx",
+      "file": "src/features/purchase/screens/PrivacyScreen.jsx",
       "line": 38,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -166,7 +166,7 @@
     {
       "from": "pr_privacy",
       "to": "pr_subs",
-      "file": "src/features/purchase/PrivacyPage.jsx",
+      "file": "src/features/purchase/screens/PrivacyScreen.jsx",
       "line": 39,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -174,7 +174,7 @@
     {
       "from": "pr_intro",
       "to": "dv_home",
-      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "file": "src/features/purchase/screens/PurchaseIntroScreen.jsx",
       "line": 9,
       "cross_domain": true,
       "target_domain": "device"
@@ -182,7 +182,7 @@
     {
       "from": "pr_intro",
       "to": "pr_how",
-      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "file": "src/features/purchase/screens/PurchaseIntroScreen.jsx",
       "line": 40,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -190,7 +190,7 @@
     {
       "from": "pr_intro",
       "to": "pr_privacy",
-      "file": "src/features/purchase/PurchaseIntroPage.jsx",
+      "file": "src/features/purchase/screens/PurchaseIntroScreen.jsx",
       "line": 41,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -198,7 +198,7 @@
     {
       "from": "pr_shipping",
       "to": "pr_confirm",
-      "file": "src/features/purchase/ShippingPage.jsx",
+      "file": "src/features/purchase/screens/ShippingScreen.jsx",
       "line": 16,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -206,7 +206,7 @@
     {
       "from": "pr_shipping",
       "to": "pr_arrived",
-      "file": "src/features/purchase/ShippingPage.jsx",
+      "file": "src/features/purchase/screens/ShippingScreen.jsx",
       "line": 61,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -214,7 +214,7 @@
     {
       "from": "pr_shipping",
       "to": "dv_home",
-      "file": "src/features/purchase/ShippingPage.jsx",
+      "file": "src/features/purchase/screens/ShippingScreen.jsx",
       "line": 62,
       "cross_domain": true,
       "target_domain": "device"
@@ -222,7 +222,7 @@
     {
       "from": "pr_subs",
       "to": "pr_bundle",
-      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "file": "src/features/purchase/screens/SubscriptionsScreen.jsx",
       "line": 14,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -230,7 +230,7 @@
     {
       "from": "pr_subs",
       "to": "pr_privacy",
-      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "file": "src/features/purchase/screens/SubscriptionsScreen.jsx",
       "line": 55,
       "cross_domain": false,
       "target_domain": "purchase"
@@ -238,7 +238,7 @@
     {
       "from": "pr_subs",
       "to": "pr_bundle",
-      "file": "src/features/purchase/SubscriptionsPage.jsx",
+      "file": "src/features/purchase/screens/SubscriptionsScreen.jsx",
       "line": 56,
       "cross_domain": false,
       "target_domain": "purchase"

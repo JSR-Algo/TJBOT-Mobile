@@ -1,12 +1,12 @@
 {
-  "_generated": "from nav-graph-data.json sha=9cfd302d222f",
+  "_generated": "from nav-graph-data.json sha=4924e8de57f5",
   "domain": "robot-mgmt",
   "count": 44,
   "calls": [
     {
       "from": "rm_factory",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 17,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -14,7 +14,7 @@
     {
       "from": "rm_factory",
       "to": "rm_offline_help",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 46,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -22,7 +22,7 @@
     {
       "from": "rm_factory",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 119,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -30,7 +30,7 @@
     {
       "from": "rm_factory",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/FactoryResetPage.jsx",
+      "file": "src/features/robot-mgmt/screens/FactoryResetScreen.jsx",
       "line": 120,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -38,7 +38,7 @@
     {
       "from": "rm_mic_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/MicTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MicTestScreen.jsx",
       "line": 27,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -46,7 +46,7 @@
     {
       "from": "rm_mic_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/MicTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MicTestScreen.jsx",
       "line": 73,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -54,7 +54,7 @@
     {
       "from": "rm_my_robot",
       "to": "parent_settings",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 12,
       "cross_domain": true,
       "target_domain": "parent"
@@ -62,7 +62,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_battery",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 31,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -70,7 +70,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_wifi",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 32,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -78,7 +78,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_storage",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 33,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -86,7 +86,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_mic_test",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 34,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -94,7 +94,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_sound",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 42,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -102,7 +102,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_mic_test",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 43,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -110,7 +110,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_speaker_test",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 44,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -118,7 +118,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_firmware",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 46,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -126,7 +126,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_offline_help",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 55,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -134,7 +134,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_support",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 56,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -142,7 +142,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_status",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 57,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -150,7 +150,7 @@
     {
       "from": "rm_my_robot",
       "to": "rm_factory",
-      "file": "src/features/robot-mgmt/MyRobotPage.jsx",
+      "file": "src/features/robot-mgmt/screens/MyRobotScreen.jsx",
       "line": 64,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -158,7 +158,7 @@
     {
       "from": "rm_offline_help",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "file": "src/features/robot-mgmt/screens/OfflineHelpScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -166,7 +166,7 @@
     {
       "from": "rm_offline_help",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "file": "src/features/robot-mgmt/screens/OfflineHelpScreen.jsx",
       "line": 44,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -174,7 +174,7 @@
     {
       "from": "rm_offline_help",
       "to": "rm_support",
-      "file": "src/features/robot-mgmt/OfflineHelpPage.jsx",
+      "file": "src/features/robot-mgmt/screens/OfflineHelpScreen.jsx",
       "line": 45,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -182,7 +182,7 @@
     {
       "from": "rm_battery",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotBatteryPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotBatteryScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -190,7 +190,7 @@
     {
       "from": "rm_firmware",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotFirmwareScreen.jsx",
       "line": 12,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -198,7 +198,7 @@
     {
       "from": "rm_firmware",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotFirmwareScreen.jsx",
       "line": 61,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -206,7 +206,7 @@
     {
       "from": "rm_firmware",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotFirmwarePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotFirmwareScreen.jsx",
       "line": 62,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -214,7 +214,7 @@
     {
       "from": "rm_sound",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotSoundPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotSoundScreen.jsx",
       "line": 21,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -222,7 +222,7 @@
     {
       "from": "rm_status",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 11,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -230,7 +230,7 @@
     {
       "from": "rm_status",
       "to": "rm_battery",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 28,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -238,7 +238,7 @@
     {
       "from": "rm_status",
       "to": "rm_wifi",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 29,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -246,7 +246,7 @@
     {
       "from": "rm_status",
       "to": "rm_storage",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 30,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -254,7 +254,7 @@
     {
       "from": "rm_status",
       "to": "rm_mic_test",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 31,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -262,7 +262,7 @@
     {
       "from": "rm_status",
       "to": "rm_speaker_test",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 32,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -270,7 +270,7 @@
     {
       "from": "rm_status",
       "to": "rm_firmware",
-      "file": "src/features/robot-mgmt/RobotStatusPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStatusScreen.jsx",
       "line": 33,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -278,7 +278,7 @@
     {
       "from": "rm_storage",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotStoragePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStorageScreen.jsx",
       "line": 16,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -286,7 +286,7 @@
     {
       "from": "rm_storage",
       "to": "cl_library",
-      "file": "src/features/robot-mgmt/RobotStoragePage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotStorageScreen.jsx",
       "line": 63,
       "cross_domain": true,
       "target_domain": "course-library"
@@ -294,7 +294,7 @@
     {
       "from": "rm_wifi",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/RobotWifiPage.jsx",
+      "file": "src/features/robot-mgmt/screens/RobotWifiScreen.jsx",
       "line": 9,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -302,7 +302,7 @@
     {
       "from": "rm_speaker_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 12,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -310,7 +310,7 @@
     {
       "from": "rm_speaker_test",
       "to": "rm_sound",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 57,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -318,7 +318,7 @@
     {
       "from": "rm_speaker_test",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 63,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -326,7 +326,7 @@
     {
       "from": "rm_speaker_test",
       "to": "rm_support",
-      "file": "src/features/robot-mgmt/SpeakerTestPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SpeakerTestScreen.jsx",
       "line": 64,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -334,7 +334,7 @@
     {
       "from": "rm_support",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SupportScreen.jsx",
       "line": 18,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -342,7 +342,7 @@
     {
       "from": "rm_support",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SupportScreen.jsx",
       "line": 74,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
@@ -350,7 +350,7 @@
     {
       "from": "rm_support",
       "to": "rm_my_robot",
-      "file": "src/features/robot-mgmt/SupportPage.jsx",
+      "file": "src/features/robot-mgmt/screens/SupportScreen.jsx",
       "line": 75,
       "cross_domain": false,
       "target_domain": "robot-mgmt"
