@@ -1,0 +1,8 @@
+{
+  "id": "auth",
+  "owner_lane": "A",
+  "flow": "docs/flows/domains/auth/flow.mmd",
+  "edge_cases": {
+    "onb_login_error": ["error", "retry", "unauthorized"]
+  }
+}
