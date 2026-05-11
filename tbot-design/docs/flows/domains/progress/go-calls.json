@@ -1,15 +1,15 @@
 {
-  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "_generated": "from nav-graph-data.json sha=747476d6c24a",
   "domain": "progress",
   "count": 11,
   "calls": [
     {
       "from": "celebration",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/CelebrationPage.jsx",
       "line": 54,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "celebration",
@@ -29,19 +29,19 @@
     },
     {
       "from": "lesson_summary",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/LessonSummaryPage.jsx",
       "line": 35,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "review_needed",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/ReviewNeededPage.jsx",
       "line": 16,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "review_needed",
@@ -53,27 +53,27 @@
     },
     {
       "from": "review_needed",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/ReviewNeededPage.jsx",
       "line": 41,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "today_progress",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/TodayProgressPage.jsx",
       "line": 28,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "today_progress",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/TodayProgressPage.jsx",
       "line": 65,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "words_practiced",

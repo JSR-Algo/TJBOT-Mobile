@@ -1,7 +1,7 @@
-<!-- GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand. -->
+<!-- GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand. -->
 # User Flow — Index
 
-> Generated from `nav-graph-data.json` (sha `0a9c39428824`). DO NOT EDIT.
+> Generated from `nav-graph-data.json` (sha `747476d6c24a`). DO NOT EDIT.
 
 ## Global overview
 
@@ -33,7 +33,7 @@
 
 ## Counts
 
-- States: 123
+- States: 122
 - Edges:  270
-- Groups: 16
+- Groups: 15
 - Domains: 12

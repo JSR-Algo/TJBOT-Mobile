@@ -71,6 +71,22 @@ if (ALL) {
     }
   }
   if (!errors.some(e => e.startsWith('[src-coverage]'))) ok('src-coverage');
+
+  // Strict: no state may carry the placeholder marker f="(undeclared)".
+  // Extractor synthesises these for go() targets it can't resolve to a real
+  // state. They were tolerated during Phase 0 / Phase 1 bootstrap; Phase 2
+  // close-out resolved every one. From here, any new appearance is a real
+  // bug (broken go() call site or missing states.js entry).
+  const undeclared = Object.entries(navGraph.states)
+    .filter(([, rec]) => rec.f === '(undeclared)')
+    .map(([id]) => id);
+  if (undeclared.length) {
+    for (const id of undeclared) {
+      fail('undeclared-targets', `state "${id}" is a synthesized placeholder (f="(undeclared)"). Either register it in src/features/<d>/states.js or fix the calling go('${id}') sites.`);
+    }
+  } else {
+    ok('undeclared-targets(0)');
+  }
 }
 
 // ─── (d) generated-file sha headers match nav-graph sha ──────────────────────

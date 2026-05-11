@@ -50,25 +50,15 @@ If two lanes both modified the same `nav-graph-data.json` indirectly (via overla
 
 ## Undeclared targets to resolve
 
-T10 (Phase 2 close-out) MUST resolve every entry below. The extractor synthesizes a placeholder state record for each (with `f: "(undeclared)"`, `g: "Undeclared"`, default `kind: "happy"`) so the validator passes during Phase 0 / Phase 1, but these are NOT real Pages and MUST be either:
+**Status: 0 undeclared targets remaining (resolved 2026-05-11 in T10).**
 
-a) **upgraded to a real state** — register in the appropriate `src/features/<d>/states.js`, wire a Page in `index.js`, then re-run `npm run flows:fast`; OR
-b) **redirected** — rewrite the calling `go(<id>)` lines to point at an existing state (e.g. `go('home')` → `go('home_hub_idle')`). Per AC15 this Page-body edit is **explicitly allowed for T10 close-out** as the only sanctioned exception (plan §10.3 step 16).
+History: extractor found exactly 1 undeclared target ID (`home`, 30 call sites across 23 files) at Phase 0 bootstrap. T10 resolved by redirecting all `go('home')` → `go('home_hub_idle')` (the canonical home state in `src/features/home/states.js`). This Page-body edit is the single sanctioned exception per plan §10.3 step 16 + AC15. Resolution commit: see git log for the T10 close-out commit.
 
-| Undeclared target | Call sites | Files (sample) | Suggested resolution |
-|---|---|---|---|
-| `home` | 30 | `course/CoursePage.jsx`, `fallback/AppErrorPage.jsx`, `lesson-session/LessonDonePage.jsx`, `parent/ParentGatePage.jsx`, `progress/CelebrationPage.jsx`, `+18 more` | redirect → `home_hub_idle` (canonical home state in `src/features/home/states.js`) |
+If a new undeclared target appears in a future run of `npm run flows:extract`, the extractor will:
+1. synthesize a placeholder state record (`f: "(undeclared)"`, `g: "Undeclared"`, default `kind: "happy"`),
+2. include it in `nav-graph-data.json` so the validator continues to pass,
+3. group it under `Undeclared` in `nav-graph-data.json.groups` for visibility.
 
-Full call-site list (23 files, regenerate via `grep -rln "go('home')" src/features/`):
+The fix path is the same as T10's: either (a) register a real state in `src/features/<d>/states.js` + wire the Page in `index.js`, or (b) redirect the call site in `*Page.jsx` to an existing state.
 
-```
-src/features/course/{CoursePage,DailyMissionPage,ReviewEntryPage}.jsx
-src/features/fallback/{AppErrorPage,AudioRecoveryPage,KidSettingsPage,LessonResumePage,MicMissingPage,NetworkErrorPage,ReconnectingOverlay,SafetyRedirectPage,VoiceFailedPage}.jsx
-src/features/lesson-session/{AudioErrorPage,ExitConfirmPage,LessonDonePage,LessonReadyPage,SafetyPage}.jsx
-src/features/parent/{ParentGatePage,ParentSummaryPage}.jsx
-src/features/progress/{CelebrationPage,LessonSummaryPage,ReviewNeededPage,TodayProgressPage}.jsx
-```
-
-When T10 resolves these, this section MUST be regenerated (or removed if list is empty after fixup).
-
-> **Note:** original plan §10.3 step 16 referenced "the 3 currently-undeclared target IDs" from the stale `user-flow-review.md`. Live extractor scan (Phase 0 bootstrap) found exactly **1** undeclared target (`home`), confirmed by `node -e "..."` against the rebuilt `nav-graph-data.json`. Plan AC14 is being amended count-agnostic by team-lead.
+> **Plan reconciliation:** original plan §10.3 step 16 referenced "the 3 currently-undeclared target IDs" from the stale `user-flow-review.md`. Live extractor scan found exactly **1** (`home`). Plan AC14 amended count-agnostic by team-lead.

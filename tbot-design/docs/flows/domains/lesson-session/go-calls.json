@@ -1,5 +1,5 @@
 {
-  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "_generated": "from nav-graph-data.json sha=747476d6c24a",
   "domain": "lesson-session",
   "count": 42,
   "calls": [
@@ -53,11 +53,11 @@
     },
     {
       "from": "audio_error",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/AudioErrorPage.jsx",
       "line": 27,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "bargein",
@@ -93,11 +93,11 @@
     },
     {
       "from": "exit_confirm",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/ExitConfirmPage.jsx",
       "line": 24,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "gentle",
@@ -149,11 +149,11 @@
     },
     {
       "from": "lesson_done",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/LessonDonePage.jsx",
       "line": 25,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "lesson_ready",
@@ -165,11 +165,11 @@
     },
     {
       "from": "lesson_ready",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/LessonReadyPage.jsx",
       "line": 13,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "lesson_ready",
@@ -261,19 +261,19 @@
     },
     {
       "from": "safety",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/SafetyPage.jsx",
       "line": 27,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "safety",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/SafetyPage.jsx",
       "line": 28,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "silence",

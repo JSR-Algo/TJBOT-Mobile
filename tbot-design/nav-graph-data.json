@@ -230,11 +230,6 @@
       "title": "Help & FAQ",
       "g": "Fallback"
     },
-    "home": {
-      "f": "(undeclared)",
-      "title": "(undeclared) home",
-      "g": "Undeclared"
-    },
     "home_hub_daily": {
       "f": "src/features/home/HomeHubPage.jsx",
       "title": "Home · Today",
@@ -643,7 +638,7 @@
     },
     {
       "from": "app_error",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/AppErrorPage.jsx",
       "line": 29
     },
@@ -655,7 +650,7 @@
     },
     {
       "from": "audio_error",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/AudioErrorPage.jsx",
       "line": 27
     },
@@ -667,7 +662,7 @@
     },
     {
       "from": "audio_recovery",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/AudioRecoveryPage.jsx",
       "line": 49
     },
@@ -691,7 +686,7 @@
     },
     {
       "from": "celebration",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/CelebrationPage.jsx",
       "line": 54
     },
@@ -877,7 +872,7 @@
     },
     {
       "from": "course",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/course/CoursePage.jsx",
       "line": 18
     },
@@ -889,7 +884,7 @@
     },
     {
       "from": "daily_mission",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/course/DailyMissionPage.jsx",
       "line": 11
     },
@@ -1123,7 +1118,7 @@
     },
     {
       "from": "exit_confirm",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/ExitConfirmPage.jsx",
       "line": 24
     },
@@ -1207,7 +1202,7 @@
     },
     {
       "from": "kid_settings",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/KidSettingsPage.jsx",
       "line": 24
     },
@@ -1231,7 +1226,7 @@
     },
     {
       "from": "lesson_done",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/LessonDonePage.jsx",
       "line": 25
     },
@@ -1267,19 +1262,19 @@
     },
     {
       "from": "lesson_ready",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/LessonReadyPage.jsx",
       "line": 13
     },
     {
       "from": "lesson_resume",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/LessonResumePage.jsx",
       "line": 7
     },
     {
       "from": "lesson_resume",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/LessonResumePage.jsx",
       "line": 29
     },
@@ -1291,7 +1286,7 @@
     },
     {
       "from": "lesson_summary",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/LessonSummaryPage.jsx",
       "line": 35
     },
@@ -1321,25 +1316,25 @@
     },
     {
       "from": "mic_missing",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/MicMissingPage.jsx",
       "line": 7
     },
     {
       "from": "mic_missing",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/MicMissingPage.jsx",
       "line": 21
     },
     {
       "from": "network_error",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/NetworkErrorPage.jsx",
       "line": 7
     },
     {
       "from": "network_error",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/NetworkErrorPage.jsx",
       "line": 18
     },
@@ -1495,7 +1490,7 @@
     },
     {
       "from": "parent_gate",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/parent/ParentGatePage.jsx",
       "line": 17
     },
@@ -1531,7 +1526,7 @@
     },
     {
       "from": "parent_summary",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/parent/ParentSummaryPage.jsx",
       "line": 57
     },
@@ -1765,7 +1760,7 @@
     },
     {
       "from": "reconnecting_overlay",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/ReconnectingOverlay.jsx",
       "line": 39
     },
@@ -1789,7 +1784,7 @@
     },
     {
       "from": "review_entry",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/course/ReviewEntryPage.jsx",
       "line": 13
     },
@@ -1801,13 +1796,13 @@
     },
     {
       "from": "review_needed",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/ReviewNeededPage.jsx",
       "line": 16
     },
     {
       "from": "review_needed",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/ReviewNeededPage.jsx",
       "line": 41
     },
@@ -2107,19 +2102,19 @@
     },
     {
       "from": "safety",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/SafetyPage.jsx",
       "line": 27
     },
     {
       "from": "safety",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/lesson-session/SafetyPage.jsx",
       "line": 28
     },
     {
       "from": "safety_redirect",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/SafetyRedirectPage.jsx",
       "line": 19
     },
@@ -2167,13 +2162,13 @@
     },
     {
       "from": "today_progress",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/TodayProgressPage.jsx",
       "line": 28
     },
     {
       "from": "today_progress",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/progress/TodayProgressPage.jsx",
       "line": 65
     },
@@ -2209,13 +2204,13 @@
     },
     {
       "from": "voice_failed",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/VoiceFailedPage.jsx",
       "line": 7
     },
     {
       "from": "voice_failed",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/fallback/VoiceFailedPage.jsx",
       "line": 14
     },
@@ -2390,14 +2385,11 @@
       "connecting",
       "greeting",
       "lesson_ready"
-    ],
-    "Undeclared": [
-      "home"
     ]
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-05-11T07:03:59Z",
-    "sourceCommit": "6970b1c465d0ed97e48385b865b533e8916b6053"
+    "generatedAt": "2026-05-11T07:33:28Z",
+    "sourceCommit": "9acafb5f82f09c247eb6978ff4d70f3be7e599ef"
   }
 }

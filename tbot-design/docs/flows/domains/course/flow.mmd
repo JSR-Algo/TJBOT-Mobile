@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand.
 %% domain: course
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -24,9 +24,9 @@ flowchart TD
   class course,daily_mission,lesson_detail,lesson_list,level,review_entry,unit happy
 
 %% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   course -> home_hub_idle (home)
+%%   daily_mission -> home_hub_idle (home)
+%%   review_entry -> home_hub_idle (home)
 %%   daily_mission -> lesson_ready (lesson-session)
 %%   lesson_detail -> lesson_ready (lesson-session)
 %%   review_entry -> lesson_ready (lesson-session)
-%%   course -> home (undeclared)
-%%   daily_mission -> home (undeclared)
-%%   review_entry -> home (undeclared)

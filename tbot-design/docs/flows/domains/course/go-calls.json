@@ -1,15 +1,15 @@
 {
-  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "_generated": "from nav-graph-data.json sha=747476d6c24a",
   "domain": "course",
   "count": 15,
   "calls": [
     {
       "from": "course",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/course/CoursePage.jsx",
       "line": 18,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "course",
@@ -21,11 +21,11 @@
     },
     {
       "from": "daily_mission",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/course/DailyMissionPage.jsx",
       "line": 11,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "daily_mission",
@@ -85,11 +85,11 @@
     },
     {
       "from": "review_entry",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/course/ReviewEntryPage.jsx",
       "line": 13,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "review_entry",

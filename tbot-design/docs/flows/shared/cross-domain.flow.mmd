@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand.
 %% Cross-domain edges only. Intra-domain edges live in domains/<d>/flow.mmd.
 flowchart LR
   app_error["Generic App Error"]
@@ -17,7 +17,7 @@ flowchart LR
   dv_pair_wifi["Robot · Pair · Wi-Fi pick"]
   exit_confirm["Exit Confirmation"]
   help_faq["Help & FAQ"]
-  home["(undeclared) home"]
+  home_hub_idle["Home · Idle happy"]
   home_hub_offline["Home · Reconnecting"]
   kid_settings["Settings"]
   lesson_detail["Lesson Detail"]
@@ -53,12 +53,12 @@ flowchart LR
   voice_failed["Voice Session Failed"]
   onb_child -->|auth→onboarding| onb_first_lesson
   onb_login -->|auth→onboarding| onb_mic
+  course -->|course→home| home_hub_idle
+  daily_mission -->|course→home| home_hub_idle
+  review_entry -->|course→home| home_hub_idle
   daily_mission -->|course→lesson-session| lesson_ready
   lesson_detail -->|course→lesson-session| lesson_ready
   review_entry -->|course→lesson-session| lesson_ready
-  course -->|course→undeclared| home
-  daily_mission -->|course→undeclared| home
-  review_entry -->|course→undeclared| home
   cl_added -->|course-library→device| dv_home
   cl_complete -->|course-library→device| dv_home
   cl_library -->|course-library→device| dv_home
@@ -67,42 +67,42 @@ flowchart LR
   cl_running -->|course-library→device| dv_home
   cl_send -->|course-library→device| dv_home
   dv_home -->|device→progress| today_progress
+  app_error -->|fallback→home| home_hub_idle
+  audio_recovery -->|fallback→home| home_hub_idle
+  kid_settings -->|fallback→home| home_hub_idle
+  lesson_resume -->|fallback→home| home_hub_idle
+  mic_missing -->|fallback→home| home_hub_idle
+  network_error -->|fallback→home| home_hub_idle
+  reconnecting_overlay -->|fallback→home| home_hub_idle
+  safety_redirect -->|fallback→home| home_hub_idle
+  voice_failed -->|fallback→home| home_hub_idle
   lesson_resume -->|fallback→lesson-session| robot_speaking
   reconnecting_overlay -->|fallback→lesson-session| robot_listening
   help_faq -->|fallback→parent| parent_summary
   kid_settings -->|fallback→parent| parent_gate
   safety_redirect -->|fallback→parent| parent_gate
-  app_error -->|fallback→undeclared| home
-  audio_recovery -->|fallback→undeclared| home
-  kid_settings -->|fallback→undeclared| home
-  lesson_resume -->|fallback→undeclared| home
-  mic_missing -->|fallback→undeclared| home
-  network_error -->|fallback→undeclared| home
-  reconnecting_overlay -->|fallback→undeclared| home
-  safety_redirect -->|fallback→undeclared| home
-  voice_failed -->|fallback→undeclared| home
   home_hub_offline -->|home→course| course
   home_hub_offline -->|home→course| review_entry
   home_hub_offline -->|home→parent| parent_gate
   home_hub_offline -->|home→parent| parent_settings
   home_hub_offline -->|home→progress| today_progress
+  audio_error -->|lesson-session→home| home_hub_idle
+  exit_confirm -->|lesson-session→home| home_hub_idle
+  lesson_done -->|lesson-session→home| home_hub_idle
+  lesson_ready -->|lesson-session→home| home_hub_idle
+  safety -->|lesson-session→home| home_hub_idle
   lesson_done -->|lesson-session→progress| lesson_summary
-  audio_error -->|lesson-session→undeclared| home
-  exit_confirm -->|lesson-session→undeclared| home
-  lesson_done -->|lesson-session→undeclared| home
-  lesson_ready -->|lesson-session→undeclared| home
-  safety -->|lesson-session→undeclared| home
   onb_mic -->|onboarding→auth| onb_login
   onb_welcome -->|onboarding→auth| onb_login
   onb_first_lesson -->|onboarding→lesson-session| lesson_ready
-  parent_gate -->|parent→undeclared| home
-  parent_summary -->|parent→undeclared| home
+  parent_gate -->|parent→home| home_hub_idle
+  parent_summary -->|parent→home| home_hub_idle
+  celebration -->|progress→home| home_hub_idle
+  lesson_summary -->|progress→home| home_hub_idle
+  review_needed -->|progress→home| home_hub_idle
+  today_progress -->|progress→home| home_hub_idle
   lesson_summary -->|progress→lesson-session| lesson_ready
   review_needed -->|progress→lesson-session| lesson_ready
-  celebration -->|progress→undeclared| home
-  lesson_summary -->|progress→undeclared| home
-  review_needed -->|progress→undeclared| home
-  today_progress -->|progress→undeclared| home
   pr_first_course -->|purchase→course-library| cl_added
   pr_first_course -->|purchase→course-library| cl_library
   pr_arrived -->|purchase→device| dv_home

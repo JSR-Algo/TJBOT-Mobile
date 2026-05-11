@@ -1,5 +1,5 @@
 {
-  "_generated": "from nav-graph-data.json sha=0a9c39428824",
+  "_generated": "from nav-graph-data.json sha=747476d6c24a",
   "domain": "parent",
   "count": 13,
   "calls": [
@@ -13,11 +13,11 @@
     },
     {
       "from": "parent_gate",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/parent/ParentGatePage.jsx",
       "line": 17,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "parent_history",
@@ -93,11 +93,11 @@
     },
     {
       "from": "parent_summary",
-      "to": "home",
+      "to": "home_hub_idle",
       "file": "src/features/parent/ParentSummaryPage.jsx",
       "line": 57,
       "cross_domain": true,
-      "target_domain": null
+      "target_domain": "home"
     },
     {
       "from": "parent_today",

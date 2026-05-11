@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=0a9c39428824. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=747476d6c24a. Do not edit by hand.
 %% domain: lesson-session
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -71,9 +71,9 @@ flowchart TD
   class activity_intro,robot_listening,robot_speaking,thinking,user_speaking,activity_done,lesson_done,audio_error,exit_confirm,reconnecting,safety,bargein,gentle,offtopic,retry,silence,success,connecting,greeting,lesson_ready happy
 
 %% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
+%%   audio_error -> home_hub_idle (home)
+%%   exit_confirm -> home_hub_idle (home)
+%%   lesson_done -> home_hub_idle (home)
+%%   lesson_ready -> home_hub_idle (home)
+%%   safety -> home_hub_idle (home)
 %%   lesson_done -> lesson_summary (progress)
-%%   audio_error -> home (undeclared)
-%%   exit_confirm -> home (undeclared)
-%%   lesson_done -> home (undeclared)
-%%   lesson_ready -> home (undeclared)
-%%   safety -> home (undeclared)
