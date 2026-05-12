@@ -2,8 +2,13 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, {
   Circle, Ellipse, G, Line, Path, Rect,
-  Animate, AnimateTransform, Pattern, Defs,
+  Pattern, Defs,
 } from 'react-native-svg';
+
+// SMIL animation tags (Animate, AnimateTransform) were removed from
+// react-native-svg ^15. The static circles below replace the previously
+// animated rings. TODO(POST-MIGRATION-DESIGN-SYSTEM-ANIM): port these
+// animations to react-native-reanimated for visual parity.
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { tokens } from '@/design-system/tokens';
@@ -113,20 +118,13 @@ export default function LCDFace({ emotion = 'idle', size = 300, accent = tokens.
 
   const renderRing = () => {
     if (cfg.ring === 'pulse') return (
-      <Circle cx={cx} cy={cy} r={ringR} fill="none" stroke={accent} strokeWidth={3} opacity={0.7}>
-        <Animate attributeName="r" values={`${ringR - 4};${ringR + 6};${ringR - 4}`} dur="2s" repeatCount="indefinite" />
-        <Animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite" />
-      </Circle>
+      <Circle cx={cx} cy={cy} r={ringR} fill="none" stroke={accent} strokeWidth={3} opacity={0.7} />
     );
     if (cfg.ring === 'glow') return (
-      <Circle cx={cx} cy={cy} r={ringR} fill="none" stroke={accent} strokeWidth={4} opacity={0.5}>
-        <Animate attributeName="opacity" values="0.3;0.7;0.3" dur="1.4s" repeatCount="indefinite" />
-      </Circle>
+      <Circle cx={cx} cy={cy} r={ringR} fill="none" stroke={accent} strokeWidth={4} opacity={0.5} />
     );
     if (cfg.ring === 'spark') return (
-      <Circle cx={cx} cy={cy} r={ringR} fill="none" stroke={accent} strokeWidth={3} strokeDasharray="6 8" opacity={0.7}>
-        <AnimateTransform attributeName="transform" type="rotate" from={`0 ${cx} ${cy}`} to={`360 ${cx} ${cy}`} dur="6s" repeatCount="indefinite" />
-      </Circle>
+      <Circle cx={cx} cy={cy} r={ringR} fill="none" stroke={accent} strokeWidth={3} strokeDasharray="6 8" opacity={0.7} />
     );
     if (cfg.ring === 'sparks') return (
       <G>
@@ -135,9 +133,7 @@ export default function LCDFace({ emotion = 'idle', size = 300, accent = tokens.
           const sx = cx + Math.cos(rad) * ringR;
           const sy = cy + Math.sin(rad) * ringR;
           return (
-            <Circle key={a} cx={sx} cy={sy} r={3} fill={accent}>
-              <Animate attributeName="r" values="2;5;2" dur="0.9s" begin={`${a / 360}s`} repeatCount="indefinite" />
-            </Circle>
+            <Circle key={a} cx={sx} cy={sy} r={3} fill={accent} />
           );
         })}
       </G>
@@ -145,9 +141,7 @@ export default function LCDFace({ emotion = 'idle', size = 300, accent = tokens.
     if (cfg.ring === 'dots') return (
       <G>
         {[0, 1, 2].map(i => (
-          <Circle key={i} cx={cx + (i - 1) * 14} cy={cy + ringR * 0.85} r={3.5} fill={skin} opacity={0.7}>
-            <Animate attributeName="opacity" values="0.2;1;0.2" dur="1.2s" begin={`${i * 0.2}s`} repeatCount="indefinite" />
-          </Circle>
+          <Circle key={i} cx={cx + (i - 1) * 14} cy={cy + ringR * 0.85} r={3.5} fill={skin} opacity={0.7} />
         ))}
       </G>
     );

@@ -289,8 +289,8 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent }: R
 }
 
 function Eyes({ look, W }: { look: RobotConfig['eyes']; W: number }) {
-  const eyeBase = {
-    position: 'absolute' as const,
+  const eyeBase: import('react-native').ViewStyle = {
+    position: 'absolute',
     top: '34%',
     width: W * 0.13,
     height: W * 0.16,
@@ -340,8 +340,8 @@ function Eyes({ look, W }: { look: RobotConfig['eyes']; W: number }) {
 
 function Mouth({ kind, W }: { kind: RobotConfig['mouth']; W: number }) {
   const mouthW = W * 0.38;
-  const mouthBase = {
-    position: 'absolute' as const,
+  const mouthBase: import('react-native').ViewStyle = {
+    position: 'absolute',
     bottom: '20%',
     left: '31%',
     width: mouthW,
