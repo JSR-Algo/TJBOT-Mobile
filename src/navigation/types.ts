@@ -1,23 +1,17 @@
-import type { CompositeScreenProps } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+// Temporary shim: PR5 deleted src/navigation/ but production screens at
+// src/screens/* still import navigation types from here. Re-export from the
+// canonical location at src/app/navigation/routes.ts.
+//
+// TODO(PR8): delete this shim when src/screens/* is retired (PR8 cleanup).
+// Production screens here will be replaced by tbot-design feature screens
+// across PR6 (learning) and PR7 (device + parent).
 
-export type AuthStackParamList = {
-  Login: undefined;
-  Signup: undefined;
-  ForgotPassword: undefined;
-  Coppa: undefined;
-};
+import type { RootStackParamList } from '@/app/navigation/routes';
+export type { RootStackParamList } from '@/app/navigation/routes';
 
-export type OnboardingStackParamList = {
-  Welcome: undefined;
-  CoppaConsent: undefined;
-  HouseholdCreate: undefined;
-  AddChild: { householdId: string };
-  InterestSetup: { childId: string; householdId: string };
-  DeviceSetupIntro: undefined;
-  VoiceTest: undefined;
-};
+export type AuthStackParamList = RootStackParamList;
+export type OnboardingStackParamList = RootStackParamList;
+export type MainStackParamList = RootStackParamList;
 
 export type MainTabParamList = {
   Home: undefined;
@@ -27,27 +21,40 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
-export type MainStackParamList = {
-  MainTabs: undefined;
-  DeviceSetup: undefined;
-  DeviceDetail: { deviceId: string };
-  ParentControls: { deviceId: string };
-  NotificationPrefs: undefined;
-  GeminiConversation: undefined;
-  // Reused from OnboardingStack so a post-onboarded user with 0 children
-  // can still reach the add-child flow from the Home dashboard CTA.
-  AddChild: { householdId: string };
-  // Software-twin demo screen — registered only when EXPO_PUBLIC_DEMO_SCREEN=true.
-  // Plan: expressive-robot-companion-rewrite §6 RM-01.
-  RobotDemo: undefined;
-};
+// Loose navigation prop types used by production screens. Retire in PR8.
+interface LooseNavigation {
+  navigate: (route: string, params?: Record<string, unknown>) => void;
+  replace: (route: string, params?: Record<string, unknown>) => void;
+  goBack: () => void;
+  popToTop: () => void;
+  setParams: (params: Record<string, unknown>) => void;
+  reset: (state: Record<string, unknown>) => void;
+}
 
-export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<AuthStackParamList, T>;
-export type OnboardingScreenProps<T extends keyof OnboardingStackParamList> = NativeStackScreenProps<OnboardingStackParamList, T>;
+interface LooseRoute {
+  name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params?: any;
+  key?: string;
+}
 
-export type MainStackScreenProps<T extends keyof MainStackParamList> = NativeStackScreenProps<MainStackParamList, T>;
-
-export type MainTabScreenProps<T extends keyof MainTabParamList> = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, T>,
-  NativeStackScreenProps<MainStackParamList>
->;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface MainTabScreenProps<T extends string = string> {
+  navigation: LooseNavigation;
+  route: LooseRoute;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface MainStackScreenProps<T extends string = string> {
+  navigation: LooseNavigation;
+  route: LooseRoute;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface AuthStackScreenProps<T extends string = string> {
+  navigation: LooseNavigation;
+  route: LooseRoute;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface OnboardingStackScreenProps<T extends string = string> {
+  navigation: LooseNavigation;
+  route: LooseRoute;
+}

@@ -1,17 +1,34 @@
 import React from 'react';
 import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
 import OnbShell, { OB } from '@/components/OnbShell';
 import OnbBigBtn from '@/components/OnbBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LoginScreen'>;
 
 export default function LoginScreen({ navigation }: Props) {
+  const { login, signup, isLoading } = useAuth();
   const [mode, setMode] = React.useState<'signup' | 'login'>('signup');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const onSubmit = async (): Promise<void> => {
+    try {
+      if (mode === 'login') {
+        await login(email, password);
+      } else {
+        await signup(email, email, password);
+      }
+      navigation.replace('HomeHubScreen');
+    } catch {
+      navigation.navigate('LoginErrorScreen');
+    }
+  };
 
   return (
     <OnbShell title="Parent account" onBack={() => navigation.navigate('MicAskScreen')}>
@@ -45,6 +62,7 @@ export default function LoginScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={20} gap={10}>
+        {/* TODO(POST-PR5-SOCIAL-AUTH): wire Google/Apple OAuth providers */}
         <TouchableOpacity
           onPress={() => navigation.navigate('ChildProfileScreen')}
           style={styles.socialBtn}
@@ -80,23 +98,25 @@ export default function LoginScreen({ navigation }: Props) {
             style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+            editable={!isLoading}
           />
           <TextInput
             placeholder="Password"
             placeholderTextColor={OB.ink3}
             style={styles.input}
             secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            editable={!isLoading}
           />
         </Box>
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
-        <OnbBigBtn
-          onClick={() =>
-            navigation.navigate(mode === 'login' ? 'LoginErrorScreen' : 'ChildProfileScreen')
-          }
-        >
-          {mode === 'signup' ? 'Create account' : 'Log in'}
+        <OnbBigBtn onClick={onSubmit}>
+          {isLoading ? '…' : mode === 'signup' ? 'Create account' : 'Log in'}
         </OnbBigBtn>
         <Text style={styles.legal}>
           By continuing you agree to our{' '}

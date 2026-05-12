@@ -8,7 +8,7 @@ import TrustScreen from './screens/TrustScreen';
 import MicAskScreen from './screens/MicAskScreen';
 import FirstLessonEntryScreen from './screens/FirstLessonEntryScreen';
 
-import { STATES } from './states';
+export { STATES } from './states';
 
 export const SCREEN_MAP = {
   onb_splash:          SplashScreen,
@@ -21,4 +21,3 @@ export const SCREEN_MAP = {
   onb_mic:             MicAskScreen,
   onb_first_lesson:    FirstLessonEntryScreen,
 };
-export { STATES };

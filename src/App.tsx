@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native';
 import { AuthProvider } from './contexts/AuthContext';
 import { HouseholdProvider } from './contexts/HouseholdContext';
 import { InteractionProvider } from './contexts/InteractionContext';
-import { RootNavigator } from './navigation/RootNavigator';
+import RootNavigator from './app/RootNavigator';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { ToastProvider } from './components/Toast';
 import { RootErrorBoundary } from './services/observability/RootErrorBoundary';

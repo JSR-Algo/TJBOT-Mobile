@@ -1,10 +1,14 @@
 export type RootStackParamList = {
-  // auth
+  // auth (tbot-design flow only)
   LoginScreen: undefined;
   LoginErrorScreen: undefined;
   ChildProfileScreen: undefined;
 
-  // onboarding
+  // onboarding (tbot-design flow only — kid intro)
+  // TODO(POST-PR5-PARENT-ONBOARDING-RE-IMPLEMENTATION):
+  // re-implement CoppaConsent/HouseholdCreate/AddChild/InterestSetup/
+  // DeviceSetupIntro/VoiceTest under tbot-design design language before
+  // legal sign-off for under-13 users.
   SplashScreen: undefined;
   WelcomeScreen: undefined;
   MicAskScreen: undefined;
@@ -17,6 +21,25 @@ export type RootStackParamList = {
 
   // home
   HomeHubScreen: undefined;
+
+  // legacy production-screen route names — TODO(PR8) remove when src/screens/* retires
+  DeviceDetail: { deviceId: string };
+  DeviceSetup: undefined;
+  NotificationPrefs: undefined;
+  GeminiConversation: undefined;
+  ParentControls: { deviceId: string };
+  AddChild: { householdId: string } | undefined;
+  Login: undefined;
+  Signup: undefined;
+  ForgotPassword: undefined;
+  Coppa: undefined;
+  Welcome: undefined;
+  CoppaConsent: undefined;
+  HouseholdCreate: undefined;
+  InterestSetup: { childId?: string; householdId?: string } | undefined;
+  DeviceSetupIntro: undefined;
+  VoiceTest: undefined;
+  RobotDemo: undefined;
 
   // course
   CourseScreen: undefined | { courseId?: string };

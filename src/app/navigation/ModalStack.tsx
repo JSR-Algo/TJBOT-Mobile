@@ -7,6 +7,17 @@ import ListenScreen from '../screens/ListenScreen';
 import SpeakScreen from '../screens/SpeakScreen';
 import DevicePairWifiScreen from '../screens/DevicePairWifiScreen';
 
+// fallback feature screens (PR5 wave A)
+import NetworkErrorScreen from '@/features/fallback/screens/NetworkErrorScreen';
+import AppErrorScreen from '@/features/fallback/screens/AppErrorScreen';
+import MicMissingScreen from '@/features/fallback/screens/MicMissingScreen';
+import VoiceFailedScreen from '@/features/fallback/screens/VoiceFailedScreen';
+import AudioRecoveryScreen from '@/features/fallback/screens/AudioRecoveryScreen';
+import SafetyRedirectScreen from '@/features/fallback/screens/SafetyRedirectScreen';
+import HelpFaqScreen from '@/features/fallback/screens/HelpFaqScreen';
+import KidSettingsScreen from '@/features/fallback/screens/KidSettingsScreen';
+import LessonResumeScreen from '@/features/fallback/screens/LessonResumeScreen';
+
 // Stub screen used for all feature routes not yet migrated (PR5-7 replaces each)
 function StubScreen() {
   return <View style={{ flex: 1 }} />;
@@ -134,16 +145,16 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="OfflineHelpScreen" component={StubScreen} />
       <Stack.Screen name="SupportScreen" component={StubScreen} />
 
-      {/* fallback — TODO(PR5) */}
-      <Stack.Screen name="NetworkErrorScreen" component={StubScreen} />
-      <Stack.Screen name="AppErrorScreen" component={StubScreen} />
-      <Stack.Screen name="MicMissingScreen" component={StubScreen} />
-      <Stack.Screen name="VoiceFailedScreen" component={StubScreen} />
-      <Stack.Screen name="AudioRecoveryScreen" component={StubScreen} />
-      <Stack.Screen name="SafetyRedirectScreen" component={StubScreen} />
-      <Stack.Screen name="HelpFaqScreen" component={StubScreen} />
-      <Stack.Screen name="KidSettingsScreen" component={StubScreen} />
-      <Stack.Screen name="LessonResumeScreen" component={StubScreen} />
+      {/* fallback — wired in PR5 */}
+      <Stack.Screen name="NetworkErrorScreen" component={NetworkErrorScreen} />
+      <Stack.Screen name="AppErrorScreen" component={AppErrorScreen} />
+      <Stack.Screen name="MicMissingScreen" component={MicMissingScreen} />
+      <Stack.Screen name="VoiceFailedScreen" component={VoiceFailedScreen} />
+      <Stack.Screen name="AudioRecoveryScreen" component={AudioRecoveryScreen} />
+      <Stack.Screen name="SafetyRedirectScreen" component={SafetyRedirectScreen} />
+      <Stack.Screen name="HelpFaqScreen" component={HelpFaqScreen} />
+      <Stack.Screen name="KidSettingsScreen" component={KidSettingsScreen} />
+      <Stack.Screen name="LessonResumeScreen" component={LessonResumeScreen} />
 
       {/* phantom routes — wired in PR6-7 */}
       <Stack.Screen name="ListenScreen" component={ListenScreen} />

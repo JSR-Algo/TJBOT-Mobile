@@ -1,33 +1,30 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { OnboardingStackParamList } from '../../navigation/types';
-import { colors } from '@/design-system/tokens/legacy-semantic';
-import { WelcomeScreen } from '../../screens/onboarding/WelcomeScreen';
-import { CoppaConsentScreen } from '../../screens/onboarding/CoppaConsentScreen';
-import { HouseholdCreateScreen } from '../../screens/onboarding/HouseholdCreateScreen';
-import { AddChildScreen } from '../../screens/onboarding/AddChildScreen';
-import { InterestSetupScreen } from '../../screens/onboarding/InterestSetupScreen';
-import { DeviceSetupIntroScreen } from '../../screens/onboarding/DeviceSetupIntroScreen';
-import { VoiceTestScreen } from '../../screens/onboarding/VoiceTestScreen';
+import type { RootStackParamList } from './routes';
+import SplashScreen from '@/features/onboarding/screens/SplashScreen';
+import WelcomeScreen from '@/features/onboarding/screens/WelcomeScreen';
+import MicAskScreen from '@/features/onboarding/screens/MicAskScreen';
+import TrustScreen from '@/features/onboarding/screens/TrustScreen';
+import IntroListenScreen from '@/features/onboarding/screens/IntroListenScreen';
+import IntroSpeakScreen from '@/features/onboarding/screens/IntroSpeakScreen';
+import IntroRetryScreen from '@/features/onboarding/screens/IntroRetryScreen';
+import IntroCelebrateScreen from '@/features/onboarding/screens/IntroCelebrateScreen';
+import FirstLessonEntryScreen from '@/features/onboarding/screens/FirstLessonEntryScreen';
 
-const Stack = createNativeStackNavigator<OnboardingStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function OnboardingStack(): React.JSX.Element {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.surface },
-        headerTintColor: colors.primary,
-        contentStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="CoppaConsent" component={CoppaConsentScreen} options={{ title: 'Parental Consent' }} />
-      <Stack.Screen name="HouseholdCreate" component={HouseholdCreateScreen} options={{ title: 'Set Up Your Family' }} />
-      <Stack.Screen name="AddChild" component={AddChildScreen} options={{ title: 'Add a Child' }} />
-      <Stack.Screen name="InterestSetup" component={InterestSetupScreen} options={{ title: "What does your child love?" }} />
-      <Stack.Screen name="DeviceSetupIntro" component={DeviceSetupIntroScreen} options={{ title: 'Connect TBOT' }} />
-      <Stack.Screen name="VoiceTest" component={VoiceTestScreen} options={{ title: 'Voice Test' }} />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="SplashScreen" component={SplashScreen} />
+      <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
+      <Stack.Screen name="MicAskScreen" component={MicAskScreen} />
+      <Stack.Screen name="TrustScreen" component={TrustScreen} />
+      <Stack.Screen name="IntroListenScreen" component={IntroListenScreen} />
+      <Stack.Screen name="IntroSpeakScreen" component={IntroSpeakScreen} />
+      <Stack.Screen name="IntroRetryScreen" component={IntroRetryScreen} />
+      <Stack.Screen name="IntroCelebrateScreen" component={IntroCelebrateScreen} />
+      <Stack.Screen name="FirstLessonEntryScreen" component={FirstLessonEntryScreen} />
     </Stack.Navigator>
   );
 }
