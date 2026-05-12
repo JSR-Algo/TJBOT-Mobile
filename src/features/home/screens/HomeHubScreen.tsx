@@ -21,7 +21,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 export default function HomeHubScreen({ navigation }: Props) {
   const { variant, cfg, isLoading } = useHomeState();
   const [greet, setGreet] = React.useState(false);
-  const greetTimer = React.useRef<ReturnType<typeof setTimeout>>();
+  const greetTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const onRobotTap = () => {
     setGreet(true);
