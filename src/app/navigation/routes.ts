@@ -152,5 +152,4 @@ export type RootStackParamList = {
   ListenScreen: undefined;
   SpeakScreen: undefined;
   DevicePairWifiScreen: undefined;
-  ParentHomeScreen: undefined;
 };

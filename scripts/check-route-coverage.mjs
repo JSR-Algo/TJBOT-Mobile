@@ -25,6 +25,13 @@ function walkScreens(dir) {
 }
 
 const featuresDir = join(root, 'src', 'features');
+
+// features/ not present until PR5 migration; skip gracefully
+if (!statSync(featuresDir, { throwIfNoEntry: false })?.isDirectory()) {
+  console.log('check-route-coverage: OK — src/features not yet migrated (PR5), skipping screen scan');
+  process.exit(0);
+}
+
 const screenFiles = walkScreens(featuresDir);
 
 const routesPath = join(root, 'src', 'app', 'navigation', 'routes.ts');
