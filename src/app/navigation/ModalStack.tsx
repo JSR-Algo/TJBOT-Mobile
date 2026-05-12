@@ -1,5 +1,4 @@
 import React from 'react';
-import { View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
 import { MainTabs } from './MainTabs';
@@ -7,7 +6,6 @@ import ListenScreen from '../screens/ListenScreen';
 import SpeakScreen from '../screens/SpeakScreen';
 import DevicePairWifiScreen from '../screens/DevicePairWifiScreen';
 
-// fallback feature screens (PR5 wave A)
 import NetworkErrorScreen from '@/features/fallback/screens/NetworkErrorScreen';
 import AppErrorScreen from '@/features/fallback/screens/AppErrorScreen';
 import MicMissingScreen from '@/features/fallback/screens/MicMissingScreen';
@@ -17,8 +15,8 @@ import SafetyRedirectScreen from '@/features/fallback/screens/SafetyRedirectScre
 import HelpFaqScreen from '@/features/fallback/screens/HelpFaqScreen';
 import KidSettingsScreen from '@/features/fallback/screens/KidSettingsScreen';
 import LessonResumeScreen from '@/features/fallback/screens/LessonResumeScreen';
+import ReconnectingOverlay from '@/features/fallback/ReconnectingOverlay';
 
-// course (PR6-B)
 import CourseScreen from '@/features/course/screens/CourseScreen';
 import LevelScreen from '@/features/course/screens/LevelScreen';
 import UnitScreen from '@/features/course/screens/UnitScreen';
@@ -27,7 +25,6 @@ import LessonDetailScreen from '@/features/course/screens/LessonDetailScreen';
 import ReviewEntryScreen from '@/features/course/screens/ReviewEntryScreen';
 import DailyMissionScreen from '@/features/course/screens/DailyMissionScreen';
 
-// course-library (PR6-B)
 import CourseLibraryScreen from '@/features/course-library/screens/CourseLibraryScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 import BuyCourseScreen from '@/features/course-library/screens/BuyCourseScreen';
@@ -39,8 +36,8 @@ import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScre
 import RobotReadyScreen from '@/features/course-library/screens/RobotReadyScreen';
 import RunningScreen from '@/features/course-library/screens/RunningScreen';
 import CompanionScreen from '@/features/course-library/screens/CompanionScreen';
+import UnlockConfirmModal from '@/features/course-library/UnlockConfirmModal';
 
-// lesson-session (PR6-B)
 import ConnectingScreen from '@/features/lesson-session/screens/ConnectingScreen';
 import GreetingScreen from '@/features/lesson-session/screens/GreetingScreen';
 import LessonReadyScreen from '@/features/lesson-session/screens/LessonReadyScreen';
@@ -66,20 +63,74 @@ import AudioErrorScreen from '@/features/lesson-session/screens/AudioErrorScreen
 import AbandonedDisconnectScreen from '@/features/lesson-session/screens/AbandonedDisconnectScreen';
 import ReconnectingScreen from '@/features/lesson-session/screens/ReconnectingScreen';
 
-// Stub screen used for all feature routes not yet migrated (PR7 replaces remaining)
-function StubScreen() {
-  return <View style={{ flex: 1 }} />;
-}
+import PurchaseIntroScreen from '@/features/purchase/screens/PurchaseIntroScreen';
+import HowItWorksScreen from '@/features/purchase/screens/HowItWorksScreen';
+import BundleScreen from '@/features/purchase/screens/BundleScreen';
+import IncludedScreen from '@/features/purchase/screens/IncludedScreen';
+import CheckoutScreen from '@/features/purchase/screens/CheckoutScreen';
+import OrderConfirmScreen from '@/features/purchase/screens/OrderConfirmScreen';
+import ShippingScreen from '@/features/purchase/screens/ShippingScreen';
+import ArrivedScreen from '@/features/purchase/screens/ArrivedScreen';
+import ActivateScreen from '@/features/purchase/screens/ActivateScreen';
+import FirstCourseScreen from '@/features/purchase/screens/FirstCourseScreen';
+import PrivacyScreen from '@/features/purchase/screens/PrivacyScreen';
+import SubscriptionsScreen from '@/features/purchase/screens/SubscriptionsScreen';
+
+import TodayProgressScreen from '@/features/progress/screens/TodayProgressScreen';
+import WordsPracticedScreen from '@/features/progress/screens/WordsPracticedScreen';
+import LessonSummaryScreen from '@/features/progress/screens/LessonSummaryScreen';
+import ReviewNeededScreen from '@/features/progress/screens/ReviewNeededScreen';
+import CelebrationScreen from '@/features/progress/screens/CelebrationScreen';
+
+import ParentGateScreen from '@/features/parent/screens/ParentGateScreen';
+import ParentSummaryScreen from '@/features/parent/screens/ParentSummaryScreen';
+import ParentTodayScreen from '@/features/parent/screens/ParentTodayScreen';
+import ParentHistoryScreen from '@/features/parent/screens/ParentHistoryScreen';
+import ParentSafetyScreen from '@/features/parent/screens/ParentSafetyScreen';
+import ParentSettingsScreen from '@/features/parent/screens/ParentSettingsScreen';
+import ParentLockedOutScreen from '@/features/parent/screens/ParentLockedOutScreen';
+
+import PairIntroScreen from '@/features/device/pairing/screens/PairIntroScreen';
+import PairSearchScreen from '@/features/device/pairing/screens/PairSearchScreen';
+import PairFoundScreen from '@/features/device/pairing/screens/PairFoundScreen';
+import PairConnectingScreen from '@/features/device/pairing/screens/PairConnectingScreen';
+import PairCodeScreen from '@/features/device/pairing/screens/PairCodeScreen';
+import PairAddScreen from '@/features/device/pairing/screens/PairAddScreen';
+import PairRenameScreen from '@/features/device/pairing/screens/PairRenameScreen';
+import PairWifiScreen from '@/features/device/pairing/screens/PairWifiScreen';
+import PairWifiPasswordScreen from '@/features/device/pairing/screens/PairWifiPasswordScreen';
+import PairOfflineScreen from '@/features/device/pairing/screens/PairOfflineScreen';
+import PairFailedScreen from '@/features/device/pairing/screens/PairFailedScreen';
+import PairSuccessScreen from '@/features/device/pairing/screens/PairSuccessScreen';
+import PairFirstLessonScreen from '@/features/device/pairing/screens/PairFirstLessonScreen';
+import DeviceHomeScreen from '@/features/device/screens/DeviceHomeScreen';
+import DeviceOverviewScreen from '@/features/device/screens/DeviceOverviewScreen';
+import DeviceFirmwareScreen from '@/features/device/screens/DeviceFirmwareScreen';
+import DeviceSessionScreen from '@/features/device/screens/DeviceSessionScreen';
+import DeviceLostScreen from '@/features/device/screens/DeviceLostScreen';
+import LCDLessonTurnScreen from '@/features/device/screens/LCDLessonTurnScreen';
+import LCDLibraryScreen from '@/features/device/screens/LCDLibraryScreen';
+
+import MyRobotScreen from '@/features/robot-mgmt/screens/MyRobotScreen';
+import RobotStatusScreen from '@/features/robot-mgmt/screens/RobotStatusScreen';
+import RobotBatteryScreen from '@/features/robot-mgmt/screens/RobotBatteryScreen';
+import RobotStorageScreen from '@/features/robot-mgmt/screens/RobotStorageScreen';
+import RobotFirmwareScreen from '@/features/robot-mgmt/screens/RobotFirmwareScreen';
+import RobotWifiScreen from '@/features/robot-mgmt/screens/RobotWifiScreen';
+import RobotSoundScreen from '@/features/robot-mgmt/screens/RobotSoundScreen';
+import MicTestScreen from '@/features/robot-mgmt/screens/MicTestScreen';
+import SpeakerTestScreen from '@/features/robot-mgmt/screens/SpeakerTestScreen';
+import FactoryResetScreen from '@/features/robot-mgmt/screens/FactoryResetScreen';
+import OfflineHelpScreen from '@/features/robot-mgmt/screens/OfflineHelpScreen';
+import SupportScreen from '@/features/robot-mgmt/screens/SupportScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Main authenticated stack: tabs root + domain screens (stubs until PR7) + modal group
 export function ModalStack(): React.JSX.Element {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeHubScreen" component={MainTabs} />
 
-      {/* course — wired in PR6 */}
       <Stack.Screen name="CourseScreen" component={CourseScreen} />
       <Stack.Screen name="LevelScreen" component={LevelScreen} />
       <Stack.Screen name="UnitScreen" component={UnitScreen} />
@@ -88,7 +139,6 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="ReviewEntryScreen" component={ReviewEntryScreen} />
       <Stack.Screen name="DailyMissionScreen" component={DailyMissionScreen} />
 
-      {/* course-library — wired in PR6 */}
       <Stack.Screen name="CourseLibraryScreen" component={CourseLibraryScreen} />
       <Stack.Screen name="CourseDetailScreen" component={CourseDetailScreen} />
       <Stack.Screen name="BuyCourseScreen" component={BuyCourseScreen} />
@@ -101,21 +151,19 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="RunningScreen" component={RunningScreen} />
       <Stack.Screen name="CompanionScreen" component={CompanionScreen} />
 
-      {/* purchase — TODO(PR7) */}
-      <Stack.Screen name="PurchaseIntroScreen" component={StubScreen} />
-      <Stack.Screen name="HowItWorksScreen" component={StubScreen} />
-      <Stack.Screen name="BundleScreen" component={StubScreen} />
-      <Stack.Screen name="IncludedScreen" component={StubScreen} />
-      <Stack.Screen name="CheckoutScreen" component={StubScreen} />
-      <Stack.Screen name="OrderConfirmScreen" component={StubScreen} />
-      <Stack.Screen name="ShippingScreen" component={StubScreen} />
-      <Stack.Screen name="ArrivedScreen" component={StubScreen} />
-      <Stack.Screen name="ActivateScreen" component={StubScreen} />
-      <Stack.Screen name="FirstCourseScreen" component={StubScreen} />
-      <Stack.Screen name="PrivacyScreen" component={StubScreen} />
-      <Stack.Screen name="SubscriptionsScreen" component={StubScreen} />
+      <Stack.Screen name="PurchaseIntroScreen" component={PurchaseIntroScreen} />
+      <Stack.Screen name="HowItWorksScreen" component={HowItWorksScreen} />
+      <Stack.Screen name="BundleScreen" component={BundleScreen} />
+      <Stack.Screen name="IncludedScreen" component={IncludedScreen} />
+      <Stack.Screen name="CheckoutScreen" component={CheckoutScreen} />
+      <Stack.Screen name="OrderConfirmScreen" component={OrderConfirmScreen} />
+      <Stack.Screen name="ShippingScreen" component={ShippingScreen} />
+      <Stack.Screen name="ArrivedScreen" component={ArrivedScreen} />
+      <Stack.Screen name="ActivateScreen" component={ActivateScreen} />
+      <Stack.Screen name="FirstCourseScreen" component={FirstCourseScreen} />
+      <Stack.Screen name="PrivacyScreen" component={PrivacyScreen} />
+      <Stack.Screen name="SubscriptionsScreen" component={SubscriptionsScreen} />
 
-      {/* lesson-session — wired in PR6 */}
       <Stack.Screen name="ConnectingScreen" component={ConnectingScreen} />
       <Stack.Screen name="GreetingScreen" component={GreetingScreen} />
       <Stack.Screen name="LessonReadyScreen" component={LessonReadyScreen} />
@@ -141,59 +189,54 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="AbandonedDisconnectScreen" component={AbandonedDisconnectScreen} />
       <Stack.Screen name="ReconnectingScreen" component={ReconnectingScreen} />
 
-      {/* progress — TODO(PR7) */}
-      <Stack.Screen name="TodayProgressScreen" component={StubScreen} />
-      <Stack.Screen name="WordsPracticedScreen" component={StubScreen} />
-      <Stack.Screen name="LessonSummaryScreen" component={StubScreen} />
-      <Stack.Screen name="ReviewNeededScreen" component={StubScreen} />
-      <Stack.Screen name="CelebrationScreen" component={StubScreen} />
+      <Stack.Screen name="TodayProgressScreen" component={TodayProgressScreen} />
+      <Stack.Screen name="WordsPracticedScreen" component={WordsPracticedScreen} />
+      <Stack.Screen name="LessonSummaryScreen" component={LessonSummaryScreen} />
+      <Stack.Screen name="ReviewNeededScreen" component={ReviewNeededScreen} />
+      <Stack.Screen name="CelebrationScreen" component={CelebrationScreen} />
 
-      {/* parent — TODO(PR7) */}
-      <Stack.Screen name="ParentGateScreen" component={StubScreen} />
-      <Stack.Screen name="ParentSummaryScreen" component={StubScreen} />
-      <Stack.Screen name="ParentTodayScreen" component={StubScreen} />
-      <Stack.Screen name="ParentHistoryScreen" component={StubScreen} />
-      <Stack.Screen name="ParentSafetyScreen" component={StubScreen} />
-      <Stack.Screen name="ParentSettingsScreen" component={StubScreen} />
-      <Stack.Screen name="ParentLockedOutScreen" component={StubScreen} />
+      <Stack.Screen name="ParentGateScreen" component={ParentGateScreen} />
+      <Stack.Screen name="ParentSummaryScreen" component={ParentSummaryScreen} />
+      <Stack.Screen name="ParentTodayScreen" component={ParentTodayScreen} />
+      <Stack.Screen name="ParentHistoryScreen" component={ParentHistoryScreen} />
+      <Stack.Screen name="ParentSafetyScreen" component={ParentSafetyScreen} />
+      <Stack.Screen name="ParentSettingsScreen" component={ParentSettingsScreen} />
+      <Stack.Screen name="ParentLockedOutScreen" component={ParentLockedOutScreen} />
 
-      {/* device / pairing — TODO(PR7) */}
-      <Stack.Screen name="PairIntroScreen" component={StubScreen} />
-      <Stack.Screen name="PairSearchScreen" component={StubScreen} />
-      <Stack.Screen name="PairFoundScreen" component={StubScreen} />
-      <Stack.Screen name="PairConnectingScreen" component={StubScreen} />
-      <Stack.Screen name="PairCodeScreen" component={StubScreen} />
-      <Stack.Screen name="PairAddScreen" component={StubScreen} />
-      <Stack.Screen name="PairRenameScreen" component={StubScreen} />
-      <Stack.Screen name="PairWifiScreen" component={StubScreen} />
-      <Stack.Screen name="PairWifiPasswordScreen" component={StubScreen} />
-      <Stack.Screen name="PairOfflineScreen" component={StubScreen} />
-      <Stack.Screen name="PairFailedScreen" component={StubScreen} />
-      <Stack.Screen name="PairSuccessScreen" component={StubScreen} />
-      <Stack.Screen name="PairFirstLessonScreen" component={StubScreen} />
-      <Stack.Screen name="DeviceHomeScreen" component={StubScreen} />
-      <Stack.Screen name="DeviceOverviewScreen" component={StubScreen} />
-      <Stack.Screen name="DeviceFirmwareScreen" component={StubScreen} />
-      <Stack.Screen name="DeviceSessionScreen" component={StubScreen} />
-      <Stack.Screen name="DeviceLostScreen" component={StubScreen} />
-      <Stack.Screen name="LCDLessonTurnScreen" component={StubScreen} />
-      <Stack.Screen name="LCDLibraryScreen" component={StubScreen} />
+      <Stack.Screen name="PairIntroScreen" component={PairIntroScreen} />
+      <Stack.Screen name="PairSearchScreen" component={PairSearchScreen} />
+      <Stack.Screen name="PairFoundScreen" component={PairFoundScreen} />
+      <Stack.Screen name="PairConnectingScreen" component={PairConnectingScreen} />
+      <Stack.Screen name="PairCodeScreen" component={PairCodeScreen} />
+      <Stack.Screen name="PairAddScreen" component={PairAddScreen} />
+      <Stack.Screen name="PairRenameScreen" component={PairRenameScreen} />
+      <Stack.Screen name="PairWifiScreen" component={PairWifiScreen} />
+      <Stack.Screen name="PairWifiPasswordScreen" component={PairWifiPasswordScreen} />
+      <Stack.Screen name="PairOfflineScreen" component={PairOfflineScreen} />
+      <Stack.Screen name="PairFailedScreen" component={PairFailedScreen} />
+      <Stack.Screen name="PairSuccessScreen" component={PairSuccessScreen} />
+      <Stack.Screen name="PairFirstLessonScreen" component={PairFirstLessonScreen} />
+      <Stack.Screen name="DeviceHomeScreen" component={DeviceHomeScreen} />
+      <Stack.Screen name="DeviceOverviewScreen" component={DeviceOverviewScreen} />
+      <Stack.Screen name="DeviceFirmwareScreen" component={DeviceFirmwareScreen} />
+      <Stack.Screen name="DeviceSessionScreen" component={DeviceSessionScreen} />
+      <Stack.Screen name="DeviceLostScreen" component={DeviceLostScreen} />
+      <Stack.Screen name="LCDLessonTurnScreen" component={LCDLessonTurnScreen} />
+      <Stack.Screen name="LCDLibraryScreen" component={LCDLibraryScreen} />
 
-      {/* robot-mgmt — TODO(PR7) */}
-      <Stack.Screen name="MyRobotScreen" component={StubScreen} />
-      <Stack.Screen name="RobotStatusScreen" component={StubScreen} />
-      <Stack.Screen name="RobotBatteryScreen" component={StubScreen} />
-      <Stack.Screen name="RobotStorageScreen" component={StubScreen} />
-      <Stack.Screen name="RobotFirmwareScreen" component={StubScreen} />
-      <Stack.Screen name="RobotWifiScreen" component={StubScreen} />
-      <Stack.Screen name="RobotSoundScreen" component={StubScreen} />
-      <Stack.Screen name="MicTestScreen" component={StubScreen} />
-      <Stack.Screen name="SpeakerTestScreen" component={StubScreen} />
-      <Stack.Screen name="FactoryResetScreen" component={StubScreen} />
-      <Stack.Screen name="OfflineHelpScreen" component={StubScreen} />
-      <Stack.Screen name="SupportScreen" component={StubScreen} />
+      <Stack.Screen name="MyRobotScreen" component={MyRobotScreen} />
+      <Stack.Screen name="RobotStatusScreen" component={RobotStatusScreen} />
+      <Stack.Screen name="RobotBatteryScreen" component={RobotBatteryScreen} />
+      <Stack.Screen name="RobotStorageScreen" component={RobotStorageScreen} />
+      <Stack.Screen name="RobotFirmwareScreen" component={RobotFirmwareScreen} />
+      <Stack.Screen name="RobotWifiScreen" component={RobotWifiScreen} />
+      <Stack.Screen name="RobotSoundScreen" component={RobotSoundScreen} />
+      <Stack.Screen name="MicTestScreen" component={MicTestScreen} />
+      <Stack.Screen name="SpeakerTestScreen" component={SpeakerTestScreen} />
+      <Stack.Screen name="FactoryResetScreen" component={FactoryResetScreen} />
+      <Stack.Screen name="OfflineHelpScreen" component={OfflineHelpScreen} />
+      <Stack.Screen name="SupportScreen" component={SupportScreen} />
 
-      {/* fallback — wired in PR5 */}
       <Stack.Screen name="NetworkErrorScreen" component={NetworkErrorScreen} />
       <Stack.Screen name="AppErrorScreen" component={AppErrorScreen} />
       <Stack.Screen name="MicMissingScreen" component={MicMissingScreen} />
@@ -204,18 +247,16 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="KidSettingsScreen" component={KidSettingsScreen} />
       <Stack.Screen name="LessonResumeScreen" component={LessonResumeScreen} />
 
-      {/* phantom routes — wired PR6 to real lesson-session components
-          (cast suppresses the alias module's route-name narrowing) */}
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <Stack.Screen name="ListenScreen" component={ListenScreen as any} />
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <Stack.Screen name="SpeakScreen" component={SpeakScreen as any} />
-      <Stack.Screen name="DevicePairWifiScreen" component={DevicePairWifiScreen} />
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <Stack.Screen name="DevicePairWifiScreen" component={DevicePairWifiScreen as any} />
 
-      {/* modals — TODO(PR7): replace StubScreen with real modal components */}
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
-        <Stack.Screen name="UnlockConfirmScreen" component={StubScreen} />
-        <Stack.Screen name="ReconnectingOverlay" component={StubScreen} />
+        <Stack.Screen name="UnlockConfirmScreen" component={UnlockConfirmModal} />
+        <Stack.Screen name="ReconnectingOverlay" component={ReconnectingOverlay} />
       </Stack.Group>
     </Stack.Navigator>
   );

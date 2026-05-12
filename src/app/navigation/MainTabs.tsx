@@ -1,25 +1,24 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from '../../navigation/types';
-import { colors, typography } from '@/design-system/tokens/legacy-semantic';
-import HomeHubScreenReal from '@/features/home/screens/HomeHubScreen';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
-import { DeviceListScreen } from '../../screens/device/DeviceListScreen';
-
-// Wrap HomeHubScreen so the BottomTab navigator's expected prop shape is
-// satisfied. The underlying screen navigates the root stack via the parent
-// navigator (acquired via useNavigation), not the tab-level prop.
-function HomeHubScreen(): React.JSX.Element {
-  const rootNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return <HomeHubScreenReal navigation={rootNav as any} route={{ key: 'HomeHubScreen', name: 'HomeHubScreen' } as any} />;
-}
-import { ProfileScreen } from '../../screens/profile/ProfileScreen';
+import { colors, typography } from '@/design-system/tokens/legacy-semantic';
+import HomeHubScreenReal from '@/features/home/screens/HomeHubScreen';
+import DeviceHomeScreen from '@/features/device/screens/DeviceHomeScreen';
+import TodayProgressScreen from '@/features/progress/screens/TodayProgressScreen';
+import ParentSummaryScreen from '@/features/parent/screens/ParentSummaryScreen';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { Home, Bot, List, TrendingUp, User } from 'lucide-react-native';
+
+type MainTabParamList = {
+  Home: undefined;
+  Devices: undefined;
+  Activity: undefined;
+  Progress: undefined;
+  Profile: undefined;
+};
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -31,13 +30,17 @@ const TAB_ICONS: Record<string, React.ComponentType<{ size: number; color: strin
   Profile: User,
 };
 
-// TODO(PR7): replace Activity + Progress stubs with real tbot-design feature
-// screens (progress feature in PR7, activity in a follow-up feature).
+// HomeHub wrapper: the underlying screen navigates the root stack via the
+// parent navigator (acquired via useNavigation), not the tab-level prop.
+function HomeHubScreen(): React.JSX.Element {
+  const rootNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <HomeHubScreenReal navigation={rootNav as any} route={{ key: 'HomeHubScreen', name: 'HomeHubScreen' } as any} />;
+}
+
+// TODO(post-PR7): wire Activity tab when activity feature lands.
 function ActivityStub(): React.JSX.Element {
   return <View style={styles.stub} testID="activityTab-stub" />;
-}
-function ProgressStub(): React.JSX.Element {
-  return <View style={styles.stub} testID="progressTab-stub" />;
 }
 
 export function MainTabs(): React.JSX.Element {
@@ -63,10 +66,13 @@ export function MainTabs(): React.JSX.Element {
           component={HomeHubScreen}
           options={{ title: 'Home', tabBarButtonTestID: 'homeTab' }}
         />
-        <Tab.Screen name="Devices" component={DeviceListScreen} options={{ title: 'Devices' }} />
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Tab.Screen name="Devices" component={DeviceHomeScreen as any} options={{ title: 'Devices' }} />
         <Tab.Screen name="Activity" component={ActivityStub} options={{ title: 'Activity' }} />
-        <Tab.Screen name="Progress" component={ProgressStub} options={{ title: 'Progress' }} />
-        <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Tab.Screen name="Progress" component={TodayProgressScreen as any} options={{ title: 'Progress' }} />
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Tab.Screen name="Profile" component={ParentSummaryScreen as any} options={{ title: 'Profile' }} />
       </Tab.Navigator>
     </View>
   );
