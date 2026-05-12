@@ -3,9 +3,9 @@ import globals from 'globals';
 
 export default [
   js.configs.recommended,
-  { ignores: ['src/main.web.jsx'] },
+  { ignores: ['node_modules', 'android', 'ios', '.omc'] },
   {
-    files: ['src/**/*.{js,jsx}'],
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       parserOptions: {
         ecmaVersion: 2022,

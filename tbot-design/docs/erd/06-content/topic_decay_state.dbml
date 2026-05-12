@@ -1,0 +1,23 @@
+// topic_decay_state — per-child topic engagement timer.
+// DecayScheduler halves interaction_count weekly; deletes when < 1.
+// COPPA: links to children → retention required.
+// Source: docs/sequences/06-content/topic-decay.sequence.mmd
+
+Table topic_decay_state {
+  id                  uuid        [pk]
+  child_id            uuid        [not null, note: 'cross-domain ref → IdentityService (children.id)']
+  topic_id            uuid        [not null, note: 'FK → topics.id']
+  interaction_count   integer     [not null, default: 0, note: 'halved weekly by DecayScheduler; row deleted when < 1']
+  last_seen_at        timestamptz [not null, note: 'last interaction timestamp; used to gate decay (< now-30d)']
+  created_at          timestamptz [not null, default: `now()`]
+  updated_at          timestamptz [not null, default: `now()`]
+  deleted_at          timestamptz [note: 'soft-delete; COPPA retention window']
+
+  Indexes {
+    (child_id, topic_id) [unique, name: 'idx_topic_decay_state_child_topic_unique']
+    (child_id, last_seen_at) [name: 'idx_topic_decay_state_child_last_seen', note: 'hot query: docs/sequences/06-content/topic-decay.sequence.mmd — decay sweep WHERE last_interaction < now-30d']
+  }
+}
+
+Ref: topic_decay_state.topic_id > topics.id
+// Ref: topic_decay_state.child_id > children.id  // cross-domain ref → IdentityService

@@ -1,0 +1,68 @@
+---
+system: sys-07-parent-controls-summary
+flow_id: weekly-summary-generation
+surface: cron
+spec_anchor: /software/systems/07-parent-controls-summary#weekly-summary-worker
+actors: [EventBridge, SQS, SummaryWorker, PostgreSQL, NotificationQueue]
+apis: []
+externals: [EventBridge, SQS]
+queues:
+  - controls.summary.weekly
+  - controls.summary.weekly.dlq
+  - tbot-notifications
+failure_paths:
+  - missing_daily_rows
+  - upsert_constraint_violation
+  - worker_timeout
+  - dlq_redelivery_exhausted
+idempotency: upsert ON CONFLICT (device_id, child_profile_id, iso_week)
+retry: SQS 3 retries with backoff (5m, 30m, 2h); DLQ after 3 fails
+timeout: 600s visibility timeout per message
+status: final
+---
+%% HAND-CURATED. Aggregates daily_summaries → engagement trend; tolerates missing daily rows.
+sequenceDiagram
+    autonumber
+    participant EventBridge
+    participant SQS as SQS controls.summary.weekly
+    participant SummaryWorker
+    participant PostgreSQL
+    participant NotificationQueue as SQS tbot-notifications
+
+    EventBridge->>SQS: cron(0 4 ? * MON *) enqueue {iso_week}
+    SQS->>SummaryWorker: deliver message (visibility 600s)
+    SummaryWorker->>PostgreSQL: SELECT daily_summaries WHERE summary_date IN week
+
+    alt missing_daily_rows
+        PostgreSQL-->>SummaryWorker: partial result (some days have no rows)
+        Note over SummaryWorker: treat missing days as zero — continue
+    else complete week
+        PostgreSQL-->>SummaryWorker: 7 rows per pair
+    end
+
+    SummaryWorker->>PostgreSQL: SELECT previous-week weekly_summaries (for engagement_trend delta)
+
+    Note over SummaryWorker: trend = increasing if Δ ≥ +15% — declining if Δ ≤ −15% — stable otherwise
+
+    loop per (device_id, child_profile_id)
+        alt upsert_constraint_violation
+            SummaryWorker->>PostgreSQL: INSERT weekly_summaries ... ON CONFLICT DO UPDATE
+            PostgreSQL-->>SummaryWorker: error
+            Note over SummaryWorker: log + continue
+        else upserted
+            SummaryWorker->>PostgreSQL: INSERT weekly_summaries ... ON CONFLICT (device_id,child_profile_id,iso_week) DO UPDATE
+            PostgreSQL-->>SummaryWorker: ok
+        end
+    end
+
+    alt worker_timeout
+        SummaryWorker--xSQS: > 600s visibility expired
+        SQS->>SummaryWorker: redeliver
+    else dlq_redelivery_exhausted
+        SQS--xSQS: move to controls.summary.weekly.dlq
+    else completed
+        SummaryWorker->>NotificationQueue: enqueue {event: summary.weekly.generated, iso_week}
+        SummaryWorker-->>SQS: ACK
+    end
+
+    Note over EventBridge,NotificationQueue: idempotent via unique (device, child, iso_week) — engagement_trend defaults to stable when prev-week total_minutes=0

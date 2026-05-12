@@ -1,0 +1,46 @@
+---
+system: sys-01-identity-household-access
+flow_id: token-refresh
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#4-4-post-v1authrefresh
+actors: [ParentApp, Gateway, IdentityService]
+apis:
+  - POST /v1/auth/refresh
+externals: []
+queues: []
+failure_paths:
+  - invalid_refresh_token
+  - refresh_replay_detected
+  - auth_refresh_rate_limited
+  - session_revoked
+idempotency: refresh tokens are single-use — rotation is the idempotency boundary; old token stays valid 30s grace after rotation to absorb concurrent requests
+retry: caller-side single retry on 5xx only — never retry on 401 (token is consumed)
+timeout: 3s p99
+status: final
+---
+%% HAND-CURATED. Race-condition surfaced per plan §11: refresh-token rotation + 30s grace window protects against concurrent refresh from two app instances.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+
+    ParentApp->>Gateway: POST /v1/auth/refresh {refreshToken, X-Request-Id}
+    Gateway->>Gateway: rate-limit (sys-17) — auth_refresh — 10 per minute per parent ID
+    Gateway->>IdentityService: forward request
+    alt auth_refresh_rate_limited
+        Gateway-->>ParentApp: 429 auth_refresh_rate_limited
+    else invalid_refresh_token
+        IdentityService-->>Gateway: 401 invalid_refresh_token
+        Gateway-->>ParentApp: 401
+    else refresh_replay_detected
+        Note over IdentityService: old token reused AFTER rotation grace window — revoke session + emit suspicious event (sys-13)
+        IdentityService-->>Gateway: 401 invalid_refresh_token
+        Gateway-->>ParentApp: 401
+    else success
+        Note over IdentityService: rotate — issue new pair, old token enters 30s grace (still accepted) to absorb concurrent refresh
+        IdentityService-->>Gateway: 200 {tokens: {accessToken, refreshToken}}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp,IdentityService: timeout 3s p99 — never retry on 401 — concurrent refresh from two app instances is safe within 30s rotation grace

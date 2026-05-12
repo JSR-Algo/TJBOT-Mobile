@@ -133,10 +133,12 @@ export function buildPageMaps() {
     function record(stateId, ident) {
       const rel = importMap[ident];
       if (!rel) return;
-      const candidate = path.join('src', 'features', domain, rel + '.jsx');
-      if (!fs.existsSync(path.join(PROJECT_ROOT, candidate))) return;
-      stateToPage.set(stateId, candidate);
-      pageToState.set(candidate, stateId);
+      const candidate = path.join('src', 'features', domain, rel + '.tsx');
+      const candidateJsx = path.join('src', 'features', domain, rel + '.jsx');
+      if (!fs.existsSync(path.join(PROJECT_ROOT, candidate)) && !fs.existsSync(path.join(PROJECT_ROOT, candidateJsx))) return;
+      const resolvedCandidate = fs.existsSync(path.join(PROJECT_ROOT, candidate)) ? candidate : candidateJsx;
+      stateToPage.set(stateId, resolvedCandidate);
+      pageToState.set(resolvedCandidate, stateId);
       stateToDomain.set(stateId, domain);
     }
 
@@ -191,13 +193,13 @@ export async function readAllStates() {
 // the same domain that imports the subcomponent (transitively via siblings).
 export function resolveSubcomponentImporters(callsiteRel) {
   const callsiteAbs = path.join(REPO_ROOT, callsiteRel);
-  const callsiteName = path.basename(callsiteAbs, '.jsx');
+  const callsiteName = path.basename(callsiteAbs).replace(/\.(tsx|jsx)$/, '');
   // Search the parent feature dir for files importing the callsite.
   const parts = callsiteRel.split(path.sep);
   const featuresIdx = parts.indexOf('features');
   if (featuresIdx < 0 || !parts[featuresIdx + 1]) return [];
   const featureDir = path.join(REPO_ROOT, ...parts.slice(0, featuresIdx + 2));
-  const candidates = walkFiles(featureDir, p => p.endsWith('.jsx') && p !== callsiteAbs);
+  const candidates = walkFiles(featureDir, p => (p.endsWith('.tsx') || p.endsWith('.jsx')) && p !== callsiteAbs);
   const importers = [];
   const reImport = new RegExp(`from\\s+['"][^'"]*${callsiteName.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')}['"]`);
   for (const c of candidates) {

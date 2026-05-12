@@ -1,0 +1,64 @@
+---
+system: sys-03-device-runtime-local-interaction
+flow_id: offline-fallback
+surface: device
+spec_anchor: /software/systems/03-device-runtime-local-interaction#offline-behavior-and-deferred-local-work
+actors: [Device, RealtimeService, ConfigService]
+apis:
+  - GET /v1/realtime/connect
+  - POST /v1/devices/heartbeat
+externals: []
+queues: []
+failure_paths:
+  - ws_connect_failure
+  - heartbeat_failure_persistent
+  - offline_manifest_expired
+  - no_valid_manifest
+idempotency: reconnect attempts use exponential backoff schedule (2s → 5m)
+retry: job_reconnect_attempt timer wheel — 10 consecutive heartbeat failures → degrade to OFFLINE_LIMITED
+timeout: 5s WS connect attempt
+status: final
+---
+%% HAND-CURATED. State machine fallback per sys-03 §4 + §10.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant RealtimeService
+    participant ConfigService
+
+    Note over Device: state=LISTENING or THINKING — WS attempts or heartbeat fail
+    Device->>RealtimeService: WS handshake attempt
+    alt ws_connect_failure (E-RT-301)
+        RealtimeService--xDevice: timeout or refused
+        Device->>Device: schedule job_reconnect_attempt (RAM timer wheel, exponential 2s→5m)
+    end
+
+    Device->>ConfigService: POST /v1/devices/heartbeat (cadence 60s)
+    alt heartbeat_failure_persistent (10 consecutive failures)
+        ConfigService--xDevice: 5xx or network timeout
+        Device->>Device: state=OFFLINE_LIMITED — touch-triggered canned responses, limited LED/display
+    end
+
+    Note over Device: load /runtime/offline/manifest.json
+    alt no_valid_manifest
+        Device->>Device: silent-limited mode (visual cues only)
+    else offline_manifest_expired
+        Device->>Device: continue using last valid content + emit warning telemetry
+    else success
+        Device->>Device: play canned offline_entry phrase
+    end
+
+    loop reconnect attempts (job_reconnect_attempt)
+        Device->>RealtimeService: WS handshake attempt (backoff window)
+        alt reconnect_success
+            RealtimeService-->>Device: 101 session ready
+            Device->>Device: health check — config etag still valid, no fault active
+            alt health_ok
+                Device->>Device: state=IDLE_READY · play reconnect_success local phrase
+            else health_fail
+                Device->>Device: remain in OFFLINE_LIMITED
+            end
+        end
+    end
+
+    Note over Device,ConfigService: timeout 5s WS · deferred jobs may not allocate over 8KB heap · drop non-critical jobs before safety jobs on timer-wheel overload

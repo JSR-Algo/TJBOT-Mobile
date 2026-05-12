@@ -1,0 +1,47 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: coppa-retention
+surface: cron
+spec_anchor: /software/systems/04-realtime-session-orchestrator#data-retention-rules
+actors: [RetentionScheduler, RetentionWorker, PostgreSQL]
+apis: []
+externals: []
+queues: []
+failure_paths:
+  - postgres_unavailable
+  - partial_batch_failure_retry_next_window
+idempotency: idempotent — UPDATE WHERE created_at < now() - interval is safe to replay
+retry: scheduler reruns on next tick — partial failures captured in metrics, surface via alert
+timeout: per-job 300s — backlog accumulates if exceeded, alerts on transcript_clearing_lag_seconds
+status: final
+---
+%% HAND-CURATED — sys-04 §4.2 retention rules + danger callout.
+sequenceDiagram
+    autonumber
+    participant RetentionScheduler
+    participant RetentionWorker
+    participant PostgreSQL
+
+    Note over RetentionScheduler: COPPA — transcripts cleared within 24h
+    alt postgres_unavailable
+        RetentionScheduler->>RetentionWorker: hourly tick — clear transcripts
+        RetentionWorker->>PostgreSQL: UPDATE session_turns SET transcript_text=NULL, response_text=NULL WHERE created_at < now() - interval 24h
+        PostgreSQL--xRetentionWorker: connection error
+        Note over RetentionWorker: emit retention_failure metric, retry next hour
+    else partial_batch_failure_retry_next_window
+        RetentionScheduler->>RetentionWorker: hourly tick
+        RetentionWorker->>PostgreSQL: UPDATE session_turns SET transcript_text=NULL, response_text=NULL WHERE created_at < now() - interval 24h
+        PostgreSQL-->>RetentionWorker: rowcount=N partial
+        Note over RetentionWorker: log lag, next tick continues
+    else success
+        RetentionScheduler->>RetentionWorker: hourly tick — clear transcripts
+        RetentionWorker->>PostgreSQL: UPDATE session_turns SET transcript_text=NULL, response_text=NULL WHERE created_at < now() - interval 24h
+        PostgreSQL-->>RetentionWorker: OK rowcount=N
+        RetentionScheduler->>RetentionWorker: daily tick — delete turns
+        RetentionWorker->>PostgreSQL: DELETE FROM session_turns WHERE created_at < now() - interval 30 days
+        PostgreSQL-->>RetentionWorker: OK rowcount=M
+        RetentionScheduler->>RetentionWorker: daily tick — delete sessions
+        RetentionWorker->>PostgreSQL: DELETE FROM sessions WHERE created_at < now() - interval 90 days
+        PostgreSQL-->>RetentionWorker: OK rowcount=K
+    end
+    Note over RetentionScheduler,PostgreSQL: COPPA: transcript_text + response_text nulled at 24h, turn rows deleted at 30d, session rows deleted at 90d

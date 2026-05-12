@@ -6,8 +6,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const en = JSON.parse(fs.readFileSync(path.join(ROOT, 'locales/en.json'), 'utf8'));
-const vi = JSON.parse(fs.readFileSync(path.join(ROOT, 'locales/vi.json'), 'utf8'));
+const en = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/services/i18n/locales/en.json'), 'utf8'));
+const vi = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/services/i18n/locales/vi.json'), 'utf8'));
 
 const enKeys = new Set(Object.keys(en).filter(k => !k.startsWith('_')));
 const viKeys = new Set(Object.keys(vi).filter(k => !k.startsWith('_')));

@@ -1,0 +1,88 @@
+---
+system: sys-20-content-authoring-review
+flow_id: template-safety-screen-to-publish
+surface: internal-RPC
+spec_anchor: /software/systems/20-content-authoring-review#template-lifecycle-state-machine
+actors: [AuthoringConsole, AuthoringService, PostgreSQL, SQS, SafetyScreener, ClaudeHaiku, ReviewerConsole]
+apis:
+  - POST /internal/v1/authoring/templates/:id/submit-for-review
+  - POST /internal/v1/authoring/reviews/:id/approve
+  - POST /internal/v1/authoring/reviews/:id/request-changes
+externals: [SQS, ClaudeHaiku]
+queues:
+  - ca-safety-screen
+  - ca-quality-score
+failure_paths:
+  - draft_validation_failure
+  - blocklist_match
+  - llm_safety_flagged
+  - pii_detected
+  - reviewer_role_insufficient
+  - quality_score_timeout
+idempotency: state machine guards transitions (draft→safety_screening→in_review→approved); safety screen per template_version
+retry: SQS retry 3x with backoff; failed safety auto-transitions to changes_requested
+timeout: 30s safety-screen — 45s quality-score per job
+status: final
+---
+%% HAND-CURATED. sys-20 has zero seed — composed from spec §5 + §7 queue pipeline.
+sequenceDiagram
+    autonumber
+    participant AuthoringConsole
+    participant AuthoringService
+    participant PostgreSQL
+    participant SQS as SQS ca-safety-screen / ca-quality-score
+    participant SafetyScreener
+    participant ClaudeHaiku
+    participant ReviewerConsole
+
+    AuthoringConsole->>AuthoringService: POST /internal/v1/authoring/templates/:id/submit-for-review
+
+    alt draft_validation_failure
+        Note over AuthoringService: templateText 10-500 chars, variationInstruction 10-300, ≥1 age band
+        AuthoringService-->>AuthoringConsole: 422 draft_validation_failure
+    else accepted
+        AuthoringService->>PostgreSQL: UPDATE ca_authoring_templates SET status='safety_screening' WHERE id=$1
+        AuthoringService->>SQS: enqueue ca-safety-screen {template_id, version}
+        AuthoringService-->>AuthoringConsole: 202 {status: safety_screening}
+
+        SQS->>SafetyScreener: deliver (timeout 30s)
+        SafetyScreener->>PostgreSQL: SELECT template_text, variation_instruction
+        SafetyScreener->>SafetyScreener: blocklist regex check (sys-05)
+        alt blocklist_match
+            SafetyScreener->>PostgreSQL: INSERT ca_safety_screen_results {pass:false, reason: blocklist}
+            SafetyScreener->>PostgreSQL: UPDATE template SET status='changes_requested'
+        else passes_blocklist
+            SafetyScreener->>ClaudeHaiku: classify(template_text, variation_instruction, policy)
+            alt llm_safety_flagged
+                ClaudeHaiku-->>SafetyScreener: {safe: false, flagged_categories: [...]}
+                SafetyScreener->>PostgreSQL: INSERT ca_safety_screen_results {pass:false, reason: llm_flagged}
+                SafetyScreener->>PostgreSQL: UPDATE template SET status='changes_requested'
+            else llm_safe
+                ClaudeHaiku-->>SafetyScreener: {safe: true}
+                SafetyScreener->>SafetyScreener: PII regex (email, phone, address, name)
+                alt pii_detected
+                    SafetyScreener->>PostgreSQL: INSERT ca_safety_screen_results {pass:false, reason: pii}
+                    SafetyScreener->>PostgreSQL: UPDATE template SET status='changes_requested'
+                else all_passed
+                    SafetyScreener->>PostgreSQL: INSERT ca_safety_screen_results {pass:true}
+                    SafetyScreener->>PostgreSQL: UPDATE template SET status='in_review' + auto-assign reviewer
+                    SafetyScreener->>SQS: enqueue ca-quality-score {template_id}
+                    alt quality_score_timeout
+                        Note over SQS,ClaudeHaiku: > 45s — message returns to queue (max 3 retries)
+                    else scored
+                        Note over PostgreSQL: ca_quality_scores row written (advisory only)
+                    end
+                end
+            end
+        end
+
+        ReviewerConsole->>AuthoringService: POST /internal/v1/authoring/reviews/:id/approve
+        alt reviewer_role_insufficient
+            AuthoringService-->>ReviewerConsole: 403 (need content_reviewer or content_admin)
+        else approved
+            AuthoringService->>PostgreSQL: UPDATE template SET status='approved'
+            AuthoringService-->>ReviewerConsole: 200 approved
+        end
+    end
+
+    Note over AuthoringConsole,ReviewerConsole: safety gates human review (advisory quality score) — every version immutable once submitted — published only by content_admin

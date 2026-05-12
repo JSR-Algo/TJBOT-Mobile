@@ -1,5 +1,7 @@
 # Architecture
 
+> **Use-case authoring lives in `docs/usecases/`** (per ADR-0005, accepted 2026-05-11). This `architecture/` tree retains the historical use-case-diagram (canonical UC ID source per ADR-0005 D2) and the per-domain `.usecase.puml` diagram source. Active per-UC content edits go to `docs/usecases/domains/<d>/`.
+
 High-level entry-point for `tbot-design`. Authoritative source is the code under `src/`; this doc maps it.
 
 ## Overview

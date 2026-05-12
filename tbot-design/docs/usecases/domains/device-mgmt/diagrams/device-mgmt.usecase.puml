@@ -1,0 +1,53 @@
+@startuml TBOT-DeviceMgmt
+title Domain · device-mgmt — post-pair runtime monitor + LCD
+left to right direction
+
+actor Parent
+actor Child
+actor "Robot Device" as Robot <<external>>
+
+package "device-mgmt" {
+  usecase "View Device Home"            as UC_DM_HOME
+  usecase "View Live Session Monitor"   as UC_DM_SESSION
+  usecase "Find My Robot — Make Chime"  as UC_DM_FIND
+  usecase "Update Firmware"             as UC_DM_FIRMWARE
+  usecase "View LCD Face Library"       as UC_DM_LCD_LIB
+  usecase "View One Lesson Turn"        as UC_DM_LCD_TURN
+}
+
+' Actor edges per src/features/device/screens/Device*Page.jsx + LCD*Page.jsx
+Parent --> UC_DM_HOME
+Parent --> UC_DM_SESSION
+Parent --> UC_DM_FIND
+Parent --> UC_DM_FIRMWARE
+Child  --> UC_DM_LCD_LIB
+Child  --> UC_DM_LCD_TURN
+
+' Internal navigation edges (DeviceHomePage quick actions)
+UC_DM_HOME ..> UC_DM_SESSION  : "Lesson · Start"
+UC_DM_HOME ..> UC_DM_FIND     : "Make Robot chime"
+UC_DM_HOME ..> UC_DM_FIRMWARE : "Firmware · update"
+
+' Robot delegations
+UC_DM_FIND     ..> Robot : <<delegate>> chime
+UC_DM_FIRMWARE ..> Robot : <<delegate>> OTA
+UC_DM_SESSION  ..> Robot : <<delegate>> live telemetry
+
+' KD6: LCD ambiguity — device-mgmt owns these UCs; cross-ref note in robot-mgmt
+note bottom of UC_DM_LCD_LIB
+  KD6: LCD UCs share renderer with robot-mgmt rm_lcd*.
+  Cross-reference noted in robot-mgmt/use-cases.md.
+end note
+
+note top of UC_DM_HOME
+  [requires] parent-gate : UC_PG_PASS
+  [requires] device-pairing : robot must be paired
+end note
+
+note bottom of UC_DM_SESSION
+  [exit] → progress : day rollup tile from yesterday card
+end note
+
+' Files: src/features/device/screens/Device*Page.jsx + LCD*Page.jsx
+' API:   src/services/api/device.api.js
+@enduml

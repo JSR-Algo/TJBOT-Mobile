@@ -1,0 +1,56 @@
+---
+system: sys-16-parent-mobile-application
+flow_id: token-refresh-mobile
+surface: mobile
+spec_anchor: /software/systems/16-parent-mobile-application#5-7-api-client-with-token-refresh
+actors: [ParentApp, Gateway, IdentityService]
+apis:
+  - POST /v1/auth/refresh
+externals: [ExpoSecureStore]
+queues: []
+failure_paths:
+  - invalid_refresh_token
+  - refresh_inflight_collision
+  - auth_refresh_rate_limited
+  - secure_store_unavailable
+idempotency: in-app refresh-inflight flag + subscriber queue serializes concurrent 401s — only one POST /v1/auth/refresh is in flight at a time
+retry: queued 401-bearing requests retry once after refresh succeeds — on refresh failure, clear tokens and emit AUTH_FAILURE (no further retry)
+timeout: refresh call 15s axios default — queued original requests inherit caller timeout
+status: final
+---
+%% HAND-CURATED. Mobile-side companion to 01-identity/token-refresh — captures the in-app singleton-refresh contract (isRefreshing flag + refreshSubscribers queue) per spec §5.7.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+
+    ParentApp->>Gateway: any /v1/* request + Bearer (expired) access token
+    Gateway->>Gateway: JWT verify — token expired
+    Gateway-->>ParentApp: 401 SESSION_EXPIRED
+    Note over ParentApp: response interceptor traps 401 — check isRefreshing flag
+    alt refresh already in flight
+        Note over ParentApp: queue this request — push callback into refreshSubscribers
+    else first 401
+        ParentApp->>ParentApp: set isRefreshing = true
+        ParentApp->>ParentApp: read refreshToken from expo-secure-store
+        alt secure_store_unavailable
+            ParentApp-->>ParentApp: clearTokens + emit AUTH_FAILURE
+        else stored token present
+            ParentApp->>Gateway: POST /v1/auth/refresh {refreshToken}
+            Gateway->>IdentityService: forward
+            alt auth_refresh_rate_limited
+                Gateway-->>ParentApp: 429 — clearTokens + emit AUTH_FAILURE
+            else invalid_refresh_token
+                IdentityService-->>Gateway: 401 invalid_refresh_token
+                Gateway-->>ParentApp: 401 — clearTokens + emit AUTH_FAILURE
+            else success
+                IdentityService-->>Gateway: 200 {tokens: {accessToken, refreshToken}}
+                Gateway-->>ParentApp: 200
+                ParentApp->>ParentApp: storeTokens + isRefreshing = false
+                Note over ParentApp: flush refreshSubscribers — each callback retries its original request with new Bearer
+            end
+        end
+    end
+
+    Note over ParentApp,IdentityService: refresh-inflight singleton prevents N concurrent /v1/auth/refresh calls when N requests hit 401 simultaneously — see spec §5.7

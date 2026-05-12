@@ -1,0 +1,37 @@
+enum safe_mode_trigger {
+  reboot_storm
+  thermal_critical
+  heap_below_floor
+  audio_overrun_repeated
+  watchdog_near_miss_persistent
+  remote_command
+}
+
+enum safe_mode_resolution {
+  remote_recovery
+  reboot_cleared
+  still_active
+  unknown
+}
+
+Table safe_mode_entries {
+  id                    uuid                  [pk, note: 'service-generated; never serial']
+  device_id             uuid                  [not null, note: 'ref → devices.id']
+  trigger               safe_mode_trigger     [not null]
+  fault_code            varchar(64)           [not null, note: 'e.g. E-BOT-801, E-THM-601, E-MEM-701, E-AUD-102']
+  entered_at_device_ts  timestamptz           [not null, note: 'timestamp as recorded on device (NVS safe_mode_until marker)']
+  exited_at_device_ts   timestamptz           [note: 'null if still active when uploaded; set when device clears safe_mode_until']
+  resolution            safe_mode_resolution  [not null, default: 'unknown']
+  support_token         varchar(32)           [note: 'short code displayed to user on device support scene']
+  uploaded_at           timestamptz           [not null, note: 'when device uploaded this record to backend']
+  created_at            timestamptz           [not null, default: `now()`]
+  updated_at            timestamptz           [not null, default: `now()`]
+
+  Indexes {
+    (device_id, entered_at_device_ts) [name: 'idx_safe_mode_entries_device_id_entered_at', note: 'hot query: docs/sequences/03-device-runtime/safe-mode-entry.sequence.mmd — support: safe-mode history per device']
+    (trigger, entered_at_device_ts) [name: 'idx_safe_mode_entries_trigger_entered_at', note: 'hot query: docs/sequences/03-device-runtime/safe-mode-entry.sequence.mmd — fleet safe-mode rate monitoring by trigger']
+    (resolution) [name: 'idx_safe_mode_entries_resolution', note: 'still_active entries for open-incident monitoring']
+  }
+}
+
+// Ref: safe_mode_entries.device_id > devices.id   // cross-domain ref → DeviceService (sys-02); documented in _shared/cross-domain-data-flow.md per Phase 3 decision

@@ -10,6 +10,10 @@
     "reconnecting": ["retry", "timeout"],
     "audio_error":  ["error", "retry"],
     "safety":       ["error"],
-    "exit_confirm": ["cancel"]
+    "exit_confirm":         ["cancel"],
+    "timed_out":            ["timeout"],
+    "cost_capped":          ["timeout"],
+    "parent_stopped":       ["error", "cancel"],
+    "abandoned_disconnect": ["timeout", "error"]
   }
 }

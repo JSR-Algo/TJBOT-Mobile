@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=a64610b0bee3. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
 %% domain: device
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -25,42 +25,5 @@ flowchart TD
     dv_pair_wifi_pw["Robot · Pair · Wi-Fi password"]
     dv_session["Robot · Live session monitor"]
   end
-  dv_firmware --> dv_home
-  dv_home --> dv_firmware
-  dv_home --> dv_lost
-  dv_home --> dv_session
-  dv_lost --> dv_home
-  dv_overview --> dv_pair_intro
-  dv_pair_add --> dv_overview
-  dv_pair_add --> dv_pair_intro
-  dv_pair_add --> dv_pair_offline
-  dv_pair_code --> dv_pair_found
-  dv_pair_code --> dv_pair_search
-  dv_pair_code --> dv_pair_wifi
-  dv_pair_connecting --> dv_pair_success
-  dv_pair_failed --> dv_pair_intro
-  dv_pair_failed --> dv_pair_search
-  dv_pair_first_lesson --> dv_home
-  dv_pair_found --> dv_pair_code
-  dv_pair_found --> dv_pair_intro
-  dv_pair_found --> dv_pair_search
-  dv_pair_intro --> dv_pair_add
-  dv_pair_intro --> dv_pair_search
-  dv_pair_offline --> dv_pair_add
-  dv_pair_offline --> dv_pair_search
-  dv_pair_offline --> dv_pair_wifi
-  dv_pair_rename --> dv_pair_first_lesson
-  dv_pair_search --> dv_pair_failed
-  dv_pair_search --> dv_pair_found
-  dv_pair_search --> dv_pair_intro
-  dv_pair_success --> dv_pair_rename
-  dv_pair_wifi --> dv_pair_code
-  dv_pair_wifi --> dv_pair_wifi_pw
-  dv_pair_wifi_pw --> dv_pair_connecting
-  dv_pair_wifi_pw --> dv_pair_wifi
-  dv_session --> dv_home
   class dv_home,dv_lcd,dv_lcd_turn,dv_overview,dv_pair_add,dv_pair_code,dv_pair_first_lesson,dv_pair_found,dv_pair_intro,dv_pair_rename,dv_pair_search,dv_pair_success,dv_pair_wifi,dv_pair_wifi_pw,dv_session happy
   class dv_firmware,dv_lost,dv_pair_connecting,dv_pair_failed,dv_pair_offline edge
-
-%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
-%%   dv_home -> today_progress (progress)

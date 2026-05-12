@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=a64610b0bee3. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
 %% domain: robot-mgmt
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -17,41 +17,5 @@ flowchart TD
     rm_support["Robot · Contact support"]
     rm_wifi["Robot · Wi-Fi"]
   end
-  rm_battery --> rm_my_robot
-  rm_factory --> rm_my_robot
-  rm_factory --> rm_offline_help
-  rm_firmware --> rm_my_robot
-  rm_mic_test --> rm_my_robot
-  rm_my_robot --> rm_battery
-  rm_my_robot --> rm_factory
-  rm_my_robot --> rm_firmware
-  rm_my_robot --> rm_mic_test
-  rm_my_robot --> rm_offline_help
-  rm_my_robot --> rm_sound
-  rm_my_robot --> rm_speaker_test
-  rm_my_robot --> rm_status
-  rm_my_robot --> rm_storage
-  rm_my_robot --> rm_support
-  rm_my_robot --> rm_wifi
-  rm_offline_help --> rm_my_robot
-  rm_offline_help --> rm_support
-  rm_sound --> rm_my_robot
-  rm_speaker_test --> rm_my_robot
-  rm_speaker_test --> rm_sound
-  rm_speaker_test --> rm_support
-  rm_status --> rm_battery
-  rm_status --> rm_firmware
-  rm_status --> rm_mic_test
-  rm_status --> rm_my_robot
-  rm_status --> rm_speaker_test
-  rm_status --> rm_storage
-  rm_status --> rm_wifi
-  rm_storage --> rm_my_robot
-  rm_support --> rm_my_robot
-  rm_wifi --> rm_my_robot
   class rm_battery,rm_firmware,rm_mic_test,rm_my_robot,rm_sound,rm_speaker_test,rm_status,rm_storage,rm_support,rm_wifi happy
   class rm_factory,rm_offline_help edge
-
-%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
-%%   rm_storage -> cl_library (course-library)
-%%   rm_my_robot -> parent_settings (parent)

@@ -1,0 +1,33 @@
+// config_versions — immutable, append-only audit trail of every config ever issued
+// to every device. Spec calls this `device_config_history`. Append-only: no UPDATE,
+// no DELETE except via sys-14 retention sweep when scoped device is deleted.
+// Source: docs/site/software/systems/08-config-fleet-management.md §Data Model.
+
+Table config_versions {
+  id                uuid          [pk]
+  document_id       uuid          [not null]
+  device_id         uuid          [not null, note: 'cross-domain ref → DeviceService; denormalised for fast per-device history scan']
+  config_version    integer       [not null, note: 'monotonic per device — UNIQUE(device_id, config_version)']
+  schema_version    varchar(16)   [not null, note: 'major.minor at time of assembly']
+  config_blob       jsonb         [not null, note: 'canonical-JSON serialisation max 8KB per ESP32 NVS constraint']
+  config_signature  text          [not null, note: 'base64 ECDSA P-256 DER signature from ConfigSigner']
+  signing_key_id    uuid          [not null]
+  source_template_id uuid         [note: 'config_templates row used as base; nullable for emergency_override']
+  cohort_id         uuid          [note: 'resolved cohort at assembly time; null if override path skipped cohort resolution']
+  change_source     varchar(32)   [not null, default: 'template_update', note: 'initial_provision|parent_controls_changed|template_updated|cohort_membership_changed|admin_push|emergency_override|rollback']
+  changed_fields    jsonb         [not null, default: `'[]'::jsonb`, note: 'array of dotted JSON paths mutated vs prior version']
+  issued_at         timestamptz   [not null, default: `now()`]
+  applied_at        timestamptz   [note: 'mirror of config_documents.applied_at at the time it was current']
+  superseded_at     timestamptz   [note: 'set when newer config_versions row becomes current']
+  created_at        timestamptz   [not null, default: `now()`]
+  updated_at        timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (device_id, config_version) [unique, name: 'idx_config_versions_device_version_unique']
+    (device_id, issued_at) [name: 'idx_config_versions_device_issued', note: 'hot query: docs/sequences/08-config/assembly-and-signing.sequence.mmd — per-device history scan']
+    (signing_key_id, issued_at) [name: 'idx_config_versions_signing_key_issued', note: 'hot query: docs/sequences/08-config/kms-key-rotation-ceremony.sequence.mmd — find configs signed by a key being rotated']
+  }
+}
+
+Ref: config_versions.document_id > config_documents.id
+Ref: config_versions.signing_key_id > config_signing_keys.id

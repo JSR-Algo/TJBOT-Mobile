@@ -63,7 +63,7 @@ async function main() {
   for (const k of Object.keys(groups).sort()) sortedGroups[k] = groups[k];
 
   // 3) Walk all .jsx for go('literal') and resolve from-state.
-  const jsxFiles = walkFiles(FEATURES_DIR, p => p.endsWith('.jsx'));
+  const jsxFiles = walkFiles(FEATURES_DIR, p => p.endsWith('.tsx') || p.endsWith('.jsx'));
   const reGo = /\bgo\(\s*['"]([a-z][a-z0-9_]*)['"]\s*\)/g;
   const edges = [];
   const dynamicCalls = [];   // go(varName) — counted, not emitted

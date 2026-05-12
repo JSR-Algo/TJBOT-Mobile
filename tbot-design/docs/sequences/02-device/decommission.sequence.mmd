@@ -1,0 +1,49 @@
+---
+system: sys-02-device-provisioning-registry
+flow_id: decommission
+surface: mobile
+spec_anchor: /software/systems/02-device-provisioning-registry#devices-lifecycle-state-ownership-lifecycle
+actors: [ParentApp, Gateway, DeviceService, PostgreSQL, DecommissionWorker, Device]
+apis:
+  - POST /v1/devices/:deviceId/decommission
+externals: []
+queues: [devices.transitions]
+failure_paths:
+  - not_owner_role
+  - device_busy_pending_ota
+  - device_already_decommissioned
+idempotency: idempotent — repeat call on lifecycle_state in {decommission_pending, decommissioned} returns 200 with current state
+retry: parent app retries on 5xx with exponential backoff
+timeout: 5s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant DeviceService
+    participant PostgreSQL
+    participant DecommissionWorker
+    participant Device
+
+    ParentApp->>Gateway: POST /v1/devices/:deviceId/decommission (Parent bearer token, role=owner)
+    Gateway->>DeviceService: forward
+    alt not_owner_role
+        DeviceService-->>ParentApp: 403 not_owner_role
+    else device_busy_pending_ota
+        DeviceService-->>ParentApp: 409 device_busy_pending_ota
+    else device_already_decommissioned
+        DeviceService-->>ParentApp: 200 {lifecycleState=decommissioned} (idempotent)
+    else success
+        DeviceService->>PostgreSQL: UPDATE devices SET lifecycle_state='decommission_pending' then INSERT audit event
+        PostgreSQL-->>DeviceService: ok
+        DeviceService-->>ParentApp: 202 {lifecycleState=decommission_pending}
+    end
+
+    DeviceService->>DecommissionWorker: enqueue devices.transitions.decommission_workflow
+    DecommissionWorker->>PostgreSQL: txn — close active device_ownership_history (ownership_status='decommissioned'), UPDATE devices SET status='decommissioned' lifecycle_state='decommissioned' decommissioned_at
+
+    Note over Device,DecommissionWorker: cloud notifies device on next heartbeat — runtime transitions to DECOMMISSIONED (sys-03 §4.2) clears local personalization, disables wake-word
+
+    Note over ParentApp,PostgreSQL: timeout 5s p99 · 8.8 from failure-matrix — decommission rejected if pending OTA · audit + immutable ownership-history record per security control

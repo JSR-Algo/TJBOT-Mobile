@@ -1,0 +1,88 @@
+---
+system: sys-22-demo-retail-mode
+flow_id: demo-content-build-and-flash
+surface: factory
+spec_anchor: /software/systems/22-demo-retail-mode#demo-content-build-cli
+actors: [Operator, DemoCLI, GoogleTTS, FlashImageBuilder, ESPTool, Device]
+apis: []
+externals: [GoogleTTS]
+queues: []
+failure_paths:
+  - manifest_validation_failure
+  - tts_api_failure
+  - audio_duration_exceeded
+  - flash_size_exceeded
+  - preview_playback_failure
+  - flash_partition_write_failure
+idempotency: manifest content-addressable; same manifest → same binary
+retry: per-clip TTS retry 3x on transient error; operator re-runs flash on USB error
+timeout: 60s per TTS clip — 10m total build for 6 interactions
+status: final
+---
+%% HAND-CURATED. sys-22 has zero seed — composed from spec §6 build CLI pipeline.
+sequenceDiagram
+    autonumber
+    participant Operator
+    participant DemoCLI as tbot-demo
+    participant GoogleTTS
+    participant FlashImageBuilder
+    participant ESPTool
+    participant Device
+
+    Operator->>DemoCLI: tbot-demo validate --manifest demo-content.json
+
+    alt manifest_validation_failure
+        Note over DemoCLI: missing fields, invalid IDs, bad structure
+        DemoCLI-->>Operator: exit 1 with validation errors
+    else valid
+        DemoCLI-->>Operator: ok (N interactions, expected size)
+
+        Operator->>DemoCLI: tbot-demo generate-audio --manifest ... --output ./audio/
+
+        loop per turn (typically 6 interactions × 3-5 turns)
+            alt tts_api_failure
+                DemoCLI->>GoogleTTS: synthesize {text, voice, style}
+                GoogleTTS-->>DemoCLI: error (rate limit / 5xx)
+                Note over DemoCLI: retry 3x with backoff — fail run if persistent
+            else synthesized
+                GoogleTTS-->>DemoCLI: audio bytes (opus/mp3)
+                DemoCLI->>DemoCLI: write ./audio/{interaction_id}/{turn_index}.opus
+                alt audio_duration_exceeded
+                    Note over DemoCLI: clip > declared duration in manifest
+                    DemoCLI-->>Operator: warn — clip exceeds budget
+                end
+            end
+        end
+
+        Operator->>DemoCLI: tbot-demo package --manifest ... --audio ./audio/ --output demo_content.bin
+        DemoCLI->>FlashImageBuilder: assemble binary (manifest + audio + earcons + face animations)
+
+        alt flash_size_exceeded
+            FlashImageBuilder-->>DemoCLI: > 2 MB demo_content partition limit
+            DemoCLI-->>Operator: exit 1 — flash_size_exceeded
+        else within_budget
+            FlashImageBuilder-->>DemoCLI: demo_content.bin (with CRC footer)
+
+            Operator->>DemoCLI: tbot-demo preview --interaction demo-greeting-001
+            alt preview_playback_failure
+                DemoCLI-->>Operator: audio driver error — operator investigates
+            else preview_ok
+                Note over Operator: human review of clip-level quality
+            end
+
+            Operator->>DemoCLI: tbot-demo flash --binary demo_content.bin --port /dev/ttyUSB0
+            DemoCLI->>ESPTool: erase + write demo_content partition (2 MB offset)
+            alt flash_partition_write_failure
+                ESPTool-->>DemoCLI: serial error / timeout / wrong chip
+                DemoCLI-->>Operator: exit 1 — flash_partition_write_failure (operator retries)
+            else flashed
+                ESPTool->>Device: write partition + verify
+                Device-->>ESPTool: verify ok
+                ESPTool-->>DemoCLI: ok
+                DemoCLI->>ESPTool: write NVS demo.enabled=true (optional)
+                DemoCLI-->>Operator: success — reboot device to enter DEMO_IDLE
+            end
+        end
+    end
+
+    Note over Operator,Device: build artefact is content-addressable — same manifest produces identical bin — demo content passes same safety review as production templates

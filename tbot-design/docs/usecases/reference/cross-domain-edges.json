@@ -1,0 +1,547 @@
+{
+  "generated_by": "scripts/usecases/_build-cross-domain.mjs",
+  "source": "Phase 0 hand-curated 56 edges + Phase 1.5 lane PR-description proposals (deterministic alpha-sort by {source,target,kind})",
+  "total": 90,
+  "edges": [
+    {
+      "source": "UC-A03",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Login success → Home Hub"
+    },
+    {
+      "source": "UC-A04",
+      "target": "ACTOR:Google",
+      "kind": "delegate",
+      "note": "Continue with Google"
+    },
+    {
+      "source": "UC-A05",
+      "target": "ACTOR:Apple",
+      "kind": "delegate",
+      "note": "Continue with Apple"
+    },
+    {
+      "source": "UC-A08",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Set up child → Home Hub"
+    },
+    {
+      "source": "UC-BU07",
+      "target": "UC-BU08",
+      "kind": "extend",
+      "note": "Lane C: extend pay options (Apple Pay)"
+    },
+    {
+      "source": "UC-BU07",
+      "target": "UC-BU09",
+      "kind": "extend",
+      "note": "Lane C: extend pay options (card)"
+    },
+    {
+      "source": "UC-BU08",
+      "target": "ACTOR:Pay",
+      "kind": "delegate",
+      "note": "Apple Pay"
+    },
+    {
+      "source": "UC-BU09",
+      "target": "ACTOR:Pay",
+      "kind": "delegate",
+      "note": "Card payment"
+    },
+    {
+      "source": "UC-BU13",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Activate via code"
+    },
+    {
+      "source": "UC-BU13",
+      "target": "UC-DP02",
+      "kind": "continues",
+      "note": "Activate Robot → pair flow (narrative)"
+    },
+    {
+      "source": "UC-BU14",
+      "target": "UC-CL05",
+      "kind": "continues",
+      "note": "First course → cl_added"
+    },
+    {
+      "source": "UC-C01",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane B: back home from course tree"
+    },
+    {
+      "source": "UC-C05",
+      "target": "UC-L01",
+      "kind": "launches",
+      "note": "Lesson Detail Start → voice session"
+    },
+    {
+      "source": "UC-C06",
+      "target": "UC-L01",
+      "kind": "launches",
+      "note": "Start Lesson From Detail (legacy-only UC)"
+    },
+    {
+      "source": "UC-C07",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane B: back home from review"
+    },
+    {
+      "source": "UC-C07",
+      "target": "UC-L01",
+      "kind": "launches",
+      "note": "Start Review → voice session"
+    },
+    {
+      "source": "UC-C08",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane B: back home from mission"
+    },
+    {
+      "source": "UC-C08",
+      "target": "UC-L01",
+      "kind": "launches",
+      "note": "Start Daily Mission → voice session"
+    },
+    {
+      "source": "UC-CL01",
+      "target": "UC-DP01",
+      "kind": "requires",
+      "note": "Library requires robot paired"
+    },
+    {
+      "source": "UC-CL01",
+      "target": "UC-PR01",
+      "kind": "requires",
+      "note": "Browse Library requires gate"
+    },
+    {
+      "source": "UC-CL03",
+      "target": "UC-CL04",
+      "kind": "include",
+      "note": "Buy/Unlock includes 4-digit confirm (UC_PG_UNLOCK)"
+    },
+    {
+      "source": "UC-CL06",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Send lesson to robot"
+    },
+    {
+      "source": "UC-CL07",
+      "target": "UC-CL08",
+      "kind": "continues",
+      "note": "Lane D: robot ready → monitor"
+    },
+    {
+      "source": "UC-CL08",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Monitor lesson on robot"
+    },
+    {
+      "source": "UC-CL08",
+      "target": "UC-CL09",
+      "kind": "continues",
+      "note": "Lane D: monitor → companion view"
+    },
+    {
+      "source": "UC-CL11",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Resync robot"
+    },
+    {
+      "source": "UC-CL11",
+      "target": "UC-RM04",
+      "kind": "exits",
+      "note": "Resync → Update Wi-Fi"
+    },
+    {
+      "source": "UC-DM03",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Find My Robot — chime"
+    },
+    {
+      "source": "UC-DM04",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Update firmware (KD5 — pending puml)"
+    },
+    {
+      "source": "UC-DP01",
+      "target": "UC-PR01",
+      "kind": "requires",
+      "note": "Device Overview requires gate"
+    },
+    {
+      "source": "UC-DP04",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Scan for robot (radio)"
+    },
+    {
+      "source": "UC-DP07",
+      "target": "ACTOR:WiFi",
+      "kind": "delegate",
+      "note": "Pick Wi-Fi"
+    },
+    {
+      "source": "UC-DP09",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Connect robot to Wi-Fi"
+    },
+    {
+      "source": "UC-DP09",
+      "target": "ACTOR:WiFi",
+      "kind": "delegate",
+      "note": "Connect robot to Wi-Fi"
+    },
+    {
+      "source": "UC-DP10",
+      "target": "UC-DP13",
+      "kind": "continues",
+      "note": "Lane D: pairing success → rename"
+    },
+    {
+      "source": "UC-DP14",
+      "target": "UC-L01",
+      "kind": "launches",
+      "note": "Lane D: first lesson handoff after pairing"
+    },
+    {
+      "source": "UC-F01",
+      "target": "UC-F06",
+      "kind": "extend",
+      "note": "Lane D: try again → reconnect overlay"
+    },
+    {
+      "source": "UC-F01",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane D: back-home from network error"
+    },
+    {
+      "source": "UC-F02",
+      "target": "UC-F03",
+      "kind": "extend",
+      "note": "Mic Missing → Audio Recovery (within fallback)"
+    },
+    {
+      "source": "UC-F02",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane D: back-home from mic missing"
+    },
+    {
+      "source": "UC-F04",
+      "target": "UC-F05",
+      "kind": "extend",
+      "note": "Voice Failed → Resume Lesson (within fallback)"
+    },
+    {
+      "source": "UC-F04",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane D: back-home from voice failed"
+    },
+    {
+      "source": "UC-F05",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane D: back-home from resume"
+    },
+    {
+      "source": "UC-F05",
+      "target": "UC-L05",
+      "kind": "resumes",
+      "note": "Resume Lesson → Listen to Robot"
+    },
+    {
+      "source": "UC-F06",
+      "target": "UC-L06",
+      "kind": "resumes",
+      "note": "Reconnecting overlay → Listen for Child"
+    },
+    {
+      "source": "UC-F07",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane D: back-home from safety redirect"
+    },
+    {
+      "source": "UC-F07",
+      "target": "UC-PR01",
+      "kind": "requires",
+      "note": "Lane D: parent confirm → gate"
+    },
+    {
+      "source": "UC-F08",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "App error → back home"
+    },
+    {
+      "source": "UC-H03",
+      "target": "UC-L01",
+      "kind": "launches",
+      "note": "Start Today's Lesson → voice session"
+    },
+    {
+      "source": "UC-H04",
+      "target": "UC-C01",
+      "kind": "launches",
+      "note": "Open Course → course tree"
+    },
+    {
+      "source": "UC-H05",
+      "target": "UC-C07",
+      "kind": "launches",
+      "note": "Open Review → start review"
+    },
+    {
+      "source": "UC-H06",
+      "target": "UC-P01",
+      "kind": "launches",
+      "note": "Open Today's Progress"
+    },
+    {
+      "source": "UC-H08",
+      "target": "UC-PR01",
+      "kind": "requires",
+      "note": "Enter Parent Space → Parent Gate"
+    },
+    {
+      "source": "UC-L02",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Connect realtime voice"
+    },
+    {
+      "source": "UC-L03",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: greeting from voice"
+    },
+    {
+      "source": "UC-L05",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: robot speech via voice"
+    },
+    {
+      "source": "UC-L07",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: child utterance to voice"
+    },
+    {
+      "source": "UC-L08",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Process utterance → voice service"
+    },
+    {
+      "source": "UC-L09",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: success feedback via voice"
+    },
+    {
+      "source": "UC-L10",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: gentle correction via voice"
+    },
+    {
+      "source": "UC-L11",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: retry prompt via voice"
+    },
+    {
+      "source": "UC-L12",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: silence prompt via voice"
+    },
+    {
+      "source": "UC-L13",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: off-topic redirect via voice"
+    },
+    {
+      "source": "UC-L16",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane B: lesson done → home"
+    },
+    {
+      "source": "UC-L16",
+      "target": "UC-P03",
+      "kind": "emits",
+      "note": "Complete Lesson → Lesson Summary"
+    },
+    {
+      "source": "UC-L17",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Confirm Exit → Home Hub"
+    },
+    {
+      "source": "UC-L18",
+      "target": "UC-F02",
+      "kind": "launches",
+      "note": "Lane B: reconnect exhausted (FB02 mic-missing or fallback path)"
+    },
+    {
+      "source": "UC-L19",
+      "target": "UC-F04",
+      "kind": "launches",
+      "note": "Lane B: audio error → voice failed"
+    },
+    {
+      "source": "UC-L19",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane B: audio error → home"
+    },
+    {
+      "source": "UC-L20",
+      "target": "UC-F07",
+      "kind": "launches",
+      "note": "Safety fallback → Safety Redirect"
+    },
+    {
+      "source": "UC-L20",
+      "target": "UC-H01",
+      "kind": "exits",
+      "note": "Lane B: safety break → home"
+    },
+    {
+      "source": "UC-L20",
+      "target": "UC-L21",
+      "kind": "include",
+      "note": "Trigger Safety Fallback → Report Safety Event (intra-domain, here for completeness)"
+    },
+    {
+      "source": "UC-L21",
+      "target": "ACTOR:RealtimeVoice",
+      "kind": "delegate",
+      "note": "Lane B: report safety event upstream"
+    },
+    {
+      "source": "UC-O01",
+      "target": "UC-A02",
+      "kind": "continues",
+      "note": "Onboarding → Sign Up step"
+    },
+    {
+      "source": "UC-O01",
+      "target": "UC-A03",
+      "kind": "continues",
+      "note": "Onboarding → Login step"
+    },
+    {
+      "source": "UC-O03",
+      "target": "ACTOR:DeviceOS",
+      "kind": "delegate",
+      "note": "Mic permission → OS sheet"
+    },
+    {
+      "source": "UC-O04",
+      "target": "UC-L01",
+      "kind": "launches",
+      "note": "Enter First Lesson → voice session"
+    },
+    {
+      "source": "UC-P03",
+      "target": "UC-P04",
+      "kind": "launches",
+      "note": "Lane C: review needed branch"
+    },
+    {
+      "source": "UC-P04",
+      "target": "UC-L01",
+      "kind": "re-enters",
+      "note": "Review Needed → re-enter session"
+    },
+    {
+      "source": "UC-PR02",
+      "target": "UC-PR01",
+      "kind": "requires",
+      "note": "Parent Summary requires gate"
+    },
+    {
+      "source": "UC-PR03",
+      "target": "UC-PR02",
+      "kind": "exits",
+      "note": "Lane C: back to summary"
+    },
+    {
+      "source": "UC-PR05",
+      "target": "UC-F07",
+      "kind": "emits",
+      "note": "Lane C: safety log on updateSafetyConfig"
+    },
+    {
+      "source": "UC-PR06",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Lane C: firmware test delegate"
+    },
+    {
+      "source": "UC-PR06",
+      "target": "UC-RM01",
+      "kind": "exits",
+      "note": "Parent Settings → Robot software"
+    },
+    {
+      "source": "UC-RM01",
+      "target": "UC-PR01",
+      "kind": "requires",
+      "note": "My Robot requires gate"
+    },
+    {
+      "source": "UC-RM05",
+      "target": "UC-CL01",
+      "kind": "exits",
+      "note": "Storage → Browse Library"
+    },
+    {
+      "source": "UC-RM06",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "OTA update"
+    },
+    {
+      "source": "UC-RM08",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Mic test"
+    },
+    {
+      "source": "UC-RM09",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Speaker test"
+    },
+    {
+      "source": "UC-RM10",
+      "target": "ACTOR:Robot",
+      "kind": "delegate",
+      "note": "Factory reset"
+    }
+  ]
+}

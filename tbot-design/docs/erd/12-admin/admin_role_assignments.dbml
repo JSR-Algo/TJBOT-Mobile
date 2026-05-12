@@ -1,0 +1,36 @@
+// admin_role_assignments — historical RBAC mapping for admin_users.
+// Plan §3 manifest names this separately so role moves are auditable
+// (spec embeds `role` column inline on admin_users; we lift it to a history table
+//  while keeping `admin_users.current_role` resolvable via app-layer join on status=active).
+
+enum admin_role_name {
+  super_admin
+  support_agent
+  viewer
+}
+
+enum admin_role_assignment_status {
+  active
+  revoked
+}
+
+Table admin_role_assignments {
+  id              uuid                            [pk]
+  admin_user_id   uuid                            [not null]
+  role            admin_role_name                 [not null]
+  status          admin_role_assignment_status    [not null, default: 'active']
+  granted_by_admin_id uuid                        [not null, note: 'self-ref into admin_users']
+  granted_at      timestamptz                     [not null, default: `now()`]
+  revoked_at      timestamptz
+  reason          varchar(240)
+  created_at      timestamptz                     [not null, default: `now()`]
+  updated_at      timestamptz                     [not null, default: `now()`]
+
+  Indexes {
+    (admin_user_id, status) [name: 'idx_admin_role_assignments_user_status', note: 'hot query: docs/sequences/12-admin/login-and-mfa.sequence.mmd — admin auth middleware resolves current role on every request']
+    (admin_user_id, role) [unique, name: 'idx_admin_role_assignments_user_role_unique', note: 'enforced when status=active via partial index in DDL emitter']
+  }
+}
+
+Ref: admin_role_assignments.admin_user_id > admin_users.id
+Ref: admin_role_assignments.granted_by_admin_id > admin_users.id

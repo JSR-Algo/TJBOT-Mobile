@@ -1,0 +1,27 @@
+// rate_limit_buckets.dbml — time-windowed counter for gateway rate limiting
+
+enum rate_limit_subject_kind {
+  user
+  device
+  ip_address
+  api_key
+}
+
+Table rate_limit_buckets {
+  id            uuid                      [pk, note: 'service-generated; never serial']
+  subject_kind  rate_limit_subject_kind   [not null]
+  subject_id    varchar(128)              [not null, note: 'user UUID, device UUID, hashed IP, or api_key UUID — must match subject_kind']
+  window_start  timestamptz               [not null, note: 'start of the time window (e.g. floor(now() to 1min)']
+  window_size_s int                       [not null, default: 60, note: 'window duration in seconds']
+  request_count int                       [not null, default: 0]
+  limit_value   int                       [not null, note: 'maximum requests allowed in this window']
+  created_at    timestamptz               [not null, default: `now()`]
+  updated_at    timestamptz               [not null, default: `now()`]
+
+  Indexes {
+    (subject_kind, subject_id, window_start) [unique, name: 'idx_rate_limit_buckets_subject_window_unique', note: 'hot query: docs/sequences/17-gateway/rate-limiting.sequence.mmd — one row per subject per window']
+    (window_start) [name: 'idx_rate_limit_buckets_window_start', note: 'hot query: docs/sequences/17-gateway/rate-limiting.sequence.mmd']
+  }
+
+  Note: '@timescaledb-hypertable(column=window_start, interval=\'1h\') — high write volume; row count: requests_per_second * unique_subjects. Rows expire after retention window (default 24h).'
+}

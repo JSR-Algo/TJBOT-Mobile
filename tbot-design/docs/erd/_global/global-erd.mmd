@@ -1,0 +1,1516 @@
+```mermaid
+erDiagram
+  auth_sessions {
+    uuid id PK
+    uuid user_id FK
+    auth_session_client client_type
+    varchar device_name
+    varchar platform
+    varchar ip_address
+    varchar user_agent
+    timestamptz issued_at
+    timestamptz last_used_at
+    timestamptz expires_at
+    auth_session_status status
+    timestamptz revoked_at
+    varchar revoke_reason
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  children {
+    uuid id PK
+    uuid household_id FK
+    varchar nickname
+    child_age_band age_band
+    boolean patient_mode_enabled
+    boolean bedtime_mode_override
+    jsonb favorite_topics
+    child_status status
+    timestamptz archived_at
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  email_verifications {
+    uuid id PK
+    uuid user_id FK
+    varchar email
+    varchar token_hash
+    email_verification_purpose purpose
+    email_verification_status status
+    timestamptz expires_at
+    timestamptz consumed_at
+    varchar requested_ip
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  household_members {
+    uuid id PK
+    uuid household_id FK
+    uuid user_id FK
+    household_member_role role
+    household_member_status status
+    uuid invited_by_user_id FK
+    timestamptz accepted_at
+    timestamptz revoked_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  households {
+    uuid id PK
+    varchar name
+    uuid primary_parent_id FK
+    varchar timezone
+    varchar locale
+    household_status status
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz archived_at
+    timestamptz deleted_at
+  }
+  mfa_secrets {
+    uuid id PK
+    uuid user_id FK
+    mfa_method method
+    mfa_secret_status status
+    varchar secret_hash
+    varchar label
+    timestamptz enrolled_at
+    timestamptz last_used_at
+    timestamptz disabled_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  password_reset_tokens {
+    uuid id PK
+    uuid user_id FK
+    varchar token_hash
+    password_reset_token_status status
+    timestamptz expires_at
+    timestamptz used_at
+    varchar requested_ip
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  refresh_tokens {
+    uuid id PK
+    uuid auth_session_id FK
+    varchar token_hash
+    refresh_token_status status
+    timestamptz issued_at
+    timestamptz expires_at
+    timestamptz rotated_at
+    uuid rotated_to_id FK
+    timestamptz revoked_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  users {
+    uuid id PK
+    varchar email
+    text password_hash
+    varchar display_name
+    user_status status
+    uuid default_household_id
+    timestamptz last_login_at
+    varchar disabled_reason
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  device_decommissions {
+    uuid id PK
+    uuid device_id FK
+    uuid household_id
+    uuid initiated_by_user_id
+    varchar reason
+    timestamptz decommissioned_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  device_heartbeats {
+    uuid id PK
+    uuid device_id FK
+    varchar firmware_version
+    integer battery_level
+    jsonb connectivity_metrics
+    varchar runtime_state
+    varchar fault_code
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  device_pairings {
+    uuid id PK
+    uuid device_id FK
+    uuid household_id
+    uuid initiated_by_user_id
+    uuid assigned_child_id
+    device_pairing_status status
+    varchar app_version
+    varchar phone_platform
+    varchar display_name
+    varchar failure_code
+    timestamptz completed_at
+    timestamptz expires_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  device_transfers {
+    uuid id PK
+    uuid device_id FK
+    uuid source_household_id
+    uuid source_user_id
+    uuid target_household_id
+    device_transfer_status status
+    varchar failure_code
+    timestamptz initiated_at
+    timestamptz factory_reset_confirmed_at
+    timestamptz target_claimed_at
+    timestamptz completed_at
+    timestamptz expires_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  devices {
+    uuid id PK
+    varchar serial_number
+    varchar hardware_revision
+    varchar firmware_version
+    device_status status
+    device_lifecycle_state lifecycle_state
+    uuid owner_user_id
+    uuid current_household_id
+    uuid assigned_child_id
+    varchar cert_serial
+    varchar display_name
+    timestamptz last_seen_at
+    integer battery_level
+    jsonb connectivity_metrics
+    timestamptz decommissioned_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  runtime_boot_reports {
+    uuid id PK
+    uuid device_id
+    integer boot_count
+    varchar firmware_version
+    boot_result result
+    integer boot_fail_window
+    varchar last_boot_reason
+    varchar config_etag
+    integer duration_ms
+    timestamptz uploaded_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  runtime_local_event_log {
+    uuid id PK
+    uuid device_id
+    varchar event_type
+    varchar severity
+    varchar fault_code
+    jsonb payload
+    timestamptz device_ts
+    timestamptz uploaded_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  safe_mode_entries {
+    uuid id PK
+    uuid device_id
+    safe_mode_trigger trigger
+    varchar fault_code
+    timestamptz entered_at_device_ts
+    timestamptz exited_at_device_ts
+    safe_mode_resolution resolution
+    varchar support_token
+    timestamptz uploaded_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  phrase_cache_entries {
+    uuid id PK
+    text phrase_text
+    varchar phrase_text_sha256
+    varchar locale
+    varchar age_band
+    varchar voice_profile
+    varchar audio_codec
+    integer sample_rate
+    varchar audio_s3_uri
+    integer audio_size_bytes
+    integer duration_ms
+    varchar expression_sync_s3_uri
+    varchar intent
+    phrase_cache_status status
+    integer version_no
+    varchar origin
+    bigint hit_count
+    timestamptz last_hit_at
+    uuid created_by_admin_user_id
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz retired_at
+  }
+  provider_failover_records {
+    uuid id PK
+    uuid session_id FK
+    uuid session_turn_id FK
+    provider_role role
+    varchar primary_provider
+    varchar fallback_provider
+    failover_trigger trigger
+    failover_outcome outcome
+    integer primary_attempt_ms
+    integer fallback_attempt_ms
+    varchar primary_error_code
+    integer primary_http_code
+    varchar circuit_state_before
+    varchar circuit_state_after
+    integer recovery_attempt_no
+    varchar instance_id
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  session_transcripts {
+    uuid id PK
+    uuid session_turn_id FK
+    uuid session_id FK
+    uuid child_profile_id
+    text transcript_text
+    text response_text
+    varchar transcript_sha256
+    varchar response_sha256
+    varchar language_detected
+    timestamptz cleared_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  session_turns {
+    uuid id PK
+    uuid session_id FK
+    integer turn_index
+    session_turn_status status
+    varchar intent
+    session_turn_safety_action safety_action
+    integer stt_ms
+    integer intent_classify_ms
+    integer input_safety_ms
+    integer llm_first_token_ms
+    integer llm_complete_ms
+    integer output_safety_ms
+    integer tts_first_byte_ms
+    integer total_turn_ms
+    bigint cost_stt_micros
+    bigint cost_llm_micros
+    bigint cost_tts_micros
+    bigint cost_total_micros
+    varchar stt_provider
+    varchar llm_provider
+    varchar tts_provider
+    integer stt_confidence
+    integer llm_input_tokens
+    integer llm_output_tokens
+    uuid prompt_version_id
+    uuid safety_policy_version_id
+    uuid blocklist_version_id
+    timestamptz cancelled_at
+    varchar failed_error_code
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  sessions {
+    uuid id PK
+    varchar device_session_id
+    uuid device_id
+    uuid household_id
+    uuid child_profile_id
+    session_interaction_mode interaction_mode
+    session_status status
+    integer turn_count
+    integer total_duration_ms
+    bigint total_cost_micros
+    session_end_reason end_reason
+    varchar stt_provider_used
+    varchar llm_provider_used
+    varchar tts_provider_used
+    integer safety_blocks_count
+    integer barge_in_count
+    varchar locale
+    varchar audio_codec
+    integer sample_rate
+    varchar fw_version
+    varchar instance_id
+    timestamptz started_at
+    timestamptz ended_at
+    timestamptz last_activity_at
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  fallback_templates {
+    uuid id PK
+    varchar template_set
+    varchar trigger_code
+    varchar locale
+    varchar age_band
+    fallback_template_status status
+    integer version_no
+    text text_segment
+    jsonb render_plan
+    jsonb motion_plan
+    jsonb expression_sync_hint
+    text notes
+    uuid created_by_admin_user_id
+    timestamptz published_at
+    timestamptz retired_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  safety_blocklist_entries {
+    uuid id PK
+    integer version_no
+    varchar locale
+    varchar category
+    text pattern
+    varchar pattern_sha256
+    blocklist_severity severity
+    varchar redirect_category
+    varchar family_configurable_key
+    integer max_pattern_steps
+    blocklist_entry_origin origin
+    text notes
+    uuid created_by_admin_user_id
+    timestamptz published_at
+    timestamptz retired_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  safety_events {
+    uuid id PK
+    uuid session_id
+    uuid session_turn_id
+    uuid child_profile_id
+    uuid household_id
+    safety_event_type event_type
+    safety_event_stage stage
+    safety_event_severity severity
+    varchar category
+    integer confidence_pct
+    varchar trigger_code
+    varchar transcript_hash
+    uuid blocklist_version_id
+    uuid safety_policy_version_id
+    uuid topic_id FK
+    uuid fallback_template_id FK
+    integer detection_latency_ms
+    boolean parent_alerted
+    timestamptz parent_alerted_at
+    boolean session_terminated
+    varchar instance_id
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  safety_pii_redactions {
+    uuid id PK
+    uuid safety_event_id FK
+    uuid session_id
+    uuid session_turn_id
+    uuid child_profile_id
+    uuid household_id
+    pii_type pii_type
+    varchar stage
+    pii_disposition disposition
+    integer match_position
+    integer match_length
+    varchar detection_pattern
+    varchar transcript_hash
+    integer detection_latency_ms
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz purged_at
+  }
+  safety_topics {
+    uuid id PK
+    varchar slug
+    varchar display_name
+    text description
+    safety_topic_severity severity
+    integer classifier_threshold_pct
+    integer required_keyword_count
+    jsonb keywords
+    safety_topic_severity parent_alert_threshold
+    varchar fallback_trigger_code
+    timestamptz retired_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  activities {
+    uuid id PK
+    uuid lesson_id FK
+    varchar slug
+    varchar title
+    activity_type activity_type
+    smallint position
+    jsonb payload
+    activity_status status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  content_personalization_snapshots {
+    uuid id PK
+    uuid child_id
+    uuid conversation_request_id
+    timestamptz snapshot_at
+    jsonb traits_payload
+    jsonb preferences_payload
+    jsonb memories_payload
+    jsonb templates_payload
+    varchar retrieval_policy
+    boolean trimmed
+    boolean degraded
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  courses {
+    uuid id PK
+    varchar slug
+    varchar title
+    varchar locale
+    smallint age_band_min
+    smallint age_band_max
+    course_status status
+    text description
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  daily_summaries {
+    uuid id PK
+    uuid device_id
+    uuid child_profile_id
+    date summary_date
+    integer total_minutes
+    integer activities_count
+    integer words_introduced
+    jsonb topics_covered
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  lessons {
+    uuid id PK
+    uuid unit_id FK
+    varchar slug
+    varchar title
+    smallint position
+    lesson_status status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  levels {
+    uuid id PK
+    uuid course_id FK
+    varchar slug
+    varchar title
+    smallint position
+    level_status status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  topic_decay_state {
+    uuid id PK
+    uuid child_id
+    uuid topic_id FK
+    integer interaction_count
+    timestamptz last_seen_at
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  topics {
+    uuid id PK
+    varchar slug
+    varchar label
+    varchar locale
+    uuid parent_id FK
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  units {
+    uuid id PK
+    uuid level_id FK
+    varchar slug
+    varchar title
+    smallint position
+    unit_status status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  words {
+    uuid id PK
+    uuid activity_id FK
+    uuid lesson_id FK
+    varchar word
+    varchar locale
+    varchar phonetic
+    text definition
+    varchar media_url
+    smallint age_band_min
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  parent_controls {
+    uuid id PK
+    uuid device_id
+    uuid household_id
+    smallint daily_limit_minutes
+    smallint per_session_limit_min
+    boolean quiet_hours_enabled
+    time quiet_hours_start
+    time quiet_hours_end
+    varchar timezone
+    jsonb content_toggles
+    integer version
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  parent_notifications_outbox {
+    uuid id PK
+    uuid device_id
+    uuid child_profile_id
+    parent_notification_event_type event_type
+    jsonb payload
+    parent_notification_status status
+    timestamptz enqueued_at
+    text failed_reason
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  usage_caps {
+    uuid id PK
+    uuid device_id
+    uuid child_profile_id
+    date cap_date
+    integer consumed_minutes
+    timestamptz capped_at
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  weekly_summaries {
+    uuid id PK
+    uuid device_id
+    uuid child_profile_id
+    varchar iso_week
+    integer total_minutes
+    integer activities_count
+    integer words_introduced
+    engagement_trend engagement_trend
+    jsonb topics_covered
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz deleted_at
+  }
+  config_assignments {
+    uuid id PK
+    uuid cohort_id FK
+    uuid device_id
+    uuid config_version_id FK
+    timestamptz assigned_at
+    varchar assigned_by
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  config_cohorts {
+    uuid id PK
+    varchar name
+    text description
+    jsonb selection_criteria
+    uuid template_id
+    boolean is_default
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  config_documents {
+    uuid id PK
+    uuid device_id
+    uuid current_version_id FK
+    varchar schema_version
+    timestamptz applied_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  config_push_events {
+    uuid id PK
+    uuid device_id
+    uuid document_id FK
+    uuid version_id FK
+    config_push_event_kind event_kind
+    varchar mqtt_message_id
+    uuid fetch_correlation_id
+    varchar error_code
+    jsonb error_detail
+    timestamptz emitted_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  config_signing_keys {
+    uuid id PK
+    varchar kms_key_id
+    text public_key_pem
+    varchar key_purpose
+    config_signing_key_status status
+    timestamptz promoted_to_active_at
+    timestamptz retired_at
+    text rotation_ceremony_ref
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  config_versions {
+    uuid id PK
+    uuid document_id FK
+    uuid device_id
+    integer config_version
+    varchar schema_version
+    jsonb config_blob
+    text config_signature
+    uuid signing_key_id FK
+    uuid source_template_id
+    uuid cohort_id
+    varchar change_source
+    jsonb changed_fields
+    timestamptz issued_at
+    timestamptz applied_at
+    timestamptz superseded_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  ota_assignments {
+    uuid id PK
+    uuid device_id
+    uuid release_id FK
+    varchar from_version
+    varchar to_version
+    ota_assignment_status status
+    varchar failure_code
+    jsonb failure_detail
+    uuid ota_cohort_id FK
+    integer battery_percent_at_start
+    integer rssi_at_start
+    integer download_duration_ms
+    integer flash_duration_ms
+    timestamptz signed_url_expires_at
+    timestamptz started_at
+    timestamptz completed_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  ota_cohorts {
+    uuid id PK
+    varchar name
+    text description
+    uuid base_cohort_id
+    jsonb selection_criteria
+    boolean canary_only
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  ota_crash_reports {
+    uuid id PK
+    uuid assignment_id FK
+    uuid device_id
+    uuid release_id FK
+    varchar failure_code
+    text stack_trace
+    integer heap_free_at_crash
+    integer uptime_seconds
+    varchar reset_reason
+    integer battery_percent
+    timestamptz reported_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  ota_pause_decisions {
+    uuid id PK
+    uuid release_id FK
+    ota_pause_decision_kind decision_kind
+    jsonb details
+    varchar decided_by
+    uuid admin_user_id
+    varchar sns_message_id
+    varchar sns_severity
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  ota_releases {
+    uuid id PK
+    varchar version
+    jsonb hw_revisions_supported
+    varchar binary_s3_key
+    varchar binary_sha256
+    bigint binary_size_bytes
+    jsonb manifest_json
+    text manifest_signature
+    text release_notes
+    ota_release_status status
+    integer rollout_percentage
+    uuid rollout_cohort_id
+    integer max_rollout_crash_rate
+    varchar created_by
+    timestamptz released_at
+    timestamptz paused_at
+    timestamptz completed_at
+    timestamptz recalled_at
+    uuid signing_key_id
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  email_sends {
+    uuid id PK
+    uuid dispatch_id FK
+    varchar from_address
+    varchar reply_to_address
+    varchar to_address
+    varchar subject_rendered
+    varchar list_unsubscribe_url
+    varchar ses_configuration_set
+    varchar ses_message_id
+    varchar ses_region
+    integer ses_send_attempt_count
+    varchar rendered_body_html_sha256
+    varchar rendered_body_text_sha256
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  notification_dispatches {
+    uuid id PK
+    uuid parent_account_id
+    uuid device_id
+    varchar notification_type
+    notification_channel channel
+    notification_dispatch_status status
+    varchar idempotency_key
+    varchar external_id
+    varchar failure_reason
+    varchar suppression_reason
+    varchar template_data_hash
+    timestamptz scheduled_for
+    timestamptz sent_at
+    timestamptz delivered_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  notification_receipts {
+    uuid id PK
+    uuid dispatch_id FK
+    notification_receipt_kind receipt_kind
+    varchar provider_event_id
+    jsonb provider_payload
+    varchar bounce_subtype
+    timestamptz received_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  notification_templates {
+    uuid id PK
+    varchar notification_type
+    notification_channel channel
+    notification_scope scope
+    text template_body
+    varchar template_subject
+    varchar push_priority
+    varchar android_channel
+    integer throttle_window_seconds
+    integer throttle_limit
+    integer suppression_cooldown_seconds
+    boolean force_send
+    boolean cannot_be_disabled
+    boolean active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  push_tokens {
+    uuid id PK
+    uuid user_id
+    text token
+    push_token_platform platform
+    varchar app_version
+    varchar device_label
+    push_token_status status
+    timestamptz invalidated_at
+    timestamptz last_used_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  audit_events {
+    uuid id PK
+    audit_actor_kind actor_kind
+    varchar actor_id
+    varchar action
+    varchar target_table
+    uuid target_id
+    jsonb details
+    varchar ip_address
+    text user_agent
+    varchar request_id
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  cost_attributions {
+    uuid id PK
+    cost_attribution_source_kind source_kind
+    uuid source_id
+    uuid session_id
+    uuid device_id
+    uuid household_id
+    timestamptz attribution_date
+    integer turn_count
+    bigint stt_cost_cents
+    bigint llm_cost_cents
+    bigint tts_cost_cents
+    bigint infra_cost_cents
+    bigint total_cost_cents
+    uuid rate_card_id
+    timestamptz computed_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  mutation_log {
+    uuid id PK
+    uuid buffer_batch_id
+    varchar endpoint
+    integer http_status_code
+    integer duration_ms
+    varchar actor_id
+    jsonb request_payload
+    jsonb response_summary
+    uuid promoted_to_audit_event_id
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  telemetry_events {
+    uuid id PK
+    uuid device_id
+    uuid child_id
+    uuid session_id
+    varchar event_type
+    jsonb payload
+    uuid batch_id
+    bigint client_timestamp_ms
+    timestamptz server_received_at
+    integer sampling_rate
+    boolean pii_scan_passed
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  admin_commands {
+    uuid id PK
+    uuid admin_user_id FK
+    varchar action
+    varchar target_type
+    varchar target_id
+    text reason
+    jsonb metadata
+    varchar ip_address
+    timestamptz occurred_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  admin_role_assignments {
+    uuid id PK
+    uuid admin_user_id FK
+    admin_role_name role
+    admin_role_assignment_status status
+    uuid granted_by_admin_id FK
+    timestamptz granted_at
+    timestamptz revoked_at
+    varchar reason
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  admin_sessions {
+    uuid id PK
+    uuid admin_user_id FK
+    varchar token_hash
+    admin_session_status status
+    varchar ip_address
+    varchar user_agent
+    timestamptz expires_at
+    timestamptz revoked_at
+    varchar revoke_reason
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  admin_users {
+    uuid id PK
+    varchar email
+    text password_hash
+    varchar mfa_secret
+    boolean mfa_enabled
+    admin_user_status status
+    timestamptz last_login_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  safety_investigations {
+    uuid id PK
+    uuid device_id
+    uuid session_id
+    uuid turn_id
+    uuid reported_by_admin_id FK
+    safety_investigation_severity severity
+    safety_investigation_status status
+    text description
+    text resolution
+    varchar escalated_to
+    jsonb metadata
+    timestamptz resolved_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  brute_force_lockouts {
+    uuid id PK
+    varchar ip_address
+    varchar reason
+    brute_force_lockout_status status
+    timestamptz blocked_at
+    timestamptz expires_at
+    timestamptz released_at
+    varchar released_by
+    uuid security_event_id
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  key_rotations {
+    uuid id PK
+    varchar secret_name
+    uuid kms_key_id FK
+    key_rotation_method rotation_method
+    key_rotation_status status
+    varchar rotated_by
+    timestamptz rotated_at
+    timestamptz old_key_expiry
+    timestamptz new_key_active_at
+    text notes
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  kms_keys {
+    uuid id PK
+    varchar alias
+    kms_key_purpose purpose
+    kms_key_status status
+    varchar external_arn
+    varchar algorithm
+    uuid rotated_from_id FK
+    timestamptz activated_at
+    timestamptz retired_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  mtls_certificates {
+    uuid id PK
+    uuid device_id
+    varchar certificate_fingerprint
+    mtls_certificate_status status
+    timestamptz issued_at
+    timestamptz expires_at
+    timestamptz first_seen_at
+    timestamptz revoked_at
+    varchar revoke_reason
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  secret_versions {
+    uuid id PK
+    varchar secret_name
+    integer version
+    secret_version_status status
+    uuid envelope_kms_key_id FK
+    text ciphertext
+    timestamptz activated_at
+    timestamptz retired_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  backup_snapshots {
+    uuid id PK
+    backup_snapshot_kind kind
+    varchar rds_snapshot_id
+    varchar s3_bucket
+    varchar s3_key
+    varchar region
+    backup_snapshot_status status
+    bigint size_bytes
+    uuid encryption_key_id
+    uuid scope_household_id
+    uuid data_export_request_id
+    timestamptz expires_at
+    timestamptz taken_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  deletion_jobs {
+    uuid id PK
+    uuid deletion_request_id FK
+    uuid household_id
+    uuid child_id
+    deletion_job_status status
+    jsonb execution_log
+    timestamptz started_at
+    timestamptz completed_at
+    text error_message
+    integer retry_count
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  deletion_requests {
+    uuid id PK
+    uuid parent_account_id
+    uuid child_id
+    deletion_request_scope scope_kind
+    timestamptz requested_at
+    timestamptz grace_period_ends_at
+    timestamptz cancelled_at
+    timestamptz executed_at
+    deletion_request_status status
+    varchar cancel_token_hash
+    varchar original_email
+    varchar request_ip
+    text request_user_agent
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  retention_policies {
+    uuid id PK
+    varchar target_table
+    bigint retention_seconds
+    retention_method method
+    varchar cron_expression
+    integer batch_size
+    integer max_iterations
+    integer yield_ms
+    varchar legal_basis
+    boolean active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  factory_records {
+    uuid id PK
+    uuid device_id
+    varchar serial_number
+    varchar factory_batch_id
+    varchar operator_id
+    varchar workstation_id
+    varchar hardware_revision
+    varchar firmware_version
+    factory_record_result overall_result
+    integer test_duration_ms
+    text notes
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  factory_serial_assignments {
+    uuid id PK
+    varchar serial_number
+    varchar factory_batch_id
+    uuid device_id
+    timestamptz allocated_at
+    timestamptz registered_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  factory_test_results {
+    uuid id PK
+    uuid factory_record_id FK
+    varchar serial_number
+    varchar test_name
+    test_result_value result
+    text measured_value
+    text pass_threshold
+    boolean is_critical
+    integer duration_ms
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  api_keys {
+    uuid id PK
+    varchar key_hash
+    varchar key_prefix
+    api_key_type type
+    uuid owner_id
+    varchar description
+    timestamptz last_used_at
+    timestamptz expires_at
+    timestamptz revoked_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  rate_limit_buckets {
+    uuid id PK
+    rate_limit_subject_kind subject_kind
+    varchar subject_id
+    timestamptz window_start
+    int window_size_s
+    int request_count
+    int limit_value
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  entitlements {
+    uuid id PK
+    uuid child_id
+    uuid subscription_id FK
+    varchar tier
+    jsonb features
+    timestamptz valid_from
+    timestamptz valid_until
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  invoices {
+    uuid id PK
+    varchar stripe_invoice_id
+    uuid stripe_customer_id FK
+    uuid subscription_id FK
+    bigint amount_due_cents
+    bigint amount_paid_cents
+    varchar currency
+    invoice_status status
+    timestamptz period_start
+    timestamptz period_end
+    timestamptz paid_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  order_items {
+    uuid id PK
+    uuid order_id FK
+    varchar product_sku
+    varchar description
+    int quantity
+    bigint unit_price_cents
+    varchar currency
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  orders {
+    uuid id PK
+    uuid household_id
+    uuid stripe_customer_id FK
+    varchar stripe_payment_intent_id
+    order_status status
+    bigint total_amount_cents
+    varchar currency
+    timestamptz fulfilled_at
+    timestamptz canceled_at
+    timestamptz refunded_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  stripe_customers {
+    uuid id PK
+    uuid user_id
+    varchar stripe_customer_id
+    varchar email
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  stripe_webhook_events {
+    uuid id PK
+    varchar stripe_event_id
+    varchar event_type
+    stripe_webhook_event_status processing_status
+    varchar payload_hash
+    int attempts
+    timestamptz processed_at
+    text failed_reason
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  subscription_plans {
+    uuid id PK
+    varchar stripe_price_id
+    varchar stripe_product_id
+    varchar name
+    subscription_plan_interval interval
+    bigint amount_cents
+    varchar currency
+    int max_child_profiles
+    int daily_turn_limit
+    int daily_session_limit
+    jsonb features
+    boolean active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  subscriptions {
+    uuid id PK
+    uuid household_id
+    uuid stripe_customer_id FK
+    uuid plan_id FK
+    varchar stripe_subscription_id
+    subscription_status status
+    timestamptz trial_ends_at
+    timestamptz current_period_start
+    timestamptz current_period_end
+    timestamptz canceled_at
+    boolean cancel_at_period_end
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  content_drafts {
+    uuid id PK
+    uuid author_id
+    varchar title
+    text template_text
+    text variation_instruction
+    jsonb age_bands
+    varchar category
+    varchar locale
+    jsonb tags
+    content_draft_status status
+    smallint current_version
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  content_revisions {
+    uuid id PK
+    uuid draft_id FK
+    smallint version_no
+    uuid author_id
+    text template_text
+    text variation_instruction
+    jsonb age_bands
+    varchar category
+    varchar locale
+    jsonb tags
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  publication_records {
+    uuid id PK
+    uuid draft_id FK
+    smallint revision_no
+    uuid publisher_id
+    varchar pack_id
+    varchar s3_url
+    uuid schedule_id
+    publication_status status
+    timestamptz published_at
+    text failed_reason
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  review_assignments {
+    uuid id PK
+    uuid draft_id FK
+    smallint revision_no
+    uuid reviewer_id
+    review_assignment_status status
+    timestamptz assigned_at
+    timestamptz completed_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  review_decisions {
+    uuid id PK
+    uuid assignment_id FK
+    uuid reviewer_id
+    uuid draft_id FK
+    smallint revision_no
+    review_decision_outcome outcome
+    text feedback
+    smallint quality_score
+    timestamptz decided_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  demo_devices {
+    uuid id PK
+    varchar serial_number
+    uuid device_id
+    boolean demo_enabled
+    varchar retail_location
+    varchar demo_content_version
+    timestamptz last_seen_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  demo_session_overrides {
+    uuid id PK
+    uuid demo_device_id FK
+    varchar interaction_id
+    jsonb override_data
+    timestamptz expires_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  audit_log {
+    uuid id PK
+    varchar actor_type
+    varchar actor_id
+    varchar action
+    varchar target_table
+    varchar target_id PK
+    audit_log_result result
+    text reason
+    jsonb before_state
+    jsonb after_state
+    jsonb metadata
+    varchar ip_address
+    varchar user_agent
+    timestamptz occurred_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  feature_flags {
+    uuid id PK
+    varchar key
+    feature_flag_scope scope
+    varchar scope_target_id
+    feature_flag_value_kind value_kind
+    jsonb value
+    text description
+    timestamptz enabled_at
+    timestamptz disabled_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  i18n_strings {
+    uuid id PK
+    varchar key
+    varchar locale
+    text value
+    varchar context
+    varchar source
+    boolean reviewed
+    varchar reviewed_by
+    timestamptz reviewed_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  idempotency_keys {
+    uuid id PK
+    varchar request_key
+    varchar service_name
+    varchar endpoint
+    varchar actor_type
+    varchar actor_id
+    idempotency_key_status status
+    integer response_status
+    jsonb response_body
+    timestamptz expires_at
+    timestamptz completed_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  media_assets {
+    uuid id PK
+    media_asset_kind kind
+    media_asset_status status
+    varchar s3_uri
+    varchar cdn_url
+    varchar content_type
+    bigint size_bytes
+    varchar checksum_sha256
+    integer duration_ms
+    integer width_px
+    integer height_px
+    varchar owner_service
+    jsonb metadata
+    varchar moderation_state
+    timestamptz expires_at
+    timestamptz created_at
+    timestamptz updated_at
+    timestamptz archived_at
+    timestamptz deleted_at
+  }
+  outbox_events {
+    uuid id PK
+    varchar topic
+    jsonb payload
+    varchar source_service
+    varchar source_table
+    varchar source_id PK
+    varchar aggregate_id
+    outbox_event_status status
+    integer attempt_count
+    timestamptz next_attempt_at
+    text last_error
+    timestamptz delivered_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  auth_sessions }o--|| users : "user_id"
+  children }o--|| households : "household_id"
+  email_verifications }o--|| users : "user_id"
+  household_members }o--|| households : "household_id"
+  household_members }o--|| users : "user_id"
+  household_members }o--|| users : "invited_by_user_id"
+  households }o--|| users : "primary_parent_id"
+  mfa_secrets }o--|| users : "user_id"
+  password_reset_tokens }o--|| users : "user_id"
+  refresh_tokens }o--|| auth_sessions : "auth_session_id"
+  refresh_tokens }o--|| refresh_tokens : "rotated_to_id"
+  device_decommissions }o--|| devices : "device_id"
+  device_heartbeats }o--|| devices : "device_id"
+  device_pairings }o--|| devices : "device_id"
+  device_transfers }o--|| devices : "device_id"
+  provider_failover_records }o--|| sessions : "session_id"
+  provider_failover_records }o--|| session_turns : "session_turn_id"
+  session_transcripts }o--|| session_turns : "session_turn_id"
+  session_transcripts }o--|| sessions : "session_id"
+  session_turns }o--|| sessions : "session_id"
+  safety_events }o--|| safety_topics : "topic_id"
+  safety_events }o--|| fallback_templates : "fallback_template_id"
+  safety_pii_redactions }o--|| safety_events : "safety_event_id"
+  activities }o--|| lessons : "lesson_id"
+  lessons }o--|| units : "unit_id"
+  levels }o--|| courses : "course_id"
+  topic_decay_state }o--|| topics : "topic_id"
+  topics }o--|| topics : "parent_id"
+  units }o--|| levels : "level_id"
+  words }o--|| activities : "activity_id"
+  words }o--|| lessons : "lesson_id"
+  config_assignments }o--|| config_cohorts : "cohort_id"
+  config_assignments }o--|| config_versions : "config_version_id"
+  config_documents }o--|| config_versions : "current_version_id"
+  config_push_events }o--|| config_documents : "document_id"
+  config_push_events }o--|| config_versions : "version_id"
+  config_versions }o--|| config_documents : "document_id"
+  config_versions }o--|| config_signing_keys : "signing_key_id"
+  ota_assignments }o--|| ota_releases : "release_id"
+  ota_assignments }o--|| ota_cohorts : "ota_cohort_id"
+  ota_crash_reports }o--|| ota_assignments : "assignment_id"
+  ota_crash_reports }o--|| ota_releases : "release_id"
+  ota_pause_decisions }o--|| ota_releases : "release_id"
+  email_sends }o--|| notification_dispatches : "dispatch_id"
+  notification_receipts }o--|| notification_dispatches : "dispatch_id"
+  admin_commands }o--|| admin_users : "admin_user_id"
+  admin_role_assignments }o--|| admin_users : "admin_user_id"
+  admin_role_assignments }o--|| admin_users : "granted_by_admin_id"
+  admin_sessions }o--|| admin_users : "admin_user_id"
+  safety_investigations }o--|| admin_users : "reported_by_admin_id"
+  key_rotations }o--|| kms_keys : "kms_key_id"
+  kms_keys }o--|| kms_keys : "rotated_from_id"
+  secret_versions }o--|| kms_keys : "envelope_kms_key_id"
+  deletion_jobs }o--|| deletion_requests : "deletion_request_id"
+  factory_test_results }o--|| factory_records : "factory_record_id"
+  entitlements }o--|| subscriptions : "subscription_id"
+  invoices }o--|| stripe_customers : "stripe_customer_id"
+  invoices }o--|| subscriptions : "subscription_id"
+  order_items }o--|| orders : "order_id"
+  orders }o--|| stripe_customers : "stripe_customer_id"
+  subscriptions }o--|| stripe_customers : "stripe_customer_id"
+  subscriptions }o--|| subscription_plans : "plan_id"
+  content_revisions }o--|| content_drafts : "draft_id"
+  publication_records }o--|| content_drafts : "draft_id"
+  review_assignments }o--|| content_drafts : "draft_id"
+  review_decisions }o--|| review_assignments : "assignment_id"
+  review_decisions }o--|| content_drafts : "draft_id"
+  demo_session_overrides }o--|| demo_devices : "demo_device_id"
+```

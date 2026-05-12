@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=a64610b0bee3. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
 %% domain: progress
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -10,15 +10,4 @@ flowchart TD
     today_progress["Today's Progress"]
     words_practiced["Words Practiced"]
   end
-  celebration --> review_needed
-  words_practiced --> review_needed
-  words_practiced --> today_progress
   class celebration,lesson_summary,review_needed,today_progress,words_practiced happy
-
-%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
-%%   celebration -> home_hub_idle (home)
-%%   lesson_summary -> home_hub_idle (home)
-%%   review_needed -> home_hub_idle (home)
-%%   today_progress -> home_hub_idle (home)
-%%   lesson_summary -> lesson_ready (lesson-session)
-%%   review_needed -> lesson_ready (lesson-session)

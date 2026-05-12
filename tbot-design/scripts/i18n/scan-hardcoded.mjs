@@ -17,21 +17,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import pkg from 'glob';
+const { sync: globSync } = pkg;
 
 const ROOT = process.cwd();
-const LOCALES = path.join(ROOT, 'locales');
+const LOCALES = path.join(ROOT, 'src/services/i18n/locales');
 const ALLOWLIST_PATH = path.join(ROOT, 'scripts/i18n/.i18n-allowlist');
 
-const FILES_TO_SCAN = [
-  'index.html',
-  'screens.jsx', 'course.jsx', 'progress.jsx', 'parent.jsx',
-  'fallback.jsx', 'home.jsx', 'onboarding.jsx', 'device.jsx',
-  'purchase.jsx', 'course-library.jsx', 'robot-mgmt.jsx',
-  'paths.jsx', 'design-system.jsx', 'tb-components.jsx',
-  'vn-features.jsx',
-  // intentionally excluded: lcd-*.jsx (face-only, doc surface, EN-on-LCD is forbidden)
-  // intentionally excluded: robot.jsx (no text), ios-frame.jsx (chrome only)
-];
+const FILES_TO_SCAN = globSync('src/features/**/*.{jsx,tsx}', { cwd: ROOT });
 
 // ── load EN catalog ──
 const en = JSON.parse(fs.readFileSync(path.join(LOCALES, 'en.json'), 'utf8'));

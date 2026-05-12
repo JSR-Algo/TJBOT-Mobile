@@ -1,0 +1,77 @@
+---
+system: sys-13-security-secrets-management
+flow_id: brute-force-detection-and-block
+surface: internal-RPC
+spec_anchor: /software/systems/13-security-secrets-management#security-event-detection-rules
+actors: [ParentApp, Gateway, IdentityService, BruteForceDetector, Redis, PostgreSQL, PagerDuty]
+apis:
+  - POST /v1/auth/login
+externals: [PagerDuty]
+queues: []
+failure_paths:
+  - ip_already_blocked
+  - escalation_24h_block
+  - postgres_insert_failed
+  - pagerduty_publish_failed
+idempotency: SET NX on ip_block:{ip} with EX prevents double-block; ip_block_list row keyed by id with append-only updates
+retry: PagerDuty escalation publish retried with backoff
+timeout: 50ms p99 per detector call
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant BruteForceDetector
+    participant Redis
+    participant PostgreSQL
+    participant PagerDuty
+
+    ParentApp->>Gateway: POST /v1/auth/login {email, password}
+    Gateway->>IdentityService: forward (after sys-17 rate limit)
+    IdentityService->>BruteForceDetector: checkLoginAttempt(ip, success=false, userId?)
+    BruteForceDetector->>Redis: GET ip_block:{ip}
+    alt ip_already_blocked
+        Redis-->>BruteForceDetector: "1"
+        BruteForceDetector-->>IdentityService: {blocked: true}
+        IdentityService-->>Gateway: 429 login_rate_limited
+        Gateway-->>ParentApp: 429
+    else not_blocked
+        Redis-->>BruteForceDetector: nil
+        BruteForceDetector->>Redis: ZADD login_attempts:{ip} {now}:{success_flag}
+        BruteForceDetector->>Redis: EXPIRE login_attempts:{ip} 600
+        BruteForceDetector->>Redis: ZREMRANGEBYSCORE login_attempts:{ip} 0 (now - 5min)
+        BruteForceDetector->>Redis: ZRANGEBYSCORE login_attempts:{ip} (now - 5min) now
+        Redis-->>BruteForceDetector: attempts[]
+
+        alt failure_threshold_exceeded (>=10 failures in 5min)
+            BruteForceDetector->>Redis: GET ip_block_count:{ip}
+            Redis-->>BruteForceDetector: prev_block_count
+            alt escalation_24h_block (block_count >= 2 → 3rd block in 24h)
+                BruteForceDetector->>Redis: SET ip_block:{ip} 1 EX 86400 (24h)
+            else first_or_second_block
+                BruteForceDetector->>Redis: SET ip_block:{ip} 1 EX 3600 (1h)
+            end
+            BruteForceDetector->>Redis: INCR ip_block_count:{ip}
+            BruteForceDetector->>PostgreSQL: INSERT security_events {event_type='brute_force_detected', severity='warning'|'critical'}
+            BruteForceDetector->>PostgreSQL: INSERT ip_block_list {ip_address, reason, expires_at, security_event_id}
+            alt postgres_insert_failed
+                PostgreSQL--xBruteForceDetector: error
+                Note over BruteForceDetector: log + retry async — Redis block remains active (security-first)
+            end
+            alt escalated_to_critical
+                BruteForceDetector->>PagerDuty: page security team {ip, block_count, severity='critical'}
+                alt pagerduty_publish_failed
+                    PagerDuty--xBruteForceDetector: 5xx
+                    Note over BruteForceDetector: retry with backoff
+                end
+            end
+            BruteForceDetector-->>IdentityService: {blocked: true}
+        else under_threshold
+            BruteForceDetector-->>IdentityService: {blocked: false}
+        end
+    end
+
+    Note over BruteForceDetector,PagerDuty: 10 fails / 5min → 1h block · 3 blocks / 24h → 24h block · security-first (Redis block holds even if PostgreSQL audit insert fails)

@@ -1,0 +1,80 @@
+---
+system: sys-16-parent-mobile-application
+flow_id: ble-provisioning
+surface: mobile
+spec_anchor: /software/systems/16-parent-mobile-application#5-3-device-and-provisioning-system-02
+actors: [ParentApp, BLEDevice, Gateway, DeviceService, Device]
+apis:
+  - POST /v1/devices/provision/start
+  - GET /v1/devices/:id
+  - POST /v1/devices/provision/complete
+externals: [BLE]
+queues: []
+failure_paths:
+  - ble_permission_denied
+  - ble_device_not_found
+  - already_assigned
+  - provision_not_ready
+  - wifi_handshake_failed
+  - device_status_poll_timeout
+idempotency: provisioningToken issued by /provision/start scopes the BLE session — /provision/complete uses {deviceId, childProfileId} which is naturally idempotent
+retry: caller-side BLE scan retries on permission/timeout — never auto-retry /provision/complete on 4xx
+timeout: BLE handshake 30s — HTTP calls 10s — Wi-Fi handshake poll up to 60s (5s interval)
+status: final
+---
+%% HAND-CURATED. Normalized from spec sequenceDiagram at 16-parent-mobile-application.md#L397 — Device (Wi-Fi) shown as the cloud-bound peer that mTLS-handshakes after BLE credential write.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant BLEDevice
+    participant Gateway
+    participant DeviceService
+    participant Device
+
+    ParentApp->>ParentApp: request BLE + location permissions
+    alt ble_permission_denied
+        ParentApp-->>ParentApp: navigate to settings prompt — abort
+    else permission granted
+        ParentApp->>BLEDevice: scan for "TBot-XXXX" advert
+        alt ble_device_not_found
+            BLEDevice-->>ParentApp: scan timeout (30s) — retry prompt
+        else device discovered
+            BLEDevice-->>ParentApp: serial advert (e.g. TBT-2026-004217)
+            ParentApp->>BLEDevice: connect + discover services + read serial char
+            BLEDevice-->>ParentApp: serial confirmation
+            ParentApp->>Gateway: POST /v1/devices/provision/start {serialNumber}
+            Gateway->>DeviceService: forward
+            alt already_assigned
+                DeviceService-->>Gateway: 409 already_assigned
+                Gateway-->>ParentApp: 409
+            else ready
+                DeviceService-->>Gateway: 200 {provisioningToken, deviceId}
+                Gateway-->>ParentApp: 200
+                ParentApp->>BLEDevice: write Wi-Fi credentials to provisioning characteristic
+                BLEDevice-->>ParentApp: ACK
+                Note over BLEDevice,Device: device connects to Wi-Fi, performs mTLS handshake with cloud (sys-02)
+                loop poll every 5s up to 60s
+                    ParentApp->>Gateway: GET /v1/devices/:id
+                    Gateway->>DeviceService: forward
+                    DeviceService-->>Gateway: {status: provisioning | online | offline}
+                    Gateway-->>ParentApp: 200
+                end
+                alt wifi_handshake_failed
+                    Note over ParentApp: status stays "offline" past poll deadline
+                    ParentApp-->>ParentApp: surface retry-Wi-Fi-credentials prompt
+                else device online
+                    ParentApp->>Gateway: POST /v1/devices/provision/complete {deviceId, childProfileId}
+                    Gateway->>DeviceService: forward
+                    alt provision_not_ready
+                        DeviceService-->>Gateway: 409 not_ready
+                        Gateway-->>ParentApp: 409
+                    else completed
+                        DeviceService-->>Gateway: 200 OK
+                        Gateway-->>ParentApp: 200
+                    end
+                end
+            end
+        end
+    end
+
+    Note over ParentApp,Device: timeout — BLE handshake 30s, HTTP 10s, status poll up to 60s — never auto-retry /provision/complete on 4xx

@@ -1,0 +1,79 @@
+---
+system: sys-08-config-fleet-management
+flow_id: assembly-and-signing
+surface: internal-RPC
+spec_anchor: /software/systems/08-config-fleet-management#signing-process-ecdsa-p-256-via-kms
+actors: [TriggerSource, ConfigAssembler, CohortResolver, SchemaTransformer, ConfigSigner, KMS, PostgreSQL]
+apis: []
+externals: [KMS]
+queues: []
+failure_paths:
+  - config_size_exceeds_8kb
+  - cohort_resolution_failure
+  - kms_signing_failure
+  - schema_transform_missing
+  - validation_failed
+idempotency: device_configs PK on device_id (1:1) — overwrite with version bump; immutable history append
+retry: 3 retries with exponential backoff on KMS transient errors
+timeout: 500ms p95 assembly duration
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant TriggerSource
+    participant ConfigAssembler
+    participant CohortResolver
+    participant SchemaTransformer
+    participant ConfigSigner
+    participant KMS
+    participant PostgreSQL
+
+    TriggerSource->>ConfigAssembler: rebuild request (initial_provision | parent_controls_changed | template_updated | cohort_membership_changed | admin_push | emergency_override | rollback)
+
+    ConfigAssembler->>CohortResolver: resolve(device_id)
+    alt cohort_resolution_failure
+        CohortResolver-->>ConfigAssembler: CohortResolutionError (no default cohort)
+        ConfigAssembler-->>TriggerSource: 500 cohort_resolution_failure
+    else success
+        CohortResolver->>PostgreSQL: SELECT fleet_cohort_memberships → criteria → default (first match wins)
+        PostgreSQL-->>CohortResolver: cohort_id
+        CohortResolver-->>ConfigAssembler: cohort_id
+    end
+
+    ConfigAssembler->>PostgreSQL: SELECT config_templates JOIN config_template_cohort_assignments
+    PostgreSQL-->>ConfigAssembler: template_blob
+    ConfigAssembler->>PostgreSQL: SELECT parent_controls (sys-07), device_config_overrides
+    ConfigAssembler->>ConfigAssembler: merge — template + parent controls + device overrides (overrides highest precedence)
+
+    ConfigAssembler->>SchemaTransformer: resolve_schema_version(device.fw_schema_range, template.schema_version)
+    alt schema_transform_missing
+        SchemaTransformer-->>ConfigAssembler: No transform path → error
+    else success
+        SchemaTransformer->>SchemaTransformer: chain transforms downward (e.g. 2.0→1.1→1.0)
+        SchemaTransformer-->>ConfigAssembler: transformed blob
+    end
+
+    ConfigAssembler->>ConfigAssembler: validate JSON schema + size ≤8KB
+    alt config_size_exceeds_8kb
+        ConfigAssembler-->>TriggerSource: 422 config_size_exceeds_8kb (reduce content_toggles keys < 150)
+    else validation_failed
+        ConfigAssembler-->>TriggerSource: 422 validation_failed
+    else success
+        ConfigAssembler->>ConfigSigner: sign(canonical JSON sorted-keys-no-whitespace)
+        ConfigSigner->>ConfigSigner: SHA-256(canonical JSON)
+        ConfigSigner->>ConfigSigner: build {config_blob_sha256, issued_at, schema_version} alphabetical
+        ConfigSigner->>KMS: Sign ECDSA_SHA_256 with CONFIG_SIGNING_KMS_KEY_ID
+        alt kms_signing_failure
+            KMS--xConfigSigner: 5xx / throttle
+            ConfigSigner->>ConfigSigner: retry with backoff (3 attempts)
+        else success
+            KMS-->>ConfigSigner: DER signature
+            ConfigSigner-->>ConfigAssembler: base64-encoded signature
+        end
+        ConfigAssembler->>PostgreSQL: UPSERT device_configs (device_id, config_version+1, …) then INSERT device_config_history (immutable audit)
+        PostgreSQL-->>ConfigAssembler: ok
+        ConfigAssembler-->>TriggerSource: 201 {config_version, issued_at}
+    end
+
+    Note over TriggerSource,PostgreSQL: assembly p95 < 500ms · config_blob_size_bytes alert > 7000 · validation rejects > 150 content_toggles keys

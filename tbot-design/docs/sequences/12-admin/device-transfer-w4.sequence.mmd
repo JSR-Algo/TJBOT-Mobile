@@ -1,0 +1,72 @@
+---
+system: sys-12-support-admin-operations
+flow_id: device-transfer-w4
+surface: admin
+spec_anchor: /software/systems/12-support-admin-operations#w4-device-transfer
+actors: [AdminConsole, DeviceTransferService, PostgreSQL, MQTT, Device, AuditLog]
+apis:
+  - POST /admin/devices/:id/transfer
+externals: [MQTT]
+queues: []
+failure_paths:
+  - device_not_found
+  - device_not_bound
+  - transfer_already_pending
+  - transaction_rollback
+  - mqtt_publish_failure
+idempotency: pending transfer guard — only one active transfer per device; transfer_code unique
+retry: admin must wait 72h expiry or cancel existing transfer before retrying
+timeout: 10s p99
+status: final
+---
+%% HAND-CURATED. W4 from spec §4 — generates 6-char dictation-safe transfer code with 72h TTL.
+sequenceDiagram
+    autonumber
+    participant AdminConsole
+    participant DeviceTransferService
+    participant PostgreSQL
+    participant MQTT
+    participant Device
+    participant AuditLog
+
+    AdminConsole->>DeviceTransferService: POST /admin/devices/:id/transfer {reason}
+    DeviceTransferService->>PostgreSQL: SELECT d.id, current_household_id FROM devices WHERE serial_number=$1
+
+    alt device_not_found
+        DeviceTransferService-->>AdminConsole: 404 device_not_found
+    else device_not_bound
+        Note over DeviceTransferService: current_household_id IS NULL
+        DeviceTransferService-->>AdminConsole: 409 device_not_bound
+    else has owner
+        DeviceTransferService->>PostgreSQL: SELECT id FROM device_transfer_log WHERE device_id=$1 AND status='pending' AND transfer_code_expires_at > now()
+        alt transfer_already_pending
+            PostgreSQL-->>DeviceTransferService: existing pending row
+            DeviceTransferService-->>AdminConsole: 409 transfer_already_pending
+        else no pending
+            DeviceTransferService->>DeviceTransferService: generate 6-char code from ABCDEFGHJKMNPQRSTUVWXYZ23456789 — expires_at = now() + 72h
+            DeviceTransferService->>PostgreSQL: BEGIN
+            alt transaction_rollback
+                DeviceTransferService->>PostgreSQL: UPDATE devices SET current_household_id=NULL, lifecycle_state='transfer_pending'
+                DeviceTransferService->>PostgreSQL: UPDATE device_ownership_history SET ended_at=now(), ownership_status='transferred'
+                DeviceTransferService->>PostgreSQL: INSERT device_transfer_log (transfer_code, expires_at, initiated_by_admin_id, status='pending', reason)
+                PostgreSQL-->>DeviceTransferService: error on any step
+                DeviceTransferService->>PostgreSQL: ROLLBACK
+                DeviceTransferService-->>AdminConsole: 500 transaction_rollback
+            else committed
+                DeviceTransferService->>PostgreSQL: UPDATE devices ... COMMIT
+                DeviceTransferService->>AuditLog: append {action: initiate_transfer, target: device, reason}
+                alt mqtt_publish_failure
+                    DeviceTransferService->>MQTT: publish tbot/{deviceId}/commands/prepare-transfer {transfer_code, command_id, issued_by} (QoS 1, retained)
+                    MQTT-->>DeviceTransferService: error
+                    Note over DeviceTransferService,AdminConsole: transfer row already committed — MQTT retry on next admin poll
+                    DeviceTransferService-->>AdminConsole: 502 mqtt_publish_failure {transferCode, expiresAt, requires_retry: true}
+                else published
+                    MQTT->>Device: deliver prepare_transfer command
+                    Device->>Device: enter transfer mode (LED pattern + audio cue)
+                    DeviceTransferService-->>AdminConsole: 200 {transferCode, expiresAt, fromHouseholdId}
+                end
+            end
+        end
+    end
+
+    Note over AdminConsole,AuditLog: transfer code dictated by phone (excludes 0/O/1/I/L) — 72h TTL — code consumed by sys-02 consumer-provisioning

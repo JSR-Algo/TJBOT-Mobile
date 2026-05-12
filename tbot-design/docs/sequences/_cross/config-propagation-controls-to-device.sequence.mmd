@@ -1,0 +1,68 @@
+---
+system: _cross
+flow_id: config-propagation-controls-to-device
+surface: multi
+spec_anchor: /software/systems/07-parent-controls-summary#controls-update-propagation
+actors: [ParentApp, Gateway, ControlsService, ConfigService, MQTT, Device]
+systems: [sys-07-parent-controls-summary, sys-08-config-fleet-management, sys-03-device-runtime-local-interaction]
+derived_from:
+  - 07-parent/controls-update.sequence.mmd
+  - 08-config/mqtt-push-and-fetch.sequence.mmd
+  - 03-device-runtime/config-pull.sequence.mmd
+apis:
+  - PATCH /v1/households/{hh}/controls (sys-07)
+  - MQTT config/v1/{deviceId}/notify (sys-08)
+  - GET /v1/devices/{deviceId}/config/current (sys-03 pull-fallback)
+externals: [MQTT]
+queues: []
+failure_paths:
+  - controls_validation_failed
+  - config_assembly_failed
+  - mqtt_push_unreachable_offline_fallback
+  - device_signature_verify_failed
+  - stale_version_rejected
+idempotency: ETag — If-Match on PATCH; config version monotonic
+retry: device pull-fallback on missed push (see sys-03 config-pull)
+timeout: 60s push attempt — 1h max stale window before pull
+status: final
+---
+%% DERIVED narrative — config flowing parent->device across 3 systems.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant ControlsService
+    participant ConfigService
+    participant MQTT
+    participant Device
+
+    ParentApp->>Gateway: PATCH controls (If-Match: etag) — sys-07 controls-update
+    Gateway->>ControlsService: forward
+    alt controls_validation_failed
+        ControlsService-->>ParentApp: 400 validation_error
+    else stale_version_rejected
+        ControlsService-->>ParentApp: 412 precondition_failed (ETag mismatch)
+    else accepted
+        ControlsService->>ConfigService: emit controls-changed event
+        ConfigService->>ConfigService: assemble + KMS-sign (sys-08 assembly-and-signing)
+        alt config_assembly_failed
+            ConfigService--xControlsService: KMS unavailable
+            Note over ConfigService: alert — controls accepted but config not built
+        else built
+            ConfigService->>MQTT: publish config/v1/{deviceId}/notify (sys-08 mqtt-push-and-fetch)
+            alt mqtt_push_unreachable_offline_fallback
+                MQTT--xDevice: offline — message retained — pull-fallback path
+                Device->>ConfigService: GET config/current (sys-03 config-pull, after reconnect)
+            else online
+                MQTT->>Device: notify (small payload)
+                Device->>ConfigService: GET config/current
+            end
+            ConfigService-->>Device: signed config blob + version
+            Device->>Device: verify signature
+            alt device_signature_verify_failed
+                Device->>Device: reject — keep prior config — alert telemetry
+            else accepted
+                Device->>Device: apply config — bump local version
+            end
+        end
+    end

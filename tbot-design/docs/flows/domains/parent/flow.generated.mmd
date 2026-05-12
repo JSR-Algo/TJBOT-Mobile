@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=a64610b0bee3. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
 %% domain: parent
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -6,24 +6,11 @@ flowchart TD
   subgraph Parent["Parent"]
     parent_gate(["Parent Gate"])
     parent_history["Past 30 Days"]
+    parent_locked_out(["Parent Gate Locked Out"])
     parent_safety["Safety & Privacy"]
     parent_settings["Parent Settings"]
     parent_summary["Parent Summary"]
     parent_today["Practiced Today"]
   end
-  parent_gate --> parent_summary
-  parent_history --> parent_summary
-  parent_safety --> parent_summary
-  parent_settings --> parent_safety
-  parent_settings --> parent_summary
-  parent_summary --> parent_history
-  parent_summary --> parent_safety
-  parent_summary --> parent_settings
-  parent_summary --> parent_today
-  parent_today --> parent_summary
   class parent_history,parent_safety,parent_settings,parent_summary,parent_today happy
-  class parent_gate edge
-
-%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
-%%   parent_gate -> home_hub_idle (home)
-%%   parent_summary -> home_hub_idle (home)
+  class parent_gate,parent_locked_out edge

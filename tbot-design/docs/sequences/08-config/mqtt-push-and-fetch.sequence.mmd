@@ -1,0 +1,58 @@
+---
+system: sys-08-config-fleet-management
+flow_id: mqtt-push-and-fetch
+surface: device
+spec_anchor: /software/systems/08-config-fleet-management#mqtt-integration
+actors: [ConfigService, MqttBroker, Device, PostgreSQL]
+apis:
+  - GET /v1/config/fetch
+  - POST /v1/config/applied
+externals: [MqttBroker]
+queues: []
+failure_paths:
+  - mqtt_push_failure
+  - device_offline_no_notify
+  - stale_config_on_device
+  - config_version_delta_check_fail
+idempotency: device compares config_version before fetch — older or equal version is ignored (race protection per plan §11)
+retry: device retries fetch within 5s + jitter; 6h poll fallback if MQTT missed
+timeout: 5s + jitter from notify to fetch
+status: final
+---
+%% HAND-CURATED. Race condition surfaced per plan §11: config version Δ check.
+sequenceDiagram
+    autonumber
+    participant ConfigService
+    participant MqttBroker
+    participant Device
+    participant PostgreSQL
+
+    ConfigService->>PostgreSQL: SELECT device_configs WHERE device_id (latest config_version)
+    PostgreSQL-->>ConfigService: {config_version, timestamp}
+    ConfigService->>MqttBroker: Publish device/{deviceId}/config/notify {config_version, timestamp} QoS 1 (max 128 bytes, retain=false)
+    alt mqtt_push_failure
+        MqttBroker--xConfigService: 5xx / throttle (rate limit 100msg/sec per cohort)
+        ConfigService->>ConfigService: log config_mqtt_push_failure_total — non-fatal, device catches up on 6h poll
+    end
+
+    alt device_offline_no_notify
+        Note over Device: device offline at publish time — catches up on next 6h periodic poll
+    else success
+        MqttBroker->>Device: deliver notification
+        Device->>Device: compare received config_version with local sys.last_config_version
+        alt config_version_delta_check_fail (same or older)
+            Note over Device: ignore — race protection against stale push on already-applied version
+        else newer
+            Device->>Device: schedule fetch within 5s + random jitter (avoid thundering herd)
+            Device->>ConfigService: GET /v1/config/fetch (mTLS) {X-Device-Id, X-Current-Config-Version}
+            ConfigService->>PostgreSQL: SELECT device_configs
+            PostgreSQL-->>ConfigService: {config_blob, config_signature, config_version}
+            ConfigService-->>Device: 200 {configVersion, schemaVersion, configSignature, configBlob}
+            Device->>Device: verify ECDSA signature (current_key → next_key fallback), apply config
+            Device->>ConfigService: POST /v1/config/applied {device_id, configVersion}
+            ConfigService->>PostgreSQL: UPDATE device_configs SET applied_at=now()
+            ConfigService-->>Device: 204
+        end
+    end
+
+    Note over ConfigService,PostgreSQL: stale_config_on_device tracked via reconciliation job (5min) · device_version Δ check prevents replay/double-apply on duplicate notify

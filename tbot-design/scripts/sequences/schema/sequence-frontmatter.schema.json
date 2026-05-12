@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tbot.local/schemas/sequence-frontmatter.schema.json",
+  "title": "Sequence Diagram Frontmatter",
+  "description": "YAML frontmatter for docs/sequences/<sys>/<flow>.sequence.mmd files. Required keys per plan §5; _cross/ variant additionally requires systems[] + derived_from[].",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "system",
+    "flow_id",
+    "surface",
+    "spec_anchor",
+    "actors",
+    "apis",
+    "externals",
+    "failure_paths",
+    "status"
+  ],
+  "properties": {
+    "system": {
+      "type": "string",
+      "description": "Owning system identifier (e.g. sys-01-identity-household-access) or '_cross' for cross-system narrative.",
+      "pattern": "^(sys-[0-9]{2}-[a-z][a-z0-9-]*|_cross)$"
+    },
+    "flow_id": {
+      "type": "string",
+      "description": "Short slug for this flow (e.g. login, token-refresh).",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[0-9]+)?$"
+    },
+    "surface": {
+      "type": "string",
+      "description": "Primary consumer surface for this flow.",
+      "enum": ["mobile", "device", "admin", "internal-RPC", "webhook-inbound", "cron", "factory", "CI", "multi"]
+    },
+    "spec_anchor": {
+      "type": "string",
+      "description": "Pointer to the owning system-spec section. Path or anchor form.",
+      "pattern": "^/?(software/systems/|docs/site/software/systems/)?[0-9]{2}-[a-z][a-z0-9-]*(\\.md)?(#[a-z0-9-]+)?$"
+    },
+    "actors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "apis": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "externals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "queues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "failure_paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "idempotency": { "type": "string" },
+    "retry": { "type": "string" },
+    "timeout": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["seed", "draft", "final"]
+    },
+    "systems": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^sys-[0-9]{2}-[a-z][a-z0-9-]*$"
+      }
+    },
+    "derived_from": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9]{2}-[a-z][a-z0-9-]*/[a-z][a-z0-9-]*\\.sequence\\.mmd$"
+      }
+    }
+  }
+}

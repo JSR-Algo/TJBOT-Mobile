@@ -1,0 +1,61 @@
+---
+system: sys-05-conversation-intelligence-and-safety
+flow_id: output-filter
+surface: internal-RPC
+spec_anchor: /software/systems/05-conversation-intelligence-and-safety#output-safety-filter
+actors: [SafetyService, BlocklistCache, FallbackTemplateStore]
+apis: []
+externals: []
+queues:
+  - tbot-safety-event
+failure_paths:
+  - hard_block_blocklist_or_pii_or_fear
+  - rewrite_attempt_still_unsafe
+  - response_too_long_after_truncate
+  - final_gate_invalid_schema
+idempotency: idempotent per (turnId, attempt_index) — re-running yields the same decision
+retry: 0 — single rewrite attempt allowed for soft checks; hard blocks go straight to fallback
+timeout: 500ms per-sentence — fail-closed (block) on filter unavailability
+status: final
+---
+%% HAND-AUTHORED — sys-05 §12 output safety filter (no sequenceDiagram in spec).
+sequenceDiagram
+    autonumber
+    participant SafetyService
+    participant BlocklistCache
+    participant FallbackTemplateStore
+
+    Note over SafetyService: LLM generated {textSegments, renderPlan, motionPlan}
+    SafetyService->>BlocklistCache: run 6 checks (blocklist, PII, fear, vocab, prompt-leak, length)
+    alt hard_block_blocklist_or_pii_or_fear
+        BlocklistCache-->>SafetyService: hit hard category
+        SafetyService-)SafetyService: emit tbot-safety-event safety.output_blocked
+        SafetyService->>FallbackTemplateStore: cascade lookup (exact -> broader-age -> generic_safe -> hardcoded)
+        FallbackTemplateStore-->>SafetyService: fallback template
+        SafetyService-->>SafetyService: return block_with_fallback
+    else rewrite_attempt_still_unsafe
+        BlocklistCache-->>SafetyService: soft check fail (vocab/prompt-leak/length)
+        SafetyService->>SafetyService: deterministic rewrite (synonyms, strip leak, truncate)
+        SafetyService->>BlocklistCache: re-check
+        BlocklistCache-->>SafetyService: still unsafe — promote to block
+        SafetyService->>FallbackTemplateStore: cascade lookup
+        FallbackTemplateStore-->>SafetyService: fallback template
+        SafetyService-->>SafetyService: return block_with_fallback policy_rewrite_failed
+    else response_too_long_after_truncate
+        BlocklistCache-->>SafetyService: length > 900 chars
+        SafetyService->>SafetyService: truncate at sentence boundary
+        SafetyService-->>SafetyService: still > 900 — fallback response_too_long
+        SafetyService->>FallbackTemplateStore: cascade lookup
+        FallbackTemplateStore-->>SafetyService: fallback template
+    else final_gate_invalid_schema
+        BlocklistCache-->>SafetyService: pass
+        SafetyService->>SafetyService: final gate — render plan, motion plan, segment ordering
+        Note over SafetyService: invalid scene/emotion enum — block
+        SafetyService->>FallbackTemplateStore: cascade lookup
+        FallbackTemplateStore-->>SafetyService: fallback template
+    else pass
+        BlocklistCache-->>SafetyService: pass all 6
+        SafetyService->>SafetyService: final gate OK
+        SafetyService-->>SafetyService: allow response
+    end
+    Note over SafetyService,FallbackTemplateStore: fail-closed — filter unavailable promotes to block

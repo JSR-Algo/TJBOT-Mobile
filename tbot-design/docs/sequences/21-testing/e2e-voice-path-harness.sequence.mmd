@@ -1,0 +1,86 @@
+---
+system: sys-21-integration-test-infrastructure
+flow_id: e2e-voice-path-harness
+surface: CI
+spec_anchor: /software/systems/21-integration-test-infrastructure#e2e-voice-path-harness
+actors: [CI, VoicePathRunner, DeviceSimulator, RealtimeService, ProviderMocks, SafetyService, ContentService, AssertionEngine]
+apis:
+  - WS /v1/realtime/session (device-side, mocked auth)
+  - POST /v1/test/scenario-load (harness internal)
+externals: [ProviderMocks]
+queues: []
+failure_paths:
+  - scenario_load_failed
+  - device_simulator_boot_timeout
+  - ws_handshake_failed
+  - safety_assertion_mismatch
+  - transcript_assertion_mismatch
+  - latency_budget_exceeded
+  - provider_mock_unreachable
+idempotency: scenario_id + run_id deterministic
+retry: CI re-run on flake; harness itself does not retry
+timeout: 15 min per full run
+status: final
+---
+%% HAND-CURATED. CI-driven E2E voice-path harness orchestrating sys-03/04/05/06/18 with mocks.
+sequenceDiagram
+    autonumber
+    participant CI
+    participant VoicePathRunner
+    participant DeviceSimulator
+    participant ProviderMocks
+    participant RealtimeService
+    participant SafetyService
+    participant ContentService
+    participant AssertionEngine
+
+    CI->>VoicePathRunner: launch (scenario.yaml, baseline.json)
+    VoicePathRunner->>VoicePathRunner: ScenarioLoader.load(scenario.yaml)
+    alt scenario_load_failed
+        VoicePathRunner-->>CI: exit 2 — schema invalid
+    else loaded
+        VoicePathRunner->>ProviderMocks: configure (stt, llm, tts fixtures, latency)
+        VoicePathRunner->>DeviceSimulator: spawn (childProfile, configOverrides)
+        DeviceSimulator->>DeviceSimulator: boot + load mock cert
+        alt device_simulator_boot_timeout
+            DeviceSimulator-->>VoicePathRunner: 60s timeout — kill
+            VoicePathRunner-->>CI: exit 3
+        else booted
+            DeviceSimulator->>RealtimeService: WS /v1/realtime/session (mock JWT)
+            alt ws_handshake_failed
+                RealtimeService-->>DeviceSimulator: 4001 close
+                VoicePathRunner-->>CI: exit 4
+            else open
+                loop per scenario turn
+                    DeviceSimulator->>RealtimeService: audio.chunk (fixture wav, 20ms frames)
+                    RealtimeService->>ProviderMocks: stt.transcribe (mocked transcript)
+                    RealtimeService->>SafetyService: input filter
+                    SafetyService-->>RealtimeService: pass — block — redirect
+                    alt safety branch matches expected
+                        RealtimeService->>ContentService: retrieve relevant pack
+                        RealtimeService->>ProviderMocks: llm.generate
+                        RealtimeService->>SafetyService: output filter
+                        RealtimeService->>ProviderMocks: tts.synthesize
+                        RealtimeService-->>DeviceSimulator: audio.response frames
+                    else mismatch
+                        Note over SafetyService,AssertionEngine: safety_assertion_mismatch — capture diff
+                    end
+                    DeviceSimulator->>VoicePathRunner: turn.transcript + timing
+                    VoicePathRunner->>AssertionEngine: evaluate(transcript, safety, latency, response)
+                end
+                AssertionEngine->>AssertionEngine: aggregate per-stage latency vs baseline
+                alt latency_budget_exceeded
+                    AssertionEngine-->>VoicePathRunner: fail — p95 over 2500ms
+                    VoicePathRunner-->>CI: exit 5
+                else transcript_assertion_mismatch
+                    AssertionEngine-->>VoicePathRunner: fail — expected vs actual diff
+                    VoicePathRunner-->>CI: exit 6
+                else pass
+                    AssertionEngine-->>VoicePathRunner: report (JUnit XML + session trace)
+                    VoicePathRunner-->>CI: exit 0
+                end
+            end
+        end
+    end
+
+    Note over ProviderMocks: provider_mock_unreachable — health-check fails before scenario start, exit 7.

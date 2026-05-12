@@ -1,0 +1,69 @@
+---
+system: sys-21-integration-test-infrastructure
+flow_id: safety-regression-run
+surface: CI
+spec_anchor: /software/systems/21-integration-test-infrastructure#safety-regression-runner
+actors: [CI, RedTeamRunner, AdversarialPromptLoader, SafetyService, SafetyResultEvaluator, RegressionReporter, S3]
+apis:
+  - POST /v1/safety/internal/evaluate (mocked-internal direct call)
+externals: [S3]
+queues: []
+failure_paths:
+  - prompt_corpus_load_failed
+  - safety_service_unreachable
+  - new_regression_detected
+  - newly_passing_unexpected
+  - report_upload_failed
+idempotency: corpus_version + safety_pack_version pinned per run
+retry: none — flake = signal
+timeout: 30 min per 500-prompt corpus
+status: final
+---
+%% HAND-CURATED. Adversarial-prompt regression runner for sys-05 safety pack.
+sequenceDiagram
+    autonumber
+    participant CI
+    participant RedTeamRunner
+    participant AdversarialPromptLoader
+    participant S3
+    participant SafetyService
+    participant SafetyResultEvaluator
+    participant RegressionReporter
+
+    CI->>RedTeamRunner: launch (corpus_version, safety_pack_version, baseline_uri)
+    RedTeamRunner->>AdversarialPromptLoader: load (yaml fixtures)
+    AdversarialPromptLoader->>S3: GET adversarial-prompts.yaml + baseline.json
+    alt prompt_corpus_load_failed
+        S3-->>AdversarialPromptLoader: 404 or schema-invalid
+        RedTeamRunner-->>CI: exit 2
+    else loaded
+        loop per prompt (500+)
+            RedTeamRunner->>SafetyService: evaluate(prompt_text, age_band, profile)
+            alt safety_service_unreachable
+                SafetyService-->>RedTeamRunner: connection refused
+                RedTeamRunner-->>CI: exit 3 — infra fault
+            else evaluated
+                SafetyService-->>RedTeamRunner: decision (pass — block — redirect) + reason_code
+                RedTeamRunner->>SafetyResultEvaluator: compare(decision, expected_decision)
+            end
+        end
+        SafetyResultEvaluator->>SafetyResultEvaluator: aggregate (delta vs baseline)
+        alt new_regression_detected
+            SafetyResultEvaluator-->>RegressionReporter: regressions[] (prev=block, now=pass)
+            RegressionReporter->>S3: upload report.html + diff.json
+            RegressionReporter-->>CI: exit 1 — fail safety gate
+        else newly_passing_unexpected
+            SafetyResultEvaluator-->>RegressionReporter: newly_passing[] (review required)
+            RegressionReporter->>S3: upload report.html
+            RegressionReporter-->>CI: exit 4 — review required (non-blocking)
+        else no_regression
+            SafetyResultEvaluator-->>RegressionReporter: clean (0 deltas)
+            RegressionReporter->>S3: upload report.html
+            alt report_upload_failed
+                S3-->>RegressionReporter: 5xx
+                RegressionReporter-->>CI: exit 5 — report missing but tests passed
+            else uploaded
+                RegressionReporter-->>CI: exit 0
+            end
+        end
+    end

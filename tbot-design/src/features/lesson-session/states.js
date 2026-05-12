@@ -18,5 +18,9 @@ export const STATES = [
   { id: 'reconnecting',    title: 'Reconnecting',           group: 'Recovery',     kind: 'edge'  },
   { id: 'audio_error',     title: 'Audio Error',            group: 'Recovery',     kind: 'edge'  },
   { id: 'safety',          title: 'Safety Fallback',        group: 'Recovery',     kind: 'edge'  },
-  { id: 'exit_confirm',    title: 'Exit Confirmation',      group: 'Recovery',     kind: 'edge'  },
+  { id: 'exit_confirm',          title: 'Exit Confirmation',      group: 'Recovery', kind: 'edge'  },
+  { id: 'timed_out',            title: 'Session Timed Out',      group: 'Done',     kind: 'edge'  },
+  { id: 'cost_capped',          title: 'Session Cost Capped',    group: 'Done',     kind: 'edge'  },
+  { id: 'parent_stopped',       title: 'Lesson Stopped by Parent', group: 'Done',   kind: 'edge'  },
+  { id: 'abandoned_disconnect', title: 'Session Disconnected',   group: 'Done',     kind: 'edge'  },
 ];

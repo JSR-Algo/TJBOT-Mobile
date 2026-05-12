@@ -1,0 +1,82 @@
+---
+system: sys-17-api-gateway-rate-limiting
+flow_id: request-middleware-chain
+surface: internal-RPC
+spec_anchor: /software/systems/17-api-gateway-rate-limiting#3-1-middleware-chain
+actors: [ParentApp, Gateway, Redis, BackendService]
+apis:
+  - GET /health
+  - POST /v1/auth/login
+  - GET /v1/*
+externals: []
+queues: []
+failure_paths:
+  - ip_blocked
+  - cors_denied
+  - body_too_large
+  - api_version_removed
+  - auth_failed
+  - rate_limited
+  - unhandled_internal_error
+idempotency: assigns X-Request-Id (UUID v4) if absent — all downstream services propagate it for tracing + dedup
+retry: caller-side honors 429 Retry-After header — never retry 403/410/413 (deterministic)
+timeout: middleware budget <10ms (Redis ops), full chain p99 <50ms before handler dispatch
+status: final
+---
+%% HAND-CURATED. Represents the 10-step middleware chain (sys-17 §3.1) — every inbound HTTP request passes through this exact order before reaching the route handler.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant Redis
+    participant BackendService
+
+    ParentApp->>Gateway: HTTP request (any /v1/* path)
+    Gateway->>Gateway: step 1 — request-id — assign X-Request-Id if absent
+    Gateway->>Redis: step 2 — ip-blocklist SISMEMBER ip_blocklist
+    alt ip_blocked
+        Redis-->>Gateway: member
+        Gateway-->>ParentApp: 403 IP_BLOCKED
+    else clear
+        Redis-->>Gateway: not-member
+        Gateway->>Gateway: step 3 — cors — Origin allowlist check
+        alt cors_denied
+            Gateway-->>ParentApp: 403 CORS_DENIED
+        else allowed
+            Gateway->>Gateway: step 4 — body-limit — reject oversized payload
+            alt body_too_large
+                Gateway-->>ParentApp: 413 PAYLOAD_TOO_LARGE
+            else within budget
+                Gateway->>Gateway: step 5 — api-version — extract /v{N}/, set Sunset header if deprecated
+                alt api_version_removed
+                    Gateway-->>ParentApp: 410 Gone
+                else supported
+                    Gateway->>Gateway: step 6 — auth-resolver — route to JWT / mTLS / api_key / none by path
+                    alt auth_failed
+                        Note over Gateway: emit auth_failure event to SQS tbot-security-events (sys-13)
+                        Gateway-->>ParentApp: 401 / 403
+                    else authenticated
+                        Gateway->>Redis: step 7 — rate-limiter — sliding-window Lua atomic check (see rate-limit-violation-event flow)
+                        alt rate_limited
+                            Gateway-->>ParentApp: 429 + Retry-After
+                        else under limit
+                            Gateway->>Gateway: step 8 — request-logger start — emit access-log start line
+                            Gateway->>BackendService: dispatch to route handler
+                            alt unhandled_internal_error
+                                BackendService-->>Gateway: throws
+                                Gateway->>Gateway: step 10 — error-formatter — shape to standard error envelope
+                                Gateway->>Gateway: step 9 — request-logger complete — emit access-log with status
+                                Gateway-->>ParentApp: 5xx standardized error
+                            else success
+                                BackendService-->>Gateway: handler response
+                                Gateway->>Gateway: step 9 — request-logger complete — emit access-log with status
+                                Gateway-->>ParentApp: 2xx response + rate-limit headers
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    Note over ParentApp,BackendService: chain short-circuits on first reject — no middleware skipped — X-Request-Id propagates to all downstream services

@@ -1,0 +1,32 @@
+// mtls_certificates — device mTLS certificate registry (fingerprint + lifecycle).
+// Source: docs/site/software/systems/13-security-secrets-management.md §3.1 device_certificates + §7 cert lifecycle.
+// Plan §3 manifest names this `mtls_certificates`.
+
+enum mtls_certificate_status {
+  provisioned
+  active
+  revoked
+  expired
+}
+
+Table mtls_certificates {
+  id                          uuid                       [pk]
+  device_id                   uuid                       [not null, note: 'cross-domain ref → DeviceService (sys-02). Lane C owns devices.id']
+  certificate_fingerprint     varchar(128)               [not null]
+  status                      mtls_certificate_status    [not null, default: 'provisioned']
+  issued_at                   timestamptz                [not null]
+  expires_at                  timestamptz                [not null]
+  first_seen_at               timestamptz                [note: 'set on first successful mTLS handshake — pinpoints provisioning → activation']
+  revoked_at                  timestamptz
+  revoke_reason               varchar(120)
+  created_at                  timestamptz                [not null, default: `now()`]
+  updated_at                  timestamptz                [not null, default: `now()`]
+
+  Indexes {
+    (certificate_fingerprint) [unique, name: 'idx_mtls_certificates_fingerprint_unique']
+    (device_id, status) [name: 'idx_mtls_certificates_device_status', note: 'hot query: docs/sequences/13-security/cert-verification-and-revocation.sequence.mmd — list active certs per device']
+    (expires_at) [name: 'idx_mtls_certificates_expires_at', note: 'partial-index condition: status=active (expiry sweeper)']
+  }
+}
+
+// Phase 3 cross-folder ref: mtls_certificates.device_id > devices.id (Lane C)

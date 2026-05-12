@@ -1,5 +1,9 @@
 # TBOT Mobile (tbot-design) — Use Case Diagram
 
+> **DEPRECATED for active authoring.** See `docs/usecases/` for the active use-case authoring (per-domain bodies, backend mapping, edge cases, cross-domain edges, hot-UC dossiers). This file is preserved as the **historical canonical UC ID source** per ADR-0005 D2 — every `UC-LL-NN` ID below remains the anchor key in `docs/usecases/reference/use-case-index.json`.
+>
+> Updates to UC IDs or the §2 catalog still happen here (single source); per-UC content updates happen in the per-domain `docs/usecases/domains/<d>/use-cases.md` files.
+
 Source: React/JSX prototype in `src/features/`, `src/services/`, `src/store/`.
 Method: code-evidence only. No invented features. Anything ambiguous is marked.
 

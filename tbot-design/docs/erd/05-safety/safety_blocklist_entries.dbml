@@ -1,0 +1,47 @@
+// safety_blocklist_entries — append-only catalog of blocklist patterns, grouped by version.
+// Source: sys-05 §4 blocklist_versions DDL (per-version JSON), §8 blocklist categories + severity actions.
+// The `blocklist_versions` row groups many entries; we expand the JSON blob into a relational table
+// for queryability (which patterns matched? what category? which version published?). Append-only.
+
+enum blocklist_severity {
+  hard_block
+  soft_block
+  block_with_redirect
+  family_configurable
+}
+
+enum blocklist_entry_origin {
+  curated
+  auto_promoted_from_event
+  vendor_seed
+}
+
+Table safety_blocklist_entries {
+  id                       uuid                    [pk]
+  version_no               integer                 [not null, note: 'monotonic — increments on every publish; matches blocklist_versions.version']
+  locale                   varchar(16)             [not null]
+  category                 varchar(64)             [not null, note: 'violence | adult_content | self_harm | substance_use | horror_scary | bullying | dating_romance | profanity | medical_advice | politics | financial | religion_proselytizing']
+  pattern                  text                    [not null, note: 'regex source — validated for catastrophic backtracking at publish time']
+  pattern_sha256           varchar(64)             [not null, note: 'hash of (pattern, locale) — uniqueness primitive']
+  severity                 blocklist_severity      [not null]
+  redirect_category        varchar(64)             [note: 'when severity=block_with_redirect — names the redirect topic (e.g. medical → "ask a grown-up")']
+  family_configurable_key  varchar(64)             [note: 'when severity=family_configurable — names the parent toggle (e.g. religion_proselytizing → families.controls.allow_religion)']
+  max_pattern_steps        integer                 [not null, note: 'NFA worst-case steps against 10k-char adversarial input — sys-05 §4 publish gate']
+  origin                   blocklist_entry_origin  [not null]
+  notes                    text
+  created_by_admin_user_id uuid                    [note: 'cross-domain ref → AdminAuthService — Phase 3 reconciles']
+  published_at             timestamptz             [note: 'NULL until the parent blocklist_versions row is published']
+  retired_at               timestamptz             [note: 'set when superseded by next version']
+  created_at               timestamptz             [not null, default: `now()`]
+  updated_at               timestamptz             [not null, default: `now()`]
+
+  Indexes {
+    (pattern_sha256, locale, version_no) [unique, name: 'idx_safety_blocklist_entries_pattern_locale_version_unique']
+    (version_no, locale, category) [name: 'idx_safety_blocklist_entries_version_locale_category', note: 'hot query: docs/sequences/05-safety/input-filter.sequence.mmd — BlocklistCache loads all patterns for active version+locale at boot']
+    (category, severity) [name: 'idx_safety_blocklist_entries_category_severity', note: 'hot query: docs/sequences/05-safety/input-filter.sequence.mmd — per-category severity stats + admin diff between versions']
+    (retired_at) [name: 'idx_safety_blocklist_entries_retired_at']
+  }
+}
+
+// No cross-domain FK on this side — created_by_admin_user_id is a cross-domain ref declared in
+// 12-admin/admin_users.dbml (owning side) at Phase 3.

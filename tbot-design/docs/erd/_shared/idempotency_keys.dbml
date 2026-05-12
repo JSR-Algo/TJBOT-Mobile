@@ -1,0 +1,32 @@
+// idempotency_keys — platform-wide request idempotency dedup.
+// Per plan §3 Q-5: promoted to _shared/ (was originally listed under 17-gateway).
+// Every service that accepts client-supplied X-Request-Id reads + writes here.
+
+enum idempotency_key_status {
+  in_flight
+  succeeded
+  failed
+}
+
+Table idempotency_keys {
+  id              uuid                       [pk]
+  request_key     varchar(120)               [not null, note: 'client-supplied X-Request-Id; scoped by service for collision avoidance']
+  service_name    varchar(64)                [not null, note: 'owning service writing this row, e.g. IdentityService, BillingService']
+  endpoint        varchar(160)               [not null, note: 'logical endpoint slug, e.g. POST_/v1/auth/signup']
+  actor_type      varchar(40)
+  actor_id        varchar(120)
+  status          idempotency_key_status     [not null, default: 'in_flight']
+  response_status integer                    [note: 'HTTP status of stored response (only set when status = succeeded | failed)']
+  response_body   jsonb                      [note: 'cached response body for replay; redacted per service convention']
+  expires_at      timestamptz                [not null, note: 'cleanup boundary — typically created_at + 24h']
+  completed_at    timestamptz
+  created_at      timestamptz                [not null, default: `now()`]
+  updated_at      timestamptz                [not null, default: `now()`]
+
+  Indexes {
+    (service_name, request_key) [unique, name: 'idx_idempotency_keys_service_request_unique', note: 'hot query: every idempotent endpoint reads by (service, key) on entry']
+    (expires_at) [name: 'idx_idempotency_keys_expires_at', note: 'partial-index condition: status != in_flight (sweep)']
+  }
+}
+
+// No Ref: lines — actor_id is polymorphic (user / admin / device / service).

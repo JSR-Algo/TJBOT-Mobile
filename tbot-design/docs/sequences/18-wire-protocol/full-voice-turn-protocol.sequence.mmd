@@ -1,0 +1,60 @@
+---
+system: sys-18-wire-protocol-domain-types
+flow_id: full-voice-turn-protocol
+surface: device
+spec_anchor: /software/systems/18-wire-protocol-domain-types#5-2-message-type-registry
+actors: [Device, RealtimeService]
+apis: []
+externals: []
+queues: []
+failure_paths:
+  - audio_seq_out_of_order
+  - frame_too_large
+  - heartbeat_missed
+  - error_frame_received
+  - reconnect_window_expired
+idempotency: sequence_id strictly monotonic per connection — out-of-order AUDIO_CHUNK triggers E-RT-206; reconnect within 10s same device_session_id resumes session
+retry: device may reconnect within 10s with same device_session_id; PING/PONG heartbeat 15s/5s, 3 missed PONGs terminate
+timeout: PONG 5s — reconnect window 10s — max frame 65536 bytes — max audio payload 4096 bytes per chunk
+status: final
+---
+%% HAND-AUTHORED — sys-18 §5.2 message registry + §5.5 protocol rules (spec narrative only; no full turn sequenceDiagram).
+sequenceDiagram
+    autonumber
+    participant Device
+    participant RealtimeService
+
+    Note over Device,RealtimeService: session already established (see ws-session-handshake)
+    alt audio_seq_out_of_order
+        Device->>RealtimeService: AUDIO_CHUNK (0x10) seq=N (non-monotonic)
+        RealtimeService-->>Device: ERROR (0xE0) E-RT-206 audio_seq_out_of_order retryable=false
+    else frame_too_large
+        Device->>RealtimeService: AUDIO_CHUNK (0x10) payload > 4096 bytes
+        RealtimeService-->>Device: ERROR (0xE0) E-RT-205 frame_too_large
+    else heartbeat_missed
+        RealtimeService-->>Device: PING (0xF0) every 15s
+        Note over Device: 3 missed PONGs (15s window each)
+        RealtimeService-->>Device: SESSION_CLOSE (0x70) end_reason=timeout
+    else reconnect_window_expired
+        Note over Device,RealtimeService: WS dropped mid-turn — device retries connect with same device_session_id
+        Device->>RealtimeService: GET /v1/realtime/connect (after 12s)
+        RealtimeService-->>Device: 401 reconnect window expired (>10s)
+    else error_frame_received
+        Device->>RealtimeService: AUDIO_CHUNK (0x10) seq=N
+        RealtimeService-->>Device: ERROR (0xE0) {code, message, retryable}
+        Device->>RealtimeService: backoff or SESSION_CLOSE (0x70) if non-retryable
+    else success
+        Device->>RealtimeService: AUDIO_CHUNK (0x10) seq=N streaming (max 4096B per chunk)
+        RealtimeService-->>Device: STT_PARTIAL (0x20)
+        Device->>RealtimeService: AUDIO_END (0x11)
+        RealtimeService-->>Device: STT_FINAL (0x21)
+        RealtimeService-->>Device: LLM_TOKEN (0x30) stream
+        RealtimeService-->>Device: LLM_DONE (0x31)
+        RealtimeService-->>Device: TTS_AUDIO (0x40) stream (max 4096B per chunk)
+        RealtimeService-->>Device: EXPRESSION_SYNC (0x50) interleaved
+        RealtimeService-->>Device: MOTION_CUE (0x51) interleaved
+        RealtimeService-->>Device: TTS_DONE (0x41)
+        RealtimeService-->>Device: PING (0xF0)
+        Device->>RealtimeService: PONG (0xF1)
+    end
+    Note over Device,RealtimeService: 10-byte header — protocol_version, message_type, payload_length uint32 BE, sequence_id uint32 BE — max frame 65536 bytes

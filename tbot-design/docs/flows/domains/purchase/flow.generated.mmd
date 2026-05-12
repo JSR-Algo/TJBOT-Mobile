@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=a64610b0bee3. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
 %% domain: purchase
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -17,33 +17,5 @@ flowchart TD
     pr_shipping["Buy · Shipping & delivery"]
     pr_subs["Buy · Course subscription"]
   end
-  pr_activate --> pr_arrived
-  pr_activate --> pr_first_course
-  pr_arrived --> pr_activate
-  pr_bundle --> pr_included
-  pr_bundle --> pr_subs
-  pr_checkout --> pr_confirm
-  pr_checkout --> pr_privacy
-  pr_confirm --> pr_shipping
-  pr_how --> pr_included
-  pr_how --> pr_intro
-  pr_included --> pr_bundle
-  pr_included --> pr_how
-  pr_intro --> pr_how
-  pr_intro --> pr_privacy
-  pr_privacy --> pr_checkout
-  pr_privacy --> pr_subs
-  pr_shipping --> pr_arrived
-  pr_shipping --> pr_confirm
-  pr_subs --> pr_bundle
-  pr_subs --> pr_privacy
   class pr_activate,pr_arrived,pr_bundle,pr_confirm,pr_first_course,pr_how,pr_included,pr_intro,pr_privacy,pr_shipping,pr_subs happy
   class pr_checkout edge
-
-%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
-%%   pr_first_course -> cl_added (course-library)
-%%   pr_first_course -> cl_library (course-library)
-%%   pr_arrived -> dv_home (device)
-%%   pr_confirm -> dv_home (device)
-%%   pr_intro -> dv_home (device)
-%%   pr_shipping -> dv_home (device)

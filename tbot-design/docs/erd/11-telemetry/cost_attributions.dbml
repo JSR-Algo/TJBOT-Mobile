@@ -1,0 +1,39 @@
+// cost_attributions — per-session unit-economics breakdown.
+// Spec calls this `cost_attribution`; ERD-level name `cost_attributions` for
+// pluralisation consistency with neighbours.
+// Polymorphic source: source_kind + source_id allow this row to attribute cost to a
+// session OR to a non-session event (e.g. provider failover overhead, content prebuild).
+// Source: docs/site/software/systems/11-telemetry-audit-cost.md §Cost Attribution.
+
+enum cost_attribution_source_kind {
+  session
+  telemetry_event
+  ota_assignment
+  daily_aggregate
+}
+
+Table cost_attributions {
+  id                  uuid                            [pk]
+  source_kind         cost_attribution_source_kind    [not null, default: 'session']
+  source_id           uuid                            [not null, note: 'polymorphic — no FK by design; pairs with source_kind. For session: sessions.id (sys-04); for telemetry_event: telemetry_events.id; for ota_assignment: ota_assignments.id']
+  session_id          uuid                            [note: 'denormalised back-reference when source_kind=session — eases hot query path']
+  device_id           uuid                            [not null, note: 'cross-domain ref → DeviceService']
+  household_id        uuid                            [not null, note: 'cross-domain ref → IdentityService']
+  attribution_date    timestamptz                     [not null, note: 'date for daily-aggregate join (UTC midnight start of day)']
+  turn_count          integer                         [not null, default: 0]
+  stt_cost_cents      bigint                          [not null, default: 0, note: 'money: bigint cents — per CONVENTIONS §5 (avoid numeric/decimal/float for money)']
+  llm_cost_cents      bigint                          [not null, default: 0]
+  tts_cost_cents      bigint                          [not null, default: 0]
+  infra_cost_cents    bigint                          [not null, default: 0]
+  total_cost_cents    bigint                          [not null, default: 0]
+  rate_card_id        uuid                            [not null, note: 'pointer at the cost_rate_card row in effect at compute time — sys-11 internal table']
+  computed_at         timestamptz                     [not null, default: `now()`]
+  created_at          timestamptz                     [not null, default: `now()`]
+  updated_at          timestamptz                     [not null, default: `now()`]
+
+  Indexes {
+    (source_kind, source_id) [unique, name: 'idx_cost_attributions_source_unique', note: 'spec §Cost Attribution Tables: UNIQUE(session_id) — generalised here to polymorphic source key']
+    (device_id, attribution_date) [name: 'idx_cost_attributions_device_date', note: 'hot query: docs/sequences/11-telemetry/session-cost-attribution.sequence.mmd — daily aggregation']
+    (household_id, attribution_date) [name: 'idx_cost_attributions_household_date', note: 'hot query: docs/sequences/11-telemetry/session-cost-attribution.sequence.mmd — top-N households dashboard']
+  }
+}

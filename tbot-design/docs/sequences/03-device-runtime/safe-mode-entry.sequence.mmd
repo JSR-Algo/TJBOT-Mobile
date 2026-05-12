@@ -1,0 +1,60 @@
+---
+system: sys-03-device-runtime-local-interaction
+flow_id: safe-mode-entry
+surface: device
+spec_anchor: /software/systems/03-device-runtime-local-interaction#failure-handling
+actors: [Device, SafetySupervisor, ConfigService]
+apis:
+  - POST /v1/devices/heartbeat
+externals: []
+queues: []
+failure_paths:
+  - reboot_storm
+  - thermal_critical
+  - heap_below_floor
+  - audio_overrun_repeated
+  - watchdog_near_miss_persistent
+idempotency: SAFE_MODE entry sets safe_mode_until NVS marker — survives reboot; cleared only on remote recovery
+retry: heartbeat continues (lower-priority, fault flag set); no realtime session attempts
+timeout: supervisor watchdog 1000ms
+status: final
+---
+%% HAND-CURATED. Per sys-03 §11.1 + §4.3 — supervisor task (priority 24) is only task that may force controlled reboot.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant SafetySupervisor
+    participant ConfigService
+
+    Note over Device,SafetySupervisor: ANY STATE — crash/thermal/heap/peripheral failure detected
+    SafetySupervisor->>SafetySupervisor: classify fault severity (info | warning | critical)
+    alt reboot_storm (E-BOT-801, boot_fail_window >= 3 in 15min)
+        SafetySupervisor->>Device: skip normal startup at next boot, display support code
+    else thermal_critical (E-THM-601)
+        SafetySupervisor->>Device: stop motion + audio amp boost, monitor temperature
+    else heap_below_floor (E-MEM-701)
+        SafetySupervisor->>Device: disable non-essential render, controlled reboot if unrecovered
+    else audio_overrun_repeated (E-AUD-102, 5 in 10min)
+        SafetySupervisor->>Device: increment counter — 3 occurrences in one boot → SAFE_MODE
+    else watchdog_near_miss_persistent
+        SafetySupervisor->>Device: restart capture pipeline — reboot after 3 consecutive
+    end
+
+    SafetySupervisor->>Device: transition state=SAFE_MODE — set safe_mode_until NVS marker
+    Device->>Device: display support scene with short error token
+    Device->>Device: allow only heartbeat + diagnostics + config pull (no realtime, no wake)
+
+    Device->>ConfigService: POST /v1/devices/heartbeat {runtime.state="SAFE_MODE", faults.lastFaultCode}
+    ConfigService-->>Device: 204
+    Note over ConfigService: cloud fleet alerts fire if safe-mode entry rate > 1% over 30min
+
+    loop job_safe_mode_exit_check every 10min
+        Device->>Device: re-evaluate health (heap recovered, thermal cleared, no fault burst)
+        alt remote_recovery_or_reboot
+            Device->>Device: clear safe_mode_until, reboot → state=BOOTING
+        else stay
+            Device->>Device: remain SAFE_MODE, emit telemetry
+        end
+    end
+
+    Note over Device,ConfigService: only safety supervisor may force controlled reboot · support bundle assembled without raw audio

@@ -1,0 +1,76 @@
+---
+system: sys-13-security-secrets-management
+flow_id: cert-verification-and-revocation
+surface: internal-RPC
+spec_anchor: /software/systems/13-security-secrets-management#certificate-verification
+actors: [Device, RealtimeService, CertificateVerifier, Redis, PostgreSQL, AdminConsole, DeviceService]
+apis:
+  - GET /v1/realtime/connect
+externals: []
+queues: []
+failure_paths:
+  - cert_revoked_redis_hit
+  - cert_not_in_postgres
+  - cert_device_id_mismatch
+  - cert_expired
+  - cert_status_provisioned_to_active_failure
+idempotency: status transition provisioned→active is one-shot on first successful handshake; revocation idempotent (status='revoked' is terminal)
+retry: device retries on TLS reject only after factory-reset (rerun manufacturing)
+timeout: 50ms p99 cert verification (5ms Redis fast-path)
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant RealtimeService
+    participant CertificateVerifier
+    participant Redis
+    participant PostgreSQL
+    participant AdminConsole
+    participant DeviceService
+
+    Device->>RealtimeService: TLS ClientHello + certificate (mTLS)
+    RealtimeService->>CertificateVerifier: verify(cert)
+    CertificateVerifier->>Redis: SISMEMBER revoked_certs cert_fingerprint
+    alt cert_revoked_redis_hit
+        Redis-->>CertificateVerifier: 1 (revoked)
+        CertificateVerifier-->>RealtimeService: REJECT
+        RealtimeService--xDevice: TLS handshake fails
+    else not_in_revoked_set
+        Redis-->>CertificateVerifier: 0
+        CertificateVerifier->>PostgreSQL: SELECT * FROM device_certificates WHERE certificate_fingerprint=$1 AND device_id=$2
+        alt cert_not_in_postgres
+            PostgreSQL-->>CertificateVerifier: 0 rows
+            CertificateVerifier-->>RealtimeService: REJECT
+        else cert_device_id_mismatch
+            PostgreSQL-->>CertificateVerifier: row with different device_id
+            CertificateVerifier-->>RealtimeService: REJECT
+        else cert_expired
+            PostgreSQL-->>CertificateVerifier: expires_at < now()
+            CertificateVerifier-->>RealtimeService: REJECT
+        else first_handshake (status='provisioned')
+            PostgreSQL-->>CertificateVerifier: status='provisioned'
+            CertificateVerifier->>PostgreSQL: UPDATE device_certificates SET status='active', first_seen_at=now()
+            alt cert_status_provisioned_to_active_failure
+                PostgreSQL--xCertificateVerifier: deadlock or unique violation
+                CertificateVerifier-->>RealtimeService: REJECT, emit security event
+            else success
+                CertificateVerifier-->>RealtimeService: ALLOW
+            end
+        else status_active
+            CertificateVerifier-->>RealtimeService: ALLOW
+        end
+    end
+
+    Note over AdminConsole,DeviceService: Revocation trigger — admin action, device anomaly, automated detection (CertAnomalyDetector)
+    AdminConsole->>DeviceService: POST /admin/devices/:deviceId/revoke-cert {reason}
+    DeviceService->>PostgreSQL: UPDATE device_certificates SET status='revoked', revoked_at=now(), revoked_by, revocation_reason
+    DeviceService->>Redis: SADD revoked_certs cert_fingerprint
+    DeviceService->>Redis: PUBLISH device_disconnect {device_id} (sys-04 orchestrator terminates active WS)
+    DeviceService->>PostgreSQL: INSERT security_events {event_type='cert_revoked', severity='warning'}
+    DeviceService-->>AdminConsole: 204
+
+    Note over Device: next connection attempt receives TLS reject → enters local-only mode until factory-reset + re-provision
+
+    Note over Device,PostgreSQL: verification p99 <50ms · Redis fast-path <5ms · revocation propagation via Redis pub/sub + revoked_certs set

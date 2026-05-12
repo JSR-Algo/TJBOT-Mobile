@@ -1,0 +1,71 @@
+---
+system: sys-09-ota-release-management
+flow_id: upload-and-signing
+surface: admin
+spec_anchor: /software/systems/09-ota-release-management#upload-and-signing-flow-admin
+actors: [AdminConsole, OtaService, S3, KMS, PostgreSQL]
+apis:
+  - POST /admin/ota/upload
+  - POST /admin/ota/:id/stage
+externals: [S3, KMS]
+queues: []
+failure_paths:
+  - invalid_semver
+  - version_already_exists
+  - binary_too_large
+  - elf_header_invalid
+  - kms_signing_failure
+  - s3_upload_failure
+idempotency: firmware_releases.version unique — duplicate POST /admin/ota/upload with same version returns 409
+retry: admin retries on 5xx with backoff
+timeout: 60s p99 upload (MAX_BINARY_SIZE 32MB)
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant AdminConsole
+    participant OtaService
+    participant S3
+    participant KMS
+    participant PostgreSQL
+
+    AdminConsole->>OtaService: POST /admin/ota/upload (multipart binary, version, hw_revisions[], release_notes)
+    alt invalid_semver
+        OtaService-->>AdminConsole: 422 invalid_semver
+    else version_already_exists
+        OtaService->>PostgreSQL: SELECT firmware_releases WHERE version
+        OtaService-->>AdminConsole: 409 version_already_exists
+    else binary_too_large (> 32MB)
+        OtaService-->>AdminConsole: 413 binary_too_large
+    else elf_header_invalid
+        OtaService-->>AdminConsole: 422 elf_header_invalid
+    else success
+        OtaService->>OtaService: compute SHA-256 of uncompressed binary
+        OtaService->>OtaService: gzip compress
+        OtaService->>S3: PutObject (KMS encrypted, key=firmware/{version}/binary.gz)
+        alt s3_upload_failure
+            S3--xOtaService: 5xx
+            OtaService-->>AdminConsole: 502 s3_upload_failure
+        else success
+            S3-->>OtaService: ETag
+        end
+
+        OtaService->>OtaService: build manifest {version, hw_revisions, binary_url, binary_sha256, binary_size_bytes, min_battery_percent, min_rssi_dbm}
+        OtaService->>KMS: Sign manifest with ECDSA_SHA_256 (OTA signing key)
+        alt kms_signing_failure
+            KMS--xOtaService: 5xx / throttle
+            OtaService-->>AdminConsole: 503 kms_signing_failure (retry)
+        else success
+            KMS-->>OtaService: DER signature (base64)
+        end
+
+        OtaService->>S3: PutObject manifest.json {…, signature}
+        S3-->>OtaService: ETag
+        OtaService->>PostgreSQL: INSERT firmware_releases {status='draft', rollout_percentage=0, max_rollout_crash_rate=0.050, …}
+        OtaService->>PostgreSQL: INSERT ota_rollout_events {event_type='created'}
+        PostgreSQL-->>OtaService: release_id
+        OtaService-->>AdminConsole: 201 {release_id, status='draft'}
+    end
+
+    Note over AdminConsole,PostgreSQL: separate POST /admin/ota/:id/stage verifies S3 objects + signature, transitions draft→staged · timeout 60s p99 · OTA signing key is HSM-backed annual ceremony (sys-13)

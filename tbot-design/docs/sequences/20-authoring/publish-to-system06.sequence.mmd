@@ -1,0 +1,92 @@
+---
+system: sys-20-content-authoring-review
+flow_id: publish-to-system06
+surface: internal-RPC
+spec_anchor: /software/systems/20-content-authoring-review#scheduling-and-publishing
+actors: [AuthoringConsole, AuthoringService, PostgreSQL, SQS, PublishOrchestrator, S3, ContentService]
+apis:
+  - POST /internal/v1/authoring/schedules
+  - POST /internal/v1/authoring/schedules/:id/publish-now
+  - POST /internal/v1/authoring/schedules/:id/cancel
+externals: [SQS, S3]
+queues:
+  - ca-publish-execute
+  - ca-publish-execute-dlq
+failure_paths:
+  - schedule_role_insufficient
+  - templates_not_approved
+  - s3_upload_failure
+  - content_service_rejection
+  - dlq_after_3_retries
+idempotency: pack assembled with content-addressable hash; sys-06 dedup on pack_id
+retry: SQS 3 retries with backoff; DLQ on exhaust
+timeout: 120s per publish-execute job
+status: final
+---
+%% HAND-CURATED. sys-20 has zero seed — composed from spec §7 publish pipeline + sys-06 hand-off.
+sequenceDiagram
+    autonumber
+    participant AuthoringConsole
+    participant AuthoringService
+    participant PostgreSQL
+    participant SQS as SQS ca-publish-execute
+    participant PublishOrchestrator
+    participant S3
+    participant ContentService as ContentService (sys-06)
+
+    AuthoringConsole->>AuthoringService: POST /internal/v1/authoring/schedules {template_ids[], scheduled_at, target_pack}
+
+    alt schedule_role_insufficient
+        Note over AuthoringService: requires content_admin
+        AuthoringService-->>AuthoringConsole: 403 insufficient_role
+    else accepted
+        AuthoringService->>PostgreSQL: SELECT status FROM ca_authoring_templates WHERE id = ANY($1)
+        alt templates_not_approved
+            Note over AuthoringService: any template not in 'approved' state
+            AuthoringService-->>AuthoringConsole: 422 templates_not_approved
+        else all_approved
+            AuthoringService->>PostgreSQL: INSERT ca_publish_schedules (template_ids, scheduled_at, status='pending')
+            AuthoringService-->>AuthoringConsole: 201 {schedule_id}
+
+            alt publish_now
+                AuthoringConsole->>AuthoringService: POST /internal/v1/authoring/schedules/:id/publish-now
+                AuthoringService->>SQS: enqueue ca-publish-execute {schedule_id}
+            else timer_fires
+                Note over SQS: scheduled_at reached → enqueue ca-publish-execute
+            else cancelled
+                AuthoringConsole->>AuthoringService: POST /internal/v1/authoring/schedules/:id/cancel
+                AuthoringService->>PostgreSQL: UPDATE schedule SET status='cancelled'
+                Note over SQS: nothing to enqueue
+            end
+
+            SQS->>PublishOrchestrator: deliver (timeout 120s)
+            PublishOrchestrator->>PostgreSQL: SELECT templates + revalidate status='approved'
+            PublishOrchestrator->>PublishOrchestrator: assemble content pack (manifest + template payloads)
+
+            alt s3_upload_failure
+                PublishOrchestrator->>S3: PUT content-packs/{pack_id}.json
+                S3-->>PublishOrchestrator: error
+                PublishOrchestrator--xSQS: NACK (retry)
+            else uploaded
+                S3-->>PublishOrchestrator: ok
+                alt content_service_rejection
+                    PublishOrchestrator->>ContentService: publish content pack {pack_id, s3_url, template_ids}
+                    ContentService-->>PublishOrchestrator: 422 schema_mismatch
+                    PublishOrchestrator->>PostgreSQL: UPDATE schedule SET status='failed', error
+                    PublishOrchestrator-->>SQS: ACK (no retry — schema requires author fix)
+                else accepted
+                    ContentService-->>PublishOrchestrator: 200 published
+                    PublishOrchestrator->>PostgreSQL: UPDATE ca_authoring_templates SET status='published', published_at
+                    PublishOrchestrator->>PostgreSQL: UPDATE schedule SET status='published'
+                    PublishOrchestrator-->>SQS: ACK
+                end
+            end
+
+            alt dlq_after_3_retries
+                SQS--xSQS: 3 retries exhausted → ca-publish-execute-dlq
+                Note over SQS: PagerDuty alert
+            end
+        end
+    end
+
+    Note over AuthoringConsole,ContentService: pack-level publish is atomic from sys-06 view — partial template publish never reaches devices — rollback retires pack

@@ -1,0 +1,31 @@
+// email_sends — SES-channel detail rows.
+// Spec keeps everything in notification_log; ERD-level decomposes to capture the
+// SES-only fields (configuration set, region, list-unsubscribe URL, raw recipient
+// fan-out) that don't fit cleanly on `notification_dispatches` and are useful for
+// CAN-SPAM compliance + SES bounce-correlation independent of dispatch row lifecycle.
+// Source: docs/site/software/systems/10-notification-delivery.md §Email Implementation.
+
+Table email_sends {
+  id                          uuid              [pk]
+  dispatch_id                 uuid              [not null]
+  from_address                varchar(254)      [not null, default: 'noreply@mail.tbot.com']
+  reply_to_address            varchar(254)      [not null, default: 'support@tbot.com']
+  to_address                  varchar(254)      [not null]
+  subject_rendered            varchar(998)      [not null, note: 'rendered Handlebars subject (RFC 5322 max line length)']
+  list_unsubscribe_url        varchar(2048)     [not null, note: 'CAN-SPAM one-click unsubscribe URL']
+  ses_configuration_set       varchar(120)      [not null, default: 'tbot-notifications']
+  ses_message_id              varchar(254)      [note: 'SES MessageId — null when send was suppressed pre-flight']
+  ses_region                  varchar(32)       [not null, default: 'us-east-1']
+  ses_send_attempt_count      integer           [not null, default: 0, note: 'incremented on each retry — ses_throttled / ses_rate_limit retryable errors']
+  rendered_body_html_sha256   varchar(64)       [note: 'sha256 of final HTML body — supports legal audit of "what did parent actually receive"']
+  rendered_body_text_sha256   varchar(64)       [note: 'sha256 of plaintext body']
+  created_at                  timestamptz       [not null, default: `now()`]
+  updated_at                  timestamptz       [not null, default: `now()`]
+
+  Indexes {
+    (dispatch_id) [unique, name: 'idx_email_sends_dispatch_id_unique']
+    (ses_message_id) [name: 'idx_email_sends_ses_message_id', note: 'hot query: docs/sequences/10-notifications/ses-bounce-complaint-handling.sequence.mmd — webhook lookup']
+  }
+}
+
+Ref: email_sends.dispatch_id > notification_dispatches.id

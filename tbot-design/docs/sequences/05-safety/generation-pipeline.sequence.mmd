@@ -1,0 +1,72 @@
+---
+system: sys-05-conversation-intelligence-and-safety
+flow_id: generation-pipeline
+surface: internal-RPC
+spec_anchor: /software/systems/05-conversation-intelligence-and-safety#request-lifecycle
+actors: [Orchestrator, SafetyService, ContentService, GoogleLiveFlash, Redis, PostgreSQL]
+apis:
+  - POST /internal/v1/conversation/generate
+  - POST /internal/v1/personalization/retrieve
+externals: [GoogleLiveFlash, Redis]
+queues:
+  - conv-analytics
+  - conv-model-eval-sample
+failure_paths:
+  - budget_exceeded
+  - model_timeout_secondary
+  - model_malformed_secondary
+  - circuit_open
+  - provider_unavailable
+idempotency: turnId — duplicate yields CONV_DUPLICATE_TURN
+retry: secondary attempt allowed on transport failure / timeout / malformed JSON — not allowed after safety block or budget exhaustion
+timeout: input safety 500ms, LLM first token 2000ms, LLM complete 15000ms — fail-closed on safety
+status: final
+---
+%% HAND-AUTHORED — sys-05 §14 request lifecycle (7 phases, no sequenceDiagram in spec).
+sequenceDiagram
+    autonumber
+    participant Orchestrator
+    participant SafetyService
+    participant ContentService
+    participant GoogleLiveFlash
+    participant Redis
+    participant PostgreSQL
+
+    Orchestrator->>SafetyService: POST /internal/v1/conversation/generate {sessionId, turnId, transcript, ageBand, recentTurns}
+    SafetyService->>PostgreSQL: INSERT conversation_requests intake row
+    SafetyService->>SafetyService: classify intent + input safety filter
+    SafetyService->>Redis: GET household:{hh}:budget_counters
+    alt budget_exceeded
+        Redis-->>SafetyService: tokens >= 50000/hr OR cost >= $0.50/day
+        SafetyService-->>Orchestrator: block_with_fallback budget_exceeded
+    else circuit_open
+        SafetyService->>ContentService: POST /internal/v1/personalization/retrieve
+        ContentService-->>SafetyService: {traits, prefs, memories, templates}
+        Note over SafetyService: primary circuit open — skip primary
+        SafetyService-->>Orchestrator: block_with_fallback model_timeout
+    else model_timeout_secondary
+        SafetyService->>ContentService: POST /internal/v1/personalization/retrieve
+        ContentService-->>SafetyService: {traits, prefs, memories, templates}
+        SafetyService->>GoogleLiveFlash: primary generate
+        GoogleLiveFlash--xSafetyService: 2000ms first-token timeout
+        SafetyService->>GoogleLiveFlash: secondary attempt
+        GoogleLiveFlash--xSafetyService: timeout
+        SafetyService-->>Orchestrator: block_with_fallback model_timeout
+    else model_malformed_secondary
+        SafetyService->>GoogleLiveFlash: primary generate
+        GoogleLiveFlash-->>SafetyService: response did not parse
+        SafetyService->>GoogleLiveFlash: secondary attempt
+        GoogleLiveFlash-->>SafetyService: still unparseable
+        SafetyService-->>Orchestrator: block_with_fallback model_malformed_output
+    else allow
+        SafetyService->>ContentService: POST /internal/v1/personalization/retrieve
+        ContentService-->>SafetyService: {traits, prefs, memories, templates}
+        SafetyService->>GoogleLiveFlash: primary generate
+        GoogleLiveFlash-->>SafetyService: {textSegments, renderPlan, motionPlan}
+        SafetyService->>SafetyService: parse + normalize + output safety filter + final gate
+        SafetyService->>Redis: INCR household:{hh}:budget_counters
+        SafetyService->>PostgreSQL: INSERT generation_attempts + safety_decisions
+        SafetyService-)SafetyService: emit conv-analytics + 1% conv-model-eval-sample
+        SafetyService-->>Orchestrator: allow {intent, textSegments, renderPlan, motionPlan, safetySummary}
+    end
+    Note over Orchestrator,PostgreSQL: secondary attempt forbidden when blocked by safety or budget exhausted

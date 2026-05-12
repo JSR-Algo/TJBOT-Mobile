@@ -1,0 +1,73 @@
+---
+system: sys-06-content-and-personalization
+flow_id: content-pack-publish
+surface: admin
+spec_anchor: /software/systems/06-content-and-personalization#content-pack-format-and-loading
+actors: [AdminConsole, ContentService, S3, PostgreSQL, Redis, InvalidationWorker]
+apis: []
+externals: [S3, Redis]
+queues:
+  - cp-content-publish
+failure_paths:
+  - checksum_mismatch
+  - template_validation_failed
+  - s3_get_failed
+  - postgres_sync_failed
+  - cache_invalidation_dlq
+idempotency: per (packKey, version) — pack version is immutable once published; re-publish requires new version
+retry: invalidate-content-cache immediate, 10s, 1m — DLQ after 3 failures
+timeout: S3 GetObject 30s — load and sync end-to-end 60s
+status: final
+---
+%% HAND-AUTHORED — sys-06 §"Content Pack Format and Loading" + §"Async Jobs and Queues" (no sequenceDiagram in spec).
+sequenceDiagram
+    autonumber
+    participant AdminConsole
+    participant ContentService
+    participant S3
+    participant PostgreSQL
+    participant Redis
+    participant InvalidationWorker
+
+    AdminConsole->>ContentService: publish request {packKey, version, locale}
+    alt s3_get_failed
+        ContentService->>S3: GetObject packs/{locale}/{packKey}/v{version}.json
+        S3--xContentService: 404 or 5xx
+        ContentService-->>AdminConsole: 502 s3_unavailable
+    else checksum_mismatch
+        ContentService->>S3: GetObject
+        S3-->>ContentService: bundle bytes
+        ContentService->>ContentService: parse + recompute sha256(templates)
+        Note over ContentService: bundle.checksum != computed
+        ContentService-->>AdminConsole: 422 checksum_mismatch
+    else template_validation_failed
+        ContentService->>S3: GetObject
+        S3-->>ContentService: bundle
+        ContentService->>ContentService: validate each template (id 1-20, category, age_bands, weights 1-1000, tags<=10)
+        Note over ContentService: invalid templates rejected per validation rules
+        ContentService->>PostgreSQL: upsert only valid templates
+        ContentService-->>AdminConsole: 207 partial {errors[], templateCount}
+    else postgres_sync_failed
+        ContentService->>S3: GetObject
+        S3-->>ContentService: bundle
+        ContentService->>PostgreSQL: upsert templates batch
+        PostgreSQL--xContentService: error
+        ContentService-->>AdminConsole: 502 postgres_sync_failed
+    else cache_invalidation_dlq
+        ContentService->>PostgreSQL: upsert templates
+        ContentService->>Redis: SET content:published:{packKey}:{version} (EX 3600)
+        Redis-->>ContentService: OK
+        ContentService-)ContentService: emit cp-content-publish
+        InvalidationWorker--xPostgres: DLQ after 3 failures
+    else success
+        ContentService->>S3: GetObject
+        S3-->>ContentService: bundle
+        ContentService->>ContentService: validate checksum + each template
+        ContentService->>PostgreSQL: upsert templates batch (packKey, version)
+        ContentService->>Redis: SET content:published:{packKey}:{version} (EX 3600)
+        ContentService-)ContentService: emit cp-content-publish
+        InvalidationWorker->>Redis: DEL stale cache keys (any older version)
+        Redis-->>InvalidationWorker: OK
+        ContentService-->>AdminConsole: 200 {templateCount}
+    end
+    Note over AdminConsole,InvalidationWorker: published packs are IMMUTABLE — updates require new version — retirement preserves snapshot auditability

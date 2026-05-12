@@ -21,6 +21,15 @@ future user-provided spec.
   into agent-ready work.
 - `templates/`: reusable spec-intake, story, plan, decision, and validation
   formats.
+- `usecases/`: per-domain use-case authoring (129 UCs across 14 domains, plus
+  actors, cross-domain edges, hot-UC dossiers). Source-of-truth for use-case
+  bodies per ADR-0005. Legacy `architecture/use-case-diagram.md` remains the
+  canonical UC ID source (per D2 in ADR-0005).
+- `flows/`: per-domain navigation flows, generated from `nav-graph-data.json`
+  (per ADR-0004).
+- `architecture/`: historical use-case-diagram (UC ID source) + per-domain
+  `.usecase.puml` files; high-level architecture map.
+- `qa/`: verification matrices and dry-run sign-offs.
 
 ## Current State
 

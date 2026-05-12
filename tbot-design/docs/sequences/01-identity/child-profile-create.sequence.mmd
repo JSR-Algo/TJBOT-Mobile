@@ -1,0 +1,53 @@
+---
+system: sys-01-identity-household-access
+flow_id: child-profile-create
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#4-10-post-v1householdshouseholdidchildren
+actors: [ParentApp, Gateway, IdentityService]
+apis:
+  - POST /v1/households/:householdId/children
+externals: []
+queues: []
+failure_paths:
+  - validation_error
+  - prompt_injection_rejected
+  - child_profile_limit_exceeded
+  - insufficient_household_role
+  - parent_write_rate_limited
+idempotency: client-supplied X-Request-Id, 24h dedup window — duplicate request returns the originally-created child profile
+retry: caller-side single retry on 5xx — never retry on 4xx (validation results are deterministic)
+timeout: 5s p99
+status: final
+---
+%% HAND-CURATED. Profile-field sanitization (AMD-012) covers prompt-injection blocklist on nickname + favoriteTopics — reject pre-write.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+
+    ParentApp->>Gateway: POST /v1/households/:householdId/children {nickname, ageBand, favoriteTopics, ...} + Bearer JWT + X-Request-Id
+    Gateway->>Gateway: rate-limit (sys-17) — parent_write — 30 per minute per parent ID
+    Gateway->>IdentityService: forward request
+    alt parent_write_rate_limited
+        Gateway-->>ParentApp: 429 parent_write_rate_limited
+    else insufficient_household_role
+        IdentityService-->>Gateway: 403 insufficient_household_role
+        Gateway-->>ParentApp: 403
+    else prompt_injection_rejected
+        Note over IdentityService: AMD-012 — nickname or favoriteTopics matched injection blocklist
+        IdentityService-->>Gateway: 400 VALIDATION_ERROR
+        Gateway-->>ParentApp: 400
+    else validation_error
+        Note over IdentityService: nickname length/regex, ageBand enum, dob future or >18y, favoriteTopics size
+        IdentityService-->>Gateway: 422 invalid_age_band | 400 VALIDATION_ERROR
+        Gateway-->>ParentApp: 4xx
+    else child_profile_limit_exceeded
+        IdentityService-->>Gateway: 409 child_profile_limit_exceeded
+        Gateway-->>ParentApp: 409
+    else success
+        IdentityService-->>Gateway: 201 {childProfile: {id, householdId, nickname, ageBand, status: "active", ...}}
+        Gateway-->>ParentApp: 201
+    end
+
+    Note over ParentApp,IdentityService: timeout 5s p99 — idempotent via X-Request-Id — never retry on 4xx (deterministic validation outcome)

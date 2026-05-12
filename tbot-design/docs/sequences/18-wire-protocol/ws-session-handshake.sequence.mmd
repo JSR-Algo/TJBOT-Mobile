@@ -1,0 +1,52 @@
+---
+system: sys-18-wire-protocol-domain-types
+flow_id: ws-session-handshake
+surface: device
+spec_anchor: /software/systems/18-wire-protocol-domain-types#5-4-connection-handshake
+actors: [Device, RealtimeService]
+apis:
+  - GET /v1/realtime/connect
+externals: []
+queues: []
+failure_paths:
+  - invalid_session_token
+  - device_inactive
+  - concurrent_session_exists
+  - service_at_capacity
+  - rate_limit_exceeded
+  - protocol_version_unsupported
+idempotency: device_session_id supplied by device on SESSION_OPEN — sequence_id monotonic per connection — reconnection within 10s with same device_session_id resumes from OPEN
+retry: device backs off on 503/429 — no server-side replay
+timeout: handshake budget 5s
+status: final
+---
+%% HAND-CURATED — normalized from _seed.1 (18#L400) + plan §11 protocol_version negotiation race.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant RealtimeService
+
+    Device->>RealtimeService: GET /v1/realtime/connect?device_id&session_token&protocol_version=1
+    alt protocol_version_unsupported
+        Note over RealtimeService: server supports {1, 2} — client requested 0 or >2
+        RealtimeService-->>Device: 426 protocol_version_unsupported — Retry-After-Protocol header lists supported versions
+    else invalid_session_token
+        Note over RealtimeService: verify JWT signature + expiry + audience
+        RealtimeService-->>Device: 401 E-RT-200
+    else device_inactive
+        Note over RealtimeService: device decommissioned or not active
+        RealtimeService-->>Device: 403 E-RT-201
+    else concurrent_session_exists
+        Note over RealtimeService: device already has active session
+        RealtimeService-->>Device: 409 E-RT-202
+    else service_at_capacity
+        RealtimeService-->>Device: 503 E-RT-203
+    else rate_limit_exceeded
+        RealtimeService-->>Device: 429 E-RT-204
+    else success
+        Note over RealtimeService: verify JWT + audience + device active + household + no concurrent session
+        RealtimeService-->>Device: 101 Switching Protocols (negotiated protocol_version)
+        Device->>RealtimeService: SESSION_OPEN (0x01) {device_session_id, child_profile_id, interaction_mode, locale, audio_codec, sample_rate, fw_version, config_version, activation, device_timestamp_ms}
+        RealtimeService-->>Device: SESSION_ACK (0x02) {session_id, max_turns=60, max_duration_ms=1800000, barge_in_enabled, cost_ceiling_usd=0.12, server_timestamp_ms}
+    end
+    Note over Device,RealtimeService: protocol_version negotiation race — device sends preferred version in query, server returns negotiated version in 101 — frames thereafter use negotiated version byte

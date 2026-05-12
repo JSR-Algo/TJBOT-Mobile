@@ -1,0 +1,39 @@
+// feature_flags — platform-wide config gates.
+// Distinct from sys-08 config_documents: config_documents are versioned cohort-scoped
+// device configs; feature_flags are simple key→value toggles consumed by every service.
+
+enum feature_flag_scope {
+  global
+  household
+  user
+  device
+  cohort
+}
+
+enum feature_flag_value_kind {
+  bool
+  string
+  number
+  json
+}
+
+Table feature_flags {
+  id              uuid                          [pk]
+  key             varchar(120)                  [not null, note: 'dotted-namespace identifier, e.g. mobile.summary.weekly.enabled']
+  scope           feature_flag_scope            [not null, default: 'global']
+  scope_target_id varchar(120)                  [note: 'when scope != global: household_id / user_id / device_id / cohort slug']
+  value_kind      feature_flag_value_kind       [not null]
+  value           jsonb                         [not null, note: 'jsonb-wrapped to support all kinds; bool/string/number stored as the JSON primitive']
+  description     text
+  enabled_at      timestamptz
+  disabled_at     timestamptz
+  created_at      timestamptz                   [not null, default: `now()`]
+  updated_at      timestamptz                   [not null, default: `now()`]
+
+  Indexes {
+    (key, scope, scope_target_id) [unique, name: 'idx_feature_flags_key_scope_target_unique', note: 'hot query: every flag read does point-lookup by (key, scope, target)']
+    (key, scope) [name: 'idx_feature_flags_key_scope', note: 'hot query: docs/sequences/_cross/config-propagation-controls-to-device.sequence.mmd — admin list overrides for a flag across all targets']
+  }
+}
+
+// No Ref: lines — scope_target_id is polymorphic (household / user / device / cohort).

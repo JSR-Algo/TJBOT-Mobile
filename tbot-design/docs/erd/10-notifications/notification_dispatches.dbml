@@ -1,0 +1,40 @@
+// notification_dispatches — one row per (parent, channel, type) delivery attempt.
+// Spec calls this `notification_log`. ERD-level name `notification_dispatches` per
+// plan §3 + §13 anti-pattern note: avoids collision with sys-07 parent_notifications_outbox
+// (Lane E) — see plan §13 "Naming improvements".
+// Source: docs/site/software/systems/10-notification-delivery.md §Data Model.
+
+enum notification_dispatch_status {
+  queued
+  sent
+  delivered
+  failed
+  bounced
+  suppressed
+}
+
+Table notification_dispatches {
+  id                  uuid                              [pk]
+  parent_account_id   uuid                              [not null, note: 'cross-domain ref → IdentityService (sys-01 users)']
+  device_id           uuid                              [note: 'cross-domain ref → DeviceService — nullable for parent-scoped types']
+  notification_type   varchar(64)                       [not null]
+  channel             notification_channel              [not null]
+  status              notification_dispatch_status      [not null, default: 'queued']
+  idempotency_key     varchar(120)                      [note: 'caller-supplied — Redis 24h SET NX + DB unique index — drops duplicate SQS redeliveries']
+  external_id         varchar(254)                      [note: 'FCM message_id or SES MessageId — populated on success']
+  failure_reason      varchar(254)                      [note: 'short reason: token_invalid, ses_rejected, quiet_hours, throttle, email_disabled, etc.']
+  suppression_reason  varchar(64)                       [note: 'when status=suppressed: throttle | preference | suppression_cooldown | email_disabled | quiet_hours']
+  template_data_hash  varchar(64)                       [note: 'sha256 of rendered template input — for dedup of identical sends']
+  scheduled_for       timestamptz                       [note: 'set when a send is deferred by timezone-aware scheduling (weekly_summary)']
+  sent_at             timestamptz
+  delivered_at        timestamptz                       [note: 'set by SES delivery webhook or FCM ack']
+  created_at          timestamptz                       [not null, default: `now()`]
+  updated_at          timestamptz                       [not null, default: `now()`]
+
+  Indexes {
+    (parent_account_id, created_at) [name: 'idx_notification_dispatches_parent_created', note: 'hot query: docs/sequences/10-notifications/sqs-worker-pipeline.sequence.mmd — per-parent timeline + dashboard']
+    (idempotency_key) [unique, name: 'idx_notification_dispatches_idempotency_key_unique']
+    (status, scheduled_for) [name: 'idx_notification_dispatches_status_scheduled', note: 'hot query: docs/sequences/10-notifications/sqs-worker-pipeline.sequence.mmd — find dispatches awaiting deferred send']
+    (external_id) [name: 'idx_notification_dispatches_external_id', note: 'hot query: docs/sequences/10-notifications/ses-bounce-complaint-handling.sequence.mmd — webhook lookup by SES MessageId']
+  }
+}

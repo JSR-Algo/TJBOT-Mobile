@@ -1,0 +1,27 @@
+// admin_commands — immutable audit log of every admin action.
+// Source: docs/site/software/systems/12-support-admin-operations.md §3.1 admin_audit_log
+// (ERD-level name is `admin_commands` per plan §3 manifest).
+// Note: INSERT-only. Deletes only via retention worker after legal retention window.
+
+Table admin_commands {
+  id              uuid          [pk]
+  admin_user_id   uuid          [not null]
+  action          varchar(64)   [not null, note: 'enum-like at app layer: device.transfer, user.disable, safety.investigate, etc.']
+  target_type     varchar(64)   [not null]
+  target_id       varchar(120)  [not null]
+  reason          text
+  metadata        jsonb         [not null, default: `'{}'::jsonb`]
+  ip_address      varchar(45)   [not null]
+  occurred_at     timestamptz   [not null, default: `now()`]
+  created_at      timestamptz   [not null, default: `now()`]
+  updated_at      timestamptz   [not null, default: `now()`, note: 'equal to created_at; row is immutable']
+
+  Indexes {
+    (admin_user_id) [name: 'idx_admin_commands_admin_user_id']
+    (action) [name: 'idx_admin_commands_action']
+    (target_type, target_id) [name: 'idx_admin_commands_target', note: 'hot query: docs/sequences/12-admin/safety-investigation-w2.sequence.mmd — list all admin actions against a device/household/user']
+    (occurred_at) [name: 'idx_admin_commands_occurred_at_desc', note: 'hot query: docs/sequences/12-admin/mqtt-remote-command.sequence.mmd — recent-actions tail']
+  }
+}
+
+Ref: admin_commands.admin_user_id > admin_users.id

@@ -1,0 +1,58 @@
+---
+system: sys-03-device-runtime-local-interaction
+flow_id: config-pull
+surface: device
+spec_anchor: /software/systems/03-device-runtime-local-interaction#config-pull-contract
+actors: [Device, Gateway, ConfigService, KMS, PostgreSQL]
+apis:
+  - GET /v1/config/fetch
+  - POST /v1/config/applied
+externals: [KMS]
+queues: []
+failure_paths:
+  - config_signature_failure
+  - config_size_exceeds_8kb
+  - schema_version_unsupported_major
+  - kms_signing_failure
+idempotency: ETag / If-None-Match yields 304 when version matches sys.last_config_etag
+retry: device retries on 5xx with backoff; falls back to 6h periodic poll on transient failure
+timeout: 5s p99 fetch
+status: final
+---
+%% HAND-CURATED. Device-side verifies ECDSA P-256 signature with embedded public key pair (current_key + next_key) per sys-08.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant Gateway
+    participant ConfigService
+    participant KMS
+    participant PostgreSQL
+
+    Device->>Gateway: GET /v1/config/fetch (mTLS) {X-Device-Id, X-Schema-Version-Min/Max, X-Current-Config-Version}
+    Gateway->>ConfigService: forward
+    alt 304 not_modified
+        ConfigService-->>Device: 304 (update sys.last_heartbeat_at only, no state mutation)
+    else schema_version_unsupported_major
+        ConfigService-->>Device: 412 schema_version_unsupported_major
+    else success
+        ConfigService->>PostgreSQL: SELECT device_configs WHERE device_id
+        PostgreSQL-->>ConfigService: {config_blob, config_signature, config_version, schema_version}
+        ConfigService-->>Device: 200 {configVersion, schemaVersion, configSignature, issuedAt, configBlob}
+    end
+
+    Device->>Device: reconstruct signing payload from received config
+    alt config_signature_failure (both current_key and next_key fail)
+        Device->>Device: reject payload, retain previous config, emit config_signature_failure telemetry
+    else next_key succeeds
+        Device->>Device: accept config + promote next_key to current_key (rotation window)
+    else current_key succeeds
+        Device->>Device: validate schema, validate size ≤8KB, persist to nvs_policy, publish CONFIG_APPLIED
+    end
+
+    Device->>Gateway: POST /v1/config/applied {device_id, configVersion} (mTLS)
+    Gateway->>ConfigService: forward
+    ConfigService->>PostgreSQL: UPDATE device_configs SET applied_at=now()
+    PostgreSQL-->>ConfigService: ok
+    ConfigService-->>Device: 204
+
+    Note over Device,PostgreSQL: timeout 5s p99 · kms_signing_failure / config_size_exceeds_8kb surface as upstream assembly errors (sys-08) · 6h periodic poll catches missed MQTT notifies

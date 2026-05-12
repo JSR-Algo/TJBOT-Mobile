@@ -1,0 +1,58 @@
+---
+system: sys-08-config-fleet-management
+flow_id: kms-key-rotation-ceremony
+surface: internal-RPC
+spec_anchor: /software/systems/08-config-fleet-management#kms-key-rotation
+actors: [SecurityEngineer, KMS, OtaService, FleetDevices, ConfigService]
+apis: []
+externals: [KMS]
+queues: []
+failure_paths:
+  - fleet_adoption_below_threshold
+  - new_key_not_propagated
+  - old_key_decommission_blocked
+idempotency: rotation is annual ceremony; CONFIG_SIGNING_KMS_KEY_ID switch is single atomic config change
+retry: manual ceremony — failure rollback documented in sys-13
+timeout: weeks (multi-stage ceremony)
+status: final
+---
+%% HAND-CURATED. Coordinates with sys-09 (OTA) for FW update carrying new next_key, and sys-13 for rotation audit log.
+sequenceDiagram
+    autonumber
+    participant SecurityEngineer
+    participant KMS
+    participant OtaService
+    participant FleetDevices
+    participant ConfigService
+
+    Note over SecurityEngineer,FleetDevices: Stage 1 — generate new key in KMS
+    SecurityEngineer->>KMS: CreateKey {KeySpec=ECC_NIST_P256, KeyUsage=SIGN_VERIFY}
+    KMS-->>SecurityEngineer: new_key_id
+
+    Note over SecurityEngineer,FleetDevices: Stage 2 — ship FW update with new public key in next_key slot (sys-09)
+    SecurityEngineer->>OtaService: prepare FW release embedding new_pubkey in next_key
+    OtaService->>FleetDevices: staged rollout (sys-09 5%→25%→50%→100%)
+
+    loop wait for ≥99% fleet adoption (typically weeks)
+        SecurityEngineer->>OtaService: GET /admin/ota/release/:id/status
+        OtaService-->>SecurityEngineer: rollout_progress_percentage
+        alt fleet_adoption_below_threshold
+            Note over SecurityEngineer: pause rotation — investigate stuck devices
+        end
+    end
+
+    Note over SecurityEngineer,FleetDevices: Stage 3 — switch active signing key
+    SecurityEngineer->>ConfigService: env var CONFIG_SIGNING_KMS_KEY_ID = new_key_id (deploy)
+    ConfigService->>ConfigService: next signing uses new key
+    ConfigService->>FleetDevices: subsequent configs signed with new_key (devices verify with embedded next_key, promote to current_key)
+
+    Note over SecurityEngineer,FleetDevices: Stage 4 — decommission old key
+    SecurityEngineer->>SecurityEngineer: confirm all active devices fetched ≥1 config signed by new key
+    alt old_key_decommission_blocked (devices still verifying with old key)
+        Note over SecurityEngineer: wait — retain old key in KMS until 100% migrated
+    else success
+        SecurityEngineer->>KMS: ScheduleKeyDeletion {old_key_id, pending=30 days}
+        KMS-->>SecurityEngineer: deletion scheduled
+    end
+
+    Note over SecurityEngineer,ConfigService: annual ceremony · audit row in key_rotation_log (sys-13) · failure rollback per sys-13 §6 §rotation-failure-rollback

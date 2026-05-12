@@ -1,4 +1,4 @@
-%% GENERATED FROM nav-graph-data.json sha=a64610b0bee3. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
 %% domain: fallback
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
@@ -15,26 +15,5 @@ flowchart TD
     safety_redirect["Safety Redirect"]
     voice_failed(["Voice Session Failed"])
   end
-  audio_recovery --> mic_missing
-  kid_settings --> help_faq
-  mic_missing --> audio_recovery
-  network_error --> reconnecting_overlay
-  voice_failed --> lesson_resume
   class help_faq,kid_settings,lesson_resume,safety_redirect happy
   class app_error,audio_recovery,mic_missing,network_error,reconnecting_overlay,voice_failed edge
-
-%% cross-domain outbound (handled in shared/cross-domain.flow.mmd):
-%%   app_error -> home_hub_idle (home)
-%%   audio_recovery -> home_hub_idle (home)
-%%   kid_settings -> home_hub_idle (home)
-%%   lesson_resume -> home_hub_idle (home)
-%%   mic_missing -> home_hub_idle (home)
-%%   network_error -> home_hub_idle (home)
-%%   reconnecting_overlay -> home_hub_idle (home)
-%%   safety_redirect -> home_hub_idle (home)
-%%   voice_failed -> home_hub_idle (home)
-%%   lesson_resume -> robot_speaking (lesson-session)
-%%   reconnecting_overlay -> robot_listening (lesson-session)
-%%   help_faq -> parent_summary (parent)
-%%   kid_settings -> parent_gate (parent)
-%%   safety_redirect -> parent_gate (parent)

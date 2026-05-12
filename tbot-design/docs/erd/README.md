@@ -1,54 +1,81 @@
-# ERD
+# ERD — TBOT 22 Backend Systems
 
-## Status
+**Status:** in-progress (Phase 1 — tooling + conventions + folder skeleton complete; Phase 2 — per-system entity extraction pending).
+**Plan of record:** `.omc/plans/erd-22-systems-design.md`.
+**Format:** DBML primary + per-entity markdown (mirrors `docs/sequences/` per-system folder convention).
+**Replaces:** the previous "TBD" placeholder. Do not re-introduce that sketch.
 
-**TBD.** No backend schema is designed for this prototype. The store placeholders under `src/store/` are the closest thing to an entity sketch today, and they are intentionally minimal.
+The ERD is the contract between backend implementers, mobile app, firmware, and authoring tools. Every backend service in `docs/sequences/_actors.md` either owns at least one entity here or carries the `@stateless` annotation in its folder `README.md`.
 
-## Expected entities
+## How to read
 
-Sketched from `src/store/*.store.js` placeholder shapes plus the per-domain page set. Names are conventional, not contractual.
+- One folder per backend system, named `<NN>-<system>/`, mirroring `docs/site/software/systems/` and `docs/sequences/`.
+- Each entity is two files: `<table>.dbml` (schema) + `<table>.md` (business purpose, lifecycle, related APIs/sequences).
+- Cross-cutting tables live in `_shared/` (e.g. `audit_log`, `idempotency_keys`).
+- The assembled global ERD lives in `_global/global-erd.dbml` (auto-built) plus a Mermaid projection `_global/global-erd.mmd`.
+- Conventions: `CONVENTIONS.md`. Lane ownership: `AGENTS.md`. Template: `templates/entity.{md,dbml}`.
 
-| Entity | Source / signal | Likely fields (sketch only) |
-|---|---|---|
-| `User` | `auth.store.js → state.user` | id, email/phone, role |
-| `Child` | `auth.store.js → state.child` | id, name, age, persona, active course |
-| `Course` | `course.store.js → state.currentCourseId`, `course-library.api.js` | id, title, level list, language pair |
-| `Level` | `course.store.js → state.currentLevel`, `course.api.js → getLevel` | id, courseId, order, theme |
-| `Unit` | `course.store.js → state.currentUnit`, `course.api.js → getUnit` | id, levelId, title |
-| `Lesson` | `course.api.js → getLessonDetail / getLessonList` | id, unitId, activity refs, est. duration |
-| `Activity` | `lesson-session.api.js → getActivityList` | id, lessonId, kind (intro / speak / listen / etc.) |
-| `Word` | `progress.api.js → getWordsPracticed` | id, surface, lemma, pronunciation status |
-| `Order` | `purchase.api.js → createOrder / getOrder`, `purchase.store.js → state.orderId` | id, userId, sku, payment status, shipping status |
-| `Cart` | `cart.store.js` | items[], pendingCourseId |
-| `Device` | `device.store.js`, `device.api.js` | id, ownerUserId, paired flag, firmware version, wifi state |
-| `Session` | `lesson.store.js → state.sessionId`, `lesson-session.api.js → startSession` | id, deviceId, childId, lessonId, lastTurnState |
+## Domain map
 
-## Relationships (likely)
+| Folder | System spec | Owning service(s) | Status |
+|---|---|---|---|
+| `01-identity/` | `docs/site/software/systems/01-identity-household-access.md` | IdentityService | pending |
+| `02-device/` | `docs/site/software/systems/02-device-provisioning-registry.md` | DeviceService, OfflineSweepWorker, DecommissionWorker, TransferWorker | pending |
+| `03-device-runtime/` | `docs/site/software/systems/03-device-runtime-local-interaction.md` | RuntimeApp (mostly device-local) | pending |
+| `04-realtime/` | `docs/site/software/systems/04-realtime-session-orchestrator.md` | RealtimeService, Orchestrator, ControlPlane, RetentionScheduler | pending |
+| `05-safety/` | `docs/site/software/systems/05-conversation-intelligence-and-safety.md` | SafetyService, BlocklistCache, TopicClassifier, PIIDetector | pending |
+| `06-content/` | `docs/site/software/systems/06-content-and-personalization.md` | ContentService, SummaryService, DecayScheduler, ModerationWorker | pending |
+| `07-parent/` | `docs/site/software/systems/07-parent-controls-summary.md` | ControlsService, SummaryWorker | pending |
+| `08-config/` | `docs/site/software/systems/08-config-fleet-management.md` | ConfigService, ConfigAssembler, ConfigSigner, CohortResolver | pending |
+| `09-ota/` | `docs/site/software/systems/09-ota-release-management.md` | OtaService, CrashMonitorWorker | pending |
+| `10-notifications/` | `docs/site/software/systems/10-notifications.md` | NotificationService | pending |
+| `11-telemetry/` | `docs/site/software/systems/11-telemetry-audit-cost.md` | TelemetryService, AuditBuffer, MutationHandler, CostAttributionWorker | pending |
+| `12-admin/` | `docs/site/software/systems/12-support-admin-operations.md` | AdminAuthService, AdminCommandService, SafetyInvestigationService, DeviceTransferService | pending |
+| `13-security/` | `docs/site/software/systems/13-security-secrets-management.md` | SecurityService, SecretsCache, BruteForceDetector, CertificateVerifier | pending |
+| `14-retention/` | `docs/site/software/systems/14-retention-deletion-backup.md` | AccountDeletionService, DeletionExecutor, RetentionWorker | pending |
+| `15-manufacturing/` | `docs/site/software/systems/15-manufacturing-provisioning-factory-test.md` | FactoryCLI workflows | pending |
+| `16-mobile/` | `docs/site/software/systems/16-parent-mobile-application.md` | ParentApp (projection-only) | pending |
+| `17-gateway/` | `docs/site/software/systems/17-api-gateway-rate-limiting.md` | Gateway / WAF | pending |
+| `18-wire-protocol/` | `docs/site/software/systems/18-wire-protocol-domain-types.md` | wire-protocol (shared types) | pending |
+| `19-billing/` | `docs/site/software/systems/19-billing-subscription.md` | BillingService | pending |
+| `20-authoring/` | `docs/site/software/systems/20-content-authoring-review.md` | AuthoringService, ReviewerConsole, AuthoringConsole | pending |
+| `21-testing/` | `docs/site/software/systems/21-integration-test-infrastructure.md` | CI (likely stateless) | pending |
+| `22-demo/` | `docs/site/software/systems/22-demo-retail-mode.md` | DemoCLI | pending |
+| `_shared/` | n/a | platform-wide | pending |
+| `_global/` | n/a | assembled | pending |
 
+## How to edit
+
+1. Pick or claim a `<NN>-<system>/` folder per `AGENTS.md` lane ownership.
+2. Copy `templates/entity.{md,dbml}` to `<NN>-<system>/<table>.{md,dbml}`.
+3. Replace the example contents while honouring every rule in `CONVENTIONS.md`.
+4. Update the folder `README.md` entity list.
+5. Cross-domain FKs go on the **owning** side only — never inline `[ref:]`.
+6. Run `npm run erd:fast` — must exit 0 (zero FAIL findings).
+7. After all entities for a lane are in: run `npm run erd:full` for the global build smoke check.
+
+## Multi-agent ownership
+
+See `AGENTS.md`. Phase 2 lanes B..G run in parallel and never touch each other's folders. `_shared/` + `_global/` + `scripts/erd/` + `CONVENTIONS.md` + `AGENTS.md` + this file are touched only by Lane A.
+
+## Validation
+
+```bash
+npm run erd:fast         # lint per file, FK reachability, frontmatter schema (target <5s)
+npm run erd:full         # erd:fast + assemble global-erd.dbml + render Mermaid (target <30s)
+npm run erd:fast -- --rule fk-reachable   # single-rule mode
 ```
-User ─┬─< Child >─┬─ Course
-      │           ├─ Order
-      │           ├─ Session ─< Activity ─< Word
-      │           └─ progress (derived)
-      └── Device (paired)
-                 └── Session
-```
 
-Diagram is sketch-only — confirm with backend once it is designed.
+The validator implements rules AC-1..AC-13 from the plan. Exit code = number of FAIL findings. WARNs are advisory.
 
 ## Pointers
 
 | For | Look at |
 |---|---|
-| Concrete state placeholders | `src/store/*.store.js` |
-| Function shapes that imply entities | `src/services/api/*.api.js` |
-| Per-domain screens that consume each entity | `src/features/<domain>/states.js` |
-
-## Still TBD
-
-- Authoritative entity definitions (waiting on backend design).
-- Foreign-key cardinalities (`Child` ↔ `Course` is likely many-to-many through enrollment, but unconfirmed).
-- Realtime session wire format (frames, telemetry, safety events).
-- Persistence boundary between client store, backend, and on-device firmware state.
-
-When the backend ERD is designed, replace this file with the formal diagram + entity dictionary.
+| Plan of record | `.omc/plans/erd-22-systems-design.md` |
+| Conventions | `CONVENTIONS.md` |
+| Lane ownership | `AGENTS.md` |
+| Entity template | `templates/entity.md` + `templates/entity.dbml` |
+| Validator | `scripts/erd/validate-erd.mjs` |
+| Service allow-list | `docs/sequences/_actors.md` |
+| Sequence files (lifecycle evidence) | `docs/sequences/<NN>-<system>/*.sequence.mmd` |

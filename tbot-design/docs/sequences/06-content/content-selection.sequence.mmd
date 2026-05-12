@@ -1,0 +1,67 @@
+---
+system: sys-06-content-and-personalization
+flow_id: content-selection
+surface: internal-RPC
+spec_anchor: /software/systems/06-content-and-personalization#post-internal-v1-content-select
+actors: [SafetyService, ContentService, PostgreSQL, Redis]
+apis:
+  - POST /internal/v1/content/select
+externals: [Redis]
+queues:
+  - cp-retrieval-analytics
+failure_paths:
+  - no_candidates_after_filter
+  - exhaustion_recovery_required
+  - parent_toggle_disabled_all
+  - redis_unavailable_skip_cooldown
+idempotency: per-turn selection — append-only delivery row prevents double-credit
+retry: 0 — exhaustion recovery is in-band, not a retry
+timeout: 200ms p99 — selection is fully in-process apart from PostgreSQL + Redis
+status: final
+---
+%% HAND-AUTHORED — sys-06 §"Content Selection Algorithm" 8-step pipeline (no sequenceDiagram in spec for this endpoint).
+sequenceDiagram
+    autonumber
+    participant SafetyService
+    participant ContentService
+    participant PostgreSQL
+    participant Redis
+
+    SafetyService->>ContentService: POST /internal/v1/content/select {category, ageBand, childProfileId, parentToggles}
+    ContentService->>PostgreSQL: SELECT active+approved templates WHERE category=? AND ageBand IN (...)
+    PostgreSQL-->>ContentService: candidate pool
+    alt parent_toggle_disabled_all
+        Note over ContentService: every candidate disabled by parent_toggles
+        ContentService-->>SafetyService: 409 no_eligible_template
+    else no_candidates_after_filter
+        ContentService->>Redis: HGET content:cooldown:{childProfileId} (24h TTL)
+        Redis-->>ContentService: cooldown set
+        ContentService->>ContentService: drop cooldown + exclusions
+        Note over ContentService: zero candidates remain — exhaustion path
+        ContentService-->>SafetyService: 409 no_eligible_template
+    else exhaustion_recovery_required
+        ContentService->>Redis: HGET content:cooldown:{childProfileId}
+        Redis-->>ContentService: cooldown set
+        ContentService->>ContentService: filter cooldown + exclusions — empty
+        ContentService->>Redis: HDEL 5 oldest cooldowns (least TTL first)
+        Redis-->>ContentService: cleared 5
+        ContentService->>ContentService: refilter, topic boost, weighted random
+        ContentService->>PostgreSQL: INSERT content_delivery_events row
+        ContentService->>Redis: HSET content:cooldown:{childProfileId} templateId EX 86400
+        ContentService-)ContentService: emit cp-retrieval-analytics
+        ContentService-->>SafetyService: {templateId, templateText, variationInstruction}
+    else redis_unavailable_skip_cooldown
+        ContentService->>Redis: HGET cooldowns
+        Redis--xContentService: error
+        Note over ContentService: degrade — proceed without cooldown filter, emit degraded metric
+        ContentService->>PostgreSQL: INSERT content_delivery_events degraded=true
+        ContentService-->>SafetyService: {templateId, templateText, variationInstruction}
+    else success
+        ContentService->>Redis: HGET content:cooldown:{childProfileId}
+        Redis-->>ContentService: cooldown set
+        ContentService->>ContentService: filter + topic boost (cap 2.0x) + weighted random
+        ContentService->>PostgreSQL: INSERT content_delivery_events (append-only)
+        ContentService->>Redis: HSET content:cooldown:{childProfileId} templateId EX 86400
+        ContentService-->>SafetyService: {templateId, templateText, variationInstruction}
+    end
+    Note over SafetyService,Redis: invariants — cooldown bypass only on exhaustion — disabled templates never selected — age band hard filter
