@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Button, OnboardingHeader } from '../../components';
 import { useHousehold } from '../../contexts/HouseholdContext';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
 const NUM_BARS = 12;

@@ -10,7 +10,7 @@ import {
 import { Home } from 'lucide-react-native';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { Button, Input, ErrorMessage, OnboardingHeader } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
 

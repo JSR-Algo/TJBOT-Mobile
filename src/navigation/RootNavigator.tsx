@@ -3,7 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthStack } from './AuthStack';
 import { MainStack } from './MainStack';
-import { colors } from '../theme';
+import { colors } from '@/design-system/tokens/legacy-semantic';
 
 export function RootNavigator(): React.JSX.Element {
   const { isAuthenticated, isLoading } = useAuth();

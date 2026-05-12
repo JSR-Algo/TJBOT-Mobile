@@ -13,7 +13,7 @@ import { useHousehold } from '../../contexts/HouseholdContext';
 import { useInteractions } from '../../contexts/InteractionContext';
 import { Card } from '../../components';
 import * as learningApi from '../../api/learning';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainTabScreenProps } from '../../navigation/types';
 
 export function DashboardScreen({ navigation }: MainTabScreenProps<'Home'>): React.JSX.Element {

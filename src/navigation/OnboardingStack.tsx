@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { OnboardingStackParamList } from './types';
-import { colors } from '../theme';
+import { colors } from '@/design-system/tokens/legacy-semantic';
 import { WelcomeScreen } from '../screens/onboarding/WelcomeScreen';
 import { CoppaConsentScreen } from '../screens/onboarding/CoppaConsentScreen';
 import { HouseholdCreateScreen } from '../screens/onboarding/HouseholdCreateScreen';

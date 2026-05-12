@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet, View } from 'react-native';
 import { MainTabParamList } from './types';
-import { colors, typography } from '../theme';
+import { colors, typography } from '@/design-system/tokens/legacy-semantic';
 import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
 import { DeviceListScreen } from '../screens/device/DeviceListScreen';
 import { ActivityScreen } from '../screens/activity/ActivityScreen';

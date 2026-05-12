@@ -12,7 +12,7 @@ import {
 import { Minus, MoonStar, Plus } from 'lucide-react-native';
 import { controlsApi, ParentControls } from '../../api/controls';
 import { Button, Card, ErrorMessage } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import { normalizeError } from '../../utils/errors';
 import type { MainStackScreenProps } from '../../navigation/types';
 

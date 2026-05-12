@@ -15,7 +15,7 @@ import { Device } from '../../types';
 import { MainStackParamList } from '../../navigation/types';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import * as devicesApi from '../../api/devices';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 
 type DeviceListNavProp = NativeStackNavigationProp<MainStackParamList>;
 

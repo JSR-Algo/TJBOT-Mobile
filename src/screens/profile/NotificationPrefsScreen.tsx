@@ -11,7 +11,7 @@ import {
 import * as notificationsApi from '../../api/notifications';
 import type { NotificationPreferences, NotificationHistoryItem } from '../../api/notifications';
 import { Card, LoadingSpinner, ErrorMessage } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainStackScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
 

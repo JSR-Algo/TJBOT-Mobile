@@ -12,7 +12,7 @@ import {
   RobotDemoScreen,
   isRobotDemoScreenEnabled,
 } from '../screens/robot-demo/RobotDemoScreen';
-import { colors } from '../theme';
+import { colors } from '@/design-system/tokens/legacy-semantic';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 

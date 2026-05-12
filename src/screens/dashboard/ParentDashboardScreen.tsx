@@ -11,7 +11,7 @@ import * as learningApi from '../../api/learning';
 import type { PronunciationTrend } from '../../api/learning';
 import { FeatureUnavailableError } from '../../api/learning';
 import { Card, LoadingSpinner, EmptyState } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainTabScreenProps } from '../../navigation/types';
 import type { KPIs } from '../../types';
 import { normalizeError } from '../../utils/errors';

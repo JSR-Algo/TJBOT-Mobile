@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ViewStyle, Pressable } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
 
 interface InputProps {
   label: string;

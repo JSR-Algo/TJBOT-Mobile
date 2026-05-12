@@ -10,7 +10,7 @@ import * as devicesApi from '../../api/devices';
 import { LoadingSpinner, Card, ErrorMessage } from '../../components';
 import { Device } from '../../types';
 import { normalizeError } from '../../utils/errors';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainStackScreenProps } from '../../navigation/types';
 
 function formatTimestamp(ts?: string): string {

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import * as learningApi from '../../api/learning';
 import { Button, ErrorMessage, OnboardingHeader } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
 

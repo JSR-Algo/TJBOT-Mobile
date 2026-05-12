@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
 
 interface ErrorMessageProps {
   message: string;

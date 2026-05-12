@@ -8,7 +8,7 @@ import {
   Linking,
 } from 'react-native';
 import { Button, ErrorMessage, OnboardingHeader } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { OnboardingScreenProps } from '../../navigation/types';
 import { sendConsent } from '../../api/auth';
 

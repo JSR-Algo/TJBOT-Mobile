@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 

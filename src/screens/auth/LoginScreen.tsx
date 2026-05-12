@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Bot } from 'lucide-react-native';
 import { Button, Input, ErrorMessage } from '../../components';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography } from '@/design-system/tokens/legacy-semantic';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
 import { useToast } from '../../components/Toast';

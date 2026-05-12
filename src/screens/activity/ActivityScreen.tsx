@@ -12,7 +12,7 @@ import { useHousehold } from '../../contexts/HouseholdContext';
 import * as dashboardApi from '../../api/dashboard';
 import * as devicesApi from '../../api/devices';
 import { Card, LoadingSpinner, ErrorMessage, EmptyState } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainTabScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
 import type { SessionHistoryItem, SafetyEvent, SessionCost } from '../../api/dashboard';

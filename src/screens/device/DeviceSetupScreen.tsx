@@ -13,7 +13,7 @@ import { Button, Input, ErrorMessage } from '../../components';
 import { initializeBle, scanForTbotDevices } from '../../ble/service';
 import type { BleBootstrapResult, BleDeviceCandidate } from '../../ble/types';
 import { normalizeError } from '../../utils/errors';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainStackScreenProps } from '../../navigation/types';
 import { trackEvent } from '../../observability/analytics';
 

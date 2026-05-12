@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Bot, Mic, ShieldCheck, TrendingUp } from 'lucide-react-native';
 import { Button, OnboardingHeader } from '../../components';
-import theme from '../../theme';
+import theme from '@/design-system/tokens/legacy-semantic';
 import type { OnboardingScreenProps } from '../../navigation/types';
 
 const FEATURES: Array<{ Icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>; text: string }> = [
