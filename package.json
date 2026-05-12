@@ -67,8 +67,9 @@
     "react-native": "0.83.4",
     "react-native-ble-plx": "^3.5.1",
     "react-native-gesture-handler": "~2.30.0",
-    "react-native-reanimated": "^3.6.3",
+    "react-native-reanimated": "^4.3.1",
     "react-native-safe-area-context": "~5.6.2",
+    "react-native-worklets": "^0.8.0",
     "react-native-screens": "~4.23.0",
     "react-native-svg": "^15.15.4",
     "xstate": "^5.31.1",
@@ -103,6 +104,7 @@
           "<rootDir>/tests/setup.ts"
         ],
         "moduleNameMapper": {
+          "^@/(.*)$": "<rootDir>/src/$1",
           "expo-secure-store": "<rootDir>/tests/__mocks__/expo-secure-store.ts",
           "expo-av": "<rootDir>/tests/__mocks__/expo-av.ts",
           "expo-haptics": "<rootDir>/tests/__mocks__/expo-haptics.ts",

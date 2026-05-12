@@ -52,7 +52,7 @@ jest.mock('../../src/contexts/AuthContext', () => ({
 // refresh's catch branch never flips onboardingComplete=false).
 const mockList = jest.fn();
 const mockListChildren = jest.fn();
-jest.mock('../src/services/api/households', () => ({
+jest.mock('../../src/services/api/households', () => ({
   list: () => mockList(),
   listChildren: () => mockListChildren(),
   create: jest.fn(),
