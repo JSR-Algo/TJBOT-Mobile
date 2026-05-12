@@ -1,0 +1,637 @@
+{
+  "generated": "2026-05-12",
+  "routeCount": 125,
+  "navigators": {
+    "AuthStack": "auth-gate fail (unauthenticated)",
+    "OnboardingStack": "kid-intro flow, reachable from features",
+    "MainTabs": "authenticated daily UX (5 tabs)",
+    "ModalStack": "authenticated stack hosting MainTabs as root + all domain screens + modal group"
+  },
+  "routes": {
+    "LoginScreen": {
+      "params": "undefined",
+      "group": "auth-(tbot-design-flow-only)",
+      "navigator": "AuthStack"
+    },
+    "LoginErrorScreen": {
+      "params": "undefined",
+      "group": "auth-(tbot-design-flow-only)",
+      "navigator": "AuthStack"
+    },
+    "ChildProfileScreen": {
+      "params": "undefined",
+      "group": "auth-(tbot-design-flow-only)",
+      "navigator": "AuthStack"
+    },
+    "SplashScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "WelcomeScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "MicAskScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "TrustScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "IntroListenScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "IntroSpeakScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "IntroRetryScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "IntroCelebrateScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "FirstLessonEntryScreen": {
+      "params": "undefined",
+      "group": "legal-sign-off-for-under-13-users.",
+      "navigator": "OnboardingStack"
+    },
+    "HomeHubScreen": {
+      "params": "undefined",
+      "group": "home",
+      "navigator": "ModalStack"
+    },
+    "CourseScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course",
+      "navigator": "ModalStack"
+    },
+    "LevelScreen": {
+      "params": "undefined | { levelId?: string }",
+      "group": "course",
+      "navigator": "ModalStack"
+    },
+    "UnitScreen": {
+      "params": "undefined | { unitId?: string }",
+      "group": "course",
+      "navigator": "ModalStack"
+    },
+    "LessonListScreen": {
+      "params": "undefined | { unitId?: string }",
+      "group": "course",
+      "navigator": "ModalStack"
+    },
+    "LessonDetailScreen": {
+      "params": "undefined | { lessonId?: string }",
+      "group": "course",
+      "navigator": "ModalStack"
+    },
+    "ReviewEntryScreen": {
+      "params": "undefined",
+      "group": "course",
+      "navigator": "ModalStack"
+    },
+    "DailyMissionScreen": {
+      "params": "undefined",
+      "group": "course",
+      "navigator": "ModalStack"
+    },
+    "CourseLibraryScreen": {
+      "params": "undefined",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "CourseDetailScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "BuyCourseScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "CourseAddedScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "CourseCompleteScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "CourseLockedScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "NeedsSyncScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "SendToRobotScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "RobotReadyScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "RunningScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "CompanionScreen": {
+      "params": "undefined",
+      "group": "course-library",
+      "navigator": "ModalStack"
+    },
+    "PurchaseIntroScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "HowItWorksScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "BundleScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "IncludedScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "CheckoutScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "OrderConfirmScreen": {
+      "params": "undefined | { orderId?: string }",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "ShippingScreen": {
+      "params": "undefined | { orderId?: string }",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "ArrivedScreen": {
+      "params": "undefined | { orderId?: string }",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "ActivateScreen": {
+      "params": "undefined | { orderId?: string }",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "FirstCourseScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "PrivacyScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "SubscriptionsScreen": {
+      "params": "undefined",
+      "group": "purchase",
+      "navigator": "ModalStack"
+    },
+    "ConnectingScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "GreetingScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "LessonReadyScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "RobotListeningScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "UserSpeakingScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "RobotSpeakingScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "ThinkingScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "ActivityIntroScreen": {
+      "params": "undefined | { activityId?: string }",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "ActivityDoneScreen": {
+      "params": "undefined | { activityId?: string }",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "SuccessScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "LessonDoneScreen": {
+      "params": "undefined | { lessonId?: string }",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "ExitConfirmScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "RetryScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "SilenceScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "BargeinScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "GentleScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "OfftopicScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "SafetyScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "CostCappedScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "ParentStoppedScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "TimedOutScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "AudioErrorScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "AbandonedDisconnectScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "ReconnectingScreen": {
+      "params": "undefined",
+      "group": "lesson-session",
+      "navigator": "ModalStack"
+    },
+    "TodayProgressScreen": {
+      "params": "undefined",
+      "group": "progress",
+      "navigator": "ModalStack"
+    },
+    "WordsPracticedScreen": {
+      "params": "undefined",
+      "group": "progress",
+      "navigator": "ModalStack"
+    },
+    "LessonSummaryScreen": {
+      "params": "undefined | { lessonId?: string }",
+      "group": "progress",
+      "navigator": "ModalStack"
+    },
+    "ReviewNeededScreen": {
+      "params": "undefined",
+      "group": "progress",
+      "navigator": "ModalStack"
+    },
+    "CelebrationScreen": {
+      "params": "undefined",
+      "group": "progress",
+      "navigator": "ModalStack"
+    },
+    "ParentGateScreen": {
+      "params": "undefined",
+      "group": "parent",
+      "navigator": "ModalStack"
+    },
+    "ParentSummaryScreen": {
+      "params": "undefined",
+      "group": "parent",
+      "navigator": "ModalStack"
+    },
+    "ParentTodayScreen": {
+      "params": "undefined",
+      "group": "parent",
+      "navigator": "ModalStack"
+    },
+    "ParentHistoryScreen": {
+      "params": "undefined",
+      "group": "parent",
+      "navigator": "ModalStack"
+    },
+    "ParentSafetyScreen": {
+      "params": "undefined",
+      "group": "parent",
+      "navigator": "ModalStack"
+    },
+    "ParentSettingsScreen": {
+      "params": "undefined",
+      "group": "parent",
+      "navigator": "ModalStack"
+    },
+    "ParentLockedOutScreen": {
+      "params": "undefined",
+      "group": "parent",
+      "navigator": "ModalStack"
+    },
+    "PairIntroScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairSearchScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairFoundScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairConnectingScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairCodeScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairAddScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairRenameScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairWifiScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairWifiPasswordScreen": {
+      "params": "undefined | { deviceId?: string; ssid?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairOfflineScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairFailedScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairSuccessScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "PairFirstLessonScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "DeviceHomeScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "DeviceOverviewScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "DeviceFirmwareScreen": {
+      "params": "undefined | { deviceId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "DeviceSessionScreen": {
+      "params": "undefined | { sessionId?: string }",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "DeviceLostScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "LCDLessonTurnScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "LCDLibraryScreen": {
+      "params": "undefined",
+      "group": "device-/-pairing",
+      "navigator": "ModalStack"
+    },
+    "MyRobotScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "RobotStatusScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "RobotBatteryScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "RobotStorageScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "RobotFirmwareScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "RobotWifiScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "RobotSoundScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "MicTestScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "SpeakerTestScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "FactoryResetScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "OfflineHelpScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "SupportScreen": {
+      "params": "undefined",
+      "group": "robot-mgmt",
+      "navigator": "ModalStack"
+    },
+    "NetworkErrorScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "AppErrorScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "MicMissingScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "VoiceFailedScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "AudioRecoveryScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "SafetyRedirectScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "HelpFaqScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "KidSettingsScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "LessonResumeScreen": {
+      "params": "undefined",
+      "group": "fallback-screens",
+      "navigator": "ModalStack"
+    },
+    "UnlockConfirmScreen": {
+      "params": "undefined | { courseId?: string }",
+      "group": "modals-&-overlays-(presented-as-modal)",
+      "navigator": "ModalStack"
+    },
+    "ReconnectingOverlay": {
+      "params": "undefined",
+      "group": "modals-&-overlays-(presented-as-modal)",
+      "navigator": "ModalStack"
+    },
+    "ListenScreen": {
+      "params": "undefined",
+      "group": "phantom-routes-referenced-by-screens-(not-yet-wired-to-real-screens)",
+      "navigator": "ModalStack"
+    },
+    "SpeakScreen": {
+      "params": "undefined",
+      "group": "phantom-routes-referenced-by-screens-(not-yet-wired-to-real-screens)",
+      "navigator": "ModalStack"
+    },
+    "DevicePairWifiScreen": {
+      "params": "undefined",
+      "group": "phantom-routes-referenced-by-screens-(not-yet-wired-to-real-screens)",
+      "navigator": "ModalStack"
+    }
+  }
+}

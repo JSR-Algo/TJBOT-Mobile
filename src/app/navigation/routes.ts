@@ -22,25 +22,6 @@ export type RootStackParamList = {
   // home
   HomeHubScreen: undefined;
 
-  // legacy production-screen route names — TODO(PR8) remove when src/screens/* retires
-  DeviceDetail: { deviceId: string };
-  DeviceSetup: undefined;
-  NotificationPrefs: undefined;
-  GeminiConversation: undefined;
-  ParentControls: { deviceId: string };
-  AddChild: { householdId: string } | undefined;
-  Login: undefined;
-  Signup: undefined;
-  ForgotPassword: undefined;
-  Coppa: undefined;
-  Welcome: undefined;
-  CoppaConsent: undefined;
-  HouseholdCreate: undefined;
-  InterestSetup: { childId?: string; householdId?: string } | undefined;
-  DeviceSetupIntro: undefined;
-  VoiceTest: undefined;
-  RobotDemo: undefined;
-
   // course
   CourseScreen: undefined | { courseId?: string };
   LevelScreen: undefined | { levelId?: string };

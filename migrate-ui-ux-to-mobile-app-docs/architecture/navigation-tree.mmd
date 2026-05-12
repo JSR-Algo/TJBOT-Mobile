@@ -1,0 +1,176 @@
+flowchart TD
+  Boot([App launch]) --> RN[RootNavigator]
+  RN --> AuthGate{isAuthenticated?}
+  AuthGate -- "false" --> AuthStack
+  AuthGate -- "true" --> ModalStack
+
+  subgraph AuthStack [AuthStack — guest-only]
+    Login[LoginScreen]
+    LoginErr[LoginErrorScreen]
+    ChildProf[ChildProfileScreen]
+    Login -- "login fail" --> LoginErr
+    LoginErr -- "Try again" --> ChildProf
+    LoginErr -- "Reset password" --> Login
+    ChildProf -- "Save" --> IntroListen[IntroListenScreen]
+    Login -- "Google/Apple" --> ChildProf
+  end
+
+  Login -. "useAuth.login success — navigation.replace" .-> HomeHubScreen
+
+  subgraph OnboardingStack [OnboardingStack — kid intro]
+    Splash[SplashScreen]
+    Welcome[WelcomeScreen]
+    IntroListen
+    IntroSpeak[IntroSpeakScreen]
+    IntroRetry[IntroRetryScreen]
+    IntroCelebrate[IntroCelebrateScreen]
+    Trust[TrustScreen]
+    MicAsk[MicAskScreen]
+    FirstLesson[FirstLessonEntryScreen]
+    Splash -- "auto 1.7s" --> Welcome
+    Welcome -- "Get started" --> IntroListen
+    Welcome -- "I have an account" --> Login
+    IntroListen -- "Next" --> IntroSpeak
+    IntroSpeak -- "Next" --> IntroRetry
+    IntroRetry -- "Next" --> IntroCelebrate
+    IntroCelebrate -- "Next" --> Trust
+    Trust -- "Continue" --> MicAsk
+    MicAsk -- "Continue" --> FirstLesson
+    MicAsk -- "Not now" --> Login
+    IntroListen -- "Skip" --> Trust
+    IntroSpeak -- "Skip" --> Trust
+    IntroRetry -- "Skip" --> Trust
+    IntroCelebrate -- "Skip" --> Trust
+    FirstLesson -- "Yes!" --> LessonReady
+  end
+
+  subgraph ModalStack [ModalStack — authenticated]
+    HomeHubScreen
+    MainTabs[(MainTabs Tab.Navigator)]
+    HomeHubScreen --> MainTabs
+
+    subgraph MainTabs
+      HomeTab[Home: HomeHubScreen]
+      DevTab[Devices: DeviceHomeScreen]
+      ActTab[Activity: stub]
+      ProgTab[Progress: TodayProgressScreen]
+      ProfTab[Profile: ParentSummaryScreen]
+    end
+
+    subgraph Learning [learning cluster]
+      CourseScreen --> LevelScreen --> UnitScreen --> LessonListScreen --> LessonDetailScreen
+      LessonDetailScreen --> ReviewEntryScreen
+      DailyMissionScreen
+      CourseLibraryScreen --> CourseDetailScreen
+      CourseDetailScreen --> BuyCourseScreen
+      CourseDetailScreen --> CourseLockedScreen
+      CourseLockedScreen --> UnlockConfirmScreen
+      BuyCourseScreen --> CourseAddedScreen
+      CourseAddedScreen --> SendToRobotScreen
+      SendToRobotScreen --> NeedsSyncScreen
+      SendToRobotScreen --> RobotReadyScreen
+      RobotReadyScreen --> RunningScreen
+      RunningScreen --> CompanionScreen
+    end
+
+    subgraph LessonSession [lesson-session FSM — 24 screens]
+      LessonReady[LessonReadyScreen]
+      Connecting[ConnectingScreen]
+      Greeting[GreetingScreen]
+      RobotListening[RobotListeningScreen]
+      UserSpeaking[UserSpeakingScreen]
+      Thinking[ThinkingScreen]
+      RobotSpeaking[RobotSpeakingScreen]
+      ActivityIntro[ActivityIntroScreen]
+      ActivityDone[ActivityDoneScreen]
+      Success[SuccessScreen]
+      LessonDone[LessonDoneScreen]
+      ExitConfirm[ExitConfirmScreen]
+      LessonReady --> Connecting --> Greeting --> RobotListening
+      RobotListening --> UserSpeaking --> Thinking --> RobotSpeaking
+      RobotSpeaking --> ActivityIntro --> ActivityDone
+      ActivityDone --> Success --> LessonDone
+      LessonReady -. error states .-> Retry & Silence & Bargein & Gentle & Offtopic & Safety & CostCapped & ParentStopped & TimedOut & AudioError & AbandonedDisconnect & Reconnecting
+    end
+
+    HomeHubScreen --> CourseLibraryScreen
+    HomeHubScreen --> ReviewNeededScreen
+    HomeHubScreen --> TodayProgressScreen
+    HomeHubScreen --> ParentGateScreen
+
+    subgraph Parent [parent cluster]
+      ParentGateScreen --> ParentSummaryScreen
+      ParentGateScreen --> ParentLockedOutScreen
+      ParentSummaryScreen --> ParentTodayScreen
+      ParentSummaryScreen --> ParentHistoryScreen
+      ParentSummaryScreen --> ParentSettingsScreen
+      ParentSettingsScreen --> ParentSafetyScreen
+      ParentStoppedScreen
+    end
+
+    subgraph Progress [progress cluster]
+      TodayProgressScreen --> WordsPracticedScreen
+      LessonSummaryScreen
+      ReviewNeededScreen
+      CelebrationScreen
+    end
+
+    subgraph Pairing [device pairing FSM — 13 screens]
+      PairIntro[PairIntroScreen] --> PairSearch[PairSearchScreen] --> PairFound[PairFoundScreen]
+      PairFound --> PairCode[PairCodeScreen] --> PairConnecting[PairConnectingScreen]
+      PairConnecting --> PairSuccess[PairSuccessScreen] --> PairFirstLesson[PairFirstLessonScreen]
+      PairConnecting --> PairFailed[PairFailedScreen]
+      PairFailed --> PairOffline[PairOfflineScreen]
+      PairAdd[PairAddScreen]
+      PairRename[PairRenameScreen]
+      PairWifi[PairWifiScreen] --> PairWifiPassword[PairWifiPasswordScreen]
+    end
+
+    subgraph Device [device cluster]
+      DeviceHomeScreen --> DeviceOverviewScreen
+      DeviceOverviewScreen --> DeviceFirmwareScreen
+      DeviceOverviewScreen --> DeviceSessionScreen
+      DeviceLostScreen
+      LCDLessonTurnScreen
+      LCDLibraryScreen
+    end
+
+    subgraph RobotMgmt [robot-mgmt cluster]
+      MyRobotScreen --> RobotStatusScreen
+      RobotStatusScreen --> RobotBatteryScreen
+      RobotStatusScreen --> RobotStorageScreen
+      RobotStatusScreen --> RobotFirmwareScreen
+      RobotStatusScreen --> RobotWifiScreen
+      RobotStatusScreen --> RobotSoundScreen
+      MyRobotScreen --> MicTestScreen
+      MyRobotScreen --> SpeakerTestScreen
+      MyRobotScreen --> FactoryResetScreen
+      MyRobotScreen --> OfflineHelpScreen
+      MyRobotScreen --> SupportScreen
+    end
+
+    subgraph Purchase [purchase 12-screen flow]
+      PurchaseIntroScreen --> HowItWorksScreen --> BundleScreen --> IncludedScreen
+      IncludedScreen --> CheckoutScreen --> OrderConfirmScreen --> ShippingScreen
+      ShippingScreen --> ArrivedScreen --> ActivateScreen --> FirstCourseScreen
+      PrivacyScreen
+      SubscriptionsScreen
+    end
+
+    subgraph Fallback [fallback]
+      NetworkErrorScreen
+      AppErrorScreen
+      MicMissingScreen
+      VoiceFailedScreen
+      AudioRecoveryScreen
+      SafetyRedirectScreen
+      HelpFaqScreen
+      KidSettingsScreen
+      LessonResumeScreen
+    end
+
+    subgraph Modal [Stack.Group presentation=modal]
+      UnlockConfirmScreen
+      ReconnectingOverlay
+    end
+  end
