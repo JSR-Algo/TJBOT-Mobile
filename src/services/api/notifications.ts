@@ -1,4 +1,4 @@
-import client from './client';
+import client from '../http/client';
 
 export interface NotificationPreferences {
   id: string;

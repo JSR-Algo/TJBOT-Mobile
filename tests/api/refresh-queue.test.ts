@@ -16,10 +16,10 @@ import {
   enqueue,
   processQueue,
   refreshAuthTokens,
-} from '../../src/api/refresh-queue';
+} from '../../src/services/http/refresh-queue';
 
 jest.mock('axios');
-jest.mock('../../src/api/tokens', () => ({
+jest.mock('../src/services/http/tokens', () => ({
   getAccessToken: jest.fn(async () => 'old-access'),
   getRefreshToken: jest.fn(async () => 'refresh-xyz'),
   setTokens: jest.fn(async () => undefined),

@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import * as learningApi from '../../api/learning';
+import * as learningApi from '../../services/api/learning';
 import { Button, ErrorMessage, OnboardingHeader } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import type { OnboardingScreenProps } from '../../navigation/types';

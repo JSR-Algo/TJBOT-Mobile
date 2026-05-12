@@ -1,4 +1,4 @@
-import client from './client';
+import client from '../http/client';
 
 export interface ParentControls {
   daily_limit_minutes: number;

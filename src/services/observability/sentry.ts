@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react-native';
-import { ENV } from '../__env__';
+import { ENV } from '../../__env__';
 
 const SENTRY_DSN = ENV.EXPO_PUBLIC_SENTRY_DSN?.trim();
 let sentryEnabled = false;

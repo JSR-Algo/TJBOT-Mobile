@@ -1,6 +1,6 @@
-import client from './client';
-import { setTokens, clearTokens } from './tokens';
-import { AuthTokens, User } from '../types';
+import client from '../http/client';
+import { setTokens, clearTokens } from '../http/tokens';
+import { AuthTokens, User } from '../../types';
 
 export async function signup(name: string, email: string, password: string): Promise<{ access_token?: string }> {
   const response = await client.post('/auth/signup', { name, email, password });

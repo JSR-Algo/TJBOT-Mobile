@@ -139,5 +139,5 @@ THEN /v1/config returns v1_robot_enabled_remote=false
 
 - [AC-4..AC-12 in plan §6](../../../.omc/plans/mobile-v1-internal-alpha-speech-ai.md)
 - [Gate G3 criteria](../../../.omc/plans/mobile-v1-internal-alpha-speech-ai.md)
-- [Safety shim README](../../src/ai/safety/README.md)
+- [Safety shim README](../../src/services/ai/safety/README.md)
 - [Verification matrix template](../../../docs/qa/templates/) (pending)

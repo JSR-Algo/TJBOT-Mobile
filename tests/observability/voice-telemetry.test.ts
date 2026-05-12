@@ -68,7 +68,7 @@ const listeners = __voiceTelemetryTestStore;
 // ─── Imports (AFTER mocks) ──────────────────────────────────────────────
 
 import * as Sentry from '@sentry/react-native';
-import { startVoiceTelemetry, stopVoiceTelemetry } from '../../src/observability/voice-telemetry';
+import { startVoiceTelemetry, stopVoiceTelemetry } from '../../src/services/observability/voice-telemetry';
 
 // Pull the mock fn created inside the factory out via the exposed
 // __mockBreadcrumb property — both test and source see the same module

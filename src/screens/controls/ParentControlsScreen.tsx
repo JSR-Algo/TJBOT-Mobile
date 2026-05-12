@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Minus, MoonStar, Plus } from 'lucide-react-native';
-import { controlsApi, ParentControls } from '../../api/controls';
+import { controlsApi, ParentControls } from '../../services/api/controls';
 import { Button, Card, ErrorMessage } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import { normalizeError } from '../../utils/errors';

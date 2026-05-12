@@ -36,7 +36,7 @@ jest.mock('../../src/contexts/AuthContext', () => ({
   }),
 }));
 
-jest.mock('../../src/api/auth', () => ({
+jest.mock('../src/services/api/auth', () => ({
   forgotPassword: jest.fn().mockResolvedValue({}),
   sendConsent: jest.fn().mockResolvedValue({}),
 }));
@@ -196,7 +196,7 @@ describe('SignupScreen', () => {
 // ─── ForgotPasswordScreen ─────────────────────────────────────────────────────
 
 describe('ForgotPasswordScreen', () => {
-  const authApi = require('../../src/api/auth');
+  const authApi = require('../src/services/api/auth');
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -253,7 +253,7 @@ describe('ForgotPasswordScreen', () => {
 // ─── CoppaScreen ──────────────────────────────────────────────────────────────
 
 describe('CoppaScreen', () => {
-  const authApi = require('../../src/api/auth');
+  const authApi = require('../src/services/api/auth');
 
   beforeEach(() => jest.clearAllMocks());
 

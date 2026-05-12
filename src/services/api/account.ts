@@ -1,5 +1,5 @@
-import client from './client';
-import { User } from '../types';
+import client from '../http/client';
+import { User } from '../../types';
 
 export async function deleteAccount(password: string): Promise<void> {
   await client.delete('/v1/account', { data: { password } });

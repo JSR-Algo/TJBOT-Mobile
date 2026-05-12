@@ -1,5 +1,5 @@
-import client from './client';
-import { Device } from '../types';
+import client from '../http/client';
+import { Device } from '../../types';
 
 export async function listByHousehold(householdId: string): Promise<Device[]> {
   const response = await client.get(`/devices/household/${householdId}`);

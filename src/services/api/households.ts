@@ -1,5 +1,5 @@
-import client from './client';
-import { Household, Child } from '../types';
+import client from '../http/client';
+import { Household, Child } from '../../types';
 
 export async function list(): Promise<Household[]> {
   const response = await client.get('/households');

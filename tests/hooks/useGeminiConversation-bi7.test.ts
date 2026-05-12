@@ -18,7 +18,7 @@
  * Default budget: 5000ms (DEFAULT_BARGE_IN_BUDGET_MS in config.ts).
  */
 
-jest.mock('../../src/observability/voice-telemetry', () => ({
+jest.mock('../src/services/observability/voice-telemetry', () => ({
   track: jest.fn(),
   jsErrorBreadcrumb: jest.fn(),
   startVoiceTelemetry: jest.fn(),
@@ -26,7 +26,7 @@ jest.mock('../../src/observability/voice-telemetry', () => ({
   nativeBreadcrumb: jest.fn(),
 }));
 
-import { track } from '../../src/observability/voice-telemetry';
+import { track } from '../../src/services/observability/voice-telemetry';
 
 const mockTrack = track as jest.MockedFunction<typeof track>;
 

@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
-import { getAccessToken } from './tokens';
-import { Config } from '../config';
+import { getAccessToken } from '../http/tokens';
+import { Config } from '../../config';
 import {
   isRefreshing,
   setRefreshing,
@@ -8,7 +8,7 @@ import {
   processQueue,
   refreshAuthTokens,
   clearAuthTokens,
-} from './refresh-queue';
+} from '../http/refresh-queue';
 
 const AI_BASE_URL = Config.AI_BASE_URL;
 

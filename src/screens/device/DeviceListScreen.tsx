@@ -14,7 +14,7 @@ import { EmptyState, Card } from '../../components';
 import { Device } from '../../types';
 import { MainStackParamList } from '../../navigation/types';
 import { useHousehold } from '../../contexts/HouseholdContext';
-import * as devicesApi from '../../api/devices';
+import * as devicesApi from '../../services/api/devices';
 import theme from '@/design-system/tokens/legacy-semantic';
 
 type DeviceListNavProp = NativeStackNavigationProp<MainStackParamList>;

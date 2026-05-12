@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import * as notificationsApi from '../../api/notifications';
-import type { NotificationPreferences, NotificationHistoryItem } from '../../api/notifications';
+import * as notificationsApi from '../../services/api/notifications';
+import type { NotificationPreferences, NotificationHistoryItem } from '../../services/api/notifications';
 import { Card, LoadingSpinner, ErrorMessage } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainStackScreenProps } from '../../navigation/types';

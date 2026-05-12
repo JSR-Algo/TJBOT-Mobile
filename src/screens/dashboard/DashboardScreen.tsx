@@ -12,7 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { useInteractions } from '../../contexts/InteractionContext';
 import { Card } from '../../components';
-import * as learningApi from '../../api/learning';
+import * as learningApi from '../../services/api/learning';
 import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainTabScreenProps } from '../../navigation/types';
 

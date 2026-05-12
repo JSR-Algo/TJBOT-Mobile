@@ -9,10 +9,10 @@ import { InteractionProvider } from './contexts/InteractionContext';
 import { RootNavigator } from './navigation/RootNavigator';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { ToastProvider } from './components/Toast';
-import { RootErrorBoundary } from './observability/RootErrorBoundary';
-import { initAnalytics } from './observability/analytics';
-import { initSentry } from './observability/sentry';
-import { startVoiceTelemetry } from './observability/voice-telemetry';
+import { RootErrorBoundary } from './services/observability/RootErrorBoundary';
+import { initAnalytics } from './services/observability/analytics';
+import { initSentry } from './services/observability/sentry';
+import { startVoiceTelemetry } from './services/observability/voice-telemetry';
 
 initSentry();
 initAnalytics();

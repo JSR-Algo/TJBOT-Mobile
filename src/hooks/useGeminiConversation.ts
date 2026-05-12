@@ -13,18 +13,18 @@ import { GoogleGenAI, Modality, ActivityHandling } from '@google/genai/web';
 // PcmStreamModule via AVAudioPlayerNode; playback-finish detection uses
 // duration-based timer (not drain polling) to avoid the stuck-on-playing
 // bug with .dataPlayedBack completion handlers on iOS.
-import { PcmStreamPlayer as AudioPlaybackService } from '../audio/PcmStreamPlayer';
+import { PcmStreamPlayer as AudioPlaybackService } from '../services/audio/PcmStreamPlayer';
 import { VoiceSession } from '../native/VoiceSession';
 import { VoiceMic } from '../native/VoiceMic';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import * as Haptics from 'expo-haptics';
 import { detectExpression } from '../utils/expressionDetector';
 import { Config } from '../config';
-import { chat as chatWithAI } from '../api/ai';
-import apiClient from '../api/client';
-import { extractInlineAudioParts } from '../ai/liveMessageAudio';
+import { chat as chatWithAI } from '../services/api/ai';
+import apiClient from '../services/http/client';
+import { extractInlineAudioParts } from '../services/ai/liveMessageAudio';
 import { startVoiceDebugProbe, stopVoiceDebugProbe } from '../debug/voiceDebugProbe';
-import { jsErrorBreadcrumb, track } from '../observability/voice-telemetry';
+import { jsErrorBreadcrumb, track } from '../services/observability/voice-telemetry';
 
 const TOKEN_FETCH_TIMEOUT_MS = 8000;
 // T4.2: how long a cached session-resumption handle is considered fresh.
@@ -219,7 +219,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     }
 
     // 2. Fetch API key from backend via the shared axios client. The axios
-    // client's response interceptor (src/api/client.ts) handles 401 →
+    // client's response interceptor (src/services/http/client.ts) handles 401 →
     // refreshAuthTokens → retry, so a naturally-expired JWT here is
     // transparent rather than a hard failure. The prior plain `fetch`
     // path skipped that interceptor and surfaced as "Không thể kết nối

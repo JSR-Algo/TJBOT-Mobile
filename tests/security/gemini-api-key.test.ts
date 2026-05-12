@@ -82,7 +82,7 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
 
     // Confirm the token is fetched from the backend's gemini/token endpoint.
     // The path in source is '/gemini/token' — the /v1 prefix is supplied by
-    // apiClient's base URL (see src/api/client.ts). Asserting the literal
+    // apiClient's base URL (see src/services/http/client.ts). Asserting the literal
     // path the source uses keeps the test resilient to baseURL changes.
     expect(src).toMatch(/apiClient\.post[^(]*\(\s*['"]\/gemini\/token['"]/);
 

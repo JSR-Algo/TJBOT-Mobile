@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken } from './tokens';
-import { normalizeError } from '../utils/errors';
-import { Config } from '../config';
+import { normalizeError } from '../../utils/errors';
+import { Config } from '../../config';
 import {
   isRefreshing,
   setRefreshing,

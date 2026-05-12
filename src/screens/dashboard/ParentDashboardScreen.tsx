@@ -7,9 +7,9 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useHousehold } from '../../contexts/HouseholdContext';
-import * as learningApi from '../../api/learning';
-import type { PronunciationTrend } from '../../api/learning';
-import { FeatureUnavailableError } from '../../api/learning';
+import * as learningApi from '../../services/api/learning';
+import type { PronunciationTrend } from '../../services/api/learning';
+import { FeatureUnavailableError } from '../../services/api/learning';
 import { Card, LoadingSpinner, EmptyState } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainTabScreenProps } from '../../navigation/types';

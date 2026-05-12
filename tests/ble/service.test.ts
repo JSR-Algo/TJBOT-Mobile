@@ -1,11 +1,11 @@
-import { BLE_CONFIG, isAllowlistedDevice } from '../../src/ble/config';
-import { initializeBle, splitDevicesByAllowlist } from '../../src/ble/service';
+import { BLE_CONFIG, isAllowlistedDevice } from '../../src/services/ble/config';
+import { initializeBle, splitDevicesByAllowlist } from '../../src/services/ble/service';
 
-jest.mock('../../src/ble/permissions', () => ({
+jest.mock('../src/services/ble/permissions', () => ({
   requestBlePermissions: jest.fn(),
 }));
 
-const { requestBlePermissions } = jest.requireMock('../../src/ble/permissions') as {
+const { requestBlePermissions } = jest.requireMock('../src/services/ble/permissions') as {
   requestBlePermissions: jest.Mock;
 };
 

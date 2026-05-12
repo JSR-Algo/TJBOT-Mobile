@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import * as notificationsApi from '../api/notifications';
+import * as notificationsApi from '../services/api/notifications';
 
 // expo-notifications requires a native rebuild — guard all calls so the app
 // runs without crashing in JS-only (Expo Go / Metro) builds.

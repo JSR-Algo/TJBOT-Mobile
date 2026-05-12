@@ -9,13 +9,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useHousehold } from '../../contexts/HouseholdContext';
-import * as dashboardApi from '../../api/dashboard';
-import * as devicesApi from '../../api/devices';
+import * as dashboardApi from '../../services/api/dashboard';
+import * as devicesApi from '../../services/api/devices';
 import { Card, LoadingSpinner, ErrorMessage, EmptyState } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainTabScreenProps } from '../../navigation/types';
 import { normalizeError } from '../../utils/errors';
-import type { SessionHistoryItem, SafetyEvent, SessionCost } from '../../api/dashboard';
+import type { SessionHistoryItem, SafetyEvent, SessionCost } from '../../services/api/dashboard';
 
 type Tab = 'Sessions' | 'Safety' | 'Cost';
 type DateRange = '7' | '30' | '90';

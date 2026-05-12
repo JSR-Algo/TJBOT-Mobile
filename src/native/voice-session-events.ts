@@ -5,7 +5,7 @@
  * VoiceMicModule, PcmStreamModule) emit over DeviceEventManagerModule /
  * RCTDeviceEventEmitter. Keep every field the native side writes in the
  * discriminated union below; the telemetry forwarder in
- * `src/observability/voice-telemetry.ts` relies on the exhaustive `event`
+ * `src/services/observability/voice-telemetry.ts` relies on the exhaustive `event`
  * tag for compile-time breadcrumb routing.
  *
  * Schema is intentionally COPPA-safe: we record device-type info (speaker,

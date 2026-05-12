@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Button, ErrorMessage } from '../../components';
 import { colors, spacing, typography, radius } from '@/design-system/tokens/legacy-semantic';
-import * as authApi from '../../api/auth';
+import * as authApi from '../../services/api/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { pendingCredentials } from '../../auth/pendingCredentials';
 

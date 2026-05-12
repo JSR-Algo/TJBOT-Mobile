@@ -1,4 +1,4 @@
-import { getAnalyticsClient, initAnalytics, isAnalyticsEnabled, trackEvent } from '../../src/observability/analytics';
+import { getAnalyticsClient, initAnalytics, isAnalyticsEnabled, trackEvent } from '../../src/services/observability/analytics';
 
 describe('analytics', () => {
   beforeEach(() => {

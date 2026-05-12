@@ -1,6 +1,6 @@
 import React from 'react';
 import { DevSettings, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../components';
+import { Button } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import { captureError } from './sentry';
 

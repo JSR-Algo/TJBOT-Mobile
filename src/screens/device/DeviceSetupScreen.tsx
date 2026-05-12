@@ -8,14 +8,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { Bot, CheckCircle2 } from 'lucide-react-native';
-import * as devicesApi from '../../api/devices';
+import * as devicesApi from '../../services/api/devices';
 import { Button, Input, ErrorMessage } from '../../components';
-import { initializeBle, scanForTbotDevices } from '../../ble/service';
-import type { BleBootstrapResult, BleDeviceCandidate } from '../../ble/types';
+import { initializeBle, scanForTbotDevices } from '../../services/ble/service';
+import type { BleBootstrapResult, BleDeviceCandidate } from '../../services/ble/types';
 import { normalizeError } from '../../utils/errors';
 import theme from '@/design-system/tokens/legacy-semantic';
 import type { MainStackScreenProps } from '../../navigation/types';
-import { trackEvent } from '../../observability/analytics';
+import { trackEvent } from '../../services/observability/analytics';
 
 export function DeviceSetupScreen({ navigation }: MainStackScreenProps<'DeviceSetup'>): React.JSX.Element {
   const [serialNumber, setSerialNumber] = useState('');

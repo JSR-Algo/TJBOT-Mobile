@@ -20,7 +20,7 @@
 
 import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
-import { Config } from '../config';
+import { Config } from '../../config';
 import {
   VOICE_EVENT_NAMES,
   type VoiceRouteChangeEvent,
@@ -30,7 +30,7 @@ import {
   type VoicePlaybackStalledEvent,
   type VoicePlaybackDrainedEvent,
   type VoiceTelemetryEvent,
-} from '../native/voice-session-events';
+} from '../../native/voice-session-events';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -107,7 +107,7 @@ function accumulateAgg(category: VoiceTelemetryCategory, event: string): void {
 
 // ── QA-mode POST (plan §12.8) ─────────────────────────────────────────────
 
-// Lazy import to avoid circular deps — apiClient lives in src/api/client.ts
+// Lazy import to avoid circular deps — apiClient lives in src/services/http/client.ts
 // which imports from config.ts. We defer the require until first QA event so
 // the module graph stays acyclic at parse time.
 let _qaFlushScheduled = false;
@@ -124,7 +124,7 @@ function scheduleQaFlush(): void {
     const batch = _qaQueue.splice(0, _qaQueue.length);
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { default: apiClient } = require('../api/client') as {
+      const { default: apiClient } = require('../http/client') as {
         default: { post: (url: string, data: unknown) => Promise<unknown> };
       };
       void apiClient

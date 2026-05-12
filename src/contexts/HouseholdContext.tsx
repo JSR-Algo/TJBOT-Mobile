@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Household, Child } from '../types';
-import * as householdsApi from '../api/households';
+import * as householdsApi from '../services/api/households';
 import { useAuth } from './AuthContext';
 import { normalizeError } from '../utils/errors';
 

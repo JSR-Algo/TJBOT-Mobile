@@ -1,5 +1,5 @@
 import PostHog from 'posthog-react-native';
-import { ENV } from '../__env__';
+import { ENV } from '../../__env__';
 
 /** Event names must follow `mobile.<domain>.<action>`. */
 const POSTHOG_KEY = ENV.EXPO_PUBLIC_POSTHOG_API_KEY?.trim();

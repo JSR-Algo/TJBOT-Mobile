@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getRefreshToken, setTokens, clearTokens } from './tokens';
-import { Config } from '../config';
+import { Config } from '../../config';
 
 /**
  * Shared refresh-queue state for all axios clients (main + AI).

@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../navigation/types';
 import { Button, Card } from '../../components';
-import * as accountApi from '../../api/account';
+import * as accountApi from '../../services/api/account';
 import theme from '@/design-system/tokens/legacy-semantic';
 
 type ProfileNavigationProp = NativeStackNavigationProp<MainStackParamList>;

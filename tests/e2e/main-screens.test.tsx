@@ -10,11 +10,11 @@ import { DeviceListScreen } from '../../src/screens/device/DeviceListScreen';
 import { ProfileScreen } from '../../src/screens/profile/ProfileScreen';
 import { DeviceSetupScreen } from '../../src/screens/device/DeviceSetupScreen';
 import { ParentControlsScreen } from '../../src/screens/controls/ParentControlsScreen';
-import * as devicesApi from '../../src/api/devices';
-import { controlsApi } from '../../src/api/controls';
+import * as devicesApi from '../../src/services/api/devices';
+import { controlsApi } from '../../src/services/api/controls';
 import type { MainStackScreenProps, MainTabScreenProps } from '../../src/navigation/types';
 
-jest.mock('../../src/ble/service', () => ({
+jest.mock('../src/services/ble/service', () => ({
   initializeBle: jest.fn(async () => ({ permission: 'granted', available: true })),
   scanForTbotDevices: jest.fn(async () => ({ allowed: [], blocked: [] })),
 }));
@@ -77,17 +77,17 @@ jest.mock('../../src/contexts/InteractionContext', () => ({
   useInteractions: () => mockInteractionState,
 }));
 
-jest.mock('../../src/api/devices', () => ({
+jest.mock('../src/services/api/devices', () => ({
   listByHousehold: jest.fn().mockResolvedValue([]),
   register: jest.fn(),
 }));
 
-jest.mock('../../src/api/learning', () => ({
+jest.mock('../src/services/api/learning', () => ({
   getKPIs: jest.fn().mockResolvedValue({ daily_streak: 0 }),
   getPronunciationTrend: jest.fn(),
 }));
 
-jest.mock('../../src/api/controls', () => ({
+jest.mock('../src/services/api/controls', () => ({
   controlsApi: {
     getControls: jest.fn().mockResolvedValue({
       daily_limit_minutes: 30,
@@ -108,7 +108,7 @@ const updateControlsMock = jest.mocked(controlsApi.updateControls);
 
 describe('DashboardScreen', () => {
   const mockRoute = { params: undefined, key: 'Home', name: 'Home' as const };
-  const learningApi = require('../../src/api/learning');
+  const learningApi = require('../src/services/api/learning');
 
   beforeEach(() => {
     jest.clearAllMocks();

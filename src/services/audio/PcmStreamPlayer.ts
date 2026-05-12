@@ -17,7 +17,7 @@
  *   - interrupt() tells the native track to flush queued samples for barge-in.
  */
 import { NativeEventEmitter, NativeModules, type EmitterSubscription } from 'react-native';
-import type { AudioMode } from '../state/voiceAssistantStore';
+import type { AudioMode } from '../../state/voiceAssistantStore';
 import { jsErrorBreadcrumb } from '../observability/voice-telemetry';
 
 const SAMPLE_RATE = 24_000;

@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button, Input, ErrorMessage } from '../../components';
 import { colors, spacing, typography } from '@/design-system/tokens/legacy-semantic';
-import * as authApi from '../../api/auth';
+import * as authApi from '../../services/api/auth';
 import { AuthStackParamList } from '../../navigation/types';
 import { useToast } from '../../components/Toast';
 

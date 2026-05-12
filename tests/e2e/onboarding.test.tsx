@@ -38,7 +38,7 @@ jest.mock('../../src/contexts/HouseholdContext', () => ({
   }),
 }));
 
-jest.mock('../../src/api/learning', () => ({
+jest.mock('../src/services/api/learning', () => ({
   updateChildProfile: jest.fn().mockResolvedValue({}),
 }));
 
@@ -178,7 +178,7 @@ describe('AddChildScreen', () => {
 // ─── InterestSetupScreen ──────────────────────────────────────────────────────
 
 describe('InterestSetupScreen', () => {
-  const learningApi = require('../../src/api/learning');
+  const learningApi = require('../src/services/api/learning');
   const mockRoute = {
     params: { childId: 'child-1', householdId: 'hh-123' },
     key: 'InterestSetup',

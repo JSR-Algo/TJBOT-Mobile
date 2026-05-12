@@ -1,4 +1,4 @@
-import client from './client';
+import client from '../http/client';
 
 /**
  * Thrown by learning APIs when the backend endpoint isn't deployed yet.

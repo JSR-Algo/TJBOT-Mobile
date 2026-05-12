@@ -10,7 +10,7 @@ import {
 import { Button, ErrorMessage, OnboardingHeader } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import type { OnboardingScreenProps } from '../../navigation/types';
-import { sendConsent } from '../../api/auth';
+import { sendConsent } from '../../services/api/auth';
 
 const CONSENT_ITEMS = [
   "TBOT collects limited data about your child's learning interactions to personalise their experience.",

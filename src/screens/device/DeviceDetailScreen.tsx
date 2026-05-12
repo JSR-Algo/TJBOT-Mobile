@@ -6,7 +6,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Bot } from 'lucide-react-native';
-import * as devicesApi from '../../api/devices';
+import * as devicesApi from '../../services/api/devices';
 import { LoadingSpinner, Card, ErrorMessage } from '../../components';
 import { Device } from '../../types';
 import { normalizeError } from '../../utils/errors';
