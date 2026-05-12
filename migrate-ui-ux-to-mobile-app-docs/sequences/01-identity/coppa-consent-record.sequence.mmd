@@ -1,0 +1,68 @@
+---
+system: sys-01-identity-household-access
+flow_id: coppa-consent-record
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#post-v1identitycoppa-consent
+actors: [ParentApp, Gateway, IdentityService, PostgreSQL]
+apis:
+  - POST /v1/identity/coppa-consent
+  - POST /v1/identity/coppa-consent/{id}/revoke
+externals: []
+queues: []
+failure_paths:
+  - invalid_payload
+  - consent_already_revoked
+  - parent_not_authenticated
+idempotency: 24h on X-Request-Id for grant; revoke is idempotent on consent_id
+retry: caller-side exponential backoff with jitter on 5xx — never retry on 4xx
+timeout: 3s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: Entry point: onb_coppa screen (ADR-0005 P3.A) — parent submits consent form
+
+    ParentApp->>Gateway: POST /v1/identity/coppa-consent {child_name, birth_date, consent_version, parent_user_id, X-Request-Id}
+    Gateway->>Gateway: auth — require valid parent JWT (Bearer)
+    Gateway->>IdentityService: forward request
+    alt parent_not_authenticated
+        Gateway-->>ParentApp: 401 parent_not_authenticated
+    else invalid_payload
+        IdentityService-->>Gateway: 422 invalid_payload {field_errors}
+        Gateway-->>ParentApp: 422
+    else idempotent_replay (X-Request-Id seen within 24h)
+        IdentityService-->>Gateway: 200 {consent_id, status: existing}
+        Gateway-->>ParentApp: 200 existing consent returned
+    else success
+        IdentityService->>PostgreSQL: INSERT coppa_consents {id, parent_user_id, child_name, birth_date, consent_version, granted_at, status: active}
+        PostgreSQL-->>IdentityService: consent_id
+        IdentityService-->>Gateway: 201 {consent_id, status: active, granted_at}
+        Gateway-->>ParentApp: 201
+        Note over ParentApp,PostgreSQL: consent_id FK gates child profile creation — IdentityService enforces on child-profile-create path
+    end
+
+    Note over ParentApp,IdentityService: --- Revocation alt branch ---
+
+    ParentApp->>Gateway: POST /v1/identity/coppa-consent/{consent_id}/revoke {reason, X-Request-Id}
+    Gateway->>Gateway: auth — require valid parent JWT; verify consent owned by caller
+    Gateway->>IdentityService: forward revoke request
+    alt consent_already_revoked
+        IdentityService-->>Gateway: 200 {consent_id, status: revoked} (idempotent)
+        Gateway-->>ParentApp: 200
+    else parent_not_authenticated
+        Gateway-->>ParentApp: 401 parent_not_authenticated
+    else revoke_success
+        IdentityService->>PostgreSQL: UPDATE coppa_consents SET status='revoked', revoked_at=now(), revoke_reason WHERE id={consent_id}
+        PostgreSQL-->>IdentityService: updated
+        IdentityService-->>Gateway: 200 {consent_id, status: revoked, revoked_at}
+        Gateway-->>ParentApp: 200
+        Note over IdentityService,PostgreSQL: child profile access gated — dependent child profiles enter suspended state pending re-consent
+    end
+
+    Note over ParentApp,IdentityService: timeout 3s p99 — X-Request-Id idempotency 24h — revoke idempotent on consent_id

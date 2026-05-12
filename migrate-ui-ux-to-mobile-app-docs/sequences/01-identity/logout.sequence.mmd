@@ -1,0 +1,48 @@
+---
+system: sys-01-identity-household-access
+flow_id: logout
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#post-v1authlogout
+actors: [ParentApp, Gateway, IdentityService, PostgreSQL]
+apis:
+  - POST /v1/auth/logout
+externals: []
+queues: []
+failure_paths:
+  - token_already_revoked
+  - network_partition
+idempotency: idempotent — repeated logout returns 200
+retry: caller-side single retry on network_partition; no retry on 4xx
+timeout: 2s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: Entry point: parent_settings → Logout tap
+
+    ParentApp->>Gateway: POST /v1/auth/logout {refresh_token} + Authorization: Bearer {access_token}
+    Gateway->>Gateway: extract jti from access_token; validate signature
+    Gateway->>IdentityService: forward request with jti + refresh_token
+    alt network_partition
+        Gateway-->>ParentApp: 503 network_partition (caller retries once with jitter)
+        Note over ParentApp: ParentApp clears local auth.store optimistically on network_partition
+    else token_already_revoked (idempotent path)
+        IdentityService-->>Gateway: 200 already_revoked
+        Gateway-->>ParentApp: 200
+    else success
+        IdentityService->>PostgreSQL: DELETE FROM refresh_tokens WHERE token_hash = hash(refresh_token)
+        PostgreSQL-->>IdentityService: deleted (1 row or 0 if already absent)
+        IdentityService->>PostgreSQL: UPDATE parent_sessions SET revoked_at=now() WHERE jti = {jti}
+        PostgreSQL-->>IdentityService: updated
+        IdentityService-->>Gateway: 200 {logged_out: true}
+        Gateway-->>ParentApp: 200
+        ParentApp->>ParentApp: clear auth.store (access_token, refresh_token, session metadata)
+    end
+
+    Note over ParentApp,IdentityService: timeout 2s p99 — server-side: hard DELETE refresh_tokens, soft revoked_at on parent_sessions

@@ -1,0 +1,47 @@
+// audit_logs — cross-cutting structured event log for privileged domain actions.
+// Note on @timescaledb-hypertable: this table is high-volume append-only (O(millions) rows/day);
+// TimescaleDB hypertable partitioned by created_at, 7-day chunks.
+// Note: @timescaledb-hypertable(column=created_at, interval='7d')
+//
+// Distinct from audit_log (_shared/audit_log.dbml):
+//   audit_log — platform-wide mutation ledger (actor+target+action, polymorphic target, sys-11/sys-12)
+//   audit_logs — structured domain-event log (typed actor, event_type vocab, subject polymorphic,
+//                request context — designed for parent-gate, sub mutations, entitlement grants,
+//                account-delete compliance audit per sys-11 telemetry-audit-cost).
+//
+// Rows are immutable after insert — updated_at is always equal to created_at.
+// No FK on actor_user_id: audit rows MUST survive user hard-delete (compliance retention mode).
+
+enum audit_actor_type {
+  parent
+  system
+  cron
+  admin
+  support
+}
+
+Table audit_logs {
+  id                uuid             [pk, note: 'service-generated; never serial']
+  actor_user_id     uuid             [note: 'NULL for system/cron actors; UUID of parent, admin, or support user otherwise. NOT FK-constrained — audit row must survive user deletion']
+  actor_session_jti uuid             [note: 'JWT JTI of the auth session that generated this event; NULL for system/cron']
+  actor_type        audit_actor_type [not null]
+  event_type        varchar(64)      [not null, note: 'dot-delimited verb.noun — e.g. parent.auth.success, subscription.canceled, account.deletion.requested']
+  subject_type      varchar(64)      [note: 'optional — target entity table name — e.g. users, subscriptions, children']
+  subject_id        uuid             [note: 'optional — PK of the subject entity; polymorphic; NOT FK-constrained']
+  payload           jsonb            [note: 'event-specific structured payload; shape documented per event_type in sys-11 spec']
+  ip                inet             [note: 'client IP; NULL for system/cron actors']
+  user_agent        text             [note: 'raw User-Agent; NULL for system/cron actors']
+  request_id        varchar(64)      [note: 'upstream request correlation ID (X-Request-Id header); NULL for async/cron events']
+  created_at        timestamptz      [not null, default: `now()`]
+  updated_at        timestamptz      [not null, default: `now()`, note: 'always equal to created_at — rows are immutable after insert']
+
+  Indexes {
+    (actor_user_id, created_at) [name: 'idx_audit_logs_actor_user_created', note: 'hot query: docs/sequences/07-parent/parent-gate-validate.sequence.mmd — actor activity lookup; WHERE actor_user_id IS NOT NULL enforced at app layer']
+    (event_type, created_at) [name: 'idx_audit_logs_event_type_created', note: 'hot query: docs/sequences/11-telemetry/audit-log-write-path.sequence.mmd — compliance export by event type + time range']
+    (subject_type, subject_id) [name: 'idx_audit_logs_subject', note: 'hot query: docs/sequences/01-identity/account-delete.sequence.mmd — all events for a subject during deletion audit; WHERE subject_id IS NOT NULL enforced in migration partial index']
+  }
+}
+
+// No Ref: lines — actor_user_id and subject_id are intentionally not FK-constrained.
+// Rationale: audit rows must outlive the user and subject rows in compliance-retention mode.
+// Cross-domain integrity is validated at write time by the audit middleware (event_type allow-list).

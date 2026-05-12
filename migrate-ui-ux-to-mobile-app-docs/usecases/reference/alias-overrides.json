@@ -1,0 +1,203 @@
+{
+  "generated_by": "scripts/usecases/_build-index.mjs",
+  "fuzzy_threshold": 0.7,
+  "ambiguity_band": 0.05,
+  "total": 39,
+  "overrides": [
+    {
+      "id": "UC-A02",
+      "override": "manual: UC_AUTH_SIGNUP",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-A03",
+      "override": "manual: UC_AUTH_LOGIN",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-A09",
+      "override": "manual: UC_AUTH_REFRESH",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-A11",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in auth puml (best=UC_AUTH_RESET r=0.32)"
+    },
+    {
+      "id": "UC-A12",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in auth puml (best=UC_AUTH_RESET r=0.31)"
+    },
+    {
+      "id": "UC-A13",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in auth puml (best=UC_AUTH_LOGOUT r=0.24)"
+    },
+    {
+      "id": "UC-A14",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in auth puml (best=UC_AUTH_RESET r=0.50)"
+    },
+    {
+      "id": "UC-A16",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in auth puml (best=UC_AUTH_SIGNUP r=0.29)"
+    },
+    {
+      "id": "UC-A17",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in auth puml (best=UC_AUTH_CHILD r=0.68)"
+    },
+    {
+      "id": "UC-BU15",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in purchase puml (best=UC_BUY_CHECKOUT r=0.33)"
+    },
+    {
+      "id": "UC-BU16",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in purchase puml (best=UC_BUY_CONFIRM r=0.24)"
+    },
+    {
+      "id": "UC-BU17",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in purchase puml (best=UC_BUY_PRIV r=0.23)"
+    },
+    {
+      "id": "UC-C06",
+      "override": "no-puml",
+      "reason": "no equivalent in any puml file (legacy-only)"
+    },
+    {
+      "id": "UC-CL04",
+      "override": "manual: UC_PG_UNLOCK",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-CL09",
+      "override": "manual: UC_CL_COMPANION",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-CL10",
+      "override": "manual: UC_CL_COMPLETE",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-DM01",
+      "override": "no-puml",
+      "reason": "KD5 — Lane D adds device-mgmt.usecase.puml in Phase 1"
+    },
+    {
+      "id": "UC-DM02",
+      "override": "no-puml",
+      "reason": "KD5 — Lane D adds device-mgmt.usecase.puml in Phase 1"
+    },
+    {
+      "id": "UC-DM03",
+      "override": "no-puml",
+      "reason": "KD5 — Lane D adds device-mgmt.usecase.puml in Phase 1"
+    },
+    {
+      "id": "UC-DM04",
+      "override": "no-puml",
+      "reason": "KD5 — Lane D adds device-mgmt.usecase.puml in Phase 1"
+    },
+    {
+      "id": "UC-DM05",
+      "override": "no-puml",
+      "reason": "KD5 — Lane D adds device-mgmt.usecase.puml in Phase 1"
+    },
+    {
+      "id": "UC-DM06",
+      "override": "no-puml",
+      "reason": "KD5 — Lane D adds device-mgmt.usecase.puml in Phase 1"
+    },
+    {
+      "id": "UC-INV01",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in purchase puml (best=UC_BUY_HOW r=0.39)"
+    },
+    {
+      "id": "UC-L07",
+      "override": "manual: UC_LSN_SPEAK",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-L22",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in lesson-session puml (best=UC_LSN_AUDIO r=0.24)"
+    },
+    {
+      "id": "UC-MOBILE01",
+      "override": "no-puml",
+      "reason": "P5 — mobile-shell domain has no puml (net-new cross-cutting domain)"
+    },
+    {
+      "id": "UC-O05",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in onboarding puml (best=UC_ONB_TRUST r=0.29)"
+    },
+    {
+      "id": "UC-PR01",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in parent-gate puml (best=UC_PG_PASS r=0.35)"
+    },
+    {
+      "id": "UC-PR03",
+      "override": "manual: UC_PRT_TODAY",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-PR04",
+      "override": "manual: UC_PRT_HISTORY",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-PR08",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in parent-summary puml (best=UC_PRT_SAFETY r=0.19)"
+    },
+    {
+      "id": "UC-PR09",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in parent-summary puml (best=UC_PRT_TODAY r=0.62)"
+    },
+    {
+      "id": "UC-PR10",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in parent-summary puml (best=UC_PRT_TODAY r=0.57)"
+    },
+    {
+      "id": "UC-PR11",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in parent-summary puml (best=UC_PRT_SAFETY r=0.44)"
+    },
+    {
+      "id": "UC-PR12",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in parent-summary puml (best=UC_PRT_SUMMARY r=0.18)"
+    },
+    {
+      "id": "UC-RM08",
+      "override": "manual: UC_RM_MIC",
+      "reason": "legacy title diverges from puml title; manually mapped"
+    },
+    {
+      "id": "UC-SUB01",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in purchase puml (best=UC_BUY_SUB r=0.59)"
+    },
+    {
+      "id": "UC-SUB04",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in purchase puml (best=UC_BUY_SUB r=0.21)"
+    },
+    {
+      "id": "UC-SUB05",
+      "override": "no-puml",
+      "reason": "no match ≥0.7 in purchase puml (best=UC_BUY_FIRST r=0.25)"
+    }
+  ]
+}

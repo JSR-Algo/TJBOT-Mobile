@@ -1,0 +1,109 @@
+// AUTO-GENERATED FROM docs/erd/15-manufacturing/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/15-manufacturing/factory_records.dbml, docs/erd/15-manufacturing/factory_serial_assignments.dbml, docs/erd/15-manufacturing/factory_test_results.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum factory_record_result {
+  pass
+  fail
+  quarantine
+}
+
+enum test_result_value {
+  pass
+  fail
+  skip
+}
+
+/// Source: docs/erd/15-manufacturing/factory_records.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model FactoryRecords {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String? @db.Uuid @map("device_id")
+  /// ref → devices.id; null if backend registration failed (device still recorded)
+  serialNumber String @db.VarChar(64) @map("serial_number")
+  /// format: TBT-YYYY-{6digits}; set from AT+SERIAL before backend registration
+  factoryBatchId String @db.VarChar(64) @map("factory_batch_id")
+  /// batch identifier from tbot-provision CLI (e.g. B2026-042)
+  operatorId String @db.VarChar(64) @map("operator_id")
+  /// operator login or workstation credential used by FactoryCLI
+  workstationId String @db.VarChar(64) @map("workstation_id")
+  /// physical workstation or test jig identifier
+  hardwareRevision String @db.VarChar(32) @map("hardware_revision")
+  firmwareVersion String @db.VarChar(32) @map("firmware_version")
+  overallResult factory_record_result @map("overall_result")
+  testDurationMs Int @map("test_duration_ms")
+  /// total time for all test phases in ms
+  notes String? @db.Text
+  /// operator free-text note on failure or quarantine; null on pass
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  factoryTestResults FactoryTestResults[] @relation(name: "factory_test_results_factory_record_id_to_factory_records")
+  @@unique([serialNumber], map: "uq_factory_records_serial_number")
+  @@index([factoryBatchId], map: "idx_factory_records_factory_batch_id")
+  @@index([overallResult, createdAt], map: "idx_factory_records_result_created_at")
+  @@index([deviceId], map: "idx_factory_records_device_id")
+  @@map("factory_records")
+}
+
+/// Source: docs/erd/15-manufacturing/factory_serial_assignments.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model FactorySerialAssignments {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  serialNumber String @db.VarChar(64) @map("serial_number")
+  /// format: TBT-YYYY-{6digits}; globally unique across all batches
+  factoryBatchId String @db.VarChar(64) @map("factory_batch_id")
+  /// batch this serial was allocated to (e.g. B2026-042)
+  deviceId String? @db.Uuid @map("device_id")
+  /// ref → devices.id; set after backend registration succeeds; null until then
+  allocatedAt DateTime @db.Timestamptz(6) @default(now()) @map("allocated_at")
+  /// when FactoryCLI assigned this serial to a physical unit
+  registeredAt DateTime? @db.Timestamptz(6) @map("registered_at")
+  /// when backend registration (POST /v1/devices/register) succeeded; null until then
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  @@unique([serialNumber], map: "uq_factory_serial_assignments_serial_number")
+  @@index([factoryBatchId], map: "idx_factory_serial_assignments_factory_batch_id")
+  @@index([deviceId], map: "idx_factory_serial_assignments_device_id")
+  @@map("factory_serial_assignments")
+}
+
+/// Source: docs/erd/15-manufacturing/factory_test_results.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model FactoryTestResults {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  factoryRecordId String @db.Uuid @map("factory_record_id")
+  /// ref → factory_records.id
+  serialNumber String @db.VarChar(64) @map("serial_number")
+  /// denormalized from factory_records for query convenience; format: TBT-YYYY-{6digits}
+  testName String @db.VarChar(64) @map("test_name")
+  /// e.g. mic_snr, speaker_spl, servo, display, wifi, ble, battery, nvs, flash, heap, thermal
+  result test_result_value
+  measuredValue String? @db.Text @map("measured_value")
+  /// raw measured value string (numeric or enum) from AT+TEST_{name} response
+  passThreshold String? @db.Text @map("pass_threshold")
+  /// pass criteria string applied at test time; stored for auditability
+  isCritical Boolean @default(true) @map("is_critical")
+  /// critical=true — single failure halts batch; false — warn only
+  durationMs Int? @map("duration_ms")
+  /// time to execute this test in ms
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  factoryRecord FactoryRecords @relation(name: "factory_test_results_factory_record_id_to_factory_records", fields: [factoryRecordId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([factoryRecordId], map: "idx_factory_test_results_factory_record_id")
+  @@index([serialNumber, testName], map: "idx_factory_test_results_serial_name")
+  @@index([testName, result], map: "idx_factory_test_results_test_name_result")
+  @@map("factory_test_results")
+}
+

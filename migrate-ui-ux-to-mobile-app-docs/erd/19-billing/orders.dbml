@@ -1,0 +1,44 @@
+// orders — one-time purchase orders for hardware or digital add-ons.
+// Per P3.C billing work. Distinct from recurring subscriptions.
+// Lifecycle: created → paid → fulfilling → shipped → arrived → activated (terminal)
+//            ↘ cancelled (terminal) | refunded (terminal)
+
+enum order_state {
+  created
+  paid
+  fulfilling
+  shipped
+  arrived
+  activated
+  cancelled
+  refunded
+}
+
+Table orders {
+  id                            uuid         [pk, note: 'service-generated; never serial']
+  user_id                       uuid         [not null, note: 'cross-domain ref → IdentityService — parent placing the order']
+  sku_id                        varchar(64)  [not null, note: 'product SKU identifier; resolved against product catalog at order time']
+  quantity                      int          [not null, default: 1, note: 'must be ≥ 1; validated at app layer']
+  amount_cents                  bigint       [not null, note: 'money: bigint cents; total charged to card = sku_unit_price_cents × quantity']
+  currency                      varchar(3)   [not null, default: 'USD', note: 'ISO 4217 — uppercase; BillingService validates against supported list']
+  state                         order_state  [not null, default: 'created']
+  state_version                 int          [not null, default: 0, note: 'incremented on every state transition for optimistic concurrency']
+  stripe_checkout_session_id    varchar(255) [note: 'Stripe Checkout Session id (cs_...) — set at order creation; NULL for orders created outside Checkout flow']
+  stripe_payment_intent_id      varchar(255) [note: 'Stripe PaymentIntent id (pi_...); set on payment confirmation']
+  shipping_address              jsonb        [note: 'snapshot of shipping address at order time — shape: {line1,line2?,city,state,postal_code,country}; NULL for digital-only orders']
+  tracking_number               varchar(64)  [note: 'carrier tracking number; set when state=shipped']
+  paid_at                       timestamptz  [note: 'set when state transitions to paid']
+  shipped_at                    timestamptz  [note: 'set when state transitions to shipped']
+  cancelled_at                  timestamptz  [note: 'set when state transitions to cancelled']
+  created_at                    timestamptz  [not null, default: `now()`]
+  updated_at                    timestamptz  [not null, default: `now()`]
+
+  Indexes {
+    (user_id, created_at) [name: 'idx_orders_user_created', note: 'hot query: docs/sequences/19-billing/checkout-initiate-mobile.sequence.mmd — order history for parent']
+    (state, created_at) [name: 'idx_orders_state_active', note: 'hot query: docs/sequences/19-billing/stripe-webhook-processing.sequence.mmd — active orders sweep WHERE state IN (created,paid,fulfilling,shipped); partial index in migration, DBML cannot express partial predicate natively']
+    (stripe_payment_intent_id) [unique, name: 'idx_orders_stripe_payment_intent_id_unique']
+    (stripe_checkout_session_id) [name: 'idx_orders_stripe_checkout_session_id', note: 'hot query: docs/sequences/19-billing/stripe-webhook-processing.sequence.mmd — checkout.session.completed webhook lookup']
+  }
+}
+
+Ref: orders.user_id > users.id    // cross-domain ref → IdentityService

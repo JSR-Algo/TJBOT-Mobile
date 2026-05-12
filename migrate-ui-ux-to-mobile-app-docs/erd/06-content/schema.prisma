@@ -1,0 +1,288 @@
+// AUTO-GENERATED FROM docs/erd/06-content/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/06-content/activities.dbml, docs/erd/06-content/content_personalization_snapshots.dbml, docs/erd/06-content/courses.dbml, docs/erd/06-content/daily_summaries.dbml, docs/erd/06-content/lessons.dbml, docs/erd/06-content/levels.dbml, docs/erd/06-content/topic_decay_state.dbml, docs/erd/06-content/topics.dbml, docs/erd/06-content/units.dbml, docs/erd/06-content/words.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum activity_status {
+  draft
+  active
+  archived
+}
+
+enum activity_type {
+  vocabulary
+  comprehension
+  pronunciation
+  storytelling
+  game
+}
+
+enum course_status {
+  draft
+  active
+  archived
+}
+
+enum lesson_status {
+  draft
+  active
+  archived
+}
+
+enum level_status {
+  draft
+  active
+  archived
+}
+
+enum unit_status {
+  draft
+  active
+  archived
+}
+
+/// Source: docs/erd/06-content/activities.dbml
+model Activities {
+  id String @id @default(uuid()) @db.Uuid
+  lessonId String @db.Uuid @map("lesson_id")
+  /// FK → lessons.id
+  slug String @db.VarChar(64)
+  title String @db.VarChar(254)
+  activityType activity_type @map("activity_type")
+  position Int @db.SmallInt
+  /// display order within lesson; 1-based
+  payload Json? @db.JsonB
+  /// activity-type-specific config; shape documented per activity_type
+  status activity_status @default(draft)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  lesson Lessons @relation(name: "activities_lesson_id_to_lessons", fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  words Words[] @relation(name: "words_activity_id_to_activities")
+  @@index([lessonId, position], map: "idx_activities_lesson_id_position")
+  @@unique([lessonId, slug], map: "idx_activities_lesson_id_slug_unique")
+  @@index([activityType, status], map: "idx_activities_type_status")
+  @@map("activities")
+}
+
+/// Source: docs/erd/06-content/content_personalization_snapshots.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model ContentPersonalizationSnapshots {
+  id String @id @default(uuid()) @db.Uuid
+  childId String @db.Uuid @map("child_id")
+  /// cross-domain ref → IdentityService (children.id)
+  conversationRequestId String @db.Uuid @map("conversation_request_id")
+  /// dedup key per retrieval.sequence.mmd — ON CONFLICT DO NOTHING
+  snapshotAt DateTime @db.Timestamptz(6) @map("snapshot_at")
+  /// moment this snapshot was assembled
+  traitsPayload Json? @db.JsonB @map("traits_payload")
+  /// up to 5 traits; blocked_realtime classification excluded
+  preferencesPayload Json? @db.JsonB @map("preferences_payload")
+  /// up to 5 preferences
+  memoriesPayload Json? @db.JsonB @map("memories_payload")
+  /// up to 3 approved+eligible child_memory_summaries
+  templatesPayload Json? @db.JsonB @map("templates_payload")
+  /// up to 5 content templates
+  retrievalPolicy String @db.VarChar(64) @map("retrieval_policy")
+  trimmed Boolean @default(false)
+  /// true when payload > 1800 chars was trimmed
+  degraded Boolean @default(false)
+  /// true when Redis cooldown unavailable
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; COPPA retention
+  @@unique([conversationRequestId], map: "idx_content_personalization_snapshots_conv_req_unique")
+  @@index([childId, snapshotAt], map: "idx_content_personalization_snapshots_child_snapshot")
+  @@index([deletedAt], map: "idx_content_personalization_snapshots_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("content_personalization_snapshots")
+}
+
+/// Source: docs/erd/06-content/courses.dbml
+model Courses {
+  id String @id @default(uuid()) @db.Uuid
+  slug String @db.VarChar(64)
+  /// machine-readable identifier; immutable after publish
+  title String @db.VarChar(254)
+  locale String @db.VarChar(16)
+  /// BCP-47; e.g. en-US
+  ageBandMin Int @db.SmallInt @map("age_band_min")
+  /// inclusive minimum age in months
+  ageBandMax Int @db.SmallInt @map("age_band_max")
+  /// inclusive maximum age in months
+  status course_status @default(draft)
+  description String? @db.Text
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  levels Levels[] @relation(name: "levels_course_id_to_courses")
+  @@unique([slug], map: "idx_courses_slug_unique")
+  @@index([locale, status], map: "idx_courses_locale_status")
+  @@map("courses")
+}
+
+/// Source: docs/erd/06-content/daily_summaries.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model DailySummaries {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService (devices.id)
+  childProfileId String @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService (children.id)
+  summaryDate String @map("summary_date")
+  /// local date of the activity day; UTC stored
+  /// TODO: unknown DBML type "date" — review and refine type map
+  totalMinutes Int @default(0) @map("total_minutes")
+  /// session minutes summed for this day
+  activitiesCount Int @default(0) @map("activities_count")
+  wordsIntroduced Int @default(0) @map("words_introduced")
+  topicsCovered Json? @db.JsonB @map("topics_covered")
+  /// array of topic slugs covered during sessions this day
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; COPPA retention
+  @@unique([deviceId, childProfileId, summaryDate], map: "idx_daily_summaries_device_child_date_unique")
+  @@index([childProfileId, summaryDate], map: "idx_daily_summaries_child_date")
+  @@index([deletedAt], map: "idx_daily_summaries_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("daily_summaries")
+}
+
+/// Source: docs/erd/06-content/lessons.dbml
+model Lessons {
+  id String @id @default(uuid()) @db.Uuid
+  unitId String @db.Uuid @map("unit_id")
+  /// FK → units.id
+  slug String @db.VarChar(64)
+  title String @db.VarChar(254)
+  position Int @db.SmallInt
+  /// display order within unit; 1-based
+  status lesson_status @default(draft)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  unit Units @relation(name: "lessons_unit_id_to_units", fields: [unitId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  activities Activities[] @relation(name: "activities_lesson_id_to_lessons")
+  words Words[] @relation(name: "words_lesson_id_to_lessons")
+  @@index([unitId, position], map: "idx_lessons_unit_id_position")
+  @@unique([unitId, slug], map: "idx_lessons_unit_id_slug_unique")
+  @@map("lessons")
+}
+
+/// Source: docs/erd/06-content/levels.dbml
+model Levels {
+  id String @id @default(uuid()) @db.Uuid
+  courseId String @db.Uuid @map("course_id")
+  /// FK → courses.id
+  slug String @db.VarChar(64)
+  title String @db.VarChar(254)
+  position Int @db.SmallInt
+  /// display order within course; 1-based
+  status level_status @default(draft)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  course Courses @relation(name: "levels_course_id_to_courses", fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  units Units[] @relation(name: "units_level_id_to_levels")
+  @@index([courseId, position], map: "idx_levels_course_id_position")
+  @@unique([courseId, slug], map: "idx_levels_course_id_slug_unique")
+  @@map("levels")
+}
+
+/// Source: docs/erd/06-content/topic_decay_state.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model TopicDecayState {
+  id String @id @default(uuid()) @db.Uuid
+  childId String @db.Uuid @map("child_id")
+  /// cross-domain ref → IdentityService (children.id)
+  topicId String @db.Uuid @map("topic_id")
+  /// FK → topics.id
+  interactionCount Int @default(0) @map("interaction_count")
+  /// halved weekly by DecayScheduler; row deleted when < 1
+  lastSeenAt DateTime @db.Timestamptz(6) @map("last_seen_at")
+  /// last interaction timestamp; used to gate decay (< now-30d)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; COPPA retention window
+  topic Topics @relation(name: "topic_decay_state_topic_id_to_topics", fields: [topicId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([childId, topicId], map: "idx_topic_decay_state_child_topic_unique")
+  @@index([childId, lastSeenAt], map: "idx_topic_decay_state_child_last_seen")
+  @@index([deletedAt], map: "idx_topic_decay_state_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("topic_decay_state")
+}
+
+/// Source: docs/erd/06-content/topics.dbml
+model Topics {
+  id String @id @default(uuid()) @db.Uuid
+  slug String @db.VarChar(64)
+  /// machine-readable; e.g. animals, colors, numbers
+  label String @db.VarChar(254)
+  /// human-readable display label
+  locale String @db.VarChar(16)
+  /// BCP-47
+  parentId String? @db.Uuid @map("parent_id")
+  /// FK → topics.id; nullable for root-level topics (topic hierarchy)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  parent Topics? @relation(name: "topics_parent_id_to_topics", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  topicDecayState TopicDecayState[] @relation(name: "topic_decay_state_topic_id_to_topics")
+  parentInverse Topics[] @relation(name: "topics_parent_id_to_topics")
+  @@unique([slug, locale], map: "idx_topics_slug_locale_unique")
+  @@index([parentId], map: "idx_topics_parent_id")
+  @@map("topics")
+}
+
+/// Source: docs/erd/06-content/units.dbml
+model Units {
+  id String @id @default(uuid()) @db.Uuid
+  levelId String @db.Uuid @map("level_id")
+  /// FK → levels.id
+  slug String @db.VarChar(64)
+  title String @db.VarChar(254)
+  position Int @db.SmallInt
+  /// display order within level; 1-based
+  status unit_status @default(draft)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  level Levels @relation(name: "units_level_id_to_levels", fields: [levelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lessons Lessons[] @relation(name: "lessons_unit_id_to_units")
+  @@index([levelId, position], map: "idx_units_level_id_position")
+  @@unique([levelId, slug], map: "idx_units_level_id_slug_unique")
+  @@map("units")
+}
+
+/// Source: docs/erd/06-content/words.dbml
+model Words {
+  id String @id @default(uuid()) @db.Uuid
+  activityId String? @db.Uuid @map("activity_id")
+  /// FK → activities.id; nullable — word may be lesson-level
+  lessonId String? @db.Uuid @map("lesson_id")
+  /// FK → lessons.id; set when activity_id is null
+  word String @db.VarChar(254)
+  locale String @db.VarChar(16)
+  /// BCP-47
+  phonetic String? @db.VarChar(254)
+  /// IPA or phonetic spelling for TTS guidance
+  definition String? @db.Text
+  mediaUrl String? @db.VarChar(2048) @map("media_url")
+  /// S3 URI for audio/image; not FK — resolved via media_assets in _shared
+  ageBandMin Int? @db.SmallInt @map("age_band_min")
+  /// optional override; inherits from activity if null
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  activitie Activities? @relation(name: "words_activity_id_to_activities", fields: [activityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lesson Lessons? @relation(name: "words_lesson_id_to_lessons", fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([activityId], map: "idx_words_activity_id")
+  @@index([lessonId], map: "idx_words_lesson_id")
+  @@index([locale, word], map: "idx_words_locale_word")
+  @@map("words")
+}
+

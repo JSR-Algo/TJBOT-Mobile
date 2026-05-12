@@ -1,0 +1,49 @@
+---
+system: sys-01-identity-household-access
+flow_id: child-switch
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#child-switch-adr-0011
+actors: [ParentApp, Gateway, IdentityService]
+apis:
+  - POST /v1/profile/active-child
+externals: []
+queues: []
+failure_paths:
+  - child_not_found
+  - child_archived
+  - not_household_member
+idempotency: naturally idempotent on (user_id, child_id) — repeat call with same child_id is a no-op
+retry: single retry on 5xx
+timeout: 1s
+status: final
+---
+%% HAND-CURATED. Lightweight active-child switch per ADR-0011 D3. Server uses active_child_id for cost-cap scoping + analytics. Client AsyncStorage persists across app restart. ~200ms expected latency.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+
+    Note over ParentApp: User taps child selector — home_hub_idle "Playing as: [Name] ▼" (ADR-0011 D4)
+
+    ParentApp->>Gateway: POST /v1/profile/active-child {child_id} + Bearer JWT
+    Gateway->>Gateway: validate parent JWT — extract user_id + household_id
+    Gateway->>IdentityService: forward request
+    IdentityService->>IdentityService: SELECT id, status, household_id FROM children WHERE id={child_id}
+    alt child_not_found
+        IdentityService-->>Gateway: 404 child_not_found
+        Gateway-->>ParentApp: 404
+    else not_household_member (child.household_id != jwt.household_id)
+        IdentityService-->>Gateway: 403 not_household_member
+        Gateway-->>ParentApp: 403
+    else child_archived (status = 'archived')
+        IdentityService-->>Gateway: 409 child_archived {child_id}
+        Gateway-->>ParentApp: 409
+    else success
+        IdentityService->>IdentityService: emit analytics event {user_id, child_id, switched_at: now()} (async, non-blocking)
+        IdentityService-->>Gateway: 200 {active_child_id: child_id}
+        Gateway-->>ParentApp: 200
+        ParentApp->>ParentApp: AsyncStorage.setItem('activeChildId', child_id) — persists across restart (ADR-0011 D3)
+    end
+
+    Note over ParentApp,IdentityService: timeout 1s — idempotent (user_id, child_id) — analytics emit async (no impact on response latency)

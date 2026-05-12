@@ -1,0 +1,91 @@
+---
+system: sys-19-billing-subscription
+flow_id: refund-request
+surface: mobile
+spec_anchor: /software/systems/19-billing-subscription#refund-request
+actors: [ParentApp, Gateway, BillingService, AdminConsole, PostgreSQL, SES, EventBridge]
+apis:
+  - POST /v1/billing/orders/{order_id}/return-request
+  - GET /v1/billing/return-requests/{request_id}
+externals: [SES]
+queues: [EventBridge]
+failure_paths:
+  - parent_jwt_stale_re_pin_required
+  - outside_30d_return_window
+  - order_not_in_returnable_state
+  - duplicate_request_pending
+idempotency: dedup on (order_id, status='pending_admin_review') — repeated request returns existing
+retry: caller-side exponential backoff on 5xx only
+timeout: 5s p99 for POST; admin review is async (24-48h)
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant BillingService
+    participant AdminConsole
+    participant PostgreSQL
+    participant SES
+    participant EventBridge
+
+    Note over ParentApp: parent in parent_settings → order history taps "Request return" on SHIPPED / ARRIVED / ACTIVATED order
+
+    ParentApp->>Gateway: POST /v1/billing/orders/{order_id}/return-request {reason_code, note, X-Request-Id} + parent JWT Bearer
+    Gateway->>Gateway: auth-resolver — require parent JWT (ADR-0005 D6 — fresh within 60s)
+    alt parent_jwt_stale_re_pin_required
+        Note over Gateway: parent JWT issued > 60s ago
+        Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
+    else authenticated
+        Gateway->>BillingService: forward request
+        BillingService->>BillingService: verify JWT freshness < 60s (ADR-0005 D6)
+        BillingService->>PostgreSQL: SELECT id, state, arrived_at, stripe_payment_intent_id FROM orders WHERE id={order_id} AND household_id={household_id}
+        alt order_not_in_returnable_state
+            PostgreSQL-->>BillingService: {state: 'created'|'paid'|'fulfilling'|'cancelled'|'refunded'}
+            BillingService-->>Gateway: 409 order_not_in_returnable_state {current_state}
+            Gateway-->>ParentApp: 409
+        else outside_30d_return_window
+            PostgreSQL-->>BillingService: {state: 'shipped'|'arrived'|'activated', arrived_at}
+            BillingService->>BillingService: check arrived_at + 30d > now()
+            Note over BillingService: 30d window expired
+            BillingService-->>Gateway: 422 outside_30d_return_window {window_closed_at: arrived_at+30d}
+            Gateway-->>ParentApp: 422
+        else duplicate_request_pending
+            BillingService->>PostgreSQL: SELECT id FROM refund_requests WHERE order_id={order_id} AND state='pending_admin_review'
+            PostgreSQL-->>BillingService: existing row
+            BillingService-->>Gateway: 200 {request_id: existing, state: pending_admin_review, expected_decision_by} (idempotent replay)
+            Gateway-->>ParentApp: 200
+        else success
+            PostgreSQL-->>BillingService: {state: 'shipped'|'arrived'|'activated', arrived_at within 30d}
+            BillingService->>PostgreSQL: INSERT refund_requests {id, order_id, household_id, reason_code, note, state: 'pending_admin_review', requested_at: now(), x_request_id}
+            PostgreSQL-->>BillingService: request_id
+            BillingService->>PostgreSQL: INSERT audit_logs {action: 'return_request', actor_jti, order_id, request_id, household_id, ts}
+            BillingService->>EventBridge: emit refund.requested {request_id, order_id, household_id, reason_code} → admin queue (sys-12)
+            EventBridge-->>BillingService: event_id
+            BillingService-)SES: (async) return_request_confirmation email {user_email, request_id, expected_decision_by: now()+48h}
+            BillingService-->>Gateway: 202 {request_id, state: pending_admin_review, expected_decision_by: now()+48h}
+            Gateway-->>ParentApp: 202
+        end
+    end
+
+    Note over AdminConsole,EventBridge: --- Admin review path (out-of-app — sys-12) ---
+    Note over AdminConsole: Admin receives EventBridge event via sys-12 queue, reviews in AdminConsole
+    Note over AdminConsole: On approval: Stripe refund issued → orders.state='refunded' → FCM push to parent (sys-10 via UC-MOBILE01)
+    Note over AdminConsole: On denial: refund_requests.state='denied' → SES denial email to parent
+
+    Note over ParentApp,EventBridge: --- Status poll ---
+
+    ParentApp->>Gateway: GET /v1/billing/return-requests/{request_id} + parent JWT Bearer
+    Gateway->>BillingService: forward (JWT validated; read-only — 60s freshness not required)
+    BillingService->>PostgreSQL: SELECT state, decided_at, decision_note FROM refund_requests WHERE id={request_id} AND household_id={household_id}
+    PostgreSQL-->>BillingService: request record
+    BillingService-->>Gateway: 200 {request_id, state, expected_decision_by, decided_at?, decision_note?}
+    Gateway-->>ParentApp: 200
+
+    Note over ParentApp,EventBridge: --- alt: lost-in-transit auto-refund (CRON sweeper) ---
+    Note over BillingService: CRON sweeper checks tracking_number with delivery-exception for 14d
+    Note over BillingService: auto-creates refund_requests row: reason='carrier_lost', state='pending_admin_review' (auto-approved)
+    Note over BillingService: SES notification to parent with auto-approval notice
+
+    Note over ParentApp,PostgreSQL: timeout 5s p99 — admin review async 24-48h — dedup on (order_id, status='pending_admin_review') — audit_logs row on submit

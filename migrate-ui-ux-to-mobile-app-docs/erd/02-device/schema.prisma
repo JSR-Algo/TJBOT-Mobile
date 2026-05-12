@@ -1,0 +1,228 @@
+// AUTO-GENERATED FROM docs/erd/02-device/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/02-device/device_decommissions.dbml, docs/erd/02-device/device_heartbeats.dbml, docs/erd/02-device/device_pairings.dbml, docs/erd/02-device/device_transfers.dbml, docs/erd/02-device/devices.dbml, docs/erd/02-device/pairing_attempts.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum device_pairing_status {
+  started
+  ble_paired
+  device_authenticated
+  completed
+  failed
+  expired
+}
+
+enum device_transfer_status {
+  initiated
+  awaiting_factory_reset
+  awaiting_target_claim
+  completed
+  failed
+  expired
+  cancelled
+}
+
+enum device_status {
+  factory_new
+  provisioning
+  active
+  offline
+  decommissioned
+  quarantined
+}
+
+enum device_lifecycle_state {
+  unassigned
+  provisioning
+  assigned
+  transfer_pending
+  decommission_pending
+  decommissioned
+}
+
+enum pairing_state {
+  TOKEN_ISSUED
+  PROVISIONING
+  CLAIM_PENDING
+  CLAIMED
+  PAIRING_FAILED
+  EXPIRED
+}
+
+/// Source: docs/erd/02-device/device_decommissions.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model DeviceDecommissions {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String @db.Uuid @map("device_id")
+  /// ref → devices.id
+  householdId String @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService; household at time of decommission
+  initiatedByUserId String @db.Uuid @map("initiated_by_user_id")
+  /// cross-domain ref → IdentityService; owner who triggered decommission
+  reason String? @db.VarChar(128)
+  /// optional operator-supplied reason or system reason code
+  decommissionedAt DateTime @db.Timestamptz(6) @map("decommissioned_at")
+  /// set by DecommissionWorker on finalization
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  device Devices @relation(name: "device_decommissions_device_id_to_devices", fields: [deviceId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([deviceId], map: "idx_device_decommissions_device_id")
+  @@index([householdId], map: "idx_device_decommissions_household_id")
+  @@index([decommissionedAt], map: "idx_device_decommissions_decommissioned_at")
+  @@map("device_decommissions")
+}
+
+/// Source: docs/erd/02-device/device_heartbeats.dbml
+/// hypertable: column=created_at interval=1d — post-migration create_hypertable() trigger required (TimescaleDB).
+model DeviceHeartbeats {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String @db.Uuid @map("device_id")
+  /// ref → devices.id
+  firmwareVersion String @db.VarChar(32) @map("firmware_version")
+  batteryLevel Int? @map("battery_level")
+  /// percent 0-100
+  connectivityMetrics Json? @db.JsonB @map("connectivity_metrics")
+  /// snapshot: rssi, packet_loss, latency_ms
+  runtimeState String? @db.VarChar(64) @map("runtime_state")
+  /// device state at heartbeat time: IDLE_READY, SAFE_MODE, OFFLINE_LIMITED, etc.
+  faultCode String? @db.VarChar(64) @map("fault_code")
+  /// last fault code if runtime_state=SAFE_MODE
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  device Devices @relation(name: "device_heartbeats_device_id_to_devices", fields: [deviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([deviceId, createdAt], map: "idx_device_heartbeats_device_id_created_at")
+  @@index([createdAt], map: "idx_device_heartbeats_created_at")
+  @@map("device_heartbeats")
+}
+
+/// Source: docs/erd/02-device/device_pairings.dbml
+model DevicePairings {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String @db.Uuid @map("device_id")
+  /// ref → devices.id
+  householdId String @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService
+  initiatedByUserId String @db.Uuid @map("initiated_by_user_id")
+  /// cross-domain ref → IdentityService
+  assignedChildId String? @db.Uuid @map("assigned_child_id")
+  /// cross-domain ref → IdentityService; set on provision/complete
+  status device_pairing_status @default(started)
+  appVersion String? @db.VarChar(32) @map("app_version")
+  phonePlatform String? @db.VarChar(32) @map("phone_platform")
+  displayName String? @db.VarChar(128) @map("display_name")
+  failureCode String? @db.VarChar(64) @map("failure_code")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  /// pairing attempt TTL; service sets ~10min from started
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  device Devices @relation(name: "device_pairings_device_id_to_devices", fields: [deviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([deviceId, status], map: "idx_device_pairings_device_id_status")
+  @@index([householdId], map: "idx_device_pairings_household_id")
+  @@index([expiresAt], map: "idx_device_pairings_expires_at")
+  @@map("device_pairings")
+}
+
+/// Source: docs/erd/02-device/device_transfers.dbml
+model DeviceTransfers {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String @db.Uuid @map("device_id")
+  /// ref → devices.id
+  sourceHouseholdId String @db.Uuid @map("source_household_id")
+  /// cross-domain ref → IdentityService
+  sourceUserId String @db.Uuid @map("source_user_id")
+  /// cross-domain ref → IdentityService; initiating owner
+  targetHouseholdId String? @db.Uuid @map("target_household_id")
+  /// cross-domain ref → IdentityService; set when target claims device
+  status device_transfer_status @default(initiated)
+  failureCode String? @db.VarChar(64) @map("failure_code")
+  initiatedAt DateTime @db.Timestamptz(6) @default(now()) @map("initiated_at")
+  factoryResetConfirmedAt DateTime? @db.Timestamptz(6) @map("factory_reset_confirmed_at")
+  targetClaimedAt DateTime? @db.Timestamptz(6) @map("target_claimed_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  /// transfer TTL; service sets per spec §7.4
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  device Devices @relation(name: "device_transfers_device_id_to_devices", fields: [deviceId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([deviceId, status], map: "idx_device_transfers_device_id_status")
+  @@index([sourceHouseholdId], map: "idx_device_transfers_source_household_id")
+  @@index([status, expiresAt], map: "idx_device_transfers_status_expires_at")
+  @@map("device_transfers")
+}
+
+/// Source: docs/erd/02-device/devices.dbml
+model Devices {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  serialNumber String @db.VarChar(64) @map("serial_number")
+  /// format: TBT-YYYY-{6digits}; unique per factory
+  hardwareRevision String @db.VarChar(32) @map("hardware_revision")
+  firmwareVersion String @db.VarChar(32) @map("firmware_version")
+  status device_status @default(factory_new)
+  lifecycleState device_lifecycle_state @default(unassigned) @map("lifecycle_state")
+  ownerUserId String? @db.Uuid @map("owner_user_id")
+  /// cross-domain ref → IdentityService; null when unassigned
+  currentHouseholdId String? @db.Uuid @map("current_household_id")
+  /// cross-domain ref → IdentityService; null when unassigned
+  assignedChildId String? @db.Uuid @map("assigned_child_id")
+  /// cross-domain ref → IdentityService; null when unassigned
+  certSerial String? @db.VarChar(128) @map("cert_serial")
+  /// cross-domain ref → SecurityService (mtls_certificates)
+  displayName String? @db.VarChar(128) @map("display_name")
+  lastSeenAt DateTime? @db.Timestamptz(6) @map("last_seen_at")
+  batteryLevel Int? @map("battery_level")
+  /// percent 0-100; null until first heartbeat
+  connectivityMetrics Json? @db.JsonB @map("connectivity_metrics")
+  /// latest heartbeat connectivity snapshot
+  decommissionedAt DateTime? @db.Timestamptz(6) @map("decommissioned_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deviceDecommissions DeviceDecommissions[] @relation(name: "device_decommissions_device_id_to_devices")
+  deviceHeartbeats DeviceHeartbeats[] @relation(name: "device_heartbeats_device_id_to_devices")
+  devicePairings DevicePairings[] @relation(name: "device_pairings_device_id_to_devices")
+  deviceTransfers DeviceTransfers[] @relation(name: "device_transfers_device_id_to_devices")
+  @@unique([serialNumber], map: "uq_devices_serial_number")
+  @@index([ownerUserId, status], map: "idx_devices_owner_user_id_status")
+  @@index([currentHouseholdId, lifecycleState], map: "idx_devices_household_id_lifecycle")
+  @@index([status, lastSeenAt], map: "idx_devices_status_last_seen_at")
+  @@map("devices")
+}
+
+/// Source: docs/erd/02-device/pairing_attempts.dbml
+model PairingAttempts {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  userId String @db.Uuid @map("user_id")
+  /// ref → users.id — parent initiating the pairing
+  deviceSerial String @db.Text @map("device_serial")
+  /// factory-burned serial number from device certificate; not a FK — device row may not exist yet at token-issuance time
+  token String @db.Text @unique
+  /// cryptographically random short-lived token; used as BLE advertisement payload
+  state pairing_state @default(TOKEN_ISSUED)
+  stateVersion Int @default(0) @map("state_version")
+  /// incremented on every state transition for optimistic concurrency
+  errorCode String? @db.Text @map("error_code")
+  /// NULL on success; set on PAIRING_FAILED with machine-readable code e.g. CERT_MISMATCH, CLAIM_TIMEOUT
+  expiresAt DateTime @db.Timestamptz(6) @default(dbgenerated("now() + interval '10 minutes'")) @map("expires_at")
+  /// DeviceService sweeper sets state=EXPIRED after this timestamp
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([userId, createdAt], map: "idx_pairing_attempts_user_created")
+  @@index([expiresAt], map: "idx_pairing_attempts_expiry")
+  @@unique([token], map: "idx_pairing_attempts_token_unique")
+  @@map("pairing_attempts")
+}
+

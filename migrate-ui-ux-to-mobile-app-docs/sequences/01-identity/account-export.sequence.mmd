@@ -1,0 +1,95 @@
+---
+system: sys-01-identity-household-access
+flow_id: account-export
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#post-v1identityaccountexport-request
+actors: [ParentApp, Gateway, IdentityService, AccountDeletionService, SQS, SES, S3, PostgreSQL]
+apis:
+  - POST /v1/identity/account/export-request
+  - GET /v1/identity/account/export-status/{job_id}
+externals: [SES, S3]
+queues: [SQS]
+failure_paths:
+  - parent_jwt_stale_re_pin_required
+  - rate_limited_one_per_30d
+  - in_progress_already
+  - export_link_expired
+idempotency: rate-limit 1 per 30d on (user_id); X-Request-Id 5min dedup on POST
+retry: caller-side none on 429 (must wait full window); 5xx exponential backoff
+timeout: 5s p99 for POST request; export pipeline runs async ~5-30 min
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant AccountDeletionService
+    participant SQS
+    participant SES
+    participant S3
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: Entry point: parent_settings → Account → Export my data (UC-A13)
+
+    ParentApp->>Gateway: POST /v1/identity/account/export-request {X-Request-Id} + parent JWT Bearer
+    Gateway->>Gateway: auth-resolver — require parent JWT (ADR-0005 D6 — fresh within 60s)
+    alt parent_jwt_stale_re_pin_required
+        Note over Gateway: parent JWT issued > 60s ago
+        Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
+    else authenticated
+        Gateway->>IdentityService: forward request
+        IdentityService->>IdentityService: verify JWT freshness < 60s (ADR-0005 D6)
+        alt rate_limited_one_per_30d
+            IdentityService->>PostgreSQL: SELECT id, requested_at FROM export_jobs WHERE user_id={user_id} AND requested_at > now()-interval '30d'
+            PostgreSQL-->>IdentityService: existing row
+            IdentityService-->>Gateway: 429 rate_limited {retry_after_seconds}
+            Gateway-->>ParentApp: 429 Retry-After: {retry_after_seconds}
+        else in_progress_already (X-Request-Id 5min dedup)
+            IdentityService->>PostgreSQL: SELECT id, state FROM export_jobs WHERE x_request_id={X-Request-Id} AND requested_at > now()-interval '5min'
+            PostgreSQL-->>IdentityService: existing_job
+            IdentityService-->>Gateway: 202 {job_id: existing, eta_seconds, state: pending}
+            Gateway-->>ParentApp: 202 (idempotent replay)
+        else success
+            IdentityService->>PostgreSQL: INSERT export_jobs {id, user_id, state: 'pending', requested_at: now(), x_request_id}
+            PostgreSQL-->>IdentityService: job_id
+            IdentityService->>SQS: enqueue export_pipeline_trigger {job_id, user_id}
+            SQS-->>IdentityService: message_id
+            IdentityService-->>Gateway: 202 {job_id, eta_seconds: 1800, state: pending}
+            Gateway-->>ParentApp: 202
+        end
+    end
+
+    Note over AccountDeletionService,SQS: --- Async export pipeline (AccountDeletionService worker pool) ---
+
+    AccountDeletionService->>SQS: dequeue export_pipeline_trigger
+    SQS-->>AccountDeletionService: {job_id, user_id}
+    AccountDeletionService->>PostgreSQL: UPDATE export_jobs SET state='assembling' WHERE id={job_id}
+    AccountDeletionService->>PostgreSQL: SELECT profile, children, lessons, consents, billing, audit_logs for user_id
+    PostgreSQL-->>AccountDeletionService: multi-table data
+    Note over AccountDeletionService: assemble multi-file archive: profile.json, children.json, lessons.json, consents.json, billing.json, audit_logs.json
+    AccountDeletionService->>S3: PUT export/{job_id}.zip (private, signed URL 24h TTL)
+    S3-->>AccountDeletionService: signed_url, expires_at
+    AccountDeletionService->>PostgreSQL: UPDATE export_jobs SET state='completed', signed_url={url}, expires_at={ts}
+    AccountDeletionService-)SES: (async) export_ready email {user_email, signed_url, expires_at}
+
+    Note over ParentApp,IdentityService: --- Status poll ---
+
+    ParentApp->>Gateway: GET /v1/identity/account/export-status/{job_id} + parent JWT Bearer
+    Gateway->>IdentityService: forward (JWT validated; read-only — 60s freshness not required)
+    IdentityService->>PostgreSQL: SELECT state, signed_url, expires_at FROM export_jobs WHERE id={job_id} AND user_id={caller_user_id}
+    PostgreSQL-->>IdentityService: job record
+    alt pending_or_assembling
+        IdentityService-->>Gateway: 200 {state: pending|assembling, eta_seconds}
+        Gateway-->>ParentApp: 200
+    else completed
+        IdentityService-->>Gateway: 200 {state: completed, signed_url, expires_at}
+        Gateway-->>ParentApp: 200 — parent taps link to download archive
+    else export_link_expired
+        Note over IdentityService: signed_url present but expires_at < now()
+        IdentityService-->>Gateway: 200 {state: expired}
+        Gateway-->>ParentApp: 200 — parent must re-request (subject to 30d rate limit)
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 5s p99 sync path — export async ~5-30 min via AccountDeletionService — 1 per 30d rate limit per user_id — X-Request-Id 5min dedup

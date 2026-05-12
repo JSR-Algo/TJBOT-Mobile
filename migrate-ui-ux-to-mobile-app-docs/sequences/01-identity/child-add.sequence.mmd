@@ -1,0 +1,93 @@
+---
+system: sys-01-identity-household-access
+flow_id: child-add
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#child-add-adr-0011
+actors: [ParentApp, Gateway, IdentityService, PostgreSQL]
+apis:
+  - POST /v1/identity/coppa-consent
+  - POST /v1/identity/children
+externals: []
+queues: []
+failure_paths:
+  - parent_jwt_stale
+  - missing_coppa_consent
+  - nickname_collision_in_household
+  - age_band_invalid
+  - hard_cap_reached
+idempotency: X-Request-Id 24h dedup; (household_id, nickname) unique check server-side
+retry: single retry on 5xx; never retry on 4xx (validation is deterministic)
+timeout: 3s
+status: final
+---
+%% HAND-CURATED. Adding 2nd child requires fresh COPPA consent first per ADR-0011 D2+D10. Soft-cap warning at 4+; hard-cap reject at 10+. Slim UC-O05 (skips parent identity, payment). children table uses statuses active/archived/scheduled_for_deletion/deleted per ADR-0011 D1.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: Phase 1 — Per-child COPPA consent (ADR-0011 D2; required for every child)
+
+    ParentApp->>Gateway: POST /v1/identity/coppa-consent {child_display_name, birth_year, policy_version} + Bearer JWT + X-Request-Id
+    Gateway->>Gateway: validate parent JWT — check freshness (ADR-0005 D6)
+    alt parent_jwt_stale
+        Gateway-->>ParentApp: 401 parent_jwt_stale
+    else jwt_valid
+        Gateway->>IdentityService: forward request
+        IdentityService->>PostgreSQL: SELECT household_id FROM users WHERE id={user_id}
+        PostgreSQL-->>IdentityService: household_id
+        IdentityService->>PostgreSQL: SELECT COUNT(*) FROM children WHERE household_id={household_id} AND status NOT IN ('deleted')
+        PostgreSQL-->>IdentityService: child_count
+        alt hard_cap_reached (child_count >= 10)
+            IdentityService-->>Gateway: 409 hard_cap_reached {limit: 10}
+            Gateway-->>ParentApp: 409
+        else age_band_invalid
+            Note over IdentityService: birth_year out of range or future date
+            IdentityService-->>Gateway: 422 age_band_invalid
+            Gateway-->>ParentApp: 422
+        else consent_valid
+            IdentityService->>PostgreSQL: INSERT coppa_consents {id: uuid(), user_id, child_display_name, birth_year, policy_version, consented_at: now(), ip_hash}
+            PostgreSQL-->>IdentityService: coppa_consent_id
+            IdentityService-->>Gateway: 201 {coppa_consent_id}
+            Gateway-->>ParentApp: 201 {coppa_consent_id}
+        end
+    end
+
+    Note over ParentApp,IdentityService: Phase 2 — Create child row (ADR-0011 D1+D5)
+
+    ParentApp->>Gateway: POST /v1/identity/children {coppa_consent_id, nickname, age_band, language_target, buddy_id} + Bearer JWT + X-Request-Id
+    Gateway->>Gateway: validate parent JWT freshness
+    alt parent_jwt_stale
+        Gateway-->>ParentApp: 401 parent_jwt_stale
+    else jwt_valid
+        Gateway->>IdentityService: forward request
+        IdentityService->>PostgreSQL: SELECT id FROM coppa_consents WHERE id={coppa_consent_id} AND user_id={user_id}
+        PostgreSQL-->>IdentityService: consent row or null
+        alt missing_coppa_consent
+            IdentityService-->>Gateway: 422 missing_coppa_consent
+            Gateway-->>ParentApp: 422
+        else consent_found
+            IdentityService->>PostgreSQL: SELECT COUNT(*) FROM children WHERE household_id={household_id} AND status NOT IN ('deleted')
+            PostgreSQL-->>IdentityService: child_count
+            alt hard_cap_reached (child_count >= 10)
+                IdentityService-->>Gateway: 409 hard_cap_reached {limit: 10}
+                Gateway-->>ParentApp: 409
+            else nickname_collision_in_household
+                Note over IdentityService: SELECT 1 FROM children WHERE household_id={household_id} AND nickname={nickname} AND status='active'
+                IdentityService-->>Gateway: 409 nickname_collision_in_household
+                Gateway-->>ParentApp: 409
+            else success
+                IdentityService->>PostgreSQL: INSERT children {id: uuid(), household_id, coppa_consent_id, nickname, age_band, language_target, buddy_id, status: 'active', created_by_user_id: user_id, created_at: now()}
+                PostgreSQL-->>IdentityService: child_id
+                Note over IdentityService: soft-cap warning — non-blocking
+                IdentityService->>PostgreSQL: SELECT COUNT(*) FROM children WHERE household_id={household_id} AND status='active'
+                PostgreSQL-->>IdentityService: active_count
+                IdentityService-->>Gateway: 201 {child: {id, nickname, age_band, status: 'active', coppa_consent_id}, soft_cap_warning: active_count >= 4}
+                Gateway-->>ParentApp: 201
+            end
+        end
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 3s — idempotent via X-Request-Id — (household_id, nickname) unique enforced — hard cap 10, soft-cap warning at 4+ (ADR-0011 D5 alt 4)

@@ -1,0 +1,180 @@
+// AUTO-GENERATED FROM docs/erd/20-authoring/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/20-authoring/content_drafts.dbml, docs/erd/20-authoring/content_revisions.dbml, docs/erd/20-authoring/publication_records.dbml, docs/erd/20-authoring/review_assignments.dbml, docs/erd/20-authoring/review_decisions.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum content_draft_status {
+  draft
+  safety_screening
+  in_review
+  changes_requested
+  approved
+  published
+  archived
+}
+
+enum publication_status {
+  pending
+  published
+  failed
+  cancelled
+  rolled_back
+}
+
+enum review_assignment_status {
+  pending
+  in_progress
+  completed
+  reassigned
+}
+
+enum review_decision_outcome {
+  approved
+  changes_requested
+}
+
+/// Source: docs/erd/20-authoring/content_drafts.dbml
+model ContentDrafts {
+  id String @id @default(uuid()) @db.Uuid
+  authorId String @db.Uuid @map("author_id")
+  /// cross-domain ref → AdminAuthService (admin_users.id)
+  title String @db.VarChar(254)
+  templateText String @db.Text @map("template_text")
+  /// main template text; 10-500 chars enforced in app
+  variationInstruction String? @db.Text @map("variation_instruction")
+  /// optional LLM variation hint; 10-300 chars enforced in app
+  ageBands Json @db.JsonB @map("age_bands")
+  /// array of age band identifiers; ≥1 required
+  category String @db.VarChar(64)
+  locale String @db.VarChar(16)
+  /// BCP-47
+  tags Json? @db.JsonB
+  /// array of topic slugs; ≤10 tags enforced in app
+  status content_draft_status @default(draft)
+  currentVersion Int @db.SmallInt @default(1) @map("current_version")
+  /// points to latest content_revisions.version_no
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  contentRevisions ContentRevisions[] @relation(name: "content_revisions_draft_id_to_content_drafts")
+  publicationRecords PublicationRecords[] @relation(name: "publication_records_draft_id_to_content_drafts")
+  reviewAssignments ReviewAssignments[] @relation(name: "review_assignments_draft_id_to_content_drafts")
+  reviewDecisions ReviewDecisions[] @relation(name: "review_decisions_draft_id_to_content_drafts")
+  @@index([authorId, status], map: "idx_content_drafts_author_status")
+  @@index([status, createdAt], map: "idx_content_drafts_status_created")
+  @@map("content_drafts")
+}
+
+/// Source: docs/erd/20-authoring/content_revisions.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model ContentRevisions {
+  id String @id @default(uuid()) @db.Uuid
+  draftId String @db.Uuid @map("draft_id")
+  /// FK → content_drafts.id
+  versionNo Int @db.SmallInt @map("version_no")
+  /// monotonically increasing per draft; 1-based
+  authorId String @db.Uuid @map("author_id")
+  /// cross-domain ref → AdminAuthService (admin_users.id)
+  templateText String @db.Text @map("template_text")
+  /// immutable snapshot of content_drafts.template_text at submission
+  variationInstruction String? @db.Text @map("variation_instruction")
+  /// immutable snapshot at submission
+  ageBands Json @db.JsonB @map("age_bands")
+  /// immutable snapshot at submission
+  category String @db.VarChar(64)
+  locale String @db.VarChar(16)
+  /// BCP-47
+  tags Json? @db.JsonB
+  /// immutable snapshot at submission
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  contentDraft ContentDrafts @relation(name: "content_revisions_draft_id_to_content_drafts", fields: [draftId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([draftId, versionNo], map: "idx_content_revisions_draft_version_unique")
+  @@index([draftId], map: "idx_content_revisions_draft_id")
+  @@map("content_revisions")
+}
+
+/// Source: docs/erd/20-authoring/publication_records.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model PublicationRecords {
+  id String @id @default(uuid()) @db.Uuid
+  draftId String @db.Uuid @map("draft_id")
+  /// FK → content_drafts.id; denormalized for query convenience
+  revisionNo Int @db.SmallInt @map("revision_no")
+  /// content_revisions.version_no that was published
+  publisherId String @db.Uuid @map("publisher_id")
+  /// cross-domain ref → AdminAuthService (admin_users.id); requires content_admin role
+  packId String @db.VarChar(64) @map("pack_id")
+  /// content-addressable pack hash assembled by PublishOrchestrator
+  s3Url String? @db.VarChar(2048) @map("s3_url")
+  /// S3 URI of uploaded content pack; set on successful upload
+  scheduleId String? @db.Uuid @map("schedule_id")
+  /// FK → ca_publish_schedules.id; null for immediate publish
+  status publication_status @default(pending)
+  publishedAt DateTime? @db.Timestamptz(6) @map("published_at")
+  /// set when ContentService (sys-06) accepts the pack
+  failedReason String? @db.Text @map("failed_reason")
+  /// set on failure
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  contentDraft ContentDrafts @relation(name: "publication_records_draft_id_to_content_drafts", fields: [draftId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([packId], map: "idx_publication_records_pack_id_unique")
+  @@index([draftId, revisionNo], map: "idx_publication_records_draft_revision")
+  @@index([status, createdAt], map: "idx_publication_records_status_created")
+  @@map("publication_records")
+}
+
+/// Source: docs/erd/20-authoring/review_assignments.dbml
+model ReviewAssignments {
+  id String @id @default(uuid()) @db.Uuid
+  draftId String @db.Uuid @map("draft_id")
+  /// FK → content_drafts.id
+  revisionNo Int @db.SmallInt @map("revision_no")
+  /// revision version being reviewed; matches content_revisions.version_no
+  reviewerId String @db.Uuid @map("reviewer_id")
+  /// cross-domain ref → AdminAuthService (admin_users.id)
+  status review_assignment_status @default(pending)
+  assignedAt DateTime @db.Timestamptz(6) @default(now()) @map("assigned_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  /// set when reviewer submits decision
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  contentDraft ContentDrafts @relation(name: "review_assignments_draft_id_to_content_drafts", fields: [draftId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reviewDecisions ReviewDecisions[] @relation(name: "review_decisions_assignment_id_to_review_assignments")
+  @@index([reviewerId, status], map: "idx_review_assignments_reviewer_status")
+  @@index([draftId, revisionNo], map: "idx_review_assignments_draft_revision")
+  @@map("review_assignments")
+}
+
+/// Source: docs/erd/20-authoring/review_decisions.dbml
+model ReviewDecisions {
+  id String @id @default(uuid()) @db.Uuid
+  assignmentId String @db.Uuid @map("assignment_id")
+  /// FK → review_assignments.id
+  reviewerId String @db.Uuid @map("reviewer_id")
+  /// cross-domain ref → AdminAuthService (admin_users.id); denormalized for audit
+  draftId String @db.Uuid @map("draft_id")
+  /// FK → content_drafts.id; denormalized for query convenience
+  revisionNo Int @db.SmallInt @map("revision_no")
+  outcome review_decision_outcome
+  feedback String? @db.Text
+  /// required when outcome=changes_requested
+  qualityScore Int? @db.SmallInt @map("quality_score")
+  /// advisory score from ca-quality-score job; NULL if timed out
+  decidedAt DateTime @db.Timestamptz(6) @default(now()) @map("decided_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  reviewAssignment ReviewAssignments @relation(name: "review_decisions_assignment_id_to_review_assignments", fields: [assignmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contentDraft ContentDrafts @relation(name: "review_decisions_draft_id_to_content_drafts", fields: [draftId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([assignmentId], map: "idx_review_decisions_assignment_id_unique")
+  @@index([draftId, decidedAt], map: "idx_review_decisions_draft_decided")
+  @@map("review_decisions")
+}
+

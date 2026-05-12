@@ -1,0 +1,79 @@
+---
+system: sys-19-billing-subscription
+flow_id: order-cancel
+surface: mobile
+spec_anchor: /software/systems/19-billing-subscription#order-cancel
+actors: [ParentApp, Gateway, BillingService, Stripe, PostgreSQL]
+apis:
+  - POST /v1/billing/orders/{order_id}/cancel
+externals: [Stripe]
+queues: []
+failure_paths:
+  - parent_jwt_stale_re_pin_required
+  - already_shipped_use_return_flow
+  - already_cancelled
+  - stripe_void_failed
+  - order_not_found
+idempotency: X-Request-Id 24h dedup
+retry: caller-side exponential backoff on 5xx only
+timeout: 5s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant BillingService
+    participant Stripe
+    participant PostgreSQL
+
+    Note over ParentApp: parent in parent_settings → order history taps "Cancel order" on CREATED / PAID / FULFILLING row
+
+    ParentApp->>Gateway: POST /v1/billing/orders/{order_id}/cancel {X-Request-Id} + parent JWT Bearer
+    Gateway->>Gateway: auth-resolver — require parent JWT (ADR-0005 D6 — fresh within 60s)
+    alt parent_jwt_stale_re_pin_required
+        Note over Gateway: parent JWT issued > 60s ago
+        Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
+    else authenticated
+        Gateway->>BillingService: forward request
+        BillingService->>BillingService: verify JWT freshness < 60s (ADR-0005 D6)
+        alt order_not_found
+            BillingService->>PostgreSQL: SELECT id, state, state_version, stripe_payment_intent_id FROM orders WHERE id={order_id} AND household_id={household_id}
+            PostgreSQL-->>BillingService: no rows
+            BillingService-->>Gateway: 404 order_not_found
+            Gateway-->>ParentApp: 404
+        else already_cancelled
+            BillingService->>PostgreSQL: SELECT id, state, state_version FROM orders WHERE id={order_id}
+            PostgreSQL-->>BillingService: {state: 'cancelled'}
+            BillingService-->>Gateway: 409 already_cancelled
+            Gateway-->>ParentApp: 409
+        else already_shipped_use_return_flow
+            BillingService->>PostgreSQL: SELECT id, state, state_version FROM orders WHERE id={order_id}
+            PostgreSQL-->>BillingService: {state: 'shipped'|'arrived'|'activated'}
+            BillingService-->>Gateway: 409 already_shipped_use_return_flow {order_id, return_flow_url: /v1/billing/orders/{order_id}/return-request}
+            Gateway-->>ParentApp: 409 — direct to UC-BU16 return/refund flow
+        else stripe_void_failed
+            BillingService->>PostgreSQL: SELECT id, state, state_version, stripe_payment_intent_id FROM orders WHERE id={order_id}
+            PostgreSQL-->>BillingService: {state: 'created'|'paid'|'fulfilling', state_version}
+            BillingService->>PostgreSQL: UPDATE orders SET state='cancel_pending' WHERE id={order_id} AND state_version={sv} (CAS)
+            BillingService->>Stripe: POST /v1/payment_intents/{stripe_payment_intent_id}/cancel OR POST /v1/refunds {payment_intent: stripe_payment_intent_id}
+            Stripe--xBillingService: 5xx / timeout
+            BillingService->>PostgreSQL: UPDATE orders SET state='cancel_failed' WHERE id={order_id}
+            BillingService-->>Gateway: 502 stripe_void_failed
+            Gateway-->>ParentApp: 502
+        else success
+            BillingService->>PostgreSQL: SELECT id, state, state_version, stripe_payment_intent_id FROM orders WHERE id={order_id}
+            PostgreSQL-->>BillingService: {state: 'created'|'paid'|'fulfilling', state_version}
+            BillingService->>PostgreSQL: UPDATE orders SET state='cancel_pending' WHERE id={order_id} AND state_version={sv} (CAS)
+            BillingService->>Stripe: POST /v1/payment_intents/{stripe_payment_intent_id}/cancel OR POST /v1/refunds {payment_intent: stripe_payment_intent_id}
+            Stripe-->>BillingService: {status: 'canceled'|'succeeded'}
+            BillingService->>PostgreSQL: UPDATE orders SET state='cancelled', cancelled_at=now(), state_version=state_version+1 WHERE id={order_id}
+            BillingService->>PostgreSQL: INSERT audit_logs {action: 'order_cancel', actor_jti, order_id, household_id, ts}
+            BillingService-)PostgreSQL: emit order.cancelled event
+            BillingService-->>Gateway: 200 {order_id, state: 'cancelled', cancelled_at}
+            Gateway-->>ParentApp: 200
+        end
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 5s p99 — X-Request-Id 24h dedup — CAS on state_version prevents concurrent double-cancel — audit_logs row on every mutation

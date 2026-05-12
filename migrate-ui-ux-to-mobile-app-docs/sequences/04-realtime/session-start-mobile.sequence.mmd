@@ -1,0 +1,109 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: session-start-mobile
+surface: mobile
+spec_anchor: /software/systems/04-realtime-session-orchestrator#post-v1sessionsstart
+actors: [ParentApp, Gateway, RealtimeService, MqttBroker, Device, PostgreSQL, Redis, BillingService]
+apis:
+  - POST /v1/sessions/start
+externals: []
+queues: []
+failure_paths:
+  - entitlement_check_failed
+  - device_offline
+  - device_busy_other_session
+  - parent_stop_cooldown_active
+  - idempotency_replay_410
+idempotency: Idempotency-Key header; stored in idempotency_keys table; 24h dedup window; non-OPEN state returns 410 Gone with Retry-With-New-Key=true
+retry: caller-side exponential backoff with jitter on 5xx only — NOT on 423 cooldown, NOT on 409 entitlement
+timeout: 5s p99 for POST; MQTT delivery + WS handshake async — parent app receives session.started observer event within ~3s in happy path
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant RealtimeService
+    participant BillingService
+    participant PostgreSQL
+    participant Redis
+    participant MqttBroker
+    participant Device
+
+    ParentApp->>Gateway: POST /v1/sessions/start {user_id, child_id, device_id, course_id} + Idempotency-Key header + Bearer token
+    Gateway->>Gateway: rate-limit (sys-17) + JWT verify
+    Gateway->>RealtimeService: forward request
+
+    RealtimeService->>PostgreSQL: SELECT idempotency_keys WHERE key=Idempotency-Key
+    alt idempotency_replay_410
+        PostgreSQL-->>RealtimeService: row found, state != OPEN
+        RealtimeService-->>Gateway: 410 Gone {Retry-With-New-Key: true}
+        Gateway-->>ParentApp: 410
+    else key already OPEN (in-flight dedup)
+        PostgreSQL-->>RealtimeService: row found, state=OPEN
+        RealtimeService-->>Gateway: 202 Accepted (replay — original request still processing)
+        Gateway-->>ParentApp: 202
+    else new key
+        PostgreSQL-->>RealtimeService: not found
+        RealtimeService->>PostgreSQL: INSERT idempotency_keys (key, state=OPEN, user_id, created_at)
+
+        RealtimeService->>BillingService: GET /v1/billing/entitlement {user_id, child_id}
+        alt entitlement_check_failed
+            BillingService-->>RealtimeService: 403 entitlement_check_failed {reason: subscription_lapsed|no_plan}
+            RealtimeService->>PostgreSQL: UPDATE idempotency_keys SET state=FAILED
+            RealtimeService-->>Gateway: 403 entitlement_check_failed
+            Gateway-->>ParentApp: 403
+        else entitlement granted
+            BillingService-->>RealtimeService: 200 {entitled: true, remaining_minutes}
+
+            RealtimeService->>PostgreSQL: SELECT users.parent_stop_cooldown_until WHERE user_id=user_id
+            alt parent_stop_cooldown_active
+                PostgreSQL-->>RealtimeService: cooldown_until > NOW()
+                RealtimeService->>PostgreSQL: UPDATE idempotency_keys SET state=FAILED
+                RealtimeService-->>Gateway: 423 parent_stop_cooldown_active {retry_after: cooldown_until}
+                Gateway-->>ParentApp: 423
+            else no cooldown
+                PostgreSQL-->>RealtimeService: cooldown_until IS NULL or past
+
+                RealtimeService->>Redis: GET device_session:{device_id}
+                alt device_busy_other_session
+                    Redis-->>RealtimeService: existing session_id
+                    RealtimeService->>PostgreSQL: UPDATE idempotency_keys SET state=FAILED
+                    RealtimeService-->>Gateway: 409 device_busy_other_session {active_session_id}
+                    Gateway-->>ParentApp: 409
+                else device slot free
+                    Redis-->>RealtimeService: nil
+
+                    RealtimeService->>PostgreSQL: INSERT realtime_sessions {session_id, user_id, child_id, device_id, device_session_id=uuid(), state=CONNECTING, state_version=0, course_id, created_at}
+                    %% unique partial index on (user_id, device_id) WHERE state IN (CONNECTING,ACTIVE,RECONNECTING,PAUSED,INTERRUPTED) enforces one active session
+                    PostgreSQL-->>RealtimeService: OK
+
+                    alt device_offline
+                        Note over RealtimeService,MqttBroker: MQTT publish attempted but device not subscribed
+                        RealtimeService->>MqttBroker: PUBLISH device/{device_id}/sessions/start {session_id, device_session_id, child_id, course_id}
+                        MqttBroker-->>RealtimeService: PUBACK (broker accepted; device delivery not confirmed)
+                        Note over RealtimeService: session stays CONNECTING; expires after 30s if Device never opens WS
+                        RealtimeService->>PostgreSQL: UPDATE idempotency_keys SET state=COMPLETE
+                        RealtimeService-->>Gateway: 200 {session_id, expires_at, state: CONNECTING}
+                        Gateway-->>ParentApp: 200
+                        Note over ParentApp: attaches observer lane (see observer-attach.sequence.mmd) — receives session.start_failed if device never connects
+                    else device online and reachable
+                        RealtimeService->>MqttBroker: PUBLISH device/{device_id}/sessions/start {session_id, device_session_id, child_id, course_id}
+                        MqttBroker-->>RealtimeService: PUBACK
+                        MqttBroker-)Device: deliver device/{device_id}/sessions/start
+                        %% Device receives MQTT push and opens WS to RealtimeService
+                        %% see also: docs/sequences/04-realtime/ws-handshake.sequence.mmd
+                        Device-)RealtimeService: (async) WS connect wss://realtime/v1/connect?session_id&device_session_id
+                        RealtimeService->>PostgreSQL: UPDATE realtime_sessions SET state=ACTIVE, state_version=1 WHERE session_id
+                        RealtimeService->>PostgreSQL: UPDATE idempotency_keys SET state=COMPLETE
+                        RealtimeService-->>Gateway: 200 {session_id, expires_at, state: CONNECTING}
+                        Gateway-->>ParentApp: 200
+                        Note over ParentApp: transitions to cl_running / CompanionScreen — attaches observer lane — receives session.started event within ~3s
+                    end
+                end
+            end
+        end
+    end
+
+    Note over ParentApp,Device: POST times out at 5s p99 — MQTT delivery + WS handshake async — retry only on 5xx with jitter — no retry on 423/409/410

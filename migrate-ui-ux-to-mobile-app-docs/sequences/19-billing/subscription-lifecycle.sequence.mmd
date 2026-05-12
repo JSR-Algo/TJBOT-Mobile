@@ -1,0 +1,133 @@
+---
+system: sys-19-billing-subscription
+flow_id: subscription-lifecycle
+surface: mobile
+spec_anchor: /software/systems/19-billing-subscription#subscription-lifecycle
+actors: [ParentApp, Gateway, BillingService, Stripe, PostgreSQL]
+apis:
+  - GET /v1/billing/subscription
+  - POST /v1/billing/subscription/cancel
+  - POST /v1/billing/subscription/pause
+  - POST /v1/billing/subscription/resume
+externals: [Stripe]
+queues: []
+failure_paths:
+  - subscription_not_found
+  - already_cancelled
+  - cancellation_window_closed
+  - stripe_unavailable
+  - pause_already_used_this_cycle
+  - parent_jwt_stale
+idempotency: GET naturally idempotent; mutations dedup on X-Request-Id 24h
+retry: caller-side exponential backoff on 5xx only
+timeout: 3s p99 — Stripe-side mutations may be 1.5s p95
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant BillingService
+    participant Stripe
+    participant PostgreSQL
+
+    Note over ParentApp: parent in parent_settings views subscription tile
+
+    ParentApp->>Gateway: GET /v1/billing/subscription + parent JWT Bearer
+    Gateway->>BillingService: forward (JWT validated; read-only — 60s freshness not required)
+    BillingService->>PostgreSQL: SELECT subscriptions WHERE household_id=? (read-through)
+    alt subscription_not_found
+        PostgreSQL-->>BillingService: no rows
+        BillingService-->>Gateway: 404 subscription_not_found
+        Gateway-->>ParentApp: 404
+    else found
+        PostgreSQL-->>BillingService: subscription row {state, current_period_end, pause_count_this_cycle, ...}
+        BillingService-->>Gateway: 200 {state, tier, current_period_end, cancel_at_period_end, pause_available}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp: parent selects mutation (cancel / pause / resume)
+    Note over ParentApp,PostgreSQL: all mutations require fresh parent JWT (ADR-0005 D6 — < 60s)
+
+    alt cancel
+        ParentApp->>Gateway: POST /v1/billing/subscription/cancel {X-Request-Id} + parent JWT Bearer
+        Gateway->>Gateway: auth-resolver — verify JWT freshness < 60s
+        alt parent_jwt_stale
+            Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
+        else already_cancelled
+            Gateway->>BillingService: forward
+            BillingService->>PostgreSQL: SELECT subscriptions WHERE household_id=?
+            PostgreSQL-->>BillingService: {state: 'cancelled'}
+            BillingService-->>Gateway: 409 already_cancelled
+            Gateway-->>ParentApp: 409
+        else cancellation_window_closed
+            Gateway->>BillingService: forward
+            BillingService->>BillingService: check cancellation window (e.g. within N days of start)
+            BillingService-->>Gateway: 422 cancellation_window_closed
+            Gateway-->>ParentApp: 422
+        else stripe_unavailable
+            Gateway->>BillingService: forward
+            BillingService->>Stripe: DELETE /v1/subscriptions/{stripe_subscription_id} {cancel_at_period_end: true}
+            Stripe--xBillingService: 5xx / timeout
+            BillingService-->>Gateway: 502 stripe_unavailable
+            Gateway-->>ParentApp: 502
+        else cancel_success
+            Gateway->>BillingService: forward
+            BillingService->>Stripe: DELETE /v1/subscriptions/{stripe_subscription_id} {cancel_at_period_end: true}
+            Stripe-->>BillingService: {status: 'active', cancel_at_period_end: true}
+            BillingService->>PostgreSQL: UPDATE subscriptions SET state='cancelled', canceled_at=now() WHERE household_id=?
+            BillingService->>PostgreSQL: INSERT audit_logs {action: 'subscription_cancel', actor_jti, household_id, ts}
+            BillingService-->>Gateway: 200 {state: 'cancelled', active_until: current_period_end}
+            Gateway-->>ParentApp: 200
+            Note over ParentApp,PostgreSQL: subscription continues until current_period_end
+        end
+    else pause
+        ParentApp->>Gateway: POST /v1/billing/subscription/pause {X-Request-Id} + parent JWT Bearer
+        Gateway->>Gateway: auth-resolver — verify JWT freshness < 60s
+        alt parent_jwt_stale
+            Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
+        else pause_already_used_this_cycle
+            Gateway->>BillingService: forward
+            BillingService->>PostgreSQL: SELECT subscriptions WHERE household_id=?
+            PostgreSQL-->>BillingService: {pause_count_this_cycle >= 1}
+            BillingService-->>Gateway: 422 pause_already_used_this_cycle
+            Gateway-->>ParentApp: 422
+        else stripe_unavailable
+            Gateway->>BillingService: forward
+            BillingService->>Stripe: POST /v1/subscriptions/{stripe_subscription_id} {pause_collection: {behavior: 'void'}}
+            Stripe--xBillingService: 5xx / timeout
+            BillingService-->>Gateway: 502 stripe_unavailable
+            Gateway-->>ParentApp: 502
+        else pause_success
+            Gateway->>BillingService: forward
+            BillingService->>Stripe: POST /v1/subscriptions/{stripe_subscription_id} {pause_collection: {behavior: 'void'}}
+            Stripe-->>BillingService: {status: 'paused'}
+            BillingService->>PostgreSQL: UPDATE subscriptions SET state='paused', pause_count_this_cycle=pause_count_this_cycle+1
+            BillingService->>PostgreSQL: INSERT audit_logs {action: 'subscription_pause', actor_jti, household_id, ts}
+            BillingService-->>Gateway: 200 {state: 'paused'}
+            Gateway-->>ParentApp: 200
+        end
+    else resume
+        ParentApp->>Gateway: POST /v1/billing/subscription/resume {X-Request-Id} + parent JWT Bearer
+        Gateway->>Gateway: auth-resolver — verify JWT freshness < 60s
+        alt parent_jwt_stale
+            Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
+        else stripe_unavailable
+            Gateway->>BillingService: forward
+            BillingService->>Stripe: POST /v1/subscriptions/{stripe_subscription_id} {pause_collection: ''}
+            Stripe--xBillingService: 5xx / timeout
+            BillingService-->>Gateway: 502 stripe_unavailable
+            Gateway-->>ParentApp: 502
+        else resume_success
+            Gateway->>BillingService: forward
+            BillingService->>Stripe: POST /v1/subscriptions/{stripe_subscription_id} {pause_collection: ''}
+            Stripe-->>BillingService: {status: 'active'}
+            BillingService->>PostgreSQL: UPDATE subscriptions SET state='active'
+            BillingService->>PostgreSQL: INSERT audit_logs {action: 'subscription_resume', actor_jti, household_id, ts}
+            BillingService-->>Gateway: 200 {state: 'active'}
+            Gateway-->>ParentApp: 200
+        end
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 3s p99 — Stripe mutations ~1.5s p95 — X-Request-Id 24h dedup — audit_logs row on every mutation
