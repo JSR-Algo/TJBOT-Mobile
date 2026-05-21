@@ -99,7 +99,7 @@ final class VoiceSessionModule: RCTEventEmitter {
       // silently winning the flag and leaving the mic tap unable to use
       // voiceProcessingIO. See SharedVoiceEngine.preflight for invariant docs.
       do {
-        try SharedVoiceEngine.shared.preflight(voiceProcessing: true)
+        try SharedVoiceEngine.shared.preflight(voiceProcessing: Self.allowsHwAecForCurrentDevice())
       } catch {
         structLog(event: "preflight_failed", details: ["err": error.localizedDescription])
         // Non-fatal: engine may already be running from a prior session or the
@@ -568,6 +568,21 @@ final class VoiceSessionModule: RCTEventEmitter {
   private func escape(_ s: String) -> String {
     return s.replacingOccurrences(of: "\\", with: "\\\\")
       .replacingOccurrences(of: "\"", with: "\\\"")
+  }
+
+  private static func allowsHwAecForCurrentDevice() -> Bool {
+    return !["iPhone12,8", "iPhone13,1"].contains(deviceModelCode())
+  }
+
+  private static func deviceModelCode() -> String {
+    var size = 0
+    sysctlbyname("hw.machine", nil, &size, nil, 0)
+    guard size > 0 else { return "" }
+    var buffer = [CChar](repeating: 0, count: size)
+    guard sysctlbyname("hw.machine", &buffer, &size, nil, 0) == 0 else {
+      return ""
+    }
+    return String(cString: buffer)
   }
 
   // MARK: - Constants

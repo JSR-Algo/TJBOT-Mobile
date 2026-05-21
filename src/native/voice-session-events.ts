@@ -59,16 +59,16 @@ export interface VoiceMicStalledEvent {
 }
 
 /**
- * Android-only. Emitted when AcousticEchoCanceler.create() fails or .enabled
- * stays false after attach. iOS never emits this — iOS uses voiceProcessingIO
- * which has no equivalent failure mode. Hook responds by calling
+ * Emitted when Android AcousticEchoCanceler.create() fails/.enabled stays
+ * false, or when iOS voiceProcessingIO fails and the mic downgrades to plain
+ * capture. Hook responds by calling
  * VoiceMic.setAecFallbackGate(true, 0.04) (plan §5.1).
  */
 export interface VoiceAecAttachFailedEvent {
   event: 'voiceAecAttachFailed';
   /** Human-readable failure reason from the AEC attach site */
   reason: string;
-  /** Android audio session ID at time of failure (for diagnostics) */
+  /** Android audio session ID at time of failure; 0 on iOS */
   modelCode: number;
   /** Build.MODEL of the device (for AEC allowlist tuning) */
   deviceCode: string;

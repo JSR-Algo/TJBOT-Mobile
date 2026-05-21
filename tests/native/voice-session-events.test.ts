@@ -262,14 +262,19 @@ describe('P0-11 — drain-event drives ASSISTANT_SPEAKING → LISTENING', () => 
     expect(hook).toMatch(/playbackRef\.current\.onPlaybackFinish[\s\S]{0,800}ASSISTANT_SPEAKING[\s\S]{0,800}transition\(['"]LISTENING['"]\)/);
   });
 
-  it('5s drain-timeout safety useEffect exists for ASSISTANT_SPEAKING state', () => {
+  it('drain-timeout safety waits for turnComplete and does not force LISTENING', () => {
     const fs = require('fs');
     const hook = fs.readFileSync(
       require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
       'utf8',
     );
-    expect(hook).toMatch(/fsmState\s*!==\s*['"]ASSISTANT_SPEAKING['"][\s\S]{0,200}5000/);
-    expect(hook).toMatch(/voice\.assistant\.drain_timeout/);
+    const idx = hook.indexOf("voice.assistant.drain_timeout");
+    expect(idx).toBeGreaterThanOrEqual(0);
+    const block = hook.slice(Math.max(0, idx - 900), idx + 500);
+    expect(block).toMatch(/fsmState\s*!==\s*['"]ASSISTANT_SPEAKING['"][\s\S]{0,900}5000/);
+    expect(block).toMatch(/turnCompleteAtMs\s*=\s*responseTurnCompleteAtMsRef\.current/);
+    expect(block).toMatch(/turnCompleteAtMs\s*===\s*null[\s\S]{0,100}return/);
+    expect(block).not.toMatch(/transition\(['"]LISTENING['"]\)/);
   });
 
   it('onPlaybackFinish clears drain-timeout anchor (responseTurnCompleteAtMsRef = null)', () => {

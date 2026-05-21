@@ -147,4 +147,16 @@ describe('P0-10 timer table — plan v2 §3.2', () => {
     expect(hook).toMatch(/VoiceMic\.onEngineReady\(\(\)\s*=>\s*\{/);
     expect(hook).toMatch(/if\s*\(s\.state\s*===\s*'READY'\)\s*\{\s*s\.transition\('LISTENING'\)/);
   });
+
+  it('ASSISTANT_SPEAKING drain timeout is telemetry-only after turnComplete anchor', () => {
+    const guardRe = /if\s*\(\s*fsmState\s*!==\s*'ASSISTANT_SPEAKING'\s*\)\s*return\s*;/;
+    const guardIdx = hook.search(guardRe);
+    expect(guardIdx).toBeGreaterThanOrEqual(0);
+    const slice = hook.slice(guardIdx, guardIdx + 1200);
+
+    expect(slice).toMatch(/turnCompleteAtMs\s*=\s*responseTurnCompleteAtMsRef\.current/);
+    expect(slice).toMatch(/turnCompleteAtMs\s*===\s*null[\s\S]{0,100}return/);
+    expect(slice).toMatch(/voice\.assistant\.drain_timeout/);
+    expect(slice).not.toMatch(/transition\('LISTENING'\)/);
+  });
 });

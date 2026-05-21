@@ -38,7 +38,7 @@ describe('P0-1 — HW AEC re-enabled (VoiceMicModule.swift)', () => {
 
   it('derives useHwAec from the allowlist, not a hardcoded false', () => {
     expect(src).toMatch(
-      /let\s+useHwAec\s*=\s*\(\s*aecRequested\s*==\s*"hw"\s*\)\s*&&\s*allowsHwAec/,
+      /(let|var)\s+useHwAec\s*=\s*\(\s*aecRequested\s*==\s*"hw"\s*\)\s*&&\s*allowsHwAec/,
     );
   });
 
@@ -355,5 +355,45 @@ describe('DIAG-6 — native listener accounting reaches startObserving/stopObser
     expect(pcm).toMatch(/override\s+func\s+stopObserving\(\)\s*\{\s*hasListeners\s*=\s*false\s*\}/);
     expect(pcm).toMatch(/@objc\s+override\s+func\s+addListener\(_\s+eventName:\s+String\)\s*\{\s*super\.addListener\(eventName\)\s*\}/);
     expect(pcm).toMatch(/@objc\s+override\s+func\s+removeListeners\(_\s+count:\s+Double\)\s*\{\s*super\.removeListeners\(count\)\s*\}/);
+  });
+});
+
+describe('DIAG-7 — iOS playback jitter buffer tuned for smooth Gemini Live audio', () => {
+  const pcm = read('PcmStream/PcmStreamModule.swift', IOS);
+
+  it('uses the max 200ms prebuffer to absorb Live chunk jitter on device', () => {
+    expect(pcm).toMatch(/jitterBufferDefaultMs:\s*Int\s*=\s*200/);
+  });
+});
+
+// ─── Gemini Live stability + barge-in plan assertions (2026-05-21) ────────────
+// Plan: .omc/plans/gemini-live-stability-and-bargein.md §4 Steps 1–3
+
+describe('AEC-1 — JS subscriber for voiceAecAttachFailed (plan §4 Step 1)', () => {
+  const hook = read('hooks/useGeminiConversation.ts');
+
+  it('hook calls VoiceMic.onAecAttachFailed with a callback', () => {
+    expect(hook).toContain('VoiceMic.onAecAttachFailed(');
+  });
+});
+
+describe('CANCEL-RECOVERY — cancel_unack opt-in recovery (plan §4 Step 2)', () => {
+  const config = read('config.ts');
+  const hook = read('hooks/useGeminiConversation.ts');
+
+  it('config.ts exports VOICE_CANCEL_UNACK_RECOVERY flag', () => {
+    expect(config).toContain('VOICE_CANCEL_UNACK_RECOVERY');
+  });
+
+  it('hook emits voice.barge_in.cancel_unacked.recovery_close telemetry', () => {
+    expect(hook).toContain('voice.barge_in.cancel_unacked.recovery_close');
+  });
+});
+
+describe('DEAD-TIME-1 — interrupt_to_listen_ms telemetry (plan §4 Step 3)', () => {
+  const hook = read('hooks/useGeminiConversation.ts');
+
+  it('hook emits voice.barge_in.interrupt_to_listen_ms on INTERRUPTED exit', () => {
+    expect(hook).toContain('voice.barge_in.interrupt_to_listen_ms');
   });
 });

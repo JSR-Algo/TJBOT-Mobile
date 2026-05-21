@@ -74,4 +74,5 @@ export const Config = {
    * cap). Override via EXPO_PUBLIC_VOICE_BARGE_IN_BUDGET_MS.
    */
   VOICE_BARGE_IN_BUDGET_MS: parseBargeInBudgetMs(),
+  VOICE_CANCEL_UNACK_RECOVERY: ENV.EXPO_PUBLIC_VOICE_CANCEL_UNACK_RECOVERY === 'true',
 } as const;

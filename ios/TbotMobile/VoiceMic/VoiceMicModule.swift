@@ -31,6 +31,36 @@ import Foundation
 import React
 import os.log
 
+enum VoicePlaybackActivity {
+  private static let playbackTailMs = 1200
+  private static let queue = DispatchQueue(label: "com.tbot.voice.playback-activity")
+  private static var active = false
+  private static var tailUntil: Date?
+
+  static func setActive(_ value: Bool) {
+    queue.sync {
+      if value {
+        active = true
+        tailUntil = nil
+      } else {
+        active = false
+        tailUntil = Date().addingTimeInterval(Double(playbackTailMs) / 1000.0)
+      }
+    }
+  }
+
+  static var isActive: Bool {
+    queue.sync {
+      if active { return true }
+      if let until = tailUntil {
+        if until > Date() { return true }
+        tailUntil = nil
+      }
+      return false
+    }
+  }
+}
+
 @objc(VoiceMicModule)
 final class VoiceMicModule: RCTEventEmitter {
 
@@ -51,6 +81,7 @@ final class VoiceMicModule: RCTEventEmitter {
   private enum Event {
     static let data = "voiceMicData"
     static let stalled = "voiceMicStalled"
+    static let aecAttachFailed = "voiceAecAttachFailed"
     /// Fires AT MOST ONCE per `start()` cycle on the first frame the tap
     /// actually delivers. JS hook uses this as the trigger for the FSM
     /// `ready → listening` transition (plan §3.2 row `ready`, §6.3 row 3).
@@ -67,6 +98,7 @@ final class VoiceMicModule: RCTEventEmitter {
   /// mic quality. Silent downgrade to `aec: 'off'`. List is conservative;
   /// plan §6 R1 lists iPhone 12 mini; iPads optional.
   private static let aecFallbackModels: Set<String> = [
+    "iPhone12,8",  // iPhone SE (2nd gen)
     "iPhone13,1",  // iPhone 12 mini
   ]
 
@@ -78,6 +110,8 @@ final class VoiceMicModule: RCTEventEmitter {
   private var running = false
   private var muted = false
   private var effectiveAecMode = "off"  // resolved at start()
+  private var fallbackGateEnabled = false
+  private var fallbackThreshold = 0.04
   private var configuredSampleRate = Config.targetSampleRate
   private var configuredChannels: AVAudioChannelCount = Config.targetChannels
   private var configuredBitsPerSample = 16
@@ -140,7 +174,14 @@ final class VoiceMicModule: RCTEventEmitter {
   override static func requiresMainQueueSetup() -> Bool { false }
 
   override func supportedEvents() -> [String]! {
-    return [Event.data, Event.stalled, Event.engineReady, "voiceMicVadStart", "voiceMicVadEnd"]
+    return [
+      Event.data,
+      Event.stalled,
+      Event.aecAttachFailed,
+      Event.engineReady,
+      "voiceMicVadStart",
+      "voiceMicVadEnd",
+    ]
   }
 
   override func startObserving() { hasListeners = true }
@@ -189,10 +230,18 @@ final class VoiceMicModule: RCTEventEmitter {
       // capture without voiceProcessingIO.
       let modelCode = Self.deviceModelCode()
       let allowsHwAec = !Self.aecFallbackModels.contains(modelCode)
-      let useHwAec = (aecRequested == "hw") && allowsHwAec
+      var useHwAec = (aecRequested == "hw") && allowsHwAec
       self.effectiveAecMode = useHwAec ? "hw" : "off"
-      NSLog("[TbotVoice-debug] VoiceMic.start aecRequested=%@ useHwAec=%@ model=%@",
-            aecRequested, useHwAec ? "true" : "false", modelCode)
+      if aecRequested == "hw" && !allowsHwAec {
+        self.emitAecAttachFailed(
+          reason: "device_aec_fallback_allowlist",
+          modelCode: modelCode
+        )
+      }
+      NSLog(
+        "[TbotVoice-debug] %@",
+        "VoiceMic.start aecRequested=\(aecRequested) useHwAec=\(useHwAec) model=\(modelCode)"
+      )
 
       os_log("[A1] pre-ensureStarted voiceProcessing=%{public}@ model=%{public}@",
              log: self.log, type: .default,
@@ -214,8 +263,26 @@ final class VoiceMicModule: RCTEventEmitter {
       } catch {
         os_log("[A1] ensureStarted FAILED err=%{public}@",
                log: self.log, type: .error, String(describing: error))
-        reject(ErrorCode.startFailed, "engine start failed: \(error)", error)
-        return
+        if useHwAec && SharedVoiceEngine.shared.stopIfIdleForReconfigure() {
+          self.emitAecAttachFailed(
+            reason: "engine_start_failed:\(String(describing: error))",
+            modelCode: modelCode
+          )
+          useHwAec = false
+          self.effectiveAecMode = "off"
+          do {
+            try SharedVoiceEngine.shared.ensureStarted(voiceProcessing: false)
+            os_log("[A1] post-ensureStarted fallback ok engineRunning=%{public}@",
+                   log: self.log, type: .default,
+                   SharedVoiceEngine.shared.isRunning() ? "true" : "false")
+          } catch {
+            reject(ErrorCode.startFailed, "engine start failed after AEC fallback: \(error)", error)
+            return
+          }
+        } else {
+          reject(ErrorCode.startFailed, "engine start failed: \(error)", error)
+          return
+        }
       }
 
       guard
@@ -232,21 +299,43 @@ final class VoiceMicModule: RCTEventEmitter {
 
       os_log("[A1] pre-installInputTap bufferFrames=%{public}d",
              log: self.log, type: .default, Config.tapBufferFrames)
-      let nativeFormat: AVAudioFormat
-      do {
-        nativeFormat = try SharedVoiceEngine.shared.installInputTap(
+      func installInputTap() throws -> AVAudioFormat {
+        try SharedVoiceEngine.shared.installInputTap(
           bufferSize: Config.tapBufferFrames
         ) { [weak self] buffer, when in
           self?.handleTap(buffer: buffer, when: when)
         }
+      }
+      var nativeFormat: AVAudioFormat
+      do {
+        nativeFormat = try installInputTap()
         os_log("[A1] post-installInputTap nativeRate=%{public}f channels=%{public}d",
                log: self.log, type: .default,
                nativeFormat.sampleRate, Int(nativeFormat.channelCount))
       } catch {
         os_log("[A1] installInputTap FAILED err=%{public}@",
                log: self.log, type: .error, String(describing: error))
-        reject(ErrorCode.startFailed, "installInputTap failed: \(error)", error)
-        return
+        if useHwAec && SharedVoiceEngine.shared.stopIfIdleForReconfigure() {
+          self.emitAecAttachFailed(
+            reason: "installInputTap_failed:\(String(describing: error))",
+            modelCode: modelCode
+          )
+          useHwAec = false
+          self.effectiveAecMode = "off"
+          do {
+            try SharedVoiceEngine.shared.ensureStarted(voiceProcessing: false)
+            nativeFormat = try installInputTap()
+            os_log("[A1] post-installInputTap fallback nativeRate=%{public}f channels=%{public}d",
+                   log: self.log, type: .default,
+                   nativeFormat.sampleRate, Int(nativeFormat.channelCount))
+          } catch {
+            reject(ErrorCode.startFailed, "installInputTap failed after AEC fallback: \(error)", error)
+            return
+          }
+        } else {
+          reject(ErrorCode.startFailed, "installInputTap failed: \(error)", error)
+          return
+        }
       }
 
       guard let conv = AVAudioConverter(from: nativeFormat, to: target) else {
@@ -278,6 +367,7 @@ final class VoiceMicModule: RCTEventEmitter {
       self.lastStallCheckFrames = 0
       self.fatalStall = false
       self.muted = false
+      self.fallbackGateEnabled = (self.effectiveAecMode != "hw" && aecRequested == "hw")
       self.running = true
       // Release fence: publish `converter`, `targetFormat`, `running` so that
       // the tap callback (HAL thread) observes them as a consistent set. The
@@ -349,9 +439,9 @@ final class VoiceMicModule: RCTEventEmitter {
     }
   }
 
-  /// P0-8: iOS stub — voiceProcessingIO provides sufficient AEC on iOS so
-  /// the software RMS fallback gate is not needed. Resolves immediately so
-  /// the JS hook can call unconditionally without Platform.OS branching.
+  /// Software fallback gate for iOS models where HW voiceProcessingIO is
+  /// disabled. Drops mic frames while AI playback is active so speaker
+  /// residual cannot reach Gemini and self-interrupt the assistant turn.
   @objc(setAecFallbackGate:threshold:resolver:rejecter:)
   func setAecFallbackGate(
     _ enabled: NSNumber,
@@ -359,7 +449,22 @@ final class VoiceMicModule: RCTEventEmitter {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter _: @escaping RCTPromiseRejectBlock
   ) {
-    resolve(nil)
+    stateQueue.async { [weak self] in
+      guard let self = self else {
+        resolve(nil)
+        return
+      }
+      self.fallbackGateEnabled = enabled.boolValue
+      self.fallbackThreshold = threshold.doubleValue
+      os_log(
+        "aecFallbackGate enabled=%{public}@ threshold=%{public}f",
+        log: self.log,
+        type: .info,
+        enabled.boolValue ? "true" : "false",
+        threshold.doubleValue
+      )
+      resolve(nil)
+    }
   }
 
   // NativeEventEmitter requires these methods to exist, but listener
@@ -414,8 +519,10 @@ final class VoiceMicModule: RCTEventEmitter {
 
     Self.tapFireCount += 1
     if Self.tapFireCount == 1 || Self.tapFireCount % 50 == 0 {
-      NSLog("[TbotVoice-debug] tap_fire #%llu frames=%u rate=%f running=%@",
-            Self.tapFireCount, frameLength, inputRate, self.running ? "true" : "false")
+      NSLog(
+        "[TbotVoice-debug] %@",
+        "tap_fire #\(Self.tapFireCount) frames=\(frameLength) rate=\(inputRate) running=\(self.running)"
+      )
       os_log("[A1] tap_fire #%{public}llu frames=%{public}u rate=%{public}f running=%{public}@",
              log: self.log, type: .default,
              Self.tapFireCount, frameLength, inputRate,
@@ -490,10 +597,16 @@ final class VoiceMicModule: RCTEventEmitter {
       memset(UnsafeMutableRawPointer(src), 0, outLen)
     }
 
+    var shouldDropForFallbackGate = false
+    if self.fallbackGateEnabled && VoicePlaybackActivity.isActive {
+      shouldDropForFallbackGate = true
+    }
+
     // Base64-encode on the tap thread (cheap; ~1µs per KB) to avoid
     // allocating a second buffer on stateQueue.
-    let nsData = Data(bytes: src, count: outLen)
-    let b64 = nsData.base64EncodedString()
+    let b64 = shouldDropForFallbackGate
+      ? ""
+      : Data(bytes: src, count: outLen).base64EncodedString()
 
     // P0-7: VAD computed on tap thread where `src` is valid.
     let vadSampleCount = outLen / 2
@@ -524,8 +637,10 @@ final class VoiceMicModule: RCTEventEmitter {
       self.seq += 1
 
       if seqNow == 0 || seqNow % 50 == 0 {
-        NSLog("[TbotVoice-debug] emit #%llu hasListeners=%@ outBytes=%d",
-              seqNow, self.hasListeners ? "true" : "false", b64.count)
+        NSLog(
+          "[TbotVoice-debug] %@",
+          "emit #\(seqNow) hasListeners=\(self.hasListeners) outBytes=\(b64.count)"
+        )
       }
 
       // Plan §3.2 row `ready`, §6.3 row 3 — the FSM's `ready → listening`
@@ -542,6 +657,14 @@ final class VoiceMicModule: RCTEventEmitter {
             "sampleRate": self.configuredSampleRate,
           ]
         )
+      }
+
+      if shouldDropForFallbackGate {
+        self.vadSpeechActive = false
+        self.vadHangoverFramesLeft = 0
+        self.preRollBuffer.removeAll()
+        self.preRollFilled = false
+        return
       }
 
       // P0-7: VAD state machine on stateQueue (serialised).
@@ -612,16 +735,8 @@ final class VoiceMicModule: RCTEventEmitter {
         Date().timeIntervalSince($0) * 1000.0
       } ?? -1
       NSLog(
-        "[TbotVoice-debug] diag tick=%d running=%@ framesDelivered=%llu lastFrameAgeMs=%.0f seq=%llu muted=%@ aec=%@ engineRunning=%@ voiceProcessing=%@",
-        diagTickCount,
-        running ? "true" : "false",
-        framesDelivered,
-        lastAgeMs,
-        seq,
-        muted ? "true" : "false",
-        effectiveAecMode,
-        SharedVoiceEngine.shared.isRunning() ? "true" : "false",
-        SharedVoiceEngine.shared.isVoiceProcessingEnabled() ? "true" : "false"
+        "[TbotVoice-debug] %@",
+        "diag tick=\(diagTickCount) running=\(running) framesDelivered=\(framesDelivered) lastFrameAgeMs=\(lastAgeMs) seq=\(seq) muted=\(muted) aec=\(effectiveAecMode) engineRunning=\(SharedVoiceEngine.shared.isRunning()) voiceProcessing=\(SharedVoiceEngine.shared.isVoiceProcessingEnabled())"
       )
     }
 
@@ -690,6 +805,24 @@ final class VoiceMicModule: RCTEventEmitter {
           "fatal": fatal,
         ]
       )
+    }
+  }
+
+  private func emitAecAttachFailed(reason: String, modelCode: String) {
+    let payload: [String: Any] = [
+      "reason": reason,
+      "modelCode": 0,
+      "deviceCode": modelCode,
+    ]
+    os_log(
+      "voiceAecAttachFailed reason=%{public}@ model=%{public}@",
+      log: log,
+      type: .error,
+      reason,
+      modelCode
+    )
+    if hasListeners {
+      sendEvent(withName: Event.aecAttachFailed, body: payload)
     }
   }
 

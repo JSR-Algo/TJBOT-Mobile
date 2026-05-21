@@ -137,6 +137,24 @@ final class SharedVoiceEngine {
     return started && engine.isRunning
   }
 
+  /// Stop an engine that was only pre-armed and has no active mic/player
+  /// users, allowing the next caller to choose a different voiceProcessing
+  /// mode. Returns false when stopping would disrupt active audio.
+  func stopIfIdleForReconfigure() -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+
+    guard micUsers == 0, playerUsers == 0, !inputTapInstalled else {
+      return false
+    }
+    if started {
+      engine.stop()
+      started = false
+    }
+    voiceProcessingEnabled = false
+    return true
+  }
+
   // MARK: - Input tap (mic user)
 
   /// Install a tap on the input node. Throws if a tap is already installed
