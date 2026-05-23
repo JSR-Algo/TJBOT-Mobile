@@ -6,7 +6,7 @@
     "slug": "tbot-mobile",
     "version": "1.0.1",
     "ios": {
-      "bundleIdentifier": "com.tbot.app",
+      "bundleIdentifier": "com.manhhodinh.tbotmobile.dev",
       "buildNumber": "2"
     },
     "android": {

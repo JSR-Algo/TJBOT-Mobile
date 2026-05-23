@@ -64,6 +64,13 @@ describe('buildSukaPrompt — language directive', () => {
     }
   });
 
+  it('forbids spoken action tags so realtime TTS stays smooth', () => {
+    const out = buildSukaPrompt('3-5', 'dang-yeu');
+    expect(out).toMatch(/Không xuất action tags/);
+    expect(out).toMatch(/Không bao giờ xuất action tags/);
+    expect(out).not.toMatch(/^\s*-\s*"\[[a-z_]+/m);
+  });
+
   it('backward compat: 3-arg call with seed as 3rd arg still returns a prompt (if anyone passed seed before)', () => {
     // The old signature was (age, style, _seed?). We reordered — the 3rd arg
     // is now `language`. This test documents the breaking reorder: callers

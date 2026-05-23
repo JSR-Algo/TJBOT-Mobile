@@ -269,11 +269,11 @@ export class PcmStreamPlayer {
         );
         this.scheduleDrainCheck();
       });
-      // Safety net: if the native event never arrives within expected
-      // duration + 2 s, fire fallback with a warning. Should never trigger
-      // under normal operation; presence in logs signals a native regression.
+      // Safety net: if the native event never arrives within queued-audio
+      // duration + 2 s, fire fallback with a warning. Do not cap below the
+      // expected duration; long replies may legitimately play for >15 s.
       const expectedMs = (this.fedFrames / SAMPLE_RATE) * 1000;
-      const safetyMs = Math.max(1000, Math.min(15_000, expectedMs + 2_000));
+      const safetyMs = Math.max(1000, expectedMs + 2_000);
       this.drainDeadlineTimer = setTimeout(() => {
         this.drainDeadlineTimer = null;
         if (this._turnGeneration !== generation || this.disposed) return;

@@ -245,6 +245,17 @@ describe('PcmStreamPlayer — drain signal', () => {
     expect(onFinish).toHaveBeenCalledTimes(1);
   });
 
+  it('iOS: drain fallback deadline is based on queued audio duration, not capped before long replies finish', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(path.join(__dirname, '../../src/audio/PcmStreamPlayer.ts'), 'utf8');
+    const idx = src.indexOf('const expectedMs = (this.fedFrames / SAMPLE_RATE) * 1000');
+    expect(idx).toBeGreaterThanOrEqual(0);
+    const block = src.slice(idx, idx + 500);
+    expect(block).toMatch(/expectedMs\s*\+\s*2_000/);
+    expect(block).not.toMatch(/Math\.min\(\s*15_000/);
+  });
+
   it('coalesces concurrent init while multiple enqueue calls arrive before ready', async () => {
     resetRnState('ios');
     RN_STATE.holdInit = true;

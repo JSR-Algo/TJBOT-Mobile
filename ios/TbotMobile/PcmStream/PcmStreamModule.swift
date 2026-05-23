@@ -56,7 +56,7 @@ final class PcmStreamModule: RCTEventEmitter {
     // key `voicePlaybackJitterBufferMs` for device-specific tuning. Set 0
     // to disable (pre-B4 behavior: play() fires on the first feed()).
     // Target: AC 2.4 — inter-chunk playback gap < 10 ms under jitter.
-    static let jitterBufferDefaultMs: Int = 50
+    static let jitterBufferDefaultMs: Int = 200
     static let jitterBufferKey: String = "voicePlaybackJitterBufferMs"
     static let jitterBufferMaxMs: Int = 200
   }
@@ -117,6 +117,7 @@ final class PcmStreamModule: RCTEventEmitter {
   /// shorter than the threshold; clear() resets for the next turn.
   private var jitterBufferFrames: UInt64 = 0
   private var playbackStarted = false
+  private var playbackActivityAnnounced = false
 
   /// Monotonically increasing. Incremented on clear() and on each endTurn()
   /// dispatch. Sentinel completion captures the generation at scheduling time
@@ -216,6 +217,7 @@ final class PcmStreamModule: RCTEventEmitter {
         let safeMs = max(0, min(configuredMs, Config.jitterBufferMaxMs))
         self.jitterBufferFrames = UInt64((Double(safeMs) / 1000.0) * Config.inputSampleRate)
         self.playbackStarted = false
+        self.playbackActivityAnnounced = false
 
         self.playerNode = node
         self.format = fmt
@@ -328,6 +330,11 @@ final class PcmStreamModule: RCTEventEmitter {
       self.fedFrames += UInt64(frameCount)
       let frameLen = UInt64(frameCount)
 
+      if !self.playbackActivityAnnounced {
+        self.playbackActivityAnnounced = true
+        self.notifyPlaybackActive(true)
+      }
+
       // Schedule FIRST. scheduleBuffer on a not-yet-playing node queues the
       // data; then play() starts consuming the queue. If we call play()
       // before any buffer is scheduled, iOS sometimes leaves the node in a
@@ -353,6 +360,7 @@ final class PcmStreamModule: RCTEventEmitter {
         if !node.isPlaying {
           node.play()
         }
+        self.notifyPlaybackActive(true)
       }
 
       resolve(data.count)
@@ -366,6 +374,7 @@ final class PcmStreamModule: RCTEventEmitter {
   ) {
     stateQueue.async { [weak self] in
       self?.playerNode?.pause()
+      self?.notifyPlaybackActive(false)
       resolve(nil)
     }
   }
@@ -377,6 +386,7 @@ final class PcmStreamModule: RCTEventEmitter {
   ) {
     stateQueue.async { [weak self] in
       self?.playerNode?.play()
+      self?.notifyPlaybackActive(true)
       resolve(nil)
     }
   }
@@ -402,6 +412,7 @@ final class PcmStreamModule: RCTEventEmitter {
       self.turnGeneration &+= 1
       // B4: reset the jitter-buffer gate so the next turn re-prebuffers.
       self.playbackStarted = false
+      self.playbackActivityAnnounced = false
       // P0-6: clear responseId gate on barge-in so the next response starts clean.
       self.currentResponseId = nil
       self.rejectedChunkCounter = 0
@@ -409,6 +420,7 @@ final class PcmStreamModule: RCTEventEmitter {
       self.qaWriter?.close(sampleRate: Config.inputSampleRate)
       self.qaWriter = nil
       node.play(at: nil)
+      self.notifyPlaybackActive(false)
       os_log("clear (barge-in) ok", log: self.log, type: .info)
       resolve(nil)
     }
@@ -440,6 +452,13 @@ final class PcmStreamModule: RCTEventEmitter {
       guard let self = self else { return }
       self.currentResponseId = responseId.isEmpty ? nil : responseId
       self.rejectedChunkCounter = 0
+      self.fedFrames = 0
+      self.playedFrames = 0
+      self.lastAdvanceCheckPlayedFrames = 0
+      self.stallNoAdvanceTicks = 0
+      self.playbackStarted = false
+      self.playbackActivityAnnounced = false
+      self.turnOpen = true
       // QA harness: close any prior writer and open a new one per responseId.
       self.qaWriter?.close(sampleRate: Config.inputSampleRate)
       self.qaWriter = responseId.isEmpty ? nil : QaWavWriter(responseId: responseId)
@@ -500,8 +519,14 @@ final class PcmStreamModule: RCTEventEmitter {
       // catches up, and we'd block a short utterance forever.
       if !self.playbackStarted {
         self.playbackStarted = true
+        if !node.isPlaying {
+          node.play()
+        }
+        self.notifyPlaybackActive(true)
+      } else if !node.isPlaying {
+        node.play()
+        self.notifyPlaybackActive(true)
       }
-      if !node.isPlaying { node.play() }
       resolve(nil)
     }
   }
@@ -544,12 +569,14 @@ final class PcmStreamModule: RCTEventEmitter {
       SharedVoiceEngine.shared.detachPlayerNode(node)
       playerNode = nil
     }
+    notifyPlaybackActive(false)
     format = nil
     fedFrames = 0
     playedFrames = 0
     lastAdvanceCheckPlayedFrames = 0
     turnOpen = false
     playbackStarted = false
+    playbackActivityAnnounced = false
     jitterBufferFrames = 0
     currentResponseId = nil
     rejectedChunkCounter = 0
@@ -622,6 +649,8 @@ final class PcmStreamModule: RCTEventEmitter {
     // QA harness: finalize WAV on drain (turn complete).
     qaWriter?.close(sampleRate: Config.inputSampleRate)
     qaWriter = nil
+    playbackActivityAnnounced = false
+    notifyPlaybackActive(false)
     os_log(
       "drained generation=%{public}llu reason=%{public}@ played=%{public}llu scheduled=%{public}llu",
       log: log, type: .info,
@@ -638,6 +667,16 @@ final class PcmStreamModule: RCTEventEmitter {
         ]
       )
     }
+  }
+
+  private func notifyPlaybackActive(_ active: Bool) {
+    VoicePlaybackActivity.setActive(active)
+    os_log(
+      "playbackActive=%{public}@",
+      log: log,
+      type: .info,
+      active ? "true" : "false"
+    )
   }
 
 // MARK: - QA Test Harness

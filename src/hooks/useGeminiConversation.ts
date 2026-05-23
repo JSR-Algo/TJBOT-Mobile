@@ -85,6 +85,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // between startConversation (which contains the goAway handler) and
   // stopConversation (declared after it).
   const reconnectRef = useRef<(() => void) | null>(null);
+  const suppressedCloseSessionIdsRef = useRef<Set<number>>(new Set());
   // A7 — AC 2.1-2.5 evidence timestamps. Stamped/cleared at the following
   // sites so Wave B device runs can harvest p50/p99 for the verification
   // matrix (docs/qa/realtime-voice-acceptance.md). All in-memory, COPPA-safe.
@@ -111,6 +112,11 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // Cleared when serverContent.interrupted arrives. If the 600ms watchdog
   // fires before the clear, voice.barge_in.cancel_unacked telemetry is emitted.
   const cancelUnackMsRef = useRef<number | null>(null);
+  // Step 3: stamped on every → INTERRUPTED; cleared on exit. interruptSourceRef
+  // tracks whether the interrupt was tap- or server-initiated so the exit telemetry
+  // can include the correct source field.
+  const interruptedAtMsRef = useRef<number | null>(null);
+  const interruptSourceRef = useRef<'tap' | 'server_interrupted'>('tap');
   // P0-11: stamped when server sends turnComplete. Used by the 5s drain-timeout
   // safety net to detect stuck ASSISTANT_SPEAKING state (plan §3.2 row).
   const responseTurnCompleteAtMsRef = useRef<number | null>(null);
@@ -435,6 +441,9 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         sessionResumptionCachedAtMsRef.current = 0;
       }
 
+      const activeSessionId = sessionIdRef.current;
+      const isCurrentSession = () => activeSessionId === sessionIdRef.current;
+
       const session = await ai.live.connect({
         model: Config.GEMINI_LIVE_MODEL,
         config: {
@@ -470,6 +479,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         },
         callbacks: {
           onopen: () => {
+            if (!isCurrentSession()) return;
             track('provider', 'live_connected');
             // A7 AC 2.1: session-start latency = WS-open time - request start.
             // Target: p50 ≤ 800ms, p99 ≤ 1500ms.
@@ -486,6 +496,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             _startAudioCapture();
           },
           onmessage: (message: any) => {
+            if (!isCurrentSession()) return;
             // Handle audio chunks from AI. FSM transition to PLAYING_AI_AUDIO
             // is deferred to `onPlaybackStart` (fires on first *played*
             // sample, not first received) — avoids the silent-mouth gap
@@ -564,15 +575,33 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
                 // where clear() never resolves.
                 if (store.getState().state === 'INTERRUPTED') {
                   const pendingTurnId = pendingUserTurnIdAfterClearRef.current;
+                  const interruptMs = interruptedAtMsRef.current;
+                  const interruptSrc = interruptSourceRef.current;
                   if (pendingTurnId !== null) {
                     pendingUserTurnIdAfterClearRef.current = null;
                     useVoiceAssistantStore.setState({ currentUserTurnId: pendingTurnId });
                     store.getState().transition('USER_SPEAKING');
+                    if (interruptMs !== null) {
+                      interruptedAtMsRef.current = null;
+                      track('barge_in', 'voice.barge_in.interrupt_to_listen_ms', {
+                        ms: Date.now() - interruptMs,
+                        destination_state: 'USER_SPEAKING',
+                        source: interruptSrc,
+                      });
+                    }
                     track('barge_in', 'voice.bargein.ordering.b_then_a', {
                       userTurnId: pendingTurnId,
                     });
                   } else {
                     store.getState().transition('LISTENING');
+                    if (interruptMs !== null) {
+                      interruptedAtMsRef.current = null;
+                      track('barge_in', 'voice.barge_in.interrupt_to_listen_ms', {
+                        ms: Date.now() - interruptMs,
+                        destination_state: 'LISTENING',
+                        source: interruptSrc,
+                      });
+                    }
                   }
                 }
               }).catch((err) => {
@@ -582,6 +611,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               if (s.aiTranscript) s.addMessage('ai', s.aiTranscript, true);
               s.setAiTranscript('');
               if (s.state === 'ASSISTANT_SPEAKING') {
+                interruptedAtMsRef.current = Date.now();
+                interruptSourceRef.current = 'server_interrupted';
                 s.transition('INTERRUPTED');
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
@@ -704,19 +735,30 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             }
           },
           onclose: (event?: any) => {
-            track('provider', 'live_disconnected', {
+            const detail = {
               code: event?.code ?? null,
               reason: event?.reason ?? null,
               wasClean: event?.wasClean ?? null,
               type: event?.type ?? null,
               state: store.getState().state,
-            });
+              stale: !isCurrentSession(),
+            };
+            track('provider', 'live_disconnected', detail);
+            if (__DEV__) console.warn('[GeminiSession] live_disconnected:', detail);
+            const suppressed = suppressedCloseSessionIdsRef.current.delete(activeSessionId);
+            if (!isCurrentSession() || suppressed) {
+              return;
+            }
             const s = store.getState();
             if (s.state !== 'IDLE' && s.state !== 'ERROR_RECOVERABLE') {
-              s.stopSession();
+              _stopAudioCapture();
+              playbackRef.current?.interrupt();
+              s.setError(detail.reason || `Gemini Live ngắt kết nối (${detail.code ?? 'unknown'}).`);
+              s.transition('ERROR_RECOVERABLE');
             }
           },
           onerror: (error: any) => {
+            if (!isCurrentSession()) return;
             // Surface as much as Gemini/SDK gives us — prior "Lỗi kết nối
             // Gemini" debugging sessions had only the fallback string
             // because `error.message` was empty. Log code/reason/type too.
@@ -732,6 +774,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             if (__DEV__) console.warn('[GeminiSession] live_error detail:', detail);
             sessionResumptionHandleRef.current = null;
             sessionResumptionCachedAtMsRef.current = 0;
+            _stopAudioCapture();
+            playbackRef.current?.interrupt();
             const shownError =
               detail.message ||
               detail.reason ||
@@ -782,7 +826,10 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
 
     // Disconnect SDK session
     try {
-      sessionRef.current?.close();
+      if (sessionRef.current) {
+        suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
+        sessionRef.current.close();
+      }
     } catch (err) {
       jsErrorBreadcrumb('gemini.session.close', err);
     }
@@ -848,7 +895,10 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       // are left running. sessionRef will be re-assigned when
       // startConversation rebuilds the WS.
       try {
-        sessionRef.current?.close?.();
+        if (sessionRef.current) {
+          suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
+          sessionRef.current.close?.();
+        }
       } catch (err) {
         jsErrorBreadcrumb('gemini.reconnect.close', err);
       }
@@ -952,20 +1002,32 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     return () => clearTimeout(handle);
   }, [fsmState, store]);
 
-  // P0-11: 5s drain-timeout safety. If ASSISTANT_SPEAKING persists for 5s
-  // after turnComplete was received, the drain event was lost (native bug or
-  // disposed player). Log and force → LISTENING. The drain event's arrival in
-  // onPlaybackFinish clears responseTurnCompleteAtMsRef so the timer never
-  // fires in the normal path (plan §3.2 ASSISTANT_SPEAKING safety net).
+  // P0-11: drain-timeout observability. Do not force LISTENING from here:
+  // turnComplete only means Gemini has sent all audio, not that iOS has played
+  // the queued audio. onPlaybackFinish / voicePlaybackDrained is the state
+  // authority; PcmStreamPlayer owns the duration-based native-event fallback.
   useEffect(() => {
     if (fsmState !== 'ASSISTANT_SPEAKING') return;
-    const handle = setTimeout(() => {
+    let handle: ReturnType<typeof setTimeout> | null = null;
+    const checkDrainTimeout = () => {
       if (store.getState().state !== 'ASSISTANT_SPEAKING') return;
+      const turnCompleteAtMs = responseTurnCompleteAtMsRef.current;
+      if (turnCompleteAtMs === null) {
+        handle = setTimeout(checkDrainTimeout, 500);
+        return;
+      }
+      const elapsedMs = Date.now() - turnCompleteAtMs;
+      if (elapsedMs < 5000) {
+        handle = setTimeout(checkDrainTimeout, 5000 - elapsedMs);
+        return;
+      }
       track('session', 'voice.assistant.drain_timeout', { deadline_ms: 5000 });
       responseTurnCompleteAtMsRef.current = null;
-      store.getState().transition('LISTENING');
-    }, 5000);
-    return () => clearTimeout(handle);
+    };
+    handle = setTimeout(checkDrainTimeout, 5000);
+    return () => {
+      if (handle !== null) clearTimeout(handle);
+    };
   }, [fsmState, store]);
 
   useEffect(() => {
@@ -1063,12 +1125,23 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       cancelUnackMsRef.current = vadStartMs;
       watchdogHandle = setTimeout(() => {
         if (cancelUnackMsRef.current === vadStartMs) {
+          const responseId = store.getState().currentResponseId ?? null;
           track('barge_in', 'voice.barge_in.cancel_unacked', {
-            responseId: store.getState().currentResponseId ?? null,
+            responseId,
             deadline_ms: 600,
             mic_vad_start_at_ms: vadStartMs,
           });
           cancelUnackMsRef.current = null;
+          if (Config.VOICE_CANCEL_UNACK_RECOVERY && store.getState().state === 'ASSISTANT_SPEAKING') {
+            track('barge_in', 'voice.barge_in.cancel_unacked.recovery_close', {
+              responseId,
+              deadline_ms: 600,
+            });
+            suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
+            sessionRef.current?.close?.();
+            store.getState().transition('RECONNECTING');
+            queueMicrotask(() => reconnectRef.current?.());
+          }
         }
       }, 600);
     });
@@ -1102,6 +1175,9 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         budget_ms: Config.VOICE_BARGE_IN_BUDGET_MS,
       });
       try {
+        if (sessionRef.current) {
+          suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
+        }
         sessionRef.current?.close?.();
       } catch (err) {
         jsErrorBreadcrumb('gemini.barge_in.budget.close', err);
@@ -1194,15 +1270,33 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         // straight to USER_SPEAKING with the stamped turn id.
         if (store.getState().state === 'INTERRUPTED') {
           const pendingTurnId = pendingUserTurnIdAfterClearRef.current;
+          const interruptMs = interruptedAtMsRef.current;
+          const interruptSrc = interruptSourceRef.current;
           if (pendingTurnId !== null) {
             pendingUserTurnIdAfterClearRef.current = null;
             useVoiceAssistantStore.setState({ currentUserTurnId: pendingTurnId });
             store.getState().transition('USER_SPEAKING');
+            if (interruptMs !== null) {
+              interruptedAtMsRef.current = null;
+              track('barge_in', 'voice.barge_in.interrupt_to_listen_ms', {
+                ms: Date.now() - interruptMs,
+                destination_state: 'USER_SPEAKING',
+                source: interruptSrc,
+              });
+            }
             track('barge_in', 'voice.bargein.ordering.b_then_a', {
               userTurnId: pendingTurnId,
             });
           } else {
             store.getState().transition('LISTENING');
+            if (interruptMs !== null) {
+              interruptedAtMsRef.current = null;
+              track('barge_in', 'voice.barge_in.interrupt_to_listen_ms', {
+                ms: Date.now() - interruptMs,
+                destination_state: 'LISTENING',
+                source: interruptSrc,
+              });
+            }
           }
         }
       })
@@ -1211,6 +1305,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       });
     if (s.aiTranscript) s.addMessage('ai', s.aiTranscript, true);
     s.setAiTranscript('');
+    interruptedAtMsRef.current = Date.now();
+    interruptSourceRef.current = 'tap';
     s.transition('INTERRUPTED');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
@@ -1310,11 +1406,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       // It activates only when voiceAecAttachFailed fires below.
       VoiceMic.setAecFallbackGate(false, 0).catch(() => {});
       const unsubAecFailed = VoiceMic.onAecAttachFailed((evt) => {
-        track('session', 'voice_aec_attach_failed', {
-          reason: evt.reason,
-          modelCode: evt.modelCode,
-          deviceCode: evt.deviceCode,
-        });
+        track('session', 'voice.aec.attach_failed', { reason: evt.reason });
+        jsErrorBreadcrumb('voice.aec.attach_failed', evt.reason);
         // AEC unavailable on this device — activate the software RMS fallback
         // gate in native VoiceMicModule (plan v2 §5.2, threshold covers child
         // voices per §13.2 A3/A5). Hook calls unconditionally on both platforms;

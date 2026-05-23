@@ -44,6 +44,9 @@ target 'TbotMobile' do
         unless existing.include?('FMT_USE_CONSTEVAL')
           config.build_settings['OTHER_CPLUSPLUSFLAGS'] = "#{existing} -DFMT_USE_CONSTEVAL=0"
         end
+        if target.name == 'fmt'
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        end
       end
     end
   end
