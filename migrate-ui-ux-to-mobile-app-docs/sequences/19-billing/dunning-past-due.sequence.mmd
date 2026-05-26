@@ -1,0 +1,89 @@
+---
+system: sys-19-billing-subscription
+flow_id: dunning-past-due
+surface: cron
+spec_anchor: /software/systems/19-billing-subscription#dunning-past-due
+actors: [BillingService, Stripe, PostgreSQL, SES, FCM, NotificationService, EventBridge]
+apis:
+  - POST /v1/billing/payment-method/update
+externals: [Stripe, SES, FCM]
+queues: [EventBridge, SQS]
+failure_paths:
+  - stripe_charge_failed_again
+  - customer_unreachable
+  - grace_period_expired
+  - payment_method_not_updated
+idempotency: sweep idempotent on (subscription_id, run_date); SetupIntent confirmation is Stripe-idempotent
+retry: at 3-day boundaries; Stripe handles within-day retries internally
+timeout: sweep batch 10min budget; per-subscription 5s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant EventBridge
+    participant BillingService
+    participant Stripe
+    participant PostgreSQL
+    participant NotificationService
+    participant SES
+    participant FCM
+
+    EventBridge->>BillingService: billing.dunning.sweep (daily cron)
+    BillingService->>PostgreSQL: SELECT subscriptions WHERE state='past_due' ORDER BY past_due_since ASC
+    PostgreSQL-->>BillingService: batch of past_due subscriptions
+
+    loop for each past_due subscription
+        BillingService->>BillingService: check idempotency — skip if already swept today (subscription_id, run_date)
+        BillingService->>Stripe: POST /v1/invoices/{latest_invoice_id}/pay (retry charge attempt)
+        alt stripe_charge_failed_again
+            Stripe-->>BillingService: payment_intent failed — decline code
+            BillingService->>PostgreSQL: UPDATE subscriptions SET retry_attempts=retry_attempts+1 WHERE id=?
+            BillingService->>PostgreSQL: SELECT EXTRACT(DAY FROM now() - past_due_since) AS days_in_past_due
+            PostgreSQL-->>BillingService: days_in_past_due
+            alt grace_period_expired (days_in_past_due >= 7)
+                Note over BillingService: hard expiry — cancel and revoke entitlements
+                BillingService->>PostgreSQL: UPDATE subscriptions SET state='cancelled', canceled_at=now()
+                BillingService->>PostgreSQL: UPDATE content_entitlements SET revoked_at=now() WHERE household_id=? AND revoked_at IS NULL
+                BillingService->>NotificationService: enqueue entitlement_revoked notification (sys-10)
+                NotificationService-)SES: send entitlement_revoked email
+                NotificationService-)FCM: push entitlement_revoked notification
+            else days_in_past_due between 3 and 6 (second reminder)
+                BillingService->>NotificationService: enqueue dunning_reminder_2 {subscription_id, days_in_past_due}
+                NotificationService-)SES: send dunning reminder #2 email
+                NotificationService-)FCM: push dunning reminder #2 notification
+            else days_in_past_due < 3 (first reminder)
+                BillingService->>NotificationService: enqueue dunning_reminder_1 {subscription_id, days_in_past_due}
+                NotificationService-)SES: send dunning reminder #1 email
+                NotificationService-)FCM: push dunning reminder #1 notification
+            end
+        else charge_succeeded
+            Stripe-->>BillingService: payment_intent succeeded
+            BillingService->>PostgreSQL: UPDATE subscriptions SET state='active', past_due_since=NULL, retry_attempts=0
+            BillingService->>PostgreSQL: UPDATE content_entitlements SET revoked_at=NULL WHERE household_id=? (restore if soft-revoked)
+            BillingService->>NotificationService: enqueue payment_recovered notification (sys-10)
+            NotificationService-)FCM: push payment_recovered notification
+        end
+    end
+
+    Note over BillingService,PostgreSQL: sweep budget 10min — per-subscription p99 5s — idempotent on (subscription_id, run_date)
+
+    Note over BillingService,FCM: parent reactivation path (separate mobile surface)
+    Note over BillingService: parent taps "Update Payment Method" in app → mobile calls POST /v1/billing/payment-method/update
+    BillingService->>Stripe: POST /v1/setup_intents {customer_id, usage: 'off_session', metadata.subscription_id}
+    Stripe-->>BillingService: {client_secret: seti_..., id: si_...}
+    BillingService-->>BillingService: return {setup_intent_client_secret} to ParentApp (not shown — mobile-surface step)
+    Note over BillingService: ParentApp completes SetupIntent in Stripe SDK (Stripe-idempotent)
+    Note over BillingService: on setup_intent.succeeded webhook → BillingService attaches new PaymentMethod and retries charge immediately
+    alt payment_method_not_updated (setup_intent cancelled or timed out)
+        Note over BillingService: subscription remains past_due — next daily sweep will retry
+    else new_payment_method_success
+        BillingService->>Stripe: POST /v1/invoices/{latest_invoice_id}/pay
+        Stripe-->>BillingService: payment_intent succeeded
+        BillingService->>PostgreSQL: UPDATE subscriptions SET state='active', past_due_since=NULL
+        BillingService->>PostgreSQL: UPDATE content_entitlements SET revoked_at=NULL WHERE household_id=? (restore if soft-revoked)
+        BillingService->>NotificationService: enqueue payment_recovered notification
+        NotificationService-)FCM: push payment_recovered
+    end
+
+    Note over EventBridge,FCM: queues: EventBridge (cron trigger), SQS (notification delivery via sys-10)

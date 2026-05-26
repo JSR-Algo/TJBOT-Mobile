@@ -1,0 +1,24 @@
+// admin_users — internal admin identity (distinct from end-user `users` per plan Q-1).
+// Source: docs/site/software/systems/12-support-admin-operations.md §3.1 admin_users.
+
+enum admin_user_status {
+  active
+  disabled
+}
+
+Table admin_users {
+  id              uuid                [pk]
+  email           varchar(254)        [not null, note: 'corporate email; case-insensitive at app layer']
+  password_hash   text                [not null]
+  mfa_secret      varchar(256)        [note: 'encrypted via sys-13 KMS envelope; required when mfa_enabled=true']
+  mfa_enabled     boolean             [not null, default: false]
+  status          admin_user_status   [not null, default: 'active']
+  last_login_at   timestamptz
+  created_at      timestamptz         [not null, default: `now()`]
+  updated_at      timestamptz         [not null, default: `now()`]
+
+  Indexes {
+    (email) [unique, name: 'idx_admin_users_email_unique']
+    (status) [name: 'idx_admin_users_status']
+  }
+}

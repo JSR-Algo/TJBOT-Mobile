@@ -1,0 +1,63 @@
+---
+system: sys-02-device-provisioning-registry
+flow_id: transfer
+surface: mobile
+spec_anchor: /software/systems/02-device-provisioning-registry#transfer-request-status
+actors: [SourceParentApp, TargetParentApp, Gateway, DeviceService, Device, PostgreSQL, TransferWorker]
+apis:
+  - POST /v1/devices/:deviceId/transfer/start
+externals: []
+queues: [devices.transitions]
+failure_paths:
+  - not_owner_role
+  - device_busy_pending_ota
+  - transfer_already_in_progress
+  - target_claim_failed
+  - transfer_broken_midway
+idempotency: one active device_transfer_requests row per device (request_status not in terminal set)
+retry: parent app retries on 5xx with exponential backoff
+timeout: 5s p99 per endpoint
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant SourceParentApp
+    participant TargetParentApp
+    participant Gateway
+    participant DeviceService
+    participant Device
+    participant PostgreSQL
+    participant TransferWorker
+
+    SourceParentApp->>Gateway: POST /v1/devices/:deviceId/transfer/start (Parent bearer token, role=owner)
+    Gateway->>DeviceService: forward
+    alt not_owner_role
+        DeviceService-->>SourceParentApp: 403 not_owner_role
+    else device_busy_pending_ota
+        DeviceService-->>SourceParentApp: 409 device_busy_pending_ota
+    else transfer_already_in_progress
+        DeviceService-->>SourceParentApp: 409 transfer_already_in_progress
+    else success
+        DeviceService->>PostgreSQL: INSERT device_transfer_requests {request_status=requested} then UPDATE devices.lifecycle_state='transfer_pending'
+        PostgreSQL-->>DeviceService: transferRequestId
+        DeviceService-->>SourceParentApp: 200 {transferRequestId, status=awaiting_factory_reset}
+    end
+
+    Note over Device,TransferWorker: source device factory-resets locally (out-of-band — sys-03 DECOMMISSIONED path)
+    Device->>Gateway: POST /v1/device/provisioning/status {status=failed, reason=factory_reset}
+    Gateway->>DeviceService: forward → enqueue devices.transitions.complete_transfer_after_reset
+
+    TransferWorker->>PostgreSQL: SELECT device_transfer_requests WHERE request_status='awaiting_factory_reset'
+    TransferWorker->>PostgreSQL: txn — close active device_ownership_history (ended_at, ownership_status='transferred'), UPDATE devices SET current_household_id=NULL lifecycle_state='unassigned' status='factory_new', UPDATE device_transfer_requests SET request_status='awaiting_target_claim'
+
+    TargetParentApp->>Gateway: POST /v1/devices/provision/start {serialNumber} (target household)
+    Note over TargetParentApp,PostgreSQL: continues via consumer-provisioning.sequence.mmd
+    alt target_claim_failed
+        DeviceService->>PostgreSQL: UPDATE device_transfer_requests SET request_status='failed', failure_code
+    else success
+        DeviceService->>PostgreSQL: UPDATE device_transfer_requests SET request_status='completed', completed_at
+    end
+
+    Note over Device,TransferWorker: transfer_broken_midway — integrity job detects (ownership not closed after reset) → freeze transfer_pending and support alert
+    Note over SourceParentApp,PostgreSQL: timeout 5s p99 · transfer state machine per spec §7.4 · audit emit per mutation

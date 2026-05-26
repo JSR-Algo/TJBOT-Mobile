@@ -1,0 +1,21 @@
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
+%% domain: course-library
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Course_Library["Course Library"]
+    cl_add_free["Course · Add free course"]
+    cl_added["Course · Added to Robot"]
+    cl_companion["Course · App companion view"]
+    cl_complete["Course · Lesson complete (synced)"]
+    cl_detail["Course · Detail"]
+    cl_library["Course · Library"]
+    cl_locked(["Course · Locked"])
+    cl_needs_sync["Course · Robot needs sync"]
+    cl_robot_ready["Course · Robot ready for today"]
+    cl_running["Course · Lesson running on Robot"]
+    cl_send["Course · Send lesson to Robot"]
+    cl_unlock_confirm["Course · Parent unlock confirmation"]
+  end
+  class cl_add_free,cl_added,cl_companion,cl_complete,cl_detail,cl_library,cl_needs_sync,cl_robot_ready,cl_running,cl_send,cl_unlock_confirm happy
+  class cl_locked edge

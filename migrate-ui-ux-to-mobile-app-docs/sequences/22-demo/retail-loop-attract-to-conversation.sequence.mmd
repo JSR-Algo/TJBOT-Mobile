@@ -1,0 +1,95 @@
+---
+system: sys-22-demo-retail-mode
+flow_id: retail-loop-attract-to-conversation
+surface: device
+spec_anchor: /software/systems/22-demo-retail-mode#retail-loop-state-machine
+actors: [Device, DemoStateMachine, FlashPartition, NVS, AudioPlayer]
+apis: []
+externals: []
+queues: []
+failure_paths:
+  - demo_content_missing
+  - demo_content_corrupt
+  - demo_audio_missing
+  - demo_servo_stall
+  - proximity_false_trigger
+  - battery_critical
+idempotency: state machine drives retail loop deterministically; analytics ring buffer wraps at 64 events
+retry: cooldown returns to ATTRACT after script complete or timeout; max consecutive interactions 10 before forced reset
+timeout: 30s ENGAGED no-interaction — 15s DEMO_CONV silence — 3m DEMO_CONV ceiling — 10s COOLDOWN
+status: final
+---
+%% HAND-CURATED. sys-22 has zero seed — composed from spec §5 firmware state machine + §7 retail loop.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant DemoStateMachine
+    participant FlashPartition
+    participant NVS
+    participant AudioPlayer
+
+    Device->>NVS: read demo.enabled flag (boot)
+
+    alt demo_content_missing
+        Device->>FlashPartition: read demo_content partition header
+        FlashPartition-->>Device: empty / unflashed
+        Note over Device,AudioPlayer: enter SAFE_MODE — LED error pattern — cannot demo
+    else demo_content_corrupt
+        Device->>FlashPartition: read and CRC verify
+        FlashPartition-->>Device: CRC fail
+        Note over Device,AudioPlayer: enter SAFE_MODE — LED error
+    else content_ok
+        DemoStateMachine->>DemoStateMachine: enter ATTRACT (face animation loop and LED breathing)
+        loop retail loop
+            alt no engagement (45s tick)
+                DemoStateMachine->>FlashPartition: load next attract phrase (rotates 3 phrases)
+                DemoStateMachine->>AudioPlayer: play attract_chime and phrase
+                AudioPlayer-->>DemoStateMachine: playback complete
+                DemoStateMachine->>NVS: append demo_attract_triggered event
+            else touch_or_proximity
+                alt proximity_false_trigger
+                    Note over DemoStateMachine: < 2s sustained — ignore
+                else sustained
+                    DemoStateMachine->>DemoStateMachine: ATTRACT → ENGAGED
+                    alt 30s_no_interaction
+                        DemoStateMachine->>DemoStateMachine: ENGAGED → ATTRACT
+                    else wake_word_or_3s_auto
+                        DemoStateMachine->>DemoStateMachine: ENGAGED → DEMO_CONV
+                        DemoStateMachine->>NVS: append demo_session_start event
+                        DemoStateMachine->>FlashPartition: select interaction (greeting/joke/fact/story/comfort/bedtime)
+                        loop 3-5 turns from flash
+                            alt demo_audio_missing
+                                FlashPartition-->>DemoStateMachine: clip not found
+                                Note over AudioPlayer: silence for expected duration
+                            else playable
+                                DemoStateMachine->>AudioPlayer: play turn audio and face animation
+                                alt demo_servo_stall
+                                    Note over AudioPlayer: servo blocked — disable servo, continue audio
+                                end
+                                AudioPlayer-->>DemoStateMachine: turn complete
+                                DemoStateMachine->>NVS: append demo_interaction_played event
+                            end
+                            alt silence > 15s (child left)
+                                DemoStateMachine->>DemoStateMachine: DEMO_CONV → ATTRACT (abandoned)
+                            else 3m_ceiling
+                                DemoStateMachine->>DemoStateMachine: DEMO_CONV → COOLDOWN (script timeout)
+                            else script_complete
+                                DemoStateMachine->>DemoStateMachine: DEMO_CONV → COOLDOWN
+                            end
+                        end
+                        DemoStateMachine->>NVS: append demo_session_end and demo_retail_reset
+                        DemoStateMachine->>AudioPlayer: "Thanks for playing!" (cooldown phrase)
+                        Note over DemoStateMachine: 10s cooldown → ATTRACT
+                    end
+                end
+            end
+
+            alt battery_critical
+                Note over Device: < 5% — display "Please charge me" — disable servos — stop demos
+            else battery_low
+                Note over Device: < 15% — reduce LED brightness — continue
+            end
+        end
+    end
+
+    Note over Device,AudioPlayer: all cloud disabled — Wi-Fi off — pre-cached audio only — analytics flush requires hold-touch 10s

@@ -6,27 +6,26 @@
  */
 import { useRef, useCallback, useEffect } from 'react';
 import { Platform } from 'react-native';
-import { requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
+import { requestRecordingPermissionsAsync } from 'expo-audio';
 import * as Device from 'expo-device';
-import { GoogleGenAI, Modality, ActivityHandling } from '@google/genai/web';
+import { GoogleGenAI, Modality } from '@google/genai/web';
 // Native streaming PCM (both platforms). iOS uses the native
 // PcmStreamModule via AVAudioPlayerNode; playback-finish detection uses
 // duration-based timer (not drain polling) to avoid the stuck-on-playing
 // bug with .dataPlayedBack completion handlers on iOS.
-import { PcmStreamPlayer as AudioPlaybackService } from '../audio/PcmStreamPlayer';
+import { PcmStreamPlayer as AudioPlaybackService } from '../services/audio/PcmStreamPlayer';
 import { VoiceSession } from '../native/VoiceSession';
 import { VoiceMic } from '../native/VoiceMic';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import * as Haptics from 'expo-haptics';
 import { detectExpression } from '../utils/expressionDetector';
 import { Config } from '../config';
-import { chat as chatWithAI } from '../api/ai';
-import apiClient from '../api/client';
-import { extractInlineAudioParts } from '../ai/liveMessageAudio';
+import { chat as chatWithAI } from '../services/api/ai';
+import apiClient from '../services/http/client';
+import { extractInlineAudioParts } from '../services/ai/liveMessageAudio';
 import { startVoiceDebugProbe, stopVoiceDebugProbe } from '../debug/voiceDebugProbe';
-import { jsErrorBreadcrumb, track } from '../observability/voice-telemetry';
+import { jsErrorBreadcrumb, track } from '../services/observability/voice-telemetry';
 
-const TOKEN_FETCH_TIMEOUT_MS = 8000;
 // T4.2: how long a cached session-resumption handle is considered fresh.
 // The Live API's server-side TTL is short (minutes); passing a stale
 // handle just makes `ai.live.connect` throw, so we gate on age up-front.
@@ -53,11 +52,50 @@ interface UseGeminiConversationReturn {
   interruptPlayback: () => void;
 }
 
+type RealtimeAudioInput = { audio: { data: string; mimeType: string } };
+type GeminiLiveSession = {
+  close?: () => void;
+  sendRealtimeInput?: (input: RealtimeAudioInput) => void;
+};
+type AudioStreamHandle = { stop: () => Promise<void> | void };
+type LiveCloseEvent = {
+  code?: number | string | null;
+  reason?: string | null;
+  wasClean?: boolean | null;
+  type?: string | null;
+};
+type LiveErrorEvent = LiveCloseEvent & {
+  message?: string | null;
+  status?: number | string | null;
+};
+type LiveTextChunk = { text?: string | null };
+type LiveServerContentMessage = {
+  serverContent?: {
+    modelTurn?: {
+      parts?: Array<{ inlineData?: { data?: unknown } }> | null;
+    } | null;
+    interrupted?: boolean | null;
+    inputTranscription?: LiveTextChunk | null;
+    outputTranscription?: LiveTextChunk | null;
+    turnComplete?: boolean | null;
+  } | null;
+  sessionResumptionUpdate?: {
+    resumable?: boolean | null;
+    newHandle?: string | null;
+  } | null;
+  goAway?: {
+    timeLeft?: number | string | null;
+  } | null;
+};
+
 export function useGeminiConversation(options: GeminiConversationOptions = {}): UseGeminiConversationReturn {
-  const sessionRef = useRef<any>(null);
+  const sessionRef = useRef<GeminiLiveSession | null>(null);
   const playbackRef = useRef<AudioPlaybackService | null>(null);
-  const audioStreamRef = useRef<any>(null);
+  const audioStreamRef = useRef<AudioStreamHandle | null>(null);
   const isCapturingRef = useRef(false);
+  const stopAudioCaptureRef = useRef<(() => void) | null>(null);
+  const audioCaptureCleanupRef = useRef<(() => void) | null>(null);
+  const audioCaptureGenerationRef = useRef(0);
   const simulatorRunIdRef = useRef(0);
   const simulatorReplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionIdRef = useRef(0);
@@ -110,7 +148,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   const pendingUserTurnIdAfterClearRef = useRef<string | null>(null);
   // §7.7 P0-14: stamped when voiceMicVadStart fires during ASSISTANT_SPEAKING.
   // Cleared when serverContent.interrupted arrives. If the 600ms watchdog
-  // fires before the clear, voice.barge_in.cancel_unacked telemetry is emitted.
+  // fires before the clear, cancel-unack telemetry is emitted.
   const cancelUnackMsRef = useRef<number | null>(null);
   // Step 3: stamped on every → INTERRUPTED; cleared on exit. interruptSourceRef
   // tracks whether the interrupt was tap- or server-initiated so the exit telemetry
@@ -120,8 +158,32 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // P0-11: stamped when server sends turnComplete. Used by the 5s drain-timeout
   // safety net to detect stuck ASSISTANT_SPEAKING state (plan §3.2 row).
   const responseTurnCompleteAtMsRef = useRef<number | null>(null);
+  // Latches voiceMicEngineReady when it fires before the FSM has reached
+  // READY. Native VoiceMicModule emits the event exactly once per start()
+  // cycle (firstFrameEmitted latch in VoiceMicModule.kt:80). On fast
+  // hardware-AEC devices (Xiaomi/Redmi) the first frame arrives in
+  // <100 ms — well before the Render-cold-start WS handshake (≈400-1500 ms)
+  // moves the FSM into READY. The original gate-only listener silently
+  // dropped that early event, leaving READY waiting for an event that
+  // never re-fires and tripping the 2 s deadline → ERROR_RECOVERABLE.
+  // The replay useEffect below catches up when state finally hits READY.
+  const engineReadyRef = useRef(false);
 
   const store = useVoiceAssistantStore;
+
+  stopAudioCaptureRef.current = _stopAudioCapture;
+
+  const handleCancelUnackRecovery = useCallback((responseId: string | null) => {
+    if (!Config.VOICE_CANCEL_UNACK_RECOVERY || store.getState().state !== 'ASSISTANT_SPEAKING') return;
+    track('barge_in', 'voice.barge_in.cancel_unacked.recovery_close', {
+      responseId,
+      deadline_ms: 600,
+    });
+    suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
+    sessionRef.current?.close?.();
+    store.getState().transition('RECONNECTING');
+    queueMicrotask(() => reconnectRef.current?.());
+  }, [store]);
 
 
   useEffect(() => {
@@ -215,7 +277,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     }
 
     // 2. Fetch API key from backend via the shared axios client. The axios
-    // client's response interceptor (src/api/client.ts) handles 401 →
+    // client's response interceptor (src/services/http/client.ts) handles 401 →
     // refreshAuthTokens → retry, so a naturally-expired JWT here is
     // transparent rather than a hard failure. The prior plain `fetch`
     // path skipped that interceptor and surfaced as "Không thể kết nối
@@ -232,14 +294,14 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     sessionRequestStartMsRef.current = Date.now();
     sessionWsOpenMsRef.current = null;
     firstAudioAtMsRef.current = null;
+    // Fetch ephemeral token from tbot-backend `POST /v1/gemini/token`. The
+    // shared axios client adds the Bearer JWT (from SecureStore) and runs
+    // 401-refresh through refreshAuthTokens, so an expired access token is
+    // transparent here. Returning to the production contract \u2014 the prior
+    // hardcoded `AIzaSy...` was a dev-diagnostic that Google then revoked
+    // for being a leaked key.
     try {
-      track('session', 'token_fetch_start');
-      const resp = await apiClient.post<{ token?: string }>(
-        '/gemini/token',
-        {},
-        { timeout: TOKEN_FETCH_TIMEOUT_MS },
-      );
-      const data = resp.data;
+      const { data } = await apiClient.post<{ token: string }>('/gemini/token', {});
       if (!data?.token || typeof data.token !== 'string') {
         throw new Error('Token response missing token');
       }
@@ -248,10 +310,10 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         tokenType: apiKey.startsWith('AIza') ? 'api_key' : 'ephemeral_token',
       });
     } catch (err) {
-      track('error', 'token_fetch_failed', {
+      track('session', 'token_fetch_failed', {
         message: err instanceof Error ? err.message : 'unknown',
       });
-      setError('Không thể kết nối Gemini. Vui lòng thử lại.');
+      setError('Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i Gemini. Vui l\u00f2ng th\u1eed l\u1ea1i.');
       transition('ERROR_RECOVERABLE');
       return;
     }
@@ -485,7 +547,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             store.getState().transition('READY');
             _startAudioCapture();
           },
-          onmessage: (message: any) => {
+          onmessage: (message: LiveServerContentMessage) => {
             if (!isCurrentSession()) return;
             // Handle audio chunks from AI. FSM transition to PLAYING_AI_AUDIO
             // is deferred to `onPlaybackStart` (fires on first *played*
@@ -555,6 +617,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
                 track('barge_in', 'interrupt_server_latency_ms', {
                   latencyMs: Date.now() - detectedAtMs,
                 });
+                // A-then-B fallback: store.getState().transition('LISTENING');
                 // P0-10: drive INTERRUPTED → LISTENING off the native
                 // clear() Promise resolution, not a setTimeout(400).
                 // P0-22 §8.4 strict-ordering rule: if VAD fired while
@@ -724,7 +787,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               }
             }
           },
-          onclose: (event?: any) => {
+          onclose: (event?: LiveCloseEvent) => {
             const detail = {
               code: event?.code ?? null,
               reason: event?.reason ?? null,
@@ -747,7 +810,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               s.transition('ERROR_RECOVERABLE');
             }
           },
-          onerror: (error: any) => {
+          onerror: (error: LiveErrorEvent) => {
             if (!isCurrentSession()) return;
             // Surface as much as Gemini/SDK gives us — prior "Lỗi kết nối
             // Gemini" debugging sessions had only the fallback string
@@ -772,7 +835,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
               detail.code ||
               detail.errorString ||
               'L\u1ed7i k\u1ebft n\u1ed1i Gemini';
-            store.getState().setError(shownError);
+            store.getState().setError(String(shownError));
             store.getState().transition('ERROR_RECOVERABLE');
           },
         },
@@ -801,7 +864,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       silenceTimerRef.current = null;
     }
 
-    _stopAudioCapture();
+    stopAudioCaptureRef.current?.();
     playbackRef.current?.interrupt();
 
     // Dispose + null the player so the next startConversation() gets a
@@ -810,16 +873,18 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     // cycles. Fire-and-forget, consistent with interrupt() above. A4.
     const disposingPlayback = playbackRef.current;
     playbackRef.current = null;
-    disposingPlayback?.dispose().catch((err) => {
-      jsErrorBreadcrumb('pcmStream.dispose', err);
-    });
+    if (disposingPlayback) {
+      disposingPlayback.dispose().catch((err) => {
+        jsErrorBreadcrumb('pcmStream.dispose', err);
+      });
+    }
 
     // Disconnect SDK session
     try {
       if (sessionRef.current) {
         suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
-        sessionRef.current.close();
       }
+      sessionRef.current?.close?.();
     } catch (err) {
       jsErrorBreadcrumb('gemini.session.close', err);
     }
@@ -831,15 +896,16 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     for (const unsub of voiceSessionUnsubsRef.current) {
       try {
         unsub();
-      } catch {
-        /* ignore */
+      } catch (err) {
+        jsErrorBreadcrumb('voiceSession.unsubscribe', err);
       }
     }
     voiceSessionUnsubsRef.current = [];
+    // VoiceSession.end(); jsErrorBreadcrumb('voiceSession.end', err);
     if (voiceSessionStartedRef.current) {
       voiceSessionStartedRef.current = false;
-      VoiceSession.end().catch(() => {
-        /* best-effort teardown */
+      VoiceSession.end().catch((err) => {
+        jsErrorBreadcrumb('voiceSession.end', err);
       });
     }
 
@@ -887,8 +953,8 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       try {
         if (sessionRef.current) {
           suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
-          sessionRef.current.close?.();
         }
+        sessionRef.current?.close?.();
       } catch (err) {
         jsErrorBreadcrumb('gemini.reconnect.close', err);
       }
@@ -1060,15 +1126,48 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // so a single subscription survives multiple capture restarts. The
   // FSM transition is gated on state === 'READY' to avoid spurious
   // LISTENING transitions when the event arrives during reconnect.
+  // Race fix (adhoc-2026-05-03): also latch into engineReadyRef so an
+  // early event (state still CONNECTING) is replayed by the useEffect
+  // below once state catches up to READY.
   useEffect(() => {
     const unsub = VoiceMic.onEngineReady(() => {
+      engineReadyRef.current = true;
       const s = store.getState();
-      if (s.state === 'READY') {
-        s.transition('LISTENING');
-      }
+      if (s.state === 'READY') { s.transition('LISTENING'); }
     });
     return () => unsub();
   }, [store]);
+
+  // Replay path for the early-event/late-READY race: when the FSM
+  // finally reaches READY and the engine-ready event already fired,
+  // drive the LISTENING transition immediately instead of waiting for
+  // the deadline-timer to bounce us into ERROR_RECOVERABLE.
+  useEffect(() => {
+    if (fsmState === 'READY' && engineReadyRef.current) {
+      engineReadyRef.current = false;
+      store.getState().transition('LISTENING');
+    }
+  }, [fsmState, store]);
+
+  // Clear the latch on every new session attempt so a stale flag from a
+  // previous cycle cannot fire as soon as state reaches READY this cycle.
+  // Native VoiceMicModule resets its own first-frame latch on stop()/start()
+  // (VoiceMicModule.kt:228, :459); this keeps the JS mirror in sync.
+  //
+  // Reconnect path (adhoc-2026-05-03 follow-up): on RECONNECTING entry the
+  // native mic engine is still running and `firstFrameEmitted` is already
+  // true on the native side, so no fresh `voiceMicEngineReady` event will
+  // ever arrive — yet the FSM is allowed to route RECONNECTING → READY
+  // (voiceAssistantStore.ts:136-142) and would then trip the 2 s READY
+  // deadline. Pre-set the JS latch so the replay useEffect drives
+  // READY → LISTENING immediately when reconnect WS reopens.
+  useEffect(() => {
+    if (fsmState === 'PREPARING_AUDIO' || fsmState === 'IDLE') {
+      engineReadyRef.current = false;
+    } else if (fsmState === 'RECONNECTING') {
+      engineReadyRef.current = true;
+    }
+  }, [fsmState]);
 
   // §7.7 P0-14: Cancel-unack deadline. While in ASSISTANT_SPEAKING, subscribe
   // to voiceMicVadStart. On receipt, stamp cancelUnackMsRef and arm a 600ms
@@ -1089,16 +1188,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
             mic_vad_start_at_ms: vadStartMs,
           });
           cancelUnackMsRef.current = null;
-          if (Config.VOICE_CANCEL_UNACK_RECOVERY && store.getState().state === 'ASSISTANT_SPEAKING') {
-            track('barge_in', 'voice.barge_in.cancel_unacked.recovery_close', {
-              responseId,
-              deadline_ms: 600,
-            });
-            suppressedCloseSessionIdsRef.current.add(sessionIdRef.current);
-            sessionRef.current?.close?.();
-            store.getState().transition('RECONNECTING');
-            queueMicrotask(() => reconnectRef.current?.());
-          }
+          handleCancelUnackRecovery(responseId);
         }
       }, 600);
     });
@@ -1107,7 +1197,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       if (watchdogHandle !== null) clearTimeout(watchdogHandle);
       cancelUnackMsRef.current = null;
     };
-  }, [fsmState, store]);
+  }, [fsmState, store, handleCancelUnackRecovery]);
 
   // P0-20 plan v2 §7.6: tap-to-interrupt generation budget. When the
   // user taps to interrupt and never speaks, the server keeps
@@ -1270,8 +1360,10 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
 
   // \u2500\u2500\u2500 Audio capture \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-  const _startAudioCapture = () => {
-    if (isCapturingRef.current) return;
+  function _startAudioCapture(): void {
+    if (isCapturingRef.current || audioCaptureCleanupRef.current !== null) return;
+    const captureGeneration = audioCaptureGenerationRef.current + 1;
+    audioCaptureGenerationRef.current = captureGeneration;
 
     // DEV-only diagnostics probe: 3-second samples of VoiceMic + VoiceSession
     // diagnostics while capturing. Distinguishes A (silent stop) from B
@@ -1320,7 +1412,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         // applies the RMS gate in the reader thread when AEC failed, so JS
         // receives only clean audio and forwards everything it gets.
         try {
-          sessionRef.current?.sendRealtimeInput({
+          sessionRef.current?.sendRealtimeInput?.({
             audio: { data: base64, mimeType: 'audio/pcm;rate=16000' },
           });
         } catch (err) {
@@ -1361,7 +1453,9 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       });
       // P0-8: on session start, disable the native RMS fallback gate.
       // It activates only when voiceAecAttachFailed fires below.
-      VoiceMic.setAecFallbackGate(false, 0).catch(() => {});
+      VoiceMic.setAecFallbackGate(false, 0).catch((err) => {
+        jsErrorBreadcrumb('voiceMic.setAecFallbackGate', err);
+      });
       const unsubAecFailed = VoiceMic.onAecAttachFailed((evt) => {
         track('session', 'voice.aec.attach_failed', { reason: evt.reason });
         jsErrorBreadcrumb('voice.aec.attach_failed', evt.reason);
@@ -1369,7 +1463,9 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         // gate in native VoiceMicModule (plan v2 §5.2, threshold covers child
         // voices per §13.2 A3/A5). Hook calls unconditionally on both platforms;
         // iOS stub resolves immediately.
-        VoiceMic.setAecFallbackGate(true, 0.04).catch(() => {});
+        VoiceMic.setAecFallbackGate(true, 0.04).catch((err) => {
+          jsErrorBreadcrumb('voiceMic.setAecFallbackGate', err);
+        });
       });
       // P0-7: native VAD event subscriptions. VadStart → USER_SPEAKING,
       // VadEnd → WAITING_AI (replaces JS setTimeout VAD).
@@ -1388,6 +1484,15 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
           track('capture', 'vad_end', { hangoverMs: evt.hangoverMs });
         }
       });
+      const cleanupNativeCapture = () => {
+        unsub();
+        unsubStall();
+        unsubAecFailed();
+        unsubVadStart();
+        unsubVadEnd();
+        audioCaptureCleanupRef.current = null;
+      };
+      audioCaptureCleanupRef.current = cleanupNativeCapture;
 
       VoiceMic.start({
         sampleRate: 16000,
@@ -1396,25 +1501,26 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         aec: 'hw',
       })
         .then(() => {
+          if (audioCaptureGenerationRef.current !== captureGeneration) {
+            unsubStall();
+            cleanupNativeCapture();
+            VoiceMic.stop().catch((err) => {
+              jsErrorBreadcrumb('voiceMic.stopAfterStaleStart', err);
+            });
+            return;
+          }
           isCapturingRef.current = true;
           audioStreamRef.current = {
             stop: () => {
-              unsub();
-              unsubStall();
-              unsubAecFailed();
-              unsubVadStart();
-              unsubVadEnd();
+              cleanupNativeCapture();
               return VoiceMic.stop();
             },
           };
           track('capture', 'audio_capture_started', { sampleRate: 16000, backend: 'native' });
         })
         .catch((err: unknown) => {
-          unsub();
-          unsubStall();
-          unsubAecFailed();
-          unsubVadStart();
-          unsubVadEnd();
+          cleanupNativeCapture();
+          jsErrorBreadcrumb('voiceMic.start', err);
           track('error', 'audio_capture_start_failed', {
             backend: 'native',
             err: String(err),
@@ -1427,19 +1533,28 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       store.getState().setError('Micro kh\u00f4ng kh\u1ea3 d\u1ee5ng.');
       store.getState().transition('ERROR_RECOVERABLE');
     }
-  };
+  }
 
-  const _stopAudioCapture = () => {
-    if (!isCapturingRef.current) return;
+  function _stopAudioCapture(): void {
+    audioCaptureGenerationRef.current += 1;
+    if (!isCapturingRef.current && audioCaptureCleanupRef.current === null) return;
     try {
-      audioStreamRef.current?.stop();
-    } catch {}
+      if (audioCaptureCleanupRef.current) {
+        audioCaptureCleanupRef.current();
+      }
+    } catch (err) {
+      jsErrorBreadcrumb('voiceMic.cleanup', err);
+    }
+    VoiceMic.stop().catch((err) => {
+      jsErrorBreadcrumb('voiceMic.stopPendingStart', err);
+      jsErrorBreadcrumb('voiceMic.stop', err);
+    });
     if (__DEV__) stopVoiceDebugProbe();
     track('capture', 'audio_capture_stopped');
     isCapturingRef.current = false;
     audioStreamRef.current = null;
     store.getState().setAudioLevel(0);
-  };
+  }
 
   return { startConversation, stopConversation, interruptPlayback };
 }

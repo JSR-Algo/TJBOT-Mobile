@@ -1,0 +1,149 @@
+// AUTO-GENERATED FROM docs/erd/11-telemetry/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/11-telemetry/audit_events.dbml, docs/erd/11-telemetry/cost_attributions.dbml, docs/erd/11-telemetry/mutation_log.dbml, docs/erd/11-telemetry/telemetry_events.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum audit_actor_kind {
+  parent
+  admin
+  system
+  device
+}
+
+enum cost_attribution_source_kind {
+  session
+  telemetry_event
+  ota_assignment
+  daily_aggregate
+}
+
+/// Source: docs/erd/11-telemetry/audit_events.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model AuditEvents {
+  id String @id @default(uuid()) @db.Uuid
+  actorKind audit_actor_kind @map("actor_kind")
+  actorId String @db.VarChar(254) @map("actor_id")
+  /// free-form — user_id, admin_user_id, service-slug, device_id; not FK-constrained because polymorphic
+  action String @db.VarChar(120)
+  /// verb_noun — create_child_profile, update_controls, force_disconnect, etc.
+  targetTable String @db.VarChar(64) @map("target_table")
+  /// polymorphic — no FK by design; this column names the row
+  targetId String @db.Uuid @map("target_id")
+  /// polymorphic — no FK by design; pairs with target_table
+  details Json @db.JsonB @default("{}")
+  /// before/after diff, reason, request_id, etc.
+  ipAddress String? @db.VarChar(45) @map("ip_address")
+  /// IPv4/IPv6 textual (varchar — not inet — for DBML portability)
+  userAgent String? @db.Text @map("user_agent")
+  requestId String? @db.VarChar(64) @map("request_id")
+  /// gateway-issued request id for end-to-end tracing
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  @@index([actorKind, actorId, createdAt], map: "idx_audit_events_actor_created")
+  @@index([targetTable, targetId, createdAt], map: "idx_audit_events_target_created")
+  @@index([action, createdAt], map: "idx_audit_events_action_created")
+  @@map("audit_events")
+}
+
+/// Source: docs/erd/11-telemetry/cost_attributions.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+/// polymorphic: target columns identify the cost-bearing entity; no FK by design
+model CostAttributions {
+  id String @id @default(uuid()) @db.Uuid
+  sourceKind cost_attribution_source_kind @default(session) @map("source_kind")
+  sourceId String @db.Uuid @map("source_id")
+  /// polymorphic — no FK by design; pairs with source_kind. For session: sessions.id (sys-04); for telemetry_event: telemetry_events.id; for ota_assignment: ota_assignments.id
+  sessionId String? @db.Uuid @map("session_id")
+  /// denormalised back-reference when source_kind=session — eases hot query path
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService
+  householdId String @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService
+  attributionDate DateTime @db.Timestamptz(6) @map("attribution_date")
+  /// date for daily-aggregate join (UTC midnight start of day)
+  turnCount Int @default(0) @map("turn_count")
+  sttCostCents BigInt @default(0) @map("stt_cost_cents")
+  /// money: bigint cents — per CONVENTIONS §5 (avoid numeric/decimal/float for money)
+  llmCostCents BigInt @default(0) @map("llm_cost_cents")
+  ttsCostCents BigInt @default(0) @map("tts_cost_cents")
+  infraCostCents BigInt @default(0) @map("infra_cost_cents")
+  totalCostCents BigInt @default(0) @map("total_cost_cents")
+  rateCardId String @db.Uuid @map("rate_card_id")
+  /// pointer at the cost_rate_card row in effect at compute time — sys-11 internal table
+  computedAt DateTime @db.Timestamptz(6) @default(now()) @map("computed_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  @@unique([sourceKind, sourceId], map: "idx_cost_attributions_source_unique")
+  @@index([deviceId, attributionDate], map: "idx_cost_attributions_device_date")
+  @@index([householdId, attributionDate], map: "idx_cost_attributions_household_date")
+  @@map("cost_attributions")
+}
+
+/// Source: docs/erd/11-telemetry/mutation_log.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model MutationLog {
+  id String @id @default(uuid()) @db.Uuid
+  bufferBatchId String @db.Uuid @map("buffer_batch_id")
+  /// groups rows that were buffered together; correlates with the audit_events flush window
+  endpoint String @db.VarChar(254)
+  /// HTTP method + path — e.g. "POST /v1/households/:id/controls"
+  httpStatusCode Int @map("http_status_code")
+  /// response status code returned to client
+  durationMs Int? @map("duration_ms")
+  actorId String @db.VarChar(254) @map("actor_id")
+  requestPayload Json @db.JsonB @default("{}") @map("request_payload")
+  /// sanitised — secrets / passwords scrubbed
+  responseSummary Json @db.JsonB @default("{}") @map("response_summary")
+  promotedToAuditEventId String? @db.Uuid @map("promoted_to_audit_event_id")
+  /// set when this mutation was successfully written to audit_events; null = not yet flushed or fallback path taken
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  @@index([bufferBatchId, createdAt], map: "idx_mutation_log_batch_created")
+  @@index([actorId, createdAt], map: "idx_mutation_log_actor_created")
+  @@index([promotedToAuditEventId], map: "idx_mutation_log_promoted")
+  @@map("mutation_log")
+}
+
+/// Source: docs/erd/11-telemetry/telemetry_events.dbml
+/// hypertable: column=created_at interval=1d — post-migration create_hypertable() trigger required (TimescaleDB).
+model TelemetryEvents {
+  id String @id @default(uuid()) @db.Uuid
+  /// event_id from device payload — UUIDv4
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService
+  childId String? @db.Uuid @map("child_id")
+  /// cross-domain ref → IdentityService — set only for child-scoped events (session.start/end/turn.latency); null for device.boot/health/error
+  sessionId String? @db.Uuid @map("session_id")
+  /// cross-domain ref → RealtimeService (sys-04 sessions) — set only for session-scoped events
+  eventType String @db.VarChar(64) @map("event_type")
+  /// device.boot|device.wake|device.session.start|device.session.end|device.turn.latency|device.error|device.ota.result|device.health
+  payload Json @db.JsonB @default("{}")
+  /// event-type-specific keys — see spec §Telemetry Event Types
+  batchId String @db.Uuid @map("batch_id")
+  /// idempotency key from POST /v1/telemetry/batch — Redis 24h SET NX dedupes across redelivery
+  clientTimestampMs BigInt @map("client_timestamp_ms")
+  /// device-supplied epoch ms; server uses created_at for analytics to bypass clock skew
+  serverReceivedAt DateTime @db.Timestamptz(6) @default(now()) @map("server_received_at")
+  /// server stamp at ingest — primary time partition column
+  samplingRate Int @default(100) @map("sampling_rate")
+  /// percentage — 10 for verbose turn.latency, 100 for everything else
+  piiScanPassed Boolean @default(true) @map("pii_scan_passed")
+  /// false rows never reach this table — kept as defensive marker
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  /// @timescaledb-hypertable column=created_at interval=1d
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([deviceId, createdAt], map: "idx_telemetry_events_device_created")
+  @@index([eventType, createdAt], map: "idx_telemetry_events_type_created")
+  @@index([sessionId, createdAt], map: "idx_telemetry_events_session_created")
+  @@index([batchId], map: "idx_telemetry_events_batch_id")
+  @@map("telemetry_events")
+}
+

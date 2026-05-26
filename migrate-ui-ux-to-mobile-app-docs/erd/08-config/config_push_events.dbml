@@ -1,0 +1,37 @@
+// config_push_events — MQTT push notification + HTTPS pull telemetry, per device.
+// Each row records a single notify→fetch→apply lifecycle attempt. Used to drive
+// `config_propagation_stale_count` reconciliation and the propagation-status admin view.
+// Source: docs/site/software/systems/08-config-fleet-management.md §MQTT Integration
+//         + Failure Modes (stale_count).
+
+enum config_push_event_kind {
+  notify_published
+  notify_skipped_offline
+  device_fetched
+  device_applied
+  device_rejected_signature
+  reconciliation_repaired
+}
+
+Table config_push_events {
+  id                uuid                       [pk]
+  device_id         uuid                       [not null, note: 'cross-domain ref → DeviceService']
+  document_id       uuid                       [not null]
+  version_id        uuid                       [not null]
+  event_kind        config_push_event_kind     [not null]
+  mqtt_message_id   varchar(120)               [note: 'AWS IoT broker message id when event_kind=notify_published']
+  fetch_correlation_id uuid                    [note: 'X-Request-Id from GET /v1/config/fetch — links notify→fetch']
+  error_code        varchar(64)                [note: 'one of: mqtt_push_failure, signature_failure, transform_missing, etc.']
+  error_detail      jsonb                      [not null, default: `'{}'::jsonb`]
+  emitted_at        timestamptz                [not null, default: `now()`]
+  created_at        timestamptz                [not null, default: `now()`]
+  updated_at        timestamptz                [not null, default: `now()`]
+
+  Indexes {
+    (device_id, emitted_at) [name: 'idx_config_push_events_device_emitted', note: 'hot query: docs/sequences/08-config/mqtt-push-and-fetch.sequence.mmd — reconciliation job stale-device scan']
+    (event_kind, emitted_at) [name: 'idx_config_push_events_kind_emitted', note: 'hot query: docs/sequences/08-config/mqtt-push-and-fetch.sequence.mmd — fleet-wide failure rate metric']
+  }
+}
+
+Ref: config_push_events.document_id > config_documents.id
+Ref: config_push_events.version_id > config_versions.id

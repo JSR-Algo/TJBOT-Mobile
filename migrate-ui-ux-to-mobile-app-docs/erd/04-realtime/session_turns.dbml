@@ -1,0 +1,70 @@
+// session_turns — one row per child utterance + assistant response within a session.
+// Source: docs/site/software/systems/04-realtime-session-orchestrator.md §4.1 session_turns table, §7 turn pipeline.
+// Sequences: turn-pipeline, barge-in, provider-failover, coppa-retention.
+// Note: high-cardinality (max 60 per session, 200 sessions/instance, ECS fleet) — hypertable candidate.
+// @timescaledb-hypertable(column=created_at, interval='1d')
+
+enum session_turn_status {
+  audio_capture
+  stt_processing
+  intent_classification
+  input_safety_check
+  llm_generation
+  output_safety_check
+  tts_synthesis
+  streaming
+  complete
+  failed
+  safety_blocked
+  cancelled
+}
+
+enum session_turn_safety_action {
+  none
+  input_blocked
+  output_blocked
+}
+
+Table session_turns {
+  id                       uuid                       [pk]
+  session_id               uuid                       [not null, note: 'FK → sessions.id; declared Ref: below — same-folder']
+  turn_index               integer                    [not null, note: 'monotonic per session starting at 0; capped at 60']
+  status                   session_turn_status        [not null, default: 'audio_capture']
+  intent                   varchar(64)                [note: 'sys-05 intent classification taxonomy — 14 intents']
+  safety_action            session_turn_safety_action [not null, default: 'none']
+  stt_ms                   integer                    [note: 'end-of-speech → final transcript ms']
+  intent_classify_ms       integer
+  input_safety_ms          integer
+  llm_first_token_ms       integer
+  llm_complete_ms          integer
+  output_safety_ms         integer
+  tts_first_byte_ms        integer
+  total_turn_ms            integer                    [note: 'end-of-speech → first TTS audio; sys-04 §7 p95 budget 1400ms']
+  cost_stt_micros          bigint                     [not null, default: 0, note: 'money: bigint micros']
+  cost_llm_micros          bigint                     [not null, default: 0, note: 'money: bigint micros']
+  cost_tts_micros          bigint                     [not null, default: 0, note: 'money: bigint micros']
+  cost_total_micros        bigint                     [not null, default: 0, note: 'money: bigint micros — sum of components for fast aggregation']
+  stt_provider             varchar(64)                [not null]
+  llm_provider             varchar(64)                [not null]
+  tts_provider             varchar(64)                [not null]
+  stt_confidence           integer                    [note: 'confidence × 1000 (0-1000); avoids float per CONVENTIONS.md']
+  llm_input_tokens         integer
+  llm_output_tokens        integer
+  prompt_version_id        uuid                       [note: 'cross-domain ref → SafetyService.prompt_template_versions — Phase 3 reconciles']
+  safety_policy_version_id uuid                       [note: 'cross-domain ref → SafetyService.safety_policy_versions — Phase 3 reconciles']
+  blocklist_version_id     uuid                       [note: 'cross-domain ref → SafetyService.blocklist_versions — Phase 3 reconciles']
+  cancelled_at             timestamptz                [note: 'barge-in / SESSION_CLOSE during streaming']
+  failed_error_code        varchar(32)                [note: 'E-RT-21x / E-RT-25x — see sys-04 §5.1']
+  created_at               timestamptz                [not null, default: `now()`]
+  updated_at               timestamptz                [not null, default: `now()`]
+
+  Indexes {
+    (session_id, turn_index) [unique, name: 'idx_session_turns_session_id_turn_index_unique']
+    (session_id) [name: 'idx_session_turns_session_id']
+    (created_at) [name: 'idx_session_turns_created_at', note: 'hot query: docs/sequences/04-realtime/coppa-retention.sequence.mmd — retention sweep range scan']
+    (status, created_at) [name: 'idx_session_turns_status_created_at', note: 'hot query: docs/sequences/11-telemetry/turn-telemetry-roll-up.sequence.mmd — telemetry aggregation by status']
+    (safety_action) [name: 'idx_session_turns_safety_action']
+  }
+}
+
+Ref: session_turns.session_id > sessions.id  // intra-domain — same lane (04-realtime)

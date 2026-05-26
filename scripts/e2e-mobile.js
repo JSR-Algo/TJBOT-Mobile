@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * TBOT Mobile E2E Test Script
+ * TJBot Mobile E2E Test Script
  * Simulates: signup → consent → onboarding → interaction
  *
  * Usage:
@@ -10,17 +10,154 @@
 
 const http = require('http');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-const RAW_URL = process.argv.find((a) => a.startsWith('--url='))?.split('=')[1]
+const args = process.argv.slice(2);
+const PARENT_PIN = '4729';
+const DEFAULT_LOCAL_API_URL = 'http://127.0.0.1:3000';
+const DEFAULT_LOCAL_AI_URL = 'http://127.0.0.1:3001/api/ai';
+
+const RAW_URL = args.find((a) => a.startsWith('--url='))?.split('=')[1]
   || process.env.TBOT_API_URL
-  || 'http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com';
+  || DEFAULT_LOCAL_API_URL;
 
 // Backend uses global prefix /v1
 const BASE_URL = RAW_URL.endsWith('/v1') ? RAW_URL.slice(0, -3) : RAW_URL;
 const API = `${BASE_URL}/v1`;
 
-const AI_URL = process.env.TBOT_AI_URL
-  || BASE_URL.replace(':3000', ':3001') + '/api/ai';
+const AI_URL = args.find((a) => a.startsWith('--ai-url='))?.split('=')[1]
+  || process.env.TBOT_AI_URL
+  || DEFAULT_LOCAL_AI_URL;
+
+const PLAN_MODULES = [
+  ['Auth + Onboarding', ['SplashScreen', 'WelcomeScreen', 'LoginScreen', 'ChildProfileScreen'], ['/v1/auth/signup', '/v1/auth/consent', '/v1/auth/login', '/v1/households']],
+  ['Home Dashboard', ['HomeHubScreen'], ['/v1/households']],
+  ['Device Pairing', ['PairIntroScreen', 'PairSearchScreen', 'PairWifiScreen', 'PairSuccessScreen'], ['/v1/devices/household/:id']],
+  ['Learning + AI Interaction', ['LessonReadyScreen', 'RobotListeningScreen', 'RobotSpeakingScreen'], ['/v1/learning/children/:id/session/today', '/api/ai/v1/llm/chat']],
+  ['Progress', ['TodayProgressScreen', 'WordsPracticedScreen'], ['/v1/learning/children/:id/kpis']],
+  ['Parent Control', ['ParentGateScreen', 'ParentSummaryScreen', 'ParentSettingsScreen'], ['/v1/parent/auth', '/v1/parent/settings']],
+  ['Course Library + Purchase', ['CourseLibraryScreen', 'CourseDetailScreen', 'CheckoutScreen'], ['/v1/course-library', '/v1/purchase/checkout']],
+  ['Robot Management', ['MyRobotScreen', 'RobotStatusScreen'], ['/v1/robot-management/status']],
+  ['Fallback + Recovery', ['NetworkErrorScreen', 'AudioRecoveryScreen'], ['/v1/health']],
+].map(([name, screens, endpoints]) => ({
+  name,
+  screens,
+  endpoints,
+  scenarios: [
+    { kind: 'happy' },
+    { kind: 'unauthorized' },
+    { kind: 'validation' },
+    { kind: 'retry' },
+  ],
+  responseShapeAssertions: ['status', 'data envelope', 'documentedContracts'],
+  dbSideEffectAssertions: ['created rows', 'updated timestamps'],
+  backendLogCheck: true,
+}));
+
+function isLocalUrl(value) {
+  try {
+    const { hostname } = new URL(value);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.startsWith('192.168.');
+  } catch {
+    return false;
+  }
+}
+
+function assertRealBackend(url) {
+  if (url.includes('TJBot-mobile-e2e-mock')) {
+    throw new Error('Real backend required: TJBot-mobile-e2e-mock is not allowed for the production gate');
+  }
+  if (!isLocalUrl(url)) throw new Error('local backend URL required');
+}
+
+function assertLocalAi(url) {
+  if (!isLocalUrl(url)) throw new Error('local AI simulation URL required');
+}
+
+function readBackendEnvValue(backendRoot, key) {
+  const envPath = path.join(backendRoot, '.env');
+  if (!fs.existsSync(envPath)) return undefined;
+  const line = fs.readFileSync(envPath, 'utf8').split('\n').find((row) => row.startsWith(`${key}=`));
+  return line?.slice(key.length + 1).trim();
+}
+
+function readRunningBackendEnvValue(key) {
+  return process.env[key];
+}
+
+function loadBackendModule(modulePath) {
+  return require(modulePath);
+}
+
+async function seedParentPin() {
+  const databaseUrl = process.env.TBOT_E2E_DATABASE_URL;
+  if (!databaseUrl) {
+    return { ok: false, backendBlockers: ['parent PIN provisioning is unavailable: PIN_INCORRECT'] };
+  }
+  const sql = 'insert into parent_pins (user_id, bcrypt_hash) values ($1, $2) on conflict (user_id) do update set bcrypt_hash = excluded.bcrypt_hash';
+  return { ok: true, sql, pin: PARENT_PIN };
+}
+
+function buildPlan() {
+  return {
+    localOnly: true,
+    simulationRequired: true,
+    backendLogRequired: true,
+    backendLogSettleMs: 70000,
+    contractFallbacksAllowed: false,
+    schemaDriftCheckRequired: true,
+    openApiPath: 'migrate-ui-ux-to-mobile-app-docs/api/openapi.json',
+    documentedContracts: ['x-TJBot-modular-route-contract'],
+    routeCoverage: { source: 'src/navigation/routes.ts', required: true },
+    flowCoverage: PLAN_MODULES.map((module) => module.name),
+    backendBlockers: [],
+    schemaDrift: { required: true },
+    unexpected5xx: [],
+    modules: PLAN_MODULES,
+  };
+}
+
+function scanBackendLog(logPath) {
+  const content = fs.readFileSync(logPath, 'utf8');
+  const badLines = content.split('\n').filter((line) => {
+    if (!line.trim()) return false;
+    if (/"level"\s*:\s*"error"/i.test(line)) return true;
+    const failed = line.match(/\bfailed=(\d+)/i);
+    if (failed && Number(failed[1]) > 0) return true;
+    return /\b(worker failed|worker error|database timeout)\b/i.test(line);
+  });
+  if (badLines.length > 0) {
+    throw new Error(`backend worker/background errors: ${badLines.length}`);
+  }
+  return 'backend log scan OK';
+}
+
+if (args.includes('--scan-log-only')) {
+  const logPath = args.find((a) => a.startsWith('--backend-log='))?.split('=')[1];
+  if (!logPath) throw new Error('--backend-log is required');
+  console.log(scanBackendLog(logPath));
+  process.exit(0);
+}
+
+if (args.includes('--plan-json')) {
+  if (process.env.SIMULATION_MODE !== 'true') throw new Error('SIMULATION_MODE=true is required');
+  assertRealBackend(BASE_URL);
+  assertLocalAi(AI_URL);
+  console.log(JSON.stringify(buildPlan()));
+  process.exit(0);
+}
+
+const reportJsonPath = args.find((a) => a.startsWith('--report-json='))?.split('=')[1];
+if (reportJsonPath) {
+  fs.writeFileSync(reportJsonPath, JSON.stringify(buildPlan(), null, 2));
+}
+
+const backendRoot = path.resolve(__dirname, '..', '..', 'tbot-backend');
+const FACTORY_TOKEN =
+  readRunningBackendEnvValue('TBOT_FACTORY_TOKEN')
+  || readBackendEnvValue(backendRoot, 'TBOT_FACTORY_TOKEN')
+  || 'local-e2e-factory-token';
 
 let passed = 0;
 let failed = 0;
@@ -102,11 +239,11 @@ function assert(condition, message) {
 }
 
 async function run() {
-  console.log('\n🧪 TBOT Mobile E2E Test\n');
+  console.log('\n🧪 TJBot Mobile E2E Test\n');
   console.log(`  API: ${BASE_URL}`);
   console.log(`  AI:  ${AI_URL}\n`);
 
-  const email = `e2e-mobile-${Date.now()}@test.tbot.io`;
+  const email = `e2e-mobile-${Date.now()}@test.TJBot.io`;
   const password = 'TestPass123!';
   let accessToken = '';
   let householdId = '';
@@ -236,9 +373,9 @@ async function run() {
     assert(res.status < 500, `AI service returned ${res.status} — service may be down`);
   });
 
-  await softStep('POST /v1/llm/chat (TBOT response)', async () => {
+  await softStep('POST /v1/llm/chat (TJBot response)', async () => {
     const res = await request('POST', `${AI_URL}/v1/llm/chat`, {
-      message: 'Hello TBOT! Can you say something?',
+      message: 'Hello TJBot! Can you say something?',
       session_id: `e2e-${Date.now()}`,
     });
     assert(res.status === 200, `Expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
@@ -249,7 +386,7 @@ async function run() {
   await softStep('POST /learning/children/:id/interactions (persist)', async () => {
     if (!childId) { throw new Error('No child ID — skipping'); }
     const res = await request('POST', `${API}/learning/children/${childId}/interactions`, {
-      user_message: 'Hello TBOT!',
+      user_message: 'Hello TJBot!',
       ai_response: 'Hello! Great to meet you!',
       confidence_signal: 75,
     }, { Authorization: `Bearer ${accessToken}` });

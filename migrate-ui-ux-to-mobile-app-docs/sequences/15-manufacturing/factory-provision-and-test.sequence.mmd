@@ -1,0 +1,114 @@
+---
+system: sys-15-manufacturing-provisioning-factory-test
+flow_id: factory-provision-and-test
+surface: factory
+spec_anchor: /software/systems/15-manufacturing-provisioning-factory-test#factory-test-sequence-detailed
+actors: [Operator, FactoryCLI, Device, IntermediateCA, Gateway, DeviceService, LabelPrinter, PostgreSQL]
+apis:
+  - POST /v1/devices/register
+  - POST /v1/factory/devices/:deviceId/certificate
+externals: [IntermediateCA, LabelPrinter]
+queues: []
+failure_paths:
+  - flash_or_boot_failed
+  - csr_invalid_format
+  - csr_curve_mismatch
+  - cert_install_failed
+  - critical_test_failed
+  - backend_register_failed
+  - label_printer_failed
+idempotency: device serial number unique; backend registration idempotent on cert fingerprint (sys-02 Sprint 2 ON CONFLICT DO NOTHING)
+retry: operator may re-run from current phase on transient failure; failed critical tests route to quarantine, no retry
+timeout: 60s p99 per AT command bucket (CSR=10s, flash=15s, tests vary 1-10s)
+status: final
+---
+%% HAND-CURATED. Production-mode workflow per sys-15 §3-5; AT command protocol 921600 8N1.
+sequenceDiagram
+    autonumber
+    participant Operator
+    participant FactoryCLI
+    participant Device
+    participant IntermediateCA
+    participant Gateway
+    participant DeviceService
+    participant LabelPrinter
+    participant PostgreSQL
+
+    Note over Operator,PostgreSQL: Phase 1 — Flash and Boot Verify
+    Operator->>FactoryCLI: tbot-provision start --port COM3 --batch B2026-042
+    FactoryCLI->>Device: flash factory firmware via UART
+    FactoryCLI->>Device: AT+STATUS
+    alt flash_or_boot_failed
+        Device--xFactoryCLI: timeout or ERROR
+        FactoryCLI-->>Operator: FAIL Phase 1 — quarantine for repair
+    else success
+        Device-->>FactoryCLI: READY
+    end
+
+    Note over Operator,PostgreSQL: Phase 2 — Certificate Provisioning
+    FactoryCLI->>Device: AT+CSR_GENERATE
+    Device->>Device: generate EC P-256 keypair via hardware TRNG — store priv key in eFuse (never extractable)
+    Device-->>FactoryCLI: PEM CSR and OK
+    FactoryCLI->>FactoryCLI: parse and validate CSR
+    alt csr_invalid_format
+        FactoryCLI-->>Operator: FAIL Phase 2 — quarantine
+    else csr_curve_mismatch (not secp256r1)
+        FactoryCLI-->>Operator: FAIL Phase 2 — wrong curve
+    else cn_invalid
+        FactoryCLI-->>Operator: FAIL Phase 2 — CN must start with TBT-
+    else success
+        FactoryCLI->>IntermediateCA: sign CSR (validate: EC P-256, CN=TBT-*, 10yr validity, key usage=digital_signature+client_auth)
+        IntermediateCA-->>FactoryCLI: signed X.509 cert PEM
+        FactoryCLI->>Device: AT+CERT_INSTALL={signed cert PEM}
+        alt cert_install_failed
+            Device--xFactoryCLI: ERROR
+            FactoryCLI-->>Operator: FAIL Phase 2
+        else success
+            Device-->>FactoryCLI: OK
+        end
+    end
+
+    Note over Operator,PostgreSQL: Phase 3 — Hardware Validation (27 tests)
+    FactoryCLI->>Device: AT+SERIAL
+    Device-->>FactoryCLI: TBT-2026-{6digits}
+    loop each test in suite (mic SNR, speaker SPL, servo, display, wifi, ble, battery, NVS, flash, heap, thermal)
+        FactoryCLI->>Device: AT+TEST_{name}
+        Device-->>FactoryCLI: {measured_value}
+        FactoryCLI->>FactoryCLI: compare vs pass criteria and criticality flag
+    end
+
+    alt critical_test_failed
+        FactoryCLI->>PostgreSQL: INSERT factory_test_results {overall_result='fail', …} then INSERT factory_test_items[]
+        FactoryCLI-->>Operator: FAIL — quarantine for repair {failed_tests}
+    else success
+        Note over Operator,PostgreSQL: Phase 4 — Production Finalize
+        FactoryCLI->>Device: AT+FLASH_PRODUCTION
+        Device-->>FactoryCLI: OK (reboots into production FW)
+
+        FactoryCLI->>Gateway: POST /v1/devices/register (mTLS, factory cred) {serial_number, hardware_revision, firmware_version}
+        Gateway->>DeviceService: forward
+        DeviceService->>PostgreSQL: INSERT devices {status='factory_new', lifecycle_state='unassigned'}
+        DeviceService-->>FactoryCLI: 201 {device_id}
+
+        FactoryCLI->>Gateway: POST /v1/factory/devices/:deviceId/certificate {certificate_pem}
+        Gateway->>DeviceService: forward
+        DeviceService->>PostgreSQL: INSERT device_certificates ON CONFLICT (fingerprint) DO NOTHING
+        DeviceService-->>FactoryCLI: 201
+
+        alt backend_register_failed
+            DeviceService--xFactoryCLI: 5xx
+            FactoryCLI-->>Operator: FAIL — re-run register only (idempotent on cert fingerprint)
+        else success
+            FactoryCLI->>PostgreSQL: INSERT factory_test_results {overall_result='pass', device_id, factory_batch_id, serial_number, test_duration_ms, operator_id, workstation_id} then INSERT factory_test_items[] (27 rows)
+            FactoryCLI->>LabelPrinter: print QR label (serial and device_id)
+            alt label_printer_failed
+                LabelPrinter--xFactoryCLI: error
+                FactoryCLI-->>Operator: WARN — manual re-print, device still PASS
+            else success
+                LabelPrinter-->>FactoryCLI: ok
+            end
+            FactoryCLI-->>Operator: PASS — ready for boxing
+        end
+    end
+
+    Note over Operator,PostgreSQL: timeout 60s per AT bucket · 921600 8N1 UART · private key NEVER leaves eFuse · pilot mode <150 units / production mode >500 units with test jig

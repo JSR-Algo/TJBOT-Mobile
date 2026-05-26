@@ -1,0 +1,116 @@
+// AUTO-GENERATED FROM docs/erd/03-device-runtime/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/03-device-runtime/runtime_boot_reports.dbml, docs/erd/03-device-runtime/runtime_local_event_log.dbml, docs/erd/03-device-runtime/safe_mode_entries.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum boot_result {
+  success
+  safe_mode_entered
+  firmware_signature_invalid
+  config_apply_failed
+  wifi_unavailable
+  repeated_crash
+}
+
+enum safe_mode_trigger {
+  reboot_storm
+  thermal_critical
+  heap_below_floor
+  audio_overrun_repeated
+  watchdog_near_miss_persistent
+  remote_command
+}
+
+enum safe_mode_resolution {
+  remote_recovery
+  reboot_cleared
+  still_active
+  unknown
+}
+
+/// Source: docs/erd/03-device-runtime/runtime_boot_reports.dbml
+model RuntimeBootReports {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String @db.Uuid @map("device_id")
+  /// ref → devices.id
+  bootCount Int @map("boot_count")
+  /// monotonic NVS counter at time of boot
+  firmwareVersion String @db.VarChar(32) @map("firmware_version")
+  result boot_result
+  bootFailWindow Int @default(0) @map("boot_fail_window")
+  /// number of failures in 15min window at boot time
+  lastBootReason String? @db.VarChar(64) @map("last_boot_reason")
+  /// e.g. power_on, watchdog_reset, software_reset, panic
+  configEtag String? @db.VarChar(128) @map("config_etag")
+  /// etag of config applied on this boot; null if config not fetched
+  durationMs Int? @map("duration_ms")
+  /// ms from power-on to IDLE_READY or SAFE_MODE
+  uploadedAt DateTime @db.Timestamptz(6) @map("uploaded_at")
+  /// when device uploaded this batch to backend
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([deviceId, createdAt], map: "idx_runtime_boot_reports_device_id_created_at")
+  @@index([result, createdAt], map: "idx_runtime_boot_reports_result_created_at")
+  @@map("runtime_boot_reports")
+}
+
+/// Source: docs/erd/03-device-runtime/runtime_local_event_log.dbml
+model RuntimeLocalEventLog {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String @db.Uuid @map("device_id")
+  /// ref → devices.id
+  eventType String @db.VarChar(64) @map("event_type")
+  /// e.g. CONFIG_APPLIED, WAKE_WORD_DETECTED, AUDIO_OVERRUN, WS_DISCONNECT
+  severity String @db.VarChar(16)
+  /// info | warning | critical
+  faultCode String? @db.VarChar(64) @map("fault_code")
+  /// e.g. E-AUD-102, E-RT-301; null for non-fault events
+  payload Json? @db.JsonB
+  /// event-specific metadata; shape varies by event_type
+  deviceTs DateTime @db.Timestamptz(6) @map("device_ts")
+  /// timestamp as recorded on device (NVS); may lag backend upload
+  uploadedAt DateTime @db.Timestamptz(6) @map("uploaded_at")
+  /// when device uploaded this batch to backend
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([deviceId, deviceTs], map: "idx_runtime_local_event_log_device_id_ts")
+  @@index([eventType, deviceTs], map: "idx_runtime_local_event_log_event_type_ts")
+  @@map("runtime_local_event_log")
+}
+
+/// Source: docs/erd/03-device-runtime/safe_mode_entries.dbml
+model SafeModeEntries {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  deviceId String @db.Uuid @map("device_id")
+  /// ref → devices.id
+  trigger safe_mode_trigger
+  faultCode String @db.VarChar(64) @map("fault_code")
+  /// e.g. E-BOT-801, E-THM-601, E-MEM-701, E-AUD-102
+  enteredAtDeviceTs DateTime @db.Timestamptz(6) @map("entered_at_device_ts")
+  /// timestamp as recorded on device (NVS safe_mode_until marker)
+  exitedAtDeviceTs DateTime? @db.Timestamptz(6) @map("exited_at_device_ts")
+  /// null if still active when uploaded; set when device clears safe_mode_until
+  resolution safe_mode_resolution @default(unknown)
+  supportToken String? @db.VarChar(32) @map("support_token")
+  /// short code displayed to user on device support scene
+  uploadedAt DateTime @db.Timestamptz(6) @map("uploaded_at")
+  /// when device uploaded this record to backend
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([deviceId, enteredAtDeviceTs], map: "idx_safe_mode_entries_device_id_entered_at")
+  @@index([trigger, enteredAtDeviceTs], map: "idx_safe_mode_entries_trigger_entered_at")
+  @@index([resolution], map: "idx_safe_mode_entries_resolution")
+  @@map("safe_mode_entries")
+}
+

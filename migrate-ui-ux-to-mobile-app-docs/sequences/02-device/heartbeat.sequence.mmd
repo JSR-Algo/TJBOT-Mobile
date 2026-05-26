@@ -1,0 +1,51 @@
+---
+system: sys-02-device-provisioning-registry
+flow_id: heartbeat
+surface: device
+spec_anchor: /software/systems/02-device-provisioning-registry#device-authenticated-endpoints
+actors: [Device, Gateway, DeviceService, PostgreSQL, OfflineSweepWorker]
+apis:
+  - POST /v1/devices/heartbeat
+externals: []
+queues: []
+failure_paths:
+  - invalid_device_identity
+  - device_not_found
+  - device_not_claimed
+  - heartbeat_rate_limited
+  - heartbeat_storm
+idempotency: per-device per-replica acceptance window (DEVICE_HEARTBEAT_RATE_LIMIT_WINDOW_MS default 10s) short-circuits BEFORE DB writes
+retry: device-side single retry after 10s on transient failure
+timeout: 5s p99
+status: final
+---
+%% HAND-CURATED. Cadence 60s nominal — see sys-03 §6.2.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant Gateway
+    participant DeviceService
+    participant PostgreSQL
+    participant OfflineSweepWorker
+
+    Device->>Gateway: POST /v1/devices/heartbeat {device_id, firmware_version, battery_level, connectivity_metrics} X-Device-Token
+    Gateway->>DeviceService: forward
+    alt invalid_device_identity
+        DeviceService-->>Device: 401 invalid_device_identity (cert revoked or mismatch)
+    else device_not_found
+        DeviceService-->>Device: 404 (not rate-limited — diagnostic response)
+    else device_not_claimed
+        DeviceService-->>Device: 403 DEVICE_NOT_CLAIMED (rejected from unclaimed states)
+    else heartbeat_rate_limited
+        DeviceService-->>Device: 202 heartbeat_ignored (subsequent heartbeat within window, no DB write)
+    else success
+        DeviceService->>PostgreSQL: UPDATE devices SET last_seen_at, firmware_version, battery_level, connectivity_metrics — transition CLAIMED→ACTIVE or OFFLINE→ACTIVE
+        DeviceService->>PostgreSQL: INSERT … ON CONFLICT (device_id) DO UPDATE device_heartbeat_snapshots
+        PostgreSQL-->>DeviceService: ok
+        DeviceService-->>Device: 204 No Content
+    end
+
+    Note over OfflineSweepWorker,PostgreSQL: every DEVICE_OFFLINE_SWEEP_INTERVAL_MS (default 60s) — single-owner via advisory lock 0x7B070FF1
+    OfflineSweepWorker->>PostgreSQL: UPDATE devices SET status='offline' WHERE state='ACTIVE' AND last_seen_at < now() - DEVICE_OFFLINE_THRESHOLD_SECONDS
+
+    Note over Device,PostgreSQL: timeout 5s p99 · rate-limit AFTER state validation so 404/403 never throttled · onModuleDestroy awaits in-flight sweep

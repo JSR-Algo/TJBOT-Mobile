@@ -1,0 +1,22 @@
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
+%% domain: home
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Home["Home"]
+    home_hub_daily["Home · Today"]
+    home_hub_done["Home · Lesson done today"]
+    home_hub_error["Home · Refresh error"]
+    home_hub_greet["Home · Robot greeting"]
+    home_hub_idle["Home · Idle happy"]
+    home_hub_mic(["Home · Needs microphone"])
+    home_hub_multiple_children["Home · Multiple children"]
+    home_hub_offline(["Home · Reconnecting"])
+    home_hub_offline_24h(["Home · Robot offline over 24h"])
+    home_hub_paused(["Home · TJBot paused"])
+    home_hub_quiet_hours(["Home · Quiet hours active"])
+    home_hub_unpaired_robot["Home · Robot not paired"]
+    home_hub_zero_child["Home · No child profile"]
+  end
+  class home_hub_daily,home_hub_done,home_hub_error,home_hub_greet,home_hub_idle,home_hub_multiple_children,home_hub_unpaired_robot,home_hub_zero_child happy
+  class home_hub_mic,home_hub_offline,home_hub_offline_24h,home_hub_paused,home_hub_quiet_hours edge

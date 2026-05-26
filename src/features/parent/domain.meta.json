@@ -1,0 +1,10 @@
+{
+  "id": "parent",
+  "owner_lane": "C",
+  "flow": "docs/flows/domains/parent/flow.generated.mmd",
+  "edge_cases": {
+    "parent_gate": ["unauthorized"],
+    "parent_locked_out": ["unauthorized", "timeout"],
+    "parent_account_privacy": ["unauthorized"]
+  }
+}

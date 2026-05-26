@@ -1,0 +1,63 @@
+---
+system: _cross
+flow_id: realtime-turn-end-to-end
+surface: multi
+spec_anchor: /software/systems/04-realtime-session-orchestrator#turn-pipeline
+actors: [Device, RealtimeService, GoogleLiveFlash, SafetyService, ContentService]
+systems: [sys-03-device-runtime-local-interaction, sys-04-realtime-session-orchestrator, sys-05-conversation-intelligence-and-safety, sys-06-content-and-personalization]
+derived_from:
+  - 03-device-runtime/realtime-turn.sequence.mmd
+  - 04-realtime/turn-pipeline.sequence.mmd
+  - 05-safety/input-filter.sequence.mmd
+  - 05-safety/output-filter.sequence.mmd
+  - 06-content/retrieval.sequence.mmd
+apis:
+  - WS audio.chunk (binary frames)
+  - WS audio.response (binary frames)
+externals: [GoogleLiveFlash]
+queues: []
+failure_paths:
+  - input_filter_block
+  - output_filter_block
+  - provider_failover_triggered
+  - content_retrieval_miss_fallback
+  - barge_in_mid_turn
+idempotency: turn_id propagated end-to-end (see sys-04 turn-pipeline)
+retry: see constituent files — _cross/ does NOT redefine retry
+timeout: 2.5s p95 end-to-end per turn
+status: final
+---
+%% DERIVED narrative — DO NOT redefine message shapes. See derived_from[] for constituent files.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant RealtimeService
+    participant SafetyService
+    participant ContentService
+    participant GoogleLiveFlash
+
+    Note over Device,GoogleLiveFlash: Composition view — single child voice turn across 5 systems.
+    Device->>RealtimeService: audio.chunk frames (sys-03 realtime-turn and sys-18 wire-protocol)
+    RealtimeService->>SafetyService: input filter (sys-05 input-filter)
+    alt input_filter_block
+        SafetyService-->>RealtimeService: blocked, reason
+        RealtimeService-->>Device: audio.response — safe fallback (sys-05 fallback-selection)
+    else allowed
+        RealtimeService->>ContentService: retrieve relevant pack (sys-06 retrieval)
+        ContentService-->>RealtimeService: pack snippets — or miss
+        Note over ContentService,RealtimeService: content_retrieval_miss_fallback — RealtimeService proceeds without RAG
+        RealtimeService->>GoogleLiveFlash: llm.generate (sys-04 turn-pipeline)
+        alt provider_failover_triggered
+            GoogleLiveFlash--xRealtimeService: timeout — see sys-04 provider-failover
+            RealtimeService->>GoogleLiveFlash: failover to secondary region
+        end
+        GoogleLiveFlash-->>RealtimeService: response tokens
+        RealtimeService->>SafetyService: output filter (sys-05 output-filter)
+        alt output_filter_block
+            SafetyService-->>RealtimeService: blocked
+            RealtimeService-->>Device: audio.response — safe fallback
+        else allowed
+            RealtimeService-->>Device: audio.response frames
+        end
+        Note over Device,RealtimeService: barge_in_mid_turn — see sys-04 barge-in
+    end

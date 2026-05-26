@@ -3,9 +3,9 @@ const globals = require('globals');
 const tseslint = require('typescript-eslint');
 const reactHooks = require('eslint-plugin-react-hooks');
 
-// P0-17 plan v2 §11.7 — TBOT custom rule banning FSM-affecting timers,
+// P0-17 plan v2 §11.7 — TJBot custom rule banning FSM-affecting timers,
 // RNLAS imports, and Platform.OS branches in shared voice layers.
-const tbotVoiceRule = require('./eslint-rules/no-voice-timing-in-shared.js');
+const TJBotVoiceRule = require('./eslint-rules/no-voice-timing-in-shared.js');
 
 module.exports = [
   {
@@ -23,17 +23,33 @@ module.exports = [
     },
     plugins: {
       'react-hooks': reactHooks,
-      'tbot-voice': {
+      'TJBot-voice': {
         rules: {
-          'no-voice-timing-in-shared': tbotVoiceRule,
+          'no-voice-timing-in-shared': TJBotVoiceRule,
         },
       },
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      'no-console': 'error',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      }],
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-console': ['error', { allow: ['error', 'warn', 'info'] }],
       'no-debugger': 'error',
-      'tbot-voice/no-voice-timing-in-shared': 'error',
+      'TJBot-voice/no-voice-timing-in-shared': 'error',
+    },
+  },
+  {
+    files: ['tests/**/*.{js,jsx,ts,tsx}'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ];

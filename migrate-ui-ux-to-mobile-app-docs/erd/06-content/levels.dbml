@@ -1,0 +1,26 @@
+// levels — level inside a course. FK to courses.
+// Hierarchy: courses → levels → units → lessons → activities.
+
+enum level_status {
+  draft
+  active
+  archived
+}
+
+Table levels {
+  id          uuid         [pk]
+  course_id   uuid         [not null, note: 'FK → courses.id']
+  slug        varchar(64)  [not null]
+  title       varchar(254) [not null]
+  position    smallint     [not null, note: 'display order within course; 1-based']
+  status      level_status [not null, default: 'draft']
+  created_at  timestamptz  [not null, default: `now()`]
+  updated_at  timestamptz  [not null, default: `now()`]
+
+  Indexes {
+    (course_id, position) [name: 'idx_levels_course_id_position', note: 'hot query: docs/sequences/06-content/content-selection.sequence.mmd — ordered level listing within course']
+    (course_id, slug) [unique, name: 'idx_levels_course_id_slug_unique']
+  }
+}
+
+Ref: levels.course_id > courses.id

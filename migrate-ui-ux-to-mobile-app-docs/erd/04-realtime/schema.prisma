@@ -1,0 +1,376 @@
+// AUTO-GENERATED FROM docs/erd/04-realtime/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/04-realtime/phrase_cache_entries.dbml, docs/erd/04-realtime/provider_failover_records.dbml, docs/erd/04-realtime/realtime_sessions.dbml, docs/erd/04-realtime/session_transcripts.dbml, docs/erd/04-realtime/session_turns.dbml, docs/erd/04-realtime/sessions.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum phrase_cache_status {
+  active
+  retired
+  rebuilding
+}
+
+enum provider_role {
+  stt
+  llm
+  tts
+}
+
+enum failover_trigger {
+  timeout
+  circuit_open
+  http_5xx
+  stream_reset
+  parse_failure
+  manual_admin
+}
+
+enum failover_outcome {
+  primary_succeeded
+  secondary_succeeded
+  cache_served
+  canned_served
+  all_failed
+}
+
+enum realtime_session_state {
+  idle
+  connecting
+  handshaking
+  open
+  turn_active
+  turn_complete
+  barge_in
+  reconnecting
+  closing
+  closed
+  error
+  paused
+  timed_out
+}
+
+enum realtime_session_end_reason {
+  complete
+  timeout
+  error
+  parent_stop
+  barge_limit
+  cost_limit
+  device_disconnect
+  safety_block
+}
+
+enum session_turn_status {
+  audio_capture
+  stt_processing
+  intent_classification
+  input_safety_check
+  llm_generation
+  output_safety_check
+  tts_synthesis
+  streaming
+  complete
+  failed
+  safety_blocked
+  cancelled
+}
+
+enum session_turn_safety_action {
+  none
+  input_blocked
+  output_blocked
+}
+
+enum session_status {
+  connecting
+  open
+  turn_active
+  turn_complete
+  reconnecting
+  closing
+  closed
+}
+
+enum session_end_reason {
+  complete
+  timeout
+  error
+  parent_stop
+  barge_limit
+  cost_limit
+}
+
+enum session_interaction_mode {
+  conversation
+  story
+  quiz
+}
+
+/// Source: docs/erd/04-realtime/phrase_cache_entries.dbml
+model PhraseCacheEntries {
+  id String @id @default(uuid()) @db.Uuid
+  phraseText String @db.Text @map("phrase_text")
+  /// canonical text used for lookup; lowercased + NFKD-normalized at write time
+  phraseTextSha256 String @db.VarChar(64) @map("phrase_text_sha256")
+  /// hash of normalized phrase_text — primary lookup key
+  locale String @db.VarChar(16)
+  /// BCP-47
+  ageBand String @db.VarChar(8) @map("age_band")
+  /// 4_5 | 6_8 — narration calibrated per sys-05 age bands
+  voiceProfile String @db.VarChar(64) @map("voice_profile")
+  /// TTS voice ID — pinned for cache hit consistency
+  audioCodec String @db.VarChar(16) @map("audio_codec")
+  /// opus | pcm16le
+  sampleRate Int @default(16000) @map("sample_rate")
+  audioS3Uri String @db.VarChar(2048) @map("audio_s3_uri")
+  /// S3 object URI; pre-loaded into orchestrator in-memory cache at boot
+  audioSizeBytes Int @map("audio_size_bytes")
+  durationMs Int @map("duration_ms")
+  expressionSyncS3Uri String? @db.VarChar(2048) @map("expression_sync_s3_uri")
+  /// optional pre-computed lip-sync frames; absent → orchestrator generates on the fly
+  intent String? @db.VarChar(64)
+  /// sys-05 intent taxonomy — narrows lookup when text-match ambiguous
+  status phrase_cache_status @default(active)
+  versionNo Int @default(1) @map("version_no")
+  /// append-only — increments on TTS regeneration
+  origin String @db.VarChar(32)
+  /// curated | auto-promoted-from-llm | failover-canned
+  hitCount BigInt @default(0) @map("hit_count")
+  /// monotonic counter — telemetry-driven LRU eviction signal
+  lastHitAt DateTime? @db.Timestamptz(6) @map("last_hit_at")
+  createdByAdminUserId String? @db.Uuid @map("created_by_admin_user_id")
+  /// cross-domain ref → AdminAuthService — Phase 3 reconciles
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  retiredAt DateTime? @db.Timestamptz(6) @map("retired_at")
+  @@unique([phraseTextSha256, locale, ageBand, voiceProfile], map: "idx_phrase_cache_entries_text_locale_age_voice_unique")
+  @@index([status, locale], map: "idx_phrase_cache_entries_status_locale")
+  @@index([intent, locale, ageBand], map: "idx_phrase_cache_entries_intent_locale_age")
+  @@index([hitCount], map: "idx_phrase_cache_entries_hit_count")
+  @@map("phrase_cache_entries")
+}
+
+/// Source: docs/erd/04-realtime/provider_failover_records.dbml
+model ProviderFailoverRecords {
+  id String @id @default(uuid()) @db.Uuid
+  sessionId String @db.Uuid @map("session_id")
+  /// FK → sessions.id
+  sessionTurnId String? @db.Uuid @map("session_turn_id")
+  /// FK → session_turns.id; nullable for circuit-only transitions outside a turn
+  role provider_role
+  primaryProvider String @db.VarChar(64) @map("primary_provider")
+  /// provider attempted first — e.g. google_live_flash, google_stt
+  fallbackProvider String? @db.VarChar(64) @map("fallback_provider")
+  /// provider that served — may equal primary if primary recovered; NULL if all-failed
+  trigger failover_trigger
+  outcome failover_outcome
+  primaryAttemptMs Int @map("primary_attempt_ms")
+  fallbackAttemptMs Int? @map("fallback_attempt_ms")
+  primaryErrorCode String? @db.VarChar(64) @map("primary_error_code")
+  /// provider-native error code or E-RT-2xx
+  primaryHttpCode Int? @map("primary_http_code")
+  /// HTTP status code from primary attempt; named *_code to avoid validator *_status false positive
+  circuitStateBefore String? @db.VarChar(16) @map("circuit_state_before")
+  /// closed | half_open | open — snapshot at decision time
+  circuitStateAfter String? @db.VarChar(16) @map("circuit_state_after")
+  recoveryAttemptNo Int @default(1) @map("recovery_attempt_no")
+  /// monotonic within (session_id, role)
+  instanceId String @db.VarChar(64) @map("instance_id")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  session Sessions @relation(name: "provider_failover_records_session_id_to_sessions", fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sessionTurn SessionTurns? @relation(name: "provider_failover_records_session_turn_id_to_session_turns", fields: [sessionTurnId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([sessionId, createdAt], map: "idx_provider_failover_records_session_id_created_at")
+  @@index([role, primaryProvider, createdAt], map: "idx_provider_failover_records_role_provider_created_at")
+  @@index([outcome, createdAt], map: "idx_provider_failover_records_outcome_created_at")
+  @@map("provider_failover_records")
+}
+
+/// Source: docs/erd/04-realtime/realtime_sessions.dbml
+model RealtimeSessions {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  userId String @db.Uuid @map("user_id")
+  /// cross-domain ref → IdentityService — parent account owning this session
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService — device that originated the session
+  childId String @db.Uuid @map("child_id")
+  /// cross-domain ref → IdentityService — child profile active at session start
+  state realtime_session_state @default(idle)
+  stateVersion Int @default(0) @map("state_version")
+  /// monotonic version counter; incremented on every state transition for optimistic concurrency
+  startAt DateTime @db.Timestamptz(6) @map("start_at")
+  /// wall clock when SESSION_OPEN received from device
+  endAt DateTime? @db.Timestamptz(6) @map("end_at")
+  /// NULL while session is open; set on any terminal transition
+  endReason realtime_session_end_reason? @map("end_reason")
+  /// NULL while open; set alongside end_at
+  turnsCount Int @default(0) @map("turns_count")
+  bargeinCount Int @default(0) @map("bargein_count")
+  costCents BigInt @default(0) @map("cost_cents")
+  /// money: bigint cents; cumulative LLM + TTS cost for this session
+  deviceSessionId String @db.Uuid @map("device_session_id")
+  /// opaque idempotency token minted by device in SESSION_OPEN payload; guards against duplicate opens
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([userId, deviceId], map: "idx_realtime_sessions_active")
+  @@unique([deviceSessionId], map: "idx_realtime_sessions_device_session_id_unique")
+  @@index([userId, startAt], map: "idx_realtime_sessions_user_start_at")
+  @@index([deviceId, state], map: "idx_realtime_sessions_device_state")
+  @@index([state, updatedAt], map: "idx_realtime_sessions_state_updated_at")
+  @@map("realtime_sessions")
+}
+
+/// Source: docs/erd/04-realtime/session_transcripts.dbml
+model SessionTranscripts {
+  id String @id @default(uuid()) @db.Uuid
+  sessionTurnId String @db.Uuid @unique @map("session_turn_id")
+  /// FK → session_turns.id; one transcript row per turn
+  sessionId String @db.Uuid @map("session_id")
+  /// FK → sessions.id; denormalized for direct retention scans
+  childProfileId String @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService.children — denormalized for COPPA on-deletion sweep
+  transcriptText String? @db.Text @map("transcript_text")
+  /// verbatim STT output; NULLed at 24h by RetentionScheduler per sys-04 §4.2
+  responseText String? @db.Text @map("response_text")
+  /// LLM-generated response; NULLed at 24h
+  transcriptSha256 String? @db.VarChar(64) @map("transcript_sha256")
+  /// SHA-256 of transcript at write time — preserved after NULL clear for safety event correlation; never reversible
+  responseSha256 String? @db.VarChar(64) @map("response_sha256")
+  /// SHA-256 of response at write time
+  languageDetected String? @db.VarChar(16) @map("language_detected")
+  /// BCP-47 — STT may return language hint independent of session locale
+  clearedAt DateTime? @db.Timestamptz(6) @map("cleared_at")
+  /// set when text columns NULLed by 24h sweep — non-NULL means text fields are empty
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  sessionTurn SessionTurns @relation(name: "session_transcripts_session_turn_id_to_session_turns", fields: [sessionTurnId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  session Sessions @relation(name: "session_transcripts_session_id_to_sessions", fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([sessionId], map: "idx_session_transcripts_session_id")
+  @@index([createdAt, clearedAt], map: "idx_session_transcripts_created_at_cleared_at")
+  @@index([transcriptSha256], map: "idx_session_transcripts_transcript_sha256")
+  @@map("session_transcripts")
+}
+
+/// Source: docs/erd/04-realtime/session_turns.dbml
+/// TODO hypertable: audit-history-strategy.md flags session_turns as a hypertable candidate (column=created_at interval=1d) but DBML lacks the @timescaledb-hypertable Note. Lane owner must add the annotation; emission is currently table-only.
+model SessionTurns {
+  id String @id @default(uuid()) @db.Uuid
+  sessionId String @db.Uuid @map("session_id")
+  /// FK → sessions.id; declared Ref: below — same-folder
+  turnIndex Int @map("turn_index")
+  /// monotonic per session starting at 0; capped at 60
+  status session_turn_status @default(audio_capture)
+  intent String? @db.VarChar(64)
+  /// sys-05 intent classification taxonomy — 14 intents
+  safetyAction session_turn_safety_action @default(none) @map("safety_action")
+  sttMs Int? @map("stt_ms")
+  /// end-of-speech → final transcript ms
+  intentClassifyMs Int? @map("intent_classify_ms")
+  inputSafetyMs Int? @map("input_safety_ms")
+  llmFirstTokenMs Int? @map("llm_first_token_ms")
+  llmCompleteMs Int? @map("llm_complete_ms")
+  outputSafetyMs Int? @map("output_safety_ms")
+  ttsFirstByteMs Int? @map("tts_first_byte_ms")
+  totalTurnMs Int? @map("total_turn_ms")
+  /// end-of-speech → first TTS audio; sys-04 §7 p95 budget 1400ms
+  costSttMicros BigInt @default(0) @map("cost_stt_micros")
+  /// money: bigint micros
+  costLlmMicros BigInt @default(0) @map("cost_llm_micros")
+  /// money: bigint micros
+  costTtsMicros BigInt @default(0) @map("cost_tts_micros")
+  /// money: bigint micros
+  costTotalMicros BigInt @default(0) @map("cost_total_micros")
+  /// money: bigint micros — sum of components for fast aggregation
+  sttProvider String @db.VarChar(64) @map("stt_provider")
+  llmProvider String @db.VarChar(64) @map("llm_provider")
+  ttsProvider String @db.VarChar(64) @map("tts_provider")
+  sttConfidence Int? @map("stt_confidence")
+  /// confidence × 1000 (0-1000); avoids float per CONVENTIONS.md
+  llmInputTokens Int? @map("llm_input_tokens")
+  llmOutputTokens Int? @map("llm_output_tokens")
+  promptVersionId String? @db.Uuid @map("prompt_version_id")
+  /// cross-domain ref → SafetyService.prompt_template_versions — Phase 3 reconciles
+  safetyPolicyVersionId String? @db.Uuid @map("safety_policy_version_id")
+  /// cross-domain ref → SafetyService.safety_policy_versions — Phase 3 reconciles
+  blocklistVersionId String? @db.Uuid @map("blocklist_version_id")
+  /// cross-domain ref → SafetyService.blocklist_versions — Phase 3 reconciles
+  cancelledAt DateTime? @db.Timestamptz(6) @map("cancelled_at")
+  /// barge-in / SESSION_CLOSE during streaming
+  failedErrorCode String? @db.VarChar(32) @map("failed_error_code")
+  /// E-RT-21x / E-RT-25x — see sys-04 §5.1
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  session Sessions @relation(name: "session_turns_session_id_to_sessions", fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  providerFailoverRecords ProviderFailoverRecords[] @relation(name: "provider_failover_records_session_turn_id_to_session_turns")
+  sessionTranscripts SessionTranscripts[] @relation(name: "session_transcripts_session_turn_id_to_session_turns")
+  @@unique([sessionId, turnIndex], map: "idx_session_turns_session_id_turn_index_unique")
+  @@index([sessionId], map: "idx_session_turns_session_id")
+  @@index([createdAt], map: "idx_session_turns_created_at")
+  @@index([status, createdAt], map: "idx_session_turns_status_created_at")
+  @@index([safetyAction], map: "idx_session_turns_safety_action")
+  @@map("session_turns")
+}
+
+/// Source: docs/erd/04-realtime/sessions.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model Sessions {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated UUID; never serial
+  deviceSessionId String @db.VarChar(64) @map("device_session_id")
+  /// opaque token minted by device — SESSION_OPEN payload; idempotency key for SETNX device_session:{deviceId}
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService — FK declared in 02-device/devices.dbml
+  householdId String @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService — FK declared in 01-identity/households.dbml
+  childProfileId String @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService.children — FK declared in 01-identity/children.dbml
+  interactionMode session_interaction_mode @map("interaction_mode")
+  status session_status @default(connecting)
+  turnCount Int @default(0) @map("turn_count")
+  totalDurationMs Int @default(0) @map("total_duration_ms")
+  totalCostMicros BigInt @default(0) @map("total_cost_micros")
+  /// money: bigint micros (1e-6 USD); $0.12 ceiling = 120_000 micros
+  endReason session_end_reason? @map("end_reason")
+  /// NULL while open; set on close
+  sttProviderUsed String @db.VarChar(64) @default("google_live_flash") @map("stt_provider_used")
+  llmProviderUsed String @db.VarChar(64) @default("google_live_flash") @map("llm_provider_used")
+  ttsProviderUsed String @db.VarChar(64) @default("google_live_flash") @map("tts_provider_used")
+  safetyBlocksCount Int @default(0) @map("safety_blocks_count")
+  bargeInCount Int @default(0) @map("barge_in_count")
+  locale String @db.VarChar(16)
+  /// BCP-47 — snapshot at SESSION_OPEN, decouples from household
+  audioCodec String @db.VarChar(16) @default("opus") @map("audio_codec")
+  sampleRate Int @default(16000) @map("sample_rate")
+  fwVersion String @db.VarChar(32) @map("fw_version")
+  instanceId String @db.VarChar(64) @map("instance_id")
+  /// orchestrator pod hosting this session — useful for support timeline
+  startedAt DateTime @db.Timestamptz(6) @map("started_at")
+  endedAt DateTime? @db.Timestamptz(6) @map("ended_at")
+  /// NULL while open
+  lastActivityAt DateTime @db.Timestamptz(6) @map("last_activity_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; RetentionScheduler hard-deletes after 90 days per sys-04 §4.2
+  providerFailoverRecords ProviderFailoverRecords[] @relation(name: "provider_failover_records_session_id_to_sessions")
+  sessionTranscripts SessionTranscripts[] @relation(name: "session_transcripts_session_id_to_sessions")
+  sessionTurns SessionTurns[] @relation(name: "session_turns_session_id_to_sessions")
+  @@index([deviceId, startedAt], map: "idx_sessions_device_id_started_at")
+  @@index([householdId, startedAt], map: "idx_sessions_household_id_started_at")
+  @@index([childProfileId, startedAt], map: "idx_sessions_child_profile_id_started_at")
+  @@index([status, lastActivityAt], map: "idx_sessions_status_last_activity_at")
+  @@index([endReason], map: "idx_sessions_end_reason")
+  @@index([createdAt], map: "idx_sessions_created_at")
+  @@index([deletedAt], map: "idx_sessions_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("sessions")
+}
+

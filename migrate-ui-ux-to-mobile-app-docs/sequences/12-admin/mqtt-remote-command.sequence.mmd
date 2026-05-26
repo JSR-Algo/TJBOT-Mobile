@@ -1,0 +1,68 @@
+---
+system: sys-12-support-admin-operations
+flow_id: mqtt-remote-command
+surface: admin
+spec_anchor: /software/systems/12-support-admin-operations#mqtt-remote-command-sequence
+actors: [AdminConsole, AdminCommandService, AuditLog, MQTT, Device]
+apis:
+  - POST /admin/devices/:id/reboot
+  - POST /admin/devices/:id/trigger-ota
+  - POST /admin/devices/:id/factory-reset
+externals: [MQTT]
+queues: []
+failure_paths:
+  - role_insufficient
+  - device_not_found
+  - device_offline
+  - mqtt_publish_failure
+  - command_ack_timeout
+idempotency: per-command UUID `command_id` — device dedupes on command_id with 1h cache; retained flag on factory-reset/transfer
+retry: QoS 1 + retained flag for destructive commands; admin-side no auto-retry
+timeout: 5 min device ACK before declaring delivery_failure
+status: final
+---
+%% HAND-CURATED. Normalized from _seed.1; destructive commands gated by super_admin role.
+sequenceDiagram
+    autonumber
+    participant AdminConsole
+    participant AdminCommandService
+    participant AuditLog
+    participant MQTT
+    participant Device
+
+    AdminConsole->>AdminCommandService: POST /admin/devices/:id/{reboot|trigger-ota|factory-reset} {reason}
+
+    alt role_insufficient
+        Note over AdminCommandService: support_agent for reboot/trigger-ota — super_admin for factory-reset
+        AdminCommandService-->>AdminConsole: 403 INSUFFICIENT_ROLE
+    else device_not_found
+        AdminCommandService-->>AdminConsole: 404 device_not_found
+    else accepted
+        AdminCommandService->>AuditLog: append {action: remote_command, target: device:id, reason}
+        AdminCommandService->>MQTT: publish tbot/{id}/commands/{verb} {command, command_id, issued_by, issued_at} (QoS 1, retained for factory-reset/transfer)
+        alt mqtt_publish_failure
+            MQTT-->>AdminCommandService: error
+            AdminCommandService-->>AdminConsole: 502 mqtt_publish_failure
+        else published
+            MQTT-->>AdminCommandService: ack (broker)
+            AdminCommandService-->>AdminConsole: 202 {command_id, status: dispatched}
+        end
+
+        alt device_offline
+            MQTT--xDevice: undelivered (retained held until reconnect)
+            Note over AdminConsole,Device: queued in broker — agent polls /admin/devices/:id for status
+        else online
+            MQTT->>Device: deliver command
+            Device->>Device: dedupe on command_id (1h cache) and execute
+            Device->>MQTT: publish tbot/{id}/results/{verb} {command_id, result}
+            MQTT->>AdminCommandService: forward result
+            AdminCommandService->>AuditLog: append {action: command_result, command_id, result}
+        end
+
+        alt command_ack_timeout
+            Note over AdminCommandService: 5 min elapsed — no result published
+            AdminCommandService->>AuditLog: append {action: command_timeout, command_id}
+        end
+    end
+
+    Note over AdminConsole,Device: destructive commands (factory-reset, transfer) use retained flag — every command writes 2 audit rows (dispatched and result/timeout)

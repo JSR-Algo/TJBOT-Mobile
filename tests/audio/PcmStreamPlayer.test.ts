@@ -193,12 +193,12 @@ async function flushMicrotasks(n = 20): Promise<void> {
 
 // Load the module under test fresh after each state reset so
 // `const Native = NativeModules.PcmStreamModule` picks up the new shape.
-type PcmStreamPlayerModule = typeof import('../../src/audio/PcmStreamPlayer');
+type PcmStreamPlayerModule = typeof import('../../src/services/audio/PcmStreamPlayer');
 function loadPlayer(): PcmStreamPlayerModule {
   let mod!: PcmStreamPlayerModule;
   jest.isolateModules(() => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    mod = require('../../src/audio/PcmStreamPlayer') as PcmStreamPlayerModule;
+    mod = require('../../src/services/audio/PcmStreamPlayer') as PcmStreamPlayerModule;
   });
   return mod;
 }

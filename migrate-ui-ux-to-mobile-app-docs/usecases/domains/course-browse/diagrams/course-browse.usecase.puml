@@ -1,0 +1,43 @@
+@startuml TBOT-CourseBrowse
+title Domain · course-browse — kid-side course tree navigation
+left to right direction
+
+actor Child
+
+package "course-browse" {
+  usecase "Browse Course Tree"  as UC_CRS_TREE
+  usecase "View Level"          as UC_CRS_LEVEL
+  usecase "View Unit"           as UC_CRS_UNIT
+  usecase "View Lesson List"    as UC_CRS_LIST
+  usecase "View Lesson Detail"  as UC_CRS_DETAIL
+  usecase "Start Review"        as UC_CRS_REVIEW
+  usecase "Start Daily Mission" as UC_CRS_MISSION
+}
+
+Child --> UC_CRS_TREE
+Child --> UC_CRS_LEVEL
+Child --> UC_CRS_UNIT
+Child --> UC_CRS_LIST
+Child --> UC_CRS_DETAIL
+Child --> UC_CRS_REVIEW
+Child --> UC_CRS_MISSION
+
+UC_CRS_TREE   ..> UC_CRS_LEVEL  : tap unlocked
+UC_CRS_LEVEL  ..> UC_CRS_UNIT   : tap unlocked
+UC_CRS_UNIT   ..> UC_CRS_LIST   : view list
+UC_CRS_LIST   ..> UC_CRS_DETAIL : tap unlocked
+UC_CRS_UNIT   ..> UC_CRS_REVIEW : "Start Review"
+
+note right of UC_CRS_DETAIL
+  [exit] → lesson-session : UC_LSN_START
+end note
+
+note right of UC_CRS_MISSION
+  [entry] from kid-hub state=daily_available
+  [exit]  → lesson-session : UC_LSN_START
+end note
+
+' Lock gates are CLIENT-SIDE only (state === 'locked').
+' Server-side enforcement NOT CONFIRMED IN SOURCE.
+' Files: src/features/course/{Course,Level,Unit,LessonList,LessonDetail,ReviewEntry,DailyMission}Page.jsx
+@enduml

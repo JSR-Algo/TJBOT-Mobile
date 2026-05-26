@@ -1,0 +1,26 @@
+// mutation_log — append-only record of every backend mutation observed by the
+// AuditBuffer middleware, BEFORE the buffered batch flushes to audit_events.
+// Provides a recoverable journal in case audit_events INSERT path fails (the
+// stdout JSON fallback in spec §Audit Log writes here too if Postgres is reachable
+// but `audit_writer` role is denied).
+// Source: docs/site/software/systems/11-telemetry-audit-cost.md §Audit Log §Write Path.
+
+Table mutation_log {
+  id              uuid          [pk]
+  buffer_batch_id uuid          [not null, note: 'groups rows that were buffered together; correlates with the audit_events flush window']
+  endpoint        varchar(254)  [not null, note: 'HTTP method + path — e.g. "POST /v1/households/:id/controls"']
+  http_status_code integer      [not null, note: 'response status code returned to client']
+  duration_ms     integer
+  actor_id        varchar(254)  [not null]
+  request_payload jsonb         [not null, default: `'{}'::jsonb`, note: 'sanitised — secrets / passwords scrubbed']
+  response_summary jsonb        [not null, default: `'{}'::jsonb`]
+  promoted_to_audit_event_id uuid [note: 'set when this mutation was successfully written to audit_events; null = not yet flushed or fallback path taken']
+  created_at      timestamptz   [not null, default: `now()`]
+  updated_at      timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (buffer_batch_id, created_at) [name: 'idx_mutation_log_batch_created', note: 'hot query: docs/sequences/11-telemetry/audit-log-write-path.sequence.mmd — group by buffer flush window']
+    (actor_id, created_at) [name: 'idx_mutation_log_actor_created', note: 'hot query: docs/sequences/11-telemetry/audit-log-write-path.sequence.mmd — per-actor mutation timeline']
+    (promoted_to_audit_event_id) [name: 'idx_mutation_log_promoted', note: 'hot query: docs/sequences/11-telemetry/audit-log-write-path.sequence.mmd — find unflushed mutations after recovery']
+  }
+}

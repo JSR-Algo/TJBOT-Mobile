@@ -1,0 +1,63 @@
+---
+system: _cross
+flow_id: billing-entitlement-session-start
+surface: multi
+spec_anchor: /software/systems/19-billing-subscription#entitlement-check
+actors: [Device, RealtimeService, BillingService, Redis, Stripe]
+systems: [sys-19-billing-subscription, sys-04-realtime-session-orchestrator]
+derived_from:
+  - 19-billing/entitlement-check-session-start.sequence.mmd
+  - 04-realtime/ws-handshake.sequence.mmd
+apis:
+  - WS /v1/realtime/session (sys-04)
+  - GET /v1/billing/entitlement (sys-19, internal-RPC)
+externals: [Stripe, Redis]
+queues: []
+failure_paths:
+  - entitlement_cache_miss_stripe_unreachable
+  - subscription_expired
+  - past_due_grace_period
+  - mid_turn_expiration
+idempotency: entitlement check keyed on household_id + entitlement_version
+retry: short Redis TTL (60s) — Stripe re-fetch on miss
+timeout: 500ms entitlement check p99
+status: final
+---
+%% DERIVED narrative — billing entitlement check at session.start across sys-04 and sys-19.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant RealtimeService
+    participant BillingService
+    participant Redis
+    participant Stripe
+
+    Device->>RealtimeService: WS handshake — open session (sys-04 ws-handshake)
+    RealtimeService->>BillingService: GET entitlement (household_id) — sys-19
+    BillingService->>Redis: GET entitlement,household_id
+    alt cache_hit_active
+        Redis-->>BillingService: active and plan and expires_at
+        BillingService-->>RealtimeService: 200 entitled
+        RealtimeService-->>Device: WS open — session ready
+    else cache_miss
+        Redis-->>BillingService: nil
+        BillingService->>Stripe: GET subscription (household_id)
+        alt entitlement_cache_miss_stripe_unreachable
+            Stripe--xBillingService: 5xx — fall back to last-known DB state
+        else fetched
+            Stripe-->>BillingService: subscription object
+        end
+        BillingService->>Redis: SETEX entitlement,household_id 60s
+        alt subscription_expired
+            BillingService-->>RealtimeService: 402 subscription_expired
+            RealtimeService-->>Device: WS close 4002 entitlement_required
+        else past_due_grace_period
+            BillingService-->>RealtimeService: 200 entitled grace
+            RealtimeService-->>Device: WS open and grace warning frame
+        else active
+            BillingService-->>RealtimeService: 200 entitled
+            RealtimeService-->>Device: WS open
+        end
+    end
+
+    Note over Device,Stripe: mid_turn_expiration — entitlement re-check on long sessions (>15 min) per sys-19 policy.

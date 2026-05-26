@@ -1,0 +1,36 @@
+// notification_receipts — inbound provider events (FCM ack, SES delivery, bounce, complaint).
+// Tied 1:N to notification_dispatches; allows multiple status events per dispatch
+// (e.g. sent → delivered → bounced when provider eventually rejects).
+// Source: docs/site/software/systems/10-notification-delivery.md
+//         §Bounce and Complaint Handling + §Push Implementation.
+
+enum notification_receipt_kind {
+  fcm_ack
+  fcm_token_invalid
+  fcm_failure
+  ses_delivery
+  ses_hard_bounce
+  ses_soft_bounce
+  ses_complaint
+  ses_reject
+}
+
+Table notification_receipts {
+  id                          uuid                          [pk]
+  dispatch_id                 uuid                          [not null]
+  receipt_kind                notification_receipt_kind     [not null]
+  provider_event_id           varchar(254)                  [not null, note: 'SES MessageId or FCM correlation id — used for webhook idempotency dedup']
+  provider_payload            jsonb                         [not null, default: `'{}'::jsonb`, note: 'raw provider event for forensic audit']
+  bounce_subtype              varchar(64)                   [note: 'Permanent | Transient | Suppressed — only when receipt_kind=ses_hard_bounce/soft_bounce']
+  received_at                 timestamptz                   [not null, default: `now()`]
+  created_at                  timestamptz                   [not null, default: `now()`]
+  updated_at                  timestamptz                   [not null, default: `now()`]
+
+  Indexes {
+    (provider_event_id) [unique, name: 'idx_notification_receipts_provider_event_id_unique']
+    (dispatch_id, received_at) [name: 'idx_notification_receipts_dispatch_received', note: 'hot query: docs/sequences/10-notifications/ses-bounce-complaint-handling.sequence.mmd — chronological event audit per dispatch']
+    (receipt_kind, received_at) [name: 'idx_notification_receipts_kind_received', note: 'hot query: docs/sequences/10-notifications/ses-bounce-complaint-handling.sequence.mmd — bounce-rate dashboards']
+  }
+}
+
+Ref: notification_receipts.dispatch_id > notification_dispatches.id

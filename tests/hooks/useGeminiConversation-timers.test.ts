@@ -148,15 +148,39 @@ describe('P0-10 timer table — plan v2 §3.2', () => {
     expect(hook).toMatch(/if\s*\(s\.state\s*===\s*'READY'\)\s*\{\s*s\.transition\('LISTENING'\)/);
   });
 
-  it('ASSISTANT_SPEAKING drain timeout is telemetry-only after turnComplete anchor', () => {
-    const guardRe = /if\s*\(\s*fsmState\s*!==\s*'ASSISTANT_SPEAKING'\s*\)\s*return\s*;/;
-    const guardIdx = hook.search(guardRe);
-    expect(guardIdx).toBeGreaterThanOrEqual(0);
-    const slice = hook.slice(guardIdx, guardIdx + 1200);
+  it('engineReadyRef latches early voiceMicEngineReady event for replay (adhoc-2026-05-03)', () => {
+    // Race fix: on fast hardware-AEC devices (Xiaomi/Redmi) the native
+    // first-frame emit beats the Render-WS handshake, so the engine-ready
+    // event fires while state is still CONNECTING. The original gate-only
+    // listener silently dropped that event and the FSM tripped its 2s
+    // READY deadline → ERROR_RECOVERABLE. The fix latches the event in JS
+    // and replays the transition once state catches up to READY.
+    //
+    // Structural assertions:
+    //   1. A `engineReadyRef` ref exists.
+    //   2. The onEngineReady listener writes `engineReadyRef.current = true`
+    //      before checking state (so an early event is captured even if the
+    //      gated transition is a no-op).
+    //   3. A useEffect keyed on `fsmState === 'READY'` reads the ref and
+    //      drives the transition when the latched event meets the catch-up.
+    //   4. A reset useEffect clears the ref on PREPARING_AUDIO entry so a
+    //      stale flag from the previous session cannot fire as soon as the
+    //      next session reaches READY.
+    expect(hook).toMatch(/engineReadyRef\s*=\s*useRef\(false\)/);
+    expect(hook).toMatch(/engineReadyRef\.current\s*=\s*true;[\s\S]*?if\s*\(s\.state\s*===\s*'READY'\)/);
+    expect(hook).toMatch(
+      /if\s*\(fsmState\s*===\s*'READY'\s*&&\s*engineReadyRef\.current\)\s*\{[\s\S]*?store\.getState\(\)\.transition\('LISTENING'\)/,
+    );
+    expect(hook).toMatch(/fsmState\s*===\s*'PREPARING_AUDIO'[\s\S]*?engineReadyRef\.current\s*=\s*false/);
+  });
 
-    expect(slice).toMatch(/turnCompleteAtMs\s*=\s*responseTurnCompleteAtMsRef\.current/);
-    expect(slice).toMatch(/turnCompleteAtMs\s*===\s*null[\s\S]{0,100}return/);
-    expect(slice).toMatch(/voice\.assistant\.drain_timeout/);
-    expect(slice).not.toMatch(/transition\('LISTENING'\)/);
+  it('engineReadyRef pre-arms on RECONNECTING entry so reconnect→READY does not stall', () => {
+    // Reconnect path race (adhoc-2026-05-03 follow-up): on goAway/WS-drop
+    // the native mic engine keeps running across RECONNECTING — its
+    // one-shot `firstFrameEmitted` latch will not re-fire — and the FSM
+    // is allowed to route RECONNECTING → READY per voiceAssistantStore.ts
+    // line 136-142. Without a pre-armed JS latch the 2 s READY deadline
+    // trips and the user is bounced into ERROR_RECOVERABLE mid-session.
+    expect(hook).toMatch(/fsmState\s*===\s*'RECONNECTING'[\s\S]*?engineReadyRef\.current\s*=\s*true/);
   });
 });

@@ -1,0 +1,63 @@
+---
+system: sys-02-device-provisioning-registry
+flow_id: factory-registration
+surface: factory
+spec_anchor: /software/systems/02-device-provisioning-registry#factory-internal-endpoints
+actors: [FactoryCLI, Gateway, DeviceService, IntermediateCA, PostgreSQL]
+apis:
+  - POST /v1/devices/register
+  - POST /v1/factory/devices/:deviceId/certificate
+externals: []
+queues: []
+failure_paths:
+  - serial_already_registered
+  - cert_fingerprint_conflict
+  - mtls_auth_failed
+  - invalid_serial_format
+idempotency: ON CONFLICT DO NOTHING on certificate_fingerprint per Sprint 2 — duplicate cert PEM returns 201 silently
+retry: factory CLI retries on 5xx with exponential backoff
+timeout: 10s p99 per endpoint
+status: final
+---
+%% HAND-CURATED. Race condition surfaced per plan §11: cert serial conflict response.
+sequenceDiagram
+    autonumber
+    participant FactoryCLI
+    participant Gateway
+    participant DeviceService
+    participant IntermediateCA
+    participant PostgreSQL
+
+    FactoryCLI->>Gateway: POST /v1/devices/register {serialNumber, hardware_revision, firmware_version} mTLS
+    Gateway->>DeviceService: forward request
+    alt serial_already_registered (unique violation)
+        DeviceService->>PostgreSQL: INSERT devices … ON CONFLICT (serial_number)
+        PostgreSQL-->>DeviceService: unique violation uq_devices_serial_number
+        DeviceService-->>Gateway: 409 serial_already_registered
+        Gateway-->>FactoryCLI: 409
+    else mtls_auth_failed
+        Gateway-->>FactoryCLI: 401 invalid factory credential
+    else invalid_serial_format
+        DeviceService-->>Gateway: 422 invalid_serial_format
+        Gateway-->>FactoryCLI: 422
+    else success
+        DeviceService->>PostgreSQL: INSERT devices {status=factory_new, lifecycle_state=unassigned}
+        PostgreSQL-->>DeviceService: device_id
+        DeviceService-->>FactoryCLI: 201 {device_id}
+    end
+
+    FactoryCLI->>IntermediateCA: sign CSR (out-of-band, sys-15 / sys-13)
+    IntermediateCA-->>FactoryCLI: signed X.509 cert and fingerprint
+    FactoryCLI->>Gateway: POST /v1/factory/devices/:deviceId/certificate {certificate_pem}
+    Gateway->>DeviceService: forward
+    alt cert_fingerprint_conflict
+        DeviceService->>PostgreSQL: INSERT device_certificates ON CONFLICT (certificate_fingerprint) DO NOTHING
+        PostgreSQL-->>DeviceService: 0 rows affected (duplicate)
+        DeviceService-->>FactoryCLI: 201 (idempotent — duplicate cert silently accepted)
+    else success
+        DeviceService->>PostgreSQL: INSERT device_certificates {status=active, issued_at, expires_at}
+        PostgreSQL-->>DeviceService: cert_id
+        DeviceService-->>FactoryCLI: 201
+    end
+
+    Note over FactoryCLI,PostgreSQL: timeout 10s p99 · factory CLI retries on 5xx · idempotent register via ON CONFLICT DO NOTHING on cert fingerprint (Sprint 2)

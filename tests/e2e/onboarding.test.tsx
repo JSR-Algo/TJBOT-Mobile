@@ -1,276 +1,276 @@
 /**
- * E2E tests for Onboarding flow — covers all buttons in:
- * HouseholdCreateScreen, AddChildScreen, InterestSetupScreen, DeviceSetupIntroScreen
+ * Unit tests for the TJBot mobile onboarding flow.
  *
- * Note: ErrorMessage renders "⚠️ {message}" — use regex for matching.
- * normalizeError maps plain Error objects to ERROR_MESSAGES.UNKNOWN_ERROR:
- * "An unexpected error occurred. Please try again."
+ * TJBot mobile kid-intro flow:
+ *   Splash → Welcome → IntroListen → IntroSpeak → IntroRetry → IntroCelebrate
+ *           → Trust → MicAsk → FirstLessonEntry → LessonReady (lesson-session)
+ *
+ * Production parent-setup screens (HouseholdCreate/AddChild/InterestSetup/
+ * DeviceSetupIntro/VoiceTest/CoppaConsent) retired in PR5 per user directive;
+ * their tests dropped.
  */
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { HouseholdCreateScreen } from '../../src/screens/onboarding/HouseholdCreateScreen';
-import { AddChildScreen } from '../../src/screens/onboarding/AddChildScreen';
-import { InterestSetupScreen } from '../../src/screens/onboarding/InterestSetupScreen';
-import { DeviceSetupIntroScreen } from '../../src/screens/onboarding/DeviceSetupIntroScreen';
-
-// ─── Mocks ────────────────────────────────────────────────────────────────────
+import { act, render, fireEvent } from '@testing-library/react-native';
+import SplashScreen from '../../src/features/onboarding/screens/SplashScreen';
+import WelcomeScreen from '../../src/features/onboarding/screens/WelcomeScreen';
+import IntroListenScreen from '../../src/features/onboarding/screens/IntroListenScreen';
+import IntroSpeakScreen from '../../src/features/onboarding/screens/IntroSpeakScreen';
+import IntroRetryScreen from '../../src/features/onboarding/screens/IntroRetryScreen';
+import IntroCelebrateScreen from '../../src/features/onboarding/screens/IntroCelebrateScreen';
+import TrustScreen from '../../src/features/onboarding/screens/TrustScreen';
+import MicAskScreen from '../../src/features/onboarding/screens/MicAskScreen';
+import FirstLessonEntryScreen from '../../src/features/onboarding/screens/FirstLessonEntryScreen';
+import { ROUTES } from '../../src/navigation/routes';
 
 const mockNavigate = jest.fn();
-const mockNavigation = { navigate: mockNavigate, goBack: jest.fn() } as any;
+const mockReplace = jest.fn();
+const mockGoBack = jest.fn();
 
-const mockCreateHousehold = jest.fn();
-const mockAddChild = jest.fn();
-const mockCompleteOnboarding = jest.fn();
+const mockNav = {
+  navigate: mockNavigate,
+  replace: mockReplace,
+  goBack: mockGoBack,
+  setParams: jest.fn(),
+  reset: jest.fn(),
+  dispatch: jest.fn(),
+  setOptions: jest.fn(),
+  isFocused: () => true,
+  canGoBack: () => true,
+  getId: () => 'TestNav',
+  getParent: () => undefined,
+  getState: () => ({} as never),
+  addListener: jest.fn(() => jest.fn()),
+  removeListener: jest.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+} as any;
 
-jest.mock('../../src/contexts/HouseholdContext', () => ({
-  useHousehold: () => ({
-    createHousehold: mockCreateHousehold,
-    addChild: mockAddChild,
-    completeOnboarding: mockCompleteOnboarding,
-    activeHousehold: null,
-    children: [],
-    isLoading: false,
-    refresh: jest.fn(),
-    pendingDeviceSetup: false,
-    clearPendingDeviceSetup: jest.fn(),
-  }),
-}));
+const mockRoute = { key: 'test', name: 'TestRoute', params: undefined };
 
-jest.mock('../../src/api/learning', () => ({
-  updateChildProfile: jest.fn().mockResolvedValue({}),
-}));
+beforeEach(() => jest.clearAllMocks());
 
-// ─── HouseholdCreateScreen ────────────────────────────────────────────────────
+// ─── SplashScreen ─────────────────────────────────────────────────────────────
 
-describe('HouseholdCreateScreen', () => {
-  const mockRoute = { params: undefined, key: 'HouseholdCreate', name: 'HouseholdCreate' as const };
-
-  beforeEach(() => jest.clearAllMocks());
-
-  it('renders Create Household button', () => {
+describe('SplashScreen', () => {
+  it('renders Robot wordmark + tagline', () => {
     const { getByText } = render(
-      <HouseholdCreateScreen navigation={mockNavigation} route={mockRoute} />
+      <SplashScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText('Create Household')).toBeTruthy();
+    expect(getByText('Robot')).toBeTruthy();
+    expect(getByText('Voice English for kids')).toBeTruthy();
   });
 
-  it('shows error when name is empty', async () => {
-    const { getAllByText, getByText } = render(
-      <HouseholdCreateScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.press(getByText('Create Household'));
-    await waitFor(() => {
-      // Input renders inline error + ErrorMessage renders ⚠️ version — both match
-      expect(getAllByText(/Please enter a household name/).length).toBeGreaterThan(0);
+  it('auto-navigates to WelcomeScreen after 1.7s', () => {
+    jest.useFakeTimers();
+    render(<SplashScreen navigation={mockNav} route={mockRoute as never} />);
+    act(() => {
+      jest.advanceTimersByTime(1700);
     });
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.WelcomeScreen);
+    jest.useRealTimers();
   });
 
-  it('calls createHousehold and navigates to AddChild on success', async () => {
-    mockCreateHousehold.mockResolvedValueOnce({ id: 'hh-123', name: 'The Smiths' });
-    const { getByText, getByPlaceholderText } = render(
-      <HouseholdCreateScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.changeText(getByPlaceholderText('e.g. The Smith Family'), 'The Smiths');
-    fireEvent.press(getByText('Create Household'));
-    await waitFor(() => {
-      expect(mockCreateHousehold).toHaveBeenCalledWith('The Smiths');
-      expect(mockNavigate).toHaveBeenCalledWith('AddChild', { householdId: 'hh-123' });
+  it('does not navigate before the 1.7s timer fires', () => {
+    jest.useFakeTimers();
+    render(<SplashScreen navigation={mockNav} route={mockRoute as never} />);
+    act(() => {
+      jest.advanceTimersByTime(1000);
     });
-  });
-
-  it('shows error on API failure', async () => {
-    mockCreateHousehold.mockRejectedValueOnce(new Error('Network error'));
-    const { getAllByText, getByPlaceholderText, getByText } = render(
-      <HouseholdCreateScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.changeText(getByPlaceholderText('e.g. The Smith Family'), 'The Smiths');
-    fireEvent.press(getByText('Create Household'));
-    await waitFor(() => {
-      // normalizeError maps a plain network-like Error to the user-facing
-      // NETWORK_ERROR message. Input + ErrorMessage both render it.
-      expect(getAllByText(/network error/i).length).toBeGreaterThan(0);
-    });
+    expect(mockNavigate).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 });
 
-// ─── AddChildScreen ───────────────────────────────────────────────────────────
+// ─── WelcomeScreen ────────────────────────────────────────────────────────────
 
-describe('AddChildScreen', () => {
-  const mockRoute = { params: { householdId: 'hh-123' }, key: 'AddChild', name: 'AddChild' as const };
-
-  beforeEach(() => jest.clearAllMocks());
-
-  it('renders Add Child and Skip buttons', () => {
+describe('WelcomeScreen', () => {
+  it('renders hero + grown-up note + CTAs', () => {
     const { getByText } = render(
-      <AddChildScreen navigation={mockNavigation} route={mockRoute} />
+      <WelcomeScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText('Add Child')).toBeTruthy();
-    expect(getByText('Skip for now')).toBeTruthy();
+    expect(getByText(/Hi! I'm Robot/)).toBeTruthy();
+    expect(getByText(/A grown-up sets things up/)).toBeTruthy();
+    expect(getByText('Get started')).toBeTruthy();
+    expect(getByText('I already have an account')).toBeTruthy();
   });
 
-  it('shows error when name is empty', async () => {
+  it('navigates to IntroListenScreen when Get started pressed', () => {
     const { getByText } = render(
-      <AddChildScreen navigation={mockNavigation} route={mockRoute} />
+      <WelcomeScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Add Child'));
-    await waitFor(() => {
-      expect(getByText(/Please enter a name/)).toBeTruthy();
-    });
+    fireEvent.press(getByText('Get started'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroListenScreen);
   });
 
-  it('shows error for invalid birth year (non-numeric)', async () => {
-    const { getByText, getByPlaceholderText } = render(
-      <AddChildScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.changeText(getByPlaceholderText('e.g. Emma'), 'Emma');
-    fireEvent.changeText(getByPlaceholderText('e.g. 2018'), 'abcd');
-    fireEvent.press(getByText('Add Child'));
-    await waitFor(() => {
-      expect(getByText(/valid 4-digit birth year/)).toBeTruthy();
-    });
-  });
-
-  it('shows error for birth year before 2000', async () => {
-    const { getByText, getByPlaceholderText } = render(
-      <AddChildScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.changeText(getByPlaceholderText('e.g. Emma'), 'Emma');
-    fireEvent.changeText(getByPlaceholderText('e.g. 2018'), '1999');
-    fireEvent.press(getByText('Add Child'));
-    await waitFor(() => {
-      expect(getByText(/Birth year must be 2000/)).toBeTruthy();
-    });
-  });
-
-  it('calls addChild on valid input', async () => {
-    mockAddChild.mockResolvedValueOnce({ id: 'child-1', household_id: 'hh-123', name: 'Emma' });
-    const { getByText, getByPlaceholderText } = render(
-      <AddChildScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.changeText(getByPlaceholderText('e.g. Emma'), 'Emma');
-    fireEvent.changeText(getByPlaceholderText('e.g. 2018'), '2018');
-    fireEvent.press(getByText('Add Child'));
-    await waitFor(() => {
-      expect(mockAddChild).toHaveBeenCalledWith({ name: 'Emma', date_of_birth: '2018-01-01' });
-    });
-  });
-
-  it('navigates to DeviceSetupIntro when Skip is pressed', () => {
+  it('navigates to LoginScreen when "I already have an account" pressed', () => {
     const { getByText } = render(
-      <AddChildScreen navigation={mockNavigation} route={mockRoute} />
+      <WelcomeScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Skip for now'));
-    expect(mockNavigate).toHaveBeenCalledWith('DeviceSetupIntro');
+    fireEvent.press(getByText('I already have an account'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LoginScreen);
   });
 });
 
-// ─── InterestSetupScreen ──────────────────────────────────────────────────────
+// ─── IntroListenScreen ───────────────────────────────────────────────────────
 
-describe('InterestSetupScreen', () => {
-  const learningApi = require('../../src/api/learning');
-  const mockRoute = {
-    params: { childId: 'child-1', householdId: 'hh-123' },
-    key: 'InterestSetup',
-    name: 'InterestSetup' as const,
-  };
-
-  beforeEach(() => jest.clearAllMocks());
-
-  it('renders all 9 interest chips', () => {
+describe('IntroListenScreen', () => {
+  it('renders kicker + title + body', () => {
     const { getByText } = render(
-      <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
+      <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
     );
-    ['Animals', 'Cars', 'Princess', 'Space', 'Dinosaurs', 'Music', 'Cooking', 'Sports', 'Art'].forEach(
-      (label) => expect(getByText(label)).toBeTruthy()
-    );
+    expect(getByText('How it works · 1')).toBeTruthy();
+    expect(getByText('Robot listens')).toBeTruthy();
+    expect(getByText(/Kids tap the mic/)).toBeTruthy();
   });
 
-  it('shows "Skip for now" when no interests selected', () => {
+  it('renders Next CTA + Skip', () => {
     const { getByText } = render(
-      <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
+      <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText('Skip for now')).toBeTruthy();
+    expect(getByText('Next')).toBeTruthy();
+    expect(getByText('Skip')).toBeTruthy();
   });
 
-  it('navigates to DeviceSetupIntro when Skip is pressed', () => {
+  it('navigates to IntroSpeakScreen when Next pressed', () => {
     const { getByText } = render(
-      <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
+      <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Skip for now'));
-    expect(mockNavigate).toHaveBeenCalledWith('DeviceSetupIntro');
+    fireEvent.press(getByText('Next'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroSpeakScreen);
   });
 
-  it('updates button label after selecting 1 interest', () => {
+  it('navigates to TrustScreen when Skip pressed', () => {
     const { getByText } = render(
-      <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
+      <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Animals'));
-    expect(getByText('Save 1 interest')).toBeTruthy();
-  });
-
-  it('updates button label after selecting 2 interests', () => {
-    const { getByText } = render(
-      <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.press(getByText('Animals'));
-    fireEvent.press(getByText('Cars'));
-    expect(getByText('Save 2 interests')).toBeTruthy();
-  });
-
-  it('deselects interest chip on second press', () => {
-    const { getByText } = render(
-      <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.press(getByText('Animals'));
-    fireEvent.press(getByText('Animals'));
-    expect(getByText('Skip for now')).toBeTruthy();
-  });
-
-  it('calls updateChildProfile and navigates on Save', async () => {
-    learningApi.updateChildProfile.mockResolvedValueOnce({});
-    const { getByText } = render(
-      <InterestSetupScreen navigation={mockNavigation} route={mockRoute} />
-    );
-    fireEvent.press(getByText('Animals'));
-    fireEvent.press(getByText('Cars'));
-    fireEvent.press(getByText('Save 2 interests'));
-    await waitFor(() => {
-      expect(learningApi.updateChildProfile).toHaveBeenCalledWith('child-1', {
-        interests: ['animals', 'cars'],
-      });
-      expect(mockNavigate).toHaveBeenCalledWith('DeviceSetupIntro');
-    });
+    fireEvent.press(getByText('Skip'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TrustScreen);
   });
 });
 
-// ─── DeviceSetupIntroScreen ───────────────────────────────────────────────────
+// ─── IntroSpeakScreen ────────────────────────────────────────────────────────
 
-describe('DeviceSetupIntroScreen', () => {
-  const mockRoute = { params: undefined, key: 'DeviceSetupIntro', name: 'DeviceSetupIntro' as const };
-
-  beforeEach(() => jest.clearAllMocks());
-
-  it('renders both action buttons', () => {
+describe('IntroSpeakScreen', () => {
+  it('renders title', () => {
     const { getByText } = render(
-      <DeviceSetupIntroScreen navigation={mockNavigation} route={mockRoute} />
+      <IntroSpeakScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText("I'm ready, let's pair")).toBeTruthy();
-    expect(getByText('Skip for now')).toBeTruthy();
+    expect(getByText('Robot speaks back')).toBeTruthy();
   });
 
-  it('calls completeOnboarding(true) when pair button is pressed', () => {
+  it('navigates to IntroRetryScreen when Next pressed', () => {
     const { getByText } = render(
-      <DeviceSetupIntroScreen navigation={mockNavigation} route={mockRoute} />
+      <IntroSpeakScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText("I'm ready, let's pair"));
-    expect(mockCompleteOnboarding).toHaveBeenCalledWith(true);
+    fireEvent.press(getByText('Next'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroRetryScreen);
+  });
+});
+
+// ─── IntroRetryScreen ────────────────────────────────────────────────────────
+
+describe('IntroRetryScreen', () => {
+  it('renders title', () => {
+    const { getByText } = render(
+      <IntroRetryScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    expect(getByText("It's okay to try again")).toBeTruthy();
   });
 
-  it('calls completeOnboarding(false) when Skip is pressed', () => {
+  it('navigates to IntroCelebrateScreen when Next pressed', () => {
     const { getByText } = render(
-      <DeviceSetupIntroScreen navigation={mockNavigation} route={mockRoute} />
+      <IntroRetryScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Skip for now'));
-    expect(mockCompleteOnboarding).toHaveBeenCalledWith(false);
+    fireEvent.press(getByText('Next'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroCelebrateScreen);
+  });
+});
+
+// ─── IntroCelebrateScreen ────────────────────────────────────────────────────
+
+describe('IntroCelebrateScreen', () => {
+  it('renders title', () => {
+    const { getByText } = render(
+      <IntroCelebrateScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    expect(getByText('Small wins, every day')).toBeTruthy();
+  });
+
+  it('navigates to TrustScreen when Next pressed', () => {
+    const { getByText } = render(
+      <IntroCelebrateScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Next'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TrustScreen);
+  });
+});
+
+// ─── TrustScreen ─────────────────────────────────────────────────────────────
+
+describe('TrustScreen', () => {
+  it('renders all 4 trust promises', () => {
+    const { getByText } = render(
+      <TrustScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    expect(getByText('Voice stays in the lesson')).toBeTruthy();
+    expect(getByText('Short, focused sessions')).toBeTruthy();
+    expect(getByText('No social, no chat, no ads')).toBeTruthy();
+    expect(getByText('You stay in control')).toBeTruthy();
+  });
+
+  it('navigates to MicAskScreen when Continue pressed', () => {
+    const { getByText } = render(
+      <TrustScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Continue'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.MicAskScreen);
+  });
+});
+
+// ─── MicAskScreen ────────────────────────────────────────────────────────────
+
+describe('MicAskScreen', () => {
+  it('renders Continue + Not now CTAs', () => {
+    const { getByText } = render(
+      <MicAskScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    expect(getByText('Continue')).toBeTruthy();
+    expect(getByText('Not now')).toBeTruthy();
+  });
+
+  it('navigates to FirstLessonEntryScreen when Not now pressed', () => {
+    const { getByText } = render(
+      <MicAskScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Not now'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.FirstLessonEntryScreen);
+  });
+
+  it('navigates to FirstLessonEntryScreen when Continue pressed', () => {
+    const { getByText } = render(
+      <MicAskScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Continue'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.FirstLessonEntryScreen);
+  });
+});
+
+// ─── FirstLessonEntryScreen ──────────────────────────────────────────────────
+
+describe('FirstLessonEntryScreen', () => {
+  it('renders parent hand-off prompt', () => {
+    const { getByText } = render(
+      <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    expect(getByText('Hand the phone to your child')).toBeTruthy();
+    expect(getByText(/About 3 minutes/)).toBeTruthy();
+    expect(getByText('Yes!')).toBeTruthy();
+  });
+
+  it('navigates to LessonReadyScreen when Yes! pressed', () => {
+    const { getByText } = render(
+      <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Yes!'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
   });
 });

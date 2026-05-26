@@ -1,0 +1,23 @@
+// AUTO-GENERATED — STATELESS SYSTEM
+// Source: docs/site/software/systems/16-mobile-applications.md (projection-only)
+// This system has no backend tables (mobile is a projection over sys-01 / sys-04 /
+// sys-06 / sys-07 / sys-19 read APIs; all persistent state lives in those systems).
+// No models declared.
+// See docs/erd/16-mobile/README.md for rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Marker enum — Prisma rejects schemas that declare a datasource without any
+// model or enum. This enum is unused at runtime; it exists solely to keep
+// `prisma validate` happy on stateless systems. Name avoids leading underscore
+// (Prisma 5.x rejects identifiers starting with `_`).
+enum stateless_marker {
+  stateless
+}

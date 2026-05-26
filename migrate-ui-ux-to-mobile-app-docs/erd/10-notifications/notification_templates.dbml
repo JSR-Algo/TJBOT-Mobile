@@ -1,0 +1,40 @@
+// notification_templates — Handlebars templates + per-type delivery configuration.
+// One row per (notification_type, channel) — e.g. (safety_alert, push), (safety_alert, email).
+// Carries throttle window, scope, suppression cooldown, and force-send flags.
+// Source: docs/site/software/systems/10-notification-delivery.md
+//         §Notification Type Configuration + §Push Templates / §Email Subjects.
+
+enum notification_channel {
+  push
+  email
+}
+
+enum notification_scope {
+  parent
+  device
+  household
+}
+
+Table notification_templates {
+  id                          uuid                     [pk]
+  notification_type           varchar(64)              [not null, note: 'one of welcome|password_reset|low_battery|device_offline|device_online|ota_available|ota_complete|safety_alert|weekly_summary|account_deletion_scheduled']
+  channel                     notification_channel     [not null]
+  scope                       notification_scope       [not null, default: 'parent']
+  template_body               text                     [not null, note: 'Handlebars source — HTML for email channel + plaintext for push channel']
+  template_subject            varchar(254)             [note: 'email subject Handlebars source; null for push']
+  push_priority               varchar(16)              [note: 'fcm priority — high | normal — only when channel=push']
+  android_channel             varchar(64)              [note: 'fcm android_channel — only when channel=push']
+  throttle_window_seconds     integer                  [not null, default: 86400, note: '86400=24h; per spec §Notification Type Configuration table']
+  throttle_limit              integer                  [not null, default: 1]
+  suppression_cooldown_seconds integer                 [not null, default: 0, note: '4h=14400 for device alerts; 24h=86400 for safety_alert']
+  force_send                  boolean                  [not null, default: false, note: 'transactional types: welcome, password_reset, account_deletion_scheduled; safety_alert is forced+undisableable']
+  cannot_be_disabled          boolean                  [not null, default: false, note: 'true only for safety_alert — overrides per-parent preferences']
+  active                      boolean                  [not null, default: true]
+  created_at                  timestamptz              [not null, default: `now()`]
+  updated_at                  timestamptz              [not null, default: `now()`]
+
+  Indexes {
+    (notification_type, channel) [unique, name: 'idx_notification_templates_type_channel_unique']
+    (notification_type, active) [name: 'idx_notification_templates_type_active', note: 'hot query: docs/sequences/10-notifications/sqs-worker-pipeline.sequence.mmd — load type config']
+  }
+}

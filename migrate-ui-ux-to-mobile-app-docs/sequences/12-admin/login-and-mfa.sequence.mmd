@@ -1,0 +1,79 @@
+---
+system: sys-12-support-admin-operations
+flow_id: login-and-mfa
+surface: admin
+spec_anchor: /software/systems/12-support-admin-operations#post-adminauthlogin
+actors: [AdminConsole, AdminAuthService, PostgreSQL, AuditLog]
+apis:
+  - POST /admin/auth/login
+  - POST /admin/auth/mfa-verify
+  - POST /admin/auth/logout
+externals: []
+queues: []
+failure_paths:
+  - invalid_credentials
+  - admin_login_rate_limited
+  - account_disabled
+  - mfa_token_invalid
+  - mfa_totp_invalid
+  - session_expired
+idempotency: per-attempt audit log row; no idempotency key (auth flow is intentionally state-changing)
+retry: caller-side no auto-retry on 401; 5 attempts per email per 10 min rate limit
+timeout: 5s p99 per request
+status: final
+---
+%% HAND-CURATED. mfa_required gated by admin_users.mfa_enabled (super_admin = required).
+sequenceDiagram
+    autonumber
+    participant AdminConsole
+    participant AdminAuthService
+    participant PostgreSQL
+    participant AuditLog
+
+    AdminConsole->>AdminAuthService: POST /admin/auth/login {email, password}
+    AdminAuthService->>PostgreSQL: SELECT COUNT login_attempt audit rows in last 10 min for email
+
+    alt admin_login_rate_limited
+        PostgreSQL-->>AdminAuthService: >= 5
+        AdminAuthService-->>AdminConsole: 429 admin_login_rate_limited
+    else under limit
+        AdminAuthService->>PostgreSQL: SELECT id, password_hash, role, mfa_enabled, mfa_secret, status FROM admin_users WHERE email=$1
+        alt invalid_credentials
+            Note over AdminAuthService: email not found OR password_hash mismatch
+            AdminAuthService->>AuditLog: append login_attempt {result: invalid_credentials}
+            AdminAuthService-->>AdminConsole: 401 invalid_credentials
+        else account_disabled
+            PostgreSQL-->>AdminAuthService: row {status: disabled}
+            AdminAuthService->>AuditLog: append login_attempt {result: account_disabled}
+            AdminAuthService-->>AdminConsole: 403 account_disabled
+        else mfa_required
+            PostgreSQL-->>AdminAuthService: row {mfa_enabled: true}
+            AdminAuthService->>AuditLog: append login_attempt {result: mfa_challenge_issued}
+            AdminAuthService-->>AdminConsole: 200 {mfaRequired: true, mfaToken (short-lived JWT, purpose=mfa_challenge)}
+            AdminConsole->>AdminAuthService: POST /admin/auth/mfa-verify {mfaToken, totp_code}
+            alt mfa_token_invalid
+                AdminAuthService-->>AdminConsole: 401 mfa_token_invalid (expired or wrong purpose)
+            else mfa_totp_invalid
+                AdminAuthService->>AuditLog: append mfa_verify {result: totp_invalid}
+                AdminAuthService-->>AdminConsole: 401 mfa_totp_invalid
+            else mfa_ok
+                AdminAuthService->>PostgreSQL: INSERT admin_sessions (id, admin_user_id, expires_at)
+                AdminAuthService->>AuditLog: append mfa_verify {result: success}
+                AdminAuthService-->>AdminConsole: 200 {access_token, refresh_token}
+            end
+        else no_mfa_success
+            PostgreSQL-->>AdminAuthService: row {mfa_enabled: false}
+            AdminAuthService->>PostgreSQL: INSERT admin_sessions (id, admin_user_id, expires_at)
+            AdminAuthService->>AuditLog: append login {result: success}
+            AdminAuthService-->>AdminConsole: 200 {access_token, refresh_token}
+        end
+    end
+
+    opt later logout
+        AdminConsole->>AdminAuthService: POST /admin/auth/logout
+        AdminAuthService->>PostgreSQL: DELETE admin_sessions WHERE id=$1
+        AdminAuthService->>AuditLog: append logout
+        AdminAuthService-->>AdminConsole: 204
+    end
+
+    Note over AdminConsole,AuditLog: every attempt audited regardless of result — MFA required for super_admin — session_expired returns 401 forcing re-login

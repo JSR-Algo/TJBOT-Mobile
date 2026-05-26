@@ -1,0 +1,35 @@
+package com.TJBotmobile
+
+import android.app.Application
+import com.facebook.react.PackageList
+import com.facebook.react.ReactApplication
+import com.facebook.react.ReactHost
+import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
+import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import com.TJBotmobile.pcmstream.PcmStreamPackage
+import com.TJBotmobile.voicemic.VoiceMicPackage
+import com.TJBotmobile.voicesession.VoiceSessionPackage
+
+class MainApplication : Application(), ReactApplication {
+
+  override val reactHost: ReactHost by lazy {
+    getDefaultReactHost(
+      context = applicationContext,
+      packageList =
+        PackageList(this).packages.apply {
+          // Local native PCM streaming module — see android/.../pcmstream/
+          add(PcmStreamPackage())
+          // App-level voice session owner (mode, focus, routing).
+          add(VoiceSessionPackage())
+          // Native AudioRecord + AcousticEchoCanceler — the Android twin of
+          // iOS VoiceMicModule. Replaces the RNLAS path that had no AEC.
+          add(VoiceMicPackage())
+        },
+    )
+  }
+
+  override fun onCreate() {
+    super.onCreate()
+    loadReactNative(this)
+  }
+}

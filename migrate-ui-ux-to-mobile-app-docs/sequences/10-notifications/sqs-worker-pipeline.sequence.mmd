@@ -1,0 +1,88 @@
+---
+system: sys-10-notifications
+flow_id: sqs-worker-pipeline
+surface: internal-RPC
+spec_anchor: /software/systems/10-notification-delivery#processing-steps-per-message
+actors: [SQS, NotificationService, Redis, PostgreSQL, FCM, SES]
+apis:
+  - SQS ReceiveMessage tbot-notifications
+  - SQS DeleteMessage
+  - FCM POST /v1/projects/{projectId}/messages:send
+  - SES SendEmail (AWS API)
+externals: [SQS, Redis, PostgreSQL, FCM, SES]
+queues:
+  - tbot-notifications (consumer)
+failure_paths:
+  - duplicate_idempotency_key
+  - preferences_missing
+  - quiet_hours_suppressed
+  - throttled_per_channel
+  - email_disabled_hard_bounce
+  - fcm_token_invalid
+  - ses_throttled_backoff
+  - send_failure_dlq_after_retries
+idempotency: SET NX on notification_id, 24h TTL (Redis)
+retry: SQS visibility-timeout backoff, max 5 attempts before DLQ
+timeout: 5s p95 per channel send
+status: final
+---
+%% HAND-CURATED. Derived narrative from `_seed.1` retained as content; promoted to final per Phase 3 Z2.
+sequenceDiagram
+    autonumber
+    participant SQS
+    participant NotificationService
+    participant Redis
+    participant PostgreSQL
+    participant FCM
+    participant SES
+
+    SQS->>NotificationService: ReceiveMessage (long-poll, batch up to 10)
+    NotificationService->>Redis: SET NX idempotency,notification_id 24h TTL
+    alt duplicate_idempotency_key
+        Redis-->>NotificationService: key exists — skip
+        NotificationService->>SQS: DeleteMessage (drop dedup)
+    else new
+        NotificationService->>PostgreSQL: SELECT preferences, type_config, suppressions
+        alt preferences_missing
+            PostgreSQL-->>NotificationService: 0 rows — drop with audit
+            NotificationService->>SQS: DeleteMessage
+        else loaded
+            NotificationService->>NotificationService: timezone and quiet-hours check
+            alt quiet_hours_suppressed
+                NotificationService->>PostgreSQL: INSERT log status,suppressed reason,quiet_hours
+                NotificationService->>SQS: DeleteMessage
+            else proceed
+                loop per channel (FCM, SES)
+                    NotificationService->>Redis: INCR throttle,channel and EXPIRE
+                    alt throttled_per_channel
+                        NotificationService->>PostgreSQL: INSERT log status,suppressed reason,throttle
+                    else FCM
+                        NotificationService->>FCM: POST messages,send
+                        alt fcm_token_invalid
+                            FCM-->>NotificationService: 404 UNREGISTERED — mark token invalid
+                            NotificationService->>PostgreSQL: UPDATE devices SET fcm_token_invalid_at
+                        else delivered
+                            NotificationService->>PostgreSQL: INSERT log status,sent
+                        end
+                    else SES
+                        alt email_disabled_hard_bounce
+                            NotificationService->>PostgreSQL: SELECT email_disabled_reason — disabled
+                            NotificationService->>PostgreSQL: INSERT log status,suppressed reason,email_disabled
+                        else send
+                            NotificationService->>SES: SendEmail (template and List-Unsubscribe header)
+                            alt ses_throttled_backoff
+                                SES-->>NotificationService: ThrottlingException
+                                NotificationService->>SQS: change visibility 1s backoff
+                            else accepted
+                                SES-->>NotificationService: MessageId
+                                NotificationService->>PostgreSQL: INSERT log status,sent ses_message_id
+                            end
+                        end
+                    end
+                end
+                NotificationService->>SQS: DeleteMessage (success or terminal failure)
+            end
+        end
+    end
+
+    Note over SQS,SES: send_failure_dlq_after_retries — SQS auto-redrive to DLQ after 5 receives.

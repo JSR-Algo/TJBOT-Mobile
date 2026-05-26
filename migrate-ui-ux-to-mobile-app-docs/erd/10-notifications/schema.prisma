@@ -1,0 +1,197 @@
+// AUTO-GENERATED FROM docs/erd/10-notifications/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/10-notifications/email_sends.dbml, docs/erd/10-notifications/notification_dispatches.dbml, docs/erd/10-notifications/notification_receipts.dbml, docs/erd/10-notifications/notification_templates.dbml, docs/erd/10-notifications/push_tokens.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum notification_dispatch_status {
+  queued
+  sent
+  delivered
+  failed
+  bounced
+  suppressed
+}
+
+enum notification_receipt_kind {
+  fcm_ack
+  fcm_token_invalid
+  fcm_failure
+  ses_delivery
+  ses_hard_bounce
+  ses_soft_bounce
+  ses_complaint
+  ses_reject
+}
+
+enum notification_channel {
+  push
+  email
+}
+
+enum notification_scope {
+  parent
+  device
+  household
+}
+
+enum push_token_status {
+  active
+  invalidated
+  revoked
+}
+
+enum push_token_platform {
+  ios
+  android
+}
+
+/// Source: docs/erd/10-notifications/email_sends.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model EmailSends {
+  id String @id @default(uuid()) @db.Uuid
+  dispatchId String @db.Uuid @map("dispatch_id")
+  fromAddress String @db.VarChar(254) @default("noreply@mail.tbot.com") @map("from_address")
+  replyToAddress String @db.VarChar(254) @default("support@tbot.com") @map("reply_to_address")
+  toAddress String @db.VarChar(254) @map("to_address")
+  subjectRendered String @db.VarChar(998) @map("subject_rendered")
+  /// rendered Handlebars subject (RFC 5322 max line length)
+  listUnsubscribeUrl String @db.VarChar(2048) @map("list_unsubscribe_url")
+  /// CAN-SPAM one-click unsubscribe URL
+  sesConfigurationSet String @db.VarChar(120) @default("tbot-notifications") @map("ses_configuration_set")
+  sesMessageId String? @db.VarChar(254) @map("ses_message_id")
+  /// SES MessageId — null when send was suppressed pre-flight
+  sesRegion String @db.VarChar(32) @default("us-east-1") @map("ses_region")
+  sesSendAttemptCount Int @default(0) @map("ses_send_attempt_count")
+  /// incremented on each retry — ses_throttled / ses_rate_limit retryable errors
+  renderedBodyHtmlSha256 String? @db.VarChar(64) @map("rendered_body_html_sha256")
+  /// sha256 of final HTML body — supports legal audit of "what did parent actually receive"
+  renderedBodyTextSha256 String? @db.VarChar(64) @map("rendered_body_text_sha256")
+  /// sha256 of plaintext body
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  notificationDispatche NotificationDispatches @relation(name: "email_sends_dispatch_id_to_notification_dispatches", fields: [dispatchId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([dispatchId], map: "idx_email_sends_dispatch_id_unique")
+  @@index([sesMessageId], map: "idx_email_sends_ses_message_id")
+  @@map("email_sends")
+}
+
+/// Source: docs/erd/10-notifications/notification_dispatches.dbml
+model NotificationDispatches {
+  id String @id @default(uuid()) @db.Uuid
+  parentAccountId String @db.Uuid @map("parent_account_id")
+  /// cross-domain ref → IdentityService (sys-01 users)
+  deviceId String? @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService — nullable for parent-scoped types
+  notificationType String @db.VarChar(64) @map("notification_type")
+  channel notification_channel
+  status notification_dispatch_status @default(queued)
+  idempotencyKey String? @db.VarChar(120) @map("idempotency_key")
+  /// caller-supplied — Redis 24h SET NX + DB unique index — drops duplicate SQS redeliveries
+  externalId String? @db.VarChar(254) @map("external_id")
+  /// FCM message_id or SES MessageId — populated on success
+  failureReason String? @db.VarChar(254) @map("failure_reason")
+  /// short reason: token_invalid, ses_rejected, quiet_hours, throttle, email_disabled, etc.
+  suppressionReason String? @db.VarChar(64) @map("suppression_reason")
+  /// when status=suppressed: throttle | preference | suppression_cooldown | email_disabled | quiet_hours
+  templateDataHash String? @db.VarChar(64) @map("template_data_hash")
+  /// sha256 of rendered template input — for dedup of identical sends
+  scheduledFor DateTime? @db.Timestamptz(6) @map("scheduled_for")
+  /// set when a send is deferred by timezone-aware scheduling (weekly_summary)
+  sentAt DateTime? @db.Timestamptz(6) @map("sent_at")
+  deliveredAt DateTime? @db.Timestamptz(6) @map("delivered_at")
+  /// set by SES delivery webhook or FCM ack
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  emailSends EmailSends[] @relation(name: "email_sends_dispatch_id_to_notification_dispatches")
+  notificationReceipts NotificationReceipts[] @relation(name: "notification_receipts_dispatch_id_to_notification_dispatches")
+  @@index([parentAccountId, createdAt], map: "idx_notification_dispatches_parent_created")
+  @@unique([idempotencyKey], map: "idx_notification_dispatches_idempotency_key_unique")
+  @@index([status, scheduledFor], map: "idx_notification_dispatches_status_scheduled")
+  @@index([externalId], map: "idx_notification_dispatches_external_id")
+  @@map("notification_dispatches")
+}
+
+/// Source: docs/erd/10-notifications/notification_receipts.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model NotificationReceipts {
+  id String @id @default(uuid()) @db.Uuid
+  dispatchId String @db.Uuid @map("dispatch_id")
+  receiptKind notification_receipt_kind @map("receipt_kind")
+  providerEventId String @db.VarChar(254) @map("provider_event_id")
+  /// SES MessageId or FCM correlation id — used for webhook idempotency dedup
+  providerPayload Json @db.JsonB @default("{}") @map("provider_payload")
+  /// raw provider event for forensic audit
+  bounceSubtype String? @db.VarChar(64) @map("bounce_subtype")
+  /// Permanent | Transient | Suppressed — only when receipt_kind=ses_hard_bounce/soft_bounce
+  receivedAt DateTime @db.Timestamptz(6) @default(now()) @map("received_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  notificationDispatche NotificationDispatches @relation(name: "notification_receipts_dispatch_id_to_notification_dispatches", fields: [dispatchId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([providerEventId], map: "idx_notification_receipts_provider_event_id_unique")
+  @@index([dispatchId, receivedAt], map: "idx_notification_receipts_dispatch_received")
+  @@index([receiptKind, receivedAt], map: "idx_notification_receipts_kind_received")
+  @@map("notification_receipts")
+}
+
+/// Source: docs/erd/10-notifications/notification_templates.dbml
+model NotificationTemplates {
+  id String @id @default(uuid()) @db.Uuid
+  notificationType String @db.VarChar(64) @map("notification_type")
+  /// one of welcome|password_reset|low_battery|device_offline|device_online|ota_available|ota_complete|safety_alert|weekly_summary|account_deletion_scheduled
+  channel notification_channel
+  scope notification_scope @default(parent)
+  templateBody String @db.Text @map("template_body")
+  /// Handlebars source — HTML for email channel + plaintext for push channel
+  templateSubject String? @db.VarChar(254) @map("template_subject")
+  /// email subject Handlebars source; null for push
+  pushPriority String? @db.VarChar(16) @map("push_priority")
+  /// fcm priority — high | normal — only when channel=push
+  androidChannel String? @db.VarChar(64) @map("android_channel")
+  /// fcm android_channel — only when channel=push
+  throttleWindowSeconds Int @default(86400) @map("throttle_window_seconds")
+  /// 86400=24h; per spec §Notification Type Configuration table
+  throttleLimit Int @default(1) @map("throttle_limit")
+  suppressionCooldownSeconds Int @default(0) @map("suppression_cooldown_seconds")
+  /// 4h=14400 for device alerts; 24h=86400 for safety_alert
+  forceSend Boolean @default(false) @map("force_send")
+  /// transactional types: welcome, password_reset, account_deletion_scheduled; safety_alert is forced+undisableable
+  cannotBeDisabled Boolean @default(false) @map("cannot_be_disabled")
+  /// true only for safety_alert — overrides per-parent preferences
+  active Boolean @default(true)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([notificationType, channel], map: "idx_notification_templates_type_channel_unique")
+  @@index([notificationType, active], map: "idx_notification_templates_type_active")
+  @@map("notification_templates")
+}
+
+/// Source: docs/erd/10-notifications/push_tokens.dbml
+model PushTokens {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid @map("user_id")
+  /// cross-domain ref → IdentityService (sys-01 users)
+  token String @db.Text
+  /// opaque token from FCM HTTP v1 / APNs — never logged; treat as secret
+  platform push_token_platform
+  appVersion String? @db.VarChar(64) @map("app_version")
+  deviceLabel String? @db.VarChar(120) @map("device_label")
+  /// iPhone 14, Pixel 8 etc. — for parent-facing device list
+  status push_token_status @default(active)
+  invalidatedAt DateTime? @db.Timestamptz(6) @map("invalidated_at")
+  /// set when FCM returned token_invalid
+  lastUsedAt DateTime? @db.Timestamptz(6) @map("last_used_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([userId, status], map: "idx_push_tokens_user_status")
+  @@unique([token], map: "idx_push_tokens_token_unique")
+  @@map("push_tokens")
+}
+

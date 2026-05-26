@@ -1,0 +1,27 @@
+enum test_result_value {
+  pass
+  fail
+  skip
+}
+
+Table factory_test_results {
+  id                uuid              [pk, note: 'service-generated; never serial']
+  factory_record_id uuid              [not null, note: 'ref → factory_records.id']
+  serial_number     varchar(64)       [not null, note: 'denormalized from factory_records for query convenience; format: TBT-YYYY-{6digits}']
+  test_name         varchar(64)       [not null, note: 'e.g. mic_snr, speaker_spl, servo, display, wifi, ble, battery, nvs, flash, heap, thermal']
+  result            test_result_value [not null]
+  measured_value    text              [note: 'raw measured value string (numeric or enum) from AT+TEST_{name} response']
+  pass_threshold    text              [note: 'pass criteria string applied at test time; stored for auditability']
+  is_critical       boolean           [not null, default: true, note: 'critical=true — single failure halts batch; false — warn only']
+  duration_ms       integer           [note: 'time to execute this test in ms']
+  created_at        timestamptz       [not null, default: `now()`]
+  updated_at        timestamptz       [not null, default: `now()`]
+
+  Indexes {
+    (factory_record_id) [name: 'idx_factory_test_results_factory_record_id', note: 'hot query: docs/sequences/15-manufacturing/factory-provision-and-test.sequence.mmd — fetch all tests for a run']
+    (serial_number, test_name) [name: 'idx_factory_test_results_serial_name', note: 'hot query: docs/sequences/15-manufacturing/factory-provision-and-test.sequence.mmd — per-test yield analysis']
+    (test_name, result) [name: 'idx_factory_test_results_test_name_result', note: 'hot query: docs/sequences/15-manufacturing/factory-provision-and-test.sequence.mmd — failure rate by test type']
+  }
+}
+
+Ref: factory_test_results.factory_record_id > factory_records.id

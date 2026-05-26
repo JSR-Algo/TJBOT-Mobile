@@ -1,0 +1,61 @@
+---
+system: sys-05-conversation-intelligence-and-safety
+flow_id: input-filter
+surface: internal-RPC
+spec_anchor: /software/systems/05-conversation-intelligence-and-safety#input-safety-filter
+actors: [Orchestrator, SafetyService, BlocklistCache, TopicClassifier, PIIDetector]
+apis:
+  - POST /internal/v1/conversation/generate
+externals: []
+queues:
+  - tbot-safety-event
+failure_paths:
+  - blocklist_hard_block
+  - topic_classifier_block
+  - pii_detected_block
+  - filter_timeout_fail_closed
+idempotency: turnId — duplicate turnId returns CONV_DUPLICATE_TURN
+retry: 0 — fail-closed (block) when filter unavailable
+timeout: 500ms hard — pipeline budget <15ms (blocklist 5ms, topic 5ms, PII 3ms)
+status: final
+---
+%% HAND-AUTHORED — sys-05 §8 input safety filter (no sequenceDiagram in spec).
+sequenceDiagram
+    autonumber
+    participant Orchestrator
+    participant SafetyService
+    participant BlocklistCache
+    participant TopicClassifier
+    participant PIIDetector
+
+    Orchestrator->>SafetyService: POST /internal/v1/conversation/generate {transcript, ageBand, locale}
+    SafetyService->>SafetyService: NFKD normalize and lowercase and strip diacritics
+    SafetyService->>BlocklistCache: regex blocklist (12 categories)
+    alt blocklist_hard_block
+        BlocklistCache-->>SafetyService: hit violence|adult_content|self_harm|substance|horror|bullying|dating
+        SafetyService-)SafetyService: emit tbot-safety-event safety.input_blocked
+        SafetyService-->>Orchestrator: block_with_fallback {category, fallback_text}
+    else topic_classifier_block
+        BlocklistCache-->>SafetyService: pass
+        SafetyService->>TopicClassifier: classify (violence_evasion, self_harm_evasion, ...)
+        TopicClassifier-->>SafetyService: confidence > 0.80
+        SafetyService-)SafetyService: emit tbot-safety-event safety.input_blocked
+        SafetyService-->>Orchestrator: block_with_fallback
+    else pii_detected_block
+        BlocklistCache-->>SafetyService: pass
+        SafetyService->>TopicClassifier: classify
+        TopicClassifier-->>SafetyService: pass
+        SafetyService->>PIIDetector: detect phone, email, address, school, full name
+        PIIDetector-->>SafetyService: PII present
+        SafetyService-->>Orchestrator: block_with_fallback pii_blocked
+    else filter_timeout_fail_closed
+        BlocklistCache--xSafetyService: 500ms timeout
+        Note over SafetyService: fail-closed — block input, log conv_safety_fail_closed_total
+        SafetyService-->>Orchestrator: block_with_fallback
+    else allow
+        BlocklistCache-->>SafetyService: pass
+        TopicClassifier-->>SafetyService: pass
+        PIIDetector-->>SafetyService: pass
+        SafetyService-->>Orchestrator: allow continues pipeline
+    end
+    Note over Orchestrator,SafetyService: total budget <15ms — filter unavailable = block (safety > availability)

@@ -1,0 +1,62 @@
+---
+system: sys-14-retention-deletion-backup
+flow_id: transcript-redaction-cron
+surface: cron
+spec_anchor: /software/systems/14-data-retention-deletion-backup#transcript-redaction-job
+actors: [EventBridge, RetentionWorker, PostgreSQL, CloudWatch]
+apis: []
+externals: [EventBridge, CloudWatch]
+queues: []
+failure_paths:
+  - job_runs_constraint_violation
+  - batch_lock_contention
+  - partial_status_max_iterations
+  - worker_crash_mid_batch
+idempotency: redact only WHERE transcript_text != '[redacted]'; replay is no-op
+retry: SKIP LOCKED prevents deadlock; next hourly run picks up missed rows
+timeout: 5m soft (100 iterations × ~3s each); EventBridge no retry on hourly trigger
+status: final
+---
+%% HAND-CURATED. Most legally sensitive retention job — 24h COPPA exposure window. Replaces seed-1 narrowly scoped to transcript redaction.
+sequenceDiagram
+    autonumber
+    participant EventBridge
+    participant RetentionWorker
+    participant PostgreSQL
+    participant CloudWatch
+
+    EventBridge->>RetentionWorker: rate(1 hour) trigger (transcript_redaction)
+    RetentionWorker->>PostgreSQL: INSERT retention_job_runs (id, job_name='transcript_redaction', started_at=NOW(), status='running')
+
+    alt job_runs_constraint_violation
+        PostgreSQL-->>RetentionWorker: PK collision / NOT NULL violation
+        RetentionWorker-->>EventBridge: error (worker exits non-zero)
+        Note over RetentionWorker,CloudWatch: P1 alert — no redaction this hour
+    else accepted
+        PostgreSQL-->>RetentionWorker: ok
+
+        loop iteration 1..100 (or until batch < 1000)
+            alt batch_lock_contention
+                RetentionWorker->>PostgreSQL: UPDATE session_turns SET transcript_text='[redacted]', response_text='[redacted]' WHERE id IN (SELECT id FROM session_turns WHERE created_at < NOW() - INTERVAL '24 hours' AND transcript_text != '[redacted]' LIMIT 1000 FOR UPDATE SKIP LOCKED) RETURNING id
+                PostgreSQL-->>RetentionWorker: 0 rows (all locked by concurrent writer)
+                Note over RetentionWorker: skip — next iteration will retry
+            else rows_redacted
+                PostgreSQL-->>RetentionWorker: N rows returned
+                RetentionWorker->>RetentionWorker: yield 100ms between batches
+            end
+        end
+
+        alt worker_crash_mid_batch
+            RetentionWorker--xPostgreSQL: connection lost
+            Note over PostgreSQL: row-level locks released — next hour run resumes
+        else partial_status_max_iterations
+            Note over RetentionWorker: 100 iterations exhausted — mark status='partial'
+            RetentionWorker->>PostgreSQL: UPDATE retention_job_runs SET completed_at=NOW(), status='partial', rows_affected, iterations=100
+        else completed
+            RetentionWorker->>PostgreSQL: UPDATE retention_job_runs SET completed_at=NOW(), status='completed', rows_affected, iterations
+        end
+
+        RetentionWorker->>CloudWatch: emit retention_job_duration_ms, retention_rows_deleted (job_name=transcript_redaction)
+    end
+
+    Note over EventBridge,CloudWatch: 24h COPPA redaction window — idempotent via != '[redacted]' guard — alert if rows_affected=0 for 3 consecutive hours (potential silent failure)

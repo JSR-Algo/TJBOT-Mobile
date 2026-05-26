@@ -1,0 +1,87 @@
+---
+system: sys-11-telemetry-audit-cost
+flow_id: device-batch-ingest
+surface: device
+spec_anchor: /software/systems/11-telemetry-audit-cost#post-v1telemetrybatch
+actors: [Device, Gateway, TelemetryService, Redis, KinesisFirehose, S3]
+apis:
+  - POST /v1/telemetry/batch
+externals: [Redis, KinesisFirehose, S3]
+queues: []
+failure_paths:
+  - mtls_cert_invalid
+  - device_id_cert_cn_mismatch
+  - batch_too_large
+  - rate_limit_exceeded
+  - circuit_breaker_open
+  - pii_rejected
+  - firehose_put_failure
+idempotency: Redis SET NX on batch_id with 24h TTL; duplicate returns cached response
+retry: device-side buffer up to 500 events / 24h with FIFO eviction; backoff on 429
+timeout: 10s p99
+status: final
+---
+%% HAND-CURATED. sys-11 has zero seed — composed from spec processing pipeline §3.2.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant Gateway
+    participant TelemetryService
+    participant Redis
+    participant KinesisFirehose
+    participant S3
+
+    Device->>Gateway: POST /v1/telemetry/batch {device_id, batch_id, events[≤100]} (mTLS)
+
+    alt mtls_cert_invalid
+        Gateway-->>Device: 401 invalid_cert
+    else device_id_cert_cn_mismatch
+        Gateway->>TelemetryService: forward
+        TelemetryService-->>Gateway: 401 cn_mismatch
+        Gateway-->>Device: 401
+    else batch_too_large
+        TelemetryService-->>Gateway: 413 batch_too_large (> 100 events)
+        Gateway-->>Device: 413
+    else duplicate batch
+        TelemetryService->>Redis: SET NX telemetry:batch:{batch_id} EX 86400
+        Redis-->>TelemetryService: exists (cached response)
+        TelemetryService-->>Gateway: 200 cached {accepted_count, rejected_count, rejected_ids}
+        Gateway-->>Device: 200
+    else rate_limit_exceeded
+        TelemetryService->>Redis: ZADD sliding-window for device
+        Redis-->>TelemetryService: count > 100/min
+        TelemetryService-->>Gateway: 429 rate_limited
+        Gateway-->>Device: 429
+    else circuit_breaker_open
+        Note over TelemetryService: 3+ consecutive violations in 1 min → device blocked 5 min
+        TelemetryService-->>Gateway: 429 circuit_open
+        Gateway-->>Device: 429
+    else success path
+        TelemetryService->>Redis: SET NX telemetry:batch:{batch_id} EX 86400
+        Redis-->>TelemetryService: ok (new)
+        TelemetryService->>Redis: ZADD sliding-window OK
+        loop per event
+            alt pii_rejected
+                Note over TelemetryService: known PII field names — email pattern — phone 7+ digits → reject
+                TelemetryService->>TelemetryService: counter telemetry_pii_rejection_total++
+            else accepted
+                TelemetryService->>TelemetryService: validate event schema
+            end
+        end
+        alt firehose_put_failure
+            TelemetryService->>KinesisFirehose: PutRecordBatch(accepted events)
+            KinesisFirehose-->>TelemetryService: partial failure
+            TelemetryService->>KinesisFirehose: per-event PutRecord fallback
+            alt fallback also fails
+                Note over TelemetryService,S3: events lost (best-effort) — P1 CloudWatch alarm fires
+            end
+        else firehose_ok
+            TelemetryService->>KinesisFirehose: PutRecordBatch(accepted events)
+            KinesisFirehose->>S3: buffered (5MB/300s) → s3://tbot-telemetry/raw/dt=YYYY-MM-DD/device=UUID/ GZIP
+        end
+        TelemetryService->>Redis: cache response with 24h TTL
+        TelemetryService-->>Gateway: 200 {accepted_count, rejected_count, rejected_ids}
+        Gateway-->>Device: 200
+    end
+
+    Note over Device,S3: idempotent via batch_id (24h dedup) — best-effort delivery — device drops oldest on buffer overflow (500 events / 24h)

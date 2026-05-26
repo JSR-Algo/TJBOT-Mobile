@@ -1,7 +1,7 @@
 /**
  * RobotBody — software-twin renderer for the 12 canonical Motion primitives.
  *
- * Source of truth: `tbot-infra/contracts/motion.{d.ts,js}` (Wave 1, ADR-010).
+ * Source of truth: `TJBot-infra/contracts/motion.{d.ts,js}` (Wave 1, ADR-010).
  * Owning task: RM-03 (`.omc/plans/expressive-robot-companion-rewrite.md` §6 Sprint 7b).
  *
  * Why this exists:
@@ -27,7 +27,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View, type ViewStyle } from 'react-native';
 
-// ─── Motion vocabulary (mirrors tbot-infra/contracts/motion.js) ─────────────
+// ─── Motion vocabulary (mirrors TJBot-infra/contracts/motion.js) ─────────────
 
 export type Motion =
   | 'LOOK_FORWARD'

@@ -8,7 +8,7 @@
  * delivered by the `useNativeDriver: true` setting on every transform; this
  * unit suite covers the structural acceptance only.
  *
- * Channel taxonomy is mirrored from `tbot-infra/contracts/motion.{d.ts,js}`.
+ * Channel taxonomy is mirrored from `TJBot-infra/contracts/motion.{d.ts,js}`.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';

@@ -1,0 +1,21 @@
+// topics — content topic taxonomy (sys-06).
+// DISTINCT from safety_topics (sys-05, Lane D) — content topics are tagging/personalization labels,
+// not classifier outputs. Do not merge.
+// Source: docs/sequences/06-content/topic-decay.sequence.mmd
+
+Table topics {
+  id          uuid         [pk]
+  slug        varchar(64)  [not null, note: 'machine-readable; e.g. animals, colors, numbers']
+  label       varchar(254) [not null, note: 'human-readable display label']
+  locale      varchar(16)  [not null, note: 'BCP-47']
+  parent_id   uuid         [note: 'FK → topics.id; nullable for root-level topics (topic hierarchy)']
+  created_at  timestamptz  [not null, default: `now()`]
+  updated_at  timestamptz  [not null, default: `now()`]
+
+  Indexes {
+    (slug, locale) [unique, name: 'idx_topics_slug_locale_unique']
+    (parent_id) [name: 'idx_topics_parent_id']
+  }
+}
+
+Ref: topics.parent_id > topics.id

@@ -1,0 +1,75 @@
+---
+system: sys-07-parent-controls-summary
+flow_id: controls-update
+surface: mobile
+spec_anchor: /software/systems/07-parent-controls-summary#put-v1controlsdeviceid
+actors: [ParentApp, Gateway, ControlsService, PostgreSQL, ConfigService]
+apis:
+  - PUT /v1/controls/:deviceId
+  - GET /v1/controls/:deviceId
+externals: []
+queues: []
+failure_paths:
+  - unauthorized
+  - insufficient_role
+  - device_not_found
+  - invalid_daily_limit
+  - invalid_per_session_limit
+  - invalid_quiet_hours
+  - version_conflict
+  - rate_limited
+  - config_service_failure
+idempotency: optimistic concurrency via expected `version` field; If-Match style version check
+retry: client re-fetch + merge on 409 VERSION_CONFLICT; no automatic retry on validation errors
+timeout: 5s p99
+status: final
+---
+%% HAND-CURATED. Race-condition surfacing per plan §11: ETag/If-Match version field on PUT.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant ControlsService
+    participant PostgreSQL
+    participant ConfigService
+
+    ParentApp->>Gateway: PUT /v1/controls/:deviceId {settings, expected_version}
+    Gateway->>Gateway: JWT validate and household membership and rate-limit 10/hr/device
+    Gateway->>ControlsService: forward request
+
+    alt unauthorized
+        ControlsService-->>Gateway: 401 UNAUTHORIZED
+        Gateway-->>ParentApp: 401
+    else insufficient_role
+        ControlsService-->>Gateway: 403 INSUFFICIENT_ROLE (viewer attempted write)
+        Gateway-->>ParentApp: 403
+    else device_not_found
+        ControlsService-->>Gateway: 404 DEVICE_NOT_FOUND
+        Gateway-->>ParentApp: 404
+    else invalid_payload
+        Note over ControlsService: invalid_daily_limit · invalid_per_session_limit · invalid_quiet_hours
+        ControlsService-->>Gateway: 422 {code}
+        Gateway-->>ParentApp: 422
+    else success
+        ControlsService->>PostgreSQL: UPDATE parent_controls SET ..., version=version+1 WHERE device_id=$1 AND version=$expected
+        alt version_conflict (0 rows affected)
+            PostgreSQL-->>ControlsService: 0 rows
+            ControlsService-->>Gateway: 409 VERSION_CONFLICT
+            Gateway-->>ParentApp: 409 {currentVersion}
+            ParentApp->>Gateway: GET /v1/controls/:deviceId
+            Gateway-->>ParentApp: 200 {current settings, version}
+        else updated
+            PostgreSQL-->>ControlsService: 1 row
+            ControlsService->>ConfigService: rebuildConfig(deviceId) (async)
+            alt config_service_failure
+                ConfigService-->>ControlsService: error
+                ControlsService-->>Gateway: 200 {configPropagationStatus: "pending"}
+            else config_rebuilt
+                ConfigService-->>ControlsService: ok
+                ControlsService-->>Gateway: 200 {configPropagationStatus: "pushed"}
+            end
+            Gateway-->>ParentApp: 200 {updated controls, configPropagationStatus}
+        end
+    end
+
+    Note over ParentApp,ConfigService: optimistic concurrency via version field — last-write-wins with 409 on stale version — async config rebuild reconciled every 5 minutes

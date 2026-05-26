@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import * as learningApi from '../api/learning';
+import * as learningApi from '../services/api/learning';
 
 export interface Interaction {
   id: string;

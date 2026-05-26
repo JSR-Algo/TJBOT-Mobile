@@ -1,0 +1,29 @@
+// parent_controls — per-device parental control settings with optimistic concurrency.
+// Versioned via `version` for ETag/If-Match conflict detection.
+// Source: docs/sequences/07-parent/controls-update.sequence.mmd
+// Source: docs/sequences/07-parent/dst-rebuild.sequence.mmd
+
+Table parent_controls {
+  id                    uuid        [pk]
+  device_id             uuid        [not null, note: 'cross-domain ref → DeviceService (devices.id)']
+  household_id          uuid        [not null, note: 'cross-domain ref → IdentityService (households.id)']
+  daily_limit_minutes   smallint    [note: 'NULL = no limit; enforced by ConfigService']
+  per_session_limit_min smallint    [note: 'NULL = no limit']
+  quiet_hours_enabled   boolean     [not null, default: false]
+  quiet_hours_start     time        [note: 'local time; NULL when quiet_hours_enabled=false']
+  quiet_hours_end       time        [note: 'local time; NULL when quiet_hours_enabled=false']
+  timezone              varchar(64) [not null, note: 'IANA timezone; used for DST rebuild in dst-rebuild.sequence.mmd']
+  content_toggles       jsonb       [note: 'map of topic_slug → enabled boolean; governs content selection']
+  version               integer     [not null, default: 0, note: 'optimistic concurrency counter; incremented on each PUT']
+  created_at            timestamptz [not null, default: `now()`]
+  updated_at            timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (device_id) [unique, name: 'idx_parent_controls_device_id_unique']
+    (household_id) [name: 'idx_parent_controls_household_id']
+    (quiet_hours_enabled, timezone) [name: 'idx_parent_controls_quiet_hours_tz', note: 'hot query: docs/sequences/07-parent/dst-rebuild.sequence.mmd — SELECT DISTINCT timezone WHERE quiet_hours_enabled=true']
+  }
+}
+
+// Ref: parent_controls.device_id > devices.id        // cross-domain ref → DeviceService
+// Ref: parent_controls.household_id > households.id  // cross-domain ref → IdentityService

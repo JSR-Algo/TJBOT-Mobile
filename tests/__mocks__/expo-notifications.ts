@@ -12,3 +12,5 @@ export const cancelScheduledNotificationAsync = jest.fn().mockResolvedValue(unde
 export const cancelAllScheduledNotificationsAsync = jest.fn().mockResolvedValue(undefined);
 export const getBadgeCountAsync = jest.fn().mockResolvedValue(0);
 export const setBadgeCountAsync = jest.fn().mockResolvedValue(true);
+export const getLastNotificationResponseAsync = jest.fn().mockResolvedValue(null);
+export const DEFAULT_ACTION_IDENTIFIER = 'expo.modules.notifications.actions.DEFAULT';

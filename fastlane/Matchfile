@@ -1,0 +1,20 @@
+# TJBot-mobile Fastlane Matchfile
+#
+# Match stores iOS code-signing assets (distribution cert + provisioning profile)
+# in a private Git repository, encrypted with MATCH_PASSWORD.
+#
+# The repo URL below is a placeholder. The repo must be created by the mobile
+# release owner as a private GitHub repo before the first Fastlane run; see
+# WS6 prereq in /Users/manhhodinh/Documents/TJBot/TJBot-mobile/.omc/plans/store-readiness-deploy.md.
+#
+# Required env vars:
+#   MATCH_PASSWORD               Symmetric key used to encrypt the cert repo
+#   MATCH_GIT_BASIC_AUTHORIZATION  Optional — base64("user:token") for HTTPS auth in CI
+
+git_url(ENV["MATCH_GIT_URL"] || "git@github.com:TJBot/match-certs.git")
+storage_mode("git")
+type("appstore")
+app_identifier(["com.TJBot.mobile"])
+
+# CI runners pull read-only; cert provisioning + rotation is a manual step.
+readonly(ENV["MATCH_READONLY"] != "false")

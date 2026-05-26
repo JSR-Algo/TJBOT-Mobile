@@ -1,0 +1,67 @@
+---
+system: sys-03-device-runtime-local-interaction
+flow_id: boot
+surface: device
+spec_anchor: /software/systems/03-device-runtime-local-interaction#boot-sequence
+actors: [Hardware, Bootloader, RuntimeApp, ConfigService, RealtimeService]
+apis:
+  - GET /v1/device/config
+  - GET /v1/realtime/connect
+externals: []
+queues: []
+failure_paths:
+  - firmware_signature_invalid
+  - repeated_boot_crash
+  - config_apply_failed
+  - wifi_unavailable
+idempotency: boot_count NVS counter monotonic — boot_fail_window tracks repeated failure
+retry: bootloader will retry signature verify; runtime app retries Wi-Fi/WS with exponential backoff
+timeout: 30s p99 from power-on to IDLE_READY
+status: final
+---
+%% HAND-CURATED. Adapted from sys-03 §14 Phase A.
+sequenceDiagram
+    autonumber
+    participant Hardware
+    participant Bootloader
+    participant RuntimeApp
+    participant ConfigService
+    participant RealtimeService
+
+    Hardware->>Bootloader: power on / reset
+    alt firmware_signature_invalid
+        Bootloader-->>Hardware: refuse to launch, fallback to safe slot or halt
+    else success
+        Bootloader->>Bootloader: verify firmware signature (ECDSA P-256 with factory-embedded key)
+        Bootloader->>RuntimeApp: launch application (state=BOOTING)
+    end
+
+    RuntimeApp->>RuntimeApp: mount NVS, load sys.last_config_etag, read boot_fail_window
+    alt repeated_boot_crash (boot_fail_window >= 3)
+        RuntimeApp->>RuntimeApp: skip normal startup → state=SAFE_MODE (display support code, allow heartbeat and diagnostics only)
+    else success
+        RuntimeApp->>RuntimeApp: init RTOS tasks (audio, network, supervisor at priority 24)
+        RuntimeApp->>RuntimeApp: init audio pipeline (DMA buffers, ring buffers)
+    end
+
+    RuntimeApp->>RuntimeApp: connect Wi-Fi
+    alt wifi_unavailable
+        RuntimeApp->>RuntimeApp: state=OFFLINE_LIMITED, schedule reconnect (exponential 2s→5m)
+    else success
+        RuntimeApp->>ConfigService: GET /v1/device/config (Authorization: DeviceBearer, If-None-Match: sys.last_config_etag)
+        alt config_apply_failed (E-CFG-422)
+            ConfigService-->>RuntimeApp: 200 payload that fails schema validation
+            RuntimeApp->>RuntimeApp: reject, keep previous config, emit fault E-CFG-422
+        else 304 Not Modified
+            ConfigService-->>RuntimeApp: 304 (update sys.last_heartbeat_at only)
+        else success
+            ConfigService-->>RuntimeApp: 200 {configVersion, etag, interactionPolicy, …}
+            RuntimeApp->>RuntimeApp: persist nvs_policy, publish CONFIG_APPLIED event
+        end
+
+        RuntimeApp->>RealtimeService: WS GET /v1/realtime/connect?device_id&session_token
+        RealtimeService-->>RuntimeApp: 101 session ready
+        RuntimeApp->>RuntimeApp: play ready chime, state=IDLE_READY
+    end
+
+    Note over Hardware,RealtimeService: timeout 30s p99 · safe-mode triggers on boot_fail_window>=3 in 15min · last_boot_reason enum logged for support diagnostics

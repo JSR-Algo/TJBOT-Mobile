@@ -1,0 +1,115 @@
+# Allowlist for scan-hardcoded.mjs
+# One literal per line. Lines starting with # are ignored.
+# These strings are intentionally not translated (proper nouns, brand,
+# content-strings owned by curriculum, etc.)
+
+# Brand
+TJBot
+Robot
+Mira
+Mai
+
+# Tech / proper nouns
+Wi-Fi
+Apple
+Google
+
+# Sample/placeholder content owned by curriculum (not UI strings)
+Animal Friends
+Hello Friends
+I like apples.
+This is a cat.
+cat
+apple
+apples
+
+# Sticker names (content)
+Brave Speaker
+Word Hunter
+Daily Star
+
+# UI separators / mathematical glyphs
+·
+—
+–
+…
+
+# Phase 11.1 — additional brand + sample data
+Buddy Panda
+Yummy Words
+Apple Pay
+Hello Friends starter course
+
+# Phase 11.1 — placeholder customer data (not UI copy)
+Sarah Chen
+Brooklyn, NY 11215
+Order #TB-48217
+sarah@example.com
+
+# Phase 11.1 — design-canvas chrome (debug-only, never user-facing)
+All Frames
+Nav Map
+
+# Phase 11.1 — version markers (auto-rendered from build, not localizable)
+v1.4.2
+v1.5.0
+
+# Phase 11.1 — scanner false-positives (JS expressions captured as text)
+: (t.view === 'canvas' ?
+0 && progress
+$149.00 · paid with Apple Pay
+
+# Phase 11.1 — quoted-content scanner quirks (literal renders with surrounding quotes)
+"cat"
+"Hello! I'm so glad you're here."
+
+# Phase 11.1.b — composite UI strings ("<label> · <data>" / "<state> · <state>")
+# Runtime translates each side via i18n.js dot-split fallback when both sides
+# are individually in the catalog (or one side is data and the other is in
+# catalog). Allowlisted as combined strings because the static scanner is
+# grep-grade and cannot simulate runtime dot-split. Translatable sub-strings
+# (e.g. "Working", "all good", "update available") are added to en.json+vi.json
+# so the runtime walker actually translates them at render time.
+100% · like new
+247 Linden St · Apt 3B
+28 lessons · added 2 minutes ago
+3 days · last started Sunday
+3 installed · 1.2 GB used
+4 minutes · ready to play
+78% · charging on dock
+9:00 PM – 7:00 AM · half volume
+Arrives at 247 Linden St · free shipping
+Buddy: Panda · Just starting
+Casa-Familia · strong signal
+Excellent · −48 dBm
+Lesson 1 · Hello, food!
+Lesson 4 of 6 · about 4 minutes
+Lesson 4 · about 2 minutes left
+Mon–Fri · 9 AM – 6 PM ET
+Normal · 28°C
+Place order · $149.00
+ROB-2A8F · Cream
+Robot · Cream
+Robot · ROB-2A8F
+Robot · activated
+Signal: strong · Battery: 78%
+Strong signal · 5 GHz
+Today's lesson · Animals at home
+Today: 1 lesson · 4 min
+Touch ID · default
+USPS · 9405 5113 1234 5678 9012 34
+Unit 2 · Animals
+Up to date · 2 minutes ago
+Visa · expires 12/27
+Volume 6 · Quiet hours on
+Working · last test today
+Working · volume 6
+Yesterday: 1 lesson · 4 min
+Yummy Words · full course
+hello@robotbuddy.app · reply in ~1 day
+v1.4.2 · update available
+v1.5.0 · 24 MB
+● Everything is working
+● Online · all good
+⚠️ Robot is offline
+⚡ On dock · 32 min to full

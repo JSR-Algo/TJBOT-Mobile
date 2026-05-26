@@ -1,0 +1,54 @@
+---
+system: sys-17-api-gateway-rate-limiting
+flow_id: rate-limit-violation-event
+surface: internal-RPC
+spec_anchor: /software/systems/17-api-gateway-rate-limiting#7-event-and-queue-design
+actors: [ParentApp, Gateway, Redis, SQS, SecurityService]
+apis: []
+externals: []
+queues: [tbot-security-events]
+failure_paths:
+  - circuit_breaker_tripped
+  - sqs_emit_failed
+  - cloudwatch_emit_dropped
+idempotency: SQS message body keyed by {requestId, category, identifier} — sys-13 consumer dedups; CloudWatch access logs are append-only and may duplicate during retries
+retry: gateway fire-and-forget — no retry on SQS failure (logged to CloudWatch, alarmed); circuit breaker fast-path rejects without re-evaluating sliding window
+timeout: SQS send 1s budget, dropped on timeout (never blocks request path)
+status: final
+---
+%% HAND-CURATED. Sliding-window Lua + violation event emission (sys-17 §3.2, §7) — request rejected with 429 emits rate_limit_violation to SQS for sys-13 fanout.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant Redis
+    participant SQS
+    participant SecurityService
+
+    ParentApp->>Gateway: HTTP request (post-auth, pre-handler)
+    Gateway->>Redis: EVAL sliding-window Lua {category, identifier, windowMs, max, burst}
+    Note over Redis: 1. check circuit breaker rl_blocked:{cat}:{id}<br/>2. ZREMRANGEBYSCORE outside window<br/>3. ZCARD count vs max<br/>4. branch — under / burst / over
+    alt circuit_breaker_tripped
+        Redis-->>Gateway: BLOCKED — fast-path reject (no ZADD)
+        Gateway-->>ParentApp: 429 TOO_MANY_REQUESTS and Retry-After
+    else over limit
+        Redis-->>Gateway: REJECT — increment rl_violations:{cat}:{id}, trip breaker if threshold
+        Gateway-->>ParentApp: 429 TOO_MANY_REQUESTS and Retry-After
+        Note over Gateway: emission sampled — first 10 violations per identifier per hour, then 10% sampling
+        Gateway-)SQS: SendMessage tbot-security-events {eventType: "rate_limit_violation", requestId, category, identifier, currentCount, maxAllowed, windowMs, violationCount, circuitBreakerTripped}
+        alt sqs_emit_failed
+            SQS-->>Gateway: 5xx / timeout
+            Note over Gateway: log to CloudWatch — do NOT retry, do NOT block response (already sent)
+        else emitted
+            SQS-->>Gateway: 200 MessageId
+            SQS-->>SecurityService: dequeue (sys-13 consumer)
+        end
+    else burst zone
+        Redis-->>Gateway: ALLOW and WARNING — ZADD and emit burst warning
+        Gateway-->>ParentApp: 2xx and warning header
+    else under limit
+        Redis-->>Gateway: ALLOW — ZADD entry
+        Gateway-->>ParentApp: 2xx (continue chain)
+    end
+
+    Note over Gateway,SQS: emission is fire-and-forget — SQS failure never blocks the 429 response — sys-13 consumes for IP-blocklist promotion and ops alarms

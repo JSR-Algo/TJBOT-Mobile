@@ -1,0 +1,33 @@
+@startuml TBOT-Progress
+title Domain · progress — kid-side post-session retrospectives
+left to right direction
+
+actor Child
+
+package "progress" {
+  usecase "View Today's Progress" as UC_PRG_TODAY
+  usecase "View Words Practiced" as UC_PRG_WORDS
+  usecase "View Lesson Summary"  as UC_PRG_SUMMARY
+  usecase "View Review Needed"   as UC_PRG_REVIEW
+  usecase "View Celebration"     as UC_PRG_CELEBRATE
+}
+
+Child --> UC_PRG_TODAY
+Child --> UC_PRG_WORDS
+Child --> UC_PRG_SUMMARY
+Child --> UC_PRG_REVIEW
+Child --> UC_PRG_CELEBRATE
+
+UC_PRG_TODAY ..> UC_PRG_WORDS  : drill down
+UC_PRG_WORDS ..> UC_PRG_REVIEW : "Practice 2 words"
+
+note right of UC_PRG_SUMMARY
+  [entry] from lesson-session : UC_LSN_DONE
+end note
+
+note right of UC_PRG_REVIEW
+  [exit] → lesson-session : UC_LSN_START (review run)
+end note
+
+' Files: src/features/progress/*Page.jsx
+@enduml

@@ -1,0 +1,65 @@
+---
+system: sys-11-telemetry-audit-cost
+flow_id: session-cost-attribution
+surface: internal-RPC
+spec_anchor: /software/systems/11-telemetry-audit-cost#cost-attribution
+actors: [RealtimeService, SQS, CostAttributionWorker, PostgreSQL, EventBridge]
+apis: []
+externals: [SQS, EventBridge]
+queues:
+  - tbot-session-completed
+  - tbot-session-completed-dlq
+failure_paths:
+  - duplicate_session
+  - rate_card_missing
+  - dlq_after_5_retries
+  - daily_aggregation_partial
+idempotency: UNIQUE constraint on session_id + pre-check INSERT ... ON CONFLICT DO NOTHING
+retry: SQS max 5 retries with backoff; DLQ 14-day retention
+timeout: 60s visibility timeout per message
+status: final
+---
+%% HAND-CURATED. sys-11 has zero seed — composed from spec §4 cost attribution + worker config.
+sequenceDiagram
+    autonumber
+    participant RealtimeService as RealtimeService (sys-04)
+    participant SQS as SQS tbot-session-completed
+    participant CostAttributionWorker
+    participant PostgreSQL
+    participant EventBridge
+
+    RealtimeService->>SQS: enqueue {session_id, device_id, household_id, turns[], audio_seconds, tokens, tts_chars}
+    SQS->>CostAttributionWorker: deliver message (visibility 60s)
+    CostAttributionWorker->>PostgreSQL: SELECT cost_rate_card WHERE effective_to IS NULL
+
+    alt rate_card_missing
+        PostgreSQL-->>CostAttributionWorker: 0 rows
+        Note over CostAttributionWorker: log P2 — message returns to queue for retry
+        CostAttributionWorker--xSQS: NACK (retry)
+    else rate_card_loaded
+        PostgreSQL-->>CostAttributionWorker: rate card row
+        CostAttributionWorker->>CostAttributionWorker: compute stt_cost and llm_cost and tts_cost and infra_cost = total
+        CostAttributionWorker->>PostgreSQL: INSERT cost_attribution (..., session_id) ON CONFLICT (session_id) DO NOTHING
+        alt duplicate_session
+            PostgreSQL-->>CostAttributionWorker: 0 rows inserted (already attributed)
+            Note over CostAttributionWorker: duplicate — ACK and continue
+        else inserted
+            PostgreSQL-->>CostAttributionWorker: 1 row
+        end
+        CostAttributionWorker-->>SQS: ACK
+    end
+
+    alt dlq_after_5_retries
+        SQS--xSQS: 5 attempts exhausted → tbot-session-completed-dlq (14-day retention)
+        Note over SQS: alert when DLQ depth > 0 for 30 min
+    end
+
+    Note over EventBridge,PostgreSQL: daily aggregation cron(0 2 * * ? *)
+    EventBridge->>CostAttributionWorker: cron 02:00 UTC
+    CostAttributionWorker->>PostgreSQL: SELECT cost_attribution WHERE date = yesterday
+    alt daily_aggregation_partial
+        Note over CostAttributionWorker: per-device upsert — partial failures logged but don't abort
+    end
+    CostAttributionWorker->>PostgreSQL: INSERT daily_cost_aggregates (date, device_id, ...) ON CONFLICT (date, device_id) DO UPDATE
+
+    Note over RealtimeService,EventBridge: idempotent via UNIQUE(session_id) and unique (date, device_id) — typical session $0.022 — alert if session > $0.15

@@ -1,0 +1,86 @@
+---
+system: sys-01-identity-household-access
+flow_id: freshness-refresh
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#freshness-refresh-adr-0009
+actors: [ParentApp, OS, Gateway, IdentityService, PostgreSQL]
+apis:
+  - POST /v1/parent/session/refresh-freshness
+externals: []
+queues: []
+failure_paths:
+  - biometric_failed_fallback_pin
+  - biometric_enrollment_changed
+  - rate_limited_30_per_24h
+  - jti_revoked
+  - expires_at_passed
+idempotency: rate-limited 30/24h per jti — not idempotent beyond that bound
+retry: no retry — biometric failure routes to PIN fallback; server errors route to PIN gate
+timeout: 2s
+status: final
+---
+%% HAND-CURATED. Biometric freshness cache per ADR-0009 D2-D7. Client checks isJwtFresh(); if stale but hasValidSession(), prompts OS biometric. On success calls /refresh-freshness. Server validates jti + enrollment_id + rate-limit. Returns new issued_at + idle_until; expires_at unchanged. Audit log on every call (D7).
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant OS
+    participant Gateway
+    participant IdentityService
+    participant PostgreSQL
+
+    Note over ParentApp: Sensitive action requested — requireFreshParentJwt() helper invoked (ADR-0009 D8)
+
+    ParentApp->>ParentApp: check parent.store.isJwtFresh() — issued_at within 60s?
+    alt jwt_already_fresh
+        Note over ParentApp: proceed to action — no round-trip needed
+    else jwt_stale — check hasValidSession()
+        ParentApp->>ParentApp: check parent.store.hasValidSession() — expires_at in future?
+        alt session_expired
+            Note over ParentApp: route to full ParentGateScreen (PIN entry)
+        else valid_session — attempt biometric refresh (ADR-0009 D3)
+            ParentApp->>OS: biometric prompt (FaceID / BiometricPrompt) — read JWT from Keychain (D1)
+            alt biometric_enrollment_changed (iOS: evaluatedPolicyDomainState changed, Android: setInvalidatedByBiometricEnrollment)
+                OS-->>ParentApp: biometric_enrollment_changed
+                Note over ParentApp: ADR-0009 D6 — new enrollment invalidates cache, fall through to PIN
+                ParentApp->>ParentApp: route to ParentGateScreen (PIN entry)
+            else biometric_failed_fallback_pin
+                OS-->>ParentApp: biometric failed (liveness / no match)
+                ParentApp->>ParentApp: route to ParentGateScreen (PIN entry) (ADR-0009 D3d)
+            else biometric_success
+                OS-->>ParentApp: JWT from biometric-gated Keychain entry
+                ParentApp->>Gateway: POST /v1/parent/session/refresh-freshness {jti} and Bearer {parent_jwt}
+                Gateway->>Gateway: validate parent JWT signature — extract user_id, jti
+                Gateway->>IdentityService: forward request
+                IdentityService->>PostgreSQL: SELECT jti, revoked_at, expires_at, biometric_enrollment_id, biometric_enabled FROM parent_sessions WHERE jti={jti}
+                PostgreSQL-->>IdentityService: session row or null
+                alt jti_revoked (revoked_at IS NOT NULL)
+                    IdentityService-->>Gateway: 401 jti_revoked
+                    Gateway-->>ParentApp: 401
+                    ParentApp->>ParentApp: clear Keychain and route to ParentGateScreen
+                else expires_at_passed
+                    IdentityService-->>Gateway: 401 expires_at_passed
+                    Gateway-->>ParentApp: 401
+                    ParentApp->>ParentApp: clear Keychain and route to ParentGateScreen
+                else rate_limited_30_per_24h
+                    IdentityService->>PostgreSQL: SELECT COUNT(*) FROM parent_session_refreshes WHERE jti={jti} AND refreshed_at > now()-interval '24h'
+                    PostgreSQL-->>IdentityService: refresh_count >= 30
+                    IdentityService-->>Gateway: 429 rate_limited_30_per_24h {retry_hint: 'use_pin'}
+                    Gateway-->>ParentApp: 429
+                    ParentApp->>ParentApp: route to ParentGateScreen (PIN entry) (ADR-0009 D4)
+                else all_checks_pass
+                    IdentityService->>PostgreSQL: INSERT parent_session_refreshes {jti, refreshed_at: now()}
+                    PostgreSQL-->>IdentityService: ok
+                    IdentityService->>PostgreSQL: UPDATE parent_sessions SET issued_at=now(), idle_until=now()+interval '15min' WHERE jti={jti}
+                    PostgreSQL-->>IdentityService: updated (expires_at UNCHANGED per D2)
+                    IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'parent.session.freshness_refreshed', payload: {biometric_used: true, jti}, actor_user_id: user_id}
+                    PostgreSQL-->>IdentityService: ok
+                    IdentityService-->>Gateway: 200 {jti, issued_at: now(), idle_until: now()+15min, expires_at: unchanged}
+                    Gateway-->>ParentApp: 200
+                    ParentApp->>OS: Keychain — write updated claims (issued_at, idle_until) (D1)
+                    ParentApp->>ParentApp: parent.store — update issued_at and idle_until, isJwtFresh() now true
+                end
+            end
+        end
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 2s — rate-limited 30/24h per jti (D4) — expires_at never extended (D2) — biometric off by default, opt-in (D9) — audit every call (D7)

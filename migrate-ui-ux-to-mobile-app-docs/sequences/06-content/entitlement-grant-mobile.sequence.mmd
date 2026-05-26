@@ -1,0 +1,77 @@
+---
+system: sys-06-content-and-personalization
+flow_id: entitlement-grant-mobile
+surface: mobile
+spec_anchor: /software/systems/06-content-and-personalization#post-v1contententitlements
+actors: [ParentApp, Gateway, ContentService, BillingService, PostgreSQL, Redis]
+apis:
+  - POST /v1/content/entitlements
+externals: [Redis]
+queues: []
+failure_paths:
+  - parent_jwt_stale_re_pin_required
+  - content_pack_not_found
+  - already_entitled
+  - subscription_required_not_active
+  - parent_approval_required_pending
+idempotency: X-Request-Id 24h dedup; idempotent on (user_id, content_pack_id) — returns existing row if already granted
+retry: caller-side exponential backoff on 5xx only
+timeout: 3s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant ContentService
+    participant BillingService
+    participant PostgreSQL
+    participant Redis
+
+    Note over ParentApp: parent in cl_add_free confirms course unlock (ADR-0005 D7 — replaces hardcoded 7351)
+    ParentApp->>Gateway: POST /v1/content/entitlements {user_id, content_pack_id, X-Request-Id} and parent JWT Bearer
+    Gateway->>Gateway: auth-resolver — JWT audience: tbot:parent (sys-17)
+    alt parent_jwt_stale_re_pin_required
+        Note over Gateway: parent JWT issued > 60s ago (ADR-0005 D6)
+        Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
+    else authenticated
+        Gateway->>ContentService: forward request
+        ContentService->>ContentService: verify parent JWT freshness < 60s (ADR-0005 D6)
+        ContentService->>PostgreSQL: SELECT content_packs WHERE id=?
+        alt content_pack_not_found
+            PostgreSQL-->>ContentService: no rows
+            ContentService-->>Gateway: 404 content_pack_not_found
+            Gateway-->>ParentApp: 404
+        else pack found
+            PostgreSQL-->>ContentService: content_pack row
+            ContentService->>BillingService: GET /internal/v1/entitlements/:householdId (service-token — see entitlement-check-session-start.sequence.mmd)
+            BillingService-->>ContentService: {tier, features, subscriptionActive}
+            alt subscription_required_not_active
+                Note over ContentService: content_pack requires subscription tier, billing reports inactive
+                ContentService-->>Gateway: 402 subscription_required_not_active
+                Gateway-->>ParentApp: 402
+            else parent_approval_required_pending
+                Note over ContentService: content_pack requires explicit parent_approvals entry, none found
+                ContentService-->>Gateway: 403 parent_approval_required_pending
+                Gateway-->>ParentApp: 403
+            else already_entitled
+                ContentService->>PostgreSQL: SELECT content_entitlements WHERE user_id=? AND content_pack_id=?
+                PostgreSQL-->>ContentService: existing row (revoked_at IS NULL)
+                Note over ContentService: idempotent — return existing entitlement
+                ContentService-->>Gateway: 200 {entitlement_id, granted_at, source: 'existing'}
+                Gateway-->>ParentApp: 200
+            else success
+                ContentService->>PostgreSQL: INSERT content_entitlements {user_id, content_pack_id, granted_at, x_request_id} ON CONFLICT (user_id, content_pack_id) DO NOTHING RETURNING *
+                PostgreSQL-->>ContentService: entitlement row
+                ContentService->>Redis: DEL entitlements:{householdId} (invalidate cached entitlement)
+                Redis-->>ContentService: OK
+                ContentService-->>Gateway: 200 {entitlement_id, granted_at}
+                Gateway-->>ParentApp: 200
+            end
+        end
+    end
+
+    Note over ParentApp: cl_add_free → cl_added screen transition
+    Note over ParentApp,Redis: future session-start uses cached entitlement per entitlement-check-session-start.sequence.mmd — cache invalidated above so next read is fresh
+    Note over ParentApp,PostgreSQL: timeout 3s p99 — X-Request-Id 24h dedup — idempotent on (user_id, content_pack_id)

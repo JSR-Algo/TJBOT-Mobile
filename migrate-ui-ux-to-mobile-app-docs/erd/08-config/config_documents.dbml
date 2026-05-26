@@ -1,0 +1,24 @@
+// config_documents — logical handle for the per-device runtime config blob.
+// Spec calls the current row `device_configs` (1:1 with device); ERD-level name is
+// `config_documents` per plan §3 manifest. `config_versions` carries the immutable
+// version history (spec's `device_config_history`).
+// Source: docs/site/software/systems/08-config-fleet-management.md §Data Model.
+
+Table config_documents {
+  id                  uuid          [pk]
+  device_id           uuid          [not null, note: 'cross-domain ref → DeviceService']
+  current_version_id  uuid          [note: 'points at active config_versions row; null only between assemble + first commit']
+  schema_version      varchar(16)   [not null, default: '1.0', note: 'major.minor — device rejects unknown major']
+  applied_at          timestamptz   [note: 'set by POST /v1/config/applied; null = not yet acked by device']
+  created_at          timestamptz   [not null, default: `now()`]
+  updated_at          timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (device_id) [unique, name: 'idx_config_documents_device_id_unique']
+    (schema_version, updated_at) [name: 'idx_config_documents_schema_updated', note: 'hot query: docs/sequences/08-config/mqtt-push-and-fetch.sequence.mmd — fleet schema audit']
+  }
+}
+
+// device_id FK is declared on the consuming side here (DeviceService owns devices).
+// current_version_id FK is internal to 08-config so kept here.
+Ref: config_documents.current_version_id > config_versions.id

@@ -59,7 +59,7 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
     //
     // A real Gemini API key is AIza + 35 more [A-Za-z0-9_-] chars (total 39).
     // Any occurrence of `AIza` followed by 10+ such chars is a hard fail.
-    const realKeyShape = /AIza[A-Za-z0-9_\-]{10,}/;
+    const realKeyShape = /AIza[A-Za-z0-9_-]{10,}/;
     const offending: Array<{ file: string; line: number; text: string }> = [];
     for (const file of allFiles) {
       const src = fs.readFileSync(file, 'utf8');
@@ -82,7 +82,7 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
 
     // Confirm the token is fetched from the backend's gemini/token endpoint.
     // The path in source is '/gemini/token' — the /v1 prefix is supplied by
-    // apiClient's base URL (see src/api/client.ts). Asserting the literal
+    // apiClient's base URL (see src/services/http/client.ts). Asserting the literal
     // path the source uses keeps the test resilient to baseURL changes.
     expect(src).toMatch(/apiClient\.post[^(]*\(\s*['"]\/gemini\/token['"]/);
 

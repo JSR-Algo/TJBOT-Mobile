@@ -1,0 +1,17 @@
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
+%% domain: parent
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Parent["Parent"]
+    parent_account_privacy(["Account Privacy"])
+    parent_gate(["Parent Gate"])
+    parent_history["Past 30 Days"]
+    parent_locked_out(["Parent Gate Locked Out"])
+    parent_safety["Safety & Privacy"]
+    parent_settings["Parent Settings"]
+    parent_summary["Parent Summary"]
+    parent_today["Practiced Today"]
+  end
+  class parent_history,parent_safety,parent_settings,parent_summary,parent_today happy
+  class parent_account_privacy,parent_gate,parent_locked_out edge

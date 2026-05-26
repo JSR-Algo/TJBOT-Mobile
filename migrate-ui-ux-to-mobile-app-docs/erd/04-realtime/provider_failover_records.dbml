@@ -1,0 +1,57 @@
+// provider_failover_records — audit ledger of provider failover events within a turn.
+// Source: sys-04 §8 Provider Failover, §13 metrics rt_circuit_breaker_transition_total, queue tbot-circuit-breaker-event.
+// One row per failover edge (primary → fallback OR fallback → canned) — enables forensic reconstruction
+// of which provider served which segment of a turn.
+
+enum provider_role {
+  stt
+  llm
+  tts
+}
+
+enum failover_trigger {
+  timeout
+  circuit_open
+  http_5xx
+  stream_reset
+  parse_failure
+  manual_admin
+}
+
+enum failover_outcome {
+  primary_succeeded
+  secondary_succeeded
+  cache_served
+  canned_served
+  all_failed
+}
+
+Table provider_failover_records {
+  id                       uuid               [pk]
+  session_id               uuid               [not null, note: 'FK → sessions.id']
+  session_turn_id          uuid               [note: 'FK → session_turns.id; nullable for circuit-only transitions outside a turn']
+  role                     provider_role      [not null]
+  primary_provider         varchar(64)        [not null, note: 'provider attempted first — e.g. google_live_flash, google_stt']
+  fallback_provider        varchar(64)        [note: 'provider that served — may equal primary if primary recovered; NULL if all-failed']
+  trigger                  failover_trigger   [not null]
+  outcome                  failover_outcome   [not null]
+  primary_attempt_ms       integer            [not null]
+  fallback_attempt_ms      integer
+  primary_error_code       varchar(64)        [note: 'provider-native error code or E-RT-2xx']
+  primary_http_code        integer            [note: 'HTTP status code from primary attempt; named *_code to avoid validator *_status false positive']
+  circuit_state_before     varchar(16)        [note: 'closed | half_open | open — snapshot at decision time']
+  circuit_state_after      varchar(16)
+  recovery_attempt_no      integer            [not null, default: 1, note: 'monotonic within (session_id, role)']
+  instance_id              varchar(64)        [not null]
+  created_at               timestamptz        [not null, default: `now()`]
+  updated_at               timestamptz        [not null, default: `now()`]
+
+  Indexes {
+    (session_id, created_at) [name: 'idx_provider_failover_records_session_id_created_at', note: 'hot query: docs/sequences/04-realtime/provider-failover.sequence.mmd — per-session failover replay for support']
+    (role, primary_provider, created_at) [name: 'idx_provider_failover_records_role_provider_created_at', note: 'hot query: docs/sequences/11-telemetry/provider-health-roll-up.sequence.mmd — provider health roll-up']
+    (outcome, created_at) [name: 'idx_provider_failover_records_outcome_created_at', note: 'hot query: docs/sequences/04-realtime/provider-failover.sequence.mmd — all-failed incident triage']
+  }
+}
+
+Ref: provider_failover_records.session_id > sessions.id  // intra-domain
+Ref: provider_failover_records.session_turn_id > session_turns.id  // intra-domain

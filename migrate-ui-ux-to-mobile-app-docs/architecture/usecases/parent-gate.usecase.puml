@@ -1,0 +1,33 @@
+@startuml TBOT-ParentGate
+title Domain · parent-gate — shared speed-bump service
+left to right direction
+
+actor Child
+actor Parent
+
+package "parent-gate" <<service>> {
+  usecase "Pass Parent Gate (3-digit)"  as UC_PG_PASS
+  usecase "Confirm Unlock (4-digit)"    as UC_PG_UNLOCK
+}
+
+Child  --> UC_PG_PASS    : initiate
+Parent --> UC_PG_PASS    : complete
+Parent --> UC_PG_UNLOCK
+
+note bottom of UC_PG_PASS
+  Used by: kid-hub (Enter Parent Space),
+  parent-summary, course-library, robot-mgmt.
+  Speed bump only — NOT real RBAC.
+  (ParentGatePage random 3-digit match)
+end note
+
+note bottom of UC_PG_UNLOCK
+  Used by: course-library (Buy/Unlock),
+  purchase (Activate Robot via code).
+  (UnlockConfirmModal hardcoded 7351 in prototype)
+end note
+
+' Files:
+'   src/features/parent/ParentGatePage.jsx
+'   src/features/course-library/UnlockConfirmModal.jsx
+@enduml

@@ -71,7 +71,7 @@ export interface UseLatencyBudgetOptions {
   onSample?: (sample: LatencyBudgetSample) => void;
   /**
    * Dev-only log tag. Budgets are printed as
-   *   `[tbot-latency] <turn_id> <metric>=<value>ms (<class>)`
+   *   `[TJBot-latency] <turn_id> <metric>=<value>ms (<class>)`
    * so the `qa-latency` CI job can scrape them.
    */
   log?: boolean;
@@ -132,7 +132,7 @@ export function useLatencyBudget(opts: UseLatencyBudgetOptions = {}) {
       // Parseable by the `qa-latency` CI job.
       // eslint-disable-next-line no-console
       console.log(
-        `[tbot-latency] ${turn.id} ${metric}=${value_ms.toFixed(1)}ms (${sample.within})`,
+        `[TJBot-latency] ${turn.id} ${metric}=${value_ms.toFixed(1)}ms (${sample.within})`,
       );
     }
     onSampleRef.current?.(sample);

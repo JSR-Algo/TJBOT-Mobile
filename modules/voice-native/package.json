@@ -1,5 +1,5 @@
 {
-  "name": "tbot-voice-native-plugin",
+  "name": "TJBot-voice-native-plugin",
   "version": "0.1.0",
   "private": true,
   "description": "Expo config plugin that preserves the voice-stack Info.plist + AndroidManifest changes across `expo prebuild --clean`. See README.md.",

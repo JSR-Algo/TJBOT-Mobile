@@ -1,0 +1,1491 @@
+{
+  "generated_by": "scripts/usecases/_build-index.mjs",
+  "source_legacy": "docs/architecture/use-case-diagram.md",
+  "source_pumls": "docs/architecture/usecases/*.usecase.puml",
+  "total": 154,
+  "entries": [
+    {
+      "id": "UC-A01",
+      "name": "View Splash / Welcome",
+      "domain": "auth",
+      "source_md_line": 33,
+      "aliases": [
+        "UC_ONB_SPLASH",
+        "UC_ONB_WELCOME"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A02",
+      "name": "Sign Up with Email/Password",
+      "domain": "auth",
+      "source_md_line": 34,
+      "aliases": [
+        "UC_AUTH_SIGNUP"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A03",
+      "name": "Log In with Email/Password",
+      "domain": "auth",
+      "source_md_line": 35,
+      "aliases": [
+        "UC_AUTH_LOGIN"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A04",
+      "name": "Continue with Google",
+      "domain": "auth",
+      "source_md_line": 36,
+      "aliases": [
+        "UC_AUTH_GOOGLE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A05",
+      "name": "Continue with Apple",
+      "domain": "auth",
+      "source_md_line": 37,
+      "aliases": [
+        "UC_AUTH_APPLE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A06",
+      "name": "Reset Password",
+      "domain": "auth",
+      "source_md_line": 38,
+      "aliases": [
+        "UC_AUTH_RESET"
+      ],
+      "status": "button-only"
+    },
+    {
+      "id": "UC-A07",
+      "name": "Recover from Login Error",
+      "domain": "auth",
+      "source_md_line": 39,
+      "aliases": [
+        "UC_AUTH_ERR"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A08",
+      "name": "Set Up Child Profile",
+      "domain": "auth",
+      "source_md_line": 40,
+      "aliases": [
+        "UC_AUTH_CHILD"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A09",
+      "name": "Token Refresh",
+      "domain": "auth",
+      "source_md_line": 41,
+      "aliases": [
+        "UC_AUTH_REFRESH"
+      ],
+      "status": "undefined"
+    },
+    {
+      "id": "UC-A10",
+      "name": "Logout",
+      "domain": "auth",
+      "source_md_line": 42,
+      "aliases": [
+        "UC_AUTH_LOGOUT"
+      ],
+      "status": "undefined"
+    },
+    {
+      "id": "UC-A11",
+      "name": "Revoke Active Session",
+      "domain": "auth",
+      "source_md_line": 43,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A12",
+      "name": "Delete Account",
+      "domain": "auth",
+      "source_md_line": 44,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A13",
+      "name": "Export Account Data",
+      "domain": "auth",
+      "source_md_line": 45,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A14",
+      "name": "Reset Parent PIN",
+      "domain": "auth",
+      "source_md_line": 46,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A15",
+      "name": "Add Child Profile",
+      "domain": "auth",
+      "source_md_line": 47,
+      "aliases": [
+        "UC_AUTH_CHILD"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A16",
+      "name": "Switch Active Child",
+      "domain": "auth",
+      "source_md_line": 48,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A17",
+      "name": "Suspend Child Profile",
+      "domain": "auth",
+      "source_md_line": 49,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-A18",
+      "name": "Delete Child Profile",
+      "domain": "auth",
+      "source_md_line": 50,
+      "aliases": [
+        "UC_AUTH_CHILD"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU01",
+      "name": "View Robot Overview",
+      "domain": "purchase",
+      "source_md_line": 139,
+      "aliases": [
+        "UC_BUY_INTRO"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU02",
+      "name": "View How It Works",
+      "domain": "purchase",
+      "source_md_line": 140,
+      "aliases": [
+        "UC_BUY_HOW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU03",
+      "name": "View What's Included",
+      "domain": "purchase",
+      "source_md_line": 141,
+      "aliases": [
+        "UC_BUY_INC"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU04",
+      "name": "Pick Bundle",
+      "domain": "purchase",
+      "source_md_line": 142,
+      "aliases": [
+        "UC_BUY_BUNDLE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU05",
+      "name": "Pick Subscription",
+      "domain": "purchase",
+      "source_md_line": 143,
+      "aliases": [
+        "UC_BUY_SUB"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU06",
+      "name": "Review Privacy & Trust",
+      "domain": "purchase",
+      "source_md_line": 144,
+      "aliases": [
+        "UC_BUY_PRIV"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU07",
+      "name": "Place Order / Checkout",
+      "domain": "purchase",
+      "source_md_line": 145,
+      "aliases": [
+        "UC_BUY_CHECKOUT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU08",
+      "name": "Pay with Apple Pay",
+      "domain": "purchase",
+      "source_md_line": 146,
+      "aliases": [
+        "UC_BUY_APPLE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU09",
+      "name": "Pay with Card",
+      "domain": "purchase",
+      "source_md_line": 147,
+      "aliases": [
+        "UC_BUY_CARD"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU10",
+      "name": "View Order Confirmation",
+      "domain": "purchase",
+      "source_md_line": 148,
+      "aliases": [
+        "UC_BUY_CONFIRM"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU11",
+      "name": "Track Shipping",
+      "domain": "purchase",
+      "source_md_line": 149,
+      "aliases": [
+        "UC_BUY_SHIP"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU12",
+      "name": "Confirm Robot Arrived",
+      "domain": "purchase",
+      "source_md_line": 150,
+      "aliases": [
+        "UC_BUY_ARRIVED"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU13",
+      "name": "Activate Robot with Code",
+      "domain": "purchase",
+      "source_md_line": 151,
+      "aliases": [
+        "UC_BUY_ACTIVATE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU14",
+      "name": "Add First Course",
+      "domain": "purchase",
+      "source_md_line": 152,
+      "aliases": [
+        "UC_BUY_FIRST"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU15",
+      "name": "Cancel Order",
+      "domain": "purchase",
+      "source_md_line": 153,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU16",
+      "name": "Request Refund / Return",
+      "domain": "purchase",
+      "source_md_line": 154,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-BU17",
+      "name": "Retry Payment",
+      "domain": "purchase",
+      "source_md_line": 155,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C01",
+      "name": "Browse Course Tree",
+      "domain": "course-browse",
+      "source_md_line": 70,
+      "aliases": [
+        "UC_CRS_TREE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C02",
+      "name": "View Level",
+      "domain": "course-browse",
+      "source_md_line": 71,
+      "aliases": [
+        "UC_CRS_LEVEL"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C03",
+      "name": "View Unit",
+      "domain": "course-browse",
+      "source_md_line": 72,
+      "aliases": [
+        "UC_CRS_UNIT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C04",
+      "name": "View Lesson List",
+      "domain": "course-browse",
+      "source_md_line": 73,
+      "aliases": [
+        "UC_CRS_LIST"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C05",
+      "name": "View Lesson Detail",
+      "domain": "course-browse",
+      "source_md_line": 74,
+      "aliases": [
+        "UC_CRS_DETAIL"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C06",
+      "name": "Start Lesson From Detail → `lesson_ready`",
+      "domain": "course-browse",
+      "source_md_line": 75,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C07",
+      "name": "Start Review",
+      "domain": "course-browse",
+      "source_md_line": 76,
+      "aliases": [
+        "UC_CRS_REVIEW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-C08",
+      "name": "Start Daily Mission",
+      "domain": "course-browse",
+      "source_md_line": 77,
+      "aliases": [
+        "UC_CRS_MISSION"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL01",
+      "name": "Browse Library",
+      "domain": "course-library",
+      "source_md_line": 125,
+      "aliases": [
+        "UC_CL_BROWSE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL02",
+      "name": "View Course Detail",
+      "domain": "course-library",
+      "source_md_line": 126,
+      "aliases": [
+        "UC_CL_DETAIL"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL03",
+      "name": "Buy / Unlock Course",
+      "domain": "course-library",
+      "source_md_line": 127,
+      "aliases": [
+        "UC_CL_BUY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL04",
+      "name": "Confirm Unlock with Numeric Code",
+      "domain": "course-library",
+      "source_md_line": 128,
+      "aliases": [
+        "UC_PG_UNLOCK"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL05",
+      "name": "Course Added to Robot",
+      "domain": "course-library",
+      "source_md_line": 129,
+      "aliases": [
+        "UC_CL_ADDED"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL06",
+      "name": "Send Lesson to Robot",
+      "domain": "course-library",
+      "source_md_line": 130,
+      "aliases": [
+        "UC_CL_SEND"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL07",
+      "name": "Confirm Robot Ready",
+      "domain": "course-library",
+      "source_md_line": 131,
+      "aliases": [
+        "UC_CL_READY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL08",
+      "name": "Monitor Lesson Running on Robot",
+      "domain": "course-library",
+      "source_md_line": 132,
+      "aliases": [
+        "UC_CL_MONITOR"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL09",
+      "name": "View Companion",
+      "domain": "course-library",
+      "source_md_line": 133,
+      "aliases": [
+        "UC_CL_COMPANION"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL10",
+      "name": "View Lesson Complete",
+      "domain": "course-library",
+      "source_md_line": 134,
+      "aliases": [
+        "UC_CL_COMPLETE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL11",
+      "name": "Resync Robot",
+      "domain": "course-library",
+      "source_md_line": 135,
+      "aliases": [
+        "UC_CL_RESYNC"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-CL12",
+      "name": "View Locked Course",
+      "domain": "course-library",
+      "source_md_line": 136,
+      "aliases": [
+        "UC_CL_LOCKED"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DM01",
+      "name": "View Device Home",
+      "domain": "device-mgmt",
+      "source_md_line": 180,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DM02",
+      "name": "View Live Session Monitor",
+      "domain": "device-mgmt",
+      "source_md_line": 181,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DM03",
+      "name": "Find My Robot",
+      "domain": "device-mgmt",
+      "source_md_line": 182,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DM04",
+      "name": "Update Firmware",
+      "domain": "device-mgmt",
+      "source_md_line": 183,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DM05",
+      "name": "View LCD Face Library",
+      "domain": "device-mgmt",
+      "source_md_line": 184,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DM06",
+      "name": "View One Lesson Turn",
+      "domain": "device-mgmt",
+      "source_md_line": 185,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP01",
+      "name": "View Device Overview",
+      "domain": "device-pairing",
+      "source_md_line": 164,
+      "aliases": [
+        "UC_DP_OVERVIEW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP02",
+      "name": "Add New Robot",
+      "domain": "device-pairing",
+      "source_md_line": 165,
+      "aliases": [
+        "UC_DP_ADD"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP03",
+      "name": "Power-on Robot Confirm",
+      "domain": "device-pairing",
+      "source_md_line": 166,
+      "aliases": [
+        "UC_DP_INTRO"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP04",
+      "name": "Scan for Robot",
+      "domain": "device-pairing",
+      "source_md_line": 167,
+      "aliases": [
+        "UC_DP_SCAN"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP05",
+      "name": "Identify Robot",
+      "domain": "device-pairing",
+      "source_md_line": 168,
+      "aliases": [
+        "UC_DP_FOUND"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP06",
+      "name": "Confirm Pairing Code",
+      "domain": "device-pairing",
+      "source_md_line": 169,
+      "aliases": [
+        "UC_DP_CODE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP07",
+      "name": "Pick Wi-Fi Network",
+      "domain": "device-pairing",
+      "source_md_line": 170,
+      "aliases": [
+        "UC_DP_WIFI"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP08",
+      "name": "Enter Wi-Fi Password",
+      "domain": "device-pairing",
+      "source_md_line": 171,
+      "aliases": [
+        "UC_DP_WIFI_PW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP09",
+      "name": "Connect Robot to Wi-Fi",
+      "domain": "device-pairing",
+      "source_md_line": 172,
+      "aliases": [
+        "UC_DP_CONNECT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP10",
+      "name": "Pairing Success",
+      "domain": "device-pairing",
+      "source_md_line": 173,
+      "aliases": [
+        "UC_DP_OK"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP11",
+      "name": "Pairing Failed Recovery",
+      "domain": "device-pairing",
+      "source_md_line": 174,
+      "aliases": [
+        "UC_DP_FAIL"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP12",
+      "name": "Pair Offline Mode",
+      "domain": "device-pairing",
+      "source_md_line": 175,
+      "aliases": [
+        "UC_DP_OFFLINE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP13",
+      "name": "Rename Robot & Pick Buddy",
+      "domain": "device-pairing",
+      "source_md_line": 176,
+      "aliases": [
+        "UC_DP_RENAME"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-DP14",
+      "name": "Pairing First Lesson",
+      "domain": "device-pairing",
+      "source_md_line": 177,
+      "aliases": [
+        "UC_DP_FIRST"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F01",
+      "name": "View Network Error",
+      "domain": "fallback-shell",
+      "source_md_line": 202,
+      "aliases": [
+        "UC_FB_NET"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F02",
+      "name": "View Mic Missing",
+      "domain": "fallback-shell",
+      "source_md_line": 203,
+      "aliases": [
+        "UC_FB_MIC"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F03",
+      "name": "Audio Permission Recovery",
+      "domain": "fallback-shell",
+      "source_md_line": 204,
+      "aliases": [
+        "UC_FB_AUDIO"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F04",
+      "name": "View Voice Failed",
+      "domain": "fallback-shell",
+      "source_md_line": 205,
+      "aliases": [
+        "UC_FB_VOICE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F05",
+      "name": "Resume Lesson",
+      "domain": "fallback-shell",
+      "source_md_line": 206,
+      "aliases": [
+        "UC_FB_RESUME"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F06",
+      "name": "View Reconnecting Overlay",
+      "domain": "fallback-shell",
+      "source_md_line": 207,
+      "aliases": [
+        "UC_FB_RECONN"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F07",
+      "name": "Safety Redirect",
+      "domain": "fallback-shell",
+      "source_md_line": 208,
+      "aliases": [
+        "UC_FB_SAFETY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-F08",
+      "name": "View Generic App Error",
+      "domain": "fallback-shell",
+      "source_md_line": 209,
+      "aliases": [
+        "UC_FB_APP"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H01",
+      "name": "View Home Hub",
+      "domain": "kid-hub",
+      "source_md_line": 60,
+      "aliases": [
+        "UC_HUB_VIEW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H02",
+      "name": "Tap Robot for Greeting",
+      "domain": "kid-hub",
+      "source_md_line": 61,
+      "aliases": [
+        "UC_HUB_TAP"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H03",
+      "name": "Start Today's Lesson",
+      "domain": "kid-hub",
+      "source_md_line": 62,
+      "aliases": [
+        "UC_HUB_START"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H04",
+      "name": "Open Course",
+      "domain": "kid-hub",
+      "source_md_line": 63,
+      "aliases": [
+        "UC_HUB_COURSE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H05",
+      "name": "Open Review → `review_entry`",
+      "domain": "kid-hub",
+      "source_md_line": 64,
+      "aliases": [
+        "UC_HUB_REVIEW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H06",
+      "name": "Open Today's Progress → `today_progress`",
+      "domain": "kid-hub",
+      "source_md_line": 65,
+      "aliases": [
+        "UC_HUB_PROG"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H07",
+      "name": "Open Kid Settings → `kid_settings`",
+      "domain": "kid-hub",
+      "source_md_line": 66,
+      "aliases": [
+        "UC_HUB_SET"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-H08",
+      "name": "Enter Parent Space",
+      "domain": "kid-hub",
+      "source_md_line": 67,
+      "aliases": [
+        "UC_HUB_PARENT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-INV01",
+      "name": "View Invoice History",
+      "domain": "purchase",
+      "source_md_line": 161,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L01",
+      "name": "Start Voice Session",
+      "domain": "lesson-session",
+      "source_md_line": 80,
+      "aliases": [
+        "UC_LSN_START"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L02",
+      "name": "Connect to Realtime Voice",
+      "domain": "lesson-session",
+      "source_md_line": 81,
+      "aliases": [
+        "UC_LSN_CONNECT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L03",
+      "name": "Receive Robot Greeting",
+      "domain": "lesson-session",
+      "source_md_line": 82,
+      "aliases": [
+        "UC_LSN_GREET"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L04",
+      "name": "Begin Activity",
+      "domain": "lesson-session",
+      "source_md_line": 83,
+      "aliases": [
+        "UC_LSN_BEGIN"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L05",
+      "name": "Listen to Robot Speech",
+      "domain": "lesson-session",
+      "source_md_line": 84,
+      "aliases": [
+        "UC_LSN_LISTEN_bot"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L06",
+      "name": "Listen for Child Speech",
+      "domain": "lesson-session",
+      "source_md_line": 85,
+      "aliases": [
+        "UC_LSN_LISTEN_KID"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L07",
+      "name": "Record Child Utterance",
+      "domain": "lesson-session",
+      "source_md_line": 86,
+      "aliases": [
+        "UC_LSN_SPEAK"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L08",
+      "name": "Process Utterance",
+      "domain": "lesson-session",
+      "source_md_line": 87,
+      "aliases": [
+        "UC_LSN_PROCESS"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L09",
+      "name": "Receive Success Feedback",
+      "domain": "lesson-session",
+      "source_md_line": 88,
+      "aliases": [
+        "UC_LSN_SUCCESS"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L10",
+      "name": "Receive Gentle Correction",
+      "domain": "lesson-session",
+      "source_md_line": 89,
+      "aliases": [
+        "UC_LSN_GENTLE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L11",
+      "name": "Receive Retry Prompt",
+      "domain": "lesson-session",
+      "source_md_line": 90,
+      "aliases": [
+        "UC_LSN_RETRY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L12",
+      "name": "Receive Silence Prompt",
+      "domain": "lesson-session",
+      "source_md_line": 91,
+      "aliases": [
+        "UC_LSN_SILENCE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L13",
+      "name": "Receive Off-topic Redirect",
+      "domain": "lesson-session",
+      "source_md_line": 92,
+      "aliases": [
+        "UC_LSN_OFFTOPIC"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L14",
+      "name": "Handle Barge-in",
+      "domain": "lesson-session",
+      "source_md_line": 93,
+      "aliases": [
+        "UC_LSN_BARGE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L15",
+      "name": "Complete Activity",
+      "domain": "lesson-session",
+      "source_md_line": 94,
+      "aliases": [
+        "UC_LSN_DONE_ACT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L16",
+      "name": "Complete Lesson",
+      "domain": "lesson-session",
+      "source_md_line": 95,
+      "aliases": [
+        "UC_LSN_DONE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L17",
+      "name": "Confirm Exit Lesson",
+      "domain": "lesson-session",
+      "source_md_line": 96,
+      "aliases": [
+        "UC_LSN_EXIT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L18",
+      "name": "Reconnect Voice",
+      "domain": "lesson-session",
+      "source_md_line": 97,
+      "aliases": [
+        "UC_LSN_RECONN"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L19",
+      "name": "Recover from Audio Error",
+      "domain": "lesson-session",
+      "source_md_line": 98,
+      "aliases": [
+        "UC_LSN_AUDIO"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L20",
+      "name": "Trigger Safety Fallback",
+      "domain": "lesson-session",
+      "source_md_line": 99,
+      "aliases": [
+        "UC_LSN_SAFETY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L21",
+      "name": "Report Safety Event",
+      "domain": "lesson-session",
+      "source_md_line": 100,
+      "aliases": [
+        "UC_LSN_SAFETY_REPORT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-L22",
+      "name": "Lesson Handoff",
+      "domain": "lesson-session",
+      "source_md_line": 101,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-MOBILE01",
+      "name": "Handle Push Notification Deep Link",
+      "domain": "mobile-shell",
+      "source_md_line": 212,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-O01",
+      "name": "Run Intro Tutorial",
+      "domain": "onboarding",
+      "source_md_line": 53,
+      "aliases": [
+        "UC_ONB_INTRO"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-O02",
+      "name": "View Parent Trust Intro",
+      "domain": "onboarding",
+      "source_md_line": 54,
+      "aliases": [
+        "UC_ONB_TRUST"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-O03",
+      "name": "Grant Microphone Permission",
+      "domain": "onboarding",
+      "source_md_line": 55,
+      "aliases": [
+        "UC_ONB_MIC"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-O04",
+      "name": "Enter First Lesson",
+      "domain": "onboarding",
+      "source_md_line": 56,
+      "aliases": [
+        "UC_ONB_FIRST"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-O05",
+      "name": "Record Parental Consent",
+      "domain": "onboarding",
+      "source_md_line": 57,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-P01",
+      "name": "View Today's Progress",
+      "domain": "progress",
+      "source_md_line": 104,
+      "aliases": [
+        "UC_PRG_TODAY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-P02",
+      "name": "View Words Practiced",
+      "domain": "progress",
+      "source_md_line": 105,
+      "aliases": [
+        "UC_PRG_WORDS"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-P03",
+      "name": "View Lesson Summary",
+      "domain": "progress",
+      "source_md_line": 106,
+      "aliases": [
+        "UC_PRG_SUMMARY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-P04",
+      "name": "View Review Needed",
+      "domain": "progress",
+      "source_md_line": 107,
+      "aliases": [
+        "UC_PRG_REVIEW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-P05",
+      "name": "View Celebration",
+      "domain": "progress",
+      "source_md_line": 108,
+      "aliases": [
+        "UC_PRG_CELEBRATE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR01",
+      "name": "Authenticate Parent",
+      "domain": "parent-gate",
+      "source_md_line": 111,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR02",
+      "name": "View Parent Summary",
+      "domain": "parent-summary",
+      "source_md_line": 112,
+      "aliases": [
+        "UC_PRT_SUMMARY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR03",
+      "name": "View Practiced Today",
+      "domain": "parent-summary",
+      "source_md_line": 113,
+      "aliases": [
+        "UC_PRT_TODAY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR04",
+      "name": "View Past 30 Days",
+      "domain": "parent-summary",
+      "source_md_line": 114,
+      "aliases": [
+        "UC_PRT_HISTORY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR05",
+      "name": "View Safety & Privacy",
+      "domain": "parent-summary",
+      "source_md_line": 115,
+      "aliases": [
+        "UC_PRT_SAFETY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR06",
+      "name": "Configure Parent Settings",
+      "domain": "parent-summary",
+      "source_md_line": 116,
+      "aliases": [
+        "UC_PRT_SETTINGS"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR07",
+      "name": "Open Help & FAQ",
+      "domain": "parent-summary",
+      "source_md_line": 117,
+      "aliases": [
+        "UC_PRT_HELP"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR08",
+      "name": "Enable Biometric Unlock",
+      "domain": "parent-summary",
+      "source_md_line": 118,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR09",
+      "name": "Invite Secondary Parent",
+      "domain": "parent-summary",
+      "source_md_line": 119,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR10",
+      "name": "Revoke Secondary Parent",
+      "domain": "parent-summary",
+      "source_md_line": 120,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR11",
+      "name": "Transfer Primary",
+      "domain": "parent-summary",
+      "source_md_line": 121,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-PR12",
+      "name": "Leave Household",
+      "domain": "parent-summary",
+      "source_md_line": 122,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM01",
+      "name": "View My Robot",
+      "domain": "robot-mgmt",
+      "source_md_line": 188,
+      "aliases": [
+        "UC_RM_VIEW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM02",
+      "name": "View Robot Status",
+      "domain": "robot-mgmt",
+      "source_md_line": 189,
+      "aliases": [
+        "UC_RM_STATUS"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM03",
+      "name": "View Battery",
+      "domain": "robot-mgmt",
+      "source_md_line": 190,
+      "aliases": [
+        "UC_RM_BATTERY"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM04",
+      "name": "View Wi-Fi",
+      "domain": "robot-mgmt",
+      "source_md_line": 191,
+      "aliases": [
+        "UC_RM_WIFI"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM05",
+      "name": "View Installed Courses",
+      "domain": "robot-mgmt",
+      "source_md_line": 192,
+      "aliases": [
+        "UC_RM_STORAGE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM06",
+      "name": "Update Robot Software",
+      "domain": "robot-mgmt",
+      "source_md_line": 193,
+      "aliases": [
+        "UC_RM_FW"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM07",
+      "name": "Adjust Sound & Volume",
+      "domain": "robot-mgmt",
+      "source_md_line": 194,
+      "aliases": [
+        "UC_RM_SOUND"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM08",
+      "name": "Run Microphone Test",
+      "domain": "robot-mgmt",
+      "source_md_line": 195,
+      "aliases": [
+        "UC_RM_MIC"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM09",
+      "name": "Run Speaker Test",
+      "domain": "robot-mgmt",
+      "source_md_line": 196,
+      "aliases": [
+        "UC_RM_SPK"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM10",
+      "name": "Factory Reset",
+      "domain": "robot-mgmt",
+      "source_md_line": 197,
+      "aliases": [
+        "UC_RM_RESET"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM11",
+      "name": "View Offline Help",
+      "domain": "robot-mgmt",
+      "source_md_line": 198,
+      "aliases": [
+        "UC_RM_OFFLINE"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-RM12",
+      "name": "Contact Support",
+      "domain": "robot-mgmt",
+      "source_md_line": 199,
+      "aliases": [
+        "UC_RM_SUPPORT"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-SUB01",
+      "name": "View Subscription Status",
+      "domain": "purchase",
+      "source_md_line": 156,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-SUB02",
+      "name": "Cancel Subscription",
+      "domain": "purchase",
+      "source_md_line": 157,
+      "aliases": [
+        "UC_BUY_SUB"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-SUB03",
+      "name": "Pause Subscription",
+      "domain": "purchase",
+      "source_md_line": 158,
+      "aliases": [
+        "UC_BUY_SUB"
+      ],
+      "status": "defined"
+    },
+    {
+      "id": "UC-SUB04",
+      "name": "Resume Subscription; sequence `19-billing/subscription-lifecycle.sequence.mmd`",
+      "domain": "purchase",
+      "source_md_line": 159,
+      "aliases": [],
+      "status": "defined"
+    },
+    {
+      "id": "UC-SUB05",
+      "name": "Handle Renewal Failure",
+      "domain": "purchase",
+      "source_md_line": 160,
+      "aliases": [],
+      "status": "defined"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+---
+system: sys-02-device-provisioning-registry
+flow_id: consumer-provisioning
+surface: mobile
+spec_anchor: /software/systems/02-device-provisioning-registry#parent-app-endpoints
+actors: [ParentApp, Gateway, DeviceService, Device, PostgreSQL]
+apis:
+  - POST /v1/devices/provision/start
+  - POST /v1/device/provisioning/status
+  - POST /v1/devices/provision/complete
+externals: []
+queues: []
+failure_paths:
+  - device_not_found
+  - device_already_assigned
+  - device_quarantined
+  - provisioning_attempt_not_ready
+  - device_auth_not_verified
+  - child_profile_household_mismatch
+idempotency: provisioningAttemptId per attempt — multiple provision/complete with same attempt id are blocked by attempt-status guard
+retry: parent app retries on 5xx with exponential backoff
+timeout: 5s p99 per endpoint
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant DeviceService
+    participant Device
+    participant PostgreSQL
+
+    ParentApp->>Gateway: POST /v1/devices/provision/start {serialNumber, appVersion, phonePlatform}
+    Gateway->>DeviceService: forward (Parent bearer token)
+    alt device_not_found
+        DeviceService-->>ParentApp: 404 device_not_found
+    else device_already_assigned
+        DeviceService-->>ParentApp: 409 device_already_assigned
+    else device_quarantined
+        DeviceService-->>ParentApp: 409 device_quarantined
+    else success
+        DeviceService->>PostgreSQL: INSERT device_provisioning_attempts {status=started}
+        PostgreSQL-->>DeviceService: provisioningAttemptId
+        DeviceService-->>ParentApp: 200 {provisioningAttemptId, deviceId, deviceStatus=provisioning}
+    end
+
+    Device->>Gateway: POST /v1/device/provisioning/status {status=ble_paired,…,device_authenticated} (device cert)
+    Gateway->>DeviceService: forward
+    alt invalid_attempt_transition
+        DeviceService-->>Device: 409 invalid_attempt_transition
+    else success
+        DeviceService->>PostgreSQL: UPDATE device_provisioning_attempts SET attempt_status
+        PostgreSQL-->>DeviceService: ok
+        DeviceService-->>Device: 204
+    end
+
+    ParentApp->>Gateway: POST /v1/devices/provision/complete {provisioningAttemptId, deviceId, assignChildProfileId, displayName}
+    Gateway->>DeviceService: forward
+    alt provisioning_attempt_not_ready
+        DeviceService-->>ParentApp: 409 provisioning_attempt_not_ready
+    else device_auth_not_verified
+        DeviceService-->>ParentApp: 409 device_auth_not_verified
+    else child_profile_household_mismatch
+        DeviceService-->>ParentApp: 422 child_profile_household_mismatch
+    else success
+        DeviceService->>PostgreSQL: BEGIN — lock devices row, INSERT device_ownership_history, UPDATE devices, COMMIT
+        PostgreSQL-->>DeviceService: ok
+        DeviceService-->>ParentApp: 200 {device: {status=active, lifecycleState=assigned, …}}
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 5s p99 · provisioningAttemptId guards re-submit · attempt-status state machine enforces transitions per spec §7.3

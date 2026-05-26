@@ -1,0 +1,75 @@
+---
+system: sys-09-ota-release-management
+flow_id: crash-rate-auto-pause
+surface: cron
+spec_anchor: /software/systems/09-ota-release-management#crash-rate-monitoring
+actors: [CrashMonitorWorker, OtaService, PostgreSQL, SNS, AdminConsole, Device]
+apis:
+  - POST /admin/ota/:id/pause
+  - POST /admin/ota/:id/resume
+  - POST /admin/ota/:id/recall
+externals: [SNS]
+queues: []
+failure_paths:
+  - insufficient_attempts
+  - crash_rate_below_threshold
+  - sns_publish_failure
+  - rollout_id_mismatch
+idempotency: paused_auto event written exactly once per (firmware_release_id, monitor_cycle); status transition to paused is idempotent
+retry: monitor cycle re-runs every 5min; SNS publish retried with backoff
+timeout: 30s p95 monitor query
+status: final
+---
+%% HAND-CURATED. Race condition surfaced per plan §11: rollout-id check on download (in-flight downloads vs auto-pause).
+sequenceDiagram
+    autonumber
+    participant CrashMonitorWorker
+    participant OtaService
+    participant PostgreSQL
+    participant SNS
+    participant AdminConsole
+    participant Device
+
+    loop every 5 minutes
+        CrashMonitorWorker->>PostgreSQL: SELECT COUNT(*) FILTER (WHERE status='success'), COUNT(*) FILTER (WHERE status IN ('failed','rollback') AND failure_code IN ('E-SAFE-901','E-SAFE-902')), COUNT(*) FROM ota_attempts WHERE firmware_release_id=$1 AND completed_at > NOW() - INTERVAL '1 hour'
+        PostgreSQL-->>CrashMonitorWorker: {success_count, crash_count, total_attempts}
+
+        alt insufficient_attempts (total < MIN_ATTEMPTS_FOR_AUTO_PAUSE=10)
+            Note over CrashMonitorWorker: insufficient_attempts — continue rollout
+        else crash_rate_below_threshold
+            Note over CrashMonitorWorker: crash_count/total ≤ max_rollout_crash_rate (default 5%) — continue
+        else auto_pause_triggered
+            CrashMonitorWorker->>PostgreSQL: txn UPDATE firmware_releases SET status='paused' paused_at=now() WHERE id=$1 AND status='rolling_out'
+            CrashMonitorWorker->>PostgreSQL: INSERT ota_rollout_events {event_type='paused_auto', details={crash_count, total_attempts, crash_rate}} then COMMIT
+            CrashMonitorWorker->>SNS: Publish SEV-2 alert {release_id, dashboard_link, crash_rate}
+            alt sns_publish_failure
+                SNS--xCrashMonitorWorker: 5xx
+                Note over CrashMonitorWorker: retry with backoff — emit metric, alert MUST reach on-call
+            else success
+                SNS-->>CrashMonitorWorker: messageId
+            end
+            CrashMonitorWorker->>CrashMonitorWorker: emit ota_rollout_auto_pause_total counter
+        end
+    end
+
+    Note over Device,OtaService: race — in-flight downloads from before auto-pause must NOT continue
+    Device->>OtaService: GET /v1/ota/check (next cycle after pause)
+    OtaService->>PostgreSQL: SELECT firmware_releases WHERE id=ota_attempts.firmware_release_id
+    alt rollout_id_mismatch (release.status='paused' OR release.status='recalled')
+        OtaService-->>Device: 304 no_update (offered release no longer eligible)
+        Note over Device: device drops the in-flight intent — will re-check next cycle if rollout resumes
+    end
+
+    AdminConsole->>OtaService: review crash details on dashboard
+    alt resume
+        AdminConsole->>OtaService: POST /admin/ota/:id/resume
+        OtaService->>PostgreSQL: UPDATE firmware_releases SET status='rolling_out' then INSERT ota_rollout_events {event_type='resumed'}
+        OtaService-->>AdminConsole: 200
+    else recall (SEV-1)
+        AdminConsole->>OtaService: POST /admin/ota/:id/recall
+        OtaService->>PostgreSQL: UPDATE firmware_releases SET status='recalled' then INSERT ota_rollout_events {event_type='recalled'}
+        OtaService->>SNS: Publish SEV-1 alert
+        OtaService-->>AdminConsole: 200
+    end
+
+    Note over CrashMonitorWorker,PostgreSQL: ota_rollout_auto_pause_total counter > 0 alerts SEV-2 · monitor cycle 5min · status check on every download intercepts in-flight on rollout-id race

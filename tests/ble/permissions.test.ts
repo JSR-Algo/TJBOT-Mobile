@@ -1,5 +1,5 @@
 import { PermissionsAndroid, Platform } from 'react-native';
-import { requestBlePermissions } from '../../src/ble/permissions';
+import { requestBlePermissions } from '../../src/services/ble/permissions';
 
 describe('BLE permissions', () => {
   const originalOS = Platform.OS;

@@ -1,0 +1,45 @@
+@startuml TBOT-FallbackShell
+title Domain · fallback-shell — app-level error & safety screens
+left to right direction
+
+actor Child
+actor Parent
+
+package "fallback-shell" {
+  usecase "View Network Error"      as UC_FB_NET
+  usecase "View Mic Missing"        as UC_FB_MIC
+  usecase "Audio Permission Recovery" as UC_FB_AUDIO
+  usecase "View Voice Failed"       as UC_FB_VOICE
+  usecase "Resume Lesson"           as UC_FB_RESUME
+  usecase "Reconnecting Overlay"    as UC_FB_RECONN
+  usecase "Safety Redirect"         as UC_FB_SAFETY
+  usecase "View Generic App Error"  as UC_FB_APP
+}
+
+Child --> UC_FB_NET
+Child --> UC_FB_MIC
+Child --> UC_FB_VOICE
+Child --> UC_FB_RESUME
+Child --> UC_FB_RECONN
+Child --> UC_FB_SAFETY
+Child --> UC_FB_APP
+Parent --> UC_FB_AUDIO
+
+UC_FB_MIC   ..> UC_FB_AUDIO  : <<extend>> "Get a grown-up"
+UC_FB_VOICE ..> UC_FB_RESUME : <<extend>> "Pick up where we left off"
+UC_FB_NET   ..> UC_FB_RECONN : "Try again"
+
+note bottom of UC_FB_RESUME
+  [exit] → lesson-session : UC_LSN_LISTEN_BOT (resumes)
+end note
+note bottom of UC_FB_RECONN
+  [exit] → lesson-session : UC_LSN_LISTEN_KID
+end note
+note bottom of UC_FB_SAFETY
+  Cross-cuts: invoked by lesson-session safety,
+  also reachable from kid-settings.
+end note
+
+' In-session recovery (UC_LSN_RECONN, UC_LSN_AUDIO) lives in lesson-session.puml.
+' Files: src/features/fallback/*Page.jsx
+@enduml

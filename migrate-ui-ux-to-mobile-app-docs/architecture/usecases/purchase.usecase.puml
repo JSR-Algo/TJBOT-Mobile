@@ -1,0 +1,74 @@
+@startuml TBOT-Purchase
+title Domain · purchase — hardware + subscription checkout funnel
+left to right direction
+
+actor Parent
+actor "Payment Provider" as Pay <<external>>
+actor "Robot Device" as Robot <<external>>
+
+package "purchase" {
+  package "Discovery" {
+    usecase "View Robot Overview"   as UC_BUY_INTRO
+    usecase "View How It Works"     as UC_BUY_HOW
+    usecase "View What's Included"  as UC_BUY_INC
+    usecase "Review Privacy"        as UC_BUY_PRIV
+  }
+  package "Selection" {
+    usecase "Pick Bundle"           as UC_BUY_BUNDLE
+    usecase "Pick Subscription"     as UC_BUY_SUB
+  }
+  package "Checkout" {
+    usecase "Place Order / Checkout" as UC_BUY_CHECKOUT
+    usecase "Pay with Apple Pay"     as UC_BUY_APPLE
+    usecase "Pay with Card"          as UC_BUY_CARD
+    usecase "View Order Confirmation" as UC_BUY_CONFIRM
+    usecase "Track Shipping"         as UC_BUY_SHIP
+  }
+  package "Activation" {
+    usecase "Confirm Robot Arrived"  as UC_BUY_ARRIVED
+    usecase "Activate Robot"         as UC_BUY_ACTIVATE
+    usecase "Add First Course"       as UC_BUY_FIRST
+  }
+}
+
+Parent --> UC_BUY_INTRO
+Parent --> UC_BUY_HOW
+Parent --> UC_BUY_BUNDLE
+Parent --> UC_BUY_SUB
+Parent --> UC_BUY_PRIV
+Parent --> UC_BUY_CHECKOUT
+Parent --> UC_BUY_CONFIRM
+Parent --> UC_BUY_SHIP
+Parent --> UC_BUY_ARRIVED
+Parent --> UC_BUY_ACTIVATE
+Parent --> UC_BUY_FIRST
+
+UC_BUY_INTRO    ..> UC_BUY_HOW
+UC_BUY_HOW      ..> UC_BUY_INC
+UC_BUY_INC      ..> UC_BUY_BUNDLE
+UC_BUY_BUNDLE   ..> UC_BUY_SUB
+UC_BUY_SUB      ..> UC_BUY_PRIV
+UC_BUY_PRIV     ..> UC_BUY_CHECKOUT
+UC_BUY_CHECKOUT ..> UC_BUY_APPLE   : <<extend>>
+UC_BUY_CHECKOUT ..> UC_BUY_CARD    : <<extend>>
+UC_BUY_CHECKOUT ..> UC_BUY_CONFIRM
+UC_BUY_CONFIRM  ..> UC_BUY_SHIP
+UC_BUY_SHIP     ..> UC_BUY_ARRIVED : on delivery
+UC_BUY_ARRIVED  ..> UC_BUY_ACTIVATE
+UC_BUY_ACTIVATE ..> UC_BUY_FIRST
+
+UC_BUY_APPLE    ..> Pay   : <<delegate>>
+UC_BUY_CARD     ..> Pay   : <<delegate>>
+UC_BUY_ACTIVATE ..> Robot : <<delegate>> (activation code)
+
+note top of UC_BUY_FIRST
+  [exit] → course-library : UC_CL_ADDED | UC_CL_BROWSE
+end note
+note top of UC_BUY_CHECKOUT
+  [shared] http/idempotency.js — Idempotency-Key header
+end note
+
+' Payment provider identity NOT CONFIRMED IN SOURCE.
+' Files: src/features/purchase/*Page.jsx
+' Store: src/store/{purchase,cart}.store.js
+@enduml
