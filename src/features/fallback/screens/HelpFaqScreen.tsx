@@ -1,11 +1,12 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Screen from '@/components/Screen';
 import TopBar from '@/components/TopBar';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HelpFaqScreen'>;
 
@@ -23,7 +24,7 @@ export default function HelpFaqScreen({ navigation }: Props) {
 
   return (
     <Screen
-      header={<TopBar title="Help & FAQ" onBack={() => navigation.navigate('ParentSummaryScreen')} />}
+      header={<TopBar title="Help & FAQ" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)} />}
       scroll
     >
       <Box paddingHorizontal={16} paddingTop={14} paddingBottom={4}>
@@ -47,6 +48,9 @@ export default function HelpFaqScreen({ navigation }: Props) {
                   onPress={() => setOpen(isOpen ? -1 : i)}
                   style={styles.faqBtn}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`FAQ: ${f.q}`}
+                  accessibilityState={{ expanded: isOpen }}
                 >
                   <Text fontWeight="500" style={styles.faqQ}>{f.q}</Text>
                   <Text style={[styles.chevron, isOpen && { transform: [{ rotate: '180deg' }] }]}>⌄</Text>
@@ -65,11 +69,24 @@ export default function HelpFaqScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={16}>
         <Text style={styles.sectionHeader}>STILL NEED HELP?</Text>
         <Box style={styles.helpList} borderRadius={14} overflow="hidden">
-          <TouchableOpacity style={[styles.helpRow, styles.helpRowBorder]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.helpRow, styles.helpRowBorder]}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate(ROUTES.SupportScreen)}
+            accessibilityRole="button"
+            accessibilityLabel="Contact support"
+          >
             <Text style={{ fontSize: 15, color: '#2B2140', flex: 1 }}>✉ Contact support</Text>
             <Text style={styles.rowChevron}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.helpRow} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.helpRow}
+            activeOpacity={0.7}
+            disabled
+            accessibilityRole="button"
+            accessibilityLabel="Open user guide"
+            accessibilityState={{ disabled: true }}
+          >
             <Text style={{ fontSize: 15, color: '#2B2140', flex: 1 }}>📄 Open user guide</Text>
             <Text style={styles.rowChevron}>›</Text>
           </TouchableOpacity>

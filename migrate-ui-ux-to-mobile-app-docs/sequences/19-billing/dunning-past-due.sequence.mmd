@@ -74,7 +74,7 @@ sequenceDiagram
     Stripe-->>BillingService: {client_secret: seti_..., id: si_...}
     BillingService-->>BillingService: return {setup_intent_client_secret} to ParentApp (not shown — mobile-surface step)
     Note over BillingService: ParentApp completes SetupIntent in Stripe SDK (Stripe-idempotent)
-    Note over BillingService: on setup_intent.succeeded webhook → BillingService attaches new PaymentMethod + retries charge immediately
+    Note over BillingService: on setup_intent.succeeded webhook → BillingService attaches new PaymentMethod and retries charge immediately
     alt payment_method_not_updated (setup_intent cancelled or timed out)
         Note over BillingService: subscription remains past_due — next daily sweep will retry
     else new_payment_method_success

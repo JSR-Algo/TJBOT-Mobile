@@ -1,19 +1,20 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFoundScreen'>;
 
 export default function PairFoundScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="We found your Robot" onBack={() => navigation.navigate('PairIntroScreen')}>
+    <DeviceShell title="We found your Robot" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.card} flexDirection="row" gap={14} alignItems="center">
           <RobotDevice emotion="paired" size={84} accent="#FF6F61" />
@@ -33,8 +34,8 @@ export default function PairFoundScreen({ navigation }: Props) {
         </Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('PairCodeScreen')}>This is my Robot</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('PairSearchScreen')}>Search again</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairCodeScreen)}>This is my Robot</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Search again</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

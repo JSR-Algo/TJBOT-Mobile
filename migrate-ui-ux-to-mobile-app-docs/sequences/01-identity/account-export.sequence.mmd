@@ -33,7 +33,7 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: Entry point: parent_settings → Account → Export my data (UC-A13)
 
-    ParentApp->>Gateway: POST /v1/identity/account/export-request {X-Request-Id} + parent JWT Bearer
+    ParentApp->>Gateway: POST /v1/identity/account/export-request {X-Request-Id} and parent JWT Bearer
     Gateway->>Gateway: auth-resolver — require parent JWT (ADR-0005 D6 — fresh within 60s)
     alt parent_jwt_stale_re_pin_required
         Note over Gateway: parent JWT issued > 60s ago
@@ -76,8 +76,8 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: --- Status poll ---
 
-    ParentApp->>Gateway: GET /v1/identity/account/export-status/{job_id} + parent JWT Bearer
-    Gateway->>IdentityService: forward (JWT validated; read-only — 60s freshness not required)
+    ParentApp->>Gateway: GET /v1/identity/account/export-status/{job_id} and parent JWT Bearer
+    Gateway->>IdentityService: forward (JWT validated, read-only — 60s freshness not required)
     IdentityService->>PostgreSQL: SELECT state, signed_url, expires_at FROM export_jobs WHERE id={job_id} AND user_id={caller_user_id}
     PostgreSQL-->>IdentityService: job record
     alt pending_or_assembling

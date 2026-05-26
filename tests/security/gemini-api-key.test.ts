@@ -59,7 +59,7 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
     //
     // A real Gemini API key is AIza + 35 more [A-Za-z0-9_-] chars (total 39).
     // Any occurrence of `AIza` followed by 10+ such chars is a hard fail.
-    const realKeyShape = /AIza[A-Za-z0-9_\-]{10,}/;
+    const realKeyShape = /AIza[A-Za-z0-9_-]{10,}/;
     const offending: Array<{ file: string; line: number; text: string }> = [];
     for (const file of allFiles) {
       const src = fs.readFileSync(file, 'utf8');

@@ -34,7 +34,7 @@ if (!statSync(featuresDir, { throwIfNoEntry: false })?.isDirectory()) {
 
 const screenFiles = walkScreens(featuresDir);
 
-const routesPath = join(root, 'src', 'app', 'navigation', 'routes.ts');
+const routesPath = join(root, 'src', 'navigation', 'routes.ts');
 const routesSrc = readFileSync(routesPath, 'utf8');
 
 // Extract route keys from RootStackParamList
@@ -60,5 +60,28 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+function featureNavigationFiles(dir) {
+  const results = [];
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    const st = statSync(full);
+    if (st.isDirectory()) {
+      const nav = join(full, 'navigation.ts');
+      if (statSync(nav, { throwIfNoEntry: false })?.isFile()) results.push(nav);
+    }
+  }
+  return results;
+}
+
+const featureRegistrations = [];
+for (const file of featureNavigationFiles(featuresDir)) {
+  const source = readFileSync(file, 'utf8');
+  for (const match of source.matchAll(/\bname:\s*ROUTES\.(\w+)/g)) {
+    featureRegistrations.push(match[1]);
+  }
+}
+const duplicateRegistrations = featureRegistrations.filter((route, index) => featureRegistrations.indexOf(route) !== index);
 const total = routeKeys.size;
 console.log(`check-route-coverage: OK — ${screenFiles.length} screen files, ${total} routes registered`);
+console.log(`check-route-coverage: OK — ${featureRegistrations.length} feature route registrations`);
+console.log(`check-route-coverage: OK — ${new Set(duplicateRegistrations).size} duplicate screen registrations`);

@@ -937,7 +937,7 @@
       "domain": "lesson-session",
       "source_md_line": 84,
       "aliases": [
-        "UC_LSN_LISTEN_BOT"
+        "UC_LSN_LISTEN_bot"
       ],
       "status": "defined"
     },

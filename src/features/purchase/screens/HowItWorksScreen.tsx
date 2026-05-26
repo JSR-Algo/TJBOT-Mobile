@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -9,6 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HowItWorksScreen'>;
 
@@ -20,7 +21,7 @@ const STEPS = [
 
 export default function HowItWorksScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="How it works" onBack={() => navigation.navigate('PurchaseIntroScreen')}>
+    <DeviceShell title="How it works" onBack={() => navigation.navigate(ROUTES.PurchaseIntroScreen)}>
       <Box paddingHorizontal={24} paddingTop={18}>
         <PRStepTab step={1} total={3} />
       </Box>
@@ -44,8 +45,8 @@ export default function HowItWorksScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('IncludedScreen')}>What's included</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('PurchaseIntroScreen')}>Back</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.IncludedScreen)}>What's included</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PurchaseIntroScreen)}>Back</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

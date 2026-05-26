@@ -54,7 +54,7 @@ export function splitDevicesByAllowlist(devices: BleDeviceCandidate[]): BleScanR
   );
 }
 
-export async function scanForTbotDevices(timeoutMs = BLE_CONFIG.SCAN_TIMEOUT_MS): Promise<BleScanResult> {
+export async function scanForTJBotDevices(timeoutMs = BLE_CONFIG.SCAN_TIMEOUT_MS): Promise<BleScanResult> {
   const manager = getBleManager();
   const seen = new Map<string, BleDeviceCandidate>();
 

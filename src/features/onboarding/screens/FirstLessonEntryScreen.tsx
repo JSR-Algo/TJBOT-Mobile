@@ -1,18 +1,30 @@
 import React from 'react';
-import { StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
+import { useOptionalHousehold } from '@/contexts/HouseholdContext';
+import { legacyNavigate } from '../legacyNavigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FirstLessonEntryScreen'>;
 
-export default function FirstLessonEntryScreen({ navigation }: Props) {
+export default function FirstLessonEntryScreen(_props: Props) {
+  const household = useOptionalHousehold();
+  const handleStart = () => {
+    if (household) {
+      household.completeOnboarding(ROUTES.LessonReadyScreen);
+      return;
+    }
+    legacyNavigate(_props.navigation, ROUTES.LessonReadyScreen);
+  };
+
   return (
     <ScreenShell bg="#FFF8E1">
       <Box style={styles.parentPill} flexDirection="row" alignItems="center" gap={8}>
@@ -29,7 +41,7 @@ export default function FirstLessonEntryScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate('LessonReadyScreen')} color="#FF6F61">Yes!</PrimaryCTA>
+        <PrimaryCTA onPress={handleStart} color="#FF6F61">Yes!</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

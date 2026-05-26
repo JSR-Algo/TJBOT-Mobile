@@ -10,7 +10,7 @@
 
 ### Purchase / unlock sub-flow
 
-`cl_buy` → `cl_unlock_confirm`
+`cl_add_free` → `cl_unlock_confirm`
 
 `cl_unlock_confirm` is classified **happy** (exemption: this is a parent-gated confirmation modal, not an error branch — it is the intentional, expected step in the unlock funnel, always reached before the purchase completes).
 

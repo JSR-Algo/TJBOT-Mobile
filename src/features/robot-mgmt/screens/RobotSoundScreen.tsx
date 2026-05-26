@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotSoundScreen'>;
 
@@ -37,7 +38,7 @@ export default function RobotSoundScreen({ navigation }: Props) {
   const [voice, setVoice] = React.useState<VoiceId>('warm');
 
   return (
-    <DeviceShell title="Sound & volume" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Sound & volume" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.volCard}>
           <Box flexDirection="row" justifyContent="space-between" alignItems="flex-end" style={{ marginBottom: 14 }}>

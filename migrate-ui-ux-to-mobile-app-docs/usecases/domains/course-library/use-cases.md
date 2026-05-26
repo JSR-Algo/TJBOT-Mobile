@@ -25,7 +25,7 @@
 - **Main Flow:**
   1. `CourseDetailPage` mounts and renders `DvShell title="Course details"` (`CourseDetailScreen.jsx:13`).
   2. Page renders the LCD preview, course summary, and lesson breakdown.
-  3. Parent taps "Add to Robot" → navigation transitions to `cl_buy` (UC-CL03) — `CourseDetailScreen.jsx:70`.
+  3. Parent taps "Add to Robot" → navigation transitions to `cl_add_free` (UC-CL03) — `CourseDetailScreen.jsx:70`.
 - **Postconditions:** Parent has decided to add (transitions to UC-CL03) or to go back.
 - **Alt Flow:**
   1. Parent taps "Back to library" → returns to `cl_library` (`CourseDetailScreen.jsx:71`).
@@ -59,7 +59,7 @@
   3. When all 4 are entered correctly (`vals.join('') === target.join('')` — `UnlockConfirmModal.jsx:10`), the slots turn green; primary CTA enables and Parent taps confirm → navigation transitions to `cl_added` (UC-CL05).
 - **Postconditions:** Course is unlocked client-side (KD11 — server-side enforcement deferred); navigation lands on `cl_added`.
 - **Alt Flow:**
-  1. Parent taps back → returns to `cl_buy` (UC-CL03) without unlock — `UnlockConfirmModal.jsx:11`.
+  1. Parent taps back → returns to `cl_add_free` (UC-CL03) without unlock — `UnlockConfirmModal.jsx:11`.
 - **Error Flow:**
   1. Wrong code → slots stay red; CTA stays disabled. Parent retries (no lock-out in prototype — KD11).
 

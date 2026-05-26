@@ -2,28 +2,33 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFailedScreen'>;
 
-type GoScreen = 'PairIntroScreen' | 'PairWifiPasswordScreen' | 'PairSearchScreen';
+type GoScreen =
+  | typeof ROUTES.PairIntroScreen
+  | typeof ROUTES.PairWifiPasswordScreen
+  | typeof ROUTES.PairSearchScreen;
 
 const REASONS: { ic: string; t: string; b: string; go: GoScreen }[] = [
-  { ic: '🔋', t: 'Robot looks asleep', b: 'Hold the top button until you hear a chime.', go: 'PairIntroScreen' },
-  { ic: '📶', t: 'Wrong Wi-Fi password', b: 'Try entering it again — common typos: O vs 0.', go: 'PairWifiPasswordScreen' },
-  { ic: '📡', t: 'Robot is too far', b: 'Bring Robot within 1–2 m of your phone.', go: 'PairSearchScreen' },
-  { ic: '🔌', t: 'Battery is low', b: 'Plug Robot in for 5 minutes, then try again.', go: 'PairIntroScreen' },
+  { ic: '🔋', t: 'Robot looks asleep', b: 'Hold the top button until you hear a chime.', go: ROUTES.PairIntroScreen },
+  { ic: '📶', t: 'Wrong Wi-Fi password', b: 'Try entering it again — common typos: O vs 0.', go: ROUTES.PairWifiPasswordScreen },
+  { ic: '📡', t: 'Robot is too far', b: 'Bring Robot within 1–2 m of your phone.', go: ROUTES.PairSearchScreen },
+  { ic: '🔌', t: 'Battery is low', b: 'Plug Robot in for 5 minutes, then try again.', go: ROUTES.PairIntroScreen },
 ];
 
-export default function PairFailedScreen({ navigation }: Props) {
+export default function PairFailedScreen({ navigation, route }: Props) {
+  const params = route.params;
   return (
-    <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate('PairIntroScreen')}>
+    <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="gentle" size={160} accent="#FF6F61" />
         <Text fontWeight="600" style={styles.heading}>We couldn't reach your Robot</Text>
@@ -37,7 +42,20 @@ export default function PairFailedScreen({ navigation }: Props) {
             key={r.t}
             style={styles.reasonCard}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate(r.go)}
+            onPress={() => {
+              if (r.go === ROUTES.PairWifiPasswordScreen) {
+                if (params) navigation.navigate(ROUTES.PairWifiPasswordScreen, params);
+                else navigation.navigate(ROUTES.PairWifiPasswordScreen);
+                return;
+              }
+              if (r.go === ROUTES.PairSearchScreen) {
+                navigation.navigate(ROUTES.PairSearchScreen);
+                return;
+              }
+              navigation.navigate(ROUTES.PairIntroScreen);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={r.t === 'Wrong Wi-Fi password' ? 'Fix wrong Wi-Fi password' : r.t}
           >
             <Box style={styles.reasonIcon} alignItems="center" justifyContent="center">
               <Text style={{ fontSize: 16 }}>{r.ic}</Text>
@@ -53,7 +71,16 @@ export default function PairFailedScreen({ navigation }: Props) {
         ))}
       </Box>
       <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30}>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('PairSearchScreen')}>Try again</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Try again</DeviceBigBtn>
+        <DeviceBigBtn
+          secondary
+          accessibilityLabel="Contact support"
+          onClick={() => navigation.navigate(ROUTES.SupportScreen, {
+            context: { topic: 'wifi', errorFamily: 'robot_offline' },
+          })}
+        >
+          Contact support
+        </DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

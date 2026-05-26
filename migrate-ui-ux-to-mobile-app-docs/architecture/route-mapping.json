@@ -1,637 +1,1347 @@
 {
   "generated": "2026-05-12",
-  "routeCount": 125,
+  "routeCount": 122,
   "navigators": {
-    "AuthStack": "auth-gate fail (unauthenticated)",
-    "OnboardingStack": "kid-intro flow, reachable from features",
-    "MainTabs": "authenticated daily UX (5 tabs)",
-    "ModalStack": "authenticated stack hosting MainTabs as root + all domain screens + modal group"
+    "AuthNavigator": "unauthenticated auth routes",
+    "OnboardingNavigator": "authenticated setup routes before protected app",
+    "MainTabNavigator": "protected five-tab daily UX host",
+    "ModalNavigator": "protected stack routes plus modal group and tab hosts"
   },
   "routes": {
     "LoginScreen": {
-      "params": "undefined",
-      "group": "auth-(tbot-design-flow-only)",
-      "navigator": "AuthStack"
-    },
-    "LoginErrorScreen": {
-      "params": "undefined",
-      "group": "auth-(tbot-design-flow-only)",
-      "navigator": "AuthStack"
-    },
-    "ChildProfileScreen": {
-      "params": "undefined",
-      "group": "auth-(tbot-design-flow-only)",
-      "navigator": "AuthStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/login",
+      "stateMachineId": "onb_login"
     },
     "SplashScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/splash",
+      "stateMachineId": "onb_splash"
     },
     "WelcomeScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/welcome",
+      "stateMachineId": "onb_welcome"
     },
     "MicAskScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "onboarding",
+      "rootBranch": "onboarding",
+      "navigator": "OnboardingNavigator",
+      "bucket": "stackScreens",
+      "role": "onboarding",
+      "backBehavior": "linear-onboarding",
+      "deepLinkPath": "onboarding/mic-ask",
+      "backTarget": "ChildProfileScreen",
+      "stateMachineId": "onb_mic"
     },
     "TrustScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/trust",
+      "backTarget": "IntroCelebrateScreen",
+      "stateMachineId": "onb_trust"
     },
     "IntroListenScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/intro-listen",
+      "backTarget": "WelcomeScreen",
+      "stateMachineId": "onb_intro_listen"
     },
     "IntroSpeakScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/intro-speak",
+      "backTarget": "IntroListenScreen",
+      "stateMachineId": "onb_intro_speak"
     },
     "IntroRetryScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/intro-retry",
+      "backTarget": "IntroSpeakScreen",
+      "stateMachineId": "onb_intro_retry"
     },
     "IntroCelebrateScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "auth",
+      "rootBranch": "auth",
+      "navigator": "AuthNavigator",
+      "bucket": "stackScreens",
+      "role": "auth",
+      "backBehavior": "blocked-auth",
+      "deepLinkPath": "auth/intro-celebrate",
+      "backTarget": "IntroRetryScreen",
+      "stateMachineId": "onb_intro_celebrate"
+    },
+    "ChildProfileScreen": {
+      "feature": "onboarding",
+      "rootBranch": "onboarding",
+      "navigator": "OnboardingNavigator",
+      "bucket": "stackScreens",
+      "role": "onboarding-root",
+      "backBehavior": "linear-onboarding",
+      "deepLinkPath": "onboarding/child-profile",
+      "stateMachineId": "onb_child"
     },
     "FirstLessonEntryScreen": {
-      "params": "undefined",
-      "group": "legal-sign-off-for-under-13-users.",
-      "navigator": "OnboardingStack"
+      "feature": "onboarding",
+      "rootBranch": "onboarding",
+      "navigator": "OnboardingNavigator",
+      "bucket": "stackScreens",
+      "role": "onboarding",
+      "backBehavior": "linear-onboarding",
+      "deepLinkPath": "onboarding/first-lesson-entry",
+      "backTarget": "MicAskScreen",
+      "stateMachineId": "onb_first_lesson"
     },
     "HomeHubScreen": {
-      "params": "undefined",
-      "group": "home",
-      "navigator": "ModalStack"
+      "feature": "home",
+      "rootBranch": "protected",
+      "navigator": "MainTabNavigator",
+      "bucket": "tabScreen",
+      "role": "tab",
+      "backBehavior": "tab-root",
+      "deepLinkPath": "home/home-hub",
+      "stateMachineIds": [
+        "home_hub_idle",
+        "home_hub_greet",
+        "home_hub_daily",
+        "home_hub_done",
+        "home_hub_mic",
+        "home_hub_offline",
+        "home_hub_zero_child",
+        "home_hub_multiple_children",
+        "home_hub_unpaired_robot",
+        "home_hub_offline_24h",
+        "home_hub_paused",
+        "home_hub_quiet_hours",
+        "home_hub_error"
+      ]
     },
     "CourseScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course",
-      "navigator": "ModalStack"
+      "feature": "course",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course/course",
+      "stateMachineId": "course"
     },
     "LevelScreen": {
-      "params": "undefined | { levelId?: string }",
-      "group": "course",
-      "navigator": "ModalStack"
+      "feature": "course",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course/level",
+      "backTarget": "CourseScreen",
+      "stateMachineId": "level"
     },
     "UnitScreen": {
-      "params": "undefined | { unitId?: string }",
-      "group": "course",
-      "navigator": "ModalStack"
+      "feature": "course",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course/unit",
+      "backTarget": "LevelScreen",
+      "stateMachineId": "unit"
     },
     "LessonListScreen": {
-      "params": "undefined | { unitId?: string }",
-      "group": "course",
-      "navigator": "ModalStack"
+      "feature": "course",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course/lesson-list",
+      "backTarget": "UnitScreen",
+      "stateMachineId": "lesson_list"
     },
     "LessonDetailScreen": {
-      "params": "undefined | { lessonId?: string }",
-      "group": "course",
-      "navigator": "ModalStack"
+      "feature": "course",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course/lesson-detail",
+      "backTarget": "UnitScreen",
+      "stateMachineId": "lesson_detail"
     },
     "ReviewEntryScreen": {
-      "params": "undefined",
-      "group": "course",
-      "navigator": "ModalStack"
+      "feature": "course",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course/review-entry",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "review_entry"
     },
     "DailyMissionScreen": {
-      "params": "undefined",
-      "group": "course",
-      "navigator": "ModalStack"
+      "feature": "course",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course/daily-mission",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "daily_mission"
     },
     "CourseLibraryScreen": {
-      "params": "undefined",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "MainTabNavigator",
+      "bucket": "tabScreen",
+      "role": "tab",
+      "backBehavior": "tab-root",
+      "deepLinkPath": "course-library/course-library",
+      "stateMachineId": "cl_library"
     },
     "CourseDetailScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/course-detail",
+      "backTarget": "CourseLibraryScreen",
+      "stateMachineId": "cl_detail"
     },
     "BuyCourseScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/buy-course",
+      "backTarget": "CourseDetailScreen",
+      "stateMachineId": "cl_add_free"
     },
     "CourseAddedScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/course-added",
+      "stateMachineId": "cl_added"
     },
     "CourseCompleteScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/course-complete",
+      "backTarget": "CourseLibraryScreen",
+      "stateMachineId": "cl_complete"
     },
     "CourseLockedScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/course-locked",
+      "backTarget": "CourseLibraryScreen",
+      "stateMachineId": "cl_locked"
     },
     "NeedsSyncScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/needs-sync",
+      "backTarget": "CourseLibraryScreen",
+      "stateMachineId": "cl_needs_sync"
     },
     "SendToRobotScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/send-to-robot",
+      "backTarget": "DeviceHomeScreen",
+      "forwardCycleGroup": "course-dispatch-picker",
+      "stateMachineId": "cl_send"
     },
     "RobotReadyScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/robot-ready",
+      "backTarget": "SendToRobotScreen",
+      "forwardCycleGroup": "course-dispatch-picker",
+      "stateMachineId": "cl_robot_ready"
     },
     "RunningScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/running",
+      "backTarget": "RobotReadyScreen",
+      "stateMachineId": "cl_running"
     },
     "CompanionScreen": {
-      "params": "undefined",
-      "group": "course-library",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "course-library/companion",
+      "backTarget": "RunningScreen",
+      "stateMachineId": "cl_companion"
     },
     "PurchaseIntroScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal-entry",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/purchase-intro",
+      "backTarget": "DeviceHomeScreen",
+      "stateMachineId": "pr_intro"
     },
     "HowItWorksScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/how-it-works",
+      "backTarget": "PurchaseIntroScreen",
+      "stateMachineId": "pr_how"
     },
     "BundleScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/bundle",
+      "backTarget": "IncludedScreen",
+      "stateMachineId": "pr_bundle"
     },
     "IncludedScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/included",
+      "backTarget": "HowItWorksScreen",
+      "stateMachineId": "pr_included"
     },
     "CheckoutScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/checkout",
+      "backTarget": "PrivacyScreen",
+      "stateMachineId": "pr_checkout"
     },
     "OrderConfirmScreen": {
-      "params": "undefined | { orderId?: string }",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/order-confirm",
+      "backTarget": "CheckoutScreen",
+      "stateMachineId": "pr_confirm"
     },
     "ShippingScreen": {
-      "params": "undefined | { orderId?: string }",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/shipping",
+      "backTarget": "OrderConfirmScreen",
+      "stateMachineId": "pr_shipping"
     },
     "ArrivedScreen": {
-      "params": "undefined | { orderId?: string }",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/arrived",
+      "backTarget": "ShippingScreen",
+      "stateMachineId": "pr_arrived"
     },
     "ActivateScreen": {
-      "params": "undefined | { orderId?: string }",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/activate",
+      "backTarget": "ArrivedScreen",
+      "stateMachineId": "pr_activate"
     },
     "FirstCourseScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/first-course",
+      "backTarget": "ActivateScreen",
+      "stateMachineId": "pr_first_course"
     },
     "PrivacyScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/privacy",
+      "backTarget": "SubscriptionsScreen",
+      "stateMachineId": "pr_privacy"
     },
     "SubscriptionsScreen": {
-      "params": "undefined",
-      "group": "purchase",
-      "navigator": "ModalStack"
+      "feature": "purchase",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "purchase/subscriptions",
+      "backTarget": "BundleScreen",
+      "stateMachineId": "pr_subs"
     },
     "ConnectingScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/connecting",
+      "stateMachineId": "connecting"
     },
     "GreetingScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/greeting",
+      "stateMachineId": "greeting"
     },
     "LessonReadyScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/lesson-ready",
+      "stateMachineId": "lesson_ready"
     },
     "RobotListeningScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/robot-listening",
+      "forwardCycleGroup": "lesson-exit-resume",
+      "stateMachineId": "robot_listening"
     },
     "UserSpeakingScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/user-speaking",
+      "forwardCycleGroup": "lesson-exit-resume",
+      "stateMachineId": "user_speaking"
     },
     "RobotSpeakingScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/robot-speaking",
+      "forwardCycleGroup": "lesson-exit-resume",
+      "stateMachineId": "robot_speaking"
     },
     "ThinkingScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/thinking",
+      "forwardCycleGroup": "lesson-exit-resume",
+      "stateMachineId": "thinking"
     },
     "ActivityIntroScreen": {
-      "params": "undefined | { activityId?: string }",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/activity-intro",
+      "stateMachineId": "activity_intro"
     },
     "ActivityDoneScreen": {
-      "params": "undefined | { activityId?: string }",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/activity-done",
+      "stateMachineId": "activity_done"
     },
     "SuccessScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/success",
+      "forwardCycleGroup": "lesson-exit-resume",
+      "stateMachineId": "success"
     },
     "LessonDoneScreen": {
-      "params": "undefined | { lessonId?: string }",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/lesson-done",
+      "stateMachineId": "lesson_done"
     },
     "ExitConfirmScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/exit-confirm",
+      "forwardCycleGroup": "lesson-exit-resume",
+      "stateMachineId": "exit_confirm"
     },
     "RetryScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/retry",
+      "stateMachineId": "retry"
     },
     "SilenceScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/silence",
+      "stateMachineId": "silence"
     },
     "BargeinScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/bargein",
+      "stateMachineId": "bargein"
     },
     "GentleScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/gentle",
+      "stateMachineId": "gentle"
     },
     "OfftopicScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/offtopic",
+      "stateMachineId": "offtopic"
     },
     "SafetyScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/safety",
+      "stateMachineId": "safety"
     },
     "CostCappedScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/cost-capped",
+      "stateMachineId": "cost_capped"
     },
     "ParentStoppedScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/parent-stopped",
+      "stateMachineId": "parent_stopped"
     },
     "TimedOutScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/timed-out",
+      "stateMachineId": "timed_out"
     },
     "AudioErrorScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/audio-error",
+      "stateMachineId": "audio_error"
     },
     "AbandonedDisconnectScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/abandoned-disconnect",
+      "stateMachineId": "abandoned_disconnect"
     },
     "ReconnectingScreen": {
-      "params": "undefined",
-      "group": "lesson-session",
-      "navigator": "ModalStack"
+      "feature": "lesson-session",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-session/reconnecting",
+      "stateMachineId": "reconnecting"
     },
     "TodayProgressScreen": {
-      "params": "undefined",
-      "group": "progress",
-      "navigator": "ModalStack"
+      "feature": "progress",
+      "rootBranch": "protected",
+      "navigator": "MainTabNavigator",
+      "bucket": "tabScreen",
+      "role": "tab",
+      "backBehavior": "tab-root",
+      "deepLinkPath": "progress/today-progress",
+      "stateMachineId": "today_progress"
     },
     "WordsPracticedScreen": {
-      "params": "undefined",
-      "group": "progress",
-      "navigator": "ModalStack"
+      "feature": "progress",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "progress/words-practiced",
+      "backTarget": "TodayProgressScreen",
+      "stateMachineId": "words_practiced"
     },
     "LessonSummaryScreen": {
-      "params": "undefined | { lessonId?: string }",
-      "group": "progress",
-      "navigator": "ModalStack"
+      "feature": "progress",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "progress/lesson-summary",
+      "stateMachineId": "lesson_summary"
     },
     "ReviewNeededScreen": {
-      "params": "undefined",
-      "group": "progress",
-      "navigator": "ModalStack"
+      "feature": "progress",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "progress/review-needed",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "review_needed"
     },
     "CelebrationScreen": {
-      "params": "undefined",
-      "group": "progress",
-      "navigator": "ModalStack"
+      "feature": "progress",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "progress/celebration",
+      "stateMachineId": "celebration"
     },
     "ParentGateScreen": {
-      "params": "undefined",
-      "group": "parent",
-      "navigator": "ModalStack"
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "MainTabNavigator",
+      "bucket": "tabScreen",
+      "role": "tab",
+      "backBehavior": "tab-root",
+      "deepLinkPath": "parent/parent-gate",
+      "stateMachineId": "parent_gate"
     },
     "ParentSummaryScreen": {
-      "params": "undefined",
-      "group": "parent",
-      "navigator": "ModalStack"
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-summary",
+      "backTarget": "ParentGateScreen",
+      "stateMachineId": "parent_summary"
     },
     "ParentTodayScreen": {
-      "params": "undefined",
-      "group": "parent",
-      "navigator": "ModalStack"
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-today",
+      "backTarget": "ParentSummaryScreen",
+      "stateMachineId": "parent_today"
     },
     "ParentHistoryScreen": {
-      "params": "undefined",
-      "group": "parent",
-      "navigator": "ModalStack"
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-history",
+      "backTarget": "ParentSummaryScreen",
+      "stateMachineId": "parent_history"
     },
     "ParentSafetyScreen": {
-      "params": "undefined",
-      "group": "parent",
-      "navigator": "ModalStack"
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-safety",
+      "backTarget": "ParentSummaryScreen",
+      "stateMachineId": "parent_safety"
     },
     "ParentSettingsScreen": {
-      "params": "undefined",
-      "group": "parent",
-      "navigator": "ModalStack"
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-settings",
+      "backTarget": "ParentSummaryScreen",
+      "stateMachineId": "parent_settings"
+    },
+    "ParentAccountPrivacyScreen": {
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-account-privacy",
+      "backTarget": "ParentSettingsScreen",
+      "stateMachineId": "parent_account_privacy"
     },
     "ParentLockedOutScreen": {
-      "params": "undefined",
-      "group": "parent",
-      "navigator": "ModalStack"
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-locked-out",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "parent_locked_out"
     },
     "PairIntroScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-intro",
+      "backTarget": "PairAddScreen",
+      "stateMachineId": "dv_pair_intro"
     },
     "PairSearchScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-search",
+      "backTarget": "PairIntroScreen",
+      "forwardCycleGroup": "device-pairing-retry",
+      "stateMachineId": "dv_pair_search"
     },
     "PairFoundScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-found",
+      "backTarget": "PairIntroScreen",
+      "forwardCycleGroup": "device-pairing-retry",
+      "stateMachineId": "dv_pair_found"
     },
     "PairConnectingScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-connecting",
+      "backTarget": "PairWifiPasswordScreen",
+      "forwardCycleGroup": "device-pairing-retry",
+      "stateMachineId": "dv_pair_connecting"
     },
     "PairCodeScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-code",
+      "backTarget": "PairFoundScreen",
+      "forwardCycleGroup": "device-pairing-retry",
+      "stateMachineId": "dv_pair_code"
     },
     "PairAddScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-add",
+      "backTarget": "DeviceOverviewScreen",
+      "stateMachineId": "dv_pair_add"
     },
     "PairRenameScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-rename",
+      "backTarget": "PairSuccessScreen",
+      "stateMachineId": "dv_pair_rename"
     },
     "PairWifiScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-wifi",
+      "backTarget": "PairCodeScreen",
+      "forwardCycleGroup": "device-pairing-retry",
+      "stateMachineId": "dv_pair_wifi"
     },
     "PairWifiPasswordScreen": {
-      "params": "undefined | { deviceId?: string; ssid?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-wifi-password",
+      "backTarget": "PairWifiScreen",
+      "forwardCycleGroup": "device-pairing-retry",
+      "stateMachineId": "dv_pair_wifi_pw"
     },
     "PairOfflineScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-offline",
+      "backTarget": "PairAddScreen",
+      "stateMachineId": "dv_pair_offline"
     },
     "PairFailedScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-failed",
+      "backTarget": "PairIntroScreen",
+      "forwardCycleGroup": "device-pairing-retry",
+      "stateMachineId": "dv_pair_failed"
     },
     "PairSuccessScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-success",
+      "backTarget": "PairConnectingScreen",
+      "stateMachineId": "dv_pair_success"
     },
     "PairFirstLessonScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/pair-first-lesson",
+      "backTarget": "PairRenameScreen",
+      "stateMachineId": "dv_pair_first_lesson"
     },
     "DeviceHomeScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "MainTabNavigator",
+      "bucket": "tabScreen",
+      "role": "tab",
+      "backBehavior": "tab-root",
+      "deepLinkPath": "device/device-home",
+      "stateMachineId": "dv_home"
     },
     "DeviceOverviewScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/device-overview",
+      "stateMachineId": "dv_overview"
     },
     "DeviceFirmwareScreen": {
-      "params": "undefined | { deviceId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/device-firmware",
+      "backTarget": "DeviceHomeScreen",
+      "stateMachineId": "dv_firmware"
     },
     "DeviceSessionScreen": {
-      "params": "undefined | { sessionId?: string }",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/device-session",
+      "backTarget": "DeviceHomeScreen",
+      "stateMachineId": "dv_session"
     },
     "DeviceLostScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/device-lost",
+      "backTarget": "DeviceHomeScreen",
+      "stateMachineId": "dv_lost"
     },
     "LCDLessonTurnScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "state-machine",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/lcdlesson-turn",
+      "backTarget": "DeviceHomeScreen",
+      "stateMachineId": "dv_lcd_turn"
     },
     "LCDLibraryScreen": {
-      "params": "undefined",
-      "group": "device-/-pairing",
-      "navigator": "ModalStack"
+      "feature": "device",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "device/lcdlibrary",
+      "backTarget": "DeviceHomeScreen",
+      "stateMachineId": "dv_lcd"
     },
     "MyRobotScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/my-robot",
+      "backTarget": "ParentSummaryScreen",
+      "stateMachineId": "rm_my_robot"
     },
     "RobotStatusScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/robot-status",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_status"
     },
     "RobotBatteryScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/robot-battery",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_battery"
     },
     "RobotStorageScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/robot-storage",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_storage"
     },
     "RobotFirmwareScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/robot-firmware",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_firmware"
     },
     "RobotWifiScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/robot-wifi",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_wifi"
     },
     "RobotSoundScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/robot-sound",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_sound"
     },
     "MicTestScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/mic-test",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_mic_test"
     },
     "SpeakerTestScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/speaker-test",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_speaker_test"
     },
     "FactoryResetScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/factory-reset",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_factory"
     },
     "OfflineHelpScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/offline-help",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_offline_help"
     },
     "SupportScreen": {
-      "params": "undefined",
-      "group": "robot-mgmt",
-      "navigator": "ModalStack"
+      "feature": "robot-mgmt",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "robot-mgmt/support",
+      "backTarget": "MyRobotScreen",
+      "stateMachineId": "rm_support"
     },
     "NetworkErrorScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/network-error",
+      "backTarget": "HomeHubScreen",
+      "forwardCycleGroup": "network-retry",
+      "stateMachineId": "network_error"
     },
     "AppErrorScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/app-error",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "app_error"
     },
     "MicMissingScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/mic-missing",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "mic_missing"
     },
     "VoiceFailedScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/voice-failed",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "voice_failed"
     },
     "AudioRecoveryScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/audio-recovery",
+      "backTarget": "MicMissingScreen",
+      "stateMachineId": "audio_recovery"
     },
     "SafetyRedirectScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/safety-redirect",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "safety_redirect"
     },
     "HelpFaqScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/help-faq",
+      "backTarget": "ParentSummaryScreen",
+      "stateMachineId": "help_faq"
     },
     "KidSettingsScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "fallback-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/kid-settings",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "kid_settings"
     },
     "LessonResumeScreen": {
-      "params": "undefined",
-      "group": "fallback-screens",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "fallback/lesson-resume",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "lesson_resume"
     },
     "UnlockConfirmScreen": {
-      "params": "undefined | { courseId?: string }",
-      "group": "modals-&-overlays-(presented-as-modal)",
-      "navigator": "ModalStack"
+      "feature": "course-library",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "course-library/unlock-confirm",
+      "backTarget": "CourseDetailScreen",
+      "stateMachineId": "cl_unlock_confirm"
     },
     "ReconnectingOverlay": {
-      "params": "undefined",
-      "group": "modals-&-overlays-(presented-as-modal)",
-      "navigator": "ModalStack"
-    },
-    "ListenScreen": {
-      "params": "undefined",
-      "group": "phantom-routes-referenced-by-screens-(not-yet-wired-to-real-screens)",
-      "navigator": "ModalStack"
-    },
-    "SpeakScreen": {
-      "params": "undefined",
-      "group": "phantom-routes-referenced-by-screens-(not-yet-wired-to-real-screens)",
-      "navigator": "ModalStack"
-    },
-    "DevicePairWifiScreen": {
-      "params": "undefined",
-      "group": "phantom-routes-referenced-by-screens-(not-yet-wired-to-real-screens)",
-      "navigator": "ModalStack"
+      "feature": "fallback",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "modalScreens",
+      "role": "modal-entry",
+      "backBehavior": "modal-stack-back",
+      "deepLinkPath": "fallback/reconnecting-overlay",
+      "backTarget": "NetworkErrorScreen",
+      "forwardCycleGroup": "network-retry",
+      "stateMachineId": "reconnecting_overlay"
     }
   }
 }

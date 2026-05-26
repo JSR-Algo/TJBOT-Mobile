@@ -27,7 +27,7 @@ sequenceDiagram
     participant BillingService
     participant Redis
 
-    RealtimeService->>Gateway: GET /internal/v1/entitlements/:householdId + service-token Bearer
+    RealtimeService->>Gateway: GET /internal/v1/entitlements/:householdId and service-token Bearer
     Gateway->>Gateway: auth-resolver — JWT audience: tbot:service (sys-17)
     alt service_token_invalid
         Gateway-->>RealtimeService: 401 invalid_token
@@ -38,7 +38,7 @@ sequenceDiagram
             Redis-->>BillingService: {tier, dailyTurnLimit, dailySessionLimit, maxChildProfiles, features, ...}
         else cache miss
             Redis-->>BillingService: nil
-            BillingService->>BillingService: resolve from billing.entitlements + households.subscription_status (see Entitlement Resolution Logic)
+            BillingService->>BillingService: resolve from billing.entitlements and households.subscription_status (see Entitlement Resolution Logic)
             alt household_not_found
                 BillingService-->>Gateway: 404 household_not_found
                 Gateway-->>RealtimeService: 404
@@ -49,7 +49,7 @@ sequenceDiagram
                 BillingService->>Redis: SETEX entitlements:{householdId} (cache for TTL)
             end
         end
-        BillingService->>Redis: GET usage:{householdId}:{today}:turns + :sessions
+        BillingService->>Redis: GET usage:{householdId}:{today}:turns and :sessions
         Redis-->>BillingService: {turnCount, sessionCount}
         BillingService->>BillingService: compute turnsRemaining = dailyTurnLimit == -1 ? -1 : max(0, dailyTurnLimit - turnCount)
         alt daily_session_limit_reached

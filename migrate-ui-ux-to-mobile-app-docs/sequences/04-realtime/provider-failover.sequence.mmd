@@ -35,15 +35,15 @@ sequenceDiagram
     else fallback_provider_unavailable
         Orchestrator->>GoogleLiveFlashFallback: retry in fallback region
         GoogleLiveFlashFallback--xOrchestrator: 5xx
-        Orchestrator->>PhraseCache: lookup cached response by intent + content hash
+        Orchestrator->>PhraseCache: lookup cached response by intent and content hash
         PhraseCache-->>Orchestrator: cached phrase audio
     else all_providers_failed_use_canned
         Orchestrator->>GoogleLiveFlashFallback: retry
         GoogleLiveFlashFallback--xOrchestrator: error
         Orchestrator->>PhraseCache: lookup
         PhraseCache--xOrchestrator: miss
-        Note over Orchestrator: send LLM_TOKEN text frames + ERROR E-RT-212
+        Note over Orchestrator: send LLM_TOKEN text frames and ERROR E-RT-212
     else success
-        GoogleLiveFlashPrimary-->>Orchestrator: stream STT_FINAL + LLM_TOKEN + TTS_AUDIO
+        GoogleLiveFlashPrimary-->>Orchestrator: stream STT_FINAL and LLM_TOKEN and TTS_AUDIO
     end
     Note over Orchestrator: half-open after 30s — 5 consecutive successes required to close — automatic failback, no sticky failover

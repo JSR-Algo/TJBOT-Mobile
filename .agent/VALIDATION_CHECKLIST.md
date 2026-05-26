@@ -1,7 +1,7 @@
-# tbot-mobile — Validation Checklist
+# TJBot-mobile — Validation Checklist
 
 Hard gates every agent must pass before marking a task REVIEW.
-Run from `/Users/manhhodinh/Documents/TBOT/tbot-mobile/`.
+Run from `/Users/manhhodinh/Documents/TJBot/TJBot-mobile/`.
 
 Tick each box with evidence (command + exit code + key output line).
 A ticked box without evidence is a FAKE-DONE signal.
@@ -27,7 +27,7 @@ npm run lint
 ```
 
 - Expected: exit code 0, no `error` lines
-- Fail signal: `tbot-voice/no-voice-timing-in-shared` fires, or any `error` rule fires
+- Fail signal: `TJBot-voice/no-voice-timing-in-shared` fires, or any `error` rule fires
 - Custom rule file: `eslint-rules/no-voice-timing-in-shared.js` must exist and load
 
 ### G3 — Unit tests

@@ -38,7 +38,7 @@ sequenceDiagram
         CostAttributionWorker--xSQS: NACK (retry)
     else rate_card_loaded
         PostgreSQL-->>CostAttributionWorker: rate card row
-        CostAttributionWorker->>CostAttributionWorker: compute stt_cost + llm_cost + tts_cost + infra_cost = total
+        CostAttributionWorker->>CostAttributionWorker: compute stt_cost and llm_cost and tts_cost and infra_cost = total
         CostAttributionWorker->>PostgreSQL: INSERT cost_attribution (..., session_id) ON CONFLICT (session_id) DO NOTHING
         alt duplicate_session
             PostgreSQL-->>CostAttributionWorker: 0 rows inserted (already attributed)

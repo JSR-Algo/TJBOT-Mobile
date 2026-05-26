@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -10,6 +10,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
 import PRChip from '../components/PRChip';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FirstCourseScreen'>;
 
@@ -62,8 +63,8 @@ export default function FirstCourseScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('CourseAddedScreen')}>Send Hello Friends to Robot</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('CourseLibraryScreen')}>Explore the library first</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CourseAddedScreen)}>Send Hello Friends to Robot</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>Explore the library first</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

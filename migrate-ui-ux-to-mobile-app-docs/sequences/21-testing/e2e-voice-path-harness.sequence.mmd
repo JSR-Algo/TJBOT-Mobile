@@ -41,7 +41,7 @@ sequenceDiagram
     else loaded
         VoicePathRunner->>ProviderMocks: configure (stt, llm, tts fixtures, latency)
         VoicePathRunner->>DeviceSimulator: spawn (childProfile, configOverrides)
-        DeviceSimulator->>DeviceSimulator: boot + load mock cert
+        DeviceSimulator->>DeviceSimulator: boot and load mock cert
         alt device_simulator_boot_timeout
             DeviceSimulator-->>VoicePathRunner: 60s timeout — kill
             VoicePathRunner-->>CI: exit 3
@@ -65,7 +65,7 @@ sequenceDiagram
                     else mismatch
                         Note over SafetyService,AssertionEngine: safety_assertion_mismatch — capture diff
                     end
-                    DeviceSimulator->>VoicePathRunner: turn.transcript + timing
+                    DeviceSimulator->>VoicePathRunner: turn.transcript and timing
                     VoicePathRunner->>AssertionEngine: evaluate(transcript, safety, latency, response)
                 end
                 AssertionEngine->>AssertionEngine: aggregate per-stage latency vs baseline
@@ -76,7 +76,7 @@ sequenceDiagram
                     AssertionEngine-->>VoicePathRunner: fail — expected vs actual diff
                     VoicePathRunner-->>CI: exit 6
                 else pass
-                    AssertionEngine-->>VoicePathRunner: report (JUnit XML + session trace)
+                    AssertionEngine-->>VoicePathRunner: report (JUnit XML and session trace)
                     VoicePathRunner-->>CI: exit 0
                 end
             end

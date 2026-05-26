@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
@@ -9,13 +9,14 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SilenceScreen'>;
 
 export default function SilenceScreen({ navigation }: Props) {
   return (
     <ScreenShell>
-      <LessonHeader progress={0.34} onExit={() => navigation.navigate('ExitConfirmScreen')} />
+      <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Robot emotion="curious" size={220} />
         <SpeechBubble>Hmm, I didn't hear that clearly.{'\n'}Let's try again.</SpeechBubble>
@@ -25,7 +26,7 @@ export default function SilenceScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate('RobotListeningScreen')} color="#FF6F61">I'm here!</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)} color="#FF6F61">I'm here!</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

@@ -47,7 +47,7 @@ sequenceDiagram
     end
 
     FactoryCLI->>IntermediateCA: sign CSR (out-of-band, sys-15 / sys-13)
-    IntermediateCA-->>FactoryCLI: signed X.509 cert + fingerprint
+    IntermediateCA-->>FactoryCLI: signed X.509 cert and fingerprint
     FactoryCLI->>Gateway: POST /v1/factory/devices/:deviceId/certificate {certificate_pem}
     Gateway->>DeviceService: forward
     alt cert_fingerprint_conflict

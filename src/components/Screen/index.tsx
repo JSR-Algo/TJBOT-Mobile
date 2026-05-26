@@ -20,9 +20,6 @@ export default function Screen({
   padding = 16,
   children,
 }: Props) {
-  const Wrapper = safeArea ? SafeAreaView : Box;
-  const wrapperProps = safeArea ? { style: styles.root } : { flex: 1 };
-
   const body = scroll ? (
     <ScrollView
       style={styles.scroll}
@@ -37,12 +34,22 @@ export default function Screen({
     </Box>
   );
 
+  if (!safeArea) {
+    return (
+      <Box flex={1}>
+        {header}
+        {subheader}
+        {body}
+      </Box>
+    );
+  }
+
   return (
-    <Wrapper {...(wrapperProps as any)}>
+    <SafeAreaView style={styles.root}>
       {header}
       {subheader}
       {body}
-    </Wrapper>
+    </SafeAreaView>
   );
 }
 

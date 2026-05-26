@@ -2,12 +2,13 @@ import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceOverviewScreen'>;
 
@@ -68,7 +69,7 @@ export default function DeviceOverviewScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={60}>
-        <DeviceBigBtn onClick={() => navigation.navigate('PairAddScreen')}>Set up your Robot</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>Set up your Robot</DeviceBigBtn>
       </Box>
     </ScrollView>
   );

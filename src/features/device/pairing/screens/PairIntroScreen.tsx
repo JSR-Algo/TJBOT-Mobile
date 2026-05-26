@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairIntroScreen'>;
 
@@ -19,7 +20,7 @@ const STEPS = [
 
 export default function PairIntroScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Turn on Robot" onBack={() => navigation.navigate('PairAddScreen')}>
+    <DeviceShell title="Turn on Robot" onBack={() => navigation.navigate(ROUTES.PairAddScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="charging" size={180} accent={DV.accent} />
         <Text fontWeight="600" style={styles.heading}>Power on your Robot</Text>
@@ -38,7 +39,7 @@ export default function PairIntroScreen({ navigation }: Props) {
         ))}
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate('PairSearchScreen')}>My Robot is on</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>My Robot is on</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

@@ -43,7 +43,7 @@ GIVEN the app is built with EXPO_PUBLIC_V1_ROBOT=true
   AND a seeded parent+child with COPPA consent granted
 WHEN the parent logs in
   AND selects the child profile
-  AND taps "Talk to TBOT"
+  AND taps "Talk to TJBot"
 THEN RobotScreen loads within 2 s
   AND the robot avatar is in IDLE_BREATHING expression
 WHEN the child taps-and-holds, says "hi"
@@ -51,7 +51,7 @@ THEN within 2.5 s first audio chunk arrives (instrumented; E2E only asserts ≤ 
   AND the robot transitions IDLE → LISTENING → THINKING → SPEAKING
   AND a transcript chunk is POSTed to /v1/live/transcript-sink with valid X-Session-Mac
 WHEN the child completes 3 turns
-  AND taps "Bye TBOT"
+  AND taps "Bye TJBot"
 THEN WSS closes cleanly
   AND live_session_duration_ms is emitted
   AND no async timers remain (Jest --detectOpenHandles, post-test)
@@ -83,7 +83,7 @@ THEN audio chunks for that turn are dropped before playback
 
 ```
 GIVEN a child profile with coppaConsentStatus != "granted"
-WHEN parent taps "Talk to TBOT"
+WHEN parent taps "Talk to TJBot"
 THEN RobotScreen is NOT entered
   AND app navigates to CoppaConsentScreen
   AND coppa_gate_blocked telemetry is emitted
@@ -106,7 +106,7 @@ GIVEN app built with EXPO_PUBLIC_V1_ROBOT=true
   AND backend config has v1_robot_enabled_remote=false
 WHEN parent opens the app (cold start)
 THEN /v1/config returns v1_robot_enabled_remote=false
-  AND the home tab falls back to legacy InteractionScreen OR shows "TBOT is resting" UI
+  AND the home tab falls back to legacy InteractionScreen OR shows "TJBot is resting" UI
   AND no /v1/live/ephemeral-token call is made
 ```
 
@@ -118,9 +118,9 @@ THEN /v1/config returns v1_robot_enabled_remote=false
 
 ## 6. Infrastructure
 
-- **Detox** for iOS + Android simulator/emulator. Config at `tbot-mobile/.detoxrc.js`.
-- **Maestro** smoke against a TestFlight build on one physical iOS device. Config at `tbot-mobile/.maestro/`.
-- **Network spy** — local MITM proxy run by the Detox test harness (`tbot-mobile/tests/e2e/network-spy.ts`) to assert which outbound calls fired.
+- **Detox** for iOS + Android simulator/emulator. Config at `TJBot-mobile/.detoxrc.js`.
+- **Maestro** smoke against a TestFlight build on one physical iOS device. Config at `TJBot-mobile/.maestro/`.
+- **Network spy** — local MITM proxy run by the Detox test harness (`TJBot-mobile/tests/e2e/network-spy.ts`) to assert which outbound calls fired.
 - **Mocked Gemini WSS** — a fake WS server in the test harness that replays prewritten transcripts. Activated by `EXPO_PUBLIC_GEMINI_WSS_URL=ws://localhost:9901` at build time.
 
 ## 7. Fixtures
@@ -131,7 +131,7 @@ THEN /v1/config returns v1_robot_enabled_remote=false
 
 ## 8. CI integration
 
-- GitHub Actions job `mobile-e2e` runs on PR against `tbot-mobile/src/**` or `tbot-mobile/tests/e2e/**` changes.
+- GitHub Actions job `mobile-e2e` runs on PR against `TJBot-mobile/src/**` or `TJBot-mobile/tests/e2e/**` changes.
 - Artifacts: Detox screenshots, logcat (Android), xcodebuild output (iOS), mocked WS transcript. Retained 30 days.
 - Required status check before merge to `main` (enforced by branch protection).
 

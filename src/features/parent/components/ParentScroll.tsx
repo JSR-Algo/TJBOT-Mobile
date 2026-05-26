@@ -34,7 +34,13 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
           gap={12}
         >
           {onBack ? (
-            <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity
+              onPress={onBack}
+              style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
               <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={PA.ink2} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M15 18l-6-6 6-6" />
               </Svg>
@@ -55,5 +61,5 @@ const styles = StyleSheet.create({
     paddingTop: 56, paddingBottom: 12, paddingHorizontal: 20,
     borderBottomWidth: 1, zIndex: 5,
   },
-  backBtn: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  backBtn: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 });

@@ -2,7 +2,5 @@
   "id": "onboarding",
   "owner_lane": "A",
   "flow": "docs/flows/domains/onboarding/flow.generated.mmd",
-  "edge_cases": {
-    "onb_login_error": ["error", "retry"]
-  }
+  "edge_cases": {}
 }

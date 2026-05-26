@@ -43,7 +43,7 @@ sequenceDiagram
     alt no_valid_manifest
         Device->>Device: silent-limited mode (visual cues only)
     else offline_manifest_expired
-        Device->>Device: continue using last valid content + emit warning telemetry
+        Device->>Device: continue using last valid content and emit warning telemetry
     else success
         Device->>Device: play canned offline_entry phrase
     end

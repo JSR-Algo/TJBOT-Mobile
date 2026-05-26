@@ -3,11 +3,11 @@ import path from 'path';
 
 describe('iOS VoiceMic fallback echo gate', () => {
   const micSrc = fs.readFileSync(
-    path.join(__dirname, '../../ios/TbotMobile/VoiceMic/VoiceMicModule.swift'),
+    path.join(__dirname, '../../ios/TJBotMobile/VoiceMic/VoiceMicModule.swift'),
     'utf8',
   );
   const pcmSrc = fs.readFileSync(
-    path.join(__dirname, '../../ios/TbotMobile/PcmStream/PcmStreamModule.swift'),
+    path.join(__dirname, '../../ios/TJBotMobile/PcmStream/PcmStreamModule.swift'),
     'utf8',
   );
 

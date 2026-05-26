@@ -38,7 +38,7 @@ sequenceDiagram
 
     RuntimeApp->>RuntimeApp: mount NVS, load sys.last_config_etag, read boot_fail_window
     alt repeated_boot_crash (boot_fail_window >= 3)
-        RuntimeApp->>RuntimeApp: skip normal startup → state=SAFE_MODE (display support code, allow heartbeat + diagnostics only)
+        RuntimeApp->>RuntimeApp: skip normal startup → state=SAFE_MODE (display support code, allow heartbeat and diagnostics only)
     else success
         RuntimeApp->>RuntimeApp: init RTOS tasks (audio, network, supervisor at priority 24)
         RuntimeApp->>RuntimeApp: init audio pipeline (DMA buffers, ring buffers)

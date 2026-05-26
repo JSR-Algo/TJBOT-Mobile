@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -16,10 +17,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetailScreen'>;
 const ICONS = ['🗣️', '🎯', '💛', '🔢'];
 const COURSE = COURSES[2]!;
 
-export default function CourseDetailScreen({ navigation }: Props) {
-  const c = COURSE;
+export default function CourseDetailScreen({ navigation, route }: Props) {
+  const courseId = route.params?.courseId ?? COURSE.id;
+  const c = COURSES.find((course) => course.id === courseId) ?? COURSE;
   return (
-    <DeviceShell title="Course details" onBack={() => navigation.navigate('CourseLibraryScreen')}>
+    <DeviceShell title="Course details" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard}>
           <Box style={styles.heroLCD} alignItems="center" justifyContent="center">
@@ -27,7 +29,7 @@ export default function CourseDetailScreen({ navigation }: Props) {
           </Box>
           <Box padding={14} paddingBottom={16}>
             <Box flexDirection="row" gap={8} alignItems="center" style={styles.chipRow}>
-              <CLChip state={c.state as any} />
+              <CLChip state={c.state} />
               <Text style={styles.metaText}>Ages {c.ages} · {c.level}</Text>
             </Box>
             <Text fontWeight="600" style={styles.title}>{c.title}</Text>
@@ -69,8 +71,8 @@ export default function CourseDetailScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('BuyCourseScreen')}>Add to Robot</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('CourseLibraryScreen')}>Back to library</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId })}>Add to Robot</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>Back to library</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

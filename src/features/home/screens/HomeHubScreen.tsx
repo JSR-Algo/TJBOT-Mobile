@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
 import TopBar from '@/components/TopBar';
 import CircleBtn from '@/design-system/components/CircleBtn';
@@ -15,6 +15,7 @@ import HomeSecondaryButton from '../components/HomeSecondaryButton';
 import { useHomeState } from '../hooks/useHomeState';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 
@@ -49,12 +50,12 @@ export default function HomeHubScreen({ navigation }: Props) {
     <ScreenShell bg={bg}>
       <TopBar
         left={
-          <CircleBtn size={44} onPress={() => navigation.navigate('ParentGateScreen')}>
+          <CircleBtn size={44} onPress={() => navigation.navigate(ROUTES.ParentGateScreen)}>
             <UserIcon />
           </CircleBtn>
         }
         right={
-          <CircleBtn size={44} onPress={() => navigation.navigate('ParentSettingsScreen')}>
+          <CircleBtn size={44} onPress={() => navigation.navigate(ROUTES.ParentGateScreen)}>
             <SettingsIcon />
           </CircleBtn>
         }
@@ -91,7 +92,7 @@ export default function HomeHubScreen({ navigation }: Props) {
 
       <Box style={styles.primaryCta}>
         <PrimaryCTA
-          onPress={() => navigation.navigate(cfg.ctaTarget as any)}
+          onPress={() => navigateHomeCtaTarget(navigation, cfg.ctaTarget)}
           color={cfg.ctaColor}
         >
           {cfg.ctaLabel}
@@ -99,12 +100,35 @@ export default function HomeHubScreen({ navigation }: Props) {
       </Box>
 
       <Box style={styles.secondaryRow} flexDirection="row" gap={10}>
-        <HomeSecondaryButton label="Course"   icon="🗺️" onPress={() => navigation.navigate('CourseScreen')}         dim={cfg.dimSecondary} />
-        <HomeSecondaryButton label="Review"   icon="🔁" onPress={() => navigation.navigate('ReviewNeededScreen')}   dim={cfg.dimSecondary} badge={cfg.reviewBadge} />
-        <HomeSecondaryButton label="Progress" icon="⭐" onPress={() => navigation.navigate('TodayProgressScreen')} dim={cfg.dimSecondary} />
+        <HomeSecondaryButton label="Course"   icon="🗺️" onPress={() => navigation.navigate(ROUTES.CourseScreen)}         dim={cfg.dimSecondary} />
+        <HomeSecondaryButton label="Review"   icon="🔁" onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}   dim={cfg.dimSecondary} badge={cfg.reviewBadge} />
+        <HomeSecondaryButton label="Progress" icon="⭐" onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)} dim={cfg.dimSecondary} />
       </Box>
     </ScreenShell>
   );
+}
+
+function navigateHomeCtaTarget(
+  navigation: Props['navigation'],
+  target: keyof RootStackParamList,
+): void {
+  if (target === ROUTES.LessonReadyScreen) {
+    navigation.navigate(ROUTES.LessonReadyScreen);
+    return;
+  }
+  if (target === ROUTES.TodayProgressScreen) {
+    navigation.navigate(ROUTES.TodayProgressScreen);
+    return;
+  }
+  if (target === ROUTES.ParentGateScreen) {
+    navigation.navigate(ROUTES.ParentGateScreen);
+    return;
+  }
+  if (target === ROUTES.DeviceOverviewScreen) {
+    navigation.navigate(ROUTES.DeviceOverviewScreen);
+    return;
+  }
+  navigation.navigate(ROUTES.HomeHubScreen);
 }
 
 function UserIcon() {

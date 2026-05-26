@@ -9,14 +9,25 @@ export const Pressable = memo(function Pressable({
   haptic = true,
   onPress,
   children,
+  accessibilityRole,
+  accessibilityState,
+  disabled,
   ...rest
 }: StyledPressableProps) {
   const handlePress: PressableProps['onPress'] = (e) => {
     if (haptic) Vibration.vibrate(10);
     onPress?.(e);
   };
+  const resolvedAccessibilityState =
+    disabled == null ? accessibilityState : { ...accessibilityState, disabled };
   return (
-    <RNPressable onPress={handlePress} {...rest}>
+    <RNPressable
+      onPress={handlePress}
+      accessibilityRole={accessibilityRole ?? (onPress ? 'button' : undefined)}
+      accessibilityState={resolvedAccessibilityState}
+      disabled={disabled}
+      {...rest}
+    >
       {children}
     </RNPressable>
   );

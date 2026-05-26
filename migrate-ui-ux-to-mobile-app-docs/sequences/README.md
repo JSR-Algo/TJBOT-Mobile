@@ -5,7 +5,7 @@
 Hand-authored + spec-seeded `sequenceDiagram` files covering all 22 backend systems at **contract-level** depth.
 Distinct from `docs/flows/` (mobile UI nav-graph). See `AGENTS.md` for ownership lanes and `_actors.md` for the participant allow-list.
 
-Total files: **78**.
+Total files: **102**.
 
 ## _cross
 
@@ -20,9 +20,22 @@ Total files: **78**.
 
 | flow_id | surface | externals | status | file |
 |---|---|---|---|---|
+| account-delete | mobile | SES | final | `01-identity/account-delete.sequence.mmd` |
+| account-export | mobile | SES, S3 | final | `01-identity/account-export.sequence.mmd` |
+| child-add | mobile | — | final | `01-identity/child-add.sequence.mmd` |
+| child-delete | mobile | — | final | `01-identity/child-delete.sequence.mmd` |
 | child-profile-create | mobile | — | final | `01-identity/child-profile-create.sequence.mmd` |
+| child-switch | mobile | — | final | `01-identity/child-switch.sequence.mmd` |
+| coppa-consent-record | mobile | — | final | `01-identity/coppa-consent-record.sequence.mmd` |
+| freshness-refresh | mobile | — | final | `07-parent/freshness-refresh.sequence.mmd` |
+| household-invite-parent | mobile | SES | final | `07-parent/household-invite-parent.sequence.mmd` |
+| household-leave | mobile | — | final | `07-parent/household-leave.sequence.mmd` |
+| household-transfer-primary | mobile | SES | final | `07-parent/household-transfer-primary.sequence.mmd` |
 | login | mobile | SES | final | `01-identity/login.sequence.mmd` |
+| logout | mobile | — | final | `01-identity/logout.sequence.mmd` |
 | password-reset | mobile | SES | final | `01-identity/password-reset.sequence.mmd` |
+| pin-recovery | mobile | SES | final | `01-identity/pin-recovery.sequence.mmd` |
+| session-revoke | mobile | — | final | `01-identity/session-revoke.sequence.mmd` |
 | signup | mobile | SES | final | `01-identity/signup.sequence.mmd` |
 | token-refresh | mobile | — | final | `01-identity/token-refresh.sequence.mmd` |
 
@@ -52,8 +65,10 @@ Total files: **78**.
 |---|---|---|---|---|
 | barge-in | device | GoogleLiveFlash | final | `04-realtime/barge-in.sequence.mmd` |
 | coppa-retention | cron | — | final | `04-realtime/coppa-retention.sequence.mmd` |
+| observer-attach | mobile | — | final | `04-realtime/observer-attach.sequence.mmd` |
 | provider-failover | device | GoogleLiveFlashPrimary, GoogleLiveFlashFallback, PhraseCache | final | `04-realtime/provider-failover.sequence.mmd` |
 | session-close | device | Redis | final | `04-realtime/session-close.sequence.mmd` |
+| session-start-mobile | mobile | — | final | `04-realtime/session-start-mobile.sequence.mmd` |
 | turn-pipeline | device | GoogleLiveFlash | final | `04-realtime/turn-pipeline.sequence.mmd` |
 | ws-handshake | device | Redis | final | `04-realtime/ws-handshake.sequence.mmd` |
 
@@ -73,6 +88,7 @@ Total files: **78**.
 |---|---|---|---|---|
 | content-pack-publish | admin | S3, Redis | final | `06-content/content-pack-publish.sequence.mmd` |
 | content-selection | internal-RPC | Redis | final | `06-content/content-selection.sequence.mmd` |
+| entitlement-grant-mobile | mobile | Redis | final | `06-content/entitlement-grant-mobile.sequence.mmd` |
 | memory-ingest | internal-RPC | — | final | `06-content/memory-ingest.sequence.mmd` |
 | retrieval | internal-RPC | Redis | final | `06-content/retrieval.sequence.mmd` |
 | topic-decay | cron | — | final | `06-content/topic-decay.sequence.mmd` |
@@ -85,6 +101,7 @@ Total files: **78**.
 | controls-update | mobile | — | final | `07-parent/controls-update.sequence.mmd` |
 | daily-summary-generation | cron | EventBridge, SQS | final | `07-parent/daily-summary-generation.sequence.mmd` |
 | dst-rebuild | cron | EventBridge | final | `07-parent/dst-rebuild.sequence.mmd` |
+| parent-gate-validate | mobile | — | final | `07-parent/parent-gate-validate.sequence.mmd` |
 | weekly-summary-generation | cron | EventBridge, SQS | final | `07-parent/weekly-summary-generation.sequence.mmd` |
 
 ## sys-08-config-fleet-management
@@ -150,6 +167,12 @@ Total files: **78**.
 |---|---|---|---|---|
 | factory-provision-and-test | factory | IntermediateCA, LabelPrinter | final | `15-manufacturing/factory-provision-and-test.sequence.mmd` |
 
+## sys-16-mobile-shell
+
+| flow_id | surface | externals | status | file |
+|---|---|---|---|---|
+| push-deep-link | mobile | FCM | final | `16-mobile/push-deep-link.sequence.mmd` |
+
 ## sys-16-parent-mobile-application
 
 | flow_id | surface | externals | status | file |
@@ -176,8 +199,14 @@ Total files: **78**.
 
 | flow_id | surface | externals | status | file |
 |---|---|---|---|---|
+| checkout-initiate-mobile | mobile | Stripe | final | `19-billing/checkout-initiate-mobile.sequence.mmd` |
+| dunning-past-due | cron | Stripe, SES, FCM | final | `19-billing/dunning-past-due.sequence.mmd` |
 | entitlement-check-session-start | internal-RPC | — | final | `19-billing/entitlement-check-session-start.sequence.mmd` |
+| invoice-history | mobile | Stripe | final | `19-billing/invoice-history.sequence.mmd` |
+| order-cancel | mobile | Stripe | final | `19-billing/order-cancel.sequence.mmd` |
+| refund-request | mobile | SES | final | `19-billing/refund-request.sequence.mmd` |
 | stripe-webhook-processing | webhook-inbound | Stripe | final | `19-billing/stripe-webhook-processing.sequence.mmd` |
+| subscription-lifecycle | mobile | Stripe | final | `19-billing/subscription-lifecycle.sequence.mmd` |
 
 ## sys-20-content-authoring-review
 

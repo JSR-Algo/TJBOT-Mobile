@@ -2,11 +2,12 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import OnbShell, { OB } from '@/components/OnbShell';
 import OnbBigBtn from '@/components/OnbBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen'>;
 
@@ -33,7 +34,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
   const sel = BUDDIES.find(b => b.id === buddy);
 
   return (
-    <OnbShell title="Your child's buddy" onBack={() => navigation.navigate('LoginScreen')}>
+    <OnbShell title="Your child's buddy" onBack={() => navigation.navigate(ROUTES.LoginScreen)}>
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text fontWeight="600" style={styles.heading}>Pick a buddy and a starting level</Text>
         <Text style={styles.sub}>
@@ -103,7 +104,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <OnbBigBtn onClick={() => navigation.navigate('IntroListenScreen')}>Save and meet Robot</OnbBigBtn>
+        <OnbBigBtn onClick={() => navigation.navigate(ROUTES.IntroListenScreen)}>Save and meet Robot</OnbBigBtn>
       </Box>
     </OnbShell>
   );

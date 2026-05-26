@@ -20,8 +20,8 @@ function exportsOf(file) {
   for (const m of txt.matchAll(/export\s+const\s+(\w+)/g)) out.add(m[1]);
   return out;
 }
-const apiDir = resolve(ROOT, 'src/services/api');
-const storeDir = resolve(ROOT, 'src/store');
+const apiDir = resolve(APP_ROOT, 'src/services/api');
+const storeDir = resolve(APP_ROOT, 'src/store');
 const apiExports = {};
 for (const f of existsSync(apiDir) ? readdirSync(apiDir) : []) {
   if (f.endsWith('.api.js') || f.endsWith('.api.ts')) apiExports[f] = exportsOf(resolve(apiDir, f));

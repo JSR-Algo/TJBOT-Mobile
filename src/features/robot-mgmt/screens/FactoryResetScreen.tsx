@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -10,6 +10,7 @@ import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FactoryResetScreen'>;
 type Step = 'warning' | 'gate' | 'confirm';
@@ -24,7 +25,7 @@ export default function FactoryResetScreen({ navigation }: Props) {
 
   if (step === 'warning') {
     return (
-      <DeviceShell title="Factory reset" onBack={() => navigation.navigate('MyRobotScreen')}>
+      <DeviceShell title="Factory reset" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
         <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
           <Box style={styles.dangerCircle} alignItems="center" justifyContent="center">
             <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={RM.danger} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -54,7 +55,7 @@ export default function FactoryResetScreen({ navigation }: Props) {
           </Box>
         </Box>
         <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-          <DeviceBigBtn secondary onClick={() => navigation.navigate('OfflineHelpScreen')}>Try smaller fixes first</DeviceBigBtn>
+          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.OfflineHelpScreen)}>Try smaller fixes first</DeviceBigBtn>
           <DeviceBigBtn danger onClick={() => setStep('gate')}>I understand · continue</DeviceBigBtn>
         </Box>
       </DeviceShell>
@@ -121,8 +122,8 @@ export default function FactoryResetScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={30} paddingBottom={30} gap={10}>
-        <DeviceBigBtn danger onClick={() => navigation.navigate('MyRobotScreen')}>Yes, erase Robot</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRobotScreen')}>Cancel</DeviceBigBtn>
+        <DeviceBigBtn danger onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>Yes, erase Robot</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>Cancel</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

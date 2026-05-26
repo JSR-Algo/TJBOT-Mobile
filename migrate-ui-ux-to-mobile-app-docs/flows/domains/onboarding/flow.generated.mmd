@@ -1,5 +1,11 @@
-%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
 %% domain: onboarding
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
   classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Onboarding["Onboarding"]
+    onb_child["11 · Child Profile"]
+    onb_first_lesson["12 · First Lesson Entry"]
+    onb_mic["8 · Voice Permission"]
+  end
+  class onb_child,onb_first_lesson,onb_mic happy

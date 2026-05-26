@@ -34,7 +34,7 @@ sequenceDiagram
         IdentityService-->>Gateway: 401 invalid_refresh_token
         Gateway-->>ParentApp: 401
     else refresh_replay_detected
-        Note over IdentityService: old token reused AFTER rotation grace window — revoke session + emit suspicious event (sys-13)
+        Note over IdentityService: old token reused AFTER rotation grace window — revoke session and emit suspicious event (sys-13)
         IdentityService-->>Gateway: 401 invalid_refresh_token
         Gateway-->>ParentApp: 401
     else success

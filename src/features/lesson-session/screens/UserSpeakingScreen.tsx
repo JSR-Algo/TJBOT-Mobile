@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
@@ -10,13 +10,15 @@ import WaveBars from '@/design-system/components/WaveBars';
 import MicButton from '@/components/MicButton';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UserSpeakingScreen'>;
 
 export default function UserSpeakingScreen({ navigation }: Props) {
   return (
     <ScreenShell bg="#E8F8F0">
-      <LessonHeader progress={0.32} onExit={() => navigation.navigate('ExitConfirmScreen')} />
+      <Box accessible accessibilityLabel="Student voice is being heard" flex={1}>
+      <LessonHeader progress={0.32} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center">
         <Text fontWeight="800" style={styles.iHearYou}>I hear you!</Text>
         <Box style={styles.pulseWrap} alignItems="center" justifyContent="center">
@@ -30,8 +32,9 @@ export default function UserSpeakingScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} alignItems="center" gap={14}>
-        <MicButton on onClick={() => navigation.navigate('ThinkingScreen')} label="stop" />
+        <MicButton on onClick={() => navigation.navigate(ROUTES.ThinkingScreen)} label="stop" />
         <Text fontWeight="700" style={styles.tapText}>Tap when done</Text>
+      </Box>
       </Box>
     </ScreenShell>
   );

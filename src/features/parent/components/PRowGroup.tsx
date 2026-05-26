@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { PA } from './ParentScroll';
 
 type Props = {
   header?: string;

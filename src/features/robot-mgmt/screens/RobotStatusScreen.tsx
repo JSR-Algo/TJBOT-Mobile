@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
@@ -9,12 +9,13 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import RmChip from '../components/RmChip';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotStatusScreen'>;
 
 export default function RobotStatusScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot status" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Robot status" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard} flexDirection="row" gap={12} alignItems="center">
           <RobotDevice emotion="happy" size={72} accent="#FF6F61" />
@@ -28,12 +29,12 @@ export default function RobotStatusScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Details</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="🔋" title="Battery" body="78% · charging on dock" onClick={() => navigation.navigate('RobotBatteryScreen')} />
-          <DeviceRow icon="📶" title="Wi-Fi" body="Casa-Familia · strong signal" onClick={() => navigation.navigate('RobotWifiScreen')} />
-          <DeviceRow icon="📚" title="Courses on Robot" body="3 installed · 1.2 GB used" onClick={() => navigation.navigate('RobotStorageScreen')} />
-          <DeviceRow icon="🎙️" title="Microphone" body="Working · last test today" onClick={() => navigation.navigate('MicTestScreen')} />
-          <DeviceRow icon="🔈" title="Speaker" body="Working · volume 6" onClick={() => navigation.navigate('SpeakerTestScreen')} />
-          <DeviceRow icon="⬆️" title="Software" body="v1.4.2 · update available" onClick={() => navigation.navigate('RobotFirmwareScreen')} />
+          <DeviceRow icon="🔋" title="Battery" body="78% · charging on dock" onClick={() => navigation.navigate(ROUTES.RobotBatteryScreen)} />
+          <DeviceRow icon="📶" title="Wi-Fi" body="Casa-Familia · strong signal" onClick={() => navigation.navigate(ROUTES.RobotWifiScreen)} />
+          <DeviceRow icon="📚" title="Courses on Robot" body="3 installed · 1.2 GB used" onClick={() => navigation.navigate(ROUTES.RobotStorageScreen)} />
+          <DeviceRow icon="🎙️" title="Microphone" body="Working · last test today" onClick={() => navigation.navigate(ROUTES.MicTestScreen)} />
+          <DeviceRow icon="🔈" title="Speaker" body="Working · volume 6" onClick={() => navigation.navigate(ROUTES.SpeakerTestScreen)} />
+          <DeviceRow icon="⬆️" title="Software" body="v1.4.2 · update available" onClick={() => navigation.navigate(ROUTES.RobotFirmwareScreen)} />
           <DeviceRow icon="🌡️" title="Temperature" body="Normal · 28°C" />
           <DeviceRow icon="⏱️" title="Uptime" body="3 days · last started Sunday" />
         </Box>

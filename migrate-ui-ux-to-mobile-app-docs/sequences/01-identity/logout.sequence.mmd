@@ -26,9 +26,9 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: Entry point: parent_settings → Logout tap
 
-    ParentApp->>Gateway: POST /v1/auth/logout {refresh_token} + Authorization: Bearer {access_token}
-    Gateway->>Gateway: extract jti from access_token; validate signature
-    Gateway->>IdentityService: forward request with jti + refresh_token
+    ParentApp->>Gateway: POST /v1/auth/logout {refresh_token} and Authorization: Bearer {access_token}
+    Gateway->>Gateway: extract jti from access_token, validate signature
+    Gateway->>IdentityService: forward request with jti and refresh_token
     alt network_partition
         Gateway-->>ParentApp: 503 network_partition (caller retries once with jitter)
         Note over ParentApp: ParentApp clears local auth.store optimistically on network_partition

@@ -29,7 +29,7 @@ sequenceDiagram
     participant PIIDetector
 
     Orchestrator->>SafetyService: POST /internal/v1/conversation/generate {transcript, ageBand, locale}
-    SafetyService->>SafetyService: NFKD normalize + lowercase + strip diacritics
+    SafetyService->>SafetyService: NFKD normalize and lowercase and strip diacritics
     SafetyService->>BlocklistCache: regex blocklist (12 categories)
     alt blocklist_hard_block
         BlocklistCache-->>SafetyService: hit violence|adult_content|self_harm|substance|horror|bullying|dating

@@ -40,7 +40,7 @@ UC actors model **who wants something**; sequence participants model **what spea
 | UC actor | Sequence participant(s) | Mapping notes |
 |---|---|---|
 | **Robot Device** (`actors/external/robot-device.md`) | `BLEDevice` (during pairing) → `Device` (post-claim) | `BLEDevice` is the BLE-exposed surface during sys-02 provisioning; `Device` is the cloud-bound, Wi-Fi-attached surface for all post-claim flows (sys-02..18). Same physical robot, two participant identities to reflect the transport/lifecycle boundary. |
-| **Realtime Voice Service** (`actors/external/realtime-voice-service.md`) | `RealtimeService` (orchestrator) + `GoogleLiveFlash` / `GoogleLiveFlashPrimary` / `GoogleLiveFlashFallback` (provider) | UC collapses orchestrator + provider into one external system; sequences split them. `RealtimeService` is the TBot-owned WS orchestrator (sys-04). `GoogleLiveFlash` is the third-party LLM/voice provider. Provider-failover sequence uses the Primary/Fallback split. |
+| **Realtime Voice Service** (`actors/external/realtime-voice-service.md`) | `RealtimeService` (orchestrator) + `GoogleLiveFlash` / `GoogleLiveFlashPrimary` / `GoogleLiveFlashFallback` (provider) | UC collapses orchestrator + provider into one external system; sequences split them. `RealtimeService` is the TJBot-owned WS orchestrator (sys-04). `GoogleLiveFlash` is the third-party LLM/voice provider. Provider-failover sequence uses the Primary/Fallback split. |
 | **Google OAuth** (`actors/external/google-oauth.md`) | _(no direct participant — proxied through `IdentityService`)_ | Sequence allow-list does NOT include `GoogleOAuth` as a participant. Login flows model OAuth tokens as opaque inputs to `IdentityService.verify*()`. Treat the UC-A04 "Continue with Google" tap as `ParentApp → Gateway → IdentityService` with an OAuth credential payload; the provider hop is implicit. |
 | **Apple Sign-In** (`actors/external/apple-sign-in.md`) | _(no direct participant — proxied through `IdentityService`)_ | Identical treatment to Google OAuth. UC-A05 "Continue with Apple" → `ParentApp → Gateway → IdentityService`. |
 | **Payment Provider** (`actors/external/payment-provider.md`) | `Stripe` | UC uses generic "Payment Provider" because source code does not confirm provider identity (KD9). Sequence allow-list commits to `Stripe`. Until KD9 is resolved, treat them as the same actor for design purposes; if a future ADR selects a non-Stripe provider, both this glossary and `_actors.md` need updating. |
@@ -62,9 +62,9 @@ For each sequence participant that represents a consumer-surface or external sys
 | `OS` | Device OS | Mic perms, push registration, deep-link delivery. |
 | `Stripe` | Payment Provider | Pending KD9 resolution. |
 | `GoogleLiveFlash` (+ Primary / Fallback) | Realtime Voice Service (provider half) | Orchestrator half is `RealtimeService`. |
-| `RealtimeService` | Realtime Voice Service (orchestrator half) | TBot-owned. |
+| `RealtimeService` | Realtime Voice Service (orchestrator half) | TJBot-owned. |
 | `MqttBroker`, `Redis`, `S3`, `CloudFront`, `SES`, `SQS`, `SNS`, `FCM`, `EventBridge`, `Kinesis`, `KMS`, `YubiHSM`, `PagerDuty` | _(no UC actor — infra / fan-out)_ | These are internal infrastructure participants; no end-user UC initiates against them directly. |
-| `IdentityService` / `DeviceService` / `BillingService` / `SafetyService` / etc. | _(no UC actor — TBot backend services)_ | UCs are initiated by `ParentApp` (i.e. Parent / Child / Guest); these services receive RPCs. |
+| `IdentityService` / `DeviceService` / `BillingService` / `SafetyService` / etc. | _(no UC actor — TJBot backend services)_ | UCs are initiated by `ParentApp` (i.e. Parent / Child / Guest); these services receive RPCs. |
 | `AdminConsole` / `AuthoringConsole` / `ReviewerConsole` / `FactoryCLI` / `DemoCLI` / `CI` / `Operator` / `SecurityEngineer*` | _(out of UC scope)_ | Operator/admin tooling lives outside the mobile UC model. |
 
 ---

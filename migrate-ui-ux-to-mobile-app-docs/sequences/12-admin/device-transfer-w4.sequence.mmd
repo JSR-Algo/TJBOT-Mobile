@@ -43,7 +43,7 @@ sequenceDiagram
             PostgreSQL-->>DeviceTransferService: existing pending row
             DeviceTransferService-->>AdminConsole: 409 transfer_already_pending
         else no pending
-            DeviceTransferService->>DeviceTransferService: generate 6-char code from ABCDEFGHJKMNPQRSTUVWXYZ23456789 — expires_at = now() + 72h
+            DeviceTransferService->>DeviceTransferService: generate 6-char code from ABCDEFGHJKMNPQRSTUVWXYZ23456789 — expires_at = now() and 72h
             DeviceTransferService->>PostgreSQL: BEGIN
             alt transaction_rollback
                 DeviceTransferService->>PostgreSQL: UPDATE devices SET current_household_id=NULL, lifecycle_state='transfer_pending'
@@ -62,7 +62,7 @@ sequenceDiagram
                     DeviceTransferService-->>AdminConsole: 502 mqtt_publish_failure {transferCode, expiresAt, requires_retry: true}
                 else published
                     MQTT->>Device: deliver prepare_transfer command
-                    Device->>Device: enter transfer mode (LED pattern + audio cue)
+                    Device->>Device: enter transfer mode (LED pattern and audio cue)
                     DeviceTransferService-->>AdminConsole: 200 {transferCode, expiresAt, fromHouseholdId}
                 end
             end

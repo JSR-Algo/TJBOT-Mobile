@@ -10,11 +10,15 @@ interface PrimaryCTAProps {
   onPress?: () => void;
   color?: string;
   icon?: React.ReactNode;
+  disabled?: boolean;
+  testID?: string;
+  accessibilityLabel?: string;
 }
 
-export default function PrimaryCTA({ children, onPress, color = tokens.colors.coral, icon }: PrimaryCTAProps) {
+export default function PrimaryCTA({ children, onPress, color = tokens.colors.coral, icon, disabled = false, testID, accessibilityLabel }: PrimaryCTAProps) {
+  const label = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
   return (
-    <Pressable haptic onPress={onPress}>
+    <Pressable haptic onPress={onPress} disabled={disabled} testID={testID} accessibilityLabel={label} style={styles.pressable}>
       <Box style={[styles.btn, { backgroundColor: color, ...tokens.shadows.button }]}>
         {icon}
         <Text style={styles.label}>{children}</Text>
@@ -24,6 +28,9 @@ export default function PrimaryCTA({ children, onPress, color = tokens.colors.co
 }
 
 const styles = StyleSheet.create({
+  pressable: {
+    width: '100%',
+  },
   btn: {
     width: '100%',
     minHeight: 72,
@@ -35,9 +42,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
   },
   label: {
-    color: '#fff',
+    color: '#2B2140',
     fontWeight: '700',
     fontSize: 26,
-    letterSpacing: 0.2,
+    letterSpacing: 0,
+    textAlign: 'center',
+    flexShrink: 1,
   },
 });

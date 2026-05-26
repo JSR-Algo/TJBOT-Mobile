@@ -1,2 +1,2 @@
 // Placeholder — realtime websocket wiring TBD.
-export function openRealtime(sessionId) { throw new Error('not implemented'); }
+export function openRealtime(_sessionId) { throw new Error('not implemented'); }

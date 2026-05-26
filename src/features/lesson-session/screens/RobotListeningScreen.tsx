@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
@@ -9,13 +9,15 @@ import PulseRing from '@/design-system/components/PulseRing';
 import MicButton from '@/components/MicButton';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotListeningScreen'>;
 
 export default function RobotListeningScreen({ navigation }: Props) {
   return (
     <ScreenShell>
-      <LessonHeader progress={0.3} onExit={() => navigation.navigate('ExitConfirmScreen')} />
+      <Box accessible accessibilityLabel="Robot is listening" flex={1}>
+      <LessonHeader progress={0.3} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center">
         <Text fontWeight="800" style={styles.yourTurn}>Your turn!</Text>
         <Text fontWeight="600" style={styles.prompt}>Say: <Text fontWeight="700" style={{ color: '#1A1A1F' }}>"cat"</Text> 🐱</Text>
@@ -27,8 +29,9 @@ export default function RobotListeningScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} alignItems="center" gap={14}>
-        <MicButton on onClick={() => navigation.navigate('UserSpeakingScreen')} label="speak now" />
+        <MicButton on onClick={() => navigation.navigate(ROUTES.UserSpeakingScreen)} label="speak now" />
         <Text fontWeight="700" style={styles.listeningText}>I'm listening…</Text>
+      </Box>
       </Box>
     </ScreenShell>
   );

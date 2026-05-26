@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'KidSettingsScreen'>;
 
@@ -16,7 +17,7 @@ export default function KidSettingsScreen({ navigation }: Props) {
 
   return (
     <PageScroll>
-      <PageHeader onBack={() => navigation.navigate('HomeHubScreen')} title="Settings" />
+      <PageHeader onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} title="Settings" />
       <Box paddingHorizontal={24} paddingTop={4} paddingBottom={16} alignItems="center">
         <Robot emotion="happy" size={140} />
       </Box>
@@ -36,7 +37,7 @@ export default function KidSettingsScreen({ navigation }: Props) {
       </Box>
       <Box paddingHorizontal={18} paddingBottom={18}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('ParentGateScreen')}
+          onPress={() => navigation.navigate(ROUTES.ParentGateScreen)}
           style={styles.parentBtn}
           activeOpacity={0.8}
         >
@@ -52,7 +53,7 @@ export default function KidSettingsScreen({ navigation }: Props) {
       </Box>
       <Box paddingHorizontal={18} paddingBottom={24}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('HelpFaqScreen')}
+          onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
           style={styles.helpBtn}
           activeOpacity={0.7}
         >

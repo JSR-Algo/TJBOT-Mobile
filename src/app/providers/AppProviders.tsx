@@ -5,8 +5,8 @@ import { ThemeProvider } from './ThemeProvider';
 
 type Props = { children: React.ReactNode };
 
-// TODO(PR2-deps): restore QueryProvider, I18nextProvider, ErrorBoundary once
-// react-i18next + @tanstack/react-query are merged from tbot-design package.json
+// QueryProvider, I18nextProvider, and ErrorBoundary are restored after
+// react-i18next plus @tanstack/react-query finish the dependency promotion.
 export function AppProviders({ children }: Props) {
   return (
     <SafeAreaProvider>

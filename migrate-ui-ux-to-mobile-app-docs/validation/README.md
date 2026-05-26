@@ -1,6 +1,6 @@
 # validation/
 
-No source validation files here. Validator scripts live in `tbot-mobile/scripts/`:
+No source validation files here. Validator scripts live in `TJBot-mobile/scripts/`:
 
 | Script dir | Validates |
 |---|---|
@@ -9,7 +9,7 @@ No source validation files here. Validator scripts live in `tbot-mobile/scripts/
 | `scripts/sequences/` | Sequence diagram syntax + actor allow-list |
 | `scripts/usecases/` | Use-case index coverage + domain.meta.json alignment |
 
-Run all validators from `tbot-mobile/`:
+Run all validators from `TJBot-mobile/`:
 
 ```sh
 npm run erd:validate

@@ -66,7 +66,7 @@ sequenceDiagram
             RetentionWorker->>PostgreSQL: UPDATE retention_job_runs SET completed_at=NOW(), status='completed', rows_affected, iterations, duration_ms
         end
 
-        RetentionWorker->>CloudWatch: emit retention_job_duration_ms + retention_rows_deleted {job_name}
+        RetentionWorker->>CloudWatch: emit retention_job_duration_ms and retention_rows_deleted {job_name}
     end
 
     Note over EventBridge,CloudWatch: applies to session_turns_cleanup, sessions_cleanup, daily_summaries_cleanup, weekly_summaries_cleanup, content_delivery_log_cleanup, safety_events_cleanup, notification_log_cleanup, provisioning_attempts_cleanup, cost_attribution_cleanup, audit_log_cleanup, ota_attempts_cleanup

@@ -44,4 +44,4 @@ sequenceDiagram
         RetentionWorker->>PostgreSQL: DELETE FROM sessions WHERE created_at < now() - interval 90 days
         PostgreSQL-->>RetentionWorker: OK rowcount=K
     end
-    Note over RetentionScheduler,PostgreSQL: COPPA: transcript_text + response_text nulled at 24h, turn rows deleted at 30d, session rows deleted at 90d
+    Note over RetentionScheduler,PostgreSQL: COPPA: transcript_text and response_text nulled at 24h, turn rows deleted at 30d, session rows deleted at 90d

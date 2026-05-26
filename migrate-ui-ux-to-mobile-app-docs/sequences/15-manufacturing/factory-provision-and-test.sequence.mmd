@@ -34,7 +34,7 @@ sequenceDiagram
     participant LabelPrinter
     participant PostgreSQL
 
-    Note over Operator,PostgreSQL: Phase 1 — Flash + Boot Verify
+    Note over Operator,PostgreSQL: Phase 1 — Flash and Boot Verify
     Operator->>FactoryCLI: tbot-provision start --port COM3 --batch B2026-042
     FactoryCLI->>Device: flash factory firmware via UART
     FactoryCLI->>Device: AT+STATUS
@@ -48,8 +48,8 @@ sequenceDiagram
     Note over Operator,PostgreSQL: Phase 2 — Certificate Provisioning
     FactoryCLI->>Device: AT+CSR_GENERATE
     Device->>Device: generate EC P-256 keypair via hardware TRNG — store priv key in eFuse (never extractable)
-    Device-->>FactoryCLI: PEM CSR + OK
-    FactoryCLI->>FactoryCLI: parse + validate CSR
+    Device-->>FactoryCLI: PEM CSR and OK
+    FactoryCLI->>FactoryCLI: parse and validate CSR
     alt csr_invalid_format
         FactoryCLI-->>Operator: FAIL Phase 2 — quarantine
     else csr_curve_mismatch (not secp256r1)
@@ -74,7 +74,7 @@ sequenceDiagram
     loop each test in suite (mic SNR, speaker SPL, servo, display, wifi, ble, battery, NVS, flash, heap, thermal)
         FactoryCLI->>Device: AT+TEST_{name}
         Device-->>FactoryCLI: {measured_value}
-        FactoryCLI->>FactoryCLI: compare vs pass criteria + criticality flag
+        FactoryCLI->>FactoryCLI: compare vs pass criteria and criticality flag
     end
 
     alt critical_test_failed
@@ -100,7 +100,7 @@ sequenceDiagram
             FactoryCLI-->>Operator: FAIL — re-run register only (idempotent on cert fingerprint)
         else success
             FactoryCLI->>PostgreSQL: INSERT factory_test_results {overall_result='pass', device_id, factory_batch_id, serial_number, test_duration_ms, operator_id, workstation_id} then INSERT factory_test_items[] (27 rows)
-            FactoryCLI->>LabelPrinter: print QR label (serial + device_id)
+            FactoryCLI->>LabelPrinter: print QR label (serial and device_id)
             alt label_printer_failed
                 LabelPrinter--xFactoryCLI: error
                 FactoryCLI-->>Operator: WARN — manual re-print, device still PASS

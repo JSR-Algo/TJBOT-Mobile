@@ -44,7 +44,7 @@ sequenceDiagram
         ControlsService-->>ParentApp: 412 precondition_failed (ETag mismatch)
     else accepted
         ControlsService->>ConfigService: emit controls-changed event
-        ConfigService->>ConfigService: assemble + KMS-sign (sys-08 assembly-and-signing)
+        ConfigService->>ConfigService: assemble and KMS-sign (sys-08 assembly-and-signing)
         alt config_assembly_failed
             ConfigService--xControlsService: KMS unavailable
             Note over ConfigService: alert — controls accepted but config not built
@@ -57,7 +57,7 @@ sequenceDiagram
                 MQTT->>Device: notify (small payload)
                 Device->>ConfigService: GET config/current
             end
-            ConfigService-->>Device: signed config blob + version
+            ConfigService-->>Device: signed config blob and version
             Device->>Device: verify signature
             alt device_signature_verify_failed
                 Device->>Device: reject — keep prior config — alert telemetry

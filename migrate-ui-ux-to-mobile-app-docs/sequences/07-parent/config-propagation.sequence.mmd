@@ -47,7 +47,7 @@ sequenceDiagram
         Note over Device,ConfigService: re-ACK on next heartbeat
     else applied
         ConfigService-->>Device: 200 signed config blob
-        Device->>Device: verify signature + apply
+        Device->>Device: verify signature and apply
         Device->>ConfigService: POST /v1/config/applied {config_version, applied_at}
         ConfigService->>PostgreSQL: mark CONFIRMED
     end

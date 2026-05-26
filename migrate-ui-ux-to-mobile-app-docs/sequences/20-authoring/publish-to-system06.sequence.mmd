@@ -60,8 +60,8 @@ sequenceDiagram
             end
 
             SQS->>PublishOrchestrator: deliver (timeout 120s)
-            PublishOrchestrator->>PostgreSQL: SELECT templates + revalidate status='approved'
-            PublishOrchestrator->>PublishOrchestrator: assemble content pack (manifest + template payloads)
+            PublishOrchestrator->>PostgreSQL: SELECT templates and revalidate status='approved'
+            PublishOrchestrator->>PublishOrchestrator: assemble content pack (manifest and template payloads)
 
             alt s3_upload_failure
                 PublishOrchestrator->>S3: PUT content-packs/{pack_id}.json

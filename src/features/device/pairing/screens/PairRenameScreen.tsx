@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
@@ -51,7 +52,7 @@ export default function PairRenameScreen({ navigation }: Props) {
         <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate('PairFirstLessonScreen')}>Save & continue</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairFirstLessonScreen)}>Save & continue</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

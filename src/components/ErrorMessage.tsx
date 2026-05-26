@@ -6,10 +6,10 @@ interface ErrorMessageProps {
   message: string;
 }
 
-export function ErrorMessage({ message }: ErrorMessageProps): React.JSX.Element {
-  if (!message) return <></>;
+export function ErrorMessage({ message }: ErrorMessageProps): React.JSX.Element | null {
+  if (!message) return null;
   return (
-    <View style={styles.container}>
+    <View accessible accessibilityRole="alert" style={styles.container}>
       <Text style={styles.text}>⚠️ {message}</Text>
     </View>
   );

@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -14,10 +15,9 @@ import LCDPreview from '../components/LCDPreview';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseAddedScreen'>;
 
-const COURSE = COURSES[2]!;
-
-export default function CourseAddedScreen({ navigation }: Props) {
-  const c = COURSE;
+export default function CourseAddedScreen({ navigation, route }: Props) {
+  const courseId = route.params?.courseId ?? 'c_food';
+  const c = COURSES.find(x => x.id === courseId) ?? COURSES[2]!;
   return (
     <DeviceShell title="Added to Robot">
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
@@ -47,8 +47,8 @@ export default function CourseAddedScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('SendToRobotScreen')}>Send today's lesson now</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Back to Robot home</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen, { courseId })}>Send today's lesson now</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Back to Robot home</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

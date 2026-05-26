@@ -2,11 +2,13 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import OnbShell, { OB } from '@/components/OnbShell';
 import OnbBigBtn from '@/components/OnbBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { legacyNavigate } from '../legacyNavigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TrustScreen'>;
 
@@ -35,7 +37,7 @@ const PROMISES = [
 
 export default function TrustScreen({ navigation }: Props) {
   return (
-    <OnbShell title="Our promise" onBack={() => navigation.navigate('IntroCelebrateScreen')}>
+    <OnbShell title="Our promise" onBack={() => legacyNavigate(navigation, ROUTES.IntroCelebrateScreen)}>
       <Box paddingHorizontal={20} paddingTop={18} style={{ marginBottom: 8 }}>
         <Text fontWeight="600" style={styles.heading}>Made for kids 6–10. Designed with parents.</Text>
         <Text style={styles.sub}>Before we set things up, here's how we treat your child's privacy and time.</Text>
@@ -59,7 +61,7 @@ export default function TrustScreen({ navigation }: Props) {
         </Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={14} paddingBottom={30}>
-        <OnbBigBtn onClick={() => navigation.navigate('MicAskScreen')}>Continue</OnbBigBtn>
+        <OnbBigBtn onClick={() => legacyNavigate(navigation, ROUTES.MicAskScreen)}>Continue</OnbBigBtn>
       </Box>
     </OnbShell>
   );

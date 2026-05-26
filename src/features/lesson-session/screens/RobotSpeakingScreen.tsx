@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
@@ -9,25 +9,28 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import WaveBars from '@/design-system/components/WaveBars';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotSpeakingScreen'>;
 
 export default function RobotSpeakingScreen({ navigation }: Props) {
   return (
     <ScreenShell>
-      <LessonHeader progress={0.25} onExit={() => navigation.navigate('ExitConfirmScreen')} />
+      <Box accessible accessibilityLabel="Robot is speaking" flex={1}>
+      <LessonHeader progress={0.25} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Text fontWeight="700" style={styles.listenLabel}>Listen 👂</Text>
         <Robot emotion="speak" size={220} />
         <SpeechBubble>This is a cat.{'\n'}🐱</SpeechBubble>
-        <Box style={{ marginTop: 8 }}>
+        <Box accessible accessibilityLabel="Robot voice waveform" style={{ marginTop: 8 }}>
           <WaveBars color="#6FC1FF" height={20} count={12} />
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <TouchableOpacity style={styles.waitBtn} onPress={() => navigation.navigate('RobotListeningScreen')}>
+        <TouchableOpacity style={styles.waitBtn} onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)}>
           <Text fontWeight="700" style={styles.waitText}>🤖 Robot is talking…</Text>
         </TouchableOpacity>
+      </Box>
       </Box>
     </ScreenShell>
   );

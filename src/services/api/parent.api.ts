@@ -1,3 +1,42 @@
+import client from '../http/client';
+
+export const BACKEND_CONTRACT_UNAVAILABLE_CODE = 'BACKEND_CONTRACT_UNAVAILABLE' as const;
+
+export class BackendContractUnavailableError extends Error {
+  readonly code = BACKEND_CONTRACT_UNAVAILABLE_CODE;
+  constructor(operation: string) {
+    super(`BACKEND_CONTRACT_UNAVAILABLE: ${operation} has no documented backend contract`);
+    this.name = 'BackendContractUnavailableError';
+  }
+}
+
+function unwrap<T>(response: { data: { data?: T } | T }): T {
+  const body = response.data as { data?: T } & T;
+  return (body && typeof body === 'object' && 'data' in body && body.data !== undefined ? body.data : body) as T;
+}
+
+export interface ParentAuthResult {
+  authenticated: boolean;
+  authenticated_at?: string;
+}
+
+export interface ClearLockoutResult {
+  cleared: boolean;
+}
+
+export async function authenticateParent(params: { pin: string }): Promise<ParentAuthResult> {
+  const response = await client.post('/parent/auth', { pin: params.pin });
+  return unwrap<ParentAuthResult>(response);
+}
+
+export async function clearParentLockout(params: { targetUserId: string; reason?: string }): Promise<ClearLockoutResult> {
+  const response = await client.post('/parent/lockout/clear', {
+    target_user_id: params.targetUserId,
+    reason: params.reason ?? 'mobile_parent_recovery',
+  });
+  return unwrap<ClearLockoutResult>(response);
+}
+
 export interface ParentSummary {
   weekMinutes: number;
   weekLessons: number;
@@ -17,6 +56,20 @@ export interface ParentHistoryEntry {
   lessons: number;
 }
 
+interface RawParentToday {
+  date?: string;
+  minutes_done?: number;
+  minutesDone?: number;
+  lessons_completed?: number;
+  lessonsCompleted?: number;
+}
+
+interface RawParentHistoryEntry {
+  date: string;
+  minutes?: number;
+  lessons?: number;
+}
+
 export interface SafetyConfig {
   maxDailyMinutes: number;
   allowWeekends: boolean;
@@ -29,16 +82,34 @@ export interface ParentSettings {
   language: string;
 }
 
+function mapParentToday(raw: RawParentToday): ParentToday {
+  return {
+    date: raw.date ?? '',
+    minutesDone: raw.minutes_done ?? raw.minutesDone ?? 0,
+    lessonsCompleted: raw.lessons_completed ?? raw.lessonsCompleted ?? 0,
+  };
+}
+
+function mapParentHistoryEntry(raw: RawParentHistoryEntry): ParentHistoryEntry {
+  return {
+    date: raw.date,
+    minutes: raw.minutes ?? 0,
+    lessons: raw.lessons ?? 0,
+  };
+}
+
 export async function getParentSummary(): Promise<ParentSummary> {
-  throw new Error('not implemented');
+  throw new BackendContractUnavailableError('/parent/summary');
 }
 
 export async function getParentToday(): Promise<ParentToday> {
-  throw new Error('not implemented');
+  const response = await client.get('/parent/today');
+  return mapParentToday(unwrap<RawParentToday>(response));
 }
 
 export async function getParentHistory(): Promise<ParentHistoryEntry[]> {
-  throw new Error('not implemented');
+  const response = await client.get('/parent/history');
+  return unwrap<RawParentHistoryEntry[]>(response).map(mapParentHistoryEntry);
 }
 
 export async function getSafetyConfig(): Promise<SafetyConfig> {

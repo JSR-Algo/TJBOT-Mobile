@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
@@ -9,6 +9,7 @@ import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewEntryScreen'>;
 
@@ -19,7 +20,7 @@ export default function ReviewEntryScreen({ navigation }: Props) {
   return (
     <PageScroll>
       <PageHeader
-        onBack={() => navigation.navigate('HomeHubScreen')}
+        onBack={() => navigation.navigate(ROUTES.HomeHubScreen)}
         subtitle="Quick review"
         title="Words to revisit"
       />
@@ -43,7 +44,7 @@ export default function ReviewEntryScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingBottom={30}>
-        <PrimaryCTA onPress={() => navigation.navigate('LessonReadyScreen')} color="#FFC857">Start Review</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FFC857">Start Review</PrimaryCTA>
       </Box>
     </PageScroll>
   );

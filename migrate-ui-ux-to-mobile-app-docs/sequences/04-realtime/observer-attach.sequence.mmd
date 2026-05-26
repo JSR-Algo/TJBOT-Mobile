@@ -26,8 +26,8 @@ sequenceDiagram
     participant RealtimeService
     participant Redis
 
-    ParentApp->>Gateway: WS upgrade GET wss://realtime/v1/observer/{session_id} + Authorization: Bearer token
-    Gateway->>Gateway: JWT verify + rate-limit (sys-17)
+    ParentApp->>Gateway: WS upgrade GET wss://realtime/v1/observer/{session_id} and Authorization: Bearer token
+    Gateway->>Gateway: JWT verify and rate-limit (sys-17)
 
     alt ws_handshake_failed
         Gateway-->>ParentApp: 400 / 426 Upgrade Required

@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BundleScreen'>;
 
@@ -19,7 +20,7 @@ const OPTS = [
 export default function BundleScreen({ navigation }: Props) {
   const [pick, setPick] = React.useState(0);
   return (
-    <DeviceShell title="Pick your bundle" onBack={() => navigation.navigate('IncludedScreen')}>
+    <DeviceShell title="Pick your bundle" onBack={() => navigation.navigate(ROUTES.IncludedScreen)}>
       <Box paddingHorizontal={24} paddingTop={18}>
         <PRStepTab step={2} total={3} />
       </Box>
@@ -29,6 +30,9 @@ export default function BundleScreen({ navigation }: Props) {
           const sel = i === pick;
           return (
             <TouchableOpacity key={o.id} onPress={() => setPick(i)} activeOpacity={0.8}
+              accessibilityLabel={`Select ${o.title} bundle`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: sel }}
               style={[styles.optCard, sel && styles.optCardSel]}>
               <Box flexDirection="row" alignItems="flex-start" justifyContent="space-between" gap={10}>
                 <Box flex={1}>
@@ -49,11 +53,11 @@ export default function BundleScreen({ navigation }: Props) {
         })}
       </Box>
 
-      <Text style={styles.note}>Both bundles include free shipping and a 30-day return.</Text>
+      <Text style={styles.note}>both bundles include free shipping and a 30-day return.</Text>
 
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('SubscriptionsScreen')}>Continue</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('IncludedScreen')}>Back</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SubscriptionsScreen)}>Continue</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.IncludedScreen)}>Back</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

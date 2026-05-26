@@ -33,7 +33,7 @@ sequenceDiagram
 
     Note over ParentApp,EmailService: Phase 1 — Request initiation
     ParentApp->>Gateway: POST /v1/account/delete {password_reconfirmation}
-    Gateway->>AccountDeletionService: forward (JWT + parent_account_id)
+    Gateway->>AccountDeletionService: forward (JWT and parent_account_id)
     alt password_mismatch
         AccountDeletionService-->>Gateway: 401 password_mismatch
         Gateway-->>ParentApp: 401
@@ -47,7 +47,7 @@ sequenceDiagram
         else committed
             AccountDeletionService->>PostgreSQL: COMMIT
             alt email_send_failure
-                AccountDeletionService->>EmailService: confirmation + cancel link
+                AccountDeletionService->>EmailService: confirmation and cancel link
                 EmailService-->>AccountDeletionService: error
                 Note over AccountDeletionService: log P2 — deletion still scheduled
             else sent
@@ -76,7 +76,7 @@ sequenceDiagram
             Note over DeletionExecutor: filtered by WHERE clause — skip
         else execute_cascade
             alt executor_partial_failure
-                DeletionExecutor->>PostgreSQL: BEGIN — DELETE session_turns/sessions/summaries/safety logs/cost_attribution — NULL household on devices — soft-delete child profiles — DELETE household + memberships — COMMIT
+                DeletionExecutor->>PostgreSQL: BEGIN — DELETE session_turns/sessions/summaries/safety logs/cost_attribution — NULL household on devices — soft-delete child profiles — DELETE household and memberships — COMMIT
                 PostgreSQL-->>DeletionExecutor: error mid-cascade
                 DeletionExecutor->>PostgreSQL: ROLLBACK
                 Note over DeletionExecutor: status remains grace_period — next hourly run retries

@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import IntroFrame from '../components/IntroFrame';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -15,8 +16,8 @@ export default function IntroCelebrateScreen({ navigation }: Props) {
     <IntroFrame
       navigation={navigation}
       idx={3}
-      prev="IntroRetryScreen"
-      next="TrustScreen"
+      prev={ROUTES.IntroRetryScreen}
+      next={ROUTES.TrustScreen}
       bg="#FFF8E1"
       kicker="How it works · 4"
       title="Small wins, every day"

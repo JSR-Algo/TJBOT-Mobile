@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ExitConfirmScreen'>;
 
@@ -23,8 +24,13 @@ export default function ExitConfirmScreen({ navigation }: Props) {
         <Text fontWeight="800" style={styles.title}>Stop the lesson?</Text>
         <Text fontWeight="600" style={styles.sub}>We can finish later.</Text>
         <Box gap={12} style={{ marginTop: 22 }}>
-          <PrimaryCTA onPress={() => navigation.navigate('RobotListeningScreen')} color="#7BD389">Keep playing</PrimaryCTA>
-          <TouchableOpacity style={styles.stopBtn} onPress={() => navigation.navigate('HomeHubScreen' as any)}>
+          <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)} color="#7BD389">Keep playing</PrimaryCTA>
+          <TouchableOpacity
+            style={styles.stopBtn}
+            onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+            accessibilityRole="button"
+            accessibilityLabel="Stop lesson for now"
+          >
             <Text fontWeight="700" style={styles.stopText}>Stop for now</Text>
           </TouchableOpacity>
         </Box>

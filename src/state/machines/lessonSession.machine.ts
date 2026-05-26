@@ -8,7 +8,7 @@ import type {
 /**
  * LessonSession state machine.
  *
- * Plan: tbot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
+ * Plan: TJBot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
  * §4.2, §5, §7. Architect + Critic consensus pass 2026-05-11.
  *
  * Server-authoritative terminals (plan §0 Principle 1, ADR-002):

@@ -31,8 +31,8 @@ sequenceDiagram
     participant MqttBroker
     participant Device
 
-    ParentApp->>Gateway: POST /v1/sessions/start {user_id, child_id, device_id, course_id} + Idempotency-Key header + Bearer token
-    Gateway->>Gateway: rate-limit (sys-17) + JWT verify
+    ParentApp->>Gateway: POST /v1/sessions/start {user_id, child_id, device_id, course_id} and Idempotency-Key header and Bearer token
+    Gateway->>Gateway: rate-limit (sys-17) and JWT verify
     Gateway->>RealtimeService: forward request
 
     RealtimeService->>PostgreSQL: SELECT idempotency_keys WHERE key=Idempotency-Key
@@ -82,8 +82,8 @@ sequenceDiagram
                     alt device_offline
                         Note over RealtimeService,MqttBroker: MQTT publish attempted but device not subscribed
                         RealtimeService->>MqttBroker: PUBLISH device/{device_id}/sessions/start {session_id, device_session_id, child_id, course_id}
-                        MqttBroker-->>RealtimeService: PUBACK (broker accepted; device delivery not confirmed)
-                        Note over RealtimeService: session stays CONNECTING; expires after 30s if Device never opens WS
+                        MqttBroker-->>RealtimeService: PUBACK (broker accepted, device delivery not confirmed)
+                        Note over RealtimeService: session stays CONNECTING, expires after 30s if Device never opens WS
                         RealtimeService->>PostgreSQL: UPDATE idempotency_keys SET state=COMPLETE
                         RealtimeService-->>Gateway: 200 {session_id, expires_at, state: CONNECTING}
                         Gateway-->>ParentApp: 200
@@ -106,4 +106,4 @@ sequenceDiagram
         end
     end
 
-    Note over ParentApp,Device: POST times out at 5s p99 — MQTT delivery + WS handshake async — retry only on 5xx with jitter — no retry on 423/409/410
+    Note over ParentApp,Device: POST times out at 5s p99 — MQTT delivery and WS handshake async — retry only on 5xx with jitter — no retry on 423/409/410

@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairSuccessScreen'>;
 
@@ -49,7 +50,7 @@ export default function PairSuccessScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate('PairRenameScreen')}>Choose a Buddy & name</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairRenameScreen)}>Choose a Buddy & name</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

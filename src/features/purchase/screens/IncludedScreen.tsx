@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IncludedScreen'>;
 
@@ -22,7 +23,7 @@ const ITEMS = [
 
 export default function IncludedScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="In the box" onBack={() => navigation.navigate('HowItWorksScreen')}>
+    <DeviceShell title="In the box" onBack={() => navigation.navigate(ROUTES.HowItWorksScreen)}>
       <Box paddingHorizontal={24} paddingTop={18} alignItems="center">
         <PRStepTab step={2} total={3} />
         <Text fontWeight="600" style={styles.heading}>Everything to start tomorrow</Text>
@@ -45,7 +46,7 @@ export default function IncludedScreen({ navigation }: Props) {
       <Text style={styles.note}>Hardware is yours. The starter course is included forever.</Text>
 
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate('BundleScreen')}>Choose a bundle</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.BundleScreen)}>Choose a bundle</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

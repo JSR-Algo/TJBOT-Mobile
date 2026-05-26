@@ -31,7 +31,7 @@ sequenceDiagram
     participant DeviceService
     participant Device
 
-    ParentApp->>ParentApp: request BLE + location permissions
+    ParentApp->>ParentApp: request BLE and location permissions
     alt ble_permission_denied
         ParentApp-->>ParentApp: navigate to settings prompt — abort
     else permission granted
@@ -40,7 +40,7 @@ sequenceDiagram
             BLEDevice-->>ParentApp: scan timeout (30s) — retry prompt
         else device discovered
             BLEDevice-->>ParentApp: serial advert (e.g. TBT-2026-004217)
-            ParentApp->>BLEDevice: connect + discover services + read serial char
+            ParentApp->>BLEDevice: connect and discover services and read serial char
             BLEDevice-->>ParentApp: serial confirmation
             ParentApp->>Gateway: POST /v1/devices/provision/start {serialNumber}
             Gateway->>DeviceService: forward

@@ -17,7 +17,8 @@ export default function MicButton({ on, onClick, label }: Props) {
     <Pressable
       haptic
       onPress={onClick}
-      accessibilityLabel={label ?? 'microphone'}
+      accessibilityLabel={label ?? (on ? 'Stop microphone' : 'Start microphone')}
+      accessibilityState={{ selected: Boolean(on) }}
     >
       <Box style={[styles.btn, { backgroundColor: bg }]}>
         <MicSvg color={fg} />

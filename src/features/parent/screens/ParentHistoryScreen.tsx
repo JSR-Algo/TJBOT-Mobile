@@ -1,12 +1,16 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import ParentScroll, { PA } from '../components/ParentScroll';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { getParentHistory } from '@/services/api/parent.api';
+import { ROUTES } from '@/navigation/routes';
+import { useParentGateGuard } from '../hooks/useParentGateGuard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentHistoryScreen'>;
+type HistoryErrorState = { title: string; detail: string };
 
 const VERBS = ['Greetings & feelings', 'Family words', 'Numbers 1–10', 'Animals', 'Daily routines', 'Color words', 'Food vocabulary', 'Polite phrases'] as const;
 
@@ -22,10 +26,67 @@ function buildDays() {
 }
 
 export default function ParentHistoryScreen({ navigation }: Props) {
+  useParentGateGuard(navigation, ROUTES.ParentHistoryScreen);
   const days = React.useMemo(buildDays, []);
+  const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
+  const [errorState, setErrorState] = React.useState<HistoryErrorState>({
+    title: 'History unavailable',
+    detail: 'Try again.',
+  });
+
+  const loadHistory = React.useCallback(() => {
+    let active = true;
+    setStatus('loading');
+    getParentHistory()
+      .then((history) => {
+        if (active) {
+          setStatus(Array.isArray(history) ? 'success' : 'error');
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setErrorState(classifyHistoryError(error));
+          setStatus('error');
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  React.useEffect(loadHistory, [loadHistory]);
+
+  if (status === 'loading') {
+    return (
+      <ParentScroll title="Past 30 days" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
+        <Box paddingHorizontal={24} paddingTop={40}>
+          <Text style={styles.stat}>Loading history</Text>
+        </Box>
+      </ParentScroll>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <ParentScroll title="Past 30 days" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
+        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
+          <Text fontWeight="700" style={styles.errorTitle}>{errorState.title}</Text>
+          <Text style={styles.stat}>{errorState.detail}</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Retry ${errorState.title}`}
+            onPress={() => { loadHistory(); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </Box>
+      </ParentScroll>
+    );
+  }
 
   return (
-    <ParentScroll title="Past 30 days" onBack={() => navigation.navigate('ParentSummaryScreen')}>
+    <ParentScroll title="Past 30 days" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
       <Box paddingHorizontal={16} paddingTop={14} paddingBottom={4}>
         <Box flexDirection="row" gap={14}>
           <Text style={styles.stat}><Text fontWeight="600" style={{ color: PA.ink }}>22</Text> active days</Text>
@@ -71,8 +132,18 @@ export default function ParentHistoryScreen({ navigation }: Props) {
   );
 }
 
+function classifyHistoryError(error: unknown): HistoryErrorState {
+  const shaped = error as { code?: string };
+  if (shaped.code === 'NETWORK_ERROR') {
+    return { title: 'History offline', detail: 'Check your internet connection and try again.' };
+  }
+  return { title: 'History unavailable', detail: 'Try again.' };
+}
+
 const styles = StyleSheet.create({
   stat: { fontSize: 13, color: PA.ink2 },
+  errorTitle: { fontSize: 20, color: PA.ink },
+  retryText: { color: PA.accent, fontSize: 15, fontWeight: '500' },
   div: { width: 1, backgroundColor: PA.hair },
   list: { backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair },
   row: { padding: 12 },

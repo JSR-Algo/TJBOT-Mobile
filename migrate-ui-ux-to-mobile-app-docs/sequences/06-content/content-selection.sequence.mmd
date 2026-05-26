@@ -36,13 +36,13 @@ sequenceDiagram
     else no_candidates_after_filter
         ContentService->>Redis: HGET content:cooldown:{childProfileId} (24h TTL)
         Redis-->>ContentService: cooldown set
-        ContentService->>ContentService: drop cooldown + exclusions
+        ContentService->>ContentService: drop cooldown and exclusions
         Note over ContentService: zero candidates remain — exhaustion path
         ContentService-->>SafetyService: 409 no_eligible_template
     else exhaustion_recovery_required
         ContentService->>Redis: HGET content:cooldown:{childProfileId}
         Redis-->>ContentService: cooldown set
-        ContentService->>ContentService: filter cooldown + exclusions — empty
+        ContentService->>ContentService: filter cooldown and exclusions — empty
         ContentService->>Redis: HDEL 5 oldest cooldowns (least TTL first)
         Redis-->>ContentService: cleared 5
         ContentService->>ContentService: refilter, topic boost, weighted random
@@ -59,7 +59,7 @@ sequenceDiagram
     else success
         ContentService->>Redis: HGET content:cooldown:{childProfileId}
         Redis-->>ContentService: cooldown set
-        ContentService->>ContentService: filter + topic boost (cap 2.0x) + weighted random
+        ContentService->>ContentService: filter and topic boost (cap 2.0x) and weighted random
         ContentService->>PostgreSQL: INSERT content_delivery_events (append-only)
         ContentService->>Redis: HSET content:cooldown:{childProfileId} templateId EX 86400
         ContentService-->>SafetyService: {templateId, templateText, variationInstruction}

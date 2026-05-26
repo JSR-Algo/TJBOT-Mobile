@@ -42,7 +42,7 @@ function makePrng(seed: number) {
 function resetStore() {
   const s = useVoiceAssistantStore.getState();
   // Force back to IDLE for clean slate
-  (s as any)._forceState?.('IDLE') ?? s.reset?.();
+  s.reset?.();
   // If no reset helper: use the internal setState
   useVoiceAssistantStore.setState({
     state: 'IDLE',
@@ -66,8 +66,6 @@ describe('BI8 §8.4 ordering fuzz — 200 trials', () => {
   //     2. clear() resolves → read pendingRef → transition INTERRUPTED → USER_SPEAKING with turnId
 
   function simulateOrdering(aFirstMs: number, bFirstMs: number): void {
-    const store = useVoiceAssistantStore.getState();
-
     // Simulate the two event handlers from the hook
     let pendingTurnId: string | null = null;
 
@@ -146,7 +144,7 @@ describe('BI8 §8.4 ordering fuzz — 200 trials', () => {
     resetStore();
     useVoiceAssistantStore.setState({ state: 'INTERRUPTED', currentUserTurnId: null } as any);
 
-    let pendingTurnId: string | null = null;
+    const pendingTurnId: string | null = null;
 
     // A: clear resolves first — no pending ref → go to LISTENING
     if (useVoiceAssistantStore.getState().state === 'INTERRUPTED' && pendingTurnId === null) {

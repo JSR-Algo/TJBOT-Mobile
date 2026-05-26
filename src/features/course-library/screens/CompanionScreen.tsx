@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanionScreen'>;
 
@@ -30,7 +31,7 @@ export default function CompanionScreen({ navigation }: Props) {
   const cur = PHASES[phase]!;
 
   return (
-    <DeviceShell title="What Robot sees" onBack={() => navigation.navigate('RunningScreen')}>
+    <DeviceShell title="What Robot sees" onBack={() => navigation.navigate(ROUTES.RunningScreen)}>
       <Text style={styles.intro}>
         A live mirror of Robot's face. <Text fontWeight="600" style={{ color: CL.ink }}>No transcript</Text> — what your child says stays between them.
       </Text>
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
   progressTitle: { fontSize: 13, color: CL.ink },
   progressCount: { fontSize: 11, color: CL.ink2 },
   progressTrack: { height: 8, borderRadius: 4, backgroundColor: '#EEF1F5', overflow: 'hidden' },
-  progressFill: { width: '37%', height: '100%' as any, backgroundColor: CL.accent, borderRadius: 4 },
+  progressFill: { width: '37%', height: '100%', backgroundColor: CL.accent, borderRadius: 4 },
   progressFooter: { marginTop: 8 },
   progressMeta: { fontSize: 11, color: CL.ink2 },
   sectionLabel: { fontSize: 11, color: CL.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },

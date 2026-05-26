@@ -29,13 +29,13 @@ describe('BLE service', () => {
 
   test('enforces allowlist filtering before pairing', () => {
     const result = splitDevicesByAllowlist([
-      { id: 'TBOT-001', name: 'TBOT Bedroom', localName: 'TBOT Bedroom', serviceUUIDs: [BLE_CONFIG.SERVICE_UUID] },
+      { id: 'TJBot-001', name: 'TJBot Bedroom', localName: 'TJBot Bedroom', serviceUUIDs: [BLE_CONFIG.SERVICE_UUID] },
       { id: 'XYZ-001', name: 'Speaker', localName: 'Speaker', serviceUUIDs: [BLE_CONFIG.SERVICE_UUID] },
     ]);
 
     expect(result.allowed).toHaveLength(1);
     expect(result.blocked).toHaveLength(1);
-    expect(isAllowlistedDevice('TBOT-001', 'TBOT Bedroom')).toBe(true);
+    expect(isAllowlistedDevice('TJBot-001', 'TJBot Bedroom')).toBe(true);
     expect(isAllowlistedDevice('XYZ-001', 'Speaker')).toBe(false);
   });
 });

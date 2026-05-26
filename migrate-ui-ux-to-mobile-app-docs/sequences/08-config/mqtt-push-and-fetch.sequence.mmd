@@ -43,7 +43,7 @@ sequenceDiagram
         alt config_version_delta_check_fail (same or older)
             Note over Device: ignore — race protection against stale push on already-applied version
         else newer
-            Device->>Device: schedule fetch within 5s + random jitter (avoid thundering herd)
+            Device->>Device: schedule fetch within 5s and random jitter (avoid thundering herd)
             Device->>ConfigService: GET /v1/config/fetch (mTLS) {X-Device-Id, X-Current-Config-Version}
             ConfigService->>PostgreSQL: SELECT device_configs
             PostgreSQL-->>ConfigService: {config_blob, config_signature, config_version}

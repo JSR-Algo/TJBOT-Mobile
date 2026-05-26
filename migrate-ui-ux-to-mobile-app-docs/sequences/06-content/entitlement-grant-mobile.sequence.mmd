@@ -29,8 +29,8 @@ sequenceDiagram
     participant PostgreSQL
     participant Redis
 
-    Note over ParentApp: parent in cl_buy confirms course unlock (ADR-0005 D7 — replaces hardcoded 7351)
-    ParentApp->>Gateway: POST /v1/content/entitlements {user_id, content_pack_id, X-Request-Id} + parent JWT Bearer
+    Note over ParentApp: parent in cl_add_free confirms course unlock (ADR-0005 D7 — replaces hardcoded 7351)
+    ParentApp->>Gateway: POST /v1/content/entitlements {user_id, content_pack_id, X-Request-Id} and parent JWT Bearer
     Gateway->>Gateway: auth-resolver — JWT audience: tbot:parent (sys-17)
     alt parent_jwt_stale_re_pin_required
         Note over Gateway: parent JWT issued > 60s ago (ADR-0005 D6)
@@ -48,11 +48,11 @@ sequenceDiagram
             ContentService->>BillingService: GET /internal/v1/entitlements/:householdId (service-token — see entitlement-check-session-start.sequence.mmd)
             BillingService-->>ContentService: {tier, features, subscriptionActive}
             alt subscription_required_not_active
-                Note over ContentService: content_pack requires subscription tier; billing reports inactive
+                Note over ContentService: content_pack requires subscription tier, billing reports inactive
                 ContentService-->>Gateway: 402 subscription_required_not_active
                 Gateway-->>ParentApp: 402
             else parent_approval_required_pending
-                Note over ContentService: content_pack requires explicit parent_approvals entry; none found
+                Note over ContentService: content_pack requires explicit parent_approvals entry, none found
                 ContentService-->>Gateway: 403 parent_approval_required_pending
                 Gateway-->>ParentApp: 403
             else already_entitled
@@ -72,6 +72,6 @@ sequenceDiagram
         end
     end
 
-    Note over ParentApp: cl_buy → cl_added screen transition
+    Note over ParentApp: cl_add_free → cl_added screen transition
     Note over ParentApp,Redis: future session-start uses cached entitlement per entitlement-check-session-start.sequence.mmd — cache invalidated above so next read is fresh
     Note over ParentApp,PostgreSQL: timeout 3s p99 — X-Request-Id 24h dedup — idempotent on (user_id, content_pack_id)

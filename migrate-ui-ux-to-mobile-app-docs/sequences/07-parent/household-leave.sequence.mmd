@@ -25,7 +25,7 @@ sequenceDiagram
     participant IdentityService
     participant PostgreSQL
 
-    ParentApp->>Gateway: POST /v1/household/leave + Bearer JWT
+    ParentApp->>Gateway: POST /v1/household/leave and Bearer JWT
     Gateway->>Gateway: validate parent JWT — extract user_id, household_id
     Gateway->>IdentityService: forward request
     IdentityService->>PostgreSQL: SELECT role, status FROM household_members WHERE user_id={user_id} AND household_id={household_id}
@@ -55,7 +55,7 @@ sequenceDiagram
             Note over IdentityService: users row intact — user is now orphan (no active household_members row)
             IdentityService-->>Gateway: 200 {left: true, household_id}
             Gateway-->>ParentApp: 200
-            ParentApp->>ParentApp: clear parent.store + Keychain + route to post-household landing screen
+            ParentApp->>ParentApp: clear parent.store and Keychain and route to post-household landing screen
         end
     end
 

@@ -39,8 +39,8 @@ sequenceDiagram
         Note over ParentApp: no valid auth token in secure storage
         ParentApp-->>ParentApp: navigate to login screen — deep_link stored for post-auth resume
     else app has valid session
-        ParentApp->>Gateway: GET /v1/mobile/deep-link/validate?path={url-encoded deep_link path} + Bearer token
-        Gateway->>Gateway: JWT verify + rate-limit (sys-17)
+        ParentApp->>Gateway: GET /v1/mobile/deep-link/validate?path={url-encoded deep_link path} and Bearer token
+        Gateway->>Gateway: JWT verify and rate-limit (sys-17)
         Gateway->>NotificationService: forward validate request
 
         alt invalid_deep_link_target

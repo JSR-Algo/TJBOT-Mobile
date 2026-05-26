@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const iconDir = path.join(__dirname, '..', '..', 'ios', 'TbotMobile', 'Images.xcassets', 'AppIcon.appiconset');
+const iconDir = path.join(__dirname, '..', '..', 'ios', 'TJBotMobile', 'Images.xcassets', 'AppIcon.appiconset');
 const contentsPath = path.join(iconDir, 'Contents.json');
 
 function pngSize(filePath: string): {width: number; height: number} {

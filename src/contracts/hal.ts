@@ -1,7 +1,7 @@
-// @tbot/contracts — Hardware Abstraction Layer — mobile projection (type-only)
+// @TJBot/contracts — Hardware Abstraction Layer — mobile projection (type-only)
 //
-// Source of truth: tbot-infra/contracts/hal.d.ts (ADR-013).
-// Imported by tbot-mobile/src/screens/robot-demo/TwinDriver.ts (RM-12) and
+// Source of truth: TJBot-infra/contracts/hal.d.ts (ADR-013).
+// Imported by TJBot-mobile/src/screens/robot-demo/TwinDriver.ts (RM-12) and
 // the backend-HAL=twin bridge (RM-10).
 //
 // Plan: expressive-robot-companion-rewrite §3 ADR-013, §6 RM-10/RM-12.

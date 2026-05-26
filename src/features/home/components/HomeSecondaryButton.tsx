@@ -15,8 +15,12 @@ export default function HomeSecondaryButton({ label, icon, onPress, badge, dim }
   return (
     <TouchableOpacity
       onPress={onPress}
+      disabled={dim}
       style={[styles.btn, dim && { opacity: 0.55 }]}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: Boolean(dim) }}
     >
       <Text style={{ fontSize: 26, lineHeight: 30 }}>{icon}</Text>
       <Text fontWeight="700" style={{ fontSize: 14, color: '#2B2140' }}>{label}</Text>

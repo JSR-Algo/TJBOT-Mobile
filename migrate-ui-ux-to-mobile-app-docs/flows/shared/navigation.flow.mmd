@@ -12,7 +12,7 @@ flowchart TD
   back_btn -->|home_hub_*| back_no_op["no-op (root) — splash/exit prompt only"]
   back_btn -->|lesson session active| exit_confirm_intercept["intercept → exit_confirm sheet"]
   back_btn -->|in parent_* tree| pop_to_parent_summary["pop to parent_summary"]
-  back_btn -->|in pr_* checkout| pop_to_cl_buy["pop to cl_buy / cl_library if cancelled"]
+  back_btn -->|in pr_* checkout| pop_to_cl_add_free["pop to cl_add_free / cl_library if cancelled"]
 
   %% ── Parent-gate interception ─────────────────────────────────────────────
   any_parent_entry(["any go('parent_*') target"]):::rule

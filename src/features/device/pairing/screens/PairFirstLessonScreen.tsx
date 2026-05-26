@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFirstLessonScreen'>;
 
@@ -53,7 +54,7 @@ export default function PairFirstLessonScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24}>
-        <PrimaryCTA onPress={() => navigation.navigate('DeviceHomeScreen')} color="#FF6F61">Hand it to your child</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.DeviceHomeScreen)} color="#FF6F61">Hand it to your child</PrimaryCTA>
         <Text style={styles.note}>You'll get a calm summary in this app after each lesson.</Text>
       </Box>
     </ScrollView>

@@ -27,7 +27,7 @@ sequenceDiagram
     participant AuditLog
 
     AdminConsole->>SafetyInvestigationService: POST /admin/workflows/w2/investigate {serial_number, reported_time_approx, parent_description}
-    SafetyInvestigationService->>PostgreSQL: SELECT device + child_profile WHERE serial_number=$1
+    SafetyInvestigationService->>PostgreSQL: SELECT device and child_profile WHERE serial_number=$1
 
     alt device_not_found
         PostgreSQL-->>SafetyInvestigationService: 0 rows

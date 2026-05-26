@@ -50,7 +50,7 @@ describe('P0-22 pendingUserTurnIdAfterClearRef plumbing', () => {
   it('documents the §8.4 rationale on the ref declaration', () => {
     expect(hook).toMatch(/P0-22 plan v2 §8\.4/);
     // Comments may wrap across lines; match the phrase tokens
-    // tolerantly. Both orderings must be named in source so a future
+    // tolerantly. both orderings must be named in source so a future
     // reader sees the contract.
     expect(hook).toMatch(/B-then-A[\s\S]{0,80}path/);
     expect(hook).toMatch(/A-then-B[\s\S]{0,80}path/);

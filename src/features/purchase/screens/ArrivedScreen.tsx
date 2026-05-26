@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -10,10 +10,24 @@ import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import RobotHero from '../components/RobotHero';
 import PRChip from '../components/PRChip';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ArrivedScreen'>;
 
-export default function ArrivedScreen({ navigation }: Props) {
+export default function ArrivedScreen({ navigation, route }: Props) {
+  const orderId = route.params?.orderId;
+
+  if (!orderId) {
+    return (
+      <DeviceShell title="Robot is here">
+        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
+          <Text fontWeight="700" style={styles.heading}>Delivery link is missing</Text>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.ShippingScreen)}>Back to tracking</DeviceBigBtn>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
   return (
     <DeviceShell title="Robot is here">
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
@@ -40,8 +54,8 @@ export default function ArrivedScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('ActivateScreen')}>Set up Robot now</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Later tonight</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.ActivateScreen, { orderId })}>Set up Robot now</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Later tonight</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

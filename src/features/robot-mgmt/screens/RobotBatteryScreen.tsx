@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import RmChip from '../components/RmChip';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotBatteryScreen'>;
 
@@ -18,7 +19,7 @@ const CIRC = 2 * Math.PI * RADIUS;
 
 export default function RobotBatteryScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Battery" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Battery" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <Box style={styles.ringWrap}>
           <Svg width={180} height={180} viewBox="0 0 180 180">

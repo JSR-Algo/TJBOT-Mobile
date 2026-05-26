@@ -2,7 +2,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import IntroFrame from '../components/IntroFrame';
 import { Box } from '@/design-system/primitives/Box';
@@ -15,8 +16,8 @@ export default function IntroRetryScreen({ navigation }: Props) {
     <IntroFrame
       navigation={navigation}
       idx={2}
-      prev="IntroSpeakScreen"
-      next="IntroCelebrateScreen"
+      prev={ROUTES.IntroSpeakScreen}
+      next={ROUTES.IntroCelebrateScreen}
       bg="#FFF1D6"
       kicker="How it works · 3"
       title="It's okay to try again"

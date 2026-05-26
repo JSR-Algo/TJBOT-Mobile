@@ -15,7 +15,13 @@ export function OfflineBanner(): React.JSX.Element | null {
   if (!isOffline) return null;
 
   return (
-    <View style={styles.banner} accessibilityRole="alert">
+    <View
+      testID="offline-banner"
+      style={styles.banner}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+      pointerEvents="none"
+    >
       <Text style={styles.text}>No internet connection</Text>
     </View>
   );

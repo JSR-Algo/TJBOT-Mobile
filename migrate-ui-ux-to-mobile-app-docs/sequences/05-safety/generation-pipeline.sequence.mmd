@@ -34,7 +34,7 @@ sequenceDiagram
 
     Orchestrator->>SafetyService: POST /internal/v1/conversation/generate {sessionId, turnId, transcript, ageBand, recentTurns}
     SafetyService->>PostgreSQL: INSERT conversation_requests intake row
-    SafetyService->>SafetyService: classify intent + input safety filter
+    SafetyService->>SafetyService: classify intent and input safety filter
     SafetyService->>Redis: GET household:{hh}:budget_counters
     alt budget_exceeded
         Redis-->>SafetyService: tokens >= 50000/hr OR cost >= $0.50/day
@@ -63,10 +63,10 @@ sequenceDiagram
         ContentService-->>SafetyService: {traits, prefs, memories, templates}
         SafetyService->>GoogleLiveFlash: primary generate
         GoogleLiveFlash-->>SafetyService: {textSegments, renderPlan, motionPlan}
-        SafetyService->>SafetyService: parse + normalize + output safety filter + final gate
+        SafetyService->>SafetyService: parse and normalize and output safety filter and final gate
         SafetyService->>Redis: INCR household:{hh}:budget_counters
-        SafetyService->>PostgreSQL: INSERT generation_attempts + safety_decisions
-        SafetyService-)SafetyService: emit conv-analytics + 1% conv-model-eval-sample
+        SafetyService->>PostgreSQL: INSERT generation_attempts and safety_decisions
+        SafetyService-)SafetyService: emit conv-analytics and 1% conv-model-eval-sample
         SafetyService-->>Orchestrator: allow {intent, textSegments, renderPlan, motionPlan, safetySummary}
     end
     Note over Orchestrator,PostgreSQL: secondary attempt forbidden when blocked by safety or budget exhausted

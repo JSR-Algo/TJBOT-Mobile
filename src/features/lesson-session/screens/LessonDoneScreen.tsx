@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonDoneScreen'>;
 
@@ -26,8 +27,8 @@ export default function LessonDoneScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} gap={12}>
-        <PrimaryCTA onPress={() => navigation.navigate('LessonSummaryScreen' as any)} color="#FF6F61">See what you did</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen' as any)}>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonSummaryScreen)} color="#FF6F61">See what you did</PrimaryCTA>
+        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>
           <Text fontWeight="700" style={styles.homeText}>Back home</Text>
         </TouchableOpacity>
       </Box>

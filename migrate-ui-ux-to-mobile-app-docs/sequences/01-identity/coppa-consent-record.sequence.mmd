@@ -50,7 +50,7 @@ sequenceDiagram
     Note over ParentApp,IdentityService: --- Revocation alt branch ---
 
     ParentApp->>Gateway: POST /v1/identity/coppa-consent/{consent_id}/revoke {reason, X-Request-Id}
-    Gateway->>Gateway: auth — require valid parent JWT; verify consent owned by caller
+    Gateway->>Gateway: auth — require valid parent JWT, verify consent owned by caller
     Gateway->>IdentityService: forward revoke request
     alt consent_already_revoked
         IdentityService-->>Gateway: 200 {consent_id, status: revoked} (idempotent)

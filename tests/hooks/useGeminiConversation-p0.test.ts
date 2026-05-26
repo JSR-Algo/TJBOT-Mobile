@@ -28,7 +28,7 @@ import * as path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const SRC = path.join(REPO_ROOT, 'src');
-const IOS = path.join(REPO_ROOT, 'ios/TbotMobile');
+const IOS = path.join(REPO_ROOT, 'ios/TJBotMobile');
 
 const read = (rel: string, root: string = SRC): string =>
   fs.readFileSync(path.join(root, rel), 'utf8');

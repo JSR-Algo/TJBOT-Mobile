@@ -26,6 +26,8 @@ export default function DeviceShell({ title, onBack, children }: Props) {
             onPress={onBack}
             style={styles.backBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <BackIcon color={DV.ink2} />
           </TouchableOpacity>
@@ -59,8 +61,8 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   backBtn: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',

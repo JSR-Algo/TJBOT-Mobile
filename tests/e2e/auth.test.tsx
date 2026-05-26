@@ -1,19 +1,14 @@
 /**
- * Unit tests for tbot-design auth flow (rewritten from .pr5-skip for PR5 retired UI).
+ * Unit tests for production auth feature flow.
  *
  * Covers:
- *   - LoginScreen: signup/login mode toggle, social buttons, useAuth wiring, success/failure navigation
- *   - LoginErrorScreen: Try again + Reset password navigation
- *   - ChildProfileScreen: buddy + level selection, Save navigation
- *
- * Production parent-setup screens (Signup/ForgotPassword/Coppa/CoppaConsent/...)
- * were retired in PR5 per user directive; corresponding tests dropped.
+ *   - LoginScreen: signup/login mode toggle, inline error handling, password UX,
+ *     forgot-password flow, USER_EXISTS auto-switch, field-level error highlighting
  */
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import * as authApi from '@/services/api/auth';
 import LoginScreen from '../../src/features/auth/screens/LoginScreen';
-import LoginErrorScreen from '../../src/features/auth/screens/LoginErrorScreen';
-import ChildProfileScreen from '../../src/features/auth/screens/ChildProfileScreen';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -22,6 +17,7 @@ const mockReplace = jest.fn();
 const mockGoBack = jest.fn();
 const mockLogin = jest.fn();
 const mockSignup = jest.fn();
+const mockForgotPassword = jest.spyOn(authApi, 'forgotPassword');
 
 const mockNavProp = {
   navigate: mockNavigate,
@@ -58,51 +54,38 @@ jest.mock('@/contexts/AuthContext', () => ({
 
 // ─── LoginScreen ──────────────────────────────────────────────────────────────
 
-describe('LoginScreen (tbot-design feature)', () => {
+describe('LoginScreen (auth feature)', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('renders signup mode by default with email + password inputs', () => {
-    const { getByText, getByPlaceholderText } = render(
+    const { getByText, getByPlaceholderText, getByLabelText } = render(
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
     expect(getByText('Create your account')).toBeTruthy();
     expect(getByPlaceholderText('Email')).toBeTruthy();
     expect(getByPlaceholderText('Password')).toBeTruthy();
     expect(getByText('Create account')).toBeTruthy();
+    expect(getByLabelText('Sign up mode').props.accessibilityState).toEqual({ selected: true });
+    expect(getByLabelText('Log in mode').props.accessibilityState).toEqual({ selected: false });
   });
 
   it('switches to login mode when "Log in" tab pressed', () => {
-    const { getAllByText, getByText } = render(
+    const { getAllByText, getByText, getByLabelText } = render(
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    fireEvent.press(getAllByText('Log in')[0]); // only one "Log in" exists pre-press (tab)
+    fireEvent.press(getAllByText('Log in')[0]);
     expect(getByText('Welcome back')).toBeTruthy();
-    // After mode switch button label becomes "Log in" too → 2 instances
     expect(getAllByText('Log in').length).toBeGreaterThanOrEqual(2);
+    expect(getByLabelText('Sign up mode').props.accessibilityState).toEqual({ selected: false });
+    expect(getByLabelText('Log in mode').props.accessibilityState).toEqual({ selected: true });
   });
 
-  it('renders Google + Apple social buttons', () => {
+  it('does not render placeholder social auth buttons', () => {
     const { getByText } = render(
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    expect(getByText('Continue with Google')).toBeTruthy();
-    expect(getByText('Continue with Apple')).toBeTruthy();
-  });
-
-  it('navigates to ChildProfileScreen when Google button pressed', () => {
-    const { getByText } = render(
-      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
-    );
-    fireEvent.press(getByText('Continue with Google'));
-    expect(mockNavigate).toHaveBeenCalledWith('ChildProfileScreen');
-  });
-
-  it('navigates to ChildProfileScreen when Apple button pressed', () => {
-    const { getByText } = render(
-      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
-    );
-    fireEvent.press(getByText('Continue with Apple'));
-    expect(mockNavigate).toHaveBeenCalledWith('ChildProfileScreen');
+    expect(() => getByText('Continue with Google')).toThrow();
+    expect(() => getByText('Continue with Apple')).toThrow();
   });
 
   it('calls login with email + password in login mode', async () => {
@@ -110,7 +93,6 @@ describe('LoginScreen (tbot-design feature)', () => {
     const { getAllByText, getByPlaceholderText } = render(
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    // [0] = tab label, [1] = submit button (both say "Log in")
     fireEvent.press(getAllByText('Log in')[0]);
     fireEvent.changeText(getByPlaceholderText('Email'), 'parent@test.com');
     fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
@@ -120,7 +102,7 @@ describe('LoginScreen (tbot-design feature)', () => {
     });
   });
 
-  it('replaces to HomeHubScreen on login success', async () => {
+  it('lets the root auth gate switch branches on login success (no replace call)', async () => {
     mockLogin.mockResolvedValueOnce(undefined);
     const { getAllByText, getByPlaceholderText } = render(
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
@@ -130,22 +112,32 @@ describe('LoginScreen (tbot-design feature)', () => {
     fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
     fireEvent.press(getAllByText('Log in')[1]);
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('HomeHubScreen');
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 
-  it('navigates to LoginErrorScreen on login failure', async () => {
+  it('shows inline error on login failure (no navigation)', async () => {
     mockLogin.mockRejectedValueOnce(new Error('bad credentials'));
-    const { getAllByText, getByPlaceholderText } = render(
+    const { getAllByText, getByPlaceholderText, findByRole } = render(
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
     fireEvent.press(getAllByText('Log in')[0]);
     fireEvent.changeText(getByPlaceholderText('Email'), 'parent@test.com');
     fireEvent.changeText(getByPlaceholderText('Password'), 'wrongpass');
     fireEvent.press(getAllByText('Log in')[1]);
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('LoginErrorScreen');
-    });
+    const alert = await findByRole('alert');
+    expect(alert).toBeTruthy();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('shows validation feedback and does not submit empty credentials', () => {
+    const { getByText, getByRole } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Create account'));
+    expect(getByRole('alert')).toBeTruthy();
+    expect(mockSignup).not.toHaveBeenCalled();
+    expect(mockLogin).not.toHaveBeenCalled();
   });
 
   it('calls signup(email, email, password) when in signup mode', async () => {
@@ -154,98 +146,137 @@ describe('LoginScreen (tbot-design feature)', () => {
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
     fireEvent.changeText(getByPlaceholderText('Email'), 'new@test.com');
-    fireEvent.changeText(getByPlaceholderText('Password'), 'newpass123');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'NewPass1!');
+    fireEvent.changeText(getByPlaceholderText('Confirm password'), 'NewPass1!');
     fireEvent.press(getByText('Create account'));
     await waitFor(() => {
-      // tbot-design has no name input — signup called with email twice
-      expect(mockSignup).toHaveBeenCalledWith('new@test.com', 'new@test.com', 'newpass123');
-    });
-  });
-});
-
-// ─── LoginErrorScreen ─────────────────────────────────────────────────────────
-
-describe('LoginErrorScreen (tbot-design feature)', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('renders error heading + sub-text', () => {
-    const { getByText } = render(
-      <LoginErrorScreen navigation={mockNavProp} route={mockRoute as never} />
-    );
-    expect(getByText("We couldn't sign you in")).toBeTruthy();
-    expect(getByText(/didn't match/)).toBeTruthy();
-    expect(getByText('Email or password is incorrect.')).toBeTruthy();
-  });
-
-  it('navigates to ChildProfileScreen when Try again pressed', () => {
-    const { getByText } = render(
-      <LoginErrorScreen navigation={mockNavProp} route={mockRoute as never} />
-    );
-    fireEvent.press(getByText('Try again'));
-    expect(mockNavigate).toHaveBeenCalledWith('ChildProfileScreen');
-  });
-
-  it('navigates to LoginScreen when Reset password pressed', () => {
-    const { getByText } = render(
-      <LoginErrorScreen navigation={mockNavProp} route={mockRoute as never} />
-    );
-    fireEvent.press(getByText('Reset password'));
-    expect(mockNavigate).toHaveBeenCalledWith('LoginScreen');
-  });
-});
-
-// ─── ChildProfileScreen ───────────────────────────────────────────────────────
-
-describe('ChildProfileScreen (tbot-design feature)', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('renders heading + buddy section + level section', () => {
-    const { getByText } = render(
-      <ChildProfileScreen navigation={mockNavProp} route={mockRoute as never} />
-    );
-    expect(getByText('Pick a buddy and a starting level')).toBeTruthy();
-    expect(getByText('BUDDY')).toBeTruthy();
-    expect(getByText('STARTING LEVEL')).toBeTruthy();
-  });
-
-  it('renders all 8 buddy emojis', () => {
-    const { getByText } = render(
-      <ChildProfileScreen navigation={mockNavProp} route={mockRoute as never} />
-    );
-    ['🐼', '🐱', '🦊', '🐰', '🐸', '🦁', '🦄', '🐶'].forEach(emoji => {
-      expect(getByText(emoji)).toBeTruthy();
+      expect(mockSignup).toHaveBeenCalledWith('new@test.com', 'new@test.com', 'NewPass1!');
     });
   });
 
-  it('renders all 3 starting level labels', () => {
-    const { getByText } = render(
-      <ChildProfileScreen navigation={mockNavProp} route={mockRoute as never} />
+  it('shows PasswordChecklist rule text in signup mode', () => {
+    const { getAllByText } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    expect(getByText('Just starting')).toBeTruthy();
-    expect(getByText('Knows some words')).toBeTruthy();
-    expect(getByText('Speaks a bit')).toBeTruthy();
+    const ruleTexts = ['At least 8 characters', 'One uppercase letter', 'One number', 'One special character (!@#$%^&*)'];
+    for (const rule of ruleTexts) {
+      expect(getAllByText(rule).length).toBeGreaterThan(0);
+    }
   });
 
-  it('shows default panda buddy greeting', () => {
-    const { getByText } = render(
-      <ChildProfileScreen navigation={mockNavProp} route={mockRoute as never} />
+  it('does not show PasswordChecklist in login mode', () => {
+    const { queryByText, getAllByText } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    expect(getByText(/Panda friend/)).toBeTruthy();
+    fireEvent.press(getAllByText('Log in')[0]);
+    expect(queryByText('At least 8 characters')).toBeNull();
   });
 
-  it('updates greeting when different buddy selected', () => {
-    const { getByText } = render(
-      <ChildProfileScreen navigation={mockNavProp} route={mockRoute as never} />
+  it('shows show/hide password toggle and changes secureTextEntry state', () => {
+    const { getAllByLabelText, getByPlaceholderText } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('🦊'));
-    expect(getByText(/Fox friend/)).toBeTruthy();
+    const passwordInput = getByPlaceholderText('Password');
+    expect(passwordInput.props.secureTextEntry).toBe(true);
+    fireEvent.press(getAllByLabelText('Show password')[0]);
+    expect(getByPlaceholderText('Password').props.secureTextEntry).toBe(false);
+    fireEvent.press(getAllByLabelText('Hide password')[0]);
+    expect(getByPlaceholderText('Password').props.secureTextEntry).toBe(true);
   });
 
-  it('navigates to IntroListenScreen when Save pressed', () => {
-    const { getByText } = render(
-      <ChildProfileScreen navigation={mockNavProp} route={mockRoute as never} />
+  it('shows confirm password field in signup mode and validates mismatch', async () => {
+    const { getByPlaceholderText, findByRole, getByText } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Save and meet Robot'));
-    expect(mockNavigate).toHaveBeenCalledWith('IntroListenScreen');
+    fireEvent.changeText(getByPlaceholderText('Email'), 'test@test.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'NewPass1!');
+    fireEvent.changeText(getByPlaceholderText('Confirm password'), 'DifferentPass1!');
+    fireEvent.press(getByText('Create account'));
+    const alert = await findByRole('alert');
+    expect(alert.props.children).toContain('Passwords do not match');
+    expect(mockSignup).not.toHaveBeenCalled();
+  });
+
+  it('clears all errors when switching mode tab', () => {
+    const { getAllByText, getByText, queryByRole } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Create account'));
+    expect(queryByRole('alert')).toBeTruthy();
+    fireEvent.press(getAllByText('Log in')[0]);
+    expect(queryByRole('alert')).toBeNull();
+  });
+
+  it('shows email field-level error when email is missing', () => {
+    const { getAllByText, getByPlaceholderText, getByRole } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    fireEvent.press(getAllByText('Log in')[0]);
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Pass1!');
+    fireEvent.press(getAllByText('Log in')[1]);
+    expect(getByRole('alert')).toBeTruthy();
+  });
+
+  it('shows Forgot password link in login mode only', () => {
+    const { getAllByText, queryByLabelText, getByLabelText } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    expect(queryByLabelText('Forgot password')).toBeNull();
+    fireEvent.press(getAllByText('Log in')[0]);
+    expect(getByLabelText('Forgot password')).toBeTruthy();
+  });
+
+  it('switches to forgot password inline reset flow when link pressed', () => {
+    const { getAllByText, getByLabelText, getByText } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    fireEvent.press(getAllByText('Log in')[0]);
+    fireEvent.press(getByLabelText('Forgot password'));
+    expect(getByText('Send reset email')).toBeTruthy();
+    expect(getByLabelText('Back to log in')).toBeTruthy();
+  });
+
+  it('calls forgotPassword API and shows success message in inline reset flow', async () => {
+    mockForgotPassword.mockResolvedValueOnce(undefined);
+    const { getAllByText, getByLabelText, getByPlaceholderText, findByText } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    fireEvent.press(getAllByText('Log in')[0]);
+    fireEvent.changeText(getByPlaceholderText('Email'), 'parent@test.com');
+    fireEvent.press(getByLabelText('Forgot password'));
+    fireEvent.press(await findByText('Send reset email'));
+    await waitFor(() => {
+      expect(mockForgotPassword).toHaveBeenCalledWith('parent@test.com');
+    });
+    expect(await findByText('Password reset email sent.')).toBeTruthy();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('auto-switches to login tab and shows error on USER_EXISTS', async () => {
+    mockSignup.mockRejectedValueOnce({ code: 'USER_EXISTS', message: 'An account with this email already exists.' });
+    const { getByText, getByPlaceholderText, getByLabelText, findByRole } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    fireEvent.changeText(getByPlaceholderText('Email'), 'existing@test.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'NewPass1!');
+    fireEvent.changeText(getByPlaceholderText('Confirm password'), 'NewPass1!');
+    fireEvent.press(getByText('Create account'));
+    await findByRole('alert');
+    expect(getByLabelText('Log in mode').props.accessibilityState).toEqual({ selected: true });
+    expect(getByPlaceholderText('Email').props.value).toBe('existing@test.com');
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('auto-switches to login tab on ACCOUNT_ALREADY_EXISTS error', async () => {
+    mockSignup.mockRejectedValueOnce({ code: 'ACCOUNT_ALREADY_EXISTS', message: 'An account with this email already exists.' });
+    const { getByText, getByPlaceholderText, getByLabelText, findByRole } = render(
+      <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
+    );
+    fireEvent.changeText(getByPlaceholderText('Email'), 'dupe@test.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'NewPass1!');
+    fireEvent.changeText(getByPlaceholderText('Confirm password'), 'NewPass1!');
+    fireEvent.press(getByText('Create account'));
+    await findByRole('alert');
+    expect(getByLabelText('Log in mode').props.accessibilityState).toEqual({ selected: true });
   });
 });

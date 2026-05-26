@@ -52,7 +52,7 @@ sequenceDiagram
         SafetyService-->>AdminConsole: 409 red_team_regression
     else success
         SafetyService->>SafetyService: validate, probe, red-team suite green
-        SafetyService->>PostgreSQL: INSERT blocklist_versions row + activate
+        SafetyService->>PostgreSQL: INSERT blocklist_versions row and activate
         SafetyService->>PostgreSQL: INSERT audit event
         SafetyService->>Redis: DEL blocklist:active
         SafetyService-)SafetyService: emit conv-policy-publish fanout

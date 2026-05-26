@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -9,6 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import RmChip from '../components/RmChip';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OfflineHelpScreen'>;
 
@@ -22,7 +23,7 @@ const STEPS = [
 
 export default function OfflineHelpScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot offline help" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Robot offline help" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingTop={24} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="reconnect" size={150} accent="#FF6F61" />
         <Box marginTop={14}><RmChip color={RM.warn} bg="#FFF4D9">⚠️ Robot is offline</RmChip></Box>
@@ -40,7 +41,7 @@ export default function OfflineHelpScreen({ navigation }: Props) {
               <Text fontWeight="600" style={styles.stepTitle}>{s.t}</Text>
               <Text style={styles.stepBody}>{s.b}</Text>
               {s.cta && (
-                <TouchableOpacity onPress={() => navigation.navigate('RobotWifiScreen')} activeOpacity={0.7} style={{ marginTop: 8 }}>
+                <TouchableOpacity onPress={() => navigation.navigate(ROUTES.RobotWifiScreen)} activeOpacity={0.7} style={{ marginTop: 8 }}>
                   <Text fontWeight="600" style={styles.stepCta}>{s.cta} →</Text>
                 </TouchableOpacity>
               )}
@@ -50,8 +51,8 @@ export default function OfflineHelpScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('MyRobotScreen')}>Try connecting again</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('SupportScreen')}>Still stuck · contact support</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>Try connecting again</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.SupportScreen)}>Still stuck · contact support</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

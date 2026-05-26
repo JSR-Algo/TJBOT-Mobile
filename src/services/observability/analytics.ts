@@ -5,28 +5,54 @@ import { ENV } from '../../__env__';
 const POSTHOG_KEY = ENV.EXPO_PUBLIC_POSTHOG_API_KEY?.trim();
 const POSTHOG_HOST = ENV.EXPO_PUBLIC_POSTHOG_HOST?.trim() || 'https://us.i.posthog.com';
 
+export type UserRole = 'child' | 'teen' | 'adult';
+
+export const SENSITIVE_PROPERTY_PATTERN =
+  /(?:email|token|secret|password|transcript|audio|name|dob|birthdate|address|phone)/i;
+
 let client: PostHog | null = null;
 let analyticsEnabled = false;
+let currentRole: UserRole | null = null;
 
-export function initAnalytics(): void {
+export function initAnalytics(role?: UserRole): void {
+  if (role !== undefined) currentRole = role;
   if (!POSTHOG_KEY) {
     analyticsEnabled = false;
     return;
   }
+  const disabled = currentRole === 'child';
 
   client = new PostHog(POSTHOG_KEY, {
     host: POSTHOG_HOST,
-    disabled: false,
+    disabled,
     captureNativeAppLifecycleEvents: true,
     flushAt: 1,
     flushInterval: 1000,
   });
-  analyticsEnabled = true;
+  analyticsEnabled = !disabled;
+}
+
+export function setAnalyticsUserRole(role: UserRole): void {
+  currentRole = role;
+  if (role === 'child') {
+    if (client) {
+      void client.optOut();
+    }
+    analyticsEnabled = false;
+    return;
+  }
+  if (client) {
+    void client.optIn();
+    analyticsEnabled = true;
+    return;
+  }
+  initAnalytics(role);
 }
 
 export function identifyAnalyticsUser(userId: string, email?: string): void {
   if (!analyticsEnabled || !client || !userId) return;
-  client.identify(userId, email ? { email } : undefined);
+  const properties = email ? redactSensitiveProperties({ email }) : undefined;
+  client.identify(userId, properties);
 }
 
 export function resetAnalytics(): void {
@@ -36,10 +62,7 @@ export function resetAnalytics(): void {
 
 export function trackEvent(event: string, properties?: Record<string, string | number | boolean | null>): void {
   if (!analyticsEnabled || !client) return;
-  // Strip undefined values for PostHog's strict JsonType
-  const clean = properties
-    ? Object.fromEntries(Object.entries(properties).filter(([, v]) => v !== undefined))
-    : undefined;
+  const clean = properties ? redactSensitiveProperties(properties) : undefined;
   client.capture(event, clean);
 }
 
@@ -49,4 +72,15 @@ export function isAnalyticsEnabled(): boolean {
 
 export function getAnalyticsClient(): PostHog | null {
   return client;
+}
+
+function redactSensitiveProperties(
+  properties: Record<string, string | number | boolean | null | undefined>,
+): Record<string, string | number | boolean | null> {
+  const clean: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(properties)) {
+    if (value === undefined || SENSITIVE_PROPERTY_PATTERN.test(key)) continue;
+    clean[key] = value;
+  }
+  return clean;
 }

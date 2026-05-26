@@ -1,20 +1,21 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceLostScreen'>;
 
 export default function DeviceLostScreen({ navigation }: Props) {
   const [chiming, setChiming] = React.useState(false);
   return (
-    <DeviceShell title="Find Robot" onBack={() => navigation.navigate('DeviceHomeScreen')}>
+    <DeviceShell title="Find Robot" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion={chiming ? 'happy' : 'sleep'} size={180} accent="#FF6F61" />
         <Text fontWeight="600" style={styles.heading}>

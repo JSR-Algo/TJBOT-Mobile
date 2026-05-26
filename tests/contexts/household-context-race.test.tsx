@@ -12,7 +12,8 @@
  * This test asserts:
  *  1. Mid-hydration (authLoading=true) — destructive clear is NOT called
  *  2. Post-hydration with isAuthenticated=true — persisted flag survives
- *  3. Real logout (authLoading=false, isAuthenticated=false) — flag IS cleared
+ *  3. Real logout (authLoading=false, isAuthenticated=false) — flag survives
+ *     because onboarding is device-first-run state, not account state
  */
 
 import React from 'react';
@@ -122,9 +123,8 @@ describe('HouseholdContext cold-start race fix (B2)', () => {
       expect(getByTestId('probe').props.children).toBe('COMPLETE');
     });
 
-    // Now AuthContext finishes hydrating: still no token (logged-out cold start)
-    // We don't flip isAuthenticated yet — just authLoading→false. Without the
-    // fix, this would also trigger the clear effect and wipe the flag.
+    // Now AuthContext finishes hydrating: still no token (logged-out cold start).
+    // Onboarding is per install/device, so this must not wipe the flag.
     authState.isLoading = false;
     rerender(
       <HouseholdProvider>
@@ -132,15 +132,13 @@ describe('HouseholdContext cold-start race fix (B2)', () => {
       </HouseholdProvider>,
     );
 
-    // After authLoading=false + isAuthenticated=false, the clear branch DOES
-    // run (real logged-out state). Flag gets cleared and state resets.
     await waitFor(() => {
-      expect(getByTestId('probe').props.children).toBe('NOT_COMPLETE');
+      expect(getByTestId('probe').props.children).toBe('COMPLETE');
     });
     const cleared = SecureStoreMock.deleteItemAsync.mock.calls.some(
       (call: unknown[]) => call[0] === ONBOARDING_KEY,
     );
-    expect(cleared).toBe(true);
+    expect(cleared).toBe(false);
   });
 
   it('authenticated returning user keeps onboardingComplete=true after refresh', async () => {

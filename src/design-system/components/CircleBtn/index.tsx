@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Pressable } from '@/design-system/primitives/Pressable';
 import { Box } from '@/design-system/primitives/Box';
-import { tokens } from '@/design-system/tokens';
 
 interface CircleBtnProps {
   children?: React.ReactNode;
@@ -10,12 +9,14 @@ interface CircleBtnProps {
   onPress?: () => void;
   size?: number;
   ariaLabel?: string;
+  accessibilityLabel?: string;
 }
 
-export default function CircleBtn({ children, bg = '#fff', onPress, size = 48, ariaLabel }: CircleBtnProps) {
+export default function CircleBtn({ children, bg = '#fff', onPress, size = 48, ariaLabel, accessibilityLabel }: CircleBtnProps) {
+  const touchSize = Math.max(size, 44);
   return (
-    <Pressable haptic onPress={onPress} accessibilityLabel={ariaLabel}>
-      <Box style={[styles.base, { width: size, height: size, borderRadius: size / 2, backgroundColor: bg }]}>
+    <Pressable haptic onPress={onPress} accessibilityLabel={accessibilityLabel ?? ariaLabel}>
+      <Box style={[styles.base, { width: touchSize, height: touchSize, borderRadius: touchSize / 2, backgroundColor: bg }]}>
         {children}
       </Box>
     </Pressable>

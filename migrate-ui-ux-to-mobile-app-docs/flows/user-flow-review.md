@@ -57,8 +57,8 @@ The TBOT mobile flow is a **kid-facing voice-learning app + parent control surfa
 ### ISSUE 6
 - **Type:** circular navigation in `course-library` purchase loop
 - **Severity:** MEDIUM
-- **Location:** `cl_buy <-> cl_detail`, `cl_buy <-> cl_unlock_confirm`, `cl_companion <-> cl_running`, `cl_robot_ready <-> cl_send` (4 reciprocal pairs in a single domain)
-- **Description:** the buy-and-send-to-robot flow has multiple back-edges across what should be a forward-only commit funnel. A user can `cl_unlock_confirm` → `cl_buy` (back) → `cl_buy` again (re-confirm). No idempotency cue.
+- **Location:** `cl_add_free <-> cl_detail`, `cl_add_free <-> cl_unlock_confirm`, `cl_companion <-> cl_running`, `cl_robot_ready <-> cl_send` (4 reciprocal pairs in a single domain)
+- **Description:** the buy-and-send-to-robot flow has multiple back-edges across what should be a forward-only commit funnel. A user can `cl_unlock_confirm` → `cl_add_free` (back) → `cl_add_free` again (re-confirm). No idempotency cue.
 - **Impact:** for a backend, this means each "confirm" button must be idempotent, server-side. If naive, a user can double-charge by tapping back/forward.
 
 ### ISSUE 7
@@ -131,7 +131,7 @@ The flow lacks these necessary paths for a production SaaS:
 | UX3 | **Lesson exit path lands on undeclared `home`** | `exit_confirm → home` resolves to a variant — possibly the wrong one (e.g. `home_hub_offline` after a network drop). User feels disoriented. |
 | UX4 | **No back navigation on dead-end screens** | 12 dead-end screens have no manual back path. If auto-advance fails (timer doesn't fire, animation hangs), user is stuck. Mobile back-gesture only works if React Navigation provides it; flow doesn't show that wiring. |
 | UX5 | **Pairing loop has many recovery paths** | `dv_pair_failed → dv_pair_search → dv_pair_failed` (reciprocal). If retry keeps failing, user has no obvious exit. |
-| UX6 | **Course unlock confirmation can be re-tapped** | `cl_unlock_confirm <-> cl_buy` reciprocal. User can tap "Unlock" multiple times without obvious idempotency. |
+| UX6 | **Course unlock confirmation can be re-tapped** | `cl_unlock_confirm <-> cl_add_free` reciprocal. User can tap "Unlock" multiple times without obvious idempotency. |
 | UX7 | **Lesson session has 20 internal states** | If a kid goes off-script (looks away, says nothing), the flow handles `silence`, `offtopic`, `bargein`, `retry`, `gentle` — good — but transitions between them depend on AI inference. From the kid's POV, "why is the robot saying retry?" is opaque. |
 | UX8 | **No global "where am I?" affordance** | Apps with 121 screens need a breadcrumb or section indicator. Flow shows nothing. |
 
@@ -142,7 +142,7 @@ The flow lacks these necessary paths for a production SaaS:
 | # | Risk | Source-of-pain |
 |---|---|---|
 | B1 | **Zero API surface in source** | 0 `fetch`/`axios` calls in `src/features/**`. Every transition currently fires synchronously. Migrating to a backend means EVERY screen entry needs an async loading state — no current scaffold. |
-| B2 | **Idempotency unclear on `cl_buy` reciprocal loop** | `cl_buy <-> cl_unlock_confirm` lets a user "unlock" → "back" → "unlock again". Backend must dedup by client-generated request ID, but the client doesn't generate one (no API client at all yet). |
+| B2 | **Idempotency unclear on `cl_add_free` reciprocal loop** | `cl_add_free <-> cl_unlock_confirm` lets a user "unlock" → "back" → "unlock again". Backend must dedup by client-generated request ID, but the client doesn't generate one (no API client at all yet). |
 | B3 | **Realtime lesson session has no transport in flow** | `lesson-session/Connecting` exists, but how does it connect (WebSocket? polling?). 20 lesson states imply heavy bidirectional traffic — backend must guarantee message ordering, recover from reconnect mid-utterance. |
 | B4 | **State stored only in component memory** | No store/Redux. After 121 screens of in-component state, "where does my profile live?" has no answer. Backend will get bombarded with redundant fetches. |
 | B5 | **No request lineage** | Without a request-ID mechanism in the client, server can't correlate "user clicked unlock" → "device received course" — debugging will be hell. |
@@ -203,7 +203,7 @@ Improvements only — not a redesign. Order by impact-to-cost.
    - Drives correct React-Navigation method choice.
 
 6. **Add idempotency markers to commit funnels.**
-   - `cl_buy → cl_unlock_confirm → cl_added` should be one-way after confirmation. Disable back-nav on confirmed steps.
+   - `cl_add_free → cl_unlock_confirm → cl_added` should be one-way after confirmation. Disable back-nav on confirmed steps.
    - Generate a client request ID on entry to commit screens.
 
 7. **Add a realtime-session transport layer in the flow.**

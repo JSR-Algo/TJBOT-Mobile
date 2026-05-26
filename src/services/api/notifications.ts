@@ -39,7 +39,7 @@ export async function updatePreferences(prefs: UpdatePrefsPayload): Promise<Noti
 }
 
 export async function getHistory(limit = 20): Promise<NotificationHistoryItem[]> {
-  const res = await client.get('/notifications/history', { params: { limit } });
+  const res = await client.get('/me/notifications', { params: { limit } });
   return res.data.data ?? res.data;
 }
 
@@ -48,5 +48,5 @@ export async function registerPushToken(token: string, platform: 'ios' | 'androi
 }
 
 export async function removePushToken(token: string): Promise<void> {
-  await client.delete(`/notifications/push-token/${encodeURIComponent(token)}`);
+  await client.delete('/notifications/push-token', { data: { token } });
 }

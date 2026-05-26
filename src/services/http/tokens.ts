@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
-const ACCESS_TOKEN_KEY = 'tbot_access_token';
-const REFRESH_TOKEN_KEY = 'tbot_refresh_token';
+const ACCESS_TOKEN_KEY = 'TJBot_access_token';
+const REFRESH_TOKEN_KEY = 'TJBot_refresh_token';
 export const SECURE_STORE_OPTIONS = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED,
 } as const;
@@ -44,5 +44,5 @@ export async function deleteSecureItem(key: string): Promise<void> {
 export const SECURE_STORE_KEYS = {
   accessToken: ACCESS_TOKEN_KEY,
   refreshToken: REFRESH_TOKEN_KEY,
-  user: 'tbot_user',
+  user: 'TJBot_user',
 } as const;

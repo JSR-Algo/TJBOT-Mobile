@@ -1,7 +1,7 @@
 /**
- * Unit tests for tbot-design onboarding flow (rewritten from .pr5-skip).
+ * Unit tests for the TJBot mobile onboarding flow.
  *
- * tbot-design's kid-intro flow:
+ * TJBot mobile kid-intro flow:
  *   Splash → Welcome → IntroListen → IntroSpeak → IntroRetry → IntroCelebrate
  *           → Trust → MicAsk → FirstLessonEntry → LessonReady (lesson-session)
  *
@@ -20,6 +20,7 @@ import IntroCelebrateScreen from '../../src/features/onboarding/screens/IntroCel
 import TrustScreen from '../../src/features/onboarding/screens/TrustScreen';
 import MicAskScreen from '../../src/features/onboarding/screens/MicAskScreen';
 import FirstLessonEntryScreen from '../../src/features/onboarding/screens/FirstLessonEntryScreen';
+import { ROUTES } from '../../src/navigation/routes';
 
 const mockNavigate = jest.fn();
 const mockReplace = jest.fn();
@@ -49,7 +50,7 @@ beforeEach(() => jest.clearAllMocks());
 
 // ─── SplashScreen ─────────────────────────────────────────────────────────────
 
-describe('SplashScreen (tbot-design feature)', () => {
+describe('SplashScreen', () => {
   it('renders Robot wordmark + tagline', () => {
     const { getByText } = render(
       <SplashScreen navigation={mockNav} route={mockRoute as never} />
@@ -64,7 +65,7 @@ describe('SplashScreen (tbot-design feature)', () => {
     act(() => {
       jest.advanceTimersByTime(1700);
     });
-    expect(mockNavigate).toHaveBeenCalledWith('WelcomeScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.WelcomeScreen);
     jest.useRealTimers();
   });
 
@@ -81,7 +82,7 @@ describe('SplashScreen (tbot-design feature)', () => {
 
 // ─── WelcomeScreen ────────────────────────────────────────────────────────────
 
-describe('WelcomeScreen (tbot-design feature)', () => {
+describe('WelcomeScreen', () => {
   it('renders hero + grown-up note + CTAs', () => {
     const { getByText } = render(
       <WelcomeScreen navigation={mockNav} route={mockRoute as never} />
@@ -97,7 +98,7 @@ describe('WelcomeScreen (tbot-design feature)', () => {
       <WelcomeScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Get started'));
-    expect(mockNavigate).toHaveBeenCalledWith('IntroListenScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroListenScreen);
   });
 
   it('navigates to LoginScreen when "I already have an account" pressed', () => {
@@ -105,13 +106,13 @@ describe('WelcomeScreen (tbot-design feature)', () => {
       <WelcomeScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('I already have an account'));
-    expect(mockNavigate).toHaveBeenCalledWith('LoginScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LoginScreen);
   });
 });
 
 // ─── IntroListenScreen ───────────────────────────────────────────────────────
 
-describe('IntroListenScreen (tbot-design feature)', () => {
+describe('IntroListenScreen', () => {
   it('renders kicker + title + body', () => {
     const { getByText } = render(
       <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
@@ -134,7 +135,7 @@ describe('IntroListenScreen (tbot-design feature)', () => {
       <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Next'));
-    expect(mockNavigate).toHaveBeenCalledWith('IntroSpeakScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroSpeakScreen);
   });
 
   it('navigates to TrustScreen when Skip pressed', () => {
@@ -142,13 +143,13 @@ describe('IntroListenScreen (tbot-design feature)', () => {
       <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Skip'));
-    expect(mockNavigate).toHaveBeenCalledWith('TrustScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TrustScreen);
   });
 });
 
 // ─── IntroSpeakScreen ────────────────────────────────────────────────────────
 
-describe('IntroSpeakScreen (tbot-design feature)', () => {
+describe('IntroSpeakScreen', () => {
   it('renders title', () => {
     const { getByText } = render(
       <IntroSpeakScreen navigation={mockNav} route={mockRoute as never} />
@@ -161,13 +162,13 @@ describe('IntroSpeakScreen (tbot-design feature)', () => {
       <IntroSpeakScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Next'));
-    expect(mockNavigate).toHaveBeenCalledWith('IntroRetryScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroRetryScreen);
   });
 });
 
 // ─── IntroRetryScreen ────────────────────────────────────────────────────────
 
-describe('IntroRetryScreen (tbot-design feature)', () => {
+describe('IntroRetryScreen', () => {
   it('renders title', () => {
     const { getByText } = render(
       <IntroRetryScreen navigation={mockNav} route={mockRoute as never} />
@@ -180,13 +181,13 @@ describe('IntroRetryScreen (tbot-design feature)', () => {
       <IntroRetryScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Next'));
-    expect(mockNavigate).toHaveBeenCalledWith('IntroCelebrateScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroCelebrateScreen);
   });
 });
 
 // ─── IntroCelebrateScreen ────────────────────────────────────────────────────
 
-describe('IntroCelebrateScreen (tbot-design feature)', () => {
+describe('IntroCelebrateScreen', () => {
   it('renders title', () => {
     const { getByText } = render(
       <IntroCelebrateScreen navigation={mockNav} route={mockRoute as never} />
@@ -199,13 +200,13 @@ describe('IntroCelebrateScreen (tbot-design feature)', () => {
       <IntroCelebrateScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Next'));
-    expect(mockNavigate).toHaveBeenCalledWith('TrustScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.TrustScreen);
   });
 });
 
 // ─── TrustScreen ─────────────────────────────────────────────────────────────
 
-describe('TrustScreen (tbot-design feature)', () => {
+describe('TrustScreen', () => {
   it('renders all 4 trust promises', () => {
     const { getByText } = render(
       <TrustScreen navigation={mockNav} route={mockRoute as never} />
@@ -221,13 +222,13 @@ describe('TrustScreen (tbot-design feature)', () => {
       <TrustScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Continue'));
-    expect(mockNavigate).toHaveBeenCalledWith('MicAskScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.MicAskScreen);
   });
 });
 
 // ─── MicAskScreen ────────────────────────────────────────────────────────────
 
-describe('MicAskScreen (tbot-design feature)', () => {
+describe('MicAskScreen', () => {
   it('renders Continue + Not now CTAs', () => {
     const { getByText } = render(
       <MicAskScreen navigation={mockNav} route={mockRoute as never} />
@@ -236,18 +237,26 @@ describe('MicAskScreen (tbot-design feature)', () => {
     expect(getByText('Not now')).toBeTruthy();
   });
 
-  it('navigates to LoginScreen when Not now pressed', () => {
+  it('navigates to FirstLessonEntryScreen when Not now pressed', () => {
     const { getByText } = render(
       <MicAskScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Not now'));
-    expect(mockNavigate).toHaveBeenCalledWith('LoginScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.FirstLessonEntryScreen);
+  });
+
+  it('navigates to FirstLessonEntryScreen when Continue pressed', () => {
+    const { getByText } = render(
+      <MicAskScreen navigation={mockNav} route={mockRoute as never} />
+    );
+    fireEvent.press(getByText('Continue'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.FirstLessonEntryScreen);
   });
 });
 
 // ─── FirstLessonEntryScreen ──────────────────────────────────────────────────
 
-describe('FirstLessonEntryScreen (tbot-design feature)', () => {
+describe('FirstLessonEntryScreen', () => {
   it('renders parent hand-off prompt', () => {
     const { getByText } = render(
       <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />
@@ -262,6 +271,6 @@ describe('FirstLessonEntryScreen (tbot-design feature)', () => {
       <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Yes!'));
-    expect(mockNavigate).toHaveBeenCalledWith('LessonReadyScreen');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
   });
 });

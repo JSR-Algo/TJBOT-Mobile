@@ -1,14 +1,14 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
-import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import RobotHero from '../components/RobotHero';
 import PRChip from '../components/PRChip';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PurchaseIntroScreen'>;
 
@@ -20,7 +20,8 @@ const FEATURES = [
 
 export default function PurchaseIntroScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Meet Robot" onBack={() => navigation.navigate('DeviceHomeScreen')}>
+    <DeviceShell title="Meet Robot" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+      <Box testID="purchaseIntroScroll">
       <Box paddingHorizontal={24} paddingTop={18} alignItems="center">
         <RobotHero size={220} accent="#FF6F61" />
         <Box style={styles.chipWrap}><PRChip>A gentle English buddy</PRChip></Box>
@@ -45,10 +46,20 @@ export default function PurchaseIntroScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('HowItWorksScreen')}>See how it works</DeviceBigBtn>
-        <TouchableOpacity onPress={() => navigation.navigate('PrivacyScreen')} style={styles.privacyBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          testID="purchaseIntroHowItWorksCta"
+          accessibilityRole="button"
+          accessibilityLabel="See how it works"
+          onPress={() => navigation.navigate(ROUTES.HowItWorksScreen)}
+          style={styles.primaryCta}
+          activeOpacity={0.7}
+        >
+          <Text fontWeight="600" style={styles.primaryCtaText}>See how it works</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.PrivacyScreen)} style={styles.privacyBtn} activeOpacity={0.7}>
           <Text fontWeight="500" style={styles.privacyText}>Privacy & safety first</Text>
         </TouchableOpacity>
+      </Box>
       </Box>
     </DeviceShell>
   );
@@ -64,6 +75,8 @@ const styles = StyleSheet.create({
   featureIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#EEF1F5', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   featureTitle: { fontSize: 14, color: PR.ink },
   featureBody: { fontSize: 12, color: PR.ink2, marginTop: 2, lineHeight: 18 },
+  primaryCta: { width: '100%', minHeight: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: PR.accent },
+  primaryCtaText: { fontSize: 16, color: '#fff' },
   privacyBtn: { alignItems: 'center', padding: 8 },
   privacyText: { fontSize: 13, color: PR.ink2 },
 });

@@ -46,4 +46,4 @@ sequenceDiagram
 
     Note over Device,DecommissionWorker: cloud notifies device on next heartbeat — runtime transitions to DECOMMISSIONED (sys-03 §4.2) clears local personalization, disables wake-word
 
-    Note over ParentApp,PostgreSQL: timeout 5s p99 · 8.8 from failure-matrix — decommission rejected if pending OTA · audit + immutable ownership-history record per security control
+    Note over ParentApp,PostgreSQL: timeout 5s p99 · 8.8 from failure-matrix — decommission rejected if pending OTA · audit and immutable ownership-history record per security control

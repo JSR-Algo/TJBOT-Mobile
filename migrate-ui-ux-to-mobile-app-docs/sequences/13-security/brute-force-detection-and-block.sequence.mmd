@@ -59,7 +59,7 @@ sequenceDiagram
             BruteForceDetector->>PostgreSQL: INSERT ip_block_list {ip_address, reason, expires_at, security_event_id}
             alt postgres_insert_failed
                 PostgreSQL--xBruteForceDetector: error
-                Note over BruteForceDetector: log + retry async — Redis block remains active (security-first)
+                Note over BruteForceDetector: log and retry async — Redis block remains active (security-first)
             end
             alt escalated_to_critical
                 BruteForceDetector->>PagerDuty: page security team {ip, block_count, severity='critical'}

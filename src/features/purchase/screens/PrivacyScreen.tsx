@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRChip from '../components/PRChip';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PrivacyScreen'>;
 
@@ -22,7 +23,7 @@ const ROWS = [
 
 export default function PrivacyScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="What we promise parents" onBack={() => navigation.navigate('SubscriptionsScreen')}>
+    <DeviceShell title="What we promise parents" onBack={() => navigation.navigate(ROUTES.SubscriptionsScreen)}>
       <Box paddingHorizontal={24} paddingTop={18}>
         <PRChip color={PR.good} bg="#E6F4EE">Privacy first · always</PRChip>
         <Text fontWeight="600" style={styles.heading}>Your child's voice stays your child's</Text>
@@ -43,8 +44,8 @@ export default function PrivacyScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('CheckoutScreen')}>I'm ready · go to checkout</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('SubscriptionsScreen')}>Back</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CheckoutScreen)}>I'm ready · go to checkout</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.SubscriptionsScreen)}>Back</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

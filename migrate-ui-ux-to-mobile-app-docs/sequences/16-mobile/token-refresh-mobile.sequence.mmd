@@ -25,7 +25,7 @@ sequenceDiagram
     participant Gateway
     participant IdentityService
 
-    ParentApp->>Gateway: any /v1/* request + Bearer (expired) access token
+    ParentApp->>Gateway: any /v1/* request and Bearer (expired) access token
     Gateway->>Gateway: JWT verify — token expired
     Gateway-->>ParentApp: 401 SESSION_EXPIRED
     Note over ParentApp: response interceptor traps 401 — check isRefreshing flag
@@ -35,19 +35,19 @@ sequenceDiagram
         ParentApp->>ParentApp: set isRefreshing = true
         ParentApp->>ParentApp: read refreshToken from expo-secure-store
         alt secure_store_unavailable
-            ParentApp-->>ParentApp: clearTokens + emit AUTH_FAILURE
+            ParentApp-->>ParentApp: clearTokens and emit AUTH_FAILURE
         else stored token present
             ParentApp->>Gateway: POST /v1/auth/refresh {refreshToken}
             Gateway->>IdentityService: forward
             alt auth_refresh_rate_limited
-                Gateway-->>ParentApp: 429 — clearTokens + emit AUTH_FAILURE
+                Gateway-->>ParentApp: 429 — clearTokens and emit AUTH_FAILURE
             else invalid_refresh_token
                 IdentityService-->>Gateway: 401 invalid_refresh_token
-                Gateway-->>ParentApp: 401 — clearTokens + emit AUTH_FAILURE
+                Gateway-->>ParentApp: 401 — clearTokens and emit AUTH_FAILURE
             else success
                 IdentityService-->>Gateway: 200 {tokens: {accessToken, refreshToken}}
                 Gateway-->>ParentApp: 200
-                ParentApp->>ParentApp: storeTokens + isRefreshing = false
+                ParentApp->>ParentApp: storeTokens and isRefreshing = false
                 Note over ParentApp: flush refreshSubscribers — each callback retries its original request with new Bearer
             end
         end

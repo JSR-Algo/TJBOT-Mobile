@@ -1,12 +1,18 @@
-%% GENERATED FROM nav-graph-data.json sha=99252d49ba12. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
 %% domain: auth
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
   classDef edge  fill:#fee2e2,stroke:#991b1b
-  subgraph Onboarding["Onboarding"]
-    onb_child["11 · Child Profile"]
-    onb_login["9 · Login / Sign Up"]
-    onb_login_error(["10 · Login Error"])
+  subgraph Entry["Entry"]
+    onb_intro_celebrate["6 · Intro · Celebrate"]
+    onb_intro_listen["3 · Intro · Listen"]
+    onb_intro_retry["5 · Intro · Try Again"]
+    onb_intro_speak["4 · Intro · Speak"]
+    onb_splash["1 · Splash"]
+    onb_trust["7 · Parent Trust Intro"]
+    onb_welcome["2 · Welcome"]
   end
-  class onb_child,onb_login happy
-  class onb_login_error edge
+  subgraph Onboarding["Onboarding"]
+    onb_login["9 · Login / Sign Up"]
+  end
+  class onb_intro_celebrate,onb_intro_listen,onb_intro_retry,onb_intro_speak,onb_splash,onb_trust,onb_welcome,onb_login happy

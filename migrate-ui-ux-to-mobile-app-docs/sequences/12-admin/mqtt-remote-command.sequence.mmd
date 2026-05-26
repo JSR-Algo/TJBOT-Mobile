@@ -53,7 +53,7 @@ sequenceDiagram
             Note over AdminConsole,Device: queued in broker — agent polls /admin/devices/:id for status
         else online
             MQTT->>Device: deliver command
-            Device->>Device: dedupe on command_id (1h cache) + execute
+            Device->>Device: dedupe on command_id (1h cache) and execute
             Device->>MQTT: publish tbot/{id}/results/{verb} {command_id, result}
             MQTT->>AdminCommandService: forward result
             AdminCommandService->>AuditLog: append {action: command_result, command_id, result}
@@ -65,4 +65,4 @@ sequenceDiagram
         end
     end
 
-    Note over AdminConsole,Device: destructive commands (factory-reset, transfer) use retained flag — every command writes 2 audit rows (dispatched + result/timeout)
+    Note over AdminConsole,Device: destructive commands (factory-reset, transfer) use retained flag — every command writes 2 audit rows (dispatched and result/timeout)

@@ -2,22 +2,43 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from './components/CL';
+import { unlockCourse } from '@/services/api/course-library.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnlockConfirmScreen'>;
 
 const TARGET = ['7', '3', '5', '1'];
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
 
-export default function UnlockConfirmModal({ navigation }: Props) {
+export default function UnlockConfirmModal({ navigation, route }: Props) {
+  const courseId = route.params?.courseId ?? 'c_food';
   const [vals, setVals] = React.useState(['', '', '', '']);
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const filled = vals.every(Boolean);
   const ok = vals.join('') === TARGET.join('');
+
+  const handleConfirm = () => {
+    if (!ok || pending) return;
+    setPending(true);
+    setError(null);
+    void unlockCourse(courseId)
+      .then(() => {
+        navigation.replace(ROUTES.CourseAddedScreen, { courseId });
+      })
+      .catch(() => {
+        setError('Course unlock is unavailable. Try again later.');
+      })
+      .finally(() => {
+        setPending(false);
+      });
+  };
 
   const handleKey = (k: string) => {
     setVals(prev => {
@@ -35,7 +56,7 @@ export default function UnlockConfirmModal({ navigation }: Props) {
   };
 
   return (
-    <DeviceShell title="Quick parent check" onBack={() => navigation.navigate('BuyCourseScreen')}>
+    <DeviceShell title="Quick parent check" onBack={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId })}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <Box style={styles.lockIcon}>
           <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={CL.ink2} strokeWidth={1.8} strokeLinecap="round">
@@ -44,7 +65,7 @@ export default function UnlockConfirmModal({ navigation }: Props) {
           </Svg>
         </Box>
         <Text fontWeight="600" style={styles.heading}>Type the number below</Text>
-        <Text style={styles.sub}>A small step so kids can't add courses by accident.</Text>
+        <Text style={styles.sub}>A small step so kids can't add free courses by accident.</Text>
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} alignItems="center">
@@ -65,12 +86,15 @@ export default function UnlockConfirmModal({ navigation }: Props) {
         <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {KEYS.map((k, i) => {
             if (!k) return <Box key={i} flex={1} height={54} />;
+            const label = k === '⌫' ? 'Delete last digit' : `Enter digit ${k}`;
             return (
               <TouchableOpacity
                 key={i}
                 onPress={() => handleKey(k)}
                 style={styles.key}
                 activeOpacity={0.7}
+                accessibilityLabel={label}
+                accessibilityRole="button"
               >
                 <Text fontWeight="600" style={styles.keyText}>{k}</Text>
               </TouchableOpacity>
@@ -80,8 +104,9 @@ export default function UnlockConfirmModal({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => { if (ok) navigation.navigate('CourseAddedScreen'); }}>
-          {ok ? 'Confirm purchase' : filled ? 'Try again' : 'Enter the number'}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <DeviceBigBtn onClick={handleConfirm} disabled={pending || !ok}>
+          {pending ? 'Adding...' : ok ? 'Confirm add' : filled ? 'Try again' : 'Enter the number'}
         </DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -103,4 +128,5 @@ const styles = StyleSheet.create({
     backgroundColor: CL.card, alignItems: 'center', justifyContent: 'center',
   },
   keyText: { fontSize: 20, color: CL.ink },
+  errorText: { fontSize: 13, color: '#C0392B', textAlign: 'center', marginBottom: 10 },
 });

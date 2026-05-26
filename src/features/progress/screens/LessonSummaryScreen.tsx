@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonSummaryScreen'>;
 
@@ -42,8 +43,8 @@ export default function LessonSummaryScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate('LessonReadyScreen')} color="#FF6F61">Keep going →</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen')} activeOpacity={0.7} style={styles.stopBtn}>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FF6F61">Keep going →</PrimaryCTA>
+        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7} style={styles.stopBtn}>
           <Text fontWeight="700" style={{ fontSize: 18, color: '#5C4F77' }}>Stop for today</Text>
         </TouchableOpacity>
       </Box>

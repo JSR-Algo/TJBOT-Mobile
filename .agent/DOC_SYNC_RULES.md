@@ -1,10 +1,10 @@
-# tbot-mobile — Doc Sync Rules
+# TJBot-mobile — Doc Sync Rules
 
 When code behavior or contracts change, these docs must be updated in the
 same PR (or in the same commit batch). Leaving drift is a FAIL condition.
 
 Docs workspace root:
-`/Users/manhhodinh/Documents/TBOT/migrate-ui-ux-to-mobile-app-docs/`
+`/Users/manhhodinh/Documents/TJBot/migrate-ui-ux-to-mobile-app-docs/`
 
 ---
 
@@ -63,10 +63,10 @@ payload shapes in `src/services/ble/`
 
 Action:
 1. STOP. Do not commit.
-2. Open cross-repo issue tagging tbot-firmware and tbot-backend.
+2. Open cross-repo issue tagging TJBot-firmware and tbot-backend.
 3. Read `migrate-ui-ux-to-mobile-app-docs/sequences/18-wire-protocol/` and
    `docs/site/software/systems/18-*.md`.
-4. Only proceed after explicit approval from tbot-firmware agent/team.
+4. Only proceed after explicit approval from TJBot-firmware agent/team.
 5. When approved: update `migrate-ui-ux-to-mobile-app-docs/sequences/18-wire-protocol/<flow>.sequence.mmd`
    to reflect the new protocol.
 

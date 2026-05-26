@@ -1,30 +1,31 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairOfflineScreen'>;
 
 const TIPS = [
-  { ic: '🔌', t: 'Check Robot is plugged in', b: 'Or has at least 20% battery', nav: null as null | 'PairWifiScreen' },
-  { ic: '📶', t: 'Update Wi-Fi', b: 'If your network changed or password rotated', nav: 'PairWifiScreen' as const },
+  { ic: '🔌', t: 'Check Robot is plugged in', b: 'Or has at least 20% battery', nav: null },
+  { ic: '📶', t: 'Update Wi-Fi', b: 'If your network changed or password rotated', nav: ROUTES.PairWifiScreen },
   { ic: '🔄', t: 'Restart Robot', b: 'Hold the top button for 5 seconds', nav: null },
 ] as const;
 
 export default function PairOfflineScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot is offline" onBack={() => navigation.navigate('PairAddScreen')}>
+    <DeviceShell title="Robot is offline" onBack={() => navigation.navigate(ROUTES.PairAddScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="reconnect" size={170} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>Robot · ROB-2A8F is offline</Text>
+        <Text fontWeight="600" style={styles.heading}>Robot needs a reconnect</Text>
         <Text style={styles.sub}>
-          Last seen <Text fontWeight="600" style={{ color: DV.ink }}>2 hours ago</Text> on Casa-Familia.
+          Pairing is safe. Plug Robot in, bring it near your phone, then reconnect.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={22}>
@@ -50,7 +51,15 @@ export default function PairOfflineScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('PairSearchScreen')}>Reconnect now</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Reconnect now</DeviceBigBtn>
+        <DeviceBigBtn
+          secondary
+          onClick={() => navigation.navigate(ROUTES.SupportScreen, {
+            context: { topic: 'wifi', errorFamily: 'robot_offline' },
+          })}
+        >
+          Contact support
+        </DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

@@ -43,7 +43,7 @@ sequenceDiagram
     else sensitive_content_rejected
         ContentService->>PostgreSQL: INSERT child_memory_summaries (pending, suppressed)
         ContentService-)ContentService: emit cp-memory-moderation
-        ModerationWorker->>PostgreSQL: load + classify
+        ModerationWorker->>PostgreSQL: load and classify
         Note over ModerationWorker: contains address/health/legal/financial — reject
         ModerationWorker->>PostgreSQL: UPDATE state=rejected
     else success

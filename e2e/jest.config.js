@@ -1,3 +1,5 @@
+const babelConfigFile = require.resolve('../babel.config.js');
+
 /**
  * Jest config for Detox E2E suite.
  *
@@ -16,7 +18,9 @@ module.exports = {
   reporters: ['detox/runners/jest/reporter'],
   testEnvironment: 'detox/runners/jest/testEnvironment',
   verbose: true,
+  modulePathIgnorePatterns: ['<rootDir>/.worktrees/'],
+  watchPathIgnorePatterns: ['<rootDir>/.worktrees/'],
   transform: {
-    '\\.tsx?$': ['babel-jest', { configFile: '<rootDir>/babel.config.js' }],
+    '\\.tsx?$': ['babel-jest', { configFile: babelConfigFile }],
   },
 };

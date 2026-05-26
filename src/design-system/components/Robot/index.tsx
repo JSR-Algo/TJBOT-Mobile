@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import Svg, { Circle, G, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { tokens } from '@/design-system/tokens';
 import { Text } from '@/design-system/primitives/Text';
 
@@ -55,9 +55,10 @@ interface RobotProps {
   size?: number;
   color?: string;
   accent?: string;
+  accessibilityLabel?: string;
 }
 
-export default function Robot({ emotion = 'idle', size = 220, color, accent }: RobotProps) {
+export default function Robot({ emotion = 'idle', size = 220, color, accent, accessibilityLabel }: RobotProps) {
   const cfg = CONFIGS[emotion] ?? CONFIGS.idle;
   const W = size;
   const bodyColor = color ?? tokens.colors.bot.body;
@@ -146,7 +147,11 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent }: R
   const headH = W * 0.86;
 
   return (
-    <View style={{ width: W, height: W * 1.05, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
+      style={{ width: W, height: W * 1.05, position: 'relative', alignItems: 'center', justifyContent: 'center' }}
+    >
       {/* glow */}
       {cfg.glow !== 'off' && (
         <Animated.View

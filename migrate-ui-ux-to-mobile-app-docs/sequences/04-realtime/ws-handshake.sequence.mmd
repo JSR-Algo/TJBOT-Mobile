@@ -34,7 +34,7 @@ sequenceDiagram
     alt invalid_session_token
         Orchestrator-->>Device: 401 E-RT-200
     else device_inactive
-        Orchestrator->>ControlPlane: verify device active + ownership
+        Orchestrator->>ControlPlane: verify device active and ownership
         ControlPlane-->>Orchestrator: 403 device_inactive
         Orchestrator-->>Device: 403 E-RT-201
     else concurrent_session_exists

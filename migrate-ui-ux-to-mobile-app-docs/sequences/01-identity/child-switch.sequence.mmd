@@ -26,8 +26,8 @@ sequenceDiagram
 
     Note over ParentApp: User taps child selector — home_hub_idle "Playing as: [Name] ▼" (ADR-0011 D4)
 
-    ParentApp->>Gateway: POST /v1/profile/active-child {child_id} + Bearer JWT
-    Gateway->>Gateway: validate parent JWT — extract user_id + household_id
+    ParentApp->>Gateway: POST /v1/profile/active-child {child_id} and Bearer JWT
+    Gateway->>Gateway: validate parent JWT — extract user_id and household_id
     Gateway->>IdentityService: forward request
     IdentityService->>IdentityService: SELECT id, status, household_id FROM children WHERE id={child_id}
     alt child_not_found

@@ -126,12 +126,20 @@ jest.mock('lucide-react-native', () => {
   const React = require('react');
   const makeIcon = (name: string) => (props: Record<string, unknown>) =>
     React.createElement('Text', { testID: `icon-${name}`, ...props });
+  const namedIcons = {
+    BookOpen: makeIcon('BookOpen'),
+    Bot: makeIcon('Bot'),
+    Home: makeIcon('Home'),
+    TrendingUp: makeIcon('TrendingUp'),
+    User: makeIcon('User'),
+  };
   return new Proxy(
-    {},
+    { __esModule: true, ...namedIcons },
     {
       get: (_target, prop: string) => {
         if (prop === '__esModule') return true;
         if (typeof prop !== 'string') return undefined;
+        if (prop in namedIcons) return namedIcons[prop as keyof typeof namedIcons];
         return makeIcon(prop);
       },
       has: () => true,

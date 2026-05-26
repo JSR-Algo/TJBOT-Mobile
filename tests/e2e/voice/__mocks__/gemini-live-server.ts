@@ -178,13 +178,10 @@ export function createMockGeminiLiveModule(script: ScriptedTurn[] = STANDARD_VOI
   return {
     GoogleGenAI: jest.fn().mockImplementation(() => ({
       live: {
-        connect: jest.fn().mockImplementation((_config: unknown) => {
+        connect: jest.fn().mockImplementation((config: { callbacks?: MockSessionCallbacks }) => {
           // The real SDK connect() returns a session object; we return
           // a Promise that resolves to one after wiring callbacks.
-          return {
-            sendRealtimeInput: jest.fn(),
-            close: jest.fn(),
-          };
+          return createMockSession(script, config.callbacks ?? {});
         }),
       },
     })),

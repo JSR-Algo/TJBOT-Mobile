@@ -39,7 +39,7 @@ sequenceDiagram
                 ControlsService->>ConfigService: rebuildConfig(deviceId)
                 alt config_rebuild_partial_failure
                     ConfigService-->>ControlsService: error
-                    Note over ControlsService: log + continue (reconciliation cron picks up stale)
+                    Note over ControlsService: log and continue (reconciliation cron picks up stale)
                 else rebuilt
                     ConfigService-->>ControlsService: ok (new config_version)
                 end

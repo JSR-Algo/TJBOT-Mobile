@@ -2,7 +2,8 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -10,6 +11,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import LCDPreview from '../components/LCDPreview';
+import { sendCourseToRobot } from '@/services/api/course-library.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SendToRobotScreen'>;
 
@@ -19,10 +21,22 @@ const OPTIONS = [
   { title: 'Lesson 1 · Hello, food!',    body: 'Try the new course Yummy Words',         tag: 'New course',  tagColor: '#2A6FDB', emo: 'speak' },
 ];
 
-export default function SendToRobotScreen({ navigation }: Props) {
+export default function SendToRobotScreen({ navigation, route }: Props) {
+  const courseId = route.params?.courseId ?? 'c_food';
   const [pick, setPick] = React.useState(0);
+  const [syncError, setSyncError] = React.useState<string | null>(null);
+
+  const handleSend = async () => {
+    setSyncError(null);
+    try {
+      await sendCourseToRobot(courseId);
+      navigation.navigate(ROUTES.RobotReadyScreen, { courseId });
+    } catch {
+      setSyncError('Robot sync is unavailable. Try again when Robot is online.');
+    }
+  };
   return (
-    <DeviceShell title="Today's lesson" onBack={() => navigation.navigate('DeviceHomeScreen')}>
+    <DeviceShell title="Today's lesson" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
       <Text style={styles.intro}>
         Pick what Robot plays today. We'll send it to the device — about 4 minutes when your child is ready.
       </Text>
@@ -63,8 +77,14 @@ export default function SendToRobotScreen({ navigation }: Props) {
         </Box>
       </Box>
 
+      {syncError && (
+        <Box paddingHorizontal={20} paddingTop={12}>
+          <Text style={styles.errorText}>{syncError}</Text>
+        </Box>
+      )}
+
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate('RobotReadyScreen')}>Send to Robot</DeviceBigBtn>
+        <DeviceBigBtn onClick={handleSend}>Send to Robot</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
@@ -86,4 +106,5 @@ const styles = StyleSheet.create({
   },
   sectionLabel: { fontSize: 11, color: CL.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   rowCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
+  errorText: { fontSize: 13, color: '#C0392B', lineHeight: 19 },
 });

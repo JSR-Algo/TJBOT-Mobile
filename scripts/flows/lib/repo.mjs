@@ -92,13 +92,18 @@ export function walkFiles(root, predicate) {
   return out.sort();
 }
 
-// Read a feature's STATES export by importing its states.js (sync via require not
-// possible in ESM; called only from buildPageMaps via callers that prefetch).
+function featureSourcePath(domain, fileBase) {
+  const tsPath = path.join(FEATURES_DIR, domain, `${fileBase}.ts`);
+  if (fs.existsSync(tsPath)) return tsPath;
+  const jsPath = path.join(FEATURES_DIR, domain, `${fileBase}.js`);
+  return fs.existsSync(jsPath) ? jsPath : null;
+}
+
+// Read a feature's STATES export by parsing text so TS and JS sources are both supported.
 function statesIdsFromFeature(domain) {
-  const statesJs = path.join(FEATURES_DIR, domain, 'states.js');
-  if (!fs.existsSync(statesJs)) return [];
-  // Parse as text: extract { id: 'foo', ... } literals (avoids dynamic import in sync ctx).
-  const src = fs.readFileSync(statesJs, 'utf8');
+  const statesPath = featureSourcePath(domain, 'states');
+  if (!statesPath) return [];
+  const src = fs.readFileSync(statesPath, 'utf8');
   const ids = [];
   const re = /\{\s*id\s*:\s*['"]([a-z][a-z0-9_]*)['"]/g;
   let m;
@@ -106,8 +111,21 @@ function statesIdsFromFeature(domain) {
   return ids;
 }
 
+function statesFromFeature(domain) {
+  const statesPath = featureSourcePath(domain, 'states');
+  if (!statesPath) return [];
+  const src = fs.readFileSync(statesPath, 'utf8');
+  return Array.from(src.matchAll(/\{\s*id\s*:\s*['"]([^'"]+)['"][\s\S]*?title\s*:\s*['"]([^'"]+)['"][\s\S]*?group\s*:\s*['"]([^'"]+)['"][\s\S]*?kind\s*:\s*['"]([^'"]+)['"]/g))
+    .map((match) => ({
+      id: match[1],
+      title: match[2],
+      group: match[3],
+      kind: match[4],
+    }));
+}
+
 // Extract { stateId -> pageFile (relative to PROJECT_ROOT) } by parsing each
-// feature's index.js SCREEN_MAP. Supports two patterns:
+// feature's index.ts/js SCREEN_MAP. Supports two patterns:
 //   (a) Literal map:   SCREEN_MAP = { state_id: ComponentIdent, ... }
 //   (b) Fan-out:       SCREEN_MAP = Object.fromEntries(STATES.map(s => [s.id, ...XPage...]))
 //                      → every state-id in this feature maps to the single Page identifier
@@ -117,8 +135,8 @@ export function buildPageMaps() {
   const stateToDomain = new Map();
   const pageToState = new Map();
   for (const domain of listDomains()) {
-    const indexPath = path.join(FEATURES_DIR, domain, 'index.js');
-    if (!fs.existsSync(indexPath)) continue;
+    const indexPath = featureSourcePath(domain, 'index');
+    if (!indexPath) continue;
     const src = fs.readFileSync(indexPath, 'utf8');
 
     // Build identifier -> relative-path map from imports.
@@ -168,7 +186,7 @@ export function buildPageMaps() {
   return { stateToPage, pageToState, stateToDomain };
 }
 
-// Read all states.js into { stateId -> {title, group, domain, kind} }.
+// Read all states.ts/js into { stateId -> {title, group, domain, kind} }.
 // C1 fix 2026-05-11: include `kind` so extract-go-calls.mjs can propagate
 // happy/edge classification from src/features/<d>/states.js (canonical source)
 // into nav-graph-data.json. Without this, kind silently drops and the entire
@@ -176,11 +194,7 @@ export function buildPageMaps() {
 export async function readAllStates() {
   const out = new Map();
   for (const domain of listDomains()) {
-    const statesJs = path.join(FEATURES_DIR, domain, 'states.js');
-    if (!fs.existsSync(statesJs)) continue;
-    const mod = await import(`file://${statesJs}?t=${Date.now()}`);
-    if (!mod.STATES) continue;
-    for (const s of mod.STATES) {
+    for (const s of statesFromFeature(domain)) {
       out.set(s.id, { title: s.title, group: s.group, domain, kind: s.kind });
     }
   }
@@ -221,7 +235,7 @@ export function gitHeadSha() {
 }
 
 // Returns staged paths *relative to the git toplevel* (which may be an ancestor
-// of PROJECT_ROOT, e.g. tbot-mobile/). Caller filters by prefix as needed.
+// of PROJECT_ROOT, e.g. TJBot-mobile/). Caller filters by prefix as needed.
 export function gitStagedFiles() {
   try {
     return execSync('git diff --cached --name-only', { cwd: PROJECT_ROOT })
@@ -230,7 +244,7 @@ export function gitStagedFiles() {
 }
 
 // Returns the project-relative prefix of PROJECT_ROOT inside the git toplevel.
-// "" if PROJECT_ROOT === git toplevel; "tbot-design/" if nested.
+// "" if PROJECT_ROOT === git toplevel; "TJBot-mobile/" if nested.
 export function projectPrefixWithinGit() {
   try {
     const top = execSync('git rev-parse --show-toplevel', { cwd: PROJECT_ROOT }).toString().trim();

@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WordsPracticedScreen'>;
 
@@ -25,7 +26,7 @@ const VISITING = [
 export default function WordsPracticedScreen({ navigation }: Props) {
   return (
     <PageScroll>
-      <PageHeader onBack={() => navigation.navigate('TodayProgressScreen')} subtitle="Today" title="Words Practiced" />
+      <PageHeader onBack={() => navigation.navigate(ROUTES.TodayProgressScreen)} subtitle="Today" title="Words Practiced" />
 
       <Box paddingHorizontal={24} paddingBottom={8} flexDirection="row" alignItems="center" gap={12}>
         <Robot emotion="happy" size={80} />
@@ -51,7 +52,7 @@ export default function WordsPracticedScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingTop={10} paddingBottom={28}>
-        <PrimaryCTA onPress={() => navigation.navigate('ReviewNeededScreen')} color="#FFC857">Practice 2 words</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)} color="#FFC857">Practice 2 words</PrimaryCTA>
       </Box>
     </PageScroll>
   );

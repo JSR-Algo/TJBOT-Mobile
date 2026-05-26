@@ -48,7 +48,7 @@ sequenceDiagram
         alt upsert_constraint_violation
             SummaryWorker->>PostgreSQL: INSERT weekly_summaries ... ON CONFLICT DO UPDATE
             PostgreSQL-->>SummaryWorker: error
-            Note over SummaryWorker: log + continue
+            Note over SummaryWorker: log and continue
         else upserted
             SummaryWorker->>PostgreSQL: INSERT weekly_summaries ... ON CONFLICT (device_id,child_profile_id,iso_week) DO UPDATE
             PostgreSQL-->>SummaryWorker: ok

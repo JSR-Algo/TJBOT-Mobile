@@ -29,8 +29,8 @@ sequenceDiagram
 
     Note over ParentApp: parent in parent_settings → billing history taps "Billing history"
 
-    ParentApp->>Gateway: GET /v1/billing/invoices?limit=N&offset=M + parent JWT Bearer
-    Gateway->>BillingService: forward (JWT validated; read-only — 60s freshness not required)
+    ParentApp->>Gateway: GET /v1/billing/invoices?limit=N&offset=M and parent JWT Bearer
+    Gateway->>BillingService: forward (JWT validated, read-only — 60s freshness not required)
     BillingService->>PostgreSQL: SELECT id, date, amount_cents, status, pdf_available, period_start, period_end FROM invoices WHERE household_id={household_id} ORDER BY date DESC LIMIT N OFFSET M
     alt list_empty
         PostgreSQL-->>BillingService: no rows
@@ -51,7 +51,7 @@ sequenceDiagram
 
     Note over ParentApp: parent taps a row to view PDF
 
-    ParentApp->>Gateway: GET /v1/billing/invoices/{invoice_id}/pdf + parent JWT Bearer
+    ParentApp->>Gateway: GET /v1/billing/invoices/{invoice_id}/pdf and parent JWT Bearer
     Gateway->>BillingService: forward
     BillingService->>PostgreSQL: SELECT stripe_invoice_id, pdf_available FROM invoices WHERE id={invoice_id} AND household_id={household_id}
     alt invoice_not_found

@@ -6,15 +6,30 @@ import { OB } from '@/components/OnbShell';
 type Props = {
   children?: React.ReactNode;
   onClick?: () => void;
+  onPress?: () => void;
   color?: string;
   secondary?: boolean;
   danger?: boolean;
+  disabled?: boolean;
+  testID?: string;
+  accessibilityLabel?: string;
 };
 
-export default function OnbBigBtn({ children, onClick, color = OB.accent, secondary = false, danger = false }: Props) {
+export default function OnbBigBtn({ children, onClick, onPress, color = OB.accent, secondary = false, danger = false, disabled = false, testID, accessibilityLabel }: Props) {
+  const handler = onClick ?? onPress;
+  const label = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
   if (secondary) {
     return (
-      <TouchableOpacity onPress={onClick} style={[styles.base, styles.secondary]} activeOpacity={0.7}>
+      <TouchableOpacity
+        onPress={handler}
+        disabled={disabled}
+        style={[styles.base, styles.secondary]}
+        activeOpacity={0.7}
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ disabled }}
+      >
         <Text fontWeight="500" style={{ fontSize: 16, color: OB.ink }}>
           {children}
         </Text>
@@ -27,7 +42,12 @@ export default function OnbBigBtn({ children, onClick, color = OB.accent, second
 
   return (
     <TouchableOpacity
-      onPress={onClick}
+      onPress={handler}
+      disabled={disabled}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
       style={[styles.base, { backgroundColor: bg }, styles.primary, { shadowColor }]}
       activeOpacity={0.7}
     >
@@ -41,7 +61,7 @@ export default function OnbBigBtn({ children, onClick, color = OB.accent, second
 const styles = StyleSheet.create({
   base: {
     width: '100%',
-    minHeight: 50,
+    minHeight: 52,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

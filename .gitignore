@@ -8,8 +8,15 @@ android/build/
 android/.gradle/
 android/app/build/
 *.log
+fastlane/AuthKey.json
+fastlane/play-key.json
+*.ipa
+*.xcarchive
+.bundle/
+vendor/bundle/
 .DS_Store
 coverage/
+artifacts/
 .omc/
 .omx/
 .code-review-graph/
@@ -26,5 +33,8 @@ android/app/src/main/res/drawable-xxhdpi/
 android/app/src/main/res/drawable-xxxhdpi/
 android/app/src/main/res/raw/
 android/app/src/main/res/xml/
-ios/TbotMobile.xcworkspace/xcuserdata/
+ios/TJBotMobile.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+.worktrees/
+tbot-design/
 src/components/gemini/.omc/

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://tbot.local/schemas/nav-graph.schema.json",
+  "$id": "https://TJBot.local/schemas/nav-graph.schema.json",
   "title": "Nav Graph Data",
-  "description": "Canonical nav-graph store for tbot-design. Generated/maintained by scripts/flows/extract-go-calls.mjs.",
+  "description": "Canonical nav-graph store for TJBot-mobile. Generated/maintained by scripts/flows/extract-go-calls.mjs.",
   "type": "object",
   "additionalProperties": false,
   "required": ["states", "edges", "groups", "meta"],

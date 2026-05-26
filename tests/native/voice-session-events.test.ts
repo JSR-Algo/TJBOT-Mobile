@@ -203,7 +203,7 @@ describe('P0-15 — VoiceMicDiagnostics.tapInstalled surface', () => {
   it('SharedVoiceEngine.swift snapshot uses tapInstalled key (not inputTapInstalled)', () => {
     const fs = require('fs');
     const swift = fs.readFileSync(
-      require('path').join(__dirname, '../../ios/TbotMobile/SharedVoiceEngine.swift'),
+      require('path').join(__dirname, '../../ios/TJBotMobile/SharedVoiceEngine.swift'),
       'utf8',
     );
     expect(swift).toMatch(/["']tapInstalled["']/);
@@ -215,7 +215,7 @@ describe('P0-15 — VoiceMicDiagnostics.tapInstalled surface', () => {
     const kt = fs.readFileSync(
       require('path').join(
         __dirname,
-        '../../android/app/src/main/java/com/tbotmobile/voicemic/VoiceMicModule.kt',
+        '../../android/app/src/main/java/com/TJBotmobile/voicemic/VoiceMicModule.kt',
       ),
       'utf8',
     );

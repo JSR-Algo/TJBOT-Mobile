@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
@@ -9,13 +9,14 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AudioErrorScreen'>;
 
 export default function AudioErrorScreen({ navigation }: Props) {
   return (
     <ScreenShell bg="#FDECEA">
-      <LessonHeader progress={0.34} onExit={() => navigation.navigate('ExitConfirmScreen')} />
+      <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Robot emotion="sad" size={220} accent="#FF6F61" />
         <SpeechBubble>I can't hear my microphone.{'\n'}Let's check it together.</SpeechBubble>
@@ -25,8 +26,12 @@ export default function AudioErrorScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate('RobotListeningScreen')} color="#FF6F61">Try again</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen' as any)}>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)} color="#FF6F61">Try again</PrimaryCTA>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          accessibilityRole="button"
+          accessibilityLabel="Go home"
+        >
           <Text fontWeight="700" style={styles.homeText}>Go home</Text>
         </TouchableOpacity>
       </Box>

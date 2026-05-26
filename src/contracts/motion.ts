@@ -1,6 +1,6 @@
-// @tbot/contracts — Motion vocabulary (12 primitives) — mobile projection
+// @TJBot/contracts — Motion vocabulary (12 primitives) — mobile projection
 //
-// Source of truth: tbot-infra/contracts/motion.js (ADR-010).
+// Source of truth: TJBot-infra/contracts/motion.js (ADR-010).
 // Parity asserted in tests/contracts/parity.test.ts.
 //
 // Plan: expressive-robot-companion-rewrite §3 ADR-010, §6 RM-02/RM-08/RM-12.

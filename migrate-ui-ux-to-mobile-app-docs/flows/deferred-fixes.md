@@ -51,7 +51,7 @@ This is a **prototype** with no test infrastructure. The "fix all" pass applied 
 ### D4. Subscription / tier guards on flow edges
 
 **Severity:** ISSUE on SCALABILITY (HIGH)
-**Why deferred:** requires (a) defining tier model server-side, (b) tier checker store, (c) `<TierGate tier="pro">` wrapper component, (d) decorating every gated edge. Currently no billing surface beyond UI screens (`cl_buy`, `cl_locked`).
+**Why deferred:** requires (a) defining tier model server-side, (b) tier checker store, (c) `<TierGate tier="pro">` wrapper component, (d) decorating every gated edge. Currently no billing surface beyond UI screens (`cl_add_free`, `cl_locked`).
 **Cost:** 1 sprint after billing backend lands
 **When to revisit:** after `purchase.api.js` is wired
 

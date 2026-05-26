@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -10,10 +10,83 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import RobotHero from '../components/RobotHero';
+import { getOrder, type Order } from '@/services/api/purchase.api';
+import { refreshEntitlementsAfterPurchase } from '@/services/api/account';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderConfirmScreen'>;
 
-export default function OrderConfirmScreen({ navigation }: Props) {
+export default function OrderConfirmScreen({ navigation, route }: Props) {
+  const orderId = route.params?.orderId;
+  const [order, setOrder] = React.useState<Order | null>(null);
+  const [status, setStatus] = React.useState<'loading' | 'error' | 'ready'>('loading');
+  const refreshedOrderId = React.useRef<string | null>(null);
+
+  const loadOrder = React.useCallback(async (): Promise<void> => {
+    if (!orderId) {
+      return;
+    }
+    setStatus('loading');
+    try {
+      const next = await getOrder(orderId);
+      setOrder(next);
+      setStatus('ready');
+      if (next.status === 'paid' && refreshedOrderId.current !== next.id) {
+        refreshedOrderId.current = next.id;
+        await refreshEntitlementsAfterPurchase();
+      }
+    } catch {
+      setStatus('error');
+    }
+  }, [orderId]);
+
+  React.useEffect(() => {
+    void loadOrder();
+  }, [loadOrder]);
+
+  if (!orderId) {
+    return (
+      <DeviceShell title="Order placed">
+        <Box paddingHorizontal={24} paddingTop={40}>
+          <Text fontWeight="700" style={styles.heading}>Order link is missing</Text>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CheckoutScreen)}>Back to checkout</DeviceBigBtn>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
+  if (status === 'loading') {
+    return (
+      <DeviceShell title="Order placed">
+        <Box paddingHorizontal={24} paddingTop={40}>
+          <Text style={styles.sub}>Loading order...</Text>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <DeviceShell title="Order placed">
+        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
+          <Text fontWeight="700" style={styles.heading}>Order needs a retry</Text>
+          <DeviceBigBtn onClick={loadOrder}>Retry order status</DeviceBigBtn>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
+  if (order?.status !== 'paid') {
+    return (
+      <DeviceShell title="Order placed">
+        <Box paddingHorizontal={24} paddingTop={40}>
+          <Text fontWeight="700" style={styles.heading}>Payment not complete</Text>
+          <Text style={styles.sub}>Finish payment before delivery setup.</Text>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
   return (
     <DeviceShell title="Order placed">
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
@@ -22,7 +95,7 @@ export default function OrderConfirmScreen({ navigation }: Props) {
             <Path d="M5 12l5 5 9-10" />
           </Svg>
         </Box>
-        <Text fontWeight="600" style={styles.heading}>Thank you, Sarah</Text>
+        <Text fontWeight="600" style={styles.heading}>Order confirmed</Text>
         <Text style={styles.sub}>
           Robot is on its way. We'll send a setup nudge when it arrives — no rush.
         </Text>
@@ -32,7 +105,7 @@ export default function OrderConfirmScreen({ navigation }: Props) {
         <Box style={styles.orderTile}>
           <RobotHero size={84} accent="#FF6F61" halo={false} />
           <Box flex={1}>
-            <Text fontWeight="700" style={styles.orderLabel}>Order #TB-48217</Text>
+            <Text fontWeight="700" style={styles.orderLabel}>Order #{order.id}</Text>
             <Text fontWeight="600" style={styles.orderTitle}>Robot · Cream</Text>
             <Text style={styles.orderSub}>Hello Friends starter course</Text>
             <Text style={styles.orderSub}>$149.00 · paid with Apple Pay</Text>
@@ -58,8 +131,8 @@ export default function OrderConfirmScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('ShippingScreen')}>Track delivery</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Back to home</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.ShippingScreen, { orderId: order.id })}>Track delivery</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Back to home</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

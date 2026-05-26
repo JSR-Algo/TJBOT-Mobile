@@ -17,6 +17,8 @@ interface WaveBarsProps {
   color?: string;
   active?: boolean;
   height?: number;
+  reduceMotion?: boolean;
+  accessibilityLabel?: string;
 }
 
 function Bar({ color, active, delay, barHeight }: { color: string; active: boolean; delay: number; barHeight: number }) {
@@ -60,14 +62,28 @@ function Bar({ color, active, delay, barHeight }: { color: string; active: boole
   );
 }
 
-export default function WaveBars({ count = 14, color = tokens.colors.coral, active = true, height = 42 }: WaveBarsProps) {
+export default function WaveBars({
+  count = 14,
+  color = tokens.colors.coral,
+  active = true,
+  height = 42,
+  reduceMotion = false,
+  accessibilityLabel,
+}: WaveBarsProps) {
+  const animateActive = active && !reduceMotion;
   return (
-    <Box flexDirection="row" gap={5} alignItems="center" style={{ height }}>
+    <Box
+      flexDirection="row"
+      gap={5}
+      alignItems="center"
+      accessibilityLabel={accessibilityLabel}
+      style={{ height }}
+    >
       {Array.from({ length: count }).map((_, i) => (
         <Bar
           key={i}
           color={color}
-          active={active}
+          active={animateActive}
           delay={Math.round((i * 0.07 % 1) * 1000)}
           barHeight={height}
         />

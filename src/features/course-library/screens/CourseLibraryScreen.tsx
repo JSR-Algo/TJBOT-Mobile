@@ -1,51 +1,108 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { listLibrary, type LibraryItem } from '@/services/api/course-library.api';
 import CL from '../components/CL';
-import COURSES from '../components/courses';
-import CourseCard from '../components/CourseCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseLibraryScreen'>;
 
-const SECTIONS = [
-  { title: 'On your Robot now', filter: (c: typeof COURSES[0]) => c.state === 'installed' },
-  { title: 'Available to add',  filter: (c: typeof COURSES[0]) => c.state === 'not_installed' },
-  { title: 'For when ready',    filter: (c: typeof COURSES[0]) => c.state === 'locked',
-    help: "These are shaped for older kids. Robot will suggest them when your child is ready." },
-];
+type LoadState =
+  | { kind: 'loading' }
+  | { kind: 'ready'; courses: LibraryItem[] }
+  | { kind: 'error'; title: string; detail?: string };
 
 export default function CourseLibraryScreen({ navigation }: Props) {
+  const [state, setState] = React.useState<LoadState>({ kind: 'loading' });
+
+  React.useEffect(() => {
+    let active = true;
+    setState({ kind: 'loading' });
+    void listLibrary()
+      .then((courses) => {
+        if (active) setState({ kind: 'ready', courses: courses ?? [] });
+      })
+      .catch((error: unknown) => {
+        if (active) setState(libraryErrorState(error));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
-    <DeviceShell title="Course Library" onBack={() => navigation.navigate('DeviceHomeScreen')}>
-      <Text style={styles.intro}>
-        Pick what your Robot teaches. Lessons play <Text fontWeight="600" style={{ color: CL.ink }}>on the Robot</Text>, not the phone.
-      </Text>
-      {SECTIONS.map((sec, si) => {
-        const items = COURSES.filter(sec.filter);
-        if (!items.length) return null;
-        return (
-          <Box key={si} paddingHorizontal={16} paddingTop={18}>
-            <Text fontWeight="700" style={styles.sectionLabel}>{sec.title}</Text>
-            <Box gap={8}>
-              {items.map(c => (
-                <CourseCard key={c.id} course={c} accent="#FF6F61" onClick={() => navigation.navigate('CourseDetailScreen')} />
-              ))}
-            </Box>
-            {sec.help ? <Text style={styles.helpText}>{sec.help}</Text> : null}
+    <DeviceShell title="Course Library">
+      <Text style={styles.intro}>Pick what your Robot teaches.</Text>
+      <Box paddingHorizontal={16} paddingTop={18} paddingBottom={30} gap={10}>
+        {state.kind === 'loading' ? <Text style={styles.message}>Loading library</Text> : null}
+        {state.kind === 'error' ? (
+          <Box gap={6}>
+            <Text fontWeight="800" style={styles.message}>{state.title}</Text>
+            {state.detail ? <Text style={styles.detail}>{state.detail}</Text> : null}
           </Box>
-        );
-      })}
-      <Box height={30} />
+        ) : null}
+        {state.kind === 'ready' && state.courses.length === 0 ? (
+          <Text style={styles.message}>No library courses yet</Text>
+        ) : null}
+        {state.kind === 'ready' && state.courses.map((course) => {
+          const locked = course.locked === true || !course.owned;
+          return (
+            <TouchableOpacity
+              key={course.courseId}
+              onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.courseId })}
+              style={styles.courseCard}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${course.title}${locked ? ' locked' : ''} course`}
+            >
+              <Box flex={1}>
+                <Text fontWeight="800" style={styles.title}>{course.title}</Text>
+                <Text style={styles.meta}>{course.language}</Text>
+              </Box>
+              {course.syncedToDevice ? <Text fontWeight="800" style={styles.onRobot}>On Robot</Text> : null}
+              {locked ? <Text fontWeight="800" style={styles.locked}>Locked</Text> : null}
+            </TouchableOpacity>
+          );
+        })}
+      </Box>
     </DeviceShell>
   );
 }
 
+function libraryErrorState(error: unknown): LoadState {
+  const record = asRecord(error);
+  if (record?.code === 'NETWORK_ERROR') {
+    return { kind: 'error', title: 'Library offline' };
+  }
+  if (record?.status === 502) {
+    return { kind: 'error', title: 'Library service unavailable', detail: 'Retry in a moment.' };
+  }
+  return { kind: 'error', title: 'Library unavailable' };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+}
+
 const styles = StyleSheet.create({
   intro: { fontSize: 13, color: CL.ink2, lineHeight: 20, paddingHorizontal: 20, paddingTop: 14 },
-  sectionLabel: { fontSize: 11, color: CL.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  helpText: { fontSize: 11, color: CL.ink3, lineHeight: 17, paddingTop: 8, paddingHorizontal: 6 },
+  message: { fontSize: 18, color: CL.ink },
+  detail: { fontSize: 14, color: CL.ink2 },
+  courseCard: {
+    backgroundColor: CL.card,
+    borderWidth: 1,
+    borderColor: CL.hair,
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  title: { fontSize: 15, color: CL.ink },
+  meta: { fontSize: 12, color: CL.ink2, marginTop: 3 },
+  onRobot: { fontSize: 12, color: CL.good },
+  locked: { fontSize: 12, color: '#6E5A8A' },
 });

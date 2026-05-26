@@ -36,7 +36,7 @@ sequenceDiagram
     RealtimeService->>BillingService: GET entitlement (household_id) — sys-19
     BillingService->>Redis: GET entitlement,household_id
     alt cache_hit_active
-        Redis-->>BillingService: active + plan + expires_at
+        Redis-->>BillingService: active and plan and expires_at
         BillingService-->>RealtimeService: 200 entitled
         RealtimeService-->>Device: WS open — session ready
     else cache_miss
@@ -53,7 +53,7 @@ sequenceDiagram
             RealtimeService-->>Device: WS close 4002 entitlement_required
         else past_due_grace_period
             BillingService-->>RealtimeService: 200 entitled grace
-            RealtimeService-->>Device: WS open + grace warning frame
+            RealtimeService-->>Device: WS open and grace warning frame
         else active
             BillingService-->>RealtimeService: 200 entitled
             RealtimeService-->>Device: WS open

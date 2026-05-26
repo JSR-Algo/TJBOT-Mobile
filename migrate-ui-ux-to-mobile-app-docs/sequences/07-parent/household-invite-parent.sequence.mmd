@@ -32,7 +32,7 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: UC-PR09 — Primary parent invites secondary (ADR-0010 D3)
 
-    ParentApp->>Gateway: POST /v1/household/parents/invite {email, nickname} + Bearer JWT (primary)
+    ParentApp->>Gateway: POST /v1/household/parents/invite {email, nickname} and Bearer JWT (primary)
     Gateway->>Gateway: validate parent JWT — extract user_id, household_id
     Gateway->>IdentityService: forward request
     IdentityService->>PostgreSQL: SELECT role FROM household_members WHERE user_id={user_id} AND household_id={household_id}
@@ -63,7 +63,7 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: UC-PR09 — Invitee accepts (ADR-0010 D3)
 
-    ParentApp->>Gateway: POST /v1/household/parents/accept {token} + Bearer JWT (invitee)
+    ParentApp->>Gateway: POST /v1/household/parents/accept {token} and Bearer JWT (invitee)
     Gateway->>Gateway: validate invitee JWT — extract invitee user_id
     Gateway->>IdentityService: forward request
     IdentityService->>PostgreSQL: SELECT id, household_id, expires_at, status FROM household_members WHERE token_hash=sha256({token})
@@ -86,7 +86,7 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: UC-PR10 — Primary revokes secondary (ADR-0010 D5)
 
-    ParentApp->>Gateway: DELETE /v1/household/parents/{target_user_id} + Bearer JWT (primary)
+    ParentApp->>Gateway: DELETE /v1/household/parents/{target_user_id} and Bearer JWT (primary)
     Gateway->>Gateway: validate primary JWT
     Gateway->>IdentityService: forward request
     IdentityService->>PostgreSQL: SELECT role FROM household_members WHERE user_id={user_id} AND household_id={household_id}

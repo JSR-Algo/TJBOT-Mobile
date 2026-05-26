@@ -82,6 +82,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
+    - RNWorklets
     - SocketRocket
     - Yoga
   - ExpoModulesJSI (55.0.20):
@@ -2742,7 +2743,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNReanimated (3.19.5):
+  - RNReanimated (4.2.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2769,11 +2770,11 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated (= 3.19.5)
-    - RNReanimated/worklets (= 3.19.5)
+    - RNReanimated/reanimated (= 4.2.1)
+    - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/reanimated (3.19.5):
+  - RNReanimated/reanimated (4.2.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2800,10 +2801,11 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated/apple (= 3.19.5)
+    - RNReanimated/reanimated/apple (= 4.2.1)
+    - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/reanimated/apple (3.19.5):
+  - RNReanimated/reanimated/apple (4.2.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2830,65 +2832,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - RNReanimated/worklets (3.19.5):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - RNReanimated/worklets/apple (= 3.19.5)
-    - SocketRocket
-    - Yoga
-  - RNReanimated/worklets/apple (3.19.5):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
+    - RNWorklets
     - SocketRocket
     - Yoga
   - RNScreens (4.23.0):
@@ -3037,6 +2981,95 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNWorklets (0.7.2):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNWorklets/worklets (= 0.7.2)
+    - SocketRocket
+    - Yoga
+  - RNWorklets/worklets (0.7.2):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNWorklets/worklets/apple (= 0.7.2)
+    - SocketRocket
+    - Yoga
+  - RNWorklets/worklets/apple (0.7.2):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - Sentry/HybridSDK (8.58.0)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
@@ -3144,6 +3177,7 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNSVG (from `../node_modules/react-native-svg`)
+  - RNWorklets (from `../node_modules/react-native-worklets`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -3357,6 +3391,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@sentry/react-native"
   RNSVG:
     :path: "../node_modules/react-native-svg"
+  RNWorklets:
+    :path: "../node_modules/react-native-worklets"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3375,7 +3411,7 @@ SPEC CHECKSUMS:
   ExpoHaptics: de693bae4eb861f25b6651d63c035f772ccab523
   ExpoKeepAwake: a1baf9810a2dee1905aa9bdd336852598f7220e9
   ExpoLogBox: a3de999775d423ac9cb85d24bd47628e5392761f
-  ExpoModulesCore: ea4b9ec09482acb3e4d0f833176b917667e867f9
+  ExpoModulesCore: 43a8bee140aeae375b6a0c8055ea6225bc917dc0
   ExpoModulesJSI: a998e176d28567273b540fa568505ff1c9aaacac
   ExpoNotifications: 71db05b1d1e1aaf6ead79f859faa1adfe3cc09ff
   ExpoSecureStore: 2410bec85e98b0718e21b8b012d4c3721ba8c0ed
@@ -3383,7 +3419,7 @@ SPEC CHECKSUMS:
   FBLazyVector: 82d1d7996af4c5850242966eb81e73f9a6dfab1e
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: 499cdf95affc874936c6f2ba8db94d9b7d7874cd
+  hermes-engine: f823c0490f2a543fde75496d0e1accff45066d25
   MultiplatformBleAdapter: b1fddd0d499b96b607e00f0faa8e60648343dc1d
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: 9da1d0cf93db23ca8b41e8efe9ae558fd9c0077f
@@ -3459,14 +3495,15 @@ SPEC CHECKSUMS:
   ReactCommon: 5901ef412ae35cc727b9584d4f7e3e1f7f17c251
   RNCAsyncStorage: 01e4301688a611936e3644746ffe3325d3181952
   RNGestureHandler: b407c25a3f51d22dd7430e6b530f753f112b7e77
-  RNReanimated: 9584a0e858e678d4859eb139b2e67fd92115cfb0
+  RNReanimated: 292cd58688552a22b3fc1cefcfbc49b336dfed68
   RNScreens: afaf526a9c804c3b4503f950cf3e67ed81e29ada
   RNSentry: 820c733b229b86dc8153305a9d5a96ec46147469
   RNSVG: 3405336c4507ee0bafb02b08058d57216daa2c50
+  RNWorklets: 01efdd402d236a13651ea5ea5437ca85a44e7afa
   Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: b669e79fa0f8d3f6f5e35372345f54b99e06b13c
 
-PODFILE CHECKSUM: 8006f2843e6617a4fa7cc0351f99feecac72fe91
+PODFILE CHECKSUM: d74955e267f35e08481de65fc54519ca4fd48e97
 
 COCOAPODS: 1.16.2

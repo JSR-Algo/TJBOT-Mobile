@@ -2,12 +2,13 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LevelScreen'>;
 
@@ -62,7 +63,7 @@ export default function LevelScreen({ navigation }: Props) {
   return (
     <PageScroll>
       <PageHeader
-        onBack={() => navigation.navigate('CourseScreen')}
+        onBack={() => navigation.navigate(ROUTES.CourseScreen)}
         subtitle="Level 1"
         title="Hello Friends"
       />
@@ -82,7 +83,7 @@ export default function LevelScreen({ navigation }: Props) {
               icon={u.icon}
               color={u.color}
               big={u.state === 'current'}
-              onPress={() => u.state !== 'locked' && navigation.navigate('UnitScreen')}
+              onPress={() => u.state !== 'locked' && navigation.navigate(ROUTES.UnitScreen)}
             />
             <Text fontWeight="700" style={[styles.unitLabel, { color: u.state === 'locked' ? '#8B8B96' : '#2B2140' }]}>
               <Text style={{ opacity: 0.6 }}>Unit {i + 1}</Text>{'\n'}{u.title}

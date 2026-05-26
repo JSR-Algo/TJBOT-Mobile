@@ -26,7 +26,7 @@ sequenceDiagram
     participant Gateway
     participant IdentityService
 
-    ParentApp->>Gateway: POST /v1/households/:householdId/children {nickname, ageBand, favoriteTopics, ...} + Bearer JWT + X-Request-Id
+    ParentApp->>Gateway: POST /v1/households/:householdId/children {nickname, ageBand, favoriteTopics, ...} and Bearer JWT and X-Request-Id
     Gateway->>Gateway: rate-limit (sys-17) — parent_write — 30 per minute per parent ID
     Gateway->>IdentityService: forward request
     alt parent_write_rate_limited

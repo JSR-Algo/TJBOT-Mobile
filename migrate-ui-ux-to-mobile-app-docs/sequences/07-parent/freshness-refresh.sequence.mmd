@@ -39,16 +39,16 @@ sequenceDiagram
             Note over ParentApp: route to full ParentGateScreen (PIN entry)
         else valid_session — attempt biometric refresh (ADR-0009 D3)
             ParentApp->>OS: biometric prompt (FaceID / BiometricPrompt) — read JWT from Keychain (D1)
-            alt biometric_enrollment_changed (iOS: evaluatedPolicyDomainState changed; Android: setInvalidatedByBiometricEnrollment)
+            alt biometric_enrollment_changed (iOS: evaluatedPolicyDomainState changed, Android: setInvalidatedByBiometricEnrollment)
                 OS-->>ParentApp: biometric_enrollment_changed
-                Note over ParentApp: ADR-0009 D6 — new enrollment invalidates cache; fall through to PIN
+                Note over ParentApp: ADR-0009 D6 — new enrollment invalidates cache, fall through to PIN
                 ParentApp->>ParentApp: route to ParentGateScreen (PIN entry)
             else biometric_failed_fallback_pin
                 OS-->>ParentApp: biometric failed (liveness / no match)
                 ParentApp->>ParentApp: route to ParentGateScreen (PIN entry) (ADR-0009 D3d)
             else biometric_success
                 OS-->>ParentApp: JWT from biometric-gated Keychain entry
-                ParentApp->>Gateway: POST /v1/parent/session/refresh-freshness {jti} + Bearer {parent_jwt}
+                ParentApp->>Gateway: POST /v1/parent/session/refresh-freshness {jti} and Bearer {parent_jwt}
                 Gateway->>Gateway: validate parent JWT signature — extract user_id, jti
                 Gateway->>IdentityService: forward request
                 IdentityService->>PostgreSQL: SELECT jti, revoked_at, expires_at, biometric_enrollment_id, biometric_enabled FROM parent_sessions WHERE jti={jti}
@@ -56,11 +56,11 @@ sequenceDiagram
                 alt jti_revoked (revoked_at IS NOT NULL)
                     IdentityService-->>Gateway: 401 jti_revoked
                     Gateway-->>ParentApp: 401
-                    ParentApp->>ParentApp: clear Keychain + route to ParentGateScreen
+                    ParentApp->>ParentApp: clear Keychain and route to ParentGateScreen
                 else expires_at_passed
                     IdentityService-->>Gateway: 401 expires_at_passed
                     Gateway-->>ParentApp: 401
-                    ParentApp->>ParentApp: clear Keychain + route to ParentGateScreen
+                    ParentApp->>ParentApp: clear Keychain and route to ParentGateScreen
                 else rate_limited_30_per_24h
                     IdentityService->>PostgreSQL: SELECT COUNT(*) FROM parent_session_refreshes WHERE jti={jti} AND refreshed_at > now()-interval '24h'
                     PostgreSQL-->>IdentityService: refresh_count >= 30
@@ -77,7 +77,7 @@ sequenceDiagram
                     IdentityService-->>Gateway: 200 {jti, issued_at: now(), idle_until: now()+15min, expires_at: unchanged}
                     Gateway-->>ParentApp: 200
                     ParentApp->>OS: Keychain — write updated claims (issued_at, idle_until) (D1)
-                    ParentApp->>ParentApp: parent.store — update issued_at + idle_until; isJwtFresh() now true
+                    ParentApp->>ParentApp: parent.store — update issued_at and idle_until, isJwtFresh() now true
                 end
             end
         end

@@ -31,7 +31,7 @@ sequenceDiagram
     participant SES
 
     Note over ParentApp,IdentityService: Step 1 — Request recovery token (ADR-0008 D2)
-    Note over ParentApp: Callable from ParentGateScreen + ParentLockedOutScreen even during GATE_LOCKED_OUT (D1)
+    Note over ParentApp: Callable from ParentGateScreen and ParentLockedOutScreen even during GATE_LOCKED_OUT (D1)
 
     ParentApp->>Gateway: POST /v1/parent/pin/recovery/request {user_id, email_hint}
     Gateway->>Gateway: rate-limit — pin_recovery_request — 1 per hour per (user_id, ip_prefix /24) (D6)
@@ -42,10 +42,10 @@ sequenceDiagram
         IdentityService->>PostgreSQL: SELECT email FROM users WHERE id={user_id}
         PostgreSQL-->>IdentityService: email row (or no row)
         alt email_delivery_failed (SES or email mismatch — never revealed)
-            Note over IdentityService: ADR-0008 D10 — anti-enumeration; same 202 regardless
+            Note over IdentityService: ADR-0008 D10 — anti-enumeration, same 202 regardless
             IdentityService-->>Gateway: 202 {message: "If that email is on file, we sent a link."}
             Gateway-->>ParentApp: 202
-        else email matches — create token + send
+        else email matches — create token and send
             IdentityService->>PostgreSQL: INSERT pin_recovery_tokens {token: 32-byte-base64url, user_id, expires_at: now()+15min, used_at: null, ip_prefix}
             PostgreSQL-->>IdentityService: inserted
             IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'parent.pin.recovery.request_sent', actor_user_id: user_id}
@@ -102,7 +102,7 @@ sequenceDiagram
         IdentityService->>PostgreSQL: DELETE FROM parent_lockouts WHERE user_id={token.user_id}
         PostgreSQL-->>IdentityService: cleared
         IdentityService->>PostgreSQL: UPDATE parent_sessions SET revoked_at=now() WHERE user_id={token.user_id} AND revoked_at IS NULL
-        PostgreSQL-->>IdentityService: all sessions revoked (D4 + D9)
+        PostgreSQL-->>IdentityService: all sessions revoked (D4 and D9)
         IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'parent.pin.recovery.pin_reset_completed', actor_user_id: token.user_id}
         PostgreSQL-->>IdentityService: ok
         IdentityService-->>Gateway: 200 {reset: true}

@@ -45,7 +45,7 @@ const html = [
   '<html lang="en">',
   '<head>',
   '<meta charset="utf-8">',
-  '<title>tbot-design · user flow</title>',
+  '<title>TJBot-mobile · user flow</title>',
   '<style>',
   'body{font-family:-apple-system,Segoe UI,sans-serif;margin:0;padding:24px;background:#fafafa;color:#111}',
   'h1{font-size:22px;margin:0 0 8px} h2{font-size:16px;margin:32px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}',
@@ -58,7 +58,7 @@ const html = [
   '</head>',
   '<body>',
   HEADER,  // already HTML-comment-formatted via generatedHeader()
-  '<h1>tbot-design · user flow</h1>',
+  '<h1>TJBot-mobile · user flow</h1>',
   `<div class="meta">Generated from <code>nav-graph-data.json</code> (sha <code>${navGraphSha}</code>) at ${new Date().toISOString()}.</div>`,
   '<nav class="nav">',
   ...sections.map(s => `<a href="#${s.rel.replace(/\W+/g, '_')}">${s.rel}</a>`),

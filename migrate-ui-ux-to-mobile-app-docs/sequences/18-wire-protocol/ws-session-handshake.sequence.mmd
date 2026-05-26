@@ -31,7 +31,7 @@ sequenceDiagram
         Note over RealtimeService: server supports {1, 2} — client requested 0 or >2
         RealtimeService-->>Device: 426 protocol_version_unsupported — Retry-After-Protocol header lists supported versions
     else invalid_session_token
-        Note over RealtimeService: verify JWT signature + expiry + audience
+        Note over RealtimeService: verify JWT signature and expiry and audience
         RealtimeService-->>Device: 401 E-RT-200
     else device_inactive
         Note over RealtimeService: device decommissioned or not active
@@ -44,7 +44,7 @@ sequenceDiagram
     else rate_limit_exceeded
         RealtimeService-->>Device: 429 E-RT-204
     else success
-        Note over RealtimeService: verify JWT + audience + device active + household + no concurrent session
+        Note over RealtimeService: verify JWT and audience and device active and household and no concurrent session
         RealtimeService-->>Device: 101 Switching Protocols (negotiated protocol_version)
         Device->>RealtimeService: SESSION_OPEN (0x01) {device_session_id, child_profile_id, interaction_mode, locale, audio_codec, sample_rate, fw_version, config_version, activation, device_timestamp_ms}
         RealtimeService-->>Device: SESSION_ACK (0x02) {session_id, max_turns=60, max_duration_ms=1800000, barge_in_enabled, cost_ceiling_usd=0.12, server_timestamp_ms}

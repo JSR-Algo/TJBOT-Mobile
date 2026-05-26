@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
@@ -9,6 +9,7 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewNeededScreen'>;
 
@@ -21,7 +22,7 @@ const WORDS = [
 export default function ReviewNeededScreen({ navigation }: Props) {
   return (
     <PageScroll bg="#FFE6BD">
-      <PageHeader onBack={() => navigation.navigate('HomeHubScreen')} subtitle="A friendly nudge" title="Let's visit again" />
+      <PageHeader onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} subtitle="A friendly nudge" title="Let's visit again" />
       <Box paddingHorizontal={24} paddingBottom={16} flexDirection="row" alignItems="center" gap={12}>
         <Robot emotion="curious" size={120} accent="#FFC857" />
         <SpeechBubble>3 words miss you!</SpeechBubble>
@@ -46,10 +47,10 @@ export default function ReviewNeededScreen({ navigation }: Props) {
         ))}
       </Box>
       <Box paddingHorizontal={24} paddingTop={10} paddingBottom={28} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate('LessonReadyScreen')} color="#FFC857">
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FFC857">
           Practice together
         </PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen')} activeOpacity={0.7} style={styles.laterBtn}>
+        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7} style={styles.laterBtn}>
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77' }}>Maybe later</Text>
         </TouchableOpacity>
       </Box>

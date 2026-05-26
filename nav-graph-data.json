@@ -1,9 +1,9 @@
 {
   "states": {
     "abandoned_disconnect": {
-      "f": "src/features/lesson-session/states.js",
-      "title": "Session Disconnected",
-      "g": "Done",
+      "f": "src/features/lesson-session/screens/AbandonedDisconnectScreen.tsx",
+      "title": "Abandoned Disconnect",
+      "g": "Recovery",
       "kind": "edge"
     },
     "activity_done": {
@@ -48,15 +48,15 @@
       "g": "Progress",
       "kind": "happy"
     },
-    "cl_added": {
-      "f": "src/features/course-library/screens/CourseAddedScreen.tsx",
-      "title": "Course · Added to Robot",
+    "cl_add_free": {
+      "f": "src/features/course-library/screens/BuyCourseScreen.tsx",
+      "title": "Course · Add free course",
       "g": "Course Library",
       "kind": "happy"
     },
-    "cl_buy": {
-      "f": "src/features/course-library/screens/BuyCourseScreen.tsx",
-      "title": "Course · Buy / Unlock",
+    "cl_added": {
+      "f": "src/features/course-library/screens/CourseAddedScreen.tsx",
+      "title": "Course · Added to Robot",
       "g": "Course Library",
       "kind": "happy"
     },
@@ -127,9 +127,9 @@
       "kind": "happy"
     },
     "cost_capped": {
-      "f": "src/features/lesson-session/states.js",
-      "title": "Session Cost Capped",
-      "g": "Done",
+      "f": "src/features/lesson-session/screens/CostCappedScreen.tsx",
+      "title": "Cost Capped",
+      "g": "Recovery",
       "kind": "edge"
     },
     "course": {
@@ -164,7 +164,7 @@
     },
     "dv_lcd_turn": {
       "f": "src/features/device/screens/LCDLessonTurnScreen.tsx",
-      "title": "Robot · One lesson turn",
+      "title": "Robot · LCD lesson turn",
       "g": "Robot Device",
       "kind": "happy"
     },
@@ -266,7 +266,7 @@
     },
     "exit_confirm": {
       "f": "src/features/lesson-session/screens/ExitConfirmScreen.tsx",
-      "title": "Exit Confirmation",
+      "title": "Exit Confirm",
       "g": "Recovery",
       "kind": "edge"
     },
@@ -290,7 +290,7 @@
     },
     "home_hub_daily": {
       "f": "src/features/home/screens/HomeHubScreen.tsx",
-      "title": "Home · Today's lesson",
+      "title": "Home · Today",
       "g": "Home",
       "kind": "happy"
     },
@@ -299,6 +299,11 @@
       "title": "Home · Lesson done today",
       "g": "Home",
       "kind": "happy"
+    },
+    "home_hub_error": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Refresh error",
+      "g": "Home"
     },
     "home_hub_greet": {
       "f": "src/features/home/screens/HomeHubScreen.tsx",
@@ -318,11 +323,44 @@
       "g": "Home",
       "kind": "edge"
     },
+    "home_hub_multiple_children": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Multiple children",
+      "g": "Home"
+    },
     "home_hub_offline": {
       "f": "src/features/home/screens/HomeHubScreen.tsx",
       "title": "Home · Reconnecting",
       "g": "Home",
       "kind": "edge"
+    },
+    "home_hub_offline_24h": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Robot offline over 24h",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_paused": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · TJBot paused",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_quiet_hours": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Quiet hours active",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_unpaired_robot": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Robot not paired",
+      "g": "Home"
+    },
+    "home_hub_zero_child": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · No child profile",
+      "g": "Home"
     },
     "kid_settings": {
       "f": "src/features/fallback/screens/KidSettingsScreen.tsx",
@@ -391,9 +429,39 @@
       "kind": "edge"
     },
     "onb_child": {
-      "f": "src/features/auth/screens/ChildProfileScreen.tsx",
+      "f": "src/features/onboarding/screens/ChildProfileScreen.tsx",
       "title": "11 · Child Profile",
       "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_first_lesson": {
+      "f": "src/features/onboarding/screens/FirstLessonEntryScreen.tsx",
+      "title": "12 · First Lesson Entry",
+      "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_intro_celebrate": {
+      "f": "src/features/auth/screens/IntroCelebrateScreen.tsx",
+      "title": "6 · Intro · Celebrate",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_intro_listen": {
+      "f": "src/features/auth/screens/IntroListenScreen.tsx",
+      "title": "3 · Intro · Listen",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_intro_retry": {
+      "f": "src/features/auth/screens/IntroRetryScreen.tsx",
+      "title": "5 · Intro · Try Again",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_intro_speak": {
+      "f": "src/features/auth/screens/IntroSpeakScreen.tsx",
+      "title": "4 · Intro · Speak",
+      "g": "Entry",
       "kind": "happy"
     },
     "onb_login": {
@@ -402,10 +470,34 @@
       "g": "Onboarding",
       "kind": "happy"
     },
-    "onb_login_error": {
-      "f": "src/features/auth/screens/LoginErrorScreen.tsx",
-      "title": "10 · Login Error",
+    "onb_mic": {
+      "f": "src/features/onboarding/screens/MicAskScreen.tsx",
+      "title": "8 · Voice Permission",
       "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_splash": {
+      "f": "src/features/auth/screens/SplashScreen.tsx",
+      "title": "1 · Splash",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_trust": {
+      "f": "src/features/auth/screens/TrustScreen.tsx",
+      "title": "7 · Parent Trust Intro",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_welcome": {
+      "f": "src/features/auth/screens/WelcomeScreen.tsx",
+      "title": "2 · Welcome",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "parent_account_privacy": {
+      "f": "src/features/parent/screens/ParentAccountPrivacyScreen.tsx",
+      "title": "Account Privacy",
+      "g": "Parent",
       "kind": "edge"
     },
     "parent_gate": {
@@ -421,7 +513,7 @@
       "kind": "happy"
     },
     "parent_locked_out": {
-      "f": "src/features/parent/states.js",
+      "f": "src/features/parent/screens/ParentLockedOutScreen.tsx",
       "title": "Parent Gate Locked Out",
       "g": "Parent",
       "kind": "edge"
@@ -439,9 +531,9 @@
       "kind": "happy"
     },
     "parent_stopped": {
-      "f": "src/features/lesson-session/states.js",
-      "title": "Lesson Stopped by Parent",
-      "g": "Done",
+      "f": "src/features/lesson-session/screens/ParentStoppedScreen.tsx",
+      "title": "Parent Stopped",
+      "g": "Recovery",
       "kind": "edge"
     },
     "parent_summary": {
@@ -500,7 +592,7 @@
     },
     "pr_included": {
       "f": "src/features/purchase/screens/IncludedScreen.tsx",
-      "title": "Buy · What's included",
+      "title": "Buy · What",
       "g": "Purchase",
       "kind": "happy"
     },
@@ -673,14 +765,14 @@
       "kind": "happy"
     },
     "timed_out": {
-      "f": "src/features/lesson-session/states.js",
-      "title": "Session Timed Out",
-      "g": "Done",
+      "f": "src/features/lesson-session/screens/TimedOutScreen.tsx",
+      "title": "Timed Out",
+      "g": "Recovery",
       "kind": "edge"
     },
     "today_progress": {
       "f": "src/features/progress/screens/TodayProgressScreen.tsx",
-      "title": "Today's Progress",
+      "title": "Today",
       "g": "Progress",
       "kind": "happy"
     },
@@ -728,8 +820,8 @@
       "unit"
     ],
     "Course Library": [
+      "cl_add_free",
       "cl_added",
-      "cl_buy",
       "cl_companion",
       "cl_complete",
       "cl_detail",
@@ -742,12 +834,17 @@
       "cl_unlock_confirm"
     ],
     "Done": [
-      "abandoned_disconnect",
       "activity_done",
-      "cost_capped",
-      "lesson_done",
-      "parent_stopped",
-      "timed_out"
+      "lesson_done"
+    ],
+    "Entry": [
+      "onb_intro_celebrate",
+      "onb_intro_listen",
+      "onb_intro_retry",
+      "onb_intro_speak",
+      "onb_splash",
+      "onb_trust",
+      "onb_welcome"
     ],
     "Fallback": [
       "app_error",
@@ -772,17 +869,26 @@
     "Home": [
       "home_hub_daily",
       "home_hub_done",
+      "home_hub_error",
       "home_hub_greet",
       "home_hub_idle",
       "home_hub_mic",
-      "home_hub_offline"
+      "home_hub_multiple_children",
+      "home_hub_offline",
+      "home_hub_offline_24h",
+      "home_hub_paused",
+      "home_hub_quiet_hours",
+      "home_hub_unpaired_robot",
+      "home_hub_zero_child"
     ],
     "Onboarding": [
       "onb_child",
+      "onb_first_lesson",
       "onb_login",
-      "onb_login_error"
+      "onb_mic"
     ],
     "Parent": [
+      "parent_account_privacy",
       "parent_gate",
       "parent_history",
       "parent_locked_out",
@@ -813,10 +919,14 @@
       "pr_subs"
     ],
     "Recovery": [
+      "abandoned_disconnect",
       "audio_error",
+      "cost_capped",
       "exit_confirm",
+      "parent_stopped",
       "reconnecting",
-      "safety"
+      "safety",
+      "timed_out"
     ],
     "Robot Device": [
       "dv_firmware",
@@ -862,7 +972,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-05-12T04:51:45Z",
-    "sourceCommit": "418774bca1249c526654b2ca789d01485af97341"
+    "generatedAt": "2026-05-26T05:15:09Z",
+    "sourceCommit": "97590a2dc8627d9966edd969cc056d87c1c21ccb"
   }
 }

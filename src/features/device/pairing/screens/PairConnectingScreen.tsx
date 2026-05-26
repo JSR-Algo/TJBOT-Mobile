@@ -2,12 +2,14 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { pairDevice } from '@/services/api/device.api';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 
@@ -18,23 +20,51 @@ const STEPS = [
   'Loading starter lesson',
 ] as const;
 
-export default function PairConnectingScreen({ navigation }: Props) {
+export default function PairConnectingScreen({ navigation, route }: Props) {
   const [i, setI] = React.useState(0);
+  const [status, setStatus] = React.useState<'pairing' | 'complete' | 'failed'>('pairing');
+  const params = route.params;
 
   React.useEffect(() => {
-    if (i < STEPS.length - 1) {
-      const t = setTimeout(() => setI(i + 1), 900);
-      return () => clearTimeout(t);
+    const code = getParamString(params, 'code');
+    const ssid = getParamString(params, 'ssid');
+    const password = getParamString(params, 'password');
+    if (!code || !ssid || !password) {
+      setStatus('failed');
+      return;
     }
-    const t = setTimeout(() => navigation.navigate('PairSuccessScreen'), 1100);
-    return () => clearTimeout(t);
-  }, [i]);
+    let cancelled = false;
+    void pairDevice({
+      serialNumber: params?.deviceId,
+      code,
+      wifiSsid: ssid,
+      wifiPassword: password,
+    }).then((result) => {
+      if (cancelled) return;
+      setI(STEPS.length - 1);
+      setStatus('complete');
+      navigation.navigate(ROUTES.PairSuccessScreen, { deviceId: result.deviceId });
+    }).catch(() => {
+      if (cancelled) return;
+      setStatus('failed');
+      navigation.navigate(ROUTES.PairFailedScreen, {
+        deviceId: params?.deviceId,
+        code,
+        ssid,
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigation, params]);
 
   return (
     <DeviceShell title="Connecting Robot…">
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="reconnect" size={180} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>Hang tight — about 30 seconds</Text>
+        <Text fontWeight="600" style={styles.heading}>
+          {status === 'complete' ? 'Pairing complete' : status === 'failed' ? 'Pairing failed' : 'Hang tight — about 30 seconds'}
+        </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24} gap={8}>
         {STEPS.map((s, idx) => {
@@ -64,6 +94,12 @@ export default function PairConnectingScreen({ navigation }: Props) {
       </Box>
     </DeviceShell>
   );
+}
+
+function getParamString(params: Props['route']['params'], key: 'code' | 'ssid' | 'password'): string | undefined {
+  if (!params || !(key in params)) return undefined;
+  const value = params[key];
+  return typeof value === 'string' ? value : undefined;
 }
 
 const styles = StyleSheet.create({

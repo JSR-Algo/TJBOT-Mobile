@@ -1,14 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceSessionScreen'>;
 
@@ -27,7 +27,7 @@ export default function DeviceSessionScreen({ navigation }: Props) {
   }, []);
 
   return (
-    <DeviceShell title="Lesson in progress" onBack={() => navigation.navigate('DeviceHomeScreen')}>
+    <DeviceShell title="Lesson in progress" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.liveCard} alignItems="center" gap={12}>
           <Text style={styles.liveLabel}>Live · what Robot sees</Text>

@@ -32,7 +32,7 @@ sequenceDiagram
 
     CI->>RedTeamRunner: launch (corpus_version, safety_pack_version, baseline_uri)
     RedTeamRunner->>AdversarialPromptLoader: load (yaml fixtures)
-    AdversarialPromptLoader->>S3: GET adversarial-prompts.yaml + baseline.json
+    AdversarialPromptLoader->>S3: GET adversarial-prompts.yaml and baseline.json
     alt prompt_corpus_load_failed
         S3-->>AdversarialPromptLoader: 404 or schema-invalid
         RedTeamRunner-->>CI: exit 2
@@ -43,14 +43,14 @@ sequenceDiagram
                 SafetyService-->>RedTeamRunner: connection refused
                 RedTeamRunner-->>CI: exit 3 — infra fault
             else evaluated
-                SafetyService-->>RedTeamRunner: decision (pass — block — redirect) + reason_code
+                SafetyService-->>RedTeamRunner: decision (pass — block — redirect) and reason_code
                 RedTeamRunner->>SafetyResultEvaluator: compare(decision, expected_decision)
             end
         end
         SafetyResultEvaluator->>SafetyResultEvaluator: aggregate (delta vs baseline)
         alt new_regression_detected
             SafetyResultEvaluator-->>RegressionReporter: regressions[] (prev=block, now=pass)
-            RegressionReporter->>S3: upload report.html + diff.json
+            RegressionReporter->>S3: upload report.html and diff.json
             RegressionReporter-->>CI: exit 1 — fail safety gate
         else newly_passing_unexpected
             SafetyResultEvaluator-->>RegressionReporter: newly_passing[] (review required)

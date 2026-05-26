@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Create the missing TbotMobileTests XCTest Unit Testing Bundle target.
+# Create the missing TJBotMobileTests XCTest Unit Testing Bundle target.
 # Wires in the 4 existing test .swift files, sets iOS 15.1 deployment target,
 # configures Automatic signing with team 7Q65CFWBG8, and updates the shared
 # scheme's TestableReference BlueprintIdentifier to match the new target.
@@ -7,9 +7,9 @@
 
 require 'xcodeproj'
 
-PROJECT_PATH = File.join(__dir__, 'TbotMobile.xcodeproj')
-SCHEME_PATH = File.join(PROJECT_PATH, 'xcshareddata', 'xcschemes', 'TbotMobile.xcscheme')
-TESTS_DIR = 'TbotMobileTests'
+PROJECT_PATH = File.join(__dir__, 'TJBotMobile.xcodeproj')
+SCHEME_PATH = File.join(PROJECT_PATH, 'xcshareddata', 'xcschemes', 'TJBotMobile.xcscheme')
+TESTS_DIR = 'TJBotMobileTests'
 TEST_FILES = %w[
   SharedEngineSpikeTests.swift
   VoiceSessionModuleTests.swift
@@ -18,24 +18,24 @@ TEST_FILES = %w[
 ]
 DEPLOYMENT_TARGET = '15.1'
 DEV_TEAM = '7Q65CFWBG8'
-BUNDLE_ID = 'com.manhhodinh.tbot.TbotMobileTests'
+BUNDLE_ID = 'com.manhhodinh.TJBot.TJBotMobileTests'
 
 proj = Xcodeproj::Project.open(PROJECT_PATH)
 
 # Check if target already exists — idempotent re-run
-existing = proj.targets.find { |t| t.name == 'TbotMobileTests' }
+existing = proj.targets.find { |t| t.name == 'TJBotMobileTests' }
 if existing
-  puts "TbotMobileTests target already exists (UUID: #{existing.uuid}); skipping creation."
+  puts "TJBotMobileTests target already exists (UUID: #{existing.uuid}); skipping creation."
   exit 0
 end
 
-app_target = proj.targets.find { |t| t.name == 'TbotMobile' }
-raise 'TbotMobile app target not found' unless app_target
+app_target = proj.targets.find { |t| t.name == 'TJBotMobile' }
+raise 'TJBotMobile app target not found' unless app_target
 
 # Create the Unit Testing Bundle target.
 test_target = proj.new_target(
   :unit_test_bundle,
-  'TbotMobileTests',
+  'TJBotMobileTests',
   :ios,
   DEPLOYMENT_TARGET,
   proj.products_group,
@@ -67,7 +67,7 @@ test_target.build_configurations.each do |cfg|
   bs['DEVELOPMENT_TEAM']               = DEV_TEAM
   bs['GENERATE_INFOPLIST_FILE']        = 'YES'
   bs['TARGETED_DEVICE_FAMILY']         = '1,2'
-  bs['TEST_HOST']                      = '$(BUILT_PRODUCTS_DIR)/TbotMobile.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TbotMobile'
+  bs['TEST_HOST']                      = '$(BUILT_PRODUCTS_DIR)/TJBotMobile.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TJBotMobile'
   bs['BUNDLE_LOADER']                  = '$(TEST_HOST)'
   bs['LD_RUNPATH_SEARCH_PATHS']        = ['$(inherited)', '@executable_path/Frameworks', '@loader_path/Frameworks']
   bs['CLANG_ENABLE_MODULES']           = 'YES'
@@ -79,7 +79,7 @@ end
 test_target.add_dependency(app_target)
 
 proj.save
-puts "Created TbotMobileTests target with UUID: #{test_target.uuid}"
+puts "Created TJBotMobileTests target with UUID: #{test_target.uuid}"
 puts "Wired #{test_target.source_build_phase.files.count} source files."
 
 # Now patch the shared scheme so the TestableReference points at the new UUID
@@ -87,7 +87,7 @@ puts "Wired #{test_target.source_build_phase.files.count} source files."
 if File.exist?(SCHEME_PATH)
   scheme_xml = File.read(SCHEME_PATH)
   patched = scheme_xml.gsub(
-    /BlueprintIdentifier = "[A-F0-9]{24}"(\s+BuildableName = "TbotMobileTests\.xctest")/,
+    /BlueprintIdentifier = "[A-F0-9]{24}"(\s+BuildableName = "TJBotMobileTests\.xctest")/,
     "BlueprintIdentifier = \"#{test_target.uuid}\"\\1"
   )
   if patched != scheme_xml

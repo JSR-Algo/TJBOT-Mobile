@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import MiniProgress from '../components/MiniProgress';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnitScreen'>;
 
@@ -24,7 +25,7 @@ export default function UnitScreen({ navigation }: Props) {
   return (
     <PageScroll>
       <PageHeader
-        onBack={() => navigation.navigate('LevelScreen')}
+        onBack={() => navigation.navigate(ROUTES.LevelScreen)}
         subtitle="Unit 3"
         title="How are you?"
       />
@@ -55,7 +56,7 @@ export default function UnitScreen({ navigation }: Props) {
             <TouchableOpacity
               key={l.id}
               disabled={isLocked}
-              onPress={() => navigation.navigate('LessonDetailScreen')}
+              onPress={() => navigation.navigate(ROUTES.LessonDetailScreen)}
               style={[styles.lessonRow, { opacity: isLocked ? 0.6 : 1 }]}
               activeOpacity={0.8}
             >
@@ -76,7 +77,7 @@ export default function UnitScreen({ navigation }: Props) {
               )}
               {isDone && (
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('ReviewEntryScreen')}
+                  onPress={() => navigation.navigate(ROUTES.ReviewEntryScreen)}
                   style={styles.replayBtn}
                   activeOpacity={0.8}
                 >

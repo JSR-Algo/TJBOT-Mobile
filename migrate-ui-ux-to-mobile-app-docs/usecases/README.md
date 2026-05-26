@@ -1,4 +1,4 @@
-# Use Case Model — tbot-mobile (tbot-design)
+# Use Case Model — TJBot-mobile (TJBot-design)
 
 Per-domain use-case authoring split out of `docs/architecture/use-case-diagram.md` (504-line monolith) per ADR-0005. Reads `docs/architecture/usecases/*.usecase.puml` as the authoritative diagram source.
 

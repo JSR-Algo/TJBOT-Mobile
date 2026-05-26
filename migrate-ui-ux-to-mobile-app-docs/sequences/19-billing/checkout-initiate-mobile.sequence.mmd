@@ -31,7 +31,7 @@ sequenceDiagram
     participant PostgreSQL
 
     Note over ParentApp: parent in pr_checkout taps "Confirm purchase"
-    ParentApp->>Gateway: POST /v1/billing/checkout-session {sku_id, quantity, billing_address, X-Request-Id} + parent JWT Bearer
+    ParentApp->>Gateway: POST /v1/billing/checkout-session {sku_id, quantity, billing_address, X-Request-Id} and parent JWT Bearer
     Gateway->>Gateway: auth-resolver — JWT audience: tbot:parent (sys-17)
     alt parent_jwt_stale_re_pin_required
         Note over Gateway: parent JWT issued > 60s ago (ADR-0005 D6)
@@ -52,7 +52,7 @@ sequenceDiagram
         else fraud_check_held
             BillingService->>PostgreSQL: INSERT orders {sku_id, quantity, billing_address, state: 'fraud_review', x_request_id}
             PostgreSQL-->>BillingService: order_id
-            Note over BillingService: fraud rule triggered — order held; ops notified async
+            Note over BillingService: fraud rule triggered — order held, ops notified async
             BillingService-->>Gateway: 202 {order_id, state: 'fraud_review'}
             Gateway-->>ParentApp: 202
         else stripe_unavailable
@@ -75,9 +75,9 @@ sequenceDiagram
     end
 
     Note over ParentApp: presents Stripe-hosted checkout in webview / SDK redirect
-    Note over ParentApp,PostgreSQL: payment completion is async — see stripe-webhook-processing.sequence.mmd; orders.state transitions to 'paid' via webhook worker
+    Note over ParentApp,PostgreSQL: payment completion is async — see stripe-webhook-processing.sequence.mmd, orders.state transitions to 'paid' via webhook worker
     loop poll until state='paid' or expires_at exceeded
-        ParentApp->>Gateway: GET /v1/billing/orders/{order_id} + parent JWT Bearer
+        ParentApp->>Gateway: GET /v1/billing/orders/{order_id} and parent JWT Bearer
         Gateway->>BillingService: forward
         BillingService->>PostgreSQL: SELECT orders WHERE id=?
         PostgreSQL-->>BillingService: {state, ...}

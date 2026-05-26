@@ -22,7 +22,6 @@ const __voiceTelemetryTestStore: Record<string, Listener[]> = ((globalThis as an
 jest.mock('react-native', () => {
   class FakeEmitter {
     addListener(name: string, cb: (e: unknown) => void): { remove: () => void } {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const store: Record<string, Array<(e: unknown) => void>> =
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ((globalThis as any).__voiceTelemetryListeners ??= {});

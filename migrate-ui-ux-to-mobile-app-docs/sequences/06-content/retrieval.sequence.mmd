@@ -33,14 +33,14 @@ sequenceDiagram
         PostgreSQL-->>ContentService: key not in policy classification
         ContentService-->>SafetyService: 400 policy_key_unknown
     else over_budget_trim_and_cap
-        ContentService->>PostgreSQL: load traits + prefs + approved memories
+        ContentService->>PostgreSQL: load traits and prefs and approved memories
         ContentService->>Redis: HGET cooldowns for templates
         ContentService->>ContentService: score and rank candidates
         Note over ContentService: total payload > 1800 chars — trim by salience and recency
         ContentService->>PostgreSQL: INSERT retrieval_snapshots row trimmed=true
         ContentService-->>SafetyService: {traits<=5, prefs<=5, memories<=3, templates<=5} truncated
     else redis_unavailable_in_memory_fallback
-        ContentService->>PostgreSQL: load traits + prefs + memories
+        ContentService->>PostgreSQL: load traits and prefs and memories
         ContentService->>Redis: HGET cooldowns
         Redis--xContentService: connection error
         Note over ContentService: degrade — in-memory cooldown fallback, log degradation metric
@@ -51,10 +51,10 @@ sequenceDiagram
         Note over ContentService: traits with blocked_realtime classification dropped
         ContentService-->>SafetyService: bounded retrieval (sensitive fields omitted)
     else success
-        ContentService->>PostgreSQL: load traits + prefs + approved+eligible memories
+        ContentService->>PostgreSQL: load traits and prefs and approved+eligible memories
         ContentService->>Redis: HGET content:cooldown:{childProfileId}
         Redis-->>ContentService: cooldown set
-        ContentService->>ContentService: score + rank + diversity cap
+        ContentService->>ContentService: score and rank and diversity cap
         ContentService->>PostgreSQL: INSERT retrieval_snapshots row
         ContentService-)ContentService: emit cp-retrieval-analytics
         ContentService-->>SafetyService: {traits, preferences, memorySummaries, contentTemplates, retrievalPolicy}

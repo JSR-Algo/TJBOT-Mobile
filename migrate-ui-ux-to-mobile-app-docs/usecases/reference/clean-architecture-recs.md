@@ -29,7 +29,7 @@ All findings derive from the actual `src/` tree, not from speculation. Severity 
 - `src/features/parent/screens/ParentGateScreen.jsx:7-12` — generates a random 3-digit number, holds it in `useState`, compares input against `target`, schedules a 280ms `setTimeout` to navigate on match.
 - `src/features/course-library/UnlockConfirmModal.jsx:7-10` — accepts a hardcoded 4-digit `target = ['7','3','5','1']`, holds 4 input cells in `useState`, compares against target, navigates on match (no timer; navigation is on-button-press).
 
-Both components implement the same "type-a-shown-number-to-proceed" intent with different rendering. The patterns are not currently abstracted; each lives inside its feature folder.
+both components implement the same "type-a-shown-number-to-proceed" intent with different rendering. The patterns are not currently abstracted; each lives inside its feature folder.
 
 **Action:**
 

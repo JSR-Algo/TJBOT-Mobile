@@ -3,7 +3,7 @@
 // BLE/handshake timeouts, not server-session terminals.
 // sys-18 wire integration deferred to firmware sprint.
 
-import { setup, assign, type ActorRef } from 'xstate';
+import { setup, assign } from 'xstate';
 import type {
   DevicePairingContext,
   DevicePairingEvent,
@@ -90,7 +90,7 @@ export const devicePairingMachine = setup({
 }).createMachine({
   id: 'devicePairing',
   initial: 'IDLE',
-  context: ({ input }) => ({
+  context: ({ input: _input }) => ({
     deviceSerial: null,
     deviceId: null,
     pairingToken: null,

@@ -9,6 +9,7 @@ import {
   refreshAuthTokens,
   clearAuthTokens,
 } from '../http/refresh-queue';
+import { backendContractUnavailable } from './undocumented-api-routes';
 
 const AI_BASE_URL = Config.AI_BASE_URL;
 
@@ -74,6 +75,9 @@ _aiClient.interceptors.response.use(
 );
 
 export async function transcribe(audioUri: string): Promise<{ text: string; confidence: number; confidence_signal?: number; phoneme_confidence?: number }> {
+  void audioUri;
+  backendContractUnavailable('transcribe');
+/*
   const form = new FormData();
   const filename = audioUri.split('/').pop() ?? 'audio.m4a';
   const ext = filename.split('.').pop()?.toLowerCase() ?? 'm4a';
@@ -89,6 +93,7 @@ export async function transcribe(audioUri: string): Promise<{ text: string; conf
     timeout: 30000,
   });
   return response.data;
+*/
 }
 
 export async function chat(
@@ -103,6 +108,9 @@ export async function chat(
   },
   history?: Array<{ user: string; assistant: string }>,
 ): Promise<{ response: string; session_id: string }> {
+  void message; void sessionId; void childProfile; void history;
+  backendContractUnavailable('chat');
+/*
   const http = _aiClient;
   const response = await http.post('/v1/llm/chat', {
     message,
@@ -111,10 +119,15 @@ export async function chat(
     ...(history && history.length > 0 ? { history: history.slice(-5) } : {}),
   });
   return response.data;
+*/
 }
 
 export async function synthesize(text: string): Promise<{ audio_url: string; duration_ms: number }> {
+  void text;
+  backendContractUnavailable('synthesize');
+/*
   const http = _aiClient;
   const response = await http.post('/v1/tts/synthesize', { text });
   return response.data;
+*/
 }

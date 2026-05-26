@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://tbot.local/schemas/sequence-frontmatter.schema.json",
+  "$id": "https://TJBot.local/schemas/sequence-frontmatter.schema.json",
   "title": "Sequence Diagram Frontmatter",
   "description": "YAML frontmatter for docs/sequences/<sys>/<flow>.sequence.mmd files. Required keys per plan §5; _cross/ variant additionally requires systems[] + derived_from[].",
   "type": "object",

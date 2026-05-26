@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -12,15 +12,17 @@ import CL from '../components/CL';
 import COURSES from '../components/courses';
 import CLChip from '../components/CLChip';
 import CourseCard from '../components/CourseCard';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseLockedScreen'>;
 
 const COURSE = COURSES[4]!;
 
-export default function CourseLockedScreen({ navigation }: Props) {
-  const c = COURSE;
+export default function CourseLockedScreen({ navigation, route }: Props) {
+  const courseId = route.params?.courseId ?? COURSE.id;
+  const c = COURSES.find(course => course.id === courseId) ?? COURSE;
   return (
-    <DeviceShell title="Locked for now" onBack={() => navigation.navigate('CourseLibraryScreen')}>
+    <DeviceShell title="Locked for now" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard}>
           <Box style={styles.heroLCD} alignItems="center" justifyContent="center">
@@ -55,12 +57,20 @@ export default function CourseLockedScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={16} paddingTop={20}>
         <Text fontWeight="700" style={styles.sectionLabel}>Try first</Text>
-        <CourseCard course={COURSES[0]!} accent="#FF6F61" onClick={() => navigation.navigate('CourseDetailScreen')} />
+        <CourseCard course={COURSES[0]!} accent="#FF6F61" onClick={() => navigation.navigate(ROUTES.CourseDetailScreen)} />
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('UnlockConfirmScreen')}>Unlock anyway</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('CourseLibraryScreen')}>Back to library</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId })}>Add free course</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>Back to library</DeviceBigBtn>
+        <DeviceBigBtn
+          secondary
+          onClick={() => navigation.navigate(ROUTES.SupportScreen, {
+            context: { topic: 'app_error', errorFamily: 'app_error' },
+          })}
+        >
+          Contact support
+        </DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

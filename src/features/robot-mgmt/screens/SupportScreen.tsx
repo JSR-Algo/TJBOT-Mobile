@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SupportScreen'>;
 
@@ -27,7 +28,7 @@ const ATTACHED = ['Robot ROB-2A8F', 'Software v1.4.2', 'Wi-Fi: strong', 'Battery
 export default function SupportScreen({ navigation }: Props) {
   const [topic, setTopic] = React.useState<TopicId>('hardware');
   return (
-    <DeviceShell title="Contact support" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Contact support" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingHorizontal={24} paddingTop={18}>
         <Text style={styles.intro}>We're a small team and we read every message. Most replies arrive within a day.</Text>
       </Box>
@@ -75,8 +76,8 @@ export default function SupportScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('MyRobotScreen')}>Send to support</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRobotScreen')}>Cancel</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>Send to support</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>Cancel</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

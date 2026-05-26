@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -10,6 +10,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import CLChip from '../components/CLChip';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotReadyScreen'>;
 
@@ -54,8 +55,8 @@ export default function RobotReadyScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('RunningScreen')}>Hand it to your child</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('SendToRobotScreen')}>Pick a different lesson</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.RunningScreen)}>Hand it to your child</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Pick a different lesson</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

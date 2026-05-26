@@ -1,5 +1,5 @@
-@startuml TBOT-Overview
-title TBOT Mobile — Domain Overview (actors + bounded contexts)
+@startuml TJBot-Overview
+title TJBot Mobile — Domain Overview (actors + bounded contexts)
 left to right direction
 skinparam packageStyle rectangle
 

@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceFirmwareScreen'>;
 
@@ -21,7 +22,7 @@ const CHANGES = [
 
 export default function DeviceFirmwareScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Software update" onBack={() => navigation.navigate('DeviceHomeScreen')}>
+    <DeviceShell title="Software update" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.heroCard} flexDirection="row" gap={14} alignItems="center">
           <RobotDevice emotion="charging" size={84} accent="#FF6F61" />
@@ -48,8 +49,8 @@ export default function DeviceFirmwareScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('DeviceHomeScreen')}>Update tonight (recommended)</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Update now</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Update tonight (recommended)</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Update now</DeviceBigBtn>
         <Text style={styles.note}>Tonight's update happens during quiet hours so Robot is ready in the morning.</Text>
       </Box>
     </DeviceShell>

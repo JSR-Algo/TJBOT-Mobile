@@ -27,16 +27,7 @@ const MMD_HEADER = mermaidGeneratedHeader(navGraphSha);   // for .mmd outputs
 
 // Build state -> domain map from src/features/<d>/states.js (canonical).
 function buildStateDomainMap() {
-  const m = new Map();
-  for (const d of listDomains()) {
-    const sjs = path.join(FEATURES_DIR, d, 'states.js');
-    if (!fs.existsSync(sjs)) continue;
-    const src = fs.readFileSync(sjs, 'utf8');
-    const re = /\{\s*id\s*:\s*['"]([a-z][a-z0-9_]*)['"]/g;
-    let mm;
-    while ((mm = re.exec(src)) !== null) m.set(mm[1], d);
-  }
-  return m;
+  return buildPageMaps().stateToDomain;
 }
 
 const stateToDomain = buildStateDomainMap();

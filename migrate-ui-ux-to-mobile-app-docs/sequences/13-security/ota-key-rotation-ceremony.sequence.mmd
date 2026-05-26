@@ -41,7 +41,7 @@ sequenceDiagram
 
     Note over SecurityEngineerOne,FleetDevices: Key Generation (air-gapped)
     SecurityEngineerOne->>AirGappedWorkstation: boot from read-only media
-    SecurityEngineerTwo->>AirGappedWorkstation: witness + co-sign (both engineers required)
+    SecurityEngineerTwo->>AirGappedWorkstation: witness and co-sign (both engineers required)
     AirGappedWorkstation->>YubiHSM: generate ECDSA P-256 keypair
     YubiHSM-->>AirGappedWorkstation: public key exported (private NEVER leaves HSM)
     AirGappedWorkstation->>AirGappedWorkstation: seal HSM in tamper-evident bag
@@ -49,7 +49,7 @@ sequenceDiagram
         Note over SecurityEngineerOne: abort ceremony — tamper evidence broken
     end
 
-    Note over SecurityEngineerOne,FleetDevices: Import + Staged Rollout
+    Note over SecurityEngineerOne,FleetDevices: Import and Staged Rollout
     SecurityEngineerOne->>KMS: ImportKey (public_key)
     alt kms_import_failed
         KMS--xSecurityEngineerOne: error
@@ -64,12 +64,12 @@ sequenceDiagram
         Note over SecurityEngineerOne: hold ceremony — wait for laggards or skip-and-revoke unhealthy devices
     end
 
-    Note over SecurityEngineerOne,FleetDevices: Activate + Overlap (90 days)
+    Note over SecurityEngineerOne,FleetDevices: Activate and Overlap (90 days)
     SecurityEngineerOne->>YubiHSM: begin signing OTA manifests with new key
     Note over FleetDevices: both keys accepted for 90 days (overlap window)
     SecurityEngineerOne->>FleetDevices: FW update — remove old key from trust list (after overlap)
 
-    SecurityEngineerOne->>PostgreSQL: INSERT key_rotation_log {secret_name='ota_signing_key', rotation_method='manual', status='completed', notes='ceremony log + S3 legal hold'}
+    SecurityEngineerOne->>PostgreSQL: INSERT key_rotation_log {secret_name='ota_signing_key', rotation_method='manual', status='completed', notes='ceremony log and S3 legal hold'}
     SecurityEngineerOne->>SecurityEngineerOne: store signed ceremony log in S3 (legal hold)
 
     Note over SecurityEngineerOne,PostgreSQL: annual ceremony · timeout weeks · rotation_failed_rollback → revert to AWSPREVIOUS, page on-call, no auto-retry

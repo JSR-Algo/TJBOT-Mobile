@@ -1,4 +1,4 @@
-import client from '../http/client';
+import { backendContractUnavailable } from './undocumented-api-routes';
 
 export interface SessionHistoryItem {
   id: string;
@@ -50,24 +50,20 @@ export async function getSessionHistory(
   from?: string,
   to?: string,
 ): Promise<SessionHistoryResponse> {
-  const params: Record<string, unknown> = { page, limit };
-  if (from) params.from = from;
-  if (to) params.to = to;
-  const res = await client.get(`/summaries/sessions/${deviceId}`, { params });
-  return res.data.data ?? res.data;
+  void page; void limit; void from; void to;
+  backendContractUnavailable(`getSessionHistory:${deviceId}`);
 }
 
 export async function getSafetyEvents(
   deviceId: string,
   limit = 50,
 ): Promise<SafetyEvent[]> {
-  const res = await client.get(`/summaries/safety/${deviceId}`, { params: { limit } });
-  return res.data.data ?? res.data;
+  void limit;
+  backendContractUnavailable(`getSafetyEvents:${deviceId}`);
 }
 
 export async function getWeeklySummary(deviceId: string): Promise<WeeklySummary[]> {
-  const res = await client.get(`/summaries/weekly/${deviceId}`);
-  return res.data.data ?? res.data;
+  backendContractUnavailable(`getWeeklySummary:${deviceId}`);
 }
 
 export async function getSessionCost(
@@ -75,9 +71,6 @@ export async function getSessionCost(
   from?: string,
   to?: string,
 ): Promise<SessionCost> {
-  const params: Record<string, unknown> = {};
-  if (from) params.from = from;
-  if (to) params.to = to;
-  const res = await client.get(`/summaries/cost/${deviceId}`, { params });
-  return res.data.data ?? res.data;
+  void from; void to;
+  backendContractUnavailable(`getSessionCost:${deviceId}`);
 }

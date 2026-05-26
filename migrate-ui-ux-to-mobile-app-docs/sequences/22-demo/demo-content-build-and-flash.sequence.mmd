@@ -55,7 +55,7 @@ sequenceDiagram
         end
 
         Operator->>DemoCLI: tbot-demo package --manifest ... --audio ./audio/ --output demo_content.bin
-        DemoCLI->>FlashImageBuilder: assemble binary (manifest + audio + earcons + face animations)
+        DemoCLI->>FlashImageBuilder: assemble binary (manifest and audio and earcons and face animations)
 
         alt flash_size_exceeded
             FlashImageBuilder-->>DemoCLI: > 2 MB demo_content partition limit
@@ -71,12 +71,12 @@ sequenceDiagram
             end
 
             Operator->>DemoCLI: tbot-demo flash --binary demo_content.bin --port /dev/ttyUSB0
-            DemoCLI->>ESPTool: erase + write demo_content partition (2 MB offset)
+            DemoCLI->>ESPTool: erase and write demo_content partition (2 MB offset)
             alt flash_partition_write_failure
                 ESPTool-->>DemoCLI: serial error / timeout / wrong chip
                 DemoCLI-->>Operator: exit 1 — flash_partition_write_failure (operator retries)
             else flashed
-                ESPTool->>Device: write partition + verify
+                ESPTool->>Device: write partition and verify
                 Device-->>ESPTool: verify ok
                 ESPTool-->>DemoCLI: ok
                 DemoCLI->>ESPTool: write NVS demo.enabled=true (optional)

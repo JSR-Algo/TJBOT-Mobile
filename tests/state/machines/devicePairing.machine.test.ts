@@ -19,9 +19,9 @@ describe('DevicePairing machine', () => {
       actor.send({ type: 'TAP_START_SCAN' });
       expect(actor.getSnapshot().value).toBe('SCANNING');
 
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TBOT-001', displayCode: '1234' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-001', displayCode: '1234' });
       expect(actor.getSnapshot().value).toBe('DEVICE_FOUND');
-      expect(actor.getSnapshot().context.deviceSerial).toBe('TBOT-001');
+      expect(actor.getSnapshot().context.deviceSerial).toBe('TJBot-001');
       expect(actor.getSnapshot().context.displayCode).toBe('1234');
 
       actor.send({ type: 'USER_MATCHES_CODE' });
@@ -76,7 +76,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TBOT-002', displayCode: '5678' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-002', displayCode: '5678' });
       expect(actor.getSnapshot().value).toBe('DEVICE_FOUND');
 
       actor.send({ type: 'CODE_DECLINE' });
@@ -93,7 +93,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TBOT-003', displayCode: '0000' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-003', displayCode: '0000' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -114,7 +114,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TBOT-004', displayCode: '9999' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-004', displayCode: '9999' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -131,7 +131,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TBOT-005', displayCode: '1111' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-005', displayCode: '1111' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -151,7 +151,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TBOT-006', displayCode: '2222' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-006', displayCode: '2222' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -189,7 +189,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TBOT-007', displayCode: '3333' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-007', displayCode: '3333' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });

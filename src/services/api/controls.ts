@@ -1,4 +1,4 @@
-import client from '../http/client';
+import { backendContractUnavailable } from './undocumented-api-routes';
 
 export interface ParentControls {
   daily_limit_minutes: number;
@@ -13,12 +13,11 @@ export interface ParentControls {
 
 export const controlsApi = {
   async getControls(deviceId: string): Promise<ParentControls> {
-    const res = await client.get(`/controls/${deviceId}`);
-    return res.data.data ?? res.data;
+    backendContractUnavailable(`controlsApi.getControls:${deviceId}`);
   },
 
   async updateControls(deviceId: string, controls: Partial<ParentControls>): Promise<ParentControls> {
-    const res = await client.put(`/controls/${deviceId}`, controls);
-    return res.data.data ?? res.data;
+    void controls;
+    backendContractUnavailable(`controlsApi.updateControls:${deviceId}`);
   },
 };

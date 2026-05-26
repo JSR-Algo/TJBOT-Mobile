@@ -25,10 +25,10 @@ sequenceDiagram
     participant IdentityService
     participant PostgreSQL
 
-    Note over ParentApp,IdentityService: Entry point: parent_settings → Active Sessions — parent views + revokes other-device sessions
+    Note over ParentApp,IdentityService: Entry point: parent_settings → Active Sessions — parent views and revokes other-device sessions
 
     ParentApp->>Gateway: GET /v1/identity/sessions
-    Gateway->>Gateway: require valid parent JWT; extract user_id
+    Gateway->>Gateway: require valid parent JWT, extract user_id
     Gateway->>IdentityService: forward request
     IdentityService->>PostgreSQL: SELECT jti, device_name, platform, created_at, last_seen_at, ip_hash FROM parent_sessions WHERE user_id={user_id} AND revoked_at IS NULL ORDER BY last_seen_at DESC USING parent_sessions_active_by_user_idx
     PostgreSQL-->>IdentityService: sessions[]
@@ -38,7 +38,7 @@ sequenceDiagram
     Note over ParentApp: parent selects a session to revoke (other device or current device)
 
     ParentApp->>Gateway: DELETE /v1/identity/sessions/{jti}
-    Gateway->>Gateway: require valid parent JWT; extract caller_user_id + caller_jti
+    Gateway->>Gateway: require valid parent JWT, extract caller_user_id and caller_jti
     Gateway->>IdentityService: forward request
     alt session_not_found (jti absent or already revoked — idempotent)
         IdentityService-->>Gateway: 200 already_revoked
@@ -52,7 +52,7 @@ sequenceDiagram
         IdentityService-->>Gateway: 200 {jti, revoked_at, self_revoke: (jti == caller_jti)}
         Gateway-->>ParentApp: 200
         alt self_revoke (parent revoked their own current session jti)
-            ParentApp->>ParentApp: forced logout — clear auth.store + navigate to login screen
+            ParentApp->>ParentApp: forced logout — clear auth.store and navigate to login screen
         else other_device_revoke
             ParentApp->>ParentApp: remove revoked session from list UI
         end

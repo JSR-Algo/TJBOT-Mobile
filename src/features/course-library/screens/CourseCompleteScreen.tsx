@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -9,6 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import CLChip from '../components/CLChip';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseCompleteScreen'>;
 
@@ -62,8 +63,8 @@ export default function CourseCompleteScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('SendToRobotScreen')}>Plan tomorrow's lesson</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Done</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Plan tomorrow's lesson</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Done</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

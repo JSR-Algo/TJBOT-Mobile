@@ -13,12 +13,23 @@ type Props = {
   onClick?: () => void;
   secondary?: boolean;
   danger?: boolean;
+  disabled?: boolean;
+  accessibilityLabel?: string;
 };
 
-export default function DeviceBigBtn({ children, onClick, secondary, danger }: Props) {
+export default function DeviceBigBtn({ children, onClick, secondary, danger, disabled = false, accessibilityLabel }: Props) {
+  const label = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
   if (secondary) {
     return (
-      <TouchableOpacity onPress={onClick} style={[styles.base, styles.secondary]} activeOpacity={0.7}>
+      <TouchableOpacity
+        onPress={onClick}
+        disabled={disabled}
+        style={[styles.base, styles.secondary]}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ disabled }}
+      >
         <Text fontWeight="500" style={{ fontSize: 16, color: DV.ink }}>
           {children}
         </Text>
@@ -28,7 +39,15 @@ export default function DeviceBigBtn({ children, onClick, secondary, danger }: P
 
   const bg = danger ? '#C0392B' : DV.accent;
   return (
-    <TouchableOpacity onPress={onClick} style={[styles.base, { backgroundColor: bg }, styles.primary]} activeOpacity={0.7}>
+    <TouchableOpacity
+      onPress={onClick}
+      disabled={disabled}
+      style={[styles.base, { backgroundColor: bg }, styles.primary]}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+    >
       <Text fontWeight="600" style={{ fontSize: 16, color: '#fff' }}>
         {children}
       </Text>
@@ -39,7 +58,7 @@ export default function DeviceBigBtn({ children, onClick, secondary, danger }: P
 const styles = StyleSheet.create({
   base: {
     width: '100%',
-    minHeight: 50,
+    minHeight: 52,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

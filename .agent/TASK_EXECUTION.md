@@ -1,7 +1,7 @@
-# tbot-mobile — Task Execution
+# TJBot-mobile — Task Execution
 
 Coding standards, commit format, and stop conditions for all agents working
-in `/Users/manhhodinh/Documents/TBOT/tbot-mobile/`.
+in `/Users/manhhodinh/Documents/TJBot/TJBot-mobile/`.
 
 ---
 
@@ -31,7 +31,7 @@ in `/Users/manhhodinh/Documents/TBOT/tbot-mobile/`.
 1. No web-only APIs: `document`, `window`, `localStorage`, CSS modules, `className`.
    ESLint `globals.node` config excludes browser globals.
 2. No `Platform.OS` branches in shared voice/audio layers (enforced by
-   `tbot-voice/no-voice-timing-in-shared` ESLint rule).
+   `TJBot-voice/no-voice-timing-in-shared` ESLint rule).
 3. All UI components must be accessible: `accessibilityLabel` and `accessibilityRole`
    on interactive elements. Missing accessibility props fail code review.
 4. State machines for complex flows: purchase, lesson-session, and device-pairing
@@ -138,8 +138,8 @@ Any of these in your change marks the task as FAIL (not PARTIAL — FAIL means s
 3. Updating task state to DONE without runtime evidence
 4. Cross-repo edit without cross-repo approval
 5. Leaving docs drift unresolved after a behavior change
-6. Treating any tbot-design stub/prototype path as the primary code path
-   (tbot-design content is being promoted, not legacy-preserved)
+6. Treating any TJBot-design stub/prototype path as the primary code path
+   (TJBot-design content is being promoted, not legacy-preserved)
 7. Bypassing validation scripts or CI gates (`--no-verify`, `--skip-validation`)
 8. Marking PARTIAL work as DONE to close a task quickly
 9. Inventing acceptance criteria not specified in the task record
@@ -169,7 +169,7 @@ PARTIAL is represented as IN_PROGRESS with a comment naming the gap.
 
 ## Validation command reference
 
-Run these from `/Users/manhhodinh/Documents/TBOT/tbot-mobile/`:
+Run these from `/Users/manhhodinh/Documents/TJBot/TJBot-mobile/`:
 
 | Gate | Command | Required from |
 |---|---|---|

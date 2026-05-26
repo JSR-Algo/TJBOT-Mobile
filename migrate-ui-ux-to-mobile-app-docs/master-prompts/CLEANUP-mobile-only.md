@@ -1,12 +1,12 @@
 # MASTER PROMPT — Cleanup: keep mobile flow only, drop everything else
 
-Drop this whole file into a fresh AI session pointed at the TBOT design prototype. The goal is **mobile-only, flow-only** — strip every artifact that isn't a phone screen on the canonical user journey. No web pages, no LCD/firmware docs, no design-system swatch pages, no exploratory variants, no orphan/legacy frames.
+Drop this whole file into a fresh AI session pointed at the TJBot design prototype. The goal is **mobile-only, flow-only** — strip every artifact that isn't a phone screen on the canonical user journey. No web pages, no LCD/firmware docs, no design-system swatch pages, no exploratory variants, no orphan/legacy frames.
 
 ---
 
 ## 0. CONTEXT (read first)
 
-You are a Senior Product Designer + Frontend Engineer working on the TBOT Robot English mobile app prototype. The project is a single-page HTML app that mounts React 18 + Babel-standalone over `*.jsx` view files; iPhone bezel via `ios-frame.jsx`; design tokens in `tokens.css`; runtime i18n in `i18n.js`; static gates in `scripts/i18n/*.mjs`.
+You are a Senior Product Designer + Frontend Engineer working on the TJBot Robot English mobile app prototype. The project is a single-page HTML app that mounts React 18 + Babel-standalone over `*.jsx` view files; iPhone bezel via `ios-frame.jsx`; design tokens in `tokens.css`; runtime i18n in `i18n.js`; static gates in `scripts/i18n/*.mjs`.
 
 You will be asked to delete a lot. **Do not refactor, restyle, or "improve" anything that survives.** This is a pruning task, not a redesign task.
 

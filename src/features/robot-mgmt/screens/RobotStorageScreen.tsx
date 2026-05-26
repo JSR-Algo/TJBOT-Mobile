@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotStorageScreen'>;
 
@@ -25,7 +26,7 @@ const LEGEND = [
 
 export default function RobotStorageScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Courses on Robot" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Courses on Robot" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.gaugeCard}>
           <Box flexDirection="row" alignItems="flex-end" justifyContent="space-between" style={{ marginBottom: 10 }}>
@@ -74,7 +75,7 @@ export default function RobotStorageScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.rowCard}>
           <DeviceRow icon="🔄" title="Sync now" body="Check for new lessons in your courses" />
-          <DeviceRow icon="📚" title="Browse Course Library" body="Add or remove courses" onClick={() => navigation.navigate('CourseLibraryScreen')} />
+          <DeviceRow icon="📚" title="Browse Course Library" body="Add or remove courses" onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)} />
         </Box>
       </Box>
 
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   storageLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
   storageMeta: { fontSize: 13, color: RM.ink2 },
   gaugeTrack: { height: 10, borderRadius: 6, backgroundColor: '#EEF1F5', overflow: 'hidden', flexDirection: 'row' },
-  gaugeSegment: { height: '100%' as any },
+  gaugeSegment: { height: '100%' },
   legendDot: { width: 8, height: 8, borderRadius: 2 },
   legendText: { fontSize: 11, color: RM.ink2 },
   sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },

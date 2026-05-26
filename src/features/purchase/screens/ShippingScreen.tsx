@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -11,6 +11,8 @@ import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import RobotHero from '../components/RobotHero';
 import PRChip from '../components/PRChip';
+import { getShippingStatus, type ShippingStatus } from '@/services/api/purchase.api';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShippingScreen'>;
 
@@ -22,15 +24,68 @@ const STEPS = [
   { t: 'Delivered',         s: '',                       done: false, active: false },
 ];
 
-export default function ShippingScreen({ navigation }: Props) {
+export default function ShippingScreen({ navigation, route }: Props) {
+  const orderId = route.params?.orderId;
+  const [shipping, setShipping] = React.useState<ShippingStatus | null>(null);
+  const [status, setStatus] = React.useState<'loading' | 'error' | 'ready'>('loading');
+
+  const loadShipping = React.useCallback(async (): Promise<void> => {
+    if (!orderId) {
+      return;
+    }
+    setStatus('loading');
+    try {
+      setShipping(await getShippingStatus(orderId));
+      setStatus('ready');
+    } catch {
+      setStatus('error');
+    }
+  }, [orderId]);
+
+  React.useEffect(() => {
+    void loadShipping();
+  }, [loadShipping]);
+
+  if (!orderId) {
+    return (
+      <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate(ROUTES.OrderConfirmScreen)}>
+        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
+          <Text fontWeight="700" style={styles.stepTitle}>Tracking link is missing</Text>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.OrderConfirmScreen)}>Back to order</DeviceBigBtn>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
+  if (status === 'loading') {
+    return (
+      <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate(ROUTES.OrderConfirmScreen, { orderId })}>
+        <Box paddingHorizontal={24} paddingTop={40}>
+          <Text style={styles.stepSub}>Loading shipping...</Text>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate(ROUTES.OrderConfirmScreen, { orderId })}>
+        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
+          <Text fontWeight="700" style={styles.stepTitle}>Shipping needs a retry</Text>
+          <DeviceBigBtn onClick={loadShipping}>Retry shipping status</DeviceBigBtn>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
   return (
-    <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate('OrderConfirmScreen')}>
+    <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate(ROUTES.OrderConfirmScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.trackTile}>
           <RobotHero size={84} accent="#FF6F61" halo={false} />
           <Box flex={1}>
-            <PRChip color="#8A6A12" bg="#FFF4D9">Arriving Wed, Apr 24</PRChip>
-            <Text fontWeight="600" style={styles.orderNum}>Order #TB-48217</Text>
+            <PRChip color="#8A6A12" bg="#FFF4D9">Arriving {shipping?.estimatedDelivery ?? 'soon'}</PRChip>
+            <Text fontWeight="600" style={styles.orderNum}>Order #{orderId}</Text>
             <Text style={styles.address}>247 Linden St · Apt 3B</Text>
           </Box>
         </Box>
@@ -64,14 +119,16 @@ export default function ShippingScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={16}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📍" title="Track with carrier" body="USPS · 9405 5113 1234 5678 9012 34" />
+          <DeviceRow icon="📍" title="Track with carrier" body={`Carrier ${shipping?.trackingNumber ?? 'pending'}`} />
           <DeviceRow icon="✉️" title="Change delivery address" body="Until Tuesday at 6 PM" />
         </Box>
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('ArrivedScreen')}>Mark as arrived (demo)</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Back to home</DeviceBigBtn>
+        {shipping?.status === 'delivered' ? (
+          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.ArrivedScreen, { orderId })}>Robot has arrived</DeviceBigBtn>
+        ) : null}
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Back to home</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

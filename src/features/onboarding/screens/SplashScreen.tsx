@@ -1,19 +1,21 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { legacyNavigate } from '../legacyNavigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SplashScreen'>;
 
 export default function SplashScreen({ navigation }: Props) {
   React.useEffect(() => {
-    const t = setTimeout(() => navigation.navigate('WelcomeScreen'), 1700);
+    const t = setTimeout(() => legacyNavigate(navigation, ROUTES.WelcomeScreen), 1700);
     return () => clearTimeout(t);
-  }, []);
+  }, [navigation]);
 
   return (
     <ScreenShell bg="#F8F6F1">

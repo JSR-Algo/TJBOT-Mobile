@@ -28,7 +28,7 @@ sequenceDiagram
     participant SQS
     participant PostgreSQL
 
-    ParentApp->>Gateway: PATCH /v1/identity/children/{child_id} {status: "archived" | "scheduled_for_deletion"} + Bearer JWT
+    ParentApp->>Gateway: PATCH /v1/identity/children/{child_id} {status: "archived" | "scheduled_for_deletion"} and Bearer JWT
     Gateway->>Gateway: validate parent JWT — extract user_id, household_id, role claim
     alt parent_jwt_stale
         Gateway-->>ParentApp: 401 parent_jwt_stale
@@ -69,7 +69,7 @@ sequenceDiagram
             else primary_parent confirmed
                 IdentityService->>PostgreSQL: UPDATE children SET status='scheduled_for_deletion', updated_at=now() WHERE id={child_id}
                 PostgreSQL-->>IdentityService: updated
-                Note over IdentityService,SQS: Cascade soft-delete per ADR-0011 D6 — scoped to child_id only; other children unaffected
+                Note over IdentityService,SQS: Cascade soft-delete per ADR-0011 D6 — scoped to child_id only, other children unaffected
                 IdentityService->>PostgreSQL: UPDATE lesson_history SET deleted_at=now() WHERE child_id={child_id}
                 PostgreSQL-->>IdentityService: ok
                 IdentityService->>PostgreSQL: UPDATE progress SET deleted_at=now() WHERE child_id={child_id}

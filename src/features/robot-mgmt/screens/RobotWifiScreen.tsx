@@ -2,12 +2,13 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotWifiScreen'>;
 
@@ -16,7 +17,7 @@ const OTHERS = [['Casa-Guest', '—'], ['Linden 3B', '—'], ['Verizon-7K2', '�
 export default function RobotWifiScreen({ navigation }: Props) {
   const [showOthers, setShowOthers] = React.useState(false);
   return (
-    <DeviceShell title="Wi-Fi" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Wi-Fi" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard} flexDirection="row" gap={14} alignItems="center">
           <Box style={styles.wifiIcon} alignItems="center" justifyContent="center">

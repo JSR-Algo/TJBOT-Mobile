@@ -106,7 +106,7 @@ describe('P0-20 watchdog wiring (plan v2 §7.6)', () => {
 
   it('uses a `resolved` flag to prevent both timer and VAD branches firing twice', () => {
     expect(watchdog).toMatch(/let\s+resolved\s*=\s*false/);
-    // Both branches early-return on resolved.
+    // both branches early-return on resolved.
     const resolvedChecks = (watchdog.match(/if\s*\(resolved\)\s*return/g) ?? []).length;
     expect(resolvedChecks).toBeGreaterThanOrEqual(2);
   });

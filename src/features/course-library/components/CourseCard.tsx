@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import LCDFace from '@/design-system/components/LCDFace';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -15,6 +15,7 @@ type Course = {
   lessons: number;
   teaches: string[];
 };
+type CourseState = 'installed' | 'not_installed' | 'locked' | 'ready' | 'completed' | 'needs_sync';
 
 type Props = {
   course: Course;
@@ -24,8 +25,10 @@ type Props = {
 };
 
 export default function CourseCard({ course, onClick, accent, showLCD = true }: Props) {
-  return (
-    <TouchableOpacity onPress={onClick} style={[styles.card, { opacity: course.state === 'locked' ? 0.85 : 1 }]} activeOpacity={0.8}>
+  const chipState = isCourseState(course.state) ? course.state : 'not_installed';
+  const accessibilityLabel = `${course.title} ${course.state} course`;
+  const content = (
+    <>
       {showLCD && (
         <Box style={styles.lcdWrap}>
           <LCDFace emotion={course.lcd} size={72} accent={accent} />
@@ -33,7 +36,7 @@ export default function CourseCard({ course, onClick, accent, showLCD = true }: 
       )}
       <Box flex={1}>
         <Box flexDirection="row" alignItems="center" gap={8} style={styles.chipRow}>
-          <CLChip state={course.state as any} />
+          <CLChip state={chipState} />
           <Text style={[styles.ages, { color: CL.ink3 }]}>Ages {course.ages}</Text>
         </Box>
         <Text fontWeight="600" style={styles.title}>{course.title}</Text>
@@ -49,14 +52,42 @@ export default function CourseCard({ course, onClick, accent, showLCD = true }: 
           )}
         </Box>
       </Box>
+    </>
+  );
+
+  if (!onClick) {
+    return (
+      <View
+        style={[styles.card, { opacity: course.state === 'locked' ? 0.85 : 1 }]}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: true }}
+      >
+        {content}
+      </View>
+    );
+  }
+  return (
+    <TouchableOpacity
+      onPress={onClick}
+      style={[styles.card, { opacity: course.state === 'locked' ? 0.85 : 1 }]}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${accessibilityLabel}`}
+    >
+      {content}
     </TouchableOpacity>
   );
+}
+
+function isCourseState(state: string): state is CourseState {
+  return ['installed', 'not_installed', 'locked', 'ready', 'completed', 'needs_sync'].includes(state);
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14,
     padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start',
+    minHeight: 44,
   },
   lcdWrap: { backgroundColor: '#0E1116', borderRadius: 10, padding: 6 },
   chipRow: { marginBottom: 4, flexWrap: 'wrap' },

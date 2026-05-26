@@ -63,13 +63,13 @@ describe('getApiBaseUrl resolution order', () => {
   }
 
   it('explicit non-localhost ENV.TBOT_API_URL wins (with /v1 appended)', () => {
-    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.tbot.app' });
-    expect(get()).toBe('https://staging.tbot.app/v1');
+    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.TJBot.app' });
+    expect(get()).toBe('https://staging.TJBot.app/v1');
   });
 
   it('preserves /v1 when explicit URL already has it', () => {
-    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.tbot.app/v1' });
-    expect(get()).toBe('https://staging.tbot.app/v1');
+    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.TJBot.app/v1' });
+    expect(get()).toBe('https://staging.TJBot.app/v1');
   });
 
   it('treats literal http://localhost:3000 as "user forgot" and runs the auto-derive path', () => {

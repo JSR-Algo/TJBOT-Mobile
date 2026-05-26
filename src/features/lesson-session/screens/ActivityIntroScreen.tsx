@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivityIntroScreen'>;
 
@@ -34,7 +35,7 @@ function ProgressDots({ total, current }: { total: number; current: number }) {
 export default function ActivityIntroScreen({ navigation }: Props) {
   return (
     <ScreenShell>
-      <LessonHeader progress={0.15} onExit={() => navigation.navigate('ExitConfirmScreen')} />
+      <LessonHeader progress={0.15} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={styles.dotsRow} alignItems="center">
         <ProgressDots total={TOTAL} current={0} />
       </Box>
@@ -51,7 +52,7 @@ export default function ActivityIntroScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate('RobotSpeakingScreen')} color="#FF6F61">Start</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)} color="#FF6F61">Start</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

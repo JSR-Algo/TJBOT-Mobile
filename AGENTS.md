@@ -1,6 +1,6 @@
-# tbot-mobile — Agents.md (Codex / Gemini CLI Shim)
+# TJBot-mobile — Agents.md (Codex / Gemini CLI Shim)
 
-You are in `tbot-mobile` — the TBOT React Native mobile application (sys-16).
+You are in `TJBot-mobile` — the TJBot React Native mobile application (sys-16).
 
 This file mirrors `CLAUDE.md` for agent runtimes that read `AGENTS.md` instead
 of `CLAUDE.md` (Codex, Gemini CLI, and similar tools).
@@ -27,15 +27,15 @@ Produce a READ-BEFORE-CODE SUMMARY block before the first file write.
 
 **This repo owns sys-16 (mobile UX shell) only.**
 
-Do not edit: tbot-backend, tbot-firmware, tbot-ai-services, tbot-infra,
-root `/Users/manhhodinh/Documents/TBOT/docs/` (separate git repo).
+Do not edit: tbot-backend, TJBot-firmware, TJBot-ai-services, TJBot-infra,
+root `/Users/manhhodinh/Documents/TJBot/docs/` (separate git repo).
 
 Cross-repo escalation triggers:
-- BLE wire protocol (sys-18) → escalate to tbot-firmware + tbot-backend
+- BLE wire protocol (sys-18) → escalate to TJBot-firmware + tbot-backend
 - Auth / COPPA (sys-01) → escalate to tbot-backend
-- Safety filters (sys-05) → escalate to tbot-ai-services
-- Infrastructure (sys-13) → escalate to tbot-infra
-- Realtime session (sys-04) → escalate to tbot-backend + tbot-ai-services
+- Safety filters (sys-05) → escalate to TJBot-ai-services
+- Infrastructure (sys-13) → escalate to TJBot-infra
+- Realtime session (sys-04) → escalate to tbot-backend + TJBot-ai-services
 
 ---
 
@@ -43,18 +43,18 @@ Cross-repo escalation triggers:
 
 | What | Path |
 |---|---|
-| Docs workspace | `/Users/manhhodinh/Documents/TBOT/migrate-ui-ux-to-mobile-app-docs/` |
+| Docs workspace | `/Users/manhhodinh/Documents/TJBot/migrate-ui-ux-to-mobile-app-docs/` |
 | HTTP client | `src/api/client.ts` (pre-PR4), `src/services/http/client.ts` (post-PR4) |
 | Route constants | `src/app/navigation/routes.ts` |
 | Custom ESLint rule | `eslint-rules/no-voice-timing-in-shared.js` |
 | Path helper for scripts | `scripts/_lib/paths.mjs` |
-| Tasks canonical source | `/Users/manhhodinh/Documents/TBOT/packages/shared-data/src/content/tasks.json` |
+| Tasks canonical source | `/Users/manhhodinh/Documents/TJBot/packages/shared-data/src/content/tasks.json` |
 
 ---
 
 ## Validation commands
 
-Run from `/Users/manhhodinh/Documents/TBOT/tbot-mobile/`:
+Run from `/Users/manhhodinh/Documents/TJBot/TJBot-mobile/`:
 
 ```bash
 # Always required

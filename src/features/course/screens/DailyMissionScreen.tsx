@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DailyMissionScreen'>;
 
@@ -22,7 +23,7 @@ export default function DailyMissionScreen({ navigation }: Props) {
   return (
     <PageScroll>
       <PageHeader
-        onBack={() => navigation.navigate('HomeHubScreen')}
+        onBack={() => navigation.navigate(ROUTES.HomeHubScreen)}
         subtitle="Today's mission"
         title="Make Robot smile"
       />
@@ -61,7 +62,7 @@ export default function DailyMissionScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingBottom={30}>
-        <PrimaryCTA onPress={() => navigation.navigate('LessonReadyScreen')} color="#FF6F61">Continue Mission</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FF6F61">Continue Mission</PrimaryCTA>
       </Box>
     </PageScroll>
   );

@@ -55,7 +55,7 @@ sequenceDiagram
     end
 
     Note over AccountDeletionService,SQS: --- Downstream async pipeline (after 30-day grace period) ---
-    Note over AccountDeletionService,SQS: SQS message held until grace_period_ends_at; AccountDeletionService dequeues + executes full pipeline — see 14-retention/account-deletion-pipeline.sequence.mmd
+    Note over AccountDeletionService,SQS: SQS message held until grace_period_ends_at, AccountDeletionService dequeues and executes full pipeline — see 14-retention/account-deletion-pipeline.sequence.mmd
 
     Note over ParentApp,IdentityService: --- Status poll ---
 

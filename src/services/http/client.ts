@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken } from './tokens';
-import { normalizeError } from '../../utils/errors';
+import { normalizeError, type AppError } from '../../utils/errors';
 import { Config } from '../../config';
 import {
   isRefreshing,
@@ -28,11 +28,12 @@ const client: AxiosInstance = axios.create({
   // ECONNABORTED and saw "Network Error" even though the backend was alive.
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
+  validateStatus: (status) => status >= 200 && status < 300 || status === 307,
 });
 
 // Global hook that AuthContext can register to force a logout when token
 // refresh fails. Without this, `clearTokens()` wipes SecureStore but the
-// in-memory `isAuthenticated` flag stays true and `RootNavigator` keeps the
+// in-memory `isAuthenticated` flag stays true and the root stack keeps the
 // user stranded on the Main stack. See the Round 4 stale-token fix.
 let onAuthInvalidated: (() => void) | null = null;
 
@@ -45,15 +46,31 @@ client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const method = config.method?.toUpperCase();
+  if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+    const headers = config.headers as Record<string, string | undefined>;
+    headers['X-Request-Id'] = headers['X-Request-Id'] ?? headers['Idempotency-Key'] ?? `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
   return config;
 });
+
+function isFreshAuthEndpoint(url: string | undefined): boolean {
+  return typeof url === 'string' && (url.includes('/parent/auth') || url.includes('/auth/login') || url.includes('/auth/register'));
+}
+
+function withRetryMetadata(error: AppError, status: number | undefined): AppError {
+  if (status === 429 || status === 503 || status === 504) {
+    return { ...error, retryable: true };
+  }
+  return error;
+}
 
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isFreshAuthEndpoint(originalRequest.url)) {
       if (isRefreshing()) {
         return new Promise((resolve, reject) => {
           enqueue({ resolve, reject });
@@ -93,7 +110,7 @@ client.interceptors.response.use(
       }
     }
 
-    const normalized = normalizeError(error);
+    const normalized = withRetryMetadata(normalizeError(error), error.response?.status);
     return Promise.reject(normalized);
   },
 );

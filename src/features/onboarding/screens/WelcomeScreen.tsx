@@ -2,12 +2,14 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { legacyNavigate } from '../legacyNavigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WelcomeScreen'>;
 
@@ -26,8 +28,8 @@ export default function WelcomeScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate('IntroListenScreen')} color="#FF6F61">Get started</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate('LoginScreen' as any)}>
+        <PrimaryCTA onPress={() => legacyNavigate(navigation, ROUTES.IntroListenScreen)} color="#FF6F61">Get started</PrimaryCTA>
+        <TouchableOpacity onPress={() => legacyNavigate(navigation, ROUTES.LoginScreen)}>
           <Text fontWeight="700" style={styles.loginText}>I already have an account</Text>
         </TouchableOpacity>
       </Box>

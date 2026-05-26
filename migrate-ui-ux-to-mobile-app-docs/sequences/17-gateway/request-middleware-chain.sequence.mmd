@@ -58,7 +58,7 @@ sequenceDiagram
                     else authenticated
                         Gateway->>Redis: step 7 — rate-limiter — sliding-window Lua atomic check (see rate-limit-violation-event flow)
                         alt rate_limited
-                            Gateway-->>ParentApp: 429 + Retry-After
+                            Gateway-->>ParentApp: 429 and Retry-After
                         else under limit
                             Gateway->>Gateway: step 8 — request-logger start — emit access-log start line
                             Gateway->>BackendService: dispatch to route handler
@@ -70,7 +70,7 @@ sequenceDiagram
                             else success
                                 BackendService-->>Gateway: handler response
                                 Gateway->>Gateway: step 9 — request-logger complete — emit access-log with status
-                                Gateway-->>ParentApp: 2xx response + rate-limit headers
+                                Gateway-->>ParentApp: 2xx response and rate-limit headers
                             end
                         end
                     end

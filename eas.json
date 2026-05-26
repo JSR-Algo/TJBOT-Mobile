@@ -18,7 +18,7 @@
       "distribution": "store",
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.tbot.io/v1",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.TJBot.io/v1",
         "EXPO_PUBLIC_DEMO_SCREEN": "false"
       }
     },

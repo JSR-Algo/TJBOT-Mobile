@@ -34,7 +34,7 @@ sequenceDiagram
     participant ConfigService
 
     ParentApp->>Gateway: PUT /v1/controls/:deviceId {settings, expected_version}
-    Gateway->>Gateway: JWT validate + household membership + rate-limit 10/hr/device
+    Gateway->>Gateway: JWT validate and household membership and rate-limit 10/hr/device
     Gateway->>ControlsService: forward request
 
     alt unauthorized

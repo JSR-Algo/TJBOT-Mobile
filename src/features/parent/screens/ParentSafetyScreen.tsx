@@ -1,12 +1,14 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import ParentScroll, { PA } from '../components/ParentScroll';
 import PRowGroup from '../components/PRowGroup';
 import PRow from '../components/PRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
+import { useParentGateGuard } from '../hooks/useParentGateGuard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSafetyScreen'>;
 
@@ -27,8 +29,9 @@ function Section({ title, body, items }: { title: string; body?: string; items?:
 }
 
 export default function ParentSafetyScreen({ navigation }: Props) {
+  useParentGateGuard(navigation, ROUTES.ParentSafetyScreen);
   return (
-    <ParentScroll title="Safety & Privacy" onBack={() => navigation.navigate('ParentSummaryScreen')}>
+    <ParentScroll title="Safety & Privacy" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
       <Section
         title="Microphone"
         body="The microphone turns on only during a lesson, while your child is speaking with the robot. It turns off automatically when the lesson ends or the app goes to the background."

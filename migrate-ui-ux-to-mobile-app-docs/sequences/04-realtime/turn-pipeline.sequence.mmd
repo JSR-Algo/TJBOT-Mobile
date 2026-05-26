@@ -54,7 +54,7 @@ sequenceDiagram
         Orchestrator-->>Device: LLM_TOKEN (0x30) stream
         Orchestrator->>GoogleLiveFlash: synthesize TTS Neural2
         GoogleLiveFlash-->>Orchestrator: TTS audio stream
-        Orchestrator-->>Device: TTS_AUDIO (0x40) + EXPRESSION_SYNC (0x50)
+        Orchestrator-->>Device: TTS_AUDIO (0x40) and EXPRESSION_SYNC (0x50)
         Orchestrator-->>Device: TTS_DONE (0x41)
     end
     Orchestrator-)Orchestrator: emit tbot-session-telemetry turn.completed

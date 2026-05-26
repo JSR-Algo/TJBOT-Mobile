@@ -30,10 +30,10 @@ sequenceDiagram
     Note over Redis: 1. check circuit breaker rl_blocked:{cat}:{id}<br/>2. ZREMRANGEBYSCORE outside window<br/>3. ZCARD count vs max<br/>4. branch — under / burst / over
     alt circuit_breaker_tripped
         Redis-->>Gateway: BLOCKED — fast-path reject (no ZADD)
-        Gateway-->>ParentApp: 429 TOO_MANY_REQUESTS + Retry-After
+        Gateway-->>ParentApp: 429 TOO_MANY_REQUESTS and Retry-After
     else over limit
         Redis-->>Gateway: REJECT — increment rl_violations:{cat}:{id}, trip breaker if threshold
-        Gateway-->>ParentApp: 429 TOO_MANY_REQUESTS + Retry-After
+        Gateway-->>ParentApp: 429 TOO_MANY_REQUESTS and Retry-After
         Note over Gateway: emission sampled — first 10 violations per identifier per hour, then 10% sampling
         Gateway-)SQS: SendMessage tbot-security-events {eventType: "rate_limit_violation", requestId, category, identifier, currentCount, maxAllowed, windowMs, violationCount, circuitBreakerTripped}
         alt sqs_emit_failed
@@ -44,8 +44,8 @@ sequenceDiagram
             SQS-->>SecurityService: dequeue (sys-13 consumer)
         end
     else burst zone
-        Redis-->>Gateway: ALLOW + WARNING — ZADD + emit burst warning
-        Gateway-->>ParentApp: 2xx + warning header
+        Redis-->>Gateway: ALLOW and WARNING — ZADD and emit burst warning
+        Gateway-->>ParentApp: 2xx and warning header
     else under limit
         Redis-->>Gateway: ALLOW — ZADD entry
         Gateway-->>ParentApp: 2xx (continue chain)

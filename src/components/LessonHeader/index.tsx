@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import type { DimensionValue } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CircleBtn from '@/design-system/components/CircleBtn';
@@ -16,7 +17,7 @@ export default function LessonHeader({ progress = 0.4, onExit }: Props) {
         <CloseIcon />
       </CircleBtn>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${progress * 100}%` as any }]} />
+        <View style={[styles.fill, { width: `${progress * 100}%` as DimensionValue }]} />
       </View>
       <Box style={styles.badge}>
         <Text fontWeight="700" style={{ fontSize: 14, color: '#5C4F77' }}>

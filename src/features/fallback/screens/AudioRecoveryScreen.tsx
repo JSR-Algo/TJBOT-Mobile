@@ -1,11 +1,12 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import Screen from '@/components/Screen';
 import TopBar from '@/components/TopBar';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AudioRecoveryScreen'>;
 
@@ -17,7 +18,7 @@ const STEPS = [
 
 export default function AudioRecoveryScreen({ navigation }: Props) {
   return (
-    <Screen header={<TopBar title="Microphone access" onBack={() => navigation.navigate('MicMissingScreen')} />} scroll>
+    <Screen header={<TopBar title="Microphone access" onBack={() => navigation.navigate(ROUTES.MicMissingScreen)} />} scroll>
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={8}>
         <Text fontWeight="600" style={styles.heading}>Microphone access is needed for speaking practice.</Text>
         <Text style={styles.sub}>
@@ -48,11 +49,27 @@ export default function AudioRecoveryScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={12} gap={10} paddingBottom={36}>
-        <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          activeOpacity={0.8}
+          disabled
+          accessibilityRole="button"
+          accessibilityLabel="Open device Settings, Unavailable"
+          accessibilityState={{ disabled: true }}
+        >
           <Text fontWeight="600" style={{ fontSize: 15, color: '#fff' }}>Open device Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen')} style={styles.secondaryBtn} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} style={styles.secondaryBtn} activeOpacity={0.7}>
           <Text fontWeight="500" style={{ fontSize: 15, color: '#2B2140' }}>Back to play area</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
+          style={styles.secondaryBtn}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Need help?"
+        >
+          <Text fontWeight="500" style={{ fontSize: 15, color: '#2B2140' }}>Need help?</Text>
         </TouchableOpacity>
       </Box>
 

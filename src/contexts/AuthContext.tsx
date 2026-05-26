@@ -92,7 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         try {
           user = await accountApi.getAccountSummary();
         } catch (err: unknown) {
-          const status = (err as { status?: number })?.status;
+          const status = (err as { status?: number; response?: { status?: number } }).status
+            ?? (err as { response?: { status?: number } }).response?.status;
           authRejected = status === 401;
           user = null;
         }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -25,7 +25,7 @@ const TRANSITIONS = [
   { t: "didn't_hear / try_again", b: 'Branch from listen if no audio after ~3 s — never punitive.' },
 ] as const;
 
-export default function LCDLessonTurnScreen({ navigation }: Props) {
+export default function LCDLessonTurnScreen({ navigation: _navigation }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 40 }}>
       <Box style={styles.header}>

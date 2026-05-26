@@ -4,7 +4,7 @@
 // with random Vietnamese diacritic characters. Render the app under this locale
 // to surface truncation, overflow, and clipped touch targets.
 //
-// Activate at runtime: localStorage.tbot.lang = 'vi-stretched'.
+// Activate at runtime: localStorage.TJBot.lang = 'vi-stretched'.
 
 import fs from 'node:fs';
 import path from 'node:path';

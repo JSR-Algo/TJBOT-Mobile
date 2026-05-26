@@ -1,14 +1,11 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import Svg, {
   Circle, Ellipse, G, Line, Path, Rect,
-  Pattern, Defs,
 } from 'react-native-svg';
 
 // SMIL animation tags (Animate, AnimateTransform) were removed from
 // react-native-svg ^15. The static circles below replace the previously
-// animated rings. TODO(POST-MIGRATION-DESIGN-SYSTEM-ANIM): port these
-// animations to react-native-reanimated for visual parity.
+// animated rings until reanimated parity work is scheduled.
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { tokens } from '@/design-system/tokens';

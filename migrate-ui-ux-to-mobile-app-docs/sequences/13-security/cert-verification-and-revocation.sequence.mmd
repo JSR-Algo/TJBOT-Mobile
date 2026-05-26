@@ -30,7 +30,7 @@ sequenceDiagram
     participant AdminConsole
     participant DeviceService
 
-    Device->>RealtimeService: TLS ClientHello + certificate (mTLS)
+    Device->>RealtimeService: TLS ClientHello and certificate (mTLS)
     RealtimeService->>CertificateVerifier: verify(cert)
     CertificateVerifier->>Redis: SISMEMBER revoked_certs cert_fingerprint
     alt cert_revoked_redis_hit
@@ -71,6 +71,6 @@ sequenceDiagram
     DeviceService->>PostgreSQL: INSERT security_events {event_type='cert_revoked', severity='warning'}
     DeviceService-->>AdminConsole: 204
 
-    Note over Device: next connection attempt receives TLS reject → enters local-only mode until factory-reset + re-provision
+    Note over Device: next connection attempt receives TLS reject → enters local-only mode until factory-reset and re-provision
 
-    Note over Device,PostgreSQL: verification p99 <50ms · Redis fast-path <5ms · revocation propagation via Redis pub/sub + revoked_certs set
+    Note over Device,PostgreSQL: verification p99 <50ms · Redis fast-path <5ms · revocation propagation via Redis pub/sub and revoked_certs set

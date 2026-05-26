@@ -28,9 +28,9 @@ sequenceDiagram
     participant IdentityService
     participant PostgreSQL
 
-    Note over ParentApp,IdentityService: Phase 1 — Per-child COPPA consent (ADR-0011 D2; required for every child)
+    Note over ParentApp,IdentityService: Phase 1 — Per-child COPPA consent (ADR-0011 D2, required for every child)
 
-    ParentApp->>Gateway: POST /v1/identity/coppa-consent {child_display_name, birth_year, policy_version} + Bearer JWT + X-Request-Id
+    ParentApp->>Gateway: POST /v1/identity/coppa-consent {child_display_name, birth_year, policy_version} and Bearer JWT and X-Request-Id
     Gateway->>Gateway: validate parent JWT — check freshness (ADR-0005 D6)
     alt parent_jwt_stale
         Gateway-->>ParentApp: 401 parent_jwt_stale
@@ -57,7 +57,7 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: Phase 2 — Create child row (ADR-0011 D1+D5)
 
-    ParentApp->>Gateway: POST /v1/identity/children {coppa_consent_id, nickname, age_band, language_target, buddy_id} + Bearer JWT + X-Request-Id
+    ParentApp->>Gateway: POST /v1/identity/children {coppa_consent_id, nickname, age_band, language_target, buddy_id} and Bearer JWT and X-Request-Id
     Gateway->>Gateway: validate parent JWT freshness
     alt parent_jwt_stale
         Gateway-->>ParentApp: 401 parent_jwt_stale

@@ -51,7 +51,7 @@ sequenceDiagram
         Note over NotificationService,SES: parent_unreachable_dlq — terminal failure after 5 retries.
     and investigate lane
         SafetyService->>SQS: SendMessage tbot-safety-events (severity, transcript_ref)
-        SQS->>SafetyInvestigationService: dequeue + assign reviewer
+        SQS->>SafetyInvestigationService: dequeue and assign reviewer
         alt investigation_assignment_skipped
             SafetyInvestigationService-->>SQS: no reviewer available — re-queue with delay
         else assigned

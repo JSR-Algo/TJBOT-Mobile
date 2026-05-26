@@ -1,12 +1,14 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CelebrationScreen'>;
 
@@ -30,7 +32,7 @@ export default function CelebrationScreen({ navigation }: Props) {
                 borderRadius: i % 2 ? 4 : 50,
                 transform: [{ rotate: `${i * 23}deg` }],
                 opacity: 0.85,
-              } as any,
+              } satisfies ViewStyle,
             ]}
           />
         ))}
@@ -57,9 +59,9 @@ export default function CelebrationScreen({ navigation }: Props) {
       </Box>
 
       <Box position="relative" paddingHorizontal={24} paddingTop={24} paddingBottom={30} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate('HomeHubScreen')} color="#FF6F61">Back to Robot Home</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#FF6F61">Back to Robot Home</PrimaryCTA>
         <TouchableOpacity
-          onPress={() => navigation.navigate('ReviewNeededScreen')}
+          onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
           style={styles.reviewBtn}
           activeOpacity={0.8}
         >

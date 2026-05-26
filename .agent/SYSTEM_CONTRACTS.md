@@ -1,6 +1,6 @@
-# tbot-mobile — System Contracts
+# TJBot-mobile — System Contracts
 
-All contracts consumed or produced by the tbot-mobile app. Violating any
+All contracts consumed or produced by the TJBot-mobile app. Violating any
 contract without cross-repo approval is a HARD STOP.
 
 ---
@@ -9,10 +9,10 @@ contract without cross-repo approval is a HARD STOP.
 
 ### Source of truth
 
-`/Users/manhhodinh/Documents/TBOT/migrate-ui-ux-to-mobile-app-docs/api/openapi.json`
-(symlink → `/Users/manhhodinh/Documents/TBOT/docs/site/api/openapi.json`)
+`/Users/manhhodinh/Documents/TJBot/migrate-ui-ux-to-mobile-app-docs/api/openapi.json`
+(symlink → `/Users/manhhodinh/Documents/TJBot/docs/site/api/openapi.json`)
 
-tbot-mobile is a consumer. Never modify openapi.json through the symlink.
+TJBot-mobile is a consumer. Never modify openapi.json through the symlink.
 If the app needs a new endpoint, escalate to tbot-backend.
 
 ### Axios client
@@ -53,7 +53,7 @@ Key names are contract: do not rename without auditing all callers.
 
 Located at `src/api/{auth,account,ai,controls,dashboard,devices,households,learning,notifications}.ts`
 
-11 post-PR4 target modules (tbot-design layout):
+11 post-PR4 target modules (TJBot-design layout):
 `src/services/api/{auth,account,ai,content,course,device,household,learning,lesson,parent,purchase}.ts`
 
 ---
@@ -65,7 +65,7 @@ Post-PR4 location: `src/services/ws/observer.ts`
 Protocol: JSON frames over `wss://`. Message shapes defined in:
 `migrate-ui-ux-to-mobile-app-docs/sequences/04-realtime/`
 
-tbot-mobile is a consumer — it reads and emits events as specified in those
+TJBot-mobile is a consumer — it reads and emits events as specified in those
 sequence diagrams. Do not change message shapes. If a new event type is needed,
 escalate to tbot-backend.
 
@@ -81,13 +81,13 @@ Invariants:
 
 Location: `src/services/ble/` (post-PR4)
 
-tbot-mobile consumes the BLE protocol specified in:
+TJBot-mobile consumes the BLE protocol specified in:
 `migrate-ui-ux-to-mobile-app-docs/sequences/18-wire-protocol/`
 
 Library: `react-native-ble-plx@3.5.x`
 
 **HARD STOP**: Any change to BLE message schemas, service UUIDs, or
-characteristic UUIDs requires escalation to tbot-firmware AND tbot-backend.
+characteristic UUIDs requires escalation to TJBot-firmware AND tbot-backend.
 These values are burned into firmware — changing them unilaterally bricks
 paired devices in the field.
 
@@ -112,8 +112,8 @@ Files: `src/features/auth/screens/CoppaScreen.tsx` and
        `src/features/onboarding/screens/CoppaConsentScreen.tsx`
 
 These screens contain legally reviewed copy. Do not modify the consent text
-without explicit user sign-off. When resolving the collision between tbot-mobile
-and tbot-design COPPA screens (PR5), run `git log --follow` on both files to
+without explicit user sign-off. When resolving the collision between TJBot-mobile
+and TJBot-design COPPA screens (PR5), run `git log --follow` on both files to
 identify the most recently legal-reviewed copy and keep that one.
 
 COPPA copy changes are a **cross-repo escalation** — see tbot-backend and
@@ -165,9 +165,9 @@ Breaking an existing event name drops dashboard panels — treat as a breaking c
 Location: `src/services/ai/gemini.ts` (post-PR4)
 Package: `@google/genai@1.49.x`
 
-Gemini client is an internal implementation detail of tbot-mobile.
+Gemini client is an internal implementation detail of TJBot-mobile.
 No cross-repo contract. However:
-- AI safety filters live in tbot-ai-services (sys-05) — tbot-mobile only
+- AI safety filters live in TJBot-ai-services (sys-05) — TJBot-mobile only
   sends prompts through the backend relay; it does NOT invoke Gemini directly
   in production flow. The local `gemini.ts` is for development + offline fallback.
 - Do not add new Gemini invocations that bypass the backend safety relay.
@@ -177,7 +177,7 @@ No cross-repo contract. However:
 ## 7. ESLint custom rule (lint contract)
 
 File: `eslint-rules/no-voice-timing-in-shared.js`
-Rule ID: `tbot-voice/no-voice-timing-in-shared`
+Rule ID: `TJBot-voice/no-voice-timing-in-shared`
 Severity: `error`
 
 This rule bans FSM-affecting timers, RNLAS imports, and `Platform.OS` branches

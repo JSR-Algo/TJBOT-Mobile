@@ -1,21 +1,50 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { LogBox, StyleSheet } from 'react-native';
 import { AuthProvider } from './contexts/AuthContext';
 import { HouseholdProvider } from './contexts/HouseholdContext';
 import { InteractionProvider } from './contexts/InteractionContext';
-import RootNavigator from './app/RootNavigator';
+import { AppNavigator } from './navigation/AppNavigator';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { ToastProvider } from './components/Toast';
 import { RootErrorBoundary } from './services/observability/RootErrorBoundary';
-import { initAnalytics } from './services/observability/analytics';
-import { initSentry } from './services/observability/sentry';
+import { QueryProvider } from './app/providers/QueryProvider';
+import { ParentSessionProvider } from './features/parent/context/ParentSessionContext';
+import * as SecureStore from 'expo-secure-store';
+import { initAnalytics, setAnalyticsUserRole } from './services/observability/analytics';
+import { initSentry, setSentryUserRole } from './services/observability/sentry';
 import { startVoiceTelemetry } from './services/observability/voice-telemetry';
 
-initSentry();
-initAnalytics();
+type ResolvedRole = 'child' | 'teen' | 'adult' | 'unknown';
+
+initSentry({ userRole: 'unknown', enableAutoSessionTracking: false });
+
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+]);
+
+export const __ageGateBootPromise: Promise<ResolvedRole> = (async () => {
+  let role: ResolvedRole = 'unknown';
+  try {
+    const stored = await SecureStore.getItemAsync('age_answer_completed');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as { role?: ResolvedRole };
+        if (parsed.role === 'child' || parsed.role === 'teen' || parsed.role === 'adult') {
+          role = parsed.role;
+        }
+      } catch { /* malformed — keep unknown */ }
+    }
+  } catch { /* keychain failure — keep unknown */ }
+  setSentryUserRole(role);
+  if (role === 'child') {
+    setAnalyticsUserRole('child');
+  } else if (role !== 'unknown') {
+    initAnalytics(role);
+  }
+  return role;
+})();
 
 function AppInner(): React.JSX.Element {
   usePushNotifications();
@@ -30,24 +59,26 @@ function AppInner(): React.JSX.Element {
 
   return (
     <HouseholdProvider>
-      <InteractionProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </InteractionProvider>
+      <ParentSessionProvider>
+        <InteractionProvider>
+          <AppNavigator />
+        </InteractionProvider>
+      </ParentSessionProvider>
     </HouseholdProvider>
   );
 }
 
 export default function App(): React.JSX.Element {
   return (
-    <GestureHandlerRootView style={styles.root}>
+    <GestureHandlerRootView style={styles.root} testID="appRoot">
       <SafeAreaProvider>
         <AuthProvider>
           <ToastProvider>
-            <RootErrorBoundary>
-              <AppInner />
-            </RootErrorBoundary>
+            <QueryProvider>
+              <RootErrorBoundary>
+                <AppInner />
+              </RootErrorBoundary>
+            </QueryProvider>
           </ToastProvider>
         </AuthProvider>
       </SafeAreaProvider>

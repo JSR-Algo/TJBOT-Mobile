@@ -37,7 +37,7 @@ sequenceDiagram
     participant GoogleLiveFlash
 
     Note over Device,GoogleLiveFlash: Composition view — single child voice turn across 5 systems.
-    Device->>RealtimeService: audio.chunk frames (sys-03 realtime-turn + sys-18 wire-protocol)
+    Device->>RealtimeService: audio.chunk frames (sys-03 realtime-turn and sys-18 wire-protocol)
     RealtimeService->>SafetyService: input filter (sys-05 input-filter)
     alt input_filter_block
         SafetyService-->>RealtimeService: blocked, reason

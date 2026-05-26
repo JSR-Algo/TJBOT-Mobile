@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace, { LCD_STATES_LIST } from '@/design-system/components/LCDFace';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LCDLibraryScreen'>;
+type LCDStateInfo = typeof LCD_STATES_LIST[number];
 
 const GROUPS = ['Conversation', 'Feedback', 'System', 'Safety', 'Lifecycle'] as const;
 type Group = typeof GROUPS[number];
@@ -30,7 +31,7 @@ const ANTI_PATTERNS = [
   { t: 'No tiny text on the LCD', b: 'Anything text-shaped must be 24px+ at 1× and a known glyph (z, !, %).' },
 ] as const;
 
-export default function LCDLibraryScreen({ navigation }: Props) {
+export default function LCDLibraryScreen({ navigation: _navigation }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 40 }}>
       <Box style={styles.header}>
@@ -51,7 +52,7 @@ export default function LCDLibraryScreen({ navigation }: Props) {
       </Box>
 
       {GROUPS.map(g => {
-        const items = LCD_STATES_LIST.filter((s: any) => s.group === g);
+        const items = LCD_STATES_LIST.filter((s: LCDStateInfo) => s.group === g);
         if (!items.length) return null;
         const color = GROUP_COLORS[g];
         return (
@@ -63,21 +64,20 @@ export default function LCDLibraryScreen({ navigation }: Props) {
               <Text style={styles.groupCount}>{items.length}</Text>
             </Box>
             <Box gap={10}>
-              {items.map((s: any) => (
+              {items.map((s: LCDStateInfo) => (
                 <Box key={s.id} style={styles.faceCard}>
                   <Box style={styles.lcdBg}>
                     <LCDFace emotion={s.id} size={300} accent="#FF6F61" />
                   </Box>
                   <Box padding={14}>
                     <Box flexDirection="row" alignItems="flex-end" justifyContent="space-between" gap={8} style={{ marginBottom: 4 }}>
-                      <Text fontWeight="600" style={styles.faceLabel}>{s.label}</Text>
+                      <Text fontWeight="600" style={styles.faceLabel}>{s.title}</Text>
                       <Text style={styles.faceId}>{s.id}</Text>
                     </Box>
                     <Box style={styles.groupChip}>
                       <Text fontWeight="700" style={[styles.groupChipText, { color }]}>{g}</Text>
                     </Box>
-                    <Text style={styles.faceAnim}><Text fontWeight="600" style={{ color: DV.ink }}>Animation. </Text>{s.anim}</Text>
-                    <Text style={styles.faceUse}><Text fontWeight="600" style={{ color: DV.ink }}>Use. </Text>{s.use}</Text>
+                    <Text style={styles.faceUse}><Text fontWeight="600" style={{ color: DV.ink }}>Use. </Text>{s.title}</Text>
                   </Box>
                 </Box>
               ))}

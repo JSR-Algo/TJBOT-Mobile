@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import PulseRing from '@/design-system/components/PulseRing';
 import IntroFrame from '../components/IntroFrame';
@@ -14,8 +15,8 @@ export default function IntroListenScreen({ navigation }: Props) {
     <IntroFrame
       navigation={navigation}
       idx={0}
-      prev="WelcomeScreen"
-      next="IntroSpeakScreen"
+      prev={ROUTES.WelcomeScreen}
+      next={ROUTES.IntroSpeakScreen}
       bg="#E8F4FF"
       kicker="How it works · 1"
       title="Robot listens"

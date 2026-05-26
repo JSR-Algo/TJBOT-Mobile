@@ -4,7 +4,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
   withDelay,
   Easing,
@@ -14,6 +13,7 @@ import { tokens } from '@/design-system/tokens';
 interface PulseRingProps {
   size?: number;
   color?: string;
+  reduceMotion?: boolean;
 }
 
 function Ring({ size, color, delay }: { size: number; color: string; delay: number }) {
@@ -63,7 +63,10 @@ function Ring({ size, color, delay }: { size: number; color: string; delay: numb
   );
 }
 
-export default function PulseRing({ size = 240, color = tokens.colors.coral }: PulseRingProps) {
+export default function PulseRing({ size = 240, color = tokens.colors.coral, reduceMotion = false }: PulseRingProps) {
+  if (reduceMotion) {
+    return null;
+  }
   return (
     <>
       {[0, 800, 1600].map((delay, i) => (

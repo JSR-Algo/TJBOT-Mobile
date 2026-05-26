@@ -34,8 +34,8 @@ sequenceDiagram
 
     Note over ParentApp: parent in parent_settings views subscription tile
 
-    ParentApp->>Gateway: GET /v1/billing/subscription + parent JWT Bearer
-    Gateway->>BillingService: forward (JWT validated; read-only — 60s freshness not required)
+    ParentApp->>Gateway: GET /v1/billing/subscription and parent JWT Bearer
+    Gateway->>BillingService: forward (JWT validated, read-only — 60s freshness not required)
     BillingService->>PostgreSQL: SELECT subscriptions WHERE household_id=? (read-through)
     alt subscription_not_found
         PostgreSQL-->>BillingService: no rows
@@ -51,7 +51,7 @@ sequenceDiagram
     Note over ParentApp,PostgreSQL: all mutations require fresh parent JWT (ADR-0005 D6 — < 60s)
 
     alt cancel
-        ParentApp->>Gateway: POST /v1/billing/subscription/cancel {X-Request-Id} + parent JWT Bearer
+        ParentApp->>Gateway: POST /v1/billing/subscription/cancel {X-Request-Id} and parent JWT Bearer
         Gateway->>Gateway: auth-resolver — verify JWT freshness < 60s
         alt parent_jwt_stale
             Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
@@ -83,7 +83,7 @@ sequenceDiagram
             Note over ParentApp,PostgreSQL: subscription continues until current_period_end
         end
     else pause
-        ParentApp->>Gateway: POST /v1/billing/subscription/pause {X-Request-Id} + parent JWT Bearer
+        ParentApp->>Gateway: POST /v1/billing/subscription/pause {X-Request-Id} and parent JWT Bearer
         Gateway->>Gateway: auth-resolver — verify JWT freshness < 60s
         alt parent_jwt_stale
             Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required
@@ -109,7 +109,7 @@ sequenceDiagram
             Gateway-->>ParentApp: 200
         end
     else resume
-        ParentApp->>Gateway: POST /v1/billing/subscription/resume {X-Request-Id} + parent JWT Bearer
+        ParentApp->>Gateway: POST /v1/billing/subscription/resume {X-Request-Id} and parent JWT Bearer
         Gateway->>Gateway: auth-resolver — verify JWT freshness < 60s
         alt parent_jwt_stale
             Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required

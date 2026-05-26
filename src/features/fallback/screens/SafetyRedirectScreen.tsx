@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
 import Robot from '@/design-system/components/Robot';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SafetyRedirectScreen'>;
 
@@ -19,13 +20,26 @@ export default function SafetyRedirectScreen({ navigation }: Props) {
         <SpeechBubble>Let's take a tiny pause.{'\n'}A grown-up can help if you need.</SpeechBubble>
         <Box style={styles.hint}>
           <Text fontWeight="700" style={{ fontSize: 14, color: '#5C4F77', textAlign: 'center', lineHeight: 21 }}>
-            We'll come back to learning when you're ready.
+            Your place is saved. A grown-up can help, or you can take a break.
           </Text>
         </Box>
       </Box>
       <Box style={styles.cta} gap={10}>
-        <PrimaryCTA color="#6B4A9B" onPress={() => navigation.navigate('HomeHubScreen')}>Take a break</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate('ParentGateScreen')} activeOpacity={0.7}>
+        <PrimaryCTA color="#6B4A9B" onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} accessibilityLabel="Back to home">Take a break</PrimaryCTA>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Need help?"
+        >
+          <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Need help?</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Back to home"
+        >
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Get a grown-up</Text>
         </TouchableOpacity>
       </Box>

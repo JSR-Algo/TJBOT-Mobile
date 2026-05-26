@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
@@ -9,20 +9,21 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RetryScreen'>;
 
 export default function RetryScreen({ navigation }: Props) {
   return (
     <ScreenShell>
-      <LessonHeader progress={0.34} onExit={() => navigation.navigate('ExitConfirmScreen')} />
+      <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Robot emotion="curious" size={220} accent="#E8A33C" />
         <SpeechBubble>I heard you trying.{'\n'}One more time?</SpeechBubble>
         <Text fontWeight="700" style={styles.prompt}>Say: <Text fontWeight="700" style={{ color: '#1A1A1F' }}>"cat"</Text></Text>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate('RobotListeningScreen')} color="#FF6F61">I'll try!</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)} color="#FF6F61">I'll try!</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

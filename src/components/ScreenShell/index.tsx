@@ -6,9 +6,10 @@ type Props = {
   children?: React.ReactNode;
   bg?: string;
   onTap?: () => void;
+  testID?: string;
 };
 
-export default function ScreenShell({ children, bg, onTap }: Props) {
+export default function ScreenShell({ children, bg, onTap, testID }: Props) {
   return (
     <Box
       flex={1}
@@ -16,6 +17,7 @@ export default function ScreenShell({ children, bg, onTap }: Props) {
       overflow="hidden"
       style={[styles.root, bg ? { backgroundColor: bg } : undefined]}
       onTouchEnd={onTap}
+      testID={testID}
     >
       {children}
     </Box>

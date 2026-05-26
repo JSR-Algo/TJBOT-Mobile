@@ -11,47 +11,47 @@
 # certainly corrupt cross-phase refs — don't do that.
 #
 # Usage:
-#   cd tbot-mobile && ruby scripts/activate-voice-native.rb
+#   cd TJBot-mobile && ruby scripts/activate-voice-native.rb
 #   cd ios && pod install   # refresh autolinking
 #
 # Guarantees:
 #   - Re-running is a no-op once all files are present.
-#   - Only touches the TbotMobile target (ignores Pods target).
+#   - Only touches the TJBotMobile target (ignores Pods target).
 #   - Sources added land in the target's "Compile Sources" build phase.
 #   - Bridging header is a file reference only (never compiled).
 #   - Build settings set on every configuration (Debug + Release).
 
 require 'xcodeproj'
 
-PROJECT_PATH = File.expand_path('../ios/TbotMobile.xcodeproj', __dir__)
-TARGET_NAME  = 'TbotMobile'
+PROJECT_PATH = File.expand_path('../ios/TJBotMobile.xcodeproj', __dir__)
+TARGET_NAME  = 'TJBotMobile'
 
-# [relative_path_from_ios_TbotMobile, compile?, group_path_from_project_root]
+# [relative_path_from_ios_TJBotMobile, compile?, group_path_from_project_root]
 FILES = [
   # MB-NATIVE-VOICE-001 — VoiceSession (already on disk, just not in target)
-  ['VoiceSession/VoiceSessionModule.swift', true,  'TbotMobile/VoiceSession'],
-  ['VoiceSession/VoiceSessionModule.m',     true,  'TbotMobile/VoiceSession'],
+  ['VoiceSession/VoiceSessionModule.swift', true,  'TJBotMobile/VoiceSession'],
+  ['VoiceSession/VoiceSessionModule.m',     true,  'TJBotMobile/VoiceSession'],
 
   # Shared infra — SharedVoiceEngine actor (Phase 3; file may not exist yet
   # when this script first runs. Guard with File.exist? below.)
-  ['SharedVoiceEngine.swift',               true,  'TbotMobile'],
+  ['SharedVoiceEngine.swift',               true,  'TJBotMobile'],
 
   # MB-NATIVE-VOICE-003 — VoiceMic (Phase 4)
-  ['VoiceMic/VoiceMicModule.swift',         true,  'TbotMobile/VoiceMic'],
-  ['VoiceMic/VoiceMicModule.m',             true,  'TbotMobile/VoiceMic'],
+  ['VoiceMic/VoiceMicModule.swift',         true,  'TJBotMobile/VoiceMic'],
+  ['VoiceMic/VoiceMicModule.m',             true,  'TJBotMobile/VoiceMic'],
 
   # MB-NATIVE-VOICE-004 — PcmStream (Phase 5)
-  ['PcmStream/PcmStreamModule.swift',       true,  'TbotMobile/PcmStream'],
-  ['PcmStream/PcmStreamModule.m',           true,  'TbotMobile/PcmStream'],
+  ['PcmStream/PcmStreamModule.swift',       true,  'TJBotMobile/PcmStream'],
+  ['PcmStream/PcmStreamModule.m',           true,  'TJBotMobile/PcmStream'],
 
   # Bridging header — project root, non-compiled, needed so Swift sees
   # React's ObjC headers.
-  ['TbotMobile-Bridging-Header.h',          false, 'TbotMobile'],
+  ['TJBotMobile-Bridging-Header.h',          false, 'TJBotMobile'],
 ].freeze
 
 # Build settings applied to every configuration on the target.
 BUILD_SETTINGS = {
-  'SWIFT_OBJC_BRIDGING_HEADER' => 'TbotMobile/TbotMobile-Bridging-Header.h',
+  'SWIFT_OBJC_BRIDGING_HEADER' => 'TJBotMobile/TJBotMobile-Bridging-Header.h',
   'SWIFT_VERSION'              => '5.0',
   'CLANG_ENABLE_MODULES'       => 'YES',
 }.freeze
@@ -61,8 +61,8 @@ def log(msg)
 end
 
 def find_or_create_group(project, path)
-  # path is "TbotMobile/VoiceSession" — walk/create subgroups off main_group.
-  # Project convention (see TbotMobile group at pbxproj line 72): virtual
+  # path is "TJBotMobile/VoiceSession" — walk/create subgroups off main_group.
+  # Project convention (see TJBotMobile group at pbxproj line 72): virtual
   # groups with `name` only, NO `path` attribute. File references inside
   # carry the full project-root-relative path. Passing `path` to `new_group`
   # would make it a real-folder group and break path resolution.
@@ -86,8 +86,8 @@ def file_already_referenced?(target, file_abs_path)
     target.project.files.any? { |ref| ref.real_path.to_s == file_abs_path }
 end
 
-def add_file(project, target, rel_path, compile, group_path, ios_tbot_root)
-  abs_path = File.join(ios_tbot_root, rel_path)
+def add_file(project, target, rel_path, compile, group_path, ios_TJBot_root)
+  abs_path = File.join(ios_TJBot_root, rel_path)
   unless File.exist?(abs_path)
     log "  · skip (file not on disk yet): #{rel_path}"
     return :skipped
@@ -137,12 +137,12 @@ def main
   target = project.targets.find { |t| t.name == TARGET_NAME }
   abort "target '#{TARGET_NAME}' not found" unless target
 
-  ios_tbot_root = File.expand_path('../ios/TbotMobile', __dir__)
+  ios_TJBot_root = File.expand_path('../ios/TJBotMobile', __dir__)
 
   log "adding files to target #{target.name}"
   stats = { added: 0, noop: 0, skipped: 0 }
   FILES.each do |rel, compile, group_path|
-    result = add_file(project, target, rel, compile, group_path, ios_tbot_root)
+    result = add_file(project, target, rel, compile, group_path, ios_TJBot_root)
     stats[result] += 1
   end
 

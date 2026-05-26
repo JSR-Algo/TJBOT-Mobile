@@ -25,7 +25,7 @@ const BYTES_PER_SAMPLE = 2;
 
 interface NativePcmStreamModule {
   // Android exposes `init`; iOS exposes `initWithRate` because Swift/ObjC
-  // reserve the `init` selector. Both shapes are accepted — see
+  // reserve the `init` selector. both shapes are accepted — see
   // `callInit` below.
   init?(rate: number): Promise<void>;
   initWithRate?(rate: number): Promise<void>;

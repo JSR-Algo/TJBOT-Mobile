@@ -31,7 +31,7 @@ sequenceDiagram
     alt reboot_storm (E-BOT-801, boot_fail_window >= 3 in 15min)
         SafetySupervisor->>Device: skip normal startup at next boot, display support code
     else thermal_critical (E-THM-601)
-        SafetySupervisor->>Device: stop motion + audio amp boost, monitor temperature
+        SafetySupervisor->>Device: stop motion and audio amp boost, monitor temperature
     else heap_below_floor (E-MEM-701)
         SafetySupervisor->>Device: disable non-essential render, controlled reboot if unrecovered
     else audio_overrun_repeated (E-AUD-102, 5 in 10min)
@@ -42,7 +42,7 @@ sequenceDiagram
 
     SafetySupervisor->>Device: transition state=SAFE_MODE — set safe_mode_until NVS marker
     Device->>Device: display support scene with short error token
-    Device->>Device: allow only heartbeat + diagnostics + config pull (no realtime, no wake)
+    Device->>Device: allow only heartbeat and diagnostics and config pull (no realtime, no wake)
 
     Device->>ConfigService: POST /v1/devices/heartbeat {runtime.state="SAFE_MODE", faults.lastFaultCode}
     ConfigService-->>Device: 204

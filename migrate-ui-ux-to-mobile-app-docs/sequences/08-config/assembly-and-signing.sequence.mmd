@@ -44,7 +44,7 @@ sequenceDiagram
     ConfigAssembler->>PostgreSQL: SELECT config_templates JOIN config_template_cohort_assignments
     PostgreSQL-->>ConfigAssembler: template_blob
     ConfigAssembler->>PostgreSQL: SELECT parent_controls (sys-07), device_config_overrides
-    ConfigAssembler->>ConfigAssembler: merge — template + parent controls + device overrides (overrides highest precedence)
+    ConfigAssembler->>ConfigAssembler: merge — template and parent controls and device overrides (overrides highest precedence)
 
     ConfigAssembler->>SchemaTransformer: resolve_schema_version(device.fw_schema_range, template.schema_version)
     alt schema_transform_missing
@@ -54,7 +54,7 @@ sequenceDiagram
         SchemaTransformer-->>ConfigAssembler: transformed blob
     end
 
-    ConfigAssembler->>ConfigAssembler: validate JSON schema + size ≤8KB
+    ConfigAssembler->>ConfigAssembler: validate JSON schema and size ≤8KB
     alt config_size_exceeds_8kb
         ConfigAssembler-->>TriggerSource: 422 config_size_exceeds_8kb (reduce content_toggles keys < 150)
     else validation_failed

@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SafetyScreen'>;
 
@@ -28,8 +29,12 @@ export default function SafetyScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate('HomeHubScreen' as any)} color="#9B8FB8">Take a break</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen' as any)}>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#9B8FB8">Take a break</PrimaryCTA>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          accessibilityRole="button"
+          accessibilityLabel="Get a grown-up"
+        >
           <Text fontWeight="700" style={styles.grownUpText}>Get a grown-up</Text>
         </TouchableOpacity>
       </Box>

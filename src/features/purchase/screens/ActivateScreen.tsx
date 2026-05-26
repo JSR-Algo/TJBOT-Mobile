@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -10,27 +10,36 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
+import { activateRobot } from '@/services/api/purchase.api';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivateScreen'>;
 
 const CODE_CHARS = ['T', 'B', '4', '7', 'K', '9'];
 
-export default function ActivateScreen({ navigation }: Props) {
-  const [vals, setVals] = React.useState(['', '', '', '', '', '']);
+export default function ActivateScreen({ navigation, route }: Props) {
+  const [code, setCode] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+  const vals = code.padEnd(6, '').slice(0, 6).split('');
   const filled = vals.every(Boolean);
+  const orderId = route.params?.orderId;
 
   const handleKey = (k: string) => {
-    if (k === 'CLR') { setVals(['', '', '', '', '', '']); return; }
-    setVals(prev => {
-      const next = [...prev];
-      const idx = next.findIndex(x => !x);
-      if (idx >= 0) next[idx] = k;
-      return next;
-    });
+    if (k === 'CLR') { setCode(''); return; }
+    setCode(prev => (prev + k).slice(0, 6).toUpperCase());
+  };
+
+  const submit = async (): Promise<void> => {
+    if (!filled || submitting) {
+      return;
+    }
+    setSubmitting(true);
+    await activateRobot(code.toUpperCase());
+    navigation.navigate(ROUTES.FirstCourseScreen, orderId ? { orderId } : undefined);
   };
 
   return (
-    <DeviceShell title="Activate your Robot" onBack={() => navigation.navigate('ArrivedScreen')}>
+    <DeviceShell title="Activate your Robot" onBack={() => navigation.navigate(ROUTES.ArrivedScreen, orderId ? { orderId } : undefined)}>
       <Box paddingHorizontal={24} paddingTop={18} alignItems="center">
         <PRStepTab step={1} total={3} />
       </Box>
@@ -47,6 +56,13 @@ export default function ActivateScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24}>
+        <TextInput
+          accessibilityLabel="Activation code"
+          placeholder="Activation code"
+          value={code}
+          onChangeText={(text) => setCode(text.slice(0, 6).toUpperCase())}
+          style={styles.hiddenInput}
+        />
         <Box flexDirection="row" gap={8} justifyContent="center">
           {vals.map((v, i) => (
             <Box key={i} style={[styles.codeDigit, { borderColor: v ? PR.accent : PR.hair }]}>
@@ -76,8 +92,8 @@ export default function ActivateScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => { if (filled) navigation.navigate('FirstCourseScreen'); }}>
-          {filled ? 'Activate Robot' : 'Enter the code'}
+        <DeviceBigBtn onClick={submit}>
+          {submitting ? 'Activating Robot...' : filled ? 'Activate Robot' : 'Enter the code'}
         </DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -98,4 +114,5 @@ const styles = StyleSheet.create({
   clearBtn: { marginTop: 10, alignItems: 'center', padding: 8 },
   clearText: { fontSize: 13, color: PR.accent },
   helpRow: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
+  hiddenInput: { height: 0, opacity: 0 },
 });

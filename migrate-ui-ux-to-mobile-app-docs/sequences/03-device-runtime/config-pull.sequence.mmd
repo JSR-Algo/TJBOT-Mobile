@@ -44,7 +44,7 @@ sequenceDiagram
     alt config_signature_failure (both current_key and next_key fail)
         Device->>Device: reject payload, retain previous config, emit config_signature_failure telemetry
     else next_key succeeds
-        Device->>Device: accept config + promote next_key to current_key (rotation window)
+        Device->>Device: accept config and promote next_key to current_key (rotation window)
     else current_key succeeds
         Device->>Device: validate schema, validate size ≤8KB, persist to nvs_policy, publish CONFIG_APPLIED
     end

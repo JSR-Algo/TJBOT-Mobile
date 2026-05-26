@@ -65,7 +65,7 @@ sequenceDiagram
                     SafetyScreener->>PostgreSQL: UPDATE template SET status='changes_requested'
                 else all_passed
                     SafetyScreener->>PostgreSQL: INSERT ca_safety_screen_results {pass:true}
-                    SafetyScreener->>PostgreSQL: UPDATE template SET status='in_review' + auto-assign reviewer
+                    SafetyScreener->>PostgreSQL: UPDATE template SET status='in_review' and auto-assign reviewer
                     SafetyScreener->>SQS: enqueue ca-quality-score {template_id}
                     alt quality_score_timeout
                         Note over SQS,ClaudeHaiku: > 45s — message returns to queue (max 3 retries)

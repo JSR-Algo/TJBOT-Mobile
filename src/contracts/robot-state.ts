@@ -1,10 +1,10 @@
-// @tbot/contracts — RobotInteractionState (canonical 10-state FSM) — mobile projection
+// @TJBot/contracts — RobotInteractionState (canonical 10-state FSM) — mobile projection
 //
-// Source of truth: tbot-infra/contracts/robot-state.js (ADR-008).
-// This file is a TypeScript projection consumed by tbot-mobile. A parity test
+// Source of truth: TJBot-infra/contracts/robot-state.js (ADR-008).
+// This file is a TypeScript projection consumed by TJBot-mobile. A parity test
 // (tests/contracts/parity.test.ts) asserts every enum value, forward edge, and
 // universal-target here matches the authoritative JS module at the filesystem
-// path `../../../tbot-infra/contracts/robot-state.js`. Drift fails the test.
+// path `../../../TJBot-infra/contracts/robot-state.js`. Drift fails the test.
 //
 // Plan: expressive-robot-companion-rewrite §3 ADR-008, §6 RM-02.
 

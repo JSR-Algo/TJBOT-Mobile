@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 
@@ -21,16 +21,16 @@ type Props = {
 
 export default function DeviceRow({ icon, title, body, right, onClick, danger }: Props) {
   const titleColor = danger ? '#C0392B' : DV.ink;
-
-  return (
-    <TouchableOpacity
-      onPress={onClick}
-      style={styles.root}
-      activeOpacity={0.7}
-    >
+  const accessibilityLabel = [title, body].filter(Boolean).join('. ');
+  const renderedIcon =
+    typeof icon === 'string' || typeof icon === 'number'
+      ? <Text style={styles.iconText}>{icon}</Text>
+      : icon;
+  const content = (
+    <>
       {icon ? (
         <Box style={styles.iconWrap}>
-          {icon}
+          {renderedIcon}
         </Box>
       ) : null}
       <Box flex={1}>
@@ -43,7 +43,26 @@ export default function DeviceRow({ icon, title, body, right, onClick, danger }:
           </Text>
         ) : null}
       </Box>
-      {right ?? <ChevronRight color={DV.ink3} />}
+      {right ?? (onClick ? <ChevronRight color={DV.ink3} /> : null)}
+    </>
+  );
+
+  if (!onClick) {
+    return (
+      <View style={styles.root} accessibilityLabel={accessibilityLabel}>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <TouchableOpacity
+      onPress={onClick}
+      style={styles.root}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+    >
+      {content}
     </TouchableOpacity>
   );
 }
@@ -60,6 +79,7 @@ function ChevronRight({ color }: { color: string }) {
 const styles = StyleSheet.create({
   root: {
     width: '100%',
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -75,5 +95,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#EEF1F5',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconText: {
+    fontSize: 18,
+    lineHeight: 22,
   },
 });

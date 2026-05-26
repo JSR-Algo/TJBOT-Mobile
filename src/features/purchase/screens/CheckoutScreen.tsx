@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -9,6 +9,12 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
+import { ROUTES } from '@/navigation/routes';
+import {
+  createCheckoutSession,
+  type CheckoutSessionPayload,
+} from '@/services/api/purchase.api';
+import { isSubscriptionFeatureEnabled } from '@/config/feature-flags';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CheckoutScreen'>;
 
@@ -18,9 +24,39 @@ const ORDER_ITEMS = [
   { t: 'Shipping',                            s: 'Free · arrives in 3–5 business days', p: 'Free' },
 ];
 
+const SAVED_SHIPPING_PROFILE: CheckoutSessionPayload['billing_address'] | null = null;
+
 export default function CheckoutScreen({ navigation }: Props) {
+  const [error, setError] = React.useState<string | null>(null);
+
+  if (!isSubscriptionFeatureEnabled()) {
+    return (
+      <DeviceShell title="Checkout" onBack={() => navigation.navigate(ROUTES.PrivacyScreen)}>
+        <Box testID="checkoutDisabledPlaceholder" paddingHorizontal={24} paddingTop={40}>
+          <Text fontWeight="700" style={styles.disabledTitle}>Purchases return in v1.1</Text>
+          <Text style={styles.disabledBody}>Robot checkout is paused in this build.</Text>
+        </Box>
+      </DeviceShell>
+    );
+  }
+
+  const placeOrder = async (): Promise<void> => {
+    if (!SAVED_SHIPPING_PROFILE) {
+      setError('Shipping profile is missing. Add a saved address before checkout.');
+      return;
+    }
+    const session = await createCheckoutSession({
+      sku_id: 'robot-hello-friends-bundle',
+      quantity: 1,
+      billing_address: SAVED_SHIPPING_PROFILE,
+    }, `checkout-${Date.now()}`);
+    if (session.state === 'paid' && session.orderId) {
+      navigation.navigate(ROUTES.OrderConfirmScreen, { orderId: session.orderId });
+    }
+  };
+
   return (
-    <DeviceShell title="Checkout" onBack={() => navigation.navigate('PrivacyScreen')}>
+    <DeviceShell title="Checkout" onBack={() => navigation.navigate(ROUTES.PrivacyScreen)}>
       <Box paddingHorizontal={24} paddingTop={18}>
         <PRStepTab step={2} total={3} />
       </Box>
@@ -49,10 +85,16 @@ export default function CheckoutScreen({ navigation }: Props) {
         <Text fontWeight="700" style={styles.sectionLabel}>Ship to</Text>
         <Box style={styles.shipCard}>
           <Box flex={1}>
-            <Text fontWeight="600" style={styles.shipName}>Sarah Chen</Text>
-            <Text style={styles.shipAddr}>247 Linden St · Apt 3B{'\n'}Brooklyn, NY 11215</Text>
+            <Text fontWeight="600" style={styles.shipName}>Missing</Text>
+            <Text style={styles.shipAddr}>Add a saved shipping address before checkout</Text>
           </Box>
-          <TouchableOpacity onPress={() => {}} activeOpacity={0.7}>
+          <TouchableOpacity
+            disabled
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Edit shipping address, Unavailable"
+            accessibilityState={{ disabled: true }}
+          >
             <Text fontWeight="600" style={styles.editBtn}>Edit</Text>
           </TouchableOpacity>
         </Box>
@@ -67,9 +109,10 @@ export default function CheckoutScreen({ navigation }: Props) {
       </Box>
 
       <Text style={styles.legalNote}>30-day return · 2-year warranty · no auto-renew without notice</Text>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <Box paddingHorizontal={20} paddingTop={10} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate('OrderConfirmScreen')}>Place order · $149.00</DeviceBigBtn>
+        <DeviceBigBtn onClick={placeOrder}>Place order · $149.00</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
@@ -96,4 +139,7 @@ const styles = StyleSheet.create({
   editBtn: { fontSize: 13, color: PR.accent },
   rowCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   legalNote: { fontSize: 11, color: PR.ink3, lineHeight: 18, textAlign: 'center', paddingHorizontal: 18, paddingVertical: 18 },
+  errorText: { fontSize: 12, color: '#B42318', lineHeight: 18, textAlign: 'center', paddingHorizontal: 20 },
+  disabledTitle: { fontSize: 22, color: PR.ink, marginBottom: 8 },
+  disabledBody: { fontSize: 13, color: PR.ink2, lineHeight: 20 },
 });

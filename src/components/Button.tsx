@@ -51,6 +51,7 @@ export function Button({
       activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: isDisabled }}
       testID={testID}
     >
       {loading ? (

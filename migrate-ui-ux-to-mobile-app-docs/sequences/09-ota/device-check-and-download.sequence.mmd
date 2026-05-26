@@ -50,14 +50,14 @@ sequenceDiagram
     else already_on_version
         OtaService-->>Device: 304 no_update
     else success
-        OtaService->>CloudFront: generate signed URL (1h expiry) for binary + manifest
+        OtaService->>CloudFront: generate signed URL (1h expiry) for binary and manifest
         CloudFront-->>OtaService: signed URLs
         OtaService->>PostgreSQL: INSERT ota_attempts {status='offered', from_version, to_version, battery_percent_at_start, rssi_at_start}
         OtaService-->>Device: 200 {manifest_url, signature, min_battery_percent, min_rssi_dbm, binary_sha256, binary_size_bytes}
     end
 
     Device->>CloudFront: GET signed manifest URL
-    CloudFront-->>Device: manifest JSON + signature
+    CloudFront-->>Device: manifest JSON and signature
     Device->>Device: bootloader verifies ECDSA P-256 signature with factory-embedded public key
     alt manifest_signature_invalid
         Device->>Device: REJECT, retain current FW, emit fault telemetry

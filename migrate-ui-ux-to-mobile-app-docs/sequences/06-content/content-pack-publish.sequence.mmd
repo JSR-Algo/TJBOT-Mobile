@@ -37,7 +37,7 @@ sequenceDiagram
     else checksum_mismatch
         ContentService->>S3: GetObject
         S3-->>ContentService: bundle bytes
-        ContentService->>ContentService: parse + recompute sha256(templates)
+        ContentService->>ContentService: parse and recompute sha256(templates)
         Note over ContentService: bundle.checksum != computed
         ContentService-->>AdminConsole: 422 checksum_mismatch
     else template_validation_failed
@@ -62,7 +62,7 @@ sequenceDiagram
     else success
         ContentService->>S3: GetObject
         S3-->>ContentService: bundle
-        ContentService->>ContentService: validate checksum + each template
+        ContentService->>ContentService: validate checksum and each template
         ContentService->>PostgreSQL: upsert templates batch (packKey, version)
         ContentService->>Redis: SET content:published:{packKey}:{version} (EX 3600)
         ContentService-)ContentService: emit cp-content-publish

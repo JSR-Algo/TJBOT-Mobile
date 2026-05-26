@@ -68,4 +68,4 @@ sequenceDiagram
         OtaService-->>AdminConsole: 201 {release_id, status='draft'}
     end
 
-    Note over AdminConsole,PostgreSQL: separate POST /admin/ota/:id/stage verifies S3 objects + signature, transitions draft→staged · timeout 60s p99 · OTA signing key is HSM-backed annual ceremony (sys-13)
+    Note over AdminConsole,PostgreSQL: separate POST /admin/ota/:id/stage verifies S3 objects and signature, transitions draft→staged · timeout 60s p99 · OTA signing key is HSM-backed annual ceremony (sys-13)

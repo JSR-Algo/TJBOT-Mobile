@@ -2,12 +2,13 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import IntroDots from './IntroDots';
+import { ROUTES } from '@/navigation/routes';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, keyof RootStackParamList>;
 
@@ -24,15 +25,16 @@ interface Props {
 }
 
 export default function IntroFrame({ navigation, idx, prev, next, bg, kicker, title, body, illo }: Props) {
+  const navigate = navigation.navigate as (name: keyof RootStackParamList) => void;
   return (
     <ScreenShell bg={bg}>
       <Box style={styles.navBar} flexDirection="row" alignItems="center" justifyContent="space-between">
-        <TouchableOpacity style={styles.backBtn} onPress={() => prev && navigation.navigate(prev as any)}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => prev && navigate(prev)}>
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <Path d="M15 18l-6-6 6-6" />
           </Svg>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('TrustScreen' as any)}>
+        <TouchableOpacity onPress={() => navigate(ROUTES.TrustScreen)}>
           <Text fontWeight="700" style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </Box>
@@ -44,7 +46,7 @@ export default function IntroFrame({ navigation, idx, prev, next, bg, kicker, ti
       </Box>
       <Box style={styles.footer} alignItems="center" gap={18}>
         <IntroDots idx={idx} />
-        <PrimaryCTA onPress={() => navigation.navigate(next as any)} color="#FF6F61">Next</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigate(next)} color="#FF6F61">Next</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

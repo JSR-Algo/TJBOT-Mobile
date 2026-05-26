@@ -73,11 +73,6 @@ const VALID_TRANSITIONS: Record<VoiceState, readonly VoiceState[]> = {
   READY: ['LISTENING', 'ERROR_RECOVERABLE', 'ENDED'],
   LISTENING: [
     'USER_SPEAKING',
-    // Server may emit audio chunks while we are still in LISTENING (no
-    // local VAD edge fired yet — provider auto-VAD detected speech faster
-    // or the model emits an unsolicited continuation). Hook mints
-    // responseId via freezeNewResponse before this transition.
-    'WAITING_AI',
     'ASSISTANT_SPEAKING',
     'RECONNECTING',
     'INTERRUPTED',
@@ -87,17 +82,12 @@ const VALID_TRANSITIONS: Record<VoiceState, readonly VoiceState[]> = {
   ],
   USER_SPEAKING: [
     'USER_SPEECH_FINALIZING',
-    // Server-cut path: audio chunks arrive while user is still speaking
-    // (provider auto-VAD detected end-of-utterance faster than our local VAD).
-    // Hook mints responseId via freezeNewResponse before this transition.
-    'WAITING_AI',
     'ASSISTANT_SPEAKING',
     'INTERRUPTED',
     'RECONNECTING',
     'ERROR_RECOVERABLE',
     'ERROR_FATAL',
     'ENDED',
-    'LISTENING',
   ],
   USER_SPEECH_FINALIZING: [
     'WAITING_AI',
@@ -324,9 +314,6 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
     const current = get().state;
     const valid = VALID_TRANSITIONS[current];
     if (!valid.includes(to)) {
-      if (__DEV__) {
-        console.warn(`[VoiceStateMachine] Invalid transition: ${current} -> ${to}`);
-      }
       return false;
     }
 
@@ -342,7 +329,6 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
         snap.epoch,
       );
       if (violation) {
-        console.warn(`[VoiceStateMachine] Invariant violated for ${current} -> ${to}: ${violation}`);
         return false;
       }
     }

@@ -1,23 +1,24 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairSearchScreen'>;
 
 export default function PairSearchScreen({ navigation }: Props) {
   React.useEffect(() => {
-    const t = setTimeout(() => navigation.navigate('PairFoundScreen'), 2400);
+    const t = setTimeout(() => navigation.navigate(ROUTES.PairFoundScreen), 2400);
     return () => clearTimeout(t);
   }, []);
 
   return (
-    <DeviceShell title="Looking for Robot…" onBack={() => navigation.navigate('PairIntroScreen')}>
+    <DeviceShell title="Looking for Robot…" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
       <Box paddingTop={40} paddingHorizontal={24} paddingBottom={30} alignItems="center" gap={24}>
         <Box style={styles.pulseWrap} alignItems="center" justifyContent="center">
           {[0, 1, 2].map(i => (
@@ -32,7 +33,7 @@ export default function PairSearchScreen({ navigation }: Props) {
         </Box>
         <Text fontWeight="600" style={styles.heading}>Looking nearby…</Text>
         <Text style={styles.sub}>Make sure Robot is within 3 meters and showing a face.</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('PairFailedScreen')} style={{ marginTop: 20 }}>
+        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.PairFailedScreen)} style={{ marginTop: 20 }}>
           <Text fontWeight="500" style={styles.link}>I don't see my Robot</Text>
         </TouchableOpacity>
       </Box>

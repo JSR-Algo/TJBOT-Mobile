@@ -35,15 +35,15 @@ sequenceDiagram
         FlashPartition-->>Device: empty / unflashed
         Note over Device,AudioPlayer: enter SAFE_MODE — LED error pattern — cannot demo
     else demo_content_corrupt
-        Device->>FlashPartition: read + CRC verify
+        Device->>FlashPartition: read and CRC verify
         FlashPartition-->>Device: CRC fail
         Note over Device,AudioPlayer: enter SAFE_MODE — LED error
     else content_ok
-        DemoStateMachine->>DemoStateMachine: enter ATTRACT (face animation loop + LED breathing)
+        DemoStateMachine->>DemoStateMachine: enter ATTRACT (face animation loop and LED breathing)
         loop retail loop
             alt no engagement (45s tick)
                 DemoStateMachine->>FlashPartition: load next attract phrase (rotates 3 phrases)
-                DemoStateMachine->>AudioPlayer: play attract_chime + phrase
+                DemoStateMachine->>AudioPlayer: play attract_chime and phrase
                 AudioPlayer-->>DemoStateMachine: playback complete
                 DemoStateMachine->>NVS: append demo_attract_triggered event
             else touch_or_proximity
@@ -62,7 +62,7 @@ sequenceDiagram
                                 FlashPartition-->>DemoStateMachine: clip not found
                                 Note over AudioPlayer: silence for expected duration
                             else playable
-                                DemoStateMachine->>AudioPlayer: play turn audio + face animation
+                                DemoStateMachine->>AudioPlayer: play turn audio and face animation
                                 alt demo_servo_stall
                                     Note over AudioPlayer: servo blocked — disable servo, continue audio
                                 end
@@ -77,7 +77,7 @@ sequenceDiagram
                                 DemoStateMachine->>DemoStateMachine: DEMO_CONV → COOLDOWN
                             end
                         end
-                        DemoStateMachine->>NVS: append demo_session_end + demo_retail_reset
+                        DemoStateMachine->>NVS: append demo_session_end and demo_retail_reset
                         DemoStateMachine->>AudioPlayer: "Thanks for playing!" (cooldown phrase)
                         Note over DemoStateMachine: 10s cooldown → ATTRACT
                     end

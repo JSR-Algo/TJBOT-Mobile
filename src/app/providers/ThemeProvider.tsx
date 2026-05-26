@@ -10,7 +10,7 @@ type Props = {
 };
 
 export function ThemeProvider({ children, gender = 'default' }: Props) {
-  const [currentGender, setCurrentGender] = useState<Gender>(gender);
+  const [currentGender] = useState<Gender>(gender);
   const theme = (themes[currentGender] ?? themes.default) as typeof themes.default;
   return (
     <ThemeContext.Provider value={theme}>

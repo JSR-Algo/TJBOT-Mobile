@@ -30,12 +30,12 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: ADR-0005 D3 — server auth order: (1) Redis rate-limit, (2) lockout precheck, (3) bcrypt compare, (4) attempt row insert
 
-    ParentApp->>Gateway: POST /v1/parent/auth {pin, X-Request-Id} + Authorization: Bearer {parent_access_token}
-    Gateway->>Gateway: validate parent JWT signature; extract user_id + ip_hash
+    ParentApp->>Gateway: POST /v1/parent/auth {pin, X-Request-Id} and Authorization: Bearer {parent_access_token}
+    Gateway->>Gateway: validate parent JWT signature, extract user_id and ip_hash
     Gateway->>IdentityService: forward request with user_id, ip_hash
 
     Note over IdentityService,Redis: Step 1 — Redis token-bucket rate-limit (10 attempts / 5 min per user_id+ip_hash)
-    IdentityService->>Redis: INCR + EXPIRE rate_limit:parent_auth:{user_id}:{ip_hash}
+    IdentityService->>Redis: INCR and EXPIRE rate_limit:parent_auth:{user_id}:{ip_hash}
     alt rate_limited (bucket exhausted — count > 10 within 5min window)
         Redis-->>IdentityService: count > 10
         IdentityService-->>Gateway: 429 rate_limited {retry_after_seconds} (NO attempt row written)
@@ -75,7 +75,7 @@ sequenceDiagram
                 IdentityService-->>Gateway: 503 network_partition
                 Gateway-->>ParentApp: 503
             else pin_correct
-                Note over IdentityService,PostgreSQL: Step 4 — insert success attempt row + issue parent_session JWT
+                Note over IdentityService,PostgreSQL: Step 4 — insert success attempt row and issue parent_session JWT
                 IdentityService->>PostgreSQL: INSERT parent_auth_attempts {user_id, succeeded: true, ip_hash, attempted_at}
                 PostgreSQL-->>IdentityService: inserted
                 IdentityService->>PostgreSQL: INSERT parent_sessions {jti: uuid(), user_id, idle_until: now()+interval '15min', expires_at: now()+interval '24h', created_at, ip_hash}
@@ -90,7 +90,7 @@ sequenceDiagram
     Note over ParentApp,IdentityService: --- Lockout clear (primary-parent only, ADR-0005 D4) ---
 
     ParentApp->>Gateway: POST /v1/parent/lockout/clear {target_user_id}
-    Gateway->>Gateway: require valid parent JWT + primary_parent role claim
+    Gateway->>Gateway: require valid parent JWT and primary_parent role claim
     Gateway->>IdentityService: forward
     IdentityService->>PostgreSQL: DELETE FROM parent_lockouts WHERE user_id={target_user_id}
     PostgreSQL-->>IdentityService: deleted

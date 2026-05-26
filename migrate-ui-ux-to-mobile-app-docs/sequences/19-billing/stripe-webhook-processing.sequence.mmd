@@ -27,7 +27,7 @@ sequenceDiagram
     participant SQS
     participant NotificationService
 
-    Stripe->>Gateway: POST /webhooks/stripe + Stripe-Signature header + event payload
+    Stripe->>Gateway: POST /webhooks/stripe and Stripe-Signature header and event payload
     Gateway->>BillingService: forward (no JWT — auth via Stripe-Signature only)
     BillingService->>BillingService: verify Stripe-Signature against webhook-secret (tbot/stripe/webhook-secret)
     alt stripe_signature_invalid

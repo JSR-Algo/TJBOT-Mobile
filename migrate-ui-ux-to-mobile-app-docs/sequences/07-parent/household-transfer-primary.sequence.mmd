@@ -32,7 +32,7 @@ sequenceDiagram
 
     Note over ParentApp,IdentityService: Step 1 — Primary initiates transfer (ADR-0010 D7a)
 
-    ParentApp->>Gateway: POST /v1/household/transfer-primary {to_user_id} + Bearer JWT (primary)
+    ParentApp->>Gateway: POST /v1/household/transfer-primary {to_user_id} and Bearer JWT (primary)
     Gateway->>Gateway: validate primary JWT — extract user_id, household_id
     Gateway->>IdentityService: forward request
     IdentityService->>PostgreSQL: SELECT role FROM household_members WHERE user_id={user_id} AND household_id={household_id}
@@ -63,10 +63,10 @@ sequenceDiagram
         end
     end
 
-    Note over ParentApp,IdentityService: Step 2 — Target secondary confirms (ADR-0010 D7b; up to 7 days later)
+    Note over ParentApp,IdentityService: Step 2 — Target secondary confirms (ADR-0010 D7b, up to 7 days later)
     Note over ParentApp: Target must have fresh JWT via biometric or PIN (ADR-0009 D3 requireFreshParentJwt)
 
-    ParentApp->>Gateway: POST /v1/household/transfer-primary/confirm {request_id} + Bearer JWT (target secondary)
+    ParentApp->>Gateway: POST /v1/household/transfer-primary/confirm {request_id} and Bearer JWT (target secondary)
     Gateway->>Gateway: validate target JWT — check freshness (ADR-0009 D3 isJwtFresh within 60s — biometric_or_pin_required)
     alt biometric_or_pin_required (JWT not fresh)
         Gateway-->>ParentApp: 401 biometric_or_pin_required
@@ -95,7 +95,7 @@ sequenceDiagram
             IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'household.transfer_primary.completed', payload: {from_user_id, to_user_id}, actor_user_id: to_user_id}
             IdentityService->>PostgreSQL: COMMIT
             PostgreSQL-->>IdentityService: txn committed
-            IdentityService-)SES: (async) email both parties — prior primary (now secondary) + new primary confirmation
+            IdentityService-)SES: (async) email both parties — prior primary (now secondary) and new primary confirmation
             IdentityService-->>Gateway: 200 {new_primary_user_id: to_user_id, prior_primary_user_id: from_user_id}
             Gateway-->>ParentApp: 200
         end

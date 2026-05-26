@@ -38,7 +38,12 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             <Text style={styles.body}>
               {this.state.error.message || 'Unknown error'}
             </Text>
-            <TouchableOpacity style={styles.btn} onPress={this.reset}>
+            <TouchableOpacity
+              style={styles.btn}
+              onPress={this.reset}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+            >
               <Text style={styles.btnText}>Try again</Text>
             </TouchableOpacity>
           </View>
@@ -81,6 +86,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 22,
     borderRadius: 999,
+    minHeight: 44,
   },
   btnText: {
     color: '#fff',

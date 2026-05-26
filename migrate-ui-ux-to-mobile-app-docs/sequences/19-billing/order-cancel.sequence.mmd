@@ -30,7 +30,7 @@ sequenceDiagram
 
     Note over ParentApp: parent in parent_settings → order history taps "Cancel order" on CREATED / PAID / FULFILLING row
 
-    ParentApp->>Gateway: POST /v1/billing/orders/{order_id}/cancel {X-Request-Id} + parent JWT Bearer
+    ParentApp->>Gateway: POST /v1/billing/orders/{order_id}/cancel {X-Request-Id} and parent JWT Bearer
     Gateway->>Gateway: auth-resolver — require parent JWT (ADR-0005 D6 — fresh within 60s)
     alt parent_jwt_stale_re_pin_required
         Note over Gateway: parent JWT issued > 60s ago

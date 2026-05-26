@@ -1,3 +1,5 @@
+export const HOME_BACKEND_CONTRACT_AVAILABLE = false as const;
+
 export interface HomeHub {
   childName: string;
   streakDays: number;

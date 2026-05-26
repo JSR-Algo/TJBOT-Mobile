@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
+import { ROUTES } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import WaveBars from '@/design-system/components/WaveBars';
 import IntroFrame from '../components/IntroFrame';
@@ -15,8 +16,8 @@ export default function IntroSpeakScreen({ navigation }: Props) {
     <IntroFrame
       navigation={navigation}
       idx={1}
-      prev="IntroListenScreen"
-      next="IntroRetryScreen"
+      prev={ROUTES.IntroListenScreen}
+      next={ROUTES.IntroRetryScreen}
       bg="#E8F8F0"
       kicker="How it works · 2"
       title="Robot speaks back"

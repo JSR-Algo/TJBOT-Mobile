@@ -51,7 +51,7 @@ sequenceDiagram
         Note over SafetyService: emit conv_missing_policy_total counter, page P1
         SafetyService-->>SafetyService: hardcoded ultimate
     else exact_match_hit
-        Redis-->>SafetyService: hit exact (template_set + locale + ageBand + trigger_code)
+        Redis-->>SafetyService: hit exact (template_set and locale and ageBand and trigger_code)
         SafetyService-->>SafetyService: use exact template
     end
     Note over SafetyService,PostgreSQL: hardcoded floor guarantees a response — never returns null

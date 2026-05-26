@@ -19,7 +19,7 @@ export default function PageHeader({ left, right, title, subtitle, onBack }: Pag
     <Box style={styles.container}>
       <Box style={styles.row}>
         {left ?? (onBack ? (
-          <CircleBtn size={42} onPress={onBack} ariaLabel="back">
+          <CircleBtn size={42} onPress={onBack} ariaLabel="Back">
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={tokens.colors.ink} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M15 5l-7 7 7 7" stroke={tokens.colors.ink} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>

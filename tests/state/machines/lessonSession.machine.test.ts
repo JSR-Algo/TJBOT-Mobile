@@ -1,7 +1,7 @@
 /**
  * LessonSession machine unit tests.
  *
- * Plan: tbot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
+ * Plan: TJBot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
  * §4.2, §5.
  *
  * The most load-bearing assertion in this file is the

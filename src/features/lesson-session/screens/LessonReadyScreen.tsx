@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/app/navigation/routes';
+import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonReadyScreen'>;
 
@@ -23,7 +24,7 @@ export default function LessonReadyScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate('ConnectingScreen')} color="#FF6F61">I'm ready!</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.ConnectingScreen)} color="#FF6F61">I'm ready!</PrimaryCTA>
       </Box>
     </ScreenShell>
   );
