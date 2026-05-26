@@ -1,0 +1,47 @@
+---
+system: sys-01-identity-household-access
+flow_id: login
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#post-v1authlogin
+actors: [ParentApp, Gateway, IdentityService, SES]
+apis:
+  - POST /v1/auth/login
+  - POST /v1/auth/refresh
+externals: [SES]
+queues: []
+failure_paths:
+  - invalid_credentials
+  - account_disabled
+  - login_rate_limited
+  - mfa_required
+idempotency: client-supplied X-Request-Id, 24h dedup window
+retry: caller-side exponential backoff with jitter on 5xx
+timeout: 5s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant SES
+
+    ParentApp->>Gateway: POST /v1/auth/login {email, password, deviceName, platform, X-Request-Id}
+    Gateway->>Gateway: rate-limit (sys-17) — 5 per minute per IP plus email
+    Gateway->>IdentityService: forward request
+    alt invalid_credentials
+        IdentityService-->>Gateway: 401 invalid_credentials
+        Gateway-->>ParentApp: 401
+    else account_disabled
+        IdentityService-->>Gateway: 423 account_disabled
+        Gateway-->>ParentApp: 423
+    else login_rate_limited
+        Gateway-->>ParentApp: 429 login_rate_limited
+    else success
+        IdentityService-->>Gateway: 200 {access_token, refresh_token, expires_in}
+        Gateway-->>ParentApp: 200
+        IdentityService-)SES: (async via queue auth.email) login_notice email
+    end
+
+    Note over ParentApp,IdentityService: timeout 5s p99 — caller-side retry with jitter on 5xx — idempotent via X-Request-Id

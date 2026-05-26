@@ -1,0 +1,21 @@
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
+%% domain: purchase
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Purchase["Purchase"]
+    pr_activate["Buy · Activate Robot"]
+    pr_arrived["Buy · Robot arrived · setup"]
+    pr_bundle["Buy · Bundle picker"]
+    pr_checkout(["Buy · Checkout"])
+    pr_confirm["Buy · Order confirmed"]
+    pr_first_course["Buy · Add first course"]
+    pr_how["Buy · How lessons work"]
+    pr_included["Buy · What"]
+    pr_intro["Buy · Robot overview"]
+    pr_privacy["Buy · Parent trust & privacy"]
+    pr_shipping["Buy · Shipping & delivery"]
+    pr_subs["Buy · Course subscription"]
+  end
+  class pr_activate,pr_arrived,pr_bundle,pr_confirm,pr_first_course,pr_how,pr_included,pr_intro,pr_privacy,pr_shipping,pr_subs happy
+  class pr_checkout edge

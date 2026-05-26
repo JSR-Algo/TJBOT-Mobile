@@ -367,7 +367,7 @@ describe('store does NOT schedule timers (lint rule §11.7 spirit)', () => {
     // @ts-expect-error — partial monkey patch is intentional
     global.setTimeout = (...args: unknown[]) => {
       calls += 1;
-      // @ts-expect-error
+      // @ts-expect-error — Node and React Native timer handles differ in Jest.
       return real(...args);
     };
     try {

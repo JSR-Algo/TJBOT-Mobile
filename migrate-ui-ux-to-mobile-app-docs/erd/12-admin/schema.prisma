@@ -1,0 +1,164 @@
+// AUTO-GENERATED FROM docs/erd/12-admin/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/12-admin/admin_commands.dbml, docs/erd/12-admin/admin_role_assignments.dbml, docs/erd/12-admin/admin_sessions.dbml, docs/erd/12-admin/admin_users.dbml, docs/erd/12-admin/safety_investigations.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum admin_role_name {
+  super_admin
+  support_agent
+  viewer
+}
+
+enum admin_role_assignment_status {
+  active
+  revoked
+}
+
+enum admin_session_status {
+  active
+  revoked
+  expired
+}
+
+enum admin_user_status {
+  active
+  disabled
+}
+
+enum safety_investigation_severity {
+  low
+  medium
+  high
+  critical
+}
+
+enum safety_investigation_status {
+  open
+  investigating
+  resolved
+  escalated
+}
+
+/// Source: docs/erd/12-admin/admin_commands.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model AdminCommands {
+  id String @id @default(uuid()) @db.Uuid
+  adminUserId String @db.Uuid @map("admin_user_id")
+  action String @db.VarChar(64)
+  /// enum-like at app layer: device.transfer, user.disable, safety.investigate, etc.
+  targetType String @db.VarChar(64) @map("target_type")
+  targetId String @db.VarChar(120) @map("target_id")
+  reason String? @db.Text
+  metadata Json @db.JsonB @default("{}")
+  ipAddress String @db.VarChar(45) @map("ip_address")
+  occurredAt DateTime @db.Timestamptz(6) @default(now()) @map("occurred_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  /// equal to created_at; row is immutable
+  adminUser AdminUsers @relation(name: "admin_commands_admin_user_id_to_admin_users", fields: [adminUserId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([adminUserId], map: "idx_admin_commands_admin_user_id")
+  @@index([action], map: "idx_admin_commands_action")
+  @@index([targetType, targetId], map: "idx_admin_commands_target")
+  @@index([occurredAt], map: "idx_admin_commands_occurred_at_desc")
+  @@map("admin_commands")
+}
+
+/// Source: docs/erd/12-admin/admin_role_assignments.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model AdminRoleAssignments {
+  id String @id @default(uuid()) @db.Uuid
+  adminUserId String @db.Uuid @map("admin_user_id")
+  role admin_role_name
+  status admin_role_assignment_status @default(active)
+  grantedByAdminId String @db.Uuid @map("granted_by_admin_id")
+  /// self-ref into admin_users
+  grantedAt DateTime @db.Timestamptz(6) @default(now()) @map("granted_at")
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  reason String? @db.VarChar(240)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  adminUser AdminUsers @relation(name: "admin_role_assignments_admin_user_id_to_admin_users", fields: [adminUserId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  grantedByAdmin AdminUsers @relation(name: "admin_role_assignments_granted_by_admin_id_to_admin_users", fields: [grantedByAdminId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([adminUserId, status], map: "idx_admin_role_assignments_user_status")
+  @@unique([adminUserId, role], map: "idx_admin_role_assignments_user_role_unique")
+  @@map("admin_role_assignments")
+}
+
+/// Source: docs/erd/12-admin/admin_sessions.dbml
+model AdminSessions {
+  id String @id @default(uuid()) @db.Uuid
+  adminUserId String @db.Uuid @map("admin_user_id")
+  tokenHash String @db.VarChar(128) @map("token_hash")
+  status admin_session_status @default(active)
+  ipAddress String @db.VarChar(45) @map("ip_address")
+  userAgent String? @db.VarChar(512) @map("user_agent")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  /// admin sessions cap at 12h per spec §3 Session Rules
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  revokeReason String? @db.VarChar(80) @map("revoke_reason")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  adminUser AdminUsers @relation(name: "admin_sessions_admin_user_id_to_admin_users", fields: [adminUserId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([tokenHash], map: "idx_admin_sessions_token_hash_unique")
+  @@index([adminUserId, status], map: "idx_admin_sessions_admin_user_status")
+  @@index([expiresAt], map: "idx_admin_sessions_expires_at")
+  @@map("admin_sessions")
+}
+
+/// Source: docs/erd/12-admin/admin_users.dbml
+model AdminUsers {
+  id String @id @default(uuid()) @db.Uuid
+  email String @db.VarChar(254)
+  /// corporate email; case-insensitive at app layer
+  passwordHash String @db.Text @map("password_hash")
+  mfaSecret String? @db.VarChar(256) @map("mfa_secret")
+  /// encrypted via sys-13 KMS envelope; required when mfa_enabled=true
+  mfaEnabled Boolean @default(false) @map("mfa_enabled")
+  status admin_user_status @default(active)
+  lastLoginAt DateTime? @db.Timestamptz(6) @map("last_login_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  adminCommands AdminCommands[] @relation(name: "admin_commands_admin_user_id_to_admin_users")
+  adminRoleAssignmentsAdminUser AdminRoleAssignments[] @relation(name: "admin_role_assignments_admin_user_id_to_admin_users")
+  adminRoleAssignmentsGrantedByAdmin AdminRoleAssignments[] @relation(name: "admin_role_assignments_granted_by_admin_id_to_admin_users")
+  adminSessions AdminSessions[] @relation(name: "admin_sessions_admin_user_id_to_admin_users")
+  safetyInvestigations SafetyInvestigations[] @relation(name: "safety_investigations_reported_by_admin_id_to_admin_users")
+  @@unique([email], map: "idx_admin_users_email_unique")
+  @@index([status], map: "idx_admin_users_status")
+  @@map("admin_users")
+}
+
+/// Source: docs/erd/12-admin/safety_investigations.dbml
+model SafetyInvestigations {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService (sys-02). Lane C owns devices.id
+  sessionId String @db.Uuid @map("session_id")
+  /// cross-domain ref → RealtimeService (sys-04). Lane D owns sessions.id
+  turnId String? @db.Uuid @map("turn_id")
+  /// cross-domain ref → RealtimeService (sys-04). Lane D owns session_turns.id
+  reportedByAdminId String @db.Uuid @map("reported_by_admin_id")
+  severity safety_investigation_severity
+  status safety_investigation_status @default(open)
+  description String @db.Text
+  resolution String? @db.Text
+  escalatedTo String? @db.VarChar(120) @map("escalated_to")
+  metadata Json @db.JsonB @default("{}")
+  resolvedAt DateTime? @db.Timestamptz(6) @map("resolved_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  adminUser AdminUsers @relation(name: "safety_investigations_reported_by_admin_id_to_admin_users", fields: [reportedByAdminId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([deviceId], map: "idx_safety_investigations_device_id")
+  @@index([status], map: "idx_safety_investigations_status")
+  @@index([severity, createdAt], map: "idx_safety_investigations_severity_created_at")
+  @@map("safety_investigations")
+}
+

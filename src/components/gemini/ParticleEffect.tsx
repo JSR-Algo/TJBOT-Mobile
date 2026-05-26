@@ -6,6 +6,7 @@ const COLORS = ['#F9A8D4', '#FDE68A', '#A78BFA', '#6EE7B7', '#93C5FD', '#FCA5A5'
 
 interface ParticleProps {
   active: boolean;
+  reduceMotion?: boolean;
 }
 
 function Particle({ color, delay }: { color: string; delay: number }) {
@@ -44,8 +45,8 @@ function Particle({ color, delay }: { color: string; delay: number }) {
   );
 }
 
-export function ParticleEffect({ active }: ParticleProps) {
-  if (!active) return null;
+export function ParticleEffect({ active, reduceMotion = false }: ParticleProps) {
+  if (!active || reduceMotion) return null;
 
   return (
     <View style={styles.container} pointerEvents="none">

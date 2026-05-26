@@ -1,0 +1,28 @@
+// api_keys.dbml — device-bearer or admin-bearer API keys for machine-to-machine auth
+
+enum api_key_type {
+  device_bearer
+  admin_bearer
+}
+
+Table api_keys {
+  id              uuid          [pk, note: 'service-generated; never serial']
+  key_hash        varchar(64)   [not null, unique, note: 'SHA-256 of the raw API key; raw key never stored']
+  key_prefix      varchar(8)    [not null, note: 'first 8 chars of raw key for identification in logs (non-secret)']
+  type            api_key_type  [not null]
+  owner_id        uuid          [not null, note: 'UUID of owning entity — device UUID if type=device_bearer, admin_user UUID if type=admin_bearer']
+  description     varchar(255)
+  last_used_at    timestamptz
+  expires_at      timestamptz   [note: 'null = no expiry; device keys typically long-lived']
+  revoked_at      timestamptz
+  created_at      timestamptz   [not null, default: `now()`]
+  updated_at      timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (key_hash) [unique, name: 'idx_api_keys_key_hash_unique']
+    (owner_id, type) [name: 'idx_api_keys_owner_id_type', note: 'hot query: docs/sequences/19-billing/entitlement-check-session-start.sequence.mmd — list keys by owner for rotation']
+    (type, revoked_at) [name: 'idx_api_keys_type_revoked_at', note: 'hot query: docs/sequences/19-billing/entitlement-check-session-start.sequence.mmd — filter active keys by type for auth resolution']
+  }
+}
+// cross-domain ref: owner_id → devices.id when type = device_bearer (DeviceService)
+//                  owner_id → admin_users.id when type = admin_bearer (AdminAuthService)

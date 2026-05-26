@@ -1,0 +1,9 @@
+{
+  "id": "robot-mgmt",
+  "owner_lane": "D",
+  "flow": "docs/flows/domains/robot-mgmt/flow.generated.mmd",
+  "edge_cases": {
+    "rm_offline_help": ["error"],
+    "rm_factory":      ["cancel"]
+  }
+}

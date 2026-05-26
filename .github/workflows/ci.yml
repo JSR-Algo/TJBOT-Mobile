@@ -30,97 +30,159 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
+  mobile-quality:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
-
       - name: Install dependencies
         run: npm ci
-
       - name: Lint mobile app
         run: npm run lint
-
       - name: Typecheck mobile app
         run: npm run typecheck
-
-      - name: Run mobile tests
+      - name: Run mobile unit tests
         run: npm test -- --runInBand
-
+      - name: Run mobile integration tests
+        run: npm run test:integration
+      - name: Validate flows docs
+        run: npm run flows:validate
+      - name: Validate sequences docs
+        run: npm run sequences:fast
+      - name: Validate ERD docs
+        run: npm run erd:validate
+      - name: Validate use cases docs
+        run: npm run usecases:check
+      - name: Check token parity
+        run: npm run check:token-parity
+      - name: Check screen prop types
+        run: npm run check:screen-prop-types
       - name: Validate Expo config
         run: npx expo config --json > /tmp/expo-config.json
 
-  android-native-build:
+  mobile-api-contract-sync:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Check API contract sync
+        run: npm run api:contract-sync:check
 
+  mobile-state-machines:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run state machine tests
+        run: npm run test:state-machines
+
+  mobile-navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run navigation tests
+        run: npm run test:navigation
+      - name: Check route coverage
+        run: npm run check:route-coverage
+
+  mobile-screens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run screen tests
+        run: npm run test:screens
+
+  mobile-e2e-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run simulated E2E plan
+        run: SIMULATION_MODE=true npm run e2e:mobile -- --plan-json
+
+  mobile-android-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Install dependencies
         run: npm ci
-
       - name: Build Android debug app
-        run: ./gradlew assembleDebug
-        working-directory: android
+        run: npm run build:android
 
-  ios-native-build:
+  mobile-ios-build:
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
-
       - name: Install dependencies
         run: npm ci
-
       - name: Install CocoaPods dependencies
         run: pod install
         working-directory: ios
-
       - name: Build iOS simulator app
-        run: xcodebuild -workspace TbotMobile.xcworkspace -scheme TbotMobile -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' build
-        working-directory: ios
+        run: npm run build:ios
 
   eas-config:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
-
       - name: Install dependencies
         run: npm ci
-
       - name: Validate EAS profile config
         run: |
           npx --yes eas-cli@latest --version
           test -f eas.json
-

@@ -1,0 +1,29 @@
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
+%% domain: device
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Robot_Device["Robot Device"]
+    dv_firmware(["Robot · Firmware update"])
+    dv_home["Robot · Device home"]
+    dv_lcd["Robot · LCD face library"]
+    dv_lcd_turn["Robot · LCD lesson turn"]
+    dv_lost(["Robot · Find my Robot"])
+    dv_overview["Robot · How it works together"]
+    dv_pair_add["Robot · Pair · add"]
+    dv_pair_code["Robot · Pair · confirm code"]
+    dv_pair_connecting(["Robot · Pair · connecting"])
+    dv_pair_failed(["Robot · Pair · failed"])
+    dv_pair_first_lesson["Robot · Pair · first lesson"]
+    dv_pair_found["Robot · Pair · found"]
+    dv_pair_intro["Robot · Pair · turn on"]
+    dv_pair_offline(["Robot · Pair · offline"])
+    dv_pair_rename["Robot · Pair · rename & buddy"]
+    dv_pair_search["Robot · Pair · searching"]
+    dv_pair_success["Robot · Pair · success"]
+    dv_pair_wifi["Robot · Pair · Wi-Fi pick"]
+    dv_pair_wifi_pw["Robot · Pair · Wi-Fi password"]
+    dv_session["Robot · Live session monitor"]
+  end
+  class dv_home,dv_lcd,dv_lcd_turn,dv_overview,dv_pair_add,dv_pair_code,dv_pair_first_lesson,dv_pair_found,dv_pair_intro,dv_pair_rename,dv_pair_search,dv_pair_success,dv_pair_wifi,dv_pair_wifi_pw,dv_session happy
+  class dv_firmware,dv_lost,dv_pair_connecting,dv_pair_failed,dv_pair_offline edge

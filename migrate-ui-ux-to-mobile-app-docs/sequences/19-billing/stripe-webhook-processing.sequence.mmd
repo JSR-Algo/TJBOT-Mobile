@@ -1,0 +1,66 @@
+---
+system: sys-19-billing-subscription
+flow_id: stripe-webhook-processing
+surface: webhook-inbound
+spec_anchor: /software/systems/19-billing-subscription#stripe-webhook
+actors: [Stripe, Gateway, BillingService, SQS, NotificationService]
+apis:
+  - POST /webhooks/stripe
+externals: [Stripe]
+queues: [tbot-billing-events]
+failure_paths:
+  - stripe_signature_invalid
+  - duplicate_event_dedupe
+  - webhook_persist_failed
+  - worker_handler_failed
+idempotency: Stripe-Signature header verified against tbot/stripe/webhook-secret; webhook_events table PK on stripe_event_id deduplicates Stripe's at-least-once redelivery (Stripe retries up to 3x)
+retry: synchronous handler MUST return 200 within 5s so Stripe stops retrying; downstream worker retries via SQS visibility-timeout + dead-letter queue
+timeout: 5s p99 (Stripe SLA cutoff — exceeding triggers Stripe retry)
+status: final
+---
+%% HAND-CURATED. Race-condition surfaced per plan §11: Stripe idempotency via {Stripe-Signature header verify + stripe_event_id PK insert} — duplicate webhook delivery cannot double-process.
+sequenceDiagram
+    autonumber
+    participant Stripe
+    participant Gateway
+    participant BillingService
+    participant SQS
+    participant NotificationService
+
+    Stripe->>Gateway: POST /webhooks/stripe and Stripe-Signature header and event payload
+    Gateway->>BillingService: forward (no JWT — auth via Stripe-Signature only)
+    BillingService->>BillingService: verify Stripe-Signature against webhook-secret (tbot/stripe/webhook-secret)
+    alt stripe_signature_invalid
+        Note over BillingService: alert ops — potential webhook forgery
+        BillingService-->>Gateway: 400 invalid_signature
+        Gateway-->>Stripe: 400
+    else signature valid
+        BillingService->>BillingService: INSERT webhook_events {stripe_event_id, event_type, processing_status: "received"}
+        alt duplicate_event_dedupe
+            Note over BillingService: PK conflict on stripe_event_id — Stripe redelivery
+            BillingService-->>Gateway: 200 OK (already processed)
+            Gateway-->>Stripe: 200 OK
+        else new event
+            BillingService-)SQS: SendMessage tbot-billing-events {stripe_event_id, event_type, payload_hash}
+            alt webhook_persist_failed
+                Note over BillingService: SQS send failed — webhook_events status: "failed" — Stripe will retry up to 3x
+                BillingService-->>Gateway: 500 webhook_persist_failed
+                Gateway-->>Stripe: 500
+            else enqueued
+                BillingService-->>Gateway: 200 OK (within 5s — Stripe done)
+                Gateway-->>Stripe: 200 OK
+            end
+        end
+    end
+
+    Note over BillingService,NotificationService: async worker leg
+    SQS-->>BillingService: dequeue webhook_event
+    BillingService->>BillingService: handle by event_type (checkout.session.completed | customer.subscription.updated | invoice.payment_failed | ...) — rebuild entitlements, update subscription_status
+    alt worker_handler_failed
+        Note over BillingService: webhook_events status set to "failed", attempts++ — SQS visibility timeout returns it for retry, DLQ after N attempts
+    else handler ok
+        BillingService->>BillingService: webhook_events status: "processed", processed_at = now()
+        BillingService-)NotificationService: enqueue user-facing notification (sys-10) — payment success / payment failed / trial ending
+    end
+
+    Note over Stripe,SQS: idempotency hinges on stripe_event_id PK — Stripe-Signature verify rejects forgery — 200-in-5s separates ingest from work

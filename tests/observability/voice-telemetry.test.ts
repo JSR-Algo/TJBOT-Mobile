@@ -22,7 +22,6 @@ const __voiceTelemetryTestStore: Record<string, Listener[]> = ((globalThis as an
 jest.mock('react-native', () => {
   class FakeEmitter {
     addListener(name: string, cb: (e: unknown) => void): { remove: () => void } {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const store: Record<string, Array<(e: unknown) => void>> =
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ((globalThis as any).__voiceTelemetryListeners ??= {});
@@ -68,7 +67,7 @@ const listeners = __voiceTelemetryTestStore;
 // ─── Imports (AFTER mocks) ──────────────────────────────────────────────
 
 import * as Sentry from '@sentry/react-native';
-import { startVoiceTelemetry, stopVoiceTelemetry } from '../../src/observability/voice-telemetry';
+import { startVoiceTelemetry, stopVoiceTelemetry } from '../../src/services/observability/voice-telemetry';
 
 // Pull the mock fn created inside the factory out via the exposed
 // __mockBreadcrumb property — both test and source see the same module

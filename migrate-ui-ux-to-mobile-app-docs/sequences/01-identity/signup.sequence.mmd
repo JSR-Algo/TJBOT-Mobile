@@ -1,0 +1,57 @@
+---
+system: sys-01-identity-household-access
+flow_id: signup
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#4-1-post-v1authsignup
+actors: [ParentApp, Gateway, IdentityService, SES]
+apis:
+  - POST /v1/auth/signup
+externals: [SES]
+queues: [auth.email]
+failure_paths:
+  - account_exists
+  - weak_password
+  - invalid_timezone
+  - missing_required_consent
+  - signup_rate_limited
+  - signup_transaction_failed
+idempotency: client-supplied X-Request-Id, 24h dedup window
+retry: caller-side exponential backoff with jitter on 5xx — never retry on 4xx
+timeout: 5s p99
+status: final
+---
+%% HAND-CURATED. Normalized from spec sequenceDiagram at 01-identity-household-access.md#L353 — DB-transaction depth intentionally stripped per plan §0.1.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant SES
+
+    ParentApp->>Gateway: POST /v1/auth/signup {email, password, displayName, timezone, locale, acceptances, X-Request-Id}
+    Gateway->>Gateway: rate-limit (sys-17) — auth_signup — 10 per 15min per IP
+    Gateway->>IdentityService: forward request
+    alt signup_rate_limited
+        Gateway-->>ParentApp: 429 signup_rate_limited
+    else weak_password
+        IdentityService-->>Gateway: 422 weak_password
+        Gateway-->>ParentApp: 422
+    else invalid_timezone
+        IdentityService-->>Gateway: 422 invalid_timezone
+        Gateway-->>ParentApp: 422
+    else missing_required_consent
+        IdentityService-->>Gateway: 422 missing_required_consent
+        Gateway-->>ParentApp: 422
+    else account_exists
+        IdentityService-->>Gateway: 409 account_exists
+        Gateway-->>ParentApp: 409
+    else signup_transaction_failed
+        IdentityService-->>Gateway: 500 signup_transaction_failed
+        Gateway-->>ParentApp: 500
+    else success
+        IdentityService-->>Gateway: 201 {access_token, refresh_token, parentAccount, household}
+        Gateway-->>ParentApp: 201
+        IdentityService-)SES: (async via queue auth.email) welcome email
+    end
+
+    Note over ParentApp,IdentityService: timeout 5s p99 — caller-side retry with jitter on 5xx only — idempotent via X-Request-Id (24h dedup)

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { colors } from '../theme';
+import { colors } from '@/design-system/tokens/legacy-semantic';
 
 interface LoadingSpinnerProps {
   fullscreen?: boolean;

@@ -1,0 +1,26 @@
+// words — vocabulary word taxonomy.
+// Words may be associated with activities or lessons per delivery config.
+// Source: docs/sequences/06-content/content-selection.sequence.mmd
+
+Table words {
+  id           uuid         [pk]
+  activity_id  uuid         [note: 'FK → activities.id; nullable — word may be lesson-level']
+  lesson_id    uuid         [note: 'FK → lessons.id; set when activity_id is null']
+  word         varchar(254) [not null]
+  locale       varchar(16)  [not null, note: 'BCP-47']
+  phonetic     varchar(254) [note: 'IPA or phonetic spelling for TTS guidance']
+  definition   text
+  media_url    varchar(2048) [note: 'S3 URI for audio/image; not FK — resolved via media_assets in _shared']
+  age_band_min smallint     [note: 'optional override; inherits from activity if null']
+  created_at   timestamptz  [not null, default: `now()`]
+  updated_at   timestamptz  [not null, default: `now()`]
+
+  Indexes {
+    (activity_id) [name: 'idx_words_activity_id']
+    (lesson_id) [name: 'idx_words_lesson_id']
+    (locale, word) [name: 'idx_words_locale_word', note: 'hot query: docs/sequences/06-content/content-selection.sequence.mmd — word lookup by locale']
+  }
+}
+
+Ref: words.activity_id > activities.id
+Ref: words.lesson_id > lessons.id

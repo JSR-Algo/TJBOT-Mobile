@@ -1,0 +1,53 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: session-close
+surface: device
+spec_anchor: /software/systems/04-realtime-session-orchestrator#session-state-machine
+actors: [Device, Orchestrator, Redis, PostgreSQL]
+apis: []
+externals: [Redis]
+queues:
+  - tbot-session-completed
+failure_paths:
+  - idle_timeout
+  - turn_limit_reached
+  - cost_limit_reached
+  - admin_terminate
+  - duration_limit_reached
+idempotency: SESSION_CLOSE_ACK guarantees single close per sessionId — duplicate SESSION_CLOSE frames coalesced
+retry: 0 — close is terminal; CLOSING force-closes after 5s
+timeout: CLOSING 5s force-close — admin terminate writes audit row before close
+status: final
+---
+%% HAND-CURATED — sys-04 §11 state machine timeouts + §6 SESSION_CLOSE semantics.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant Orchestrator
+    participant Redis
+    participant PostgreSQL
+
+    alt idle_timeout
+        Note over Orchestrator: OPEN idle 60s — close with timeout
+        Orchestrator-->>Device: SESSION_CLOSE (0x70) end_reason=timeout
+    else turn_limit_reached
+        Note over Orchestrator: turn_count >= 60 — close with complete
+        Orchestrator-->>Device: SESSION_CLOSE (0x70) end_reason=complete
+    else cost_limit_reached
+        Note over Orchestrator: cost >= $0.12 — close with cost_limit
+        Orchestrator-->>Device: SESSION_CLOSE (0x70) end_reason=cost_limit
+    else duration_limit_reached
+        Note over Orchestrator: total duration >= 30 min — close with timeout
+        Orchestrator-->>Device: SESSION_CLOSE (0x70) end_reason=timeout
+    else admin_terminate
+        Note over Orchestrator: POST /v1/admin/sessions/:sessionId/terminate
+        Orchestrator-->>Device: SESSION_CLOSE (0x70) end_reason=error
+    else device_initiated
+        Device->>Orchestrator: SESSION_CLOSE (0x70)
+    end
+    Orchestrator->>Orchestrator: cancel in-flight LLM and TTS calls
+    Orchestrator->>PostgreSQL: UPDATE sessions SET end_reason, ended_at
+    Orchestrator->>Redis: DEL device_session:{deviceId}
+    Orchestrator-)Orchestrator: emit tbot-session-completed SessionCompletedEvent
+    Orchestrator-->>Device: SESSION_CLOSE_ACK (0x71)
+    Note over Device,Orchestrator: WS close — CLOSING force-closes after 5s — telemetry flushed before ack

@@ -1,0 +1,43 @@
+// backup_snapshots — registry of RDS automated snapshots + cross-region copies +
+// data-export packages produced by COPPA right-of-access requests.
+// Snapshots themselves live in AWS (RDS snapshot store + S3 export bucket);
+// this table is the auditable manifest of what exists and when it expires.
+// Source: docs/site/software/systems/14-data-retention-deletion-backup.md
+//         §Backup Strategy + §S3 (data export 7d).
+
+enum backup_snapshot_kind {
+  rds_automated
+  rds_cross_region
+  rds_manual
+  s3_data_export
+}
+
+enum backup_snapshot_status {
+  creating
+  available
+  expired
+  deleted
+}
+
+Table backup_snapshots {
+  id                  uuid                       [pk]
+  kind                backup_snapshot_kind       [not null]
+  rds_snapshot_id     varchar(254)               [note: 'AWS RDS snapshot ARN — null when kind=s3_data_export']
+  s3_bucket           varchar(254)               [note: 'tbot-exports for kind=s3_data_export; null otherwise']
+  s3_key              varchar(2048)              [note: 'object key inside s3_bucket']
+  region              varchar(32)                [not null, default: 'us-east-1', note: 'us-east-1 primary; us-west-2 for cross-region copies']
+  status              backup_snapshot_status     [not null, default: 'creating']
+  size_bytes          bigint
+  encryption_key_id   uuid                       [note: 'cross-domain ref → SecurityService (sys-13 kms_keys) — every snapshot encrypted at rest']
+  scope_household_id  uuid                       [note: 'cross-domain ref → IdentityService — set only for COPPA right-of-access data export packages']
+  data_export_request_id uuid                    [note: 'cross-domain ref → AccountDeletionService companion (DataExportService — sys-14 internal); set only for kind=s3_data_export']
+  expires_at          timestamptz                [not null, note: '35d for rds_automated; 7d for rds_cross_region; 7d for s3_data_export']
+  taken_at            timestamptz                [not null, default: `now()`]
+  created_at          timestamptz                [not null, default: `now()`]
+  updated_at          timestamptz                [not null, default: `now()`]
+
+  Indexes {
+    (kind, status, expires_at) [name: 'idx_backup_snapshots_kind_status_expires', note: 'hot query: docs/sequences/14-retention/cron-job-base-execution.sequence.mmd — sweep expired snapshots']
+    (scope_household_id, taken_at) [name: 'idx_backup_snapshots_household_taken', note: 'hot query: docs/sequences/14-retention/account-deletion-pipeline.sequence.mmd — data export delivery: find latest export per household']
+  }
+}

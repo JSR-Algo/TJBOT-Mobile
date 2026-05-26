@@ -1,0 +1,21 @@
+%% GENERATED FROM nav-graph-data.json sha=2e58cd2ef8b5. Do not edit by hand.
+%% domain: robot-mgmt
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Robot_Mgmt["Robot Mgmt"]
+    rm_battery["Robot · Battery"]
+    rm_factory(["Robot · Factory reset"])
+    rm_firmware["Robot · Software update"]
+    rm_mic_test["Robot · Microphone test"]
+    rm_my_robot["Robot · My Robot"]
+    rm_offline_help(["Robot · Offline help"])
+    rm_sound["Robot · Sound & volume"]
+    rm_speaker_test["Robot · Speaker test"]
+    rm_status["Robot · Status"]
+    rm_storage["Robot · Courses installed"]
+    rm_support["Robot · Contact support"]
+    rm_wifi["Robot · Wi-Fi"]
+  end
+  class rm_battery,rm_firmware,rm_mic_test,rm_my_robot,rm_sound,rm_speaker_test,rm_status,rm_storage,rm_support,rm_wifi happy
+  class rm_factory,rm_offline_help edge

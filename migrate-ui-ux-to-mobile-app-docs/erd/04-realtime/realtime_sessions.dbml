@@ -1,0 +1,63 @@
+// realtime_sessions — authoritative record of a child voice session on a TBot device.
+// Business term "ChildSession" maps to this table (per ADR-0006).
+// Per SM plan §8.2 (LessonSession state machine) + ADR-0006 (child_sessions ownership, device-anchored).
+// Partial unique index on (user_id, device_id) WHERE state is active prevents concurrent active sessions
+// per device — DBML does not natively express partial indexes; constraint documented in Notes below and
+// enforced via CHECK + application layer; represented here as a regular unique index with a DBML Note.
+
+enum realtime_session_state {
+  idle
+  connecting
+  handshaking
+  open
+  turn_active
+  turn_complete
+  barge_in
+  reconnecting
+  closing
+  closed
+  error
+  paused
+  timed_out
+}
+
+enum realtime_session_end_reason {
+  complete
+  timeout
+  error
+  parent_stop
+  barge_limit
+  cost_limit
+  device_disconnect
+  safety_block
+}
+
+Table realtime_sessions {
+  id                uuid                        [pk, note: 'service-generated; never serial']
+  user_id           uuid                        [not null, note: 'cross-domain ref → IdentityService — parent account owning this session']
+  device_id         uuid                        [not null, note: 'cross-domain ref → DeviceService — device that originated the session']
+  child_id          uuid                        [not null, note: 'cross-domain ref → IdentityService — child profile active at session start']
+  state             realtime_session_state      [not null, default: 'idle']
+  state_version     int                         [not null, default: 0, note: 'monotonic version counter; incremented on every state transition for optimistic concurrency']
+  start_at          timestamptz                 [not null, note: 'wall clock when SESSION_OPEN received from device']
+  end_at            timestamptz                 [note: 'NULL while session is open; set on any terminal transition']
+  end_reason        realtime_session_end_reason [note: 'NULL while open; set alongside end_at']
+  turns_count       int                         [not null, default: 0]
+  bargein_count     int                         [not null, default: 0]
+  cost_cents        bigint                      [not null, default: 0, note: 'money: bigint cents; cumulative LLM + TTS cost for this session']
+  device_session_id uuid                        [not null, note: 'opaque idempotency token minted by device in SESSION_OPEN payload; guards against duplicate opens']
+  created_at        timestamptz                 [not null, default: `now()`]
+  updated_at        timestamptz                 [not null, default: `now()`]
+
+  Indexes {
+    (user_id, device_id) [name: 'idx_realtime_sessions_active', note: 'hot query: docs/sequences/04-realtime/session-start-mobile.sequence.mmd — partial unique enforced at app layer WHERE state NOT IN (closed,error,timed_out); DBML cannot express partial unique natively; see entity .md Notes']
+    (device_session_id) [unique, name: 'idx_realtime_sessions_device_session_id_unique']
+    (user_id, start_at) [name: 'idx_realtime_sessions_user_start_at', note: 'hot query: docs/sequences/04-realtime/observer-attach.sequence.mmd — session history for parent observer attach']
+    (device_id, state) [name: 'idx_realtime_sessions_device_state', note: 'hot query: docs/sequences/04-realtime/ws-handshake.sequence.mmd — look up open session for device']
+    (state, updated_at) [name: 'idx_realtime_sessions_state_updated_at', note: 'hot query: docs/sequences/04-realtime/session-close.sequence.mmd — idle-timeout sweep']
+  }
+}
+
+Ref: realtime_sessions.user_id > users.id
+Ref: realtime_sessions.device_id > devices.id
+// Ref: realtime_sessions.child_id > children.id    // cross-domain ref → IdentityService

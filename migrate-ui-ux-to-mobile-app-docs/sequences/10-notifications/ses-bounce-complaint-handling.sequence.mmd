@@ -1,0 +1,54 @@
+---
+system: sys-10-notifications
+flow_id: ses-bounce-complaint-handling
+surface: webhook-inbound
+spec_anchor: /software/systems/10-notification-delivery#bounce-and-complaint-handling
+actors: [SES, SNS, NotificationService, PostgreSQL]
+apis:
+  - POST /webhooks/ses-events
+externals: [SES, SNS, PostgreSQL]
+queues: []
+failure_paths:
+  - invalid_sns_signature
+  - unknown_notification_id
+  - duplicate_event
+  - transactional_email_override
+idempotency: dedupe on SNS MessageId
+retry: SNS auto-retry with exponential backoff up to 23 days
+timeout: 2s p99 webhook ack
+status: final
+---
+%% HAND-CURATED. SES bounce/complaint webhook fan-in path.
+sequenceDiagram
+    autonumber
+    participant SES
+    participant SNS
+    participant NotificationService
+    participant PostgreSQL
+
+    SES-)SNS: publish bounce / complaint / delivery event
+    SNS->>NotificationService: POST /webhooks/ses-events (signed)
+    NotificationService->>NotificationService: verify SNS signature
+    alt invalid_sns_signature
+        NotificationService-->>SNS: 401 invalid_signature
+    else valid
+        NotificationService->>PostgreSQL: SELECT notification by ses_message_id
+        alt unknown_notification_id
+            PostgreSQL-->>NotificationService: 0 rows
+            NotificationService-->>SNS: 200 OK (logged, dropped)
+        else duplicate_event
+            PostgreSQL-->>NotificationService: event_id already recorded
+            NotificationService-->>SNS: 200 OK (idempotent)
+        else hard_bounce
+            NotificationService->>PostgreSQL: UPDATE parents SET email_disabled_reason,hard_bounce
+            NotificationService->>PostgreSQL: UPDATE notifications SET status,bounced
+            NotificationService-->>SNS: 200 OK
+        else complaint
+            NotificationService->>PostgreSQL: UPDATE parents SET email_disabled_reason,complaint
+            NotificationService-->>SNS: 200 OK
+            Note over NotificationService,PostgreSQL: transactional_email_override — password_reset still permitted post-flag (security-critical)
+        else delivery
+            NotificationService->>PostgreSQL: UPDATE notifications SET status,delivered
+            NotificationService-->>SNS: 200 OK
+        end
+    end

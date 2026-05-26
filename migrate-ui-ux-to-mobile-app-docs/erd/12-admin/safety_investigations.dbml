@@ -1,0 +1,46 @@
+// safety_investigations — admin-side case file for safety-filter misses.
+// Source: docs/site/software/systems/12-support-admin-operations.md §3.1 safety_incidents.
+// Plan §3 manifest names this `safety_investigations`.
+
+enum safety_investigation_severity {
+  low
+  medium
+  high
+  critical
+}
+
+enum safety_investigation_status {
+  open
+  investigating
+  resolved
+  escalated
+}
+
+Table safety_investigations {
+  id                       uuid                              [pk]
+  device_id                uuid                              [not null, note: 'cross-domain ref → DeviceService (sys-02). Lane C owns devices.id']
+  session_id               uuid                              [not null, note: 'cross-domain ref → RealtimeService (sys-04). Lane D owns sessions.id']
+  turn_id                  uuid                              [note: 'cross-domain ref → RealtimeService (sys-04). Lane D owns session_turns.id']
+  reported_by_admin_id     uuid                              [not null]
+  severity                 safety_investigation_severity     [not null]
+  status                   safety_investigation_status       [not null, default: 'open']
+  description              text                              [not null]
+  resolution               text
+  escalated_to             varchar(120)
+  metadata                 jsonb                             [not null, default: `'{}'::jsonb`]
+  resolved_at              timestamptz
+  created_at               timestamptz                       [not null, default: `now()`]
+  updated_at               timestamptz                       [not null, default: `now()`]
+
+  Indexes {
+    (device_id) [name: 'idx_safety_investigations_device_id']
+    (status) [name: 'idx_safety_investigations_status']
+    (severity, created_at) [name: 'idx_safety_investigations_severity_created_at', note: 'hot query: docs/sequences/12-admin/safety-investigation-w2.sequence.mmd — open-critical triage queue']
+  }
+}
+
+Ref: safety_investigations.reported_by_admin_id > admin_users.id
+// Phase 3 adds cross-folder Refs:
+//   safety_investigations.device_id   > devices.id          (Lane C)
+//   safety_investigations.session_id  > sessions.id         (Lane D)
+//   safety_investigations.turn_id     > session_turns.id    (Lane D)

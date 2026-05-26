@@ -1,8 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { User } from '../types';
-import * as authApi from '../api/auth';
-import * as accountApi from '../api/account';
-import { setAuthInvalidatedHandler } from '../api/client';
+import * as authApi from '../services/api/auth';
+import * as accountApi from '../services/api/account';
+import { setAuthInvalidatedHandler } from '../services/http/client';
 import {
   clearTokens,
   deleteSecureItem,
@@ -10,9 +10,9 @@ import {
   getSecureJson,
   SECURE_STORE_KEYS,
   setSecureJson,
-} from '../api/tokens';
+} from '../services/http/tokens';
 import { normalizeError } from '../utils/errors';
-import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../observability/analytics';
+import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../services/observability/analytics';
 
 interface AuthState {
   user: User | null;
@@ -92,7 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         try {
           user = await accountApi.getAccountSummary();
         } catch (err: unknown) {
-          const status = (err as { status?: number })?.status;
+          const status = (err as { status?: number; response?: { status?: number } }).status
+            ?? (err as { response?: { status?: number } }).response?.status;
           authRejected = status === 401;
           user = null;
         }

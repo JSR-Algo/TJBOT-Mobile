@@ -1,0 +1,37 @@
+// fallback_templates — deterministic safe replies for every blocked or degraded scenario.
+// Source: sys-05 §4 fallback_response_templates DDL, §17 fallback selection cascade (19 trigger codes).
+// Locale + age-band indexed; selection cascade lives in code, not DB triggers.
+// Distinct from sys-04 phrase_cache_entries: this is TEXT template (locale-aware copy);
+// phrase_cache is the RENDERED AUDIO. Both layers exist by design (plan §13 separation rationale).
+
+enum fallback_template_status {
+  draft
+  published
+  retired
+}
+
+Table fallback_templates {
+  id                       uuid                       [pk]
+  template_set             varchar(64)                [not null, note: 'groups templates referenced by safety_policy_versions.fallback_template_set']
+  trigger_code             varchar(64)                [not null, note: 'one of the 19 trigger codes in sys-05 §17 — violence_blocked, self_harm_blocked, …, generic_safe']
+  locale                   varchar(16)                [not null, note: 'BCP-47']
+  age_band                 varchar(8)                 [not null, note: '4_5 | 6_8']
+  status                   fallback_template_status   [not null, default: 'draft']
+  version_no               integer                    [not null, default: 1]
+  text_segment             text                       [not null, note: 'verbatim assistant response copy; sys-05 §4 calibrated to age band']
+  render_plan              jsonb                      [note: 'optional renderPlan (baseScene + emotion) per sys-05 §11 output contract']
+  motion_plan              jsonb                      [note: 'optional motionPlan (style + maxAmplitudePct)']
+  expression_sync_hint     jsonb                      [note: 'optional pre-computed expression frames; orchestrator falls back to generated when absent']
+  notes                    text
+  created_by_admin_user_id uuid                       [note: 'cross-domain ref → AdminAuthService — Phase 3 reconciles']
+  published_at             timestamptz                [note: 'set when status flips to published']
+  retired_at               timestamptz
+  created_at               timestamptz                [not null, default: `now()`]
+  updated_at               timestamptz                [not null, default: `now()`]
+
+  Indexes {
+    (template_set, trigger_code, locale, age_band, status) [name: 'idx_fallback_templates_set_code_locale_age_status', note: 'hot query: docs/sequences/05-safety/fallback-selection.sequence.mmd — cascade lookup: exact match → broader age → generic_safe']
+    (trigger_code, locale) [name: 'idx_fallback_templates_trigger_code_locale', note: 'hot query: docs/sequences/05-safety/fallback-selection.sequence.mmd — locale-scoped trigger code lookup when template_set unknown']
+    (status, updated_at) [name: 'idx_fallback_templates_status_updated_at', note: 'hot query: docs/sequences/05-safety/policy-publish.sequence.mmd — admin diff between versions']
+  }
+}

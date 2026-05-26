@@ -1,0 +1,58 @@
+---
+system: sys-07-parent-controls-summary
+flow_id: daily-summary-generation
+surface: cron
+spec_anchor: /software/systems/07-parent-controls-summary#daily-summary-worker
+actors: [EventBridge, SQS, SummaryWorker, PostgreSQL, NotificationQueue]
+apis: []
+externals: [EventBridge, SQS]
+queues:
+  - controls.summary.daily
+  - controls.summary.daily.dlq
+  - tbot-notifications
+failure_paths:
+  - worker_crash_mid_batch
+  - upsert_constraint_violation
+  - dlq_redelivery_exhausted
+idempotency: upsert ON CONFLICT (device_id, child_profile_id, summary_date)
+retry: SQS 3 retries with exponential backoff (30s, 5m, 30m); DLQ after 3 fails
+timeout: 300s visibility timeout per message
+status: final
+---
+%% HAND-CURATED. Cron-driven aggregation; upsert keys make replay idempotent.
+sequenceDiagram
+    autonumber
+    participant EventBridge
+    participant SQS as SQS controls.summary.daily
+    participant SummaryWorker
+    participant PostgreSQL
+    participant NotificationQueue as SQS tbot-notifications
+
+    EventBridge->>SQS: cron(0 3 * * ? *) enqueue {target_date}
+    SQS->>SummaryWorker: deliver message (visibility 300s)
+    SummaryWorker->>PostgreSQL: SELECT aggregates per (device_id, child_profile_id) for target_date
+
+    loop per aggregated row
+        alt upsert_constraint_violation
+            SummaryWorker->>PostgreSQL: INSERT ... ON CONFLICT DO UPDATE
+            PostgreSQL-->>SummaryWorker: error (other than unique)
+            Note over SummaryWorker: increment summaries_failed counter — continue loop
+        else upserted
+            SummaryWorker->>PostgreSQL: INSERT daily_summaries ... ON CONFLICT (device_id,child_profile_id,summary_date) DO UPDATE
+            PostgreSQL-->>SummaryWorker: ok
+        end
+    end
+
+    alt worker_crash_mid_batch
+        SummaryWorker--xSQS: message not ACKed
+        Note over SQS,SummaryWorker: SQS redelivers — upsert idempotent → no duplicates
+        SQS->>SummaryWorker: redeliver (attempt 2 of 3)
+    else dlq_redelivery_exhausted
+        SQS--xSQS: 3 attempts failed
+        Note over SQS: move to controls.summary.daily.dlq — PagerDuty after 30 min depth>0
+    else completed
+        SummaryWorker->>NotificationQueue: enqueue {event: summary.daily.generated, target_date, summaries_created}
+        SummaryWorker-->>SQS: ACK
+    end
+
+    Note over EventBridge,NotificationQueue: idempotent via unique (device_id, child_profile_id, summary_date) — no daily row for inactive days

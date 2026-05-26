@@ -1,0 +1,75 @@
+// safety_events — append-only ledger of every input-blocked / output-blocked / PII-detected / severe-counter event.
+// Source: sys-05 §4 schema (conversation_request_events conceptual table), §17 trigger codes, §20 alerts.
+// Cross-system: feeds sys-12 SafetyInvestigationService, sys-11 telemetry, sys-10 parent notifications.
+
+enum safety_event_type {
+  input_blocklist_hit
+  input_topic_classified
+  input_pii_detected
+  output_blocklist_hit
+  output_pii_emitted
+  output_fear_amplification
+  output_age_inappropriate_vocabulary
+  output_prompt_leakage
+  output_response_too_long
+  output_rewrite_attempted
+  output_rewrite_failed
+  final_gate_invalid_schema
+  model_timeout
+  model_malformed
+  budget_exceeded
+  severe_counter_increment
+  red_team_regression_detected
+}
+
+enum safety_event_stage {
+  input
+  output
+  final_gate
+  governance
+}
+
+enum safety_event_severity {
+  low
+  medium
+  high
+  critical
+}
+
+Table safety_events {
+  id                          uuid                   [pk]
+  session_id                  uuid                   [note: 'cross-domain ref → RealtimeService.sessions — nullable for non-turn events (red-team, publish gates)']
+  session_turn_id             uuid                   [note: 'cross-domain ref → RealtimeService.session_turns — nullable for non-turn events']
+  child_profile_id            uuid                   [note: 'cross-domain ref → IdentityService.children — nullable but always present for live-turn events']
+  household_id                uuid                   [note: 'cross-domain ref → IdentityService.households — denormalized for parent-summary lookups + severe counter']
+  event_type                  safety_event_type      [not null]
+  stage                       safety_event_stage     [not null]
+  severity                    safety_event_severity  [not null]
+  category                    varchar(64)            [note: 'e.g. violence | self_harm | pii_phone_us — see sys-05 §8 blocklist categories']
+  confidence_pct              integer                [note: 'classifier confidence × 100 (0-100); avoids float per CONVENTIONS.md']
+  trigger_code                varchar(64)            [note: 'sys-05 §17 fallback trigger code — links to fallback_templates lookup']
+  transcript_hash             varchar(64)            [note: 'SHA-256 of transcript at event time — never raw text; correlates with session_transcripts.transcript_sha256']
+  blocklist_version_id        uuid                   [note: 'cross-domain self-ref → safety_blocklist_entries version snapshot']
+  safety_policy_version_id    uuid                   [note: 'snapshot of the safety_policy_versions row in effect; ref declared in safety_policy_versions when added in Phase 3']
+  topic_id                    uuid                   [note: 'FK → safety_topics.id; nullable when not classifier-driven']
+  fallback_template_id        uuid                   [note: 'FK → fallback_templates.id; nullable when no fallback emitted']
+  detection_latency_ms        integer
+  parent_alerted              boolean                [not null, default: false, note: 'true → sys-10 dispatched a parent notification']
+  parent_alerted_at           timestamptz
+  session_terminated          boolean                [not null, default: false, note: 'sys-04 force-close due to this event']
+  instance_id                 varchar(64)
+  created_at                  timestamptz            [not null, default: `now()`]
+  updated_at                  timestamptz            [not null, default: `now()`]
+
+  Indexes {
+    (household_id, created_at) [name: 'idx_safety_events_household_id_created_at', note: 'hot query: docs/sequences/05-safety/safety-event-fanout.sequence.mmd — severe-counter 1h sliding window + parent-summary join']
+    (child_profile_id, created_at) [name: 'idx_safety_events_child_profile_id_created_at', note: 'hot query: docs/sequences/12-admin/safety-investigation.sequence.mmd — per-child support timeline']
+    (event_type, created_at) [name: 'idx_safety_events_event_type_created_at', note: 'hot query: docs/sequences/05-safety/safety-event-fanout.sequence.mmd — fanout subscribers filter by type']
+    (severity, parent_alerted, created_at) [name: 'idx_safety_events_severity_parent_alerted_created_at', note: 'hot query: docs/sequences/10-notifications/safety-alert-dispatch.sequence.mmd — alert dispatcher selects high+critical un-alerted rows']
+    (session_id) [name: 'idx_safety_events_session_id']
+    (transcript_hash) [name: 'idx_safety_events_transcript_hash']
+  }
+}
+
+Ref: safety_events.topic_id > safety_topics.id  // intra-domain
+Ref: safety_events.fallback_template_id > fallback_templates.id  // intra-domain

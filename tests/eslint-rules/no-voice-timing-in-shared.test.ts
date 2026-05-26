@@ -1,5 +1,5 @@
 /**
- * RuleTester suite for the TBOT custom rule (plan v2 §11.7).
+ * RuleTester suite for the TJBot custom rule (plan v2 §11.7).
  *
  * Each invalid case asserts that a code construct in a specific
  * filename is reported with the right messageId. Each valid case
@@ -14,7 +14,6 @@
 import { RuleTester } from 'eslint';
 import * as path from 'path';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const rule = require('../../eslint-rules/no-voice-timing-in-shared.js');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');

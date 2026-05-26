@@ -1,0 +1,6 @@
+{
+  "id": "auth",
+  "owner_lane": "A",
+  "flow": "docs/flows/domains/auth/flow.generated.mmd",
+  "edge_cases": {}
+}

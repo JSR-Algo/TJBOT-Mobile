@@ -1,0 +1,29 @@
+// pin_recovery_tokens — single-use PIN-recovery magic-link tokens for parent PIN reset.
+// Source: docs/decisions/0008-pin-recovery-flow.md D2/D5/D6.
+
+enum pin_recovery_token_status {
+  pending
+  consumed
+  expired
+  invalidated
+}
+
+Table pin_recovery_tokens {
+  id              uuid                        [pk]
+  user_id         uuid                        [not null]
+  token_hash      varchar(128)                [not null, note: 'sha256 of the 32-byte random token; raw token never stored']
+  status          pin_recovery_token_status   [not null, default: 'pending']
+  expires_at      timestamptz                 [not null, note: 'TTL 15 minutes per ADR-0008 D5']
+  used_at         timestamptz
+  requested_ip    varchar(45)                 [note: 'for 1/hour throttle per ADR-0008 D6; IPv4 or IPv6 (max 45 chars)']
+  created_at      timestamptz                 [not null, default: `now()`]
+  updated_at      timestamptz                 [not null, default: `now()`]
+
+  Indexes {
+    (token_hash) [unique, name: 'idx_pin_recovery_tokens_token_hash_unique']
+    (user_id, status) [name: 'idx_pin_recovery_tokens_user_status', note: 'hot query: docs/sequences/01-identity/pin-recovery.sequence.mmd — find pending recovery token for user']
+    (user_id, created_at) [name: 'idx_pin_recovery_tokens_user_created_at', note: 'hot query: docs/sequences/01-identity/pin-recovery.sequence.mmd — throttle check: count requests per user in rolling 1-hour window']
+  }
+}
+
+Ref: pin_recovery_tokens.user_id > users.id

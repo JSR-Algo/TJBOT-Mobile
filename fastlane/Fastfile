@@ -1,0 +1,77 @@
+# TJBot-mobile Fastlane lanes
+#
+# Phase 1 default upload path is manual `xcrun altool` (Option B′ per
+# store-readiness-deploy plan v4 line 66). These lanes are scaffolded for the
+# Day 7-10 Fastlane swap-in once Match is green.
+#
+# Required env vars (CI: GitHub Actions secrets → workflow `env:` → Fastlane):
+#   ===== iOS / Match =====
+#   MATCH_PASSWORD                       Symmetric password for the Match cert repo
+#   MATCH_GIT_URL                        SSH or HTTPS URL of the private Match repo (overrides Matchfile default)
+#   MATCH_GIT_BASIC_AUTHORIZATION        base64("user:token") for HTTPS auth in CI runners
+#   ===== App Store Connect API key =====
+#   APP_STORE_CONNECT_API_KEY_ID         The 10-char key ID from App Store Connect
+#   APP_STORE_CONNECT_API_KEY_ISSUER_ID  Issuer UUID from the API Keys page
+#   APP_STORE_CONNECT_API_KEY_CONTENT    base64 of the .p8 private key (never commit the .p8 itself)
+#   APP_STORE_CONNECT_API_KEY_PATH       Optional: path to a JSON key file generated at runtime
+#   ===== Apple ID + Fastlane session (fallback when API key path not used) =====
+#   FASTLANE_APPLE_ID                    Apple ID used by Appfile
+#   FASTLANE_TEAM_ID                     Apple Developer Team ID
+#   ===== Android =====
+#   GOOGLE_PLAY_JSON_KEY                 Service-account JSON key for Play Console API
+#   ANDROID_KEYSTORE_BASE64              base64 of the upload keystore (.jks)
+#   ANDROID_KEYSTORE_PASSWORD            Keystore password
+#   ANDROID_KEY_ALIAS                    Key alias inside the keystore
+#   ANDROID_KEY_PASSWORD                 Key password (often same as keystore password)
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload a Release build to TestFlight (Phase 2 swap-in path)"
+  lane :beta_ios do
+    setup_ci if ENV["CI"]
+
+    match(
+      type: "appstore",
+      readonly: true
+    )
+
+    build_app(
+      workspace: "ios/TJBotMobile.xcworkspace",
+      scheme: "TJBotMobile",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "build/ios",
+      output_name: "TJBotMobile-1.0.0-1.ipa",
+      clean: true
+    )
+
+    upload_to_testflight(
+      api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"] || "fastlane/AuthKey.json",
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
+  end
+end
+
+platform :android do
+  desc "Upload a Release AAB to Play Console Internal track"
+  lane :beta_android do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "android/"
+    )
+
+    upload_to_play_store(
+      track: "internal",
+      aab: "android/app/build/outputs/bundle/release/app-release.aab",
+      json_key: ENV["GOOGLE_PLAY_JSON_KEY"],
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end

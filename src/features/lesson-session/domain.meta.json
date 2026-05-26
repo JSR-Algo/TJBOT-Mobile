@@ -1,0 +1,19 @@
+{
+  "id": "lesson-session",
+  "owner_lane": "B",
+  "flow": "docs/flows/domains/lesson-session/flow.generated.mmd",
+  "edge_cases": {
+    "gentle":       ["retry"],
+    "retry":        ["retry"],
+    "offtopic":     ["retry"],
+    "bargein":      ["error"],
+    "reconnecting": ["retry", "timeout"],
+    "audio_error":  ["error", "retry"],
+    "safety":       ["error"],
+    "exit_confirm":         ["cancel"],
+    "timed_out":            ["timeout"],
+    "cost_capped":          ["timeout"],
+    "parent_stopped":       ["error", "cancel"],
+    "abandoned_disconnect": ["timeout", "error"]
+  }
+}

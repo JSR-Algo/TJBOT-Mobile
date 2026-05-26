@@ -1,0 +1,62 @@
+---
+system: sys-06-content-and-personalization
+flow_id: retrieval
+surface: internal-RPC
+spec_anchor: /software/systems/06-content-and-personalization#post-internal-v1-personalization-retrieve
+actors: [SafetyService, ContentService, PostgreSQL, Redis]
+apis:
+  - POST /internal/v1/personalization/retrieve
+externals: [Redis]
+queues:
+  - cp-retrieval-analytics
+failure_paths:
+  - policy_key_unknown
+  - over_budget_trim_and_cap
+  - redis_unavailable_in_memory_fallback
+  - sensitive_data_blocked
+idempotency: conversationRequestId — duplicate requests return existing retrieval_snapshot row
+retry: 0 — latency budget does not allow retry; caller (System 05) proceeds with empty personalization on timeout
+timeout: 500ms p99 — total payload <=1800 chars truncated if exceeded
+status: final
+---
+%% HAND-CURATED — normalized from _seed.1 (06-content#L1490).
+sequenceDiagram
+    autonumber
+    participant SafetyService
+    participant ContentService
+    participant PostgreSQL
+    participant Redis
+
+    SafetyService->>ContentService: POST /internal/v1/personalization/retrieve {conversationRequestId, childProfileId, locale, ageBand, topicHints}
+    alt policy_key_unknown
+        ContentService->>PostgreSQL: SELECT allowlisted trait/preference keys
+        PostgreSQL-->>ContentService: key not in policy classification
+        ContentService-->>SafetyService: 400 policy_key_unknown
+    else over_budget_trim_and_cap
+        ContentService->>PostgreSQL: load traits and prefs and approved memories
+        ContentService->>Redis: HGET cooldowns for templates
+        ContentService->>ContentService: score and rank candidates
+        Note over ContentService: total payload > 1800 chars — trim by salience and recency
+        ContentService->>PostgreSQL: INSERT retrieval_snapshots row trimmed=true
+        ContentService-->>SafetyService: {traits<=5, prefs<=5, memories<=3, templates<=5} truncated
+    else redis_unavailable_in_memory_fallback
+        ContentService->>PostgreSQL: load traits and prefs and memories
+        ContentService->>Redis: HGET cooldowns
+        Redis--xContentService: connection error
+        Note over ContentService: degrade — in-memory cooldown fallback, log degradation metric
+        ContentService->>PostgreSQL: INSERT retrieval_snapshots row degraded=true
+        ContentService-->>SafetyService: bounded retrieval (cooldown best-effort)
+    else sensitive_data_blocked
+        ContentService->>PostgreSQL: load traits filtered by policy classification
+        Note over ContentService: traits with blocked_realtime classification dropped
+        ContentService-->>SafetyService: bounded retrieval (sensitive fields omitted)
+    else success
+        ContentService->>PostgreSQL: load traits and prefs and approved+eligible memories
+        ContentService->>Redis: HGET content:cooldown:{childProfileId}
+        Redis-->>ContentService: cooldown set
+        ContentService->>ContentService: score and rank and diversity cap
+        ContentService->>PostgreSQL: INSERT retrieval_snapshots row
+        ContentService-)ContentService: emit cp-retrieval-analytics
+        ContentService-->>SafetyService: {traits, preferences, memorySummaries, contentTemplates, retrievalPolicy}
+    end
+    Note over SafetyService,Redis: retrieval is bounded — allowed_realtime classification only — never raw parent notes

@@ -1,0 +1,18 @@
+Table factory_serial_assignments {
+  id                uuid        [pk, note: 'service-generated; never serial']
+  serial_number     varchar(64) [not null, note: 'format: TBT-YYYY-{6digits}; globally unique across all batches']
+  factory_batch_id  varchar(64) [not null, note: 'batch this serial was allocated to (e.g. B2026-042)']
+  device_id         uuid        [note: 'ref → devices.id; set after backend registration succeeds; null until then']
+  allocated_at      timestamptz [not null, default: `now()`, note: 'when FactoryCLI assigned this serial to a physical unit']
+  registered_at     timestamptz [note: 'when backend registration (POST /v1/devices/register) succeeded; null until then']
+  created_at        timestamptz [not null, default: `now()`]
+  updated_at        timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (serial_number) [unique, name: 'uq_factory_serial_assignments_serial_number', note: 'globally unique serial registry — single source of truth for serial allocation']
+    (factory_batch_id) [name: 'idx_factory_serial_assignments_factory_batch_id', note: 'hot query: docs/sequences/15-manufacturing/factory-provision-and-test.sequence.mmd — batch inventory audit']
+    (device_id) [name: 'idx_factory_serial_assignments_device_id']
+  }
+}
+
+// Ref: factory_serial_assignments.device_id > devices.id   // cross-domain ref → DeviceService (sys-02); documented in _shared/cross-domain-data-flow.md per Phase 3 decision

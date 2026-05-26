@@ -1,0 +1,36 @@
+@startuml TBOT-ParentSummary
+title Domain · parent-summary — parent dashboards on child activity
+left to right direction
+
+actor Parent
+
+package "parent-summary" {
+  usecase "View Parent Summary"      as UC_PRT_SUMMARY
+  usecase "View Today (parent)"      as UC_PRT_TODAY
+  usecase "View 30-Day History"      as UC_PRT_HISTORY
+  usecase "View Safety & Privacy"    as UC_PRT_SAFETY
+  usecase "Configure Parent Settings" as UC_PRT_SETTINGS
+  usecase "Open Help & FAQ"          as UC_PRT_HELP
+}
+
+Parent --> UC_PRT_SUMMARY
+Parent --> UC_PRT_TODAY
+Parent --> UC_PRT_HISTORY
+Parent --> UC_PRT_SAFETY
+Parent --> UC_PRT_SETTINGS
+Parent --> UC_PRT_HELP
+
+UC_PRT_SUMMARY ..> UC_PRT_TODAY    : drill
+UC_PRT_SUMMARY ..> UC_PRT_HISTORY  : drill
+UC_PRT_SUMMARY ..> UC_PRT_SAFETY   : drill
+UC_PRT_SUMMARY ..> UC_PRT_SETTINGS : header
+
+note top of UC_PRT_SUMMARY
+  [requires] parent-gate : UC_PG_PASS
+end note
+note bottom of UC_PRT_SETTINGS
+  [exit] → robot-mgmt : UC_RM_VIEW
+end note
+
+' Files: src/features/parent/Parent{Summary,Today,History,Safety,Settings}Page.jsx
+@enduml

@@ -1,7 +1,7 @@
 import React from 'react';
 import { DevSettings } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
-import { RootErrorBoundary } from '../../src/observability/RootErrorBoundary';
+import { RootErrorBoundary } from '../../src/services/observability/RootErrorBoundary';
 
 function Thrower(): React.JSX.Element {
   throw new Error('boom');

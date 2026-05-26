@@ -28,7 +28,7 @@ import * as path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const SRC = path.join(REPO_ROOT, 'src');
-const IOS = path.join(REPO_ROOT, 'ios/TbotMobile');
+const IOS = path.join(REPO_ROOT, 'ios/TJBotMobile');
 
 const read = (rel: string, root: string = SRC): string =>
   fs.readFileSync(path.join(root, rel), 'utf8');
@@ -128,9 +128,9 @@ describe('P0-5 + P0-5b — media-services reset engine recovery loop', () => {
   const session = read('VoiceSession/VoiceSessionModule.swift', IOS);
   const events = read('native/voice-session-events.ts');
   const wrapper = read('native/VoiceSession.ts');
-  const player = read('audio/PcmStreamPlayer.ts');
+  const player = read('services/audio/PcmStreamPlayer.ts');
   const hook = read('hooks/useGeminiConversation.ts');
-  const telemetry = read('observability/voice-telemetry.ts');
+  const telemetry = read('services/observability/voice-telemetry.ts');
 
   it('VoiceSessionModule.handleMediaServicesReset calls SharedVoiceEngine.shared.handleMediaServicesReset()', () => {
     // The call must happen inside the handleMediaServicesReset observer body,

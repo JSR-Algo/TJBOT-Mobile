@@ -1,4 +1,4 @@
-import { extractInlineAudioParts } from '../../src/ai/liveMessageAudio';
+import { extractInlineAudioParts } from '../../src/services/ai/liveMessageAudio';
 
 describe('extractInlineAudioParts', () => {
   it('returns every audio payload in modelTurn.parts order with its part index', () => {

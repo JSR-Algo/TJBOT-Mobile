@@ -1,0 +1,978 @@
+{
+  "states": {
+    "abandoned_disconnect": {
+      "f": "src/features/lesson-session/screens/AbandonedDisconnectScreen.tsx",
+      "title": "Abandoned Disconnect",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "activity_done": {
+      "f": "src/features/lesson-session/screens/ActivityDoneScreen.tsx",
+      "title": "Activity Complete",
+      "g": "Done",
+      "kind": "happy"
+    },
+    "activity_intro": {
+      "f": "src/features/lesson-session/screens/ActivityIntroScreen.tsx",
+      "title": "Activity Intro",
+      "g": "Activity",
+      "kind": "happy"
+    },
+    "app_error": {
+      "f": "src/features/fallback/screens/AppErrorScreen.tsx",
+      "title": "Generic App Error",
+      "g": "Fallback",
+      "kind": "edge"
+    },
+    "audio_error": {
+      "f": "src/features/lesson-session/screens/AudioErrorScreen.tsx",
+      "title": "Audio Error",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "audio_recovery": {
+      "f": "src/features/fallback/screens/AudioRecoveryScreen.tsx",
+      "title": "Audio Permission Recovery",
+      "g": "Fallback",
+      "kind": "edge"
+    },
+    "bargein": {
+      "f": "src/features/lesson-session/screens/BargeinScreen.tsx",
+      "title": "Interrupted (Barge-in)",
+      "g": "Feedback",
+      "kind": "edge"
+    },
+    "celebration": {
+      "f": "src/features/progress/screens/CelebrationScreen.tsx",
+      "title": "Celebration",
+      "g": "Progress",
+      "kind": "happy"
+    },
+    "cl_add_free": {
+      "f": "src/features/course-library/screens/BuyCourseScreen.tsx",
+      "title": "Course · Add free course",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_added": {
+      "f": "src/features/course-library/screens/CourseAddedScreen.tsx",
+      "title": "Course · Added to Robot",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_companion": {
+      "f": "src/features/course-library/screens/CompanionScreen.tsx",
+      "title": "Course · App companion view",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_complete": {
+      "f": "src/features/course-library/screens/CourseCompleteScreen.tsx",
+      "title": "Course · Lesson complete (synced)",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_detail": {
+      "f": "src/features/course-library/screens/CourseDetailScreen.tsx",
+      "title": "Course · Detail",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_library": {
+      "f": "src/features/course-library/screens/CourseLibraryScreen.tsx",
+      "title": "Course · Library",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_locked": {
+      "f": "src/features/course-library/screens/CourseLockedScreen.tsx",
+      "title": "Course · Locked",
+      "g": "Course Library",
+      "kind": "edge"
+    },
+    "cl_needs_sync": {
+      "f": "src/features/course-library/screens/NeedsSyncScreen.tsx",
+      "title": "Course · Robot needs sync",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_robot_ready": {
+      "f": "src/features/course-library/screens/RobotReadyScreen.tsx",
+      "title": "Course · Robot ready for today",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_running": {
+      "f": "src/features/course-library/screens/RunningScreen.tsx",
+      "title": "Course · Lesson running on Robot",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_send": {
+      "f": "src/features/course-library/screens/SendToRobotScreen.tsx",
+      "title": "Course · Send lesson to Robot",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "cl_unlock_confirm": {
+      "f": "src/features/course-library/UnlockConfirmModal.tsx",
+      "title": "Course · Parent unlock confirmation",
+      "g": "Course Library",
+      "kind": "happy"
+    },
+    "connecting": {
+      "f": "src/features/lesson-session/screens/ConnectingScreen.tsx",
+      "title": "Connecting Voice",
+      "g": "Start",
+      "kind": "happy"
+    },
+    "cost_capped": {
+      "f": "src/features/lesson-session/screens/CostCappedScreen.tsx",
+      "title": "Cost Capped",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "course": {
+      "f": "src/features/course/screens/CourseScreen.tsx",
+      "title": "Course Overview",
+      "g": "Course",
+      "kind": "happy"
+    },
+    "daily_mission": {
+      "f": "src/features/course/screens/DailyMissionScreen.tsx",
+      "title": "Daily Mission",
+      "g": "Course",
+      "kind": "happy"
+    },
+    "dv_firmware": {
+      "f": "src/features/device/screens/DeviceFirmwareScreen.tsx",
+      "title": "Robot · Firmware update",
+      "g": "Robot Device",
+      "kind": "edge"
+    },
+    "dv_home": {
+      "f": "src/features/device/screens/DeviceHomeScreen.tsx",
+      "title": "Robot · Device home",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_lcd": {
+      "f": "src/features/device/screens/LCDLibraryScreen.tsx",
+      "title": "Robot · LCD face library",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_lcd_turn": {
+      "f": "src/features/device/screens/LCDLessonTurnScreen.tsx",
+      "title": "Robot · LCD lesson turn",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_lost": {
+      "f": "src/features/device/screens/DeviceLostScreen.tsx",
+      "title": "Robot · Find my Robot",
+      "g": "Robot Device",
+      "kind": "edge"
+    },
+    "dv_overview": {
+      "f": "src/features/device/screens/DeviceOverviewScreen.tsx",
+      "title": "Robot · How it works together",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_add": {
+      "f": "src/features/device/pairing/screens/PairAddScreen.tsx",
+      "title": "Robot · Pair · add",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_code": {
+      "f": "src/features/device/pairing/screens/PairCodeScreen.tsx",
+      "title": "Robot · Pair · confirm code",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_connecting": {
+      "f": "src/features/device/pairing/screens/PairConnectingScreen.tsx",
+      "title": "Robot · Pair · connecting",
+      "g": "Robot Device",
+      "kind": "edge"
+    },
+    "dv_pair_failed": {
+      "f": "src/features/device/pairing/screens/PairFailedScreen.tsx",
+      "title": "Robot · Pair · failed",
+      "g": "Robot Device",
+      "kind": "edge"
+    },
+    "dv_pair_first_lesson": {
+      "f": "src/features/device/pairing/screens/PairFirstLessonScreen.tsx",
+      "title": "Robot · Pair · first lesson",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_found": {
+      "f": "src/features/device/pairing/screens/PairFoundScreen.tsx",
+      "title": "Robot · Pair · found",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_intro": {
+      "f": "src/features/device/pairing/screens/PairIntroScreen.tsx",
+      "title": "Robot · Pair · turn on",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_offline": {
+      "f": "src/features/device/pairing/screens/PairOfflineScreen.tsx",
+      "title": "Robot · Pair · offline",
+      "g": "Robot Device",
+      "kind": "edge"
+    },
+    "dv_pair_rename": {
+      "f": "src/features/device/pairing/screens/PairRenameScreen.tsx",
+      "title": "Robot · Pair · rename & buddy",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_search": {
+      "f": "src/features/device/pairing/screens/PairSearchScreen.tsx",
+      "title": "Robot · Pair · searching",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_success": {
+      "f": "src/features/device/pairing/screens/PairSuccessScreen.tsx",
+      "title": "Robot · Pair · success",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_wifi": {
+      "f": "src/features/device/pairing/screens/PairWifiScreen.tsx",
+      "title": "Robot · Pair · Wi-Fi pick",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_wifi_pw": {
+      "f": "src/features/device/pairing/screens/PairWifiPasswordScreen.tsx",
+      "title": "Robot · Pair · Wi-Fi password",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_session": {
+      "f": "src/features/device/screens/DeviceSessionScreen.tsx",
+      "title": "Robot · Live session monitor",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "exit_confirm": {
+      "f": "src/features/lesson-session/screens/ExitConfirmScreen.tsx",
+      "title": "Exit Confirm",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "gentle": {
+      "f": "src/features/lesson-session/screens/GentleScreen.tsx",
+      "title": "Gentle Correction",
+      "g": "Feedback",
+      "kind": "edge"
+    },
+    "greeting": {
+      "f": "src/features/lesson-session/screens/GreetingScreen.tsx",
+      "title": "Robot Greeting",
+      "g": "Start",
+      "kind": "happy"
+    },
+    "help_faq": {
+      "f": "src/features/fallback/screens/HelpFaqScreen.tsx",
+      "title": "Help & FAQ",
+      "g": "Fallback",
+      "kind": "happy"
+    },
+    "home_hub_daily": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Today",
+      "g": "Home",
+      "kind": "happy"
+    },
+    "home_hub_done": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Lesson done today",
+      "g": "Home",
+      "kind": "happy"
+    },
+    "home_hub_error": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Refresh error",
+      "g": "Home"
+    },
+    "home_hub_greet": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Robot greeting",
+      "g": "Home",
+      "kind": "happy"
+    },
+    "home_hub_idle": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Idle happy",
+      "g": "Home",
+      "kind": "happy"
+    },
+    "home_hub_mic": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Needs microphone",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_multiple_children": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Multiple children",
+      "g": "Home"
+    },
+    "home_hub_offline": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Reconnecting",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_offline_24h": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Robot offline over 24h",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_paused": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · TJBot paused",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_quiet_hours": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Quiet hours active",
+      "g": "Home",
+      "kind": "edge"
+    },
+    "home_hub_unpaired_robot": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · Robot not paired",
+      "g": "Home"
+    },
+    "home_hub_zero_child": {
+      "f": "src/features/home/screens/HomeHubScreen.tsx",
+      "title": "Home · No child profile",
+      "g": "Home"
+    },
+    "kid_settings": {
+      "f": "src/features/fallback/screens/KidSettingsScreen.tsx",
+      "title": "Settings",
+      "g": "Fallback",
+      "kind": "happy"
+    },
+    "lesson_detail": {
+      "f": "src/features/course/screens/LessonDetailScreen.tsx",
+      "title": "Lesson Detail",
+      "g": "Course",
+      "kind": "happy"
+    },
+    "lesson_done": {
+      "f": "src/features/lesson-session/screens/LessonDoneScreen.tsx",
+      "title": "Lesson Complete",
+      "g": "Done",
+      "kind": "happy"
+    },
+    "lesson_list": {
+      "f": "src/features/course/screens/LessonListScreen.tsx",
+      "title": "Lesson List",
+      "g": "Course",
+      "kind": "happy"
+    },
+    "lesson_ready": {
+      "f": "src/features/lesson-session/screens/LessonReadyScreen.tsx",
+      "title": "Lesson Ready",
+      "g": "Start",
+      "kind": "happy"
+    },
+    "lesson_resume": {
+      "f": "src/features/fallback/screens/LessonResumeScreen.tsx",
+      "title": "Lesson Resume",
+      "g": "Fallback",
+      "kind": "happy"
+    },
+    "lesson_summary": {
+      "f": "src/features/progress/screens/LessonSummaryScreen.tsx",
+      "title": "Lesson Summary",
+      "g": "Progress",
+      "kind": "happy"
+    },
+    "level": {
+      "f": "src/features/course/screens/LevelScreen.tsx",
+      "title": "Level Overview",
+      "g": "Course",
+      "kind": "happy"
+    },
+    "mic_missing": {
+      "f": "src/features/fallback/screens/MicMissingScreen.tsx",
+      "title": "Mic Permission Missing",
+      "g": "Fallback",
+      "kind": "edge"
+    },
+    "network_error": {
+      "f": "src/features/fallback/screens/NetworkErrorScreen.tsx",
+      "title": "Network Error",
+      "g": "Fallback",
+      "kind": "edge"
+    },
+    "offtopic": {
+      "f": "src/features/lesson-session/screens/OfftopicScreen.tsx",
+      "title": "Off-topic Redirect",
+      "g": "Feedback",
+      "kind": "edge"
+    },
+    "onb_child": {
+      "f": "src/features/onboarding/screens/ChildProfileScreen.tsx",
+      "title": "11 · Child Profile",
+      "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_first_lesson": {
+      "f": "src/features/onboarding/screens/FirstLessonEntryScreen.tsx",
+      "title": "12 · First Lesson Entry",
+      "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_intro_celebrate": {
+      "f": "src/features/auth/screens/IntroCelebrateScreen.tsx",
+      "title": "6 · Intro · Celebrate",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_intro_listen": {
+      "f": "src/features/auth/screens/IntroListenScreen.tsx",
+      "title": "3 · Intro · Listen",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_intro_retry": {
+      "f": "src/features/auth/screens/IntroRetryScreen.tsx",
+      "title": "5 · Intro · Try Again",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_intro_speak": {
+      "f": "src/features/auth/screens/IntroSpeakScreen.tsx",
+      "title": "4 · Intro · Speak",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_login": {
+      "f": "src/features/auth/screens/LoginScreen.tsx",
+      "title": "9 · Login / Sign Up",
+      "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_mic": {
+      "f": "src/features/onboarding/screens/MicAskScreen.tsx",
+      "title": "8 · Voice Permission",
+      "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_splash": {
+      "f": "src/features/auth/screens/SplashScreen.tsx",
+      "title": "1 · Splash",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_trust": {
+      "f": "src/features/auth/screens/TrustScreen.tsx",
+      "title": "7 · Parent Trust Intro",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "onb_welcome": {
+      "f": "src/features/auth/screens/WelcomeScreen.tsx",
+      "title": "2 · Welcome",
+      "g": "Entry",
+      "kind": "happy"
+    },
+    "parent_account_privacy": {
+      "f": "src/features/parent/screens/ParentAccountPrivacyScreen.tsx",
+      "title": "Account Privacy",
+      "g": "Parent",
+      "kind": "edge"
+    },
+    "parent_gate": {
+      "f": "src/features/parent/screens/ParentGateScreen.tsx",
+      "title": "Parent Gate",
+      "g": "Parent",
+      "kind": "edge"
+    },
+    "parent_history": {
+      "f": "src/features/parent/screens/ParentHistoryScreen.tsx",
+      "title": "Past 30 Days",
+      "g": "Parent",
+      "kind": "happy"
+    },
+    "parent_locked_out": {
+      "f": "src/features/parent/screens/ParentLockedOutScreen.tsx",
+      "title": "Parent Gate Locked Out",
+      "g": "Parent",
+      "kind": "edge"
+    },
+    "parent_safety": {
+      "f": "src/features/parent/screens/ParentSafetyScreen.tsx",
+      "title": "Safety & Privacy",
+      "g": "Parent",
+      "kind": "happy"
+    },
+    "parent_settings": {
+      "f": "src/features/parent/screens/ParentSettingsScreen.tsx",
+      "title": "Parent Settings",
+      "g": "Parent",
+      "kind": "happy"
+    },
+    "parent_stopped": {
+      "f": "src/features/lesson-session/screens/ParentStoppedScreen.tsx",
+      "title": "Parent Stopped",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "parent_summary": {
+      "f": "src/features/parent/screens/ParentSummaryScreen.tsx",
+      "title": "Parent Summary",
+      "g": "Parent",
+      "kind": "happy"
+    },
+    "parent_today": {
+      "f": "src/features/parent/screens/ParentTodayScreen.tsx",
+      "title": "Practiced Today",
+      "g": "Parent",
+      "kind": "happy"
+    },
+    "pr_activate": {
+      "f": "src/features/purchase/screens/ActivateScreen.tsx",
+      "title": "Buy · Activate Robot",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_arrived": {
+      "f": "src/features/purchase/screens/ArrivedScreen.tsx",
+      "title": "Buy · Robot arrived · setup",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_bundle": {
+      "f": "src/features/purchase/screens/BundleScreen.tsx",
+      "title": "Buy · Bundle picker",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_checkout": {
+      "f": "src/features/purchase/screens/CheckoutScreen.tsx",
+      "title": "Buy · Checkout",
+      "g": "Purchase",
+      "kind": "edge"
+    },
+    "pr_confirm": {
+      "f": "src/features/purchase/screens/OrderConfirmScreen.tsx",
+      "title": "Buy · Order confirmed",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_first_course": {
+      "f": "src/features/purchase/screens/FirstCourseScreen.tsx",
+      "title": "Buy · Add first course",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_how": {
+      "f": "src/features/purchase/screens/HowItWorksScreen.tsx",
+      "title": "Buy · How lessons work",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_included": {
+      "f": "src/features/purchase/screens/IncludedScreen.tsx",
+      "title": "Buy · What",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_intro": {
+      "f": "src/features/purchase/screens/PurchaseIntroScreen.tsx",
+      "title": "Buy · Robot overview",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_privacy": {
+      "f": "src/features/purchase/screens/PrivacyScreen.tsx",
+      "title": "Buy · Parent trust & privacy",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_shipping": {
+      "f": "src/features/purchase/screens/ShippingScreen.tsx",
+      "title": "Buy · Shipping & delivery",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "pr_subs": {
+      "f": "src/features/purchase/screens/SubscriptionsScreen.tsx",
+      "title": "Buy · Course subscription",
+      "g": "Purchase",
+      "kind": "happy"
+    },
+    "reconnecting": {
+      "f": "src/features/lesson-session/screens/ReconnectingScreen.tsx",
+      "title": "Reconnecting",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "reconnecting_overlay": {
+      "f": "src/features/fallback/ReconnectingOverlay.tsx",
+      "title": "Reconnecting Overlay",
+      "g": "Fallback",
+      "kind": "edge"
+    },
+    "retry": {
+      "f": "src/features/lesson-session/screens/RetryScreen.tsx",
+      "title": "Retry Prompt",
+      "g": "Feedback",
+      "kind": "edge"
+    },
+    "review_entry": {
+      "f": "src/features/course/screens/ReviewEntryScreen.tsx",
+      "title": "Review Entry",
+      "g": "Course",
+      "kind": "happy"
+    },
+    "review_needed": {
+      "f": "src/features/progress/screens/ReviewNeededScreen.tsx",
+      "title": "Review Needed",
+      "g": "Progress",
+      "kind": "happy"
+    },
+    "rm_battery": {
+      "f": "src/features/robot-mgmt/screens/RobotBatteryScreen.tsx",
+      "title": "Robot · Battery",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_factory": {
+      "f": "src/features/robot-mgmt/screens/FactoryResetScreen.tsx",
+      "title": "Robot · Factory reset",
+      "g": "Robot Mgmt",
+      "kind": "edge"
+    },
+    "rm_firmware": {
+      "f": "src/features/robot-mgmt/screens/RobotFirmwareScreen.tsx",
+      "title": "Robot · Software update",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_mic_test": {
+      "f": "src/features/robot-mgmt/screens/MicTestScreen.tsx",
+      "title": "Robot · Microphone test",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_my_robot": {
+      "f": "src/features/robot-mgmt/screens/MyRobotScreen.tsx",
+      "title": "Robot · My Robot",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_offline_help": {
+      "f": "src/features/robot-mgmt/screens/OfflineHelpScreen.tsx",
+      "title": "Robot · Offline help",
+      "g": "Robot Mgmt",
+      "kind": "edge"
+    },
+    "rm_sound": {
+      "f": "src/features/robot-mgmt/screens/RobotSoundScreen.tsx",
+      "title": "Robot · Sound & volume",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_speaker_test": {
+      "f": "src/features/robot-mgmt/screens/SpeakerTestScreen.tsx",
+      "title": "Robot · Speaker test",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_status": {
+      "f": "src/features/robot-mgmt/screens/RobotStatusScreen.tsx",
+      "title": "Robot · Status",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_storage": {
+      "f": "src/features/robot-mgmt/screens/RobotStorageScreen.tsx",
+      "title": "Robot · Courses installed",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_support": {
+      "f": "src/features/robot-mgmt/screens/SupportScreen.tsx",
+      "title": "Robot · Contact support",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "rm_wifi": {
+      "f": "src/features/robot-mgmt/screens/RobotWifiScreen.tsx",
+      "title": "Robot · Wi-Fi",
+      "g": "Robot Mgmt",
+      "kind": "happy"
+    },
+    "robot_listening": {
+      "f": "src/features/lesson-session/screens/RobotListeningScreen.tsx",
+      "title": "Robot Listening",
+      "g": "Activity",
+      "kind": "happy"
+    },
+    "robot_speaking": {
+      "f": "src/features/lesson-session/screens/RobotSpeakingScreen.tsx",
+      "title": "Robot Speaking",
+      "g": "Activity",
+      "kind": "happy"
+    },
+    "safety": {
+      "f": "src/features/lesson-session/screens/SafetyScreen.tsx",
+      "title": "Safety Fallback",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "safety_redirect": {
+      "f": "src/features/fallback/screens/SafetyRedirectScreen.tsx",
+      "title": "Safety Redirect",
+      "g": "Fallback",
+      "kind": "happy"
+    },
+    "silence": {
+      "f": "src/features/lesson-session/screens/SilenceScreen.tsx",
+      "title": "Silence Prompt",
+      "g": "Feedback",
+      "kind": "happy"
+    },
+    "success": {
+      "f": "src/features/lesson-session/screens/SuccessScreen.tsx",
+      "title": "Success Moment",
+      "g": "Feedback",
+      "kind": "happy"
+    },
+    "thinking": {
+      "f": "src/features/lesson-session/screens/ThinkingScreen.tsx",
+      "title": "Robot Thinking",
+      "g": "Activity",
+      "kind": "happy"
+    },
+    "timed_out": {
+      "f": "src/features/lesson-session/screens/TimedOutScreen.tsx",
+      "title": "Timed Out",
+      "g": "Recovery",
+      "kind": "edge"
+    },
+    "today_progress": {
+      "f": "src/features/progress/screens/TodayProgressScreen.tsx",
+      "title": "Today",
+      "g": "Progress",
+      "kind": "happy"
+    },
+    "unit": {
+      "f": "src/features/course/screens/UnitScreen.tsx",
+      "title": "Unit Detail",
+      "g": "Course",
+      "kind": "happy"
+    },
+    "user_speaking": {
+      "f": "src/features/lesson-session/screens/UserSpeakingScreen.tsx",
+      "title": "User Speaking",
+      "g": "Activity",
+      "kind": "happy"
+    },
+    "voice_failed": {
+      "f": "src/features/fallback/screens/VoiceFailedScreen.tsx",
+      "title": "Voice Session Failed",
+      "g": "Fallback",
+      "kind": "edge"
+    },
+    "words_practiced": {
+      "f": "src/features/progress/screens/WordsPracticedScreen.tsx",
+      "title": "Words Practiced",
+      "g": "Progress",
+      "kind": "happy"
+    }
+  },
+  "edges": [],
+  "groups": {
+    "Activity": [
+      "activity_intro",
+      "robot_listening",
+      "robot_speaking",
+      "thinking",
+      "user_speaking"
+    ],
+    "Course": [
+      "course",
+      "daily_mission",
+      "lesson_detail",
+      "lesson_list",
+      "level",
+      "review_entry",
+      "unit"
+    ],
+    "Course Library": [
+      "cl_add_free",
+      "cl_added",
+      "cl_companion",
+      "cl_complete",
+      "cl_detail",
+      "cl_library",
+      "cl_locked",
+      "cl_needs_sync",
+      "cl_robot_ready",
+      "cl_running",
+      "cl_send",
+      "cl_unlock_confirm"
+    ],
+    "Done": [
+      "activity_done",
+      "lesson_done"
+    ],
+    "Entry": [
+      "onb_intro_celebrate",
+      "onb_intro_listen",
+      "onb_intro_retry",
+      "onb_intro_speak",
+      "onb_splash",
+      "onb_trust",
+      "onb_welcome"
+    ],
+    "Fallback": [
+      "app_error",
+      "audio_recovery",
+      "help_faq",
+      "kid_settings",
+      "lesson_resume",
+      "mic_missing",
+      "network_error",
+      "reconnecting_overlay",
+      "safety_redirect",
+      "voice_failed"
+    ],
+    "Feedback": [
+      "bargein",
+      "gentle",
+      "offtopic",
+      "retry",
+      "silence",
+      "success"
+    ],
+    "Home": [
+      "home_hub_daily",
+      "home_hub_done",
+      "home_hub_error",
+      "home_hub_greet",
+      "home_hub_idle",
+      "home_hub_mic",
+      "home_hub_multiple_children",
+      "home_hub_offline",
+      "home_hub_offline_24h",
+      "home_hub_paused",
+      "home_hub_quiet_hours",
+      "home_hub_unpaired_robot",
+      "home_hub_zero_child"
+    ],
+    "Onboarding": [
+      "onb_child",
+      "onb_first_lesson",
+      "onb_login",
+      "onb_mic"
+    ],
+    "Parent": [
+      "parent_account_privacy",
+      "parent_gate",
+      "parent_history",
+      "parent_locked_out",
+      "parent_safety",
+      "parent_settings",
+      "parent_summary",
+      "parent_today"
+    ],
+    "Progress": [
+      "celebration",
+      "lesson_summary",
+      "review_needed",
+      "today_progress",
+      "words_practiced"
+    ],
+    "Purchase": [
+      "pr_activate",
+      "pr_arrived",
+      "pr_bundle",
+      "pr_checkout",
+      "pr_confirm",
+      "pr_first_course",
+      "pr_how",
+      "pr_included",
+      "pr_intro",
+      "pr_privacy",
+      "pr_shipping",
+      "pr_subs"
+    ],
+    "Recovery": [
+      "abandoned_disconnect",
+      "audio_error",
+      "cost_capped",
+      "exit_confirm",
+      "parent_stopped",
+      "reconnecting",
+      "safety",
+      "timed_out"
+    ],
+    "Robot Device": [
+      "dv_firmware",
+      "dv_home",
+      "dv_lcd",
+      "dv_lcd_turn",
+      "dv_lost",
+      "dv_overview",
+      "dv_pair_add",
+      "dv_pair_code",
+      "dv_pair_connecting",
+      "dv_pair_failed",
+      "dv_pair_first_lesson",
+      "dv_pair_found",
+      "dv_pair_intro",
+      "dv_pair_offline",
+      "dv_pair_rename",
+      "dv_pair_search",
+      "dv_pair_success",
+      "dv_pair_wifi",
+      "dv_pair_wifi_pw",
+      "dv_session"
+    ],
+    "Robot Mgmt": [
+      "rm_battery",
+      "rm_factory",
+      "rm_firmware",
+      "rm_mic_test",
+      "rm_my_robot",
+      "rm_offline_help",
+      "rm_sound",
+      "rm_speaker_test",
+      "rm_status",
+      "rm_storage",
+      "rm_support",
+      "rm_wifi"
+    ],
+    "Start": [
+      "connecting",
+      "greeting",
+      "lesson_ready"
+    ]
+  },
+  "meta": {
+    "version": "1.0.0",
+    "generatedAt": "2026-05-26T05:15:09Z",
+    "sourceCommit": "97590a2dc8627d9966edd969cc056d87c1c21ccb"
+  }
+}

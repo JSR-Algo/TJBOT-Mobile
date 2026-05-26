@@ -1,0 +1,81 @@
+---
+system: sys-16-mobile-shell
+flow_id: push-deep-link
+surface: mobile
+spec_anchor: /software/systems/16-parent-mobile-application#push-deep-link-handling
+actors: [ParentApp, OS, FCM, Gateway, NotificationService]
+apis:
+  - GET /v1/mobile/deep-link/validate?path=<route>
+externals: [FCM]
+queues: []
+failure_paths:
+  - invalid_deep_link_target
+  - parent_gate_required_redirect
+  - lesson_in_progress_redirect
+  - mid_activity_redirect_to_resume
+  - account_signed_out_redirect_to_login
+idempotency: deep-link delivery is best-effort; FCM deduplicates its own deliveries by message_id
+retry: none — if validate fails within 2s, fall back to home_hub_idle
+timeout: 2s for GET /v1/mobile/deep-link/validate; fallback on timeout
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant NotificationService
+    participant FCM
+    participant OS
+    participant ParentApp
+    participant Gateway
+
+    NotificationService->>FCM: POST /v1/messages:send {to: fcm_token, data: {deep_link: "tbot://parent/summary?date=2026-05-12", notification_id, type}}
+    %% FCM deduplicates by message_id; best-effort delivery
+    FCM-)OS: deliver push payload (data-only message, no display notification body)
+    OS-)ParentApp: onMessageReceived / didReceiveRemoteNotification {data.deep_link}
+
+    ParentApp->>ParentApp: parse deep_link URI — extract scheme=tbot, host, path, query params
+
+    alt account_signed_out_redirect_to_login
+        Note over ParentApp: no valid auth token in secure storage
+        ParentApp-->>ParentApp: navigate to login screen — deep_link stored for post-auth resume
+    else app has valid session
+        ParentApp->>Gateway: GET /v1/mobile/deep-link/validate?path={url-encoded deep_link path} and Bearer token
+        Gateway->>Gateway: JWT verify and rate-limit (sys-17)
+        Gateway->>NotificationService: forward validate request
+
+        alt invalid_deep_link_target
+            NotificationService-->>Gateway: 422 invalid_deep_link_target {reason: unknown_route|malformed_uri|deprecated_route}
+            Gateway-->>ParentApp: 422
+            Note over ParentApp: unknown route — navigate to home_hub_idle (fallback)
+        else validate succeeds
+            NotificationService-->>Gateway: 200 {valid: true, resolved_route, context}
+            Gateway-->>ParentApp: 200
+
+            ParentApp->>ParentApp: check resolved_route prefix
+
+            alt parent_gate_required_redirect
+                Note over ParentApp: resolved_route is parent_* (e.g. parent/settings, parent/summary)
+                ParentApp->>ParentApp: check parent_session freshness (ADR-0005)
+                Note over ParentApp: parent_session expired or missing — requires biometric/PIN re-auth
+                ParentApp-->>ParentApp: navigate to parent_gate with return_route={resolved_route}
+            else mid_activity_redirect_to_resume
+                Note over ParentApp: resolved_route targets lesson_* mid-funnel (e.g. lesson/vocabulary/step/3)
+                ParentApp-->>ParentApp: navigate to lesson_resume — never navigate mid-funnel (pr_* and lesson_* entry rule)
+            else lesson_in_progress_redirect
+                Note over ParentApp: resolved_route targets a lesson start but session state = cl_running
+                ParentApp-->>ParentApp: navigate to cl_running / CompanionScreen (lesson already active)
+                %% see also: docs/sequences/04-realtime/observer-attach.sequence.mmd
+            else pr_route
+                Note over ParentApp: resolved_route is pr_* (progress, rewards) — always enter at pr_intro
+                ParentApp-->>ParentApp: navigate to pr_intro — never mid-funnel per nav-graph deep-link rule
+            else direct_navigate
+                Note over ParentApp: resolved_route is safe for direct navigation (e.g. home/summary, course_library)
+                ParentApp-->>ParentApp: navigate directly to resolved_route
+            end
+        end
+
+        Note over ParentApp,Gateway: validate timeout 2s p99 — on timeout navigate to home_hub_idle (fail-safe)
+        %% nav-graph deep-link rules: docs/flows/shared/navigation.flow.mmd
+    end
+
+    Note over ParentApp,FCM: FCM delivery is best-effort — duplicate deliveries deduplicated by FCM message_id — no server-side retry on deep-link validate failure

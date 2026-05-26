@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ViewStyle, Pressable } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
 
 interface InputProps {
   label: string;
@@ -74,6 +74,9 @@ export function Input({
             onPress={() => setHidePassword(!hidePassword)}
             style={styles.eyeButton}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${hidePassword ? 'Show' : 'Hide'} ${label}`}
+            accessibilityState={{ selected: !hidePassword }}
           >
             <Text style={styles.eyeIcon}>{hidePassword ? '\u{1F441}' : '\u{1F648}'}</Text>
           </Pressable>
@@ -122,8 +125,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.divider,
   },
   eyeButton: {
+    minWidth: 44,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   eyeIcon: {
     fontSize: 18,

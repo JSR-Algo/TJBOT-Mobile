@@ -1,0 +1,175 @@
+// AUTO-GENERATED FROM docs/erd/13-security/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/13-security/brute_force_lockouts.dbml, docs/erd/13-security/key_rotations.dbml, docs/erd/13-security/kms_keys.dbml, docs/erd/13-security/mtls_certificates.dbml, docs/erd/13-security/secret_versions.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum brute_force_lockout_status {
+  active
+  expired
+  released_early
+}
+
+enum key_rotation_method {
+  automated
+  manual
+  emergency
+}
+
+enum key_rotation_status {
+  completed
+  failed
+  rolled_back
+}
+
+enum kms_key_purpose {
+  envelope
+  config_signing
+  ota_signing
+  mtls_root
+  jwt_signing
+  webhook_signing
+}
+
+enum kms_key_status {
+  active
+  rotating
+  retired
+  compromised
+}
+
+enum mtls_certificate_status {
+  provisioned
+  active
+  revoked
+  expired
+}
+
+enum secret_version_status {
+  pending
+  active
+  retired
+  compromised
+}
+
+/// Source: docs/erd/13-security/brute_force_lockouts.dbml
+model BruteForceLockouts {
+  id String @id @default(uuid()) @db.Uuid
+  ipAddress String @db.VarChar(45) @map("ip_address")
+  /// string repr of INET; v6-capable
+  reason String @db.VarChar(120)
+  status brute_force_lockout_status @default(active)
+  blockedAt DateTime @db.Timestamptz(6) @default(now()) @map("blocked_at")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  releasedAt DateTime? @db.Timestamptz(6) @map("released_at")
+  releasedBy String? @db.VarChar(120) @map("released_by")
+  /// admin email or system identity
+  securityEventId String? @db.Uuid @map("security_event_id")
+  /// optional pointer to a security_events row when the lockout was triggered by an event
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([ipAddress, expiresAt], map: "idx_brute_force_lockouts_ip_expires_at")
+  @@index([expiresAt], map: "idx_brute_force_lockouts_expires_at")
+  @@map("brute_force_lockouts")
+}
+
+/// Source: docs/erd/13-security/key_rotations.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model KeyRotations {
+  id String @id @default(uuid()) @db.Uuid
+  secretName String @db.VarChar(120) @map("secret_name")
+  kmsKeyId String? @db.Uuid @map("kms_key_id")
+  /// when the rotation targets a kms_keys row; null for secret_versions-only rotations
+  rotationMethod key_rotation_method @map("rotation_method")
+  status key_rotation_status
+  rotatedBy String @db.VarChar(120) @map("rotated_by")
+  /// admin email or system identity
+  rotatedAt DateTime @db.Timestamptz(6) @map("rotated_at")
+  oldKeyExpiry DateTime? @db.Timestamptz(6) @map("old_key_expiry")
+  newKeyActiveAt DateTime @db.Timestamptz(6) @map("new_key_active_at")
+  notes String? @db.Text
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  /// equal to created_at; row is immutable after insert
+  kmsKey KmsKeys? @relation(name: "key_rotations_kms_key_id_to_kms_keys", fields: [kmsKeyId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([secretName, rotatedAt], map: "idx_key_rotations_secret_rotated_at")
+  @@index([status], map: "idx_key_rotations_status")
+  @@map("key_rotations")
+}
+
+/// Source: docs/erd/13-security/kms_keys.dbml
+model KmsKeys {
+  id String @id @default(uuid()) @db.Uuid
+  alias String @db.VarChar(120)
+  /// human-readable identifier, e.g. "config-signing-2026-q2"
+  purpose kms_key_purpose
+  status kms_key_status @default(active)
+  externalArn String @db.VarChar(512) @map("external_arn")
+  /// KMS / YubiHSM URI; opaque to app
+  algorithm String @db.VarChar(40)
+  /// e.g. AES_256_GCM, ECDSA_P384, ED25519
+  rotatedFromId String? @db.Uuid @map("rotated_from_id")
+  /// self-ref to previous version of same alias
+  activatedAt DateTime @db.Timestamptz(6) @map("activated_at")
+  retiredAt DateTime? @db.Timestamptz(6) @map("retired_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  rotatedFrom KmsKeys? @relation(name: "kms_keys_rotated_from_id_to_kms_keys", fields: [rotatedFromId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  keyRotations KeyRotations[] @relation(name: "key_rotations_kms_key_id_to_kms_keys")
+  rotatedFromInverse KmsKeys[] @relation(name: "kms_keys_rotated_from_id_to_kms_keys")
+  secretVersions SecretVersions[] @relation(name: "secret_versions_envelope_kms_key_id_to_kms_keys")
+  @@unique([alias], map: "idx_kms_keys_alias_unique")
+  @@index([purpose, status], map: "idx_kms_keys_purpose_status")
+  @@map("kms_keys")
+}
+
+/// Source: docs/erd/13-security/mtls_certificates.dbml
+model MtlsCertificates {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService (sys-02). Lane C owns devices.id
+  certificateFingerprint String @db.VarChar(128) @map("certificate_fingerprint")
+  status mtls_certificate_status @default(provisioned)
+  issuedAt DateTime @db.Timestamptz(6) @map("issued_at")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  firstSeenAt DateTime? @db.Timestamptz(6) @map("first_seen_at")
+  /// set on first successful mTLS handshake — pinpoints provisioning → activation
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  revokeReason String? @db.VarChar(120) @map("revoke_reason")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([certificateFingerprint], map: "idx_mtls_certificates_fingerprint_unique")
+  @@index([deviceId, status], map: "idx_mtls_certificates_device_status")
+  @@index([expiresAt], map: "idx_mtls_certificates_expires_at")
+  @@map("mtls_certificates")
+}
+
+/// Source: docs/erd/13-security/secret_versions.dbml
+model SecretVersions {
+  id String @id @default(uuid()) @db.Uuid
+  secretName String @db.VarChar(120) @map("secret_name")
+  /// logical name, e.g. "stripe.webhook.signing", "db.realtime.password"
+  version Int
+  /// monotonic per secret_name
+  status secret_version_status @default(pending)
+  envelopeKmsKeyId String @db.Uuid @map("envelope_kms_key_id")
+  /// kms_keys.id used to envelope-encrypt the ciphertext blob
+  ciphertext String @db.Text
+  /// envelope-encrypted base64 blob; cleartext never persists
+  activatedAt DateTime? @db.Timestamptz(6) @map("activated_at")
+  retiredAt DateTime? @db.Timestamptz(6) @map("retired_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  kmsKey KmsKeys @relation(name: "secret_versions_envelope_kms_key_id_to_kms_keys", fields: [envelopeKmsKeyId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([secretName, version], map: "idx_secret_versions_name_version_unique")
+  @@index([secretName, status], map: "idx_secret_versions_name_status")
+  @@map("secret_versions")
+}
+

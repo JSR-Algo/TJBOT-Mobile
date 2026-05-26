@@ -1,0 +1,181 @@
+// AUTO-GENERATED FROM docs/erd/08-config/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/08-config/config_assignments.dbml, docs/erd/08-config/config_cohorts.dbml, docs/erd/08-config/config_documents.dbml, docs/erd/08-config/config_push_events.dbml, docs/erd/08-config/config_signing_keys.dbml, docs/erd/08-config/config_versions.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum config_push_event_kind {
+  notify_published
+  notify_skipped_offline
+  device_fetched
+  device_applied
+  device_rejected_signature
+  reconciliation_repaired
+}
+
+enum config_signing_key_status {
+  active
+  next
+  decommissioning
+  retired
+}
+
+/// Source: docs/erd/08-config/config_assignments.dbml
+model ConfigAssignments {
+  id String @id @default(uuid()) @db.Uuid
+  cohortId String @db.Uuid @map("cohort_id")
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService
+  configVersionId String? @db.Uuid @map("config_version_id")
+  /// most recently issued version under this assignment; null until first assembly
+  assignedAt DateTime @db.Timestamptz(6) @default(now()) @map("assigned_at")
+  assignedBy String @db.VarChar(120) @map("assigned_by")
+  /// admin email or system actor id
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  configCohort ConfigCohorts @relation(name: "config_assignments_cohort_id_to_config_cohorts", fields: [cohortId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  configVersion ConfigVersions? @relation(name: "config_assignments_config_version_id_to_config_versions", fields: [configVersionId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([cohortId, deviceId], map: "idx_config_assignments_cohort_device_unique")
+  @@index([deviceId, assignedAt], map: "idx_config_assignments_device_assigned")
+  @@map("config_assignments")
+}
+
+/// Source: docs/erd/08-config/config_cohorts.dbml
+model ConfigCohorts {
+  id String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(120)
+  description String? @db.Text
+  selectionCriteria Json @db.JsonB @default("{}") @map("selection_criteria")
+  /// AND-joined keys per spec §Selection Criteria: hw_revision, fw_version_gte, fw_version_lt, household_country
+  templateId String? @db.Uuid @map("template_id")
+  /// config template applied to members; null = inherits default template
+  isDefault Boolean @default(false) @map("is_default")
+  /// exactly one default cohort must exist — partial unique index enforces
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  configAssignments ConfigAssignments[] @relation(name: "config_assignments_cohort_id_to_config_cohorts")
+  @@unique([name], map: "idx_config_cohorts_name_unique")
+  @@unique([isDefault], map: "idx_config_cohorts_single_default_unique")
+  @@map("config_cohorts")
+}
+
+/// Source: docs/erd/08-config/config_documents.dbml
+model ConfigDocuments {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService
+  currentVersionId String? @db.Uuid @map("current_version_id")
+  /// points at active config_versions row; null only between assemble + first commit
+  schemaVersion String @db.VarChar(16) @default("1.0") @map("schema_version")
+  /// major.minor — device rejects unknown major
+  appliedAt DateTime? @db.Timestamptz(6) @map("applied_at")
+  /// set by POST /v1/config/applied; null = not yet acked by device
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  configVersion ConfigVersions? @relation(name: "config_documents_current_version_id_to_config_versions", fields: [currentVersionId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  configPushEvents ConfigPushEvents[] @relation(name: "config_push_events_document_id_to_config_documents")
+  configVersions ConfigVersions[] @relation(name: "config_versions_document_id_to_config_documents")
+  @@unique([deviceId], map: "idx_config_documents_device_id_unique")
+  @@index([schemaVersion, updatedAt], map: "idx_config_documents_schema_updated")
+  @@map("config_documents")
+}
+
+/// Source: docs/erd/08-config/config_push_events.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model ConfigPushEvents {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService
+  documentId String @db.Uuid @map("document_id")
+  versionId String @db.Uuid @map("version_id")
+  eventKind config_push_event_kind @map("event_kind")
+  mqttMessageId String? @db.VarChar(120) @map("mqtt_message_id")
+  /// AWS IoT broker message id when event_kind=notify_published
+  fetchCorrelationId String? @db.Uuid @map("fetch_correlation_id")
+  /// X-Request-Id from GET /v1/config/fetch — links notify→fetch
+  errorCode String? @db.VarChar(64) @map("error_code")
+  /// one of: mqtt_push_failure, signature_failure, transform_missing, etc.
+  errorDetail Json @db.JsonB @default("{}") @map("error_detail")
+  emittedAt DateTime @db.Timestamptz(6) @default(now()) @map("emitted_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  configDocument ConfigDocuments @relation(name: "config_push_events_document_id_to_config_documents", fields: [documentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  configVersion ConfigVersions @relation(name: "config_push_events_version_id_to_config_versions", fields: [versionId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([deviceId, emittedAt], map: "idx_config_push_events_device_emitted")
+  @@index([eventKind, emittedAt], map: "idx_config_push_events_kind_emitted")
+  @@map("config_push_events")
+}
+
+/// Source: docs/erd/08-config/config_signing_keys.dbml
+model ConfigSigningKeys {
+  id String @id @default(uuid()) @db.Uuid
+  kmsKeyId String @db.VarChar(2048) @map("kms_key_id")
+  /// AWS KMS key ARN — cross-domain ref → SecurityService (sys-13 kms_keys)
+  publicKeyPem String @db.Text @map("public_key_pem")
+  /// ECDSA P-256 public key in PEM — embedded in firmware current_key / next_key slot
+  keyPurpose String @db.VarChar(64) @default("config_signing") @map("key_purpose")
+  /// separates from OTA signing key + per-device mTLS CA
+  status config_signing_key_status @default(next)
+  promotedToActiveAt DateTime? @db.Timestamptz(6) @map("promoted_to_active_at")
+  /// set when Stage 3 of rotation flips CONFIG_SIGNING_KMS_KEY_ID to this row
+  retiredAt DateTime? @db.Timestamptz(6) @map("retired_at")
+  /// set when ScheduleKeyDeletion is queued in KMS
+  rotationCeremonyRef String? @db.Text @map("rotation_ceremony_ref")
+  /// free-form pointer at the ceremony audit row (sys-13)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  configVersions ConfigVersions[] @relation(name: "config_versions_signing_key_id_to_config_signing_keys")
+  @@index([status, promotedToActiveAt], map: "idx_config_signing_keys_status_promoted")
+  @@unique([kmsKeyId], map: "idx_config_signing_keys_kms_key_id_unique")
+  @@map("config_signing_keys")
+}
+
+/// Source: docs/erd/08-config/config_versions.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model ConfigVersions {
+  id String @id @default(uuid()) @db.Uuid
+  documentId String @db.Uuid @map("document_id")
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService; denormalised for fast per-device history scan
+  configVersion Int @map("config_version")
+  /// monotonic per device — UNIQUE(device_id, config_version)
+  schemaVersion String @db.VarChar(16) @map("schema_version")
+  /// major.minor at time of assembly
+  configBlob Json @db.JsonB @map("config_blob")
+  /// canonical-JSON serialisation max 8KB per ESP32 NVS constraint
+  configSignature String @db.Text @map("config_signature")
+  /// base64 ECDSA P-256 DER signature from ConfigSigner
+  signingKeyId String @db.Uuid @map("signing_key_id")
+  sourceTemplateId String? @db.Uuid @map("source_template_id")
+  /// config_templates row used as base; nullable for emergency_override
+  cohortId String? @db.Uuid @map("cohort_id")
+  /// resolved cohort at assembly time; null if override path skipped cohort resolution
+  changeSource String @db.VarChar(32) @default("template_update") @map("change_source")
+  /// initial_provision|parent_controls_changed|template_updated|cohort_membership_changed|admin_push|emergency_override|rollback
+  changedFields Json @db.JsonB @default("[]") @map("changed_fields")
+  /// array of dotted JSON paths mutated vs prior version
+  issuedAt DateTime @db.Timestamptz(6) @default(now()) @map("issued_at")
+  appliedAt DateTime? @db.Timestamptz(6) @map("applied_at")
+  /// mirror of config_documents.applied_at at the time it was current
+  supersededAt DateTime? @db.Timestamptz(6) @map("superseded_at")
+  /// set when newer config_versions row becomes current
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  configDocument ConfigDocuments @relation(name: "config_versions_document_id_to_config_documents", fields: [documentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  configSigningKey ConfigSigningKeys @relation(name: "config_versions_signing_key_id_to_config_signing_keys", fields: [signingKeyId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  configAssignments ConfigAssignments[] @relation(name: "config_assignments_config_version_id_to_config_versions")
+  configDocuments ConfigDocuments[] @relation(name: "config_documents_current_version_id_to_config_versions")
+  configPushEvents ConfigPushEvents[] @relation(name: "config_push_events_version_id_to_config_versions")
+  @@unique([deviceId, configVersion], map: "idx_config_versions_device_version_unique")
+  @@index([deviceId, issuedAt], map: "idx_config_versions_device_issued")
+  @@index([signingKeyId, issuedAt], map: "idx_config_versions_signing_key_issued")
+  @@map("config_versions")
+}
+

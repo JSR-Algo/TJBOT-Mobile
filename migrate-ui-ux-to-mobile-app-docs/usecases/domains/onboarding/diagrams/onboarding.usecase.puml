@@ -1,0 +1,36 @@
+@startuml TBOT-Onboarding
+title Domain · onboarding — pre-account intro & permissions
+left to right direction
+
+actor Guest
+actor "Device OS" as OS <<external>>
+
+package "onboarding" {
+  usecase "View Splash"              as UC_ONB_SPLASH
+  usecase "View Welcome"             as UC_ONB_WELCOME
+  usecase "Run Intro Tutorial"       as UC_ONB_INTRO
+  usecase "View Parent Trust Intro"  as UC_ONB_TRUST
+  usecase "Grant Mic Permission"     as UC_ONB_MIC
+  usecase "Enter First Lesson"       as UC_ONB_FIRST
+}
+
+Guest --> UC_ONB_SPLASH
+Guest --> UC_ONB_WELCOME
+Guest --> UC_ONB_INTRO
+Guest --> UC_ONB_TRUST
+Guest --> UC_ONB_MIC
+Guest --> UC_ONB_FIRST
+
+UC_ONB_SPLASH  ..> UC_ONB_WELCOME : <<auto-advance>>
+UC_ONB_WELCOME ..> UC_ONB_INTRO   : "Get started"
+UC_ONB_INTRO   ..> UC_ONB_TRUST   : <<auto-advance>>
+UC_ONB_TRUST   ..> UC_ONB_MIC
+UC_ONB_MIC     ..> OS : <<delegate>> permission sheet
+
+note right of UC_ONB_FIRST
+  [exit] → lesson-session : UC_LSN_START
+end note
+
+' [exit] login step → auth : UC_AUTH_LOGIN | UC_AUTH_SIGNUP
+' Files: src/features/onboarding/*Page.jsx
+@enduml

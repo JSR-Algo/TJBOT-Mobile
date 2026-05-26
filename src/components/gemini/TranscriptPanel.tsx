@@ -28,7 +28,7 @@ function useTypewriter(text: string, speed = 30): string {
       // Per-character typing animation. Presentation-only; does not
       // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
       // timers in shared layers.
-      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
+      // eslint-disable-next-line TJBot-voice/no-voice-timing-in-shared
       const timer = setInterval(() => {
         if (i < newChars.length) {
           setDisplayed(text.slice(0, alreadyShown + i + 1));

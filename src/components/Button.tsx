@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -17,6 +17,7 @@ interface ButtonProps {
   variant?: ButtonVariant;
   loading?: boolean;
   disabled?: boolean;
+  accessibilityLabel?: string;
   style?: ViewStyle;
   testID?: string;
 }
@@ -27,6 +28,7 @@ export function Button({
   variant = 'primary',
   loading = false,
   disabled = false,
+  accessibilityLabel,
   style,
   testID,
 }: ButtonProps): React.JSX.Element {
@@ -47,6 +49,9 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: isDisabled }}
       testID={testID}
     >
       {loading ? (

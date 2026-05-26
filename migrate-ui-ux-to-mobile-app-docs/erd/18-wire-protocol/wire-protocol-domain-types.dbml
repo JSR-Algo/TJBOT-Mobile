@@ -1,0 +1,89 @@
+// wire-protocol-domain-types.dbml — shared enum/type declarations for the TBOT wire protocol.
+// NO Table blocks. These types are referenced by name across multiple domain DBML files.
+// See docs/erd/18-wire-protocol/README.md for usage rules.
+
+// Connection and session transport
+
+enum ws_close_code {
+  normal_closure          // 4000 — clean session end
+  entitlement_required    // 4002 — subscription expired or inactive
+  auth_invalid            // 4003 — JWT invalid or expired
+  rate_limited            // 4004 — too many active sessions
+  server_error            // 4005 — internal error
+  protocol_error          // 4006 — client sent unexpected frame
+}
+
+// Session lifecycle shared types
+
+enum session_turn_role {
+  child
+  assistant
+}
+
+enum transcript_segment_kind {
+  speech
+  intent
+  safety_event
+  system_annotation
+}
+
+// Safety and content classification
+
+enum safety_severity {
+  low
+  medium
+  high
+  critical
+}
+
+enum safety_action {
+  allow
+  redact
+  block
+  escalate
+}
+
+// OTA and config delivery
+
+enum delivery_channel {
+  push_ota
+  pull_config
+  mqtt_command
+  webhook
+}
+
+// Billing and entitlement wire types
+
+enum billing_tier {
+  free
+  plus
+  enterprise
+}
+
+enum entitlement_source {
+  stripe_subscription
+  promotional
+  trial
+  admin_override
+}
+
+// Device capability flags (shared across device and wire protocol)
+
+enum device_capability {
+  voice_input
+  servo_face
+  led_ring
+  proximity_sensor
+  touch_sensor
+  wifi_only
+  wifi_plus_ble
+}
+
+// Notification channels (shared across sys-07 and sys-10)
+
+enum notification_channel {
+  push_apns
+  push_fcm
+  email_ses
+  sms_sns
+}

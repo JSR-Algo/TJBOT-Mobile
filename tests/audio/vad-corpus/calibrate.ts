@@ -208,27 +208,6 @@ function runVad(
 
 // ── Evaluation helpers ────────────────────────────────────────────────────
 
-/**
- * Checks whether a detected segment overlaps with any ground-truth marker.
- * Overlap threshold: 50% of the shorter segment must coincide.
- */
-function overlapsAny(
-  detected: [number, number],
-  groundTruth: readonly VadSpeechMarker[],
-): boolean {
-  const [ds, de] = detected;
-  const dLen = de - ds;
-  for (const gt of groundTruth) {
-    const overlap = Math.min(de, gt.offsetSec) - Math.max(ds, gt.onsetSec);
-    if (overlap > 0) {
-      const gtLen = gt.offsetSec - gt.onsetSec;
-      const shorter = Math.min(dLen, gtLen);
-      if (overlap / shorter >= 0.5) return true;
-    }
-  }
-  return false;
-}
-
 interface EvalResult {
   tp: number; // true positives  (speech detected, ground truth = speech)
   fp: number; // false positives (speech detected, ground truth = silence)

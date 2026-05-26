@@ -1,189 +1,217 @@
-# SYSTEM_CONTRACTS — tbot-mobile
+# TJBot-mobile — System Contracts
 
-## REST API CONSUMED FROM tbot-backend
+All contracts consumed or produced by the TJBot-mobile app. Violating any
+contract without cross-repo approval is a HARD STOP.
 
-Base URL: EXPO_PUBLIC_API_BASE_URL (environment variable, never hardcode)
-Auth: Bearer token in Authorization header
-Protocol: HTTPS only
+---
 
-### Auth Endpoints
-- POST /v1/auth/register — create parent account
-- POST /v1/auth/login — returns { accessToken, refreshToken }
-- POST /v1/auth/refresh — body: { refreshToken } → returns new accessToken
-- POST /v1/auth/logout — invalidates tokens server-side
-- POST /v1/auth/coppa-consent — body: { consentTimestamp, parentId }
-- DELETE /v1/auth/account — full account deletion (COPPA right to erasure)
+## 1. HTTP API contract (sys-01 / sys-02 consumer)
 
-### Device Endpoints
-- GET /v1/devices — list paired devices for parent
-- POST /v1/devices/pair — body: { bleDeviceId, deviceName }
-- DELETE /v1/devices/:deviceId — unpair device
-- PATCH /v1/devices/:deviceId/settings — body: device settings object
+### Source of truth
 
-### Content/Summary Endpoints
-- GET /v1/summaries/:deviceId — conversation summaries (read-only)
-- GET /v1/summaries/:deviceId/:summaryId — single summary detail
+`/Users/manhhodinh/Documents/TJBot/migrate-ui-ux-to-mobile-app-docs/api/openapi.json`
+(symlink → `/Users/manhhodinh/Documents/TJBot/docs/site/api/openapi.json`)
 
-### Error Codes Consumed
-- 401 UNAUTHORIZED → trigger token refresh flow
-- 403 COPPA_CONSENT_REQUIRED → show consent screen
-- 404 DEVICE_NOT_FOUND → show pairing prompt
-- 429 RATE_LIMITED → show retry-after message
-- 5xx → show generic error, log to crash reporter
+TJBot-mobile is a consumer. Never modify openapi.json through the symlink.
+If the app needs a new endpoint, escalate to tbot-backend.
 
-## BLE PROTOCOL CONSUMED FROM tbot-firmware
+### Axios client
 
-Service UUID: loaded from BLE_CONFIG.SERVICE_UUID constant (do not hardcode)
-Transport: BLE GATT over react-native-ble-plx
+Pre-PR4 location: `src/api/client.ts`
+Post-PR4 location: `src/services/http/client.ts`
 
-### Characteristics (READ from firmware spec, do not infer)
-- DEVICE_INFO_CHAR: device name, firmware version (read-only)
-- CONTROL_CHAR: write commands (volume, bedtime mode, activity)
-- STATUS_CHAR: notify on device state changes
+Critical invariants:
+- `baseURL`: resolved from `Config.API_BASE_URL` (env var, never hardcoded)
+- `timeout`: 30 000 ms (Render free-tier cold starts can reach 20s; 15s was too tight)
+- `Content-Type`: `application/json` on all requests
+- Request interceptor: reads `getAccessToken()` from SecureStore, injects
+  `Authorization: Bearer <token>` header
+- Response interceptor: on 401 with `_retry` not set:
+  1. If another refresh is in flight (`isRefreshing()`), enqueue the request
+     in `refresh-queue` and await the queue resolution
+  2. Otherwise: set `isRefreshing(true)`, call `refreshAuthTokens(BASE_URL)`,
+     on success: `processQueue(null, access_token)`, retry original request
+  3. On refresh failure: `processQueue(refreshError, null)`, `clearAuthTokens()`,
+     call `onAuthInvalidated()` to kick UI back to AuthStack
+- `setAuthInvalidatedHandler(handler)` must be called by `AuthContext` or
+  `auth.store` on mount; null-safe (handler is best-effort, swallows errors)
+- `normalizeError(error)` wraps all non-401 errors before rejection
 
-### Pairing Flow
-1. Scan for service UUID
-2. Verify device UUID in allowlist
-3. Connect → discover services → read DEVICE_INFO_CHAR
-4. POST /v1/devices/pair with bleDeviceId and device name
-5. Store pairing record locally (device ID only, no audio data)
+Do not bypass the refresh queue for any new domain API module. The queue
+serializes concurrent token-refresh attempts — removing it causes race conditions.
 
-### BLE Error Codes Consumed
-- BleError.DEVICE_NOT_FOUND → "Device not found, move closer"
-- BleError.DEVICE_DISCONNECTED → trigger reconnect, max 2 retries
-- BleError.OPERATION_TIMEOUT → "Connection timed out, try again"
+### Token storage
 
-## PUSH NOTIFICATIONS
+Pre-PR4 location: `src/api/tokens.ts`
+Post-PR4 location: `src/services/http/tokens.ts`
 
-Providers: Expo Notifications SDK → FCM (Android) → AWS SNS
-Token registration: send Expo push token to POST /v1/devices/push-token on login
-Notification payload schema:
-```typescript
-interface PushPayload {
-  type: 'SUMMARY_READY' | 'DEVICE_OFFLINE' | 'LOW_BATTERY';
-  deviceId: string;
-  deepLinkPath: string;  // e.g., "/summaries/device-123"
-}
-```
-Deep link handling: navigate to deepLinkPath on notification tap
-NEVER display raw notification payload to user
+Tokens stored in `expo-secure-store` (iOS Keychain / Android Keystore).
+Never store tokens in AsyncStorage — no encryption guarantee.
+Key names are contract: do not rename without auditing all callers.
 
-## REALTIME VOICE / GEMINI LIVE (sys-04 + sys-16)
+### 9 existing domain API modules (pre-PR4)
 
-Authoritative design: `docs/architecture/unified-realtime-architecture.md`
-Acceptance criteria: `docs/qa/realtime-voice-acceptance.md` §2
-ADR (iOS voice-processing-IO decision): `docs/adr/mb-native-voice-003-voice-processing-io.md`
+Located at `src/api/{auth,account,ai,controls,dashboard,devices,households,learning,notifications}.ts`
 
-### Architectural contract
+11 post-PR4 target modules (TJBot-design layout):
+`src/services/api/{auth,account,ai,content,course,device,household,learning,lesson,parent,purchase}.ts`
 
-Mobile owns the Gemini Live WebSocket session directly via `@google/genai`.
-Audio frames NEVER transit the TBOT backend on the hot path — the backend
-is only the ephemeral-token minting authority. Cold-path summaries go via
-`POST /v1/summaries` after the session closes.
+---
 
-Call graph:
-```
-Mobile → POST /gemini/token (backend: auth + mint token) ← ephemeral token
-Mobile ←→ Google Live API WebSocket  (direct; PCM 16 kHz up / 24 kHz down)
-Mobile → POST /v1/summaries (cold-path, transcript only, no audio)
-```
+## 2. WebSocket / Realtime protocol (sys-04 consumer)
 
-### Endpoint: POST /gemini/token
+Post-PR4 location: `src/services/ws/observer.ts`
 
-Consumed via `apiClient.post('/gemini/token')` (the `/v1` prefix is added
-by `apiClient.baseURL`, source: `src/api/client.ts`).
+Protocol: JSON frames over `wss://`. Message shapes defined in:
+`migrate-ui-ux-to-mobile-app-docs/sequences/04-realtime/`
 
-Request:
-- Bearer-token auth (parent account access token in `Authorization` header).
-- Empty body `{}`.
+TJBot-mobile is a consumer — it reads and emits events as specified in those
+sequence diagrams. Do not change message shapes. If a new event type is needed,
+escalate to tbot-backend.
 
-Response (200):
-```typescript
-interface GeminiTokenResponse {
-  token: string;      // Ephemeral auth token — NEVER a long-lived 'AIza...' key in prod.
-  expiresAt: string;  // ISO-8601; TTL must be ≤ 5 minutes (AC 2.1, docs/qa/realtime-voice-acceptance.md).
-}
-```
+Invariants:
+- Connection established only after auth (token available in SecureStore)
+- Reconnect with exponential backoff on disconnect
+- All lesson-session realtime frames flow through `observer.ts` — do not
+  open a second WebSocket connection for lesson-session features
 
-Security rules:
-- Default path (`ALLOW_DEV_API_KEY` env unset or not literally `"true"`) =
-  ephemeral token via `v1alpha/authTokens` endpoint, TTL 5 min. Backend
-  enforces this at `tbot-backend/src/ai/gemini-token.service.ts:40` and
-  the locked-in spec at `gemini-token.service.spec.ts`.
-- Dev override (`ALLOW_DEV_API_KEY=true`) returns the raw `AIza...` key
-  for local dev only. The response still declares `expiresAt` = now+5min
-  so the client refresh cadence is identical in dev and prod.
-- Mobile MUST re-fetch on 401 and before `expiresAt` elapses. See
-  `src/hooks/useGeminiConversation.ts` `sessionRequestStartMsRef` + A7
-  `session_start_latency_ms` telemetry.
-- Token MUST NOT be stored anywhere on disk (memory-only in the hook ref).
+---
 
-### Google Live WebSocket contract
+## 3. BLE wire protocol (sys-18 consumer)
 
-Library: `@google/genai/web` `GoogleGenAI.live.connect(...)`.
-Model: `Config.GEMINI_LIVE_MODEL` (default `models/gemini-2.0-flash-live-001`).
+Location: `src/services/ble/` (post-PR4)
 
-Connect config:
-- `responseModalities: [Modality.AUDIO]`
-- `speechConfig.languageCode` — required, currently `vi-VN`. Without this field Gemini Live auto-detects and hallucinates short Vietnamese input (2026-04-24 repro: `"Bạn do ai tạo?"` → `"Bà ấy có nấu không?"`). Source-match guard in `tests/hooks/useGeminiConversation-language.test.ts`.
-- `speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName` — default `Kore`
-- `systemInstruction` — age-aware persona assembled per `src/ai/safety/README.md §5`
-- `inputAudioTranscription: {}` + `outputAudioTranscription: {}` — both on
-- `sessionResumption: resumptionConfig` — live as of A6 (2026-04-24); passes
-  cached handle if present and fresh (< `HANDLE_MAX_AGE_MS`).
-- `realtimeInputConfig.activityHandling` — ROLLED BACK; server-side default
-  (`START_OF_ACTIVITY_INTERRUPTS`) is authoritative. Re-enable only after
-  device testing proves the SDK accepts the field on `gemini-2.0-flash-live-001`.
+TJBot-mobile consumes the BLE protocol specified in:
+`migrate-ui-ux-to-mobile-app-docs/sequences/18-wire-protocol/`
 
-Resumable handles:
-- Cached in-memory via `sessionResumptionHandleRef` when server emits
-  `message.sessionResumptionUpdate` with `resumable=true`.
-- Used on reconnect (goAway handler) to preserve conversation state.
-- NEVER persisted to disk (COPPA / PII rule at
-  `useGeminiConversation.ts:73-77`).
+Library: `react-native-ble-plx@3.5.x`
 
-### Server-initiated signals (hot path)
+**HARD STOP**: Any change to BLE message schemas, service UUIDs, or
+characteristic UUIDs requires escalation to TJBot-firmware AND tbot-backend.
+These values are burned into firmware — changing them unilaterally bricks
+paired devices in the field.
 
-- `message.serverContent.modelTurn.parts[*].inlineData.data` — base64 PCM
-  24 kHz Int16 LE; multiple parts possible per message (extractor at
-  `src/ai/liveMessageAudio.ts`).
-- `message.serverContent.interrupted` — server barge-in. Triggers
-  `playbackRef.current.interrupt()` + FSM PLAYING_AI_AUDIO → INTERRUPTED.
-  A7 telemetry event: `interrupt_server_latency_ms` (AC 2.5, target p50 ≤ 250ms).
-- `message.sessionResumptionUpdate` — caches handle (see above).
-- `message.goAway` — server evicts session soon. Triggers A5 graceful
-  reconnect via `reconnectRef`. Telemetry: `live_go_away` +
-  `session_reconnect_begin`.
+Invariants:
+- Service UUID and characteristic UUIDs are constants — do not change without firmware coordination
+- Pairing flow state machine lives in `src/features/device/pairing/` — changes
+  must be reflected in `migrate-ui-ux-to-mobile-app-docs/state-machines/device-pairing.state.mmd`
+- BLE operations run on a dedicated queue — never block the JS thread
 
-### State machine (`src/state/voiceAssistantStore.ts`)
+---
 
-Canonical states: `IDLE → REQUESTING_MIC_PERMISSION → CONNECTING →
-LISTENING → STREAMING_INPUT → WAITING_AI → PLAYING_AI_AUDIO → INTERRUPTED
-→ (LISTENING | STREAMING_INPUT) …`. Error / recovery:
-- `RECONNECTING` reachable from every active state (A5, 2026-04-24).
-- `ERROR` ↔ `IDLE` auto-reset at 5 s (A3, reverted from 60 s debug value).
+## 4. Authentication and COPPA (sys-01 consumer)
 
-### Audio path (iOS)
+### SecureStore token keys (contract — do not rename)
 
-- Capture: RNLAS (`react-native-live-audio-stream`) today; native
-  `VoiceMicModule` gated off pending A1 root-cause. PCM 16 kHz Int16 mono,
-  streamed via `session.sendRealtimeInput({audio: {data: base64, mimeType}})`.
-- Playback: native `PcmStreamModule` (`ios/TbotMobile/PcmStream/`). 24 kHz
-  Float32 mono via `AVAudioEngine` + `AVAudioPlayerNode` on the shared
-  `SharedVoiceEngine`. 50 ms jitter buffer (B4, 2026-04-24, configurable
-  via UserDefaults `voicePlaybackJitterBufferMs`).
-- `AVAudioSession` config: `.playAndRecord` + `.default` mode + `[.allowBluetooth,
-  .allowBluetoothA2DP, .defaultToSpeaker]`. `.voiceChat` mode is NOT SAFE on
-  iOS 18.7.7 per B1 spike verdict (ADR mb-native-voice-003).
-- HW AEC: capture-side only via `inputNode.setVoiceProcessingEnabled(true)`.
+Defined in `src/api/tokens.ts` (pre-PR4) / `src/services/http/tokens.ts` (post-PR4).
+Renaming a key without a migration script logs users out in production.
 
-### Telemetry (AC 2.1/2.4/2.5 evidence)
+### COPPA legal text
 
-In-memory timestamps stamped at specific hook sites (A7, 2026-04-24):
-- `sessionRequestStartMsRef` → at `POST /gemini/token` call
-- `sessionWsOpenMsRef` → at Live API `onopen`
-- `firstAudioAtMsRef` → at first inbound audio chunk
-- `interruptDetectedMsRef` → at server-content `interrupted` signal
+Files: `src/features/auth/screens/CoppaScreen.tsx` and
+       `src/features/onboarding/screens/CoppaConsentScreen.tsx`
 
-Emitted events: `session_start_latency_ms`, `first_audio_received_latency_ms`,
-`interrupt_server_latency_ms`.
+These screens contain legally reviewed copy. Do not modify the consent text
+without explicit user sign-off. When resolving the collision between TJBot-mobile
+and TJBot-design COPPA screens (PR5), run `git log --follow` on both files to
+identify the most recently legal-reviewed copy and keep that one.
+
+COPPA copy changes are a **cross-repo escalation** — see tbot-backend and
+`docs/site/legal/coppa-*.md`.
+
+### Auth gate
+
+`RootNavigator.tsx` (pre-PR3: `src/navigation/`, post-PR3: `src/app/`)
+presents AuthStack when unauthenticated, OnboardingStack when authenticated
+but not onboarded, MainTabs otherwise. This gate is driven by `AuthContext`
+or `auth.store` — both expose `isAuthenticated` and `isOnboarded` booleans.
+
+`setAuthInvalidatedHandler` must be called on mount so the HTTP client can
+force navigation to AuthStack on token-refresh failure.
+
+---
+
+## 5. Observability contracts
+
+### Sentry (error tracking)
+
+Init: `src/services/observability/sentry.ts` (post-PR4)
+Package: `@sentry/react-native@7.x`
+
+**Required tags on every event:**
+- `feature`: the feature slice name (e.g. `lesson-session`, `auth`)
+- `screen`: the screen component name (e.g. `LoginScreen`)
+
+Do not capture PII in Sentry breadcrumbs. User ID is allowed (it is
+pseudonymous in the system). Raw email/name must not appear in events.
+
+### PostHog (product analytics)
+
+Init: `src/services/observability/posthog.ts` (post-PR4)
+Package: `posthog-react-native@3.6.x`
+
+**Event naming convention (contract):**
+`<domain>_<verb>_<noun>` in snake_case.
+
+Examples: `auth_login_success`, `lesson_session_started`, `device_pair_completed`
+
+Do not invent new event names without checking PostHog dashboard for conflicts.
+Breaking an existing event name drops dashboard panels — treat as a breaking change.
+
+---
+
+## 6. AI (Gemini) contract
+
+Location: `src/services/ai/gemini.ts` (post-PR4)
+Package: `@google/genai@1.49.x`
+
+Gemini client is an internal implementation detail of TJBot-mobile.
+No cross-repo contract. However:
+- AI safety filters live in TJBot-ai-services (sys-05) — TJBot-mobile only
+  sends prompts through the backend relay; it does NOT invoke Gemini directly
+  in production flow. The local `gemini.ts` is for development + offline fallback.
+- Do not add new Gemini invocations that bypass the backend safety relay.
+
+---
+
+## 7. ESLint custom rule (lint contract)
+
+File: `eslint-rules/no-voice-timing-in-shared.js`
+Rule ID: `TJBot-voice/no-voice-timing-in-shared`
+Severity: `error`
+
+This rule bans FSM-affecting timers, RNLAS imports, and `Platform.OS` branches
+in shared voice layers (plan v2 §11.7). Do not disable or weaken this rule.
+Do not add `// eslint-disable` comments for this rule without a recorded justification.
+
+---
+
+## 8. TypeScript contract
+
+Config: `tsconfig.json` (extends `expo/tsconfig.base`)
+
+`strict: true` — this is a hard contract. All new code must pass:
+- `noImplicitAny`
+- `strictNullChecks`
+- `strictFunctionTypes`
+- `strictPropertyInitialization`
+
+Forbidden suppressions:
+- `any` type annotation (use `unknown` + narrowing)
+- `@ts-ignore`
+- `@ts-expect-error` (unless the underlying platform type is demonstrably wrong
+  and a GitHub issue is linked in the same comment)
+- `unknown as T` casts without a runtime type guard
+
+---
+
+## 9. Navigation route constants (PR3+ contract)
+
+File: `src/app/navigation/routes.ts`
+
+Route names are constants — not string literals in screen calls. Detox e2e
+tests reference these constants. Renaming a route without updating:
+1. `routes.ts` constant
+2. All Detox test specs that reference the old name
+3. `linking.ts` deep-link mapping
+...is a breaking change that will fail Detox e2e.

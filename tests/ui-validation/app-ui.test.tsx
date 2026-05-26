@@ -1,5 +1,3 @@
-import React from 'react';
-import { create } from 'react-test-renderer';
 import { validateComponentJSON } from './ui-checker';
 
 // Minimal smoke test: validates the ui-checker utility itself

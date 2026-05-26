@@ -1,0 +1,86 @@
+---
+system: sys-09-ota-release-management
+flow_id: device-check-and-download
+surface: device
+spec_anchor: /software/systems/09-ota-release-management#ota-check-flow-device-facing
+actors: [Device, Gateway, OtaService, S3, CloudFront, PostgreSQL]
+apis:
+  - GET /v1/ota/check
+  - POST /v1/ota/result
+externals: [S3, CloudFront]
+queues: []
+failure_paths:
+  - rate_limited_4_per_24h
+  - stuck_device_3_failures
+  - cohort_excluded
+  - rollout_not_eligible
+  - manifest_signature_invalid
+  - binary_sha_mismatch
+  - signed_url_expired
+idempotency: ota_attempts rows append-only per (device_id, firmware_release_id, status); device deduplicates by checking current version before download
+retry: device retries at next 6h interval if signed URL expired; auto-skipped after 3 failures in 7 days
+timeout: 10s check · 120s download p95
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant Gateway
+    participant OtaService
+    participant S3
+    participant CloudFront
+    participant PostgreSQL
+
+    Device->>Gateway: GET /v1/ota/check (mTLS) {X-Device-Id, X-Firmware-Version, X-Hardware-Revision, X-Battery-Percent, X-RSSI}
+    Gateway->>OtaService: forward
+    OtaService->>PostgreSQL: validate device exists
+    alt rate_limited_4_per_24h
+        OtaService-->>Device: 429 rate_limited (ota_check_rate_limited_total inc)
+    else stuck_device_3_failures
+        OtaService->>PostgreSQL: COUNT ota_attempts WHERE status IN ('failed','rollback') AND completed_at > now() - 7d
+        PostgreSQL-->>OtaService: >=3
+        OtaService-->>Device: 304 no_update (auto-skipped)
+    else cohort_excluded
+        OtaService->>PostgreSQL: cohort filtering check (sys-08 fleet_cohorts)
+        OtaService-->>Device: 304 no_update
+    else rollout_not_eligible
+        OtaService->>OtaService: bucket = SHA-256 of deviceId+releaseId first 4 bytes mod 100, eligible if bucket below rollout_percentage
+        OtaService-->>Device: 304 no_update
+    else already_on_version
+        OtaService-->>Device: 304 no_update
+    else success
+        OtaService->>CloudFront: generate signed URL (1h expiry) for binary and manifest
+        CloudFront-->>OtaService: signed URLs
+        OtaService->>PostgreSQL: INSERT ota_attempts {status='offered', from_version, to_version, battery_percent_at_start, rssi_at_start}
+        OtaService-->>Device: 200 {manifest_url, signature, min_battery_percent, min_rssi_dbm, binary_sha256, binary_size_bytes}
+    end
+
+    Device->>CloudFront: GET signed manifest URL
+    CloudFront-->>Device: manifest JSON and signature
+    Device->>Device: bootloader verifies ECDSA P-256 signature with factory-embedded public key
+    alt manifest_signature_invalid
+        Device->>Device: REJECT, retain current FW, emit fault telemetry
+    else success
+        Device->>Device: anti-downgrade check, min battery+RSSI check
+        Device->>CloudFront: GET signed binary URL (status=downloading)
+        alt signed_url_expired
+            CloudFront--xDevice: 403
+            Device->>Device: retry at next ota_check cycle
+        else success
+            CloudFront-->>Device: gzipped binary
+            Device->>Device: decompress, SHA-256, compare to manifest
+            alt binary_sha_mismatch
+                Device->>Device: REJECT — tampered download
+            else success
+                Device->>Device: validate ELF header, flash to inactive OTA slot, A/B swap, reboot, verify
+            end
+        end
+    end
+
+    Device->>Gateway: POST /v1/ota/result {release_id, status='success'|'failed'|'rollback', failure_code, download_duration_ms, flash_duration_ms}
+    Gateway->>OtaService: forward
+    OtaService->>PostgreSQL: UPDATE ota_attempts SET status, completed_at, failure_code
+    OtaService-->>Device: 204
+
+    Note over Device,PostgreSQL: timeout 10s check / 120s download p95 · signed URL 1h · auto-skip after 3 failures in 7d

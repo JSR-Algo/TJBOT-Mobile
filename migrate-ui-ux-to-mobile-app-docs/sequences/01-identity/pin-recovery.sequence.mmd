@@ -1,0 +1,112 @@
+---
+system: sys-01-identity-household-access
+flow_id: pin-recovery
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#pin-recovery-adr-0008
+actors: [ParentApp, Gateway, IdentityService, PostgreSQL, SES]
+apis:
+  - POST /v1/parent/pin/recovery/request
+  - POST /v1/parent/pin/recovery/validate
+  - POST /v1/parent/pin/recovery/complete
+externals: [SES]
+queues: []
+failure_paths:
+  - rate_limited_1_per_hour
+  - token_expired
+  - token_already_used
+  - token_not_found
+  - email_delivery_failed
+idempotency: rate-limited 1/hour per (user_id, ip_prefix /24); token is one-shot (used_at set on complete)
+retry: no retry on 4xx; single retry on 5xx for request step only
+timeout: 3s
+status: final
+---
+%% HAND-CURATED. 3-step PIN recovery per ADR-0008 D2-D5. Anti-enumeration 202 (D10). All sessions revoked on complete (D4+D9). Audit row written each step (D7).
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant PostgreSQL
+    participant SES
+
+    Note over ParentApp,IdentityService: Step 1 — Request recovery token (ADR-0008 D2)
+    Note over ParentApp: Callable from ParentGateScreen and ParentLockedOutScreen even during GATE_LOCKED_OUT (D1)
+
+    ParentApp->>Gateway: POST /v1/parent/pin/recovery/request {user_id, email_hint}
+    Gateway->>Gateway: rate-limit — pin_recovery_request — 1 per hour per (user_id, ip_prefix /24) (D6)
+    alt rate_limited_1_per_hour
+        Gateway-->>ParentApp: 429 rate_limited {retry_after_seconds, escalate_to_support: true if 3rd rejection}
+    else within_rate_limit
+        Gateway->>IdentityService: forward request
+        IdentityService->>PostgreSQL: SELECT email FROM users WHERE id={user_id}
+        PostgreSQL-->>IdentityService: email row (or no row)
+        alt email_delivery_failed (SES or email mismatch — never revealed)
+            Note over IdentityService: ADR-0008 D10 — anti-enumeration, same 202 regardless
+            IdentityService-->>Gateway: 202 {message: "If that email is on file, we sent a link."}
+            Gateway-->>ParentApp: 202
+        else email matches — create token and send
+            IdentityService->>PostgreSQL: INSERT pin_recovery_tokens {token: 32-byte-base64url, user_id, expires_at: now()+15min, used_at: null, ip_prefix}
+            PostgreSQL-->>IdentityService: inserted
+            IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'parent.pin.recovery.request_sent', actor_user_id: user_id}
+            PostgreSQL-->>IdentityService: ok
+            IdentityService-)SES: (async) email magic link tbot://parent/pin-reset?token=… to users.email
+            IdentityService-->>Gateway: 202 {message: "If that email is on file, we sent a link."}
+            Gateway-->>ParentApp: 202
+        end
+    end
+
+    Note over ParentApp,IdentityService: Step 2 — Validate token on magic-link landing (ADR-0008 D3)
+
+    ParentApp->>Gateway: POST /v1/parent/pin/recovery/validate {token}
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT token, expires_at, used_at FROM pin_recovery_tokens WHERE token={token}
+    PostgreSQL-->>IdentityService: row or no row
+    alt token_not_found
+        IdentityService-->>Gateway: 404 token_not_found
+        Gateway-->>ParentApp: 404
+    else token_already_used
+        IdentityService-->>Gateway: 410 token_already_used
+        Gateway-->>ParentApp: 410
+    else token_expired (expires_at <= now())
+        IdentityService-->>Gateway: 410 token_expired
+        Gateway-->>ParentApp: 410
+    else token_valid
+        IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'parent.pin.recovery.token_validated', actor_user_id: token.user_id}
+        PostgreSQL-->>IdentityService: ok
+        IdentityService-->>Gateway: 200 {valid: true, user_id}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp,IdentityService: Step 3 — Submit new PIN (ADR-0008 D4+D5+D9)
+
+    ParentApp->>Gateway: POST /v1/parent/pin/recovery/complete {token, new_pin}
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT token, expires_at, used_at, user_id FROM pin_recovery_tokens WHERE token={token}
+    PostgreSQL-->>IdentityService: row or no row
+    alt token_not_found
+        IdentityService-->>Gateway: 404 token_not_found
+        Gateway-->>ParentApp: 404
+    else token_already_used
+        IdentityService-->>Gateway: 410 token_already_used
+        Gateway-->>ParentApp: 410
+    else token_expired
+        IdentityService-->>Gateway: 410 token_expired
+        Gateway-->>ParentApp: 410
+    else token_valid — complete reset
+        IdentityService->>IdentityService: bcrypt.hash(new_pin, cost=12)
+        IdentityService->>PostgreSQL: UPDATE parent_pins SET bcrypt_hash={hash}, updated_at=now() WHERE user_id={token.user_id}
+        PostgreSQL-->>IdentityService: updated
+        IdentityService->>PostgreSQL: UPDATE pin_recovery_tokens SET used_at=now() WHERE token={token}
+        PostgreSQL-->>IdentityService: updated (one-shot D5)
+        IdentityService->>PostgreSQL: DELETE FROM parent_lockouts WHERE user_id={token.user_id}
+        PostgreSQL-->>IdentityService: cleared
+        IdentityService->>PostgreSQL: UPDATE parent_sessions SET revoked_at=now() WHERE user_id={token.user_id} AND revoked_at IS NULL
+        PostgreSQL-->>IdentityService: all sessions revoked (D4 and D9)
+        IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'parent.pin.recovery.pin_reset_completed', actor_user_id: token.user_id}
+        PostgreSQL-->>IdentityService: ok
+        IdentityService-->>Gateway: 200 {reset: true}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp,SES: timeout 3s — token TTL 15min — one-shot token — all prior parent_sessions revoked on complete (D4+D9) — anti-enumeration 202 on request (D10)

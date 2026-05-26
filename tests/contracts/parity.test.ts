@@ -1,5 +1,5 @@
 // Parity test — mobile TypeScript projections must match the authoritative JS
-// contracts in tbot-infra/contracts/. Any drift fails this test.
+// contracts in TJBot-infra/contracts/. Any drift fails this test.
 //
 // Plan: expressive-robot-companion-rewrite §6 RM-02 (AC: "unit tests for all
 // 10 states + invalid transitions").
@@ -7,7 +7,7 @@
 // Why this test matters:
 //   - The mobile app bundles its own TypeScript projections of the 10-state
 //     FSM, the 14-expression enum, the 12-motion enum, and the realtime-event
-//     shape. Metro cannot ingest the `.js` files at ../../tbot-infra/contracts/
+//     shape. Metro cannot ingest the `.js` files at ../../TJBot-infra/contracts/
 //     without a monorepo build step, so drift would be silent.
 //   - This test requires() the authoritative JS modules at runtime via Node's
 //     resolver and compares every load-bearing constant byte-for-byte.
@@ -49,7 +49,7 @@ const CONTRACTS_DIR = path.resolve(
   "..",
   "..",
   "..",
-  "tbot-infra",
+  "TJBot-infra",
   "contracts",
 );
 
@@ -63,7 +63,6 @@ const CONTRACTS_DIR = path.resolve(
 
 function tryRequire(modulePath: string): any | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
     return require(modulePath);
   } catch (err) {
     // eslint-disable-next-line no-console

@@ -80,7 +80,7 @@ human review. Full TypeScript type at `types.ts`.
 ### Step 1 — Record
 
 ```bash
-cd tbot-mobile/tests/audio/vad-corpus
+cd TJBot-mobile/tests/audio/vad-corpus
 ./record.sh --category=child --duration_s=2
 ```
 
@@ -95,7 +95,7 @@ driver with `alsa`: see comment in the script.
 Open `label.html` in any modern browser (Chrome, Safari, Firefox):
 
 ```
-open tbot-mobile/tests/audio/vad-corpus/label.html
+open TJBot-mobile/tests/audio/vad-corpus/label.html
 ```
 
 1. Click **Load WAV** and select `<category>/<name>.wav`.
@@ -114,7 +114,7 @@ sample has clipping or severe noise artifacts; `calibrate.ts` will skip it.
 After at least 50 labeled samples (ideally the full 200), run:
 
 ```bash
-cd tbot-mobile
+cd TJBot-mobile
 npx ts-node --project tsconfig.json tests/audio/vad-corpus/calibrate.ts
 ```
 
@@ -145,7 +145,7 @@ energy_dB > E_THRESHOLD  AND  zcr in [Z_LOW, Z_HIGH]  →  speech frame
 hangover: SPEECH state persists for HANGOVER_MS after first non-speech frame
 ```
 
-Both iOS and Android run VAD on the **post-conversion 16 kHz Int16 buffer**
+both iOS and Android run VAD on the **post-conversion 16 kHz Int16 buffer**
 (after iOS `AVAudioConverter`, after Android `AudioRecord` output). A 200 ms
 ring buffer provides pre-roll on both platforms.
 

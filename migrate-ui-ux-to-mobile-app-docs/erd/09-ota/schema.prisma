@@ -1,0 +1,199 @@
+// AUTO-GENERATED FROM docs/erd/09-ota/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/09-ota/ota_assignments.dbml, docs/erd/09-ota/ota_cohorts.dbml, docs/erd/09-ota/ota_crash_reports.dbml, docs/erd/09-ota/ota_pause_decisions.dbml, docs/erd/09-ota/ota_releases.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ota_assignment_status {
+  offered
+  downloading
+  downloaded
+  flashing
+  verifying
+  success
+  failed
+  rollback
+  skipped
+}
+
+enum ota_pause_decision_kind {
+  created
+  staged
+  started
+  percentage_increased
+  paused_manual
+  paused_auto
+  resumed
+  completed
+  recalled
+}
+
+enum ota_release_status {
+  drafted
+  cohort_assigned
+  rolling_out
+  paused
+  completed
+  rolled_back
+}
+
+/// Source: docs/erd/09-ota/ota_assignments.dbml
+model OtaAssignments {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService
+  releaseId String @db.Uuid @map("release_id")
+  fromVersion String @db.VarChar(64) @map("from_version")
+  toVersion String @db.VarChar(64) @map("to_version")
+  status ota_assignment_status @default(offered)
+  failureCode String? @db.VarChar(64) @map("failure_code")
+  /// one of E-OTA-401..E-SAFE-901..902 etc.
+  failureDetail Json @db.JsonB @default("{}") @map("failure_detail")
+  otaCohortId String? @db.Uuid @map("ota_cohort_id")
+  /// if release targeted an OTA-specific cohort, captured here at offer time
+  batteryPercentAtStart Int? @map("battery_percent_at_start")
+  /// snapshot at offer time — informs pre-flight gating
+  rssiAtStart Int? @map("rssi_at_start")
+  /// snapshot dBm at offer time
+  downloadDurationMs Int? @map("download_duration_ms")
+  /// reported by device on POST /v1/ota/result
+  flashDurationMs Int? @map("flash_duration_ms")
+  /// reported by device on POST /v1/ota/result
+  signedUrlExpiresAt DateTime? @db.Timestamptz(6) @map("signed_url_expires_at")
+  /// CloudFront URL 1h expiry — surfaces signed_url_expired retry path
+  startedAt DateTime @db.Timestamptz(6) @default(now()) @map("started_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  otaRelease OtaReleases @relation(name: "ota_assignments_release_id_to_ota_releases", fields: [releaseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  otaCohort OtaCohorts? @relation(name: "ota_assignments_ota_cohort_id_to_ota_cohorts", fields: [otaCohortId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  otaCrashReports OtaCrashReports[] @relation(name: "ota_crash_reports_assignment_id_to_ota_assignments")
+  @@index([releaseId, status], map: "idx_ota_assignments_release_status")
+  @@index([deviceId, startedAt], map: "idx_ota_assignments_device_started")
+  @@index([releaseId, completedAt], map: "idx_ota_assignments_release_completed")
+  @@map("ota_assignments")
+}
+
+/// Source: docs/erd/09-ota/ota_cohorts.dbml
+model OtaCohorts {
+  id String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(120)
+  description String? @db.Text
+  baseCohortId String? @db.Uuid @map("base_cohort_id")
+  /// optional ref to sys-08 config_cohorts (cross-domain) — if set this OTA cohort is a subset of that fleet cohort
+  selectionCriteria Json @db.JsonB @default("{}") @map("selection_criteria")
+  /// AND-joined keys hw_revision / fw_version_gte / fw_version_lt
+  canaryOnly Boolean @default(false) @map("canary_only")
+  /// when true rollout cannot move beyond 25% without admin override
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  otaAssignments OtaAssignments[] @relation(name: "ota_assignments_ota_cohort_id_to_ota_cohorts")
+  @@unique([name], map: "idx_ota_cohorts_name_unique")
+  @@map("ota_cohorts")
+}
+
+/// Source: docs/erd/09-ota/ota_crash_reports.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model OtaCrashReports {
+  id String @id @default(uuid()) @db.Uuid
+  assignmentId String @db.Uuid @map("assignment_id")
+  /// one row per crash; back-reference to the ota_assignments row that recorded it
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService — denormalised for crash-rate queries
+  releaseId String @db.Uuid @map("release_id")
+  failureCode String @db.VarChar(64) @map("failure_code")
+  stackTrace String? @db.Text @map("stack_trace")
+  /// firmware panic trace if collected
+  heapFreeAtCrash Int? @map("heap_free_at_crash")
+  uptimeSeconds Int? @map("uptime_seconds")
+  resetReason String? @db.VarChar(64) @map("reset_reason")
+  /// esp_reset_reason() value
+  batteryPercent Int? @map("battery_percent")
+  reportedAt DateTime @db.Timestamptz(6) @default(now()) @map("reported_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  otaAssignment OtaAssignments @relation(name: "ota_crash_reports_assignment_id_to_ota_assignments", fields: [assignmentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  otaRelease OtaReleases @relation(name: "ota_crash_reports_release_id_to_ota_releases", fields: [releaseId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([releaseId, reportedAt], map: "idx_ota_crash_reports_release_reported")
+  @@index([failureCode, reportedAt], map: "idx_ota_crash_reports_code_reported")
+  @@map("ota_crash_reports")
+}
+
+/// Source: docs/erd/09-ota/ota_pause_decisions.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model OtaPauseDecisions {
+  id String @id @default(uuid()) @db.Uuid
+  releaseId String @db.Uuid @map("release_id")
+  decisionKind ota_pause_decision_kind @map("decision_kind")
+  details Json @db.JsonB @default("{}")
+  /// crash_count, total_attempts, crash_rate, prior_percentage, new_percentage, etc.
+  decidedBy String @db.VarChar(254) @map("decided_by")
+  /// admin email for manual events; system actor slug for auto events
+  adminUserId String? @db.Uuid @map("admin_user_id")
+  /// cross-domain ref → AdminAuthService (sys-12 admin_users) — set only when decision_kind in (paused_manual, resumed, recalled)
+  snsMessageId String? @db.VarChar(120) @map("sns_message_id")
+  /// SNS publish id for SEV-2/SEV-1 alerts
+  snsSeverity String? @db.VarChar(16) @map("sns_severity")
+  /// SEV-1 | SEV-2
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  otaRelease OtaReleases @relation(name: "ota_pause_decisions_release_id_to_ota_releases", fields: [releaseId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([releaseId, createdAt], map: "idx_ota_pause_decisions_release_created")
+  @@index([decisionKind, createdAt], map: "idx_ota_pause_decisions_kind_created")
+  @@map("ota_pause_decisions")
+}
+
+/// Source: docs/erd/09-ota/ota_releases.dbml
+model OtaReleases {
+  id String @id @default(uuid()) @db.Uuid
+  version String @db.VarChar(64)
+  /// strict semver — unique fleet-wide
+  hwRevisionsSupported Json @db.JsonB @default("[]") @map("hw_revisions_supported")
+  /// array of hw_revision strings the binary targets
+  binaryS3Key String @db.VarChar(2048) @map("binary_s3_key")
+  binarySha256 String @db.VarChar(64) @map("binary_sha256")
+  /// hex of uncompressed binary; device verifies after download
+  binarySizeBytes BigInt @map("binary_size_bytes")
+  /// MAX_BINARY_SIZE = 32MB per ESP32 flash partition
+  manifestJson Json @db.JsonB @map("manifest_json")
+  /// signed manifest payload — keys sorted, no whitespace
+  manifestSignature String @db.Text @map("manifest_signature")
+  /// base64 ECDSA P-256 DER over canonical manifest
+  releaseNotes String? @db.Text @map("release_notes")
+  status ota_release_status @default(drafted)
+  rolloutPercentage Int @default(0) @map("rollout_percentage")
+  /// monotonic — 0/5/25/50/100 per spec staged-rollout steps
+  rolloutCohortId String? @db.Uuid @map("rollout_cohort_id")
+  /// cross-domain ref → ConfigService (sys-08 config_cohorts) — optional cohort filter on top of percentage gate
+  maxRolloutCrashRate Int @default(50) @map("max_rollout_crash_rate")
+  /// parts per thousand — default 50‰ = 5% per spec; integer avoids numeric/decimal/float ban
+  createdBy String @db.VarChar(254) @map("created_by")
+  /// admin email (sys-12)
+  releasedAt DateTime? @db.Timestamptz(6) @map("released_at")
+  /// first time status entered rolling_out
+  pausedAt DateTime? @db.Timestamptz(6) @map("paused_at")
+  /// most recent paused_auto or paused_manual transition
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  /// set when status=completed at 100%
+  recalledAt DateTime? @db.Timestamptz(6) @map("recalled_at")
+  /// set when status=rolled_back (SEV-1 path)
+  signingKeyId String? @db.Uuid @map("signing_key_id")
+  /// OTA manifest signing key — separate from config_signing_keys (sys-08)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  otaAssignments OtaAssignments[] @relation(name: "ota_assignments_release_id_to_ota_releases")
+  otaCrashReports OtaCrashReports[] @relation(name: "ota_crash_reports_release_id_to_ota_releases")
+  otaPauseDecisions OtaPauseDecisions[] @relation(name: "ota_pause_decisions_release_id_to_ota_releases")
+  @@unique([version], map: "idx_ota_releases_version_unique")
+  @@index([status, rolloutPercentage], map: "idx_ota_releases_status_rollout")
+  @@index([rolloutCohortId, status], map: "idx_ota_releases_cohort_status")
+  @@map("ota_releases")
+}
+
