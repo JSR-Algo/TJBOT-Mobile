@@ -26,6 +26,7 @@ export async function requestBlePermissions(): Promise<BlePermissionState> {
   const result = await PermissionsAndroid.requestMultiple([
     PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
     PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
   ]);
 
   return Object.values(result).every((value) => value === PermissionsAndroid.RESULTS.GRANTED)

@@ -13,19 +13,19 @@ import { ROUTES } from '@/navigation/routes';
 type Props = NativeStackScreenProps<RootStackParamList, 'PairSuccessScreen'>;
 
 const FACTS = [
-  { ic: '🤖', t: 'Robot listens & speaks', b: 'Mic and speaker on the Robot, not your phone.' },
-  { ic: '📚', t: 'Starter course is loaded', b: 'Unit 1 is on the device, ready to go.' },
-  { ic: '🛡️', t: 'Audio is not saved', b: 'Conversations stay between Robot and your child.' },
+  { ic: 'OK', t: 'Robot authenticated', b: 'The device checked in with the cloud before setup completed.' },
+  { ic: 'Wi', t: 'Wi-Fi stayed transient', b: 'Network details were used only during setup.' },
+  { ic: 'ID', t: 'Device assigned', b: 'Robot is now linked to your household and child profile.' },
 ] as const;
 
 export default function PairSuccessScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot is ready">
+    <DeviceShell title="Robot connected">
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="celebrate" size={200} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>Your Robot is paired</Text>
+        <Text fontWeight="600" style={styles.heading}>Your Robot is ready</Text>
         <Text style={styles.sub}>
-          Lessons will play <Text fontWeight="600" style={{ color: DV.ink }}>on the Robot</Text>. Your phone is just for setup, progress, and safety.
+          Setup finished after Robot authenticated with the cloud and your account completed the provisioning attempt.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24}>
@@ -50,7 +50,7 @@ export default function PairSuccessScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairRenameScreen)}>Choose a Buddy & name</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairFirstLessonScreen)}>Continue</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

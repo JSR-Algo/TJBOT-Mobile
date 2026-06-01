@@ -9,10 +9,12 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairAddScreen'>;
 
 export default function PairAddScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <DeviceShell title="Add a Robot" onBack={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}>
       <Box paddingHorizontal={20} paddingTop={24}>
@@ -26,7 +28,7 @@ export default function PairAddScreen({ navigation }: Props) {
           activeOpacity={0.7}
           onPress={() => navigation.navigate(ROUTES.PairIntroScreen)}
           accessibilityRole="button"
-          accessibilityLabel="Pair a new Robot"
+          accessibilityLabel={t('Pair a new Robot')}
         >
           <RobotDevice emotion="charging" size={64} accent="#FF6F61" />
           <Box flex={1}>
@@ -42,7 +44,7 @@ export default function PairAddScreen({ navigation }: Props) {
           activeOpacity={0.7}
           onPress={() => navigation.navigate(ROUTES.PairOfflineScreen)}
           accessibilityRole="button"
-          accessibilityLabel="Reconnect offline Robot"
+          accessibilityLabel={t('Reconnect offline Robot')}
         >
           <Box style={styles.offlineIcon} alignItems="center" justifyContent="center">
             <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={DV.ink2} strokeWidth="1.6">

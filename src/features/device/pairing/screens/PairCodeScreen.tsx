@@ -8,34 +8,30 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairCodeScreen'>;
 
-const CODE = ['4', '7', '2', '1'] as const;
-
 export default function PairCodeScreen({ navigation, route }: Props) {
+  const { t } = useAppLanguage();
   const [code, setCode] = React.useState('');
-  const deviceId = route.params?.deviceId;
+  const params = route.params;
   const submit = () => {
     if (!/^\d{6}$/.test(code)) return;
-    navigation.navigate(ROUTES.PairWifiScreen, { deviceId, code });
+    navigation.navigate(ROUTES.PairWifiScreen, { ...(params ?? {}), code });
   };
 
   return (
-    <DeviceShell title="Confirm it's yours" onBack={() => navigation.navigate(ROUTES.PairFoundScreen)}>
+    <DeviceShell title="Confirm it's yours" onBack={() => navigation.navigate(ROUTES.PairQrScanScreen, params)}>
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text style={styles.intro}>
-          Robot is showing a 4-digit code on its face. Type it here so we know we're pairing the right one.
+          Robot is showing a 6-digit code on its face. Type it here so we know we're pairing the right one.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={18} alignItems="center">
         <Box style={styles.lcdBg}>
-          <Box flexDirection="row" gap={14} alignItems="center">
-            {CODE.map((d, i) => (
-              <Text key={i} fontWeight="800" style={styles.lcdDigit}>{d}</Text>
-            ))}
-          </Box>
-          <Text style={styles.lcdLabel}>On Robot's face</Text>
+          <Text fontWeight="800" style={styles.lcdDigit}>------</Text>
+          <Text style={styles.lcdLabel}>Enter Robot's live code</Text>
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={20}>
@@ -43,11 +39,11 @@ export default function PairCodeScreen({ navigation, route }: Props) {
         <TextInput
           value={code}
           onChangeText={setCode}
-          placeholder="Pairing code"
+          placeholder={t('Pairing code')}
           keyboardType="number-pad"
           maxLength={6}
           style={styles.codeInput}
-          accessibilityLabel="Pairing code"
+          accessibilityLabel={t('Pairing code')}
         />
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>

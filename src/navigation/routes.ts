@@ -101,16 +101,17 @@ export type RootStackParamList = {
   // device / pairing
   PairIntroScreen: undefined;
   PairSearchScreen: undefined;
-  PairFoundScreen: undefined | { deviceId?: string };
-  PairConnectingScreen: undefined | { deviceId?: string; code?: string; ssid?: string; password?: string };
-  PairCodeScreen: undefined | { deviceId?: string };
+  PairFoundScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairQrScanScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairConnectingScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
   PairAddScreen: undefined;
-  PairRenameScreen: undefined | { deviceId?: string };
-  PairWifiScreen: undefined | { deviceId?: string; code?: string };
-  PairWifiPasswordScreen: undefined | { deviceId?: string; code?: string; ssid?: string };
+  PairRenameScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
+  PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
   PairOfflineScreen: undefined;
-  PairFailedScreen: undefined | { deviceId?: string; code?: string; ssid?: string };
-  PairSuccessScreen: undefined | { deviceId?: string };
+  PairFailedScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairSuccessScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
   PairFirstLessonScreen: undefined;
 
   DeviceHomeScreen: undefined;
@@ -235,6 +236,7 @@ export const ROUTES = {
   'PairIntroScreen': 'PairIntroScreen',
   'PairSearchScreen': 'PairSearchScreen',
   'PairFoundScreen': 'PairFoundScreen',
+  'PairQrScanScreen': 'PairQrScanScreen',
   'PairConnectingScreen': 'PairConnectingScreen',
   'PairCodeScreen': 'PairCodeScreen',
   'PairAddScreen': 'PairAddScreen',

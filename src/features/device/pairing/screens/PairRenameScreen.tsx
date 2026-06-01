@@ -8,6 +8,9 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
+import { useHousehold } from '@/contexts/HouseholdContext';
+import { completeDeviceProvisioning } from '@/services/api/device.api';
+import { markLocalDevicePaired } from '../localPairedDevice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
@@ -17,8 +20,51 @@ const BUDDIES = [
   { ic: '🐢', n: 'Turtle' }, { ic: '🐱', n: 'Cat' },
 ] as const;
 
-export default function PairRenameScreen({ navigation }: Props) {
+export default function PairRenameScreen({ navigation, route }: Props) {
   const [buddy, setBuddy] = React.useState(2);
+  const [saving, setSaving] = React.useState(false);
+  const { children } = useHousehold();
+
+  const save = async (): Promise<void> => {
+    if (saving) return;
+    const deviceId = route.params?.deviceId;
+    const provisioningAttemptId = route.params?.provisioningAttemptId;
+    const serialNumber = route.params?.serialNumber;
+    const childId = children[0]?.id;
+    if (!deviceId || !provisioningAttemptId || !childId) {
+      navigation.navigate(ROUTES.PairFailedScreen, {
+        deviceId,
+        serialNumber,
+        provisioningAttemptId,
+        errorCode: 'PAIRING_CONTEXT_MISSING',
+      });
+      return;
+    }
+    setSaving(true);
+    try {
+      await completeDeviceProvisioning({
+        provisioningAttemptId,
+        deviceId,
+        assignChildProfileId: childId,
+        displayName: 'Living-room Robot',
+      });
+      await markLocalDevicePairedBestEffort(deviceId);
+      navigation.navigate(ROUTES.PairSuccessScreen, {
+        deviceId,
+        serialNumber,
+        provisioningAttemptId,
+      });
+    } catch (error) {
+      navigation.navigate(ROUTES.PairFailedScreen, {
+        deviceId,
+        serialNumber,
+        provisioningAttemptId,
+        errorCode: errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED'),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <DeviceShell title="Choose a Buddy">
@@ -52,10 +98,27 @@ export default function PairRenameScreen({ navigation }: Props) {
         <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairFirstLessonScreen)}>Save & continue</DeviceBigBtn>
+        <DeviceBigBtn onClick={save}>{saving ? 'Saving...' : 'Save & continue'}</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
+}
+
+function errorCodeFrom(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error !== null) {
+    const record = error as { code?: unknown; response?: { data?: { code?: unknown } } };
+    if (typeof record.code === 'string') return record.code;
+    if (typeof record.response?.data?.code === 'string') return record.response.data.code;
+  }
+  return fallback;
+}
+
+async function markLocalDevicePairedBestEffort(deviceId: string): Promise<void> {
+  try {
+    await markLocalDevicePaired(deviceId);
+  } catch {
+    // Backend completion is authoritative; local cache failure must not undo it.
+  }
 }
 
 const styles = StyleSheet.create({
