@@ -7,6 +7,7 @@ import TopBar from '@/components/TopBar';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HelpFaqScreen'>;
 
@@ -20,6 +21,7 @@ const FAQS = [
 ] as const;
 
 export default function HelpFaqScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   const [open, setOpen] = React.useState(0);
 
   return (
@@ -29,7 +31,7 @@ export default function HelpFaqScreen({ navigation }: Props) {
     >
       <Box paddingHorizontal={16} paddingTop={14} paddingBottom={4}>
         <TextInput
-          placeholder="Search help…"
+          placeholder={t('Search help…')}
           placeholderTextColor="#8B8B96"
           style={styles.searchInput}
         />
@@ -49,7 +51,7 @@ export default function HelpFaqScreen({ navigation }: Props) {
                   style={styles.faqBtn}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={`FAQ: ${f.q}`}
+                  accessibilityLabel={`FAQ: ${t(f.q)}`}
                   accessibilityState={{ expanded: isOpen }}
                 >
                   <Text fontWeight="500" style={styles.faqQ}>{f.q}</Text>
@@ -74,7 +76,7 @@ export default function HelpFaqScreen({ navigation }: Props) {
             activeOpacity={0.7}
             onPress={() => navigation.navigate(ROUTES.SupportScreen)}
             accessibilityRole="button"
-            accessibilityLabel="Contact support"
+            accessibilityLabel={t('Contact support')}
           >
             <Text style={{ fontSize: 15, color: '#2B2140', flex: 1 }}>✉ Contact support</Text>
             <Text style={styles.rowChevron}>›</Text>
@@ -84,7 +86,7 @@ export default function HelpFaqScreen({ navigation }: Props) {
             activeOpacity={0.7}
             disabled
             accessibilityRole="button"
-            accessibilityLabel="Open user guide"
+            accessibilityLabel={t('Open user guide')}
             accessibilityState={{ disabled: true }}
           >
             <Text style={{ fontSize: 15, color: '#2B2140', flex: 1 }}>📄 Open user guide</Text>

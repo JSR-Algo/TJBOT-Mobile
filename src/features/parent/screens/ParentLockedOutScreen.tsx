@@ -18,7 +18,7 @@ export default function ParentLockedOutScreen({ navigation }: Props) {
   const unlock = async (): Promise<void> => {
     try {
       await clearParentLockout({ targetUserId: user?.id ?? 'parent-1' });
-      navigation.replace(ROUTES.ParentGateScreen);
+      navigation.replace(ROUTES.ParentSummaryScreen);
     } catch {
       setError('Could not clear the lockout. Try again.');
     }

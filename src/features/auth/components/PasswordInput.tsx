@@ -2,7 +2,9 @@ import React from 'react';
 import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { OB } from '@/components/OnbShell';
+import { Config } from '@/config';
 import { Box } from '@/design-system/primitives/Box';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = {
   value: string;
@@ -15,6 +17,7 @@ type Props = {
 
 export default function PasswordInput({ value, onChangeText, placeholder, testID, hasError, editable = true }: Props) {
   const [visible, setVisible] = React.useState(false);
+  const { t } = useAppLanguage();
 
   return (
     <Box
@@ -25,19 +28,23 @@ export default function PasswordInput({ value, onChangeText, placeholder, testID
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={placeholder ? t(placeholder) : undefined}
         testID={testID}
         placeholderTextColor={OB.ink3}
         style={styles.input}
         secureTextEntry={!visible}
+        autoComplete={Config.QA_MODE ? 'one-time-code' : undefined}
         autoCapitalize="none"
+        importantForAutofill={Config.QA_MODE ? 'no' : undefined}
+        textContentType={Config.QA_MODE ? 'oneTimeCode' : undefined}
         editable={editable}
       />
       <TouchableOpacity
         onPress={() => setVisible(v => !v)}
         style={styles.eyeBtn}
+        testID={testID ? `${testID}Toggle` : undefined}
         accessibilityRole="button"
-        accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+        accessibilityLabel={visible ? t('Hide password') : t('Show password')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         {visible ? <EyeOffIcon /> : <EyeIcon />}

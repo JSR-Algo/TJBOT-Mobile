@@ -10,15 +10,19 @@ import { Text } from '@/design-system/primitives/Text';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { captureError } from '@/services/observability/sentry';
+import { useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSettingsScreen'>;
 
-type Lang = 'vi' | 'both' | 'en';
-const LANG_OPTIONS: { v: Lang; label: string }[] = [
+const LANG_OPTIONS: { v: AppLocale; label: string }[] = [
   { v: 'vi', label: 'Tiếng Việt' },
-  { v: 'both', label: 'VI + EN' },
   { v: 'en', label: 'English' },
 ];
+
+function languageLabel(locale: AppLocale): string {
+  return LANG_OPTIONS.find(option => option.v === locale)?.label ?? 'Tiếng Việt';
+}
 
 export default function ParentSettingsScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentSettingsScreen);
@@ -27,7 +31,22 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   const [sound, setSound] = React.useState(false);
   const [haptics, setHaptics] = React.useState(false);
   const [analytics, setAnalytics] = React.useState(false);
-  const [lang, setLang] = React.useState<Lang>('vi');
+  const [savingLanguage, setSavingLanguage] = React.useState<AppLocale | null>(null);
+  const [languageSaveFailed, setLanguageSaveFailed] = React.useState(false);
+  const { language, setLanguage, t } = useAppLanguage();
+
+  const updateLanguage = React.useCallback(async (nextLanguage: AppLocale): Promise<void> => {
+    setSavingLanguage(nextLanguage);
+    setLanguageSaveFailed(false);
+    try {
+      await setLanguage(nextLanguage);
+    } catch (error) {
+      captureError(error);
+      setLanguageSaveFailed(true);
+    } finally {
+      setSavingLanguage(null);
+    }
+  }, [setLanguage]);
 
   const unavailableRows = [
     'Child name',
@@ -44,32 +63,33 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   return (
     <ParentScroll title="Settings" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
       <PRowGroup header="Language" footer="Changes apply to the whole app — for both child and parent surfaces.">
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Open App language, Unavailable"
-          activeOpacity={0.7}
-          disabled
-          accessibilityState={{ disabled: true }}
-        >
-          <PRow icon="🌐" label="App language" value="Unavailable" isLast />
-        </TouchableOpacity>
+        <PRow icon="🌐" label="App language" value={languageLabel(language)} isLast />
         <Box paddingHorizontal={16} paddingBottom={14} paddingTop={0} flexDirection="row" gap={8} style={{ backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: PA.hair }}>
           {LANG_OPTIONS.map(o => (
             <TouchableOpacity
               key={o.v}
-              onPress={() => setLang(o.v)}
+              accessibilityRole="radio"
+              accessibilityLabel={`${o.label}, ${language === o.v ? t('Selected') : t('Not selected')}`}
+              accessibilityState={{ selected: language === o.v, disabled: savingLanguage !== null }}
+              disabled={savingLanguage !== null}
+              onPress={() => { void updateLanguage(o.v); }}
               style={[
                 styles.langBtn,
-                { borderColor: lang === o.v ? PA.accent : PA.hair, backgroundColor: lang === o.v ? PA.accent : '#fff' },
+                { borderColor: language === o.v ? PA.accent : PA.hair, backgroundColor: language === o.v ? PA.accent : '#fff', opacity: savingLanguage !== null && savingLanguage !== o.v ? 0.6 : 1 },
               ]}
               activeOpacity={0.7}
             >
-              <Text fontWeight="600" style={{ fontSize: 14, color: lang === o.v ? '#fff' : PA.ink }}>
+              <Text fontWeight="600" style={{ fontSize: 14, color: language === o.v ? '#fff' : PA.ink }} i18n={false}>
                 {o.label}
               </Text>
             </TouchableOpacity>
           ))}
         </Box>
+        {languageSaveFailed ? (
+          <Box paddingHorizontal={16} paddingBottom={14} style={{ backgroundColor: '#fff' }}>
+            <Text style={{ fontSize: 13, color: '#C0392B' }}>Language could not be saved. Try again.</Text>
+          </Box>
+        ) : null}
       </PRowGroup>
 
       <PRowGroup header="Profile and plan">
@@ -88,7 +108,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         <PRow icon="📊" label="Anonymous usage analytics" toggle={analytics} onToggle={setAnalytics} />
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Open Safety & Privacy details"
+          accessibilityLabel={t('Open Safety & Privacy details')}
           onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
           activeOpacity={0.7}
         >

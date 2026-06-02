@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = {
   left?: React.ReactNode;
@@ -12,13 +13,14 @@ type Props = {
 };
 
 export default function TopBar({ left, right, title, dark, onBack }: Props) {
+  const { t } = useAppLanguage();
   const fg = dark ? '#fff' : '#1A1A1F';
   return (
     <Box style={styles.root}>
       <Box>
         {left}
         {!left && onBack ? (
-          <TouchableOpacity onPress={onBack} accessibilityRole="button" accessibilityLabel="Back to home" style={styles.backBtn}>
+          <TouchableOpacity onPress={onBack} accessibilityRole="button" accessibilityLabel={t('Back to home')} style={styles.backBtn}>
             <Text fontWeight="800" style={{ fontSize: 24, color: fg }}>‹</Text>
           </TouchableOpacity>
         ) : null}

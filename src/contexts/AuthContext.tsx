@@ -13,6 +13,8 @@ import {
 } from '../services/http/tokens';
 import { normalizeError } from '../utils/errors';
 import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../services/observability/analytics';
+import { captureError } from '@/services/observability/sentry';
+import { clearLocalPairedDevice } from '@/features/device/pairing/localPairedDevice';
 
 interface AuthState {
   user: User | null;
@@ -51,6 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       await deleteSecureItem(SECURE_STORE_KEYS.user);
     } catch {
       // non-blocking
+    }
+    try {
+      await clearLocalPairedDevice();
+    } catch (error) {
+      captureError(error);
     }
     resetAnalytics();
     setState({ user: null, isLoading: false, isAuthenticated: false, error: null });

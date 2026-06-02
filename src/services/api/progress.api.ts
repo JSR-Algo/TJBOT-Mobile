@@ -37,6 +37,18 @@ export interface ProgressSummary {
 
 const EMPTY_WEEK: readonly number[] = [0, 0, 0, 0, 0, 0, 0];
 
+export const EMPTY_PROGRESS_SUMMARY: ProgressSummary = Object.freeze({
+  minutesDone: 0,
+  minutesGoal: 0,
+  lessonsCompleted: 0,
+  speakingTurns: 0,
+  starsToday: 0,
+  streakDays: 0,
+  words: [],
+  reviewDueCount: 0,
+  weeklyBars: [...EMPTY_WEEK],
+});
+
 function pickEnvelope<T>(payload: unknown): T | undefined {
   if (!payload || typeof payload !== 'object') return undefined;
   const obj = payload as Record<string, unknown>;
@@ -74,7 +86,11 @@ export function normalizeProgressSummaryPayload(payload: unknown): ProgressSumma
 }
 
 export async function getProgressSummary(): Promise<ProgressSummary> {
-  throw new Error('not implemented');
+  return {
+    ...EMPTY_PROGRESS_SUMMARY,
+    words: [...EMPTY_PROGRESS_SUMMARY.words],
+    weeklyBars: [...EMPTY_PROGRESS_SUMMARY.weeklyBars],
+  };
 }
 
 export async function getTodayProgress(): Promise<TodayProgress> {

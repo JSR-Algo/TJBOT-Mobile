@@ -8,8 +8,11 @@
 // child screen never renders real data even when API returns 200".
 
 import React from 'react';
+import type { RouteProp } from '@react-navigation/native';
 import { act, render, waitFor } from '@testing-library/react-native';
 import { ParentSessionProvider } from '../../../src/features/parent/context/ParentSessionContext';
+import { ROUTES, type RootStackParamList } from '../../../src/navigation/routes';
+import { setAppLanguage } from '../../../src/services/i18n/i18n';
 
 // Treat useFocusEffect as useEffect so the load runs on mount without a
 // real NavigationContainer mounted.
@@ -42,6 +45,8 @@ jest.mock('../../../src/services/api/parent.api', () => ({
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ParentSummaryScreen = require('../../../src/features/parent/screens/ParentSummaryScreen').default;
 
+type ParentSummaryRoute = RouteProp<RootStackParamList, typeof ROUTES.ParentSummaryScreen>;
+
 function fakeNavigation() {
   return {
     navigate: jest.fn(),
@@ -50,15 +55,13 @@ function fakeNavigation() {
   };
 }
 
-function fakeRoute() {
-  return { key: 'p', name: 'ParentSummaryScreen', params: undefined };
+function fakeRoute(): ParentSummaryRoute {
+  return { key: 'p', name: ROUTES.ParentSummaryScreen, params: undefined };
 }
 
 function renderScreen() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const navigation = fakeNavigation() as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const route = fakeRoute() as any;
+  const navigation = fakeNavigation();
+  const route = fakeRoute();
   return render(
     <ParentSessionProvider>
       <ParentSummaryScreen navigation={navigation} route={route} />
@@ -72,7 +75,7 @@ describe('ParentSummaryScreen', () => {
   });
 
   it('does not render the failure copy when the API call succeeds', async () => {
-    mockGetParentSummary.mockResolvedValueOnce({ today: { lessonsCompleted: 2 } });
+    mockGetParentSummary.mockResolvedValueOnce({ weekMinutes: 8, weekLessons: 1, streak: 2, topWords: ['hello'] });
 
     const { queryByText } = renderScreen();
 
@@ -87,17 +90,54 @@ describe('ParentSummaryScreen', () => {
     expect(queryByText('Parent summary offline')).toBeNull();
   });
 
-  it('renders the failure copy with retry when the API call rejects', async () => {
+  it('keeps parent summary backend failures explicit instead of masking them as empty activity', async () => {
+    mockGetParentSummary.mockRejectedValueOnce(
+      Object.assign(new Error('Parent summary API route not documented'), {
+        code: 'BACKEND_CONTRACT_UNAVAILABLE',
+      }),
+    );
+
+    const { findByText, queryByText } = renderScreen();
+
+    await findByText('Parent summary unavailable');
+
+    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
+    expect(queryByText('Try again.')).toBeTruthy();
+    expect(queryByText('Retry')).toBeTruthy();
+    expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
+  });
+
+  it('renders failure copy when the API call rejects', async () => {
     mockGetParentSummary.mockRejectedValueOnce(Object.assign(new Error('network'), { isAxiosError: true }));
 
-    const { queryByText, findByText } = renderScreen();
+    const { findByText, queryByText } = renderScreen();
 
-    // Should land on a failure title — exact wording varies by error
-    // classification, but the retry button is the load-bearing affordance.
-    await findByText('Retry');
+    await findByText('Parent summary unavailable');
 
-    // Loading should also be gone by this point.
     expect(queryByText('Loading parent summary')).toBeNull();
+    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
+    expect(queryByText('Retry')).toBeTruthy();
+  });
+
+  it('treats malformed parent summary payloads as unavailable instead of empty activity', async () => {
+    mockGetParentSummary.mockResolvedValueOnce({ weekMinutes: '5', weekLessons: 2, streak: 1, topWords: [] });
+
+    const { findByText, queryByText } = renderScreen();
+
+    await findByText('Parent summary unavailable');
+
+    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
+    expect(queryByText('Tuần này: 2 bài và 5 phút.')).toBeNull();
+  });
+
+  it('translates dynamic parent summary copy in Vietnamese', async () => {
+    await setAppLanguage('vi');
+    mockGetParentSummary.mockResolvedValueOnce({ weekMinutes: 5, weekLessons: 2, streak: 3, topWords: [] });
+
+    const { findByText } = renderScreen();
+
+    await findByText('Tuần này: 2 bài và 5 phút.');
+    await findByText('2 bài trong tuần này');
   });
 
   it('eventually clears the loading message after a successful fetch', async () => {
@@ -112,7 +152,7 @@ describe('ParentSummaryScreen', () => {
     expect(queryByText('Loading parent summary')).not.toBeNull();
 
     await act(async () => {
-      resolveIt!({ ok: true });
+      resolveIt!({ weekMinutes: 1, weekLessons: 1, streak: 1, topWords: [] });
     });
 
     await waitFor(() => {

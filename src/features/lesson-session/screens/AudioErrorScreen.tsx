@@ -10,10 +10,12 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AudioErrorScreen'>;
 
 export default function AudioErrorScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <ScreenShell bg="#FDECEA">
       <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
@@ -30,7 +32,7 @@ export default function AudioErrorScreen({ navigation }: Props) {
         <TouchableOpacity
           onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
           accessibilityRole="button"
-          accessibilityLabel="Go home"
+          accessibilityLabel={t('Go home')}
         >
           <Text fontWeight="700" style={styles.homeText}>Go home</Text>
         </TouchableOpacity>

@@ -32,17 +32,17 @@ Module: Home Dashboard
 
 Module: Device Pairing
 - Screens: PairIntroScreen, PairSearchScreen, PairFoundScreen, PairCodeScreen, PairWifiScreen, PairConnectingScreen, PairSuccessScreen, PairFailedScreen, DeviceHomeScreen
-- Endpoints: POST /v1/devices/factory-register, POST /v1/devices/ble-code/:serialNumber, POST /v1/devices/claim, GET /v1/devices/:deviceId
-- Test data setup: unique serial `TBOT-<timestamp>`, local factory token, authenticated parent, household
-- Happy path: factory-register robot, request BLE code, claim robot with returned code, fetch claimed device, open Devices tab
-- Failure path: claim unknown serial with BLE code `000000`, expect 400/403/404/409/422, then retry normal route without poisoning device state
+- Endpoints: POST /v1/devices/provision/start, POST /v1/devices/provision/connect, GET /v1/devices/:deviceId
+- Test data setup: unique serial `TBOT-<timestamp>` already present in device registry, authenticated parent, household, ESP activation bridge stub when hardware is unavailable
+- Happy path: start provisioning from BLE-discovered serial, submit live code + transient Wi-Fi credentials to connect endpoint, fetch backend device state, open Devices tab
+- Failure path: connect unknown attempt or invalid BLE code `000000`, expect 400/403/404/409/422/503/504 typed error, then retry normal route without poisoning device state
 - User actions: tap Pair Robot, find robot, enter pairing code, continue Wi-Fi step, wait for success
 - Expected navigation: Home/Devices tab -> pairing stack -> PairSuccessScreen -> DeviceHomeScreen
 - Expected loading/empty/error states: scanning, connecting, robot not found, invalid code, retry pairing
-- Assertions: factory response includes device_id, BLE code exists, claim response includes device_id, claimed device loads, invalid claim does not bind device
+- Assertions: start response includes deviceId + provisioningAttemptId, connect response returns deviceId + `esp_bind_requested` or typed error, device loads, invalid connect does not bind device, Wi-Fi password is not logged or persisted
 - Cleanup: deregister claimed robot in Robot Management flow or reset backend fixture DB
 - Test command: `SIMULATION_MODE=true TBOT_FACTORY_TOKEN=local-e2e-factory-token npm run e2e:mobile:local`
-- Pass criteria: pairing happy path binds one device; failure path rejects invalid code; route map contains all pairing screens
+- Pass criteria: pairing happy path reaches backend-backed connection attempt; failure path rejects invalid code/actionable ESP errors; route map contains all pairing screens
 
 Module: Learning + Lesson Session
 - Screens: ConnectingScreen, GreetingScreen, LessonReadyScreen, RobotListeningScreen, UserSpeakingScreen, ThinkingScreen, RobotSpeakingScreen, LessonDoneScreen, RetryScreen, AudioErrorScreen
@@ -73,16 +73,16 @@ Module: Progress
 - Pass criteria: progress surfaces render valid, empty, or error states without hanging beyond 10 seconds
 
 Module: Parent Control
-- Screens: ParentGateScreen, ParentSummaryScreen, ParentTodayScreen, ParentHistoryScreen, ParentSafetyScreen, ParentSettingsScreen, ParentLockedOutScreen
-- Endpoints: POST /v1/parent/auth, GET /v1/controls/:deviceId, PUT /v1/controls/:deviceId, POST /v1/controls/:deviceId/emergency-stop
-- Test data setup: authenticated parent, claimed robot device, controls row, parent PIN path
-- Happy path: pass parent gate, open parent summary/settings, read controls, update quiet hours/content categories, trigger emergency stop
-- Failure path: read controls for unknown device UUID and expect 403/404; wrong PIN may show ParentLockedOutScreen depending backend policy
-- User actions: tap Open Parent Controls, enter PIN, tap Settings, adjust quiet hours or category toggles, tap emergency stop
-- Expected navigation: Home/Profile -> ParentGateScreen -> ParentSummaryScreen -> ParentSettingsScreen/ParentSafetyScreen
-- Expected loading/empty/error states: parent gate loading, wrong PIN, locked out, controls unavailable, retry
+- Screens: ParentSummaryScreen, ParentTodayScreen, ParentHistoryScreen, ParentSafetyScreen, ParentSettingsScreen
+- Endpoints: GET /v1/controls/:deviceId, PUT /v1/controls/:deviceId, POST /v1/controls/:deviceId/emergency-stop
+- Test data setup: authenticated parent, claimed robot device, controls row
+- Happy path: open parent summary/settings directly, read controls, update quiet hours/content categories, trigger emergency stop
+- Failure path: read controls for unknown device UUID and expect 403/404
+- User actions: tap Open Parent Controls/Profile, tap Settings, adjust quiet hours or category toggles, tap emergency stop
+- Expected navigation: Home/Profile -> ParentSummaryScreen -> ParentSettingsScreen/ParentSafetyScreen
+- Expected loading/empty/error states: controls unavailable, retry
 - Assertions: controls fetch returns 200, update returns 200, emergency stop response includes stopped, unknown device is rejected
-- Cleanup: restore controls to default values or rely on isolated local test device; reset parent gate state between app launches
+- Cleanup: restore controls to default values or rely on isolated local test device
 - Test command: `SIMULATION_MODE=true TBOT_BACKEND_LOG=/tmp/tbot-backend-e2e.log npm run e2e:mobile:local`
 - Pass criteria: parent can update controls and stop robot; failure path blocks unauthorized/unknown device access
 

@@ -24,6 +24,7 @@ const mockGetAccountSummary = jest.fn<Promise<User>, []>(async () => {
 
 const mockResetAnalytics = jest.fn();
 const mockLogin = jest.fn<Promise<{ user?: User }>, [string, string]>();
+const mockClearLocalPairedDevice = jest.fn<Promise<void>, []>(async () => undefined);
 
 jest.mock('../../src/services/http/client', () => ({
   setAuthInvalidatedHandler: (handler: (() => void) | null) => mockSetAuthInvalidatedHandler(handler),
@@ -52,6 +53,10 @@ jest.mock('../../src/services/observability/analytics', () => ({
   identifyAnalyticsUser: jest.fn(),
   resetAnalytics: () => mockResetAnalytics(),
   trackEvent: jest.fn(),
+}));
+
+jest.mock('../../src/features/device/pairing/localPairedDevice', () => ({
+  clearLocalPairedDevice: () => mockClearLocalPairedDevice(),
 }));
 
 import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
@@ -122,6 +127,7 @@ describe('AuthContext auth invalidation handler', () => {
     });
     expect(mockClearTokens).toHaveBeenCalled();
     expect(mockDeleteSecureItem).toHaveBeenCalledWith('TJBot_user');
+    expect(mockClearLocalPairedDevice).toHaveBeenCalled();
     expect(mockResetAnalytics).toHaveBeenCalled();
   });
 
@@ -141,6 +147,7 @@ describe('AuthContext auth invalidation handler', () => {
     });
     expect(mockClearTokens).toHaveBeenCalled();
     expect(mockDeleteSecureItem).toHaveBeenCalledWith('TJBot_user');
+    expect(mockClearLocalPairedDevice).toHaveBeenCalled();
     expect(mockResetAnalytics).toHaveBeenCalled();
   });
 });

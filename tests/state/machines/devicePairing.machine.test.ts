@@ -1,13 +1,42 @@
 import { createActor } from 'xstate';
-import { devicePairingMachine } from '../../../src/state/machines/devicePairing.machine';
+import { DevicePairingServices, devicePairingMachine } from '../../../src/state/machines/devicePairing.machine';
+
+type DevGlobal = typeof globalThis & { __DEV__?: boolean };
+
+const activeActors: Array<{ stop: () => void }> = [];
 
 function makeActor() {
   const actor = createActor(devicePairingMachine, { input: { userId: 'test-user' } });
   actor.start();
+  activeActors.push(actor);
   return actor;
 }
 
 describe('DevicePairing machine', () => {
+  afterEach(() => {
+    for (const actor of activeActors.splice(0)) {
+      actor.stop();
+    }
+    jest.useRealTimers();
+  });
+
+  describe('default services', () => {
+    it('keeps fake service implementations gated to dev/test mode', async () => {
+      const devGlobal = globalThis as DevGlobal;
+      const previousDev = devGlobal.__DEV__;
+      const previousNodeEnv = process.env.NODE_ENV;
+      try {
+        devGlobal.__DEV__ = false;
+        process.env.NODE_ENV = 'production';
+
+        await expect(DevicePairingServices.bleScan()).rejects.toThrow('dev/test only');
+      } finally {
+        devGlobal.__DEV__ = previousDev;
+        process.env.NODE_ENV = previousNodeEnv;
+      }
+    });
+  });
+
   describe('happy path', () => {
     it('IDLE → FIRST_LESSON_READY full flow', () => {
       const actor = makeActor();

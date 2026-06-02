@@ -5,14 +5,14 @@ import { OB } from '@/components/OnbShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 
-type Rule = { label: string; met: boolean };
+type Rule = { id: 'length' | 'uppercase' | 'number' | 'special'; label: string; met: boolean };
 
 function buildRules(password: string): Rule[] {
   return [
-    { label: 'At least 8 characters', met: password.length >= 8 },
-    { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
-    { label: 'One number', met: /\d/.test(password) },
-    { label: 'One special character (!@#$%^&*)', met: /[!@#$%^&*]/.test(password) },
+    { id: 'length', label: 'At least 8 characters', met: password.length >= 8 },
+    { id: 'uppercase', label: 'One uppercase letter', met: /[A-Z]/.test(password) },
+    { id: 'number', label: 'One number', met: /\d/.test(password) },
+    { id: 'special', label: 'One special character (!@#$%^&*)', met: /[!@#$%^&*]/.test(password) },
   ];
 }
 
@@ -34,7 +34,9 @@ export default function PasswordChecklist({ password, visible = true }: Props) {
           flexDirection="row"
           alignItems="center"
           gap={8}
+          accessible
           accessibilityLabel={`${rule.label}: ${rule.met ? 'met' : 'not met'}`}
+          testID={`passwordRule_${rule.id}_${rule.met ? 'met' : 'not_met'}`}
         >
           {rule.met ? <CheckIcon /> : <XIcon />}
           <Text style={[styles.label, rule.met ? styles.labelMet : styles.labelUnmet]}>

@@ -19,7 +19,7 @@ describe('deriveHomeState', () => {
     });
 
     expect(state.variant).toBe('zero_child');
-    expect(state.cfg.ctaTarget).toBe(ROUTES.ParentGateScreen);
+    expect(state.cfg.ctaTarget).toBe(ROUTES.ParentSummaryScreen);
   });
 
   it('shows a dedicated multi-child selector state until a child is selected', () => {

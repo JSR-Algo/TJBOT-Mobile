@@ -7,16 +7,10 @@
  */
 import { beforeAll, beforeEach } from '@jest/globals';
 import { device } from 'detox';
+import { launchCleanApp } from './helpers/ui';
 
 beforeAll(async () => {
-  await device.launchApp({
-    newInstance: true,
-    delete: true,
-    permissions: {
-      notifications: 'YES',
-      microphone: 'YES',
-    },
-  });
+  await launchCleanApp();
 });
 
 beforeEach(async () => {

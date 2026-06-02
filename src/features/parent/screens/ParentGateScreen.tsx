@@ -9,6 +9,7 @@ import { Text } from '@/design-system/primitives/Text';
 import ParentScroll, { PA } from '../components/ParentScroll';
 import { authenticateParent } from '@/services/api/parent.api';
 import { useParentSession } from '../context/ParentSessionContext';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentGateScreen'>;
 
@@ -43,6 +44,7 @@ function replaceAfterParentGate(navigation: Props['navigation'], next: ParentGat
 }
 
 export default function ParentGateScreen({ navigation, route }: Props) {
+  const { t } = useAppLanguage();
   const parentSession = useParentSession();
   const [val, setVal] = React.useState('');
   const [message, setMessage] = React.useState<string | null>(null);
@@ -116,7 +118,7 @@ export default function ParentGateScreen({ navigation, route }: Props) {
             inputMode="numeric"
             value={val}
             onChangeText={text => setVal(text.replace(/\D/g, '').slice(0, 6))}
-            placeholder="Parent PIN"
+            placeholder={t('Parent PIN')}
             placeholderTextColor={PA.ink3}
             editable={!disabled}
             secureTextEntry

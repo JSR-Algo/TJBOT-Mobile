@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { translateCopy } from '@/services/i18n/i18n';
 
 type State = { error: Error | null; info: React.ErrorInfo | null };
 type Props = {
@@ -30,11 +31,13 @@ export default class ErrorBoundary extends React.Component<Props, State> {
       if (Fallback) {
         return <Fallback error={this.state.error} reset={this.reset} />;
       }
+      const heading = translateCopy('Something went wrong');
+      const action = translateCopy('Try again');
       return (
         <View style={styles.root}>
           <View style={styles.card}>
             <Text style={styles.emoji}>😬</Text>
-            <Text style={styles.heading}>Something went wrong</Text>
+            <Text style={styles.heading}>{heading}</Text>
             <Text style={styles.body}>
               {this.state.error.message || 'Unknown error'}
             </Text>
@@ -42,9 +45,9 @@ export default class ErrorBoundary extends React.Component<Props, State> {
               style={styles.btn}
               onPress={this.reset}
               accessibilityRole="button"
-              accessibilityLabel="Try again"
+              accessibilityLabel={action}
             >
-              <Text style={styles.btnText}>Try again</Text>
+              <Text style={styles.btnText}>{action}</Text>
             </TouchableOpacity>
           </View>
         </View>

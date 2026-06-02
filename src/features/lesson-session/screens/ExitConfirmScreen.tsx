@@ -9,10 +9,12 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ExitConfirmScreen'>;
 
 export default function ExitConfirmScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <ScreenShell>
       <LessonHeader progress={0.34} onExit={() => {}} />
@@ -29,7 +31,7 @@ export default function ExitConfirmScreen({ navigation }: Props) {
             style={styles.stopBtn}
             onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
             accessibilityRole="button"
-            accessibilityLabel="Stop lesson for now"
+            accessibilityLabel={t('Stop lesson for now')}
           >
             <Text fontWeight="700" style={styles.stopText}>Stop for now</Text>
           </TouchableOpacity>

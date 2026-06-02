@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '@/design-system/primitives/Text';
 import { OB } from '@/components/OnbShell';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = {
   children?: React.ReactNode;
@@ -16,8 +17,9 @@ type Props = {
 };
 
 export default function OnbBigBtn({ children, onClick, onPress, color = OB.accent, secondary = false, danger = false, disabled = false, testID, accessibilityLabel }: Props) {
+  const { t } = useAppLanguage();
   const handler = onClick ?? onPress;
-  const label = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
+  const label = accessibilityLabel ?? (typeof children === 'string' ? t(children) : undefined);
   if (secondary) {
     return (
       <TouchableOpacity

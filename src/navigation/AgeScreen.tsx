@@ -9,6 +9,7 @@ import {
   type AgeAnswer,
   type AgeBandId,
 } from '@/features/onboarding/ageGate';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { setAnalyticsUserRole, initAnalytics, isAnalyticsEnabled } from '@/services/observability/analytics';
 import { captureError, setSentryUserRole } from '@/services/observability/sentry';
 
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export default function AgeScreen({ onComplete }: Props): React.JSX.Element {
+  const { language, t } = useAppLanguage();
   const [band, setBand] = React.useState<AgeBandId | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -61,6 +63,12 @@ export default function AgeScreen({ onComplete }: Props): React.JSX.Element {
         <Box style={styles.list} borderRadius={14} borderWidth={1} borderColor={OB.hair} overflow="hidden">
           {BANDS.map((b, i) => {
             const active = band === b.id;
+            const localizedLabel = t(b.label);
+            const accessibilityLabel = translateTemplate(
+              active ? 'Age range {{label}} selected' : 'Age range {{label}}',
+              { label: localizedLabel },
+              { locale: language },
+            );
             return (
               <TouchableOpacity
                 key={b.id}
@@ -73,7 +81,7 @@ export default function AgeScreen({ onComplete }: Props): React.JSX.Element {
                 ]}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`Age range ${b.label}${active ? ' selected' : ''}`}
+                accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ selected: active }}
               >
                 <Box

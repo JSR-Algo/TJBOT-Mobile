@@ -10,6 +10,7 @@
 
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 import { LATENCY_TARGETS } from "../../hooks/useLatencyBudget";
 import type { LatencyBudgetSample } from "../../hooks/useLatencyBudget";
@@ -62,14 +63,15 @@ function formatTargets(metric: LatencyMetric): string {
 }
 
 export function LatencyHud({ samples, visible }: LatencyHudProps): React.JSX.Element | null {
+  const { language } = useAppLanguage();
   if (!visible) return null;
   return (
     <View
       style={styles.container}
-      accessibilityLabel="Latency HUD — ADR-011 budgets"
+      accessibilityLabel={translateCopy('Latency HUD - ADR-011 budgets', { locale: language })}
       pointerEvents="none"
     >
-      <Text style={styles.title}>ADR-011 LATENCY HUD</Text>
+      <Text style={styles.title}>{translateCopy('ADR-011 latency HUD', { locale: language })}</Text>
       {ROWS.map((row) => {
         const sample = samples[row.metric];
         const color = classColor(sample ? sample.within : null);

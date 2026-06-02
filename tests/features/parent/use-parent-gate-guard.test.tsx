@@ -1,18 +1,9 @@
-// Lock in the redirect behaviour from Batch 7:
-//   - protected parent screen with a stale gate → navigation.replace to
-//     ParentGateScreen with `next` = the original screen
-//   - protected parent screen with a fresh gate → no redirect, touchActivity
-//     extends the idle window
-//
-// These tests would catch a regression where the guard silently allowed
-// access to a protected surface after the parent-gate window expired.
+// Parent PIN is no longer part of the mobile product flow. The guard remains
+// as a compatibility hook for existing screens, but it must not redirect.
 
 import React from 'react';
-import { act, renderHook } from '@testing-library/react-native';
-import {
-  ParentSessionProvider,
-  useParentSession,
-} from '../../../src/features/parent/context/ParentSessionContext';
+import { renderHook } from '@testing-library/react-native';
+import { ParentSessionProvider } from '../../../src/features/parent/context/ParentSessionContext';
 import { useParentGateGuard } from '../../../src/features/parent/hooks/useParentGateGuard';
 import { ROUTES } from '../../../src/navigation/routes';
 
@@ -56,71 +47,40 @@ describe('useParentGateGuard', () => {
     jest.useRealTimers();
   });
 
-  it('redirects to ParentGateScreen with the correct next param when gate is stale', () => {
+  it('does not redirect when the former gate session is stale', () => {
     const navigation = makeNavigation();
 
     renderHook(
       () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useParentGateGuard(navigation as any, 'ParentSummaryScreen');
+        useParentGateGuard(navigation, ROUTES.ParentSummaryScreen);
       },
       { wrapper },
     );
 
-    expect(navigation.replace).toHaveBeenCalledTimes(1);
-    expect(navigation.replace).toHaveBeenCalledWith(
-      ROUTES.ParentGateScreen,
-      { next: 'ParentSummaryScreen' },
-    );
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 
-  it('passes the caller screen name through to the gate so the user lands back here', () => {
+  it('does not redirect any protected parent detail screen through the old PIN gate', () => {
     const navigation = makeNavigation();
     renderHook(
       () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useParentGateGuard(navigation as any, 'ParentAccountPrivacyScreen');
+        useParentGateGuard(navigation, ROUTES.ParentAccountPrivacyScreen);
       },
       { wrapper },
     );
-    expect(navigation.replace).toHaveBeenCalledWith(
-      ROUTES.ParentGateScreen,
-      { next: 'ParentAccountPrivacyScreen' },
-    );
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 
-  it('does not redirect when the gate is fresh', () => {
+  it('does not require a fresh parent session before showing parent surfaces', () => {
     const navigation = makeNavigation();
 
-    // Open the gate first, then mount the guard on a separate hook so the
-    // guard sees a fresh ParentSession.
-    let combined: { session: ReturnType<typeof useParentSession> } | null = null;
     renderHook(
       () => {
-        const session = useParentSession();
-        combined = { session };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useParentGateGuard(navigation as any, 'ParentSummaryScreen');
+        useParentGateGuard(navigation, ROUTES.ParentSummaryScreen);
       },
       { wrapper },
     );
 
-    expect(navigation.replace).toHaveBeenCalledTimes(1); // initial mount: stale
-
-    act(() => { combined!.session.markGated(); });
-
-    // Subsequent focus cycle (deps include navigation+thisScreen+session)
-    // sees fresh and DOES NOT redirect. There's no second replace call.
-    // We also check that we haven't accumulated more calls.
-    expect(navigation.replace).toHaveBeenCalledTimes(1);
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
-
-  // Re-focus after staleness is covered by composition:
-  //   - ParentSessionContext tests prove `isFresh()` flips false on the
-  //     idle/absolute boundary (parent-session-context.test.tsx).
-  //   - The three tests above prove that `isFresh()===false` at focus
-  //     time redirects with the correct payload.
-  // Synthesizing a focus event without a real NavigationContainer is
-  // awkward (touchActivity itself extends the idle window) and the
-  // composed coverage is sufficient.
 });

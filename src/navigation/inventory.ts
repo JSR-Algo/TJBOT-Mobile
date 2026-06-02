@@ -116,6 +116,7 @@ const BUSINESS_FLOW_SEQUENCES = {
     ROUTES.PairAddScreen,
     ROUTES.PairIntroScreen,
     ROUTES.PairFoundScreen,
+    ROUTES.PairQrScanScreen,
     ROUTES.PairCodeScreen,
     ROUTES.PairWifiScreen,
     ROUTES.PairWifiPasswordScreen,

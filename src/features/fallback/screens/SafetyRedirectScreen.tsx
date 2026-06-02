@@ -9,10 +9,12 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SafetyRedirectScreen'>;
 
 export default function SafetyRedirectScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <ScreenShell bg="#E8E5F0">
       <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
@@ -30,7 +32,7 @@ export default function SafetyRedirectScreen({ navigation }: Props) {
           onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Need help?"
+          accessibilityLabel={t('Need help?')}
         >
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Need help?</Text>
         </TouchableOpacity>
@@ -38,7 +40,7 @@ export default function SafetyRedirectScreen({ navigation }: Props) {
           onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Back to home"
+          accessibilityLabel={t('Back to home')}
         >
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Get a grown-up</Text>
         </TouchableOpacity>

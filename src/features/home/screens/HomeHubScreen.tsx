@@ -19,6 +19,8 @@ import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 
+export const HOME_HUB_ROBOT_STAGE_TOP_PADDING = 116;
+
 export default function HomeHubScreen({ navigation }: Props) {
   const { variant, cfg, isLoading } = useHomeState();
   const [greet, setGreet] = React.useState(false);
@@ -50,12 +52,20 @@ export default function HomeHubScreen({ navigation }: Props) {
     <ScreenShell bg={bg}>
       <TopBar
         left={
-          <CircleBtn size={44} onPress={() => navigation.navigate(ROUTES.ParentGateScreen)}>
+          <CircleBtn
+            size={44}
+            accessibilityLabel="Open parent dashboard"
+            onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
+          >
             <UserIcon />
           </CircleBtn>
         }
         right={
-          <CircleBtn size={44} onPress={() => navigation.navigate(ROUTES.ParentGateScreen)}>
+          <CircleBtn
+            size={44}
+            accessibilityLabel="Open parent settings"
+            onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
+          >
             <SettingsIcon />
           </CircleBtn>
         }
@@ -92,6 +102,7 @@ export default function HomeHubScreen({ navigation }: Props) {
 
       <Box style={styles.primaryCta}>
         <PrimaryCTA
+          testID="homePrimaryCta"
           onPress={() => navigateHomeCtaTarget(navigation, cfg.ctaTarget)}
           color={cfg.ctaColor}
         >
@@ -103,6 +114,7 @@ export default function HomeHubScreen({ navigation }: Props) {
         <HomeSecondaryButton label="Course"   icon="🗺️" onPress={() => navigation.navigate(ROUTES.CourseScreen)}         dim={cfg.dimSecondary} />
         <HomeSecondaryButton label="Review"   icon="🔁" onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}   dim={cfg.dimSecondary} badge={cfg.reviewBadge} />
         <HomeSecondaryButton label="Progress" icon="⭐" onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)} dim={cfg.dimSecondary} />
+        <HomeSecondaryButton label="Robot"    icon="🤖" onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)} dim={cfg.dimSecondary} />
       </Box>
     </ScreenShell>
   );
@@ -120,8 +132,8 @@ function navigateHomeCtaTarget(
     navigation.navigate(ROUTES.TodayProgressScreen);
     return;
   }
-  if (target === ROUTES.ParentGateScreen) {
-    navigation.navigate(ROUTES.ParentGateScreen);
+  if (target === ROUTES.ParentSummaryScreen) {
+    navigation.navigate(ROUTES.ParentSummaryScreen);
     return;
   }
   if (target === ROUTES.DeviceOverviewScreen) {
@@ -150,7 +162,7 @@ function SettingsIcon() {
 }
 
 const styles = StyleSheet.create({
-  robotStage: { paddingTop: 128, paddingHorizontal: 24, paddingBottom: 280, gap: 14 },
+  robotStage: { paddingTop: HOME_HUB_ROBOT_STAGE_TOP_PADDING, paddingHorizontal: 24, paddingBottom: 280, gap: 14 },
   greeting: { fontSize: 18, color: '#5C4F77' },
   robotWrap: { position: 'relative', width: 240, height: 240, marginTop: 6, alignItems: 'center', justifyContent: 'center' },
   pulseWrap: { position: 'absolute', top: -10, left: -10, right: -10, bottom: -10 },

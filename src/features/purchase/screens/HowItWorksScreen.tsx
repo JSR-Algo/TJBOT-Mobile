@@ -21,7 +21,7 @@ const STEPS = [
 
 export default function HowItWorksScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="How it works" onBack={() => navigation.navigate(ROUTES.PurchaseIntroScreen)}>
+    <DeviceShell title="How it works" screenTestID="howItWorksScreen" onBack={() => navigation.navigate(ROUTES.PurchaseIntroScreen)}>
       <Box paddingHorizontal={24} paddingTop={18}>
         <PRStepTab step={1} total={3} />
       </Box>

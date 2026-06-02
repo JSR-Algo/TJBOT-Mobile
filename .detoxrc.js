@@ -13,10 +13,17 @@
  * Required by tests/e2e-native-coverage-contract.test.ts. Metro config is
  * shared so e2e bundles match production transforms: require('./metro.config.js').
  */
-const metroConfig = require('./metro.config.js'); // eslint-disable-line @typescript-eslint/no-unused-vars
-
 const VOICE_HARNESS = process.env.E2E_ENABLE_VOICE_TEST_HARNESS === 'true' ? 'true' : 'false';
 const IOS_SIMULATOR_DEVICE_TYPE = process.env.E2E_IOS_SIMULATOR_DEVICE_TYPE || 'iPhone 17 Pro';
+const IOS_API_URL = process.env.E2E_IOS_API_URL || 'http://localhost:3000';
+const IOS_AI_URL = process.env.E2E_IOS_AI_URL || 'http://localhost:3001/api/ai';
+const ANDROID_API_URL = process.env.E2E_ANDROID_API_URL || 'http://10.0.2.2:3000';
+const ANDROID_AI_URL = process.env.E2E_ANDROID_AI_URL || 'http://10.0.2.2:3001/api/ai';
+
+process.env.TBOT_API_URL = IOS_API_URL;
+process.env.TBOT_AI_URL = IOS_AI_URL;
+
+const metroConfig = require('./metro.config.js'); // eslint-disable-line @typescript-eslint/no-unused-vars
 
 /** @type {Detox.DetoxConfig} */
 module.exports = {
@@ -35,10 +42,10 @@ module.exports = {
       binaryPath:
         'ios/build/Build/Products/Debug-iphonesimulator/TJBotMobile.app',
       build:
-        "SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true xcodebuild -workspace ios/TJBotMobile.xcworkspace -scheme TJBotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO -destination 'generic/platform=iOS Simulator'",
+        `TBOT_API_URL=${IOS_API_URL} TBOT_AI_URL=${IOS_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true xcodebuild -workspace ios/TJBotMobile.xcworkspace -scheme TJBotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- -destination 'generic/platform=iOS Simulator'`,
       launchArgs: {
-        TBOT_API_URL: process.env.E2E_IOS_API_URL || 'http://localhost:3000',
-        TBOT_AI_URL: process.env.E2E_IOS_AI_URL || 'http://localhost:3001',
+        TBOT_API_URL: IOS_API_URL,
+        TBOT_AI_URL: IOS_AI_URL,
         voiceHarness: VOICE_HARNESS,
       },
     },
@@ -46,11 +53,11 @@ module.exports = {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
       build:
-        'cd android && SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug -Pe2eBundleDebug=true && cd ..',
+        `cd android && TBOT_API_URL=${ANDROID_API_URL} TBOT_AI_URL=${ANDROID_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug -Pe2eBundleDebug=true && cd ..`,
       reversePorts: [8081],
       launchArgs: {
-        TBOT_API_URL: process.env.E2E_ANDROID_API_URL || 'http://10.0.2.2:3000',
-        TBOT_AI_URL: process.env.E2E_ANDROID_AI_URL || 'http://10.0.2.2:3001',
+        TBOT_API_URL: ANDROID_API_URL,
+        TBOT_AI_URL: ANDROID_AI_URL,
         voiceHarness: VOICE_HARNESS,
       },
     },

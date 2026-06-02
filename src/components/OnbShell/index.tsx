@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 export const OB = {
   bg: '#F5F5F2',
@@ -22,11 +23,13 @@ type Props = {
   total?: number;
   onBack?: () => void;
   title?: string;
+  testID?: string;
 };
 
-export default function OnbShell({ children, step, total, onBack, title }: Props) {
+export default function OnbShell({ children, step, total, onBack, title, testID }: Props) {
+  const { t } = useAppLanguage();
   return (
-    <ScrollView style={[styles.root, { backgroundColor: OB.bg }]}>
+    <ScrollView style={[styles.root, { backgroundColor: OB.bg }]} testID={testID}>
       <Box
         style={[styles.header, { backgroundColor: OB.bg, borderBottomColor: OB.hair }]}
         flexDirection="row"
@@ -39,7 +42,7 @@ export default function OnbShell({ children, step, total, onBack, title }: Props
             style={styles.backBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('Go back')}
           >
             <BackIcon color={OB.ink2} />
           </TouchableOpacity>

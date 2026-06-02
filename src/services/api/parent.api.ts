@@ -44,6 +44,13 @@ export interface ParentSummary {
   topWords: string[];
 }
 
+export const EMPTY_PARENT_SUMMARY: ParentSummary = Object.freeze({
+  weekMinutes: 0,
+  weekLessons: 0,
+  streak: 0,
+  topWords: [],
+});
+
 export interface ParentToday {
   date: string;
   minutesDone: number;
@@ -99,7 +106,9 @@ function mapParentHistoryEntry(raw: RawParentHistoryEntry): ParentHistoryEntry {
 }
 
 export async function getParentSummary(): Promise<ParentSummary> {
-  throw new BackendContractUnavailableError('/parent/summary');
+  // The backend parent-summary contract is not designed yet. Keep the parent
+  // profile usable without inventing child activity data.
+  return { ...EMPTY_PARENT_SUMMARY, topWords: [...EMPTY_PARENT_SUMMARY.topWords] };
 }
 
 export async function getParentToday(): Promise<ParentToday> {

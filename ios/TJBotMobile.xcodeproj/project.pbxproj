@@ -45,6 +45,7 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = TJBotMobile/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = TJBotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1749F12F36CED817179A8157 /* PcmStreamModuleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PcmStreamModuleTests.swift; sourceTree = "<group>"; };
+		2A80E0A4C87E4B1FB33D7B2E /* TJBotMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = TJBotMobile.entitlements; path = TJBotMobile/TJBotMobile.entitlements; sourceTree = "<group>"; };
 		2CB91DD0495C02B6E65CA09C /* VoiceMicModuleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceMicModuleTests.swift; sourceTree = "<group>"; };
 		37730A1DCA2ACE18350A27C3 /* Pods-TJBotMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TJBotMobile.release.xcconfig"; path = "Target Support Files/Pods-TJBotMobile/Pods-TJBotMobile.release.xcconfig"; sourceTree = "<group>"; };
 		4E133BB36BFE1597E6CFEB9F /* PcmStreamModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PcmStreamModule.swift; path = TJBotMobile/PcmStream/PcmStreamModule.swift; sourceTree = "<group>"; };
@@ -96,6 +97,7 @@
 				761780EC2CA45674006654EE /* AppDelegate.mm */,
 				761780EF2CA45674006654EE /* main.m */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				2A80E0A4C87E4B1FB33D7B2E /* TJBotMobile.entitlements */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */,
@@ -469,6 +471,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TJBotMobile/TJBotMobile.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -506,6 +509,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TJBotMobile/TJBotMobile.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

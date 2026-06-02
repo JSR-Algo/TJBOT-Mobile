@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, ViewProps } from 'react-native';
 import { tokens } from '@/design-system/tokens';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 type ColorToken = keyof typeof tokens.colors;
 
@@ -58,6 +59,10 @@ export const Box = memo(function Box({
   top, right, bottom, left, width, height, opacity, overflow,
   style, children, ...rest
 }: BoxProps) {
+  const { language } = useAppLanguage();
+  const accessibilityLabel = typeof rest.accessibilityLabel === 'string'
+    ? translateCopy(rest.accessibilityLabel, { locale: language })
+    : rest.accessibilityLabel;
   return (
     <View
       style={[
@@ -96,6 +101,7 @@ export const Box = memo(function Box({
         style,
       ]}
       {...rest}
+      accessibilityLabel={accessibilityLabel}
     >
       {children}
     </View>

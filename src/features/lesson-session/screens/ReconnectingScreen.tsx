@@ -9,10 +9,12 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReconnectingScreen'>;
 
 export default function ReconnectingScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <ScreenShell bg="#E8E5F0">
       <Box accessible accessibilityLabel="Reconnecting to Robot voice" flex={1}>
@@ -28,7 +30,7 @@ export default function ReconnectingScreen({ navigation }: Props) {
         </Box>
         <Box style={styles.footer}>
           <TouchableOpacity
-            accessibilityLabel="Wait with Robot"
+            accessibilityLabel={t('Wait with Robot')}
             accessibilityRole="button"
             style={styles.waitBtn}
             onPress={() => { /* no-op — resume must come from server */ }}

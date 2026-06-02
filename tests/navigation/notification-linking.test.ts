@@ -56,8 +56,11 @@ describe('notification linking', () => {
     });
   });
 
-  it('lets React Navigation own configured route paths and manually handles only dynamic notification paths', () => {
+  it('lets React Navigation handle configured paths and manually queues dynamic notification paths', () => {
+    expect(NAVIGATION_LINKING_CONFIG.prefixes).toContain('tjbot://');
+    expect(NAVIGATION_LINKING_CONFIG.prefixes).not.toContain('tbot://');
     expect(shouldHandleDeepLinkManually('TJBot://device/device-home')).toBe(false);
+    expect(shouldHandleDeepLinkManually('tjbot://device/device-home')).toBe(false);
     expect(shouldHandleDeepLinkManually('TJBot://device/device-1')).toBe(true);
   });
 

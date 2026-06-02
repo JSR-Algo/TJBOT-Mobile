@@ -10,17 +10,25 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import COURSES from '../components/courses';
 import { ROUTES } from '@/navigation/routes';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BuyCourseScreen'>;
 
 const COURSE = COURSES[2]!;
 
 export default function BuyCourseScreen({ navigation, route }: Props) {
+  const { language, t } = useAppLanguage();
   const courseId = route.params?.courseId ?? COURSE.id;
   const c = COURSES.find((course) => course.id === courseId) ?? COURSE;
+  const title = translateTemplate('Add {{title}}', { title: c.title }, { locale: language });
+  const courseMeta = translateTemplate(
+    '{{lessons}} {{lessonLabel}} · {{weeks}} {{weekLabel}}',
+    { lessons: c.lessons, lessonLabel: t('lessons'), weeks: c.weeks, weekLabel: t('weeks') },
+    { locale: language },
+  );
 
   return (
-    <DeviceShell title={`Add ${c.title}`} onBack={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId })}>
+    <DeviceShell title={title} onBack={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId })}>
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.courseTile}>
           <Box style={styles.lcdWrap}>
@@ -28,7 +36,7 @@ export default function BuyCourseScreen({ navigation, route }: Props) {
           </Box>
           <Box>
             <Text fontWeight="600" style={styles.courseName}>{c.title}</Text>
-            <Text style={styles.courseMeta}>{c.lessons} lessons · {c.weeks} weeks</Text>
+            <Text style={styles.courseMeta} i18n={false}>{courseMeta}</Text>
           </Box>
         </Box>
       </Box>

@@ -10,6 +10,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import type { Child } from '@/types';
 import { Config } from '@/config';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import * as authApi from '@/services/api/auth';
 import {
   allowsDevelopmentCoppaConsentBypass,
@@ -67,6 +68,7 @@ function dobFromAgeBand(bandId: AgeBandId): string {
 }
 
 export default function ChildProfileScreen({ navigation }: Props) {
+  const { language, t } = useAppLanguage();
   const { activeHousehold, addChild, createHousehold } = useHousehold();
   const [buddy, setBuddy] = React.useState<(typeof BUDDIES)[number]['id']>('panda');
   const [level, setLevel] = React.useState<(typeof LEVELS)[number]['id']>('starter');
@@ -119,6 +121,11 @@ export default function ChildProfileScreen({ navigation }: Props) {
         <Box style={styles.buddyGrid}>
           {BUDDIES.map(b => {
             const active = buddy === b.id;
+            const accessibilityLabel = translateTemplate(
+              active ? 'Buddy {{label}} selected' : 'Buddy {{label}}',
+              { label: b.label },
+              { locale: language },
+            );
             return (
               <TouchableOpacity
                 key={b.id}
@@ -129,7 +136,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
                 ]}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`${b.label} buddy${active ? ' selected' : ''}`}
+                accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ selected: active }}
               >
                 <Text style={{ fontSize: 30 }}>{b.emoji}</Text>
@@ -145,6 +152,12 @@ export default function ChildProfileScreen({ navigation }: Props) {
         <Box style={styles.ageBandRow}>
           {AGE_BANDS.map(b => {
             const active = ageBand === b.id;
+            const localizedLabel = t(b.label);
+            const accessibilityLabel = translateTemplate(
+              active ? 'Age range {{label}} selected' : 'Age range {{label}}',
+              { label: localizedLabel },
+              { locale: language },
+            );
             return (
               <TouchableOpacity
                 key={b.id}
@@ -155,7 +168,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
                 ]}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`Age range ${b.label}${active ? ' selected' : ''}`}
+                accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ selected: active }}
               >
                 <Text fontWeight="700" style={[styles.ageBandText, active && { color: OB.accent }]}>{b.label}</Text>
@@ -171,6 +184,12 @@ export default function ChildProfileScreen({ navigation }: Props) {
         <Box style={styles.levelList} borderRadius={14} borderWidth={1} borderColor={OB.hair} overflow="hidden">
           {LEVELS.map((l, i) => {
             const active = level === l.id;
+            const localizedLabel = t(l.label);
+            const accessibilityLabel = translateTemplate(
+              active ? 'Starting level {{label}} selected' : 'Starting level {{label}}',
+              { label: localizedLabel },
+              { locale: language },
+            );
             return (
               <TouchableOpacity
                 key={l.id}
@@ -182,7 +201,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
                 ]}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`Starting level: ${l.label}${active ? ' selected' : ''}`}
+                accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ selected: active }}
               >
                 <Box

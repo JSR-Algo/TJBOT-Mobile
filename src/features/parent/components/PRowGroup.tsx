@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = {
   header?: string;
@@ -10,10 +11,12 @@ type Props = {
 };
 
 export default function PRowGroup({ header, footer, children }: Props) {
+  const { language } = useAppLanguage();
+  const translatedHeader = header ? translateCopy(header, { locale: language }).toUpperCase() : null;
   return (
     <Box paddingHorizontal={16} paddingTop={14}>
-      {header ? (
-        <Text fontWeight="600" style={styles.header}>{header.toUpperCase()}</Text>
+      {translatedHeader ? (
+        <Text fontWeight="600" style={styles.header} i18n={false}>{translatedHeader}</Text>
       ) : null}
       <Box style={styles.card} borderRadius={14} overflow="hidden">
         {children}

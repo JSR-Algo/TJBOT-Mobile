@@ -10,10 +10,12 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MicMissingScreen'>;
 
 export default function MicMissingScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <ScreenShell bg="#FFE5DC">
       <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
@@ -32,7 +34,7 @@ export default function MicMissingScreen({ navigation }: Props) {
           onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Need help?"
+          accessibilityLabel={t('Need help?')}
         >
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Need help?</Text>
         </TouchableOpacity>

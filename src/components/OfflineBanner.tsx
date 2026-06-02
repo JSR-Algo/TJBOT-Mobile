@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
+import { Text } from '@/design-system/primitives/Text';
 
 export function OfflineBanner(): React.JSX.Element | null {
   const [isOffline, setIsOffline] = useState(false);

@@ -183,6 +183,8 @@
 
 ## UC-A14 — Reset Parent PIN
 
+> Mobile status: retired from the primary parent app flow. The app is parent-operated and no longer asks for a parent PIN. Backend PIN recovery contracts can remain for compatibility or a future child-operated mode, but mobile navigation should not depend on them.
+
 - **Goal:** Parent who forgot their PIN regains access via an email magic-link, even during a 15-min `GATE_LOCKED_OUT` window. Per ADR-0008.
 - **Trigger:** Tap "Forgot PIN?" link on `ParentGateScreen` OR `ParentLockedOutScreen`.
 - **Preconditions:** Authenticated user with a verified `users.email` on file. Active `parent_pins` row exists for the user (the reset replaces it).

@@ -15,6 +15,7 @@ import * as SecureStore from 'expo-secure-store';
 import { initAnalytics, setAnalyticsUserRole } from './services/observability/analytics';
 import { initSentry, setSentryUserRole } from './services/observability/sentry';
 import { startVoiceTelemetry } from './services/observability/voice-telemetry';
+import { useLoadAppLanguagePreference } from './services/i18n/i18n';
 
 type ResolvedRole = 'child' | 'teen' | 'adult' | 'unknown';
 
@@ -47,6 +48,7 @@ export const __ageGateBootPromise: Promise<ResolvedRole> = (async () => {
 })();
 
 function AppInner(): React.JSX.Element {
+  useLoadAppLanguagePreference();
   usePushNotifications();
 
   useEffect(() => {

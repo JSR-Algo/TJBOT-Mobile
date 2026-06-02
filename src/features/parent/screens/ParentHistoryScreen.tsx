@@ -8,6 +8,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { getParentHistory } from '@/services/api/parent.api';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentHistoryScreen'>;
 type HistoryErrorState = { title: string; detail: string };
@@ -26,6 +27,7 @@ function buildDays() {
 }
 
 export default function ParentHistoryScreen({ navigation }: Props) {
+  const { language, t } = useAppLanguage();
   useParentGateGuard(navigation, ROUTES.ParentHistoryScreen);
   const days = React.useMemo(buildDays, []);
   const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
@@ -74,7 +76,7 @@ export default function ParentHistoryScreen({ navigation }: Props) {
           <Text style={styles.stat}>{errorState.detail}</Text>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={`Retry ${errorState.title}`}
+            accessibilityLabel={translateTemplate('Retry {{title}}', { title: t(errorState.title) }, { locale: language })}
             onPress={() => { loadHistory(); }}
             activeOpacity={0.7}
           >
@@ -120,7 +122,18 @@ export default function ParentHistoryScreen({ navigation }: Props) {
                   {d.active ? d.topic : 'No practice'}
                 </Text>
                 {d.active ? (
-                  <Text style={{ fontSize: 12, color: PA.ink2, marginTop: 2 }}>{d.min} min · {d.turns} speaking turns</Text>
+                  <Text style={{ fontSize: 12, color: PA.ink2, marginTop: 2 }} i18n={false}>
+                    {translateTemplate(
+                      '{{minutes}} {{minuteLabel}} · {{turns}} {{turnLabel}}',
+                      {
+                        minutes: d.min,
+                        minuteLabel: t('min'),
+                        turns: d.turns,
+                        turnLabel: t('speaking turns'),
+                      },
+                      { locale: language },
+                    )}
+                  </Text>
                 ) : null}
               </Box>
             </Box>

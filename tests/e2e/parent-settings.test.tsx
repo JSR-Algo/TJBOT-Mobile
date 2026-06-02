@@ -1,7 +1,13 @@
 import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
+import {
+  APP_LANGUAGE_STORAGE_KEY,
+  loadAppLanguagePreference,
+  setAppLanguage,
+} from '../../src/services/i18n/i18n';
 import ParentSettingsScreen from '../../src/features/parent/screens/ParentSettingsScreen';
 import ParentGateScreen from '../../src/features/parent/screens/ParentGateScreen';
 import ParentLockedOutScreen from '../../src/features/parent/screens/ParentLockedOutScreen';
@@ -80,8 +86,10 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
 }
 
 describe('Parent settings and gate', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    await AsyncStorage.clear();
+    await setAppLanguage('en');
     mockParentSessionFresh = false;
     parentApiMock.getParentSummary.mockRejectedValue(new Error('Parent summary API route not documented'));
     parentApiMock.getParentToday.mockRejectedValue(new Error('Parent today API route not documented'));
@@ -144,7 +152,29 @@ describe('Parent settings and gate', () => {
     fireEvent.press(getByLabelText('Open Safety & Privacy details'));
 
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentSafetyScreen);
-    expect(getByLabelText('Open App language, Unavailable')).toBeTruthy();
+    expect(getByLabelText('English, Selected')).toBeTruthy();
+    expect(getByLabelText('Tiếng Việt, Not selected')).toBeTruthy();
+  });
+
+  it('defaults app language to Vietnamese, switches to English, and persists the choice', async () => {
+    await AsyncStorage.clear();
+    await loadAppLanguagePreference();
+
+    const view = render(
+      <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
+    );
+
+    expect(view.getByText('Ngôn ngữ ứng dụng')).toBeTruthy();
+    expect(view.getAllByText('Tiếng Việt').length).toBeGreaterThanOrEqual(1);
+
+    await act(async () => {
+      fireEvent.press(view.getByText('English'));
+    });
+
+    await waitFor(() => {
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(APP_LANGUAGE_STORAGE_KEY, 'en');
+    });
+    expect(view.getByText('App language')).toBeTruthy();
   });
 
   it('requires export confirmation and refreshes status only from user action', async () => {
@@ -598,7 +628,7 @@ describe('Parent settings and gate', () => {
     await waitFor(() => {
       expect(parentApiMock.clearParentLockout).toHaveBeenCalledWith({ targetUserId: 'parent-1' });
     });
-    expect(mockNavigation.replace).toHaveBeenCalledWith(ROUTES.ParentGateScreen);
+    expect(mockNavigation.replace).toHaveBeenCalledWith(ROUTES.ParentSummaryScreen);
   });
 
   it('keeps lockout recoverable when clear-lockout fails', async () => {
@@ -619,7 +649,8 @@ describe('Parent settings and gate', () => {
     });
   });
 
-  it('keeps parent summary blocked instead of rendering guessed backend fields', async () => {
+  it('keeps parent summary failures explicit when the backend contract is unavailable', async () => {
+    parentApiMock.getParentSummary.mockRejectedValueOnce(Object.assign(new Error('Parent summary API route not documented'), { code: 'BACKEND_CONTRACT_UNAVAILABLE' }));
     const { getByText, queryByText } = render(
       <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
@@ -627,6 +658,9 @@ describe('Parent settings and gate', () => {
     expect(getByText('Loading parent summary')).toBeTruthy();
     await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
     expect(getByText('Parent summary unavailable')).toBeTruthy();
+    expect(getByText('Try again.')).toBeTruthy();
+    expect(getByText('Retry')).toBeTruthy();
+    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
     expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
     expect(queryByText('Your child practiced 3 lessons for 18 minutes this week.')).toBeNull();
   });
@@ -640,10 +674,11 @@ describe('Parent settings and gate', () => {
 
     await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
     expect(getByText('Parent summary unavailable')).toBeTruthy();
+    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
     expect(queryByText('Loading parent summary')).toBeNull();
   });
 
-  it('shows an explicit parent summary error when the backend contract is unavailable', async () => {
+  it('shows parent summary failure copy when the backend contract is unavailable', async () => {
     parentApiMock.getParentSummary.mockRejectedValueOnce(new Error('Parent summary API route not documented'));
 
     const { getByText, queryByText } = render(
@@ -651,6 +686,7 @@ describe('Parent settings and gate', () => {
     );
 
     await waitFor(() => expect(getByText('Parent summary unavailable')).toBeTruthy());
+    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
     expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
   });
 
@@ -695,6 +731,18 @@ describe('Parent settings and gate', () => {
 
     await waitFor(() => expect(outage.getByText('Parent summary service unavailable')).toBeTruthy());
     expect(outage.getByText('Retry in a moment.')).toBeTruthy();
+  });
+
+  it('renders dynamic parent summary copy in Vietnamese', async () => {
+    await setAppLanguage('vi');
+    parentApiMock.getParentSummary.mockResolvedValueOnce({ weekMinutes: 5, weekLessons: 2, streak: 3, topWords: [] });
+
+    const { getByText } = render(
+      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
+    );
+
+    await waitFor(() => expect(getByText('Tuần này: 2 bài và 5 phút.')).toBeTruthy());
+    expect(getByText('2 bài trong tuần này')).toBeTruthy();
   });
 
   it('exposes parent summary navigation controls with clear accessibility labels', async () => {

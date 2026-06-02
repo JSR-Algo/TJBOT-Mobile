@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, StyleSheet, Text as RNText, TextInput, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
+import { Linking, StyleSheet, TextInput, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import { Box } from '@/design-system/primitives/Box';
@@ -18,6 +18,7 @@ import {
 } from '@/services/api/account';
 import { normalizeError } from '@/utils/errors';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentAccountPrivacyScreen'>;
 
@@ -75,6 +76,7 @@ function PrivacyActionButton({
   textColor?: string;
   disabled?: boolean;
 }): React.ReactElement {
+  const { t } = useAppLanguage();
   const state = disabled ? { disabled: true } : { disabled: false };
   return (
     <TouchableOpacity
@@ -83,20 +85,21 @@ function PrivacyActionButton({
       }}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={t(accessibilityLabel)}
       accessibilityState={state}
       style={[style, disabled && styles.buttonDisabled]}
       activeOpacity={0.75}
     >
-      <RNText accessible={false} style={[styles.actionText, { color: textColor }]}>
+      <Text accessible={false} style={[styles.actionText, { color: textColor }]}>
         {label}
-      </RNText>
+      </Text>
     </TouchableOpacity>
   );
 }
 
 export default function ParentAccountPrivacyScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentAccountPrivacyScreen);
+  const { t } = useAppLanguage();
   const [exportConfirm, setExportConfirm] = React.useState('');
   const [deleteConfirm, setDeleteConfirm] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -269,7 +272,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
             value={exportConfirm}
             onChangeText={setExportConfirm}
             placeholder="EXPORT"
-            accessibilityLabel="Export confirmation"
+            accessibilityLabel={t('Export confirmation')}
             placeholderTextColor={PA.ink3}
             autoCapitalize="characters"
             style={styles.input}
@@ -312,7 +315,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
             value={deleteConfirm}
             onChangeText={setDeleteConfirm}
             placeholder={DELETE_PHRASE}
-            accessibilityLabel="Delete confirmation phrase"
+            accessibilityLabel={t('Delete confirmation phrase')}
             placeholderTextColor={PA.ink3}
             autoCapitalize="none"
             style={styles.input}
@@ -320,8 +323,8 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
           <TextInput
             value={password}
             onChangeText={setPassword}
-            placeholder="Password"
-            accessibilityLabel="Account password"
+            placeholder={t('Password')}
+            accessibilityLabel={t('Account password')}
             placeholderTextColor={PA.ink3}
             secureTextEntry
             style={styles.input}

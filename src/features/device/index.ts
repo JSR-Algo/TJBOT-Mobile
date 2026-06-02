@@ -3,6 +3,7 @@ import PairSearchScreen from './pairing/screens/PairSearchScreen';
 import PairFoundScreen from './pairing/screens/PairFoundScreen';
 import PairConnectingScreen from './pairing/screens/PairConnectingScreen';
 import PairCodeScreen from './pairing/screens/PairCodeScreen';
+import PairQrScanScreen from './pairing/screens/PairQrScanScreen';
 import PairAddScreen from './pairing/screens/PairAddScreen';
 import PairRenameScreen from './pairing/screens/PairRenameScreen';
 import PairWifiScreen from './pairing/screens/PairWifiScreen';
@@ -27,6 +28,7 @@ export const SCREEN_MAP = {
   dv_pair_intro: PairIntroScreen,
   dv_pair_search: PairSearchScreen,
   dv_pair_found: PairFoundScreen,
+  dv_pair_qr_scan: PairQrScanScreen,
   dv_pair_code: PairCodeScreen,
   dv_pair_wifi: PairWifiScreen,
   dv_pair_wifi_pw: PairWifiPasswordScreen,

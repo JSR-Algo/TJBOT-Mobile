@@ -12,12 +12,14 @@ import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
 import { activateRobot } from '@/services/api/purchase.api';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivateScreen'>;
 
 const CODE_CHARS = ['T', 'B', '4', '7', 'K', '9'];
 
 export default function ActivateScreen({ navigation, route }: Props) {
+  const { t } = useAppLanguage();
   const [code, setCode] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
   const vals = code.padEnd(6, '').slice(0, 6).split('');
@@ -57,8 +59,8 @@ export default function ActivateScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={20} paddingTop={24}>
         <TextInput
-          accessibilityLabel="Activation code"
-          placeholder="Activation code"
+          accessibilityLabel={t('Activation code')}
+          placeholder={t('Activation code')}
           value={code}
           onChangeText={(text) => setCode(text.slice(0, 6).toUpperCase())}
           style={styles.hiddenInput}

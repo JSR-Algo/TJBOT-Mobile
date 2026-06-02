@@ -8,6 +8,7 @@ import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { getLessonList, type LessonDetail } from '@/services/api/course.api';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonListScreen'>;
 
@@ -17,6 +18,7 @@ type LoadState =
   | { kind: 'error'; title: string; detail?: string };
 
 export default function LessonListScreen({ navigation, route }: Props) {
+  const { language, t } = useAppLanguage();
   const unitId = route.params?.unitId;
   const [state, setState] = React.useState<LoadState>(
     unitId ? { kind: 'loading' } : { kind: 'error', title: 'Lesson list unavailable' },
@@ -68,7 +70,18 @@ export default function LessonListScreen({ navigation, route }: Props) {
           >
             <Box flex={1}>
               <Text fontWeight="800" style={styles.title}>{lesson.title}</Text>
-              <Text style={styles.meta}>{lesson.durationMinutes} minutes · {lesson.wordsCount} words</Text>
+              <Text style={styles.meta} i18n={false}>
+                {translateTemplate(
+                  '{{duration}} {{minuteLabel}} · {{words}} {{wordLabel}}',
+                  {
+                    duration: lesson.durationMinutes,
+                    minuteLabel: t('minutes'),
+                    words: lesson.wordsCount,
+                    wordLabel: t('words'),
+                  },
+                  { locale: language },
+                )}
+              </Text>
             </Box>
           </TouchableOpacity>
         ))}

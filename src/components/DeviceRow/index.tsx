@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 const DV = {
   ink: '#1A1A1F',
@@ -20,8 +21,12 @@ type Props = {
 };
 
 export default function DeviceRow({ icon, title, body, right, onClick, danger }: Props) {
+  const { language } = useAppLanguage();
   const titleColor = danger ? '#C0392B' : DV.ink;
-  const accessibilityLabel = [title, body].filter(Boolean).join('. ');
+  const accessibilityLabel = [title, body]
+    .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    .map(value => translateCopy(value, { locale: language }))
+    .join('. ');
   const renderedIcon =
     typeof icon === 'string' || typeof icon === 'number'
       ? <Text style={styles.iconText}>{icon}</Text>

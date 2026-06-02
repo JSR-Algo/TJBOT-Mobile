@@ -32,7 +32,7 @@ flowchart TD
     Protected_HomeHubScreen[HomeHubScreen<br/>tabScreen / tab] --> MainTabNavigatorNode
     Protected_CourseLibraryScreen[CourseLibraryScreen<br/>tabScreen / tab] --> MainTabNavigatorNode
     Protected_TodayProgressScreen[TodayProgressScreen<br/>tabScreen / tab] --> MainTabNavigatorNode
-    Protected_ParentGateScreen[ParentGateScreen<br/>tabScreen / tab] --> MainTabNavigatorNode
+    Protected_ParentSummaryScreen[ParentSummaryScreen<br/>tabScreen / tab] --> MainTabNavigatorNode
     Protected_DeviceHomeScreen[DeviceHomeScreen<br/>tabScreen / tab] --> MainTabNavigatorNode
     Protected_CourseScreen[CourseScreen<br/>stackScreens / stack-entry]
     Protected_LevelScreen[LevelScreen<br/>stackScreens / stack]
@@ -79,16 +79,17 @@ flowchart TD
     Protected_LessonSummaryScreen[LessonSummaryScreen<br/>stackScreens / stack-entry]
     Protected_ReviewNeededScreen[ReviewNeededScreen<br/>stackScreens / stack-entry]
     Protected_CelebrationScreen[CelebrationScreen<br/>stackScreens / state-machine]
-    Protected_ParentSummaryScreen[ParentSummaryScreen<br/>stackScreens / stack]
+    Protected_ParentGateScreen[ParentGateScreen<br/>stackScreens / fallback-entry]
     Protected_ParentTodayScreen[ParentTodayScreen<br/>stackScreens / stack]
     Protected_ParentHistoryScreen[ParentHistoryScreen<br/>stackScreens / stack]
     Protected_ParentSafetyScreen[ParentSafetyScreen<br/>stackScreens / stack]
-    Protected_ParentSettingsScreen[ParentSettingsScreen<br/>stackScreens / stack]
+    Protected_ParentSettingsScreen[ParentSettingsScreen<br/>stackScreens / stack-entry]
     Protected_ParentAccountPrivacyScreen[ParentAccountPrivacyScreen<br/>stackScreens / stack]
     Protected_ParentLockedOutScreen[ParentLockedOutScreen<br/>stackScreens / fallback-entry]
     Protected_PairIntroScreen[PairIntroScreen<br/>stackScreens / stack]
     Protected_PairSearchScreen[PairSearchScreen<br/>stackScreens / stack]
     Protected_PairFoundScreen[PairFoundScreen<br/>stackScreens / state-machine]
+    Protected_PairQrScanScreen[PairQrScanScreen<br/>stackScreens / stack]
     Protected_PairConnectingScreen[PairConnectingScreen<br/>stackScreens / stack]
     Protected_PairCodeScreen[PairCodeScreen<br/>stackScreens / stack]
     Protected_PairAddScreen[PairAddScreen<br/>stackScreens / stack]

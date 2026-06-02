@@ -8,39 +8,53 @@ import PRowGroup from '../components/PRowGroup';
 import PRow from '../components/PRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { getParentSummary } from '@/services/api/parent.api';
+import { getParentSummary, type ParentSummary } from '@/services/api/parent.api';
+import { captureError } from '@/services/observability/sentry';
+import { localeDateTag, translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSummaryScreen'>;
 type SummaryParams = { deviceId?: string; summaryDate?: string };
-type SummaryErrorState = { title: string; detail: string };
+type SummaryErrorState = {
+  title: string;
+  detail: string;
+  detailValues?: Readonly<Record<string, string | number>>;
+};
 
-const STATS = [
-  { v: '8', l: 'minutes' },
-  { v: '1', l: 'lesson' },
-  { v: '8', l: 'speaking turns' },
-] as const;
+const EMPTY_SUMMARY: ParentSummary = {
+  weekMinutes: 0,
+  weekLessons: 0,
+  streak: 0,
+  topWords: [],
+};
 
 export default function ParentSummaryScreen({ navigation, route }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentSummaryScreen);
+  const { language, t } = useAppLanguage();
   const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
-  const [errorState, setErrorState] = React.useState<SummaryErrorState>({
-    title: 'Parent summary unavailable',
-    detail: 'Try again.',
-  });
+  const [summary, setSummary] = React.useState<ParentSummary>(() => emptySummary());
+  const [errorState, setErrorState] = React.useState<SummaryErrorState>(() => defaultSummaryError());
   const params = (route.params ?? {}) as SummaryParams;
 
   const loadSummary = React.useCallback(() => {
     let active = true;
     setStatus('loading');
     getParentSummary()
-      .then((summary) => {
+      .then((nextSummary) => {
         if (active) {
-          setStatus(summary && typeof summary === 'object' ? 'success' : 'error');
+          const normalized = normalizeParentSummary(nextSummary);
+          if (normalized) {
+            setSummary(normalized);
+            setStatus('success');
+          } else {
+            setErrorState(defaultSummaryError());
+            setStatus('error');
+          }
         }
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
+        captureError(error);
         if (active) {
           setErrorState(classifySummaryError(error));
           setStatus('error');
@@ -59,7 +73,7 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
         <Box paddingHorizontal={24} paddingTop={40}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Open Parent Space settings"
+            accessibilityLabel={t('Open Parent Space settings')}
             onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
             activeOpacity={0.7}
           >
@@ -72,24 +86,26 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
   }
 
   if (status === 'error') {
+    const title = t(errorState.title);
+    const detail = translateTemplate(errorState.detail, errorState.detailValues ?? {}, { locale: language });
     return (
       <ParentScroll title="Parent Space">
         <Box paddingHorizontal={24} paddingTop={40} gap={12}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Open Parent Space settings"
+            accessibilityLabel={t('Open Parent Space settings')}
             onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
             activeOpacity={0.7}
           >
             <Text style={styles.retryText}>Settings</Text>
           </TouchableOpacity>
-          {params.summaryDate ? <Text style={styles.dateLabel}>Requested summary: {params.summaryDate}</Text> : null}
-          {params.deviceId ? <Text style={styles.dateLabel}>Robot: {params.deviceId}</Text> : null}
-          <Text fontWeight="700" style={styles.headline}>{errorState.title}</Text>
-          <Text style={styles.dateLabel}>{errorState.detail}</Text>
+          {params.summaryDate ? <Text style={styles.dateLabel} i18n={false}>{summaryDateLabel(params.summaryDate, language)}</Text> : null}
+          {params.deviceId ? <Text style={styles.dateLabel} i18n={false}>{summaryDeviceLabel(params.deviceId, language)}</Text> : null}
+          <Text fontWeight="700" style={styles.headline} i18n={false}>{title}</Text>
+          <Text style={styles.dateLabel} i18n={false}>{detail}</Text>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={`Retry ${errorState.title}`}
+            accessibilityLabel={translateTemplate('Retry {{title}}', { title }, { locale: language })}
             onPress={() => { loadSummary(); }}
             activeOpacity={0.7}
           >
@@ -100,13 +116,17 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
     );
   }
 
+  const stats = summaryStats(summary);
+  const hasActivity = !isEmptyParentSummary(summary);
+  const topWords = summary.topWords.slice(0, 3);
+
   return (
     <ParentScroll
       title="Parent Space"
       right={
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Open Parent Space settings"
+          accessibilityLabel={t('Open Parent Space settings')}
           onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
           activeOpacity={0.7}
         >
@@ -115,13 +135,15 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
       }
     >
       <Box paddingHorizontal={16} paddingTop={18} paddingBottom={8}>
-        <Text style={styles.dateLabel}>Today · Tuesday, Mar 12</Text>
-        <Text fontWeight="600" style={styles.headline}>
-          Mira practiced greetings and feelings for about 8 minutes.
+        <Text style={styles.dateLabel} i18n={false}>{formatTodayLabel(language)}</Text>
+        {params.summaryDate ? <Text style={styles.dateLabel} i18n={false}>{summaryDateLabel(params.summaryDate, language)}</Text> : null}
+        {params.deviceId ? <Text style={styles.dateLabel} i18n={false}>{summaryDeviceLabel(params.deviceId, language)}</Text> : null}
+        <Text fontWeight="600" style={styles.headline} i18n={!hasActivity}>
+          {hasActivity ? weeklySummaryLabel(summary, language) : 'No lesson activity has synced yet.'}
         </Text>
 
         <Box flexDirection="row" gap={10} marginBottom={14} style={{ flexWrap: 'wrap' }}>
-          {STATS.map(s => (
+          {stats.map(s => (
             <Box key={s.l} style={styles.statCard} flex={1}>
               <Text fontWeight="600" style={styles.statVal}>{s.v}</Text>
               <Text style={styles.statLabel}>{s.l}</Text>
@@ -135,16 +157,18 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
           activeOpacity={0.8}
         >
           <Box flex={1}>
-            <Text fontWeight="500" style={{ fontSize: 15, color: PA.ink }}>What Mira practiced today</Text>
-            <Text style={{ fontSize: 13, color: PA.ink2, marginTop: 2 }}>Greetings · feelings · 3 new words</Text>
+            <Text fontWeight="500" style={{ fontSize: 15, color: PA.ink }}>Today's practice</Text>
+            <Text style={{ fontSize: 13, color: PA.ink2, marginTop: 2 }}>
+              {topWords.length ? topWords.join(' · ') : 'No words synced yet'}
+            </Text>
           </Box>
           <ChevronIcon />
         </TouchableOpacity>
       </Box>
 
       <PRowGroup header="History">
-        <PRow icon="🗓" label="Past 30 days" value="22 days active" chevron onPress={() => navigation.navigate(ROUTES.ParentHistoryScreen)} />
-        <PRow icon="📚" label="Course progress" value="Unit 3 of 8" chevron isLast />
+        <PRow icon="🗓" label="Past 30 days" value={weeklyLessonsLabel(summary.weekLessons, language)} chevron onPress={() => navigation.navigate(ROUTES.ParentHistoryScreen)} />
+        <PRow icon="📚" label="Course progress" value={hasActivity ? 'In progress' : 'No synced progress'} chevron isLast />
       </PRowGroup>
 
       <PRowGroup header="Account">
@@ -161,18 +185,135 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
   );
 }
 
+function emptySummary(): ParentSummary {
+  return { ...EMPTY_SUMMARY, topWords: [] };
+}
+
+function defaultSummaryError(): SummaryErrorState {
+  return { title: 'Parent summary unavailable', detail: 'Try again.' };
+}
+
 function classifySummaryError(error: unknown): SummaryErrorState {
-  const shaped = error as { status?: number; retryAfterSeconds?: number; code?: string };
-  if (shaped.status === 429 || shaped.code === 'RATE_LIMIT_EXCEEDED') {
+  const record = asRecord(error);
+  const code = readString(record, 'code');
+  const status = readNumber(record, 'status');
+  if (status === 429 || code === 'RATE_LIMIT_EXCEEDED') {
     return {
       title: 'Parent summary refresh limited',
-      detail: `Try again in ${shaped.retryAfterSeconds ?? 30} seconds.`,
+      detail: 'Try again in {{seconds}} seconds.',
+      detailValues: { seconds: readNumber(record, 'retryAfterSeconds') ?? 30 },
     };
   }
-  if (shaped.status === 502 || shaped.code === 'INTERNAL_ERROR') {
+  if (status === 502 || code === 'INTERNAL_ERROR') {
     return { title: 'Parent summary service unavailable', detail: 'Retry in a moment.' };
   }
-  return { title: 'Parent summary unavailable', detail: 'Try again.' };
+  return defaultSummaryError();
+}
+
+function normalizeParentSummary(value: unknown): ParentSummary | null {
+  const raw = asRecord(value);
+  if (!raw) return null;
+  const weekMinutes = readNumberAlias(raw, 'weekMinutes', 'week_minutes');
+  const weekLessons = readNumberAlias(raw, 'weekLessons', 'week_lessons');
+  const streak = readNumberAlias(raw, 'streak');
+  const topWords = readStringArrayAlias(raw, 'topWords', 'top_words');
+  if (weekMinutes === undefined || weekLessons === undefined || streak === undefined || topWords === undefined) {
+    return null;
+  }
+  return {
+    weekMinutes,
+    weekLessons,
+    streak,
+    topWords,
+  };
+}
+
+function isEmptyParentSummary(summary: ParentSummary): boolean {
+  return summary.weekMinutes === 0
+    && summary.weekLessons === 0
+    && summary.streak === 0
+    && summary.topWords.length === 0;
+}
+
+function summaryStats(summary: ParentSummary): Array<{ v: string; l: string }> {
+  return [
+    { v: String(summary.weekMinutes), l: 'minutes' },
+    { v: String(summary.weekLessons), l: 'lessons' },
+    { v: String(summary.streak), l: 'day streak' },
+  ];
+}
+
+function formatTodayLabel(locale: AppLocale, date = new Date()): string {
+  const formattedDate = date.toLocaleDateString(localeDateTag(locale), { weekday: 'short', month: 'short', day: 'numeric' });
+  return translateTemplate('Today · {{date}}', { date: formattedDate }, { locale });
+}
+
+function pluralize(word: string, count: number): string {
+  return count === 1 ? word : `${word}s`;
+}
+
+function weeklySummaryLabel(summary: ParentSummary, locale: AppLocale): string {
+  return translateTemplate(
+    'This week: {{lessons}} {{lessonLabel}} and {{minutes}} {{minuteLabel}}.',
+    {
+      lessons: summary.weekLessons,
+      lessonLabel: translateTemplate(pluralize('lesson', summary.weekLessons), {}, { locale }),
+      minutes: summary.weekMinutes,
+      minuteLabel: translateTemplate(pluralize('minute', summary.weekMinutes), {}, { locale }),
+    },
+    { locale },
+  );
+}
+
+function weeklyLessonsLabel(weekLessons: number, locale: AppLocale): string {
+  return translateTemplate(
+    '{{lessons}} {{lessonLabel}} this week',
+    {
+      lessons: weekLessons,
+      lessonLabel: translateTemplate(pluralize('lesson', weekLessons), {}, { locale }),
+    },
+    { locale },
+  );
+}
+
+function summaryDateLabel(date: string, locale: AppLocale): string {
+  return translateTemplate('Requested summary: {{date}}', { date }, { locale });
+}
+
+function summaryDeviceLabel(deviceId: string, locale: AppLocale): string {
+  return translateTemplate('Robot: {{deviceId}}', { deviceId }, { locale });
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : null;
+}
+
+function readNumberAlias(record: Record<string, unknown>, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+  }
+  return undefined;
+}
+
+function readStringArrayAlias(record: Record<string, unknown>, ...keys: string[]): string[] | undefined {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    return Array.isArray(value) && value.every((item): item is string => typeof item === 'string') ? [...value] : undefined;
+  }
+  return undefined;
+}
+
+function readString(record: Record<string, unknown> | null, key: string): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function readNumber(record: Record<string, unknown> | null, key: string): number | undefined {
+  const value = record?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function ChevronIcon() {

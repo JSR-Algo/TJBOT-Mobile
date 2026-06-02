@@ -13,6 +13,7 @@ export type SeededAccount = {
 const DEFAULT_API_ROOT = 'http://127.0.0.1:3000';
 const DEFAULT_AI_ROOT = 'http://127.0.0.1:3001/api/ai';
 let mockBackend: http.Server | null = null;
+let mockAi: http.Server | null = null;
 
 function e2eAuthMode(): string {
   return process.env.E2E_AUTH_MODE ?? 'preseed';
@@ -67,6 +68,71 @@ export async function seedAccountWithoutHousehold(): Promise<SeededAccount> {
   return { email, password };
 }
 
+export async function seedOnboardedAccount(email: string, password: string): Promise<SeededAccount> {
+  if (e2eAuthMode() !== 'preseed') {
+    return { email, password };
+  }
+
+  let token: string | null = null;
+  const signup = await requestJson('POST', `${apiV1Root()}/auth/signup`, {
+    email,
+    password,
+    name: 'Detox Parent',
+  });
+  const signupStatus = getStatus(signup);
+  if (signupStatus === 201 || signupStatus === 200) {
+    token = accessTokenFrom(signup);
+  } else if (signupStatus === 409) {
+    const login = await requestJson('POST', `${apiV1Root()}/auth/login`, { email, password });
+    const loginStatus = getStatus(login);
+    if (loginStatus < 200 || loginStatus >= 300) {
+      throw new Error(`Expected local login 2xx while seeding onboarded account, got ${loginStatus}`);
+    }
+    token = accessTokenFrom(login);
+  } else {
+    throw new Error(`Expected local signup 2xx/409, got ${signupStatus}`);
+  }
+
+  if (!token) {
+    throw new Error('Local onboarded seed missing access_token');
+  }
+
+  const headers = { Authorization: `Bearer ${token}` };
+  const consent = await requestJson('POST', `${apiV1Root()}/auth/consent`, {
+    stripe_token: 'tok_test_bypass',
+    consent_given: true,
+  }, headers);
+  const consentStatus = getStatus(consent);
+  if (consentStatus < 200 || consentStatus >= 300) {
+    throw new Error(`Expected local COPPA consent 2xx, got ${consentStatus}`);
+  }
+
+  const household = await requestJson('POST', `${apiV1Root()}/households`, {
+    name: 'Detox Household',
+  }, headers);
+  const householdStatus = getStatus(household);
+  if (householdStatus < 200 || householdStatus >= 300) {
+    throw new Error(`Expected local household create 2xx, got ${householdStatus}`);
+  }
+  const householdId = stringField(getField(household, 'body'), 'id')
+    || stringField(getField(getField(household, 'body'), 'data'), 'id');
+  if (!householdId) {
+    throw new Error('Local onboarded seed missing household id');
+  }
+
+  const child = await requestJson('POST', `${apiV1Root()}/households/${householdId}/children`, {
+    name: 'Detox Child',
+    vocabulary_level: 'beginner',
+    learning_style: 'balanced',
+  }, headers);
+  const childStatus = getStatus(child);
+  if (childStatus < 200 || childStatus >= 300) {
+    throw new Error(`Expected local child create 2xx, got ${childStatus}`);
+  }
+
+  return { email, password };
+}
+
 export async function assertLocalBackendReady(): Promise<void> {
   let response: unknown;
   try {
@@ -82,9 +148,18 @@ export async function assertLocalBackendReady(): Promise<void> {
 }
 
 export async function stopLocalMockBackend(): Promise<void> {
-  if (!mockBackend) return;
-  const server = mockBackend;
-  mockBackend = null;
+  await stopMockServer('backend');
+}
+
+export async function stopLocalMockAi(): Promise<void> {
+  await stopMockServer('ai');
+}
+
+async function stopMockServer(kind: 'backend' | 'ai'): Promise<void> {
+  const server = kind === 'backend' ? mockBackend : mockAi;
+  if (!server) return;
+  if (kind === 'backend') mockBackend = null;
+  else mockAi = null;
   await new Promise<void>((resolve, reject) => {
     server.close((error) => {
       if (error) reject(error);
@@ -94,7 +169,13 @@ export async function stopLocalMockBackend(): Promise<void> {
 }
 
 export async function assertLocalAiSimulationReady(): Promise<void> {
-  const response = await requestJson('GET', `${aiServiceRoot()}/health`);
+  let response: unknown;
+  try {
+    response = await requestJson('GET', `${aiServiceRoot()}/health`);
+  } catch {
+    await startMockAi();
+    response = await requestJson('GET', `${aiServiceRoot()}/health`);
+  }
   const status = getStatus(response);
   if (status >= 500) {
     throw new Error(`Local AI simulation returned ${status}`);
@@ -103,6 +184,37 @@ export async function assertLocalAiSimulationReady(): Promise<void> {
   if (getField(body, 'simulation_mode') !== true) {
     throw new Error('Local AI service is not running with simulation_mode=true');
   }
+}
+
+async function startMockAi(): Promise<void> {
+  if (mockAi) return;
+  const root = new URL(aiServiceRoot());
+  const port = Number(root.port || '80');
+  const host = root.hostname === '127.0.0.1' || root.hostname === 'localhost' ? '0.0.0.0' : root.hostname;
+
+  const server = http.createServer((req, res) => {
+    const path = (req.url ?? '').split('?')[0] ?? '';
+    const method = req.method ?? 'GET';
+    if (method === 'GET' && path === '/health') {
+      send(res, 200, { status: 'ok', simulation_mode: true, service: 'tbot-mobile-e2e-ai-mock' });
+      return;
+    }
+    send(res, 200, { simulation_mode: true, data: {} });
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, host, () => {
+      server.off('error', reject);
+      resolve();
+    });
+  });
+  const address = server.address() as AddressInfo;
+  if (address.port !== port) {
+    server.close();
+    throw new Error(`Mock AI started on unexpected port ${address.port}`);
+  }
+  mockAi = server;
 }
 
 async function requestJson(
@@ -231,12 +343,16 @@ async function startMockBackend(): Promise<void> {
         const password = stringField(body, 'password');
         const name = stringField(body, 'name') || 'Detox Parent';
         if (!email || !password) return send(res, 400, { error: { code: 'VALIDATION_ERROR' } });
+        if (users.has(email)) return send(res, 409, { error: { code: 'USER_EXISTS' } });
         const user = { id: uid('usr'), email, name, password };
         users.set(email, user);
         const accessToken = uid('tok');
         const refreshToken = uid('ref');
         tokens.set(accessToken, email);
         return send(res, 201, { data: { access_token: accessToken, refresh_token: refreshToken, user } });
+      }
+      if (method === 'POST' && path === '/v1/auth/forgot-password') {
+        return send(res, 200, { data: { ok: true } });
       }
       if (method === 'POST' && path === '/v1/auth/login') {
         const body = await readBody(req);

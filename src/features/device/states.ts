@@ -4,6 +4,7 @@ export const STATES = [
   { id: 'dv_pair_intro',        title: 'Robot · Pair · turn on',         group: 'Robot Device', kind: 'happy' },
   { id: 'dv_pair_search',       title: 'Robot · Pair · searching',       group: 'Robot Device', kind: 'happy' },
   { id: 'dv_pair_found',        title: 'Robot · Pair · found',           group: 'Robot Device', kind: 'happy' },
+  { id: 'dv_pair_qr_scan',     title: 'Robot · Pair · QR scan',         group: 'Robot Device', kind: 'happy' },
   { id: 'dv_pair_code',         title: 'Robot · Pair · confirm code',    group: 'Robot Device', kind: 'happy' },
   { id: 'dv_pair_wifi',         title: 'Robot · Pair · Wi-Fi pick',      group: 'Robot Device', kind: 'happy' },
   { id: 'dv_pair_wifi_pw',      title: 'Robot · Pair · Wi-Fi password',  group: 'Robot Device', kind: 'happy' },

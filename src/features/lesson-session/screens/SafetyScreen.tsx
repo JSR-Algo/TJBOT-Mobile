@@ -10,10 +10,12 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SafetyScreen'>;
 
 export default function SafetyScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <ScreenShell bg="#E8E5F0">
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={20}>
@@ -33,7 +35,7 @@ export default function SafetyScreen({ navigation }: Props) {
         <TouchableOpacity
           onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
           accessibilityRole="button"
-          accessibilityLabel="Get a grown-up"
+          accessibilityLabel={t('Get a grown-up')}
         >
           <Text fontWeight="700" style={styles.grownUpText}>Get a grown-up</Text>
         </TouchableOpacity>

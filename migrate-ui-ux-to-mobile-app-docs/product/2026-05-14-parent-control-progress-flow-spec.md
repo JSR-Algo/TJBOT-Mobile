@@ -2,8 +2,8 @@
 
 Date: 2026-05-14
 System: sys-16 parent mobile application
-Scope: Parent gate, parent dashboard, safety/settings, progress summary, history/review
-Screens: `ParentGateScreen`, `ParentSummaryScreen`, `ParentTodayScreen`, `ParentHistoryScreen`, `ParentSafetyScreen`, `ParentSettingsScreen`, `ParentLockedOutScreen`, `TodayProgressScreen`, `LessonSummaryScreen`, `WordsPracticedScreen`, `ReviewNeededScreen`, `CelebrationScreen`
+Scope: Parent dashboard, safety/settings, progress summary, history/review
+Screens: `ParentSummaryScreen`, `ParentTodayScreen`, `ParentHistoryScreen`, `ParentSafetyScreen`, `ParentSettingsScreen`, `TodayProgressScreen`, `LessonSummaryScreen`, `WordsPracticedScreen`, `ReviewNeededScreen`, `CelebrationScreen`. Legacy PIN screens may remain registered for backend compatibility but are not primary mobile entry points.
 
 ## Goal
 
@@ -18,13 +18,12 @@ Parents can control safety, see progress, and understand what happened without b
 
 ## Parent Control IA
 
-1. `ParentGateScreen` protects parent-only controls with server-backed PIN verification.
-2. `ParentSummaryScreen` is the parent landing view with one current status, one progress summary, and clear routes to today, history, safety, and settings.
-3. `ParentTodayScreen` explains today's activity in parent language: lesson topic, time, speaking turns, words practiced, and next review.
-4. `ParentHistoryScreen` shows activity over time with filters for child, date range, and topic when the household has enough data.
-5. `ParentSafetyScreen` explains privacy and safety in plain language and links to policy/support.
-6. `ParentSettingsScreen` groups parent-editable controls by language, child profile, lesson limits, audio/feedback, privacy, subscription, and support.
-7. `ParentLockedOutScreen` explains cooldown, gives a parent-account unlock path, gives help, and returns safely to the play area.
+1. `ParentSummaryScreen` is the parent landing view with one current status, one progress summary, and clear routes to today, history, safety, and settings.
+2. `ParentTodayScreen` explains today's activity in parent language: lesson topic, time, speaking turns, words practiced, and next review.
+3. `ParentHistoryScreen` shows activity over time with filters for child, date range, and topic when the household has enough data.
+4. `ParentSafetyScreen` explains privacy and safety in plain language and links to policy/support.
+5. `ParentSettingsScreen` groups parent-editable controls by language, child profile, lesson limits, audio/feedback, privacy, subscription, and support.
+6. Parent entry points open parent surfaces directly because this mobile app is parent-operated.
 
 ## Progress Summary Hierarchy
 
@@ -51,28 +50,14 @@ Child-facing progress screens may be warmer, but they must not drive parent deci
 | Analytics | Anonymous usage analytics | Explicit opt-in | No child identity, audio, or transcript implication. |
 | Data retention | Summary history | 30 days | State that lesson summaries are retained, not recordings. |
 | Content safety | Safe lesson topics | Always on | Do not expose filter/model internals. |
-| Account changes | Parent Space only | Always gated | Cannot be changed from child play area. |
+| Account changes | Parent Space only | Parent account required | Cannot be changed from child play area. |
 
-## Gate Behavior
+## Parent Entry Behavior
 
-- PIN input accepts numeric characters only and caps at the configured PIN length.
-- Valid PIN calls parent authentication and navigates to `ParentSummaryScreen`.
-- Wrong PIN stays on `ParentGateScreen`, clears no server state, and shows: "Wrong PIN. Try again."
-- Rate limit disables PIN entry and confirm action until retry time expires.
-- Lockout routes to `ParentLockedOutScreen`.
-- Back from the gate returns to `HomeHubScreen` or play area, never to protected parent detail screens.
-- Parent-gated routes should not be reachable from child-facing entry points without a valid parent session.
-
-## Locked-Out Behavior
-
-`ParentLockedOutScreen` must show four things:
-
-1. Cooldown: remaining time in plain language.
-2. Parent recovery: "Unlock with parent account."
-3. Help path: "Get help" or "Contact support."
-4. Safe exit: "Back to play area."
-
-The screen should avoid blame. It should say that the lock protects parent controls from child access.
+- Home/profile parent entry opens `ParentSummaryScreen` directly.
+- The Home settings icon opens `ParentSettingsScreen` directly.
+- Parent detail screens do not redirect through `ParentGateScreen`.
+- Backend parent PIN endpoints may remain available for compatibility, but mobile UX does not require parents to know or enter a PIN.
 
 ## History And Review
 
@@ -102,15 +87,8 @@ Review needed should always give one clear primary action:
 
 | Context | EN | VI |
 | --- | --- | --- |
-| Parent gate title | Parent Space | Khu vực phụ huynh |
-| Parent gate body | Enter your parent PIN to manage safety, settings, and progress. | Nhập mã PIN phụ huynh để quản lý an toàn, cài đặt và tiến độ. |
-| Wrong PIN | Wrong PIN. Try again. | Sai mã PIN. Hãy thử lại. |
-| Rate limit | Too many attempts. Try again in {seconds} seconds. | Thử quá nhiều lần. Hãy thử lại sau {seconds} giây. |
-| Locked out title | Parent Space is locked | Khu vực phụ huynh đang bị khóa |
-| Locked out body | This protects parent controls from child access. | Điều này giúp bảo vệ phần kiểm soát của phụ huynh. |
-| Unlock action | Unlock with parent account | Mở khóa bằng tài khoản phụ huynh |
-| Help action | Get help | Nhận trợ giúp |
-| Safe exit | Back to play area | Quay lại khu vực học |
+| Parent space title | Parent Space | Khu vực phụ huynh |
+| Parent settings entry | Settings | Cài đặt |
 | Parent summary | Mira practiced greetings and feelings for about 8 minutes. | Mira đã luyện chào hỏi và cảm xúc khoảng 8 phút. |
 | Today detail | Today: 1 lesson, 8 minutes, 8 speaking turns. | Hôm nay: 1 bài học, 8 phút, 8 lượt nói. |
 | Words practiced | Words practiced today | Từ đã luyện hôm nay |
@@ -122,26 +100,21 @@ Review needed should always give one clear primary action:
 
 ## Acceptance Tests
 
-1. Valid parent PIN calls `authenticateParent({ pin })` and navigates to `ParentSummaryScreen`.
-2. Wrong parent PIN stays on `ParentGateScreen` and does not navigate to `ParentSummaryScreen`.
-3. Rate-limited parent gate disables PIN input and confirm action until retry time expires.
-4. Locked parent gate routes to `ParentLockedOutScreen`.
-5. Locked-out screen shows cooldown, account unlock, help, and back-to-play actions.
-6. Back behavior from locked-out returns to `HomeHubScreen`, not protected parent detail.
-7. Child/play entry points route to `ParentGateScreen`, not directly to `ParentSummaryScreen` or settings.
-8. Parent summary surfaces one current status, today's summary, review action, history, safety, and settings.
-9. Parent history supports child, date range, and topic filtering when relevant.
-10. Parent history empty state says no practice exists for the selected range.
-11. Offline parent/progress summaries show last cached update time.
-12. Parent progress copy contains no diagnosis terms: delay, disorder, risk, therapy, assessment, abnormal.
-13. Safety settings explain effect in parent language and do not expose filter, model, or backend internals.
-14. Review needed primary CTA starts review practice; secondary CTA returns home.
-15. Celebration copy is effort-based and does not require rewards, streaks, or stickers to continue.
+1. Home/profile parent entry routes directly to `ParentSummaryScreen`.
+2. Home settings entry routes directly to `ParentSettingsScreen`.
+3. Parent detail screens do not redirect to `ParentGateScreen` when no parent PIN session exists.
+4. Parent summary surfaces one current status, today's summary, review action, history, safety, and settings.
+5. Parent history supports child, date range, and topic filtering when relevant.
+6. Parent history empty state says no practice exists for the selected range.
+7. Offline parent/progress summaries show last cached update time.
+8. Parent progress copy contains no diagnosis terms: delay, disorder, risk, therapy, assessment, abnormal.
+9. Safety settings explain effect in parent language and do not expose filter, model, or backend internals.
+10. Review needed primary CTA starts review practice; secondary CTA returns home.
+11. Celebration copy is effort-based and does not require rewards, streaks, or stickers to continue.
 
 ## Current Implementation Review Notes
 
-- `ParentGateScreen` already uses server-backed authentication and handles 401, 423, and 429 responses.
-- `ParentLockedOutScreen` has account unlock and back-to-play paths, but should add visible cooldown and help path.
+- Mobile parent entry now bypasses `ParentGateScreen`; backend PIN routes are compatibility-only unless a future child-operated mode reintroduces them.
 - `ParentHistoryScreen` currently shows a 30-day list but lacks child/date/topic filters.
 - `ParentSafetyScreen` uses plain language and avoids technical filter details.
 - `TodayProgressScreen`, `ReviewNeededScreen`, and `CelebrationScreen` are functional, but parent-facing surfaces should avoid letting stars, streaks, or stickers dominate decision-making.

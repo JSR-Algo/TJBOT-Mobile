@@ -26,6 +26,10 @@ const MOBILE_SCAN_DIRS = [
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 const CALL_RE = /\b(?:client|http|_aiClient|axios)\.(get|post|put|patch|delete)[\s\S]{0,180}?\(\s*(`([^`]+)`|'([^']+)'|"([^"]+)")/g;
+const ROUTE_CONTRACT_EXTENSION_KEYS = [
+  'x-tbot-modular-route-contract',
+  'x-TJBot-modular-route-contract',
+];
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -116,12 +120,13 @@ function extractBackendRoutes(openapi) {
     }
   }
 
-  const extensionRoutes = openapi['x-TJBot-modular-route-contract']?.routes ?? [];
+  const routeContractExtensionKey = ROUTE_CONTRACT_EXTENSION_KEYS.find((key) => openapi[key]?.routes);
+  const extensionRoutes = routeContractExtensionKey ? openapi[routeContractExtensionKey].routes : [];
   for (const route of extensionRoutes) {
     const normalizedRoute = {
       method: route.method,
       path: route.path,
-      source: 'x-TJBot-modular-route-contract.routes',
+      source: `${routeContractExtensionKey}.routes`,
       requiresAuth: route.requiresAuth ?? null,
       idempotencyHeader: route.idempotencyHeader ?? null,
     };

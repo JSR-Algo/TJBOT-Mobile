@@ -37,7 +37,7 @@ export default function KidSettingsScreen({ navigation }: Props) {
       </Box>
       <Box paddingHorizontal={18} paddingBottom={18}>
         <TouchableOpacity
-          onPress={() => navigation.navigate(ROUTES.ParentGateScreen)}
+          onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
           style={styles.parentBtn}
           activeOpacity={0.8}
         >

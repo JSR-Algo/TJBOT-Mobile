@@ -20,6 +20,7 @@ implemented until tests or validation evidence exist.
 | Story | Contract | Unit | Integration | E2E | Platform | Status | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | TBD | Add rows when story packets are created | no | no | no | no | planned | none |
+| PARENT-PIN-BYPASS | Parent-operated mobile app opens parent summary/settings directly without requiring parent PIN; backend PIN routes remain compatibility-only | yes | no | yes | no | changed | `tests/features/parent/use-parent-gate-guard.test.tsx`; `tests/home/home-state.test.ts`; `tests/home/home-parent-entry.test.tsx`; `tests/e2e/parent-settings.test.tsx`; `tests/navigation/navigation-architecture.test.ts` |
 
 ## Evidence Rules
 

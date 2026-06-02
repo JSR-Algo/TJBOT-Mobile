@@ -13,6 +13,7 @@
  */
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 export type ToastSeverity = 'info' | 'warning' | 'error';
 
@@ -83,6 +84,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }): Reac
 }
 
 function ToastBubble({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) {
+  const { language } = useAppLanguage();
   const opacity = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -93,7 +95,7 @@ function ToastBubble({ item, onDismiss }: { item: ToastItem; onDismiss: () => vo
   return (
     <Animated.View style={[styles.bubble, { opacity, backgroundColor: c.bg, borderColor: c.border }]}>
       <Text style={[styles.text, { color: c.text }]} numberOfLines={3}>{item.text}</Text>
-      <TouchableOpacity onPress={onDismiss} accessibilityLabel="Dismiss notification">
+      <TouchableOpacity onPress={onDismiss} accessibilityLabel={translateCopy('Dismiss notification', { locale: language })}>
         <Text style={[styles.dismiss, { color: c.text }]}>✕</Text>
       </TouchableOpacity>
     </Animated.View>

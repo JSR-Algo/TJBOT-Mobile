@@ -14,7 +14,6 @@ const fs = require('fs');
 const path = require('path');
 
 const args = process.argv.slice(2);
-const PARENT_PIN = '4729';
 const DEFAULT_LOCAL_API_URL = 'http://127.0.0.1:3000';
 const DEFAULT_LOCAL_AI_URL = 'http://127.0.0.1:3001/api/ai';
 
@@ -33,10 +32,10 @@ const AI_URL = args.find((a) => a.startsWith('--ai-url='))?.split('=')[1]
 const PLAN_MODULES = [
   ['Auth + Onboarding', ['SplashScreen', 'WelcomeScreen', 'LoginScreen', 'ChildProfileScreen'], ['/v1/auth/signup', '/v1/auth/consent', '/v1/auth/login', '/v1/households']],
   ['Home Dashboard', ['HomeHubScreen'], ['/v1/households']],
-  ['Device Pairing', ['PairIntroScreen', 'PairSearchScreen', 'PairWifiScreen', 'PairSuccessScreen'], ['/v1/devices/household/:id']],
+  ['Device Pairing', ['PairIntroScreen', 'PairSearchScreen', 'PairFoundScreen', 'PairCodeScreen', 'PairWifiScreen', 'PairConnectingScreen', 'PairSuccessScreen', 'PairFailedScreen'], ['/v1/devices/provision/start', '/v1/devices/provision/connect', '/v1/devices/:deviceId']],
   ['Learning + AI Interaction', ['LessonReadyScreen', 'RobotListeningScreen', 'RobotSpeakingScreen'], ['/v1/learning/children/:id/session/today', '/api/ai/v1/llm/chat']],
   ['Progress', ['TodayProgressScreen', 'WordsPracticedScreen'], ['/v1/learning/children/:id/kpis']],
-  ['Parent Control', ['ParentGateScreen', 'ParentSummaryScreen', 'ParentSettingsScreen'], ['/v1/parent/auth', '/v1/parent/settings']],
+  ['Parent Control', ['ParentSummaryScreen', 'ParentTodayScreen', 'ParentHistoryScreen', 'ParentSafetyScreen', 'ParentSettingsScreen'], ['/v1/parent/settings']],
   ['Course Library + Purchase', ['CourseLibraryScreen', 'CourseDetailScreen', 'CheckoutScreen'], ['/v1/course-library', '/v1/purchase/checkout']],
   ['Robot Management', ['MyRobotScreen', 'RobotStatusScreen'], ['/v1/robot-management/status']],
   ['Fallback + Recovery', ['NetworkErrorScreen', 'AudioRecoveryScreen'], ['/v1/health']],
@@ -84,19 +83,6 @@ function readBackendEnvValue(backendRoot, key) {
 
 function readRunningBackendEnvValue(key) {
   return process.env[key];
-}
-
-function loadBackendModule(modulePath) {
-  return require(modulePath);
-}
-
-async function seedParentPin() {
-  const databaseUrl = process.env.TBOT_E2E_DATABASE_URL;
-  if (!databaseUrl) {
-    return { ok: false, backendBlockers: ['parent PIN provisioning is unavailable: PIN_INCORRECT'] };
-  }
-  const sql = 'insert into parent_pins (user_id, bcrypt_hash) values ($1, $2) on conflict (user_id) do update set bcrypt_hash = excluded.bcrypt_hash';
-  return { ok: true, sql, pin: PARENT_PIN };
 }
 
 function buildPlan() {

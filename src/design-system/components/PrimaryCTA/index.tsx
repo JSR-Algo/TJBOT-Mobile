@@ -4,6 +4,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { Pressable } from '@/design-system/primitives/Pressable';
 import { tokens } from '@/design-system/tokens';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 interface PrimaryCTAProps {
   children?: React.ReactNode;
@@ -16,7 +17,9 @@ interface PrimaryCTAProps {
 }
 
 export default function PrimaryCTA({ children, onPress, color = tokens.colors.coral, icon, disabled = false, testID, accessibilityLabel }: PrimaryCTAProps) {
-  const label = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
+  const { language } = useAppLanguage();
+  const labelSource = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
+  const label = labelSource ? translateCopy(labelSource, { locale: language }) : undefined;
   return (
     <Pressable haptic onPress={onPress} disabled={disabled} testID={testID} accessibilityLabel={label} style={styles.pressable}>
       <Box style={[styles.btn, { backgroundColor: color, ...tokens.shadows.button }]}>

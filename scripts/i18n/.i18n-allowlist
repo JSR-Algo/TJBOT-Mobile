@@ -22,6 +22,14 @@ This is a cat.
 cat
 apple
 apples
+Review · 3 tricky words
+Say hi
+My name
+Numbers 1-5
+Colors
+I am happy
+I'm fine
+Goodbye
 
 # Sticker names (content)
 Brave Speaker
@@ -45,6 +53,16 @@ Sarah Chen
 Brooklyn, NY 11215
 Order #TB-48217
 sarah@example.com
+Mon, 9:42 AM
+Mon, 4:10 PM
+Casa-Familia
+
+# Operational/API metadata or exact user-entered confirmation tokens
+Requested from mobile parent settings.
+EXPORT
+
+# Locale names shown in their own language
+Tiếng Việt
 
 # Phase 11.1 — design-canvas chrome (debug-only, never user-facing)
 All Frames
@@ -61,6 +79,7 @@ $149.00 · paid with Apple Pay
 
 # Phase 11.1 — quoted-content scanner quirks (literal renders with surrounding quotes)
 "cat"
+"cat" 🐱
 "Hello! I'm so glad you're here."
 
 # Phase 11.1.b — composite UI strings ("<label> · <data>" / "<state> · <state>")
@@ -92,6 +111,7 @@ ROB-2A8F · Cream
 Robot · Cream
 Robot · ROB-2A8F
 Robot · activated
+Robot ·
 Signal: strong · Battery: 78%
 Strong signal · 5 GHz
 Today's lesson · Animals at home

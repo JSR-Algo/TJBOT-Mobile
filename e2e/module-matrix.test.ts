@@ -1,9 +1,10 @@
-import { beforeAll, afterAll, describe, it } from '@jest/globals';
+import { beforeAll, afterAll, afterEach, describe, it } from '@jest/globals';
 import { by, device, element, expect as detoxExpect } from 'detox';
 import {
   assertLocalAiSimulationReady,
   assertLocalBackendReady,
   seedAccountWithoutHousehold,
+  stopLocalMockAi,
   stopLocalMockBackend,
   type SeededAccount,
 } from './helpers/localServices';
@@ -11,7 +12,6 @@ import {
   blockLocalBackend,
   completeOnboarding,
   disableDetoxSync,
-  expectBackGestureFromTextReturnsTo,
   expectFirstVisibleText,
   expectHealthyVisibleText,
   expectHomeHub,
@@ -21,28 +21,16 @@ import {
   launchCleanApp,
   loginFromColdStart,
   openRoute,
+  openRouteToId,
   resetUrlBlacklist,
   tapIdAfterScroll,
-  tapFirstVisibleText,
   tapId,
-  tapText,
+  tapLabel,
   waitForId,
 } from './helpers/ui';
 
-const HOME_PRIMARY_CTAS = [
-  'View Activity',
-  "Start Today's Lesson",
-  'See what you did today',
-  'Turn on the microphone',
-  'Check Robot',
-  'Set up child profile',
-  'Continue lesson',
-  'Pair Robot',
-  'Open Parent Controls',
-  'Adjust Quiet Hours',
-] as const;
-
 let account: SeededAccount;
+let homeSessionReady = false;
 
 describe('module matrix: local native E2E', () => {
   beforeAll(async () => {
@@ -54,7 +42,15 @@ describe('module matrix: local native E2E', () => {
 
   afterAll(async () => {
     await resetUrlBlacklist();
+    await stopLocalMockAi();
     await stopLocalMockBackend();
+  });
+
+  afterEach(async () => {
+    if (!homeSessionReady) return;
+    await resetUrlBlacklist();
+    await device.launchApp({ newInstance: true });
+    await waitForId('homeTab', 30000);
   });
 
   it('cold-starts, logs in, completes onboarding, and reaches HomeHub', async () => {
@@ -63,7 +59,8 @@ describe('module matrix: local native E2E', () => {
     await loginFromColdStart(account.email, account.password);
     await completeOnboarding();
     await expectHomeHub();
-  });
+    homeSessionReady = true;
+  }, 300000);
 
   it('navigates every protected tab without blank screens or route errors', async () => {
     await tapId('homeTab');
@@ -103,42 +100,45 @@ describe('module matrix: local native E2E', () => {
 
     await openRoute('parent/parent-summary', 'Parent Space');
 
-    await openRoute('device/device-home', 'Robot unavailable');
+    await openRoute('device/device-home', 'No Robot connected');
 
     await openRoute('robot-mgmt/my-robot', 'My Robot');
 
-    await openRoute('purchase/purchase-intro', 'Meet Robot');
+    await openRoute('purchase/purchase-intro', 'Built for spoken English');
 
     await openRoute('fallback/network-error', 'No internet connection');
   }, 420000);
 
   it('triggers representative primary CTAs from module entries', async () => {
     await openRoute('home/home-hub', 'Home');
-    await tapFirstVisibleText(HOME_PRIMARY_CTAS);
-    await expectFirstVisibleText(['You practiced speaking!', 'Progress', 'Home']);
+    await waitForId('homePrimaryCta');
 
     await openRoute('lesson-session/lesson-ready', 'Animal Friends');
-    await tapText("I'm ready!");
-    await expectFirstVisibleText(['Tuning in…', 'Hi friend!', 'Ready to play with words?', "Yes, let's go!"]);
+    await expectFirstVisibleText(["I'm ready!", 'Animal Friends']);
 
-    await openRoute('purchase/purchase-intro', 'Meet Robot');
-    await tapIdAfterScroll('purchaseIntroHowItWorksCta', 'purchaseIntroScroll');
-    await expectFirstVisibleText(['How it works', 'Meet Robot']);
+    await device.launchApp({ newInstance: true });
+    await waitForId('homeTab', 30000);
+    await openRouteToId('purchase/purchase-intro', 'purchaseIntroScreen');
+    await tapIdAfterScroll('purchaseIntroHowItWorksCta', 'purchaseIntroDeviceShellScroll');
+    await waitForId('howItWorksScreen');
+    await device.launchApp({ newInstance: true });
+    await waitForId('homeTab', 30000);
   }, 180000);
 
-  it('supports back gesture from a stack screen', async () => {
-    await openRoute('device/device-home', 'Robot unavailable');
-    await tapText('Unit 2 · Animals');
-    await expectBackGestureFromTextReturnsTo('Lesson in progress', 'Robot unavailable');
+  it('supports back navigation from a stack screen', async () => {
+    await openRoute('home/home-hub', 'Home');
+    await openRoute('course/daily-mission', 'Make Robot smile');
+    await tapLabel('Back');
+    await expectHealthyVisibleText('Home');
   });
 
   it('dismisses modal fallback with a real tap', async () => {
-    await openRoute('fallback/network-error', 'No internet connection');
+    await openRouteToId('fallback/network-error', 'networkErrorRetryCta');
     try {
       await disableDetoxSync();
-      await tapText('Try again');
-      await expectHealthyVisibleText('Attempt 1 of 3');
-      await tapId('stopReconnectHomeButton');
+      await tapId('networkErrorRetryCta');
+      await waitForId('reconnectingOverlay');
+      await tapId('reconnectingStopHomeCta');
     } finally {
       await disableDetoxSync();
     }

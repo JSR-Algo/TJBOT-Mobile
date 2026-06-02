@@ -71,6 +71,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.PairIntroScreen, 'dv_pair_intro'],
       [ROUTES.PairSearchScreen, 'dv_pair_search'],
       [ROUTES.PairFoundScreen, 'dv_pair_found'],
+      [ROUTES.PairQrScanScreen, 'dv_pair_qr_scan'],
       [ROUTES.PairCodeScreen, 'dv_pair_code'],
       [ROUTES.PairWifiScreen, 'dv_pair_wifi'],
       [ROUTES.PairWifiPasswordScreen, 'dv_pair_wifi_pw'],

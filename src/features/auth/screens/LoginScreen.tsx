@@ -11,6 +11,7 @@ import { normalizeError } from '@/utils/errors';
 import * as authApi from '@/services/api/auth';
 import PasswordInput from '../components/PasswordInput';
 import PasswordChecklist from '../components/PasswordChecklist';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LoginScreen'>;
 
@@ -29,13 +30,13 @@ function validateInputs(
   if (!EMAIL_RE.test(email)) return { emailError: 'Enter a valid email address.', passwordError: null, generalError: null };
   if (!password) return { emailError: null, passwordError: 'Enter your password to continue.', generalError: null };
   if (mode === 'login') return { emailError: null, passwordError: null, generalError: null };
-  const issues: string[] = [];
-  if (password.length < 8) issues.push('at least 8 characters');
-  if (!PASSWORD_UPPER_RE.test(password)) issues.push('one uppercase letter');
-  if (!PASSWORD_DIGIT_RE.test(password)) issues.push('one number');
-  if (!PASSWORD_SPECIAL_RE.test(password)) issues.push('one special character (!@#$%^&*)');
-  if (issues.length > 0) {
-    return { emailError: null, passwordError: `Password must contain ${issues.join(', ')}.`, generalError: null };
+  let issueCount = 0;
+  if (password.length < 8) issueCount += 1;
+  if (!PASSWORD_UPPER_RE.test(password)) issueCount += 1;
+  if (!PASSWORD_DIGIT_RE.test(password)) issueCount += 1;
+  if (!PASSWORD_SPECIAL_RE.test(password)) issueCount += 1;
+  if (issueCount > 0) {
+    return { emailError: null, passwordError: 'Password must meet every rule below.', generalError: null };
   }
   if (confirmPassword !== password) {
     return { emailError: null, passwordError: 'Passwords do not match.', generalError: null };
@@ -44,6 +45,7 @@ function validateInputs(
 }
 
 export default function LoginScreen(_: Props) {
+  const { t } = useAppLanguage();
   const { login, signup, isLoading } = useAuth();
   const [mode, setMode] = React.useState<'signup' | 'login'>('signup');
   const [email, setEmail] = React.useState('');
@@ -133,7 +135,7 @@ export default function LoginScreen(_: Props) {
         : 'Log in';
 
   return (
-    <OnbShell title="Parent account">
+    <OnbShell title="Parent account" testID="loginScreenScroll">
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text fontWeight="600" style={styles.heading}>
           {mode === 'signup' ? 'Create your account' : 'Welcome back'}
@@ -145,21 +147,22 @@ export default function LoginScreen(_: Props) {
 
       <Box paddingHorizontal={20} paddingTop={18}>
         <Box style={styles.tabBar} flexDirection="row">
-          {([{ id: 'signup', label: 'Sign up' }, { id: 'login', label: 'Log in' }] as const).map(t => (
+          {([{ id: 'signup', label: 'Sign up' }, { id: 'login', label: 'Log in' }] as const).map(tab => (
             <TouchableOpacity
-              key={t.id}
-              onPress={() => switchMode(t.id)}
-              style={[styles.tab, mode === t.id && styles.tabActive]}
+              key={tab.id}
+              onPress={() => switchMode(tab.id)}
+              style={[styles.tab, mode === tab.id && styles.tabActive]}
               activeOpacity={0.7}
+              testID={`authModeTab_${tab.id}`}
               accessibilityRole="button"
-              accessibilityLabel={`${t.label} mode`}
-              accessibilityState={{ selected: mode === t.id }}
+              accessibilityLabel={t(`${tab.label} mode`)}
+              accessibilityState={{ selected: mode === tab.id }}
             >
               <Text
                 fontWeight="600"
-                style={{ fontSize: 14, color: mode === t.id ? OB.ink : OB.ink2 }}
+                style={{ fontSize: 14, color: mode === tab.id ? OB.ink : OB.ink2 }}
               >
-                {t.label}
+                {tab.label}
               </Text>
             </TouchableOpacity>
           ))}
@@ -169,7 +172,7 @@ export default function LoginScreen(_: Props) {
       <Box paddingHorizontal={20} paddingTop={20} gap={10}>
         <Box gap={8}>
           <TextInput
-            placeholder="Email"
+            placeholder={t('Email')}
             testID="emailInput"
             placeholderTextColor={OB.ink3}
             style={[styles.input, emailError ? styles.inputError : null]}
@@ -184,7 +187,7 @@ export default function LoginScreen(_: Props) {
             editable={!isLoading && !resetSending}
           />
           {emailError ? (
-            <Text accessibilityRole="alert" style={styles.fieldError}>{emailError}</Text>
+            <Text accessibilityRole="alert" testID="emailErrorText" style={styles.fieldError}>{emailError}</Text>
           ) : null}
 
           {!forgotMode ? (
@@ -216,7 +219,7 @@ export default function LoginScreen(_: Props) {
           ) : null}
 
           {passwordError ? (
-            <Text accessibilityRole="alert" style={styles.fieldError}>{passwordError}</Text>
+            <Text accessibilityRole="alert" testID="passwordErrorText" style={styles.fieldError}>{passwordError}</Text>
           ) : null}
 
           {mode === 'signup' && !forgotMode ? (
@@ -225,11 +228,11 @@ export default function LoginScreen(_: Props) {
         </Box>
 
         {generalError ? (
-          <Text accessibilityRole="alert" style={styles.error}>{generalError}</Text>
+          <Text accessibilityRole="alert" testID="generalErrorText" style={styles.error}>{generalError}</Text>
         ) : null}
 
         {resetMessage ? (
-          <Text accessibilityRole="alert" style={styles.success}>{resetMessage}</Text>
+          <Text accessibilityRole="alert" testID="resetMessageText" style={styles.success}>{resetMessage}</Text>
         ) : null}
       </Box>
 
@@ -238,7 +241,8 @@ export default function LoginScreen(_: Props) {
           <TouchableOpacity
             onPress={() => { setForgotMode(true); clearErrors(); setResetMessage(null); }}
             accessibilityRole="button"
-            accessibilityLabel="Forgot password"
+            accessibilityLabel={t('Forgot password')}
+            testID="forgotPasswordButton"
             style={styles.forgotWrap}
           >
             <Text style={styles.forgot}>Forgot password?</Text>
@@ -249,7 +253,8 @@ export default function LoginScreen(_: Props) {
           <TouchableOpacity
             onPress={() => { setForgotMode(false); clearErrors(); setResetMessage(null); }}
             accessibilityRole="button"
-            accessibilityLabel="Back to log in"
+            accessibilityLabel={t('Back to log in')}
+            testID="backToLoginButton"
             style={styles.forgotWrap}
           >
             <Text style={styles.forgot}>Back to log in</Text>
@@ -258,14 +263,15 @@ export default function LoginScreen(_: Props) {
 
         <OnbBigBtn
           onClick={onSubmit}
+          testID="submitButton"
         >
           {ctaLabel}
         </OnbBigBtn>
-        <Text style={styles.legal}>
-          By continuing you agree to our{' '}
-          <Text style={{ color: OB.accent }}>Terms</Text>
-          {' '}and{' '}
-          <Text style={{ color: OB.accent }}>Privacy Policy</Text>.
+        <Text i18n={false} style={styles.legal}>
+          {t('By continuing you agree to our')}{' '}
+          <Text i18n={false} style={{ color: OB.accent }}>{t('Terms')}</Text>
+          {' '}{t('and')}{' '}
+          <Text i18n={false} style={{ color: OB.accent }}>{t('Privacy Policy')}</Text>.
         </Text>
       </Box>
     </OnbShell>

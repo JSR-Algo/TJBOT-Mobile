@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 const BAR_COUNT = 16;
 const CENTER = (BAR_COUNT - 1) / 2;
@@ -16,6 +17,7 @@ export function WaveVisualizer({ audioLevel, color, isAiSpeaking, reduceMotion =
   isAiSpeaking?: boolean;
   reduceMotion?: boolean;
 }) {
+  const { language } = useAppLanguage();
   const bars = useRef(
     Array.from({ length: BAR_COUNT }, () => new Animated.Value(0.05)),
   ).current;
@@ -48,7 +50,7 @@ export function WaveVisualizer({ audioLevel, color, isAiSpeaking, reduceMotion =
   }, [audioLevel, isAiSpeaking, bars, reduceMotion]);
 
   return (
-    <View style={styles.container} accessibilityLabel="Voice activity waveform">
+    <View style={styles.container} accessibilityLabel={translateCopy('Voice activity waveform', { locale: language })}>
       {bars.map((bar, i) => (
         <Animated.View
           key={i}

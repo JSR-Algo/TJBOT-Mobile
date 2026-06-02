@@ -8,6 +8,7 @@ import type { FeatureTabName, FeatureTabScreen } from './types';
 import { colors, typography } from '@/design-system/tokens/legacy-semantic';
 import { DEFAULT_MAIN_TAB_NAME, MAIN_TAB_SCREENS } from './featureRegistry';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 type MainTabParamList = Record<FeatureTabName, undefined>;
 
@@ -58,6 +59,7 @@ export function MainTabNavigator({
   initialRouteName,
   initialRouteParams,
 }: Props): React.JSX.Element {
+  const { language } = useAppLanguage();
   const tabRoutes = MAIN_TAB_SCREENS.map(screen => ({
     screen,
     component: createTabRouteScreen(screen, initialRouteName, initialRouteParams),
@@ -85,7 +87,7 @@ export function MainTabNavigator({
               name={screen.tabName}
               component={Component}
               options={{
-                title: screen.title,
+                title: translateCopy(screen.title, { locale: language }),
                 tabBarButtonTestID: screen.tabBarButtonTestID,
                 tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
                   <MainTabIcon Icon={Icon} color={color} focused={focused} />

@@ -7,10 +7,12 @@ import Robot from '@/design-system/components/Robot';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReconnectingOverlay'>;
 
 export default function ReconnectingOverlay({ navigation, route }: Props) {
+  const { t } = useAppLanguage();
   const maxAttempts = Math.max(1, route.params?.maxAttempts ?? 3);
   const attempt = Math.min(Math.max(1, route.params?.attempt ?? 1), maxAttempts);
   const failureTarget = route.params?.failureTarget ?? ROUTES.HelpFaqScreen;
@@ -31,7 +33,7 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
   }, [attempt, failureTarget, maxAttempts, navigation]);
 
   return (
-    <ScreenShell>
+    <ScreenShell testID="reconnectingOverlay">
       <Box style={[StyleSheet.absoluteFillObject, styles.bgHint]} opacity={0.35}>
         <Robot emotion="idle" size={180} />
       </Box>
@@ -49,11 +51,12 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
           ))}
         </Box>
         <TouchableOpacity
+          testID="reconnectingStopHomeCta"
           onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
           style={styles.homeBtn}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Stop reconnecting and go home"
+          accessibilityLabel={t('Stop reconnecting and go home')}
         >
           <Text fontWeight="700" style={{ fontSize: 14, color: '#5C4F77' }}>Stop and go home</Text>
         </TouchableOpacity>

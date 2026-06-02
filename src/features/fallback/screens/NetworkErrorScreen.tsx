@@ -11,13 +11,15 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NetworkErrorScreen'>;
 
 export default function NetworkErrorScreen({ navigation, route }: Props) {
+  const { t } = useAppLanguage();
   const attempt = getAttempt(route.params);
   return (
-    <ScreenShell bg="#E8E5F0">
+    <ScreenShell bg="#E8E5F0" testID="networkErrorScreen">
       <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
         <Robot emotion="worry" size={220} accent="#6B4A9B" />
@@ -30,6 +32,7 @@ export default function NetworkErrorScreen({ navigation, route }: Props) {
       </Box>
       <Box style={styles.cta} gap={10}>
         <PrimaryCTA
+          testID="networkErrorRetryCta"
           color="#6B4A9B"
           onPress={() => navigation.navigate(ROUTES.ReconnectingOverlay, {
             attempt,
@@ -42,10 +45,11 @@ export default function NetworkErrorScreen({ navigation, route }: Props) {
           Try again
         </PrimaryCTA>
         <TouchableOpacity
+          testID="networkErrorBackHomeCta"
           onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Back home"
+          accessibilityLabel={t('Back home')}
         >
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Back home</Text>
         </TouchableOpacity>

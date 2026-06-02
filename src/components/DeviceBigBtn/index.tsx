@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '@/design-system/primitives/Text';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 const DV = {
   ink: '#1A1A1F',
@@ -18,7 +19,9 @@ type Props = {
 };
 
 export default function DeviceBigBtn({ children, onClick, secondary, danger, disabled = false, accessibilityLabel }: Props) {
-  const label = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
+  const { language } = useAppLanguage();
+  const labelSource = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
+  const label = labelSource ? translateCopy(labelSource, { locale: language }) : undefined;
   if (secondary) {
     return (
       <TouchableOpacity

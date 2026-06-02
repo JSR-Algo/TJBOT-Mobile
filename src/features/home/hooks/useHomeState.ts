@@ -116,7 +116,7 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     emotion: 'gentle', accent: '#FFC857',
     chip: { text: "Add a child to begin", color: '#FFC857' },
     ctaLabel: "Set up a child", ctaIcon: '👶', ctaColor: '#FF6F61',
-    ctaTarget: ROUTES.ParentGateScreen, ctaEnabled: true,
+    ctaTarget: ROUTES.ParentSummaryScreen, ctaEnabled: true,
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },

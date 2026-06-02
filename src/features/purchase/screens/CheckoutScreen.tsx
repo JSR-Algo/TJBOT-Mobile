@@ -15,6 +15,7 @@ import {
   type CheckoutSessionPayload,
 } from '@/services/api/purchase.api';
 import { isSubscriptionFeatureEnabled } from '@/config/feature-flags';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CheckoutScreen'>;
 
@@ -27,6 +28,7 @@ const ORDER_ITEMS = [
 const SAVED_SHIPPING_PROFILE: CheckoutSessionPayload['billing_address'] | null = null;
 
 export default function CheckoutScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   const [error, setError] = React.useState<string | null>(null);
 
   if (!isSubscriptionFeatureEnabled()) {
@@ -92,7 +94,7 @@ export default function CheckoutScreen({ navigation }: Props) {
             disabled
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Edit shipping address, Unavailable"
+            accessibilityLabel={t('Edit shipping address, Unavailable')}
             accessibilityState={{ disabled: true }}
           >
             <Text fontWeight="600" style={styles.editBtn}>Edit</Text>

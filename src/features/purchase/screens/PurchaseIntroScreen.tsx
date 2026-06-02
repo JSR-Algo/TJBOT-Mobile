@@ -9,6 +9,7 @@ import { PR } from '../purchase.local-tokens';
 import RobotHero from '../components/RobotHero';
 import PRChip from '../components/PRChip';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PurchaseIntroScreen'>;
 
@@ -19,8 +20,14 @@ const FEATURES = [
 ];
 
 export default function PurchaseIntroScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
-    <DeviceShell title="Meet Robot" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+    <DeviceShell
+      title="Meet Robot"
+      screenTestID="purchaseIntroScreen"
+      scrollTestID="purchaseIntroDeviceShellScroll"
+      onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}
+    >
       <Box testID="purchaseIntroScroll">
       <Box paddingHorizontal={24} paddingTop={18} alignItems="center">
         <RobotHero size={220} accent="#FF6F61" />
@@ -49,7 +56,7 @@ export default function PurchaseIntroScreen({ navigation }: Props) {
         <TouchableOpacity
           testID="purchaseIntroHowItWorksCta"
           accessibilityRole="button"
-          accessibilityLabel="See how it works"
+          accessibilityLabel={t('See how it works')}
           onPress={() => navigation.navigate(ROUTES.HowItWorksScreen)}
           style={styles.primaryCta}
           activeOpacity={0.7}

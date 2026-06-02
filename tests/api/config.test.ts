@@ -15,15 +15,17 @@ describe('getApiBaseUrl resolution order', () => {
     jest.resetModules();
   });
 
-  function loadGetApiBaseUrl(opts: {
+  function loadConfig(opts: {
     envApiUrl?: string;
+    envAiUrl?: string;
     scriptURL?: string | null | undefined;
     isDevice?: boolean;
     platformOS?: 'ios' | 'android';
     dev?: boolean;
-  }): () => string {
+  }): Pick<typeof import('../../src/config'), 'getApiBaseUrl' | 'getAiBaseUrl'> {
     const {
       envApiUrl = '',
+      envAiUrl = '',
       scriptURL = null,
       isDevice = true,
       platformOS = 'ios',
@@ -33,7 +35,7 @@ describe('getApiBaseUrl resolution order', () => {
     jest.doMock('../../src/__env__', () => ({
       ENV: {
         TBOT_API_URL: envApiUrl,
-        TBOT_AI_URL: '',
+        TBOT_AI_URL: envAiUrl,
         EXPO_PUBLIC_GEMINI_LIVE_MODEL: '',
         EXPO_PUBLIC_SENTRY_DSN: '',
         EXPO_PUBLIC_POSTHOG_API_KEY: '',
@@ -58,8 +60,11 @@ describe('getApiBaseUrl resolution order', () => {
     (globalThis as unknown as { __DEV__: boolean }).__DEV__ = dev;
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('../../src/config');
-    return mod.getApiBaseUrl as () => string;
+    return require('../../src/config') as Pick<typeof import('../../src/config'), 'getApiBaseUrl' | 'getAiBaseUrl'>;
+  }
+
+  function loadGetApiBaseUrl(opts: Parameters<typeof loadConfig>[0]): () => string {
+    return loadConfig(opts).getApiBaseUrl;
   }
 
   it('explicit non-localhost ENV.TBOT_API_URL wins (with /v1 appended)', () => {
@@ -138,6 +143,16 @@ describe('getApiBaseUrl resolution order', () => {
       dev: true,
     });
     expect(get()).toBe('https://tbot-backend-8wmh.onrender.com/v1');
+  });
+
+  it('ignores committed localhost AI URLs in production builds', () => {
+    const { getAiBaseUrl } = loadConfig({
+      envAiUrl: 'http://localhost:3001/api/ai',
+      isDevice: true,
+      dev: false,
+    });
+
+    expect(getAiBaseUrl()).toBe('https://tbot-backend-8wmh.onrender.com/api/ai');
   });
 
   it('malformed scriptURL falls through gracefully', () => {

@@ -38,7 +38,7 @@ export default function IntroFrame({ idx, onBack, onNext, bg, kicker, title, bod
       </Box>
       <Box style={styles.footer} alignItems="center" gap={18}>
         <IntroDots idx={idx} />
-        <PrimaryCTA onPress={onNext} color="#FF6F61">Next</PrimaryCTA>
+        <PrimaryCTA onPress={onNext} color="#FF6F61" testID="introNextButton">Next</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

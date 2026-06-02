@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 const DV = {
   bg: '#F5F5F2',
@@ -15,19 +16,32 @@ type Props = {
   title?: string;
   onBack?: () => void;
   children?: React.ReactNode;
+  screenTestID?: string;
+  scrollTestID?: string;
 };
 
-export default function DeviceShell({ title, onBack, children }: Props) {
+export default function DeviceShell({ title, onBack, children, screenTestID, scrollTestID = 'deviceShellScroll' }: Props) {
+  const { language } = useAppLanguage();
   return (
-    <ScrollView style={[styles.root, { backgroundColor: DV.bg }]}>
-      <Box style={[styles.header, { backgroundColor: DV.bg, borderBottomColor: DV.hair }]} flexDirection="row" alignItems="center" gap={12}>
+    <ScrollView
+      testID={scrollTestID}
+      style={[styles.root, { backgroundColor: DV.bg }]}
+    >
+      <Box
+        testID={screenTestID}
+        collapsable={false}
+        style={[styles.header, { backgroundColor: DV.bg, borderBottomColor: DV.hair }]}
+        flexDirection="row"
+        alignItems="center"
+        gap={12}
+      >
         {onBack ? (
           <TouchableOpacity
             onPress={onBack}
             style={styles.backBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+              accessibilityLabel={translateCopy('Go back', { locale: language })}
           >
             <BackIcon color={DV.ink2} />
           </TouchableOpacity>

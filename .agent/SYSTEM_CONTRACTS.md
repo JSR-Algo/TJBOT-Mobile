@@ -96,6 +96,13 @@ Invariants:
 - Pairing flow state machine lives in `src/features/device/pairing/` — changes
   must be reflected in `migrate-ui-ux-to-mobile-app-docs/state-machines/device-pairing.state.mmd`
 - BLE operations run on a dedicated queue — never block the JS thread
+- Pairing success is not allowed on `/devices/provision/connect` alone. Mobile
+  must wait for `/devices/provision/{provisioningAttemptId}/status` to report
+  `device_authenticated`, then call `/devices/provision/complete` before the
+  final success screen.
+- Wi-Fi password is transient only: keep it in RAM handoff, consume it for
+  `/devices/provision/connect`, and never put it in navigation params, logs,
+  analytics, or persistent storage.
 
 ---
 

@@ -19,11 +19,10 @@ export function AppNavigator(): React.JSX.Element {
     if (!target) {
       return;
     }
+    setPendingDeepLinkTarget(target);
     if (navigationRef.isReady()) {
       navigationRef.dispatch(CommonActions.navigate(target));
-      return;
     }
-    setPendingDeepLinkTarget(target);
   }, []);
 
   React.useEffect(() => {

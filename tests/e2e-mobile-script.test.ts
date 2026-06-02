@@ -122,56 +122,14 @@ describe('e2e-mobile local production gate', () => {
     expect(source).toContain('routeCoverage');
   });
 
-  it('uses the documented local parent PIN for parent-gate contract checks', () => {
-    const source = fs.readFileSync(SCRIPT, 'utf8');
-    const openApi = JSON.parse(
-      fs.readFileSync(path.join(ROOT, 'migrate-ui-ux-to-mobile-app-docs/api/openapi.json'), 'utf8'),
-    ) as {
-      paths?: {
-        '/v1/parent/auth'?: {
-          post?: {
-            requestBody?: {
-              content?: {
-                'application/json'?: {
-                  examples?: {
-                    default?: {
-                      value?: {
-                        pin?: string;
-                      };
-                    };
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-    const documentedPin =
-      openApi.paths?.['/v1/parent/auth']?.post?.requestBody?.content?.['application/json']?.examples?.default?.value?.pin;
-
-    expect(documentedPin).toBe('4729');
-    expect(source).toContain(`PARENT_PIN = '${documentedPin}'`);
-    expect(source).toContain('pin: PARENT_PIN');
-    expect(source).toContain('seedParentPin');
-    expect(source).toContain('parent_pins');
-  });
-
-  it('reports missing local parent PIN provisioning as an explicit backend blocker', () => {
+  it('does not require local parent PIN provisioning for parent controls', () => {
     const source = fs.readFileSync(SCRIPT, 'utf8');
 
     expect(source).toContain('backendBlockers');
-    expect(source).toContain('parent PIN provisioning is unavailable');
-    expect(source).toContain('PIN_INCORRECT');
-  });
-
-  it('can seed the documented parent PIN through local Postgres when DB access is available', () => {
-    const source = fs.readFileSync(SCRIPT, 'utf8');
-
-    expect(source).toContain('seedParentPin');
-    expect(source).toContain('parent_pins (user_id, bcrypt_hash)');
-    expect(source).toContain('TBOT_E2E_DATABASE_URL');
-    expect(source).toContain('loadBackendModule');
+    expect(source).not.toContain('PARENT_PIN');
+    expect(source).not.toContain('seedParentPin');
+    expect(source).not.toContain('parent_pins');
+    expect(source).not.toContain('/v1/parent/auth');
   });
 
   it('fails early when the contract gate is pointed at the mobile mock backend', () => {

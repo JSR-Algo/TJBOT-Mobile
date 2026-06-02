@@ -22,6 +22,10 @@ const IOS_SIMULATOR_AI = 'http://127.0.0.1:3001/api/ai';
 const ANDROID_EMULATOR_AI = 'http://10.0.2.2:3001/api/ai';
 
 const LOOPBACK_TBOT_API = 'http://localhost:3000';
+const LOOPBACK_TBOT_AI_URLS = new Set([
+  'http://localhost:3001/api/ai',
+  'http://127.0.0.1:3001/api/ai',
+]);
 
 function ensureV1(url: string): string {
   const trimmed = url.replace(/\/+$/, '');
@@ -66,7 +70,7 @@ export function getApiBaseUrl(): string {
 
 export function getAiBaseUrl(): string {
   const explicit = ENV.TBOT_AI_URL?.trim();
-  if (explicit && explicit !== `${LOOPBACK_TBOT_API}/api/ai`) {
+  if (explicit && !LOOPBACK_TBOT_AI_URLS.has(explicit.replace(/\/+$/, ''))) {
     return explicit.replace(/\/+$/, '');
   }
   if (Device.isDevice && __DEV__) {

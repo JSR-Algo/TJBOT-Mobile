@@ -1,8 +1,8 @@
 import client from '@/services/http/client';
 import {
   authenticateParent,
-  BackendContractUnavailableError,
   clearParentLockout,
+  EMPTY_PARENT_SUMMARY,
   getParentSummary,
 } from '@/services/api/parent.api';
 
@@ -46,10 +46,8 @@ describe('parent API response normalization', () => {
     );
   });
 
-  it('keeps undocumented summary routes explicit instead of returning guessed data', async () => {
-    await expect(getParentSummary()).rejects.toMatchObject({
-      name: 'BackendContractUnavailableError',
-      code: 'BACKEND_CONTRACT_UNAVAILABLE',
-    } satisfies Partial<BackendContractUnavailableError>);
+  it('returns an empty parent summary while the backend summary route is not designed', async () => {
+    await expect(getParentSummary()).resolves.toEqual(EMPTY_PARENT_SUMMARY);
+    expect(mockedClient.post).not.toHaveBeenCalled();
   });
 });

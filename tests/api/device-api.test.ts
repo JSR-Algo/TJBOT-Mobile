@@ -2,22 +2,20 @@ describe('device API client', () => {
   it('loads the primary household device from the documented household route', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({
-      data: {
-        data: [
-          {
-            id: 'device-1',
-            serial_number: 'TJBot-0001',
-            status: 'active',
-            battery_level: 87,
-            firmware_version: '1.0.0',
-            last_seen_at: '2026-05-16T00:00:00.000Z',
-            connectivity_metrics: {
-              connectivity_state: 'online',
-              wifi_ssid: 'Casa',
-            },
+      data: [
+        {
+          id: 'device-1',
+          serial_number: 'TJBot-0001',
+          status: 'active',
+          battery_level: 87,
+          firmware_version: '1.0.0',
+          last_seen_at: '2026-05-16T00:00:00.000Z',
+          connectivity_metrics: {
+            connectivity_state: 'online',
+            wifi_ssid: 'Casa',
           },
-        ],
-      },
+        },
+      ],
     });
 
     jest.doMock('@/services/http/client', () => ({
@@ -25,7 +23,6 @@ describe('device API client', () => {
       default: { get },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
     await expect(getDeviceStatus('primary')).resolves.toEqual({
@@ -58,7 +55,6 @@ describe('device API client', () => {
       default: { get },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
     await expect(getDeviceStatus('device-2')).resolves.toEqual({
@@ -82,20 +78,19 @@ describe('device API client', () => {
       default: { delete: deleteRequest },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { unpairDevice } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
     await expect(unpairDevice('device-3')).resolves.toBeUndefined();
     expect(deleteRequest).toHaveBeenCalledWith('/devices/device-3');
   });
 
-  it('claims a BLE-discovered device through the documented claim route', async () => {
+  it('starts consumer provisioning through the documented provisioning route', async () => {
     jest.resetModules();
     const post = jest.fn().mockResolvedValueOnce({
       data: {
-        device_id: 'device-4',
-        household_id: 'household-1',
-        state: 'CLAIMED',
+        provisioningAttemptId: 'attempt-1',
+        deviceId: 'device-4',
+        deviceStatus: 'provisioning',
       },
     });
 
@@ -104,18 +99,184 @@ describe('device API client', () => {
       default: { post },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { startDeviceProvisioning } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(startDeviceProvisioning({
+      serialNumber: 'TJBot-0001',
+      appVersion: '1.0.0',
+      phonePlatform: 'ios',
+    })).resolves.toEqual({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      deviceStatus: 'provisioning',
+    });
+    expect(post).toHaveBeenCalledWith('/devices/provision/start', {
+      serialNumber: 'TJBot-0001',
+      appVersion: '1.0.0',
+      phonePlatform: 'ios',
+    });
+  });
+
+  it('connects a provisioning attempt through the backend provision bridge', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({
+      data: {
+        deviceId: 'device-4',
+        provisioningAttemptId: 'attempt-1',
+        status: 'esp_bind_requested',
+      },
+    });
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post },
+    }));
+
     const { pairDevice } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
     await expect(pairDevice({
       serialNumber: 'TJBot-0001',
-      code: '4721',
+      deviceId: 'device-4',
+      provisioningAttemptId: 'attempt-1',
+      code: '123456',
       wifiSsid: 'Casa',
       wifiPassword: 'secret-pass',
-    })).resolves.toEqual({ deviceId: 'device-4' });
-    expect(post).toHaveBeenCalledWith('/devices/claim', {
-      serial_number: 'TJBot-0001',
-      ble_code: '4721',
+    })).resolves.toEqual({
+      deviceId: 'device-4',
+      provisioningAttemptId: 'attempt-1',
+      status: 'esp_bind_requested',
+    });
+    expect(post).toHaveBeenCalledWith('/devices/provision/connect', {
+      deviceId: 'device-4',
+      provisioningAttemptId: 'attempt-1',
+      serialNumber: 'TJBot-0001',
+      code: '123456',
+      wifiSsid: 'Casa',
+      wifiPassword: 'secret-pass',
+    });
+  });
+
+  it('confirms local BLE handoff without sending Wi-Fi credentials', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({
+      data: {
+        deviceId: 'device-4',
+        provisioningAttemptId: 'attempt-1',
+        status: 'ble_paired',
+      },
+    });
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post },
+    }));
+
+    const { confirmLocalBlePaired } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(confirmLocalBlePaired({
+      serialNumber: 'TJBot-0001',
+      deviceId: 'device-4',
+      provisioningAttemptId: 'attempt-1',
+      code: '123456',
+    })).resolves.toEqual({
+      deviceId: 'device-4',
+      provisioningAttemptId: 'attempt-1',
+      status: 'ble_paired',
+    });
+    expect(post).toHaveBeenCalledWith('/devices/provision/local-ble-paired', {
+      deviceId: 'device-4',
+      provisioningAttemptId: 'attempt-1',
+      serialNumber: 'TJBot-0001',
+      code: '123456',
+    });
+    expect(JSON.stringify(post.mock.calls)).not.toContain('wifiPassword');
+  });
+
+  it('reads provisioning attempt status without sending secrets', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: {
+        provisioningAttemptId: 'attempt-1',
+        deviceId: 'device-4',
+        status: 'device_authenticated',
+      },
+    });
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { get },
+    }));
+
+    const { getProvisioningAttemptStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getProvisioningAttemptStatus('attempt-1')).resolves.toEqual({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      status: 'device_authenticated',
+    });
+    expect(get).toHaveBeenCalledWith('/devices/provision/attempt-1/status');
+    expect(JSON.stringify(get.mock.calls)).not.toContain('secret');
+  });
+
+  it('mints a bootstrap token via the bootstrap-token endpoint', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({
+      data: {
+        token: 'abc123def456ghi789jkl012mno345pqr678stu',
+        expiresAt: '2026-06-01T00:05:00.000Z',
+        ttlSeconds: 300,
+      },
+    });
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post },
+    }));
+
+    const { mintBootstrapToken } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(mintBootstrapToken({ provisioningAttemptId: 'attempt-1' })).resolves.toEqual({
+      token: 'abc123def456ghi789jkl012mno345pqr678stu',
+      expiresAt: '2026-06-01T00:05:00.000Z',
+      ttlSeconds: 300,
+    });
+    expect(post).toHaveBeenCalledWith('/devices/provision/attempt-1/bootstrap-token');
+  });
+
+  it('completes provisioning only through the backend complete endpoint', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({
+      data: {
+        device: {
+          id: 'device-4',
+          status: 'active',
+          lifecycleState: 'assigned',
+          displayName: 'Living-room Robot',
+          assignedChildProfileId: 'child-1',
+        },
+      },
+    });
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post },
+    }));
+
+    const { completeDeviceProvisioning } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(completeDeviceProvisioning({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      assignChildProfileId: 'child-1',
+      displayName: 'Living-room Robot',
+    })).resolves.toMatchObject({
+      device: { id: 'device-4', status: 'active' },
+    });
+    expect(post).toHaveBeenCalledWith('/devices/provision/complete', {
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      assignChildProfileId: 'child-1',
+      displayName: 'Living-room Robot',
     });
   });
 });

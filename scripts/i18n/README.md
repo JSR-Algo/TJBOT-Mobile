@@ -1,7 +1,6 @@
-# i18n tooling — TJBot prototype
+# i18n tooling — TJBot mobile
 
-Scripts for the Path B (prototype-scoped) i18n migration. All scripts are
-plain Node ESM (no deps). Run from the project root.
+Scripts for the TJBot mobile EN/VI catalog gate. Run from the project root.
 
 ## Files
 
@@ -13,7 +12,7 @@ locales/
   vi-stretched.json    Generated. +35% length pad with VN diacritics.
 
 scripts/i18n/
-  scan-hardcoded.mjs   AST-lite scan for translatable strings not in en.json.
+  scan-hardcoded.mjs   TypeScript AST scan for screen copy not in en.json.
   check-key-parity.mjs Asserts keys(en) === keys(vi).
   pseudo-locale.mjs    Builds vi-pseudo.json from vi.json.
   length-stress.mjs    Builds vi-stretched.json from vi.json.
@@ -28,6 +27,7 @@ scripts/i18n/
 node scripts/i18n/scan-hardcoded.mjs           # human-readable, exits 1 if any
 node scripts/i18n/scan-hardcoded.mjs --json    # machine-readable
 node scripts/i18n/scan-hardcoded.mjs --report  # writes last-scan.json
+node scripts/i18n/scan-hardcoded.mjs --root tmp/project --json
 
 # 2. Verify key parity
 node scripts/i18n/check-key-parity.mjs         # exits 1 on any delta
@@ -52,20 +52,32 @@ localStorage.setItem('TJBot.lang', 'vi');            location.reload();
 - `vi-stretched` — every value padded to 1.35× length.
   Any clipped CTA / overflowing pill / truncated body = layout regression.
 
-## CI gate (Path B substitute)
+## Scanner coverage
 
-Until this prototype ships in a real CI, the gate is a single command:
+`scan-hardcoded.mjs` parses `src/**/*.{jsx,tsx}` with the TypeScript compiler
+API. It flags likely user-facing literals when they are not exact EN catalog
+keys/values and are not listed in `.i18n-allowlist`:
+
+- JSX text nodes.
+- JSX copy attributes, including `accessibilityLabel`, `accessibilityHint`,
+  `placeholder`, `title`, `label`, `heading`, `body`, and related props.
+- Feature object properties and setter calls commonly used for screen copy,
+  such as `title`, `body`, `message`, `description`, `setError`, and
+  `setMessage`.
+
+The scanner intentionally ignores data-like literals: URLs, paths, colors,
+numbers/units, i18n key-shaped strings, single identifiers, and allowlisted
+brand/curriculum/sample values.
+
+## CI gate
+
+The recurring local/CI gate is:
 
 ```bash
-node scripts/i18n/scan-hardcoded.mjs && \
-node scripts/i18n/check-key-parity.mjs
+npm run i18n:check
 ```
 
-both must exit 0. Add to `package.json` once the project gains one:
-
-```json
-{ "scripts": { "i18n:check": "node scripts/i18n/scan-hardcoded.mjs && node scripts/i18n/check-key-parity.mjs" } }
-```
+It runs the hardcoded-copy scan, EN/VI key parity, and bundle freshness check.
 
 ## Adding a new string (CONTRIBUTING)
 
@@ -74,7 +86,7 @@ both must exit 0. Add to `package.json` once the project gains one:
    (persona: child uses con/mình + nhé/nha/nào; parent uses bạn).
 3. If the string is brand/content/proper-noun, add to `.i18n-allowlist` instead.
 4. Run `node scripts/i18n/check-key-parity.mjs` — must exit 0.
-5. Run `node scripts/i18n/scan-hardcoded.mjs` — must not list your file.
+5. Run `npm run i18n:check` — must exit 0.
 
 ## Phase 11 — runtime bundle (`locales/bundle.js`)
 
@@ -105,25 +117,15 @@ workflow.
 ### `npm run i18n:check` semantics
 
 ```bash
-npm run i18n:check     # scan-hardcoded && check-key-parity
+npm run i18n:check     # scan-hardcoded && check-key-parity && check-bundle-freshness
 ```
 
-Composes the two existing gates:
+Composes the existing gates:
 
-1. `npm run i18n:scan` — scans JSX/HTML/JS for hardcoded translatable
-   literals not present in `en.json`. Exits 1 on any leak.
+1. `npm run i18n:scan` — scans React Native source for hardcoded
+   translatable literals not present in `en.json`. Exits 1 on any leak.
 2. `npm run i18n:parity` — asserts EN/VI key sets are equal (excluding
    `_meta`) and no VI value is empty. Exits 1 on any delta.
+3. `npm run i18n:bundle:check` — verifies the generated bundle is current.
 
-both must pass for the i18n gate to pass.
-
-### Known limitation — bundle freshness (R3)
-
-`i18n:check` does NOT currently verify `locales/bundle.js` is in sync with
-`locales/{en,vi}.json`. A contributor who edits the JSON catalogs but forgets
-`npm run i18n:bundle` will see stale text in the browser. As a defence,
-`i18n.js` logs a warning to the DevTools console and falls back to EN if the
-loaded catalog has zero non-`_meta` keys (`[TJBot.i18n] empty VI catalog —
-bundle.js missing or stale, run npm run i18n:bundle`). A bundle-freshness gate
-that diffs the generator's output against the committed `bundle.js` is tracked
-as Phase 11 follow-up.
+All three must pass for the i18n gate to pass.

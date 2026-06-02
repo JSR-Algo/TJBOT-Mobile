@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text } from 'react-native';
 import Screen from '@/components/Screen';
+import { Text } from '@/design-system/primitives/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 type Props = NativeStackScreenProps<RootStackParamList, 'AbandonedDisconnectScreen'>;

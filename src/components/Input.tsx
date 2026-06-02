@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ViewStyle, Pressable } from 'react-native';
+import { View, TextInput, StyleSheet, ViewStyle, Pressable } from 'react-native';
 import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
+import { Text } from '@/design-system/primitives/Text';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 interface InputProps {
   label: string;
@@ -33,6 +35,7 @@ export function Input({
 }: InputProps): React.JSX.Element {
   const [focused, setFocused] = useState(false);
   const [hidePassword, setHidePassword] = useState(true);
+  const { t } = useAppLanguage();
 
   return (
     <View style={[styles.container, style]}>
@@ -48,7 +51,7 @@ export function Input({
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry && hidePassword}
-          placeholder={placeholder}
+          placeholder={placeholder ? t(placeholder) : undefined}
           placeholderTextColor={colors.textMuted}
           autoCapitalize={secureTextEntry ? 'none' : autoCapitalize}
           keyboardType={keyboardType}
@@ -75,7 +78,7 @@ export function Input({
             style={styles.eyeButton}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={`${hidePassword ? 'Show' : 'Hide'} ${label}`}
+            accessibilityLabel={`${hidePassword ? t('Show') : t('Hide')} ${t(label)}`}
             accessibilityState={{ selected: !hidePassword }}
           >
             <Text style={styles.eyeIcon}>{hidePassword ? '\u{1F441}' : '\u{1F648}'}</Text>

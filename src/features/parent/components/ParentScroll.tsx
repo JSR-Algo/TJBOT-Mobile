@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 export const PA = {
   bg: '#F5F5F2',
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export default function ParentScroll({ children, title, onBack, right }: Props) {
+  const { language } = useAppLanguage();
   return (
     <ScrollView style={[styles.root, { backgroundColor: PA.bg }]}>
       {title !== undefined ? (
@@ -39,7 +41,7 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
               style={styles.backBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={translateCopy('Go back', { locale: language })}
             >
               <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={PA.ink2} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M15 18l-6-6 6-6" />

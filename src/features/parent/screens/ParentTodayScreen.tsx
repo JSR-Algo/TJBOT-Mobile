@@ -11,6 +11,7 @@ import { PA } from '../components/ParentScroll';
 import { getParentToday } from '@/services/api/parent.api';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentTodayScreen'>;
 type TodayErrorState = { title: string; detail: string };
@@ -25,6 +26,7 @@ const WORD_ROWS = [
 
 export default function ParentTodayScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentTodayScreen);
+  const { language, t } = useAppLanguage();
   const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
   const [errorState, setErrorState] = React.useState<TodayErrorState>({
     title: 'Today summary unavailable',
@@ -59,7 +61,7 @@ export default function ParentTodayScreen({ navigation }: Props) {
         <Box paddingHorizontal={24} paddingTop={40}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Back to Parent Space"
+            accessibilityLabel={t('Back to Parent Space')}
             onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
             activeOpacity={0.7}
           >
@@ -77,7 +79,7 @@ export default function ParentTodayScreen({ navigation }: Props) {
         <Box paddingHorizontal={24} paddingTop={40} gap={12}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Back to Parent Space"
+            accessibilityLabel={t('Back to Parent Space')}
             onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
             activeOpacity={0.7}
           >
@@ -87,7 +89,7 @@ export default function ParentTodayScreen({ navigation }: Props) {
           <Text style={{ fontSize: 13, color: PA.ink3 }}>{errorState.detail}</Text>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={`Retry ${errorState.title}`}
+            accessibilityLabel={translateTemplate('Retry {{title}}', { title: t(errorState.title) }, { locale: language })}
             onPress={() => { loadToday(); }}
             activeOpacity={0.7}
           >
@@ -103,7 +105,7 @@ export default function ParentTodayScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18} paddingBottom={8}>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Back to Parent Space"
+          accessibilityLabel={t('Back to Parent Space')}
           onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
           activeOpacity={0.7}
         >

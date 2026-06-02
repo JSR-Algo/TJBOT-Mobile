@@ -3,7 +3,11 @@ import {
   normalizeCourseDetailPayload,
   normalizeLessonListPayload,
 } from '../../src/services/api/course.api';
-import { normalizeProgressSummaryPayload } from '../../src/services/api/progress.api';
+import {
+  EMPTY_PROGRESS_SUMMARY,
+  getProgressSummary,
+  normalizeProgressSummaryPayload,
+} from '../../src/services/api/progress.api';
 
 describe('course/progress API payload normalization', () => {
   it('normalizes course catalog envelopes and missing fields', () => {
@@ -150,5 +154,9 @@ describe('course/progress API payload normalization', () => {
       reviewDueCount: 0,
       weeklyBars: [0, 0, 0, 0, 0, 0, 0],
     });
+  });
+
+  it('returns empty progress while the progress summary backend is not designed', async () => {
+    await expect(getProgressSummary()).resolves.toEqual(EMPTY_PROGRESS_SUMMARY);
   });
 });

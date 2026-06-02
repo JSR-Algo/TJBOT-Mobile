@@ -23,6 +23,7 @@ import {
 } from '../../src/services/api/course-library.api';
 import { getProgressSummary } from '../../src/services/api/progress.api';
 import { getBillingProviderStatus } from '../../src/services/api/purchase.api';
+import { setAppLanguage } from '../../src/services/i18n/i18n';
 
 jest.mock('@/config/feature-flags', () => ({
   __esModule: true,
@@ -338,7 +339,7 @@ describe('course, course-library, and progress stable screen states', () => {
     expect(screen.getByLabelText('Thursday practice progress: 50 percent, today')).toBeTruthy();
   });
 
-  it('renders progress empty and timeout states without showing stale metrics', async () => {
+  it('renders progress empty and failed refresh states without showing stale metrics', async () => {
     mockGetProgressSummary.mockResolvedValueOnce({
       minutesDone: 0,
       minutesGoal: 0,
@@ -400,15 +401,38 @@ describe('course, course-library, and progress stable screen states', () => {
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.CourseDetailScreen, { courseId: 'c_animals' });
   });
 
-  it('renders progress summary error and offline states without crashing', async () => {
+  it('renders progress summary empty state on error and offline states without crashing', async () => {
     mockGetProgressSummary.mockRejectedValueOnce({ code: 'INTERNAL_ERROR', message: 'server down' });
     const error = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
     await waitFor(() => expect(error.getByText('Progress unavailable')).toBeTruthy());
+    expect(error.queryByText('No practice yet')).toBeNull();
     error.unmount();
 
     mockGetProgressSummary.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'offline' });
     const offline = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
     await waitFor(() => expect(offline.getByText('Progress offline')).toBeTruthy());
+    expect(offline.queryByText('No practice yet')).toBeNull();
+  });
+
+  it('translates dynamic progress copy and labels in Vietnamese', async () => {
+    await setAppLanguage('vi');
+    mockGetProgressSummary.mockResolvedValueOnce({
+      minutesDone: 9,
+      minutesGoal: 10,
+      lessonsCompleted: 2,
+      speakingTurns: 5,
+      starsToday: 0,
+      streakDays: 1,
+      words: [],
+      reviewDueCount: 3,
+      weeklyBars: [0.2, 0, 0.8, 0.5, 0, 0, 0],
+    });
+
+    const screen = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
+
+    await waitFor(() => expect(screen.getByText('3 mục ôn tập cần làm')).toBeTruthy());
+    expect(screen.getByLabelText('Thứ Hai tiến độ luyện tập: 20 phần trăm')).toBeTruthy();
+    expect(screen.getByLabelText('Thứ Năm tiến độ luyện tập: 50 phần trăm, hôm nay')).toBeTruthy();
   });
 
   it('renders remaining progress screens with missing route data', () => {

@@ -14,38 +14,44 @@ export interface DevicePairingInput {
   userId: string;
 }
 
-// Backend service stubs — real implementations replace these in firmware sprint.
-// API refs: POST /v1/devices/pairing-token, POST /v1/devices/claim, PATCH /v1/devices/{id}
-// BLE refs: sys-18 GATT service/characteristic UUIDs owned by firmware
+// Default services are dev/test-only placeholders for the executable state
+// machine tests. Runtime pairing screens use BLE scan plus
+// POST /v1/devices/provision/start and /provision/connect.
 export const DevicePairingServices = {
-  // POST /v1/devices/pairing-token
+  // Deprecated placeholder; not a production API path.
   async issuePairingToken(_args: { userId: string }): Promise<string> {
-    // sys-18 wire integration deferred to firmware sprint
+    assertDevTestStubAllowed();
     return 'stub-pairing-token';
   },
 
-  // POST /v1/devices/claim — idempotent on pairing_token
+  // Deprecated placeholder; not a production API path.
   async claimDevice(_args: { pairingToken: string }): Promise<{ deviceId: string }> {
-    // sys-18 wire integration deferred to firmware sprint
+    assertDevTestStubAllowed();
     return { deviceId: 'stub-device-id' };
   },
 
   // PATCH /v1/devices/{id}
   async renameDevice(_args: { id: string; name: string }): Promise<void> {
-    // sys-18 wire integration deferred to firmware sprint
+    assertDevTestStubAllowed();
   },
 
-  // BLE scan — intentionally fake; sys-18 wire integration deferred to firmware sprint
+  // Test stub only; runtime screens call services/ble/service.
   async bleScan(): Promise<{ serial: string; displayCode: string } | null> {
-    // sys-18 wire integration deferred to firmware sprint
+    assertDevTestStubAllowed();
     return null;
   },
 
-  // BLE GATT write wifi credentials — intentionally fake; sys-18 wire integration deferred to firmware sprint
+  // Test stub only; runtime screens submit Wi-Fi transiently through backend.
   async bleProvision(_args: { ssid: string; password: string }): Promise<void> {
-    // sys-18 wire integration deferred to firmware sprint
+    assertDevTestStubAllowed();
   },
 };
+
+function assertDevTestStubAllowed(): void {
+  if (typeof __DEV__ !== 'undefined' && __DEV__) return;
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') return;
+  throw new Error('DevicePairingServices stubs are dev/test only; use backend provisioning APIs in runtime.');
+}
 
 const PROVISIONING_TIMEOUT_MS = 30_000;
 const CLAIM_PENDING_TIMEOUT_MS = 60_000;

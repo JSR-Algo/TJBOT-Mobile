@@ -43,7 +43,7 @@ type NavigationLinkingConfig = LinkingOptions<RootStackParamList> & {
 };
 
 export const NAVIGATION_LINKING_CONFIG: NavigationLinkingConfig = {
-  prefixes: ['TJBot://'],
+  prefixes: ['TJBot://', 'tjbot://'],
   getInitialURL: async () => {
     const url = await Linking.getInitialURL();
     if (url) return url;
