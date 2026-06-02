@@ -4,4 +4,12 @@ export const STATES = [
   { id: 'lesson_summary', title: 'Lesson Summary', group: 'Progress', kind: 'happy' },
   { id: 'review_needed', title: 'Review Needed', group: 'Progress', kind: 'happy' },
   { id: 'celebration', title: 'Celebration', group: 'Progress', kind: 'happy' },
+  { id: 'lesson_demo_home', title: 'Lesson Demo Home', group: 'Progress', kind: 'happy' },
+  { id: 'lesson_demo_roadmap', title: 'Lesson Demo Roadmap', group: 'Progress', kind: 'happy' },
+  { id: 'lesson_demo_session', title: 'Lesson Demo Session', group: 'Progress', kind: 'happy' },
+  { id: 'lesson_demo_parent_summary', title: 'Lesson Demo Parent Summary', group: 'Progress', kind: 'happy' },
+  { id: 'lesson_demo_showcase', title: 'Lesson Demo Showcase', group: 'Progress', kind: 'happy' },
+  { id: 'lesson_planner', title: 'Lesson Planner', group: 'Progress', kind: 'happy' },
+  { id: 'child_practice', title: 'Child Practice', group: 'Progress', kind: 'happy' },
+  { id: 'robot_lesson_control', title: 'Robot Lesson Control', group: 'Progress', kind: 'happy' },
 ] as const;

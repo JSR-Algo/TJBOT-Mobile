@@ -87,6 +87,14 @@ export type RootStackParamList = {
   LessonSummaryScreen: undefined | { lessonId?: string };
   ReviewNeededScreen: undefined;
   CelebrationScreen: undefined;
+  LessonDemoHomeScreen: undefined;
+  LessonDemoRoadmapScreen: undefined | { ageBand?: '4-6' | '7-9' | '10-11' };
+  LessonDemoSessionScreen: undefined | { week?: number; day?: number; ageBand?: '4-6' | '7-9' | '10-11' };
+  LessonDemoParentSummaryScreen: undefined | { lessonId?: string; ageBand?: '4-6' | '7-9' | '10-11' };
+  LessonDemoShowcaseScreen: undefined | { ageBand?: '4-6' | '7-9' | '10-11' };
+  LessonPlannerScreen: undefined | { childId?: string };
+  ChildPracticeScreen: undefined | { childId?: string; sessionId?: string };
+  RobotLessonControlScreen: undefined | { deviceId?: string; lessonId?: string; sessionIndex?: number };
 
   // parent
   ParentGateScreen: undefined | { next?: 'ParentSummaryScreen' | 'ParentSettingsScreen' | 'ParentSafetyScreen' | 'ParentHistoryScreen' | 'ParentTodayScreen' | 'ParentAccountPrivacyScreen' };
@@ -224,6 +232,14 @@ export const ROUTES = {
   'LessonSummaryScreen': 'LessonSummaryScreen',
   'ReviewNeededScreen': 'ReviewNeededScreen',
   'CelebrationScreen': 'CelebrationScreen',
+  'LessonDemoHomeScreen': 'LessonDemoHomeScreen',
+  'LessonDemoRoadmapScreen': 'LessonDemoRoadmapScreen',
+  'LessonDemoSessionScreen': 'LessonDemoSessionScreen',
+  'LessonDemoParentSummaryScreen': 'LessonDemoParentSummaryScreen',
+  'LessonDemoShowcaseScreen': 'LessonDemoShowcaseScreen',
+  'LessonPlannerScreen': 'LessonPlannerScreen',
+  'ChildPracticeScreen': 'ChildPracticeScreen',
+  'RobotLessonControlScreen': 'RobotLessonControlScreen',
   'ParentGateScreen': 'ParentGateScreen',
   'ParentSummaryScreen': 'ParentSummaryScreen',
   'ParentTodayScreen': 'ParentTodayScreen',
