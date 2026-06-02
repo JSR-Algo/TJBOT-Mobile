@@ -1,0 +1,41 @@
+%% GENERATED FROM nav-graph-data.json sha=f0475d686227. Do not edit by hand.
+%% domain: lesson-session
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Activity["Activity"]
+    activity_intro["Activity Intro"]
+    robot_listening["Robot Listening"]
+    robot_speaking["Robot Speaking"]
+    thinking["Robot Thinking"]
+    user_speaking["User Speaking"]
+  end
+  subgraph Done["Done"]
+    activity_done["Activity Complete"]
+    lesson_done["Lesson Complete"]
+  end
+  subgraph Feedback["Feedback"]
+    bargein(["Interrupted (Barge-in)"])
+    gentle(["Gentle Correction"])
+    offtopic(["Off-topic Redirect"])
+    retry(["Retry Prompt"])
+    silence["Silence Prompt"]
+    success["Success Moment"]
+  end
+  subgraph Recovery["Recovery"]
+    abandoned_disconnect(["Abandoned Disconnect"])
+    audio_error(["Audio Error"])
+    cost_capped(["Cost Capped"])
+    exit_confirm(["Exit Confirm"])
+    parent_stopped(["Parent Stopped"])
+    reconnecting(["Reconnecting"])
+    safety(["Safety Fallback"])
+    timed_out(["Timed Out"])
+  end
+  subgraph Start["Start"]
+    connecting["Connecting Voice"]
+    greeting["Robot Greeting"]
+    lesson_ready["Lesson Ready"]
+  end
+  class activity_intro,robot_listening,robot_speaking,thinking,user_speaking,activity_done,lesson_done,silence,success,connecting,greeting,lesson_ready happy
+  class bargein,gentle,offtopic,retry,abandoned_disconnect,audio_error,cost_capped,exit_confirm,parent_stopped,reconnecting,safety,timed_out edge

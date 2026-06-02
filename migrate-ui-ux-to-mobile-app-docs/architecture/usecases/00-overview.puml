@@ -1,0 +1,79 @@
+@startuml TBOT-Overview
+title TBOT Mobile — Domain Overview (actors + bounded contexts)
+left to right direction
+skinparam packageStyle rectangle
+
+' ===== ACTORS =====
+actor Guest
+actor "Authenticated User" as AuthUser
+actor Child
+actor Parent
+actor "Robot Device" as Robot <<external>>
+actor "Realtime Voice Service" as Voice <<external>>
+actor "Google OAuth" as Google <<external>>
+actor "Apple Sign-In" as Apple <<external>>
+actor "Payment Provider" as Pay <<external>>
+actor "Device OS" as OS <<external>>
+actor "Wi-Fi Network" as WiFi <<external>>
+
+' ===== DOMAIN BOUNDARIES =====
+package "auth"           as D_AUTH
+package "onboarding"     as D_ONB
+package "kid-hub"        as D_HUB
+package "course-browse"  as D_CRS
+package "lesson-session" as D_LSN
+package "progress"       as D_PRG
+package "parent-gate"    as D_PG  <<service>>
+package "parent-summary" as D_PRT
+package "course-library" as D_CL
+package "purchase"       as D_BUY
+package "device-pairing" as D_DP
+package "robot-mgmt"     as D_RM
+package "fallback-shell" as D_FB
+
+' ===== ACTOR-TO-DOMAIN ENTRY EDGES =====
+Guest    --> D_AUTH
+Guest    --> D_ONB
+AuthUser --> D_AUTH
+Child    --> D_HUB
+Child    --> D_CRS
+Child    --> D_LSN
+Child    --> D_PRG
+Parent   --> D_PG
+Parent   --> D_PRT
+Parent   --> D_CL
+Parent   --> D_BUY
+Parent   --> D_DP
+Parent   --> D_RM
+
+' ===== EXTERNAL DELEGATIONS =====
+D_AUTH ..> Google : OAuth
+D_AUTH ..> Apple  : OAuth
+D_ONB  ..> OS     : permission
+D_LSN  ..> Voice  : realtime
+D_BUY  ..> Pay    : payment
+D_BUY  ..> Robot  : activate
+D_CL   ..> Robot  : send course
+D_DP   ..> Robot  : pair / OTA
+D_DP   ..> WiFi   : provision
+D_RM   ..> Robot  : diagnostics
+
+' ===== CROSS-DOMAIN HANDOFF EDGES (gate / lifecycle) =====
+D_HUB  ..> D_PG    : <<requires>>
+D_PRT  ..> D_PG    : <<requires>>
+D_CL   ..> D_PG    : <<requires>>
+D_BUY  ..> D_PG    : <<requires>>
+D_DP   ..> D_PG    : <<requires>>
+D_RM   ..> D_PG    : <<requires>>
+D_LSN  ..> D_PRG   : <<emits>> lesson_summary
+D_CRS  ..> D_LSN   : <<launches>>
+D_HUB  ..> D_LSN   : <<launches>>
+D_BUY  ..> D_CL    : <<continues>> first course
+D_CL   ..> D_DP    : <<requires>> robot paired
+D_PRG  ..> D_LSN   : <<re-enters>> review
+D_FB   ..> D_LSN   : <<resumes>>
+D_FB   ..> D_HUB   : <<exits>>
+D_ONB  ..> D_AUTH  : login step
+D_AUTH ..> D_HUB   : on success
+
+@enduml

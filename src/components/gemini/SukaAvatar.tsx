@@ -66,15 +66,19 @@ const TILT_MAP: Record<string, number> = { curious: 5, shy: -5, thinking: 3, lis
 function voiceStateToExpression(state: VoiceState): string {
   switch (state) {
     case 'IDLE': return 'idle';
-    case 'REQUESTING_MIC_PERMISSION':
+    case 'ENDED': return 'idle';
+    case 'PREPARING_AUDIO':
     case 'CONNECTING':
+    case 'READY':
     case 'RECONNECTING': return 'connecting';
     case 'LISTENING': return 'listening';
-    case 'STREAMING_INPUT': return 'streaming';
+    case 'USER_SPEAKING': return 'streaming';
+    case 'USER_SPEECH_FINALIZING': return 'thinking';
     case 'WAITING_AI': return 'thinking';
-    case 'PLAYING_AI_AUDIO': return 'speaking';
+    case 'ASSISTANT_SPEAKING': return 'speaking';
     case 'INTERRUPTED': return 'interrupted';
-    case 'ERROR': return 'sad';
+    case 'ERROR_RECOVERABLE':
+    case 'ERROR_FATAL': return 'sad';
     default: return 'idle';
   }
 }
@@ -83,11 +87,15 @@ function voiceStateToExpression(state: VoiceState): string {
 interface SukaAvatarProps {
   voiceState: VoiceState;
   audioLevel: number;
+  reduceMotion?: boolean;
 }
 
-export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
+export function SukaAvatar({ voiceState, audioLevel, reduceMotion = false }: SukaAvatarProps) {
   // Expression override from action tags (presentation-only)
   const expressionOverride = useVoiceAssistantStore((s) => s.expressionOverride);
+  // Subtle buffering cue while speaking (plan §2.7). UI flag only; does not
+  // change the FSM-driven expression.
+  const isBuffering = useVoiceAssistantStore((s) => s.isBuffering);
   const expressionKey = expressionOverride ?? voiceStateToExpression(voiceState);
   const expr = EXPRESSIONS[expressionKey] ?? EXPRESSIONS.idle;
 
@@ -106,6 +114,7 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
 
   // ── Idle breathing loop ──────────────────────────────────────────
   useEffect(() => {
+    if (reduceMotion) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(breatheAnim, { toValue: 1.018, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
@@ -114,25 +123,40 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
     );
     loop.start();
     return () => loop.stop();
-  }, [breatheAnim]);
+  }, [breatheAnim, reduceMotion]);
 
   // ── Periodic blink ───────────────────────────────────────────────
   useEffect(() => {
-    if (voiceState === 'ERROR') return;
+    if (reduceMotion) return;
+    if (voiceState === 'ERROR_RECOVERABLE' || voiceState === 'ERROR_FATAL') return;
     let timeout: ReturnType<typeof setTimeout>;
     const doBlink = () => {
       Animated.sequence([
         Animated.timing(eyeScaleY, { toValue: 0.08, duration: 80, useNativeDriver: true }),
         Animated.timing(eyeScaleY, { toValue: expr.eyeScaleY, duration: 120, useNativeDriver: true }),
       ]).start();
+      // Blink scheduling is presentation-only animation — does not
+      // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
+      // timers; this is the documented carve-out.
+      // eslint-disable-next-line TJBot-voice/no-voice-timing-in-shared
       timeout = setTimeout(doBlink, 3000 + Math.random() * 3000);
     };
+    // eslint-disable-next-line TJBot-voice/no-voice-timing-in-shared
     timeout = setTimeout(doBlink, 2000 + Math.random() * 2000);
     return () => clearTimeout(timeout);
-  }, [voiceState, expr.eyeScaleY, eyeScaleY]);
+  }, [voiceState, expr.eyeScaleY, eyeScaleY, reduceMotion]);
 
   // ── Expression transitions ───────────────────────────────────────
   useEffect(() => {
+    if (reduceMotion) {
+      eyeScaleY.setValue(expr.eyeScaleY);
+      eyeOffsetY.setValue(expr.eyeOffsetY);
+      mouthHeight.setValue(expr.mouthHeight);
+      mouthWidth.setValue(expr.mouthWidth);
+      glowOpacity.setValue(expr.glowOpacity);
+      cheekOpacity.setValue(expr.cheekOpacity);
+      return;
+    }
     Animated.parallel([
       Animated.spring(eyeScaleY, { toValue: expr.eyeScaleY, useNativeDriver: true, friction: 5 }),
       Animated.spring(eyeOffsetY, { toValue: expr.eyeOffsetY, useNativeDriver: true, friction: 5 }),
@@ -141,10 +165,11 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
       Animated.timing(glowOpacity, { toValue: expr.glowOpacity, duration: 200, useNativeDriver: true }),
       Animated.timing(cheekOpacity, { toValue: expr.cheekOpacity, duration: 200, useNativeDriver: true }),
     ]).start();
-  }, [expressionKey, expr, eyeScaleY, eyeOffsetY, mouthHeight, mouthWidth, glowOpacity, cheekOpacity]);
+  }, [expressionKey, expr, eyeScaleY, eyeOffsetY, mouthHeight, mouthWidth, glowOpacity, cheekOpacity, reduceMotion]);
 
   // ── Glow pulse for connecting/celebrating states ─────────────────
   useEffect(() => {
+    if (reduceMotion) return;
     if (expr.glowPulse) {
       const loop = Animated.loop(
         Animated.sequence([
@@ -157,22 +182,28 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
     } else {
       glowScale.setValue(1);
     }
-  }, [expr.glowPulse, glowScale]);
+  }, [expr.glowPulse, glowScale, reduceMotion]);
 
   // ── Speaking: mouth + glow follow audio level ────────────────────
+  // While the playback service is refilling after an underrun, dim the glow
+  // by ~15% to communicate "catching breath" without alarming the user.
+  // Mouth animation is left untouched so the avatar still appears lively.
   useEffect(() => {
+    if (reduceMotion) return;
     if (expressionKey === 'speaking') {
+      const dim = isBuffering ? 0.85 : 1;
       const targetMouth = 8 + audioLevel * 20;
-      const targetGlow = 0.25 + audioLevel * 0.3;
+      const targetGlow = (0.25 + audioLevel * 0.3) * dim;
       Animated.parallel([
         Animated.spring(mouthHeight, { toValue: targetMouth, useNativeDriver: false, friction: 6, tension: 120 }),
         Animated.timing(glowOpacity, { toValue: targetGlow, duration: 100, useNativeDriver: true }),
       ]).start();
     }
-  }, [audioLevel, expressionKey, mouthHeight, glowOpacity]);
+  }, [audioLevel, expressionKey, isBuffering, mouthHeight, glowOpacity, reduceMotion]);
 
   // ── Cute bounce for happy/celebrating/laugh ──────────────────────
   useEffect(() => {
+    if (reduceMotion) return;
     if (BOUNCY_EXPRESSIONS.includes(expressionKey)) {
       const bounce = Animated.loop(
         Animated.sequence([
@@ -195,16 +226,18 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
     } else {
       bounceAnim.setValue(0);
     }
-  }, [expressionKey, bounceAnim]);
+  }, [expressionKey, bounceAnim, reduceMotion]);
 
   // ── Head tilt for curious/shy ────────────────────────────────────
   useEffect(() => {
+    if (reduceMotion) return;
     const target = TILT_MAP[expressionKey] ?? 0;
     Animated.spring(headTilt, { toValue: target, useNativeDriver: true, friction: 8 }).start();
-  }, [expressionKey, headTilt]);
+  }, [expressionKey, headTilt, reduceMotion]);
 
   // ── Eye sparkle for happy states ─────────────────────────────────
   useEffect(() => {
+    if (reduceMotion) return;
     if (SPARKLE_EXPRESSIONS.includes(expressionKey)) {
       const sparkle = Animated.loop(
         Animated.sequence([
@@ -217,7 +250,7 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
     } else {
       sparkleOpacity.setValue(0);
     }
-  }, [expressionKey, sparkleOpacity]);
+  }, [expressionKey, sparkleOpacity, reduceMotion]);
 
   // ── Mouth style (curve direction) ───────────────────────────────
   const getMouthStyle = () => {
@@ -242,9 +275,9 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
   });
 
   return (
-    <View style={styles.wrapper}>
+    <View style={styles.wrapper} accessibilityLabel={expressionKey === 'speaking' ? 'Suka is speaking' : 'Suka avatar'}>
       {/* Celebrating particles */}
-      <ParticleEffect active={expressionKey === 'celebrating'} />
+      <ParticleEffect active={expressionKey === 'celebrating'} reduceMotion={reduceMotion} />
 
       {/* Glow ring */}
       <Animated.View
@@ -299,8 +332,8 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
             styles.mouth,
             getMouthStyle(),
             {
-              width: mouthWidth as unknown as number,
-              height: mouthHeight as unknown as number,
+              width: mouthWidth,
+              height: mouthHeight,
             },
           ]}
         />

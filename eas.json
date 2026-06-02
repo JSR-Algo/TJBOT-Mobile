@@ -13,11 +13,20 @@
         "buildType": "apk"
       }
     },
+    // REQUIRES: HTTPS cert on backend, App Store certs — see docs/qa/ad-hoc/2026-04-17-mobile-release-hardening.md §Follow-ups
+    "production": {
+      "distribution": "store",
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.TJBot.io/v1",
+        "EXPO_PUBLIC_DEMO_SCREEN": "false"
+      }
+    },
     "staging-device": {
       "developmentClient": false,
       "distribution": "internal",
       "env": {
-        "TBOT_API_URL": "http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com/v1",
+        "TBOT_API_URL": "https://tbot-backend-8wmh.onrender.com/v1",
         "TBOT_AI_URL": "http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com/api/ai"
       },
       "ios": {},

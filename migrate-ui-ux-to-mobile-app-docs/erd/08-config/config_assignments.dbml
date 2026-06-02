@@ -1,0 +1,23 @@
+// config_assignments — device-to-cohort membership rows (the M:N junction).
+// Spec calls these `fleet_cohort_memberships`. Required for "explicit membership"
+// resolution path (first match wins, before criteria/default).
+// Source: docs/site/software/systems/08-config-fleet-management.md §Fleet Cohort Resolution.
+
+Table config_assignments {
+  id                    uuid          [pk]
+  cohort_id             uuid          [not null]
+  device_id             uuid          [not null, note: 'cross-domain ref → DeviceService']
+  config_version_id     uuid          [note: 'most recently issued version under this assignment; null until first assembly']
+  assigned_at           timestamptz   [not null, default: `now()`]
+  assigned_by           varchar(120)  [not null, note: 'admin email or system actor id']
+  created_at            timestamptz   [not null, default: `now()`]
+  updated_at            timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (cohort_id, device_id) [unique, name: 'idx_config_assignments_cohort_device_unique']
+    (device_id, assigned_at) [name: 'idx_config_assignments_device_assigned', note: 'hot query: docs/sequences/08-config/assembly-and-signing.sequence.mmd — CohortResolver explicit-membership lookup']
+  }
+}
+
+Ref: config_assignments.cohort_id > config_cohorts.id
+Ref: config_assignments.config_version_id > config_versions.id

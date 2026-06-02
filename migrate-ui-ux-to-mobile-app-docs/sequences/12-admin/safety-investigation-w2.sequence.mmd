@@ -1,0 +1,64 @@
+---
+system: sys-12-support-admin-operations
+flow_id: safety-investigation-w2
+surface: admin
+spec_anchor: /software/systems/12-support-admin-operations#w2-safety-investigation
+actors: [AdminConsole, SafetyInvestigationService, PostgreSQL, AuditLog]
+apis:
+  - POST /admin/workflows/w2/investigate
+externals: []
+queues: []
+failure_paths:
+  - device_not_found
+  - no_sessions_in_window
+  - all_turns_filtered
+  - incident_insert_failure
+idempotency: incident created per investigation invocation; no dedup on parent-report wording — operator discretion
+retry: admin re-runs manually if needed; no auto-retry
+timeout: 30s p99
+status: final
+---
+%% HAND-CURATED. W2 from spec §4 — creates safety_incident only when unfiltered turns found.
+sequenceDiagram
+    autonumber
+    participant AdminConsole
+    participant SafetyInvestigationService
+    participant PostgreSQL
+    participant AuditLog
+
+    AdminConsole->>SafetyInvestigationService: POST /admin/workflows/w2/investigate {serial_number, reported_time_approx, parent_description}
+    SafetyInvestigationService->>PostgreSQL: SELECT device and child_profile WHERE serial_number=$1
+
+    alt device_not_found
+        PostgreSQL-->>SafetyInvestigationService: 0 rows
+        SafetyInvestigationService-->>AdminConsole: 404 device_not_found
+    else found
+        SafetyInvestigationService->>PostgreSQL: SELECT sessions WHERE device_id=$1 AND started_at BETWEEN report_time ± 2h ORDER BY started_at DESC
+
+        alt no_sessions_in_window
+            PostgreSQL-->>SafetyInvestigationService: 0 rows
+            SafetyInvestigationService-->>AdminConsole: 200 {finding: "No sessions in window", safetyFilterBehavior: not_applicable, incidentCreated: false}
+        else sessions found
+            loop per session in window
+                SafetyInvestigationService->>PostgreSQL: SELECT session_turns WHERE session_id=$1 ORDER BY turn_index
+                SafetyInvestigationService->>SafetyInvestigationService: filter turns where safety_action IS NULL OR 'none'
+                alt unfiltered_turns_found
+                    SafetyInvestigationService->>AuditLog: append {action: view_session_transcript, target: session, reason: "Safety: <description>"}
+                    alt incident_insert_failure
+                        SafetyInvestigationService->>PostgreSQL: INSERT safety_incidents
+                        PostgreSQL-->>SafetyInvestigationService: error
+                        SafetyInvestigationService-->>AdminConsole: 500 incident_insert_failure
+                    else inserted
+                        SafetyInvestigationService->>PostgreSQL: INSERT safety_incidents (severity: medium, status: open, description, metadata)
+                        PostgreSQL-->>SafetyInvestigationService: incident_id
+                        SafetyInvestigationService-->>AdminConsole: 200 {finding, safetyFilterBehavior: missed, incidentCreated: true, incidentId}
+                    end
+                end
+            end
+            alt all_turns_filtered
+                SafetyInvestigationService-->>AdminConsole: 200 {finding: "All turns had safety_action applied", safetyFilterBehavior: blocked, incidentCreated: false}
+            end
+        end
+    end
+
+    Note over AdminConsole,AuditLog: every transcript read audited — safety_incident state machine open→investigating→escalated→resolved (no backward transitions)

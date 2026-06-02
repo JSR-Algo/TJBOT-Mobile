@@ -1,0 +1,92 @@
+---
+system: sys-14-retention-deletion-backup
+flow_id: account-deletion-pipeline
+surface: mobile
+spec_anchor: /software/systems/14-data-retention-deletion-backup#account-deletion-pipeline-detailed-sequence
+actors: [ParentApp, Gateway, AccountDeletionService, PostgreSQL, EventBridge, DeletionExecutor, EmailService]
+apis:
+  - POST /v1/account/delete
+  - POST /v1/account/cancel-deletion
+externals: [EventBridge, EmailService]
+queues: []
+failure_paths:
+  - password_mismatch
+  - transaction_rollback
+  - grace_period_not_elapsed
+  - executor_partial_failure
+  - email_send_failure
+idempotency: deletion request keyed by parent_account_id; grace_period state machine prevents duplicate execution
+retry: executor cron picks up failed rows on next hourly run (idempotent per-household cascade)
+timeout: 5s request initiation; 60m per-account execution
+status: final
+---
+%% HAND-CURATED. Normalized from _seed.1 — DB-transaction depth stripped to contract level per Principle 1.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant AccountDeletionService
+    participant PostgreSQL
+    participant EventBridge
+    participant DeletionExecutor
+    participant EmailService
+
+    Note over ParentApp,EmailService: Phase 1 — Request initiation
+    ParentApp->>Gateway: POST /v1/account/delete {password_reconfirmation}
+    Gateway->>AccountDeletionService: forward (JWT and parent_account_id)
+    alt password_mismatch
+        AccountDeletionService-->>Gateway: 401 password_mismatch
+        Gateway-->>ParentApp: 401
+    else verified
+        alt transaction_rollback
+            AccountDeletionService->>PostgreSQL: BEGIN — INSERT account_deletion_requests (status=grace_period, grace_period_ends_at=now()+30d) — UPDATE parent_accounts (status=scheduled_for_deletion) — revoke sessions
+            PostgreSQL-->>AccountDeletionService: error on any step
+            AccountDeletionService->>PostgreSQL: ROLLBACK
+            AccountDeletionService-->>Gateway: 500 deletion_request_failed
+            Gateway-->>ParentApp: 500
+        else committed
+            AccountDeletionService->>PostgreSQL: COMMIT
+            alt email_send_failure
+                AccountDeletionService->>EmailService: confirmation and cancel link
+                EmailService-->>AccountDeletionService: error
+                Note over AccountDeletionService: log P2 — deletion still scheduled
+            else sent
+                EmailService-->>AccountDeletionService: ok
+            end
+            AccountDeletionService-->>Gateway: 200 {grace_period_ends_at}
+            Gateway-->>ParentApp: 200
+        end
+    end
+
+    Note over ParentApp,EmailService: Phase 2 — Grace period (30 days)
+    alt parent_cancels
+        ParentApp->>Gateway: POST /v1/account/cancel-deletion
+        Gateway->>AccountDeletionService: forward
+        AccountDeletionService->>PostgreSQL: UPDATE account_deletion_requests SET status=cancelled — UPDATE parent_accounts SET status=active
+        AccountDeletionService-->>Gateway: 200 cancelled
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp,EmailService: Phase 3 — Execution (after 30 days)
+    EventBridge->>DeletionExecutor: rate(1 hour) trigger
+    DeletionExecutor->>PostgreSQL: SELECT account_deletion_requests WHERE grace_period_ends_at < NOW() AND status='grace_period'
+
+    loop per household owned
+        alt grace_period_not_elapsed
+            Note over DeletionExecutor: filtered by WHERE clause — skip
+        else execute_cascade
+            alt executor_partial_failure
+                DeletionExecutor->>PostgreSQL: BEGIN — DELETE session_turns/sessions/summaries/safety logs/cost_attribution — NULL household on devices — soft-delete child profiles — DELETE household and memberships — COMMIT
+                PostgreSQL-->>DeletionExecutor: error mid-cascade
+                DeletionExecutor->>PostgreSQL: ROLLBACK
+                Note over DeletionExecutor: status remains grace_period — next hourly run retries
+            else cascade_complete
+                DeletionExecutor->>PostgreSQL: COMMIT
+                DeletionExecutor->>PostgreSQL: anonymize parent_account (email→hash, name→'[deleted]')
+                DeletionExecutor->>PostgreSQL: UPDATE account_deletion_requests SET status=completed, completed_at=NOW()
+                DeletionExecutor->>EmailService: send deletion confirmation (to original email)
+            end
+        end
+    end
+
+    Note over ParentApp,EmailService: COPPA-compliant — 30-day grace period — audit_log consent/deletion events excluded from cleanup (retained indefinitely)

@@ -1,0 +1,57 @@
+---
+system: sys-05-conversation-intelligence-and-safety
+flow_id: fallback-selection
+surface: internal-RPC
+spec_anchor: /software/systems/05-conversation-intelligence-and-safety#fallback-selection-cascade
+actors: [SafetyService, Redis, PostgreSQL]
+apis: []
+externals: [Redis]
+queues:
+  - conv-review
+failure_paths:
+  - exact_match_miss
+  - broader_age_miss
+  - generic_safe_miss
+  - all_miss_use_hardcoded
+idempotency: idempotent per (locale, ageBand, trigger_code) — cascade order is deterministic
+retry: 0 — cascade resolves in single pass
+timeout: Redis cache lookup 50ms, PostgreSQL fetch 500ms — never blocks fallback (hardcoded floor)
+status: final
+---
+%% HAND-AUTHORED — sys-05 §17 fallback selection cascade + 19 trigger codes (no sequenceDiagram in spec).
+sequenceDiagram
+    autonumber
+    participant SafetyService
+    participant Redis
+    participant PostgreSQL
+
+    Note over SafetyService: trigger one of 19 codes (violence_blocked, model_timeout, budget_exceeded, ...)
+    SafetyService->>Redis: GET fallback:{template_set}:{locale}:{ageBand}:{trigger_code}
+    alt exact_match_miss
+        Redis-->>SafetyService: miss
+        SafetyService->>PostgreSQL: SELECT FROM fallback_response_templates exact
+        PostgreSQL-->>SafetyService: empty
+        SafetyService->>Redis: GET fallback:{template_set}:{locale}:6_8:{trigger_code}
+        Redis-->>SafetyService: hit broader age
+        SafetyService-->>SafetyService: use broader-age template
+    else broader_age_miss
+        Redis-->>SafetyService: miss
+        SafetyService->>Redis: GET fallback:{template_set}:{locale}:{ageBand}:generic_safe
+        Redis-->>SafetyService: hit generic safe
+        SafetyService-->>SafetyService: use generic_safe template
+    else generic_safe_miss
+        Redis-->>SafetyService: miss
+        SafetyService->>PostgreSQL: SELECT FROM fallback_response_templates generic_safe
+        PostgreSQL-->>SafetyService: empty
+        Note over SafetyService: hardcoded ultimate — "Let's ask a grown-up together."
+        SafetyService-)SafetyService: emit conv-review for missing-fallback investigation
+    else all_miss_use_hardcoded
+        Redis-->>SafetyService: miss
+        PostgreSQL-->>SafetyService: miss across cascade
+        Note over SafetyService: emit conv_missing_policy_total counter, page P1
+        SafetyService-->>SafetyService: hardcoded ultimate
+    else exact_match_hit
+        Redis-->>SafetyService: hit exact (template_set and locale and ageBand and trigger_code)
+        SafetyService-->>SafetyService: use exact template
+    end
+    Note over SafetyService,PostgreSQL: hardcoded floor guarantees a response — never returns null

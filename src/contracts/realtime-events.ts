@@ -1,6 +1,6 @@
-// @tbot/contracts — Realtime event vocabulary — mobile projection
+// @TJBot/contracts — Realtime event vocabulary — mobile projection
 //
-// Source of truth: tbot-infra/contracts/realtime-events.js (ADR-006/011/014).
+// Source of truth: TJBot-infra/contracts/realtime-events.js (ADR-006/011/014).
 // Mobile omits the Zod validator to avoid a new runtime dependency; instead it
 // exposes TypeScript discriminated-union types plus a lightweight
 // `isRealtimeEvent` narrowing helper. Round-trip compatibility with the
@@ -110,7 +110,7 @@ export type RealtimeEvent =
  * Structural narrowing for a parsed JSON payload from the backend gateway.
  * Returns `true` iff the object matches one of the 6 event shapes. Used as a
  * first-line guard before passing to the Twin driver; the authoritative schema
- * lives server-side (Zod in tbot-infra/contracts/realtime-events.js).
+ * lives server-side (Zod in TJBot-infra/contracts/realtime-events.js).
  */
 export function isRealtimeEvent(value: unknown): value is RealtimeEvent {
   if (!value || typeof value !== "object") return false;

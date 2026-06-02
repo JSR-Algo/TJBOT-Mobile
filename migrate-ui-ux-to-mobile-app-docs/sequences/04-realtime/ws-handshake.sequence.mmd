@@ -1,0 +1,56 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: ws-handshake
+surface: device
+spec_anchor: /software/systems/04-realtime-session-orchestrator#connection-handshake
+actors: [Device, ALB, Orchestrator, Redis, ControlPlane]
+apis:
+  - GET /v1/realtime/connect
+externals: [Redis]
+queues: []
+failure_paths:
+  - invalid_session_token
+  - device_inactive
+  - concurrent_session_exists
+  - service_at_capacity
+  - rate_limit_exceeded
+idempotency: device_session_id supplied by device — server SETNX device_session:{deviceId} in Redis
+retry: device backs off with jitter on 503 E-RT-203
+timeout: connect 5s
+status: final
+---
+%% HAND-CURATED — normalized from _seed.2 (04-realtime#L773).
+sequenceDiagram
+    autonumber
+    participant Device
+    participant ALB
+    participant Orchestrator
+    participant Redis
+    participant ControlPlane
+
+    Device->>ALB: GET /v1/realtime/connect?device_id&session_token&protocol_version=1
+    ALB->>Orchestrator: WebSocket upgrade
+    Orchestrator->>Orchestrator: verify JWT signature, expiry, audience=realtime-orchestrator
+    alt invalid_session_token
+        Orchestrator-->>Device: 401 E-RT-200
+    else device_inactive
+        Orchestrator->>ControlPlane: verify device active and ownership
+        ControlPlane-->>Orchestrator: 403 device_inactive
+        Orchestrator-->>Device: 403 E-RT-201
+    else concurrent_session_exists
+        Orchestrator->>Redis: GET device_session:{deviceId}
+        Redis-->>Orchestrator: existing sessionId
+        Orchestrator-->>Device: 409 E-RT-202
+    else service_at_capacity
+        Orchestrator-->>Device: 503 E-RT-203
+    else rate_limit_exceeded
+        Orchestrator-->>Device: 429 E-RT-204
+    else success
+        Orchestrator->>Redis: SET NX device_session:{deviceId} (35min TTL)
+        Redis-->>Orchestrator: OK
+        Orchestrator-->>Device: 101 Switching Protocols
+        Device->>Orchestrator: SESSION_OPEN (0x01)
+        Orchestrator-->>Device: SESSION_ACK (0x02) sessionId, maxTurns=60, costCeilingUsd=0.12
+    end
+
+    Note over Device,Orchestrator: connect 5s — Redis SETNX enforces single-session invariant — Redis unavailable rejects admission

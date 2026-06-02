@@ -1,0 +1,243 @@
+// AUTO-GENERATED FROM docs/erd/_shared/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/_shared/audit_log.dbml, docs/erd/_shared/feature_flags.dbml, docs/erd/_shared/i18n_strings.dbml, docs/erd/_shared/idempotency_keys.dbml, docs/erd/_shared/media_assets.dbml, docs/erd/_shared/outbox_events.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum audit_log_result {
+  success
+  failure
+  partial
+}
+
+enum feature_flag_scope {
+  global
+  household
+  user
+  device
+  cohort
+}
+
+enum feature_flag_value_kind {
+  bool
+  string
+  number
+  json
+}
+
+enum idempotency_key_status {
+  in_flight
+  succeeded
+  failed
+}
+
+enum media_asset_kind {
+  audio
+  image
+  video
+  pdf
+  json
+  ota_image
+  voice_phrase
+  thumbnail
+  cover_art
+}
+
+enum media_asset_status {
+  uploading
+  active
+  archived
+  deleted
+}
+
+enum outbox_event_status {
+  pending
+  delivering
+  delivered
+  failed
+  dead_lettered
+}
+
+/// Source: docs/erd/_shared/audit_log.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+/// polymorphic: target_table allow-list validated against 102-table catalogue at app layer; target_id is string repr of pk (uuid or composite)
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+  actorType String @db.VarChar(40) @map("actor_type")
+  /// user | admin_user | service | system | device
+  actorId String? @db.VarChar(120) @map("actor_id")
+  /// uuid string for user/admin; service name for service; null for system
+  action String @db.VarChar(80)
+  /// verb.noun convention, e.g. user.disable, device.transfer, content.publish
+  targetTable String @db.VarChar(80) @map("target_table")
+  /// destination table name; validated against allow-list at app layer
+  targetId String @db.VarChar(120) @map("target_id")
+  /// string repr of pk (uuid or composite); polymorphic — no FK
+  result audit_log_result
+  reason String? @db.Text
+  beforeState Json? @db.JsonB @map("before_state")
+  /// snapshot of mutated row pre-write; redacted PII per sys-11 §retention rules
+  afterState Json? @db.JsonB @map("after_state")
+  /// snapshot post-write
+  metadata Json @db.JsonB @default("{}")
+  ipAddress String? @db.VarChar(45) @map("ip_address")
+  userAgent String? @db.VarChar(512) @map("user_agent")
+  occurredAt DateTime @db.Timestamptz(6) @default(now()) @map("occurred_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  /// equal to created_at; row is immutable after insert
+  @@index([actorType, actorId, occurredAt], map: "idx_audit_log_actor_occurred_at")
+  @@index([targetTable, targetId], map: "idx_audit_log_target")
+  @@index([action, occurredAt], map: "idx_audit_log_action_occurred_at")
+  @@index([occurredAt], map: "idx_audit_log_occurred_at_desc")
+  @@map("audit_log")
+}
+
+/// Source: docs/erd/_shared/feature_flags.dbml
+/// polymorphic: scope_target_id depends on scope (household_id / user_id / device_id / cohort slug)
+model FeatureFlags {
+  id String @id @default(uuid()) @db.Uuid
+  key String @db.VarChar(120)
+  /// dotted-namespace identifier, e.g. mobile.summary.weekly.enabled
+  scope feature_flag_scope @default(global)
+  scopeTargetId String? @db.VarChar(120) @map("scope_target_id")
+  /// when scope != global: household_id / user_id / device_id / cohort slug
+  valueKind feature_flag_value_kind @map("value_kind")
+  value Json @db.JsonB
+  /// jsonb-wrapped to support all kinds; bool/string/number stored as the JSON primitive
+  description String? @db.Text
+  enabledAt DateTime? @db.Timestamptz(6) @map("enabled_at")
+  disabledAt DateTime? @db.Timestamptz(6) @map("disabled_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([key, scope, scopeTargetId], map: "idx_feature_flags_key_scope_target_unique")
+  @@index([key, scope], map: "idx_feature_flags_key_scope")
+  @@map("feature_flags")
+}
+
+/// Source: docs/erd/_shared/i18n_strings.dbml
+model I18nStrings {
+  id String @id @default(uuid()) @db.Uuid
+  key String @db.VarChar(160)
+  /// dotted-namespace, e.g. email.password_reset.subject
+  locale String @db.VarChar(16)
+  /// BCP-47 tag, e.g. en-US, vi-VN, ja-JP
+  value String @db.Text
+  context String? @db.VarChar(240)
+  /// translator-facing description / variable substitutions
+  source String @db.VarChar(40) @default("manual")
+  /// manual | machine | crowdsource
+  reviewed Boolean @default(false)
+  reviewedBy String? @db.VarChar(120) @map("reviewed_by")
+  reviewedAt DateTime? @db.Timestamptz(6) @map("reviewed_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([key, locale], map: "idx_i18n_strings_key_locale_unique")
+  @@index([locale, reviewed], map: "idx_i18n_strings_locale_reviewed")
+  @@map("i18n_strings")
+}
+
+/// Source: docs/erd/_shared/idempotency_keys.dbml
+/// polymorphic: actor_id may be user / admin / device / service id
+model IdempotencyKeys {
+  id String @id @default(uuid()) @db.Uuid
+  requestKey String @db.VarChar(120) @map("request_key")
+  /// client-supplied X-Request-Id; scoped by service for collision avoidance
+  serviceName String @db.VarChar(64) @map("service_name")
+  /// owning service writing this row, e.g. IdentityService, BillingService
+  endpoint String @db.VarChar(160)
+  /// logical endpoint slug, e.g. POST_/v1/auth/signup
+  actorType String? @db.VarChar(40) @map("actor_type")
+  actorId String? @db.VarChar(120) @map("actor_id")
+  status idempotency_key_status @default(in_flight)
+  responseStatus Int? @map("response_status")
+  /// HTTP status of stored response (only set when status = succeeded | failed)
+  responseBody Json? @db.JsonB @map("response_body")
+  /// cached response body for replay; redacted per service convention
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  /// cleanup boundary — typically created_at + 24h
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([serviceName, requestKey], map: "idx_idempotency_keys_service_request_unique")
+  @@index([expiresAt], map: "idx_idempotency_keys_expires_at")
+  @@map("idempotency_keys")
+}
+
+/// Source: docs/erd/_shared/media_assets.dbml
+/// polymorphic: owner_service identifies producing service; allow-list per sys-06 / sys-09 / sys-20 / sys-22
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model MediaAssets {
+  id String @id @default(uuid()) @db.Uuid
+  kind media_asset_kind
+  status media_asset_status @default(uploading)
+  s3Uri String? @db.VarChar(2048) @map("s3_uri")
+  cdnUrl String? @db.VarChar(2048) @map("cdn_url")
+  /// CloudFront URL when served publicly
+  contentType String @db.VarChar(120) @map("content_type")
+  /// MIME, e.g. audio/mp4, image/png
+  sizeBytes BigInt @map("size_bytes")
+  checksumSha256 String @db.VarChar(64) @map("checksum_sha256")
+  /// hex-encoded; verified at upload and read
+  durationMs Int? @map("duration_ms")
+  /// audio/video only
+  widthPx Int? @map("width_px")
+  /// image/video only
+  heightPx Int? @map("height_px")
+  /// image/video only
+  ownerService String @db.VarChar(64) @map("owner_service")
+  /// service that created the asset; rules vary by kind
+  metadata Json @db.JsonB @default("{}")
+  moderationState String? @db.VarChar(32) @map("moderation_state")
+  /// pending | approved | rejected — populated by sys-05 ModerationWorker for user-supplied media
+  expiresAt DateTime? @db.Timestamptz(6) @map("expires_at")
+  /// TTL for ephemeral assets (e.g. phrase cache)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  archivedAt DateTime? @db.Timestamptz(6) @map("archived_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  @@index([checksumSha256], map: "idx_media_assets_checksum")
+  @@index([kind, status], map: "idx_media_assets_kind_status")
+  @@index([ownerService, createdAt], map: "idx_media_assets_owner_service_created_at")
+  @@index([deletedAt], map: "idx_media_assets_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("media_assets")
+}
+
+/// Source: docs/erd/_shared/outbox_events.dbml
+/// TODO hypertable: audit-history-strategy.md flags outbox_events as a hypertable candidate (column=created_at interval=1d) but DBML lacks the @timescaledb-hypertable Note. Lane owner must add the annotation; emission is currently table-only.
+/// polymorphic: source_id + aggregate_id are opaque ids of producing rows; no FK
+model OutboxEvents {
+  id String @id @default(uuid()) @db.Uuid
+  topic String @db.VarChar(80)
+  /// logical event topic, e.g. safety.event.published, billing.subscription.changed
+  payload Json @db.JsonB
+  /// event body — schema documented per topic in producing service spec
+  sourceService String @db.VarChar(64) @map("source_service")
+  /// service that wrote the row
+  sourceTable String? @db.VarChar(80) @map("source_table")
+  /// optional: row that motivated the event (target_table semantics, polymorphic)
+  sourceId String? @db.VarChar(120) @map("source_id")
+  /// optional pk of the source row
+  aggregateId String? @db.VarChar(120) @map("aggregate_id")
+  /// used for partitioned/ordered delivery, e.g. session_id, household_id
+  status outbox_event_status @default(pending)
+  attemptCount Int @default(0) @map("attempt_count")
+  nextAttemptAt DateTime @db.Timestamptz(6) @default(now()) @map("next_attempt_at")
+  lastError String? @db.Text @map("last_error")
+  deliveredAt DateTime? @db.Timestamptz(6) @map("delivered_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@index([status, nextAttemptAt], map: "idx_outbox_events_status_next_attempt_at")
+  @@index([topic, createdAt], map: "idx_outbox_events_topic_created_at")
+  @@index([aggregateId, createdAt], map: "idx_outbox_events_aggregate_created_at")
+  @@map("outbox_events")
+}
+

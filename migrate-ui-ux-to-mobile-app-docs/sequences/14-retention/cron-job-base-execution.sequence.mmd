@@ -1,0 +1,72 @@
+---
+system: sys-14-retention-deletion-backup
+flow_id: cron-job-base-execution
+surface: cron
+spec_anchor: /software/systems/14-data-retention-deletion-backup#base-retention-job-class
+actors: [EventBridge, RetentionWorker, PostgreSQL, CloudWatch]
+apis: []
+externals: [EventBridge, CloudWatch]
+queues: []
+failure_paths:
+  - job_already_running
+  - batch_lock_contention
+  - fk_constraint_violation
+  - max_iterations_exhausted
+  - worker_exception
+idempotency: SKIP LOCKED + per-job WHERE filter ensures repeatable deletes; replay is no-op
+retry: per-batch yield 100ms; failed runs marked status='failed' for ops investigation; no automatic re-run mid-window
+timeout: per-job ceiling (batch_size × max_iterations); EventBridge no retry
+status: final
+---
+%% HAND-CURATED. Generic shape for the 11 nightly retention jobs scheduled in the 04:00 UTC window.
+sequenceDiagram
+    autonumber
+    participant EventBridge
+    participant RetentionWorker
+    participant PostgreSQL
+    participant CloudWatch
+
+    EventBridge->>RetentionWorker: cron(MM 4 * * ? *) for {job_name}
+
+    alt job_already_running
+        RetentionWorker->>PostgreSQL: SELECT status FROM retention_job_runs WHERE job_name=$1 AND status='running' AND started_at > now() - interval '1 hour'
+        PostgreSQL-->>RetentionWorker: row found
+        Note over RetentionWorker,CloudWatch: skip — emit retention_job_skipped metric
+    else clear to run
+        RetentionWorker->>PostgreSQL: INSERT retention_job_runs (id, job_name, started_at=NOW(), status='running')
+
+        loop iteration 1..max_iterations
+            alt batch_lock_contention
+                RetentionWorker->>PostgreSQL: DELETE FROM {table} WHERE id IN (SELECT id FROM {table} WHERE created_at < NOW() - interval '{retention}' LIMIT {batch_size} FOR UPDATE SKIP LOCKED)
+                PostgreSQL-->>RetentionWorker: 0 rows (locks held)
+                Note over RetentionWorker: yield 100ms, continue
+            else fk_constraint_violation
+                PostgreSQL-->>RetentionWorker: FK violation (e.g. sessions_cleanup before session_turns_cleanup)
+                RetentionWorker->>PostgreSQL: UPDATE retention_job_runs SET status='failed', error_message
+                RetentionWorker--xEventBridge: exit non-zero
+                Note over CloudWatch: P1 — job ordering broken
+            else deleted_rows
+                PostgreSQL-->>RetentionWorker: N rows deleted
+                alt batch < batch_size
+                    Note over RetentionWorker: no more rows — exit loop
+                else more rows
+                    RetentionWorker->>RetentionWorker: yield {yield_ms}
+                end
+            end
+        end
+
+        alt max_iterations_exhausted
+            RetentionWorker->>PostgreSQL: UPDATE retention_job_runs SET completed_at=NOW(), status='partial', rows_affected, iterations=max
+            Note over CloudWatch: emit retention_job_partial (investigate batch_size or window)
+        else worker_exception
+            Note over RetentionWorker: try/catch caught error after some progress
+            RetentionWorker->>PostgreSQL: UPDATE retention_job_runs SET status=(partial if rows_affected>0 else failed), error_message
+            RetentionWorker--xEventBridge: rethrow
+        else completed
+            RetentionWorker->>PostgreSQL: UPDATE retention_job_runs SET completed_at=NOW(), status='completed', rows_affected, iterations, duration_ms
+        end
+
+        RetentionWorker->>CloudWatch: emit retention_job_duration_ms and retention_rows_deleted {job_name}
+    end
+
+    Note over EventBridge,CloudWatch: applies to session_turns_cleanup, sessions_cleanup, daily_summaries_cleanup, weekly_summaries_cleanup, content_delivery_log_cleanup, safety_events_cleanup, notification_log_cleanup, provisioning_attempts_cleanup, cost_attribution_cleanup, audit_log_cleanup, ota_attempts_cleanup

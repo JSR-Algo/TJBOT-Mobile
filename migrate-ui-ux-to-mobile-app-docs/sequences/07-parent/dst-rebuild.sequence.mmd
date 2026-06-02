@@ -1,0 +1,50 @@
+---
+system: sys-07-parent-controls-summary
+flow_id: dst-rebuild
+surface: cron
+spec_anchor: /software/systems/07-parent-controls-summary#dst-rebuild-trigger
+actors: [EventBridge, ControlsService, PostgreSQL, ConfigService]
+apis: []
+externals: [EventBridge]
+queues: []
+failure_paths:
+  - invalid_timezone
+  - config_rebuild_partial_failure
+  - no_dst_transition_detected
+idempotency: per-timezone offset diff check; rebuild only when today's UTC offset differs from yesterday's
+retry: ConfigService rebuilds queued individually; per-device failures don't abort run
+timeout: 600s per timezone batch
+status: final
+---
+%% HAND-CURATED. DST/timezone transition cron — rebuilds quiet-hours config blobs only when offset shifts.
+sequenceDiagram
+    autonumber
+    participant EventBridge
+    participant ControlsService
+    participant PostgreSQL
+    participant ConfigService
+
+    EventBridge->>ControlsService: cron(0 0 * * ? *) (daily 00:00 UTC)
+    ControlsService->>PostgreSQL: SELECT DISTINCT timezone FROM parent_controls WHERE quiet_hours_enabled=true
+
+    loop per timezone
+        ControlsService->>ControlsService: compute today UTC offset vs yesterday UTC offset
+        alt invalid_timezone
+            Note over ControlsService: fail-open — skip timezone — emit metric controls_invalid_tz_total
+        else no_dst_transition_detected
+            Note over ControlsService: offsets equal — skip
+        else dst_transition
+            ControlsService->>PostgreSQL: SELECT device_ids in this timezone
+            loop per device in timezone
+                ControlsService->>ConfigService: rebuildConfig(deviceId)
+                alt config_rebuild_partial_failure
+                    ConfigService-->>ControlsService: error
+                    Note over ControlsService: log and continue (reconciliation cron picks up stale)
+                else rebuilt
+                    ConfigService-->>ControlsService: ok (new config_version)
+                end
+            end
+        end
+    end
+
+    Note over EventBridge,ConfigService: also triggered ad-hoc on household.timezone_changed event from sys-01 — quiet_hours times NOT auto-adjusted

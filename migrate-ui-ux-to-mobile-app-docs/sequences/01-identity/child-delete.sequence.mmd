@@ -1,0 +1,88 @@
+---
+system: sys-01-identity-household-access
+flow_id: child-delete
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#child-delete-adr-0011
+actors: [ParentApp, Gateway, IdentityService, AccountDeletionService, SQS, PostgreSQL]
+apis:
+  - PATCH /v1/identity/children/{id}
+externals: []
+queues: [child.retention]
+failure_paths:
+  - parent_jwt_stale
+  - not_primary_parent
+  - child_already_deleted
+  - last_active_child_warning
+idempotency: PATCH is idempotent on (child_id, status) — repeat with same status is a no-op
+retry: single retry on 5xx
+timeout: 3s
+status: final
+---
+%% HAND-CURATED. UC-A17 suspend (status=archived) is shared; UC-A18 delete (status=scheduled_for_deletion) is PRIMARY-PARENT-ONLY per ADR-0010 D5 + ADR-0011 D6. Cascade soft-delete to lesson_history/progress/entitlement_grants scoped to child_id. 30-day retention pipeline via sys-14 (AccountDeletionService). children table: active/archived/scheduled_for_deletion/deleted (ADR-0011 NOTE — "suspended" maps to archived).
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant AccountDeletionService
+    participant SQS
+    participant PostgreSQL
+
+    ParentApp->>Gateway: PATCH /v1/identity/children/{child_id} {status: "archived" | "scheduled_for_deletion"} and Bearer JWT
+    Gateway->>Gateway: validate parent JWT — extract user_id, household_id, role claim
+    alt parent_jwt_stale
+        Gateway-->>ParentApp: 401 parent_jwt_stale
+    else jwt_valid
+        Gateway->>IdentityService: forward request
+        IdentityService->>PostgreSQL: SELECT id, status, household_id FROM children WHERE id={child_id}
+        PostgreSQL-->>IdentityService: child row or null
+        alt child_not_found
+            IdentityService-->>Gateway: 404 child_not_found
+            Gateway-->>ParentApp: 404
+        else child_already_deleted (status = 'deleted')
+            IdentityService-->>Gateway: 409 child_already_deleted
+            Gateway-->>ParentApp: 409
+        else not_household_member
+            IdentityService-->>Gateway: 403 not_household_member
+            Gateway-->>ParentApp: 403
+        else status=archived (suspend — any parent)
+            IdentityService->>PostgreSQL: SELECT COUNT(*) FROM children WHERE household_id={household_id} AND status='active'
+            PostgreSQL-->>IdentityService: active_count
+            alt last_active_child_warning (active_count = 1 and this is the last active)
+                Note over IdentityService: Non-blocking warning — still allow suspend
+                IdentityService->>PostgreSQL: UPDATE children SET status='archived', updated_at=now() WHERE id={child_id}
+                PostgreSQL-->>IdentityService: updated
+                IdentityService-->>Gateway: 200 {status: 'archived', warning: 'last_active_child'}
+                Gateway-->>ParentApp: 200
+            else multiple_active_children
+                IdentityService->>PostgreSQL: UPDATE children SET status='archived', updated_at=now() WHERE id={child_id}
+                PostgreSQL-->>IdentityService: updated
+                IdentityService-->>Gateway: 200 {status: 'archived'}
+                Gateway-->>ParentApp: 200
+            end
+        else status=scheduled_for_deletion (delete — PRIMARY PARENT ONLY per ADR-0010 D5)
+            IdentityService->>PostgreSQL: SELECT role FROM household_members WHERE user_id={user_id} AND household_id={household_id}
+            PostgreSQL-->>IdentityService: role
+            alt not_primary_parent (role != 'owner')
+                IdentityService-->>Gateway: 403 not_primary_parent {requires_role: 'owner'}
+                Gateway-->>ParentApp: 403
+            else primary_parent confirmed
+                IdentityService->>PostgreSQL: UPDATE children SET status='scheduled_for_deletion', updated_at=now() WHERE id={child_id}
+                PostgreSQL-->>IdentityService: updated
+                Note over IdentityService,SQS: Cascade soft-delete per ADR-0011 D6 — scoped to child_id only, other children unaffected
+                IdentityService->>PostgreSQL: UPDATE lesson_history SET deleted_at=now() WHERE child_id={child_id}
+                PostgreSQL-->>IdentityService: ok
+                IdentityService->>PostgreSQL: UPDATE progress SET deleted_at=now() WHERE child_id={child_id}
+                PostgreSQL-->>IdentityService: ok
+                IdentityService->>PostgreSQL: UPDATE entitlement_grants SET deleted_at=now() WHERE child_id={child_id}
+                PostgreSQL-->>IdentityService: ok
+                IdentityService-)SQS: enqueue child.retention {child_id, scheduled_deletion_at: now()+30days} → sys-14 pipeline
+                SQS-->>IdentityService: queued
+                IdentityService-->>Gateway: 200 {status: 'scheduled_for_deletion', deletion_at: now()+30days}
+                Gateway-->>ParentApp: 200
+                Note over AccountDeletionService: sys-14 retention pipeline executes after 30 days — sets status='deleted'
+            end
+        end
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 3s — PATCH idempotent on (child_id, status) — delete PRIMARY-ONLY (ADR-0010 D5) — 30d retention via sys-14 (ADR-0011 D6) — only target child affected

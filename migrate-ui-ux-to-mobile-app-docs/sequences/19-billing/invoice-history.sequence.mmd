@@ -1,0 +1,75 @@
+---
+system: sys-19-billing-subscription
+flow_id: invoice-history
+surface: mobile
+spec_anchor: /software/systems/19-billing-subscription#get-v1billinginvoices
+actors: [ParentApp, Gateway, BillingService, Stripe, PostgreSQL]
+apis:
+  - GET /v1/billing/invoices?limit=N&offset=M
+  - GET /v1/billing/invoices/{invoice_id}/pdf
+externals: [Stripe]
+queues: []
+failure_paths:
+  - invoice_pdf_unavailable_stripe_unreachable
+  - invoice_not_found
+  - list_empty
+idempotency: GET is naturally idempotent
+retry: caller-side exponential backoff on 5xx only
+timeout: 3s p99 list; 5s p99 PDF (Stripe-side)
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant BillingService
+    participant Stripe
+    participant PostgreSQL
+
+    Note over ParentApp: parent in parent_settings → billing history taps "Billing history"
+
+    ParentApp->>Gateway: GET /v1/billing/invoices?limit=N&offset=M and parent JWT Bearer
+    Gateway->>BillingService: forward (JWT validated, read-only — 60s freshness not required)
+    BillingService->>PostgreSQL: SELECT id, date, amount_cents, status, pdf_available, period_start, period_end FROM invoices WHERE household_id={household_id} ORDER BY date DESC LIMIT N OFFSET M
+    alt list_empty
+        PostgreSQL-->>BillingService: no rows
+        BillingService-->>Gateway: 200 {invoices: [], next_offset: null, total: 0}
+        Gateway-->>ParentApp: 200
+    else rows_within_30d (read-through local cache)
+        PostgreSQL-->>BillingService: invoice rows (within 30d, cached)
+        BillingService-->>Gateway: 200 {invoices: [{id, date, amount_cents, status, pdf_available, period_start, period_end}], next_offset, total}
+        Gateway-->>ParentApp: 200
+    else rows_older_than_30d (on-demand Stripe fetch)
+        PostgreSQL-->>BillingService: invoice rows (older than 30d, pdf_available may be false)
+        BillingService->>Stripe: GET /v1/invoices?customer={stripe_customer_id}&created[lte]={cutoff_ts}
+        Stripe-->>BillingService: Stripe invoice list
+        BillingService->>PostgreSQL: UPSERT invoices (backfill cache)
+        BillingService-->>Gateway: 200 {invoices: [...], next_offset, total}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp: parent taps a row to view PDF
+
+    ParentApp->>Gateway: GET /v1/billing/invoices/{invoice_id}/pdf and parent JWT Bearer
+    Gateway->>BillingService: forward
+    BillingService->>PostgreSQL: SELECT stripe_invoice_id, pdf_available FROM invoices WHERE id={invoice_id} AND household_id={household_id}
+    alt invoice_not_found
+        PostgreSQL-->>BillingService: no rows
+        BillingService-->>Gateway: 404 invoice_not_found
+        Gateway-->>ParentApp: 404
+    else invoice_pdf_unavailable_stripe_unreachable
+        PostgreSQL-->>BillingService: {stripe_invoice_id, pdf_available: true}
+        BillingService->>Stripe: GET /v1/invoices/{stripe_invoice_id} (fetch hosted_invoice_url / invoice_pdf)
+        Stripe--xBillingService: 5xx / timeout
+        BillingService-->>Gateway: 502 invoice_pdf_unavailable_stripe_unreachable
+        Gateway-->>ParentApp: 502
+    else success
+        PostgreSQL-->>BillingService: {stripe_invoice_id, pdf_available: true}
+        BillingService->>Stripe: GET /v1/invoices/{stripe_invoice_id}
+        Stripe-->>BillingService: {invoice_pdf: signed_url (24h expiry)}
+        BillingService-->>Gateway: 307 Location: {stripe_signed_pdf_url}
+        Gateway-->>ParentApp: 307 — client follows redirect to Stripe-hosted PDF
+    end
+
+    Note over ParentApp,PostgreSQL: list timeout 3s p99 — PDF timeout 5s p99 (Stripe-side) — GET naturally idempotent — rows older than 30d fetched on-demand from Stripe and cached

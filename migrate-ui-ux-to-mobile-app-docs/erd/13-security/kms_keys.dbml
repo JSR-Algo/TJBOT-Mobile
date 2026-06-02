@@ -1,0 +1,40 @@
+// kms_keys — metadata for KMS-backed keys used by the platform (envelope encryption,
+// config signing, OTA signing, mTLS root). Key material lives in KMS / YubiHSM, never here.
+// Source: docs/site/software/systems/13-security-secrets-management.md §3 / §6 rotation procedures.
+
+enum kms_key_purpose {
+  envelope
+  config_signing
+  ota_signing
+  mtls_root
+  jwt_signing
+  webhook_signing
+}
+
+enum kms_key_status {
+  active
+  rotating
+  retired
+  compromised
+}
+
+Table kms_keys {
+  id              uuid              [pk]
+  alias           varchar(120)      [not null, note: 'human-readable identifier, e.g. "config-signing-2026-q2"']
+  purpose         kms_key_purpose   [not null]
+  status          kms_key_status    [not null, default: 'active']
+  external_arn    varchar(512)      [not null, note: 'KMS / YubiHSM URI; opaque to app']
+  algorithm       varchar(40)       [not null, note: 'e.g. AES_256_GCM, ECDSA_P384, ED25519']
+  rotated_from_id uuid              [note: 'self-ref to previous version of same alias']
+  activated_at    timestamptz       [not null]
+  retired_at      timestamptz
+  created_at      timestamptz       [not null, default: `now()`]
+  updated_at      timestamptz       [not null, default: `now()`]
+
+  Indexes {
+    (alias) [unique, name: 'idx_kms_keys_alias_unique']
+    (purpose, status) [name: 'idx_kms_keys_purpose_status', note: 'hot query: docs/sequences/13-security/secrets-cache-fetch.sequence.mmd — find active key by purpose']
+  }
+}
+
+Ref: kms_keys.rotated_from_id > kms_keys.id

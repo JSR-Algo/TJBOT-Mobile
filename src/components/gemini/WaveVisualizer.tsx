@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 const BAR_COUNT = 16;
 const CENTER = (BAR_COUNT - 1) / 2;
@@ -10,18 +11,20 @@ const CENTER = (BAR_COUNT - 1) / 2;
  * When audioLevel>0 (speaking), bars animate proportionally.
  * Center bars are taller, edges taper off u2014 organic wave shape.
  */
-export function WaveVisualizer({ audioLevel, color, isAiSpeaking }: {
+export function WaveVisualizer({ audioLevel, color, isAiSpeaking, reduceMotion = false }: {
   audioLevel: number;
   color: string;
   isAiSpeaking?: boolean;
+  reduceMotion?: boolean;
 }) {
+  const { language } = useAppLanguage();
   const bars = useRef(
     Array.from({ length: BAR_COUNT }, () => new Animated.Value(0.05)),
   ).current;
 
   useEffect(() => {
-    // Silent: all bars go flat
-    if (audioLevel < 0.01 && !isAiSpeaking) {
+    // Silent or reduce-motion: all bars go flat
+    if (reduceMotion || (audioLevel < 0.01 && !isAiSpeaking)) {
       bars.forEach((bar) => {
         Animated.timing(bar, { toValue: 0.05, duration: 150, useNativeDriver: true }).start();
       });
@@ -44,10 +47,10 @@ export function WaveVisualizer({ audioLevel, color, isAiSpeaking }: {
         useNativeDriver: true,
       }).start();
     });
-  }, [audioLevel, isAiSpeaking, bars]);
+  }, [audioLevel, isAiSpeaking, bars, reduceMotion]);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLabel={translateCopy('Voice activity waveform', { locale: language })}>
       {bars.map((bar, i) => (
         <Animated.View
           key={i}

@@ -1,53 +1,13 @@
 /**
- * useOfflineSync — offline-first mutation queue for TBOT mobile.
+ * useOfflineSync — offline-first mutation queue for TJBot mobile.
  *
  * Queues failed API calls in AsyncStorage when the device is offline.
  * Replays them with exponential backoff on reconnect.
  * Prevents session start while offline.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-// ---------------------------------------------------------------------------
-// Lightweight shims so this module compiles even when the native packages
-// haven't been installed yet.  The real packages are declared as peer deps
-// and will be resolved at runtime on device.
-// ---------------------------------------------------------------------------
-
-// AsyncStorage shim
-type AsyncStorageStatic = {
-  getItem: (key: string) => Promise<string | null>;
-  setItem: (key: string, value: string) => Promise<void>;
-};
-
-function getAsyncStorage(): AsyncStorageStatic {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('@react-native-async-storage/async-storage').default;
-  } catch {
-    // In-memory fallback for tests / web
-    const mem: Record<string, string> = {};
-    return {
-      getItem: async (key) => mem[key] ?? null,
-      setItem: async (key, value) => { mem[key] = value; },
-    };
-  }
-}
-
-// NetInfo shim
-type NetInfoSubscription = () => void;
-type NetInfoChangeHandler = (state: { isConnected: boolean | null; isInternetReachable: boolean | null }) => void;
-
-function getNetInfo(): { addEventListener: (handler: NetInfoChangeHandler) => NetInfoSubscription } {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('@react-native-community/netinfo').default;
-  } catch {
-    // No-op fallback — assume always connected
-    return {
-      addEventListener: (_handler: NetInfoChangeHandler) => () => { /* noop */ },
-    };
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,10 +33,12 @@ export interface OfflineSyncState {
 // Constants
 // ---------------------------------------------------------------------------
 
-const QUEUE_STORAGE_KEY = '@tbot/offline_queue';
+const QUEUE_STORAGE_KEY = '@TJBot/offline_queue';
 const MAX_ATTEMPTS = 5;
 const BASE_BACKOFF_MS = 1_000;
 const MAX_BACKOFF_MS = 30_000;
+const UNSAFE_REPLAY_MESSAGE = 'This request cannot be safely replayed.';
+const OFFLINE_UNSAFE_REPLAY_MESSAGE = `You are offline. ${UNSAFE_REPLAY_MESSAGE}`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -91,9 +53,45 @@ function backoffDelay(attempts: number): number {
   return Math.min(delay, MAX_BACKOFF_MS);
 }
 
+function pathFromUrl(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url;
+  }
+}
+
+function isHighRiskReplayPath(path: string): boolean {
+  return (
+    path.includes('/sessions') ||
+    path.includes('/billing/') ||
+    path.includes('/account/delete') ||
+    path.includes('/account/deletion')
+  );
+}
+
+function hasReplayHeader(headers?: HeadersInit | Record<string, string>): boolean {
+  if (!headers) return false;
+  if (headers instanceof Headers) return headers.has('X-Request-Id');
+  if (Array.isArray(headers)) {
+    return headers.some(([key]) => key.toLowerCase() === 'x-request-id');
+  }
+  return Object.keys(headers).some((key) => key.toLowerCase() === 'x-request-id');
+}
+
+function canReplayRequest(
+  url: string,
+  method: string,
+  headers?: HeadersInit | Record<string, string>,
+): boolean {
+  const normalizedMethod = method.toUpperCase();
+  if (normalizedMethod === 'GET' || normalizedMethod === 'HEAD') return true;
+  if (isHighRiskReplayPath(pathFromUrl(url))) return false;
+  return hasReplayHeader(headers);
+}
+
 async function loadQueue(): Promise<QueuedRequest[]> {
   try {
-    const AsyncStorage = getAsyncStorage();
     const raw = await AsyncStorage.getItem(QUEUE_STORAGE_KEY);
     if (!raw) return [];
     return JSON.parse(raw) as QueuedRequest[];
@@ -104,7 +102,6 @@ async function loadQueue(): Promise<QueuedRequest[]> {
 
 async function saveQueue(queue: QueuedRequest[]): Promise<void> {
   try {
-    const AsyncStorage = getAsyncStorage();
     await AsyncStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue));
   } catch {
     // Storage failure — best effort
@@ -133,22 +130,6 @@ export function useOfflineSync() {
     });
   }, []);
 
-  // Listen to connectivity changes
-  useEffect(() => {
-    const NetInfo = getNetInfo();
-    const unsubscribe = NetInfo.addEventListener((netState) => {
-      const connected = netState.isConnected === true && netState.isInternetReachable !== false;
-      setState((s) => ({ ...s, isConnected: connected }));
-
-      if (connected && queueRef.current.length > 0) {
-        void replayQueue();
-      }
-    });
-
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   /**
    * Enqueue a failed request for later replay.
    */
@@ -159,6 +140,10 @@ export function useOfflineSync() {
       body?: unknown,
       headers?: Record<string, string>,
     ): Promise<void> => {
+      if (!canReplayRequest(url, method, headers)) {
+        throw new OfflineError(UNSAFE_REPLAY_MESSAGE);
+      }
+
       const item: QueuedRequest = {
         id: generateId(),
         url,
@@ -226,6 +211,20 @@ export function useOfflineSync() {
     }));
   }, []);
 
+  // Listen to connectivity changes
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((netState) => {
+      const connected = netState.isConnected === true && netState.isInternetReachable !== false;
+      setState((s) => ({ ...s, isConnected: connected }));
+
+      if (connected && queueRef.current.length > 0) {
+        void replayQueue();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [replayQueue]);
+
   /**
    * Clear the entire queue (e.g. on logout).
    */
@@ -249,19 +248,15 @@ export function useOfflineSync() {
       const { isConnected } = state;
 
       if (!isConnected) {
-        const isSessionStart =
-          url.includes('/sessions') &&
-          (options.method?.toUpperCase() === 'POST' || !options.method);
+        const method = options.method ?? 'GET';
 
-        if (isSessionStart) {
-          throw new OfflineError(
-            'You are offline. A session cannot be started without an internet connection.',
-          );
+        if (!canReplayRequest(url, method, options.headers)) {
+          throw new OfflineError(OFFLINE_UNSAFE_REPLAY_MESSAGE);
         }
 
         await enqueue(
           url,
-          options.method ?? 'GET',
+          method,
           options.body ? JSON.parse(options.body as string) : undefined,
           options.headers as Record<string, string>,
         );
@@ -275,9 +270,13 @@ export function useOfflineSync() {
         return await fetch(url, options);
       } catch (err) {
         if (err instanceof TypeError && err.message.toLowerCase().includes('network')) {
+          const method = options.method ?? 'GET';
+          if (!canReplayRequest(url, method, options.headers)) {
+            throw new OfflineError(UNSAFE_REPLAY_MESSAGE);
+          }
           await enqueue(
             url,
-            options.method ?? 'GET',
+            method,
             options.body ? JSON.parse(options.body as string) : undefined,
             options.headers as Record<string, string>,
           );

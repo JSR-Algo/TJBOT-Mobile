@@ -1,0 +1,13 @@
+{
+  "id": "fallback",
+  "owner_lane": "D",
+  "flow": "docs/flows/domains/fallback/flow.generated.mmd",
+  "edge_cases": {
+    "network_error":        ["error", "retry"],
+    "audio_recovery":       ["error", "retry"],
+    "mic_missing":          ["error"],
+    "voice_failed":         ["error"],
+    "reconnecting_overlay": ["retry"],
+    "app_error":            ["error"]
+  }
+}

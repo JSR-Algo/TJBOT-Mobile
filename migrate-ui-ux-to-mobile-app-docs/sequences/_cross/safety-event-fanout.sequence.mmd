@@ -1,0 +1,61 @@
+---
+system: _cross
+flow_id: safety-event-fanout
+surface: multi
+spec_anchor: /software/systems/05-conversation-intelligence-and-safety#output-filter
+actors: [SafetyService, SQS, NotificationService, SafetyInvestigationService, AdminConsole, ParentApp, FCM, SES]
+systems: [sys-05-conversation-intelligence-and-safety, sys-10-notification-delivery, sys-12-support-admin-operations]
+derived_from:
+  - 05-safety/output-filter.sequence.mmd
+  - 10-notifications/sqs-worker-pipeline.sequence.mmd
+  - 12-admin/safety-investigation-w2.sequence.mmd
+apis:
+  - SQS SendMessage tbot-notifications
+  - SQS SendMessage tbot-safety-events
+externals: [SQS, FCM, SES]
+queues:
+  - tbot-notifications (producer)
+  - tbot-safety-events (producer + admin consumer)
+failure_paths:
+  - sqs_publish_failed
+  - parent_unreachable_dlq
+  - investigation_assignment_skipped
+idempotency: event_id propagated through both queues
+retry: SQS auto-retry up to 5; DLQ at 24h
+timeout: 200ms event publish p99
+status: final
+---
+%% DERIVED narrative — safety-event fan-out to parent notify + admin investigation lanes.
+sequenceDiagram
+    autonumber
+    participant SafetyService
+    participant SQS
+    participant NotificationService
+    participant SafetyInvestigationService
+    participant AdminConsole
+    participant ParentApp
+    participant FCM
+    participant SES
+
+    SafetyService->>SafetyService: output filter trips on high-severity block (sys-05)
+    par notify parent lane
+        SafetyService->>SQS: SendMessage tbot-notifications (type,safety_alert)
+        alt sqs_publish_failed
+            SQS--xSafetyService: 5xx — local retry
+        else queued
+            SQS->>NotificationService: pipeline (sys-10 sqs-worker-pipeline)
+            NotificationService->>FCM: push to ParentApp (sys-10)
+            NotificationService->>SES: email (if push fails or preferences)
+            FCM-->>ParentApp: notification
+        end
+        Note over NotificationService,SES: parent_unreachable_dlq — terminal failure after 5 retries.
+    and investigate lane
+        SafetyService->>SQS: SendMessage tbot-safety-events (severity, transcript_ref)
+        SQS->>SafetyInvestigationService: dequeue and assign reviewer
+        alt investigation_assignment_skipped
+            SafetyInvestigationService-->>SQS: no reviewer available — re-queue with delay
+        else assigned
+            SafetyInvestigationService->>AdminConsole: surface in queue (sys-12)
+            AdminConsole-->>SafetyInvestigationService: reviewer opens — see sys-12 safety-investigation-w2
+        end
+    end

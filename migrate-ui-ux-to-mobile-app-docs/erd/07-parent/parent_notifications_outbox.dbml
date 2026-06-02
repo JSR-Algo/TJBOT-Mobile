@@ -1,0 +1,41 @@
+// parent_notifications_outbox — outbound notification events from sys-07 (ControlsService / SummaryWorker).
+// DISTINCT from notification_dispatches (sys-10, Lane F) — this is the sys-07 producer outbox;
+// sys-10 NotificationService reads from tbot-notifications SQS, not this table directly.
+// COPPA: may contain child references → retention required.
+// Source: docs/sequences/07-parent/daily-summary-generation.sequence.mmd
+// Source: docs/sequences/07-parent/weekly-summary-generation.sequence.mmd
+
+enum parent_notification_status {
+  pending
+  enqueued
+  failed
+}
+
+enum parent_notification_event_type {
+  summary_daily_generated
+  summary_weekly_generated
+  cap_reached
+  quiet_hours_enforced
+}
+
+Table parent_notifications_outbox {
+  id              uuid                          [pk]
+  device_id       uuid                          [not null, note: 'cross-domain ref → DeviceService (devices.id)']
+  child_profile_id uuid                         [note: 'cross-domain ref → IdentityService (children.id); nullable for device-level events']
+  event_type      parent_notification_event_type [not null]
+  payload         jsonb                         [not null, note: 'event-specific payload; e.g. {target_date, summaries_created}']
+  status          parent_notification_status    [not null, default: 'pending']
+  enqueued_at     timestamptz                   [note: 'set when SQS tbot-notifications enqueue succeeded']
+  failed_reason   text                          [note: 'set on permanent failure']
+  created_at      timestamptz                   [not null, default: `now()`]
+  updated_at      timestamptz                   [not null, default: `now()`]
+  deleted_at      timestamptz                   [note: 'soft-delete; COPPA retention when child_profile_id set']
+
+  Indexes {
+    (status, created_at) [name: 'idx_parent_notifications_outbox_status_created', note: 'hot query: docs/sequences/07-parent/daily-summary-generation.sequence.mmd — pending outbox sweep']
+    (device_id, event_type, created_at) [name: 'idx_parent_notifications_outbox_device_event', note: 'hot query: docs/sequences/07-parent/weekly-summary-generation.sequence.mmd — recent events by device']
+  }
+}
+
+// Ref: parent_notifications_outbox.device_id > devices.id          // cross-domain ref → DeviceService
+// Ref: parent_notifications_outbox.child_profile_id > children.id  // cross-domain ref → IdentityService

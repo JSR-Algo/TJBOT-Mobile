@@ -1,0 +1,58 @@
+---
+system: sys-06-content-and-personalization
+flow_id: memory-ingest
+surface: internal-RPC
+spec_anchor: /software/systems/06-content-and-personalization#post-internal-v1-personalization-memory-candidates
+actors: [SummaryService, ContentService, ModerationWorker, PostgreSQL]
+apis:
+  - POST /internal/v1/personalization/memory-candidates
+externals: []
+queues:
+  - cp-memory-moderation
+failure_paths:
+  - schema_invalid
+  - sensitive_content_rejected
+  - moderation_dlq_after_5_failures
+  - duplicate_summary_id
+idempotency: memory_summary_id key — duplicate enqueue coalesced by SQS dedup; DB INSERT ON CONFLICT preserves first
+retry: 30s, 5m, 30m on moderation worker — DLQ after 5 failures
+timeout: ingest endpoint 1s — moderation job 60s
+status: final
+---
+%% HAND-AUTHORED — sys-06 §"Memory Lifecycle" + §"Async Jobs and Queues" (no sequenceDiagram in spec).
+sequenceDiagram
+    autonumber
+    participant SummaryService
+    participant ContentService
+    participant ModerationWorker
+    participant PostgreSQL
+
+    SummaryService->>ContentService: POST /internal/v1/personalization/memory-candidates {childProfileId, summaryText, memoryType, sourceTurnIds}
+    alt schema_invalid
+        ContentService-->>SummaryService: 400 schema invalid
+    else duplicate_summary_id
+        ContentService->>PostgreSQL: INSERT child_memory_summaries (pending, suppressed) ON CONFLICT
+        PostgreSQL-->>ContentService: row exists
+        ContentService-->>SummaryService: 200 (idempotent)
+    else moderation_dlq_after_5_failures
+        ContentService->>PostgreSQL: INSERT child_memory_summaries (pending, suppressed)
+        ContentService-)ContentService: emit cp-memory-moderation
+        ModerationWorker->>PostgreSQL: load candidate
+        PostgreSQL--xModerationWorker: connection error 5x
+        Note over ModerationWorker: dead-letter to cp-memory-moderation-dlq
+    else sensitive_content_rejected
+        ContentService->>PostgreSQL: INSERT child_memory_summaries (pending, suppressed)
+        ContentService-)ContentService: emit cp-memory-moderation
+        ModerationWorker->>PostgreSQL: load and classify
+        Note over ModerationWorker: contains address/health/legal/financial — reject
+        ModerationWorker->>PostgreSQL: UPDATE state=rejected
+    else success
+        ContentService->>PostgreSQL: INSERT child_memory_summaries (pending, suppressed)
+        ContentService-)ContentService: emit cp-memory-moderation
+        ContentService-->>SummaryService: 202 {memoryId}
+        ModerationWorker->>PostgreSQL: load candidate
+        PostgreSQL-->>ModerationWorker: candidate
+        ModerationWorker->>ModerationWorker: moderation rules (allowed_summary_only, no PII, no parent-only sensitive)
+        ModerationWorker->>PostgreSQL: UPDATE state=approved, valid_until=now+90d
+    end
+    Note over SummaryService,PostgreSQL: only approved+eligible candidates surface via /retrieve — pending+suppressed never reach live turn

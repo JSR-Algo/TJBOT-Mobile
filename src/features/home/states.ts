@@ -1,0 +1,15 @@
+export const STATES = [
+  { id: 'home_hub_idle', title: 'Home · Idle happy', group: 'Home', state: 'idle', kind: 'happy' },
+  { id: 'home_hub_greet', title: 'Home · Robot greeting', group: 'Home', state: 'greeting', kind: 'happy' },
+  { id: 'home_hub_daily', title: "Home · Today's lesson", group: 'Home', state: 'daily_available', kind: 'happy' },
+  { id: 'home_hub_done', title: 'Home · Lesson done today', group: 'Home', state: 'completed_today', kind: 'happy' },
+  { id: 'home_hub_mic', title: 'Home · Needs microphone', group: 'Home', state: 'mic_needed', kind: 'edge' },
+  { id: 'home_hub_offline', title: 'Home · Reconnecting', group: 'Home', state: 'offline', kind: 'edge' },
+  { id: 'home_hub_zero_child', title: 'Home · No child profile', group: 'Home', state: 'zero_child', kind: 'empty' },
+  { id: 'home_hub_multiple_children', title: 'Home · Multiple children', group: 'Home', state: 'multiple_children', kind: 'choice' },
+  { id: 'home_hub_unpaired_robot', title: 'Home · Robot not paired', group: 'Home', state: 'unpaired_robot', kind: 'empty' },
+  { id: 'home_hub_offline_24h', title: 'Home · Robot offline over 24h', group: 'Home', state: 'offline_24h', kind: 'edge' },
+  { id: 'home_hub_paused', title: 'Home · TJBot paused', group: 'Home', state: 'paused', kind: 'edge' },
+  { id: 'home_hub_quiet_hours', title: 'Home · Quiet hours active', group: 'Home', state: 'quiet_hours', kind: 'edge' },
+  { id: 'home_hub_error', title: 'Home · Refresh error', group: 'Home', state: 'error', kind: 'error' },
+] as const;

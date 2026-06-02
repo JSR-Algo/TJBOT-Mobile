@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ViewStyle, Pressable } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { View, TextInput, StyleSheet, ViewStyle, Pressable } from 'react-native';
+import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
+import { Text } from '@/design-system/primitives/Text';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 interface InputProps {
   label: string;
@@ -14,6 +16,7 @@ interface InputProps {
   maxLength?: number;
   style?: ViewStyle;
   editable?: boolean;
+  testID?: string;
 }
 
 export function Input({
@@ -28,9 +31,11 @@ export function Input({
   maxLength,
   style,
   editable = true,
+  testID,
 }: InputProps): React.JSX.Element {
   const [focused, setFocused] = useState(false);
   const [hidePassword, setHidePassword] = useState(true);
+  const { t } = useAppLanguage();
 
   return (
     <View style={[styles.container, style]}>
@@ -46,7 +51,7 @@ export function Input({
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry && hidePassword}
-          placeholder={placeholder}
+          placeholder={placeholder ? t(placeholder) : undefined}
           placeholderTextColor={colors.textMuted}
           autoCapitalize={secureTextEntry ? 'none' : autoCapitalize}
           keyboardType={keyboardType}
@@ -54,12 +59,27 @@ export function Input({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           editable={editable}
+          testID={testID}
+          autoCorrect={false}
+          spellCheck={false}
+          autoComplete={
+            secureTextEntry
+              ? 'off'
+              : keyboardType === 'email-address'
+                ? 'email'
+                : 'off'
+          }
+          textContentType={secureTextEntry ? 'oneTimeCode' : 'none'}
+          importantForAutofill="no"
         />
         {secureTextEntry && (
           <Pressable
             onPress={() => setHidePassword(!hidePassword)}
             style={styles.eyeButton}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${hidePassword ? t('Show') : t('Hide')} ${t(label)}`}
+            accessibilityState={{ selected: !hidePassword }}
           >
             <Text style={styles.eyeIcon}>{hidePassword ? '\u{1F441}' : '\u{1F648}'}</Text>
           </Pressable>
@@ -108,8 +128,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.divider,
   },
   eyeButton: {
+    minWidth: 44,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   eyeIcon: {
     fontSize: 18,

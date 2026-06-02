@@ -1,0 +1,51 @@
+// media_assets — hybrid DB row + S3 URI for every binary asset surfaced by the platform.
+// Per plan §3 Q-10 default: DB row + S3 URI (needed for moderation + cache invalidation).
+// Consumed by sys-06 content (courses/lessons/activities media), sys-20 authoring (drafts),
+// sys-09 OTA (release artefacts cross-reference for telemetry), sys-22 demo.
+
+enum media_asset_kind {
+  audio
+  image
+  video
+  pdf
+  json
+  ota_image
+  voice_phrase
+  thumbnail
+  cover_art
+}
+
+enum media_asset_status {
+  uploading
+  active
+  archived
+  deleted
+}
+
+Table media_assets {
+  id              uuid                  [pk]
+  kind            media_asset_kind      [not null]
+  status          media_asset_status    [not null, default: 'uploading']
+  s3_uri          varchar(2048)         [not null, note: 's3://bucket/key — bucket policy declares lifecycle']
+  cdn_url         varchar(2048)         [note: 'CloudFront URL when served publicly']
+  content_type    varchar(120)          [not null, note: 'MIME, e.g. audio/mp4, image/png']
+  size_bytes      bigint                [not null]
+  checksum_sha256 varchar(64)           [not null, note: 'hex-encoded; verified at upload and read']
+  duration_ms     integer               [note: 'audio/video only']
+  width_px        integer               [note: 'image/video only']
+  height_px       integer               [note: 'image/video only']
+  owner_service   varchar(64)           [not null, note: 'service that created the asset; rules vary by kind']
+  metadata        jsonb                 [not null, default: `'{}'::jsonb`]
+  moderation_state varchar(32)          [note: 'pending | approved | rejected — populated by sys-05 ModerationWorker for user-supplied media']
+  expires_at      timestamptz           [note: 'TTL for ephemeral assets (e.g. phrase cache)']
+  created_at      timestamptz           [not null, default: `now()`]
+  updated_at      timestamptz           [not null, default: `now()`]
+  archived_at     timestamptz
+  deleted_at      timestamptz
+
+  Indexes {
+    (checksum_sha256) [name: 'idx_media_assets_checksum', note: 'hot query: content-addressed dedup at upload time']
+    (kind, status) [name: 'idx_media_assets_kind_status', note: 'hot query: docs/sequences/06-content/content-pack-publish.sequence.mmd — per-kind admin listing of active assets']
+    (owner_service, created_at) [name: 'idx_media_assets_owner_service_created_at', note: 'hot query: docs/sequences/14-retention/cron-job-base-execution.sequence.mmd — per-service inventory + retention sweep']
+  }
+}

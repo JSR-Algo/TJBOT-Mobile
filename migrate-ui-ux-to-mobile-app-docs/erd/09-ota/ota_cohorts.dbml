@@ -1,0 +1,23 @@
+// ota_cohorts — OTA-specific cohort overlays.
+// sys-08 `config_cohorts` is the cross-system primary cohort table; sys-09 may also
+// stand up an OTA-only cohort (e.g. "canary devices for next firmware") that is
+// not desirable to expose to config assembly. This entity captures that subset.
+// Source: docs/site/software/systems/09-ota-release-management.md
+//         §Deterministic Device Eligibility + cohort filtering on /v1/ota/check.
+
+Table ota_cohorts {
+  id                  uuid           [pk]
+  name                varchar(120)   [not null]
+  description         text
+  base_cohort_id      uuid           [note: 'optional ref to sys-08 config_cohorts (cross-domain) — if set this OTA cohort is a subset of that fleet cohort']
+  selection_criteria  jsonb          [not null, default: `'{}'::jsonb`, note: 'AND-joined keys hw_revision / fw_version_gte / fw_version_lt']
+  canary_only         boolean        [not null, default: false, note: 'when true rollout cannot move beyond 25% without admin override']
+  created_at          timestamptz    [not null, default: `now()`]
+  updated_at          timestamptz    [not null, default: `now()`]
+
+  Indexes {
+    (name) [unique, name: 'idx_ota_cohorts_name_unique']
+  }
+}
+
+// Ref: ota_cohorts.base_cohort_id > config_cohorts.id    // cross-domain ref → ConfigService (sys-08); documented in _shared/cross-domain-data-flow.md per Phase 3 decision

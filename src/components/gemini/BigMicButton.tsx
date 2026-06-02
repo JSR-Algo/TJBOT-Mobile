@@ -6,13 +6,14 @@ interface BigMicButtonProps {
   disabled: boolean;
   onPress: () => void;
   color: string;
+  reduceMotion?: boolean;
 }
 
-export function BigMicButton({ isActive, disabled, onPress, color }: BigMicButtonProps) {
+export function BigMicButton({ isActive, disabled, onPress, color, reduceMotion = false }: BigMicButtonProps) {
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (isActive) {
+    if (isActive && !reduceMotion) {
       const anim = Animated.loop(
         Animated.sequence([
           Animated.timing(pulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
@@ -24,7 +25,7 @@ export function BigMicButton({ isActive, disabled, onPress, color }: BigMicButto
     } else {
       pulse.setValue(1);
     }
-  }, [isActive, pulse]);
+  }, [isActive, pulse, reduceMotion]);
 
   return (
     <Animated.View style={{ transform: [{ scale: pulse }] }}>
@@ -40,6 +41,9 @@ export function BigMicButton({ isActive, disabled, onPress, color }: BigMicButto
         onPress={onPress}
         disabled={disabled}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={isActive ? 'Stop microphone' : 'Start microphone'}
+        accessibilityState={{ disabled, selected: isActive }}
         style={[
           styles.button,
           {

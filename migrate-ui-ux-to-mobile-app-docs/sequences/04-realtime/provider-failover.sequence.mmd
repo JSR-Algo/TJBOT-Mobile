@@ -1,0 +1,49 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: provider-failover
+surface: device
+spec_anchor: /software/systems/04-realtime-session-orchestrator#provider-failover
+actors: [Orchestrator, GoogleLiveFlashPrimary, GoogleLiveFlashFallback, PhraseCache]
+apis: []
+externals: [GoogleLiveFlashPrimary, GoogleLiveFlashFallback, PhraseCache]
+queues:
+  - tbot-circuit-breaker-event
+failure_paths:
+  - primary_timeout_circuit_opens
+  - fallback_provider_unavailable
+  - all_providers_failed_use_canned
+idempotency: per-turn — failover does not duplicate user-visible output
+retry: 1 retry inside primary (per call matrix) before failover — circuit opens after 5 failures in 30s
+timeout: Google Live connect 3000ms, transcript 10000ms, TTS first byte 2000ms
+status: final
+---
+%% HAND-CURATED — sys-04 §8 failover decision tree + §9 retry matrix.
+sequenceDiagram
+    autonumber
+    participant Orchestrator
+    participant GoogleLiveFlashPrimary
+    participant GoogleLiveFlashFallback
+    participant PhraseCache
+
+    Orchestrator->>GoogleLiveFlashPrimary: stream STT/LLM/TTS request
+    alt primary_timeout_circuit_opens
+        Note over GoogleLiveFlashPrimary: 5 failures in 30s — circuit opens
+        GoogleLiveFlashPrimary--xOrchestrator: timeout after 3000ms
+        Orchestrator-)Orchestrator: emit tbot-circuit-breaker-event opened
+        Orchestrator->>GoogleLiveFlashFallback: retry in fallback region
+        GoogleLiveFlashFallback-->>Orchestrator: stream response
+    else fallback_provider_unavailable
+        Orchestrator->>GoogleLiveFlashFallback: retry in fallback region
+        GoogleLiveFlashFallback--xOrchestrator: 5xx
+        Orchestrator->>PhraseCache: lookup cached response by intent and content hash
+        PhraseCache-->>Orchestrator: cached phrase audio
+    else all_providers_failed_use_canned
+        Orchestrator->>GoogleLiveFlashFallback: retry
+        GoogleLiveFlashFallback--xOrchestrator: error
+        Orchestrator->>PhraseCache: lookup
+        PhraseCache--xOrchestrator: miss
+        Note over Orchestrator: send LLM_TOKEN text frames and ERROR E-RT-212
+    else success
+        GoogleLiveFlashPrimary-->>Orchestrator: stream STT_FINAL and LLM_TOKEN and TTS_AUDIO
+    end
+    Note over Orchestrator: half-open after 30s — 5 consecutive successes required to close — automatic failback, no sticky failover

@@ -1,0 +1,53 @@
+@startuml TBOT-CourseLibrary
+title Domain · course-library — parent commerce + send-to-robot orchestration
+left to right direction
+
+actor Parent
+actor "Robot Device" as Robot <<external>>
+
+package "course-library" {
+  usecase "Browse Library"           as UC_CL_BROWSE
+  usecase "View Course Detail"       as UC_CL_DETAIL
+  usecase "Buy / Unlock Course"      as UC_CL_BUY
+  usecase "Course Added to Robot"    as UC_CL_ADDED
+  usecase "Send Lesson to Robot"     as UC_CL_SEND
+  usecase "Robot Ready"              as UC_CL_READY
+  usecase "Monitor Lesson on Robot"  as UC_CL_MONITOR
+  usecase "Companion View"           as UC_CL_COMPANION
+  usecase "Lesson Complete (synced)" as UC_CL_COMPLETE
+  usecase "Resync Robot"             as UC_CL_RESYNC
+  usecase "View Locked Course"       as UC_CL_LOCKED
+}
+
+Parent --> UC_CL_BROWSE
+Parent --> UC_CL_DETAIL
+Parent --> UC_CL_BUY
+Parent --> UC_CL_SEND
+Parent --> UC_CL_MONITOR
+Parent --> UC_CL_COMPANION
+Parent --> UC_CL_RESYNC
+Parent --> UC_CL_LOCKED
+
+UC_CL_BROWSE ..> UC_CL_DETAIL : tap card
+UC_CL_DETAIL ..> UC_CL_BUY    : "Add to Robot"
+UC_CL_BUY    ..> UC_CL_ADDED  : on confirm
+UC_CL_ADDED  ..> UC_CL_SEND   : "Send today's lesson"
+UC_CL_SEND   ..> UC_CL_READY  : on send
+UC_CL_READY  ..> UC_CL_MONITOR : "Hand to child"
+UC_CL_MONITOR ..> UC_CL_COMPANION : "See what's happening"
+UC_CL_RESYNC ..> UC_CL_ADDED : "Reconnect Robot now"
+
+UC_CL_BUY     ..> UC_CL_LOCKED : <<extend>> insufficient access
+UC_CL_BUY     ..> (Confirm Unlock 4-digit) : <<include>> UC_PG_UNLOCK
+UC_CL_SEND    ..> Robot : <<delegate>>
+UC_CL_MONITOR ..> Robot : <<delegate>>
+UC_CL_RESYNC  ..> Robot : <<delegate>>
+
+note top of UC_CL_BROWSE
+  [requires] parent-gate : UC_PG_PASS
+  [requires] device-pairing : robot must be paired
+end note
+
+' Files: src/features/course-library/*.jsx
+' API:   src/services/api/course-library.api.js
+@enduml

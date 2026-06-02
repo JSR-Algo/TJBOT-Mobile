@@ -7,19 +7,16 @@
  * target that never get produced. The only supported fixes are:
  *   1. upgrade react-native-ble-plx to a version with a proper codegen spec, or
  *   2. pin React Native back to <= 0.82 (old architecture), or
- *   3. opt ble-plx out of Android autolinking entirely.
+ *   3. opt ble-plx out of Android autolinking and link the legacy native
+ *      package manually.
  *
- * Until ble-plx ships an RN 0.83-compatible release, we take option 3 for
- * local debug installs so the rest of the app (auth, households, devices API,
- * notifications, Gemini conversation) can actually be exercised against the
- * AWS staging backend on a physical phone. At runtime, the `initializeBle()`
- * helper in `src/ble/service.ts` already has a try/catch (added in the Round 2
- * device-registration fix) that catches the "native module not linked" error
- * and degrades gracefully to `{ available: false }`. So DeviceSetupScreen
- * still renders — it just shows the BLE section as unavailable instead of
- * crashing the bundle.
+ * Until ble-plx ships an RN 0.83-compatible release, we take option 3: keep it
+ * out of generated autolinking/codegen, then include `:react-native-ble-plx`,
+ * `implementation project(':react-native-ble-plx')`, and `BlePlxPackage()`
+ * manually in the Android host. This preserves real BLE provisioning on
+ * physical Android while avoiding the broken generated codegen target.
  *
- * Remove this override when ble-plx is upgraded.
+ * Remove this override and the manual Android link when ble-plx is upgraded.
  */
 module.exports = {
   dependencies: {

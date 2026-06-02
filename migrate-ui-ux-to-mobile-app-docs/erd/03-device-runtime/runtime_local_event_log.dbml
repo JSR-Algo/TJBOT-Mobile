@@ -1,0 +1,19 @@
+Table runtime_local_event_log {
+  id              uuid        [pk, note: 'service-generated; never serial']
+  device_id       uuid        [not null, note: 'ref → devices.id']
+  event_type      varchar(64) [not null, note: 'e.g. CONFIG_APPLIED, WAKE_WORD_DETECTED, AUDIO_OVERRUN, WS_DISCONNECT']
+  severity        varchar(16) [not null, note: 'info | warning | critical']
+  fault_code      varchar(64) [note: 'e.g. E-AUD-102, E-RT-301; null for non-fault events']
+  payload         jsonb       [note: 'event-specific metadata; shape varies by event_type']
+  device_ts       timestamptz [not null, note: 'timestamp as recorded on device (NVS); may lag backend upload']
+  uploaded_at     timestamptz [not null, note: 'when device uploaded this batch to backend']
+  created_at      timestamptz [not null, default: `now()`]
+  updated_at      timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (device_id, device_ts) [name: 'idx_runtime_local_event_log_device_id_ts', note: 'hot query: docs/sequences/03-device-runtime/offline-fallback.sequence.mmd — support: event timeline per device']
+    (event_type, device_ts) [name: 'idx_runtime_local_event_log_event_type_ts', note: 'hot query: docs/sequences/03-device-runtime/safe-mode-entry.sequence.mmd — fleet fault-code aggregation']
+  }
+}
+
+// Ref: runtime_local_event_log.device_id > devices.id   // cross-domain ref → DeviceService (sys-02); documented in _shared/cross-domain-data-flow.md per Phase 3 decision

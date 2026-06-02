@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
-import { RobotState } from '../../screens/interaction/RobotStateMachine';
-import { ModeTheme } from './RobotModeTheme';
+import { RobotState, ModeTheme } from './RobotModeTheme';
 import {
   useBreathingAnimation,
   useMicPulseAnimation,

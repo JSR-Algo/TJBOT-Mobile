@@ -1,0 +1,55 @@
+---
+system: sys-07-parent-controls-summary
+flow_id: config-propagation
+surface: device
+spec_anchor: /software/systems/07-parent-controls-summary#controls-propagation-flow
+actors: [ConfigService, MQTT, Device, PostgreSQL]
+apis:
+  - GET /v1/config/fetch
+  - POST /v1/config/applied
+externals: [MQTT]
+queues: []
+failure_paths:
+  - device_offline
+  - mqtt_delivery_failure
+  - signature_invalid
+  - apply_timeout
+idempotency: device applies highest monotonic config_version; ignores stale notifications
+retry: device periodic GET /v1/config/fetch every 6 hours when offline
+timeout: 60s push (online) — indefinite (offline) — 30s device ACK
+status: final
+---
+%% HAND-CURATED. Externally-observable concurrency hint: config_version monotonic counter per Principle 1.
+sequenceDiagram
+    autonumber
+    participant ConfigService
+    participant MQTT
+    participant Device
+    participant PostgreSQL
+
+    ConfigService->>PostgreSQL: store signed blob (incremented config_version)
+    ConfigService->>MQTT: publish device/:deviceId/config/notify {config_version}
+
+    alt device_offline
+        MQTT--xDevice: notification undelivered
+        Note over Device,ConfigService: state PUSHED_TO_CONFIG — wait indefinitely
+        Device->>ConfigService: (on reconnect or every 6h) GET /v1/config/fetch
+    else delivered
+        MQTT->>Device: config/notify {config_version}
+        Device->>ConfigService: GET /v1/config/fetch
+    end
+
+    alt signature_invalid
+        Device->>Device: ECDSA P-256 verify fails
+        Device-->>ConfigService: (no apply — emit telemetry)
+    else apply_timeout
+        Device->>Device: apply takes > 30s
+        Note over Device,ConfigService: re-ACK on next heartbeat
+    else applied
+        ConfigService-->>Device: 200 signed config blob
+        Device->>Device: verify signature and apply
+        Device->>ConfigService: POST /v1/config/applied {config_version, applied_at}
+        ConfigService->>PostgreSQL: mark CONFIRMED
+    end
+
+    Note over ConfigService,Device: target ~1.35s end-to-end · escalation alert at 1h online / 24h offline / 72h auto-ticket

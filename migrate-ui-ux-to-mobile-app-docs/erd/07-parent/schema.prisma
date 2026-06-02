@@ -1,0 +1,146 @@
+// AUTO-GENERATED FROM docs/erd/07-parent/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/07-parent/parent_controls.dbml, docs/erd/07-parent/parent_notifications_outbox.dbml, docs/erd/07-parent/usage_caps.dbml, docs/erd/07-parent/weekly_summaries.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum parent_notification_status {
+  pending
+  enqueued
+  failed
+}
+
+enum parent_notification_event_type {
+  summary_daily_generated
+  summary_weekly_generated
+  cap_reached
+  quiet_hours_enforced
+}
+
+enum engagement_trend {
+  increasing
+  stable
+  declining
+}
+
+/// Source: docs/erd/07-parent/parent_controls.dbml
+model ParentControls {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService (devices.id)
+  householdId String @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService (households.id)
+  dailyLimitMinutes Int? @db.SmallInt @map("daily_limit_minutes")
+  /// NULL = no limit; enforced by ConfigService
+  perSessionLimitMin Int? @db.SmallInt @map("per_session_limit_min")
+  /// NULL = no limit
+  quietHoursEnabled Boolean @default(false) @map("quiet_hours_enabled")
+  quietHoursStart String? @map("quiet_hours_start")
+  /// local time; NULL when quiet_hours_enabled=false
+  /// TODO: unknown DBML type "time" — review and refine type map
+  quietHoursEnd String? @map("quiet_hours_end")
+  /// local time; NULL when quiet_hours_enabled=false
+  /// TODO: unknown DBML type "time" — review and refine type map
+  timezone String @db.VarChar(64)
+  /// IANA timezone; used for DST rebuild in dst-rebuild.sequence.mmd
+  contentToggles Json? @db.JsonB @map("content_toggles")
+  /// map of topic_slug → enabled boolean; governs content selection
+  version Int @default(0)
+  /// optimistic concurrency counter; incremented on each PUT
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([deviceId], map: "idx_parent_controls_device_id_unique")
+  @@index([householdId], map: "idx_parent_controls_household_id")
+  @@index([quietHoursEnabled, timezone], map: "idx_parent_controls_quiet_hours_tz")
+  @@map("parent_controls")
+}
+
+/// Source: docs/erd/07-parent/parent_notifications_outbox.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model ParentNotificationsOutbox {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService (devices.id)
+  childProfileId String? @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService (children.id); nullable for device-level events
+  eventType parent_notification_event_type @map("event_type")
+  payload Json @db.JsonB
+  /// event-specific payload; e.g. {target_date, summaries_created}
+  status parent_notification_status @default(pending)
+  enqueuedAt DateTime? @db.Timestamptz(6) @map("enqueued_at")
+  /// set when SQS tbot-notifications enqueue succeeded
+  failedReason String? @db.Text @map("failed_reason")
+  /// set on permanent failure
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; COPPA retention when child_profile_id set
+  @@index([status, createdAt], map: "idx_parent_notifications_outbox_status_created")
+  @@index([deviceId, eventType, createdAt], map: "idx_parent_notifications_outbox_device_event")
+  @@index([deletedAt], map: "idx_parent_notifications_outbox_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("parent_notifications_outbox")
+}
+
+/// Source: docs/erd/07-parent/usage_caps.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model UsageCaps {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService (devices.id)
+  childProfileId String @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService (children.id)
+  capDate String @map("cap_date")
+  /// local calendar date of enforcement; UTC stored
+  /// TODO: unknown DBML type "date" — review and refine type map
+  consumedMinutes Int @default(0) @map("consumed_minutes")
+  /// minutes consumed so far this day
+  cappedAt DateTime? @db.Timestamptz(6) @map("capped_at")
+  /// set when daily limit reached; NULL while under cap
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; COPPA retention
+  @@unique([deviceId, childProfileId, capDate], map: "idx_usage_caps_device_child_date_unique")
+  @@index([childProfileId, capDate], map: "idx_usage_caps_child_date")
+  @@index([deletedAt], map: "idx_usage_caps_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("usage_caps")
+}
+
+/// Source: docs/erd/07-parent/weekly_summaries.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model WeeklySummaries {
+  id String @id @default(uuid()) @db.Uuid
+  deviceId String @db.Uuid @map("device_id")
+  /// cross-domain ref → DeviceService (devices.id)
+  childProfileId String @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService (children.id)
+  isoWeek String @db.VarChar(8) @map("iso_week")
+  /// ISO 8601 week; format YYYY-Www e.g. 2026-W20
+  totalMinutes Int @default(0) @map("total_minutes")
+  /// sum of daily_summaries.total_minutes for the week
+  activitiesCount Int @default(0) @map("activities_count")
+  wordsIntroduced Int @default(0) @map("words_introduced")
+  engagementTrend engagement_trend @default(stable) @map("engagement_trend")
+  /// increasing if Δ ≥ +15%; declining if Δ ≤ -15%
+  topicsCovered Json? @db.JsonB @map("topics_covered")
+  /// array of topic slugs covered during the week
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; COPPA retention
+  @@unique([deviceId, childProfileId, isoWeek], map: "idx_weekly_summaries_device_child_week_unique")
+  @@index([childProfileId, isoWeek], map: "idx_weekly_summaries_child_week")
+  @@index([deletedAt], map: "idx_weekly_summaries_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("weekly_summaries")
+}
+

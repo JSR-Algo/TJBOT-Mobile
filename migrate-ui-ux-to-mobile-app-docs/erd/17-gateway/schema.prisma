@@ -1,0 +1,71 @@
+// AUTO-GENERATED FROM docs/erd/17-gateway/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/17-gateway/api_keys.dbml, docs/erd/17-gateway/rate_limit_buckets.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum api_key_type {
+  device_bearer
+  admin_bearer
+}
+
+enum rate_limit_subject_kind {
+  user
+  device
+  ip_address
+  api_key
+}
+
+/// Source: docs/erd/17-gateway/api_keys.dbml
+model ApiKeys {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  keyHash String @db.VarChar(64) @unique @map("key_hash")
+  /// SHA-256 of the raw API key; raw key never stored
+  keyPrefix String @db.VarChar(8) @map("key_prefix")
+  /// first 8 chars of raw key for identification in logs (non-secret)
+  type api_key_type
+  ownerId String @db.Uuid @map("owner_id")
+  /// UUID of owning entity — device UUID if type=device_bearer, admin_user UUID if type=admin_bearer
+  description String? @db.VarChar(255)
+  lastUsedAt DateTime? @db.Timestamptz(6) @map("last_used_at")
+  expiresAt DateTime? @db.Timestamptz(6) @map("expires_at")
+  /// null = no expiry; device keys typically long-lived
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([keyHash], map: "idx_api_keys_key_hash_unique")
+  @@index([ownerId, type], map: "idx_api_keys_owner_id_type")
+  @@index([type, revokedAt], map: "idx_api_keys_type_revoked_at")
+  @@map("api_keys")
+}
+
+/// Source: docs/erd/17-gateway/rate_limit_buckets.dbml
+/// hypertable: column=window_start interval=1h — post-migration create_hypertable() trigger required (TimescaleDB).
+model RateLimitBuckets {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  subjectKind rate_limit_subject_kind @map("subject_kind")
+  subjectId String @db.VarChar(128) @map("subject_id")
+  /// user UUID, device UUID, hashed IP, or api_key UUID — must match subject_kind
+  windowStart DateTime @db.Timestamptz(6) @map("window_start")
+  /// start of the time window (e.g. floor(now() to 1min)
+  windowSizeS Int @default(60) @map("window_size_s")
+  /// window duration in seconds
+  requestCount Int @default(0) @map("request_count")
+  limitValue Int @map("limit_value")
+  /// maximum requests allowed in this window
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([subjectKind, subjectId, windowStart], map: "idx_rate_limit_buckets_subject_window_unique")
+  @@index([windowStart], map: "idx_rate_limit_buckets_window_start")
+  @@map("rate_limit_buckets")
+}
+

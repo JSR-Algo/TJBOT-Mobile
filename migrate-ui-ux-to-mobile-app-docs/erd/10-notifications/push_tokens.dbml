@@ -1,0 +1,37 @@
+// push_tokens — FCM (Android) / APNs (iOS) device tokens per user.
+// One user may have many tokens (phone + tablet, app reinstalls); invalidated tokens
+// remain rows but never receive sends. Spec stores a single token in
+// notification_preferences.push_token; ERD-level decomposes into its own table for
+// multi-device support and per-token lifecycle.
+// Source: docs/site/software/systems/10-notification-delivery.md §Push Implementation (FCM)
+//         + §Data Model preferences.push_token.
+
+enum push_token_status {
+  active
+  invalidated
+  revoked
+}
+
+enum push_token_platform {
+  ios
+  android
+}
+
+Table push_tokens {
+  id              uuid                  [pk]
+  user_id         uuid                  [not null, note: 'cross-domain ref → IdentityService (sys-01 users)']
+  token           text                  [not null, note: 'opaque token from FCM HTTP v1 / APNs — never logged; treat as secret']
+  platform        push_token_platform   [not null]
+  app_version     varchar(64)
+  device_label    varchar(120)          [note: 'iPhone 14, Pixel 8 etc. — for parent-facing device list']
+  status          push_token_status     [not null, default: 'active']
+  invalidated_at  timestamptz           [note: 'set when FCM returned token_invalid']
+  last_used_at    timestamptz
+  created_at      timestamptz           [not null, default: `now()`]
+  updated_at      timestamptz           [not null, default: `now()`]
+
+  Indexes {
+    (user_id, status) [name: 'idx_push_tokens_user_status', note: 'hot query: docs/sequences/10-notifications/sqs-worker-pipeline.sequence.mmd — load active tokens for parent']
+    (token) [unique, name: 'idx_push_tokens_token_unique']
+  }
+}

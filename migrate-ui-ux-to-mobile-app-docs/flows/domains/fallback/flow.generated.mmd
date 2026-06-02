@@ -1,0 +1,19 @@
+%% GENERATED FROM nav-graph-data.json sha=f0475d686227. Do not edit by hand.
+%% domain: fallback
+flowchart TD
+  classDef happy fill:#dcfce7,stroke:#166534
+  classDef edge  fill:#fee2e2,stroke:#991b1b
+  subgraph Fallback["Fallback"]
+    app_error(["Generic App Error"])
+    audio_recovery(["Audio Permission Recovery"])
+    help_faq["Help & FAQ"]
+    kid_settings["Settings"]
+    lesson_resume["Lesson Resume"]
+    mic_missing(["Mic Permission Missing"])
+    network_error(["Network Error"])
+    reconnecting_overlay(["Reconnecting Overlay"])
+    safety_redirect["Safety Redirect"]
+    voice_failed(["Voice Session Failed"])
+  end
+  class help_faq,kid_settings,lesson_resume,safety_redirect happy
+  class app_error,audio_recovery,mic_missing,network_error,reconnecting_overlay,voice_failed edge

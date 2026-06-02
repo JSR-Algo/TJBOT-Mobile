@@ -1,0 +1,30 @@
+// example_entity.dbml — template demonstrating every CONVENTIONS.md rule.
+// Used as the validator self-test fixture. Copy this file when authoring a new entity
+// and rename the table + the file in lock-step with its sibling .md.
+
+enum example_entity_status {
+  pending
+  active
+  archived
+}
+
+Table example_entity {
+  id          uuid        [pk, note: 'service-generated; never serial']
+  household_id uuid       [not null, note: 'cross-domain ref → IdentityService']
+  email       varchar(254) [not null]
+  display_url varchar(2048)
+  amount_cents bigint     [not null, default: 0, note: 'money: bigint cents only']
+  payload     jsonb
+  status      example_entity_status [not null, default: 'pending']
+  created_at  timestamptz [not null, default: `now()`]
+  updated_at  timestamptz [not null, default: `now()`]
+  deleted_at  timestamptz [note: 'soft-delete; retention: coppa-180d']
+
+  Indexes {
+    (household_id, status) [name: 'idx_example_entity_household_id_status_active', note: 'hot query: docs/sequences/00-template/example.sequence.mmd']
+    (email) [unique, name: 'idx_example_entity_email_unique']
+  }
+}
+
+// Cross-domain ref example — uncomment in real files once the target table exists.
+// Ref: example_entity.household_id > households.id    // cross-domain ref → IdentityService

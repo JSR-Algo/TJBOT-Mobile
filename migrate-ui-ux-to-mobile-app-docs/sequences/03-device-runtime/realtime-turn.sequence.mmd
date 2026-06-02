@@ -1,0 +1,64 @@
+---
+system: sys-03-device-runtime-local-interaction
+flow_id: realtime-turn
+surface: device
+spec_anchor: /software/systems/03-device-runtime-local-interaction#realtime-session-contract
+actors: [Device, RealtimeService]
+apis:
+  - GET /v1/realtime/connect
+externals: []
+queues: []
+failure_paths:
+  - listening_timeout
+  - session_first_chunk_timeout
+  - barge_in_triggered
+  - chunkSeq_out_of_order
+  - duplicate_chunk
+idempotency: per-session sessionId; chunkSeq strictly increasing per session; duplicate tts.chunk ignored if checksum seen
+retry: device-side retry on WS reconnect; idempotent fallback on duplicate frames
+timeout: 12s listening (15s patient) · 30s clause cap · 120s session cap
+status: final
+---
+%% HAND-CURATED. Wake or touch → LISTENING → THINKING → SPEAKING, with barge-in per sys-03 §7.4 + §6.3.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant RealtimeService
+
+    Note over Device: state=IDLE_READY · wake or touch event → state=LISTENING
+    Device->>RealtimeService: WS {"type":"session.start", sessionId, activation:"wake_word", traceId}
+    Device->>RealtimeService: WS {"type":"audio.append", sessionId, seq, pcm16le}
+    alt listening_timeout (12s normal / 15s patient mode)
+        Device->>Device: emit E-AUD-101, exit to IDLE_READY (optional retry earcon)
+    else end-of-speech (VAD close 650ms silence)
+        Device->>RealtimeService: WS {"type":"audio.commit", sessionId, finalSeq}
+        Note over Device: state=THINKING (optional filler cue after threshold)
+    end
+
+    alt session_first_chunk_timeout (E-RT-302)
+        RealtimeService-->>Device: WS {"type":"session.error", code:"RT-UPSTREAM-TIMEOUT"}
+        Device->>Device: play local fallback phrase, state=OFFLINE_LIMITED or IDLE_READY
+    else success
+        RealtimeService-->>Device: WS {"type":"tts.chunk", sessionId, chunkSeq, audio}
+        Note over Device: state=SPEAKING — jitter buffer requires 180ms before playback
+        alt duplicate_chunk (same sessionId+chunkSeq+checksum)
+            Device->>Device: ignore duplicate, do NOT reset playback cursor, increment realtime_tts_duplicate_chunk_total
+        else chunkSeq_out_of_order
+            Device->>Device: drop frame, increment drop counter
+        else success
+            Device->>Device: write to rb_tts_stream, decode, drain to I2S
+        end
+        RealtimeService-->>Device: WS {"type":"render.cue"} | {"type":"motion.cue"}
+        Note over Device: stale cues older than playback cursor - 300ms (render) / 500ms (motion) are dropped
+
+        alt barge_in_triggered
+            Device->>Device: barge-in detector fires → set playback stop flag, flush rb_tts_stream, stop I2S within p95 <100ms
+            Device->>RealtimeService: WS {"type":"session.cancel", sessionId, reason:"barge_in"}
+            Note over Device: state=LISTENING (new turn begins)
+        else playback_complete
+            RealtimeService-->>Device: WS {"type":"session.end", sessionId}
+            Note over Device: state=IDLE_READY
+        end
+    end
+
+    Note over Device,RealtimeService: timeout 12s listening · 30s clause / 120s session caps · sessionId memory-only zeroed after use

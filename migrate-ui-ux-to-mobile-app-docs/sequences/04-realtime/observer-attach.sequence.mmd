@@ -1,0 +1,81 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: observer-attach
+surface: mobile
+spec_anchor: /software/systems/04-realtime-session-orchestrator#observer-lane
+actors: [ParentApp, Gateway, RealtimeService, Redis]
+apis:
+  - WS wss://realtime/v1/observer/{session_id}
+externals: []
+queues: []
+failure_paths:
+  - session_not_found
+  - session_terminated
+  - not_authorized_observer
+  - ws_handshake_failed
+idempotency: WS connect is idempotent — re-attach replays current state snapshot; multi-subscriber (N parent devices may attach simultaneously)
+retry: client-side reconnect with exponential backoff; server pushes full state snapshot on every reconnect
+timeout: WS handshake 3s p99; server idle ping every 60s; idle timeout 5min
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant RealtimeService
+    participant Redis
+
+    ParentApp->>Gateway: WS upgrade GET wss://realtime/v1/observer/{session_id} and Authorization: Bearer token
+    Gateway->>Gateway: JWT verify and rate-limit (sys-17)
+
+    alt ws_handshake_failed
+        Gateway-->>ParentApp: 400 / 426 Upgrade Required
+    else JWT invalid
+        Gateway-->>ParentApp: 401 ws_handshake_failed
+    else JWT valid
+        Gateway->>RealtimeService: WebSocket upgrade forward
+
+        RealtimeService->>Redis: GET realtime_session:{session_id} {state, user_id, child_id, turn_count, start_at}
+        alt session_not_found
+            Redis-->>RealtimeService: nil
+            RealtimeService-->>ParentApp: 404 session_not_found
+        else session_terminated
+            Redis-->>RealtimeService: {state: ENDED|TIMED_OUT|COST_CAPPED|PARENT_STOPPED|ABANDONED}
+            RealtimeService-->>ParentApp: 410 session_terminated {end_reason}
+        else not_authorized_observer
+            Redis-->>RealtimeService: {user_id: other_user_id}
+            Note over RealtimeService: token user_id != realtime_sessions.user_id — FK chain violation
+            RealtimeService-->>ParentApp: 403 not_authorized_observer
+        else authorized
+            Redis-->>RealtimeService: {state, user_id, child_id, turn_count, start_at, current_phase}
+            Note over RealtimeService: token user_id matches realtime_sessions.user_id — read access granted
+            RealtimeService-->>ParentApp: 101 Switching Protocols
+            %% Multi-subscriber: N parent devices may attach simultaneously (ADR-0006 D4+D7)
+            RealtimeService->>Redis: SUBSCRIBE session:{session_id}:observer
+            Redis-->>RealtimeService: subscribed
+
+            RealtimeService-->>ParentApp: observer_snapshot {current_state, turn_count, start_at, current_phase, child_id}
+
+            Note over ParentApp,Redis: server pushes observer events as session progresses
+
+            RealtimeService-->>ParentApp: session.started {session_id, child_id, course_id, start_at}
+            RealtimeService-->>ParentApp: turn.started {turn_id, turn_count, phase: listening}
+            RealtimeService-->>ParentApp: turn.completed {turn_id, end_reason: success|fallback, phase: idle}
+            RealtimeService-->>ParentApp: safety.halt {turn_id, halt_reason}
+            RealtimeService-->>ParentApp: session.reconnecting {since}
+            RealtimeService-->>ParentApp: session.resumed {resumed_at, turn_count}
+            RealtimeService-->>ParentApp: session.end {end_reason: completed|timed_out|cost_capped|parent_stopped|abandoned_disconnect, summary_available: bool}
+
+            Note over ParentApp: phone disconnect is invisible to conversation (ADR-0006 D7) — robot WS unaffected
+            Note over ParentApp,RealtimeService: on phone reconnect, re-attach replays observer_snapshot from current state
+            loop idle keepalive
+                RealtimeService-->>ParentApp: PING every 60s
+                ParentApp-->>RealtimeService: PONG
+            end
+        end
+    end
+
+    Note over ParentApp,Redis: WS handshake 3s p99 — idle timeout 5min — observer lane multi-subscriber, does not count toward unique-session index
+    %% see also: docs/sequences/04-realtime/session-start-mobile.sequence.mmd
+    %% see also: docs/sequences/04-realtime/ws-handshake.sequence.mmd (device WS — distinct lane)

@@ -1,0 +1,45 @@
+---
+system: sys-06-content-and-personalization
+flow_id: topic-decay
+surface: cron
+spec_anchor: /software/systems/06-content-and-personalization#topic-preference-decay
+actors: [DecayScheduler, DecayWorker, PostgreSQL]
+apis: []
+externals: []
+queues:
+  - cp-topic-decay
+failure_paths:
+  - postgres_unavailable
+  - partial_batch_failure_resume_next_week
+idempotency: idempotent — UPDATE WHERE last_interaction < cutoff is safe to replay; DELETE WHERE interaction_count < 1 is monotonic
+retry: scheduler reruns next Sunday — partial failures captured in metrics
+timeout: 120s per-job — alert if duration exceeded
+status: final
+---
+%% HAND-AUTHORED — sys-06 §"Topic Preference Decay" (no sequenceDiagram in spec for the cron flow).
+sequenceDiagram
+    autonumber
+    participant DecayScheduler
+    participant DecayWorker
+    participant PostgreSQL
+
+    Note over DecayScheduler: weekly Sunday 03:00 UTC
+    DecayScheduler-)DecayWorker: tick — cp-topic-decay
+    alt postgres_unavailable
+        DecayWorker->>PostgreSQL: UPDATE topic_preferences SET interaction_count = count/2 WHERE last_interaction_at < now-30d AND count >= 2
+        PostgreSQL--xDecayWorker: connection error
+        Note over DecayWorker: emit decay_failure metric, retry next week
+    else partial_batch_failure_resume_next_week
+        DecayWorker->>PostgreSQL: UPDATE topic_preferences SET interaction_count = count/2 WHERE last_interaction_at < now-30d AND count >= 2
+        PostgreSQL-->>DecayWorker: rowcount=N (partial)
+        DecayWorker->>PostgreSQL: DELETE FROM topic_preferences WHERE last_interaction_at < now-30d AND interaction_count < 1
+        PostgreSQL--xDecayWorker: error mid-batch
+        Note over DecayWorker: log partial — idempotent rerun next Sunday picks up remainder
+    else success
+        DecayWorker->>PostgreSQL: UPDATE topic_preferences SET interaction_count = count/2 WHERE last_interaction_at < now-30d AND count >= 2
+        PostgreSQL-->>DecayWorker: OK rowcount=halved
+        DecayWorker->>PostgreSQL: DELETE FROM topic_preferences WHERE last_interaction_at < now-30d AND interaction_count < 1
+        PostgreSQL-->>DecayWorker: OK rowcount=deleted
+        DecayWorker-)DecayWorker: log {halved, deleted}
+    end
+    Note over DecayScheduler,PostgreSQL: halves counts for stale topics — deletes when count drops below 1

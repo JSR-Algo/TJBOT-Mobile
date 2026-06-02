@@ -1,0 +1,37 @@
+// email_verifications — single-use email-confirmation tokens.
+// Not in sys-01 §3 tables (spec embeds verification in the signup flow), but plan §3
+// names email_verifications as a discrete table to support email-change and re-verify.
+
+enum email_verification_purpose {
+  signup
+  email_change
+  reverify
+}
+
+enum email_verification_status {
+  pending
+  consumed
+  expired
+  invalidated
+}
+
+Table email_verifications {
+  id              uuid                          [pk]
+  user_id         uuid                          [not null]
+  email           varchar(254)                  [not null, note: 'snapshot of the email being verified (may differ from users.email during change)']
+  token_hash      varchar(128)                  [not null]
+  purpose         email_verification_purpose    [not null]
+  status          email_verification_status     [not null, default: 'pending']
+  expires_at      timestamptz                   [not null]
+  consumed_at     timestamptz
+  requested_ip    varchar(45)
+  created_at      timestamptz                   [not null, default: `now()`]
+  updated_at      timestamptz                   [not null, default: `now()`]
+
+  Indexes {
+    (token_hash) [unique, name: 'idx_email_verifications_token_hash_unique']
+    (user_id, status) [name: 'idx_email_verifications_user_status', note: 'hot query: docs/sequences/01-identity/signup.sequence.mmd — find pending verifications for user']
+  }
+}
+
+Ref: email_verifications.user_id > users.id

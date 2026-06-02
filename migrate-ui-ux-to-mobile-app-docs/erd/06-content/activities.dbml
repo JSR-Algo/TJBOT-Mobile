@@ -1,0 +1,38 @@
+// activities — atomic activity inside a lesson. FK to lessons.
+// Hierarchy: courses → levels → units → lessons → activities.
+// Activities are the leaf delivery units resolved by the selection pipeline.
+
+enum activity_status {
+  draft
+  active
+  archived
+}
+
+enum activity_type {
+  vocabulary
+  comprehension
+  pronunciation
+  storytelling
+  game
+}
+
+Table activities {
+  id            uuid          [pk]
+  lesson_id     uuid          [not null, note: 'FK → lessons.id']
+  slug          varchar(64)   [not null]
+  title         varchar(254)  [not null]
+  activity_type activity_type [not null]
+  position      smallint      [not null, note: 'display order within lesson; 1-based']
+  payload       jsonb         [note: 'activity-type-specific config; shape documented per activity_type']
+  status        activity_status [not null, default: 'draft']
+  created_at    timestamptz   [not null, default: `now()`]
+  updated_at    timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (lesson_id, position) [name: 'idx_activities_lesson_id_position', note: 'hot query: docs/sequences/06-content/content-selection.sequence.mmd — ordered activity listing within lesson']
+    (lesson_id, slug) [unique, name: 'idx_activities_lesson_id_slug_unique']
+    (activity_type, status) [name: 'idx_activities_type_status', note: 'hot query: docs/sequences/06-content/content-selection.sequence.mmd — filter by type + active']
+  }
+}
+
+Ref: activities.lesson_id > lessons.id

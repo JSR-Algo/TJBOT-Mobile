@@ -1,0 +1,54 @@
+---
+system: sys-11-telemetry-audit-cost
+flow_id: audit-log-write-path
+surface: internal-RPC
+spec_anchor: /software/systems/11-telemetry-audit-cost#audit-log
+actors: [MutationHandler, AuditBuffer, PostgreSQL, CloudWatchLogs]
+apis: []
+externals: [CloudWatchLogs]
+queues: []
+failure_paths:
+  - batch_insert_retry_exhausted
+  - role_permission_denied
+  - buffer_overflow
+idempotency: append-only — no idempotency key — every mutation produces exactly one audit row
+retry: 3 retries with exponential backoff (200ms, 400ms, 800ms); fallback to stdout JSON
+timeout: 5s per batch flush
+status: final
+---
+%% HAND-CURATED. sys-11 has zero seed — composed from spec §5 audit log design.
+sequenceDiagram
+    autonumber
+    participant MutationHandler
+    participant AuditBuffer
+    participant PostgreSQL
+    participant CloudWatchLogs
+
+    MutationHandler->>AuditBuffer: append {actor_type, actor_id, action, resource_type, resource_id, details, ip, ua}
+
+    alt buffer_overflow
+        Note over AuditBuffer: in-memory > 100 entries OR > 5s since last flush → trigger flush
+    else still buffering
+        Note over AuditBuffer: hold until 100 entries or 5s
+    end
+
+    AuditBuffer->>PostgreSQL: BEGIN — INSERT batch into audit_log (role: audit_writer, INSERT-only)
+
+    alt role_permission_denied
+        PostgreSQL-->>AuditBuffer: permission denied (e.g. UPDATE attempted)
+        Note over AuditBuffer: append-only invariant violated → P1
+        AuditBuffer->>CloudWatchLogs: emit structured JSON as backup
+    else batch_insert_retry_exhausted
+        loop attempt 1..3 with backoff 200ms/400ms/800ms
+            AuditBuffer->>PostgreSQL: INSERT batch
+            PostgreSQL-->>AuditBuffer: error (deadlock, connection lost, etc)
+        end
+        Note over AuditBuffer,CloudWatchLogs: all 3 retries failed
+        AuditBuffer->>CloudWatchLogs: emit each entry as JSON for offline replay
+        Note over AuditBuffer: increment audit_log_write_failure_total
+    else success
+        PostgreSQL-->>AuditBuffer: COMMIT — N rows
+        Note over AuditBuffer: audit_log_write_total += N
+    end
+
+    Note over MutationHandler,CloudWatchLogs: append-only enforced by audit_writer role (no UPDATE/DELETE) — daily 03:00 UTC retention sweep purges via audit_admin role (consent/deletion events excluded)

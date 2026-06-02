@@ -1,0 +1,30 @@
+enum boot_result {
+  success
+  safe_mode_entered
+  firmware_signature_invalid
+  config_apply_failed
+  wifi_unavailable
+  repeated_crash
+}
+
+Table runtime_boot_reports {
+  id                    uuid        [pk, note: 'service-generated; never serial']
+  device_id             uuid        [not null, note: 'ref → devices.id']
+  boot_count            integer     [not null, note: 'monotonic NVS counter at time of boot']
+  firmware_version      varchar(32) [not null]
+  result                boot_result [not null]
+  boot_fail_window      integer     [not null, default: 0, note: 'number of failures in 15min window at boot time']
+  last_boot_reason      varchar(64) [note: 'e.g. power_on, watchdog_reset, software_reset, panic']
+  config_etag           varchar(128) [note: 'etag of config applied on this boot; null if config not fetched']
+  duration_ms           integer     [note: 'ms from power-on to IDLE_READY or SAFE_MODE']
+  uploaded_at           timestamptz [not null, note: 'when device uploaded this batch to backend']
+  created_at            timestamptz [not null, default: `now()`]
+  updated_at            timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (device_id, created_at) [name: 'idx_runtime_boot_reports_device_id_created_at', note: 'hot query: docs/sequences/03-device-runtime/boot.sequence.mmd — support lookup by device']
+    (result, created_at) [name: 'idx_runtime_boot_reports_result_created_at', note: 'hot query: docs/sequences/03-device-runtime/boot.sequence.mmd — fleet safe-mode rate monitoring']
+  }
+}
+
+// Ref: runtime_boot_reports.device_id > devices.id   // cross-domain ref → DeviceService (sys-02); documented in _shared/cross-domain-data-flow.md per Phase 3 decision

@@ -1,0 +1,78 @@
+@startuml TBOT-LessonSession
+title Domain · lesson-session — voice activity loop + in-session recovery
+left to right direction
+
+actor Child
+actor "Realtime Voice Service" as Voice <<external>>
+
+package "lesson-session" {
+  package "Setup" {
+    usecase "Start Voice Session"     as UC_LSN_START
+    usecase "Connect Realtime Voice"  as UC_LSN_CONNECT
+    usecase "Receive Robot Greeting"  as UC_LSN_GREET
+    usecase "Begin Activity"          as UC_LSN_BEGIN
+  }
+  package "Turn Loop" {
+    usecase "Listen to Robot"         as UC_LSN_LISTEN_BOT
+    usecase "Listen for Child"        as UC_LSN_LISTEN_KID
+    usecase "Speak to Robot"          as UC_LSN_SPEAK
+    usecase "Process Utterance"       as UC_LSN_PROCESS
+    usecase "Handle Barge-in"         as UC_LSN_BARGE
+  }
+  package "Feedback" {
+    usecase "Receive Success"         as UC_LSN_SUCCESS
+    usecase "Gentle Correction"       as UC_LSN_GENTLE
+    usecase "Retry Prompt"            as UC_LSN_RETRY
+    usecase "Silence Prompt"          as UC_LSN_SILENCE
+    usecase "Off-topic Redirect"      as UC_LSN_OFFTOPIC
+  }
+  package "Closure" {
+    usecase "Complete Activity"       as UC_LSN_DONE_ACT
+    usecase "Complete Lesson"         as UC_LSN_DONE
+    usecase "Confirm Exit"            as UC_LSN_EXIT
+  }
+  package "Recovery (in-session)" {
+    usecase "Reconnect Voice"         as UC_LSN_RECONN
+    usecase "Recover Audio Error"     as UC_LSN_AUDIO
+    usecase "Trigger Safety Fallback" as UC_LSN_SAFETY
+    usecase "Report Safety Event"     as UC_LSN_SAFETY_REPORT
+  }
+}
+
+Child --> UC_LSN_START
+Child --> UC_LSN_LISTEN_BOT
+Child --> UC_LSN_LISTEN_KID
+Child --> UC_LSN_SPEAK
+Child --> UC_LSN_BARGE
+Child --> UC_LSN_DONE_ACT
+Child --> UC_LSN_DONE
+Child --> UC_LSN_EXIT
+Child --> UC_LSN_RECONN
+Child --> UC_LSN_AUDIO
+
+UC_LSN_START   ..> UC_LSN_CONNECT : <<include>>
+UC_LSN_CONNECT ..> Voice : <<delegate>>
+UC_LSN_SPEAK   ..> UC_LSN_PROCESS : <<include>>
+UC_LSN_PROCESS ..> Voice : <<delegate>>
+UC_LSN_PROCESS ..> UC_LSN_SUCCESS  : on match
+UC_LSN_PROCESS ..> UC_LSN_GENTLE   : on near
+UC_LSN_PROCESS ..> UC_LSN_RETRY    : on miss
+UC_LSN_PROCESS ..> UC_LSN_SILENCE  : on timeout
+UC_LSN_PROCESS ..> UC_LSN_OFFTOPIC : on offtopic
+UC_LSN_SAFETY  ..> UC_LSN_SAFETY_REPORT : <<include>>
+
+note bottom of UC_LSN_DONE
+  [exit] → progress : UC_PRG_SUMMARY
+end note
+note bottom of UC_LSN_EXIT
+  [exit] → kid-hub : UC_HUB_VIEW
+end note
+note bottom of UC_LSN_AUDIO
+  Distinct from fallback-shell:
+  this fires INSIDE an active session.
+end note
+
+' Files: src/features/lesson-session/*Page.jsx
+' Store: src/store/lesson.store.js
+' WS:   src/services/websocket/realtime.js  (openRealtime — TBD)
+@enduml

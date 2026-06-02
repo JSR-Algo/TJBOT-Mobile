@@ -1,0 +1,52 @@
+// safety_pii_redactions — ledger of PII detection events: WHAT type + WHERE found, never the raw value.
+// Source: sys-05 §9 PII Detection (10 types), §17 fallback codes (pii_blocked).
+// COPPA P0 — child PII detection MUST log type+location but NEVER the raw matched substring.
+// The matched substring exists only in session_transcripts (cleared at 24h by sys-04 retention sweep).
+
+enum pii_type {
+  phone_us
+  phone_spelled
+  email
+  street_address
+  zip_code
+  school_name
+  full_name_disclosure
+  social_security
+  ip_address
+  credit_card
+}
+
+enum pii_disposition {
+  blocked
+  redacted_and_logged
+  allowed_after_review
+}
+
+Table safety_pii_redactions {
+  id                  uuid             [pk]
+  safety_event_id     uuid             [not null, note: 'FK → safety_events.id — every detection produces both a safety_events row AND a redaction ledger row']
+  session_id          uuid             [note: 'cross-domain ref → RealtimeService.sessions — denormalized for COPPA on-deletion sweep']
+  session_turn_id     uuid             [note: 'cross-domain ref → RealtimeService.session_turns — denormalized for retention']
+  child_profile_id    uuid             [note: 'cross-domain ref → IdentityService.children — denormalized for COPPA on-deletion sweep']
+  household_id        uuid             [note: 'cross-domain ref → IdentityService.households']
+  pii_type            pii_type         [not null]
+  stage               varchar(16)      [not null, note: 'input | output — where PII was detected']
+  disposition         pii_disposition  [not null]
+  match_position      integer          [note: 'character offset into the transcript at detection time — useful for tooling but NEVER the matched text itself']
+  match_length        integer          [note: 'length of the matched substring; combined with hash this lets investigation prove detection without ever surfacing PII']
+  detection_pattern   varchar(64)      [note: 'opaque identifier of the regex/heuristic that matched — e.g. phone_us_v3 — NOT the regex itself']
+  transcript_hash     varchar(64)      [not null, note: 'SHA-256 of transcript at detection time; correlates with session_transcripts.transcript_sha256']
+  detection_latency_ms integer
+  created_at          timestamptz      [not null, default: `now()`]
+  updated_at          timestamptz      [not null, default: `now()`]
+  purged_at           timestamptz      [note: 'set by RetentionWorker when row hard-cleared at 180d — soft marker for post-mortem aggregate reports']
+
+  Indexes {
+    (safety_event_id) [unique, name: 'idx_safety_pii_redactions_safety_event_id_unique']
+    (household_id, created_at) [name: 'idx_safety_pii_redactions_household_id_created_at', note: 'hot query: docs/sequences/07-parent/parent-summary.sequence.mmd — weekly summary PII counter per household']
+    (pii_type, created_at) [name: 'idx_safety_pii_redactions_pii_type_created_at', note: 'hot query: docs/sequences/05-safety/safety-event-fanout.sequence.mmd — type-rate dashboards']
+    (child_profile_id, created_at) [name: 'idx_safety_pii_redactions_child_profile_id_created_at', note: 'hot query: docs/sequences/14-retention/account-deletion.sequence.mmd — COPPA on-deletion sweep filters by child']
+  }
+}
+
+Ref: safety_pii_redactions.safety_event_id > safety_events.id  // intra-domain

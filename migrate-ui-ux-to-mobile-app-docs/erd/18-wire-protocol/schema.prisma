@@ -1,0 +1,85 @@
+// AUTO-GENERATED FROM docs/erd/18-wire-protocol/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/18-wire-protocol/wire-protocol-domain-types.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ws_close_code {
+  normal_closure
+  entitlement_required
+  auth_invalid
+  rate_limited
+  server_error
+  protocol_error
+}
+
+enum session_turn_role {
+  child
+  assistant
+}
+
+enum transcript_segment_kind {
+  speech
+  intent
+  safety_event
+  system_annotation
+}
+
+enum safety_severity {
+  low
+  medium
+  high
+  critical
+}
+
+enum safety_action {
+  allow
+  redact
+  block
+  escalate
+}
+
+enum delivery_channel {
+  push_ota
+  pull_config
+  mqtt_command
+  webhook
+}
+
+enum billing_tier {
+  free
+  plus
+  enterprise
+}
+
+enum entitlement_source {
+  stripe_subscription
+  promotional
+  trial
+  admin_override
+}
+
+enum device_capability {
+  voice_input
+  servo_face
+  led_ring
+  proximity_sensor
+  touch_sensor
+  wifi_only
+  wifi_plus_ble
+}
+
+enum notification_channel {
+  push_apns
+  push_fcm
+  email_ses
+  sms_sns
+}
+
