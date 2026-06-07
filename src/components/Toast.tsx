@@ -11,8 +11,9 @@
  * Remaining 19 screens use ErrorMessage only.
  * Full adoption tracked in task-s5-mobile-full-toast-adoption.
  */
-import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { registerToastHandler } from '../services/toast/toastBus';
 
 export type ToastSeverity = 'info' | 'warning' | 'error';
 
@@ -65,6 +66,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }): Reac
       setQueue((q) => q.filter((t) => t.id !== item.id));
     }, item.duration);
   }, []);
+
+  // Bridge the imperative toast bus to this provider so non-React modules
+  // (HTTP client / error layer) can raise toasts. No request fails silently.
+  useEffect(() => {
+    registerToastHandler(show);
+    return () => registerToastHandler(null);
+  }, [show]);
 
   return (
     <ToastContext.Provider value={{ show }}>

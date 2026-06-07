@@ -8,6 +8,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { getParentHistory } from '@/services/api/parent.api';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { ScreenState } from '@/components/ScreenState';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentHistoryScreen'>;
 type HistoryErrorState = { title: string; detail: string };
@@ -60,7 +61,7 @@ export default function ParentHistoryScreen({ navigation }: Props) {
     return (
       <ParentScroll title="Past 30 days" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
         <Box paddingHorizontal={24} paddingTop={40}>
-          <Text style={styles.stat}>Loading history</Text>
+          <ScreenState variant="loading" message="Loading history" />
         </Box>
       </ParentScroll>
     );

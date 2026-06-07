@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken } from './tokens';
 import { normalizeError, type AppError } from '../../utils/errors';
+import { emitToast } from '../toast/toastBus';
 import { Config } from '../../config';
 import {
   isRefreshing,
@@ -64,6 +65,21 @@ function withRetryMetadata(error: AppError, status: number | undefined): AppErro
   }
   return error;
 }
+// Surface transport-level failures globally so no request can fail silently.
+// Field/credential/validation (4xx) errors stay inline via <ErrorMessage /> on
+// each screen; only network failures + server faults raise a global toast.
+export function maybeToastTransportError(err: AppError): void {
+  const status = err.status ?? 0;
+  const isTransport = err.code === 'NETWORK_ERROR';
+  const isServerFault =
+    status >= 500 ||
+    err.code === 'INTERNAL_ERROR' ||
+    err.code === 'SERVICE_UNAVAILABLE' ||
+    err.code === 'GATEWAY_TIMEOUT';
+  if (!isTransport && !isServerFault) return;
+  const idSuffix = isServerFault && err.traceId ? ` (Error ID: ${err.traceId.slice(0, 8)})` : '';
+  emitToast({ severity: 'error', text: `${err.message}${idSuffix}` });
+}
 
 client.interceptors.response.use(
   (response) => response,
@@ -95,6 +111,7 @@ client.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await clearAuthTokens();
+        emitToast({ severity: 'warning', text: 'Your session expired. Please sign in again.' });
         // Kick the UI back to the Auth stack so the user isn't stranded on
         // an authenticated screen with invalid tokens.
         if (onAuthInvalidated) {
@@ -111,6 +128,7 @@ client.interceptors.response.use(
     }
 
     const normalized = withRetryMetadata(normalizeError(error), error.response?.status);
+    maybeToastTransportError(normalized);
     return Promise.reject(normalized);
   },
 );
