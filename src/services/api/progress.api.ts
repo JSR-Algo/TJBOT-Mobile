@@ -1,3 +1,5 @@
+import client from '@/services/http/client';
+
 export interface TodayProgress {
   minutesDone: number;
   minutesGoal: number;
@@ -107,4 +109,66 @@ export async function getLessonSummary(_lessonId: string): Promise<LessonSummary
 
 export async function getReviewQueue(): Promise<ReviewQueueItem[]> {
   throw new Error('not implemented');
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// US-006 Slice-01 (LANE-MOBILE, M3 surface-b): aggregate child-scoped progress.
+//
+// This is the dashboard aggregate (mastery/streak/lessons-completed). It is the
+// SECOND progress surface — the first is the live device-scoped poll
+// (getCurrentAssignment + getPreloadStatus, course-library.api.ts). This needs
+// its OWN normalizer (DIV-MOBILE-NORMALIZER) — do NOT force-fit
+// normalizeProgressSummaryPayload, which parses the legacy minutes/words tree.
+//
+// Path: extends the existing learning/children tree (plan M3 "extending the
+// existing learning kpis tree"; lesson-api §3.12 OPEN resolves to the
+// `learning/children/:childId` tree, not a bare `/children/` surface). Bare of
+// `/v1` (Config.API_BASE_URL already ends in /v1).
+// `lessonsCompleted` here is the AGGREGATE count projection of the authoritative
+// progress_events.lesson_completed rows — NOT a live assignment.state read.
+// ───────────────────────────────────────────────────────────────────────────
+
+export interface ChildProgressByCourse {
+  courseId: string;
+  lessonsCompleted: number;
+  lessonsTotal: number;
+}
+
+export interface ChildProgress {
+  childId: string;
+  lessonsCompleted: number;
+  currentStreakDays: number;
+  masteredWords: number;
+  byCourse: ChildProgressByCourse[];
+}
+
+export function normalizeChildProgressPayload(payload: unknown): ChildProgress {
+  const envelope = pickEnvelope<Record<string, unknown>>(payload) ?? {};
+  const summary =
+    envelope.summary && typeof envelope.summary === 'object'
+      ? (envelope.summary as Record<string, unknown>)
+      : {};
+  const byCourseRaw = envelope.byCourse ?? envelope.by_course;
+  const byCourse: ChildProgressByCourse[] = Array.isArray(byCourseRaw)
+    ? byCourseRaw.map((entry) => {
+        const c = (entry ?? {}) as Record<string, unknown>;
+        return {
+          courseId: (c.course_id ?? c.courseId ?? '') as string,
+          lessonsCompleted: Number(c.lessons_completed ?? c.lessonsCompleted ?? 0),
+          lessonsTotal: Number(c.lessons_total ?? c.lessonsTotal ?? 0),
+        };
+      })
+    : [];
+  return {
+    childId: (envelope.child_id ?? envelope.childId ?? '') as string,
+    lessonsCompleted: Number(summary.lessons_completed ?? summary.lessonsCompleted ?? 0),
+    currentStreakDays: Number(summary.current_streak_days ?? summary.currentStreakDays ?? 0),
+    masteredWords: Number(summary.mastered_words ?? summary.masteredWords ?? 0),
+    byCourse,
+  };
+}
+
+export async function getChildProgress(childId: string): Promise<ChildProgress> {
+  const response = await client.get(`/learning/children/${childId}/progress`);
+  return normalizeChildProgressPayload(response.data);
 }

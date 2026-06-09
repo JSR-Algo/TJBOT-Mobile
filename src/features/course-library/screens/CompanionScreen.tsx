@@ -9,29 +9,60 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import { ROUTES } from '@/navigation/routes';
+import {
+  getCurrentAssignment,
+  presentAssignmentState,
+  type AssignmentState,
+  type CurrentAssignment,
+} from '@/services/api/course-library.api';
+import { formatLessonCopy } from '@/utils/errors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanionScreen'>;
 
-const PHASES = [
-  { lcd: 'speak',   label: 'Robot is speaking',    time: '00:42' },
-  { lcd: 'listen',  label: 'Robot is listening',   time: '00:51' },
-  { lcd: 'think',   label: 'Robot is thinking',    time: '00:55' },
-  { lcd: 'success', label: 'Robot heard them!',     time: '01:02' },
-  { lcd: 'happy',   label: 'Robot is celebrating', time: '01:08' },
-];
+const POLL_INTERVAL_MS = 2500;
 
-export default function CompanionScreen({ navigation }: Props) {
-  const [phase, setPhase] = React.useState(2);
+function faceFor(state: AssignmentState | undefined): 'speak' | 'happy' | 'think' {
+  if (state === 'COMPLETED') return 'happy';
+  if (state === 'RUNNING') return 'speak';
+  return 'think';
+}
+
+export default function CompanionScreen({ navigation, route }: Props) {
+  const deviceId = route.params?.deviceId;
+  const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
 
   React.useEffect(() => {
-    const t = setTimeout(() => setPhase(p => (p + 1) % PHASES.length), 1800);
-    return () => clearTimeout(t);
-  }, [phase]);
+    if (!deviceId) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-  const cur = PHASES[phase]!;
+    const poll = async () => {
+      try {
+        const current = await getCurrentAssignment(deviceId);
+        if (!active) return;
+        setAssignment(current);
+        const live = current && current.state !== 'COMPLETED' && current.state !== 'FAILED' && current.state !== 'CANCELLED';
+        if (live) timer = setTimeout(poll, POLL_INTERVAL_MS);
+      } catch {
+        if (active) timer = setTimeout(poll, POLL_INTERVAL_MS);
+      }
+    };
+
+    poll();
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [deviceId]);
+
+  const lessonTitle = assignment?.lessonTitle?.trim() ? assignment.lessonTitle : "Today's lesson";
+  const presentation = assignment ? presentAssignmentState(assignment.state) : null;
+  const statusCopy = presentation
+    ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
+    : 'Lesson running on Robot';
 
   return (
-    <DeviceShell title="What Robot sees" onBack={() => navigation.navigate(ROUTES.RunningScreen)}>
+    <DeviceShell title="What Robot sees" onBack={() => navigation.navigate(ROUTES.RunningScreen, { deviceId, assignmentId: assignment?.assignmentId })}>
       <Text style={styles.intro}>
         A live mirror of Robot's face. <Text fontWeight="600" style={{ color: CL.ink }}>No transcript</Text> — what your child says stays between them.
       </Text>
@@ -40,26 +71,17 @@ export default function CompanionScreen({ navigation }: Props) {
         <Box style={styles.lcdMirror} alignItems="center" gap={12}>
           <Box flexDirection="row" alignItems="center" gap={10} style={styles.liveRow}>
             <Box style={styles.liveDot} />
-            <Text style={styles.liveText}>Live · {cur.time}</Text>
+            <Text style={styles.liveText}>Live</Text>
           </Box>
-          <LCDFace emotion={cur.lcd} size={220} accent="#FF6F61" />
-          <Text fontWeight="600" style={styles.phaseLabel}>{cur.label}</Text>
+          <LCDFace emotion={faceFor(assignment?.state)} size={220} accent="#FF6F61" />
+          <Text fontWeight="600" style={styles.phaseLabel}>{statusCopy}</Text>
         </Box>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.progressCard}>
-          <Box flexDirection="row" justifyContent="space-between" alignItems="flex-end" style={styles.progressHeader}>
-            <Text fontWeight="600" style={styles.progressTitle}>Animals at home</Text>
-            <Text style={styles.progressCount}>3 / 8 turns</Text>
-          </Box>
-          <Box style={styles.progressTrack}>
-            <Box style={styles.progressFill} />
-          </Box>
-          <Box flexDirection="row" justifyContent="space-between" style={styles.progressFooter}>
-            <Text style={styles.progressMeta}>About 2 minutes left</Text>
-            <Text style={styles.progressMeta}>Words: 4 of 10</Text>
-          </Box>
+          <Text fontWeight="600" style={styles.progressTitle}>{lessonTitle}</Text>
+          <Text style={styles.progressMeta}>Robot is leading the lesson. You can put your phone away.</Text>
         </Box>
       </Box>
 
@@ -82,15 +104,10 @@ const styles = StyleSheet.create({
   liveRow: { alignSelf: 'flex-start' },
   liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#EF5454' },
   liveText: { fontSize: 11, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: '600' },
-  phaseLabel: { fontSize: 15, color: '#fff', marginTop: 4 },
+  phaseLabel: { fontSize: 15, color: '#fff', marginTop: 4, textAlign: 'center' },
   progressCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, padding: 14 },
-  progressHeader: { marginBottom: 8 },
   progressTitle: { fontSize: 13, color: CL.ink },
-  progressCount: { fontSize: 11, color: CL.ink2 },
-  progressTrack: { height: 8, borderRadius: 4, backgroundColor: '#EEF1F5', overflow: 'hidden' },
-  progressFill: { width: '37%', height: '100%', backgroundColor: CL.accent, borderRadius: 4 },
-  progressFooter: { marginTop: 8 },
-  progressMeta: { fontSize: 11, color: CL.ink2 },
+  progressMeta: { fontSize: 11, color: CL.ink2, marginTop: 4, lineHeight: 16 },
   sectionLabel: { fontSize: 11, color: CL.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   rowCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
 });

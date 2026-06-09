@@ -6,21 +6,57 @@ import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScre
 import NeedsSyncScreen from '@/features/course-library/screens/NeedsSyncScreen';
 import UnlockConfirmModal from '@/features/course-library/UnlockConfirmModal';
 import {
+  createAssignment,
+  getCourseLessons,
+  getCourses,
+  getCurrentAssignment,
   getRobotSyncStatus,
-  sendCourseToRobot,
   unlockCourse,
 } from '@/services/api/course-library.api';
+import { getDeviceStatus } from '@/services/api/device.api';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 
 jest.mock('@/services/api/course-library.api', () => ({
   unlockCourse: jest.fn(),
   sendCourseToRobot: jest.fn(),
   getRobotSyncStatus: jest.fn(),
+  // US-006 S11: SendToRobotScreen now assigns via the device-scoped lesson API.
+  createAssignment: jest.fn(),
+  getCurrentAssignment: jest.fn(),
+  // P4: SendToRobotScreen + CourseDetail/CourseAdded read the published catalog.
+  getCourses: jest.fn(),
+  getCourseLessons: jest.fn(),
+}));
+
+jest.mock('@/services/api/device.api', () => ({
+  getDeviceStatus: jest.fn(),
+}));
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }] })),
 }));
 
 const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
-const mockedSendCourseToRobot = sendCourseToRobot as jest.MockedFunction<typeof sendCourseToRobot>;
 const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
+const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
+const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
+const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
+const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
+const mockedGetCourseLessons = getCourseLessons as jest.MockedFunction<typeof getCourseLessons>;
+
+// P4: the published catalog SendToRobotScreen renders. The first lesson is the
+// real seed lesson so the assignment carries its true {lessonId, lessonVersion,
+// profile} — no hardcoded SEED_LESSON literal.
+const SEED_COURSE = { courseId: 'c_barn', title: 'Barn Friends', lessonCount: 2 };
+const SEED_LESSONS = [
+  { lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, title: 'This Is a Barn', profile: 'espTft', manifestReady: true },
+  { lessonId: 'w01-d02-barn-colors', lessonVersion: 3, title: 'Barn Colors', profile: 'espTft', manifestReady: true },
+];
+
+function stubPublishedCatalog() {
+  mockedGetCourses.mockResolvedValue([SEED_COURSE]);
+  mockedGetCourseLessons.mockResolvedValue(SEED_LESSONS);
+}
 
 function navigationFor() {
   return {
@@ -38,9 +74,13 @@ function navigationFor() {
 describe('course-library flow guards', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    stubPublishedCatalog();
   });
 
   it('renders the course that was just added from route params', () => {
+    // No 'c_animals' in the published catalog → falls back to static metadata,
+    // proving the dynamic overlay never crashes on a non-published courseId.
+    mockedGetCourses.mockResolvedValue([]);
     const navigation = navigationFor();
     render(
       <CourseAddedScreen
@@ -102,23 +142,140 @@ describe('course-library flow guards', () => {
     expect(screen.getByLabelText('Delete last digit').props.accessibilityRole).toBe('button');
   });
 
-  it('does not show robot-ready success when send-to-robot mutation fails', async () => {
-    mockedSendCourseToRobot.mockRejectedValueOnce(new Error('sync route unavailable'));
+  // US-006 S11 (M1): send-to-robot is re-keyed from courseId→deviceId and now
+  // assigns the seed lesson via the device-scoped createAssignment (0010 /
+  // DIV-MOBILE-DEVICEKEY). These replace the old sendCourseToRobot(courseId) test.
+  // P4: the picker defaults to the first published lesson; createAssignment
+  // carries that lesson's REAL {lessonId, lessonVersion (NUMBER), profile} — no
+  // SEED_LESSON literal anywhere in the assign path.
+  it('assigns the FIRST published lesson via createAssignment and threads assignment params forward', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedCreateAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-1', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
+      lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, profile: 'espTft', state: 'PRELOADING', createdAt: null,
+    });
     const navigation = navigationFor();
     render(
       <SendToRobotScreen
         navigation={navigation as never}
-        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: { courseId: 'c_food' } } as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
       />,
     );
+
+    // Wait for the published lessons to render (catalog fetch resolved).
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
 
     await act(async () => {
       fireEvent.press(screen.getByText('Send to Robot'));
     });
 
-    expect(mockedSendCourseToRobot).toHaveBeenCalledWith('c_food');
+    expect(mockedCreateAssignment).toHaveBeenCalledWith({
+      deviceId: 'dev-1', childId: 'ch-1', lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, profile: 'espTft',
+    });
+    // lessonVersion is a NUMBER on the wire (D-LV).
+    const sentParams = mockedCreateAssignment.mock.calls[0]![0];
+    expect(typeof sentParams.lessonVersion).toBe('number');
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1,
+    });
+  });
+
+  // P4: selecting a DIFFERENT lesson feeds its real lessonId + lessonVersion into
+  // the assignment (drives the (deviceId, lessonId, childId) idempotency key).
+  it('assigns the lesson the parent actually picks (real lessonId + lessonVersion)', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedCreateAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-2', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
+      lessonId: 'w01-d02-barn-colors', lessonVersion: 3, profile: 'espTft', state: 'PRELOADING', createdAt: null,
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Barn Colors')).toBeTruthy());
+    fireEvent.press(screen.getByText('Barn Colors'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).toHaveBeenCalledWith({
+      deviceId: 'dev-1', childId: 'ch-1', lessonId: 'w01-d02-barn-colors', lessonVersion: 3, profile: 'espTft',
+    });
+  });
+
+  it('does not navigate to robot-ready when the assignment fails, and shows the lesson error copy', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 504, data: { error: { code: 'ROBOT_OFFLINE' } } } });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).toHaveBeenCalled();
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
-    expect(screen.getByText('Robot sync is unavailable. Try again when Robot is online.')).toBeTruthy();
+    expect(screen.getByText("Couldn't reach Casa Robot. Check it's on and connected.")).toBeTruthy();
+  });
+
+  it('on ASSIGNMENT_CONFLICT refetches the current assignment and proceeds from the fresh version (never blind-retry)', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
+    mockedGetCurrentAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-existing', assignmentVersion: 4, lessonId: 'w01-d01-barn-say-it',
+      lessonTitle: 'This Is a Barn', lessonVersion: 1, state: 'PRELOADING', childId: 'ch-1', profile: 'espTft',
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4,
+    });
+  });
+
+  // P4: empty published catalog → no lesson to send, send is gated, the assign
+  // path never fires (no fallback to a hardcoded seed lesson).
+  it('gates send when no lessons are published (no SEED_LESSON fallback)', async () => {
+    mockedGetCourses.mockResolvedValue([]);
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText(/No published courses yet/)).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
   });
 
   it('checks sync status before leaving NeedsSync', async () => {

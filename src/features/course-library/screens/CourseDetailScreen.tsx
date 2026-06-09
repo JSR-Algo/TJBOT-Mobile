@@ -11,6 +11,7 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import COURSES from '../components/courses';
 import CLChip from '../components/CLChip';
+import { getCourses, type PublishedCourse } from '@/services/api/course-library.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetailScreen'>;
 
@@ -19,7 +20,32 @@ const COURSE = COURSES[2]!;
 
 export default function CourseDetailScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? COURSE.id;
-  const c = COURSES.find((course) => course.id === courseId) ?? COURSE;
+  // Static catalog supplies the rich UI metadata (blurb / lcd / teaches) the
+  // published endpoints don't return. The dynamic published catalog overlays the
+  // REAL title + lessonCount for authored courses; the `?? COURSE` fallback keeps
+  // the screen from crashing when a courseId is neither published nor static.
+  const [published, setPublished] = React.useState<PublishedCourse | null>(null);
+  React.useEffect(() => {
+    let active = true;
+    void getCourses()
+      .then((list) => {
+        if (active) setPublished(list.find((course) => course.courseId === courseId) ?? null);
+      })
+      .catch(() => {
+        // Published catalog unavailable → fall back to static metadata only.
+        if (active) setPublished(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseId]);
+
+  const staticCourse = COURSES.find((course) => course.id === courseId) ?? COURSE;
+  const c = {
+    ...staticCourse,
+    title: published?.title?.trim() ? published.title : staticCourse.title,
+    lessons: published ? published.lessonCount : staticCourse.lessons,
+  };
   return (
     <DeviceShell title="Course details" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>

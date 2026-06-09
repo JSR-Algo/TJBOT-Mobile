@@ -12,12 +12,35 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import COURSES from '../components/courses';
 import LCDPreview from '../components/LCDPreview';
+import { getCourses, type PublishedCourse } from '@/services/api/course-library.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseAddedScreen'>;
 
 export default function CourseAddedScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? 'c_food';
-  const c = COURSES.find(x => x.id === courseId) ?? COURSES[2]!;
+  // Static catalog supplies the LCD emotion; the published catalog overlays the
+  // REAL course title for authored courses. `?? COURSES[2]` guards against a
+  // courseId that is neither published nor static so the screen never crashes.
+  const [published, setPublished] = React.useState<PublishedCourse | null>(null);
+  React.useEffect(() => {
+    let active = true;
+    void getCourses()
+      .then((list) => {
+        if (active) setPublished(list.find((course) => course.courseId === courseId) ?? null);
+      })
+      .catch(() => {
+        if (active) setPublished(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseId]);
+
+  const staticCourse = COURSES.find(x => x.id === courseId) ?? COURSES[2]!;
+  const c = {
+    ...staticCourse,
+    title: published?.title?.trim() ? published.title : staticCourse.title,
+  };
   return (
     <DeviceShell title="Added to Robot">
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">

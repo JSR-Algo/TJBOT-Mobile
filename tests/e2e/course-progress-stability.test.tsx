@@ -47,6 +47,10 @@ jest.mock('../../src/services/api/course.api', () => ({
 jest.mock('../../src/services/api/course-library.api', () => ({
   listLibrary: jest.fn(),
   unlockCourse: jest.fn(),
+  // P4: CourseDetailScreen overlays the published catalog onto static metadata.
+  // Empty list → static fallback renders (preserves the c_animals assertion).
+  getCourses: jest.fn(() => Promise.resolve([])),
+  getCourseLessons: jest.fn(() => Promise.resolve([])),
 }));
 
 jest.mock('../../src/services/api/progress.api', () => ({

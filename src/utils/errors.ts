@@ -23,11 +23,34 @@ export const ERROR_MESSAGES: Record<string, string> = {
   parent_auth_required: 'Parent sign-in is required.',
   stale_coppa_policy_version: 'Please review the latest consent policy.',
   missing_coppa_consent: 'Parental consent is required before continuing.',
+
+  // US-006 Slice-01 (LANE-MOBILE, M4): lesson-domain codes → parent copy.
+  // Lesson codes are net-new (0011); the mobile robot_offline recovery family is
+  // reused for UI routing only, not code identity. `<robot>`/`<lesson>` are
+  // interpolation tokens — resolve with formatLessonCopy at render.
+  // (LOW_STORAGE is NOT a code — it arrives as ASSET_DOWNLOAD_FAILED with
+  // context.reason="low_storage"; do not branch on it.)
+  ASSET_CHECKSUM_MISMATCH: "Couldn't get this lesson ready. Tap to try again.",
+  ASSET_PROFILE_UNAVAILABLE: "This lesson isn't available for <robot> yet.",
+  PRELOAD_TIMEOUT: "Couldn't get this lesson ready. Tap to try again.",
+  STEP_TIMEOUT: 'Something interrupted the lesson. Tap to restart.',
+  ROBOT_OFFLINE: "Couldn't reach <robot>. Check it's on and connected.",
+  ROBOT_BUSY: '<robot> is finishing another lesson. Try again in a moment.',
+  LOW_BATTERY: '<robot> needs more charge before this lesson can start.',
 };
 
 export function getErrorMessage(code: string | undefined): string {
   if (!code) return ERROR_MESSAGES.UNKNOWN_ERROR;
   return ERROR_MESSAGES[code] ?? ERROR_MESSAGES.UNKNOWN_ERROR;
+}
+
+// Resolves the `<robot>` / `<lesson>` interpolation tokens used by the US-006
+// lesson copy (both the M4 error map and the M5 state map). Falls back to
+// neutral nouns so a missing name never surfaces a raw token to a parent.
+export function formatLessonCopy(copy: string, vars?: { robot?: string; lesson?: string }): string {
+  const robot = vars?.robot?.trim() ? vars.robot.trim() : 'your robot';
+  const lesson = vars?.lesson?.trim() ? vars.lesson.trim() : 'this lesson';
+  return copy.split('<robot>').join(robot).split('<lesson>').join(lesson);
 }
 
 // Generic backend messages that add no value over our mapped copy.
