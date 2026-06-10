@@ -1,0 +1,27 @@
+// daily_summaries — derived daily engagement aggregate per (device, child).
+// Derived from session_transcripts; rebuilt by SummaryWorker (sys-07 cron).
+// COPPA: links to children → retention required.
+// Upsert key: (device_id, child_profile_id, summary_date).
+// Source: docs/sequences/07-parent/daily-summary-generation.sequence.mmd
+
+Table daily_summaries {
+  id                uuid    [pk]
+  device_id         uuid    [not null, note: 'cross-domain ref → DeviceService (devices.id)']
+  child_profile_id  uuid    [not null, note: 'cross-domain ref → IdentityService (children.id)']
+  summary_date      date    [not null, note: 'local date of the activity day; UTC stored']
+  total_minutes     integer [not null, default: 0, note: 'session minutes summed for this day']
+  activities_count  integer [not null, default: 0]
+  words_introduced  integer [not null, default: 0]
+  topics_covered    jsonb   [note: 'array of topic slugs covered during sessions this day']
+  created_at        timestamptz [not null, default: `now()`]
+  updated_at        timestamptz [not null, default: `now()`]
+  deleted_at        timestamptz [note: 'soft-delete; COPPA retention']
+
+  Indexes {
+    (device_id, child_profile_id, summary_date) [unique, name: 'idx_daily_summaries_device_child_date_unique']
+    (child_profile_id, summary_date) [name: 'idx_daily_summaries_child_date', note: 'hot query: docs/sequences/07-parent/weekly-summary-generation.sequence.mmd — SELECT daily_summaries WHERE summary_date IN week']
+  }
+}
+
+// Ref: daily_summaries.device_id > devices.id        // cross-domain ref → DeviceService
+// Ref: daily_summaries.child_profile_id > children.id // cross-domain ref → IdentityService

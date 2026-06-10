@@ -1,0 +1,12 @@
+{
+  "id": "home",
+  "owner_lane": "B",
+  "flow": "docs/flows/domains/home/flow.generated.mmd",
+  "edge_cases": {
+    "home_hub_mic":     ["error"],
+    "home_hub_offline": ["retry", "error"],
+    "home_hub_offline_24h": ["retry", "error"],
+    "home_hub_paused": ["unauthorized"],
+    "home_hub_quiet_hours": ["timeout"]
+  }
+}

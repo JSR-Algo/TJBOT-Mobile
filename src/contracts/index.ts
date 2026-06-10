@@ -1,4 +1,4 @@
-// @tbot/contracts — Mobile barrel export
+// @TJBot/contracts — Mobile barrel export
 //
 // Plan: expressive-robot-companion-rewrite §3 ADRs 006–015.
 

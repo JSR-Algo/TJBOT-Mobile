@@ -11,7 +11,7 @@ const API_URL = process.env.TBOT_API_URL ?? 'http://localhost:3000/v1';
 describe('Auth isolation: learning endpoints', () => {
   const http = axios.create({ baseURL: API_URL, validateStatus: () => true });
 
-  const uniqueEmail = () => `mobile-test-${Date.now()}-${Math.random().toString(36).slice(2)}@tbot-e2e.test`;
+  const uniqueEmail = () => `mobile-test-${Date.now()}-${Math.random().toString(36).slice(2)}@TJBot-e2e.test`;
 
   async function createParentAndChild() {
     const email = uniqueEmail();
@@ -35,10 +35,8 @@ describe('Auth isolation: learning endpoints', () => {
       headers: { Authorization: `Bearer ${partialToken}` },
     });
 
-    // Current backend contract requires email_verified=true before login
-    // (`tbot-backend/src/identity/auth.service.ts`). The live mobile suite does
-    // not own email verification, so it reuses the signup-issued token instead
-    // of asserting the backend's email-verification flow here.
+    // Backend no longer gates login on email verification (removed 2026-04-17).
+    // The signup-issued token is used directly for subsequent requests.
     const token = partialToken;
 
     const household = await http.post('/households', { name: `${email} Family` }, {

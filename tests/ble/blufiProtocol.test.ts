@@ -1,0 +1,393 @@
+/**
+ * US-005 — Byte-level BluFi protocol suite (mobile unit [mb-protocol]).
+ *
+ * Target unit (the ONLY source under test here):
+ *   src/services/ble/blufiProtocol.ts
+ *
+ * This is a pure-codec unit: every export must be deterministic, side-effect
+ * free, and produce EXACT on-wire bytes. ESP-IDF BluFi packs the frame "type"
+ * byte as `(frameType & 0x03) | (subType << 2)`, so the on-wire opcodes the
+ * firmware sees are:
+ *   SET_OP_MODE   = (CTRL 0x00) | (0x02 << 2) = 0x08
+ *   STA_SSID      = (DATA 0x01) | (0x02 << 2) = 0x09
+ *   STA_PASSWORD  = (DATA 0x01) | (0x03 << 2) = 0x0d
+ *   CONNECT_TO_AP = (CTRL 0x00) | (0x03 << 2) = 0x0c
+ *   GET_WIFI_LIST = (CTRL 0x00) | (0x09 << 2) = 0x24
+ *   CUSTOM_DATA   = (DATA 0x01) | (0x13 << 2) = 0x4d
+ *   CONN_REPORT   = (DATA 0x01) | (0x0f << 2) = 0x3d
+ *
+ * Every BluFi frame is base64-encoded for the GATT write characteristic. These
+ * tests decode each frame back to raw bytes and assert the EXACT structure:
+ *   [type, frameControl, sequence, dataLength, ...data]
+ * Fragmented frames carry a 2-byte little-endian total-length prefix inside the
+ * data region and set frameControl bit 0x10.
+ *
+ * SECURITY (US-005 invariant): this suite NEVER logs a Wi-Fi password, the
+ * bootstrap token, or the provisioning code. Credential values flow only INTO
+ * the encoder as fixture inputs; nothing prints decoded credential bytes.
+ */
+
+import {
+  encodeTLV,
+  buildBluFiStationProvisioningFrames,
+  buildBluFiCustomDataFrames,
+  buildBluFiWifiScanFrames,
+  parseBluFiConnReport,
+  BLUFI_DATA_CUSTOM,
+} from '../../src/services/ble/blufiProtocol';
+
+// ---------------------------------------------------------------------------
+// Test helpers (no production code under test — pure decode + assertion aids).
+// ---------------------------------------------------------------------------
+
+/** Decode a base64 GATT-write frame back into raw bytes. */
+function decode(frame: string): number[] {
+  return Array.from(Buffer.from(frame, 'base64'));
+}
+
+/** On-wire BluFi type byte: (frameType & 0x03) | (subType << 2). */
+function typeByte(frameType: number, subType: number): number {
+  return (frameType & 0x03) | (subType << 2);
+}
+
+const TYPE_CTRL = 0x00;
+const TYPE_DATA = 0x01;
+
+const OP_SET_OP_MODE = typeByte(TYPE_CTRL, 0x02); // 0x08
+const OP_STA_SSID = typeByte(TYPE_DATA, 0x02); // 0x09
+const OP_STA_PASSWORD = typeByte(TYPE_DATA, 0x03); // 0x0d
+const OP_CONNECT_TO_AP = typeByte(TYPE_CTRL, 0x03); // 0x0c
+const OP_GET_WIFI_LIST = typeByte(TYPE_CTRL, 0x09); // 0x24
+const OP_CUSTOM_DATA = typeByte(TYPE_DATA, 0x13); // 0x4d
+const OP_CONN_REPORT = typeByte(TYPE_DATA, 0x0f); // 0x3d
+
+const FC_PLAIN = 0x00;
+const FC_FRAGMENT = 0x10;
+const WIFI_MODE_STA = 0x01;
+
+/** ESP-IDF default: 12 content bytes per fragmented chunk (MTU 23 math). */
+const FRAG_CONTENT_BYTES = 12;
+
+const ascii = (s: string): number[] => Array.from(s, (c) => c.charCodeAt(0) & 0xff);
+
+describe('blufiProtocol — on-wire opcode constants (regression lock)', () => {
+  // These pin the packing math so a future "simplification" of buildType can
+  // never silently shift opcodes the firmware decodes against.
+  test('packed opcodes match the firmware-visible values', () => {
+    expect(OP_SET_OP_MODE).toBe(0x08);
+    expect(OP_STA_SSID).toBe(0x09);
+    expect(OP_STA_PASSWORD).toBe(0x0d);
+    expect(OP_CONNECT_TO_AP).toBe(0x0c);
+    expect(OP_GET_WIFI_LIST).toBe(0x24);
+    expect(OP_CUSTOM_DATA).toBe(0x4d);
+    expect(OP_CONN_REPORT).toBe(0x3d);
+  });
+
+  test('exported CUSTOM subtype constant is the raw subtype 0x13', () => {
+    expect(BLUFI_DATA_CUSTOM).toBe(0x13);
+  });
+});
+
+describe('encodeTLV — [tag, len, value] flat encoding', () => {
+  test('encodes a single ASCII-string item as tag, length, bytes', () => {
+    const out = encodeTLV([{ tag: 0x01, value: 'AB' }]);
+    expect(Array.from(out)).toEqual([0x01, 0x02, 0x41, 0x42]);
+    expect(out).toBeInstanceOf(Uint8Array);
+  });
+
+  test('concatenates multiple items in order (tag 0x01 then 0x02)', () => {
+    const out = encodeTLV([
+      { tag: 0x01, value: 'AB' },
+      { tag: 0x02, value: '123456' },
+    ]);
+    expect(Array.from(out)).toEqual([
+      0x01, 0x02, 0x41, 0x42, // tag 0x01 (bootstrap_token) len 2 "AB"
+      0x02, 0x06, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, // tag 0x02 (code) len 6 "123456"
+    ]);
+  });
+
+  test('preserves caller order — 0x02 before 0x01 is NOT reordered', () => {
+    const out = encodeTLV([
+      { tag: 0x02, value: 'X' },
+      { tag: 0x01, value: 'Y' },
+    ]);
+    expect(Array.from(out)).toEqual([0x02, 0x01, 0x58, 0x01, 0x01, 0x59]);
+  });
+
+  test('encodes a raw Uint8Array value byte-for-byte', () => {
+    const out = encodeTLV([{ tag: 0x07, value: new Uint8Array([0x00, 0xff, 0x10]) }]);
+    expect(Array.from(out)).toEqual([0x07, 0x03, 0x00, 0xff, 0x10]);
+  });
+
+  test('empty value encodes a zero length and no value bytes', () => {
+    const out = encodeTLV([{ tag: 0x09, value: '' }]);
+    expect(Array.from(out)).toEqual([0x09, 0x00]);
+  });
+
+  test('empty item list encodes to an empty buffer', () => {
+    expect(Array.from(encodeTLV([]))).toEqual([]);
+  });
+
+  test('masks string char codes to a single byte (low 8 bits)', () => {
+    // U+0100 (0x100) must be masked to 0x00 by `& 0xff`, length stays 1.
+    const out = encodeTLV([{ tag: 0x01, value: 'Ā' }]);
+    expect(Array.from(out)).toEqual([0x01, 0x01, 0x00]);
+  });
+
+  test('does not mutate the caller-supplied Uint8Array value', () => {
+    const src = new Uint8Array([0x0a, 0x0b]);
+    encodeTLV([{ tag: 0x01, value: src }]);
+    expect(Array.from(src)).toEqual([0x0a, 0x0b]);
+  });
+});
+
+describe('buildBluFiStationProvisioningFrames — short credentials (no fragmentation)', () => {
+  test('emits OP_MODE, SSID, PASSWORD, CONNECT in order with sequential numbering', () => {
+    const frames = buildBluFiStationProvisioningFrames({ ssid: 'net', password: 'pw', startSequence: 5 });
+    expect(frames).toHaveLength(4);
+
+    // SET_OP_MODE — CTRL frame carrying single byte WIFI_MODE_STA (0x01).
+    expect(decode(frames[0])).toEqual([OP_SET_OP_MODE, FC_PLAIN, 5, 0x01, WIFI_MODE_STA]);
+
+    // STA_SSID "net" — DATA frame, 3 content bytes, sequence advanced to 6.
+    expect(decode(frames[1])).toEqual([OP_STA_SSID, FC_PLAIN, 6, 0x03, ...ascii('net')]);
+
+    // STA_PASSWORD "pw" — DATA frame, 2 content bytes, sequence 7.
+    expect(decode(frames[2])).toEqual([OP_STA_PASSWORD, FC_PLAIN, 7, 0x02, ...ascii('pw')]);
+
+    // CONNECT_TO_AP — empty CTRL frame, dataLength 0, sequence 8.
+    expect(decode(frames[3])).toEqual([OP_CONNECT_TO_AP, FC_PLAIN, 8, 0x00]);
+  });
+
+  test('defaults the start sequence to 0 when omitted', () => {
+    const frames = buildBluFiStationProvisioningFrames({ ssid: 'a', password: 'b' });
+    expect(decode(frames[0])[2]).toBe(0); // OP_MODE sequence
+    expect(decode(frames[1])[2]).toBe(1); // SSID sequence
+    expect(decode(frames[2])[2]).toBe(2); // PASSWORD sequence
+    expect(decode(frames[3])[2]).toBe(3); // CONNECT sequence
+  });
+
+  test('SSID exactly at the 12-byte boundary stays a single PLAIN frame', () => {
+    const ssid = '123456789012'; // 12 ASCII bytes == FRAG_CONTENT_BYTES
+    const frames = buildBluFiStationProvisioningFrames({ ssid, password: 'p', startSequence: 0 });
+    const ssidFrame = decode(frames[1]);
+    expect(ssidFrame[0]).toBe(OP_STA_SSID);
+    expect(ssidFrame[1]).toBe(FC_PLAIN); // 12 is NOT > 12, so no fragmentation
+    expect(ssidFrame[3]).toBe(12);
+    expect(ssidFrame.slice(4)).toEqual(ascii(ssid));
+  });
+
+  test('encodes UTF-8 multibyte SSID and frames its byte length (not char length)', () => {
+    // "café" = c a f é(0xc3 0xa9) -> 5 UTF-8 bytes from 4 chars.
+    const frames = buildBluFiStationProvisioningFrames({ ssid: 'café', password: 'p', startSequence: 0 });
+    const ssidFrame = decode(frames[1]);
+    expect(ssidFrame[0]).toBe(OP_STA_SSID);
+    expect(ssidFrame[1]).toBe(FC_PLAIN);
+    expect(ssidFrame[3]).toBe(5); // dataLength = UTF-8 byte count
+    expect(ssidFrame.slice(4)).toEqual([0x63, 0x61, 0x66, 0xc3, 0xa9]);
+  });
+});
+
+describe('buildBluFiStationProvisioningFrames — fragmentation (long SSID / password)', () => {
+  test('fragments a 20-byte SSID into a FRAGMENT chunk + PLAIN tail with 2-byte total-length', () => {
+    const ssid = 'A'.repeat(20); // 20 > 12 -> one fragment (12) + one tail (8)
+    const frames = buildBluFiStationProvisioningFrames({ ssid, password: 'p', startSequence: 0 });
+
+    // [0] OP_MODE (seq 0). SSID fragments are [1] and [2].
+    const frag = decode(frames[1]);
+    const tail = decode(frames[2]);
+
+    // Fragment frame: frameControl has the 0x10 bit set, sequence 1.
+    expect(frag[0]).toBe(OP_STA_SSID);
+    expect(frag[1]).toBe(FC_FRAGMENT);
+    expect(frag[2]).toBe(1);
+    // data region = [totalRemainingLo, totalRemainingHi, ...12 content bytes]
+    // total remaining at first fragment = 20 -> 0x14, 0x00
+    expect(frag[3]).toBe(2 + FRAG_CONTENT_BYTES); // dataLength = 14
+    expect(frag.slice(4)).toEqual([0x14, 0x00, ...ascii('A'.repeat(12))]);
+
+    // Tail frame: PLAIN, sequence 2, remaining 8 content bytes, no length prefix.
+    expect(tail[0]).toBe(OP_STA_SSID);
+    expect(tail[1]).toBe(FC_PLAIN);
+    expect(tail[2]).toBe(2);
+    expect(tail[3]).toBe(8);
+    expect(tail.slice(4)).toEqual(ascii('A'.repeat(8)));
+  });
+
+  test('two full fragments + tail for a 25-byte value carry decreasing total-length', () => {
+    // 25 bytes -> frag(12, rem=25=0x19) + frag(12, rem=13=0x0d) + tail(1)
+    const ssid = 'B'.repeat(25);
+    const frames = buildBluFiStationProvisioningFrames({ ssid, password: 'p', startSequence: 0 });
+    const f1 = decode(frames[1]);
+    const f2 = decode(frames[2]);
+    const f3 = decode(frames[3]);
+
+    expect(f1[1]).toBe(FC_FRAGMENT);
+    expect(f1[2]).toBe(1);
+    expect(f1.slice(4, 6)).toEqual([25, 0]); // remaining 25
+
+    expect(f2[1]).toBe(FC_FRAGMENT);
+    expect(f2[2]).toBe(2);
+    expect(f2.slice(4, 6)).toEqual([13, 0]); // remaining 25 - 12 = 13
+
+    expect(f3[1]).toBe(FC_PLAIN);
+    expect(f3[2]).toBe(3);
+    expect(f3[3]).toBe(1); // final remaining byte
+  });
+
+  test('a long password fragments and keeps sequence continuous after the SSID', () => {
+    const password = 'P'.repeat(20); // fragments into 2 frames
+    const frames = buildBluFiStationProvisioningFrames({ ssid: 'net', password, startSequence: 0 });
+    // [0]=OP_MODE seq0, [1]=SSID seq1, [2]=PW frag seq2, [3]=PW tail seq3, [4]=CONNECT seq4
+    expect(frames).toHaveLength(5);
+    const pwFrag = decode(frames[2]);
+    const pwTail = decode(frames[3]);
+    const connect = decode(frames[4]);
+
+    expect(pwFrag[0]).toBe(OP_STA_PASSWORD);
+    expect(pwFrag[1]).toBe(FC_FRAGMENT);
+    expect(pwFrag[2]).toBe(2);
+
+    expect(pwTail[0]).toBe(OP_STA_PASSWORD);
+    expect(pwTail[1]).toBe(FC_PLAIN);
+    expect(pwTail[2]).toBe(3);
+
+    expect(connect).toEqual([OP_CONNECT_TO_AP, FC_PLAIN, 4, 0x00]);
+  });
+
+  test('sequence wraps modulo 256 across the provisioning group', () => {
+    // start at 254 -> OP_MODE 254, SSID 255, PASSWORD 0 (wrap), CONNECT 1.
+    const frames = buildBluFiStationProvisioningFrames({ ssid: 'a', password: 'b', startSequence: 254 });
+    expect(decode(frames[0])[2]).toBe(254);
+    expect(decode(frames[1])[2]).toBe(255);
+    expect(decode(frames[2])[2]).toBe(0);
+    expect(decode(frames[3])[2]).toBe(1);
+  });
+});
+
+describe('buildBluFiCustomDataFrames — TLV custom payload (token + code handoff)', () => {
+  test('wraps a short TLV in a single CUSTOM_DATA frame and returns next sequence', () => {
+    const tlv = encodeTLV([{ tag: 0x01, value: 'AB' }]); // [01 02 41 42]
+    const { frames, endSequence } = buildBluFiCustomDataFrames({ tlv }, 0);
+    expect(frames).toHaveLength(1);
+    expect(decode(frames[0])).toEqual([OP_CUSTOM_DATA, FC_PLAIN, 0, 0x04, 0x01, 0x02, 0x41, 0x42]);
+    expect(endSequence).toBe(1);
+  });
+
+  test('threads the start sequence and returns the post-frame sequence', () => {
+    const tlv = encodeTLV([{ tag: 0x01, value: 'AB' }]);
+    const { frames, endSequence } = buildBluFiCustomDataFrames({ tlv }, 9);
+    expect(decode(frames[0])[2]).toBe(9);
+    expect(endSequence).toBe(10);
+  });
+
+  test('end sequence wraps modulo 256', () => {
+    const tlv = encodeTLV([{ tag: 0x01, value: 'X' }]);
+    const { endSequence } = buildBluFiCustomDataFrames({ tlv }, 0xff);
+    expect(endSequence).toBe(0);
+  });
+
+  test('fragments a long custom TLV across CUSTOM_DATA frames', () => {
+    // 13-byte TLV value -> total payload 15 bytes -> frag(12) + tail(3).
+    const tlv = encodeTLV([{ tag: 0x01, value: 'A'.repeat(13) }]); // [01 0d ...13] = 15 bytes
+    expect(tlv.length).toBe(15);
+    const { frames, endSequence } = buildBluFiCustomDataFrames({ tlv }, 0);
+    expect(frames).toHaveLength(2);
+
+    const frag = decode(frames[0]);
+    expect(frag[0]).toBe(OP_CUSTOM_DATA);
+    expect(frag[1]).toBe(FC_FRAGMENT);
+    expect(frag[2]).toBe(0);
+    expect(frag.slice(4, 6)).toEqual([15, 0]); // remaining 15
+
+    const tail = decode(frames[1]);
+    expect(tail[0]).toBe(OP_CUSTOM_DATA);
+    expect(tail[1]).toBe(FC_PLAIN);
+    expect(tail[2]).toBe(1);
+    expect(tail[3]).toBe(3);
+
+    expect(endSequence).toBe(2);
+  });
+
+  test('empty TLV still emits one CUSTOM_DATA frame with zero dataLength', () => {
+    const { frames, endSequence } = buildBluFiCustomDataFrames({ tlv: new Uint8Array([]) }, 3);
+    expect(frames).toHaveLength(1);
+    expect(decode(frames[0])).toEqual([OP_CUSTOM_DATA, FC_PLAIN, 3, 0x00]);
+    expect(endSequence).toBe(4);
+  });
+});
+
+describe('buildBluFiWifiScanFrames — robot Wi-Fi scan request over BLE', () => {
+  test('emits a single GET_WIFI_LIST control frame, sequence 0, empty data', () => {
+    const frames = buildBluFiWifiScanFrames();
+    expect(frames).toHaveLength(1);
+    expect(decode(frames[0])).toEqual([OP_GET_WIFI_LIST, FC_PLAIN, 0x00, 0x00]);
+  });
+
+  test('is deterministic across calls', () => {
+    expect(buildBluFiWifiScanFrames()).toEqual(buildBluFiWifiScanFrames());
+  });
+});
+
+describe('parseBluFiConnReport — firmware Wi-Fi connection report (0x3d gate)', () => {
+  test('returns STA_CONN_SUCCESS (connState 0) for a well-formed report', () => {
+    // [type 0x3d, frameControl, sequence, dataLength 2, opmode, conn_state 0]
+    expect(parseBluFiConnReport([0x3d, 0x00, 0x00, 0x02, 0x01, 0x00])).toEqual({ connState: 0 });
+  });
+
+  test('returns STA_CONN_FAIL (connState 1) — drives WIFI_CONNECT_FAILED upstream', () => {
+    expect(parseBluFiConnReport([0x3d, 0x00, 0x00, 0x02, 0x01, 0x01])).toEqual({ connState: 1 });
+  });
+
+  test('returns STA_CONNECTING (connState 2)', () => {
+    expect(parseBluFiConnReport([0x3d, 0x00, 0x00, 0x02, 0x01, 0x02])).toEqual({ connState: 2 });
+  });
+
+  test('reads conn_state from payload[1], ignoring opmode and trailing bytes', () => {
+    expect(parseBluFiConnReport([0x3d, 0x10, 0x05, 0x04, 0x03, 0x01, 0xaa, 0xbb])).toEqual({ connState: 1 });
+  });
+
+  test('returns null for a non-conn-report type byte (e.g. CUSTOM 0x4d)', () => {
+    expect(parseBluFiConnReport([0x4d, 0x00, 0x00, 0x02, 0x01, 0x00])).toBeNull();
+  });
+
+  test('returns null for the wifi-list type byte (0x45) — not a conn-report', () => {
+    expect(parseBluFiConnReport([0x45, 0x00, 0x00, 0x02, 0x01, 0x00])).toBeNull();
+  });
+
+  test('returns null for a header shorter than 4 bytes', () => {
+    expect(parseBluFiConnReport([0x3d, 0x00, 0x00])).toBeNull();
+    expect(parseBluFiConnReport([])).toBeNull();
+  });
+
+  test('returns null when the frame is truncated relative to its dataLength', () => {
+    // dataLength claims 2 payload bytes but only 1 is present.
+    expect(parseBluFiConnReport([0x3d, 0x00, 0x00, 0x02, 0x01])).toBeNull();
+  });
+
+  test('returns null when dataLength < 2 (no conn_state field)', () => {
+    expect(parseBluFiConnReport([0x3d, 0x00, 0x00, 0x01, 0x01])).toBeNull();
+    expect(parseBluFiConnReport([0x3d, 0x00, 0x00, 0x00])).toBeNull();
+  });
+
+  test('is pure — does not throw and does not mutate its input', () => {
+    const input = [0x3d, 0x00, 0x00, 0x02, 0x01, 0x00];
+    const snapshot = [...input];
+    expect(() => parseBluFiConnReport(input)).not.toThrow();
+    parseBluFiConnReport(input);
+    expect(input).toEqual(snapshot);
+  });
+});
+
+describe('US-005 security invariant — codec never leaks credentials by reference', () => {
+  test('station frames do not retain the caller password string by reference', () => {
+    // The codec snapshots bytes; frames are opaque base64. We assert the
+    // returned value is plain base64 strings (no object holding the secret).
+    const frames = buildBluFiStationProvisioningFrames({ ssid: 'net', password: 'topsecretpw', startSequence: 0 });
+    for (const f of frames) {
+      expect(typeof f).toBe('string');
+      // base64 alphabet only — no raw plaintext smuggled through.
+      expect(f).toMatch(/^[A-Za-z0-9+/]*={0,2}$/);
+    }
+  });
+});

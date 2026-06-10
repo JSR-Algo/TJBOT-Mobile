@@ -1,0 +1,11 @@
+%% HAND-CURATED.
+%% Edge-case template: generic API / runtime error.
+%% Apply to any state whose Page calls a (current or future) API and can fail.
+%% Reference from src/features/<d>/domain.meta.json edge_cases[<state-id>] = ["error"].
+flowchart TD
+  classDef edge fill:#fee2e2,stroke:#991b1b
+
+  caller(["caller_state (any happy-path state with async work)"])
+  caller -->|async failure| error_toast(["error_toast"]):::edge
+  error_toast -->|"Try again"| caller
+  error_toast -->|"Dismiss"| prior_state["prior_state (back to whatever surfaced caller_state)"]

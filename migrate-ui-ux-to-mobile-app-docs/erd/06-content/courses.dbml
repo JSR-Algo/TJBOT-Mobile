@@ -1,0 +1,27 @@
+// courses — top-level course in the TBOT content curriculum.
+// Hierarchy root: courses → levels → units → lessons → activities.
+// Source: docs/sequences/06-content/content-pack-publish.sequence.mmd
+
+enum course_status {
+  draft
+  active
+  archived
+}
+
+Table courses {
+  id           uuid         [pk]
+  slug         varchar(64)  [not null, note: 'machine-readable identifier; immutable after publish']
+  title        varchar(254) [not null]
+  locale       varchar(16)  [not null, note: 'BCP-47; e.g. en-US']
+  age_band_min smallint     [not null, note: 'inclusive minimum age in months']
+  age_band_max smallint     [not null, note: 'inclusive maximum age in months']
+  status       course_status [not null, default: 'draft']
+  description  text
+  created_at   timestamptz  [not null, default: `now()`]
+  updated_at   timestamptz  [not null, default: `now()`]
+
+  Indexes {
+    (slug) [unique, name: 'idx_courses_slug_unique']
+    (locale, status) [name: 'idx_courses_locale_status', note: 'hot query: docs/sequences/06-content/content-selection.sequence.mmd — SELECT active courses by locale']
+  }
+}

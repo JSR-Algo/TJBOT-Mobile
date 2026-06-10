@@ -1,0 +1,75 @@
+---
+system: sys-13-security-secrets-management
+flow_id: ota-key-rotation-ceremony
+surface: internal-RPC
+spec_anchor: /software/systems/13-security-secrets-management#ota-signing-key-rotation-ceremony
+actors: [SecurityEngineerOne, SecurityEngineerTwo, AirGappedWorkstation, YubiHSM, KMS, OtaService, FleetDevices, PostgreSQL]
+apis: []
+externals: [KMS, YubiHSM]
+queues: []
+failure_paths:
+  - backup_key_missing
+  - hsm_seal_check_failed
+  - kms_import_failed
+  - fleet_adoption_below_threshold
+  - rotation_failed_rollback
+idempotency: key_rotation_log is immutable append; ceremony status enforces explicit start_at + co-sign
+retry: rotation failure rolls back to AWSPREVIOUS — no automatic retry, requires manual investigation
+timeout: weeks (multi-stage ceremony)
+status: final
+---
+%% HAND-CURATED. Air-gapped — 2 authorized engineers required, both must sign ceremony log.
+sequenceDiagram
+    autonumber
+    participant SecurityEngineerOne
+    participant SecurityEngineerTwo
+    participant AirGappedWorkstation
+    participant YubiHSM
+    participant KMS
+    participant OtaService
+    participant FleetDevices
+    participant PostgreSQL
+
+    Note over SecurityEngineerOne,FleetDevices: Pre-ceremony (1 week before)
+    SecurityEngineerOne->>SecurityEngineerOne: verify backup key exists
+    alt backup_key_missing
+        SecurityEngineerOne->>PostgreSQL: INSERT key_rotation_log {status='failed', notes='backup key missing'}
+        Note over SecurityEngineerOne: ABORT — no rotation without backup key
+    else success
+        SecurityEngineerOne->>FleetDevices: confirm firmware accepts both keys (sys-09 telemetry sweep)
+    end
+
+    Note over SecurityEngineerOne,FleetDevices: Key Generation (air-gapped)
+    SecurityEngineerOne->>AirGappedWorkstation: boot from read-only media
+    SecurityEngineerTwo->>AirGappedWorkstation: witness and co-sign (both engineers required)
+    AirGappedWorkstation->>YubiHSM: generate ECDSA P-256 keypair
+    YubiHSM-->>AirGappedWorkstation: public key exported (private NEVER leaves HSM)
+    AirGappedWorkstation->>AirGappedWorkstation: seal HSM in tamper-evident bag
+    alt hsm_seal_check_failed
+        Note over SecurityEngineerOne: abort ceremony — tamper evidence broken
+    end
+
+    Note over SecurityEngineerOne,FleetDevices: Import and Staged Rollout
+    SecurityEngineerOne->>KMS: ImportKey (public_key)
+    alt kms_import_failed
+        KMS--xSecurityEngineerOne: error
+        SecurityEngineerOne->>PostgreSQL: INSERT key_rotation_log {status='rolled_back'}
+        Note over SecurityEngineerOne: PagerDuty page on-call
+    else success
+        KMS-->>SecurityEngineerOne: new_key_id
+    end
+    SecurityEngineerOne->>OtaService: trigger FW update with new pubkey in trust list (staged over 2 weeks)
+    OtaService->>FleetDevices: staged rollout — must reach 100%
+    alt fleet_adoption_below_threshold (< 100%)
+        Note over SecurityEngineerOne: hold ceremony — wait for laggards or skip-and-revoke unhealthy devices
+    end
+
+    Note over SecurityEngineerOne,FleetDevices: Activate and Overlap (90 days)
+    SecurityEngineerOne->>YubiHSM: begin signing OTA manifests with new key
+    Note over FleetDevices: both keys accepted for 90 days (overlap window)
+    SecurityEngineerOne->>FleetDevices: FW update — remove old key from trust list (after overlap)
+
+    SecurityEngineerOne->>PostgreSQL: INSERT key_rotation_log {secret_name='ota_signing_key', rotation_method='manual', status='completed', notes='ceremony log and S3 legal hold'}
+    SecurityEngineerOne->>SecurityEngineerOne: store signed ceremony log in S3 (legal hold)
+
+    Note over SecurityEngineerOne,PostgreSQL: annual ceremony · timeout weeks · rotation_failed_rollback → revert to AWSPREVIOUS, page on-call, no auto-retry

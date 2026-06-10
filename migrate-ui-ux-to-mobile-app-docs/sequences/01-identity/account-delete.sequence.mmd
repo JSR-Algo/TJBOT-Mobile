@@ -1,0 +1,77 @@
+---
+system: sys-01-identity-household-access
+flow_id: account-delete
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#post-v1identityaccountdelete-request
+actors: [ParentApp, Gateway, IdentityService, AccountDeletionService, SQS, SES, PostgreSQL]
+apis:
+  - POST /v1/identity/account/delete-request
+  - GET /v1/identity/account/delete-status/{job_id}
+externals: [SES]
+queues: [SQS]
+failure_paths:
+  - pending_subscription_cancel_required
+  - deletion_already_in_progress
+  - retention_grace_period_active
+idempotency: dedup on user_id — repeated request within grace period returns existing job_id
+retry: caller-side exponential backoff with jitter on 5xx
+timeout: 5s p99 for request; pipeline runs async over 30+ days
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant AccountDeletionService
+    participant SQS
+    participant SES
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: Entry point: parent_settings → Account → Delete Account — GDPR/COPPA deletion request
+
+    ParentApp->>Gateway: POST /v1/identity/account/delete-request {confirm_phrase, reason?, X-Request-Id}
+    Gateway->>Gateway: require valid parent JWT (ADR-0005 D6 — fresh within 60s)
+    Gateway->>IdentityService: forward request
+    alt pending_subscription_cancel_required
+        IdentityService->>PostgreSQL: check active subscription state
+        PostgreSQL-->>IdentityService: has_active_subscription=true
+        IdentityService-->>Gateway: 409 pending_subscription_cancel_required {subscription_id}
+        Gateway-->>ParentApp: 409 — parent must cancel subscription first
+    else deletion_already_in_progress (dedup on user_id within grace period)
+        IdentityService->>PostgreSQL: SELECT id, status, grace_period_ends_at FROM deletion_jobs WHERE user_id={user_id} AND status NOT IN ('completed','cancelled')
+        PostgreSQL-->>IdentityService: existing_job
+        IdentityService-->>Gateway: 200 {deletion_job_id: existing, status: in_grace_period, grace_period_ends_at}
+        Gateway-->>ParentApp: 200 existing job returned
+    else success
+        IdentityService->>PostgreSQL: INSERT deletion_jobs {id, user_id, requested_at, grace_period_ends_at: now()+30d, status: in_grace_period}
+        PostgreSQL-->>IdentityService: deletion_job_id
+        IdentityService->>SQS: enqueue deletion_pipeline_trigger {deletion_job_id, user_id, execute_after: grace_period_ends_at}
+        SQS-->>IdentityService: message_id
+        IdentityService-)SES: (async) account_deletion_confirmation email {user_email, grace_period_ends_at, cancel_url}
+        IdentityService-->>Gateway: 202 {deletion_job_id, status: in_grace_period, grace_period_ends_at, cancelable: true}
+        Gateway-->>ParentApp: 202
+    end
+
+    Note over AccountDeletionService,SQS: --- Downstream async pipeline (after 30-day grace period) ---
+    Note over AccountDeletionService,SQS: SQS message held until grace_period_ends_at, AccountDeletionService dequeues and executes full pipeline — see 14-retention/account-deletion-pipeline.sequence.mmd
+
+    Note over ParentApp,IdentityService: --- Status poll ---
+
+    ParentApp->>Gateway: GET /v1/identity/account/delete-status/{job_id}
+    Gateway->>IdentityService: forward
+    IdentityService->>PostgreSQL: SELECT status, grace_period_ends_at, completed_at FROM deletion_jobs WHERE id={job_id} AND user_id={caller_user_id}
+    PostgreSQL-->>IdentityService: job record
+    alt retention_grace_period_active
+        IdentityService-->>Gateway: 200 {status: in_grace_period, grace_period_ends_at, cancelable: true}
+        Gateway-->>ParentApp: 200
+    else pipeline_running
+        IdentityService-->>Gateway: 200 {status: pipeline_running, cancelable: false}
+        Gateway-->>ParentApp: 200
+    else completed
+        IdentityService-->>Gateway: 200 {status: completed, completed_at}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 5s p99 for sync path — pipeline executes async over 30+ days via AccountDeletionService — idempotent on user_id within grace period

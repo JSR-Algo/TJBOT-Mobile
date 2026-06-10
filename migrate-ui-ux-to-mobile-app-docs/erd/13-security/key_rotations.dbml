@@ -1,0 +1,36 @@
+// key_rotations — immutable audit trail for every key / secret rotation ceremony.
+// Source: docs/site/software/systems/13-security-secrets-management.md §3.1 key_rotation_log.
+
+enum key_rotation_method {
+  automated
+  manual
+  emergency
+}
+
+enum key_rotation_status {
+  completed
+  failed
+  rolled_back
+}
+
+Table key_rotations {
+  id                   uuid                  [pk]
+  secret_name          varchar(120)          [not null]
+  kms_key_id           uuid                  [note: 'when the rotation targets a kms_keys row; null for secret_versions-only rotations']
+  rotation_method      key_rotation_method   [not null]
+  status               key_rotation_status   [not null]
+  rotated_by           varchar(120)          [not null, note: 'admin email or system identity']
+  rotated_at           timestamptz           [not null]
+  old_key_expiry       timestamptz
+  new_key_active_at    timestamptz           [not null]
+  notes                text
+  created_at           timestamptz           [not null, default: `now()`]
+  updated_at           timestamptz           [not null, default: `now()`, note: 'equal to created_at; row is immutable after insert']
+
+  Indexes {
+    (secret_name, rotated_at) [name: 'idx_key_rotations_secret_rotated_at', note: 'hot query: docs/sequences/13-security/ota-key-rotation-ceremony.sequence.mmd — latest rotation per secret']
+    (status) [name: 'idx_key_rotations_status', note: 'partial-index condition: status != completed (open / failed monitor)']
+  }
+}
+
+Ref: key_rotations.kms_key_id > kms_keys.id

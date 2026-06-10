@@ -1,52 +1,81 @@
-import type { CompositeScreenProps } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type React from 'react';
+import type { RootStackParamList } from './routes';
 
-export type AuthStackParamList = {
-  Login: undefined;
-  Signup: undefined;
-  ForgotPassword: undefined;
-  EmailVerify: { email?: string };
-  Coppa: undefined;
+export type FeatureRouteOwner =
+  | 'auth'
+  | 'onboarding'
+  | 'home'
+  | 'course'
+  | 'course-library'
+  | 'purchase'
+  | 'lesson-session'
+  | 'progress'
+  | 'parent'
+  | 'device'
+  | 'robot-mgmt'
+  | 'fallback';
+
+export type FeatureRouteRole =
+  | 'auth'
+  | 'onboarding'
+  | 'onboarding-root'
+  | 'tab'
+  | 'stack-entry'
+  | 'stack'
+  | 'modal'
+  | 'modal-entry'
+  | 'state-machine'
+  | 'fallback-entry';
+
+export type FeatureForwardCycleGroup =
+  | 'course-dispatch-picker'
+  | 'device-pairing-retry'
+  | 'lesson-exit-resume'
+  | 'network-retry';
+
+export type FeatureTabName =
+  | 'Home'
+  | 'Devices'
+  | 'Library'
+  | 'Progress'
+  | 'Profile';
+
+export type FeatureRootBranch =
+  | 'auth'
+  | 'onboarding'
+  | 'protected';
+
+export type FeatureStackScreen<RouteName extends keyof RootStackParamList = keyof RootStackParamList> = {
+  readonly name: RouteName;
+  readonly component: React.ElementType;
+  readonly role: FeatureRouteRole;
+  readonly backTarget?: keyof RootStackParamList;
+  readonly forwardCycleGroup?: FeatureForwardCycleGroup;
+  readonly stateMachineId?: string;
+  readonly stateMachineIds?: readonly string[];
 };
 
-export type OnboardingStackParamList = {
-  Welcome: undefined;
-  CoppaConsent: undefined;
-  HouseholdCreate: undefined;
-  AddChild: { householdId: string };
-  InterestSetup: { childId: string; householdId: string };
-  DeviceSetupIntro: undefined;
-  VoiceTest: undefined;
+export type FeatureTabScreen<RouteName extends keyof RootStackParamList = keyof RootStackParamList> =
+  FeatureStackScreen<RouteName> & {
+    readonly tabName: FeatureTabName;
+    readonly title: FeatureTabName;
+    readonly tabOrder: number;
+    readonly tabIcon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>;
+    readonly tabBarButtonTestID?: string;
+  };
+
+export type FeatureNavigationConfig = {
+  readonly owner: FeatureRouteOwner;
+  readonly rootBranch: FeatureRootBranch;
+  readonly initialRoute?: keyof RootStackParamList;
+  readonly stackScreens: readonly FeatureStackScreen[];
+  readonly modalScreens: readonly FeatureStackScreen[];
+  readonly tabScreen?: FeatureTabScreen;
+  readonly pendingDeviceSetupRoute?: keyof RootStackParamList;
 };
 
-export type MainTabParamList = {
-  Home: undefined;
-  Devices: undefined;
-  Activity: undefined;
-  Progress: undefined;
-  Profile: undefined;
-};
-
-export type MainStackParamList = {
-  MainTabs: undefined;
-  DeviceSetup: undefined;
-  DeviceDetail: { deviceId: string };
-  Interaction: { childId?: string } | undefined;
-  ParentControls: { deviceId: string };
-  NotificationPrefs: undefined;
-  GeminiConversation: undefined;
-  // Software-twin demo screen — registered only when EXPO_PUBLIC_DEMO_SCREEN=true.
-  // Plan: expressive-robot-companion-rewrite §6 RM-01.
-  RobotDemo: undefined;
-};
-
-export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<AuthStackParamList, T>;
-export type OnboardingScreenProps<T extends keyof OnboardingStackParamList> = NativeStackScreenProps<OnboardingStackParamList, T>;
-
-export type MainStackScreenProps<T extends keyof MainStackParamList> = NativeStackScreenProps<MainStackParamList, T>;
-
-export type MainTabScreenProps<T extends keyof MainTabParamList> = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, T>,
-  NativeStackScreenProps<MainStackParamList>
->;
+export function defineFeatureScreens<const Screens extends readonly FeatureStackScreen[]>(
+  screens: Screens,
+): Screens {
+  return screens;
+}

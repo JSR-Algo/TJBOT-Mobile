@@ -1,15 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { View, StyleSheet } from 'react-native';
+import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
+import { Text } from '@/design-system/primitives/Text';
 
 interface ErrorMessageProps {
   message: string;
 }
 
-export function ErrorMessage({ message }: ErrorMessageProps): React.JSX.Element {
-  if (!message) return <></>;
+export function ErrorMessage({ message }: ErrorMessageProps): React.JSX.Element | null {
+  if (!message) return null;
   return (
-    <View style={styles.container}>
+    <View accessible accessibilityRole="alert" style={styles.container}>
       <Text style={styles.text}>⚠️ {message}</Text>
     </View>
   );

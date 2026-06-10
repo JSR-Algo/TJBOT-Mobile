@@ -1,0 +1,356 @@
+// AUTO-GENERATED FROM docs/erd/01-identity/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/01-identity/auth_sessions.dbml, docs/erd/01-identity/children.dbml, docs/erd/01-identity/coppa_consents.dbml, docs/erd/01-identity/email_verifications.dbml, docs/erd/01-identity/household_members.dbml, docs/erd/01-identity/households.dbml, docs/erd/01-identity/mfa_secrets.dbml, docs/erd/01-identity/password_reset_tokens.dbml, docs/erd/01-identity/refresh_tokens.dbml, docs/erd/01-identity/users.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum auth_session_status {
+  active
+  revoked
+  expired
+}
+
+enum auth_session_client {
+  parent_app
+  admin_console
+  support_tool
+}
+
+enum child_age_band {
+  age_4_5
+  age_6_7
+  age_8_plus
+}
+
+enum child_status {
+  active
+  archived
+  scheduled_for_deletion
+  deleted
+}
+
+enum coppa_consent_status {
+  active
+  revoked
+  superseded
+}
+
+enum email_verification_purpose {
+  signup
+  email_change
+  reverify
+}
+
+enum email_verification_status {
+  pending
+  consumed
+  expired
+  invalidated
+}
+
+enum household_member_role {
+  owner
+  manager
+  viewer
+}
+
+enum household_member_status {
+  active
+  pending_invite
+  revoked
+}
+
+enum household_status {
+  active
+  locked
+  scheduled_for_deletion
+  deleted
+}
+
+enum mfa_method {
+  totp
+  webauthn
+  recovery_code
+}
+
+enum mfa_secret_status {
+  active
+  disabled
+  revoked
+}
+
+enum password_reset_token_status {
+  pending
+  consumed
+  expired
+  invalidated
+}
+
+enum refresh_token_status {
+  active
+  rotated
+  revoked
+  replayed
+}
+
+enum user_status {
+  active
+  disabled
+  scheduled_for_deletion
+  deleted
+}
+
+/// Source: docs/erd/01-identity/auth_sessions.dbml
+model AuthSessions {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid @map("user_id")
+  /// spec field name parent_account_id
+  clientType auth_session_client @map("client_type")
+  deviceName String? @db.VarChar(120) @map("device_name")
+  platform String? @db.VarChar(32)
+  ipAddress String? @db.VarChar(45) @map("ip_address")
+  /// string repr of INET; v6-capable
+  userAgent String? @db.VarChar(512) @map("user_agent")
+  issuedAt DateTime @db.Timestamptz(6) @default(now()) @map("issued_at")
+  lastUsedAt DateTime? @db.Timestamptz(6) @map("last_used_at")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  status auth_session_status @default(active)
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  revokeReason String? @db.VarChar(80) @map("revoke_reason")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  user Users @relation(name: "auth_sessions_user_id_to_users", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  refreshTokens RefreshTokens[] @relation(name: "refresh_tokens_auth_session_id_to_auth_sessions")
+  @@index([userId, status], map: "idx_auth_sessions_user_status")
+  @@index([expiresAt], map: "idx_auth_sessions_expires_at")
+  @@map("auth_sessions")
+}
+
+/// Source: docs/erd/01-identity/children.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model Children {
+  id String @id @default(uuid()) @db.Uuid
+  householdId String @db.Uuid @map("household_id")
+  nickname String @db.VarChar(64)
+  /// sanitized per sys-01 §4.10 profile field sanitization
+  ageBand child_age_band @map("age_band")
+  patientModeEnabled Boolean @default(false) @map("patient_mode_enabled")
+  bedtimeModeOverride Boolean @default(false) @map("bedtime_mode_override")
+  favoriteTopics Json @db.JsonB @default("[]") @map("favorite_topics")
+  /// array of topic slugs; capped at 16 items at app layer
+  status child_status @default(active)
+  archivedAt DateTime? @db.Timestamptz(6) @map("archived_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// COPPA hard-delete after retention window — sys-14 owns the sweep
+  household Households @relation(name: "children_household_id_to_households", fields: [householdId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  /// cascade-delete-coppa (sys-14 retention worker enforces COPPA §312.10 hard-delete within window)
+  @@index([householdId, status, createdAt], map: "idx_children_household_status_created_at")
+  @@index([householdId, nickname], map: "idx_children_household_nickname")
+  @@index([deletedAt], map: "idx_children_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("children")
+}
+
+/// Source: docs/erd/01-identity/coppa_consents.dbml
+model CoppaConsents {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  userId String @db.Uuid @map("user_id")
+  /// ref → users.id — consent given by the parent account holder
+  version String @db.VarChar(16)
+  /// policy version string — e.g. "2024-01-01"; bumped on any material text change
+  status coppa_consent_status @default(active)
+  ip String @db.VarChar(45)
+  /// IPv4 or IPv6 of the requesting client at consent time
+  policyTextUrl String @db.VarChar(2048) @map("policy_text_url")
+  /// URL to the immutable consent text for this version (S3 or CDN)
+  acceptedLocale String @db.VarChar(8) @map("accepted_locale")
+  /// BCP-47 locale — e.g. "en-US" — the UI language the parent saw the consent in
+  userAgent String? @db.Text @map("user_agent")
+  /// raw User-Agent header at consent time
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  /// NULL while active; set when parent revokes consent or account deletion begins
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  user Users @relation(name: "coppa_consents_user_id_to_users", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  @@index([userId, status], map: "idx_coppa_consents_user_id_active")
+  @@unique([userId, version], map: "idx_coppa_consents_user_version_unique")
+  @@map("coppa_consents")
+}
+
+/// Source: docs/erd/01-identity/email_verifications.dbml
+model EmailVerifications {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid @map("user_id")
+  email String @db.VarChar(254)
+  /// snapshot of the email being verified (may differ from users.email during change)
+  tokenHash String @db.VarChar(128) @map("token_hash")
+  purpose email_verification_purpose
+  status email_verification_status @default(pending)
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  consumedAt DateTime? @db.Timestamptz(6) @map("consumed_at")
+  requestedIp String? @db.VarChar(45) @map("requested_ip")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  user Users @relation(name: "email_verifications_user_id_to_users", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([tokenHash], map: "idx_email_verifications_token_hash_unique")
+  @@index([userId, status], map: "idx_email_verifications_user_status")
+  @@map("email_verifications")
+}
+
+/// Source: docs/erd/01-identity/household_members.dbml
+model HouseholdMembers {
+  id String @id @default(uuid()) @db.Uuid
+  householdId String @db.Uuid @map("household_id")
+  userId String @db.Uuid @map("user_id")
+  /// spec field name parent_account_id
+  role household_member_role @default(manager)
+  status household_member_status @default(active)
+  invitedByUserId String? @db.Uuid @map("invited_by_user_id")
+  /// self-ref into users for invite chain
+  acceptedAt DateTime? @db.Timestamptz(6) @map("accepted_at")
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  household Households @relation(name: "household_members_household_id_to_households", fields: [householdId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  /// cascade-soft-delete (app-layer; sys-14 retention sweep cascades soft-delete)
+  user Users @relation(name: "household_members_user_id_to_users", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  /// cascade-soft-delete (app-layer; sys-14 retention sweep cascades soft-delete)
+  invitedByUser Users? @relation(name: "household_members_invited_by_user_id_to_users", fields: [invitedByUserId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([householdId, userId], map: "idx_household_members_household_user_unique")
+  @@index([userId, status], map: "idx_household_members_user_status")
+  @@index([householdId, role, status], map: "idx_household_members_household_role_status")
+  @@map("household_members")
+}
+
+/// Source: docs/erd/01-identity/households.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model Households {
+  id String @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(120)
+  primaryParentId String @db.Uuid @map("primary_parent_id")
+  timezone String @db.VarChar(64)
+  /// IANA tz name; validated at signup
+  locale String @db.VarChar(16)
+  /// BCP-47 tag
+  status household_status @default(active)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  archivedAt DateTime? @db.Timestamptz(6) @map("archived_at")
+  /// soft-deletion ledger; sys-14 hard-deletes after window
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// set by sys-14 retention sweep
+  user Users @relation(name: "households_primary_parent_id_to_users", fields: [primaryParentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  children Children[] @relation(name: "children_household_id_to_households")
+  householdMembers HouseholdMembers[] @relation(name: "household_members_household_id_to_households")
+  @@index([primaryParentId], map: "idx_households_primary_parent_id")
+  @@index([status, updatedAt], map: "idx_households_status_updated_at")
+  @@index([deletedAt], map: "idx_households_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("households")
+}
+
+/// Source: docs/erd/01-identity/mfa_secrets.dbml
+model MfaSecrets {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid @map("user_id")
+  method mfa_method
+  status mfa_secret_status @default(active)
+  secretHash String @db.VarChar(256) @map("secret_hash")
+  /// encrypted at rest via sys-13 KMS envelope; never plaintext
+  label String? @db.VarChar(80)
+  /// user-supplied nickname for the factor (e.g. "Yubikey-blue")
+  enrolledAt DateTime @db.Timestamptz(6) @map("enrolled_at")
+  lastUsedAt DateTime? @db.Timestamptz(6) @map("last_used_at")
+  disabledAt DateTime? @db.Timestamptz(6) @map("disabled_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  user Users @relation(name: "mfa_secrets_user_id_to_users", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([userId, status], map: "idx_mfa_secrets_user_status")
+  @@map("mfa_secrets")
+}
+
+/// Source: docs/erd/01-identity/password_reset_tokens.dbml
+model PasswordResetTokens {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid @map("user_id")
+  tokenHash String @db.VarChar(128) @map("token_hash")
+  status password_reset_token_status @default(pending)
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  usedAt DateTime? @db.Timestamptz(6) @map("used_at")
+  requestedIp String? @db.VarChar(45) @map("requested_ip")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  user Users @relation(name: "password_reset_tokens_user_id_to_users", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([tokenHash], map: "idx_password_reset_tokens_token_hash_unique")
+  @@index([userId, status], map: "idx_password_reset_tokens_user_status")
+  @@map("password_reset_tokens")
+}
+
+/// Source: docs/erd/01-identity/refresh_tokens.dbml
+model RefreshTokens {
+  id String @id @default(uuid()) @db.Uuid
+  authSessionId String @db.Uuid @map("auth_session_id")
+  tokenHash String @db.VarChar(128) @map("token_hash")
+  /// sha256/argon2 hash of the bearer token; never plaintext
+  status refresh_token_status @default(active)
+  issuedAt DateTime @db.Timestamptz(6) @default(now()) @map("issued_at")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  rotatedAt DateTime? @db.Timestamptz(6) @map("rotated_at")
+  /// set when a successor token is issued
+  rotatedToId String? @db.Uuid @map("rotated_to_id")
+  /// self-ref to successor refresh_tokens row
+  revokedAt DateTime? @db.Timestamptz(6) @map("revoked_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  authSession AuthSessions @relation(name: "refresh_tokens_auth_session_id_to_auth_sessions", fields: [authSessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rotatedTo RefreshTokens? @relation(name: "refresh_tokens_rotated_to_id_to_refresh_tokens", fields: [rotatedToId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  rotatedToInverse RefreshTokens[] @relation(name: "refresh_tokens_rotated_to_id_to_refresh_tokens")
+  @@unique([tokenHash], map: "idx_refresh_tokens_token_hash_unique")
+  @@index([authSessionId, status], map: "idx_refresh_tokens_session_status")
+  @@map("refresh_tokens")
+}
+
+/// Source: docs/erd/01-identity/users.dbml
+/// soft-delete: deleted_at IS NULL = active row; sys-14 retention sweep hard-deletes after policy window.
+model Users {
+  id String @id @default(uuid()) @db.Uuid
+  email String @db.VarChar(254)
+  /// RFC 5321 max; case-insensitive at app layer
+  passwordHash String @db.Text @map("password_hash")
+  /// argon2id / bcrypt; never plaintext
+  displayName String? @db.VarChar(120) @map("display_name")
+  status user_status @default(active)
+  defaultHouseholdId String? @db.Uuid @map("default_household_id")
+  /// set after household creation; resolved on /v1/me
+  lastLoginAt DateTime? @db.Timestamptz(6) @map("last_login_at")
+  disabledReason String? @db.VarChar(120) @map("disabled_reason")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(6) @map("deleted_at")
+  /// soft-delete; sys-14 retention sweep hard-deletes after policy window
+  authSessions AuthSessions[] @relation(name: "auth_sessions_user_id_to_users")
+  coppaConsents CoppaConsents[] @relation(name: "coppa_consents_user_id_to_users")
+  emailVerifications EmailVerifications[] @relation(name: "email_verifications_user_id_to_users")
+  householdMembersUser HouseholdMembers[] @relation(name: "household_members_user_id_to_users")
+  householdMembersInvitedByUser HouseholdMembers[] @relation(name: "household_members_invited_by_user_id_to_users")
+  households Households[] @relation(name: "households_primary_parent_id_to_users")
+  mfaSecrets MfaSecrets[] @relation(name: "mfa_secrets_user_id_to_users")
+  passwordResetTokens PasswordResetTokens[] @relation(name: "password_reset_tokens_user_id_to_users")
+  @@unique([email], map: "idx_users_email_unique")
+  @@index([status, createdAt], map: "idx_users_status_created_at")
+  @@index([defaultHouseholdId], map: "idx_users_default_household_id")
+  @@index([deletedAt], map: "idx_users_deleted_at_soft")
+  /// soft-delete partial-index — apply post-migration: CREATE INDEX ... WHERE deleted_at IS NULL
+  @@map("users")
+}
+

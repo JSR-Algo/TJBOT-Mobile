@@ -1,0 +1,19 @@
+// demo_session_overrides.dbml — short-lived per-session config overrides for retail demo; 24h retention
+
+Table demo_session_overrides {
+  id              uuid          [pk, note: 'service-generated; never serial']
+  demo_device_id  uuid          [not null, note: 'FK → demo_devices.id']
+  interaction_id  varchar(64)   [not null, note: 'interaction slot identifier from demo content manifest']
+  override_data   jsonb         [not null, note: 'shape: {script?: [...], persona?: string, language?: string}']
+  expires_at      timestamptz   [not null, note: 'max 24h from creation; session-scoped']
+  created_at      timestamptz   [not null, default: `now()`]
+  updated_at      timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (demo_device_id, expires_at) [name: 'idx_demo_session_overrides_device_id_expires_at', note: 'hot query: docs/sequences/22-demo/retail-loop-attract-to-conversation.sequence.mmd']
+  }
+
+  Note: 'retention: 24h or session-scoped. DemoCLI sweeps rows where expires_at < now() on next boot.'
+}
+
+Ref: demo_session_overrides.demo_device_id > demo_devices.id

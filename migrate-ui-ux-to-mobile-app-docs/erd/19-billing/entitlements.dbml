@@ -1,0 +1,21 @@
+// entitlements.dbml — per-child content access derived from household subscription
+
+Table entitlements {
+  id              uuid        [pk, note: 'service-generated; never serial']
+  child_id        uuid        [not null, note: 'cross-domain ref → IdentityService (children table)']
+  subscription_id uuid        [not null, note: 'FK → subscriptions.id']
+  tier            varchar(64) [not null, note: 'plan tier slug e.g. "plus", "free"']
+  features        jsonb       [note: 'feature flags granted to this child; subset of subscription_plans.features']
+  valid_from      timestamptz [not null]
+  valid_until     timestamptz [not null, note: 'mirrors subscriptions.current_period_end; refreshed on renewal']
+  created_at      timestamptz [not null, default: `now()`]
+  updated_at      timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (child_id, valid_until) [name: 'idx_entitlements_child_id_valid_until', note: 'hot query: docs/sequences/19-billing/entitlement-check-session-start.sequence.mmd']
+    (subscription_id) [name: 'idx_entitlements_subscription_id']
+  }
+}
+
+Ref: entitlements.subscription_id > subscriptions.id
+// Ref: entitlements.child_id > children.id    // cross-domain ref → IdentityService

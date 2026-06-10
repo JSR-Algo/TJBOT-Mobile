@@ -1,0 +1,43 @@
+@startuml TBOT-KidHub
+title Domain · kid-hub — daily entry surface for child
+left to right direction
+
+actor Child
+
+package "kid-hub" {
+  usecase "View Home Hub"          as UC_HUB_VIEW
+  usecase "Tap Robot Greeting"     as UC_HUB_TAP
+  usecase "Start Today's Lesson"   as UC_HUB_START
+  usecase "Open Course"            as UC_HUB_COURSE
+  usecase "Open Review"            as UC_HUB_REVIEW
+  usecase "Open Today's Progress"  as UC_HUB_PROG
+  usecase "Open Kid Settings"      as UC_HUB_SET
+  usecase "Enter Parent Space"     as UC_HUB_PARENT
+}
+
+Child --> UC_HUB_VIEW
+Child --> UC_HUB_TAP
+Child --> UC_HUB_START
+Child --> UC_HUB_COURSE
+Child --> UC_HUB_REVIEW
+Child --> UC_HUB_PROG
+Child --> UC_HUB_SET
+Child --> UC_HUB_PARENT
+
+' Hub state variants (all rendered by HomeHubPage):
+' idle | greeting | daily_available | completed_today | mic_needed | offline
+
+note bottom of UC_HUB_PARENT
+  [requires] parent-gate : UC_PG_PASS
+  [exit] → parent-summary
+end note
+
+note bottom of UC_HUB_START
+  [exit] → lesson-session : UC_LSN_START
+end note
+
+' [exit] UC_HUB_COURSE  → course-browse : UC_CRS_TREE
+' [exit] UC_HUB_REVIEW  → course-browse : UC_CRS_REVIEW
+' [exit] UC_HUB_PROG    → progress      : UC_PRG_TODAY
+' Files: src/features/home/HomeHubPage.jsx
+@enduml

@@ -1,0 +1,267 @@
+// AUTO-GENERATED FROM docs/erd/19-billing/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/19-billing/entitlements.dbml, docs/erd/19-billing/invoices.dbml, docs/erd/19-billing/order_items.dbml, docs/erd/19-billing/orders.dbml, docs/erd/19-billing/stripe_customers.dbml, docs/erd/19-billing/stripe_webhook_events.dbml, docs/erd/19-billing/subscription_plans.dbml, docs/erd/19-billing/subscriptions.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum invoice_status {
+  draft
+  open
+  paid
+  void
+  uncollectible
+}
+
+enum order_state {
+  created
+  paid
+  fulfilling
+  shipped
+  arrived
+  activated
+  cancelled
+  refunded
+}
+
+enum stripe_webhook_event_status {
+  received
+  processed
+  failed
+}
+
+enum subscription_plan_interval {
+  monthly
+  annual
+}
+
+enum subscription_status {
+  trialing
+  active
+  past_due
+  canceled
+  expired
+}
+
+/// Source: docs/erd/19-billing/entitlements.dbml
+model Entitlements {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  childId String @db.Uuid @map("child_id")
+  /// cross-domain ref → IdentityService (children table)
+  subscriptionId String @db.Uuid @map("subscription_id")
+  /// FK → subscriptions.id
+  tier String @db.VarChar(64)
+  /// plan tier slug e.g. "plus", "free"
+  features Json? @db.JsonB
+  /// feature flags granted to this child; subset of subscription_plans.features
+  validFrom DateTime @db.Timestamptz(6) @map("valid_from")
+  validUntil DateTime @db.Timestamptz(6) @map("valid_until")
+  /// mirrors subscriptions.current_period_end; refreshed on renewal
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  subscription Subscriptions @relation(name: "entitlements_subscription_id_to_subscriptions", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  /// cascade-soft-delete (app-layer; sys-14 retention sweep cascades soft-delete)
+  @@index([childId, validUntil], map: "idx_entitlements_child_id_valid_until")
+  @@index([subscriptionId], map: "idx_entitlements_subscription_id")
+  @@map("entitlements")
+}
+
+/// Source: docs/erd/19-billing/invoices.dbml
+model Invoices {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  stripeInvoiceId String @db.VarChar(255) @unique @map("stripe_invoice_id")
+  /// Stripe Invoice object ID (in_...)
+  stripeCustomerId String @db.Uuid @map("stripe_customer_id")
+  /// FK → stripe_customers.id
+  subscriptionId String @db.Uuid @map("subscription_id")
+  /// FK → subscriptions.id
+  amountDueCents BigInt @map("amount_due_cents")
+  /// money: bigint cents only
+  amountPaidCents BigInt @default(0) @map("amount_paid_cents")
+  /// money: bigint cents only
+  currency String @db.VarChar(3) @default("usd")
+  status invoice_status @default(draft)
+  periodStart DateTime @db.Timestamptz(6) @map("period_start")
+  periodEnd DateTime @db.Timestamptz(6) @map("period_end")
+  paidAt DateTime? @db.Timestamptz(6) @map("paid_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  stripeCustomer StripeCustomers @relation(name: "invoices_stripe_customer_id_to_stripe_customers", fields: [stripeCustomerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  subscription Subscriptions @relation(name: "invoices_subscription_id_to_subscriptions", fields: [subscriptionId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([stripeInvoiceId], map: "idx_invoices_stripe_invoice_id_unique")
+  @@index([stripeCustomerId, status], map: "idx_invoices_stripe_customer_id_status")
+  @@index([subscriptionId], map: "idx_invoices_subscription_id")
+  @@map("invoices")
+}
+
+/// Source: docs/erd/19-billing/order_items.dbml
+model OrderItems {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  orderId String @db.Uuid @map("order_id")
+  /// FK → orders.id
+  productSku String @db.VarChar(64) @map("product_sku")
+  /// internal SKU or Stripe Price ID for the item
+  description String @db.VarChar(255)
+  quantity Int @default(1)
+  unitPriceCents BigInt @map("unit_price_cents")
+  /// money: bigint cents only; price at time of purchase — immutable after order placed
+  currency String @db.VarChar(3) @default("usd")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  order Orders @relation(name: "order_items_order_id_to_orders", fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([orderId], map: "idx_order_items_order_id")
+  @@map("order_items")
+}
+
+/// Source: docs/erd/19-billing/orders.dbml
+model Orders {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  userId String @db.Uuid @map("user_id")
+  /// cross-domain ref → IdentityService — parent placing the order
+  skuId String @db.VarChar(64) @map("sku_id")
+  /// product SKU identifier; resolved against product catalog at order time
+  quantity Int @default(1)
+  /// must be ≥ 1; validated at app layer
+  amountCents BigInt @map("amount_cents")
+  /// money: bigint cents; total charged to card = sku_unit_price_cents × quantity
+  currency String @db.VarChar(3) @default("USD")
+  /// ISO 4217 — uppercase; BillingService validates against supported list
+  state order_state @default(created)
+  stateVersion Int @default(0) @map("state_version")
+  /// incremented on every state transition for optimistic concurrency
+  stripeCheckoutSessionId String? @db.VarChar(255) @map("stripe_checkout_session_id")
+  /// Stripe Checkout Session id (cs_...) — set at order creation; NULL for orders created outside Checkout flow
+  stripePaymentIntentId String? @db.VarChar(255) @map("stripe_payment_intent_id")
+  /// Stripe PaymentIntent id (pi_...); set on payment confirmation
+  shippingAddress Json? @db.JsonB @map("shipping_address")
+  /// snapshot of shipping address at order time — shape: {line1,line2?,city,state,postal_code,country}; NULL for digital-only orders
+  trackingNumber String? @db.VarChar(64) @map("tracking_number")
+  /// carrier tracking number; set when state=shipped
+  paidAt DateTime? @db.Timestamptz(6) @map("paid_at")
+  /// set when state transitions to paid
+  shippedAt DateTime? @db.Timestamptz(6) @map("shipped_at")
+  /// set when state transitions to shipped
+  cancelledAt DateTime? @db.Timestamptz(6) @map("cancelled_at")
+  /// set when state transitions to cancelled
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  orderItems OrderItems[] @relation(name: "order_items_order_id_to_orders")
+  @@index([userId, createdAt], map: "idx_orders_user_created")
+  @@index([state, createdAt], map: "idx_orders_state_active")
+  @@unique([stripePaymentIntentId], map: "idx_orders_stripe_payment_intent_id_unique")
+  @@index([stripeCheckoutSessionId], map: "idx_orders_stripe_checkout_session_id")
+  @@map("orders")
+}
+
+/// Source: docs/erd/19-billing/stripe_customers.dbml
+model StripeCustomers {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  userId String @db.Uuid @unique @map("user_id")
+  /// cross-domain ref → IdentityService; one user → one stripe_customer
+  stripeCustomerId String @db.VarChar(255) @unique @map("stripe_customer_id")
+  /// Stripe Customer object ID (cus_...)
+  email String @db.VarChar(254)
+  /// email at time of Stripe customer creation; may drift from users.email
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  invoices Invoices[] @relation(name: "invoices_stripe_customer_id_to_stripe_customers")
+  subscriptions Subscriptions[] @relation(name: "subscriptions_stripe_customer_id_to_stripe_customers")
+  @@unique([userId], map: "idx_stripe_customers_user_id_unique")
+  @@unique([stripeCustomerId], map: "idx_stripe_customers_stripe_customer_id_unique")
+  @@map("stripe_customers")
+}
+
+/// Source: docs/erd/19-billing/stripe_webhook_events.dbml
+model StripeWebhookEvents {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  stripeEventId String @db.VarChar(255) @unique @map("stripe_event_id")
+  /// Stripe Event ID (evt_...) — idempotency key per Stripe spec
+  eventType String @db.VarChar(128) @map("event_type")
+  /// e.g. customer.subscription.updated, invoice.payment_failed
+  processingStatus stripe_webhook_event_status @default(received) @map("processing_status")
+  payloadHash String? @db.VarChar(64) @map("payload_hash")
+  /// SHA-256 of raw payload — for integrity audit
+  attempts Int @default(0)
+  processedAt DateTime? @db.Timestamptz(6) @map("processed_at")
+  failedReason String? @db.Text @map("failed_reason")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([stripeEventId], map: "idx_stripe_webhook_events_stripe_event_id_unique")
+  @@index([processingStatus, createdAt], map: "idx_stripe_webhook_events_status_created_at")
+  @@map("stripe_webhook_events")
+}
+
+/// Source: docs/erd/19-billing/subscription_plans.dbml
+model SubscriptionPlans {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  stripePriceId String @db.VarChar(255) @unique @map("stripe_price_id")
+  /// Stripe Price object ID — used for checkout and upgrade
+  stripeProductId String @db.VarChar(255) @map("stripe_product_id")
+  /// Stripe Product object ID
+  name String @db.VarChar(128)
+  /// e.g. TBOT Plus Monthly
+  interval subscription_plan_interval
+  amountCents BigInt @map("amount_cents")
+  /// money: bigint cents only
+  currency String @db.VarChar(3) @default("usd")
+  /// ISO 4217 three-letter code
+  maxChildProfiles Int @default(1) @map("max_child_profiles")
+  dailyTurnLimit Int @default(-1) @map("daily_turn_limit")
+  /// -1 means unlimited
+  dailySessionLimit Int @default(-1) @map("daily_session_limit")
+  /// -1 means unlimited
+  features Json? @db.JsonB
+  /// feature flags included in this plan; shape: {key: boolean}
+  active Boolean @default(true)
+  /// false = hidden from new signups; existing subs continue
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  subscriptions Subscriptions[] @relation(name: "subscriptions_plan_id_to_subscription_plans")
+  @@unique([stripePriceId], map: "idx_subscription_plans_stripe_price_id_unique")
+  @@index([active], map: "idx_subscription_plans_active")
+  @@map("subscription_plans")
+}
+
+/// Source: docs/erd/19-billing/subscriptions.dbml
+model Subscriptions {
+  id String @id @default(uuid()) @db.Uuid
+  /// service-generated; never serial
+  householdId String @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService
+  stripeCustomerId String @db.Uuid @map("stripe_customer_id")
+  /// FK → stripe_customers.id
+  planId String @db.Uuid @map("plan_id")
+  /// FK → subscription_plans.id
+  stripeSubscriptionId String? @db.VarChar(255) @unique @map("stripe_subscription_id")
+  /// Stripe Subscription object ID (sub_...) — null before first payment
+  status subscription_status @default(trialing)
+  trialEndsAt DateTime? @db.Timestamptz(6) @map("trial_ends_at")
+  currentPeriodStart DateTime @db.Timestamptz(6) @map("current_period_start")
+  currentPeriodEnd DateTime @db.Timestamptz(6) @map("current_period_end")
+  canceledAt DateTime? @db.Timestamptz(6) @map("canceled_at")
+  cancelAtPeriodEnd Boolean @default(false) @map("cancel_at_period_end")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  stripeCustomer StripeCustomers @relation(name: "subscriptions_stripe_customer_id_to_stripe_customers", fields: [stripeCustomerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  subscriptionPlan SubscriptionPlans @relation(name: "subscriptions_plan_id_to_subscription_plans", fields: [planId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  entitlements Entitlements[] @relation(name: "entitlements_subscription_id_to_subscriptions")
+  invoices Invoices[] @relation(name: "invoices_subscription_id_to_subscriptions")
+  @@index([householdId, status], map: "idx_subscriptions_household_id_status")
+  @@unique([stripeSubscriptionId], map: "idx_subscriptions_stripe_subscription_id_unique")
+  @@index([stripeCustomerId], map: "idx_subscriptions_stripe_customer_id")
+  @@map("subscriptions")
+}
+

@@ -1,0 +1,61 @@
+---
+system: sys-05-conversation-intelligence-and-safety
+flow_id: policy-publish
+surface: admin
+spec_anchor: /software/systems/05-conversation-intelligence-and-safety#internal-api-contract
+actors: [AdminConsole, SafetyService, PostgreSQL, Redis, RedTeamRunner]
+apis:
+  - POST /internal/v1/admin/safety-policies
+  - POST /internal/v1/admin/blocklists
+  - POST /internal/v1/admin/prompts
+  - POST /internal/v1/admin/fallback-templates
+externals: [Redis]
+queues:
+  - conv-policy-publish
+failure_paths:
+  - rbac_denied
+  - regex_compile_failed
+  - regex_catastrophic_backtracking
+  - safe_word_false_positive
+  - red_team_regression
+idempotency: version-monotonic — duplicate publish for same version rejected; admin publish events emit conv-policy-publish exactly once
+retry: caller retries on 5xx with backoff — fan-out invalidation worker has DLQ
+timeout: validation pipeline 50ms backtracking probe per pattern — red-team suite blocks publish on any regression
+status: final
+---
+%% HAND-AUTHORED — sys-05 §6 admin endpoints + §16 red-team gate (no sequenceDiagram in spec).
+sequenceDiagram
+    autonumber
+    participant AdminConsole
+    participant SafetyService
+    participant PostgreSQL
+    participant Redis
+    participant RedTeamRunner
+
+    AdminConsole->>SafetyService: POST /internal/v1/admin/blocklists {patterns, version}
+    alt rbac_denied
+        SafetyService-->>AdminConsole: 403 admin RBAC failed
+    else regex_compile_failed
+        SafetyService->>SafetyService: validate each regex compiles
+        SafetyService-->>AdminConsole: 400 pattern compile error
+    else regex_catastrophic_backtracking
+        SafetyService->>SafetyService: run 10000-char adversarial probe per pattern
+        Note over SafetyService: probe exceeds 50ms — reject pattern
+        SafetyService-->>AdminConsole: 400 catastrophic_backtracking
+    else safe_word_false_positive
+        SafetyService->>SafetyService: probe safe words (hello, play, friend, ...)
+        SafetyService-->>AdminConsole: 400 false_positive_on_safe_word
+    else red_team_regression
+        SafetyService->>RedTeamRunner: run 40+ red-team suite
+        RedTeamRunner-->>SafetyService: 1 of 40 unsafe inputs passed
+        Note over SafetyService: zero-tolerance — block publish
+        SafetyService-->>AdminConsole: 409 red_team_regression
+    else success
+        SafetyService->>SafetyService: validate, probe, red-team suite green
+        SafetyService->>PostgreSQL: INSERT blocklist_versions row and activate
+        SafetyService->>PostgreSQL: INSERT audit event
+        SafetyService->>Redis: DEL blocklist:active
+        SafetyService-)SafetyService: emit conv-policy-publish fanout
+        SafetyService-->>AdminConsole: 200 {version_id, activated_at}
+    end
+    Note over AdminConsole,RedTeamRunner: every admin endpoint requires RBAC, writes audit, invalidates Redis caches on publish

@@ -1,0 +1,104 @@
+---
+system: sys-01-identity-household-access
+flow_id: household-transfer-primary
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#transfer-primary-adr-0010
+actors: [ParentApp, Gateway, IdentityService, SES, PostgreSQL]
+apis:
+  - POST /v1/household/transfer-primary
+  - POST /v1/household/transfer-primary/confirm
+externals: [SES]
+queues: []
+failure_paths:
+  - not_primary_role
+  - target_not_secondary
+  - target_not_in_household
+  - transfer_already_in_flight
+  - confirmation_window_expired_7d
+  - biometric_or_pin_required
+idempotency: dedup on in-flight request per household_id — one transfer at a time
+retry: single retry on 5xx for initiate; no retry for confirm (auth-sensitive)
+timeout: 5s initiate; confirm is async over 7d
+status: final
+---
+%% HAND-CURATED. 2-step async transfer per ADR-0010 D7. Primary initiates; target secondary confirms with biometric+PIN freshness (ADR-0009) within 7 days. On confirm: both household_members.role rows flip in same txn + prior primary's parent_sessions revoked + audit log + SES emails both parties. household_members roles: owner (primary) / manager (secondary) per ADR-0010 NOTE.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant SES
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: Step 1 — Primary initiates transfer (ADR-0010 D7a)
+
+    ParentApp->>Gateway: POST /v1/household/transfer-primary {to_user_id} and Bearer JWT (primary)
+    Gateway->>Gateway: validate primary JWT — extract user_id, household_id
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT role FROM household_members WHERE user_id={user_id} AND household_id={household_id}
+    PostgreSQL-->>IdentityService: caller role
+    alt not_primary_role (role != 'owner')
+        IdentityService-->>Gateway: 403 not_primary_role {requires_role: 'owner'}
+        Gateway-->>ParentApp: 403
+    else primary_confirmed
+        IdentityService->>PostgreSQL: SELECT role, status FROM household_members WHERE user_id={to_user_id} AND household_id={household_id}
+        PostgreSQL-->>IdentityService: target row or null
+        alt target_not_in_household
+            IdentityService-->>Gateway: 404 target_not_in_household
+            Gateway-->>ParentApp: 404
+        else target_not_secondary (target.role != 'manager' or status != 'active')
+            IdentityService-->>Gateway: 422 target_not_secondary
+            Gateway-->>ParentApp: 422
+        else transfer_already_in_flight
+            IdentityService->>PostgreSQL: SELECT id FROM primary_transfer_requests WHERE household_id={household_id} AND state='requested'
+            PostgreSQL-->>IdentityService: existing request row
+            IdentityService-->>Gateway: 409 transfer_already_in_flight {request_id: existing.id}
+            Gateway-->>ParentApp: 409
+        else initiate_transfer
+            IdentityService->>PostgreSQL: INSERT primary_transfer_requests {id: uuid(), household_id, from_user_id: user_id, to_user_id, state: 'requested', created_at: now(), expires_at: now()+7days}
+            PostgreSQL-->>IdentityService: request_id
+            IdentityService-)SES: (async) email target secondary — confirm link tbot://household/transfer/confirm?request_id={request_id}
+            IdentityService-->>Gateway: 201 {request_id, expires_at: now()+7days}
+            Gateway-->>ParentApp: 201
+        end
+    end
+
+    Note over ParentApp,IdentityService: Step 2 — Target secondary confirms (ADR-0010 D7b, up to 7 days later)
+    Note over ParentApp: Target must have fresh JWT via biometric or PIN (ADR-0009 D3 requireFreshParentJwt)
+
+    ParentApp->>Gateway: POST /v1/household/transfer-primary/confirm {request_id} and Bearer JWT (target secondary)
+    Gateway->>Gateway: validate target JWT — check freshness (ADR-0009 D3 isJwtFresh within 60s — biometric_or_pin_required)
+    alt biometric_or_pin_required (JWT not fresh)
+        Gateway-->>ParentApp: 401 biometric_or_pin_required
+    else jwt_fresh
+        Gateway->>IdentityService: forward request
+        IdentityService->>PostgreSQL: SELECT from_user_id, to_user_id, household_id, state, expires_at FROM primary_transfer_requests WHERE id={request_id}
+        PostgreSQL-->>IdentityService: request row or null
+        alt request_not_found
+            IdentityService-->>Gateway: 404 request_not_found
+            Gateway-->>ParentApp: 404
+        else confirmation_window_expired_7d (expires_at <= now())
+            IdentityService->>PostgreSQL: UPDATE primary_transfer_requests SET state='expired' WHERE id={request_id}
+            PostgreSQL-->>IdentityService: updated
+            IdentityService-->>Gateway: 410 confirmation_window_expired_7d
+            Gateway-->>ParentApp: 410
+        else already_confirmed (state = 'confirmed')
+            IdentityService-->>Gateway: 200 {already_confirmed: true}
+            Gateway-->>ParentApp: 200
+        else confirming — atomically flip both roles
+            Note over IdentityService,PostgreSQL: Single txn — flip both rows atomically (ADR-0010 D7c)
+            IdentityService->>PostgreSQL: BEGIN
+            IdentityService->>PostgreSQL: UPDATE household_members SET role='manager' WHERE user_id={from_user_id} AND household_id={household_id}
+            IdentityService->>PostgreSQL: UPDATE household_members SET role='owner' WHERE user_id={to_user_id} AND household_id={household_id}
+            IdentityService->>PostgreSQL: UPDATE primary_transfer_requests SET state='confirmed', confirmed_at=now() WHERE id={request_id}
+            IdentityService->>PostgreSQL: UPDATE parent_sessions SET revoked_at=now() WHERE user_id={from_user_id} AND revoked_at IS NULL
+            IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'household.transfer_primary.completed', payload: {from_user_id, to_user_id}, actor_user_id: to_user_id}
+            IdentityService->>PostgreSQL: COMMIT
+            PostgreSQL-->>IdentityService: txn committed
+            IdentityService-)SES: (async) email both parties — prior primary (now secondary) and new primary confirmation
+            IdentityService-->>Gateway: 200 {new_primary_user_id: to_user_id, prior_primary_user_id: from_user_id}
+            Gateway-->>ParentApp: 200
+        end
+    end
+
+    Note over ParentApp,PostgreSQL: initiate timeout 5s — confirm async within 7d — both role-flips in single txn — prior primary sessions revoked on confirm — both parties emailed (D7c)

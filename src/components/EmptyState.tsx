@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '../theme';
+import { View, StyleSheet } from 'react-native';
+import { colors, spacing, typography } from '@/design-system/tokens/legacy-semantic';
 import { Button } from './Button';
+import { Text } from '@/design-system/primitives/Text';
 
 interface EmptyStateProps {
   title: string;
@@ -13,7 +14,7 @@ interface EmptyStateProps {
 export function EmptyState({ title, subtitle, ctaLabel, onCta }: EmptyStateProps): React.JSX.Element {
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>🤖</Text>
+      <Text style={styles.emoji} i18n={false}>🤖</Text>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {ctaLabel && onCta ? (

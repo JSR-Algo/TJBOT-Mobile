@@ -1,0 +1,30 @@
+// config_signing_keys — metadata for KMS-backed ECDSA P-256 keys used to sign config
+// blobs. The private material lives in AWS KMS; this table tracks the key's
+// public-key bytes (for audit), KMS key ARN, lifecycle status, and rotation history.
+// Source: docs/site/software/systems/08-config-fleet-management.md §KMS Key Rotation
+//         + docs/sequences/08-config/kms-key-rotation-ceremony.sequence.mmd.
+
+enum config_signing_key_status {
+  active
+  next
+  decommissioning
+  retired
+}
+
+Table config_signing_keys {
+  id                  uuid                        [pk]
+  kms_key_id          varchar(2048)               [not null, note: 'AWS KMS key ARN — cross-domain ref → SecurityService (sys-13 kms_keys)']
+  public_key_pem      text                        [not null, note: 'ECDSA P-256 public key in PEM — embedded in firmware current_key / next_key slot']
+  key_purpose         varchar(64)                 [not null, default: 'config_signing', note: 'separates from OTA signing key + per-device mTLS CA']
+  status              config_signing_key_status   [not null, default: 'next']
+  promoted_to_active_at  timestamptz              [note: 'set when Stage 3 of rotation flips CONFIG_SIGNING_KMS_KEY_ID to this row']
+  retired_at          timestamptz                 [note: 'set when ScheduleKeyDeletion is queued in KMS']
+  rotation_ceremony_ref text                      [note: 'free-form pointer at the ceremony audit row (sys-13)']
+  created_at          timestamptz                 [not null, default: `now()`]
+  updated_at          timestamptz                 [not null, default: `now()`]
+
+  Indexes {
+    (status, promoted_to_active_at) [name: 'idx_config_signing_keys_status_promoted', note: 'hot query: docs/sequences/08-config/kms-key-rotation-ceremony.sequence.mmd — find current active and next pending keys']
+    (kms_key_id) [unique, name: 'idx_config_signing_keys_kms_key_id_unique']
+  }
+}

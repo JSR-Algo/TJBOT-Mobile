@@ -1,0 +1,50 @@
+enum device_status {
+  factory_new
+  provisioning
+  active
+  offline
+  decommissioned
+  quarantined
+}
+
+enum device_lifecycle_state {
+  unassigned
+  provisioning
+  assigned
+  transfer_pending
+  decommission_pending
+  decommissioned
+}
+
+Table devices {
+  id                  uuid          [pk, note: 'service-generated; never serial']
+  serial_number       varchar(64)   [not null, note: 'format: TBT-YYYY-{6digits}; unique per factory']
+  hardware_revision   varchar(32)   [not null]
+  firmware_version    varchar(32)   [not null]
+  status              device_status [not null, default: 'factory_new']
+  lifecycle_state     device_lifecycle_state [not null, default: 'unassigned']
+  owner_user_id       uuid          [note: 'cross-domain ref → IdentityService; null when unassigned']
+  current_household_id uuid         [note: 'cross-domain ref → IdentityService; null when unassigned']
+  assigned_child_id   uuid          [note: 'cross-domain ref → IdentityService; null when unassigned']
+  cert_serial         varchar(128)  [note: 'cross-domain ref → SecurityService (mtls_certificates)']
+  display_name        varchar(128)
+  last_seen_at        timestamptz
+  battery_level       integer       [note: 'percent 0-100; null until first heartbeat']
+  connectivity_metrics jsonb        [note: 'latest heartbeat connectivity snapshot']
+  decommissioned_at   timestamptz
+  created_at          timestamptz   [not null, default: `now()`]
+  updated_at          timestamptz   [not null, default: `now()`]
+
+  Indexes {
+    (serial_number) [unique, name: 'uq_devices_serial_number']
+    (owner_user_id, status) [name: 'idx_devices_owner_user_id_status', note: 'hot query: docs/sequences/02-device/consumer-provisioning.sequence.mmd']
+    (current_household_id, lifecycle_state) [name: 'idx_devices_household_id_lifecycle', note: 'hot query: docs/sequences/02-device/consumer-provisioning.sequence.mmd']
+    (status, last_seen_at) [name: 'idx_devices_status_last_seen_at', note: 'hot query: docs/sequences/02-device/heartbeat.sequence.mmd — offline sweep']
+  }
+}
+
+// Cross-domain refs declared here (devices is the owning/consuming side for identity refs)
+// Ref: devices.owner_user_id > users.id        // cross-domain ref → IdentityService
+// Ref: devices.current_household_id > households.id  // cross-domain ref → IdentityService
+// Ref: devices.assigned_child_id > children.id       // cross-domain ref → IdentityService
+// Ref: devices.cert_serial > mtls_certificates.serial // cross-domain ref → SecurityService

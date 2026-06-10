@@ -1,0 +1,281 @@
+// AUTO-GENERATED FROM docs/erd/05-safety/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/05-safety/fallback_templates.dbml, docs/erd/05-safety/safety_blocklist_entries.dbml, docs/erd/05-safety/safety_events.dbml, docs/erd/05-safety/safety_pii_redactions.dbml, docs/erd/05-safety/safety_topics.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum fallback_template_status {
+  draft
+  published
+  retired
+}
+
+enum blocklist_severity {
+  hard_block
+  soft_block
+  block_with_redirect
+  family_configurable
+}
+
+enum blocklist_entry_origin {
+  curated
+  auto_promoted_from_event
+  vendor_seed
+}
+
+enum safety_event_type {
+  input_blocklist_hit
+  input_topic_classified
+  input_pii_detected
+  output_blocklist_hit
+  output_pii_emitted
+  output_fear_amplification
+  output_age_inappropriate_vocabulary
+  output_prompt_leakage
+  output_response_too_long
+  output_rewrite_attempted
+  output_rewrite_failed
+  final_gate_invalid_schema
+  model_timeout
+  model_malformed
+  budget_exceeded
+  severe_counter_increment
+  red_team_regression_detected
+}
+
+enum safety_event_stage {
+  input
+  output
+  final_gate
+  governance
+}
+
+enum safety_event_severity {
+  low
+  medium
+  high
+  critical
+}
+
+enum pii_type {
+  phone_us
+  phone_spelled
+  email
+  street_address
+  zip_code
+  school_name
+  full_name_disclosure
+  social_security
+  ip_address
+  credit_card
+}
+
+enum pii_disposition {
+  blocked
+  redacted_and_logged
+  allowed_after_review
+}
+
+enum safety_topic_severity {
+  cautious
+  sensitive
+  blocked
+  emergency
+}
+
+/// Source: docs/erd/05-safety/fallback_templates.dbml
+model FallbackTemplates {
+  id String @id @default(uuid()) @db.Uuid
+  templateSet String @db.VarChar(64) @map("template_set")
+  /// groups templates referenced by safety_policy_versions.fallback_template_set
+  triggerCode String @db.VarChar(64) @map("trigger_code")
+  /// one of the 19 trigger codes in sys-05 §17 — violence_blocked, self_harm_blocked, …, generic_safe
+  locale String @db.VarChar(16)
+  /// BCP-47
+  ageBand String @db.VarChar(8) @map("age_band")
+  /// 4_5 | 6_8
+  status fallback_template_status @default(draft)
+  versionNo Int @default(1) @map("version_no")
+  textSegment String @db.Text @map("text_segment")
+  /// verbatim assistant response copy; sys-05 §4 calibrated to age band
+  renderPlan Json? @db.JsonB @map("render_plan")
+  /// optional renderPlan (baseScene + emotion) per sys-05 §11 output contract
+  motionPlan Json? @db.JsonB @map("motion_plan")
+  /// optional motionPlan (style + maxAmplitudePct)
+  expressionSyncHint Json? @db.JsonB @map("expression_sync_hint")
+  /// optional pre-computed expression frames; orchestrator falls back to generated when absent
+  notes String? @db.Text
+  createdByAdminUserId String? @db.Uuid @map("created_by_admin_user_id")
+  /// cross-domain ref → AdminAuthService — Phase 3 reconciles
+  publishedAt DateTime? @db.Timestamptz(6) @map("published_at")
+  /// set when status flips to published
+  retiredAt DateTime? @db.Timestamptz(6) @map("retired_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  safetyEvents SafetyEvents[] @relation(name: "safety_events_fallback_template_id_to_fallback_templates")
+  @@index([templateSet, triggerCode, locale, ageBand, status], map: "idx_fallback_templates_set_code_locale_age_status")
+  @@index([triggerCode, locale], map: "idx_fallback_templates_trigger_code_locale")
+  @@index([status, updatedAt], map: "idx_fallback_templates_status_updated_at")
+  @@map("fallback_templates")
+}
+
+/// Source: docs/erd/05-safety/safety_blocklist_entries.dbml
+model SafetyBlocklistEntries {
+  id String @id @default(uuid()) @db.Uuid
+  versionNo Int @map("version_no")
+  /// monotonic — increments on every publish; matches blocklist_versions.version
+  locale String @db.VarChar(16)
+  category String @db.VarChar(64)
+  /// violence | adult_content | self_harm | substance_use | horror_scary | bullying | dating_romance | profanity | medical_advice | politics | financial | religion_proselytizing
+  pattern String @db.Text
+  /// regex source — validated for catastrophic backtracking at publish time
+  patternSha256 String @db.VarChar(64) @map("pattern_sha256")
+  /// hash of (pattern, locale) — uniqueness primitive
+  severity blocklist_severity
+  redirectCategory String? @db.VarChar(64) @map("redirect_category")
+  /// when severity=block_with_redirect — names the redirect topic (e.g. medical → "ask a grown-up")
+  familyConfigurableKey String? @db.VarChar(64) @map("family_configurable_key")
+  /// when severity=family_configurable — names the parent toggle (e.g. religion_proselytizing → families.controls.allow_religion)
+  maxPatternSteps Int @map("max_pattern_steps")
+  /// NFA worst-case steps against 10k-char adversarial input — sys-05 §4 publish gate
+  origin blocklist_entry_origin
+  notes String? @db.Text
+  createdByAdminUserId String? @db.Uuid @map("created_by_admin_user_id")
+  /// cross-domain ref → AdminAuthService — Phase 3 reconciles
+  publishedAt DateTime? @db.Timestamptz(6) @map("published_at")
+  /// NULL until the parent blocklist_versions row is published
+  retiredAt DateTime? @db.Timestamptz(6) @map("retired_at")
+  /// set when superseded by next version
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([patternSha256, locale, versionNo], map: "idx_safety_blocklist_entries_pattern_locale_version_unique")
+  @@index([versionNo, locale, category], map: "idx_safety_blocklist_entries_version_locale_category")
+  @@index([category, severity], map: "idx_safety_blocklist_entries_category_severity")
+  @@index([retiredAt], map: "idx_safety_blocklist_entries_retired_at")
+  @@map("safety_blocklist_entries")
+}
+
+/// Source: docs/erd/05-safety/safety_events.dbml
+model SafetyEvents {
+  id String @id @default(uuid()) @db.Uuid
+  sessionId String? @db.Uuid @map("session_id")
+  /// cross-domain ref → RealtimeService.sessions — nullable for non-turn events (red-team, publish gates)
+  sessionTurnId String? @db.Uuid @map("session_turn_id")
+  /// cross-domain ref → RealtimeService.session_turns — nullable for non-turn events
+  childProfileId String? @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService.children — nullable but always present for live-turn events
+  householdId String? @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService.households — denormalized for parent-summary lookups + severe counter
+  eventType safety_event_type @map("event_type")
+  stage safety_event_stage
+  severity safety_event_severity
+  category String? @db.VarChar(64)
+  /// e.g. violence | self_harm | pii_phone_us — see sys-05 §8 blocklist categories
+  confidencePct Int? @map("confidence_pct")
+  /// classifier confidence × 100 (0-100); avoids float per CONVENTIONS.md
+  triggerCode String? @db.VarChar(64) @map("trigger_code")
+  /// sys-05 §17 fallback trigger code — links to fallback_templates lookup
+  transcriptHash String? @db.VarChar(64) @map("transcript_hash")
+  /// SHA-256 of transcript at event time — never raw text; correlates with session_transcripts.transcript_sha256
+  blocklistVersionId String? @db.Uuid @map("blocklist_version_id")
+  /// cross-domain self-ref → safety_blocklist_entries version snapshot
+  safetyPolicyVersionId String? @db.Uuid @map("safety_policy_version_id")
+  /// snapshot of the safety_policy_versions row in effect; ref declared in safety_policy_versions when added in Phase 3
+  topicId String? @db.Uuid @map("topic_id")
+  /// FK → safety_topics.id; nullable when not classifier-driven
+  fallbackTemplateId String? @db.Uuid @map("fallback_template_id")
+  /// FK → fallback_templates.id; nullable when no fallback emitted
+  detectionLatencyMs Int? @map("detection_latency_ms")
+  parentAlerted Boolean @default(false) @map("parent_alerted")
+  /// true → sys-10 dispatched a parent notification
+  parentAlertedAt DateTime? @db.Timestamptz(6) @map("parent_alerted_at")
+  sessionTerminated Boolean @default(false) @map("session_terminated")
+  /// sys-04 force-close due to this event
+  instanceId String? @db.VarChar(64) @map("instance_id")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  safetyTopic SafetyTopics? @relation(name: "safety_events_topic_id_to_safety_topics", fields: [topicId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fallbackTemplate FallbackTemplates? @relation(name: "safety_events_fallback_template_id_to_fallback_templates", fields: [fallbackTemplateId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  safetyPiiRedactions SafetyPiiRedactions[] @relation(name: "safety_pii_redactions_safety_event_id_to_safety_events")
+  @@index([householdId, createdAt], map: "idx_safety_events_household_id_created_at")
+  @@index([childProfileId, createdAt], map: "idx_safety_events_child_profile_id_created_at")
+  @@index([eventType, createdAt], map: "idx_safety_events_event_type_created_at")
+  @@index([severity, parentAlerted, createdAt], map: "idx_safety_events_severity_parent_alerted_created_at")
+  @@index([sessionId], map: "idx_safety_events_session_id")
+  @@index([transcriptHash], map: "idx_safety_events_transcript_hash")
+  @@map("safety_events")
+}
+
+/// Source: docs/erd/05-safety/safety_pii_redactions.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model SafetyPiiRedactions {
+  id String @id @default(uuid()) @db.Uuid
+  safetyEventId String @db.Uuid @map("safety_event_id")
+  /// FK → safety_events.id — every detection produces both a safety_events row AND a redaction ledger row
+  sessionId String? @db.Uuid @map("session_id")
+  /// cross-domain ref → RealtimeService.sessions — denormalized for COPPA on-deletion sweep
+  sessionTurnId String? @db.Uuid @map("session_turn_id")
+  /// cross-domain ref → RealtimeService.session_turns — denormalized for retention
+  childProfileId String? @db.Uuid @map("child_profile_id")
+  /// cross-domain ref → IdentityService.children — denormalized for COPPA on-deletion sweep
+  householdId String? @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService.households
+  piiType pii_type @map("pii_type")
+  stage String @db.VarChar(16)
+  /// input | output — where PII was detected
+  disposition pii_disposition
+  matchPosition Int? @map("match_position")
+  /// character offset into the transcript at detection time — useful for tooling but NEVER the matched text itself
+  matchLength Int? @map("match_length")
+  /// length of the matched substring; combined with hash this lets investigation prove detection without ever surfacing PII
+  detectionPattern String? @db.VarChar(64) @map("detection_pattern")
+  /// opaque identifier of the regex/heuristic that matched — e.g. phone_us_v3 — NOT the regex itself
+  transcriptHash String @db.VarChar(64) @map("transcript_hash")
+  /// SHA-256 of transcript at detection time; correlates with session_transcripts.transcript_sha256
+  detectionLatencyMs Int? @map("detection_latency_ms")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  purgedAt DateTime? @db.Timestamptz(6) @map("purged_at")
+  /// set by RetentionWorker when row hard-cleared at 180d — soft marker for post-mortem aggregate reports
+  safetyEvent SafetyEvents @relation(name: "safety_pii_redactions_safety_event_id_to_safety_events", fields: [safetyEventId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([safetyEventId], map: "idx_safety_pii_redactions_safety_event_id_unique")
+  @@index([householdId, createdAt], map: "idx_safety_pii_redactions_household_id_created_at")
+  @@index([piiType, createdAt], map: "idx_safety_pii_redactions_pii_type_created_at")
+  @@index([childProfileId, createdAt], map: "idx_safety_pii_redactions_child_profile_id_created_at")
+  @@map("safety_pii_redactions")
+}
+
+/// Source: docs/erd/05-safety/safety_topics.dbml
+model SafetyTopics {
+  id String @id @default(uuid()) @db.Uuid
+  slug String @db.VarChar(64)
+  /// machine identifier — e.g. violence_evasion
+  displayName String @db.VarChar(120) @map("display_name")
+  description String @db.Text
+  severity safety_topic_severity
+  classifierThresholdPct Int @map("classifier_threshold_pct")
+  /// cumulative weight ÷ 100 to trigger block (default 80 = 0.80) — avoids float per CONVENTIONS.md
+  requiredKeywordCount Int @default(2) @map("required_keyword_count")
+  /// min keyword matches in input — sys-05 §13
+  keywords Json @db.JsonB
+  /// array of {token, weight}; document shape in sys-05 §13 — e.g. [{"token":"hurt","weight":40},{"token":"pain","weight":50}]
+  parentAlertThreshold safety_topic_severity @default(blocked) @map("parent_alert_threshold")
+  /// min severity that triggers parent notification — emergency always alerts
+  fallbackTriggerCode String @db.VarChar(64) @map("fallback_trigger_code")
+  /// links to fallback_templates lookup — e.g. violence_blocked
+  retiredAt DateTime? @db.Timestamptz(6) @map("retired_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  safetyEvents SafetyEvents[] @relation(name: "safety_events_topic_id_to_safety_topics")
+  @@unique([slug], map: "idx_safety_topics_slug_unique")
+  @@index([severity, retiredAt], map: "idx_safety_topics_severity_retired_at")
+  @@map("safety_topics")
+}
+

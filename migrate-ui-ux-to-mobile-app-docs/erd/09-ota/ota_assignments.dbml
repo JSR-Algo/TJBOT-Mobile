@@ -1,0 +1,48 @@
+// ota_assignments — per-device OTA attempt rows.
+// Spec calls these `ota_attempts`; ERD-level name `ota_assignments` per plan §3.
+// Captures every status transition from offered → success/failed/rollback/skipped,
+// plus the eligibility-time snapshot of device telemetry that drove pre-flight checks.
+// Source: docs/site/software/systems/09-ota-release-management.md §Data Model
+//         + §OTA Attempt Status Transitions.
+
+enum ota_assignment_status {
+  offered
+  downloading
+  downloaded
+  flashing
+  verifying
+  success
+  failed
+  rollback
+  skipped
+}
+
+Table ota_assignments {
+  id                          uuid                    [pk]
+  device_id                   uuid                    [not null, note: 'cross-domain ref → DeviceService']
+  release_id                  uuid                    [not null]
+  from_version                varchar(64)             [not null]
+  to_version                  varchar(64)             [not null]
+  status                      ota_assignment_status   [not null, default: 'offered']
+  failure_code                varchar(64)             [note: 'one of E-OTA-401..E-SAFE-901..902 etc.']
+  failure_detail              jsonb                   [not null, default: `'{}'::jsonb`]
+  ota_cohort_id               uuid                    [note: 'if release targeted an OTA-specific cohort, captured here at offer time']
+  battery_percent_at_start    integer                 [note: 'snapshot at offer time — informs pre-flight gating']
+  rssi_at_start               integer                 [note: 'snapshot dBm at offer time']
+  download_duration_ms        integer                 [note: 'reported by device on POST /v1/ota/result']
+  flash_duration_ms           integer                 [note: 'reported by device on POST /v1/ota/result']
+  signed_url_expires_at       timestamptz             [note: 'CloudFront URL 1h expiry — surfaces signed_url_expired retry path']
+  started_at                  timestamptz             [not null, default: `now()`]
+  completed_at                timestamptz
+  created_at                  timestamptz             [not null, default: `now()`]
+  updated_at                  timestamptz             [not null, default: `now()`]
+
+  Indexes {
+    (release_id, status) [name: 'idx_ota_assignments_release_status', note: 'hot query: docs/sequences/09-ota/crash-rate-auto-pause.sequence.mmd — crash-rate trailing-hour query']
+    (device_id, started_at) [name: 'idx_ota_assignments_device_started', note: 'hot query: docs/sequences/09-ota/device-check-and-download.sequence.mmd — stuck-device 7-day failure count']
+    (release_id, completed_at) [name: 'idx_ota_assignments_release_completed', note: 'hot query: docs/sequences/09-ota/crash-rate-auto-pause.sequence.mmd — partial filter completed_at > NOW()-1h']
+  }
+}
+
+Ref: ota_assignments.release_id > ota_releases.id
+Ref: ota_assignments.ota_cohort_id > ota_cohorts.id

@@ -3,7 +3,7 @@
  *
  * Deepgram with interim_results=true sends:
  * - Partials (isFinal=false): accumulated text for current utterance segment
- *   e.g. "Hello" → "Hello TBOT" → "Hello TBOT can you"
+ *   e.g. "Hello" → "Hello TJBot" → "Hello TJBot can you"
  * - Finals (isFinal=true): confirmed segment text. New segment starts after.
  * - Multiple finals per turn on natural pauses.
  *

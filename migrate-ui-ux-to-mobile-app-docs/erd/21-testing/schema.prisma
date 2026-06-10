@@ -1,0 +1,23 @@
+// AUTO-GENERATED — STATELESS SYSTEM
+// Source: docs/site/software/systems/21-testing-quality.md (file-based fixtures)
+// This system has no backend tables (test fixtures live in repo files; runtime test
+// data is ephemeral and persisted to disk via scripts, not the DB).
+// No models declared.
+// See docs/erd/21-testing/README.md for rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Marker enum — Prisma rejects schemas that declare a datasource without any
+// model or enum. This enum is unused at runtime; it exists solely to keep
+// `prisma validate` happy on stateless systems. Name avoids leading underscore
+// (Prisma 5.x rejects identifiers starting with `_`).
+enum stateless_marker {
+  stateless
+}

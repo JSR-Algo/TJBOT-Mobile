@@ -3,16 +3,20 @@ import { View, Text, Animated, StyleSheet } from 'react-native';
 import type { VoiceState } from '../../state/voiceAssistantStore';
 
 const STATUS_MAP: Record<VoiceState, { label: string; color: string; pulse: boolean }> = {
-  IDLE:                       { label: 'S\u1EB5n s\u00E0ng tr\u00F2 chuy\u1EC7n',  color: '#A0A0A0', pulse: false },
-  REQUESTING_MIC_PERMISSION:  { label: 'Xin quy\u1EC1n micro...',  color: '#FFB74D', pulse: true },
-  CONNECTING:                 { label: '\u0110ang k\u1EBFt n\u1ED1i...',     color: '#FFB74D', pulse: true },
-  LISTENING:                  { label: '\u0110ang ch\u1EDD...',          color: '#4CAF50', pulse: true },
-  STREAMING_INPUT:            { label: '\u0110ang nghe...',         color: '#4CAF50', pulse: true },
-  WAITING_AI:                 { label: '\u0110ang ngh\u0129...',          color: '#42A5F5', pulse: true },
-  PLAYING_AI_AUDIO:           { label: '\u0110ang tr\u1EA3 l\u1EDDi...',     color: '#A29BFE', pulse: true },
-  INTERRUPTED:                { label: '\u0110\u00E3 ng\u1EAFt',             color: '#FF7043', pulse: false },
-  RECONNECTING:               { label: '\u0110ang k\u1EBFt n\u1ED1i l\u1EA1i...', color: '#FFB74D', pulse: true },
-  ERROR:                      { label: 'L\u1ED7i k\u1EBFt n\u1ED1i',         color: '#FF4444', pulse: false },
+  IDLE:                       { label: 'Sẵn sàng trò chuyện',  color: '#A0A0A0', pulse: false },
+  PREPARING_AUDIO:            { label: 'Xin quyền micro...',  color: '#FFB74D', pulse: true },
+  CONNECTING:                 { label: 'Đang kết nối...',     color: '#FFB74D', pulse: true },
+  READY:                      { label: 'Đang chuẩn bị...',    color: '#FFB74D', pulse: true },
+  LISTENING:                  { label: 'Đang chờ...',          color: '#4CAF50', pulse: true },
+  USER_SPEAKING:              { label: 'Đang nghe...',         color: '#4CAF50', pulse: true },
+  USER_SPEECH_FINALIZING:     { label: 'Đang nghĩ...',          color: '#42A5F5', pulse: true },
+  WAITING_AI:                 { label: 'Đang nghĩ...',          color: '#42A5F5', pulse: true },
+  ASSISTANT_SPEAKING:         { label: 'Đang trả lời...',     color: '#A29BFE', pulse: true },
+  INTERRUPTED:                { label: 'Đã ngắt',             color: '#FF7043', pulse: false },
+  RECONNECTING:               { label: 'Đang kết nối lại...', color: '#FFB74D', pulse: true },
+  ERROR_RECOVERABLE:          { label: 'Lỗi kết nối',         color: '#FF4444', pulse: false },
+  ERROR_FATAL:                { label: 'Lỗi nghiêm trọng',    color: '#B71C1C', pulse: false },
+  ENDED:                      { label: 'Đã kết thúc',    color: '#A0A0A0', pulse: false },
 };
 
 export function StatusIndicator({ state }: { state: VoiceState }) {

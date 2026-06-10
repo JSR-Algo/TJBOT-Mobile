@@ -1,8 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { User } from '../types';
-import * as authApi from '../api/auth';
-import * as accountApi from '../api/account';
-import { setAuthInvalidatedHandler } from '../api/client';
+import * as authApi from '../services/api/auth';
+import * as accountApi from '../services/api/account';
+import { setAuthInvalidatedHandler } from '../services/http/client';
 import {
   clearTokens,
   deleteSecureItem,
@@ -10,8 +10,11 @@ import {
   getSecureJson,
   SECURE_STORE_KEYS,
   setSecureJson,
-} from '../api/tokens';
+} from '../services/http/tokens';
 import { normalizeError } from '../utils/errors';
+import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../services/observability/analytics';
+import { captureError } from '@/services/observability/sentry';
+import { clearLocalPairedDevice } from '@/features/device/pairing/localPairedDevice';
 
 interface AuthState {
   user: User | null;
@@ -51,6 +54,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     } catch {
       // non-blocking
     }
+    try {
+      await clearLocalPairedDevice();
+    } catch (error) {
+      captureError(error);
+    }
+    resetAnalytics();
     setState({ user: null, isLoading: false, isAuthenticated: false, error: null });
   }, []);
 
@@ -88,9 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         let user: User | null = null;
         let authRejected = false;
         try {
-          user = await accountApi.fetchCurrentUser();
+          user = await accountApi.getAccountSummary();
         } catch (err: unknown) {
-          const status = (err as { status?: number })?.status;
+          const status = (err as { status?: number; response?: { status?: number } }).status
+            ?? (err as { response?: { status?: number } }).response?.status;
           authRejected = status === 401;
           user = null;
         }
@@ -139,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       let user: User | null = data.user ?? null;
       if (!user) {
         try {
-          user = await accountApi.fetchCurrentUser();
+          user = await accountApi.getAccountSummary();
         } catch {
           user = null;
         }
@@ -150,7 +160,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         } catch {
           // non-blocking
         }
+        identifyAnalyticsUser(user.id, user.email);
       }
+      trackEvent('mobile.login.success');
       setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
     } catch (err) {
       const normalized = normalizeError(err);
@@ -181,9 +193,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       if (data.access_token) {
         let user: User | null = null;
         try {
-          user = await accountApi.fetchCurrentUser();
+          user = await accountApi.getAccountSummary();
         } catch {
-          user = { id: '', email, name, email_verified: false };
+          user = { id: '', email, name };
         }
         if (user) {
           try {
@@ -191,7 +203,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           } catch {
             // non-blocking
           }
+          identifyAnalyticsUser(user.id, user.email);
         }
+        trackEvent('mobile.signup.success');
         setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
       }
     } catch (err) {

@@ -18,7 +18,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'TbotMobile' do
+target 'TJBotMobile' do
   config = use_native_modules!
   use_expo_modules!
 
@@ -43,6 +43,9 @@ target 'TbotMobile' do
         # Ensure the flag is added as a separate token, not concatenated
         unless existing.include?('FMT_USE_CONSTEVAL')
           config.build_settings['OTHER_CPLUSPLUSFLAGS'] = "#{existing} -DFMT_USE_CONSTEVAL=0"
+        end
+        if target.name == 'fmt'
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
         end
       end
     end

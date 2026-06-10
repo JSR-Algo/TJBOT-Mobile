@@ -1,0 +1,70 @@
+// sessions — one continuous voice conversation between a child and TBot, bound to a device + child profile.
+// Source: docs/site/software/systems/04-realtime-session-orchestrator.md §3 domain model, §4.1 sessions table.
+// Sequences: ws-handshake, turn-pipeline, session-close, barge-in, provider-failover, coppa-retention.
+
+enum session_status {
+  connecting
+  open
+  turn_active
+  turn_complete
+  reconnecting
+  closing
+  closed
+}
+
+enum session_end_reason {
+  complete
+  timeout
+  error
+  parent_stop
+  barge_limit
+  cost_limit
+}
+
+enum session_interaction_mode {
+  conversation
+  story
+  quiz
+}
+
+Table sessions {
+  id                       uuid                     [pk, note: 'service-generated UUID; never serial']
+  device_session_id        varchar(64)              [not null, note: 'opaque token minted by device — SESSION_OPEN payload; idempotency key for SETNX device_session:{deviceId}']
+  device_id                uuid                     [not null, note: 'cross-domain ref → DeviceService — FK declared in 02-device/devices.dbml']
+  household_id             uuid                     [not null, note: 'cross-domain ref → IdentityService — FK declared in 01-identity/households.dbml']
+  child_profile_id         uuid                     [not null, note: 'cross-domain ref → IdentityService.children — FK declared in 01-identity/children.dbml']
+  interaction_mode         session_interaction_mode [not null]
+  status                   session_status           [not null, default: 'connecting']
+  turn_count               integer                  [not null, default: 0]
+  total_duration_ms        integer                  [not null, default: 0]
+  total_cost_micros        bigint                   [not null, default: 0, note: 'money: bigint micros (1e-6 USD); $0.12 ceiling = 120_000 micros']
+  end_reason               session_end_reason       [note: 'NULL while open; set on close']
+  stt_provider_used        varchar(64)              [not null, default: 'google_live_flash']
+  llm_provider_used        varchar(64)              [not null, default: 'google_live_flash']
+  tts_provider_used        varchar(64)              [not null, default: 'google_live_flash']
+  safety_blocks_count      integer                  [not null, default: 0]
+  barge_in_count           integer                  [not null, default: 0]
+  locale                   varchar(16)              [not null, note: 'BCP-47 — snapshot at SESSION_OPEN, decouples from household']
+  audio_codec              varchar(16)              [not null, default: 'opus']
+  sample_rate              integer                  [not null, default: 16000]
+  fw_version               varchar(32)              [not null]
+  instance_id              varchar(64)              [not null, note: 'orchestrator pod hosting this session — useful for support timeline']
+  started_at               timestamptz              [not null]
+  ended_at                 timestamptz              [note: 'NULL while open']
+  last_activity_at         timestamptz              [not null]
+  created_at               timestamptz              [not null, default: `now()`]
+  updated_at               timestamptz              [not null, default: `now()`]
+  deleted_at               timestamptz              [note: 'soft-delete; RetentionScheduler hard-deletes after 90 days per sys-04 §4.2']
+
+  Indexes {
+    (device_id, started_at) [name: 'idx_sessions_device_id_started_at', note: 'hot query: docs/sequences/04-realtime/ws-handshake.sequence.mmd — recent session lookup per device']
+    (household_id, started_at) [name: 'idx_sessions_household_id_started_at', note: 'hot query: docs/sequences/07-parent/parent-summary.sequence.mmd — household session aggregation']
+    (child_profile_id, started_at) [name: 'idx_sessions_child_profile_id_started_at', note: 'hot query: docs/sequences/04-realtime/turn-pipeline.sequence.mmd — child session history for personalization']
+    (status, last_activity_at) [name: 'idx_sessions_status_last_activity_at', note: 'hot query: docs/sequences/04-realtime/session-close.sequence.mmd — idle-timeout sweep selects open/turn_active sessions']
+    (end_reason) [name: 'idx_sessions_end_reason']
+    (created_at) [name: 'idx_sessions_created_at']
+  }
+}
+
+// No Ref: lines here — cross-domain FKs (device_id, household_id, child_profile_id) are declared in
+// the owning lane files (01-identity, 02-device). Phase 3 reconciles direction.

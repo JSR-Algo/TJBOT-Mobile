@@ -1,0 +1,32 @@
+// refresh_tokens — rotating refresh-token generations per auth_session.
+// Spec embeds refresh_token_hash inside auth_sessions; plan §3 normalises into a child
+// table so each rotation is auditable and replay detection has a clear row to lock.
+
+enum refresh_token_status {
+  active
+  rotated
+  revoked
+  replayed
+}
+
+Table refresh_tokens {
+  id                 uuid                    [pk]
+  auth_session_id    uuid                    [not null]
+  token_hash         varchar(128)            [not null, note: 'sha256/argon2 hash of the bearer token; never plaintext']
+  status             refresh_token_status    [not null, default: 'active']
+  issued_at          timestamptz             [not null, default: `now()`]
+  expires_at         timestamptz             [not null]
+  rotated_at         timestamptz             [note: 'set when a successor token is issued']
+  rotated_to_id      uuid                    [note: 'self-ref to successor refresh_tokens row']
+  revoked_at         timestamptz
+  created_at         timestamptz             [not null, default: `now()`]
+  updated_at         timestamptz             [not null, default: `now()`]
+
+  Indexes {
+    (token_hash) [unique, name: 'idx_refresh_tokens_token_hash_unique']
+    (auth_session_id, status) [name: 'idx_refresh_tokens_session_status', note: 'hot query: docs/sequences/01-identity/token-refresh.sequence.mmd — find the active generation for a session']
+  }
+}
+
+Ref: refresh_tokens.auth_session_id > auth_sessions.id
+Ref: refresh_tokens.rotated_to_id > refresh_tokens.id

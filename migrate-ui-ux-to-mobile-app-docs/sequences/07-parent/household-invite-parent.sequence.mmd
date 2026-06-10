@@ -1,0 +1,111 @@
+---
+system: sys-01-identity-household-access
+flow_id: household-invite-parent
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#household-invite-adr-0010
+actors: [ParentApp, Gateway, IdentityService, SES, PostgreSQL]
+apis:
+  - POST /v1/household/parents/invite
+  - POST /v1/household/parents/accept
+  - DELETE /v1/household/parents/{user_id}
+externals: [SES]
+queues: []
+failure_paths:
+  - not_primary_parent_role
+  - email_already_household_member
+  - invite_expired_7d
+  - revoke_self_forbidden
+  - last_secondary_warning
+idempotency: invite dedup on (household_id, email_hash) — re-invite to same email within 7d reuses existing pending row
+retry: single retry on 5xx
+timeout: 3s
+status: final
+---
+%% HAND-CURATED. UC-PR09 invite + UC-PR10 revoke per ADR-0010 D3. Primary issues invite (role=owner required). household_members table uses roles owner/manager/viewer; ADR "secondary_parent" maps to manager. Revoke sets status=revoked + revokes secondary's parent_sessions.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant SES
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: UC-PR09 — Primary parent invites secondary (ADR-0010 D3)
+
+    ParentApp->>Gateway: POST /v1/household/parents/invite {email, nickname} and Bearer JWT (primary)
+    Gateway->>Gateway: validate parent JWT — extract user_id, household_id
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT role FROM household_members WHERE user_id={user_id} AND household_id={household_id}
+    PostgreSQL-->>IdentityService: role
+    alt not_primary_parent_role (role != 'owner')
+        IdentityService-->>Gateway: 403 not_primary_parent_role {requires_role: 'owner'}
+        Gateway-->>ParentApp: 403
+    else primary_confirmed
+        IdentityService->>PostgreSQL: SELECT id FROM users WHERE email={email}
+        PostgreSQL-->>IdentityService: invitee_user row or null
+        IdentityService->>PostgreSQL: SELECT id FROM household_members WHERE household_id={household_id} AND email_hash=sha256({email}) AND status IN ('active','pending_invite')
+        PostgreSQL-->>IdentityService: existing member row or null
+        alt email_already_household_member
+            IdentityService-->>Gateway: 409 email_already_household_member
+            Gateway-->>ParentApp: 409
+        else dedup — pending invite exists within 7d
+            Note over IdentityService: Return existing invite — no new SES send
+            IdentityService-->>Gateway: 200 {invite_id: existing, status: 'pending_invite', resent: false}
+            Gateway-->>ParentApp: 200
+        else new_invite
+            IdentityService->>PostgreSQL: INSERT household_members {id: uuid(), household_id, email_hash: sha256(email), nickname, role: 'manager', status: 'pending_invite', invited_by_user_id: user_id, invited_at: now(), expires_at: now()+7days}
+            PostgreSQL-->>IdentityService: invite_id
+            IdentityService-)SES: (async) email magic link tbot://household/accept?token={invite_token} to {email}
+            IdentityService-->>Gateway: 201 {invite_id, status: 'pending_invite', expires_at: now()+7days}
+            Gateway-->>ParentApp: 201
+        end
+    end
+
+    Note over ParentApp,IdentityService: UC-PR09 — Invitee accepts (ADR-0010 D3)
+
+    ParentApp->>Gateway: POST /v1/household/parents/accept {token} and Bearer JWT (invitee)
+    Gateway->>Gateway: validate invitee JWT — extract invitee user_id
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT id, household_id, expires_at, status FROM household_members WHERE token_hash=sha256({token})
+    PostgreSQL-->>IdentityService: invite row or null
+    alt token_not_found
+        IdentityService-->>Gateway: 404 invite_token_not_found
+        Gateway-->>ParentApp: 404
+    else invite_expired_7d (expires_at <= now())
+        IdentityService-->>Gateway: 410 invite_expired_7d
+        Gateway-->>ParentApp: 410
+    else invite_already_accepted (status = 'active')
+        IdentityService-->>Gateway: 200 {status: 'active', already_member: true}
+        Gateway-->>ParentApp: 200
+    else accept_invite
+        IdentityService->>PostgreSQL: UPDATE household_members SET status='active', user_id={invitee.user_id}, accepted_at=now() WHERE id={invite.id}
+        PostgreSQL-->>IdentityService: updated
+        IdentityService-->>Gateway: 200 {status: 'active', household_id}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp,IdentityService: UC-PR10 — Primary revokes secondary (ADR-0010 D5)
+
+    ParentApp->>Gateway: DELETE /v1/household/parents/{target_user_id} and Bearer JWT (primary)
+    Gateway->>Gateway: validate primary JWT
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT role FROM household_members WHERE user_id={user_id} AND household_id={household_id}
+    PostgreSQL-->>IdentityService: caller role
+    alt not_primary_parent_role
+        IdentityService-->>Gateway: 403 not_primary_parent_role
+        Gateway-->>ParentApp: 403
+    else revoke_self_forbidden (target_user_id = user_id)
+        IdentityService-->>Gateway: 400 revoke_self_forbidden
+        Gateway-->>ParentApp: 400
+    else revoke_secondary
+        IdentityService->>PostgreSQL: SELECT COUNT(*) FROM household_members WHERE household_id={household_id} AND role='manager' AND status='active'
+        PostgreSQL-->>IdentityService: secondary_count
+        IdentityService->>PostgreSQL: UPDATE household_members SET status='revoked', revoked_at=now() WHERE user_id={target_user_id} AND household_id={household_id}
+        PostgreSQL-->>IdentityService: updated
+        IdentityService->>PostgreSQL: UPDATE parent_sessions SET revoked_at=now() WHERE user_id={target_user_id} AND revoked_at IS NULL
+        PostgreSQL-->>IdentityService: sessions revoked
+        IdentityService-->>Gateway: 200 {revoked: true, last_secondary_warning: secondary_count = 1}
+        Gateway-->>ParentApp: 200
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 3s — invite dedup on (household_id, email_hash) — invite expires 7d — revoke revokes all target parent_sessions

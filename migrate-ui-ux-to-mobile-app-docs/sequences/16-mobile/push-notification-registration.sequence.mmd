@@ -1,0 +1,57 @@
+---
+system: sys-16-parent-mobile-application
+flow_id: push-notification-registration
+surface: mobile
+spec_anchor: /software/systems/16-parent-mobile-application#push-notification-handling
+actors: [ParentApp, OS, FCM, Gateway, NotificationService]
+apis:
+  - POST /v1/notifications/push-token
+externals: [FCM]
+queues: []
+failure_paths:
+  - os_permission_denied
+  - fcm_token_unavailable
+  - push_token_rate_limited
+  - register_token_failed
+idempotency: server-side dedup by (parent_id, fcm_token, platform) — re-registration is upsert; rate-limited at 10 per hour per parent
+retry: caller-side single retry on 5xx with 30s backoff — onTokenRefresh re-runs registration whenever FCM rotates the token
+timeout: 10s p99
+status: final
+---
+%% HAND-CURATED. Normalized from spec sequenceDiagram at 16-parent-mobile-application.md#L619 — strips the foreground-toast + deep-link tap subflows. Covers Registration + onTokenRefresh only.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant OS
+    participant FCM
+    participant Gateway
+    participant NotificationService
+
+    ParentApp->>OS: request notification permission (iOS explicit / Android 13+ POST_NOTIFICATIONS)
+    alt os_permission_denied
+        OS-->>ParentApp: denied
+        Note over ParentApp: surface in-app banner — registration skipped, safety alerts still server-enforced
+    else permission granted
+        OS-->>ParentApp: granted
+        ParentApp->>FCM: get device token
+        alt fcm_token_unavailable
+            FCM-->>ParentApp: error / null token
+            Note over ParentApp: schedule retry on next foreground
+        else token issued
+            FCM-->>ParentApp: fcm_token
+            ParentApp->>Gateway: POST /v1/notifications/push-token {token, platform}
+            Gateway->>Gateway: rate-limit (sys-17) — push_token — 10 per hour per parent ID
+            Gateway->>NotificationService: forward
+            alt push_token_rate_limited
+                Gateway-->>ParentApp: 429 push_token_rate_limited
+            else register_token_failed
+                NotificationService-->>Gateway: 5xx
+                Gateway-->>ParentApp: 5xx — schedule single retry
+            else registered
+                NotificationService-->>Gateway: 201 Created
+                Gateway-->>ParentApp: 201
+            end
+        end
+    end
+
+    Note over FCM,NotificationService: onTokenRefresh — FCM rotates token, app re-runs POST /v1/notifications/push-token with new token (idempotent upsert)

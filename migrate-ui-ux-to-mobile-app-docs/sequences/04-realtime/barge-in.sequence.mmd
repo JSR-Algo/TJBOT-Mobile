@@ -1,0 +1,44 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: barge-in
+surface: device
+spec_anchor: /software/systems/04-realtime-session-orchestrator#binary-frame-protocol
+actors: [Device, Orchestrator, GoogleLiveFlash]
+apis: []
+externals: [GoogleLiveFlash]
+queues:
+  - tbot-session-telemetry
+failure_paths:
+  - barge_in_limit_exceeded
+  - cancellation_race_token_already_streamed
+idempotency: BARGE_IN carries playback_position_ms — server uses it to discard in-flight TTS frames past that mark
+retry: none (cancel-only)
+timeout: cancellation propagation <100ms
+status: final
+---
+%% HAND-CURATED — sys-04 §6 BARGE_IN payload + plan §11 race-condition row.
+sequenceDiagram
+    autonumber
+    participant Device
+    participant Orchestrator
+    participant GoogleLiveFlash
+
+    Note over Device,Orchestrator: orchestrator is streaming TTS_AUDIO to device — turn pipeline mid-flight
+    Device->>Orchestrator: BARGE_IN (0x60) {sessionId, playback_position_ms, device_timestamp_ms}
+    Orchestrator->>Orchestrator: increment barge_in_count for session
+    alt barge_in_limit_exceeded
+        Note over Orchestrator: barge_in_count > 5
+        Orchestrator-->>Device: SESSION_CLOSE (0x70) end_reason=barge_limit
+        Orchestrator-)Orchestrator: emit tbot-session-telemetry session.closed barge_limit
+    else cancellation_race_token_already_streamed
+        Note over Orchestrator: LLM_TOKEN frames after playback_position_ms already sent — discard, do not retract
+        Orchestrator->>GoogleLiveFlash: cancel in-flight LLM/TTS calls
+        Orchestrator-->>Device: BARGE_IN ack — TTS_DONE (0x41)
+        Orchestrator-)Orchestrator: emit tbot-session-telemetry turn.cancelled
+    else success
+        Orchestrator->>GoogleLiveFlash: cancel in-flight LLM/TTS calls
+        Orchestrator-->>Device: TTS_DONE (0x41) — flushes downlink buffer
+        Orchestrator-)Orchestrator: emit tbot-session-telemetry turn.cancelled
+    end
+
+    Note over Device,Orchestrator: ack is TTS_DONE (no dedicated barge-in ack frame) — race: frames in flight past playback_position_ms must be discarded by device

@@ -1,0 +1,61 @@
+---
+system: sys-01-identity-household-access
+flow_id: session-revoke
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#get-v1identitysessions
+actors: [ParentApp, Gateway, IdentityService, PostgreSQL]
+apis:
+  - GET /v1/identity/sessions
+  - DELETE /v1/identity/sessions/{jti}
+externals: []
+queues: []
+failure_paths:
+  - session_not_found
+  - not_authorized
+idempotency: revoke is idempotent on jti — repeated DELETE returns 200
+retry: caller-side exponential backoff with jitter on 5xx — never retry on 4xx
+timeout: 2s p99
+status: final
+---
+%% HAND-CURATED.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant PostgreSQL
+
+    Note over ParentApp,IdentityService: Entry point: parent_settings → Active Sessions — parent views and revokes other-device sessions
+
+    ParentApp->>Gateway: GET /v1/identity/sessions
+    Gateway->>Gateway: require valid parent JWT, extract user_id
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT jti, device_name, platform, created_at, last_seen_at, ip_hash FROM parent_sessions WHERE user_id={user_id} AND revoked_at IS NULL ORDER BY last_seen_at DESC USING parent_sessions_active_by_user_idx
+    PostgreSQL-->>IdentityService: sessions[]
+    IdentityService-->>Gateway: 200 {sessions: [{jti, device_name, platform, created_at, last_seen_at, is_current}]}
+    Gateway-->>ParentApp: 200 sessions list
+
+    Note over ParentApp: parent selects a session to revoke (other device or current device)
+
+    ParentApp->>Gateway: DELETE /v1/identity/sessions/{jti}
+    Gateway->>Gateway: require valid parent JWT, extract caller_user_id and caller_jti
+    Gateway->>IdentityService: forward request
+    alt session_not_found (jti absent or already revoked — idempotent)
+        IdentityService-->>Gateway: 200 already_revoked
+        Gateway-->>ParentApp: 200
+    else not_authorized (jti belongs to a different user_id)
+        IdentityService-->>Gateway: 403 not_authorized
+        Gateway-->>ParentApp: 403
+    else revoke_success
+        IdentityService->>PostgreSQL: UPDATE parent_sessions SET revoked_at=now() WHERE jti={jti} AND user_id={caller_user_id}
+        PostgreSQL-->>IdentityService: updated
+        IdentityService-->>Gateway: 200 {jti, revoked_at, self_revoke: (jti == caller_jti)}
+        Gateway-->>ParentApp: 200
+        alt self_revoke (parent revoked their own current session jti)
+            ParentApp->>ParentApp: forced logout — clear auth.store and navigate to login screen
+        else other_device_revoke
+            ParentApp->>ParentApp: remove revoked session from list UI
+        end
+    end
+
+    Note over ParentApp,IdentityService: timeout 2s p99 — hot kill via parent_sessions_active_by_user_idx (SM plan §8.4) — revoke idempotent on jti

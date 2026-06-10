@@ -1,14 +1,17 @@
 {
-  "name": "TbotMobile",
-  "displayName": "TBOT",
+  "name": "TJBotMobile",
+  "displayName": "TJBot",
   "expo": {
-    "name": "TbotMobile",
-    "slug": "tbot-mobile",
+    "name": "TJBotMobile",
+    "slug": "TJBot-mobile",
+    "version": "1.0.0",
     "ios": {
-      "bundleIdentifier": "com.tbot.app"
+      "bundleIdentifier": "com.TJBot.mobile",
+      "buildNumber": "1"
     },
     "android": {
-      "package": "com.tbot.app"
+      "package": "com.TJBot.app",
+      "versionCode": 2
     }
   }
 }

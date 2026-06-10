@@ -1,0 +1,38 @@
+// children — child identity envelope inside a household. COPPA-scoped.
+// Source: docs/site/software/systems/01-identity-household-access.md §3.1 child_profiles.
+// Plan §3 R-6: every child-data entity MUST declare COPPA retention.
+
+enum child_age_band {
+  age_4_5
+  age_6_7
+  age_8_plus
+}
+
+enum child_status {
+  active
+  archived
+  scheduled_for_deletion
+  deleted
+}
+
+Table children {
+  id                       uuid             [pk]
+  household_id             uuid             [not null]
+  nickname                 varchar(64)      [not null, note: 'sanitized per sys-01 §4.10 profile field sanitization']
+  age_band                 child_age_band   [not null]
+  patient_mode_enabled     boolean          [not null, default: false]
+  bedtime_mode_override    boolean          [not null, default: false]
+  favorite_topics          jsonb            [not null, default: `'[]'::jsonb`, note: 'array of topic slugs; capped at 16 items at app layer']
+  status                   child_status     [not null, default: 'active']
+  archived_at              timestamptz
+  created_at               timestamptz      [not null, default: `now()`]
+  updated_at               timestamptz      [not null, default: `now()`]
+  deleted_at               timestamptz      [note: 'COPPA hard-delete after retention window — sys-14 owns the sweep']
+
+  Indexes {
+    (household_id, status, created_at) [name: 'idx_children_household_status_created_at', note: 'hot query: docs/sequences/01-identity/child-profile-create.sequence.mmd — list children for /v1/me']
+    (household_id, nickname) [name: 'idx_children_household_nickname', note: 'hot query: docs/sequences/01-identity/child-profile-create.sequence.mmd — dedup at create time per spec §4.10']
+  }
+}
+
+Ref: children.household_id > households.id

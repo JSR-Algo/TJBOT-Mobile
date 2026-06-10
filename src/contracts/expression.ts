@@ -1,6 +1,6 @@
-// @tbot/contracts — Expression vocabulary (14 values) — mobile projection
+// @TJBot/contracts — Expression vocabulary (14 values) — mobile projection
 //
-// Source of truth: tbot-infra/contracts/expression.js (ADR-009).
+// Source of truth: TJBot-infra/contracts/expression.js (ADR-009).
 // Parity asserted in tests/contracts/parity.test.ts.
 //
 // Plan: expressive-robot-companion-rewrite §3 ADR-009, §6 RM-02/RM-08.

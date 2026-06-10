@@ -9,7 +9,21 @@ import {
   GestureResponderEvent,
   PanResponderGestureState,
 } from 'react-native';
-import { RobotMode } from '../../screens/interaction/RobotStateMachine';
+export type RobotMode = 'learning' | 'playful' | 'focus' | 'parent_mode' | 'sleep_mode';
+
+export type RobotState =
+  | 'idle'
+  | 'listening'
+  | 'recording'
+  | 'processing_stt'
+  | 'processing_llm'
+  | 'processing_tts'
+  | 'speaking'
+  | 'no_speech'
+  | 'error'
+  | 'low_battery'
+  | 'charging'
+  | 'offline';
 
 export interface ModeTheme {
   primary: string;

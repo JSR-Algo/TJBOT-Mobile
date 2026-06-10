@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useVoiceAssistantStore } from '../../state/voiceAssistantStore';
 import { stripActionTags } from '../../utils/stripActionTags';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 const COLORS = {
   userBubble: '#3B82F6',
@@ -25,6 +26,10 @@ function useTypewriter(text: string, speed = 30): string {
       const alreadyShown = prevTextRef.current.length;
       const newChars = text.slice(alreadyShown);
       let i = 0;
+      // Per-character typing animation. Presentation-only; does not
+      // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
+      // timers in shared layers.
+      // eslint-disable-next-line TJBot-voice/no-voice-timing-in-shared
       const timer = setInterval(() => {
         if (i < newChars.length) {
           setDisplayed(text.slice(0, alreadyShown + i + 1));
@@ -54,6 +59,7 @@ function useTypewriter(text: string, speed = 30): string {
 }
 
 export function TranscriptPanel() {
+  const { language } = useAppLanguage();
   const messages = useVoiceAssistantStore((s) => s.messages);
   const userTranscript = useVoiceAssistantStore((s) => s.userTranscript);
   const aiTranscript = useVoiceAssistantStore((s) => s.aiTranscript);
@@ -67,7 +73,7 @@ export function TranscriptPanel() {
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.sectionTitle}>📖  Cuộc trò chuyện</Text>
+      <Text style={styles.sectionTitle}>{translateCopy('Conversation', { locale: language })}</Text>
       <ScrollView
         ref={scrollRef}
         style={styles.container}
@@ -89,7 +95,7 @@ export function TranscriptPanel() {
                 styles.roleLabel,
                 msg.role === 'user' ? styles.roleLabelUser : styles.roleLabelAi,
               ]}>
-                {msg.role === 'user' ? 'Bạn' : 'Suka'}
+                {msg.role === 'user' ? translateCopy('You', { locale: language }) : 'Suka'}
               </Text>
               <View
                 style={[
@@ -115,7 +121,7 @@ export function TranscriptPanel() {
         {userTranscript ? (
           <View style={[styles.bubbleRow, styles.bubbleRowRight]}>
             <View>
-              <Text style={[styles.roleLabel, styles.roleLabelUser]}>Bạn</Text>
+              <Text style={[styles.roleLabel, styles.roleLabelUser]}>{translateCopy('You', { locale: language })}</Text>
               <View style={[styles.bubble, styles.userBubble, styles.liveBubble]}>
                 <Text style={[styles.bubbleText, styles.userText, styles.liveText]}>
                   {userTranscript}

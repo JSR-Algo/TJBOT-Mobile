@@ -1,0 +1,62 @@
+---
+system: sys-04-realtime-session-orchestrator
+flow_id: turn-pipeline
+surface: device
+spec_anchor: /software/systems/04-realtime-session-orchestrator#turn-pipeline
+actors: [Device, Orchestrator, GoogleLiveFlash, SafetyService, ContentService]
+apis:
+  - POST /internal/v1/conversation/generate
+  - POST /internal/v1/personalization/retrieve
+externals: [GoogleLiveFlash]
+queues:
+  - tbot-session-telemetry
+failure_paths:
+  - stt_timeout
+  - input_safety_blocked
+  - llm_timeout
+  - output_safety_blocked
+  - tts_timeout
+idempotency: turnId monotonic per session, AUDIO_CHUNK seq strictly monotonic
+retry: 0 (per-provider failover, fail-closed on safety)
+timeout: end-of-speech to first TTS audio 1400ms p95 — STT 2000ms hard, LLM first token 3000ms hard
+status: final
+---
+%% HAND-CURATED — normalized from _seed.1 (04-realtime#L101).
+sequenceDiagram
+    autonumber
+    participant Device
+    participant Orchestrator
+    participant GoogleLiveFlash
+    participant SafetyService
+    participant ContentService
+
+    Device->>Orchestrator: AUDIO_CHUNK (0x10) seq=N streaming
+    Device->>Orchestrator: AUDIO_END (0x11)
+    Orchestrator->>GoogleLiveFlash: stream audio (bidirectional)
+    GoogleLiveFlash-->>Orchestrator: STT_PARTIAL stream
+    Orchestrator-->>Device: STT_PARTIAL (0x20)
+    GoogleLiveFlash-->>Orchestrator: STT_FINAL transcript
+    Orchestrator-->>Device: STT_FINAL (0x21)
+    Orchestrator->>ContentService: POST /internal/v1/personalization/retrieve
+    ContentService-->>Orchestrator: {traits, prefs, memories, templates}
+    Orchestrator->>SafetyService: POST /internal/v1/conversation/generate
+    alt input_safety_blocked
+        SafetyService-->>Orchestrator: block_with_fallback fallback_text
+        Orchestrator->>GoogleLiveFlash: synthesize fallback (TTS)
+    else llm_timeout
+        SafetyService-->>Orchestrator: model_timeout fallback
+        Orchestrator->>GoogleLiveFlash: synthesize fallback (TTS)
+    else output_safety_blocked
+        SafetyService-->>Orchestrator: block_with_fallback after output gate
+        Orchestrator->>GoogleLiveFlash: synthesize fallback (TTS)
+    else success
+        SafetyService-->>Orchestrator: allow {textSegments, renderPlan, motionPlan}
+        Orchestrator-->>Device: LLM_TOKEN (0x30) stream
+        Orchestrator->>GoogleLiveFlash: synthesize TTS Neural2
+        GoogleLiveFlash-->>Orchestrator: TTS audio stream
+        Orchestrator-->>Device: TTS_AUDIO (0x40) and EXPRESSION_SYNC (0x50)
+        Orchestrator-->>Device: TTS_DONE (0x41)
+    end
+    Orchestrator-)Orchestrator: emit tbot-session-telemetry turn.completed
+
+    Note over Device,GoogleLiveFlash: target 700ms p50 end-of-speech to first TTS audio — fail-closed on safety filter unavailability

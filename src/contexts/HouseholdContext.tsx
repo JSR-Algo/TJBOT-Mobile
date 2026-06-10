@@ -1,8 +1,29 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import * as SecureStore from 'expo-secure-store';
 import { Household, Child } from '../types';
-import * as householdsApi from '../api/households';
+import * as householdsApi from '../services/api/households';
 import { useAuth } from './AuthContext';
 import { normalizeError } from '../utils/errors';
+import type { RootStackParamList } from '../navigation/routes';
+
+const ONBOARDING_COMPLETE_KEY = 'onboarding_complete_v1';
+
+async function readOnboardingCompleteFromStore(): Promise<boolean> {
+  try {
+    const v = await SecureStore.getItemAsync(ONBOARDING_COMPLETE_KEY);
+    return v === '1';
+  } catch { return false; }
+}
+
+function writeOnboardingCompleteToStore(value: boolean): void {
+  SecureStore.setItemAsync(ONBOARDING_COMPLETE_KEY, value ? '1' : '0').catch(
+    () => { /* persistence best-effort — stale state survives one cold start */ },
+  );
+}
+
+export async function clearOnboardingCompleteStore(): Promise<void> {
+  try { await SecureStore.deleteItemAsync(ONBOARDING_COMPLETE_KEY); } catch { /* noop */ }
+}
 
 interface HouseholdState {
   households: Household[];
@@ -12,21 +33,23 @@ interface HouseholdState {
   error: string | null;
   onboardingComplete: boolean;
   pendingDeviceSetup: boolean;
+  protectedInitialRoute?: keyof RootStackParamList;
 }
 
 interface HouseholdContextValue extends HouseholdState {
   createHousehold: (name: string) => Promise<Household>;
   selectHousehold: (id: string) => void;
-  addChild: (dto: { name: string; date_of_birth: string }) => Promise<Child>;
+  addChild: (dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string }, householdId?: string) => Promise<Child>;
   refresh: () => Promise<void>;
-  completeOnboarding: (withDeviceSetup?: boolean) => void;
+  completeOnboarding: (protectedInitialRoute?: keyof RootStackParamList, withDeviceSetup?: boolean) => void;
   clearPendingDeviceSetup: () => void;
+  protectedInitialRoute?: keyof RootStackParamList;
 }
 
 const HouseholdContext = createContext<HouseholdContextValue | undefined>(undefined);
 
 export function HouseholdProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [state, setState] = useState<HouseholdState>({
     households: [],
     activeHousehold: null,
@@ -35,6 +58,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     error: null,
     onboardingComplete: false,
     pendingDeviceSetup: false,
+    protectedInitialRoute: undefined,
   });
 
   const refresh = useCallback(async () => {
@@ -44,10 +68,11 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     }
     setState((s) => ({ ...s, isLoading: true, error: null }));
 
-    // Safety timeout: unblock navigation if API is unreachable
+    // Safety timeout bumped 5s → 12s: Render free-tier cold start can take
+    // 8-10s, which previously kicked the user back to Onboarding.
     const timeout = setTimeout(() => {
       setState((s) => s.isLoading ? { ...s, isLoading: false } : s);
-    }, 5000);
+    }, 12000);
 
     try {
       const households = await householdsApi.list();
@@ -57,28 +82,64 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
       if (active) {
         childList = await householdsApi.listChildren(active.id);
       }
+      const completed = households.length > 0;
+      if (completed) writeOnboardingCompleteToStore(true);
       setState((s) => ({
         ...s,
         households,
         activeHousehold: active,
         children: childList,
         isLoading: false,
-        // Returning user already has a household → onboarding was previously completed
-        onboardingComplete: s.onboardingComplete || households.length > 0,
+        onboardingComplete: s.onboardingComplete || completed,
       }));
     } catch (err) {
       clearTimeout(timeout);
       const normalized = normalizeError(err);
+      // On error, DO NOT flip onboardingComplete — a transient 401/timeout
+      // used to force returning users back into Onboarding. Keep whatever
+      // the persisted hydrate loaded.
       setState((s) => ({ ...s, error: normalized.message, isLoading: false }));
     }
   }, [isAuthenticated]);
 
+  // Hydrate persisted onboardingComplete BEFORE any refresh runs, so cold
+  // start of a returning user doesn't briefly show onboarding while
+  // the API call is in flight.
   useEffect(() => {
-    if (isAuthenticated) refresh();
-  }, [isAuthenticated, refresh]);
+    readOnboardingCompleteFromStore().then((persisted) => {
+      if (persisted) setState((s) => (s.onboardingComplete ? s : { ...s, onboardingComplete: true }));
+    });
+  }, []);
+
+  useEffect(() => {
+    // Wait for AuthContext to finish hydrating SecureStore before deciding
+    // whether to refresh or clear account-scoped household data. The device
+    // first-run flag remains independent from auth state.
+    if (authLoading) return;
+    if (isAuthenticated) {
+      refresh();
+    } else {
+      setState((s) => ({
+        ...s,
+        households: [],
+        activeHousehold: null,
+        children: [],
+        pendingDeviceSetup: false,
+      }));
+    }
+  }, [isAuthenticated, authLoading, refresh]);
 
   const createHousehold = async (name: string): Promise<Household> => {
     const household = await householdsApi.create(name);
+    // NOTE: Do NOT flip `onboardingComplete=true` here. The root stack
+    // gates onboarding vs protected app on this flag, so toggling it
+    // mid-flow unmounts onboarding and leaves the user unable to
+    // navigate forward to AddChild → InterestSetup → DeviceSetupIntro.
+    // The flag is intentionally set only by `completeOnboarding()` at
+    // DeviceSetupIntroScreen (Skip / Pair). Cold-start protection for
+    // returning users comes from the persisted-hydrate effect (line 104)
+    // plus refresh()'s own write-on-success at line 82 — the auth-loading
+    // guard at line 116 prevents the original B2 race that wiped the flag.
     setState((s) => ({
       ...s,
       households: [...s.households, household],
@@ -92,15 +153,20 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     if (found) setState((s) => ({ ...s, activeHousehold: found }));
   };
 
-  const addChild = async (dto: { name: string; date_of_birth: string }): Promise<Child> => {
-    if (!state.activeHousehold) throw new Error('No active household');
-    const child = await householdsApi.addChild(state.activeHousehold.id, dto);
+  const addChild = async (
+    dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string },
+    householdId?: string,
+  ): Promise<Child> => {
+    const targetHouseholdId = householdId ?? state.activeHousehold?.id;
+    if (!targetHouseholdId) throw new Error('No active household');
+    const child = await householdsApi.addChild(targetHouseholdId, dto);
     setState((s) => ({ ...s, children: [...s.children, child] }));
     return child;
   };
 
-  const completeOnboarding = (withDeviceSetup = false) => {
-    setState((s) => ({ ...s, onboardingComplete: true, pendingDeviceSetup: withDeviceSetup }));
+  const completeOnboarding = (protectedInitialRoute?: keyof RootStackParamList, withDeviceSetup = false) => {
+    writeOnboardingCompleteToStore(true);
+    setState((s) => ({ ...s, onboardingComplete: true, pendingDeviceSetup: withDeviceSetup, protectedInitialRoute }));
   };
 
   const clearPendingDeviceSetup = () => {
@@ -118,4 +184,8 @@ export function useHousehold(): HouseholdContextValue {
   const ctx = useContext(HouseholdContext);
   if (!ctx) throw new Error('useHousehold must be used within HouseholdProvider');
   return ctx;
+}
+
+export function useOptionalHousehold(): HouseholdContextValue | undefined {
+  return useContext(HouseholdContext);
 }

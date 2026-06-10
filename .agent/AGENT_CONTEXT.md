@@ -1,57 +1,156 @@
-# AGENT_CONTEXT — tbot-mobile
+# TJBot-mobile — Agent Context
 
-## OWNED SYSTEMS
-- sys-16: Parent Mobile App (iOS + Android)
+Ownership, forbidden actions, and dependency graph for agents working in
+`/Users/manhhodinh/Documents/TJBot/TJBot-mobile/`.
 
-## NOT OWNED — DO NOT MODIFY
-- Firmware (tbot-firmware)
-- Backend API (tbot-backend)
-- AI services (tbot-ai-services)
-- Infrastructure (tbot-infra)
+---
 
-## TECH STACK
-- Framework: React Native + Expo (managed workflow)
-- Language: TypeScript (strict mode)
-- Navigation: React Navigation v6
-- Secure storage: expo-secure-store (Keychain on iOS, Keystore on Android)
-- BLE: react-native-ble-plx
-- State management: confirm in codebase before assuming library
-- Push notifications: Expo Notifications + FCM + AWS SNS
+## Ownership
 
-## PLATFORM TARGETS
-- iOS: minimum version per EXPO_CONFIG (check app.json)
-- Android: minimum SDK per EXPO_CONFIG (check app.json)
-- Build system: Expo EAS Build
+**This repo owns sys-16: Mobile UX Shell — and only sys-16.**
 
-## FEATURES OWNED
-- Onboarding flow (account creation, COPPA consent)
-- BLE device pairing and management
-- Device controls (volume, bedtime, activity selection)
-- Conversation summaries (read-only display from backend)
-- Push notification receipt and display
-- Auth token management
-- Realtime voice interaction via WebSocket (Google Live Flash 3.1 API backend)
-  - Audio capture: PCM 16kHz mono via expo-audio
-  - Voice Activity Detection (VAD): local, pre-stream filtering
-  - Audio playback: unified response stream from Google Live (no separate TTS chunks)
-  - State machine: idle u2192 listening u2192 recording u2192 processing u2192 speaking u2192 idle
+sys-16 covers:
+- React Native application delivered to iOS and Android end-users
+- Screen structure: AuthStack, OnboardingStack, MainTabs (5 tabs), ModalStack
+- Feature slices: auth, onboarding, home, lesson-session, course, course-library,
+  device (incl. pairing/), parent (gate + summary), progress, purchase,
+  fallback, robot-mgmt
+- Design system: tokens, primitives, components, theme
+- Services consumed by the app: HTTP client, WebSocket observer, BLE client,
+  Sentry observability, PostHog analytics, Gemini AI client, secure storage
+- Navigation: `src/app/navigation/routes.ts`, `RootNavigator.tsx`, `MainTabs.tsx`
+- I18n: `src/services/i18n/` (en + vi)
+- Zustand stores: `src/store/*.store.ts` (8 stores)
+- Build tooling: Metro, Babel, ESLint (flat config), TypeScript strict
 
-## SECURITY REQUIREMENTS
-- Auth tokens: ONLY via expo-secure-store (Keychain/Keystore)
-- NEVER store tokens in AsyncStorage, MMKV unencrypted, or SecureStore with wrong options
-- BLE pairing: verify device UUID against allowlist before pairing
-- API calls: HTTPS only, certificate pinning required for auth endpoints
+sys-16 does NOT own:
+- Backend API contract definitions → tbot-backend (sys-01, sys-02, sys-04, etc.)
+- BLE wire protocol message shapes → TJBot-firmware (sys-18)
+- AI safety filters and prompts → TJBot-ai-services (sys-05)
+- Infrastructure, IAM, KMS, CI/CD → TJBot-infra (sys-13)
+- Root TJBot docs at `/Users/manhhodinh/Documents/TJBot/docs/` → separate git repo
 
-## COPPA COMPLIANCE
-- Consent screen: parent must actively tap "I agree" — no pre-checked boxes
-- NEVER auto-accept COPPA consent programmatically
-- NEVER infer consent from other actions
-- Consent timestamp must be sent to backend on acceptance
-- Age gate must appear before any child profile creation
+---
 
-## ABSOLUTE PROHIBITIONS
-- NEVER store auth tokens in AsyncStorage
-- NEVER auto-accept or skip COPPA consent flow
-- NEVER bypass authentication checks
-- NEVER connect to non-allowlisted BLE devices
-- NEVER display raw API error messages to end users
+## Forbidden actions
+
+These actions are HARD STOPS — do not proceed without cross-repo approval:
+
+1. Edit any file outside `/Users/manhhodinh/Documents/TJBot/TJBot-mobile/`
+   (exceptions: root CLAUDE.md, root AGENTS.md — but only Step 8/PR8 cleanup,
+   and only with explicit user instruction).
+2. Modify `docs/site/api/openapi.json` — that lives in the root TJBot docs repo.
+   TJBot-mobile only reads `migrate-ui-ux-to-mobile-app-docs/api/openapi.json`
+   (symlink). Do not write through the symlink.
+3. Change BLE message schemas (`src/services/ble/`) without escalating to
+   TJBot-firmware first. Wire protocol is sys-18 — cross-repo boundary.
+4. Change COPPA legal text in any screen without explicit user sign-off.
+   COPPA copy is legally reviewed — regression is a regulatory violation.
+5. Delete `.js` state files without first auditing for fields not in the `.ts`
+   twin (dual `.js`+`.ts` state files exist in 5 features; `.ts` wins but must
+   be complete first).
+6. Modify `packages/shared-data/src/content/tasks.json` to set status DONE
+   (only human reviewers may set DONE).
+7. Bypass lint, typecheck, or test gates with `--no-verify` or `// @ts-ignore`.
+8. Add `any`, `@ts-ignore`, `@ts-expect-error`, or `unknown as T` type suppressions.
+
+---
+
+## Dependency graph
+
+TJBot-mobile consumes (read-only):
+- `migrate-ui-ux-to-mobile-app-docs/api/openapi.json`
+  → symlink to `/Users/manhhodinh/Documents/TJBot/docs/site/api/openapi.json`
+  (root TJBot docs repo; TJBot-mobile is a consumer only)
+- `migrate-ui-ux-to-mobile-app-docs/sequences/<NN>-<system>/*.sequence.mmd`
+  → BLE wire protocol (sys-18), realtime session (sys-04), auth flow (sys-01)
+- `migrate-ui-ux-to-mobile-app-docs/decisions/ADR-0001` through `ADR-0012`
+  → architectural decisions baked into screen + service design
+
+TJBot-mobile emits (written by generators, not hand-edited):
+- `migrate-ui-ux-to-mobile-app-docs/flows/domains/*.generated.mmd`
+  → generated by `scripts/flows/generate-domain-flows.mjs` from
+    `src/features/*/domain.meta.json` + `nav-graph-data.json`
+- `nav-graph-data.json` at repo root
+  → generated from `src/app/navigation/routes.ts`
+
+TJBot-mobile depends on (npm):
+- `react-native@0.83.4`, `expo@55.x`, `@react-navigation/*@7.x`
+- `axios@1.7.x` (HTTP client, token-refresh interceptor)
+- `zustand@5.x` (state management)
+- `react-native-ble-plx@3.5.x` (BLE — sys-18 consumer)
+- `@sentry/react-native@7.x` (observability)
+- `posthog-react-native@3.6.x` (analytics)
+- `@google/genai@1.49.x` (Gemini AI)
+- `expo-secure-store@55.x` (token storage — SecureStore)
+- `xstate@5.x`, `@xstate/react@6.x` (state machines in purchase + lesson flows)
+- `detox@20.x` (e2e testing)
+
+---
+
+## Domain map (feature → sys-16 sub-area)
+
+| Feature dir | Screens | Tab | Notes |
+|---|---|---|---|
+| `auth/` | LoginScreen, SignupScreen, ForgotPasswordScreen, CoppaScreen | AuthStack | Token-refresh + COPPA gate |
+| `onboarding/` | WelcomeScreen, CoppaConsentScreen, HouseholdCreate, AddChild, InterestSetup, DeviceSetupIntro, VoiceTest | OnboardingStack | Runs once per account |
+| `home/` | HomeScreen, CompanionScreen | HomeTab | Entry point after auth |
+| `lesson-session/` | 24 screens incl. ListenScreen, SpeakScreen | HomeTab > LessonSession | Realtime (sys-04) consumer |
+| `course/` | 7 screens | HomeTab > Course | |
+| `course-library/` | 11 screens | HomeTab > CourseLibrary | |
+| `device/` | DeviceListScreen, DeviceDetailScreen, DeviceSetupScreen | DevicesTab | BLE pairing sub-flow |
+| `device/pairing/` | 13 screens incl. DevicePairWifiScreen | DevicesTab > Pairing | sys-18 consumer |
+| `robot-mgmt/` | 12 screens | DevicesTab | |
+| `progress/` | 5 screens | ProgressTab | |
+| `parent/` | ParentDashboardScreen, ParentControlsScreen, 7 summary screens | ProfileTab | Parent gate (modal) |
+| `purchase/` | 12 screens | ModalStack | Payment provider integration |
+| `fallback/` | 9 screens | ModalStack + inline | Network error / offline handling |
+
+---
+
+## Cross-repo escalation table
+
+| Change touches | Escalate to | Read first |
+|---|---|---|
+| Wire protocol (sys-18) | TJBot-firmware + tbot-backend + docs/packages/shared-data | `docs/site/software/systems/18-*.md` |
+| Safety filters (sys-05) | TJBot-ai-services — red-team suite must remain 100% | `docs/site/safety/*.md` |
+| Auth / COPPA (sys-01) | tbot-backend — legal review may be required | `docs/site/legal/coppa-*.md` |
+| Infra / IAM / KMS (sys-13) | TJBot-infra — staging validation required | `docs/runbooks/staging-*.md` |
+| Realtime session (sys-04) | tbot-backend + TJBot-ai-services | `docs/site/architecture/realtime-overview.md` |
+| Mobile UX (sys-16) | TJBot-mobile (this repo) | `docs/site/software/systems/16-*.md` |
+
+Cross-repo edits without explicit user approval violate this contract — STOP and escalate.
+
+---
+
+## Key file locations
+
+| Purpose | Path |
+|---|---|
+| HTTP client (axios + token-refresh) | `src/api/client.ts` (pre-PR4), `src/services/http/client.ts` (post-PR4) |
+| Secure token storage | `src/api/tokens.ts` (pre-PR4), `src/services/http/tokens.ts` (post-PR4) |
+| Root navigator (auth gate) | `src/navigation/RootNavigator.tsx` (pre-PR3), `src/app/RootNavigator.tsx` (post-PR3) |
+| Route constants | `src/app/navigation/routes.ts` |
+| Custom ESLint rule | `eslint-rules/no-voice-timing-in-shared.js` |
+| Docs workspace | `/Users/manhhodinh/Documents/TJBot/migrate-ui-ux-to-mobile-app-docs/` |
+| Validator path helper | `scripts/_lib/paths.mjs` |
+| Nav graph (generated) | `nav-graph-data.json` (repo root) |
+| Domain meta (per feature) | `src/features/*/domain.meta.json` |
+
+---
+
+## Multi-agent lane ownership (within TJBot-mobile PRs)
+
+| Lane | Writes |
+|---|---|
+| docs-infra | `migrate-ui-ux-to-mobile-app-docs/**`, `scripts/**`, `.agent/**` |
+| design-system | `src/design-system/**` |
+| navigation | `src/app/**` |
+| services | `src/services/**`, `src/contexts/**`, `src/contracts/**`, `src/hooks/**` |
+| features-auth | `src/features/{auth,onboarding,fallback}/**` |
+| features-learning | `src/features/{home,lesson-session,course,course-library}/**` |
+| features-device-parent | `src/features/{device,parent,progress,purchase,robot-mgmt}/**` |
+| testing | `tests/**` |
+
+No two lanes write the same file. `package.json` and `routes.ts` are single-owner
+(PR4 and PR3 respectively) — do not edit outside the owning PR.

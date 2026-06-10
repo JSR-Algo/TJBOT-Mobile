@@ -1,0 +1,38 @@
+// ota_pause_decisions — append-only audit log of every rollout-lifecycle event.
+// Spec calls these `ota_rollout_events`; ERD-level name `ota_pause_decisions` per
+// plan §3 manifest (broader: covers all 9 event_type values, with pause decisions
+// being the legally + operationally critical subset).
+// Source: docs/site/software/systems/09-ota-release-management.md §Data Model.
+
+enum ota_pause_decision_kind {
+  created
+  staged
+  started
+  percentage_increased
+  paused_manual
+  paused_auto
+  resumed
+  completed
+  recalled
+}
+
+Table ota_pause_decisions {
+  id                  uuid                       [pk]
+  release_id          uuid                       [not null]
+  decision_kind       ota_pause_decision_kind    [not null]
+  details             jsonb                      [not null, default: `'{}'::jsonb`, note: 'crash_count, total_attempts, crash_rate, prior_percentage, new_percentage, etc.']
+  decided_by          varchar(254)               [not null, note: 'admin email for manual events; system actor slug for auto events']
+  admin_user_id       uuid                       [note: 'cross-domain ref → AdminAuthService (sys-12 admin_users) — set only when decision_kind in (paused_manual, resumed, recalled)']
+  sns_message_id      varchar(120)               [note: 'SNS publish id for SEV-2/SEV-1 alerts']
+  sns_severity        varchar(16)                [note: 'SEV-1 | SEV-2']
+  created_at          timestamptz                [not null, default: `now()`]
+  updated_at          timestamptz                [not null, default: `now()`]
+
+  Indexes {
+    (release_id, created_at) [name: 'idx_ota_pause_decisions_release_created', note: 'hot query: docs/sequences/09-ota/crash-rate-auto-pause.sequence.mmd — release lifecycle audit timeline']
+    (decision_kind, created_at) [name: 'idx_ota_pause_decisions_kind_created', note: 'hot query: docs/sequences/09-ota/crash-rate-auto-pause.sequence.mmd — count paused_auto for SLA tracking']
+  }
+}
+
+Ref: ota_pause_decisions.release_id > ota_releases.id
+// admin_user_id cross-domain FK → AdminAuthService.admin_users (sys-12, Lane B) — declared on producer side (sys-12); no Ref: line here.

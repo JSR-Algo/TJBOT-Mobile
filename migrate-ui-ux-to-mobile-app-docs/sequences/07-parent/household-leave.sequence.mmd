@@ -1,0 +1,62 @@
+---
+system: sys-01-identity-household-access
+flow_id: household-leave
+surface: mobile
+spec_anchor: /software/systems/01-identity-household-access#household-leave-adr-0010
+actors: [ParentApp, Gateway, IdentityService, PostgreSQL]
+apis:
+  - POST /v1/household/leave
+externals: []
+queues: []
+failure_paths:
+  - cannot_leave_as_primary_transfer_first
+  - last_member_cannot_leave
+  - already_revoked
+idempotency: idempotent on (user_id) — repeat call when already revoked returns 200
+retry: single retry on 5xx
+timeout: 2s
+status: final
+---
+%% HAND-CURATED. Secondary parent leaves household per ADR-0010 D8. Primary (owner) CANNOT leave — must transfer first (references D7). Sets household_members.status=revoked + revoked_at=now(). Revokes all parent_sessions for that user. users row stays intact as orphan; user can join another household via invite.
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+    participant IdentityService
+    participant PostgreSQL
+
+    ParentApp->>Gateway: POST /v1/household/leave and Bearer JWT
+    Gateway->>Gateway: validate parent JWT — extract user_id, household_id
+    Gateway->>IdentityService: forward request
+    IdentityService->>PostgreSQL: SELECT role, status FROM household_members WHERE user_id={user_id} AND household_id={household_id}
+    PostgreSQL-->>IdentityService: member row or null
+    alt member_not_found
+        IdentityService-->>Gateway: 404 member_not_found
+        Gateway-->>ParentApp: 404
+    else already_revoked (status = 'revoked')
+        Note over IdentityService: Idempotent — treat as success
+        IdentityService-->>Gateway: 200 {left: true, already_revoked: true}
+        Gateway-->>ParentApp: 200
+    else cannot_leave_as_primary_transfer_first (role = 'owner')
+        Note over IdentityService: ADR-0010 D8 — primary must transfer role before leaving
+        IdentityService-->>Gateway: 409 cannot_leave_as_primary_transfer_first {hint: 'use POST /v1/household/transfer-primary first'}
+        Gateway-->>ParentApp: 409
+    else last_member_cannot_leave
+        IdentityService->>PostgreSQL: SELECT COUNT(*) FROM household_members WHERE household_id={household_id} AND status='active'
+        PostgreSQL-->>IdentityService: active_count
+        alt active_count = 1 (would leave household empty)
+            IdentityService-->>Gateway: 409 last_member_cannot_leave {hint: 'delete account instead'}
+            Gateway-->>ParentApp: 409
+        else secondary_can_leave
+            IdentityService->>PostgreSQL: UPDATE household_members SET status='revoked', revoked_at=now() WHERE user_id={user_id} AND household_id={household_id}
+            PostgreSQL-->>IdentityService: updated
+            IdentityService->>PostgreSQL: UPDATE parent_sessions SET revoked_at=now() WHERE user_id={user_id} AND revoked_at IS NULL
+            PostgreSQL-->>IdentityService: all sessions revoked
+            Note over IdentityService: users row intact — user is now orphan (no active household_members row)
+            IdentityService-->>Gateway: 200 {left: true, household_id}
+            Gateway-->>ParentApp: 200
+            ParentApp->>ParentApp: clear parent.store and Keychain and route to post-household landing screen
+        end
+    end
+
+    Note over ParentApp,PostgreSQL: timeout 2s — idempotent on (user_id) — primary role blocked (must transfer first per ADR-0010 D8) — users row preserved as orphan after leave

@@ -1,0 +1,166 @@
+// AUTO-GENERATED FROM docs/erd/14-retention/*.dbml — do not hand-edit; regenerate via npm run prisma:emit
+// Source files: docs/erd/14-retention/backup_snapshots.dbml, docs/erd/14-retention/deletion_jobs.dbml, docs/erd/14-retention/deletion_requests.dbml, docs/erd/14-retention/retention_policies.dbml
+// Generator: scripts/erd/dbml-to-prisma.mjs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum backup_snapshot_kind {
+  rds_automated
+  rds_cross_region
+  rds_manual
+  s3_data_export
+}
+
+enum backup_snapshot_status {
+  creating
+  available
+  expired
+  deleted
+}
+
+enum deletion_job_status {
+  requested
+  grace_period
+  executing
+  completed
+  failed
+}
+
+enum deletion_request_status {
+  pending
+  grace_period
+  cancelled
+  executing
+  completed
+  failed
+}
+
+enum deletion_request_scope {
+  parent_account
+  child_profile
+}
+
+enum retention_method {
+  hard_delete
+  soft_delete
+  redact_in_place
+  s3_lifecycle
+  hypertable_drop_chunks
+}
+
+/// Source: docs/erd/14-retention/backup_snapshots.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model BackupSnapshots {
+  id String @id @default(uuid()) @db.Uuid
+  kind backup_snapshot_kind
+  rdsSnapshotId String? @db.VarChar(254) @map("rds_snapshot_id")
+  /// AWS RDS snapshot ARN — null when kind=s3_data_export
+  s3Bucket String? @db.VarChar(254) @map("s3_bucket")
+  /// tbot-exports for kind=s3_data_export; null otherwise
+  s3Key String? @db.VarChar(2048) @map("s3_key")
+  /// object key inside s3_bucket
+  region String @db.VarChar(32) @default("us-east-1")
+  /// us-east-1 primary; us-west-2 for cross-region copies
+  status backup_snapshot_status @default(creating)
+  sizeBytes BigInt? @map("size_bytes")
+  encryptionKeyId String? @db.Uuid @map("encryption_key_id")
+  /// cross-domain ref → SecurityService (sys-13 kms_keys) — every snapshot encrypted at rest
+  scopeHouseholdId String? @db.Uuid @map("scope_household_id")
+  /// cross-domain ref → IdentityService — set only for COPPA right-of-access data export packages
+  dataExportRequestId String? @db.Uuid @map("data_export_request_id")
+  /// cross-domain ref → AccountDeletionService companion (DataExportService — sys-14 internal); set only for kind=s3_data_export
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  /// 35d for rds_automated; 7d for rds_cross_region; 7d for s3_data_export
+  takenAt DateTime @db.Timestamptz(6) @default(now()) @map("taken_at")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  @@index([kind, status, expiresAt], map: "idx_backup_snapshots_kind_status_expires")
+  @@index([scopeHouseholdId, takenAt], map: "idx_backup_snapshots_household_taken")
+  @@map("backup_snapshots")
+}
+
+/// Source: docs/erd/14-retention/deletion_jobs.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model DeletionJobs {
+  id String @id @default(uuid()) @db.Uuid
+  deletionRequestId String @db.Uuid @map("deletion_request_id")
+  householdId String? @db.Uuid @map("household_id")
+  /// cross-domain ref → IdentityService (sys-01 households) — set when scope_kind=parent_account; null for child_profile-scoped jobs
+  childId String? @db.Uuid @map("child_id")
+  /// cross-domain ref → IdentityService (sys-01 children) — set when this job is the child-profile cascade
+  status deletion_job_status @default(requested)
+  executionLog Json @db.JsonB @default("[]") @map("execution_log")
+  /// append-only array of {step, table, rows_affected, completed_at} per spec §Deletion Execution table
+  startedAt DateTime? @db.Timestamptz(6) @map("started_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  errorMessage String? @db.Text @map("error_message")
+  /// set when status=failed; cleared on retry
+  retryCount Int @default(0) @map("retry_count")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  deletionRequest DeletionRequests @relation(name: "deletion_jobs_deletion_request_id_to_deletion_requests", fields: [deletionRequestId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([deletionRequestId, status], map: "idx_deletion_jobs_request_status")
+  @@index([status, startedAt], map: "idx_deletion_jobs_status_started")
+  @@map("deletion_jobs")
+}
+
+/// Source: docs/erd/14-retention/deletion_requests.dbml
+/// immutable — row is append-only. DB GRANT model REVOKEs UPDATE/DELETE for application roles; only RetentionWorker may delete after policy window.
+model DeletionRequests {
+  id String @id @default(uuid()) @db.Uuid
+  parentAccountId String @db.Uuid @map("parent_account_id")
+  /// cross-domain ref → IdentityService (sys-01 users) — the requesting parent
+  childId String? @db.Uuid @map("child_id")
+  /// cross-domain ref → IdentityService (sys-01 children) — set only when scope_kind=child_profile
+  scopeKind deletion_request_scope @default(parent_account) @map("scope_kind")
+  requestedAt DateTime @db.Timestamptz(6) @map("requested_at")
+  gracePeriodEndsAt DateTime @db.Timestamptz(6) @map("grace_period_ends_at")
+  /// requested_at + 30 days per COPPA §312.10 "verifiable parental consent" tracked + GDPR §17 erasure window
+  cancelledAt DateTime? @db.Timestamptz(6) @map("cancelled_at")
+  executedAt DateTime? @db.Timestamptz(6) @map("executed_at")
+  status deletion_request_status @default(pending)
+  cancelTokenHash String? @db.VarChar(120) @map("cancel_token_hash")
+  /// sha256 of one-time cancel link signed token
+  originalEmail String? @db.VarChar(254) @map("original_email")
+  /// preserved at request time for sending the completion confirmation post-anonymisation
+  requestIp String? @db.VarChar(45) @map("request_ip")
+  requestUserAgent String? @db.Text @map("request_user_agent")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @map("updated_at")
+  deletionJobs DeletionJobs[] @relation(name: "deletion_jobs_deletion_request_id_to_deletion_requests")
+  @@index([parentAccountId, status], map: "idx_deletion_requests_parent_status")
+  @@index([status, gracePeriodEndsAt], map: "idx_deletion_requests_status_grace")
+  @@map("deletion_requests")
+}
+
+/// Source: docs/erd/14-retention/retention_policies.dbml
+/// polymorphic: subject_table identifies the entity governed by the policy
+model RetentionPolicies {
+  id String @id @default(uuid()) @db.Uuid
+  targetTable String @db.VarChar(64) @map("target_table")
+  /// entity table name — references the ERD entity name; not FK-constrained because polymorphic across all lanes
+  retentionSeconds BigInt @map("retention_seconds")
+  /// window in seconds; use bigint to fit 10-year windows comfortably
+  method retention_method @default(hard_delete)
+  cronExpression String @db.VarChar(120) @map("cron_expression")
+  /// cron(MM 4 * * ? *) per spec §Cron Schedule Summary
+  batchSize Int @default(5000) @map("batch_size")
+  maxIterations Int @default(100) @map("max_iterations")
+  yieldMs Int @default(100) @map("yield_ms")
+  legalBasis String? @db.VarChar(254) @map("legal_basis")
+  /// free-form citation — e.g. "COPPA §312.10", "GDPR §17", "business need", "best practice"
+  active Boolean @default(true)
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @default(now()) @updatedAt @map("updated_at")
+  @@unique([targetTable], map: "idx_retention_policies_target_table_unique")
+  @@index([active, cronExpression], map: "idx_retention_policies_active_cron")
+  @@map("retention_policies")
+}
+

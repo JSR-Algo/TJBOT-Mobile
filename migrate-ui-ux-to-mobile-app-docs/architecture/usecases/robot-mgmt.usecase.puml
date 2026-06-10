@@ -1,0 +1,60 @@
+@startuml TBOT-RobotMgmt
+title Domain · robot-mgmt — post-pair diagnostics & support
+left to right direction
+
+actor Parent
+actor "Robot Device" as Robot <<external>>
+
+package "robot-mgmt" {
+  usecase "View My Robot"         as UC_RM_VIEW
+  usecase "View Robot Status"     as UC_RM_STATUS
+  usecase "View Battery"          as UC_RM_BATTERY
+  usecase "View Wi-Fi"            as UC_RM_WIFI
+  usecase "View Installed Courses" as UC_RM_STORAGE
+  usecase "Update Robot Software" as UC_RM_FW
+  usecase "Adjust Sound & Volume" as UC_RM_SOUND
+  usecase "Run Mic Test"          as UC_RM_MIC
+  usecase "Run Speaker Test"      as UC_RM_SPK
+  usecase "Factory Reset"         as UC_RM_RESET
+  usecase "View Offline Help"     as UC_RM_OFFLINE
+  usecase "Contact Support"       as UC_RM_SUPPORT
+  usecase "Find My Robot (chime)" as UC_RM_FIND
+}
+
+Parent --> UC_RM_VIEW
+Parent --> UC_RM_STATUS
+Parent --> UC_RM_BATTERY
+Parent --> UC_RM_WIFI
+Parent --> UC_RM_STORAGE
+Parent --> UC_RM_FW
+Parent --> UC_RM_SOUND
+Parent --> UC_RM_MIC
+Parent --> UC_RM_SPK
+Parent --> UC_RM_RESET
+Parent --> UC_RM_OFFLINE
+Parent --> UC_RM_SUPPORT
+Parent --> UC_RM_FIND
+
+UC_RM_VIEW    ..> UC_RM_BATTERY : drill
+UC_RM_VIEW    ..> UC_RM_WIFI    : drill
+UC_RM_VIEW    ..> UC_RM_STORAGE : drill
+UC_RM_VIEW    ..> UC_RM_FW      : "Robot software"
+UC_RM_VIEW    ..> UC_RM_OFFLINE : "Offline help"
+UC_RM_OFFLINE ..> UC_RM_SUPPORT : "Contact support"
+
+UC_RM_FW    ..> Robot : <<delegate>> OTA
+UC_RM_MIC   ..> Robot : <<delegate>>
+UC_RM_SPK   ..> Robot : <<delegate>>
+UC_RM_RESET ..> Robot : <<delegate>> destructive
+UC_RM_FIND  ..> Robot : <<delegate>> chime
+
+note top of UC_RM_VIEW
+  [requires] parent-gate : UC_PG_PASS
+end note
+note bottom of UC_RM_STORAGE
+  [exit] → course-library : UC_CL_BROWSE
+end note
+
+' Files: src/features/robot-mgmt/*Page.jsx
+' API:   src/services/api/robot-mgmt.api.js
+@enduml

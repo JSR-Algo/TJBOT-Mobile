@@ -1,0 +1,29 @@
+// households — family trust boundary for devices, children, controls, summaries, billing.
+// Source: docs/site/software/systems/01-identity-household-access.md §3.1 households.
+
+enum household_status {
+  active
+  locked
+  scheduled_for_deletion
+  deleted
+}
+
+Table households {
+  id                 uuid              [pk]
+  name               varchar(120)
+  primary_parent_id  uuid              [not null]
+  timezone           varchar(64)       [not null, note: 'IANA tz name; validated at signup']
+  locale             varchar(16)       [not null, note: 'BCP-47 tag']
+  status             household_status  [not null, default: 'active']
+  created_at         timestamptz       [not null, default: `now()`]
+  updated_at         timestamptz       [not null, default: `now()`]
+  archived_at        timestamptz       [note: 'soft-deletion ledger; sys-14 hard-deletes after window']
+  deleted_at         timestamptz       [note: 'set by sys-14 retention sweep']
+
+  Indexes {
+    (primary_parent_id) [name: 'idx_households_primary_parent_id']
+    (status, updated_at) [name: 'idx_households_status_updated_at', note: 'hot query: docs/sequences/01-identity/login.sequence.mmd — admin household list filtered by status']
+  }
+}
+
+Ref: households.primary_parent_id > users.id   // cross-domain self-ref within sys-01
