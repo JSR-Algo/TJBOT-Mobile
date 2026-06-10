@@ -32,3 +32,9 @@ export interface LocalBleProvisioningResult {
   status: 'wifi_credentials_sent';
   transport: 'ble-blufi';
 }
+
+export interface LocalBleClaimTokenResult {
+  deviceId: string;
+  status: 'claim_token_sent';
+  transport: 'ble-blufi';
+}

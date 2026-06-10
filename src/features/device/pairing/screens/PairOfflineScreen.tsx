@@ -51,7 +51,7 @@ export default function PairOfflineScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Reconnect now</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairSearchScreen, { reconnectMode: true })}>Reconnect now</DeviceBigBtn>
         <DeviceBigBtn
           secondary
           onClick={() => navigation.navigate(ROUTES.SupportScreen, {

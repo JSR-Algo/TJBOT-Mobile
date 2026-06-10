@@ -10,10 +10,14 @@ import WaveBars from '@/design-system/components/WaveBars';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotSpeakingScreen'>;
 
 export default function RobotSpeakingScreen({ navigation }: Props) {
+  // Android hardware-back during this active voice turn must funnel through
+  // ExitConfirm, not silently pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'ASSISTANT_SPEAKING');
   return (
     <ScreenShell>
       <Box accessible accessibilityLabel="Robot is speaking" flex={1}>

@@ -10,6 +10,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
+import { getClaimStatus } from '@/services/api/claim.api';
 import { openAppSettings, openBluetoothSettings, openWifiSettings } from '../deviceSettings';
 import { useAppLanguage } from '@/services/i18n/i18n';
 
@@ -34,6 +35,37 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   const params = route.params;
   const copy = copyForError(params?.errorCode);
   const settingsAction = settingsActionForError(params?.errorCode);
+
+  React.useEffect(() => {
+    if (!canRecoverLateBleClaim(params)) return;
+    let cancelled = false;
+    void getClaimStatus(params.provisioningAttemptId)
+      .then((status) => {
+        if (cancelled) return;
+        const deviceId = status.deviceId || params.deviceId;
+        if (status.status === 'CLAIM_CONFIRMED') {
+          navigation.navigate(ROUTES.PairRenameScreen, {
+            deviceId,
+            serialNumber: params.serialNumber,
+            provisioningAttemptId: params.provisioningAttemptId,
+          });
+        }
+        if (status.status === 'CLAIMED') {
+          navigation.navigate(ROUTES.PairSuccessScreen, {
+            deviceId,
+            serialNumber: params.serialNumber,
+            provisioningAttemptId: params.provisioningAttemptId,
+          });
+        }
+      })
+      .catch(() => {
+        // Keep the recovery screen usable when the status check is unavailable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigation, params]);
+
   return (
     <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
@@ -43,40 +75,42 @@ export default function PairFailedScreen({ navigation, route }: Props) {
           {copy.body}
         </Text>
       </Box>
-      <Box paddingHorizontal={16} paddingTop={20} gap={8}>
-        {REASONS.map(r => (
-          <TouchableOpacity
-            key={r.t}
-            style={styles.reasonCard}
-            activeOpacity={0.7}
-            onPress={() => {
-              if (r.go === ROUTES.PairWifiPasswordScreen) {
-                if (params) navigation.navigate(ROUTES.PairWifiPasswordScreen, params);
-                else navigation.navigate(ROUTES.PairWifiPasswordScreen);
-                return;
-              }
-              if (r.go === ROUTES.PairSearchScreen) {
-                navigation.navigate(ROUTES.PairSearchScreen);
-                return;
-              }
-              navigation.navigate(ROUTES.PairIntroScreen);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={t(r.t === 'Wrong Wi-Fi password' ? 'Fix wrong Wi-Fi password' : r.t)}
-          >
-            <Box style={styles.reasonIcon} alignItems="center" justifyContent="center">
-              <Text style={{ fontSize: 16 }}>{r.ic}</Text>
-            </Box>
-            <Box flex={1}>
-              <Text fontWeight="600" style={styles.reasonTitle}>{r.t}</Text>
-              <Text style={styles.reasonBody}>{r.b}</Text>
-            </Box>
-            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={DV.ink3} strokeWidth="2.5" strokeLinecap="round">
-              <Path d="M9 6l6 6-6 6" />
-            </Svg>
-          </TouchableOpacity>
-        ))}
-      </Box>
+      {shouldShowReasonCards(params?.errorCode) ? (
+        <Box paddingHorizontal={16} paddingTop={20} gap={8}>
+          {REASONS.map(r => (
+            <TouchableOpacity
+              key={r.t}
+              style={styles.reasonCard}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (r.go === ROUTES.PairWifiPasswordScreen) {
+                  if (params) navigation.navigate(ROUTES.PairWifiPasswordScreen, params);
+                  else navigation.navigate(ROUTES.PairWifiPasswordScreen);
+                  return;
+                }
+                if (r.go === ROUTES.PairSearchScreen) {
+                  navigation.navigate(ROUTES.PairSearchScreen);
+                  return;
+                }
+                navigation.navigate(ROUTES.PairIntroScreen);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t(r.t === 'Wrong Wi-Fi password' ? 'Fix wrong Wi-Fi password' : r.t)}
+            >
+              <Box style={styles.reasonIcon} alignItems="center" justifyContent="center">
+                <Text style={{ fontSize: 16 }}>{r.ic}</Text>
+              </Box>
+              <Box flex={1}>
+                <Text fontWeight="600" style={styles.reasonTitle}>{r.t}</Text>
+                <Text style={styles.reasonBody}>{r.b}</Text>
+              </Box>
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={DV.ink3} strokeWidth="2.5" strokeLinecap="round">
+                <Path d="M9 6l6 6-6 6" />
+              </Svg>
+            </TouchableOpacity>
+          ))}
+        </Box>
+      ) : null}
       <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
         {settingsAction ? (
           <DeviceBigBtn accessibilityLabel={settingsAction.label} onClick={settingsAction.onPress}>
@@ -88,6 +122,13 @@ export default function PairFailedScreen({ navigation, route }: Props) {
             Use setup hotspot
           </DeviceBigBtn>
         ) : null}
+        <DeviceBigBtn
+          secondary
+          accessibilityLabel="Scan QR or enter code"
+          onClick={() => navigation.navigate(ROUTES.PairQrScanScreen)}
+        >
+          Scan QR or enter code
+        </DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Try again</DeviceBigBtn>
         <DeviceBigBtn
           secondary
@@ -101,6 +142,25 @@ export default function PairFailedScreen({ navigation, route }: Props) {
       </Box>
     </DeviceShell>
   );
+}
+
+function canRecoverLateBleClaim(params: Props['route']['params']): params is FailureParams & {
+  deviceId: string;
+  serialNumber: string;
+  provisioningAttemptId: string;
+  provisioningTransport: 'ble';
+} {
+  return !!(
+    params?.provisioningTransport === 'ble'
+    && params.deviceId
+    && params.serialNumber
+    && params.provisioningAttemptId
+    && !params.code
+  );
+}
+
+function shouldShowReasonCards(errorCode: string | undefined): boolean {
+  return errorCode !== 'DEVICE_ALREADY_ASSIGNED' && errorCode !== 'DEVICE_ALREADY_CLAIMED';
 }
 
 function settingsActionForError(errorCode: string | undefined): { label: string; onPress: () => void } | undefined {

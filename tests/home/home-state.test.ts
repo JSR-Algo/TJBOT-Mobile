@@ -1,6 +1,9 @@
+import React from 'react';
+import { renderHook } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTE_MAP } from '@/navigation/routeMap';
 import { ROUTES } from '@/navigation/routes';
-import { deriveHomeState } from '@/features/home/hooks/useHomeState';
+import { deriveHomeState, useHomeState } from '@/features/home/hooks/useHomeState';
 import { HOME_BACKEND_CONTRACT_AVAILABLE } from '@/services/api/home.api';
 
 const ENTRY_ROLES = new Set(['tab', 'stack-entry', 'modal-entry', 'state-machine', 'fallback-entry']);
@@ -10,6 +13,20 @@ const baseChildren = [{ id: 'child-1', name: 'Mina' }];
 describe('deriveHomeState', () => {
   it('documents that Home backend contract is unavailable instead of querying a throwing route', () => {
     expect(HOME_BACKEND_CONTRACT_AVAILABLE).toBe(false);
+  });
+
+  it('does not leave Home in loading state when the backend contract is unavailable', () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result, unmount } = renderHook(() => useHomeState(), { wrapper });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.variant).toBe('daily_available');
+
+    unmount();
+    queryClient.clear();
   });
 
   it('shows a dedicated zero-child state before lesson or robot actions', () => {

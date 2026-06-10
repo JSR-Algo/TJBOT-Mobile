@@ -81,6 +81,26 @@ export function buildBluFiWifiScanFrames(): string[] {
   return [bytesToBase64([buildType(BLUFI_TYPE_CTRL, BLUFI_CTRL_GET_WIFI_LIST), BLUFI_FRAME_CONTROL_PLAIN, 0x00, 0x00])];
 }
 
+// Firmware Wi-Fi connection report (BLUFI_TYPE_DATA | WIFI_REP subtype 0x0f).
+// On-wire type byte: (0x01 & 0x03) | (0x0f << 2) = 0x3d.
+const BLUFI_CONN_REPORT_TYPE = (BLUFI_TYPE_DATA & 0x03) | (0x0f << 2);
+
+/**
+ * Parses a reassembled BluFi conn-report frame. Gated on the conn-report type
+ * byte (0x3d); returns null for any other frame type or a malformed/short
+ * frame. The payload is [opmode, conn_state, ...]; conn_state is
+ * 0 = STA_CONN_SUCCESS, 1 = STA_CONN_FAIL, 2 = STA_CONNECTING. Pure: no I/O,
+ * no side effects, and it never throws.
+ */
+export function parseBluFiConnReport(frameBytes: number[]): { connState: number } | null {
+  if (frameBytes.length < 4) return null;
+  const [type, , , dataLength] = frameBytes;
+  if (type !== BLUFI_CONN_REPORT_TYPE) return null;
+  if (frameBytes.length < 4 + dataLength || dataLength < 2) return null;
+  const payload = frameBytes.slice(4, 4 + dataLength);
+  return { connState: payload[1] };
+}
+
 function appendBluFiFrames(writes: string[], type: number, data: number[], startSequence: number): number {
   let sequence = startSequence;
 

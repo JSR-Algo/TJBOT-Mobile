@@ -13,7 +13,6 @@ import { OnboardingNavigator } from './OnboardingNavigator';
 
 type Props = {
   pendingDeepLinkTarget?: NavigationDeepLinkTarget | null;
-  onDeepLinkRouteConsumed?: () => void;
 };
 
 type AgeGateState =
@@ -21,7 +20,7 @@ type AgeGateState =
   | { status: 'needed' }
   | { status: 'answered'; answer: AgeAnswer };
 
-export function RootStackNavigator({ pendingDeepLinkTarget = null, onDeepLinkRouteConsumed }: Props): React.JSX.Element {
+export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): React.JSX.Element {
   const { isAuthenticated, isLoading } = useAuth();
   const {
     isLoading: householdLoading,
@@ -30,7 +29,6 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null, onDeepLinkRou
     protectedInitialRoute = PROTECTED_DEFAULT_ROUTE,
   } = useHousehold();
   const [ageGate, setAgeGate] = React.useState<AgeGateState>({ status: 'loading' });
-  const canShowProtected = isAuthenticated && onboardingComplete;
 
   React.useEffect(() => {
     let cancelled = false;
@@ -48,12 +46,6 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null, onDeepLinkRou
       cancelled = true;
     };
   }, []);
-
-  React.useEffect(() => {
-    if (canShowProtected && pendingDeepLinkTarget) {
-      onDeepLinkRouteConsumed?.();
-    }
-  }, [canShowProtected, onDeepLinkRouteConsumed, pendingDeepLinkTarget]);
 
   if (ageGate.status === 'loading' || isLoading || (isAuthenticated && householdLoading)) {
     return (

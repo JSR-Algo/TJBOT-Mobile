@@ -230,12 +230,28 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
 }
 
+// The backend accepts the full LESSON_PROFILES set (lesson.constants.ts):
+// CreateAssignmentDto @IsIn(['espTft','piTft','mobile']). The client must pass
+// the lesson's REAL profile through — collapsing every non-espTft lesson to
+// 'espTft' pins the wrong asset bundle/render profile (MOB-3). Omitting it
+// still defaults to 'espTft' (back-compat for the espTft-only slice).
+export type LessonProfile = 'espTft' | 'piTft' | 'mobile';
+
+const LESSON_PROFILES: readonly LessonProfile[] = ['espTft', 'piTft', 'mobile'];
+
+// Narrow a published lesson's wire profile (string | null) to the backend's
+// accepted LESSON_PROFILES set, so the screen can forward the lesson's REAL
+// profile to createAssignment instead of coercing everything to 'espTft'.
+export function isLessonProfile(value: string | null | undefined): value is LessonProfile {
+  return typeof value === 'string' && (LESSON_PROFILES as readonly string[]).includes(value);
+}
+
 export interface CreateAssignmentParams {
   deviceId: string;
   lessonId: string;
   lessonVersion: number;
   childId: string;
-  profile?: 'espTft';
+  profile?: LessonProfile;
 }
 
 export interface LessonAssignment {

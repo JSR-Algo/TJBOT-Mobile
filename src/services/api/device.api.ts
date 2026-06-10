@@ -71,9 +71,11 @@ export interface CompleteDeviceProvisioningResult {
 export interface DeviceStatus {
   id: string;
   name: string;
+  serialNumber?: string;
   online: boolean;
   batteryPercent: number;
   wifiSsid?: string;
+  wifiRssi?: number;
   charging?: boolean;
   lastSeenAt?: string;
 }
@@ -96,17 +98,22 @@ interface DeviceDto {
   connectivity_metrics?: {
     connectivity_state?: string;
     wifi_ssid?: string;
+    wifi_rssi?: number;
   };
 }
 
 function normalizeDevice(dto: DeviceDto): DeviceStatus {
+  const wifiRssi = dto.connectivity_metrics?.wifi_rssi;
+  const serialNumber = dto.serial_number?.trim();
   return {
     id: dto.id ?? dto.device_id ?? '',
     name: dto.name ?? dto.serial_number ?? dto.id ?? dto.device_id ?? 'TJBot',
+    ...(serialNumber ? { serialNumber } : {}),
     online: dto.status === 'active' || dto.status === 'online' || dto.connectivity_metrics?.connectivity_state === 'online',
     batteryPercent: dto.battery_level ?? 0,
     charging: false,
     wifiSsid: dto.connectivity_metrics?.wifi_ssid,
+    ...(typeof wifiRssi === 'number' && Number.isFinite(wifiRssi) ? { wifiRssi } : {}),
     lastSeenAt: dto.last_seen_at,
   };
 }

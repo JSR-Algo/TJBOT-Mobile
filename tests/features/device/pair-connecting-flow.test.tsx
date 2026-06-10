@@ -1,0 +1,1024 @@
+import React from 'react';
+import { render, waitFor } from '@testing-library/react-native';
+import PairConnectingScreen from '@/features/device/pairing/screens/PairConnectingScreen';
+import { ROUTES } from '@/navigation/routes';
+import { provisionWifiViaLocalBle } from '@/services/ble/service';
+import {
+  confirmLocalBlePaired,
+  getDeviceStatus,
+  getProvisioningAttemptStatus,
+  mintBootstrapToken,
+  pairDevice,
+} from '@/services/api/device.api';
+import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
+import {
+  clearPairingBootstrapToken,
+  consumePairingWifiPassword,
+  getPairingBootstrapToken,
+  putPairingBootstrapToken,
+  putPairingWifiPassword,
+} from '@/features/device/pairing/pairingSecretHandoff';
+
+// ---------------------------------------------------------------------------
+// US-005 — mb-pair-connecting (PairConnectingScreen.tsx orchestration).
+//
+// This screen is the single place where the mobile app turns a local BLE/Wi-Fi
+// handoff into a *backend-confirmed* claim. The cardinal US-005 invariant for
+// this unit: a local Wi-Fi credential handoff ('wifi_credentials_sent') is NOT
+// success. The screen must keep waiting on the authoritative backend status
+// (device_authenticated / completed / CLAIM_CONFIRMED / CLAIMED) and never show
+// final success or advance to a setup/home screen before that confirmation.
+//
+// The BLE service (provisionWifiViaLocalBle), device.api and claim.api are
+// mocked exactly like the existing pairing tests so this suite exercises the
+// screen's orchestration / exit-path logic, not the wire protocol. BluFi
+// UUID/TLV/opcode wire invariants belong to the BLE-service unit, which owns
+// the real (unmocked) provisionWifiViaLocalBle implementation.
+// ---------------------------------------------------------------------------
+
+jest.mock('@/services/ble/service', () => ({
+  __esModule: true,
+  provisionWifiViaLocalBle: jest.fn(),
+}));
+
+jest.mock('@/services/api/device.api', () => ({
+  __esModule: true,
+  confirmLocalBlePaired: jest.fn(),
+  getDeviceStatus: jest.fn(),
+  getProvisioningAttemptStatus: jest.fn(),
+  mintBootstrapToken: jest.fn(),
+  pairDevice: jest.fn(),
+}));
+
+jest.mock('@/services/api/claim.api', () => ({
+  __esModule: true,
+  getClaimStatus: jest.fn(),
+  requestClaim: jest.fn(),
+}));
+
+const mockedProvisionWifiViaLocalBle = provisionWifiViaLocalBle as jest.MockedFunction<typeof provisionWifiViaLocalBle>;
+const mockedConfirmLocalBlePaired = confirmLocalBlePaired as jest.MockedFunction<typeof confirmLocalBlePaired>;
+const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
+const mockedGetProvisioningAttemptStatus = getProvisioningAttemptStatus as jest.MockedFunction<typeof getProvisioningAttemptStatus>;
+const mockedMintBootstrapToken = mintBootstrapToken as jest.MockedFunction<typeof mintBootstrapToken>;
+const mockedPairDevice = pairDevice as jest.MockedFunction<typeof pairDevice>;
+const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
+const mockedRequestClaim = requestClaim as jest.MockedFunction<typeof requestClaim>;
+
+// Opaque fixtures. These are passed INTO mocked encoders/requests as the screen
+// would; they are never logged or asserted as substrings against any rendered /
+// navigated payload (that anti-leak check is the point of several tests below).
+const BOOTSTRAP_TOKEN = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const WIFI_PASSWORD = 'sup3r-s3cret-wifi-pass';
+const PROVISIONING_CODE = '123456';
+const SERIAL = 'TBT-2026-004217';
+const SSID = 'Casa';
+
+// A claim-flow attempt id (matches the screen's isLikelyClaimId heuristic so the
+// run never re-creates a cloud claim) carrying a pre-minted bootstrap token.
+function bleClaimParams(overrides: Record<string, unknown> = {}) {
+  return {
+    deviceId: 'device-1',
+    serialNumber: SERIAL,
+    provisioningAttemptId: 'claim-1',
+    ssid: SSID,
+    bleDeviceId: 'ble-device-1',
+    provisioningTransport: 'ble',
+    ...overrides,
+  } as never;
+}
+
+// A backend (non-BLE) provisioning attempt: no bleDeviceId, code present, the
+// transport is a non-local one so the screen drives runBackendProvisioning.
+function backendParams(overrides: Record<string, unknown> = {}) {
+  return {
+    deviceId: 'device-1',
+    serialNumber: SERIAL,
+    provisioningAttemptId: 'attempt-1',
+    code: PROVISIONING_CODE,
+    ssid: SSID,
+    provisioningTransport: 'legacy_backend',
+    ...overrides,
+  } as never;
+}
+
+// A BLE-reconnect attempt: credential-only handoff, completion via device_online.
+function bleReconnectParams(overrides: Record<string, unknown> = {}) {
+  return {
+    deviceId: 'device-1',
+    serialNumber: SERIAL,
+    provisioningAttemptId: 'attempt-rc-1',
+    ssid: SSID,
+    bleDeviceId: 'ble-device-1',
+    provisioningTransport: 'ble_reconnect',
+    ...overrides,
+  } as never;
+}
+
+function seedSecrets(provisioningAttemptId: string): void {
+  putPairingWifiPassword(provisioningAttemptId, WIFI_PASSWORD);
+  putPairingBootstrapToken(provisioningAttemptId, BOOTSTRAP_TOKEN);
+}
+
+// Recursively flatten every string value that the screen passed into a
+// navigate() call so we can assert no secret ever rides into a route payload.
+function collectStrings(value: unknown, out: string[] = []): string[] {
+  if (typeof value === 'string') {
+    out.push(value);
+  } else if (Array.isArray(value)) {
+    value.forEach((v) => collectStrings(v, out));
+  } else if (value && typeof value === 'object') {
+    Object.values(value as Record<string, unknown>).forEach((v) => collectStrings(v, out));
+  }
+  return out;
+}
+
+function navigatePayloadStrings(navigate: jest.Mock): string[] {
+  return navigate.mock.calls.flatMap((call) => collectStrings(call));
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Defaults: a BLE handoff resolves the local "credentials sent" handoff only.
+  mockedProvisionWifiViaLocalBle.mockResolvedValue({
+    deviceId: 'ble-device-1',
+    status: 'wifi_credentials_sent',
+    transport: 'ble-blufi',
+  });
+  mockedConfirmLocalBlePaired.mockResolvedValue({
+    deviceId: 'device-1',
+    provisioningAttemptId: 'claim-1',
+    status: 'ble_paired',
+  });
+  mockedMintBootstrapToken.mockResolvedValue({
+    token: BOOTSTRAP_TOKEN,
+    expiresAt: '2026-06-10T12:05:00.000Z',
+    ttlSeconds: 300,
+  });
+  mockedRequestClaim.mockResolvedValue({
+    claimId: 'claim-1',
+    deviceId: 'device-1',
+    status: 'WAITING_PHYSICAL_CONFIRM',
+    message: 'Press the button on your TBot to allow connection.',
+    expiresAt: '2026-06-10T12:05:00.000Z',
+  });
+  mockedPairDevice.mockResolvedValue({
+    deviceId: 'device-1',
+    provisioningAttemptId: 'attempt-1',
+    status: 'device_authenticated',
+  });
+});
+
+afterEach(() => {
+  // Drain any leftover one-shot secrets so handoff TTL timers (and the
+  // module-level bootstrap-token map, which persists across tests) do not bleed
+  // across tests.
+  ['claim-1', 'attempt-1', 'attempt-rc-1', 'attempt-zc-1', 'claim-NEW'].forEach((id) => {
+    consumePairingWifiPassword(id);
+    clearPairingBootstrapToken(id);
+  });
+});
+
+// ===========================================================================
+// 1. Pre-flight guards (synchronous exit paths before any I/O).
+// ===========================================================================
+describe('PairConnectingScreen — pre-flight guards', () => {
+  it('routes to PairFailed with PAIRING_CONTEXT_MISSING when required params are absent', async () => {
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        // No ssid / deviceId / serial / attempt / code: the run cannot start.
+        route={{ params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
+    ));
+    // No provisioning I/O may have run.
+    expect(mockedPairDevice).not.toHaveBeenCalled();
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+    expect(mockedConfirmLocalBlePaired).not.toHaveBeenCalled();
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+  });
+
+  it('routes to PairFailed when a backend attempt has neither code nor BLE handle', async () => {
+    putPairingWifiPassword('attempt-1', WIFI_PASSWORD);
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        // legacy_backend transport, no code, no bleDeviceId: nothing can drive a run.
+        route={{ params: backendParams({ code: undefined }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
+    ));
+    expect(mockedPairDevice).not.toHaveBeenCalled();
+  });
+
+  it('[bleDeviceId loss, no code] BLE transport that lost its handle routes to clean PAIRING_CONTEXT_MISSING recovery', async () => {
+    // Identity loss with no fallback code: the screen must surface a clean
+    // recovery — never a silent hang and never a credential/token write without
+    // a live BLE handle.
+    seedSecrets('claim-1');
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ bleDeviceId: undefined, code: undefined }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
+    ));
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+    // The guard fires before consuming the bootstrap token; the token is retained
+    // for a retry (it is not silently dropped).
+    expect(getPairingBootstrapToken('claim-1')).toBe(BOOTSTRAP_TOKEN);
+  });
+
+  it('[bleDeviceId loss, code present] degrades to the backend path — no BLE handoff, never a silent hang', async () => {
+    // A BLE attempt that lost its handle but still has a fallback code must NOT
+    // try to write the token/credentials over a non-existent BLE link. It
+    // legitimately falls back to backend provisioning and still reaches a
+    // terminal recovery screen (here, a malformed/absent status poll), proving
+    // it does not hang silently.
+    seedSecrets('claim-1');
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ bleDeviceId: undefined, code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()));
+    // The cardinal safety check: no credential/token write without a BLE handle.
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+    expect(mockedConfirmLocalBlePaired).not.toHaveBeenCalled();
+    // It did not silently succeed.
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
+  });
+
+  it('routes to PairFailed when the one-shot Wi-Fi password is missing (consumed/expired)', async () => {
+    // Bootstrap token seeded but the Wi-Fi password handoff is absent: the
+    // screen must fail closed rather than send a blank password over BLE.
+    putPairingBootstrapToken('claim-1', BOOTSTRAP_TOKEN);
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
+    ));
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+  });
+
+  it('never renders final success on the initial pairing render', () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockReturnValue(new Promise(() => undefined)); // never resolves
+    const navigate = jest.fn();
+    const screen = render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    expect(screen.queryByText('Robot authenticated')).toBeNull();
+    expect(screen.getByText('Hang tight — about 30 seconds')).toBeTruthy();
+  });
+});
+
+// ===========================================================================
+// 2. Backend (non-BLE) provisioning path: pairDevice -> device_authenticated poll.
+// ===========================================================================
+describe('PairConnectingScreen — backend provisioning path', () => {
+  it('happy path: pairDevice then device_authenticated advances to PairRename', async () => {
+    putPairingWifiPassword('attempt-1', WIFI_PASSWORD);
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-1',
+      status: 'device_authenticated',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: backendParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'attempt-1',
+    }));
+    expect(mockedPairDevice).toHaveBeenCalledTimes(1);
+    // Backend path never touches the local BLE handoff.
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+  });
+
+  it('forwards the Wi-Fi credentials to pairDevice exactly once', async () => {
+    putPairingWifiPassword('attempt-1', WIFI_PASSWORD);
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-1',
+      status: 'completed',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: backendParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    expect(mockedPairDevice).toHaveBeenCalledWith({
+      deviceId: 'device-1',
+      provisioningAttemptId: 'attempt-1',
+      serialNumber: SERIAL,
+      code: PROVISIONING_CODE,
+      wifiSsid: SSID,
+      wifiPassword: WIFI_PASSWORD,
+    });
+  });
+
+  it('pairDevice rejection routes to PairFailed with the mapped backend error code', async () => {
+    putPairingWifiPassword('attempt-1', WIFI_PASSWORD);
+    mockedPairDevice.mockRejectedValue(
+      Object.assign(new Error('nope'), { code: 'BOOTSTRAP_TOKEN_ATTEMPT_MISMATCH' }),
+    );
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: backendParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'BOOTSTRAP_TOKEN_ATTEMPT_MISMATCH' }),
+    ));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('extracts the error code from an axios-style error envelope (response.data.code)', async () => {
+    putPairingWifiPassword('attempt-1', WIFI_PASSWORD);
+    mockedPairDevice.mockRejectedValue({ response: { data: { code: 'INVALID_BLE_CODE' } } });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: backendParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'INVALID_BLE_CODE' }),
+    ));
+  });
+
+  it('falls back to PAIRING_CONNECT_FAILED when an error carries no code', async () => {
+    putPairingWifiPassword('attempt-1', WIFI_PASSWORD);
+    mockedPairDevice.mockRejectedValue(new Error('plain failure'));
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: backendParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PAIRING_CONNECT_FAILED' }),
+    ));
+  });
+});
+
+// ===========================================================================
+// 3. BLE *claim* path (code present): confirm -> mint -> handoff -> auth poll.
+// ===========================================================================
+describe('PairConnectingScreen — BLE claim path (code present)', () => {
+  it('happy path: confirms, ensures token, hands off credentials, then device_authenticated advances', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'device_authenticated',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-1',
+    }));
+    expect(mockedConfirmLocalBlePaired).toHaveBeenCalledWith({
+      deviceId: 'device-1',
+      provisioningAttemptId: 'claim-1',
+      serialNumber: SERIAL,
+      code: PROVISIONING_CODE,
+    });
+    expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledTimes(1);
+  });
+
+  it('[token-before-credentials] the bootstrap token is in hand before the Wi-Fi credential handoff', async () => {
+    // No pre-seeded token: the screen must mint one and have it BEFORE the
+    // credential frames are written over BLE. We prove ordering: provision is
+    // called with the minted token, and minting happened before the handoff.
+    putPairingWifiPassword('claim-1', WIFI_PASSWORD);
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'completed',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-1' });
+    // The credential handoff carried the token (0x01) and the code (0x02).
+    expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(
+      expect.objectContaining({ token: BOOTSTRAP_TOKEN, code: PROVISIONING_CODE, ssid: SSID, password: WIFI_PASSWORD }),
+    );
+    // Mint strictly precedes the credential handoff.
+    expect(mockedMintBootstrapToken.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedProvisionWifiViaLocalBle.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('reuses a pre-minted bootstrap token instead of minting again', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'device_authenticated',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    // A token already in handoff -> no extra mint round-trip.
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+    expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(
+      expect.objectContaining({ token: BOOTSTRAP_TOKEN }),
+    );
+  });
+
+  it('[handoff != success] wifi_credentials_sent alone keeps the waiting screen — no navigation', async () => {
+    seedSecrets('claim-1');
+    // Backend status stays pre-terminal forever: the local handoff resolved, but
+    // the attempt never confirms, so the screen must keep waiting.
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'ble_paired',
+    });
+    const navigate = jest.fn();
+    const screen = render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalled());
+    await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalled());
+
+    expect(screen.queryByText('Robot authenticated')).toBeNull();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen, expect.anything());
+  });
+
+  it('[device_authenticated only after backend] renders "Robot authenticated" only once the attempt confirms', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'device_authenticated',
+    });
+    const navigate = jest.fn();
+    const screen = render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.queryByText('Robot authenticated')).toBeTruthy());
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('attempt -> failed routes to PairFailed with the backend failureCode (device-auth not verified)', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'failed',
+      failureCode: 'DEVICE_AUTH_NOT_VERIFIED',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'DEVICE_AUTH_NOT_VERIFIED' }),
+    ));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('attempt -> expired routes to PairFailed (terminal, non-advancing)', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'expired',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('a malformed attempt-status payload fails closed (PROVISIONING_STATUS_MALFORMED), never advances', async () => {
+    seedSecrets('claim-1');
+    // Missing deviceId / unknown status -> parseProvisioningStatus throws.
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({ status: 'who_knows' } as never);
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PROVISIONING_STATUS_MALFORMED' }),
+    ));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('[STA_CONN_FAIL] a WIFI_CONNECT_FAILED from the BLE handoff routes to PairFailed with that code', async () => {
+    seedSecrets('claim-1');
+    // The BLE service maps STA_CONN_FAIL -> WIFI_CONNECT_FAILED; the screen must
+    // surface it (wrong-password recovery) and never poll for auth.
+    mockedProvisionWifiViaLocalBle.mockRejectedValue(
+      Object.assign(new Error('Robot could not join the Wi-Fi network.'), { code: 'WIFI_CONNECT_FAILED' }),
+    );
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'WIFI_CONNECT_FAILED' }),
+    ));
+    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('confirmLocalBlePaired rejection (wrong/absent code) routes to PairFailed with INVALID_BLE_CODE; no token, no handoff', async () => {
+    seedSecrets('claim-1');
+    mockedConfirmLocalBlePaired.mockRejectedValue(
+      Object.assign(new Error('bad code'), { code: 'INVALID_BLE_CODE' }),
+    );
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: '000000' }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'INVALID_BLE_CODE' }),
+    ));
+    // A rejected confirm must not advance to the credential handoff.
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('PairFailed payload carries the BLE recovery context (transport + bleDeviceId) for retry', async () => {
+    seedSecrets('claim-1');
+    mockedProvisionWifiViaLocalBle.mockRejectedValue(
+      Object.assign(new Error('x'), { code: 'WIFI_CONNECT_FAILED' }),
+    );
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({
+        errorCode: 'WIFI_CONNECT_FAILED',
+        bleDeviceId: 'ble-device-1',
+        provisioningTransport: 'ble',
+        serialNumber: SERIAL,
+      }),
+    ));
+  });
+});
+
+// ===========================================================================
+// 4. BLE zero-code claim path: claim_confirmed via getClaimStatus polling.
+// ===========================================================================
+describe('PairConnectingScreen — BLE zero-code claim path', () => {
+  it('CLAIM_CONFIRMED advances to PairRename with the claim id', async () => {
+    seedSecrets('claim-1');
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams() } as never} // no code -> claim_confirmed completion mode
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-1',
+    }));
+    // Zero-code path polls the claim, not the provisioning-attempt, status.
+    expect(mockedGetClaimStatus).toHaveBeenCalledWith('claim-1');
+    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+  });
+
+  it('CLAIMED (idempotent terminal) also advances to PairRename', async () => {
+    seedSecrets('claim-1');
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'CLAIMED',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
+      provisioningAttemptId: 'claim-1',
+    })));
+  });
+
+  it('[online != claimed] getClaimStatus online:true but WAITING never advances (single-poll, no hang)', async () => {
+    seedSecrets('claim-1');
+    // Robot heartbeat is up, but physical confirm has not happened. With a single
+    // poll attempt the loop times out -> CLAIM_CONFIRM_TIMEOUT, never success.
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'WAITING_PHYSICAL_CONFIRM',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalled());
+    // An online heartbeat alone never advances the claim to a success/home screen.
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
+  });
+
+  it('claim FAILED surfaces the backend failureCode to PairFailed', async () => {
+    seedSecrets('claim-1');
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'FAILED',
+      online: false,
+      expiresAt: null,
+      failureCode: 'WIFI_CONNECT_FAILED',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'WIFI_CONNECT_FAILED' }),
+    ));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('[late-claim id] a re-minted claim id is forwarded to PairFailed on a confirmation failure (not the stale route id)', async () => {
+    // Production zero-code path that reaches this screen WITHOUT a pre-minted
+    // token and with a non-claim attempt id (e.g. the bootstrap-token handoff
+    // expired): the run re-runs requestClaim and adopts a brand-new claim id.
+    // When confirmation then fails, PairFailed must receive that NEW id so its
+    // late-claim recovery polls the real claim — not the stale route param.
+    putPairingWifiPassword('attempt-zc-1', WIFI_PASSWORD); // password only, no token
+    mockedRequestClaim.mockResolvedValue({
+      claimId: 'claim-NEW',
+      deviceId: 'device-1',
+      status: 'WAITING_PHYSICAL_CONFIRM',
+      message: 'Press the button on your TBot to allow connection.',
+      expiresAt: '2026-06-10T12:05:00.000Z',
+    });
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-NEW',
+      deviceId: 'device-1',
+      status: 'FAILED',
+      online: false,
+      expiresAt: null,
+      failureCode: 'WIFI_CONNECT_FAILED',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        // non-claim attempt id so the run re-mints a cloud claim
+        route={{ params: bleClaimParams({ provisioningAttemptId: 'attempt-zc-1' }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedRequestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({
+        errorCode: 'WIFI_CONNECT_FAILED',
+        // The freshly-minted claim id, NOT the stale 'attempt-zc-1' route param.
+        provisioningAttemptId: 'claim-NEW',
+        provisioningTransport: 'ble',
+      }),
+    ));
+  });
+
+  it('zero-code without a pre-minted token mints one before the BLE handoff', async () => {
+    putPairingWifiPassword('claim-1', WIFI_PASSWORD); // password only, no token
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-1' });
+    expect(mockedRequestClaim).not.toHaveBeenCalled(); // attempt id already looks like a claim id
+    expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(
+      expect.objectContaining({ token: BOOTSTRAP_TOKEN }),
+    );
+  });
+});
+
+// ===========================================================================
+// 5. BLE reconnect path (credential-only): device_online via getDeviceStatus.
+// ===========================================================================
+describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => {
+  it('credential-only handoff, then getDeviceStatus online:true advances to DeviceHome', async () => {
+    putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: SERIAL,
+      online: true,
+      batteryPercent: 90,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleReconnectParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen));
+    // Credential-only: no claim confirm, no token mint, no claim poll.
+    expect(mockedConfirmLocalBlePaired).not.toHaveBeenCalled();
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+    expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(
+      expect.objectContaining({ allowCredentialOnly: true, ssid: SSID, password: WIFI_PASSWORD }),
+    );
+  });
+
+  it('[reconnect waiting] before getDeviceStatus online, the screen stays waiting (no premature home nav)', async () => {
+    putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: SERIAL,
+      online: false,
+      batteryPercent: 90,
+    });
+    const navigate = jest.fn();
+    const screen = render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleReconnectParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalled());
+    // Robot offline => no home nav, screen still says hang-tight.
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
+    expect(screen.queryByText('Robot authenticated')).toBeNull();
+  });
+});
+
+// ===========================================================================
+// 6. Secret hygiene + token lifecycle (success clears, failure retains).
+// ===========================================================================
+describe('PairConnectingScreen — secret lifecycle and anti-leak', () => {
+  it('clears the bootstrap token on a confirmed success', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'device_authenticated',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    // Token is consumed/cleared once the backend confirms.
+    expect(getPairingBootstrapToken('claim-1')).toBeUndefined();
+  });
+
+  it('RETAINS the bootstrap token on a reported failure (retry-safe)', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'failed',
+      failureCode: 'DEVICE_AUTH_NOT_VERIFIED',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'DEVICE_AUTH_NOT_VERIFIED' }),
+    ));
+    // A failure path must NOT burn the token — a retry can reuse it.
+    expect(getPairingBootstrapToken('claim-1')).toBe(BOOTSTRAP_TOKEN);
+  });
+
+  it('reconnect success clears the bootstrap token', async () => {
+    seedSecrets('attempt-rc-1');
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: SERIAL,
+      online: true,
+      batteryPercent: 90,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleReconnectParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen));
+    expect(getPairingBootstrapToken('attempt-rc-1')).toBeUndefined();
+  });
+
+  it('never leaks the Wi-Fi password, token, or code into a success navigation payload', async () => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'device_authenticated',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    const strings = navigatePayloadStrings(navigate);
+    expect(strings).not.toContain(WIFI_PASSWORD);
+    expect(strings).not.toContain(BOOTSTRAP_TOKEN);
+    // The next setup screen does not receive the provisioning code.
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.not.objectContaining({ code: expect.anything() }));
+  });
+
+  it('never leaks the Wi-Fi password or bootstrap token into a failure navigation payload', async () => {
+    seedSecrets('claim-1');
+    mockedProvisionWifiViaLocalBle.mockRejectedValue(
+      // Even if a service error message accidentally embedded a secret, the screen
+      // only forwards the error CODE — not the message — into the route.
+      Object.assign(new Error(`Robot refused token ${BOOTSTRAP_TOKEN} for ${WIFI_PASSWORD}`), { code: 'WIFI_CONNECT_FAILED' }),
+    );
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'WIFI_CONNECT_FAILED' }),
+    ));
+    const strings = navigatePayloadStrings(navigate);
+    expect(strings).not.toContain(WIFI_PASSWORD);
+    expect(strings).not.toContain(BOOTSTRAP_TOKEN);
+  });
+});

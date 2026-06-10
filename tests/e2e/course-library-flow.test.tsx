@@ -16,17 +16,23 @@ import {
 import { getDeviceStatus } from '@/services/api/device.api';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 
-jest.mock('@/services/api/course-library.api', () => ({
-  unlockCourse: jest.fn(),
-  sendCourseToRobot: jest.fn(),
-  getRobotSyncStatus: jest.fn(),
-  // US-006 S11: SendToRobotScreen now assigns via the device-scoped lesson API.
-  createAssignment: jest.fn(),
-  getCurrentAssignment: jest.fn(),
-  // P4: SendToRobotScreen + CourseDetail/CourseAdded read the published catalog.
-  getCourses: jest.fn(),
-  getCourseLessons: jest.fn(),
-}));
+// Keep the pure helpers (e.g. isLessonProfile / presentAssignmentState) real —
+// mock ONLY the network reads/writes the flow exercises.
+jest.mock('@/services/api/course-library.api', () => {
+  const actual = jest.requireActual('@/services/api/course-library.api');
+  return {
+    ...actual,
+    unlockCourse: jest.fn(),
+    sendCourseToRobot: jest.fn(),
+    getRobotSyncStatus: jest.fn(),
+    // US-006 S11: SendToRobotScreen now assigns via the device-scoped lesson API.
+    createAssignment: jest.fn(),
+    getCurrentAssignment: jest.fn(),
+    // P4: SendToRobotScreen + CourseDetail/CourseAdded read the published catalog.
+    getCourses: jest.fn(),
+    getCourseLessons: jest.fn(),
+  };
+});
 
 jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
@@ -270,6 +276,62 @@ describe('course-library flow guards', () => {
     );
 
     await waitFor(() => expect(screen.getByText(/No published courses yet/)).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
+  });
+
+  // MOB-3: a non-espTft published lesson must carry its REAL profile, not be
+  // silently coerced to espTft (which would pin the wrong asset bundle / render
+  // profile and fail the backend bundle check).
+  it('sends a piTft lesson with profile=piTft (not coerced to espTft)', async () => {
+    mockedGetCourses.mockResolvedValue([{ courseId: 'c_pi', title: 'Pi Course', lessonCount: 1 }]);
+    mockedGetCourseLessons.mockResolvedValue([
+      { lessonId: 'pi-d01', lessonVersion: 2, title: 'Pi Lesson', profile: 'piTft', manifestReady: true },
+    ]);
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedCreateAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-pi', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
+      lessonId: 'pi-d01', lessonVersion: 2, profile: 'piTft', state: 'PRELOADING', createdAt: null,
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Pi Lesson')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).toHaveBeenCalledWith({
+      deviceId: 'dev-1', childId: 'ch-1', lessonId: 'pi-d01', lessonVersion: 2, profile: 'piTft',
+    });
+  });
+
+  // MOB-3: an unrecognized profile is not sendable — the assign path must not
+  // fire (rather than silently mis-sending as espTft).
+  it('gates send for a lesson whose profile is not a recognized render profile', async () => {
+    mockedGetCourses.mockResolvedValue([{ courseId: 'c_x', title: 'X Course', lessonCount: 1 }]);
+    mockedGetCourseLessons.mockResolvedValue([
+      { lessonId: 'x-d01', lessonVersion: 1, title: 'X Lesson', profile: 'bogus', manifestReady: true },
+    ]);
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('X Lesson')).toBeTruthy());
 
     await act(async () => {
       fireEvent.press(screen.getByText('Send to Robot'));

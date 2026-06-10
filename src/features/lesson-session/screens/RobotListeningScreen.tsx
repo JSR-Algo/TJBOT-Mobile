@@ -10,10 +10,14 @@ import MicButton from '@/components/MicButton';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotListeningScreen'>;
 
 export default function RobotListeningScreen({ navigation }: Props) {
+  // Android hardware-back during this active voice turn must funnel through
+  // ExitConfirm, not silently pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'LISTENING');
   return (
     <ScreenShell>
       <Box accessible accessibilityLabel="Robot is listening" flex={1}>

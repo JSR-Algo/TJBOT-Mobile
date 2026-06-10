@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getHomeHub } from '@/services/api/home.api';
+import { getHomeHub, HOME_BACKEND_CONTRACT_AVAILABLE } from '@/services/api/home.api';
 import { ROUTES } from '@/navigation/routes';
 import type { RootStackParamList } from '@/navigation/routes';
 
@@ -232,6 +232,7 @@ export function useHomeState() {
   const { data, isLoading } = useQuery({
     queryKey: ['home', 'hub'],
     queryFn: getHomeHub,
+    enabled: HOME_BACKEND_CONTRACT_AVAILABLE,
     staleTime: 30_000,
   });
   const variant: HomeVariant = (data?.variant as HomeVariant) ?? 'daily_available';

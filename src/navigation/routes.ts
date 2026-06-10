@@ -104,17 +104,17 @@ export type RootStackParamList = {
 
   // device / pairing
   PairIntroScreen: undefined;
-  PairSearchScreen: undefined;
-  PairFoundScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
-  PairQrScanScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
-  PairConnectingScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
-  PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairSearchScreen: undefined | { reconnectMode?: boolean };
+  PairFoundScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
+  PairQrScanScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
+  PairConnectingScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
+  PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
   PairAddScreen: undefined;
   PairRenameScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
-  PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
-  PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
+  PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
   PairOfflineScreen: undefined;
-  PairFailedScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'hotspot' | 'legacy_backend' };
+  PairFailedScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
   PairSuccessScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
   PairFirstLessonScreen: undefined;
 

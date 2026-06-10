@@ -30,6 +30,12 @@ function faceFor(state: AssignmentState | undefined): 'speak' | 'happy' | 'think
 export default function CompanionScreen({ navigation, route }: Props) {
   const deviceId = route.params?.deviceId;
   const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
+  // Same completion projection as RunningScreen: the current-assignment read
+  // returns null the instant the lesson finishes (COMPLETED is not an ACTIVE
+  // state), so a live→null transition is the terminal signal — the face must
+  // switch to 'happy' rather than freezing on 'think'.
+  const [finished, setFinished] = React.useState(false);
+  const sawLiveRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!deviceId) return;
@@ -40,9 +46,17 @@ export default function CompanionScreen({ navigation, route }: Props) {
       try {
         const current = await getCurrentAssignment(deviceId);
         if (!active) return;
-        setAssignment(current);
         const live = current && current.state !== 'COMPLETED' && current.state !== 'FAILED' && current.state !== 'CANCELLED';
-        if (live) timer = setTimeout(poll, POLL_INTERVAL_MS);
+        if (live) {
+          sawLiveRef.current = true;
+          setAssignment(current);
+          timer = setTimeout(poll, POLL_INTERVAL_MS);
+          return;
+        }
+        if (current) setAssignment(current);
+        if (current?.state === 'COMPLETED' || (current === null && sawLiveRef.current)) {
+          setFinished(true);
+        }
       } catch {
         if (active) timer = setTimeout(poll, POLL_INTERVAL_MS);
       }
@@ -55,8 +69,13 @@ export default function CompanionScreen({ navigation, route }: Props) {
     };
   }, [deviceId]);
 
+  const completed = finished || assignment?.state === 'COMPLETED';
   const lessonTitle = assignment?.lessonTitle?.trim() ? assignment.lessonTitle : "Today's lesson";
-  const presentation = assignment ? presentAssignmentState(assignment.state) : null;
+  const presentation = completed
+    ? presentAssignmentState('COMPLETED')
+    : assignment
+      ? presentAssignmentState(assignment.state)
+      : null;
   const statusCopy = presentation
     ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
     : 'Lesson running on Robot';
@@ -73,7 +92,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
             <Box style={styles.liveDot} />
             <Text style={styles.liveText}>Live</Text>
           </Box>
-          <LCDFace emotion={faceFor(assignment?.state)} size={220} accent="#FF6F61" />
+          <LCDFace emotion={completed ? 'happy' : faceFor(assignment?.state)} size={220} accent="#FF6F61" />
           <Text fontWeight="600" style={styles.phaseLabel}>{statusCopy}</Text>
         </Box>
       </Box>

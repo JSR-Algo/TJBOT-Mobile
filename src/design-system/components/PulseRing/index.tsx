@@ -38,6 +38,7 @@ function Ring({ size, color, delay }: { size: number; color: string; delay: numb
         false,
       ),
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- start-once animation; scale/opacity are stable reanimated shared-value refs
   }, [delay]);
 
   const animStyle = useAnimatedStyle(() => ({

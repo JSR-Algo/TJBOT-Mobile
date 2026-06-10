@@ -23,6 +23,15 @@ const POLL_INTERVAL_MS = 2500;
 export default function RunningScreen({ navigation, route }: Props) {
   const deviceId = route.params?.deviceId;
   const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
+  // Completion projection. The current-assignment endpoint only returns rows in
+  // an ACTIVE state (ASSIGNED/PRELOADING/READY/RUNNING/PAUSED); the instant a
+  // lesson finishes the backend drops it from that set and the read returns
+  // null. So "we previously saw a live assignment, now we see null" is the
+  // real terminal signal — we must NOT wait for a COMPLETED object the endpoint
+  // can never emit (the progress_events stream is the authoritative completion
+  // source; this is its live projection, plan M3).
+  const [finished, setFinished] = React.useState(false);
+  const sawLiveRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!deviceId) return;
@@ -33,12 +42,20 @@ export default function RunningScreen({ navigation, route }: Props) {
       try {
         const current = await getCurrentAssignment(deviceId);
         if (!active) return;
-        setAssignment(current);
-        // Stop once the lesson reaches a terminal state; COMPLETED renders the
-        // "Finished!" status line (the authoritative completion source is the
-        // progress_events stream — this is its live projection, plan M3).
         const live = current && current.state !== 'COMPLETED' && current.state !== 'FAILED' && current.state !== 'CANCELLED';
-        if (live) timer = setTimeout(poll, POLL_INTERVAL_MS);
+        if (live) {
+          sawLiveRef.current = true;
+          setAssignment(current);
+          timer = setTimeout(poll, POLL_INTERVAL_MS);
+          return;
+        }
+        // Terminal: either an explicit terminal-state object, or null after we
+        // had observed a live assignment. Both mean the lesson is done — render
+        // the completion UI and stop polling.
+        if (current) setAssignment(current);
+        if (current?.state === 'COMPLETED' || (current === null && sawLiveRef.current)) {
+          setFinished(true);
+        }
       } catch {
         if (active) timer = setTimeout(poll, POLL_INTERVAL_MS);
       }
@@ -57,8 +74,14 @@ export default function RunningScreen({ navigation, route }: Props) {
       : route.params?.lessonTitle?.trim()
         ? route.params.lessonTitle
         : "Today's lesson";
-  const completed = assignment?.state === 'COMPLETED';
-  const presentation = assignment ? presentAssignmentState(assignment.state) : null;
+  const completed = finished || assignment?.state === 'COMPLETED';
+  // When completion was inferred from the live terminal→null transition the
+  // polled object is not COMPLETED, so resolve the completion copy explicitly.
+  const presentation = completed
+    ? presentAssignmentState('COMPLETED')
+    : assignment
+      ? presentAssignmentState(assignment.state)
+      : null;
   const statusCopy = presentation
     ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
     : 'Lesson playing';

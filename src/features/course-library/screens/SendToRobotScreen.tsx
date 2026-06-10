@@ -14,6 +14,7 @@ import {
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
+  isLessonProfile,
   type PublishedCourse,
   type PublishedLesson,
 } from '@/services/api/course-library.api';
@@ -84,7 +85,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   // Resolve the active course: an explicit user pick wins, then the course passed
   // in via route params (deep-link from the library), then the first published
   // course. Reset the lesson selection whenever the course changes.
-  const courses = catalog.kind === 'ready' ? catalog.courses : [];
+  const courses = React.useMemo(
+    () => (catalog.kind === 'ready' ? catalog.courses : []),
+    [catalog],
+  );
   const activeCourseId = React.useMemo(() => {
     if (catalog.kind !== 'ready') return null;
     const pick = selectedCourseId ?? preferredCourseId ?? courses[0]?.courseId ?? null;
@@ -109,11 +113,17 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     [lessons, activeLessonId],
   );
 
-  // Gate send on the catalog's readiness hint: a lesson with no espTft bundle
-  // (manifestReady=false / profile=null) is not renderable, so never send it.
-  // The server READY gate remains authoritative for the actual preload.
+  // Gate send on the catalog's readiness hint: a lesson with no renderable
+  // bundle (manifestReady=false / profile=null) is not sendable. We also require
+  // a RECOGNIZED profile (LESSON_PROFILES) so the assignment carries the
+  // lesson's real render profile rather than silently coercing it to espTft
+  // (MOB-3). The server READY gate remains authoritative for the actual preload.
   const canSend =
-    hasChild && !!selectedLesson && selectedLesson.manifestReady && selectedLesson.profile != null && !sending;
+    hasChild &&
+    !!selectedLesson &&
+    selectedLesson.manifestReady &&
+    isLessonProfile(selectedLesson.profile) &&
+    !sending;
 
   const handleSelectCourse = (courseId: string) => {
     setError(null);
@@ -137,7 +147,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       setError('Pick a lesson to send to Robot.');
       return;
     }
-    if (!selectedLesson.manifestReady || selectedLesson.profile == null) {
+    if (!selectedLesson.manifestReady || !isLessonProfile(selectedLesson.profile)) {
       setError('This lesson is still preparing on the server. Try again in a moment.');
       return;
     }
@@ -156,7 +166,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           childId,
           lessonId: selectedLesson.lessonId,
           lessonVersion: selectedLesson.lessonVersion, // NUMBER (D-LV)
-          profile: selectedLesson.profile === 'espTft' ? 'espTft' : undefined,
+          // Forward the lesson's REAL profile (gated non-null + recognized by
+          // canSend / the guard above), so a piTft/mobile lesson is no longer
+          // mis-sent as espTft (MOB-3).
+          profile: isLessonProfile(selectedLesson.profile) ? selectedLesson.profile : undefined,
         });
         navigation.navigate(ROUTES.RobotReadyScreen, {
           deviceId,

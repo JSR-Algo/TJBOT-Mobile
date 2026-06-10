@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { act, render, screen, waitFor } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
 import RobotReadyScreen from '@/features/course-library/screens/RobotReadyScreen';
 import RunningScreen from '@/features/course-library/screens/RunningScreen';
@@ -84,21 +84,83 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     expect(screen.getByText('This Is a Barn')).toBeTruthy();
   });
 
-  // §10.4 — Progress surface: "Finished!" terminal state from polled assignment.
-  it('RunningScreen renders "Finished!" from a polled COMPLETED assignment (no transcript)', async () => {
-    mockedGetCurrentAssignment.mockResolvedValue(current('COMPLETED'));
-    const navigation = navigationFor();
-    render(
-      <RunningScreen
-        navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
-      />,
-    );
+  // §10.4 — Progress surface: "Finished!" terminal state.
+  //
+  // REGRESSION GUARD (MOB-1): the real GET /devices/:id/assignment/current only
+  // returns rows in an ACTIVE state — ACTIVE_ASSIGNMENT_STATES excludes
+  // COMPLETED — so the endpoint returns NULL the instant the lesson finishes; it
+  // can NEVER hand back a COMPLETED object. Drive completion the way prod does:
+  // a live RUNNING poll, then null on the next poll. The screen must read that
+  // live→null transition as completion and render "Finished!".
+  it('RunningScreen renders "Finished!" on the live RUNNING→null transition (real backend contract)', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetCurrentAssignment
+        .mockResolvedValueOnce(current('RUNNING')) // lesson is playing
+        .mockResolvedValue(null); // backend drops it from current the moment it finishes
+      const navigation = navigationFor();
+      render(
+        <RunningScreen
+          navigation={navigation as never}
+          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+        />,
+      );
 
-    await waitFor(() => expect(screen.getByText('Finished! 🎉')).toBeTruthy());
-    expect(screen.getByText('This Is a Barn')).toBeTruthy();
-    // three-streams: the progress surface renders the privacy guarantee, never a transcript.
-    expect(screen.getByText(/Audio is never saved/)).toBeTruthy();
+      // First poll resolves RUNNING.
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(screen.queryByText('Finished! 🎉')).toBeNull();
+
+      // Advance to the next poll, which returns null → completion.
+      await act(async () => {
+        jest.advanceTimersByTime(2500);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText('Finished! 🎉')).toBeTruthy();
+      expect(screen.getByText('This Is a Barn')).toBeTruthy();
+      // three-streams: the progress surface renders the privacy guarantee, never a transcript.
+      expect(screen.getByText(/Audio is never saved/)).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('CompanionScreen switches the face to happy on the live RUNNING→null transition (MOB-1)', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetCurrentAssignment
+        .mockResolvedValueOnce(current('RUNNING'))
+        .mockResolvedValue(null);
+      const navigation = navigationFor();
+      render(
+        <CompanionScreen
+          navigation={navigation as never}
+          route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1' } } as never}
+        />,
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      // Still running: the "Finished!" copy is not shown.
+      expect(screen.queryByText('Finished! 🎉')).toBeNull();
+
+      await act(async () => {
+        jest.advanceTimersByTime(2500);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      // Completion copy from presentAssignmentState('COMPLETED').
+      expect(screen.getByText('Finished! 🎉')).toBeTruthy();
+      // The privacy guarantee is preserved through completion.
+      expect(screen.getByText('No transcript')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('CompanionScreen preserves the "No transcript" guarantee while showing live state', async () => {

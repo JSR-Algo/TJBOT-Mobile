@@ -850,6 +850,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
       store.getState().setError('Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i Gemini Live.');
       store.getState().transition('ERROR_RECOVERABLE');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- session lifecycle callback must stay stable; store is the singleton zustand ref and _start/_stopAudioCapture are stable session helpers, re-creating this would churn the audio session
   }, [options.voiceName, options.systemInstruction]);
 
   const stopConversation = useCallback(() => {
@@ -915,6 +916,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     s.setAudioMode('unknown');
     s.stopSession();
     track('session', 'session_stopped');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- session-teardown callback must stay stable; store is the singleton zustand ref (identity never changes)
   }, []);
 
   // A5: reconnect helper installed via ref (see declaration comment).
@@ -1356,6 +1358,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     interruptSourceRef.current = 'tap';
     s.transition('INTERRUPTED');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- barge-in callback must stay stable; store is the singleton zustand ref (identity never changes)
   }, []);
 
   // \u2500\u2500\u2500 Audio capture \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500

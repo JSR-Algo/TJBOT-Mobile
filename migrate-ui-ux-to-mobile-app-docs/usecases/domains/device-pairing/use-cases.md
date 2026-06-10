@@ -43,43 +43,48 @@
 
 ## UC-DP04 — Scan for Robot
 
-- **Goal:** App discovers a nearby powered-on Robot for pairing.
+- **Goal:** App discovers a nearby powered-on Robot over BLE so it can deliver the zero-code claim token locally.
 - **Trigger:** Navigation arrives at `dv_pair_search` from UC-DP03 (Power-on Robot Confirm).
-- **Preconditions:** Robot is powered on and within 3 meters; user has passed UC-PR01 (parent gate); pairing radio is available on the device (transport — BLE, Wi-Fi probe, etc. — **NOT CONFIRMED IN SOURCE**, KD8).
+- **Preconditions:** Robot is powered on, within 3 meters, and advertising BLE after the user pressed BOOT/setup; user has passed UC-PR01 (parent gate); phone Bluetooth permission and radio are available.
 - **Main Flow:**
-  1. `PairSearchPage` mounts and starts a radio scan animation (`PairSearchScreen.jsx:8-14`).
-  2. After ~2.4s the scan auto-advances to `dv_pair_found` (`PairSearchScreen.jsx:6` — prototype timer; real wiring would be discovery-event-driven).
-  3. UC-DP05 (Identify Robot) runs.
-- **Postconditions:** Navigation lands on `dv_pair_found` with a discovered Robot identifier in flight.
+  1. `PairSearchScreen` verifies the phone is online and initializes BLE.
+  2. App scans for allowlisted Robot BLE advertisements and resolves each candidate to a serial, retrying the scan window before timing out so a Robot that starts advertising late after BOOT/setup can still be discovered.
+  3. If one Robot is found, the app starts provisioning context and navigates to `dv_pair_found` with `bleDeviceId` preserved.
+  4. If multiple Robots are found, the app shows a picker so the parent chooses the right Robot before provisioning context is created.
+- **Postconditions:** Navigation lands on `dv_pair_found` with a discovered Robot identifier and BLE device id in flight.
 - **Error Flow:**
-  1. User taps "I don't see my Robot" → `<<extend>>` to UC-DP11 Pairing Failed Recovery (`PairSearchScreen.jsx:18`).
-  2. Scan timeout (no device found) → UC-DP11 Pairing Failed Recovery.
+  1. User taps "I don't see my Robot" → `<<extend>>` to UC-DP11 Pairing Failed Recovery.
+  2. BLE unavailable, permission denied, or scan timeout → UC-DP11 Pairing Failed Recovery.
+  3. Backend `/claim/available-devices` may report a claimable Robot, but without a BLE scan candidate the app must not enter UC-DP05 because it cannot deliver the claim bootstrap token.
 
 ## UC-DP05 — Identify Robot
 
-- **Goal:** Parent confirms the discovered Robot is theirs (signal/battery preview) before committing to pair.
+- **Goal:** Parent confirms the discovered Robot is theirs (signal/battery preview) and starts the default physical-confirm claim.
 - **Trigger:** Radio scan from UC-DP04 surfaces a candidate device; navigation arrives at `dv_pair_found`.
 - **Preconditions:** UC-DP04 returned at least one candidate; navigation arrived at `dv_pair_found`.
 - **Main Flow:**
-  1. `PairFoundPage` renders the candidate card (Robot id, "Ready to pair", signal/battery) — `PairFoundScreen.jsx:11-23`.
-  2. Parent visually checks the Robot id matches their own (KD8 — id source is unconfirmed in source; prototype hardcodes "ROB-2A8F").
-  3. Parent taps "This is my Robot" → navigation transitions to `dv_pair_code` (UC-DP06) — `PairFoundScreen.jsx:30`.
-- **Postconditions:** Navigation lands on `dv_pair_code` with the candidate Robot selected.
+  1. `PairFoundScreen` renders the candidate card (Robot id, "Ready to pair", signal/battery) using the discovered device context.
+  2. Parent visually checks the Robot id matches their own, then taps "This is my Robot".
+  3. App calls the physical-confirm claim flow (`/claim/request`), mints a claim bootstrap token, sends that token to the Robot over BluFi, then waits on claim status.
+  4. Robot auto-confirms the pending claim after receiving the token from the phone; no parent-typed code is required on the default path.
+  5. When claim status confirms ownership, navigation transitions to `dv_pair_rename` (UC-DP13) with the claimed device context.
+- **Postconditions:** Robot is claimed to the authenticated user and the app continues to rename/complete setup; the parent did not type a code on the default path.
 - **Alt Flow:**
-  1. Parent taps "Search again" → re-runs UC-DP04 — `PairFoundScreen.jsx:31`.
+  1. Parent taps "Search again" → re-runs UC-DP04.
+  2. Physical-confirm claim fails or times out → the screen shows retry and exposes QR/code fallback (UC-DP06) without showing raw IP, URL, token, OTA, or WebSocket values.
 
 ## UC-DP06 — Confirm Pairing Code
 
-- **Goal:** Parent enters the 4-digit code shown on Robot's LCD to prove physical possession (anti-theft / wrong-device safeguard).
-- **Trigger:** Navigation arrived at `dv_pair_code` from UC-DP05.
-- **Preconditions:** Robot is showing a 4-digit code on its face; UC-DP05 selected this Robot.
+- **Goal:** Parent uses QR/code fallback to prove physical possession only when discovery or physical-confirm claim fails.
+- **Trigger:** Navigation arrived at `dv_pair_qr_scan` or `dv_pair_code` from the UC-DP05 fallback affordance.
+- **Preconditions:** Robot is showing a QR payload or 6-character code on its face; UC-DP05 selected this Robot or the parent is recovering from a failed claim.
 - **Main Flow:**
-  1. `PairCodePage` shows the on-Robot code preview and four digit input slots (`PairCodeScreen.jsx:7-30`).
-  2. Parent reads the 4 digits off Robot and types them (prototype prefills `4721`).
+  1. `PairQrScanScreen` attempts to scan the Robot QR payload; parent can choose manual entry when camera scanning is unavailable.
+  2. `PairCodeScreen` accepts a 6-character code and keeps the selected Robot context.
   3. Parent taps the primary CTA → navigation transitions to `dv_pair_wifi` (UC-DP07) per `UC_DP_CODE ..> UC_DP_WIFI`.
 - **Postconditions:** Navigation lands on `dv_pair_wifi`; pairing-code-confirmed state is set in flight.
 - **Error Flow:**
-  1. Wrong code → standard validation edge case (form re-asks; no path declared in prototype).
+  1. Wrong or expired fallback code → standard validation edge case; form re-asks and keeps the selected Robot context.
 
 ## UC-DP07 — Pick Wi-Fi Network
 

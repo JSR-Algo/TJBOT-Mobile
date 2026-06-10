@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DeviceHomeScreen from '@/features/device/screens/DeviceHomeScreen';
 import { ROUTES } from '@/navigation/routes';
@@ -40,9 +40,14 @@ function renderWithQuery(ui: React.ReactElement) {
 describe('DeviceHomeScreen', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
+    jest.useRealTimers();
     await setAppLanguage('en');
     localDeviceMocks.clearLocalPairedDevice.mockResolvedValue(undefined);
     localDeviceMocks.getLocalPairedDeviceId.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('shows connect setup when no local or backend Robot is paired', async () => {
@@ -81,6 +86,81 @@ describe('DeviceHomeScreen', () => {
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
     expect(screen.queryByText('No Robot connected')).toBeNull();
     expect(apiMocks.getDeviceStatus).toHaveBeenCalledWith('primary');
+  });
+
+  it('shows Wi-Fi signal strength when backend reports RSSI without an SSID', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'seed-device',
+      name: 'Seed Robot',
+      online: true,
+      batteryPercent: 0,
+      wifiRssi: -55,
+    });
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
+    expect(screen.getByText('Wi-Fi -55 dBm')).toBeTruthy();
+    expect(screen.queryByText('Wi-Fi not reported')).toBeNull();
+  });
+
+  it('offers Robot setup from the loading state', async () => {
+    localDeviceMocks.getLocalPairedDeviceId.mockImplementation(() => new Promise(() => undefined));
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    expect(screen.getByText('Loading Robot...')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('Connect Robot'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
+    expect(apiMocks.getDeviceStatus).not.toHaveBeenCalled();
+  });
+
+  it('shows an unavailable state instead of staying on loading when Robot status does not respond', async () => {
+    jest.useFakeTimers();
+    apiMocks.getDeviceStatus.mockImplementation(() => new Promise(() => undefined));
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(apiMocks.getDeviceStatus).toHaveBeenCalledTimes(1));
+    expect(screen.getByText('Loading Robot...')).toBeTruthy();
+
+    await act(async () => {
+      jest.advanceTimersByTime(8001);
+      jest.runOnlyPendingTimers();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(screen.queryByText('Loading Robot...')).toBeNull());
+    expect(screen.getByText('Robot status unavailable')).toBeTruthy();
+    expect(apiMocks.getDeviceStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers Robot setup when Robot status is unavailable', async () => {
+    apiMocks.getDeviceStatus.mockRejectedValue(new Error('backend unavailable'));
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Robot status unavailable')).resolves.toBeTruthy();
+    fireEvent.press(screen.getByText('Connect Robot'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
   });
 
   it('does not translate Robot names that match app copy keys', async () => {

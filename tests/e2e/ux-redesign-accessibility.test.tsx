@@ -16,17 +16,25 @@ import PairConnectingScreen from '../../src/features/device/pairing/screens/Pair
 import PairRenameScreen from '../../src/features/device/pairing/screens/PairRenameScreen';
 import PairSuccessScreen from '../../src/features/device/pairing/screens/PairSuccessScreen';
 import { markLocalDevicePaired } from '../../src/features/device/pairing/localPairedDevice';
-import { putPairingWifiPassword } from '../../src/features/device/pairing/pairingSecretHandoff';
-import { completeDeviceProvisioning, confirmLocalBlePaired, getProvisioningAttemptStatus, pairDevice, startDeviceProvisioning } from '../../src/services/api/device.api';
+import { putPairingBootstrapToken, putPairingWifiPassword } from '../../src/features/device/pairing/pairingSecretHandoff';
+import { completeDeviceProvisioning, confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken, pairDevice, startDeviceProvisioning } from '../../src/services/api/device.api';
+import { getClaimStatus, requestClaim } from '../../src/services/api/claim.api';
 import { initializeBle, provisionWifiViaLocalBle, scanForTJBotDevices, scanRobotWifiNetworks } from '../../src/services/ble/service';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
 
 jest.mock('../../src/services/api/device.api', () => ({
   completeDeviceProvisioning: jest.fn(),
   confirmLocalBlePaired: jest.fn(),
+  getDeviceStatus: jest.fn(),
   getProvisioningAttemptStatus: jest.fn(),
+  mintBootstrapToken: jest.fn(),
   pairDevice: jest.fn(),
   startDeviceProvisioning: jest.fn(),
+}));
+
+jest.mock('../../src/services/api/claim.api', () => ({
+  getClaimStatus: jest.fn(),
+  requestClaim: jest.fn(),
 }));
 
 jest.mock('../../src/contexts/HouseholdContext', () => ({
@@ -49,9 +57,16 @@ jest.mock('../../src/features/device/pairing/localPairedDevice', () => ({
 const apiMocks = {
   completeDeviceProvisioning: completeDeviceProvisioning as jest.MockedFunction<typeof completeDeviceProvisioning>,
   confirmLocalBlePaired: confirmLocalBlePaired as jest.MockedFunction<typeof confirmLocalBlePaired>,
+  getDeviceStatus: getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>,
   getProvisioningAttemptStatus: getProvisioningAttemptStatus as jest.MockedFunction<typeof getProvisioningAttemptStatus>,
+  mintBootstrapToken: mintBootstrapToken as jest.MockedFunction<typeof mintBootstrapToken>,
   pairDevice: pairDevice as jest.MockedFunction<typeof pairDevice>,
   startDeviceProvisioning: startDeviceProvisioning as jest.MockedFunction<typeof startDeviceProvisioning>,
+};
+
+const claimMocks = {
+  getClaimStatus: getClaimStatus as jest.MockedFunction<typeof getClaimStatus>,
+  requestClaim: requestClaim as jest.MockedFunction<typeof requestClaim>,
 };
 
 const bleMocks = {
@@ -102,6 +117,33 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       provisioningAttemptId: 'attempt-1',
       status: 'ble_paired',
+    });
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: 'TJBot-001',
+      online: true,
+      batteryPercent: 0,
+      wifiRssi: -55,
+    });
+    apiMocks.mintBootstrapToken.mockResolvedValue({
+      token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+      expiresAt: '2026-06-03T12:05:00.000Z',
+      ttlSeconds: 300,
+    });
+    claimMocks.getClaimStatus.mockResolvedValue({
+      claimId: 'attempt-claim',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+    claimMocks.requestClaim.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'WAITING_PHYSICAL_CONFIRM',
+      message: 'Press the button on your TBot to allow connection.',
+      expiresAt: '2026-06-03T12:05:00.000Z',
     });
     localDeviceMocks.markLocalDevicePaired.mockResolvedValue(undefined);
     netInfoFetchMock.mockResolvedValue({ type: 'wifi', isConnected: true, isInternetReachable: true } as Awaited<ReturnType<typeof NetInfo.fetch>>);
@@ -253,8 +295,8 @@ describe('mobile UX redesign accessibility coverage', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen);
   });
 
-  it('requires phone Wi-Fi before Bluetooth scanning', async () => {
-    netInfoFetchMock.mockResolvedValue({ type: 'cellular', isConnected: true, isInternetReachable: true } as Awaited<ReturnType<typeof NetInfo.fetch>>);
+  it('requires the phone to be online before Bluetooth scanning', async () => {
+    netInfoFetchMock.mockResolvedValue({ type: 'none', isConnected: false, isInternetReachable: false } as Awaited<ReturnType<typeof NetInfo.fetch>>);
 
     render(<PairSearchScreen navigation={navigation as never} route={{ params: undefined } as never} />);
 
@@ -406,6 +448,32 @@ describe('mobile UX redesign accessibility coverage', () => {
     });
   });
 
+  it('shows every robot-scanned Wi-Fi AP even when SSIDs repeat', async () => {
+    bleMocks.scanRobotWifiNetworks.mockResolvedValue([
+      { ssid: 'Tam Dentist', rssi: -61 },
+      { ssid: 'Van Phong Tam Dentist', rssi: -34 },
+      { ssid: 'Tam Dentist', rssi: -43 },
+      { ssid: 'Minh', rssi: -82 },
+    ]);
+
+    const screen = render(
+      <PairWifiScreen
+        navigation={navigation as never}
+        route={{ params: { deviceId: 'device-1', serialNumber: 'TJBot-001', provisioningAttemptId: 'attempt-1', code: '123456', bleDeviceId: 'ble-device-1', provisioningTransport: 'ble' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(bleMocks.scanRobotWifiNetworks).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryAllByText('Tam Dentist')).toHaveLength(2));
+    expect(screen.getByText('Van Phong Tam Dentist')).toBeTruthy();
+    expect(screen.getByText('Minh')).toBeTruthy();
+
+    fireEvent.press(screen.getAllByLabelText('Use Wi-Fi network Tam Dentist')[0]);
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, expect.objectContaining({
+      ssid: 'Tam Dentist',
+    }));
+  });
+
   it('keeps Wi-Fi selection on manual entry when robot network scan is unavailable', async () => {
     bleMocks.scanRobotWifiNetworks.mockRejectedValue(new Error('BLE scan unsupported'));
 
@@ -481,6 +549,7 @@ describe('mobile UX redesign accessibility coverage', () => {
       ssid: 'Casa Wi-Fi',
       password: 'secret123',
       code: '123456',
+      token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
     }));
     expect(apiMocks.confirmLocalBlePaired).toHaveBeenCalledWith({
       deviceId: 'device-1',
@@ -488,6 +557,7 @@ describe('mobile UX redesign accessibility coverage', () => {
       serialNumber: 'TJBot-001',
       code: '123456',
     });
+    expect(apiMocks.mintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'attempt-1' });
     expect(apiMocks.pairDevice).not.toHaveBeenCalled();
     await expect(screen.findByText('Robot authenticated')).resolves.toBeTruthy();
     await waitFor(() => expect(apiMocks.getProvisioningAttemptStatus).toHaveBeenCalledWith('attempt-1'));
@@ -497,6 +567,174 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
       provisioningAttemptId: 'attempt-1',
+    });
+  });
+
+  it('reconnects an already paired Robot over BLE without creating a new claim token', async () => {
+    const passwordScreen = render(
+      <PairWifiPasswordScreen
+        navigation={navigation as never}
+        route={{ params: { deviceId: 'device-1', serialNumber: 'TJBot-001', provisioningAttemptId: 'reconnect:device-1', ssid: 'Casa Wi-Fi', bleDeviceId: 'ble-device-1', provisioningTransport: 'ble_reconnect' } } as never}
+      />,
+    );
+
+    fireEvent.changeText(passwordScreen.getByPlaceholderText('Wi-Fi password'), 'secret123');
+    fireEvent.press(passwordScreen.getByText('Connect Robot'));
+
+    const connectParams = navigate.mock.calls.find(([route]) => route === ROUTES.PairConnectingScreen)?.[1];
+    render(
+      <PairConnectingScreen
+        navigation={navigation as never}
+        route={{ params: connectParams } as never}
+      />,
+    );
+
+    await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      device: {
+        id: 'ble-device-1',
+        name: 'TJBot-001',
+        localName: 'TJBot-001',
+        serviceUUIDs: [],
+      },
+      ssid: 'Casa Wi-Fi',
+      password: 'secret123',
+      allowCredentialOnly: true,
+    }));
+    expect(apiMocks.confirmLocalBlePaired).not.toHaveBeenCalled();
+    expect(apiMocks.mintBootstrapToken).not.toHaveBeenCalled();
+    await waitFor(() => expect(apiMocks.getDeviceStatus).toHaveBeenCalledWith('device-1'));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen));
+  });
+
+  it('sends a pending-claim bootstrap token with Wi-Fi over BLE and waits for claim confirmation when no code is present', async () => {
+    putPairingWifiPassword('claim-1', 'secret123');
+    putPairingBootstrapToken('claim-1', 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC');
+
+    const screen = render(
+      <PairConnectingScreen
+        navigation={navigation as never}
+        route={{
+          params: {
+            deviceId: 'device-1',
+            serialNumber: 'TJBot-001',
+            provisioningAttemptId: 'claim-1',
+            ssid: 'Casa Wi-Fi',
+            bleDeviceId: 'ble-device-1',
+            provisioningTransport: 'ble',
+          },
+        } as never}
+      />,
+    );
+
+    await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      device: {
+        id: 'ble-device-1',
+        name: 'TJBot-001',
+        localName: 'TJBot-001',
+        serviceUUIDs: [],
+      },
+      ssid: 'Casa Wi-Fi',
+      password: 'secret123',
+      token: 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC',
+    }));
+    expect(apiMocks.confirmLocalBlePaired).not.toHaveBeenCalled();
+    expect(apiMocks.mintBootstrapToken).not.toHaveBeenCalled();
+    expect(apiMocks.getProvisioningAttemptStatus).not.toHaveBeenCalled();
+    await waitFor(() => expect(claimMocks.getClaimStatus).toHaveBeenCalledWith('claim-1'));
+    await expect(screen.findByText('Robot authenticated')).resolves.toBeTruthy();
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TJBot-001',
+      provisioningAttemptId: 'claim-1',
+    });
+  });
+
+  it('refreshes a missing pending-claim bootstrap token before sending Wi-Fi over BLE', async () => {
+    putPairingWifiPassword('claim-refresh', 'secret123');
+
+    const screen = render(
+      <PairConnectingScreen
+        navigation={navigation as never}
+        route={{
+          params: {
+            deviceId: 'device-1',
+            serialNumber: 'TJBot-001',
+            provisioningAttemptId: 'claim-refresh',
+            ssid: 'Casa Wi-Fi',
+            bleDeviceId: 'ble-device-1',
+            provisioningTransport: 'ble',
+          },
+        } as never}
+      />,
+    );
+
+    await waitFor(() => expect(apiMocks.mintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-refresh' }));
+    await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      device: {
+        id: 'ble-device-1',
+        name: 'TJBot-001',
+        localName: 'TJBot-001',
+        serviceUUIDs: [],
+      },
+      ssid: 'Casa Wi-Fi',
+      password: 'secret123',
+      token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    }));
+    expect(apiMocks.confirmLocalBlePaired).not.toHaveBeenCalled();
+    await expect(screen.findByText('Robot authenticated')).resolves.toBeTruthy();
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TJBot-001',
+      provisioningAttemptId: 'claim-refresh',
+    });
+  });
+
+  it('creates a backend claim before BLE zero-code Wi-Fi provisioning when the route has only a provisioning attempt', async () => {
+    putPairingWifiPassword('attempt-1', 'secret123');
+    claimMocks.getClaimStatus.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+
+    const screen = render(
+      <PairConnectingScreen
+        navigation={navigation as never}
+        route={{
+          params: {
+            deviceId: 'device-1',
+            serialNumber: 'TJBot-001',
+            provisioningAttemptId: 'attempt-1',
+            ssid: 'Casa Wi-Fi',
+            bleDeviceId: 'ble-device-1',
+            provisioningTransport: 'ble',
+          },
+        } as never}
+      />,
+    );
+
+    await waitFor(() => expect(claimMocks.requestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' }));
+    await waitFor(() => expect(apiMocks.mintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-1' }));
+    await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      device: {
+        id: 'ble-device-1',
+        name: 'TJBot-001',
+        localName: 'TJBot-001',
+        serviceUUIDs: [],
+      },
+      ssid: 'Casa Wi-Fi',
+      password: 'secret123',
+      token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    }));
+    await waitFor(() => expect(claimMocks.getClaimStatus).toHaveBeenCalledWith('claim-1'));
+    await expect(screen.findByText('Robot authenticated')).resolves.toBeTruthy();
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TJBot-001',
+      provisioningAttemptId: 'claim-1',
     });
   });
 
@@ -704,6 +942,41 @@ describe('mobile UX redesign accessibility coverage', () => {
       ssid: 'Casa Wi-Fi',
       errorCode: 'WIFI_AUTH_FAILED',
     });
+  });
+
+  it('recovers a stale BLE failure screen after the robot confirms the claim late', async () => {
+    claimMocks.getClaimStatus.mockResolvedValueOnce({
+      claimId: 'claim-late',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+
+    render(
+      <PairFailedScreen
+        navigation={navigation as never}
+        route={{
+          params: {
+            deviceId: 'device-1',
+            serialNumber: 'TJBot-001',
+            provisioningAttemptId: 'claim-late',
+            ssid: 'Casa Wi-Fi',
+            bleDeviceId: 'ble-device-1',
+            provisioningTransport: 'ble',
+            errorCode: 'CLAIM_CONFIRM_TIMEOUT',
+          },
+        } as never}
+      />,
+    );
+
+    await waitFor(() => expect(claimMocks.getClaimStatus).toHaveBeenCalledWith('claim-late'));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TJBot-001',
+      provisioningAttemptId: 'claim-late',
+    }));
   });
 
   it('renders typed backend pairing errors as actionable retry copy', () => {

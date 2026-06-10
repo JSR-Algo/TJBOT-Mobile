@@ -8,11 +8,12 @@ import DeviceShell from '@/components/DeviceShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
-import { confirmLocalBlePaired, getProvisioningAttemptStatus, mintBootstrapToken, pairDevice } from '@/services/api/device.api';
+import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
+import { confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken, pairDevice } from '@/services/api/device.api';
 import { provisionWifiViaLocalBle } from '@/services/ble/service';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
-import { consumePairingWifiPassword } from '../pairingSecretHandoff';
+import { clearPairingBootstrapToken, consumePairingWifiPassword, getPairingBootstrapToken } from '../pairingSecretHandoff';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 type RuntimeProvisioningStatus = 'started' | 'ble_paired' | 'device_authenticated' | 'completed' | 'failed' | 'expired';
@@ -21,6 +22,11 @@ type RuntimeProvisioningStatusResult = {
   deviceId: string;
   status: RuntimeProvisioningStatus;
   failureCode?: string;
+};
+type ProvisioningRunResult = {
+  deviceId: string;
+  provisioningAttemptId: string;
+  completionMode: 'device_authenticated' | 'claim_confirmed' | 'device_online';
 };
 
 const PROVISIONING_STATUSES = [
@@ -55,7 +61,12 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     const deviceId = getParamString(params, 'deviceId');
     const serialNumber = getParamString(params, 'serialNumber');
     const provisioningAttemptId = getParamString(params, 'provisioningAttemptId');
-    if (!code || !ssid || !deviceId || !serialNumber || !provisioningAttemptId) {
+    const bleDeviceId = getParamString(params, 'bleDeviceId');
+    const transport = params?.provisioningTransport;
+    const bootstrapToken = provisioningAttemptId ? getPairingBootstrapToken(provisioningAttemptId) : undefined;
+    const canRunBleClaimProvisioning = transport === 'ble' && !!bleDeviceId;
+    const canRunBleReconnectProvisioning = transport === 'ble_reconnect' && !!bleDeviceId;
+    if (!ssid || !deviceId || !serialNumber || !provisioningAttemptId || (!code && !canRunBleClaimProvisioning && !canRunBleReconnectProvisioning)) {
       setStatus('failed');
       navigation.navigate(ROUTES.PairFailedScreen, {
         ...failureContext(params),
@@ -73,17 +84,53 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       return;
     }
     let cancelled = false;
-    const bleDeviceId = getParamString(params, 'bleDeviceId');
-    const transport = params?.provisioningTransport;
-    const run = transport === 'ble' && bleDeviceId
-      ? runLocalBleProvisioning({ deviceId, serialNumber, provisioningAttemptId, code, ssid, password, bleDeviceId })
-      : runBackendProvisioning({ deviceId, serialNumber, provisioningAttemptId, code, ssid, password });
+    // Polling loops below back off with sleep() between attempts. On unmount we
+    // must both stop the loop AND clear any pending sleep timer, or that timer
+    // leaks (keeping the Jest worker / RN event loop alive after the screen is
+    // gone — the "worker failed to exit gracefully" symptom).
+    const poll: PollController = { cancelled: false, timer: undefined };
+    const run = (transport === 'ble' || transport === 'ble_reconnect') && bleDeviceId
+      ? runLocalBleProvisioning({
+        deviceId,
+        serialNumber,
+        provisioningAttemptId,
+        code,
+        ssid,
+        password,
+        bleDeviceId,
+        bootstrapToken,
+        credentialOnly: transport === 'ble_reconnect',
+      })
+      : runBackendProvisioning({ deviceId, serialNumber, provisioningAttemptId, code: code as string, ssid, password });
 
+    // The zero-code BLE run may MINT A NEW claim id (it re-runs requestClaim when
+    // no claim/token is in hand). The success path surfaces it via
+    // result.provisioningAttemptId, but a post-run claim-confirmation throw must
+    // also carry it forward so PairFailedScreen's late-claim recovery queries the
+    // real claim — not the stale route param captured in the closure. This only
+    // applies to the claim-confirmed completion mode; the backend/auth paths keep
+    // the original route attempt id on failure (their recovery contract).
+    let recoveryAttemptId = provisioningAttemptId;
     void run.then(async (result) => {
+      if (result.completionMode === 'claim_confirmed') {
+        recoveryAttemptId = result.provisioningAttemptId;
+      }
       if (cancelled) return;
       setI(PAIRING_STEP_COUNT - 1);
-      const authenticated = await waitForDeviceAuthenticated(result.provisioningAttemptId);
+      if (result.completionMode === 'device_online') {
+        await waitForDeviceOnline(result.deviceId, poll);
+        if (cancelled) return;
+        clearPairingBootstrapToken(result.provisioningAttemptId);
+        setI(PAIRING_STEP_COUNT);
+        setStatus('authenticated');
+        navigation.navigate(ROUTES.DeviceHomeScreen);
+        return;
+      }
+      const authenticated = result.completionMode === 'claim_confirmed'
+        ? await waitForClaimConfirmed(result.provisioningAttemptId, poll)
+        : await waitForDeviceAuthenticated(result.provisioningAttemptId, poll);
       if (cancelled) return;
+      clearPairingBootstrapToken(result.provisioningAttemptId);
       setI(PAIRING_STEP_COUNT);
       setStatus('authenticated');
       navigation.navigate(ROUTES.PairRenameScreen, {
@@ -97,7 +144,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
         serialNumber,
-        provisioningAttemptId,
+        provisioningAttemptId: recoveryAttemptId,
         code,
         ssid,
         bleDeviceId,
@@ -109,6 +156,11 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     });
     return () => {
       cancelled = true;
+      poll.cancelled = true;
+      if (poll.timer !== undefined) {
+        clearTimeout(poll.timer);
+        poll.timer = undefined;
+      }
     };
   }, [navigation, params, ssid]);
 
@@ -159,8 +211,8 @@ async function runBackendProvisioning(params: {
   code: string;
   ssid: string;
   password: string;
-}): Promise<{ deviceId: string; provisioningAttemptId: string }> {
-  return pairDevice({
+}): Promise<ProvisioningRunResult> {
+  const result = await pairDevice({
     deviceId: params.deviceId,
     provisioningAttemptId: params.provisioningAttemptId,
     serialNumber: params.serialNumber,
@@ -168,29 +220,65 @@ async function runBackendProvisioning(params: {
     wifiSsid: params.ssid,
     wifiPassword: params.password,
   });
+  return { deviceId: result.deviceId, provisioningAttemptId: result.provisioningAttemptId, completionMode: 'device_authenticated' };
 }
 
 async function runLocalBleProvisioning(params: {
   deviceId: string;
   serialNumber: string;
   provisioningAttemptId: string;
-  code: string;
+  code?: string;
   ssid: string;
   password: string;
   bleDeviceId: string;
-}): Promise<{ deviceId: string; provisioningAttemptId: string }> {
-  const confirmResult = await confirmLocalBlePaired({
-    deviceId: params.deviceId,
-    provisioningAttemptId: params.provisioningAttemptId,
-    serialNumber: params.serialNumber,
-    code: params.code,
-  });
+  bootstrapToken?: string;
+  credentialOnly?: boolean;
+}): Promise<ProvisioningRunResult> {
+  if (params.credentialOnly) {
+    await provisionWifiViaLocalBle({
+      device: {
+        id: params.bleDeviceId,
+        name: params.serialNumber,
+        localName: params.serialNumber,
+        serviceUUIDs: [],
+      },
+      ssid: params.ssid,
+      password: params.password,
+      allowCredentialOnly: true,
+    });
 
-  let mintResult: { token: string } | undefined;
-  try {
-    mintResult = await mintBootstrapToken({ provisioningAttemptId: params.provisioningAttemptId });
-  } catch {
-    throw Object.assign(new Error('Bootstrap token mint failed'), { code: 'BOOTSTRAP_TOKEN_MINT_FAILED' });
+    return { deviceId: params.deviceId, provisioningAttemptId: params.provisioningAttemptId, completionMode: 'device_online' };
+  }
+
+  let token = params.bootstrapToken;
+  let claimId = params.provisioningAttemptId;
+  let completionMode: ProvisioningRunResult['completionMode'] = 'claim_confirmed';
+
+  if (params.code) {
+    await confirmLocalBlePaired({
+      deviceId: params.deviceId,
+      provisioningAttemptId: params.provisioningAttemptId,
+      serialNumber: params.serialNumber,
+      code: params.code,
+    });
+    if (!token) {
+      const bootstrap = await mintBootstrapToken({ provisioningAttemptId: params.provisioningAttemptId });
+      token = bootstrap.token;
+    }
+    completionMode = 'device_authenticated';
+  }
+
+  if (!params.code && !token && !isLikelyClaimId(claimId)) {
+    const claimed = await requestClaim({ deviceId: params.deviceId });
+    if (!claimed.claimId) {
+      throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
+    }
+    claimId = claimed.claimId;
+  }
+
+  if (!token) {
+    const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimId });
+    token = bootstrap.token;
   }
 
   await provisionWifiViaLocalBle({
@@ -203,13 +291,48 @@ async function runLocalBleProvisioning(params: {
     ssid: params.ssid,
     password: params.password,
     code: params.code,
-    token: mintResult.token,
+    token,
   });
 
-  return confirmResult;
+  return { deviceId: params.deviceId, provisioningAttemptId: claimId, completionMode };
 }
 
-async function waitForDeviceAuthenticated(provisioningAttemptId: string): Promise<{
+// Cancellation handle shared with the poll loops: the effect cleanup flips
+// `cancelled` and clears the in-flight backoff `timer` so no setTimeout outlives
+// the screen.
+type PollController = { cancelled: boolean; timer: ReturnType<typeof setTimeout> | undefined };
+
+async function waitForDeviceOnline(deviceId: string, poll: PollController): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const status = await getDeviceStatus(deviceId);
+    if (status.online) return;
+    if (poll.cancelled) return;
+    await sleep(3000, poll);
+    if (poll.cancelled) return;
+  }
+  throw Object.assign(new Error('Device did not come online'), { code: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT' });
+}
+
+async function waitForClaimConfirmed(claimId: string, poll: PollController): Promise<{
+  deviceId: string;
+  provisioningAttemptId: string;
+}> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const status = await getClaimStatus(claimId);
+    if (status.status === 'CLAIM_CONFIRMED' || status.status === 'CLAIMED') {
+      return { deviceId: status.deviceId, provisioningAttemptId: claimId };
+    }
+    if (status.status === 'FAILED' || status.status === 'CLAIM_CONFIRM_TIMEOUT') {
+      throw Object.assign(new Error('Claim failed'), { code: status.failureCode ?? status.status });
+    }
+    if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
+    await sleep(3000, poll);
+    if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
+  }
+  throw Object.assign(new Error('Claim confirmation timed out'), { code: 'CLAIM_CONFIRM_TIMEOUT' });
+}
+
+async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: PollController): Promise<{
   deviceId: string;
   provisioningAttemptId: string;
 }> {
@@ -221,7 +344,9 @@ async function waitForDeviceAuthenticated(provisioningAttemptId: string): Promis
     if (status.status === 'failed' || status.status === 'expired') {
       throw Object.assign(new Error('Provisioning failed'), { code: status.failureCode ?? 'PROVISIONING_FAILED' });
     }
-    await sleep(3000);
+    if (poll.cancelled) return { deviceId: '', provisioningAttemptId };
+    await sleep(3000, poll);
+    if (poll.cancelled) return { deviceId: '', provisioningAttemptId };
   }
   throw Object.assign(new Error('Provisioning timed out'), { code: 'PROVISIONING_TIMEOUT' });
 }
@@ -246,8 +371,19 @@ function isProvisioningStatus(value: string | undefined): value is RuntimeProvis
   return PROVISIONING_STATUSES.some((status) => status === value);
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function isLikelyClaimId(value: string): boolean {
+  return /^claim[-_]/i.test(value);
+}
+
+function sleep(ms: number, poll: PollController): Promise<void> {
+  return new Promise((resolve) => {
+    // Register the handle so the effect cleanup can clear a pending backoff on
+    // unmount instead of letting the timer outlive the screen.
+    poll.timer = setTimeout(() => {
+      poll.timer = undefined;
+      resolve();
+    }, ms);
+  });
 }
 
 function getParamString(

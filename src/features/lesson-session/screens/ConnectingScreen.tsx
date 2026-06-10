@@ -15,7 +15,7 @@ export default function ConnectingScreen({ navigation }: Props) {
   React.useEffect(() => {
     const t = setTimeout(() => navigation.navigate(ROUTES.GreetingScreen), 1800);
     return () => clearTimeout(t);
-  }, []);
+  }, [navigation]);
 
   return (
     <ScreenShell bg="#E8F4FF">

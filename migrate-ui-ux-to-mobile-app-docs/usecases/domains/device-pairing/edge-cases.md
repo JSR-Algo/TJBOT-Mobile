@@ -23,18 +23,21 @@
 
 - **timeout**: Scan must surface a bounded retry CTA after no-discovery (current prototype auto-advances on a 2.4 s timer; real wiring needs a timeout limit per KD8).
 - **error**: Radio-stack failure (BLE off, OS denied) must surface a recoverable error and route to UC-DP11.
+- **error**: A backend claimable-device listing without a matching BLE candidate must be treated as no local token channel, not as a discovered Robot.
 - **cancel**: Parent must be able to abort the scan and return to UC-DP02.
 
 ## UC-DP05
 
 - **validation**: Parent must visually confirm the candidate Robot id is theirs before tapping "This is my Robot" — wrong-device pairing is the worst failure mode.
-- **retry**: "Search again" must re-run UC-DP04 cleanly without holding the previous candidate state.
+- **timeout**: Physical confirmation must fail with retry/fallback copy when the Robot does not confirm before the claim window expires.
+- **retry**: "Try again" must restart the physical-confirm claim without requiring a new scan; "Search again" must re-run UC-DP04 cleanly.
+- **error**: Backend unavailable, already-owned, or no-device claim failures must show a recovery descriptor and never leak raw IPs, URLs, tokens, or MAC addresses.
 
 ## UC-DP06
 
-- **validation**: All 4 digits must be entered and must match Robot's display before the CTA enables.
-- **error**: Wrong code must keep the form populated and offer a retry with reasoning copy.
-- **timeout**: Robot's displayed code must rotate after a bounded interval; UI must invalidate stale entries.
+- **validation**: The fallback code must be 6 characters and must match Robot's current QR/code before the CTA can carry context forward.
+- **error**: Wrong or expired fallback code must keep the Robot context populated and offer retry/rescan reasoning copy.
+- **timeout**: Robot's displayed fallback code must rotate after a bounded interval; UI must invalidate stale entries.
 
 ## UC-DP07
 

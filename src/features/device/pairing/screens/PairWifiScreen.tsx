@@ -20,6 +20,7 @@ export default function PairWifiScreen({ navigation, route }: Props) {
   const [scanState, setScanState] = React.useState<'idle' | 'scanning' | 'ready' | 'failed'>('idle');
   const [scanAttempt, setScanAttempt] = React.useState(0);
   const bleDeviceId = route.params?.bleDeviceId;
+  const visibleNetworks = React.useMemo(() => normalizeRobotWifiNetworks(networks), [networks]);
 
   const retryScan = React.useCallback(() => {
     setScanAttempt((prev) => prev + 1);
@@ -32,8 +33,17 @@ export default function PairWifiScreen({ navigation, route }: Props) {
     }
 
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     setScanState('scanning');
     setNetworks([]);
+
+    // Wait for the retry backoff while keeping the handle so the effect's cleanup
+    // can clear it on unmount — otherwise the pending timer leaks and keeps the
+    // (Jest worker) event loop alive after the screen is gone.
+    const waitBackoff = (): Promise<void> =>
+      new Promise((resolve) => {
+        retryTimer = setTimeout(resolve, 1500);
+      });
 
     const runScan = async (attemptsLeft: number): Promise<void> => {
       try {
@@ -42,19 +52,17 @@ export default function PairWifiScreen({ navigation, route }: Props) {
         });
         if (cancelled) return;
         if (result.length === 0 && attemptsLeft > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 1500));
+          await waitBackoff();
           if (cancelled) return;
           return runScan(attemptsLeft - 1);
         }
         setNetworks(result);
         setScanState('ready');
       } catch {
+        // A scan rejection means the robot can't enumerate networks at all
+        // (unsupported / BLE error), so surface manual entry immediately
+        // instead of retrying — retries only help the transient empty-result case.
         if (cancelled) return;
-        if (attemptsLeft > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-          if (cancelled) return;
-          return runScan(attemptsLeft - 1);
-        }
         setNetworks([]);
         setScanState('failed');
       }
@@ -64,6 +72,7 @@ export default function PairWifiScreen({ navigation, route }: Props) {
 
     return () => {
       cancelled = true;
+      if (retryTimer !== undefined) clearTimeout(retryTimer);
     };
   }, [bleDeviceId, route.params?.serialNumber, scanAttempt]);
 
@@ -91,10 +100,10 @@ export default function PairWifiScreen({ navigation, route }: Props) {
             <Box style={styles.netRow}>
               <Text style={styles.netName}>Scanning from Robot…</Text>
             </Box>
-          ) : networks.length > 0 ? networks.map((network, index) => (
+          ) : visibleNetworks.length > 0 ? visibleNetworks.map((network, index) => (
             <TouchableOpacity
               key={`${network.ssid}-${index}`}
-              style={[styles.netRow, index < networks.length - 1 && styles.netBorder]}
+              style={[styles.netRow, index < visibleNetworks.length - 1 && styles.netBorder]}
               onPress={() => openPasswordScreen(network.ssid)}
               accessibilityRole="button"
               accessibilityLabel={translateTemplate('Use Wi-Fi network {{ssid}}', { ssid: network.ssid }, { locale: language })}
@@ -137,6 +146,21 @@ function signalLabel(rssi: number): string {
   if (rssi >= -60) return 'Strong';
   if (rssi >= -72) return 'OK';
   return 'Weak';
+}
+
+function normalizeRobotWifiNetworks(networks: RobotWifiNetwork[]): RobotWifiNetwork[] {
+  return networks
+    .map((network) => ({ ...network, ssid: network.ssid.trim() }))
+    .filter((network) => network.ssid.length > 0)
+    .sort((a, b) => {
+      const signalDelta = signalScore(b.rssi) - signalScore(a.rssi);
+      if (signalDelta !== 0) return signalDelta;
+      return a.ssid.localeCompare(b.ssid);
+    });
+}
+
+function signalScore(rssi: RobotWifiNetwork['rssi']): number {
+  return typeof rssi === 'number' ? rssi : Number.NEGATIVE_INFINITY;
 }
 
 const styles = StyleSheet.create({

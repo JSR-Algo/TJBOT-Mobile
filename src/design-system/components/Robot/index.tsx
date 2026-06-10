@@ -125,6 +125,7 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent, acc
         withTiming(cfg.glow === 'on' ? 0.45 : 0.25, { duration: glowDur / 2, easing: easeIO }),
       ), -1, false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation re-runs only on emotion change; cfg derives from emotion and shared values are stable refs
   }, [emotion]);
 
   const bodyStyle = useAnimatedStyle(() => ({

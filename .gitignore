@@ -7,6 +7,7 @@ ios/build/
 android/build/
 android/.gradle/
 android/app/build/
+build/
 *.log
 fastlane/AuthKey.json
 fastlane/play-key.json

@@ -11,11 +11,24 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
-import { getDeviceStatus, unpairDevice } from '@/services/api/device.api';
+import { getDeviceStatus, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '../pairing/localPairedDevice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceHomeScreen'>;
+
+const DEVICE_STATUS_SCREEN_TIMEOUT_MS = 8_000;
+
+function getDeviceStatusForScreen(deviceId: string): Promise<DeviceStatus> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<DeviceStatus>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('device status timeout')), DEVICE_STATUS_SCREEN_TIMEOUT_MS);
+  });
+
+  return Promise.race([getDeviceStatus(deviceId), timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
 
 export default function DeviceHomeScreen({ navigation }: Props) {
   const { language } = useAppLanguage();
@@ -29,8 +42,9 @@ export default function DeviceHomeScreen({ navigation }: Props) {
   const deviceIdForStatus = hasLocalDevice ? localDeviceId : 'primary';
   const deviceQuery = useQuery({
     queryKey: ['devices', 'paired', deviceIdForStatus],
-    queryFn: () => getDeviceStatus(deviceIdForStatus),
+    queryFn: () => getDeviceStatusForScreen(deviceIdForStatus),
     enabled: !localDeviceQuery.isLoading,
+    retry: false,
   });
   const unpairMutation = useMutation({
     mutationFn: (deviceId: string) => unpairDevice(deviceId),
@@ -45,8 +59,9 @@ export default function DeviceHomeScreen({ navigation }: Props) {
   if (localDeviceQuery.isLoading || deviceQuery.isLoading) {
     return (
       <DeviceShell title="Devices">
-        <Box paddingHorizontal={20} paddingTop={28}>
+        <Box paddingHorizontal={20} paddingTop={28} gap={14}>
           <Text style={styles.emptyBody}>Loading Robot...</Text>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>Connect Robot</DeviceBigBtn>
         </Box>
       </DeviceShell>
     );
@@ -61,6 +76,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
             <Text fontWeight="700" style={styles.emptyTitle}>Robot status unavailable</Text>
             <Text style={styles.emptyBody}>Check your connection and try again.</Text>
             <DeviceBigBtn onClick={() => { void deviceQuery.refetch(); }}>Try again</DeviceBigBtn>
+            <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>Connect Robot</DeviceBigBtn>
           </Box>
         </Box>
       </DeviceShell>
@@ -85,7 +101,12 @@ export default function DeviceHomeScreen({ navigation }: Props) {
   const connectionLabel = translateCopy(device.online ? 'Online' : 'Offline', { locale: language });
   const connectionColor = device.online ? DV.good : DV.ink2;
   const batteryLabel = `${device.batteryPercent}%`;
-  const wifiLabel = device.wifiSsid ?? translateCopy('Wi-Fi not reported', { locale: language });
+  const wifiSsid = device.wifiSsid?.trim();
+  const wifiLabel = wifiSsid && wifiSsid.length > 0
+    ? wifiSsid
+    : typeof device.wifiRssi === 'number'
+      ? `Wi-Fi ${device.wifiRssi} dBm`
+      : translateCopy('Wi-Fi not reported', { locale: language });
 
   return (
     <DeviceShell title="Devices">

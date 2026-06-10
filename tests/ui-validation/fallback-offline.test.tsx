@@ -198,7 +198,7 @@ describe('fallback and offline UI stability', () => {
     expect(screen.getByText('Pairing is safe. Plug Robot in, bring it near your phone, then reconnect.')).toBeTruthy();
     expect(screen.queryByText(/\b(telemetry|contract|schema|backend|BLE)\b/i)).toBeNull();
     fireEvent.press(screen.getByText('Reconnect now'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
   });
 
   it('routes voice failure through checkpoint-aware resume copy', () => {

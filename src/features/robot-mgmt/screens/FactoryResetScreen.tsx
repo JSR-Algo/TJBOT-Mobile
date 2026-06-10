@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -9,6 +10,8 @@ import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { getDeviceStatus, unpairDevice } from '@/services/api/device.api';
+import { clearLocalPairedDevice, getLocalPairedDeviceId } from '@/features/device/pairing/localPairedDevice';
 import { RM } from '../components/RM';
 import { ROUTES } from '@/navigation/routes';
 
@@ -18,10 +21,40 @@ type Step = 'warning' | 'gate' | 'confirm';
 const KEYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'back'] as const;
 
 export default function FactoryResetScreen({ navigation }: Props) {
+  const queryClient = useQueryClient();
   const [step, setStep] = React.useState<Step>('warning');
   const [target] = React.useState(() => 100 + Math.floor(Math.random() * 900));
   const [val, setVal] = React.useState('');
   const [shake, setShake] = React.useState(false);
+  const localDeviceQuery = useQuery({
+    queryKey: ['devices', 'local-paired-id'],
+    queryFn: getLocalPairedDeviceId,
+  });
+  const localDeviceId = localDeviceQuery.data;
+  const hasLocalDevice = typeof localDeviceId === 'string' && localDeviceId.length > 0;
+  const deviceIdForStatus = hasLocalDevice ? localDeviceId : 'primary';
+  const deviceQuery = useQuery({
+    queryKey: ['devices', 'factory-reset-target', deviceIdForStatus],
+    queryFn: () => getDeviceStatus(deviceIdForStatus),
+    enabled: !localDeviceQuery.isLoading,
+    retry: false,
+  });
+  const device = deviceQuery.data;
+  const robotName = device?.name?.trim() || device?.id || 'Robot';
+  const canReset = typeof device?.id === 'string' && device.id.length > 0;
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      if (!canReset) throw new Error('No paired Robot to erase.');
+      await unpairDevice(device.id);
+      await clearLocalPairedDevice();
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['devices', 'local-paired-id'], null);
+      queryClient.removeQueries({ queryKey: ['devices', 'paired'] });
+      queryClient.removeQueries({ queryKey: ['devices', 'factory-reset-target'] });
+      navigation.navigate(ROUTES.MyRobotScreen);
+    },
+  });
 
   if (step === 'warning') {
     return (
@@ -112,7 +145,7 @@ export default function FactoryResetScreen({ navigation }: Props) {
     <DeviceShell title="Last check" onBack={() => setStep('warning')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="gentle" size={150} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>Erase Robot ROB-2A8F?</Text>
+        <Text fontWeight="600" style={styles.heading}>Erase Robot {robotName}?</Text>
         <Text style={styles.sub}>Robot will sleep, forget Wi-Fi, and need to be paired again.</Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24}>
@@ -121,8 +154,29 @@ export default function FactoryResetScreen({ navigation }: Props) {
           <DeviceRow icon="⏱️" title="Takes about 90 seconds" />
         </Box>
       </Box>
+      {deviceQuery.isError ? (
+        <Box paddingHorizontal={20} paddingTop={14}>
+          <Text style={styles.errorText}>Robot status unavailable. Try again.</Text>
+        </Box>
+      ) : null}
+      {!deviceQuery.isLoading && !canReset ? (
+        <Box paddingHorizontal={20} paddingTop={14}>
+          <Text style={styles.errorText}>No paired Robot found.</Text>
+        </Box>
+      ) : null}
+      {resetMutation.isError ? (
+        <Box paddingHorizontal={20} paddingTop={14}>
+          <Text style={styles.errorText}>Could not erase Robot. Try again.</Text>
+        </Box>
+      ) : null}
       <Box paddingHorizontal={20} paddingTop={30} paddingBottom={30} gap={10}>
-        <DeviceBigBtn danger onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>Yes, erase Robot</DeviceBigBtn>
+        <DeviceBigBtn
+          danger
+          disabled={deviceQuery.isLoading || resetMutation.isPending || !canReset}
+          onClick={() => resetMutation.mutate()}
+        >
+          {resetMutation.isPending ? 'Erasing Robot...' : 'Yes, erase Robot'}
+        </DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>Cancel</DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -135,6 +189,7 @@ const styles = StyleSheet.create({
   sub: { fontSize: 14, color: RM.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 8 },
   rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   warningNote: { backgroundColor: '#FBE6E2', borderRadius: 12, padding: 14 },
+  errorText: { fontSize: 13, color: RM.danger, lineHeight: 18, textAlign: 'center' },
   gateLabel: { fontSize: 13, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
   targetNum: { fontSize: 60, color: RM.ink, letterSpacing: 1, marginTop: 14 },
   digitBox: { width: 46, height: 56, borderRadius: 10, backgroundColor: RM.card, borderWidth: 2, borderColor: RM.hair },

@@ -41,6 +41,7 @@ function Bar({ color, active, delay, barHeight }: { color: string; active: boole
     } else {
       scaleY.value = withTiming(0.3);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scaleY is a stable reanimated shared-value ref; effect intentionally keys on active/delay only
   }, [active, delay]);
 
   const animStyle = useAnimatedStyle(() => ({

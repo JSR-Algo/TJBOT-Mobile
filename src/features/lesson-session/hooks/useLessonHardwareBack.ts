@@ -12,12 +12,20 @@ import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 // Terminal / exit screens (LessonDone, AbandonedDisconnect, TimedOut,
 // ExitConfirm itself) must NOT use this hook — back from those is the
 // expected return-to-home path.
+//
+// Binding uses the screen's OWN `navigation` prop (not useNavigation()/
+// useFocusEffect, which require a NavigationContainer context). The handler is
+// attached IMMEDIATELY on mount — a native-stack push mounts the screen already
+// focused, so the prior addListener('focus', attach) wiring never fired for
+// that common case and left the guard inert in the shipped app (the MOB-2 bug).
+// Focus/blur listeners then detach while the screen is backgrounded so a
+// non-foreground voice screen never swallows the back press.
 export function useLessonHardwareBack(
   navigation: NativeStackNavigationProp<RootStackParamList>,
   voiceStateForResume: string,
 ): void {
   React.useEffect(() => {
-    let hardwareSubscription: { remove: () => void } | null = null;
+    let subscription: { remove: () => void } | null = null;
 
     const onBackPress = (): boolean => {
       navigation.navigate(ROUTES.ExitConfirmScreen, {
@@ -28,17 +36,18 @@ export function useLessonHardwareBack(
     };
 
     const attach = (): void => {
-      hardwareSubscription?.remove();
-      hardwareSubscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      if (subscription) return;
+      subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     };
     const detach = (): void => {
-      hardwareSubscription?.remove();
-      hardwareSubscription = null;
+      subscription?.remove();
+      subscription = null;
     };
 
+    // Attach NOW (the mount is already focused), then track focus/blur.
+    attach();
     const focusUnsubscribe = navigation.addListener?.('focus', attach);
     const blurUnsubscribe = navigation.addListener?.('blur', detach);
-    if (!focusUnsubscribe) attach();
 
     return () => {
       detach();
