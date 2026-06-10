@@ -128,6 +128,15 @@ describe('native Detox E2E coverage contract', () => {
     expect(project).not.toContain('"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.manhhodinh.tjbot.mobile;');
   });
 
+  it('keeps iOS Release signing automatic without forcing a distribution identity', () => {
+    const project = read('ios/TJBotMobile.xcodeproj/project.pbxproj');
+    const releaseTarget = project.match(/13B07F951A680F5B00A75B9A \/\* Release \*\/[\s\S]*?\n\t\t};/)?.[0] ?? '';
+
+    expect(releaseTarget).not.toBe('');
+    expect(releaseTarget).toContain('CODE_SIGN_STYLE = Automatic;');
+    expect(releaseTarget).not.toContain('CODE_SIGN_IDENTITY = "Apple Distribution";');
+  });
+
   it('keeps debug iOS device builds Metro-backed for LAN backend discovery', () => {
     const appDelegate = read('ios/TJBotMobile/AppDelegate.mm');
 

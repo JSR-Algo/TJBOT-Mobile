@@ -1,3 +1,6 @@
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+
 /**
  * Resolution-order tests for src/config.ts::getApiBaseUrl()
  *
@@ -13,6 +16,36 @@
 describe('getApiBaseUrl resolution order', () => {
   beforeEach(() => {
     jest.resetModules();
+  });
+
+  it('generates TBOT_API_URL from EXPO_PUBLIC_API_BASE_URL for EAS production builds', () => {
+    const generatedEnvPath = join(__dirname, '..', '..', 'src', '__env__.ts');
+    const originalGeneratedEnv = readFileSync(generatedEnvPath, 'utf8');
+    const originalTbotApiUrl = process.env.TBOT_API_URL;
+    const originalExpoApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+    try {
+      process.env.TBOT_API_URL = '';
+      process.env.EXPO_PUBLIC_API_BASE_URL = 'https://tbot-backend-8wmh.onrender.com/v1';
+      jest.resetModules();
+      jest.doMock('expo/metro-config', () => ({
+        getDefaultConfig: () => ({ resolver: { sourceExts: [], resolverMainFields: [] } }),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('../../metro.config.js');
+
+      expect(readFileSync(generatedEnvPath, 'utf8')).toContain(
+        'TBOT_API_URL: "https://tbot-backend-8wmh.onrender.com/v1"',
+      );
+    } finally {
+      writeFileSync(generatedEnvPath, originalGeneratedEnv);
+      if (originalTbotApiUrl === undefined) delete process.env.TBOT_API_URL;
+      else process.env.TBOT_API_URL = originalTbotApiUrl;
+      if (originalExpoApiBaseUrl === undefined) delete process.env.EXPO_PUBLIC_API_BASE_URL;
+      else process.env.EXPO_PUBLIC_API_BASE_URL = originalExpoApiBaseUrl;
+      jest.dontMock('expo/metro-config');
+    }
   });
 
   function loadConfig(opts: {
