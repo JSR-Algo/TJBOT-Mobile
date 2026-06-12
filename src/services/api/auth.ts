@@ -15,7 +15,7 @@ export async function login(email: string, password: string): Promise<AuthTokens
   const response = await client.post('/auth/login', { email, password });
   const data = response.data.data ?? response.data;
   if (data.access_token) {
-    await setTokens(data.access_token, data.refresh_token);
+    await setTokens(data.access_token, data.refresh_token ?? '');
   }
   return data;
 }

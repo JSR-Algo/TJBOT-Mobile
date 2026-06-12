@@ -55,7 +55,7 @@ client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
 });
 
 function isFreshAuthEndpoint(url: string | undefined): boolean {
-  return typeof url === 'string' && (url.includes('/parent/auth') || url.includes('/auth/login') || url.includes('/auth/register'));
+  return typeof url === 'string' && (url.includes('/parent/auth') || url.includes('/auth/login') || url.includes('/auth/signup') || url.includes('/auth/register'));
 }
 
 function withRetryMetadata(error: AppError, status: number | undefined): AppError {
@@ -75,6 +75,9 @@ client.interceptors.response.use(
         return new Promise((resolve, reject) => {
           enqueue({ resolve, reject });
         }).then((token) => {
+          // Mark the request before re-sending so a second 401 on this queued
+          // follower rejects instead of starting a fresh refresh (refresh storm).
+          originalRequest._retry = true;
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${token}`;
           }

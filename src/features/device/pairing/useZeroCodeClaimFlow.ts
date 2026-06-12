@@ -180,6 +180,9 @@ export function useZeroCodeClaimFlow(
       }
       const claimed = await requestClaim({ deviceId });
       if (isStale(gen)) return;
+      if (!claimed.claimId) {
+        throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
+      }
       if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
         const confirmed = { deviceId: claimed.deviceId || deviceId };
         setResult(confirmed);

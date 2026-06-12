@@ -77,6 +77,9 @@ export default function PairFoundScreen({ navigation, route }: Props) {
       void (async () => {
         try {
           const claimed = await requestClaim({ deviceId });
+          if (!claimed.claimId) {
+            throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
+          }
           if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
             navigation.navigate(ROUTES.PairRenameScreen, {
               deviceId: claimed.deviceId || deviceId,
