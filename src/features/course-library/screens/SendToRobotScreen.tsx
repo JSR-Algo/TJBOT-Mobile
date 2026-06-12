@@ -36,13 +36,17 @@ type CatalogState =
   | { kind: 'error'; message: string };
 
 export default function SendToRobotScreen({ navigation, route }: Props) {
-  // childId = the single active child (D-CHILD-RESOLUTION, ADR 0013 §N), sent
-  // EXPLICITLY. Household isolation is enforced server-side (D-HOUSEHOLD-AUTHZ),
-  // not by this choice. useOptionalHousehold so the screen degrades gracefully
-  // outside a provider.
+  // childId = the parent-selected ACTIVE child (D-CHILD-RESOLUTION, ADR 0013 §N),
+  // sent EXPLICITLY. For multi-child families the parent picks who they're
+  // sending to via the selector below; single-child resolves to the one child
+  // (activeChild === children[0]). Household isolation is enforced server-side
+  // (D-HOUSEHOLD-AUTHZ), not by this choice. useOptionalHousehold so the screen
+  // degrades gracefully outside a provider.
   const household = useOptionalHousehold();
-  const childId = household?.children?.[0]?.id;
+  const childrenList = household?.children ?? [];
+  const childId = household?.activeChild?.id;
   const hasChild = Boolean(childId);
+  const setActiveChild = household?.setActiveChild;
 
   const [catalog, setCatalog] = React.useState<CatalogState>({ kind: 'loading' });
   const [selectedCourseId, setSelectedCourseId] = React.useState<string | null>(null);
@@ -205,6 +209,32 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       <Text style={styles.intro}>
         Pick a lesson to send to Robot — about 4 minutes when your child is ready.
       </Text>
+
+      {childrenList.length > 1 && (
+        <Box paddingHorizontal={16} paddingTop={18}>
+          <Text fontWeight="700" style={styles.sectionLabel}>Child</Text>
+          <Box style={styles.rowCard}>
+            {childrenList.map((child, i) => {
+              const sel = child.id === childId;
+              return (
+                <TouchableOpacity
+                  key={child.id}
+                  onPress={() => setActiveChild?.(child.id)}
+                  style={[styles.pickRow, i < childrenList.length - 1 && styles.pickBorder, sel && styles.pickRowSel]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: sel }}
+                  accessibilityLabel={`Send to ${child.name}`}
+                >
+                  <Box flex={1}>
+                    <Text fontWeight="600" style={styles.pickTitle} i18n={false}>{child.name}</Text>
+                  </Box>
+                  {sel ? <Text fontWeight="800" style={styles.pickCheck}>✓</Text> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
 
       {catalog.kind === 'loading' && (
         <Box paddingHorizontal={20} paddingTop={18}>

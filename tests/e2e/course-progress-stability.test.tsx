@@ -152,7 +152,7 @@ function makeAssignment(overrides: Partial<AssignmentProgress> = {}): Assignment
 describe('course, course-library, and progress stable screen states', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }] } as never);
+    mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
   });
 
   it('renders course catalog loading, empty, error, offline, locked, and unlocked states', async () => {

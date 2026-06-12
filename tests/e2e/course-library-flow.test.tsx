@@ -39,7 +39,7 @@ jest.mock('@/services/api/device.api', () => ({
 }));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
-  useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }] })),
+  useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } })),
 }));
 
 const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;

@@ -31,8 +31,8 @@ function stateLabel(state: string): string {
 }
 
 export default function TodayProgressScreen({ navigation }: Props) {
-  const { children } = useHousehold();
-  const childId = children[0]?.id;
+  const { activeChild } = useHousehold();
+  const childId = activeChild?.id;
 
   const query = useQuery({
     queryKey: ['lesson-progress', 'child', childId],

@@ -40,9 +40,10 @@ const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction
 
 const ParentTodayScreen = require('../../../src/features/parent/screens/ParentTodayScreen').default;
 
-// Only `children` is read by the screen (children[0]?.id).
+// The screen reads activeChild?.id. activeChild resolves to children[0] by
+// default (HouseholdContext fallback), so mirror that here.
 function householdWith(children: Array<{ id: string }> | undefined): void {
-  mockedUseHousehold.mockReturnValue({ children } as never);
+  mockedUseHousehold.mockReturnValue({ children, activeChild: children?.[0] ?? null } as never);
 }
 
 function makeAssignment(overrides: Partial<AssignmentProgress> = {}): AssignmentProgress {

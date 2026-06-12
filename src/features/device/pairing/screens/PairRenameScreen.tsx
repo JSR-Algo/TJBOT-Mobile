@@ -23,14 +23,14 @@ const BUDDIES = [
 export default function PairRenameScreen({ navigation, route }: Props) {
   const [buddy, setBuddy] = React.useState(2);
   const [saving, setSaving] = React.useState(false);
-  const { children } = useHousehold();
+  const { activeChild } = useHousehold();
 
   const save = async (): Promise<void> => {
     if (saving) return;
     const deviceId = route.params?.deviceId;
     const provisioningAttemptId = route.params?.provisioningAttemptId;
     const serialNumber = route.params?.serialNumber;
-    const childId = children[0]?.id;
+    const childId = activeChild?.id; // active-child (defaults to children[0]); was hardcoded children[0]
     if (!deviceId || !provisioningAttemptId || !childId) {
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,

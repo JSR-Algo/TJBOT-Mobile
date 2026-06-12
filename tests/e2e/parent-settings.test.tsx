@@ -117,7 +117,7 @@ describe('Parent settings and gate', () => {
     parentApiMock.getParentSummary.mockRejectedValue(new Error('Parent summary API route not documented'));
     parentApiMock.getParentToday.mockRejectedValue(new Error('Parent today API route not documented'));
     parentApiMock.getParentHistory.mockRejectedValue(new Error('Parent history API route not documented'));
-    mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }] } as never);
+    mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
     mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],

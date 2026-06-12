@@ -43,8 +43,8 @@ function parsedTime(iso: string | null): number {
 export default function ParentHistoryScreen({ navigation }: Props) {
   const { language, t } = useAppLanguage();
   useParentGateGuard(navigation, ROUTES.ParentHistoryScreen);
-  const { children } = useHousehold();
-  const childId = children[0]?.id;
+  const { activeChild } = useHousehold();
+  const childId = activeChild?.id;
 
   const query = useQuery({
     queryKey: ['lesson-progress', 'child', childId],

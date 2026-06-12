@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Household, Child } from '../types';
 import * as householdsApi from '../services/api/households';
 import { useAuth } from './AuthContext';
@@ -7,6 +8,24 @@ import { normalizeError } from '../utils/errors';
 import type { RootStackParamList } from '../navigation/routes';
 
 const ONBOARDING_COMPLETE_KEY = 'onboarding_complete_v1';
+
+// Mobile-local active-child selection. The backend active_child_id endpoint is
+// currently unreliable, so the app owns this choice locally and persists it.
+// On hydrate we read the last pick; resolution always falls back to children[0]
+// when the stored id is missing/stale, so single-child households stay
+// byte-identical to the old children[0] behavior.
+const ACTIVE_CHILD_ID_KEY = 'active_child_id';
+
+function readActiveChildIdFromStore(): Promise<string | null> {
+  return AsyncStorage.getItem(ACTIVE_CHILD_ID_KEY).catch(() => null);
+}
+
+function writeActiveChildIdToStore(value: string | null): void {
+  const op = value === null
+    ? AsyncStorage.removeItem(ACTIVE_CHILD_ID_KEY)
+    : AsyncStorage.setItem(ACTIVE_CHILD_ID_KEY, value);
+  op.catch(() => { /* persistence best-effort — selection survives in-memory regardless */ });
+}
 
 async function readOnboardingCompleteFromStore(): Promise<boolean> {
   try {
@@ -29,6 +48,7 @@ interface HouseholdState {
   households: Household[];
   activeHousehold: Household | null;
   children: Child[];
+  activeChildId: string | null;
   isLoading: boolean;
   error: string | null;
   onboardingComplete: boolean;
@@ -37,6 +57,11 @@ interface HouseholdState {
 }
 
 interface HouseholdContextValue extends HouseholdState {
+  // Resolved active child. Falls back to children[0] when the persisted id is
+  // unset or no longer present, so multi-child families can pick who a lesson
+  // is sent to / monitored, while single-child stays === children[0].
+  activeChild: Child | null;
+  setActiveChild: (id: string) => void;
   createHousehold: (name: string) => Promise<Household>;
   selectHousehold: (id: string) => void;
   addChild: (dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string }, householdId?: string) => Promise<Child>;
@@ -54,6 +79,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     households: [],
     activeHousehold: null,
     children: [],
+    activeChildId: null,
     isLoading: false,
     error: null,
     onboardingComplete: false,
@@ -111,6 +137,15 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     });
   }, []);
 
+  // Hydrate the persisted active-child pick. Stored as a raw id; resolution
+  // against `children` (with children[0] fallback) happens at render below, so
+  // a stale id never selects a child that no longer exists.
+  useEffect(() => {
+    readActiveChildIdFromStore().then((id) => {
+      if (id) setState((s) => (s.activeChildId ? s : { ...s, activeChildId: id }));
+    });
+  }, []);
+
   useEffect(() => {
     // Wait for AuthContext to finish hydrating SecureStore before deciding
     // whether to refresh or clear account-scoped household data. The device
@@ -153,6 +188,14 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     if (found) setState((s) => ({ ...s, activeHousehold: found }));
   };
 
+  const setActiveChild = (id: string) => {
+    // Only accept ids that are actually in the current children list; ignore
+    // stale/foreign ids so the resolved activeChild can never go out of range.
+    if (!state.children.some((c) => c.id === id)) return;
+    writeActiveChildIdToStore(id);
+    setState((s) => ({ ...s, activeChildId: id }));
+  };
+
   const addChild = async (
     dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string },
     householdId?: string,
@@ -173,8 +216,14 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     setState((s) => ({ ...s, pendingDeviceSetup: false }));
   };
 
+  // Resolve the active child: the persisted pick when it's still present,
+  // otherwise children[0]. This keeps single-child households byte-identical to
+  // the old children[0] reads (activeChild === children[0]).
+  const activeChild =
+    state.children.find((c) => c.id === state.activeChildId) ?? state.children[0] ?? null;
+
   return (
-    <HouseholdContext.Provider value={{ ...state, createHousehold, selectHousehold, addChild, refresh, completeOnboarding, clearPendingDeviceSetup }}>
+    <HouseholdContext.Provider value={{ ...state, activeChild, setActiveChild, createHousehold, selectHousehold, addChild, refresh, completeOnboarding, clearPendingDeviceSetup }}>
       {children}
     </HouseholdContext.Provider>
   );

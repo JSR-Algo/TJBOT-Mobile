@@ -53,8 +53,8 @@ function formatTime(iso: string | null, locale: AppLocale): string | null {
 export default function ParentTodayScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentTodayScreen);
   const { language, t } = useAppLanguage();
-  const { children } = useHousehold();
-  const childId = children[0]?.id;
+  const { activeChild } = useHousehold();
+  const childId = activeChild?.id;
 
   const query = useQuery({
     queryKey: ['lesson-progress', 'child', childId],

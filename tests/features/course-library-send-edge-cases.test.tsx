@@ -29,7 +29,7 @@ jest.mock('@/services/api/device.api', () => ({
 }));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
-  useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }] })),
+  useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } })),
 }));
 
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
@@ -77,8 +77,9 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
     jest.clearAllMocks();
     stubPublishedCatalog();
     // Default: a household WITH a child (each test that needs the empty case
-    // overrides this explicitly).
-    mockedUseOptionalHousehold.mockReturnValue({ children: [{ id: 'ch-1' }] } as never);
+    // overrides this explicitly). activeChild resolves to the single child,
+    // matching the context's children[0] fallback.
+    mockedUseOptionalHousehold.mockReturnValue({ children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } } as never);
   });
 
   // ── Empty-children "add a child first" guard ───────────────────────────────
