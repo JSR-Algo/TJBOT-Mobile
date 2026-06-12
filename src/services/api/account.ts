@@ -113,7 +113,7 @@ export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSn
   if (entitlementsInFlight) return entitlementsInFlight;
   entitlementsInFlight = (async () => {
     try {
-      const response = await client.get('/v1/account/entitlements');
+      const response = await client.get('/account/entitlements');
       const raw = unwrap<{
         courses?: string[];
         subscription_status?: string;
@@ -132,30 +132,43 @@ export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSn
 }
 
 export async function deleteAccount(password: string): Promise<void> {
-  await client.delete('/v1/account', { data: { password } });
+  await client.delete('/account', { data: { password } });
 }
 
 export async function exportData(): Promise<object> {
-  const response = await client.get('/v1/account/export');
+  const response = await client.get('/account/export');
   return response.data.data ?? response.data;
 }
 
 /**
  * Fetch the current user's account summary.
  *
- * Uses /v1/account/export until /v1/me is deployed under
- * task-s5-backend-v1-me-endpoint.
+ * Uses /account/export (resolves to /v1/account/export via the /v1 base) until
+ * a dedicated /me endpoint is deployed under task-s5-backend-v1-me-endpoint.
+ *
+ * The export endpoint returns the profile nested under `account`
+ * ({ account: { id, email, name } } — see tbot-backend
+ * AccountService.exportData). A flat { user_id, email, name } shape is also
+ * accepted defensively (it appears in the controller's Swagger example), with
+ * the nested form taking precedence and id mapping from id/user_id.
  */
 export async function getAccountSummary(): Promise<User | null> {
-  const response = await client.get('/v1/account/export');
+  const response = await client.get('/account/export');
   const data = (response.data.data ?? response.data) as {
     account?: { id?: string; email?: string; name?: string };
+    user_id?: string;
+    id?: string;
+    email?: string;
+    name?: string;
   };
   const account = data?.account;
-  if (!account?.id || !account.email) return null;
+  const id = account?.id ?? data?.id ?? data?.user_id;
+  const email = account?.email ?? data?.email;
+  const name = account?.name ?? data?.name;
+  if (!id || !email) return null;
   return {
-    id: account.id,
-    email: account.email,
-    name: account.name ?? '',
+    id,
+    email,
+    name: name ?? '',
   };
 }
