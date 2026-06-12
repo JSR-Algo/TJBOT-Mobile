@@ -56,6 +56,9 @@ function buildReadinessReport(options) {
   if (ios && ios.onlinePhysicalDeviceIds.length === 0) {
     blockers.push({ code: 'IOS_DEVICE_UNAVAILABLE', detail: ios.detail });
   }
+  if (ios && ios.onlinePhysicalDeviceIds.length > 0 && ios.developerServicesReady === false) {
+    blockers.push({ code: 'IOS_DEVELOPER_SERVICES_UNAVAILABLE', detail: ios.detail });
+  }
   if (android) {
     if (!android.adbAvailable) blockers.push({ code: 'ANDROID_ADB_UNAVAILABLE', detail: android.detail });
     else if (android.readyDeviceIds.length === 0) blockers.push({ code: 'ANDROID_DEVICE_UNAVAILABLE', detail: android.detail });
@@ -122,22 +125,38 @@ function inspectRobotUsb(robotPort) {
 
 function inspectIosDevices() {
   const xcrun = runCommand('xcrun', ['xctrace', 'list', 'devices']);
-  if (!xcrun.ok) {
+  const devicectl = runCommand('xcrun', ['devicectl', 'list', 'devices']);
+  if (!xcrun.ok && !devicectl.ok) {
     return {
       xcrunAvailable: false,
       onlinePhysicalDeviceIds: [],
       offlinePhysicalDeviceIds: [],
-      detail: 'xcrun xctrace list devices failed.',
+      detail: 'xcrun xctrace list devices and xcrun devicectl list devices failed.',
     };
   }
-  const parsed = parseXctraceDevices(xcrun.stdout);
+  const parsed = mergeDeviceLists(
+    xcrun.ok ? parseXctraceDevices(xcrun.stdout) : emptyDeviceList(),
+    devicectl.ok ? parseDevicectlDevices(devicectl.stdout) : emptyDeviceList(),
+  );
+  const details = parsed.onlinePhysicalDeviceIds.length > 0
+    ? inspectDevicectlDetails(parsed.onlinePhysicalDeviceIds[0])
+    : { developerServicesReady: null };
   return {
     xcrunAvailable: true,
+    developerServicesReady: details.developerServicesReady,
     ...parsed,
     detail: parsed.onlinePhysicalDeviceIds.length > 0
-      ? `iOS physical device ready: ${parsed.onlinePhysicalDeviceIds[0]}`
-      : 'No online physical iPhone/iPad listed by xcrun; offline devices do not count.',
+      ? details.developerServicesReady === false
+        ? `iOS physical device reachable but developer disk image services are unavailable: ${parsed.onlinePhysicalDeviceIds[0]}`
+        : `iOS physical device ready: ${parsed.onlinePhysicalDeviceIds[0]}`
+      : 'No online physical iPhone/iPad listed by xcrun/devicectl; offline devices do not count.',
   };
+}
+
+function inspectDevicectlDetails(deviceId) {
+  const details = runCommand('xcrun', ['devicectl', 'device', 'info', 'details', '--device', deviceId]);
+  if (!details.ok) return { developerServicesReady: false };
+  return parseDevicectlDetails(details.stdout);
 }
 
 function inspectAndroidDevices() {
@@ -251,6 +270,44 @@ function parseXctraceDevices(output) {
   return { onlinePhysicalDeviceIds, offlinePhysicalDeviceIds };
 }
 
+function parseDevicectlDevices(output) {
+  const onlinePhysicalDeviceIds = [];
+  const offlinePhysicalDeviceIds = [];
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('Name ') || line.startsWith('---')) continue;
+    if (!/\biPhone\b|\biPad\b/i.test(line)) continue;
+    const match = line.match(/\b([0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12})\b\s+(.+?)\s+(iPhone|iPad)\b/i);
+    if (!match) continue;
+    const [, id, state] = match;
+    if (/available/i.test(state) && !/unavailable/i.test(state)) onlinePhysicalDeviceIds.push(id);
+    else offlinePhysicalDeviceIds.push(id);
+  }
+  return { onlinePhysicalDeviceIds, offlinePhysicalDeviceIds };
+}
+
+function parseDevicectlDetails(output) {
+  const ddiUnavailable = /ddiServicesAvailable:\s*false/i.test(output)
+    || /developer disk image could not be mounted/i.test(output);
+  const developerModeDisabled = /developerModeStatus:\s*disabled/i.test(output);
+  return { developerServicesReady: !ddiUnavailable && !developerModeDisabled };
+}
+
+function mergeDeviceLists(...lists) {
+  return {
+    onlinePhysicalDeviceIds: unique(lists.flatMap(list => list.onlinePhysicalDeviceIds)),
+    offlinePhysicalDeviceIds: unique(lists.flatMap(list => list.offlinePhysicalDeviceIds)),
+  };
+}
+
+function emptyDeviceList() {
+  return { onlinePhysicalDeviceIds: [], offlinePhysicalDeviceIds: [] };
+}
+
+function unique(values) {
+  return [...new Set(values)];
+}
+
 function parseAdbDevices(output) {
   const readyDeviceIds = [];
   const blockedDeviceIds = [];
@@ -276,6 +333,19 @@ iPhone Offline (26.4.2) (00008110-OFFLINE)
 == Simulators ==
 iPhone 17 Pro (26.4.1) (SIMULATOR-ID)
 `);
+  const devicectlIos = parseDevicectlDevices(`
+Name     Hostname                  Identifier                             State                Model
+------   -----------------------   ------------------------------------   ------------------   ----------------------
+datngg   datngg.coredevice.local   DC4CF837-665D-5E57-A83F-E6229525E513   available (paired)   iPhone 13 (iPhone14,5)
+iPhone   iPhone.coredevice.local   E7A8B2C6-711F-5936-A7C9-864CC781F3B0   unavailable          iPhone SE (iPhone12,8)
+Mac      mac.coredevice.local      F60CA545-C1A7-5F93-A041-928680F0A985   available            MacBook Air
+`);
+  const devicectlDetails = parseDevicectlDetails(`
+Current device information:
+▿ deviceProperties:
+    • ddiServicesAvailable: false
+    • developerModeStatus: enabled
+`);
   const android = parseAdbDevices(`
 List of devices attached
 ZY22READY device product:pixel model:Pixel_8 device:shiba transport_id:1
@@ -283,6 +353,8 @@ R58MUNAUTH unauthorized usb:336592896X transport_id:2
 `);
   return {
     ios,
+    devicectlIos,
+    devicectlDetails,
     android,
     adbResolution: {
       sdkFallback: resolveAdbCommand(

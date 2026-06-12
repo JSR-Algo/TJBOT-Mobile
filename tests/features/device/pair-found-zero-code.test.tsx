@@ -104,6 +104,43 @@ describe('PairFoundScreen zero-code default path', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairCodeScreen, expect.anything());
   });
 
+  it('exits immediately when the Wi-Fi claim request is already confirmed', async () => {
+    mockedRequestClaim.mockResolvedValueOnce({
+      claimId: 'claim-confirmed',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      message: 'Already confirmed.',
+      expiresAt: '2026-06-03T12:05:00.000Z',
+    });
+    const navigate = jest.fn();
+    const screen = render(
+      <PairFoundScreen
+        navigation={{ navigate } as never}
+        route={{
+          params: {
+            deviceId: 'device-1',
+            serialNumber: 'TBT-2026-004217',
+            provisioningAttemptId: 'attempt-1',
+            bleDeviceId: 'ble-device-1',
+            provisioningTransport: 'ble',
+          },
+        } as never}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('This is my Robot'));
+
+    await waitFor(() => expect(mockedRequestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TBT-2026-004217',
+      provisioningAttemptId: 'claim-confirmed',
+    }));
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+    expect(mockedSendClaimBootstrapTokenViaBle).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
+  });
+
   it('shows retry and QR/code fallback after a claim failure', async () => {
     mockedRequestClaim.mockRejectedValueOnce({ code: 'INTERNAL_ERROR', message: 'boom', status: 500 });
     const navigate = jest.fn();

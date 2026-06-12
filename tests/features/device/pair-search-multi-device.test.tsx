@@ -100,7 +100,7 @@ describe('PairSearchScreen multi-device picker', () => {
     }));
   });
 
-  it('routes a normal scan of the already paired primary robot to BLE reconnect instead of starting a new claim attempt', async () => {
+  it('routes a normal scan of the already paired primary robot to PairFound so claim token delivery still runs', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-owned',
       name: 'Van phong Tam',
@@ -115,15 +115,15 @@ describe('PairSearchScreen multi-device picker', () => {
     const navigate = jest.fn();
     renderSearch(navigate);
 
-    await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary'));
-    expect(mockedStartProvisioning).not.toHaveBeenCalled();
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiScreen, {
-      deviceId: 'device-owned',
+    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-OWNED' }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFoundScreen, {
       serialNumber: 'TBOT-OWNED',
-      provisioningAttemptId: 'reconnect:device-owned',
+      deviceId: 'device-9',
+      provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-owned',
-      provisioningTransport: 'ble_reconnect',
     }));
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
   });
 
   it('keeps the normal new-pairing path when the scanned robot is not the paired primary robot', async () => {
@@ -147,7 +147,6 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-new',
-      provisioningTransport: 'ble',
     }));
   });
 
@@ -184,7 +183,6 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-b',
-      provisioningTransport: 'ble',
     }));
   });
 
@@ -202,7 +200,6 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-a',
-      provisioningTransport: 'ble',
     }));
     // No picker copy rendered on the fast path.
     expect(screen.queryByText('We found more than one Robot nearby. Pick the one you want to pair.')).toBeNull();
@@ -222,7 +219,6 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-late',
-      provisioningTransport: 'ble',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
   });

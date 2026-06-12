@@ -67,7 +67,7 @@ export interface UseZeroCodeClaimFlowParams {
 }
 
 const DEFAULT_POLL_INTERVAL_MS = 3000;
-const DEFAULT_MAX_POLL_ATTEMPTS = 20;
+const DEFAULT_CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
 
 async function defaultPollClaimStatus(claimId: string): Promise<ClaimStatusResult> {
   return getClaimStatus(claimId);
@@ -99,7 +99,7 @@ export function useZeroCodeClaimFlow(
     deviceId,
     bleDevice,
     pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
-    maxPollAttempts = DEFAULT_MAX_POLL_ATTEMPTS,
+    maxPollAttempts,
     pollClaimStatus = defaultPollClaimStatus,
     onConnected,
   } = params;
@@ -120,10 +120,16 @@ export function useZeroCodeClaimFlow(
   const waitForPhysicalConfirm = useCallback(
     async (claim: ClaimRequestResult, gen: number) => {
       setPhase('waitingPhysicalConfirm');
-      for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
+      const explicitPollLimit = maxPollAttempts === undefined ? undefined : Math.max(1, maxPollAttempts);
+      let deadlineMs = resolveDeadlineMs(claim.expiresAt);
+      for (let attempt = 0; ; attempt += 1) {
+        if (explicitPollLimit !== undefined && attempt >= explicitPollLimit) break;
         if (isStale(gen)) return;
         const status = await pollClaimStatus(claim.claimId);
         if (isStale(gen)) return;
+        if (status?.expiresAt && maxPollAttempts === undefined) {
+          deadlineMs = readFutureDeadlineMs(status.expiresAt) ?? deadlineMs;
+        }
         // `online` is only robot heartbeat/connectivity metadata. An unclaimed
         // robot can be online while still waiting for backend claim confirmation.
         if (status?.status === 'CLAIM_CONFIRMED' || status?.status === 'CLAIMED') {
@@ -143,6 +149,8 @@ export function useZeroCodeClaimFlow(
           setPhase('failed');
           return;
         }
+        if (explicitPollLimit !== undefined && attempt === explicitPollLimit - 1) break;
+        if (explicitPollLimit === undefined && Date.now() >= deadlineMs) break;
         await sleep(pollIntervalMs);
       }
       if (isStale(gen)) return;
@@ -172,6 +180,13 @@ export function useZeroCodeClaimFlow(
       }
       const claimed = await requestClaim({ deviceId });
       if (isStale(gen)) return;
+      if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
+        const confirmed = { deviceId: claimed.deviceId || deviceId };
+        setResult(confirmed);
+        setPhase('connected');
+        onConnected?.(confirmed);
+        return;
+      }
       const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimed.claimId });
       if (isStale(gen)) return;
       await sendClaimBootstrapTokenViaBle({ device: bleDevice, token: bootstrap.token });
@@ -215,4 +230,15 @@ function sleep(ms: number): Promise<void> {
     const id = setTimeout(resolve, ms);
     (id as { unref?: () => void }).unref?.();
   });
+}
+
+function resolveDeadlineMs(expiresAt?: string | null): number {
+  return readFutureDeadlineMs(expiresAt) ?? Date.now() + DEFAULT_CONFIRM_TIMEOUT_MS;
+}
+
+function readFutureDeadlineMs(expiresAt?: string | null): number | null {
+  if (!expiresAt) return null;
+  const deadlineMs = Date.parse(expiresAt);
+  if (!Number.isFinite(deadlineMs)) return null;
+  return deadlineMs > Date.now() ? deadlineMs : null;
 }

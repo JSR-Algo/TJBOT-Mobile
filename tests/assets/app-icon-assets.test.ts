@@ -21,13 +21,20 @@ function expectedPixels(size: string, scale: string): number {
   return points * multiplier;
 }
 
+const requiredIPadAppStoreIcons = [
+  {idiom: 'ipad', scale: '2x', size: '76x76'},
+  {idiom: 'ipad', scale: '2x', size: '83.5x83.5'},
+];
+
 describe('iOS app icon asset catalog', () => {
   it('references existing PNG files at the required dimensions', () => {
     const contents = JSON.parse(fs.readFileSync(contentsPath, 'utf8')) as {
       images: Array<{filename?: string; idiom: string; scale: string; size: string}>;
     };
 
-    expect(contents.images).toHaveLength(9);
+    for (const requiredIcon of requiredIPadAppStoreIcons) {
+      expect(contents.images).toEqual(expect.arrayContaining([expect.objectContaining(requiredIcon)]));
+    }
 
     for (const image of contents.images) {
       expect(image.filename).toBeTruthy();

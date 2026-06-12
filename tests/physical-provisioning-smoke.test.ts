@@ -10,6 +10,13 @@ type SelfTestReport = {
     onlinePhysicalDeviceIds: string[];
     offlinePhysicalDeviceIds: string[];
   };
+  devicectlIos: {
+    onlinePhysicalDeviceIds: string[];
+    offlinePhysicalDeviceIds: string[];
+  };
+  devicectlDetails: {
+    developerServicesReady: boolean;
+  };
   android: {
     readyDeviceIds: string[];
     blockedDeviceIds: string[];
@@ -46,6 +53,9 @@ describe('physical BLE/BluFi provisioning smoke harness', () => {
 
     expect(report.ios.onlinePhysicalDeviceIds).toEqual(['00008110-ONLINE']);
     expect(report.ios.offlinePhysicalDeviceIds).toEqual(['00008110-CUSTOM-NAME', '00008110-OFFLINE']);
+    expect(report.devicectlIos.onlinePhysicalDeviceIds).toEqual(['DC4CF837-665D-5E57-A83F-E6229525E513']);
+    expect(report.devicectlIos.offlinePhysicalDeviceIds).toEqual(['E7A8B2C6-711F-5936-A7C9-864CC781F3B0']);
+    expect(report.devicectlDetails.developerServicesReady).toBe(false);
     expect(report.android.readyDeviceIds).toEqual(['ZY22READY']);
     expect(report.android.blockedDeviceIds).toEqual(['R58MUNAUTH']);
     expect(report.adbResolution.sdkFallback).toBe('/tmp/android-sdk/platform-tools/adb');

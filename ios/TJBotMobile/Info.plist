@@ -26,7 +26,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.TJBot.mobile</string>
+			<string>net.jasonle.tjbot</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>TJBot</string>
@@ -49,6 +49,8 @@
 	<string>TJBot uses Bluetooth to scan for and pair with your child's device during setup.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>TJBot uses Bluetooth to scan for and pair with your child's device during setup.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>TJBot uses the camera to scan setup codes when pairing your child's device.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>TJBot uses your location to provide localised content for your child.</string>
 	<key>NSMicrophoneUsageDescription</key>

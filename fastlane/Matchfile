@@ -14,7 +14,7 @@
 git_url(ENV["MATCH_GIT_URL"] || "git@github.com:TJBot/match-certs.git")
 storage_mode("git")
 type("appstore")
-app_identifier(["com.TJBot.mobile"])
+app_identifier(["net.jasonle.tjbot"])
 
 # CI runners pull read-only; cert provisioning + rotation is a manual step.
 readonly(ENV["MATCH_READONLY"] != "false")

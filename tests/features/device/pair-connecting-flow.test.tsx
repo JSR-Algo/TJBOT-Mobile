@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import PairConnectingScreen from '@/features/device/pairing/screens/PairConnectingScreen';
 import { ROUTES } from '@/navigation/routes';
 import { provisionWifiViaLocalBle } from '@/services/ble/service';
@@ -64,6 +64,12 @@ const mockedMintBootstrapToken = mintBootstrapToken as jest.MockedFunction<typeo
 const mockedPairDevice = pairDevice as jest.MockedFunction<typeof pairDevice>;
 const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
 const mockedRequestClaim = requestClaim as jest.MockedFunction<typeof requestClaim>;
+
+async function advancePairingPolls(ms: number): Promise<void> {
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(ms);
+  });
+}
 
 // Opaque fixtures. These are passed INTO mocked encoders/requests as the screen
 // would; they are never logged or asserted as substrings against any rendered /
@@ -547,6 +553,49 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
   });
 
+  it('keeps waiting past 20 polls for delayed device_authenticated status', async () => {
+    jest.useFakeTimers();
+    try {
+      seedSecrets('claim-1');
+      let polls = 0;
+      mockedGetProvisioningAttemptStatus.mockImplementation(async () => {
+        polls += 1;
+        if (polls >= 25) {
+          return {
+            provisioningAttemptId: 'claim-1',
+            deviceId: 'device-1',
+            status: 'device_authenticated',
+          };
+        }
+        return {
+          provisioningAttemptId: 'claim-1',
+          deviceId: 'device-1',
+          status: 'ble_paired',
+        };
+      });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+
+      await advancePairingPolls(24 * 3000);
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+        deviceId: 'device-1',
+        serialNumber: SERIAL,
+        provisioningAttemptId: 'claim-1',
+      }));
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(25);
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
   it('attempt -> failed routes to PairFailed with the backend failureCode (device-auth not verified)', async () => {
     seedSecrets('claim-1');
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
@@ -760,6 +809,153 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
   });
 
+  it('keeps waiting past 20 polls for delayed CLAIM_CONFIRMED status', async () => {
+    jest.useFakeTimers();
+    try {
+      seedSecrets('claim-1');
+      const claimExpiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      let polls = 0;
+      mockedGetClaimStatus.mockImplementation(async () => {
+        polls += 1;
+        if (polls >= 25) {
+          return {
+            claimId: 'claim-1',
+            deviceId: 'device-1',
+            status: 'CLAIM_CONFIRMED',
+            online: true,
+            expiresAt: null,
+            failureCode: null,
+          };
+        }
+        return {
+          claimId: 'claim-1',
+          deviceId: 'device-1',
+          status: 'WAITING_PHYSICAL_CONFIRM',
+          online: true,
+          expiresAt: claimExpiresAt,
+          failureCode: null,
+        };
+      });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams() } as never}
+        />,
+      );
+
+      await advancePairingPolls(24 * 3000);
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+        deviceId: 'device-1',
+        serialNumber: SERIAL,
+        provisioningAttemptId: 'claim-1',
+      }));
+      expect(mockedGetClaimStatus).toHaveBeenCalledTimes(25);
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not shrink the backend claim expiry window while polling status updates', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-06-10T12:00:00.000Z'));
+    try {
+      seedSecrets('claim-1');
+      const claimExpiresAt = '2026-06-10T12:05:00.000Z';
+      let polls = 0;
+      mockedGetClaimStatus.mockImplementation(async () => {
+        polls += 1;
+        if (polls >= 76) {
+          return {
+            claimId: 'claim-1',
+            deviceId: 'device-1',
+            status: 'CLAIM_CONFIRMED',
+            online: true,
+            expiresAt: null,
+            failureCode: null,
+          };
+        }
+        return {
+          claimId: 'claim-1',
+          deviceId: 'device-1',
+          status: 'WAITING_PHYSICAL_CONFIRM',
+          online: true,
+          expiresAt: claimExpiresAt,
+          failureCode: null,
+        };
+      });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams() } as never}
+        />,
+      );
+
+      await advancePairingPolls(75 * 3000);
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+        deviceId: 'device-1',
+        serialNumber: SERIAL,
+        provisioningAttemptId: 'claim-1',
+      }));
+      expect(mockedGetClaimStatus).toHaveBeenCalledTimes(76);
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not extend the original claim deadline when status expiresAt is malformed', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-06-10T12:00:00.000Z'));
+    try {
+      putPairingWifiPassword('attempt-zc-invalid-expiry', WIFI_PASSWORD);
+      mockedRequestClaim.mockResolvedValue({
+        claimId: 'claim-invalid-expiry',
+        deviceId: 'device-1',
+        status: 'WAITING_PHYSICAL_CONFIRM',
+        message: 'Press the button on your TBot to allow connection.',
+        expiresAt: '2026-06-10T12:00:30.000Z',
+      });
+      mockedGetClaimStatus.mockResolvedValue({
+        claimId: 'claim-invalid-expiry',
+        deviceId: 'device-1',
+        status: 'WAITING_PHYSICAL_CONFIRM',
+        online: true,
+        expiresAt: 'not-a-date',
+        failureCode: null,
+      });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ provisioningAttemptId: 'attempt-zc-invalid-expiry' }) } as never}
+        />,
+      );
+
+      await advancePairingPolls(35 * 1000);
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({
+          errorCode: 'CLAIM_CONFIRM_TIMEOUT',
+          provisioningAttemptId: 'claim-invalid-expiry',
+        }),
+      ));
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    } finally {
+      consumePairingWifiPassword('attempt-zc-invalid-expiry');
+      clearPairingBootstrapToken('attempt-zc-invalid-expiry');
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
   it('claim FAILED surfaces the backend failureCode to PairFailed', async () => {
     seedSecrets('claim-1');
     mockedGetClaimStatus.mockResolvedValue({
@@ -826,6 +1022,47 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
         provisioningTransport: 'ble',
       }),
     ));
+  });
+
+  it('[late-claim confirmed] a retry request that returns CLAIM_CONFIRMED advances without minting another token', async () => {
+    // Reproduces the field symptom class: the robot has already confirmed, but
+    // the mobile route lost its in-memory bootstrap token and re-runs
+    // requestClaim. If the backend returns the confirmed claim, the screen must
+    // not mint/send another token or restart local BLE; it should adopt that
+    // claim id and let the status poll exit the waiting screen.
+    putPairingWifiPassword('attempt-zc-1', WIFI_PASSWORD); // password only, no token
+    mockedRequestClaim.mockResolvedValue({
+      claimId: 'claim-confirmed-1',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      message: 'Connection already confirmed.',
+      expiresAt: '2026-06-10T12:05:00.000Z',
+    });
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-confirmed-1',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      online: true,
+      expiresAt: null,
+      failureCode: null,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ provisioningAttemptId: 'attempt-zc-1' }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-confirmed-1',
+    }));
+    expect(mockedRequestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' });
+    expect(mockedGetClaimStatus).toHaveBeenCalledWith('claim-confirmed-1');
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
   });
 
   it('zero-code without a pre-minted token mints one before the BLE handoff', async () => {

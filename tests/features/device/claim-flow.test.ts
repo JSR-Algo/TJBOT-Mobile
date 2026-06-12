@@ -247,6 +247,35 @@ describe('useZeroCodeClaimFlow reliability UX', () => {
     );
   });
 
+  it('exits immediately when requestClaim returns an already confirmed claim', async () => {
+    mockedRequestClaim.mockResolvedValue({
+      claimId: 'claim_confirmed_1',
+      deviceId: 'dev_1',
+      status: 'CLAIM_CONFIRMED',
+      message: 'Connection already confirmed.',
+      expiresAt: '2026-06-03T12:05:00.000Z',
+    });
+    const onConnected = jest.fn();
+
+    const { result } = renderHook(() =>
+      useZeroCodeClaimFlow({
+        deviceId: 'dev_1',
+        bleDevice: BLE_DEVICE,
+        pollIntervalMs: 1,
+        onConnected,
+      }),
+    );
+
+    act(() => { result.current[1].connect(); });
+
+    await waitFor(() => expect(result.current[0].phase).toBe('connected'));
+    expect(result.current[0].result).toEqual({ deviceId: 'dev_1' });
+    expect(onConnected).toHaveBeenCalledWith({ deviceId: 'dev_1' });
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+    expect(mockedSendClaimBootstrapTokenViaBle).not.toHaveBeenCalled();
+    expect(mockedGetClaimStatus).not.toHaveBeenCalled();
+  });
+
   it('does not treat robot online heartbeat as claim confirmation', async () => {
     mockedRequestClaim.mockResolvedValue({
       claimId: 'claim_1',
@@ -278,6 +307,123 @@ describe('useZeroCodeClaimFlow reliability UX', () => {
     await waitFor(() => expect(result.current[0].phase).toBe('failed'));
     expect(result.current[0].error?.code).toBe('CLAIM_CONFIRM_TIMEOUT');
     expect(result.current[0].result).toBeNull();
+  });
+
+  it('continues polling past 20 quick attempts while the claim window is still open', async () => {
+    const claimExpiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    mockedRequestClaim.mockResolvedValue({
+      claimId: 'claim_1',
+      deviceId: 'dev_1',
+      status: 'WAITING_PHYSICAL_CONFIRM',
+      message: 'Press the button on your TBot to allow connection.',
+      expiresAt: claimExpiresAt,
+    });
+    let polls = 0;
+    mockedGetClaimStatus.mockImplementation(async () => {
+      polls += 1;
+      if (polls >= 25) {
+        return { claimId: 'claim_1', deviceId: 'dev_1', status: 'CLAIM_CONFIRMED', online: true, expiresAt: null, failureCode: null };
+      }
+      return { claimId: 'claim_1', deviceId: 'dev_1', status: 'WAITING_PHYSICAL_CONFIRM', online: true, expiresAt: claimExpiresAt, failureCode: null };
+    });
+
+    const { result } = renderHook(() =>
+      useZeroCodeClaimFlow({
+        deviceId: 'dev_1',
+        bleDevice: BLE_DEVICE,
+        pollIntervalMs: 1,
+      }),
+    );
+
+    act(() => { result.current[1].connect(); });
+
+    await waitFor(() => expect(result.current[0].phase).toBe('connected'));
+    expect(mockedGetClaimStatus).toHaveBeenCalledTimes(25);
+    expect(result.current[0].error).toBeNull();
+  });
+
+  it('does not shrink the claim expiry window while polling status updates', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-06-10T12:00:00.000Z'));
+    try {
+      const claimExpiresAt = '2026-06-10T12:01:40.000Z';
+      mockedRequestClaim.mockResolvedValue({
+        claimId: 'claim_1',
+        deviceId: 'dev_1',
+        status: 'WAITING_PHYSICAL_CONFIRM',
+        message: 'Press the button on your TBot to allow connection.',
+        expiresAt: claimExpiresAt,
+      });
+      let polls = 0;
+      mockedGetClaimStatus.mockImplementation(async () => {
+        polls += 1;
+        if (polls >= 76) {
+          return { claimId: 'claim_1', deviceId: 'dev_1', status: 'CLAIM_CONFIRMED', online: true, expiresAt: null, failureCode: null };
+        }
+        return { claimId: 'claim_1', deviceId: 'dev_1', status: 'WAITING_PHYSICAL_CONFIRM', online: true, expiresAt: claimExpiresAt, failureCode: null };
+      });
+
+      const { result } = renderHook(() =>
+        useZeroCodeClaimFlow({
+          deviceId: 'dev_1',
+          bleDevice: BLE_DEVICE,
+          pollIntervalMs: 1000,
+        }),
+      );
+
+      act(() => { result.current[1].connect(); });
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(75_000);
+      });
+
+      await waitFor(() => expect(result.current[0].phase).toBe('connected'));
+      expect(mockedGetClaimStatus).toHaveBeenCalledTimes(76);
+      expect(result.current[0].error).toBeNull();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not extend the original claim deadline when status expiresAt is malformed', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-06-10T12:00:00.000Z'));
+    try {
+      mockedRequestClaim.mockResolvedValue({
+        claimId: 'claim_1',
+        deviceId: 'dev_1',
+        status: 'WAITING_PHYSICAL_CONFIRM',
+        message: 'Press the button on your TBot to allow connection.',
+        expiresAt: '2026-06-10T12:00:30.000Z',
+      });
+      mockedGetClaimStatus.mockResolvedValue({
+        claimId: 'claim_1',
+        deviceId: 'dev_1',
+        status: 'WAITING_PHYSICAL_CONFIRM',
+        online: true,
+        expiresAt: 'not-a-date',
+        failureCode: null,
+      });
+
+      const { result } = renderHook(() =>
+        useZeroCodeClaimFlow({
+          deviceId: 'dev_1',
+          bleDevice: BLE_DEVICE,
+          pollIntervalMs: 1000,
+        }),
+      );
+
+      act(() => { result.current[1].connect(); });
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(35_000);
+      });
+
+      await waitFor(() => expect(result.current[0].phase).toBe('failed'));
+      expect(result.current[0].error?.code).toBe('CLAIM_CONFIRM_TIMEOUT');
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
   });
 
   it('prevents double-submit: a second connect() while in flight issues one claim request', async () => {

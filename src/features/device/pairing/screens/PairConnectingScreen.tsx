@@ -27,7 +27,13 @@ type ProvisioningRunResult = {
   deviceId: string;
   provisioningAttemptId: string;
   completionMode: 'device_authenticated' | 'claim_confirmed' | 'device_online';
+  claimExpiresAt?: string | null;
 };
+
+const PAIRING_POLL_INTERVAL_MS = 3000;
+const DEVICE_ONLINE_MAX_POLL_ATTEMPTS = 20;
+const CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
+const CONFIRM_MAX_POLL_ATTEMPTS = Math.ceil(CONFIRM_TIMEOUT_MS / PAIRING_POLL_INTERVAL_MS) + 1;
 
 const PROVISIONING_STATUSES = [
   'started',
@@ -127,7 +133,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         return;
       }
       const authenticated = result.completionMode === 'claim_confirmed'
-        ? await waitForClaimConfirmed(result.provisioningAttemptId, poll)
+        ? await waitForClaimConfirmed(result.provisioningAttemptId, poll, result.claimExpiresAt)
         : await waitForDeviceAuthenticated(result.provisioningAttemptId, poll);
       if (cancelled) return;
       clearPairingBootstrapToken(result.provisioningAttemptId);
@@ -252,6 +258,7 @@ async function runLocalBleProvisioning(params: {
 
   let token = params.bootstrapToken;
   let claimId = params.provisioningAttemptId;
+  let claimExpiresAt: string | null = null;
   let completionMode: ProvisioningRunResult['completionMode'] = 'claim_confirmed';
 
   if (params.code) {
@@ -274,6 +281,10 @@ async function runLocalBleProvisioning(params: {
       throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
     }
     claimId = claimed.claimId;
+    claimExpiresAt = claimed.expiresAt || null;
+    if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
+      return { deviceId: claimed.deviceId || params.deviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+    }
   }
 
   if (!token) {
@@ -294,7 +305,7 @@ async function runLocalBleProvisioning(params: {
     token,
   });
 
-  return { deviceId: params.deviceId, provisioningAttemptId: claimId, completionMode };
+  return { deviceId: params.deviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
 }
 
 // Cancellation handle shared with the poll loops: the effect cleanup flips
@@ -303,22 +314,27 @@ async function runLocalBleProvisioning(params: {
 type PollController = { cancelled: boolean; timer: ReturnType<typeof setTimeout> | undefined };
 
 async function waitForDeviceOnline(deviceId: string, poll: PollController): Promise<void> {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  for (let attempt = 0; attempt < DEVICE_ONLINE_MAX_POLL_ATTEMPTS; attempt += 1) {
     const status = await getDeviceStatus(deviceId);
     if (status.online) return;
     if (poll.cancelled) return;
-    await sleep(3000, poll);
+    if (attempt === DEVICE_ONLINE_MAX_POLL_ATTEMPTS - 1) break;
+    await sleep(PAIRING_POLL_INTERVAL_MS, poll);
     if (poll.cancelled) return;
   }
   throw Object.assign(new Error('Device did not come online'), { code: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT' });
 }
 
-async function waitForClaimConfirmed(claimId: string, poll: PollController): Promise<{
+async function waitForClaimConfirmed(claimId: string, poll: PollController, expiresAt?: string | null): Promise<{
   deviceId: string;
   provisioningAttemptId: string;
 }> {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  let deadlineMs = resolveConfirmDeadlineMs(expiresAt);
+  for (;;) {
     const status = await getClaimStatus(claimId);
+    if (status.expiresAt) {
+      deadlineMs = readFutureDeadlineMs(status.expiresAt) ?? deadlineMs;
+    }
     if (status.status === 'CLAIM_CONFIRMED' || status.status === 'CLAIMED') {
       return { deviceId: status.deviceId, provisioningAttemptId: claimId };
     }
@@ -326,7 +342,8 @@ async function waitForClaimConfirmed(claimId: string, poll: PollController): Pro
       throw Object.assign(new Error('Claim failed'), { code: status.failureCode ?? status.status });
     }
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
-    await sleep(3000, poll);
+    if (Date.now() >= deadlineMs) break;
+    await sleep(PAIRING_POLL_INTERVAL_MS, poll);
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
   }
   throw Object.assign(new Error('Claim confirmation timed out'), { code: 'CLAIM_CONFIRM_TIMEOUT' });
@@ -336,7 +353,7 @@ async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: P
   deviceId: string;
   provisioningAttemptId: string;
 }> {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  for (let attempt = 0; attempt < CONFIRM_MAX_POLL_ATTEMPTS; attempt += 1) {
     const status = parseProvisioningStatus(await getProvisioningAttemptStatus(provisioningAttemptId));
     if (status.status === 'device_authenticated' || status.status === 'completed') {
       return { deviceId: status.deviceId, provisioningAttemptId: status.provisioningAttemptId };
@@ -345,10 +362,22 @@ async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: P
       throw Object.assign(new Error('Provisioning failed'), { code: status.failureCode ?? 'PROVISIONING_FAILED' });
     }
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId };
-    await sleep(3000, poll);
+    if (attempt === CONFIRM_MAX_POLL_ATTEMPTS - 1) break;
+    await sleep(PAIRING_POLL_INTERVAL_MS, poll);
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId };
   }
   throw Object.assign(new Error('Provisioning timed out'), { code: 'PROVISIONING_TIMEOUT' });
+}
+
+function resolveConfirmDeadlineMs(expiresAt?: string | null): number {
+  return readFutureDeadlineMs(expiresAt) ?? Date.now() + CONFIRM_TIMEOUT_MS;
+}
+
+function readFutureDeadlineMs(expiresAt?: string | null): number | null {
+  if (!expiresAt) return null;
+  const deadlineMs = Date.parse(expiresAt);
+  if (!Number.isFinite(deadlineMs)) return null;
+  return deadlineMs > Date.now() ? deadlineMs : null;
 }
 
 function parseProvisioningStatus(value: unknown): RuntimeProvisioningStatusResult {

@@ -77,6 +77,14 @@ export default function PairFoundScreen({ navigation, route }: Props) {
       void (async () => {
         try {
           const claimed = await requestClaim({ deviceId });
+          if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
+            navigation.navigate(ROUTES.PairRenameScreen, {
+              deviceId: claimed.deviceId || deviceId,
+              serialNumber,
+              provisioningAttemptId: claimed.claimId,
+            });
+            return;
+          }
           const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimed.claimId });
           putPairingBootstrapToken(claimed.claimId, bootstrap.token);
           navigation.navigate(ROUTES.PairWifiScreen, {

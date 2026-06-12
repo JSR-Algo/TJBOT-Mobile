@@ -45,19 +45,31 @@ export default function PairSearchScreen({ navigation, route }: Props) {
     async (chosen: RobotCandidate): Promise<void> => {
       setSearchState('provisioning');
       try {
+        logDevPairSearchEvent('provision start requested', { serialNumber: chosen.serialNumber });
         const attempt = await startDeviceProvisioning({ serialNumber: chosen.serialNumber });
         if (cancelledRef.current) return;
+        logDevPairSearchEvent('provision start succeeded', {
+          serialNumber: chosen.serialNumber,
+          deviceId: attempt.deviceId,
+          provisioningAttemptId: attempt.provisioningAttemptId,
+          deviceStatus: attempt.deviceStatus,
+        });
         navigation.navigate(ROUTES.PairFoundScreen, {
           serialNumber: chosen.serialNumber,
           deviceId: attempt.deviceId,
           provisioningAttemptId: attempt.provisioningAttemptId,
           bleDeviceId: chosen.candidate.id,
-          provisioningTransport: 'ble',
         });
       } catch (error) {
         if (cancelledRef.current) return;
+        const errorCode = errorCodeFrom(error, 'PROVISIONING_START_FAILED');
+        logDevPairSearchEvent('provision start failed', {
+          serialNumber: chosen.serialNumber,
+          errorCode,
+          ...devErrorSummary(error),
+        });
         navigation.navigate(ROUTES.PairFailedScreen, {
-          errorCode: errorCodeFrom(error, 'PROVISIONING_START_FAILED'),
+          errorCode,
         });
       }
     },
@@ -96,14 +108,6 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         await reconnectAndGoToWifi(chosen);
         return;
       }
-
-      const matchingPrimary = await getMatchingPrimaryDevice(chosen);
-      if (cancelledRef.current) return;
-      if (matchingPrimary) {
-        await reconnectAndGoToWifi(chosen, matchingPrimary);
-        return;
-      }
-
       await provisionAndGoToFound(chosen);
     },
     [provisionAndGoToFound, reconnectAndGoToWifi, reconnectMode],
@@ -321,30 +325,6 @@ async function listAvailableClaimDevicesForDiscovery(): Promise<AvailableClaimDe
   }
 }
 
-async function getMatchingPrimaryDevice(chosen: RobotCandidate): Promise<DeviceStatus | null> {
-  try {
-    const device = await getDeviceStatus('primary');
-    if (!device.id) return null;
-    return deviceMatchesCandidate(device, chosen) ? device : null;
-  } catch (error) {
-    logDevPairSearchEvent('primary device lookup failed', devErrorSummary(error));
-    return null;
-  }
-}
-
-function deviceMatchesCandidate(device: DeviceStatus, chosen: RobotCandidate): boolean {
-  const candidateSerial = normalizeRobotIdentity(chosen.serialNumber);
-  if (!candidateSerial) return false;
-  return [device.serialNumber, device.name]
-    .map(normalizeRobotIdentity)
-    .some((value) => value === candidateSerial);
-}
-
-function normalizeRobotIdentity(value: string | undefined): string | undefined {
-  const normalized = value?.trim().replace(/\s+/g, '').toUpperCase();
-  return normalized && normalized.length > 0 ? normalized : undefined;
-}
-
 async function isPhoneOnline(): Promise<boolean> {
   const state = await NetInfo.fetch().catch(() => undefined);
   return state?.isConnected === true && state.isInternetReachable !== false;
@@ -352,9 +332,11 @@ async function isPhoneOnline(): Promise<boolean> {
 
 function errorCodeFrom(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null) {
-    const record = error as { code?: unknown; response?: { data?: { code?: unknown } } };
+    const record = error as { code?: unknown; response?: { data?: { code?: unknown; error?: { code?: unknown } } } };
+    const data = record.response?.data;
+    if (typeof data?.error?.code === 'string') return data.error.code;
+    if (typeof data?.code === 'string') return data.code;
     if (typeof record.code === 'string') return record.code;
-    if (typeof record.response?.data?.code === 'string') return record.response.data.code;
   }
   return fallback;
 }
@@ -380,8 +362,16 @@ function devErrorSummary(error: unknown): Record<string, unknown> {
   const summary: Record<string, unknown> = {};
   if (typeof error.name === 'string') summary.name = error.name;
   if (typeof error.code === 'string' || typeof error.code === 'number') summary.code = error.code;
+  if (typeof error.status === 'number') summary.status = error.status;
+  if (typeof error.traceId === 'string') summary.traceId = error.traceId;
   if (isRecord(error.response) && typeof error.response.status === 'number') {
     summary.status = error.response.status;
+  }
+  if (isRecord(error.response) && isRecord(error.response.data)) {
+    const data = error.response.data;
+    if (typeof data.code === 'string') summary.backendCode = data.code;
+    if (isRecord(data.error) && typeof data.error.code === 'string') summary.backendCode = data.error.code;
+    if (typeof data.traceId === 'string') summary.traceId = data.traceId;
   }
   return Object.keys(summary).length > 0 ? summary : { kind: 'object' };
 }

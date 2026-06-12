@@ -40,6 +40,8 @@ PODS:
     - ExpoModulesCore
   - ExpoAudio (55.0.11):
     - ExpoModulesCore
+  - ExpoCamera (55.0.19):
+    - ExpoModulesCore
   - ExpoDevice (55.0.12):
     - ExpoModulesCore
   - ExpoDomWebView (55.0.5):
@@ -3082,6 +3084,7 @@ DEPENDENCIES:
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../node_modules/expo-audio/ios`)
+  - ExpoCamera (from `../node_modules/expo-camera/ios`)
   - ExpoDevice (from `../node_modules/expo-device/ios`)
   - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
@@ -3202,6 +3205,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-asset/ios"
   ExpoAudio:
     :path: "../node_modules/expo-audio/ios"
+  ExpoCamera:
+    :path: "../node_modules/expo-camera/ios"
   ExpoDevice:
     :path: "../node_modules/expo-device/ios"
   ExpoDomWebView:
@@ -3404,6 +3409,7 @@ SPEC CHECKSUMS:
   Expo: c4941fa0bd0da6917cc71c74f577295096730fa6
   ExpoAsset: 63f22b029eb9aa68d5048f77ff9430f42c770d2c
   ExpoAudio: 0de9d744a2255359f09feeb012656ae25bed30f3
+  ExpoCamera: 7926674f9ec1be53bfc83b21c908b7fadd381b32
   ExpoDevice: 69f6179e7edf17dcba9fc7c118af2d1f2b19c341
   ExpoDomWebView: 2b2fbd9a07de8790569257cbf9dfdaa31cf95c70
   ExpoFileSystem: 05e8c679738bd90263f9ed32bfa221f7b52ebbe5

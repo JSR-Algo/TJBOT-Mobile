@@ -195,6 +195,23 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
     }));
   });
 
+  it('surfaces nested backend error codes before a generic axios transport code', async () => {
+    mockedGetDeviceStatus.mockRejectedValue({
+      code: 'ERR_BAD_REQUEST',
+      response: {
+        status: 409,
+        data: { error: { code: 'DEVICE_ALREADY_ASSIGNED', message: 'Device is already assigned.' } },
+      },
+    });
+    mockedScan.mockResolvedValue({ allowed: [candidate('ble-owned', 'TBOT-OWNED')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate, { reconnectMode: true });
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      errorCode: 'DEVICE_ALREADY_ASSIGNED',
+    }));
+  });
+
   it('reconnect path forwards the BLE id of the actually scanned candidate, not the device record', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-xyz',
@@ -214,12 +231,12 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// getMatchingPrimaryDevice() + deviceMatchesCandidate() — normal (non-reconnect)
-// path. A scanned robot that IS the already-paired primary must be reconnected,
-// not re-claimed. Matching is via normalizeRobotIdentity over serial + name.
+// Normal add-robot flow — a BLE scan candidate must enter PairFound so the
+// claim bootstrap token can be delivered locally. A stale backend primary
+// status is not proof that the firmware is already claimed.
 // ---------------------------------------------------------------------------
-describe('getMatchingPrimaryDevice / deviceMatchesCandidate', () => {
-  it('matches by serialNumber and reconnects instead of starting a new claim', async () => {
+describe('normal add-robot route', () => {
+  it('starts a fresh claim even when the backend primary serial matches the scanned Robot', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-owned',
       name: 'Living Room',
@@ -231,74 +248,66 @@ describe('getMatchingPrimaryDevice / deviceMatchesCandidate', () => {
     const navigate = jest.fn();
     renderSearch(navigate);
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiScreen, {
-      deviceId: 'device-owned',
+    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-OWNED' }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFoundScreen, {
       serialNumber: 'TBOT-OWNED',
-      provisioningAttemptId: 'reconnect:device-owned',
+      deviceId: 'device-9',
+      provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-owned',
-      provisioningTransport: 'ble_reconnect',
     }));
-    expect(mockedStartProvisioning).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
   });
 
-  it('matches by name when serialNumber is absent on the device record', async () => {
+  it('starts a fresh claim when the matching primary is also claimable over zero-code BLE', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-owned',
       name: 'TBOT-OWNED',
-      online: false,
-      batteryPercent: 0,
-    });
-    mockedScan.mockResolvedValue({ allowed: [candidate('ble-owned', 'TBOT-OWNED')], blocked: [] });
-    const navigate = jest.fn();
-    renderSearch(navigate);
-
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
-      ROUTES.PairWifiScreen,
-      expect.objectContaining({ deviceId: 'device-owned', provisioningTransport: 'ble_reconnect' }),
-    ));
-    expect(mockedStartProvisioning).not.toHaveBeenCalled();
-  });
-
-  it('matches case-insensitively (normalizeRobotIdentity upper-cases both sides)', async () => {
-    mockedGetDeviceStatus.mockResolvedValue({
-      id: 'device-owned',
-      name: 'tbot-owned',
-      serialNumber: 'tbot-owned',
+      serialNumber: 'TBOT-OWNED',
       online: true,
-      batteryPercent: 50,
+      batteryPercent: 80,
     } as DeviceStatusResult);
-    // BLE serial pattern requires upper-ish, but normalization upper-cases the
-    // candidate too — use a serial that the scan resolves verbatim.
+    mockedListAvailable.mockResolvedValue([availableDevice('TBOT-OWNED', 'device-owned')]);
     mockedScan.mockResolvedValue({ allowed: [candidate('ble-owned', 'TBOT-OWNED')], blocked: [] });
     const navigate = jest.fn();
     renderSearch(navigate);
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
-      ROUTES.PairWifiScreen,
-      expect.objectContaining({ provisioningTransport: 'ble_reconnect' }),
-    ));
-    expect(mockedStartProvisioning).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-OWNED' }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFoundScreen, {
+      serialNumber: 'TBOT-OWNED',
+      deviceId: 'device-9',
+      provisioningAttemptId: 'attempt-9',
+      bleDeviceId: 'ble-owned',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
   });
 
-  it('matches when the device record name has internal/edge whitespace (collapsed by normalization)', async () => {
+  it('does not reconnect in the normal add-robot flow when the claimable list is stale or empty', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-owned',
-      name: '  TBOT  -  OWNED  ',
+      name: 'TBOT-OWNED',
+      serialNumber: 'TBOT-OWNED',
       online: true,
-      batteryPercent: 33,
-    });
+      batteryPercent: 80,
+    } as DeviceStatusResult);
+    mockedListAvailable.mockResolvedValue([]);
     mockedScan.mockResolvedValue({ allowed: [candidate('ble-owned', 'TBOT-OWNED')], blocked: [] });
     const navigate = jest.fn();
     renderSearch(navigate);
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
-      ROUTES.PairWifiScreen,
-      expect.objectContaining({ provisioningTransport: 'ble_reconnect' }),
-    ));
-    expect(mockedStartProvisioning).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-OWNED' }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFoundScreen, {
+      serialNumber: 'TBOT-OWNED',
+      deviceId: 'device-9',
+      provisioningAttemptId: 'attempt-9',
+      bleDeviceId: 'ble-owned',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
   });
 
-  it('does NOT match a different robot and falls through to a fresh claim attempt', async () => {
+  it('starts a fresh claim for a different scanned Robot without consulting primary status', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-owned',
       name: 'Kitchen',
@@ -316,56 +325,9 @@ describe('getMatchingPrimaryDevice / deviceMatchesCandidate', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-new',
-      provisioningTransport: 'ble',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
-  });
-
-  it('treats a primary with empty id as no match (getMatchingPrimaryDevice returns null) and claims fresh', async () => {
-    mockedGetDeviceStatus.mockResolvedValue({
-      id: '',
-      name: 'TBOT-OWNED',
-      serialNumber: 'TBOT-OWNED',
-      online: false,
-      batteryPercent: 0,
-    } as DeviceStatusResult);
-    mockedScan.mockResolvedValue({ allowed: [candidate('ble-owned', 'TBOT-OWNED')], blocked: [] });
-    const navigate = jest.fn();
-    renderSearch(navigate);
-
-    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-OWNED' }));
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
-  });
-
-  it('does not match when the device has neither matching serial nor name (blank identity fields)', async () => {
-    mockedGetDeviceStatus.mockResolvedValue({
-      id: 'device-owned',
-      name: '   ',
-      online: true,
-      batteryPercent: 60,
-    });
-    mockedScan.mockResolvedValue({ allowed: [candidate('ble-new', 'TBOT-NEW')], blocked: [] });
-    const navigate = jest.fn();
-    renderSearch(navigate);
-
-    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-NEW' }));
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
-  });
-
-  it('treats a getDeviceStatus rejection as no match (non-fatal) and claims fresh', async () => {
-    // getMatchingPrimaryDevice swallows lookup errors and returns null so a
-    // backend hiccup never blocks a brand-new pairing.
-    mockedGetDeviceStatus.mockRejectedValue(new Error('lookup blew up'));
-    mockedScan.mockResolvedValue({ allowed: [candidate('ble-new', 'TBOT-NEW')], blocked: [] });
-    const navigate = jest.fn();
-    renderSearch(navigate);
-
-    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-NEW' }));
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
-      ROUTES.PairFoundScreen,
-      expect.objectContaining({ serialNumber: 'TBOT-NEW' }),
-    ));
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
   });
 });
 

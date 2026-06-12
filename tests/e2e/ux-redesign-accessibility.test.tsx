@@ -281,7 +281,6 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       provisioningAttemptId: 'attempt-1',
       bleDeviceId: 'TBT-2026-004217',
-      provisioningTransport: 'ble',
     });
   });
 
