@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
 import CourseScreen from '../../src/features/course/screens/CourseScreen';
 import LessonListScreen from '../../src/features/course/screens/LessonListScreen';
@@ -21,7 +22,8 @@ import {
   listLibrary,
   unlockCourse,
 } from '../../src/services/api/course-library.api';
-import { getProgressSummary } from '../../src/services/api/progress.api';
+import { getChildLessonProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
+import { useHousehold } from '@/contexts/HouseholdContext';
 import { getBillingProviderStatus } from '../../src/services/api/purchase.api';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
 
@@ -54,7 +56,12 @@ jest.mock('../../src/services/api/course-library.api', () => ({
 }));
 
 jest.mock('../../src/services/api/progress.api', () => ({
-  getProgressSummary: jest.fn(),
+  getChildLessonProgress: jest.fn(),
+}));
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  __esModule: true,
+  useHousehold: jest.fn(),
 }));
 
 jest.mock('../../src/services/api/purchase.api', () => ({
@@ -76,7 +83,8 @@ const mockListCourseCatalog = listCourseCatalog as jest.MockedFunction<typeof li
 const mockGetLessonList = getLessonList as jest.MockedFunction<typeof getLessonList>;
 const mockListLibrary = listLibrary as jest.MockedFunction<typeof listLibrary>;
 const mockUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
-const mockGetProgressSummary = getProgressSummary as jest.MockedFunction<typeof getProgressSummary>;
+const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
+const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockGetBillingProviderStatus = getBillingProviderStatus as jest.MockedFunction<typeof getBillingProviderStatus>;
 
 const mockNavigate = jest.fn();
@@ -108,9 +116,43 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   return { promise, resolve: resolveFn };
 }
 
+// TodayProgressScreen now reads the child-scoped lesson-progress feed via
+// TanStack Query + HouseholdContext, so it needs both a QueryClientProvider
+// and a household with an active child.
+function renderProgress() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <TodayProgressScreen navigation={navigation as never} route={route as never} />
+    </QueryClientProvider>,
+  );
+}
+
+function makeAssignment(overrides: Partial<AssignmentProgress> = {}): AssignmentProgress {
+  return {
+    assignmentId: 'assign-1',
+    deviceId: 'device-1',
+    childId: 'child-1',
+    lessonId: 'lesson-1',
+    lessonVersion: 1,
+    lessonTitle: 'Greetings',
+    profile: 'espTft',
+    state: 'RUNNING',
+    startedAt: '2026-05-18T10:00:00.000Z',
+    completedAt: null,
+    stepsCompleted: 3,
+    stepsSucceeded: 2,
+    lastEventAt: '2026-05-18T10:05:00.000Z',
+    createdAt: '2026-05-18T09:59:00.000Z',
+    updatedAt: '2026-05-18T10:05:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('course, course-library, and progress stable screen states', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }] } as never);
   });
 
   it('renders course catalog loading, empty, error, offline, locked, and unlocked states', async () => {
@@ -321,48 +363,27 @@ describe('course, course-library, and progress stable screen states', () => {
     await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'course-open' }));
   });
 
-  it('renders progress summary when backend data is partial', async () => {
-    mockGetProgressSummary.mockResolvedValueOnce({
-      minutesDone: 9,
-      minutesGoal: 0,
-      lessonsCompleted: 0,
-      speakingTurns: 0,
-      starsToday: 0,
-      streakDays: 0,
-      words: [],
-      reviewDueCount: 0,
-      weeklyBars: [0.2, 0, 0.8, 0.5, 0, 0, 0],
-    });
+  it('renders the latest lesson with real step counts', async () => {
+    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment({ stepsSucceeded: 2, stepsCompleted: 3 })]);
 
-    const screen = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
+    const screen = renderProgress();
     expect(screen.getByText('Loading progress')).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('9')).toBeTruthy());
-    expect(screen.getByText('0')).toBeTruthy();
-    expect(screen.getByText('No review due')).toBeTruthy();
-    expect(screen.getByLabelText('Monday practice progress: 20 percent')).toBeTruthy();
-    expect(screen.getByLabelText('Thursday practice progress: 50 percent, today')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('Greetings')).toBeTruthy());
+    expect(screen.getByText('2')).toBeTruthy();
+    expect(screen.getByText('3')).toBeTruthy();
+    expect(screen.getByText('In progress')).toBeTruthy();
   });
 
   it('renders progress empty and failed refresh states without showing stale metrics', async () => {
-    mockGetProgressSummary.mockResolvedValueOnce({
-      minutesDone: 0,
-      minutesGoal: 0,
-      lessonsCompleted: 0,
-      speakingTurns: 0,
-      starsToday: 0,
-      streakDays: 0,
-      words: [],
-      reviewDueCount: 0,
-      weeklyBars: [0, 0, 0, 0, 0, 0, 0],
-    });
-    const empty = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
-    await waitFor(() => expect(empty.getByText('No practice yet')).toBeTruthy());
+    mockGetChildLessonProgress.mockResolvedValueOnce([]);
+    const empty = renderProgress();
+    await waitFor(() => expect(empty.getByText('No lessons yet')).toBeTruthy());
     empty.unmount();
 
-    mockGetProgressSummary.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'timeout of 30000ms exceeded' });
-    const timeout = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
-    await waitFor(() => expect(timeout.getByText('Progress refresh timed out')).toBeTruthy());
-    expect(timeout.queryByText('minutes done')).toBeNull();
+    mockGetChildLessonProgress.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'timeout of 30000ms exceeded' });
+    const failed = renderProgress();
+    await waitFor(() => expect(failed.getByText('Progress unavailable')).toBeTruthy());
+    expect(failed.queryByText('steps right')).toBeNull();
   });
 
   it('labels purchase plan controls for assistive technology', async () => {
@@ -405,38 +426,28 @@ describe('course, course-library, and progress stable screen states', () => {
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.CourseDetailScreen, { courseId: 'c_animals' });
   });
 
-  it('renders progress summary empty state on error and offline states without crashing', async () => {
-    mockGetProgressSummary.mockRejectedValueOnce({ code: 'INTERNAL_ERROR', message: 'server down' });
-    const error = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
+  it('renders the error state without showing stale metrics, regardless of error code', async () => {
+    mockGetChildLessonProgress.mockRejectedValueOnce({ code: 'INTERNAL_ERROR', message: 'server down' });
+    const error = renderProgress();
     await waitFor(() => expect(error.getByText('Progress unavailable')).toBeTruthy());
-    expect(error.queryByText('No practice yet')).toBeNull();
+    expect(error.queryByText('No lessons yet')).toBeNull();
     error.unmount();
 
-    mockGetProgressSummary.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'offline' });
-    const offline = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
-    await waitFor(() => expect(offline.getByText('Progress offline')).toBeTruthy());
-    expect(offline.queryByText('No practice yet')).toBeNull();
+    mockGetChildLessonProgress.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'offline' });
+    const offline = renderProgress();
+    await waitFor(() => expect(offline.getByText('Progress unavailable')).toBeTruthy());
+    expect(offline.queryByText('No lessons yet')).toBeNull();
   });
 
-  it('translates dynamic progress copy and labels in Vietnamese', async () => {
+  it('translates the lesson state label in Vietnamese', async () => {
     await setAppLanguage('vi');
-    mockGetProgressSummary.mockResolvedValueOnce({
-      minutesDone: 9,
-      minutesGoal: 10,
-      lessonsCompleted: 2,
-      speakingTurns: 5,
-      starsToday: 0,
-      streakDays: 1,
-      words: [],
-      reviewDueCount: 3,
-      weeklyBars: [0.2, 0, 0.8, 0.5, 0, 0, 0],
-    });
+    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment({ state: 'RUNNING' })]);
 
-    const screen = render(<TodayProgressScreen navigation={navigation as never} route={route as never} />);
+    const screen = renderProgress();
 
-    await waitFor(() => expect(screen.getByText('3 mục ôn tập cần làm')).toBeTruthy());
-    expect(screen.getByLabelText('Thứ Hai tiến độ luyện tập: 20 phần trăm')).toBeTruthy();
-    expect(screen.getByLabelText('Thứ Năm tiến độ luyện tập: 50 phần trăm, hôm nay')).toBeTruthy();
+    // 'In progress' → vi key 'Đang tiến hành'; proves the real data flows
+    // through the i18n layer (not the deleted hardcoded weekly-bar copy).
+    await waitFor(() => expect(screen.getByText('Đang tiến hành')).toBeTruthy());
   });
 
   it('renders remaining progress screens with missing route data', () => {

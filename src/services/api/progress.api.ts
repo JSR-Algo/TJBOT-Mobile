@@ -1,4 +1,5 @@
 import client from '@/services/http/client';
+import type { AssignmentState } from '@/services/api/course-library.api';
 
 export interface TodayProgress {
   minutesDone: number;
@@ -171,4 +172,77 @@ export function normalizeChildProgressPayload(payload: unknown): ChildProgress {
 export async function getChildProgress(childId: string): Promise<ChildProgress> {
   const response = await client.get(`/learning/children/${childId}/progress`);
   return normalizeChildProgressPayload(response.data);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// US-006 lesson-runtime progress (parent dashboard). Child-scoped feed of a
+// child's lesson ASSIGNMENTS + per-assignment step counts, newest first. This
+// is the live per-assignment monitoring surface (distinct from the aggregate
+// getChildProgress above): it powers Today (latest/active) + History (terminal
+// assignments). Backend: GET children/:childId/lesson-progress (parent JWT,
+// child-scoped) -> { data: { assignments: AssignmentProgress[] } }. Wire fields
+// are camelCase (server SQL aliases), so no snake_case fallback is needed; the
+// envelope unwrap mirrors getChildProgress (DIV-MOBILE-NORMALIZER). Bare of
+// `/v1` — Config.API_BASE_URL already ends in /v1.
+// ───────────────────────────────────────────────────────────────────────────
+
+const ASSIGNMENT_STATES: readonly AssignmentState[] = [
+  'UNASSIGNED', 'ASSIGNED', 'PRELOADING', 'READY', 'RUNNING', 'COMPLETED', 'PAUSED', 'FAILED', 'CANCELLED',
+];
+
+function toAssignmentState(value: unknown): AssignmentState {
+  return typeof value === 'string' && (ASSIGNMENT_STATES as readonly string[]).includes(value)
+    ? (value as AssignmentState)
+    : 'UNASSIGNED';
+}
+
+export interface AssignmentProgress {
+  assignmentId: string;
+  deviceId: string;
+  childId: string;
+  lessonId: string;
+  lessonVersion: number;
+  lessonTitle: string | null;
+  profile: string;
+  state: AssignmentState;
+  startedAt: string | null;
+  completedAt: string | null;
+  stepsCompleted: number;
+  stepsSucceeded: number;
+  lastEventAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function normalizeAssignmentProgress(entry: unknown): AssignmentProgress {
+  const r = (entry ?? {}) as Record<string, unknown>;
+  const lessonTitle = r.lessonTitle;
+  return {
+    assignmentId: (r.assignmentId ?? '') as string,
+    deviceId: (r.deviceId ?? '') as string,
+    childId: (r.childId ?? '') as string,
+    lessonId: (r.lessonId ?? '') as string,
+    lessonVersion: Number(r.lessonVersion ?? 0),
+    lessonTitle: typeof lessonTitle === 'string' ? lessonTitle : null,
+    profile: (r.profile ?? '') as string,
+    state: toAssignmentState(r.state),
+    startedAt: (r.startedAt ?? null) as string | null,
+    completedAt: (r.completedAt ?? null) as string | null,
+    stepsCompleted: Number(r.stepsCompleted ?? 0),
+    stepsSucceeded: Number(r.stepsSucceeded ?? 0),
+    lastEventAt: (r.lastEventAt ?? null) as string | null,
+    createdAt: (r.createdAt ?? '') as string,
+    updatedAt: (r.updatedAt ?? '') as string,
+  };
+}
+
+export function normalizeChildLessonProgressPayload(payload: unknown): AssignmentProgress[] {
+  const envelope = pickEnvelope<Record<string, unknown>>(payload) ?? {};
+  const rows = envelope.assignments;
+  return Array.isArray(rows) ? rows.map(normalizeAssignmentProgress) : [];
+}
+
+export async function getChildLessonProgress(childId: string): Promise<AssignmentProgress[]> {
+  const response = await client.get(`/children/${childId}/lesson-progress`);
+  return normalizeChildLessonProgressPayload(response.data);
 }

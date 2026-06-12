@@ -1,66 +1,62 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ParentScroll, { PA } from '../components/ParentScroll';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { getParentHistory } from '@/services/api/parent.api';
+import { getChildLessonProgress, type AssignmentProgress } from '@/services/api/progress.api';
+import { useHousehold } from '@/contexts/HouseholdContext';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
-import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
+import { translateTemplate, useAppLanguage, localeDateTag } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentHistoryScreen'>;
-type HistoryErrorState = { title: string; detail: string };
 
-const VERBS = ['Greetings & feelings', 'Family words', 'Numbers 1–10', 'Animals', 'Daily routines', 'Color words', 'Food vocabulary', 'Polite phrases'] as const;
+// History = lessons that have finished one way or another.
+const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED']);
 
-function buildDays() {
-  const out = [];
-  for (let i = 0; i < 30; i++) {
-    const active = i % 7 !== 5;
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    out.push({ i, date, active, min: 4 + ((i * 3) % 9), turns: 5 + ((i * 7) % 10), topic: VERBS[i % VERBS.length] });
-  }
-  return out;
+const OUTCOME_COPY: Record<string, string> = {
+  COMPLETED: 'Completed',
+  FAILED: "Didn't finish",
+  CANCELLED: 'Cancelled',
+};
+
+function outcomeLabel(state: string): string {
+  return OUTCOME_COPY[state] ?? state;
+}
+
+// Best-effort timestamp for ordering/display: a finished lesson should have
+// completedAt, but fall back to the last event / update so a row never renders
+// without a date.
+function finishedAt(a: AssignmentProgress): string | null {
+  return a.completedAt ?? a.lastEventAt ?? a.updatedAt ?? null;
+}
+
+function parsedTime(iso: string | null): number {
+  if (!iso) return 0;
+  const t = new Date(iso).getTime();
+  return Number.isNaN(t) ? 0 : t;
 }
 
 export default function ParentHistoryScreen({ navigation }: Props) {
   const { language, t } = useAppLanguage();
   useParentGateGuard(navigation, ROUTES.ParentHistoryScreen);
-  const days = React.useMemo(buildDays, []);
-  const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
-  const [errorState, setErrorState] = React.useState<HistoryErrorState>({
-    title: 'History unavailable',
-    detail: 'Try again.',
+  const { children } = useHousehold();
+  const childId = children[0]?.id;
+
+  const query = useQuery({
+    queryKey: ['lesson-progress', 'child', childId],
+    queryFn: () => getChildLessonProgress(childId as string),
+    enabled: typeof childId === 'string' && childId.length > 0,
   });
 
-  const loadHistory = React.useCallback(() => {
-    let active = true;
-    setStatus('loading');
-    getParentHistory()
-      .then((history) => {
-        if (active) {
-          setStatus(Array.isArray(history) ? 'success' : 'error');
-        }
-      })
-      .catch((error) => {
-        if (active) {
-          setErrorState(classifyHistoryError(error));
-          setStatus('error');
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  const back = () => navigation.navigate(ROUTES.ParentSummaryScreen);
 
-  React.useEffect(loadHistory, [loadHistory]);
-
-  if (status === 'loading') {
+  if (query.isLoading) {
     return (
-      <ParentScroll title="Past 30 days" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
+      <ParentScroll title="Lesson history" onBack={back}>
         <Box paddingHorizontal={24} paddingTop={40}>
           <Text style={styles.stat}>Loading history</Text>
         </Box>
@@ -68,16 +64,16 @@ export default function ParentHistoryScreen({ navigation }: Props) {
     );
   }
 
-  if (status === 'error') {
+  if (query.isError) {
     return (
-      <ParentScroll title="Past 30 days" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
+      <ParentScroll title="Lesson history" onBack={back}>
         <Box paddingHorizontal={24} paddingTop={40} gap={12}>
-          <Text fontWeight="700" style={styles.errorTitle}>{errorState.title}</Text>
-          <Text style={styles.stat}>{errorState.detail}</Text>
+          <Text fontWeight="700" style={styles.errorTitle}>History unavailable</Text>
+          <Text style={styles.stat}>Try again.</Text>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={translateTemplate('Retry {{title}}', { title: t(errorState.title) }, { locale: language })}
-            onPress={() => { loadHistory(); }}
+            accessibilityLabel={translateTemplate('Retry {{title}}', { title: t('History unavailable') }, { locale: language })}
+            onPress={() => { void query.refetch(); }}
             activeOpacity={0.7}
           >
             <Text style={styles.retryText}>Retry</Text>
@@ -87,70 +83,91 @@ export default function ParentHistoryScreen({ navigation }: Props) {
     );
   }
 
+  const assignments = query.data ?? [];
+  const finished = assignments
+    .filter((a) => TERMINAL_STATES.has(a.state))
+    .sort((a, b) => parsedTime(finishedAt(b)) - parsedTime(finishedAt(a)));
+  const completedCount = finished.filter((a) => a.state === 'COMPLETED').length;
+
+  if (finished.length === 0) {
+    return (
+      <ParentScroll title="Lesson history" onBack={back}>
+        <Box paddingHorizontal={24} paddingTop={40}>
+          <Text style={styles.stat}>No lessons yet</Text>
+        </Box>
+      </ParentScroll>
+    );
+  }
+
   return (
-    <ParentScroll title="Past 30 days" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
+    <ParentScroll title="Lesson history" onBack={back}>
       <Box paddingHorizontal={16} paddingTop={14} paddingBottom={4}>
         <Box flexDirection="row" gap={14}>
-          <Text style={styles.stat}><Text fontWeight="600" style={{ color: PA.ink }}>22</Text> active days</Text>
+          <Text style={styles.stat} i18n={false}>
+            {translateTemplate('{{count}} {{label}}', { count: completedCount, label: t('completed') }, { locale: language })}
+          </Text>
           <Box style={styles.div} />
-          <Text style={styles.stat}><Text fontWeight="600" style={{ color: PA.ink }}>2h 48m</Text> total</Text>
-          <Box style={styles.div} />
-          <Text style={styles.stat}><Text fontWeight="600" style={{ color: PA.ink }}>14</Text> lessons</Text>
+          <Text style={styles.stat} i18n={false}>
+            {translateTemplate('{{count}} {{label}}', { count: finished.length, label: t('total') }, { locale: language })}
+          </Text>
         </Box>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={14} paddingBottom={28}>
         <Box style={styles.list} borderRadius={14} overflow="hidden">
-          {days.map((d, i) => (
-            <Box
-              key={d.i}
-              flexDirection="row"
-              alignItems="center"
-              gap={12}
-              style={[
-                styles.row,
-                !d.active && { opacity: 0.55 },
-                i < days.length - 1 && { borderBottomWidth: 1, borderBottomColor: PA.hair },
-              ]}
-            >
-              <Box style={[styles.dayChip, d.active && { backgroundColor: '#EEF1F5' }]} alignItems="center">
-                <Text style={styles.monthLabel}>{d.date.toLocaleDateString(undefined, { month: 'short' })}</Text>
-                <Text fontWeight="600" style={styles.dayNum}>{d.date.getDate()}</Text>
-              </Box>
-              <Box flex={1}>
-                <Text fontWeight={d.active ? '500' : '400'} style={{ fontSize: 14, color: d.active ? PA.ink : PA.ink3 }} numberOfLines={1}>
-                  {d.active ? d.topic : 'No practice'}
-                </Text>
-                {d.active ? (
+          {finished.map((a, i) => {
+            const when = finishedAt(a);
+            const date = when ? new Date(when) : null;
+            const valid = date && !Number.isNaN(date.getTime());
+            const dimmed = a.state !== 'COMPLETED';
+            return (
+              <Box
+                key={a.assignmentId}
+                flexDirection="row"
+                alignItems="center"
+                gap={12}
+                style={[
+                  styles.row,
+                  dimmed && { opacity: 0.6 },
+                  i < finished.length - 1 && { borderBottomWidth: 1, borderBottomColor: PA.hair },
+                ]}
+              >
+                <Box style={[styles.dayChip, { backgroundColor: '#EEF1F5' }]} alignItems="center">
+                  {valid ? (
+                    <>
+                      <Text style={styles.monthLabel} i18n={false}>
+                        {date.toLocaleDateString(localeDateTag(language), { month: 'short' })}
+                      </Text>
+                      <Text fontWeight="600" style={styles.dayNum} i18n={false}>{date.getDate()}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.monthLabel}>—</Text>
+                  )}
+                </Box>
+                <Box flex={1}>
+                  <Text fontWeight="500" style={{ fontSize: 14, color: PA.ink }} numberOfLines={1} i18n={false}>
+                    {a.lessonTitle ?? t('Untitled lesson')}
+                  </Text>
                   <Text style={{ fontSize: 12, color: PA.ink2, marginTop: 2 }} i18n={false}>
                     {translateTemplate(
-                      '{{minutes}} {{minuteLabel}} · {{turns}} {{turnLabel}}',
+                      '{{outcome}} · {{succeeded}}/{{completed}} {{stepLabel}}',
                       {
-                        minutes: d.min,
-                        minuteLabel: t('min'),
-                        turns: d.turns,
-                        turnLabel: t('speaking turns'),
+                        outcome: t(outcomeLabel(a.state)),
+                        succeeded: a.stepsSucceeded,
+                        completed: a.stepsCompleted,
+                        stepLabel: t('steps'),
                       },
                       { locale: language },
                     )}
                   </Text>
-                ) : null}
+                </Box>
               </Box>
-            </Box>
-          ))}
+            );
+          })}
         </Box>
-        <Text style={styles.footer}>Daily summaries are kept for 30 days, then deleted automatically.</Text>
       </Box>
     </ParentScroll>
   );
-}
-
-function classifyHistoryError(error: unknown): HistoryErrorState {
-  const shaped = error as { code?: string };
-  if (shaped.code === 'NETWORK_ERROR') {
-    return { title: 'History offline', detail: 'Check your internet connection and try again.' };
-  }
-  return { title: 'History unavailable', detail: 'Try again.' };
 }
 
 const styles = StyleSheet.create({
@@ -163,5 +180,4 @@ const styles = StyleSheet.create({
   dayChip: { width: 42, padding: 6, borderRadius: 8, flexShrink: 0 },
   monthLabel: { fontSize: 10, color: PA.ink3, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '600' },
   dayNum: { fontSize: 16, color: PA.ink, lineHeight: 20 },
-  footer: { fontSize: 12, color: PA.ink3, paddingTop: 10, paddingHorizontal: 4, lineHeight: 18 },
 });

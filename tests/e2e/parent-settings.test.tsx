@@ -2,6 +2,7 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
 import {
   APP_LANGUAGE_STORAGE_KEY,
@@ -17,6 +18,8 @@ import ParentHistoryScreen from '../../src/features/parent/screens/ParentHistory
 import ParentAccountPrivacyScreen from '../../src/features/parent/screens/ParentAccountPrivacyScreen';
 import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
+import { getChildLessonProgress } from '../../src/services/api/progress.api';
+import { useHousehold } from '@/contexts/HouseholdContext';
 
 jest.setTimeout(120_000);
 
@@ -72,8 +75,28 @@ jest.mock('../../src/services/api/account', () => ({
   refreshEntitlementsAfterPurchase: jest.fn(),
 }));
 
+jest.mock('../../src/services/api/progress.api', () => ({
+  __esModule: true,
+  getChildLessonProgress: jest.fn(),
+}));
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  __esModule: true,
+  useHousehold: jest.fn(),
+}));
+
 const parentApiMock = parentApi as jest.Mocked<typeof parentApi>;
 const accountApiMock = accountApi as jest.Mocked<typeof accountApi>;
+const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
+const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
+
+// ParentToday/History read the child-scoped lesson-progress feed via TanStack
+// Query + HouseholdContext; this helper supplies the query client for those
+// screens (the household + lesson-progress fetch are mocked module-wide).
+function renderWithQuery(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (reason: Error) => void } {
   let resolvePromise: (value: T) => void = () => undefined;
@@ -94,6 +117,8 @@ describe('Parent settings and gate', () => {
     parentApiMock.getParentSummary.mockRejectedValue(new Error('Parent summary API route not documented'));
     parentApiMock.getParentToday.mockRejectedValue(new Error('Parent today API route not documented'));
     parentApiMock.getParentHistory.mockRejectedValue(new Error('Parent history API route not documented'));
+    mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }] } as never);
+    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],
       subscriptionStatus: 'none',
@@ -757,43 +782,40 @@ describe('Parent settings and gate', () => {
   });
 
   it('keeps today summary blocked instead of rendering hardcoded or guessed rows', async () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText } = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(parentApiMock.getParentToday).toHaveBeenCalledTimes(1));
-    expect(getByText('Today summary unavailable')).toBeTruthy();
+    await waitFor(() => expect(getByText('Today summary unavailable')).toBeTruthy());
     expect(queryByText('Mira practiced greetings, feelings, and three new words.')).toBeNull();
     expect(queryByText('Hello')).toBeNull();
     expect(queryByText('Today: 2 lessons, 11 minutes.')).toBeNull();
   });
 
-  it('does not stay loading when today summary unexpectedly resolves without a typed contract', async () => {
-    parentApiMock.getParentToday.mockResolvedValueOnce(undefined as never);
+  it('shows the empty state instead of stale rows when there is no active lesson', async () => {
+    mockGetChildLessonProgress.mockReset();
+    mockGetChildLessonProgress.mockResolvedValueOnce([]);
 
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText } = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(parentApiMock.getParentToday).toHaveBeenCalledTimes(1));
-    expect(getByText('Today summary unavailable')).toBeTruthy();
+    await waitFor(() => expect(getByText('No lessons yet')).toBeTruthy());
     expect(queryByText("Loading today's progress")).toBeNull();
+    expect(queryByText('Mira practiced greetings, feelings, and three new words.')).toBeNull();
   });
 
-  it('shows today timeout state without stale data', async () => {
-    parentApiMock.getParentToday.mockRejectedValueOnce(
-      Object.assign(new Error('timeout of 30000ms exceeded'), { code: 'NETWORK_ERROR' }),
-    );
-    const timeout = render(
+  it('shows the today error state without stale data', async () => {
+    const timeout = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(timeout.getByText('Today summary timed out')).toBeTruthy());
+    await waitFor(() => expect(timeout.getByText('Today summary unavailable')).toBeTruthy());
     expect(timeout.queryByText('Today: 2 lessons, 11 minutes.')).toBeNull();
   });
 
   it('labels parent back navigation with the destination screen', async () => {
-    const screen = render(
+    const screen = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
@@ -804,31 +826,25 @@ describe('Parent settings and gate', () => {
   });
 
   it('keeps parent history blocked instead of rendering generated 30-day rows', async () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText } = renderWithQuery(
       <ParentHistoryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(parentApiMock.getParentHistory).toHaveBeenCalledTimes(1));
-    expect(getByText('History unavailable')).toBeTruthy();
+    await waitFor(() => expect(getByText('History unavailable')).toBeTruthy());
     expect(queryByText('Greetings & feelings')).toBeNull();
     expect(queryByText('1 lesson · 9 min')).toBeNull();
   });
 
-  it('shows parent history offline state without generated stale rows', async () => {
-    parentApiMock.getParentHistory.mockRejectedValueOnce(
-      Object.assign(new Error('offline'), { code: 'NETWORK_ERROR' }),
-    );
-
-    const { getByLabelText, getByText, queryByText } = render(
+  it('shows the history error state with a retry affordance and no generated stale rows', async () => {
+    const { getByLabelText, getByText, queryByText } = renderWithQuery(
       <ParentHistoryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(getByText('History offline')).toBeTruthy());
-    expect(getByText('Check your internet connection and try again.')).toBeTruthy();
+    await waitFor(() => expect(getByText('History unavailable')).toBeTruthy());
     expect(queryByText('Greetings & feelings')).toBeNull();
 
-    fireEvent.press(getByLabelText('Retry History offline'));
-    await waitFor(() => expect(parentApiMock.getParentHistory).toHaveBeenCalledTimes(2));
+    fireEvent.press(getByLabelText('Retry History unavailable'));
+    await waitFor(() => expect(mockGetChildLessonProgress.mock.calls.length).toBeGreaterThanOrEqual(2));
   });
 
 });
