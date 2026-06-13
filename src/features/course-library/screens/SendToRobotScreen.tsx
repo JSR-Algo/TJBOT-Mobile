@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
@@ -43,6 +44,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   // (D-HOUSEHOLD-AUTHZ), not by this choice. useOptionalHousehold so the screen
   // degrades gracefully outside a provider.
   const household = useOptionalHousehold();
+  const queryClient = useQueryClient();
   const childrenList = household?.children ?? [];
   const childId = household?.activeChild?.id;
   const hasChild = Boolean(childId);
@@ -175,6 +177,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           // mis-sent as espTft (MOB-3).
           profile: isLessonProfile(selectedLesson.profile) ? selectedLesson.profile : undefined,
         });
+        // The new assignment is now the child's in-flight lesson. Invalidate the
+        // shared progress cache (SAME key ParentToday/History/TodayProgress read)
+        // so those screens refetch instead of showing stale pre-send data.
+        void queryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
         navigation.navigate(ROUTES.RobotReadyScreen, {
           deviceId,
           assignmentId: assignment.assignmentId,

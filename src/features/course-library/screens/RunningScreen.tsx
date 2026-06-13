@@ -53,9 +53,20 @@ export default function RunningScreen({ navigation, route }: Props) {
         // had observed a live assignment. Both mean the lesson is done — render
         // the completion UI and stop polling.
         if (current) setAssignment(current);
-        if (current?.state === 'COMPLETED' || (current === null && sawLiveRef.current)) {
+        const terminal =
+          current?.state === 'COMPLETED' ||
+          current?.state === 'FAILED' ||
+          current?.state === 'CANCELLED' ||
+          (current === null && sawLiveRef.current);
+        if (terminal) {
           setFinished(true);
+          return;
         }
+        // Non-terminal: most importantly current===null && !sawLiveRef.current,
+        // the read-after-write race right after createAssignment where the
+        // assignment isn't visible yet. Keep polling — stopping here would
+        // freeze the UI on 'Lesson playing' forever.
+        timer = setTimeout(poll, POLL_INTERVAL_MS);
       } catch {
         if (active) timer = setTimeout(poll, POLL_INTERVAL_MS);
       }

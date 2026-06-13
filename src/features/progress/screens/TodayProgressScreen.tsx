@@ -15,6 +15,17 @@ import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TodayProgressScreen'>;
 
+// A CANCELLED/FAILED lesson is not an accomplishment and must never render under
+// the "You practiced speaking!" celebration. COMPLETED is a real win and stays
+// celebratable; active states are work-in-progress the child is still doing.
+// Mirrors ParentTodayScreen's TERMINAL_STATES/isActive predicate, but keeps
+// COMPLETED (ParentTodayScreen drops it because that screen is in-flight only).
+const FAILURE_STATES = new Set(['CANCELLED', 'FAILED']);
+
+function isCelebratable(a: AssignmentProgress): boolean {
+  return !FAILURE_STATES.has(a.state);
+}
+
 const STATE_COPY: Record<string, string> = {
   ASSIGNED: 'Sent to robot',
   PRELOADING: 'Getting ready',
@@ -40,12 +51,18 @@ export default function TodayProgressScreen({ navigation }: Props) {
     enabled: typeof childId === 'string' && childId.length > 0,
   });
 
-  // Newest first from the server — the first row is the most recent lesson.
-  const latest = query.data?.[0];
+  // Newest first from the server (updated_at DESC). Skip CANCELLED/FAILED so a
+  // wrong-state lesson never lands under the celebration header; the newest
+  // celebratable assignment (COMPLETED or still active) is the one to show.
+  const latest = (query.data ?? []).find(isCelebratable);
+
+  // Only celebrate a finished/active lesson; never frame a completed-but-empty
+  // run as a win the same way, and never reach here for a failed/cancelled one.
+  const headerTitle = latest ? 'You practiced speaking!' : 'No practice yet';
 
   return (
     <PageScroll>
-      <PageHeader subtitle="Today" title="You practiced speaking!" />
+      <PageHeader subtitle="Today" title={headerTitle} />
 
       <Box paddingHorizontal={18} paddingBottom={14} gap={12}>
         {query.isLoading ? <Text style={styles.message}>Loading progress</Text> : null}

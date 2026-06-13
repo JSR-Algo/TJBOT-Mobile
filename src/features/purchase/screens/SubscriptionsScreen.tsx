@@ -11,6 +11,7 @@ import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
 import { isSubscriptionFeatureEnabled } from '@/config/feature-flags';
 import { ROUTES } from '@/navigation/routes';
+import { localeDateTag, useAppLanguage } from '@/services/i18n/i18n';
 import {
   cancelOrder,
   cancelSubscription,
@@ -36,6 +37,7 @@ const OPTS = [
 ] as const;
 
 export default function SubscriptionsScreen({ navigation, route }: Props) {
+  const { language } = useAppLanguage();
   const [pick, setPick] = React.useState<'none' | 'all' | 'pack'>('none');
   const [plans, setPlans] = React.useState<BillingPlan[]>([]);
   const [currentPlan, setCurrentPlan] = React.useState<BillingPlan | null>(null);
@@ -167,9 +169,15 @@ export default function SubscriptionsScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={18} gap={8}>
         {currentPlan ? <Text style={styles.statusLine}>Current plan: {currentPlan.name}</Text> : null}
         {subscription ? <Text style={styles.statusLine}>Subscription status: {subscription.status}</Text> : null}
-        {subscription?.currentPeriodEnd && subscription.cancelAtPeriodEnd ? (
-          <Text style={styles.statusLine}>Renews until {subscription.currentPeriodEnd}</Text>
-        ) : null}
+        {subscription?.currentPeriodEnd && subscription.cancelAtPeriodEnd
+          ? (() => {
+              const d = new Date(subscription.currentPeriodEnd);
+              const label = Number.isNaN(d.getTime())
+                ? null
+                : d.toLocaleDateString(localeDateTag(language), { month: 'short', day: 'numeric', year: 'numeric' });
+              return label ? <Text style={styles.statusLine} i18n={false}>Renews until {label}</Text> : null;
+            })()
+          : null}
         {updating ? <Text style={styles.statusLine}>Updating subscription...</Text> : null}
         {mutationMessage ? <Text style={styles.successText}>{mutationMessage}</Text> : null}
         {paymentMessage ? <Text style={styles.errorText}>{paymentMessage}</Text> : null}

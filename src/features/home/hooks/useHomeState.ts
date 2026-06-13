@@ -235,6 +235,7 @@ export function useHomeState() {
     enabled: HOME_BACKEND_CONTRACT_AVAILABLE,
     staleTime: 30_000,
   });
-  const variant: HomeVariant = (data?.variant as HomeVariant) ?? 'daily_available';
+  const raw = data?.variant;
+  const variant: HomeVariant = raw && raw in CFG ? (raw as HomeVariant) : 'daily_available';
   return { variant, cfg: CFG[variant], data, isLoading };
 }
