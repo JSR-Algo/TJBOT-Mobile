@@ -42,6 +42,9 @@ _aiClient.interceptors.response.use(
         return new Promise<string>((resolve, reject) => {
           enqueue({ resolve, reject });
         }).then((token) => {
+          // Mark the request before re-sending so a second 401 on this queued
+          // follower rejects instead of starting a fresh refresh (refresh storm).
+          originalRequest._retry = true;
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${token}`;
           }

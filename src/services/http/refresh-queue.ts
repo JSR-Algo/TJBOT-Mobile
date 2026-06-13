@@ -52,9 +52,17 @@ export async function refreshAuthTokens(baseUrl: string = Config.API_BASE_URL): 
   const refreshToken = await getRefreshToken();
   if (!refreshToken) throw new Error('No refresh token');
 
-  const response = await axios.post(`${baseUrl}/auth/refresh`, {
-    refresh_token: refreshToken,
-  });
+  // 30s timeout matches client.ts. Without it this POST has no timeout
+  // (infinite): a hung /auth/refresh would strand every queued 401 forever —
+  // followers blocked in enqueue() never resolve and the caller's
+  // catch/finally (processQueue(error,null) + clearAuthTokens()) never runs.
+  // On timeout axios rejects with ECONNABORTED, which flows into the caller's
+  // catch so followers reject and the session is invalidated.
+  const response = await axios.post(
+    `${baseUrl}/auth/refresh`,
+    { refresh_token: refreshToken },
+    { timeout: 30000 },
+  );
   const { access_token, refresh_token: newRefreshToken } = response.data.data ?? response.data;
   await setTokens(access_token, newRefreshToken ?? refreshToken);
   return access_token;
