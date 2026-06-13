@@ -78,6 +78,12 @@ export interface DeviceStatus {
   wifiRssi?: number;
   charging?: boolean;
   lastSeenAt?: string;
+  // Per-child device binding. Present only when the backend surfaces it on the
+  // household list (see getDeviceStatus → resolveHouseholdDevice). Today the
+  // column EXISTS in the DB (devices.assigned_child_profile_id, set at
+  // provisioning complete) but GET /devices/household/me does NOT SELECT it, so
+  // this is usually undefined and the resolver falls back to devices[0].
+  assignedChildProfileId?: string;
 }
 
 export interface FirmwareVersion {
@@ -100,11 +106,18 @@ interface DeviceDto {
     wifi_ssid?: string;
     wifi_rssi?: number;
   };
+  // Per-child device binding, read defensively in both casings. The provisioning
+  // DB row carries `assigned_child_profile_id`; the provision-complete response
+  // uses the camelCase `assignedChildProfileId`. Either may appear if/when the
+  // household list starts surfacing the column (currently it does not).
+  assigned_child_profile_id?: string;
+  assignedChildProfileId?: string;
 }
 
 function normalizeDevice(dto: DeviceDto): DeviceStatus {
   const wifiRssi = dto.connectivity_metrics?.wifi_rssi;
   const serialNumber = dto.serial_number?.trim();
+  const assignedChildProfileId = dto.assigned_child_profile_id ?? dto.assignedChildProfileId;
   return {
     id: dto.id ?? dto.device_id ?? '',
     name: dto.name ?? dto.serial_number ?? dto.id ?? dto.device_id ?? 'TJBot',
@@ -115,7 +128,26 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
     wifiSsid: dto.connectivity_metrics?.wifi_ssid,
     ...(typeof wifiRssi === 'number' && Number.isFinite(wifiRssi) ? { wifiRssi } : {}),
     lastSeenAt: dto.last_seen_at,
+    // Only surface the binding when present, so the single-device household
+    // response stays byte-identical to the pre-binding shape (exact-match tests).
+    ...(assignedChildProfileId ? { assignedChildProfileId } : {}),
   };
+}
+
+// Pick the device bound to the active child from a household list. The binding
+// (assignedChildProfileId) is only present when the backend surfaces the
+// devices.assigned_child_profile_id column — see the residual note. When no
+// device matches (single-device household, no childId, or the column is not
+// surfaced), fall back to the first-listed device, keeping the long-standing
+// single-robot behavior byte-identical.
+function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceDto {
+  if (childId) {
+    const bound = devices.find(
+      (d) => (d.assigned_child_profile_id ?? d.assignedChildProfileId) === childId,
+    );
+    if (bound) return bound;
+  }
+  return devices[0] ?? {};
 }
 
 export async function startDeviceProvisioning(params: ProvisionStartParams): Promise<ProvisionStartResult> {
@@ -177,12 +209,18 @@ export async function completeDeviceProvisioning(params: CompleteDeviceProvision
   return response.data;
 }
 
-export async function getDeviceStatus(deviceId: string): Promise<DeviceStatus> {
+// When deviceId === 'primary', resolves the household's device for the given
+// active child (childId). In a multi-robot household this prevents a lesson from
+// being routed to the wrong robot: the device whose assignedChildProfileId
+// matches childId wins, falling back to the first-listed device when none
+// matches (single robot, no childId, or backend not yet surfacing the binding —
+// see residual). Pass-through deviceIds (a real device id) ignore childId.
+export async function getDeviceStatus(deviceId: string, childId?: string): Promise<DeviceStatus> {
   if (deviceId === 'primary') {
     const response = await client.get<DeviceDto[] | { data?: DeviceDto[] }>('/devices/household/me');
     const payload = response.data;
     const devices = Array.isArray(payload) ? payload : payload.data ?? [];
-    return normalizeDevice(devices[0] ?? {});
+    return normalizeDevice(resolveHouseholdDevice(devices, childId));
   }
   const response = await client.get<DeviceDto>(`/devices/${deviceId}`);
   return normalizeDevice(response.data);

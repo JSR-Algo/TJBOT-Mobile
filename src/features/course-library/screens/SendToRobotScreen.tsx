@@ -159,7 +159,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     }
     setSending(true);
     try {
-      const device = await getDeviceStatus('primary');
+      // Resolve the household device for the ACTIVE child, not blindly the
+      // first-listed robot. In a multi-robot household this routes the lesson to
+      // the child's own robot (device whose assignedChildProfileId === childId),
+      // falling back to the first device when no per-child binding is available.
+      const device = await getDeviceStatus('primary', childId);
       const deviceId = device.id;
       if (!deviceId) {
         setError(formatLessonCopy(getErrorMessage('ROBOT_OFFLINE'), { robot: device.name }));
