@@ -11,6 +11,7 @@ import { PA } from '../components/ParentScroll';
 import { getParentToday } from '@/services/api/parent.api';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { ScreenState } from '@/components/ScreenState';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentTodayScreen'>;
 type TodayErrorState = { title: string; detail: string };
@@ -65,7 +66,7 @@ export default function ParentTodayScreen({ navigation }: Props) {
           >
             <Text style={{ color: PA.accent, fontSize: 15, fontWeight: '500', marginBottom: 12 }}>Back to Parent Space</Text>
           </TouchableOpacity>
-          <Text style={{ fontSize: 13, color: PA.ink3 }}>Loading today's progress</Text>
+          <ScreenState variant="loading" message="Loading today's progress" />
         </Box>
       </ParentScroll>
     );

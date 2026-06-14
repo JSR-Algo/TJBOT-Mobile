@@ -44,7 +44,7 @@ function validateInputs(
 }
 
 export default function LoginScreen(_: Props) {
-  const { login, signup, isLoading } = useAuth();
+  const { login, signup } = useAuth();
   const [mode, setMode] = React.useState<'signup' | 'login'>('signup');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -55,6 +55,7 @@ export default function LoginScreen(_: Props) {
   const [forgotMode, setForgotMode] = React.useState(false);
   const [resetSending, setResetSending] = React.useState(false);
   const [resetMessage, setResetMessage] = React.useState<string | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
 
   const clearErrors = () => {
     setEmailError(null);
@@ -100,6 +101,7 @@ export default function LoginScreen(_: Props) {
       return;
     }
     clearErrors();
+    setSubmitting(true);
     try {
       if (mode === 'login') {
         await login(cleanEmail, password);
@@ -121,12 +123,14 @@ export default function LoginScreen(_: Props) {
       const suffix = isServerFault && traceId ? ` (Error ID: ${traceId.slice(0, 8)})` : '';
       const hint = isServerFault ? ' If this keeps happening, contact support with the Error ID.' : '';
       setGeneralError(`${message}${hint}${suffix}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const ctaLabel = forgotMode
     ? (resetSending ? 'Sending…' : 'Send reset email')
-    : isLoading
+      : submitting
       ? '…'
       : mode === 'signup'
         ? 'Create account'
@@ -181,7 +185,7 @@ export default function LoginScreen(_: Props) {
               if (emailError) setEmailError(null);
               if (resetMessage) setResetMessage(null);
             }}
-            editable={!isLoading && !resetSending}
+            editable={!submitting && !resetSending}
           />
           {emailError ? (
             <Text accessibilityRole="alert" style={styles.fieldError}>{emailError}</Text>
@@ -197,7 +201,7 @@ export default function LoginScreen(_: Props) {
               placeholder="Password"
               testID="passwordInput"
               hasError={!!passwordError}
-              editable={!isLoading}
+              editable={!submitting}
             />
           ) : null}
 
@@ -211,7 +215,7 @@ export default function LoginScreen(_: Props) {
               placeholder="Confirm password"
               testID="confirmPasswordInput"
               hasError={!!passwordError}
-              editable={!isLoading}
+              editable={!submitting}
             />
           ) : null}
 
@@ -258,6 +262,7 @@ export default function LoginScreen(_: Props) {
 
         <OnbBigBtn
           onClick={onSubmit}
+          disabled={submitting || resetSending}
         >
           {ctaLabel}
         </OnbBigBtn>

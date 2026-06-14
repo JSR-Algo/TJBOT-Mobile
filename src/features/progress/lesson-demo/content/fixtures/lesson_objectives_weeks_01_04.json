@@ -1,0 +1,522 @@
+[
+  {
+    "lesson_id": "w01-d01-hello-name",
+    "week": 1,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Say hello and answer with a first name in a short greeting routine.",
+    "focus_items": ["hello", "my name"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "Listen, repeat, then answer TeeBot with one name phrase.",
+    "review_items": ["hello"],
+    "reward_event": {
+      "type": "effort_badge",
+      "badge_id": "first_hello",
+      "message": "You started your English routine today."
+    },
+    "fallback_lesson": {
+      "reason": "short_greeting_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: hello."},
+        {"type": "repeat", "prompt": "Say: hello."},
+        {"type": "choice", "prompt": "Is hello a greeting?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["framework-001", "framework-009", "book-014", "app-016"]
+  },
+  {
+    "lesson_id": "w01-d02-goodbye-see-you",
+    "week": 1,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use goodbye and see you to close a short English exchange.",
+    "focus_items": ["goodbye", "see you"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Echo the close of the phrase, then choose the phrase TeeBot says at the end.",
+    "review_items": ["hello"],
+    "reward_event": {
+      "type": "routine_badge",
+      "badge_id": "goodbye_helper",
+      "message": "You finished a greeting routine."
+    },
+    "fallback_lesson": {
+      "reason": "greeting_close_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: goodbye."},
+        {"type": "repeat", "prompt": "Say: goodbye."},
+        {"type": "choice", "prompt": "Do we say goodbye at the end?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-014", "method-001", "market-008"]
+  },
+  {
+    "lesson_id": "w01-d03-yes-no",
+    "week": 1,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer a simple classroom question with yes or no without translating every word.",
+    "focus_items": ["yes", "no"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "Hear a question, tap yes or no, then say the short answer aloud.",
+    "review_items": ["hello", "goodbye"],
+    "reward_event": {
+      "type": "choice_badge",
+      "badge_id": "yes_no_ready",
+      "message": "You answered in English today."
+    },
+    "fallback_lesson": {
+      "reason": "short_answer_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: yes."},
+        {"type": "repeat", "prompt": "Say: yes."},
+        {"type": "choice", "prompt": "Does yes mean okay?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["framework-001", "framework-004", "book-017", "app-017"]
+  },
+  {
+    "lesson_id": "w01-d04-please-thank-you",
+    "week": 1,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use please and thank you in a polite request routine.",
+    "focus_items": ["please", "thank you"],
+    "vietnamese_l1_target": "theta",
+    "practice_method": "Practice a request with a soft voice, then repeat thank you with tongue-air awareness.",
+    "review_items": ["yes", "no"],
+    "reward_event": {
+      "type": "manners_badge",
+      "badge_id": "polite_speaker",
+      "message": "You used kind English words."
+    },
+    "fallback_lesson": {
+      "reason": "polite_word_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: thank you."},
+        {"type": "repeat", "prompt": "Say: thank you."},
+        {"type": "choice", "prompt": "Is thank you a kind phrase?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["method-001", "method-002", "book-013", "book-014"]
+  },
+  {
+    "lesson_id": "w01-d05-greeting-review",
+    "week": 1,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Complete a mini greeting dialogue using hello, goodbye, yes, no, please, and thank you.",
+    "focus_items": ["hello", "goodbye", "thank you"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "Run a three-turn mini dialogue, then choose the best closing phrase.",
+    "review_items": ["hello", "goodbye", "yes", "no", "please", "thank you"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "first_lesson_badge",
+      "message": "You completed your first English week."
+    },
+    "fallback_lesson": {
+      "reason": "week_one_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: hello."},
+        {"type": "repeat", "prompt": "Say: hello."},
+        {"type": "practice", "prompt": "Say hello, then say goodbye."}
+      ]
+    },
+    "source_card_ids": ["framework-001", "framework-004", "book-011", "app-016"]
+  },
+  {
+    "lesson_id": "w02-d01-happy-sad",
+    "week": 2,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Name two simple feelings with happy and sad.",
+    "focus_items": ["happy", "sad"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Match a face card, listen to the word, then say the feeling.",
+    "review_items": ["hello", "yes", "no"],
+    "reward_event": {
+      "type": "feelings_badge",
+      "badge_id": "feeling_words_1",
+      "message": "You named feelings in English."
+    },
+    "fallback_lesson": {
+      "reason": "feeling_word_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: happy."},
+        {"type": "repeat", "prompt": "Say: happy."},
+        {"type": "choice", "prompt": "Is happy a feeling?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "app-017", "method-001"]
+  },
+  {
+    "lesson_id": "w02-d02-tired-okay",
+    "week": 2,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use tired and okay to answer a gentle check-in question.",
+    "focus_items": ["tired", "okay"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Hear TeeBot ask a check-in, then answer with one feeling word.",
+    "review_items": ["happy", "sad"],
+    "reward_event": {
+      "type": "check_in_badge",
+      "badge_id": "feeling_check_in",
+      "message": "You answered a check-in in English."
+    },
+    "fallback_lesson": {
+      "reason": "check_in_word_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: okay."},
+        {"type": "repeat", "prompt": "Say: okay."},
+        {"type": "choice", "prompt": "Can okay answer a check-in?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-014", "app-016", "method-004"]
+  },
+  {
+    "lesson_id": "w02-d03-i-am-happy",
+    "week": 2,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Build a complete feeling sentence with I am happy.",
+    "focus_items": ["I am happy"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Put I, am, and happy in order, then say the sentence.",
+    "review_items": ["happy", "sad", "okay"],
+    "reward_event": {
+      "type": "sentence_badge",
+      "badge_id": "i_am_builder",
+      "message": "You built a full English sentence."
+    },
+    "fallback_lesson": {
+      "reason": "copula_be_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: I am happy."},
+        {"type": "repeat", "prompt": "Say: I am happy."},
+        {"type": "choice", "prompt": "Does I am happy need am?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["method-005", "book-012", "book-014", "framework-001"]
+  },
+  {
+    "lesson_id": "w02-d04-are-you-okay",
+    "week": 2,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask and answer Are you okay? with supportive classroom language.",
+    "focus_items": ["Are you okay?", "I am okay"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Listen for question intonation, then answer with I am okay.",
+    "review_items": ["I am happy", "tired", "okay"],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "kind_question",
+      "message": "You asked a kind English question."
+    },
+    "fallback_lesson": {
+      "reason": "feeling_question_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: Are you okay?"},
+        {"type": "repeat", "prompt": "Say: Are you okay?"},
+        {"type": "practice", "prompt": "Answer: I am okay."}
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "app-017", "method-001"]
+  },
+  {
+    "lesson_id": "w02-d05-feelings-review",
+    "week": 2,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Complete a feelings check-in using I am plus one feeling word.",
+    "focus_items": ["I am happy", "I am okay", "I am tired"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Pick a feeling card, say a full sentence, then hear a gentle correction if am is missing.",
+    "review_items": ["happy", "sad", "tired", "okay", "I am"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "brave_speaker_badge",
+      "message": "You shared feelings with English sentences."
+    },
+    "fallback_lesson": {
+      "reason": "week_two_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: I am happy."},
+        {"type": "repeat", "prompt": "Say: I am happy."},
+        {"type": "practice", "prompt": "Choose happy, sad, tired, or okay."}
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-014", "book-017", "app-016"]
+  },
+  {
+    "lesson_id": "w03-d01-mom-dad",
+    "week": 3,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Name mom and dad clearly in a family picture routine.",
+    "focus_items": ["mom", "dad"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Point to a family picture, listen, then repeat mom or dad.",
+    "review_items": ["hello", "I am happy"],
+    "reward_event": {
+      "type": "family_badge",
+      "badge_id": "family_words_1",
+      "message": "You named family people in English."
+    },
+    "fallback_lesson": {
+      "reason": "family_word_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: dad."},
+        {"type": "repeat", "prompt": "Say: dad."},
+        {"type": "choice", "prompt": "Is dad a family word?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-011", "book-015", "method-004"]
+  },
+  {
+    "lesson_id": "w03-d02-brother-sister",
+    "week": 3,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Say brother and sister with attention to the voiced th sound in brother.",
+    "focus_items": ["brother", "sister"],
+    "vietnamese_l1_target": "eth",
+    "practice_method": "Listen for the middle sound in brother, then sort brother and sister cards.",
+    "review_items": ["mom", "dad"],
+    "reward_event": {
+      "type": "family_badge",
+      "badge_id": "sibling_words",
+      "message": "You added more family words."
+    },
+    "fallback_lesson": {
+      "reason": "sibling_word_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: brother."},
+        {"type": "repeat", "prompt": "Say: brother."},
+        {"type": "choice", "prompt": "Is brother a family word?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["method-001", "method-005", "book-013", "book-015"]
+  },
+  {
+    "lesson_id": "w03-d03-this-is-my-mom",
+    "week": 3,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Introduce a family member with This is my mom.",
+    "focus_items": ["This is my mom"],
+    "vietnamese_l1_target": "eth",
+    "practice_method": "Build the sentence from word tiles, then say it while pointing to a picture.",
+    "review_items": ["mom", "dad", "brother", "sister"],
+    "reward_event": {
+      "type": "sentence_badge",
+      "badge_id": "family_sentence",
+      "message": "You introduced someone with English."
+    },
+    "fallback_lesson": {
+      "reason": "family_sentence_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: This is my mom."},
+        {"type": "repeat", "prompt": "Say: This is my mom."},
+        {"type": "choice", "prompt": "Does this sentence use my?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-012", "book-014", "market-008"]
+  },
+  {
+    "lesson_id": "w03-d04-who-is-this",
+    "week": 3,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask Who is this? and answer with a family word.",
+    "focus_items": ["Who is this?", "This is my dad"],
+    "vietnamese_l1_target": "eth",
+    "practice_method": "TeeBot asks, the child answers from two family picture choices.",
+    "review_items": ["This is my mom", "brother", "sister"],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "family_question",
+      "message": "You asked and answered a family question."
+    },
+    "fallback_lesson": {
+      "reason": "who_question_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: Who is this?"},
+        {"type": "repeat", "prompt": "Say: Who is this?"},
+        {"type": "practice", "prompt": "Answer: This is my dad."}
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-011", "book-015", "app-017"]
+  },
+  {
+    "lesson_id": "w03-d05-family-review",
+    "week": 3,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Complete a family show-and-tell using This is my plus one family word.",
+    "focus_items": ["This is my mom", "This is my dad", "Who is this?"],
+    "vietnamese_l1_target": "eth",
+    "practice_method": "Run a show-and-tell loop with two family cards and one question.",
+    "review_items": ["mom", "dad", "brother", "sister", "This is my"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "family_helper_badge",
+      "message": "You completed a family show-and-tell."
+    },
+    "fallback_lesson": {
+      "reason": "week_three_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: This is my mom."},
+        {"type": "repeat", "prompt": "Say: This is my mom."},
+        {"type": "practice", "prompt": "Choose mom, dad, brother, or sister."}
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-011", "book-014", "app-016"]
+  },
+  {
+    "lesson_id": "w04-d01-one-two",
+    "week": 4,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Count one and two with clear final sound on one.",
+    "focus_items": ["one", "two"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Tap one or two objects, listen, then say the number.",
+    "review_items": ["yes", "no", "This is my"],
+    "reward_event": {
+      "type": "number_badge",
+      "badge_id": "numbers_1_2",
+      "message": "You counted in English."
+    },
+    "fallback_lesson": {
+      "reason": "number_word_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: one."},
+        {"type": "repeat", "prompt": "Say: one."},
+        {"type": "choice", "prompt": "Is one a number?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["book-013", "book-017", "app-016", "method-004"]
+  },
+  {
+    "lesson_id": "w04-d02-three-four-five",
+    "week": 4,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Count three, four, and five with care for the th sound in three.",
+    "focus_items": ["three", "four", "five"],
+    "vietnamese_l1_target": "theta",
+    "practice_method": "Count objects from three to five, then repeat three with tongue-air awareness.",
+    "review_items": ["one", "two"],
+    "reward_event": {
+      "type": "number_badge",
+      "badge_id": "numbers_3_5",
+      "message": "You counted more numbers in English."
+    },
+    "fallback_lesson": {
+      "reason": "three_word_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: three."},
+        {"type": "repeat", "prompt": "Say: three."},
+        {"type": "choice", "prompt": "Does three start with th?", "choices": ["yes", "not now"]}
+      ]
+    },
+    "source_card_ids": ["method-001", "method-002", "book-013", "app-015"]
+  },
+  {
+    "lesson_id": "w04-d03-i-have-two",
+    "week": 4,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Say I have two to describe a small set of objects.",
+    "focus_items": ["I have two"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Choose a number card, count objects, then say I have plus the number.",
+    "review_items": ["one", "two", "three", "four", "five"],
+    "reward_event": {
+      "type": "sentence_badge",
+      "badge_id": "i_have_number",
+      "message": "You used a number in a full sentence."
+    },
+    "fallback_lesson": {
+      "reason": "i_have_sentence_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: I have two."},
+        {"type": "repeat", "prompt": "Say: I have two."},
+        {"type": "practice", "prompt": "Hold up two fingers and say I have two."}
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-012", "book-014", "app-016"]
+  },
+  {
+    "lesson_id": "w04-d04-how-many",
+    "week": 4,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask How many? and answer with a number from one to five.",
+    "focus_items": ["How many?", "I have three"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot shows objects, asks How many?, and the child answers with I have plus a number.",
+    "review_items": ["I have two", "one", "two", "three", "four", "five"],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "how_many_question",
+      "message": "You asked and answered a counting question."
+    },
+    "fallback_lesson": {
+      "reason": "counting_question_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: How many?"},
+        {"type": "repeat", "prompt": "Say: How many?"},
+        {"type": "practice", "prompt": "Answer: I have three."}
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "book-017", "app-017"]
+  },
+  {
+    "lesson_id": "w04-d05-numbers-review",
+    "week": 4,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Complete a count-and-say review using one to five and I have plus a number.",
+    "focus_items": ["one", "three", "I have five"],
+    "vietnamese_l1_target": "theta",
+    "practice_method": "Count five objects, answer How many?, then repeat three with a careful th sound.",
+    "review_items": ["one", "two", "three", "four", "five", "How many?", "I have"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "counting_star",
+      "message": "You completed your first counting week."
+    },
+    "fallback_lesson": {
+      "reason": "week_four_review",
+      "steps": [
+        {"type": "listen", "prompt": "Listen: one, two, three."},
+        {"type": "repeat", "prompt": "Say: one, two, three."},
+        {"type": "practice", "prompt": "Answer: I have one."}
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "book-014", "app-016"]
+  }
+]

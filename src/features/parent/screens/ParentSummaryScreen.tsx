@@ -11,6 +11,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { getParentSummary } from '@/services/api/parent.api';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { ScreenState } from '@/components/ScreenState';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSummaryScreen'>;
 type SummaryParams = { deviceId?: string; summaryDate?: string };
@@ -65,7 +66,7 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
           >
             <Text style={styles.retryText}>Settings</Text>
           </TouchableOpacity>
-          <Text style={styles.dateLabel}>Loading parent summary</Text>
+          <ScreenState variant="loading" message="Loading parent summary" />
         </Box>
       </ParentScroll>
     );

@@ -1,0 +1,1003 @@
+[
+  {
+    "lesson_id": "w05-d01-red-blue",
+    "week": 5,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Name the colors red and blue by pointing or saying the word.",
+    "focus_items": [
+      "red",
+      "blue"
+    ],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Tap the color swatch TeeBot names, then say the color aloud.",
+    "review_items": [
+      "one",
+      "two",
+      "three"
+    ],
+    "reward_event": {
+      "type": "color_badge",
+      "badge_id": "color_namer",
+      "message": "You named colors in English today."
+    },
+    "fallback_lesson": {
+      "reason": "color_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: red."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: red."
+        },
+        {
+          "type": "choice",
+          "prompt": "Is red a color?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-011",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w05-d02-yellow-green",
+    "week": 5,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Find and say the colors yellow and green in a simple color hunt.",
+    "focus_items": [
+      "yellow",
+      "green"
+    ],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "Look for yellow and green objects, then say each color with TeeBot.",
+    "review_items": [
+      "red",
+      "blue"
+    ],
+    "reward_event": {
+      "type": "color_badge",
+      "badge_id": "color_finder",
+      "message": "You found colors around you in English."
+    },
+    "fallback_lesson": {
+      "reason": "color_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: green."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: green."
+        },
+        {
+          "type": "choice",
+          "prompt": "Is green a color?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-012",
+      "app-017",
+      "method-002"
+    ]
+  },
+  {
+    "lesson_id": "w05-d03-it-is-red",
+    "week": 5,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Build a color sentence with It is red using a sentence frame.",
+    "focus_items": [
+      "It is red"
+    ],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Point to a color, then say It is plus the color in a short sentence.",
+    "review_items": [
+      "yellow",
+      "green",
+      "red",
+      "blue"
+    ],
+    "reward_event": {
+      "type": "sentence_badge",
+      "badge_id": "it_is_builder",
+      "message": "You built a color sentence in English."
+    },
+    "fallback_lesson": {
+      "reason": "copula_be_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: It is red."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: It is red."
+        },
+        {
+          "type": "practice",
+          "prompt": "Point to something red and say It is red."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-013",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w05-d04-what-color",
+    "week": 5,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask What color? and answer with a color name.",
+    "focus_items": [
+      "What color?",
+      "It is blue"
+    ],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot shows an item, asks What color?, and the child answers with It is plus a color.",
+    "review_items": [
+      "It is red",
+      "red",
+      "blue",
+      "yellow",
+      "green"
+    ],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "what_color_question",
+      "message": "You asked and answered a color question."
+    },
+    "fallback_lesson": {
+      "reason": "color_question_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: What color?"
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: What color?"
+        },
+        {
+          "type": "practice",
+          "prompt": "Answer: It is blue."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-014",
+      "app-017",
+      "method-004"
+    ]
+  },
+  {
+    "lesson_id": "w05-d05-colors-review",
+    "week": 5,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Complete a color hunt review using red, blue, yellow, green, and It is plus a color.",
+    "focus_items": [
+      "red",
+      "green",
+      "It is yellow"
+    ],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Find three colored objects, name each color, then say It is for one of them.",
+    "review_items": [
+      "red",
+      "blue",
+      "yellow",
+      "green",
+      "What color?",
+      "It is"
+    ],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "color_explorer",
+      "message": "You completed your first color week."
+    },
+    "fallback_lesson": {
+      "reason": "week_five_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: red, blue, yellow, green."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: red, blue, yellow, green."
+        },
+        {
+          "type": "practice",
+          "prompt": "Point to something yellow and say It is yellow."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-011",
+      "book-014",
+      "app-016"
+    ]
+  },
+  {
+    "lesson_id": "w06-d01-ball-car",
+    "week": 6,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Name the toys ball and car by picture or by pointing.",
+    "focus_items": [
+      "ball",
+      "car"
+    ],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Point to the toy picture TeeBot names, then say the word aloud.",
+    "review_items": [
+      "red",
+      "blue",
+      "It is red"
+    ],
+    "reward_event": {
+      "type": "toy_badge",
+      "badge_id": "toy_namer",
+      "message": "You named toys in English today."
+    },
+    "fallback_lesson": {
+      "reason": "toy_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: ball."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: ball."
+        },
+        {
+          "type": "choice",
+          "prompt": "Is ball a toy?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-015",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w06-d02-doll-robot",
+    "week": 6,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Repeat and point to the toys doll and robot.",
+    "focus_items": [
+      "doll",
+      "robot"
+    ],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Listen to TeeBot say doll and robot, then repeat and point to each toy.",
+    "review_items": [
+      "ball",
+      "car"
+    ],
+    "reward_event": {
+      "type": "toy_badge",
+      "badge_id": "toy_repeater",
+      "message": "You repeated toy words in English."
+    },
+    "fallback_lesson": {
+      "reason": "toy_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: robot."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: robot."
+        },
+        {
+          "type": "choice",
+          "prompt": "Is robot a toy?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-016",
+      "app-017",
+      "method-004"
+    ]
+  },
+  {
+    "lesson_id": "w06-d03-i-like-robots",
+    "week": 6,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Say I like robots to express a toy preference.",
+    "focus_items": [
+      "I like robots"
+    ],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "Choose a favorite toy, then say I like plus the toy name in a short sentence.",
+    "review_items": [
+      "doll",
+      "robot",
+      "ball",
+      "car"
+    ],
+    "reward_event": {
+      "type": "preference_badge",
+      "badge_id": "i_like_builder",
+      "message": "You shared what you like in English."
+    },
+    "fallback_lesson": {
+      "reason": "preference_sentence_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: I like robots."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: I like robots."
+        },
+        {
+          "type": "practice",
+          "prompt": "Say I like plus your favorite toy."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-013",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w06-d04-do-you-like-it",
+    "week": 6,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer Do you like it? with yes or no and a toy name.",
+    "focus_items": [
+      "Do you like it?",
+      "I like cars"
+    ],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks Do you like it? and the child answers with yes or no and a toy name.",
+    "review_items": [
+      "I like robots",
+      "ball",
+      "car",
+      "doll",
+      "robot"
+    ],
+    "reward_event": {
+      "type": "choice_badge",
+      "badge_id": "do_you_like_answer",
+      "message": "You answered a like question in English."
+    },
+    "fallback_lesson": {
+      "reason": "preference_question_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: Do you like it?"
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: Do you like it?"
+        },
+        {
+          "type": "choice",
+          "prompt": "Do you like robots?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-014",
+      "app-017",
+      "method-002"
+    ]
+  },
+  {
+    "lesson_id": "w06-d05-toys-review",
+    "week": 6,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review toys and colors by saying I like the red car in a short sentence.",
+    "focus_items": [
+      "I like the red car"
+    ],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Pick a toy and a color, then say I like the plus color plus toy in one sentence.",
+    "review_items": [
+      "ball",
+      "car",
+      "doll",
+      "robot",
+      "red",
+      "blue",
+      "I like"
+    ],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "choice_maker",
+      "message": "You made choices with toys and colors in English."
+    },
+    "fallback_lesson": {
+      "reason": "week_six_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: I like the red car."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: I like the red car."
+        },
+        {
+          "type": "practice",
+          "prompt": "Say I like the blue ball."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-011",
+      "book-015",
+      "app-016"
+    ]
+  },
+  {
+    "lesson_id": "w07-d01-cat-dog",
+    "week": 7,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Name the animals cat and dog by sound and picture match.",
+    "focus_items": [
+      "cat",
+      "dog"
+    ],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Hear the animal sound, see the picture, then say cat or dog.",
+    "review_items": [
+      "ball",
+      "car",
+      "I like robots"
+    ],
+    "reward_event": {
+      "type": "animal_badge",
+      "badge_id": "animal_namer",
+      "message": "You named animals in English today."
+    },
+    "fallback_lesson": {
+      "reason": "animal_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: cat."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: cat."
+        },
+        {
+          "type": "choice",
+          "prompt": "Is cat an animal?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-011",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w07-d02-bird-fish",
+    "week": 7,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Listen and repeat the animal words bird and fish.",
+    "focus_items": [
+      "bird",
+      "fish"
+    ],
+    "vietnamese_l1_target": "sh",
+    "practice_method": "Listen to TeeBot say bird and fish, then repeat each word with a quiet sh for fish.",
+    "review_items": [
+      "cat",
+      "dog"
+    ],
+    "reward_event": {
+      "type": "animal_badge",
+      "badge_id": "animal_repeater",
+      "message": "You repeated animal words in English."
+    },
+    "fallback_lesson": {
+      "reason": "animal_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: fish."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: fish."
+        },
+        {
+          "type": "choice",
+          "prompt": "Is fish an animal?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-012",
+      "app-017",
+      "method-002"
+    ]
+  },
+  {
+    "lesson_id": "w07-d03-i-see-a-cat",
+    "week": 7,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Build an animal sentence with I see a cat using a sentence frame.",
+    "focus_items": [
+      "I see a cat"
+    ],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Look at an animal picture, then say I see a plus the animal name.",
+    "review_items": [
+      "bird",
+      "fish",
+      "cat",
+      "dog"
+    ],
+    "reward_event": {
+      "type": "sentence_badge",
+      "badge_id": "i_see_builder",
+      "message": "You built an animal sentence in English."
+    },
+    "fallback_lesson": {
+      "reason": "animal_sentence_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: I see a cat."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: I see a cat."
+        },
+        {
+          "type": "practice",
+          "prompt": "Point to a dog picture and say I see a dog."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-013",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w07-d04-what-do-you-see",
+    "week": 7,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer What do you see? with an animal picture and a short sentence.",
+    "focus_items": [
+      "What do you see?",
+      "I see a bird"
+    ],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot shows a picture and asks What do you see?, then the child answers with I see a plus the animal.",
+    "review_items": [
+      "I see a cat",
+      "cat",
+      "dog",
+      "bird",
+      "fish"
+    ],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "what_do_you_see_question",
+      "message": "You asked and answered an animal question."
+    },
+    "fallback_lesson": {
+      "reason": "animal_question_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: What do you see?"
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: What do you see?"
+        },
+        {
+          "type": "practice",
+          "prompt": "Answer: I see a bird."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-014",
+      "app-017",
+      "method-004"
+    ]
+  },
+  {
+    "lesson_id": "w07-d05-animals-review",
+    "week": 7,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Complete an animal guessing game using cat, dog, bird, fish, and I see a plus an animal.",
+    "focus_items": [
+      "cat",
+      "bird",
+      "I see a dog"
+    ],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Guess the animal from a sound or picture, then say I see a plus the animal name.",
+    "review_items": [
+      "cat",
+      "dog",
+      "bird",
+      "fish",
+      "What do you see?",
+      "I see"
+    ],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "animal_friend",
+      "message": "You completed your first animal week."
+    },
+    "fallback_lesson": {
+      "reason": "week_seven_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: cat, dog, bird, fish."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: cat, dog, bird, fish."
+        },
+        {
+          "type": "practice",
+          "prompt": "Point to a cat and say I see a cat."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-011",
+      "book-014",
+      "app-016"
+    ]
+  },
+  {
+    "lesson_id": "w08-d01-run-jump",
+    "week": 8,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Act out and say the action words run and jump.",
+    "focus_items": [
+      "run",
+      "jump"
+    ],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Move like the action TeeBot names, then say run or jump aloud.",
+    "review_items": [
+      "cat",
+      "dog",
+      "I see a cat"
+    ],
+    "reward_event": {
+      "type": "action_badge",
+      "badge_id": "action_mover",
+      "message": "You moved and named actions in English today."
+    },
+    "fallback_lesson": {
+      "reason": "action_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: jump."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: jump."
+        },
+        {
+          "type": "choice",
+          "prompt": "Is jump an action?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-015",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w08-d02-swim-fly",
+    "week": 8,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say the animal actions swim and fly.",
+    "focus_items": [
+      "swim",
+      "fly"
+    ],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "Choose which animal can swim or fly, then say the action word with the animal.",
+    "review_items": [
+      "run",
+      "jump"
+    ],
+    "reward_event": {
+      "type": "action_badge",
+      "badge_id": "action_chooser",
+      "message": "You chose animal actions in English."
+    },
+    "fallback_lesson": {
+      "reason": "action_word_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: swim."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: swim."
+        },
+        {
+          "type": "choice",
+          "prompt": "Can a fish swim?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-016",
+      "app-017",
+      "method-002"
+    ]
+  },
+  {
+    "lesson_id": "w08-d03-the-dog-can-run",
+    "week": 8,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Build a can sentence with The dog can run to describe an animal action.",
+    "focus_items": [
+      "The dog can run"
+    ],
+    "vietnamese_l1_target": "tense_aspect",
+    "practice_method": "Pick an animal and an action, then say The plus animal plus can plus action in a sentence.",
+    "review_items": [
+      "swim",
+      "fly",
+      "run",
+      "jump",
+      "cat",
+      "dog"
+    ],
+    "reward_event": {
+      "type": "sentence_badge",
+      "badge_id": "can_sentence_builder",
+      "message": "You built a can sentence in English."
+    },
+    "fallback_lesson": {
+      "reason": "can_sentence_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: The dog can run."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: The dog can run."
+        },
+        {
+          "type": "practice",
+          "prompt": "Say The cat can jump."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-013",
+      "app-016",
+      "method-001"
+    ]
+  },
+  {
+    "lesson_id": "w08-d04-can-it-fly",
+    "week": 8,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer Can it fly? with yes or no and a short animal sentence.",
+    "focus_items": [
+      "Can it fly?",
+      "The bird can fly"
+    ],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks Can it fly? and the child answers with yes or no and The plus animal plus can plus action.",
+    "review_items": [
+      "The dog can run",
+      "swim",
+      "fly",
+      "run",
+      "jump"
+    ],
+    "reward_event": {
+      "type": "choice_badge",
+      "badge_id": "can_it_fly_answer",
+      "message": "You answered a can question in English."
+    },
+    "fallback_lesson": {
+      "reason": "can_question_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: Can it fly?"
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: Can it fly?"
+        },
+        {
+          "type": "choice",
+          "prompt": "Can a bird fly?",
+          "choices": [
+            "yes",
+            "not now"
+          ]
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-004",
+      "book-014",
+      "app-017",
+      "method-004"
+    ]
+  },
+  {
+    "lesson_id": "w08-d05-animal-actions-review",
+    "week": 8,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review animal actions by saying A bird can fly in a short sentence.",
+    "focus_items": [
+      "A bird can fly"
+    ],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Pick an animal and action, then say A plus animal plus can plus action in one sentence.",
+    "review_items": [
+      "run",
+      "jump",
+      "swim",
+      "fly",
+      "cat",
+      "dog",
+      "bird",
+      "can"
+    ],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "action_badge",
+      "message": "You completed your first action week."
+    },
+    "fallback_lesson": {
+      "reason": "week_eight_review",
+      "steps": [
+        {
+          "type": "listen",
+          "prompt": "Listen: A bird can fly."
+        },
+        {
+          "type": "repeat",
+          "prompt": "Say: A bird can fly."
+        },
+        {
+          "type": "practice",
+          "prompt": "Say A fish can swim."
+        }
+      ]
+    },
+    "source_card_ids": [
+      "framework-001",
+      "book-011",
+      "book-014",
+      "app-016"
+    ]
+  }
+]

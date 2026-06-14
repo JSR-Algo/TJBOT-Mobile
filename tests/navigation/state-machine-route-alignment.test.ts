@@ -2,20 +2,70 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { ROUTE_MAP } from '@/navigation/routeMap';
 import { ROUTES } from '@/navigation/routes';
+import type { FeatureRouteOwner } from '@/navigation/types';
 
 const root = join(__dirname, '..', '..');
+const featureStatePaths: Record<FeatureRouteOwner, { jsPath: string; tsPath: string }> = {
+  auth: {
+    tsPath: join(root, 'src', 'features', 'auth', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'auth', 'states.js'),
+  },
+  onboarding: {
+    tsPath: join(root, 'src', 'features', 'onboarding', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'onboarding', 'states.js'),
+  },
+  home: {
+    tsPath: join(root, 'src', 'features', 'home', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'home', 'states.js'),
+  },
+  course: {
+    tsPath: join(root, 'src', 'features', 'course', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'course', 'states.js'),
+  },
+  'course-library': {
+    tsPath: join(root, 'src', 'features', 'course-library', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'course-library', 'states.js'),
+  },
+  purchase: {
+    tsPath: join(root, 'src', 'features', 'purchase', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'purchase', 'states.js'),
+  },
+  'lesson-session': {
+    tsPath: join(root, 'src', 'features', 'lesson-session', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'lesson-session', 'states.js'),
+  },
+  progress: {
+    tsPath: join(root, 'src', 'features', 'progress', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'progress', 'states.js'),
+  },
+  parent: {
+    tsPath: join(root, 'src', 'features', 'parent', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'parent', 'states.js'),
+  },
+  device: {
+    tsPath: join(root, 'src', 'features', 'device', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'device', 'states.js'),
+  },
+  'robot-mgmt': {
+    tsPath: join(root, 'src', 'features', 'robot-mgmt', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'robot-mgmt', 'states.js'),
+  },
+  fallback: {
+    tsPath: join(root, 'src', 'features', 'fallback', 'states.ts'),
+    jsPath: join(root, 'src', 'features', 'fallback', 'states.js'),
+  },
+};
 
-function readFeatureStates(feature: string): string {
-  const tsPath = join(root, 'src', 'features', feature, 'states.ts');
+function readFeatureStates(feature: FeatureRouteOwner): string {
+  const { tsPath, jsPath } = featureStatePaths[feature];
   if (existsSync(tsPath)) return readFileSync(tsPath, 'utf8');
 
-  const jsPath = join(root, 'src', 'features', feature, 'states.js');
   if (existsSync(jsPath)) return readFileSync(jsPath, 'utf8');
 
   return '';
 }
 
-function stateIds(feature: string): readonly string[] {
+function stateIds(feature: FeatureRouteOwner): readonly string[] {
   return Array.from(readFeatureStates(feature).matchAll(/\{\s*id:\s*'([^']+)'/g), match => match[1]);
 }
 
@@ -128,6 +178,14 @@ describe('state-machine route alignment', () => {
       [ROUTES.LessonSummaryScreen, 'lesson_summary'],
       [ROUTES.ReviewNeededScreen, 'review_needed'],
       [ROUTES.CelebrationScreen, 'celebration'],
+      [ROUTES.LessonDemoHomeScreen, 'lesson_demo_home'],
+      [ROUTES.LessonDemoRoadmapScreen, 'lesson_demo_roadmap'],
+      [ROUTES.LessonDemoSessionScreen, 'lesson_demo_session'],
+      [ROUTES.LessonDemoParentSummaryScreen, 'lesson_demo_parent_summary'],
+      [ROUTES.LessonDemoShowcaseScreen, 'lesson_demo_showcase'],
+      [ROUTES.LessonPlannerScreen, 'lesson_planner'],
+      [ROUTES.ChildPracticeScreen, 'child_practice'],
+      [ROUTES.RobotLessonControlScreen, 'robot_lesson_control'],
     ]);
     const actualProgressStateIds = new Map(
       Object.values(ROUTE_MAP)

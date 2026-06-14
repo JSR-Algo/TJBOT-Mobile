@@ -50,6 +50,8 @@ export default function TodayProgressScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28} gap={10}>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonDemoHomeScreen)} color="#6CE2B6">Open lesson demo</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonPlannerScreen)} color="#FFD166">View today's lesson</PrimaryCTA>
         <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#FF6F61">Back home</PrimaryCTA>
       </Box>
     </PageScroll>

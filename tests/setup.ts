@@ -1,3 +1,91 @@
+jest.mock('react-native', () => {
+  const React = require('react');
+  const actual = jest.requireActual('react-native');
+
+  const host = (name: string) => {
+    const Component = React.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+      React.createElement(name, { ...props, ref }, props.children),
+    );
+    Component.displayName = name;
+    return Component;
+  };
+
+  const overrides = {
+    Text: host('Text'),
+    View: host('View'),
+    ScrollView: host('ScrollView'),
+    SafeAreaView: host('SafeAreaView'),
+    Pressable: host('Pressable'),
+    TouchableOpacity: host('TouchableOpacity'),
+    TouchableHighlight: host('TouchableHighlight'),
+    TouchableWithoutFeedback: host('TouchableWithoutFeedback'),
+    TextInput: host('TextInput'),
+    Image: host('Image'),
+    ActivityIndicator: host('ActivityIndicator'),
+    RefreshControl: host('RefreshControl'),
+    Switch: host('Switch'),
+    FlatList: host('FlatList'),
+    SectionList: host('SectionList'),
+  };
+  class AnimatedValue {
+    private value: unknown;
+
+    constructor(value: unknown) {
+      this.value = value;
+    }
+
+    setValue(value: unknown) {
+      this.value = value;
+    }
+
+    interpolate(config: { outputRange?: unknown[] }) {
+      return config.outputRange?.[0] ?? this.value;
+    }
+
+    addListener() {
+      return 'jest-listener';
+    }
+
+    removeListener() {}
+    removeAllListeners() {}
+    stopAnimation(callback?: (value: unknown) => void) {
+      callback?.(this.value);
+    }
+  }
+  const animation = {
+    start: (callback?: (result: { finished: boolean }) => void) => callback?.({ finished: true }),
+    stop: jest.fn(),
+    reset: jest.fn(),
+  };
+  const animated = {
+    Value: AnimatedValue,
+    ValueXY: AnimatedValue,
+    View: overrides.View,
+    Text: overrides.Text,
+    ScrollView: overrides.ScrollView,
+    Image: overrides.Image,
+    createAnimatedComponent: (component: unknown) => component,
+    timing: () => animation,
+    spring: () => animation,
+    decay: () => animation,
+    delay: () => animation,
+    sequence: () => animation,
+    parallel: () => animation,
+    stagger: () => animation,
+    loop: () => animation,
+    event: () => jest.fn(),
+  };
+
+  return new Proxy(actual, {
+    get(target, prop: string) {
+      if (prop === '__esModule') return true;
+      if (prop in overrides) return overrides[prop as keyof typeof overrides];
+      if (prop === 'Animated') return animated;
+      return target[prop];
+    },
+  });
+});
+
 // Silence React Navigation warnings in tests
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
@@ -46,7 +134,6 @@ jest.mock('react-native-screens', () => ({
 // Inline manual mock for react-native-reanimated (the package's own /mock
 // entry uses ES imports that jest can't transform). No-ops everything.
 jest.mock('react-native-reanimated', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
   const View = (props: Record<string, unknown>) =>
     React.createElement('View', props);
@@ -93,7 +180,6 @@ jest.mock('react-native-reanimated', () => {
 // inline SVG illustrations mount cleanly in jsdom. Avoids native-bridge
 // requirements for Path/Circle/etc.
 jest.mock('react-native-svg', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
   const stub = (name: string) => (props: Record<string, unknown>) =>
     React.createElement('Text', { testID: `svg-${name}`, ...props });
@@ -122,7 +208,6 @@ jest.mock('@react-native-community/netinfo', () => ({
 jest.mock('lucide-react-native', () => {
   // jest.mock factory runs before top-level imports resolve, so require() is the
   // only portable way to grab React here.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
   const makeIcon = (name: string) => (props: Record<string, unknown>) =>
     React.createElement('Text', { testID: `icon-${name}`, ...props });
