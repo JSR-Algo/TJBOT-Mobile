@@ -37,11 +37,14 @@ jest.mock('../../src/services/api/claim.api', () => ({
   requestClaim: jest.fn(),
 }));
 
-jest.mock('../../src/contexts/HouseholdContext', () => ({
-  useHousehold: jest.fn(() => ({
-    children: [{ id: 'child-1', household_id: 'household-1', name: 'Alex' }],
-  })),
-}));
+jest.mock('../../src/contexts/HouseholdContext', () => {
+  const child = { id: 'child-1', household_id: 'household-1', name: 'Alex' };
+  // The pairing rename screen reads `activeChild` (the resolved active child),
+  // not the raw children array — mirror the real context's resolution.
+  return {
+    useHousehold: jest.fn(() => ({ children: [child], activeChild: child })),
+  };
+});
 
 jest.mock('../../src/services/ble/service', () => ({
   initializeBle: jest.fn(),
@@ -83,7 +86,11 @@ const localDeviceMocks = {
 const netInfoFetchMock = NetInfo.fetch as jest.MockedFunction<typeof NetInfo.fetch>;
 
 const navigate = jest.fn();
-const navigation = { navigate };
+// PairRenameScreen finalizes pairing with navigation.reset (it removes the
+// finished pairing screens from the back stack and makes DeviceHome the root),
+// so the test navigation must expose reset as well as navigate.
+const reset = jest.fn();
+const navigation = { navigate, reset };
 const originalPlatformOS = Platform.OS;
 
 describe('mobile UX redesign accessibility coverage', () => {
@@ -602,7 +609,9 @@ describe('mobile UX redesign accessibility coverage', () => {
     expect(apiMocks.confirmLocalBlePaired).not.toHaveBeenCalled();
     expect(apiMocks.mintBootstrapToken).not.toHaveBeenCalled();
     await waitFor(() => expect(apiMocks.getDeviceStatus).toHaveBeenCalledWith('device-1'));
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen));
+    // Finalize resets the stack to [DeviceHome] (device_online has no PairSuccess to
+    // preserve) so Back can't walk back through the finished reconnect screens.
+    await waitFor(() => expect(reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] }));
   });
 
   it('sends a pending-claim bootstrap token with Wi-Fi over BLE and waits for claim confirmation when no code is present', async () => {
@@ -795,10 +804,17 @@ describe('mobile UX redesign accessibility coverage', () => {
       displayName: 'Living-room Robot',
     }));
     await waitFor(() => expect(localDeviceMocks.markLocalDevicePaired).toHaveBeenCalledWith('device-1'));
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, {
-      deviceId: 'device-1',
-      serialNumber: 'TJBot-001',
-      provisioningAttemptId: 'attempt-1',
+    // Finalize resets the stack to [DeviceHome, PairSuccess] so Back can't walk
+    // back through the finished pairing screens.
+    expect(reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: { deviceId: 'device-1', serialNumber: 'TJBot-001', provisioningAttemptId: 'attempt-1' },
+        },
+      ],
     });
   });
 
@@ -814,11 +830,16 @@ describe('mobile UX redesign accessibility coverage', () => {
     fireEvent.press(screen.getByText('Save & continue'));
 
     await waitFor(() => expect(apiMocks.completeDeviceProvisioning).toHaveBeenCalled());
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, {
-      deviceId: 'device-1',
-      serialNumber: 'TJBot-001',
-      provisioningAttemptId: 'attempt-1',
-    });
+    await waitFor(() => expect(reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: { deviceId: 'device-1', serialNumber: 'TJBot-001', provisioningAttemptId: 'attempt-1' },
+        },
+      ],
+    }));
   });
 
   it('continues from final success to first lesson instead of reopening rename', () => {

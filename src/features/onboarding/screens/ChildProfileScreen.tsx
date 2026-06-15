@@ -12,9 +12,11 @@ import type { Child } from '@/types';
 import { Config } from '@/config';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import * as authApi from '@/services/api/auth';
+import { finalizeDevicePairing } from '@/features/device/pairing/finalizeDevicePairing';
 import {
   allowsDevelopmentCoppaConsentBypass,
   childProfileSaveErrorMessage,
+  pairingFinalizeErrorMessage,
   saveOnboardingChildProfile,
 } from '../childProfileSave';
 
@@ -67,7 +69,7 @@ function dobFromAgeBand(bandId: AgeBandId): string {
   return `${birthYear}-07-01`;
 }
 
-export default function ChildProfileScreen({ navigation }: Props) {
+export default function ChildProfileScreen({ navigation, route }: Props) {
   const { language, t } = useAppLanguage();
   const { activeHousehold, addChild, createHousehold } = useHousehold();
   const [buddy, setBuddy] = React.useState<(typeof BUDDIES)[number]['id']>('panda');
@@ -75,6 +77,10 @@ export default function ChildProfileScreen({ navigation }: Props) {
   const [ageBand, setAgeBand] = React.useState<AgeBandId | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // In the from-pairing path, the child can be created successfully but the
+  // finalize step still fail. Remember the created child so a retry FINISHES the
+  // pairing for that same child instead of creating a duplicate profile.
+  const createdChildRef = React.useRef<Child | null>(null);
   const sel = BUDDIES.find(b => b.id === buddy);
 
   const saveChildProfile = async (): Promise<void> => {
@@ -86,25 +92,56 @@ export default function ChildProfileScreen({ navigation }: Props) {
     setSaving(true);
     setError(null);
 
-    try {
-      await saveOnboardingChildProfile({
-        name: `${sel?.label ?? 'Panda'} friend`,
-        date_of_birth: dobFromAgeBand(ageBand),
-        vocabulary_level: LEVEL_TO_VOCABULARY[level],
-        learning_style: 'visual',
-      }, {
-        activeHousehold,
-        createHousehold,
-        addChild,
-        recordDevelopmentCoppaConsent: () => authApi.sendConsent('tok_test_bypass'),
-        allowDevelopmentCoppaConsentBypass: allowsDevelopmentCoppaConsentBypass(__DEV__, Config.API_BASE_URL),
-      });
-      navigation.navigate(ROUTES.MicAskScreen);
-    } catch (saveError: unknown) {
-      setError(childProfileSaveErrorMessage(saveError));
-    } finally {
-      setSaving(false);
+    let child: Child;
+    if (createdChildRef.current) {
+      // Retry of a from-pairing save whose child already exists — reuse it so we
+      // finish the pairing rather than creating a duplicate profile.
+      child = createdChildRef.current;
+    } else {
+      try {
+        child = await saveOnboardingChildProfile({
+          name: `${sel?.label ?? 'Panda'} friend`,
+          date_of_birth: dobFromAgeBand(ageBand),
+          vocabulary_level: LEVEL_TO_VOCABULARY[level],
+          learning_style: 'visual',
+        }, {
+          activeHousehold,
+          createHousehold,
+          addChild,
+          recordDevelopmentCoppaConsent: () => authApi.sendConsent('tok_test_bypass'),
+          allowDevelopmentCoppaConsentBypass: allowsDevelopmentCoppaConsentBypass(__DEV__, Config.API_BASE_URL),
+        });
+      } catch (saveError: unknown) {
+        setError(childProfileSaveErrorMessage(saveError));
+        setSaving(false);
+        return;
+      }
+      createdChildRef.current = child;
     }
+
+    // Entered mid-pairing (PairRenameScreen routed here because the household had
+    // no child): FINISH the pairing the parent started with the child they just
+    // created, landing on the same DeviceHome/PairSuccess terminus as the happy
+    // path. Do NOT fall through to MicAskScreen — that would abandon the
+    // already-claimed robot in onboarding.
+    const pairing = route.params?.pairing;
+    if (pairing) {
+      try {
+        await finalizeDevicePairing(navigation, pairing, child.id);
+      } catch (finalizeError: unknown) {
+        // The child was created successfully; only the finalize step failed.
+        // Surface a sensible error in-place (the parent can retry the save, which
+        // now finds the existing child) rather than silently dead-ending.
+        setError(pairingFinalizeErrorMessage(finalizeError));
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // Plain onboarding (no pairing context): advance to the next onboarding step.
+    navigation.navigate(ROUTES.MicAskScreen);
+    setSaving(false);
   };
 
   return (

@@ -9,8 +9,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { useHousehold } from '@/contexts/HouseholdContext';
-import { completeDeviceProvisioning } from '@/services/api/device.api';
-import { markLocalDevicePaired } from '../localPairedDevice';
+import { finalizeDevicePairing } from '../finalizeDevicePairing';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
@@ -44,45 +43,34 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     // The robot has ALREADY connected by this point (claim/confirm set the device
     // active + owned). The only thing missing is a child profile to assign it to,
     // so a missing/mismatched child is NOT a connection failure — sending the
-    // parent to the scary "connect failed" screen is wrong. Route them to create a
-    // child profile instead (they can finish assigning the already-connected robot
-    // afterwards).
+    // parent to the scary "connect failed" screen is wrong. Route them into the
+    // COPPA-safe child-creation UI, carrying the pairing context so that screen
+    // can FINISH this pairing once a child exists (instead of dropping them into
+    // onboarding and abandoning the already-claimed robot).
     if (!childId) {
-      navigation.navigate(ROUTES.ChildProfileScreen);
+      navigation.navigate(ROUTES.ChildProfileScreen, {
+        pairing: { deviceId, provisioningAttemptId, serialNumber },
+      });
       return;
     }
     setSaving(true);
     try {
-      await completeDeviceProvisioning({
-        provisioningAttemptId,
-        deviceId,
-        assignChildProfileId: childId,
-        displayName: 'Living-room Robot',
-      });
-      await markLocalDevicePairedBestEffort(deviceId);
-      // Pairing is now COMPLETE. Reset the stack so the (now-finished) pairing
-      // screens — connecting/found/rename/etc. — are removed from the back stack and
-      // DeviceHome becomes the root. Otherwise `navigate` just pushes Success on top
-      // of the whole pairing stack (this flow is entered from DeviceOverview, not
-      // DeviceHome), so pressing Back walks back THROUGH pairing and lands on main /
-      // re-runs a finished screen (= the reported "back goes to main / errors" bug).
-      navigation.reset({
-        index: 1,
-        routes: [
-          { name: ROUTES.DeviceHomeScreen },
-          {
-            name: ROUTES.PairSuccessScreen,
-            params: { deviceId, serialNumber, provisioningAttemptId },
-          },
-        ],
-      });
+      // Pairing finalize (complete + mark paired + reset to DeviceHome/Success) is
+      // shared with the zero-child path so both terminate identically. Reset is
+      // required here because this flow is entered from DeviceOverview, not
+      // DeviceHome: a plain navigate would push Success on top of the whole pairing
+      // stack and Back would walk back THROUGH finished pairing screens.
+      await finalizeDevicePairing(navigation, { deviceId, provisioningAttemptId, serialNumber }, childId);
     } catch (error) {
       const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
       // A missing/mismatched child profile is a finalize-only problem — the robot
-      // is already connected — so guide to creating a child rather than reporting a
+      // is already connected — so guide to creating a child (with pairing context
+      // so the new child finishes this pairing) rather than reporting a
       // connection failure.
       if (code === 'CHILD_PROFILE_NOT_FOUND' || code === 'CHILD_PROFILE_HOUSEHOLD_MISMATCH') {
-        navigation.navigate(ROUTES.ChildProfileScreen);
+        navigation.navigate(ROUTES.ChildProfileScreen, {
+          pairing: { deviceId, provisioningAttemptId, serialNumber },
+        });
         return;
       }
       navigation.navigate(ROUTES.PairFailedScreen, {
@@ -141,14 +129,6 @@ function errorCodeFrom(error: unknown, fallback: string): string {
     if (typeof record.response?.data?.code === 'string') return record.response.data.code;
   }
   return fallback;
-}
-
-async function markLocalDevicePairedBestEffort(deviceId: string): Promise<void> {
-  try {
-    await markLocalDevicePaired(deviceId);
-  } catch {
-    // Backend completion is authoritative; local cache failure must not undo it.
-  }
 }
 
 const styles = StyleSheet.create({

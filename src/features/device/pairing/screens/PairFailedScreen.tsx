@@ -51,10 +51,24 @@ export default function PairFailedScreen({ navigation, route }: Props) {
           });
         }
         if (status.status === 'CLAIMED') {
-          navigation.navigate(ROUTES.PairSuccessScreen, {
-            deviceId,
-            serialNumber: params.serialNumber,
-            provisioningAttemptId: params.provisioningAttemptId,
+          // Reset (not navigate) to the success terminus so the finished/failed
+          // pairing stack underneath is dropped — otherwise swipe-back lands on
+          // this PairFailed screen, whose effect re-fetches CLAIMED and bounces
+          // forward to PairSuccess again (an inescapable loop). Mirrors the happy
+          // path's reset shape (PairRenameScreen [DeviceHome, PairSuccess]).
+          navigation.reset({
+            index: 1,
+            routes: [
+              { name: ROUTES.DeviceHomeScreen },
+              {
+                name: ROUTES.PairSuccessScreen,
+                params: {
+                  deviceId,
+                  serialNumber: params.serialNumber,
+                  provisioningAttemptId: params.provisioningAttemptId,
+                },
+              },
+            ],
           });
         }
       })

@@ -72,16 +72,21 @@ const COMPLETE_OK: CompleteDeviceProvisioningResult = {
   },
 };
 
-// Only `children` is read by the screen (children[0]?.id). We cast the partial
-// context the same way the app shapes it; the rest of the context surface is
-// irrelevant to save().
+// The screen reads `activeChild?.id` from the household context (the resolved
+// active child, which the real context derives as the persisted pick or
+// children[0]). We mirror that resolution here — activeChild = children[0] when
+// present — so the mock matches the context contract the screen depends on.
 function householdWith(children: Array<{ id: string }> | undefined): void {
-  mockedUseHousehold.mockReturnValue({ children } as never);
+  const activeChild = children && children.length > 0 ? children[0] : null;
+  mockedUseHousehold.mockReturnValue({ children, activeChild } as never);
 }
 
-function renderScreen(navigate: jest.Mock, params?: Record<string, unknown>) {
+// The happy path finalizes pairing via navigation.reset (DeviceHome + PairSuccess),
+// not navigate, so the screen needs a reset on its navigation. Tests that care
+// about the terminus pass their own reset mock; the rest get a throwaway one.
+function renderScreen(navigate: jest.Mock, params?: Record<string, unknown>, reset: jest.Mock = jest.fn()) {
   return render(
-    <PairRenameScreen navigation={{ navigate } as never} route={{ params } as never} />,
+    <PairRenameScreen navigation={{ navigate, reset } as never} route={{ params } as never} />,
   );
 }
 
@@ -94,12 +99,18 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// Happy path — full context -> backend claim-complete -> PairSuccess.
+// Happy path — full context -> backend claim-complete -> reset to PairSuccess.
+//
+// The screen finalizes via navigation.reset([DeviceHome, PairSuccess]) (not a
+// plain navigate): this flow is entered from DeviceOverview, so the back stack
+// must be rebased on DeviceHome with PairSuccess on top, otherwise Back walks
+// back THROUGH the finished pairing screens.
 // ---------------------------------------------------------------------------
 describe('PairRenameScreen — save() happy path', () => {
-  it('on full context, completes provisioning with the assigned child + fixed displayName and routes to PairSuccess', async () => {
+  it('on full context, completes provisioning with the assigned child + fixed displayName and resets to PairSuccess', async () => {
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
     fireEvent.press(screen.getByText('Save & continue'));
 
@@ -114,24 +125,31 @@ describe('PairRenameScreen — save() happy path', () => {
     });
 
     await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, {
-        deviceId: 'device-1',
-        serialNumber: 'TBT-2026-004217',
-        provisioningAttemptId: 'claim-1',
+      expect(reset).toHaveBeenCalledWith({
+        index: 1,
+        routes: [
+          { name: ROUTES.DeviceHomeScreen },
+          {
+            name: ROUTES.PairSuccessScreen,
+            params: { deviceId: 'device-1', serialNumber: 'TBT-2026-004217', provisioningAttemptId: 'claim-1' },
+          },
+        ],
       }),
     );
-    // Success means PairSuccess only — never a PairFailed hop on the happy path.
+    // Success means the reset terminus only — never a PairFailed hop on the happy path.
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(reset).toHaveBeenCalledTimes(1);
   });
 
   it('marks the device locally paired (best-effort cache) before advancing to success', async () => {
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
     fireEvent.press(screen.getByText('Save & continue'));
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything()));
+    await waitFor(() => expect(reset).toHaveBeenCalled());
     // The local cache is keyed by the backend-confirmed deviceId.
     expect(mockedMarkLocal).toHaveBeenCalledWith('device-1');
   });
@@ -139,27 +157,30 @@ describe('PairRenameScreen — save() happy path', () => {
   it('still reaches PairSuccess when the local-cache write fails (cache failure must not undo a confirmed claim)', async () => {
     mockedMarkLocal.mockRejectedValue(new Error('disk full'));
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
     fireEvent.press(screen.getByText('Save & continue'));
 
     // Backend completion is authoritative: a best-effort local-cache failure is
     // swallowed and the flow still advances to success (not PairFailed).
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything()));
+    await waitFor(() => expect(reset).toHaveBeenCalled());
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
   it('forwards serialNumber to PairSuccess only when present (omitted when absent)', async () => {
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, { deviceId: 'device-1', provisioningAttemptId: 'claim-1' });
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, { deviceId: 'device-1', provisioningAttemptId: 'claim-1' }, reset);
 
     fireEvent.press(screen.getByText('Save & continue'));
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything()));
-    const [, params] = navigate.mock.calls[0] as [string, Record<string, unknown>];
-    expect(params).toMatchObject({ deviceId: 'device-1', provisioningAttemptId: 'claim-1' });
+    await waitFor(() => expect(reset).toHaveBeenCalled());
+    const [{ routes }] = reset.mock.calls[0] as [{ routes: Array<{ name: string; params?: Record<string, unknown> }> }];
+    const successParams = routes.find((r) => r.name === ROUTES.PairSuccessScreen)?.params ?? {};
+    expect(successParams).toMatchObject({ deviceId: 'device-1', provisioningAttemptId: 'claim-1' });
     // serialNumber is undefined in params (carried through verbatim), never invented.
-    expect(params.serialNumber).toBeUndefined();
+    expect(successParams.serialNumber).toBeUndefined();
   });
 });
 
@@ -203,42 +224,7 @@ describe('PairRenameScreen — missing-context gate (PAIRING_CONTEXT_MISSING)', 
     expect(mockedComplete).not.toHaveBeenCalled();
   });
 
-  it('routes to PairFailed with PAIRING_CONTEXT_MISSING when there is no assigned child (children empty)', async () => {
-    householdWith([]);
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
-        deviceId: 'device-1',
-        serialNumber: 'TBT-2026-004217',
-        provisioningAttemptId: 'claim-1',
-        errorCode: 'PAIRING_CONTEXT_MISSING',
-      }),
-    );
-    // No child to assign -> no complete request (the request requires a child id).
-    expect(mockedComplete).not.toHaveBeenCalled();
-  });
-
-  it('treats a falsy first-child id as no child and gates (children[0].id is empty string)', async () => {
-    householdWith([{ id: '' }]);
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairFailedScreen,
-        expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
-      ),
-    );
-    expect(mockedComplete).not.toHaveBeenCalled();
-  });
-
-  it('uses the FIRST child as the assignee when several children exist', async () => {
+  it('uses the active child as the assignee when several children exist', async () => {
     householdWith([{ id: 'child-A' }, { id: 'child-B' }, { id: 'child-C' }]);
     const navigate = jest.fn();
     const screen = renderScreen(navigate, FULL_PARAMS);
@@ -246,7 +232,8 @@ describe('PairRenameScreen — missing-context gate (PAIRING_CONTEXT_MISSING)', 
     fireEvent.press(screen.getByText('Save & continue'));
 
     await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(1));
-    // children[0] is the assignee — not the last, not an arbitrary one.
+    // The resolved active child (children[0] here) is the assignee — not the last,
+    // not an arbitrary one.
     expect(mockedComplete).toHaveBeenCalledWith(expect.objectContaining({ assignChildProfileId: 'child-A' }));
   });
 
@@ -279,6 +266,90 @@ describe('PairRenameScreen — missing-context gate (PAIRING_CONTEXT_MISSING)', 
     // setSaving(true) runs only after the gate passes, so the CTA stays put.
     expect(screen.getByText('Save & continue')).toBeTruthy();
     expect(screen.queryByText('Saving...')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Zero-child path — pairing CONTEXT is present but the household has no child
+// profile yet. The robot is already claimed, so this is NOT a failure: route the
+// parent into the child-creation UI carrying the pairing context so they can
+// finish the pairing once a child exists. (This is the dead-end fix: previously
+// no-child was wrongly treated like missing context / sent to PairFailed.)
+// ---------------------------------------------------------------------------
+describe('PairRenameScreen — zero-child path (route into child creation with pairing context)', () => {
+  it('routes to ChildProfileScreen carrying the pairing context when there is no child (children empty)', async () => {
+    householdWith([]);
+    const navigate = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS);
+
+    fireEvent.press(screen.getByText('Save & continue'));
+
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith(ROUTES.ChildProfileScreen, {
+        pairing: {
+          deviceId: 'device-1',
+          provisioningAttemptId: 'claim-1',
+          serialNumber: 'TBT-2026-004217',
+        },
+      }),
+    );
+    // The robot is already claimed; no finalize fires and we never show PairFailed.
+    expect(mockedComplete).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats a falsy active-child id as no child and routes into child creation (id is empty string)', async () => {
+    householdWith([{ id: '' }]);
+    const navigate = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS);
+
+    fireEvent.press(screen.getByText('Save & continue'));
+
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith(
+        ROUTES.ChildProfileScreen,
+        expect.objectContaining({
+          pairing: expect.objectContaining({ deviceId: 'device-1', provisioningAttemptId: 'claim-1' }),
+        }),
+      ),
+    );
+    expect(mockedComplete).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+  });
+
+  it('still gates to PairFailed (NOT child creation) when the pairing CONTEXT itself is missing and there is no child', async () => {
+    // No deviceId/attemptId AND no child: this is a genuine context loss, so the
+    // missing-context gate wins over the zero-child path (the gate runs first).
+    householdWith([]);
+    const navigate = jest.fn();
+    const screen = renderScreen(navigate, { serialNumber: 'TBT-2026-004217' });
+
+    fireEvent.press(screen.getByText('Save & continue'));
+
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
+      ),
+    );
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.ChildProfileScreen, expect.anything());
+    expect(mockedComplete).not.toHaveBeenCalled();
+  });
+
+  it('omits serialNumber from the carried pairing context when absent', async () => {
+    householdWith([]);
+    const navigate = jest.fn();
+    const screen = renderScreen(navigate, { deviceId: 'device-1', provisioningAttemptId: 'claim-1' });
+
+    fireEvent.press(screen.getByText('Save & continue'));
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.ChildProfileScreen, expect.anything()));
+    const [, params] = (navigate.mock.calls.find((c) => c[0] === ROUTES.ChildProfileScreen) ?? []) as [
+      string,
+      { pairing?: { serialNumber?: string } },
+    ];
+    expect(params.pairing?.serialNumber).toBeUndefined();
   });
 });
 
@@ -422,6 +493,31 @@ describe('PairRenameScreen — completeDeviceProvisioning rejection -> PairFaile
     // A rejected claim must NOT touch the local-paired cache.
     expect(mockedMarkLocal).not.toHaveBeenCalled();
   });
+
+  it.each(['CHILD_PROFILE_NOT_FOUND', 'CHILD_PROFILE_HOUSEHOLD_MISMATCH'])(
+    'routes a %s finalize error into ChildProfileScreen with pairing context (NOT PairFailed)',
+    async (code) => {
+      // The child the screen tried to assign is gone/foreign, but the robot is
+      // already claimed — so this is a finalize-only problem: guide the parent to
+      // (re)create a child carrying the pairing context, not the scary fail screen.
+      mockedComplete.mockRejectedValue(Object.assign(new Error('x'), { code }));
+      const navigate = jest.fn();
+      const screen = renderScreen(navigate, FULL_PARAMS);
+
+      fireEvent.press(screen.getByText('Save & continue'));
+
+      await waitFor(() =>
+        expect(navigate).toHaveBeenCalledWith(ROUTES.ChildProfileScreen, {
+          pairing: {
+            deviceId: 'device-1',
+            provisioningAttemptId: 'claim-1',
+            serialNumber: 'TBT-2026-004217',
+          },
+        }),
+      );
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -434,7 +530,8 @@ describe('PairRenameScreen — in-flight CTA + double-submit guard', () => {
       () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
     );
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
     expect(screen.getByText('Save & continue')).toBeTruthy();
     fireEvent.press(screen.getByText('Save & continue'));
@@ -443,9 +540,9 @@ describe('PairRenameScreen — in-flight CTA + double-submit guard', () => {
     await waitFor(() => expect(screen.getByText('Saving...')).toBeTruthy());
     expect(screen.queryByText('Save & continue')).toBeNull();
 
-    // Settle the backend call -> flow advances to success.
+    // Settle the backend call -> flow advances to success (reset terminus).
     resolveComplete(COMPLETE_OK);
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything()));
+    await waitFor(() => expect(reset).toHaveBeenCalled());
   });
 
   it('restores the CTA to "Save & continue" after a failed save (finally re-enables retry)', async () => {
@@ -461,13 +558,14 @@ describe('PairRenameScreen — in-flight CTA + double-submit guard', () => {
     expect(screen.queryByText('Saving...')).toBeNull();
   });
 
-  it('ignores a second press while a save is in flight (exactly one complete call, one navigation)', async () => {
+  it('ignores a second press while a save is in flight (exactly one complete call, one reset)', async () => {
     let resolveComplete: (v: CompleteDeviceProvisioningResult) => void = () => {};
     mockedComplete.mockImplementation(
       () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
     );
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
     fireEvent.press(screen.getByText('Save & continue'));
     await waitFor(() => expect(screen.getByText('Saving...')).toBeTruthy());
@@ -477,27 +575,28 @@ describe('PairRenameScreen — in-flight CTA + double-submit guard', () => {
     fireEvent.press(screen.getByText('Saving...'));
 
     resolveComplete(COMPLETE_OK);
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything()));
+    await waitFor(() => expect(reset).toHaveBeenCalled());
 
-    // The guard collapsed the extra presses: one claim-complete, one navigate.
+    // The guard collapsed the extra presses: one claim-complete, one reset.
     expect(mockedComplete).toHaveBeenCalledTimes(1);
-    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(reset).toHaveBeenCalledTimes(1);
   });
 
   it('allows a fresh save after the previous one settled (guard is per-flight, not permanent)', async () => {
     mockedComplete.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'BACKEND_5XX' }));
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
     // First press fails and re-enables the CTA.
     fireEvent.press(screen.getByText('Save & continue'));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()));
     await waitFor(() => expect(screen.getByText('Save & continue')).toBeTruthy());
 
-    // Second press now succeeds.
+    // Second press now succeeds (reset terminus).
     mockedComplete.mockResolvedValueOnce(COMPLETE_OK);
     fireEvent.press(screen.getByText('Save & continue'));
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything()));
+    await waitFor(() => expect(reset).toHaveBeenCalled());
 
     // Two independent flights = two complete calls.
     expect(mockedComplete).toHaveBeenCalledTimes(2);

@@ -13,7 +13,11 @@ export type RootStackParamList = {
   IntroSpeakScreen: undefined;
   IntroRetryScreen: undefined;
   IntroCelebrateScreen: undefined;
-  ChildProfileScreen: undefined;
+  // Optional `pairing` context lets the parent create a child mid-pairing and
+  // then FINISH the pairing they started (PairRenameScreen → here when the
+  // household has no child yet), instead of being dropped into onboarding. When
+  // absent, this is plain onboarding and the screen advances to MicAskScreen.
+  ChildProfileScreen: undefined | { pairing?: { deviceId: string; provisioningAttemptId: string; serialNumber?: string } };
   FirstLessonEntryScreen: undefined;
 
   // home

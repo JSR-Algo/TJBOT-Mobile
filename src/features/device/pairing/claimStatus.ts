@@ -107,6 +107,14 @@ const CLAIM_ALREADY_CONFIRMED: ClaimStatusDescriptor = {
   recovery: 'none',
 };
 
+const CLAIM_QUARANTINED: ClaimStatusDescriptor = {
+  code: 'DEVICE_QUARANTINED',
+  title: "We can't set up this Robot",
+  body: 'This Robot is locked for safety. Contact support to continue.',
+  retryable: false,
+  recovery: 'support',
+};
+
 const CLAIM_UNKNOWN: ClaimStatusDescriptor = {
   code: 'CLAIM_UNKNOWN',
   title: 'Could not connect',
@@ -126,12 +134,25 @@ const CLAIM_UNKNOWN: ClaimStatusDescriptor = {
 // the offline case is the robot_unreachable model rather than a thrown code.
 // Local BLE delivery codes are included separately because they are part of the
 // same user-visible claim flow.
+//
+// DEVICE_QUARANTINED (409) and DEVICE_NOT_FOUND (404) are ALSO emitted by
+// POST /claim/request (claim.service.ts) — they were missing from the
+// 2026-06-04 audit. Without explicit entries they fell through to the status
+// switch: a 409 mapped to DEVICE_ALREADY_CLAIMED ("reset it") which is wrong
+// for an UNOWNED quarantined device, and a 404 mapped to CLAIM_UNKNOWN
+// ("try again") instead of prompting a rescan.
 const CODE_MAP: Record<string, ClaimStatusDescriptor> = {
   DEVICE_ALREADY_CLAIMED,
   DEVICE_ALREADY_OWNED: DEVICE_ALREADY_CLAIMED,
   CONFLICT: DEVICE_ALREADY_CLAIMED,
   CLAIM_ALREADY_CONFIRMED,
   NO_DEVICE_AVAILABLE,
+  // A stale/mismatched serial — rescan for a fresh device rather than retry the
+  // same failing claim (the 404 status fallback would say "try again").
+  DEVICE_NOT_FOUND: NO_DEVICE_AVAILABLE,
+  // The device is locked for safety (and may be UNOWNED), so the bare-409
+  // "already paired elsewhere, reset it" copy is wrong/unactionable here.
+  DEVICE_QUARANTINED: CLAIM_QUARANTINED,
   // Invalid/expired pairing or fallback-token input. The 6-digit fallback
   // emits PAIRING_CODE_* (NOT FALLBACK_CODE_*); the QR fallback token emits
   // FALLBACK_TOKEN_*. A bare 403/401 with no code is disambiguated below.
@@ -210,5 +231,6 @@ export const CLAIM_STATUS = {
   CLAIM_RATE_LIMITED,
   CLAIM_SERVER_ERROR,
   CLAIM_AUTH_REQUIRED,
+  CLAIM_QUARANTINED,
   CLAIM_UNKNOWN,
 } as const;

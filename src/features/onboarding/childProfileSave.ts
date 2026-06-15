@@ -48,6 +48,17 @@ export function childProfileSaveErrorMessage(saveError: unknown): string {
   return 'Could not save child profile. Check your connection and try again.';
 }
 
+// Used when the child profile saved but finishing the (already-claimed) robot's
+// pairing failed. The profile exists, so the parent only needs to retry the
+// finalize step — which a second save does without re-creating the child.
+export function pairingFinalizeErrorMessage(finalizeError: unknown): string {
+  const code = errorCode(finalizeError);
+  if (code === 'PROVISIONING_ATTEMPT_EXPIRED' || code === 'PROVISIONING_ATTEMPT_NOT_FOUND') {
+    return 'Setup timed out. Start pairing again from the robot screen.';
+  }
+  return 'Saved your child, but could not finish setting up the robot. Check your connection and try again.';
+}
+
 export function allowsDevelopmentCoppaConsentBypass(isDev: boolean, apiBaseUrl: string): boolean {
   return isDev && apiBaseUrl.includes('tbot-backend-8wmh.onrender.com');
 }

@@ -33,10 +33,10 @@ const mockedOpenWifiSettings = openWifiSettings as jest.MockedFunction<typeof op
 const mockedOpenBluetoothSettings = openBluetoothSettings as jest.MockedFunction<typeof openBluetoothSettings>;
 const mockedOpenAppSettings = openAppSettings as jest.MockedFunction<typeof openAppSettings>;
 
-type Nav = { navigate: jest.Mock };
+type Nav = { navigate: jest.Mock; reset: jest.Mock };
 
 function makeNav(): Nav {
-  return { navigate: jest.fn() };
+  return { navigate: jest.fn(), reset: jest.fn() };
 }
 
 function renderScreen(params: Record<string, unknown> | undefined, nav: Nav = makeNav()) {
@@ -430,14 +430,25 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
   });
 
-  it('CLAIMED navigates to PairSuccessScreen with the carried ids', async () => {
+  it('CLAIMED resets to the PairSuccess terminus with the carried ids (drops the failed stack)', async () => {
     mockedGetClaimStatus.mockResolvedValue(claimStatus({ status: 'CLAIMED' }));
     const { nav } = renderScreen(lateBleClaimParams());
-    await waitFor(() => expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, {
-      deviceId: 'device-1',
-      serialNumber: 'TBT-2026-004217',
-      provisioningAttemptId: 'claim-1',
+    await waitFor(() => expect(nav.reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: {
+            deviceId: 'device-1',
+            serialNumber: 'TBT-2026-004217',
+            provisioningAttemptId: 'claim-1',
+          },
+        },
+      ],
     }));
+    // Reset (not navigate) so swipe-back lands on DeviceHome, not this screen.
+    expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
   });
 
@@ -454,10 +465,19 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
   it('falls back to params.deviceId when the status omits a deviceId', async () => {
     mockedGetClaimStatus.mockResolvedValue(claimStatus({ status: 'CLAIMED', deviceId: '' }));
     const { nav } = renderScreen(lateBleClaimParams({ deviceId: 'local-device-7' }));
-    await waitFor(() => expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, {
-      deviceId: 'local-device-7',
-      serialNumber: 'TBT-2026-004217',
-      provisioningAttemptId: 'claim-1',
+    await waitFor(() => expect(nav.reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: {
+            deviceId: 'local-device-7',
+            serialNumber: 'TBT-2026-004217',
+            provisioningAttemptId: 'claim-1',
+          },
+        },
+      ],
     }));
   });
 

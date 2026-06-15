@@ -1105,14 +1105,18 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
       batteryPercent: 90,
     });
     const navigate = jest.fn();
+    const reset = jest.fn();
     render(
       <PairConnectingScreen
-        navigation={{ navigate } as never}
+        navigation={{ navigate, reset } as never}
         route={{ params: bleReconnectParams() } as never}
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen));
+    // Reset (not navigate) so the finished reconnect/pairing stack is dropped and
+    // DeviceHome becomes the root — Back must not re-enter the finished screens.
+    await waitFor(() => expect(reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
     // Credential-only: no claim confirm, no token mint, no claim poll.
     expect(mockedConfirmLocalBlePaired).not.toHaveBeenCalled();
     expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
@@ -1201,14 +1205,15 @@ describe('PairConnectingScreen — secret lifecycle and anti-leak', () => {
       batteryPercent: 90,
     });
     const navigate = jest.fn();
+    const reset = jest.fn();
     render(
       <PairConnectingScreen
-        navigation={{ navigate } as never}
+        navigation={{ navigate, reset } as never}
         route={{ params: bleReconnectParams() } as never}
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen));
+    await waitFor(() => expect(reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] }));
     expect(getPairingBootstrapToken('attempt-rc-1')).toBeUndefined();
   });
 

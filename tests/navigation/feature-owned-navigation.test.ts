@@ -20,7 +20,13 @@ const FEATURES_WITH_ROUTES = [
   'fallback',
 ] as const;
 
-const ENTRY_ROLES = new Set(['tab', 'stack-entry', 'modal-entry', 'state-machine', 'fallback-entry']);
+// Entry roles a cross-feature forward navigation is allowed to target. Includes
+// 'onboarding-root' (the onboarding stack's entry, e.g. ChildProfileScreen) — a
+// parent who pairs a robot with no child profile is routed from the device
+// feature into that entry to create a child and finish pairing. This matches the
+// STATIC_ENTRY_ROLES allow-list in route-reachability.test.ts (which already
+// treats onboarding-root as an entry); the two were out of sync.
+const ENTRY_ROLES = new Set(['onboarding-root', 'tab', 'stack-entry', 'modal-entry', 'state-machine', 'fallback-entry']);
 
 function listFiles(dir: string, predicate: (file: string) => boolean): string[] {
   const entries = readdirSync(dir);

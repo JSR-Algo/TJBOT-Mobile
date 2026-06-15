@@ -129,7 +129,12 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         clearPairingBootstrapToken(result.provisioningAttemptId);
         setI(PAIRING_STEP_COUNT);
         setStatus('authenticated');
-        navigation.navigate(ROUTES.DeviceHomeScreen);
+        // Reset (not navigate) so the finished reconnect/pairing stack is dropped
+        // and DeviceHome becomes the root — otherwise Back walks the parent back
+        // THROUGH the finished pairing screens (this flow is entered from
+        // DeviceOverview, not DeviceHome), mirroring PairRename/PairFirstLesson.
+        // device_online has no PairSuccess to preserve, so a single-route reset.
+        navigation.reset({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] });
         return;
       }
       const authenticated = result.completionMode === 'claim_confirmed'
