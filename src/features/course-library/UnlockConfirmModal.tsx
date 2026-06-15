@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -9,7 +10,10 @@ import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from './components/CL';
-import { unlockCourse } from '@/services/api/course-library.api';
+import { enrollCourse } from '@/services/api/course-library.api';
+import { getDeviceStatus } from '@/services/api/device.api';
+import { useOptionalHousehold } from '@/contexts/HouseholdContext';
+import { normalizeError } from '@/utils/errors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnlockConfirmScreen'>;
 
@@ -18,26 +22,71 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
 
 export default function UnlockConfirmModal({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? 'c_food';
+  // childId = the parent's currently-active child (D-CHILD-RESOLUTION). The
+  // backend AuthGuard verifies the parent owns this child via req.auth.sub —
+  // the client never trusts the household_id alone.
+  const household = useOptionalHousehold();
+  const queryClient = useQueryClient();
+  const childId = household?.activeChild?.id;
   const [vals, setVals] = React.useState(['', '', '', '']);
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const filled = vals.every(Boolean);
   const ok = vals.join('') === TARGET.join('');
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!ok || pending) return;
-    setPending(true);
     setError(null);
-    void unlockCourse(courseId)
-      .then(() => {
-        navigation.replace(ROUTES.CourseAddedScreen, { courseId });
-      })
-      .catch(() => {
-        setError('Course unlock is unavailable. Try again later.');
-      })
-      .finally(() => {
-        setPending(false);
-      });
+    if (!childId) {
+      // No active child → enrollment has no target. Surface a friendly Vietnamese
+      // message — same parent-onboarding cue used by SendToRobotScreen for the
+      // childless-household state, just localized for the unlock modal.
+      setError('Vui lòng thêm bé vào tài khoản trước khi mở khoá khoá học.');
+      return;
+    }
+    setPending(true);
+    try {
+      // Resolve the household device for the ACTIVE child the same way
+      // SendToRobotScreen does — 'primary' lets the server pick the bound robot
+      // (devices.assigned_child_profile_id === childId) and falls back to the
+      // first-listed device in single-robot households. When no device is
+      // available we still attempt the enrollment WITHOUT deviceId so the parent
+      // can finish the unlock flow; the backend creates the enrollment and
+      // returns a placeholder/no-op assignment that RobotReadyScreen will show
+      // as "no robot yet".
+      let deviceId: string | undefined;
+      try {
+        const device = await getDeviceStatus('primary', childId);
+        if (device.id) deviceId = device.id;
+      } catch {
+        // Treat resolver errors as "no device yet" — the next branch handles it.
+        deviceId = undefined;
+      }
+      if (!deviceId) {
+        setError('Chưa có robot — kết nối robot trước khi mở khoá khoá học.');
+        return;
+      }
+      try {
+        const { assignment } = await enrollCourse(courseId, { childId, deviceId });
+        // The new enrollment becomes the child's in-flight course. Invalidate
+        // the shared progress cache (SAME key ParentToday / ParentHistory /
+        // TodayProgress read) plus the enrollment + current-assignment keys so
+        // those screens refetch instead of showing stale pre-enroll data.
+        void queryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+        void queryClient.invalidateQueries({ queryKey: ['enrollments', 'child', childId] });
+        void queryClient.invalidateQueries({ queryKey: ['assignment', 'device', deviceId, 'current'] });
+        navigation.replace(ROUTES.CourseAddedScreen, { courseId, assignmentId: assignment.id });
+      } catch (err) {
+        const normalized = normalizeError(err);
+        if (normalized.code === 'NO_DEVICE') {
+          setError('Chưa có robot — kết nối robot trước khi mở khoá khoá học.');
+          return;
+        }
+        setError('Không thể mở khoá khoá học. Vui lòng thử lại.');
+      }
+    } finally {
+      setPending(false);
+    }
   };
 
   const handleKey = (k: string) => {
@@ -105,7 +154,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <DeviceBigBtn onClick={handleConfirm} disabled={pending || !ok}>
+        <DeviceBigBtn onClick={() => { void handleConfirm(); }} disabled={pending || !ok}>
           {pending ? 'Adding...' : ok ? 'Confirm add' : filled ? 'Try again' : 'Enter the number'}
         </DeviceBigBtn>
       </Box>

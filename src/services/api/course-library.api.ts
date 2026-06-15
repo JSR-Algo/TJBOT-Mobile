@@ -97,10 +97,21 @@ export async function purchaseCourse(_courseId: string): Promise<void> {
   backendContractUnavailable(`purchaseCourse:${_courseId}`);
 }
 
+/**
+ * @deprecated The `/course-library/:id/unlock` stub returns 410 GONE. The real
+ * enrollment flow lives at POST `/v1/courses/:courseId/enroll` — call
+ * {@link enrollCourse} instead. Retained as a no-op shim so older callers fall
+ * through gracefully; new code MUST NOT call this.
+ */
 export async function unlockCourse(courseId: string): Promise<void> {
   await client.post(`/course-library/${courseId}/unlock`);
 }
 
+/**
+ * @deprecated The `/course-library/:id/send-to-robot` stub returns 410 GONE.
+ * Use {@link createAssignment} (device-scoped lesson assignment) for the real
+ * send-to-robot flow; for course enrollment use {@link enrollCourse}.
+ */
 export async function sendCourseToRobot(courseId: string): Promise<void> {
   await client.post(`/course-library/${courseId}/send-to-robot`);
 }
@@ -409,6 +420,100 @@ export interface AssignmentPresentation {
   clState: CLScreenState;
   chipState?: CLChipState;
   copy: string;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Course enrollment (parent → child → course). Replaces the retired
+// `/course-library/:id/unlock` stub. The backend is AuthGuard-protected and
+// verifies parent ownership of childId (and, when provided, deviceId) via
+// req.auth.sub — same ownership pattern as lesson-assignment.service.ts.
+//
+//   POST /v1/courses/:courseId/enroll  body { childId, deviceId? }
+//        → { data: { enrollment, assignment } }
+//   GET  /v1/children/:childId/enrollments  → { data: { enrollments: [...] } }
+//
+// Paths are BARE — baseURL already carries /v1 via ensureV1 (DIV-MOBILE-PREFIX).
+// `currentLessonKey` is the catalog ordering key (lessons.lesson_key ASC) the
+// backend chose as the first/next lesson, NOT a lesson_id.
+// ───────────────────────────────────────────────────────────────────────────
+
+export type EnrollmentStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+
+export interface Enrollment {
+  id: string;
+  childId: string;
+  courseId: string;
+  deviceId: string | null;
+  status: EnrollmentStatus;
+  currentLessonKey: string | null;
+}
+
+export interface AssignmentRef {
+  id: string;
+  lessonId: string;
+  lessonVersion: number; // NUMBER (D-LV) — same wire shape as createAssignment.
+  state: AssignmentState;
+}
+
+const ENROLLMENT_STATUSES: readonly EnrollmentStatus[] = ['ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED'];
+
+function toEnrollmentStatus(value: unknown): EnrollmentStatus {
+  return typeof value === 'string' && (ENROLLMENT_STATUSES as readonly string[]).includes(value)
+    ? (value as EnrollmentStatus)
+    : 'ACTIVE';
+}
+
+export function normalizeEnrollmentPayload(payload: unknown): Enrollment {
+  const r = asRecord(payload);
+  return {
+    id: (r.id ?? r.enrollment_id ?? r.enrollmentId ?? '') as string,
+    childId: (r.child_id ?? r.childId ?? '') as string,
+    courseId: (r.course_id ?? r.courseId ?? '') as string,
+    deviceId: (r.device_id ?? r.deviceId ?? null) as string | null,
+    status: toEnrollmentStatus(r.status),
+    currentLessonKey: (r.current_lesson_key ?? r.currentLessonKey ?? null) as string | null,
+  };
+}
+
+export function normalizeAssignmentRefPayload(payload: unknown): AssignmentRef {
+  const r = asRecord(payload);
+  return {
+    id: (r.id ?? r.assignment_id ?? r.assignmentId ?? '') as string,
+    lessonId: (r.lesson_id ?? r.lessonId ?? '') as string,
+    lessonVersion: Number(r.lesson_version ?? r.lessonVersion ?? 0), // NUMBER (D-LV)
+    state: toAssignmentState(r.state),
+  };
+}
+
+// Enroll the given child in the course. When `deviceId` is supplied the backend
+// also creates (or returns the existing) lesson assignment for the course's
+// first lesson on that device, so the parent lands on a screen that can
+// immediately poll the assignment. NO_DEVICE handling is the caller's job —
+// the backend will surface a code like `NO_DEVICE` / `ROBOT_OFFLINE` when the
+// deviceId is missing or invalid for the child.
+export async function enrollCourse(
+  courseId: string,
+  body: { childId: string; deviceId?: string },
+): Promise<{ enrollment: Enrollment; assignment: AssignmentRef }> {
+  const response = await client.post(`/courses/${courseId}/enroll`, body);
+  const envelope = pickEnvelope<Record<string, unknown>>(response.data) ?? {};
+  return {
+    enrollment: normalizeEnrollmentPayload(envelope.enrollment ?? {}),
+    assignment: normalizeAssignmentRefPayload(envelope.assignment ?? {}),
+  };
+}
+
+// List a child's enrollments. AuthGuard-scoped: backend verifies the caller is
+// the parent of `childId` (req.auth.sub → child ownership).
+export async function listChildEnrollments(childId: string): Promise<{ enrollments: Enrollment[] }> {
+  const response = await client.get(`/children/${childId}/enrollments`);
+  const envelope = pickEnvelope<{ enrollments?: unknown[] }>(response.data) ?? {};
+  const rawList: unknown[] = Array.isArray(envelope)
+    ? envelope
+    : Array.isArray(envelope.enrollments)
+      ? envelope.enrollments
+      : [];
+  return { enrollments: rawList.map((raw) => normalizeEnrollmentPayload(raw)) };
 }
 
 export function presentAssignmentState(state: AssignmentState): AssignmentPresentation {

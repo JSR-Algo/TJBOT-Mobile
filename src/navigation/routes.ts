@@ -32,7 +32,7 @@ export type RootStackParamList = {
   CourseLibraryScreen: undefined;
   CourseDetailScreen: undefined | { courseId?: string };
   BuyCourseScreen: undefined | { courseId?: string };
-  CourseAddedScreen: undefined | { courseId?: string };
+  CourseAddedScreen: undefined | { courseId?: string; assignmentId?: string };
   CourseCompleteScreen: undefined | { courseId?: string };
   CourseLockedScreen: undefined | { courseId?: string };
   NeedsSyncScreen: undefined | { courseId?: string };
