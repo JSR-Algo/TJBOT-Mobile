@@ -31,13 +31,24 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     const provisioningAttemptId = route.params?.provisioningAttemptId;
     const serialNumber = route.params?.serialNumber;
     const childId = activeChild?.id; // active-child (defaults to children[0]); was hardcoded children[0]
-    if (!deviceId || !provisioningAttemptId || !childId) {
+    // Genuine loss of pairing context — this IS a setup failure.
+    if (!deviceId || !provisioningAttemptId) {
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
         serialNumber,
         provisioningAttemptId,
         errorCode: 'PAIRING_CONTEXT_MISSING',
       });
+      return;
+    }
+    // The robot has ALREADY connected by this point (claim/confirm set the device
+    // active + owned). The only thing missing is a child profile to assign it to,
+    // so a missing/mismatched child is NOT a connection failure — sending the
+    // parent to the scary "connect failed" screen is wrong. Route them to create a
+    // child profile instead (they can finish assigning the already-connected robot
+    // afterwards).
+    if (!childId) {
+      navigation.navigate(ROUTES.ChildProfileScreen);
       return;
     }
     setSaving(true);
@@ -49,17 +60,36 @@ export default function PairRenameScreen({ navigation, route }: Props) {
         displayName: 'Living-room Robot',
       });
       await markLocalDevicePairedBestEffort(deviceId);
-      navigation.navigate(ROUTES.PairSuccessScreen, {
-        deviceId,
-        serialNumber,
-        provisioningAttemptId,
+      // Pairing is now COMPLETE. Reset the stack so the (now-finished) pairing
+      // screens — connecting/found/rename/etc. — are removed from the back stack and
+      // DeviceHome becomes the root. Otherwise `navigate` just pushes Success on top
+      // of the whole pairing stack (this flow is entered from DeviceOverview, not
+      // DeviceHome), so pressing Back walks back THROUGH pairing and lands on main /
+      // re-runs a finished screen (= the reported "back goes to main / errors" bug).
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: ROUTES.DeviceHomeScreen },
+          {
+            name: ROUTES.PairSuccessScreen,
+            params: { deviceId, serialNumber, provisioningAttemptId },
+          },
+        ],
       });
     } catch (error) {
+      const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
+      // A missing/mismatched child profile is a finalize-only problem — the robot
+      // is already connected — so guide to creating a child rather than reporting a
+      // connection failure.
+      if (code === 'CHILD_PROFILE_NOT_FOUND' || code === 'CHILD_PROFILE_HOUSEHOLD_MISMATCH') {
+        navigation.navigate(ROUTES.ChildProfileScreen);
+        return;
+      }
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
         serialNumber,
         provisioningAttemptId,
-        errorCode: errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED'),
+        errorCode: code,
       });
     } finally {
       setSaving(false);

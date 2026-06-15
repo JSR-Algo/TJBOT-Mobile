@@ -54,7 +54,7 @@ export default function PairFirstLessonScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.DeviceHomeScreen)} color="#FF6F61">Hand it to your child</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.reset({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] })} color="#FF6F61">Hand it to your child</PrimaryCTA>
         <Text style={styles.note}>You'll get a calm summary in this app after each lesson.</Text>
       </Box>
     </ScrollView>
