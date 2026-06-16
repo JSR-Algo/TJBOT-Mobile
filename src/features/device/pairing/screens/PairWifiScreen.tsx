@@ -11,9 +11,10 @@ import { buildPairWifiPasswordParams } from '../routeParams';
 import {
   connectProvisionableDevice,
   scanWifiNetworks,
+  stopProvisionSearch,
   type ProvisioningError,
 } from '@/services/provisioning/espProvisioning';
-import { getPairingCandidate, setConnectedEspDevice } from '../pairingSession';
+import { getConnectedEspDevice, getPairingCandidate, setConnectedEspDevice } from '../pairingSession';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairWifiScreen'>;
 
@@ -23,15 +24,34 @@ export default function PairWifiScreen({ navigation, route }: Props) {
   const [networks, setNetworks] = React.useState<WifiRow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [scanKey, setScanKey] = React.useState(0);
 
   const espDeviceName =
     route.params?.espDeviceName ?? getPairingCandidate()?.espDeviceName ?? '';
   const pairingCode = route.params?.code;
 
   React.useEffect(() => {
+    return () => {
+      const device = getConnectedEspDevice();
+      if (device) {
+        try {
+          device.disconnect();
+        } catch {
+          /* ignore */
+        }
+      }
+      stopProvisionSearch();
+    };
+  }, []);
+
+  React.useEffect(() => {
     let cancelled = false;
 
     const load = async (): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      setNetworks([]);
+
       if (!espDeviceName) {
         setError('Robot provisioning name missing. Search again from the start.');
         setLoading(false);
@@ -72,7 +92,7 @@ export default function PairWifiScreen({ navigation, route }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [espDeviceName, pairingCode, route.params?.serial]);
+  }, [espDeviceName, pairingCode, route.params?.serial, scanKey]);
 
   const openPasswordScreen = (ssid: string): void => {
     navigation.navigate(ROUTES.PairWifiPasswordScreen, buildPairWifiPasswordParams(ssid, {
@@ -132,7 +152,18 @@ export default function PairWifiScreen({ navigation, route }: Props) {
           )}
         </Box>
       </Box>
-      <Box paddingHorizontal={20} paddingTop={12}>
+      <Box paddingHorizontal={20} paddingTop={12} gap={8}>
+        {!loading && networks.length > 0 ? (
+          <TouchableOpacity
+            onPress={() => setScanKey((k) => k + 1)}
+            accessibilityRole="button"
+            accessibilityLabel="Scan again"
+          >
+            <Text fontWeight="500" style={styles.otherLink}>
+              Scan again
+            </Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
           onPress={() => openPasswordScreen('Other network')}
           accessibilityRole="button"

@@ -12,10 +12,11 @@ import { pairDevice } from '@/services/api/device.api';
 import {
   connectProvisionableDevice,
   provisionWifi,
+  stopProvisionSearch,
   type ProvisioningError,
 } from '@/services/provisioning/espProvisioning';
 import { ROUTES } from '@/navigation/routes';
-import { clearPairingSession, getConnectedEspDevice } from '../pairingSession';
+import { clearPairingSession, getConnectedEspDevice, setConnectedEspDevice } from '../pairingSession';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 
@@ -30,6 +31,20 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
   const [stepIndex, setStepIndex] = React.useState(0);
   const [status, setStatus] = React.useState<'pairing' | 'complete' | 'failed'>('pairing');
   const params = route.params;
+
+  React.useEffect(() => {
+    return () => {
+      const device = getConnectedEspDevice();
+      if (device) {
+        try {
+          device.disconnect();
+        } catch {
+          /* ignore */
+        }
+      }
+      stopProvisionSearch();
+    };
+  }, []);
 
   React.useEffect(() => {
     const code = getParamString(params, 'code');
@@ -59,6 +74,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
             username: serial ?? espDeviceName,
           });
           device = connected.device;
+          setConnectedEspDevice(device);
         }
 
         if (device) {
@@ -85,10 +101,14 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       } catch (err) {
         if (cancelled) return;
         setStatus('failed');
+        const isProvError = err instanceof Error && err.name === 'ProvisioningError';
         const message =
           err instanceof Error
             ? err.message
             : (err as ProvisioningError)?.message ?? 'Pairing failed';
+        const errorCode = isProvError
+          ? (err as ProvisioningError).code
+          : 'E-PROV-001';
         navigation.navigate(ROUTES.PairFailedScreen, {
           deviceId: params?.deviceId,
           serial: params?.serial,
@@ -96,6 +116,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           code,
           ssid,
           error: message,
+          errorCode,
         });
       }
     };

@@ -28,6 +28,16 @@ const REASONS: { ic: string; t: string; b: string; go: GoScreen }[] = [
 export default function PairFailedScreen({ navigation, route }: Props) {
   const params = route.params;
   const error = typeof params?.error === 'string' && params.error.trim() ? params.error.trim() : null;
+  const errorCode = params?.errorCode;
+
+  const reasons = React.useMemo(() => {
+    if (errorCode === 'E-PROV-001') {
+      // BLE timeout / connect failure — Wi-Fi password recovery is not relevant.
+      return REASONS.filter((r) => r.t !== 'Wrong Wi-Fi password');
+    }
+    return REASONS;
+  }, [errorCode]);
+
   return (
     <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
@@ -41,7 +51,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
         ) : null}
       </Box>
       <Box paddingHorizontal={16} paddingTop={20} gap={8}>
-        {REASONS.map(r => (
+        {reasons.map(r => (
           <TouchableOpacity
             key={r.t}
             style={styles.reasonCard}

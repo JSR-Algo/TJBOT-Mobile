@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View, ViewProps } from 'react-native';
+import { View, ViewProps, DimensionValue } from 'react-native';
 import { tokens } from '@/design-system/tokens';
 
 type ColorToken = keyof typeof tokens.colors;
@@ -33,8 +33,8 @@ export interface BoxProps extends ViewProps {
   right?: number;
   bottom?: number;
   left?: number;
-  width?: number | string;
-  height?: number | string;
+  width?: DimensionValue;
+  height?: DimensionValue;
   opacity?: number;
   overflow?: 'visible' | 'hidden' | 'scroll';
 }

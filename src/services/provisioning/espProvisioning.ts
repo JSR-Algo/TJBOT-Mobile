@@ -11,6 +11,7 @@ import {
   resolveEspSecurity,
   resolveProofOfPossession,
 } from './config';
+import type { ProvisioningErrorCode } from '@/state/machines/devicePairing.types';
 
 export type ProvisioningConnectParams = {
   deviceName: string;
@@ -26,7 +27,7 @@ export type ProvisioningConnectResult = {
 export class ProvisioningError extends Error {
   constructor(
     message: string,
-    readonly code: 'NOT_FOUND' | 'CONNECT_FAILED' | 'SCAN_FAILED' | 'PROVISION_FAILED',
+    readonly code: ProvisioningErrorCode,
   ) {
     super(message);
     this.name = 'ProvisioningError';
@@ -60,6 +61,7 @@ export function stopProvisionSearch(): void {
 
 export async function connectProvisionableDevice(
   params: ProvisioningConnectParams,
+  retry = true,
 ): Promise<ProvisioningConnectResult> {
   const security = resolveEspSecurity();
   const pop = resolveProofOfPossession(params.pairingCode);
@@ -75,10 +77,12 @@ export async function connectProvisionableDevice(
     await device.connect(pop, null, username);
     return { device, deviceName: params.deviceName };
   } catch (err) {
-    throw new ProvisioningError(
-      err instanceof Error ? err.message : 'Failed to connect to robot for provisioning',
-      'CONNECT_FAILED',
-    );
+    const message = err instanceof Error ? err.message : 'Failed to connect to robot for provisioning';
+    const transient = /peripheral disconnected/i.test(message);
+    if (transient && retry) {
+      return connectProvisionableDevice(params, false);
+    }
+    throw new ProvisioningError(message, 'E-PROV-001');
   }
 }
 
@@ -89,7 +93,7 @@ export async function scanWifiNetworks(device: ESPDevice): Promise<ESPWifiList[]
   } catch (err) {
     throw new ProvisioningError(
       err instanceof Error ? err.message : 'Wi-Fi scan failed',
-      'SCAN_FAILED',
+      'E-PROV-001',
     );
   }
 }
@@ -104,7 +108,7 @@ export async function provisionWifi(
   } catch (err) {
     throw new ProvisioningError(
       err instanceof Error ? err.message : 'Wi-Fi provisioning failed',
-      'PROVISION_FAILED',
+      'E-PROV-002',
     );
   } finally {
     try {
