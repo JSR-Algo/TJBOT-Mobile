@@ -73,7 +73,9 @@ describe('Gemini API key — ephemeral-only enforcement (AC-23)', () => {
   });
 
   it('GoogleGenAI({apiKey}) caller sources apiKey from backend ephemeral token', () => {
-    const hookPath = path.join(SRC_ROOT, 'hooks', 'useGeminiConversation.ts');
+    // Token fetch and GoogleGenAI construction moved to the dedicated
+    // useGeminiAudioSession hook (useGeminiConversation is now the composer).
+    const hookPath = path.join(SRC_ROOT, 'hooks', 'useGeminiAudioSession.ts');
     const src = fs.readFileSync(hookPath, 'utf8');
 
     // Confirm that apiKey is assigned from data.token (backend response), not
