@@ -44,8 +44,8 @@ export function isAllowlistedDevice(
 
   if (!prefixMatch) return false;
 
-  // Hardening: when service UUIDs are advertised, require the provisioning service UUID.
-  if (serviceUUIDs && serviceUUIDs.length > 0) {
+  // Hardening: when service UUIDs are provided, require the provisioning service UUID.
+  if (serviceUUIDs !== undefined) {
     if (!serviceUUIDs.includes(BLE_CONFIG.SERVICE_UUID)) {
       return false;
     }

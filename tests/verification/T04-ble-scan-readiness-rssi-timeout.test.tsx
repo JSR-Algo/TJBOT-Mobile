@@ -87,7 +87,9 @@ describe('T04 BLE scan readiness, RSSI capture, and timeout alignment', () => {
       const manager = bleService.getBleManager();
       (manager.startDeviceScan as jest.Mock).mockImplementation(
         (_uuids: string[], _options: unknown, callback: (error: Error | null, device: unknown | null) => void) => {
-          devices.forEach((device) => callback(null, device as Record<string, unknown>));
+          devices.forEach((device) =>
+            callback(null, { ...device, serviceUUIDs: [BLE_CONFIG.SERVICE_UUID] } as Record<string, unknown>),
+          );
         },
       );
     }
