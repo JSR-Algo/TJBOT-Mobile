@@ -11,8 +11,15 @@
  */
 
 describe('getApiBaseUrl resolution order', () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   function loadGetApiBaseUrl(opts: {
@@ -30,22 +37,7 @@ describe('getApiBaseUrl resolution order', () => {
       dev = true,
     } = opts;
 
-    jest.doMock('../../src/__env__', () => ({
-      ENV: {
-        EXPO_PUBLIC_TBOT_API_URL: envApiUrl,
-        EXPO_PUBLIC_TBOT_AI_URL: '',
-        EXPO_PUBLIC_WS_URL: '',
-        EXPO_PUBLIC_GEMINI_LIVE_MODEL: '',
-        EXPO_PUBLIC_SENTRY_DSN: '',
-        EXPO_PUBLIC_POSTHOG_API_KEY: '',
-        EXPO_PUBLIC_POSTHOG_HOST: '',
-        EXPO_PUBLIC_VOICE_TEST_HARNESS: '',
-        EXPO_PUBLIC_VOICE_BARGE_IN_BUDGET_MS: '',
-        EXPO_PUBLIC_VOICE_CANCEL_UNACK_RECOVERY: '',
-        EXPO_PUBLIC_ESP_DEVICE_PREFIX: '',
-        EXPO_PUBLIC_ESP_SECURITY: '',
-      },
-    }));
+    process.env.EXPO_PUBLIC_TBOT_API_URL = envApiUrl;
 
     jest.doMock('expo-device', () => ({ isDevice }));
 
