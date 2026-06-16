@@ -21,6 +21,12 @@ import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import { detectExpression } from '../utils/expressionDetector';
 import { chat as chatWithAI } from '../services/api/ai';
 import { startVoiceDebugProbe, stopVoiceDebugProbe } from '../debug/voiceDebugProbe';
+import {
+  checkInput,
+  checkOutput,
+  assemblePersona,
+  type SafetyContext,
+} from '@/services/ai/safety';
 import { useGeminiAudioSession, type SessionResumptionUpdate } from './useGeminiAudioSession';
 import { useGeminiPlayback } from './useGeminiPlayback';
 import { useGeminiTimers } from './useGeminiTimers';
@@ -51,7 +57,31 @@ export function useGeminiConversation(
   const fsmState = useVoiceAssistantStore((s) => s.state);
   const telemetry = useVoiceTelemetry();
   const playback = useGeminiPlayback();
-  const session = useGeminiAudioSession(options, telemetry);
+  const safetyContext: SafetyContext = useMemo(
+    () => ({
+      childAgeBracket: '4-6',
+      childProfileId: 'default',
+      sessionId: 'session-default',
+      theme: {
+        version: '1.0.0',
+        allowedTopics: ['animals', 'colors', 'family', 'school', 'food'],
+        vocab: ['hello', 'cat', 'dog', 'blue', 'apple'],
+        openers: ['Hi friend!', 'Ready to learn?'],
+      },
+      telemetry: {
+        emit: (event, payload) => telemetry.track('session', event, payload),
+      },
+    }),
+    [telemetry],
+  );
+
+  const session = useGeminiAudioSession(
+    {
+      ...options,
+      systemInstruction: options.systemInstruction || assemblePersona(safetyContext),
+    },
+    telemetry,
+  );
 
   const audioStreamRef = useRef<AudioStreamHandle | null>(null);
   const isCapturingRef = useRef(false);
@@ -187,6 +217,8 @@ export function useGeminiConversation(
         const rms = count > 0 ? Math.sqrt(sum / count) : 0;
 
         try {
+          const inputCheck = checkInput(base64, safetyContext);
+          if (inputCheck.verdict === 'block') return;
           session.sessionRef.current?.sendRealtimeInput?.({
             audio: { data: base64, mimeType: 'audio/pcm;rate=16000' },
           });
@@ -498,6 +530,10 @@ export function useGeminiConversation(
         telemetry.trackInputTranscript(text.length);
       },
       onOutputTranscript: (text: string) => {
+        // Handle AI output transcription chunk (outputTranscription) through the safety shim.
+        const outputCheck = checkOutput(text, safetyContext);
+        if (outputCheck.verdict === 'block') return;
+
         const expr = detectExpression(text);
         if (expr) {
           store.getState().setExpressionOverride(expr);
@@ -557,7 +593,7 @@ export function useGeminiConversation(
         }
       },
     }),
-    [store, telemetry, playback, timers],
+    [store, telemetry, playback, timers, safetyContext],
   );
 
   // ── Playback callbacks ─────────────────────────────────────────────────────
