@@ -7,6 +7,10 @@ jest.mock('../../../src/services/api/robot-mgmt.api', () => ({
   runMicTest: jest.fn(),
 }));
 
+jest.mock('@/config/feature-flags', () => ({
+  FEATURE_DEVICE_MANAGEMENT: true,
+}));
+
 const apiMocks = {
   runMicTest: runMicTest as jest.MockedFunction<typeof runMicTest>,
 };
