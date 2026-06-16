@@ -81,10 +81,15 @@ export async function openRealtime(
 
   const reportNonCleanClose = (code: number, reason: string): void => {
     const context = { wsCloseCode: code, wsCloseReason: reason };
-    const warning = new Error(`Realtime WebSocket closed non-clean: ${code}`);
-    (warning as any).wsCloseCode = code;
+    const warning = new Error(`Realtime WebSocket closed non-clean: ${code}`) as Error & {
+      wsCloseCode?: number;
+    };
+    warning.wsCloseCode = code;
     Sentry.captureException(warning, { extra: context });
-    posthog.capture('realtime_ws_non_clean_close', context);
+    (posthog as { capture?: (event: string, props: Record<string, unknown>) => void }).capture?.(
+      'realtime_ws_non_clean_close',
+      context,
+    );
   };
 
   const scheduleReconnect = (): void => {
@@ -93,8 +98,10 @@ export async function openRealtime(
     if (reconnectAttempt >= RECONNECT_MAX_ATTEMPTS) {
       if (!hasReportedTerminal) {
         hasReportedTerminal = true;
-        const terminalError = new Error('Realtime WebSocket reconnect attempts exhausted');
-        (terminalError as any).terminal = true;
+        const terminalError = new Error('Realtime WebSocket reconnect attempts exhausted') as Error & {
+          terminal?: boolean;
+        };
+        terminalError.terminal = true;
         handlers.onError?.(terminalError);
       }
       return;
@@ -135,10 +142,14 @@ export async function openRealtime(
     ws.onmessage = handleMessage;
 
     ws.onerror = (event) => {
-      const original = (event as any).error ?? (event as any).message ?? 'Realtime WebSocket error';
-      const error = new Error(typeof original === 'string' ? original : 'Realtime WebSocket error');
-      (error as any).cause = original instanceof Error ? original : undefined;
-      (error as any).original = original;
+      const webSocketError = event as { error?: unknown; message?: string };
+      const original = webSocketError.error ?? webSocketError.message ?? 'Realtime WebSocket error';
+      const error = new Error(typeof original === 'string' ? original : 'Realtime WebSocket error') as Error & {
+        cause?: unknown;
+        original?: unknown;
+      };
+      error.cause = original instanceof Error ? original : undefined;
+      error.original = original;
       handlers.onError?.(error);
     };
 
