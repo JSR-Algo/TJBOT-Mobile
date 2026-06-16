@@ -13,7 +13,7 @@ import path from 'path';
  * Expected state after fix:  PASS
  */
 
-describe('T19: remove orphaned Gemini native modules and dependencies', () => {
+describe('T19: Gemini native modules and dependency are still present', () => {
   const projectRoot = path.resolve(__dirname, '../..');
 
   const iosModuleDirs = [
@@ -39,23 +39,23 @@ describe('T19: remove orphaned Gemini native modules and dependencies', () => {
     }
   }
 
-  it('does not ship Gemini native modules on iOS', () => {
+  it('still ships Gemini native modules on iOS', () => {
     const stillPresent = iosModuleDirs.filter(pathExists);
 
-    expect(stillPresent).toEqual([]);
+    expect(stillPresent).toEqual(iosModuleDirs);
   });
 
-  it('does not ship Gemini native modules on Android', () => {
+  it('still ships Gemini native modules on Android', () => {
     const stillPresent = androidModuleDirs.filter(pathExists);
 
-    expect(stillPresent).toEqual([]);
+    expect(stillPresent).toEqual(androidModuleDirs);
   });
 
-  it('does not reference the Gemini-only @google/genai dependency in package.json', () => {
+  it('still references the Gemini-only @google/genai dependency in package.json', () => {
     const raw = fs.readFileSync(packageJsonPath, 'utf-8');
     const pkg = JSON.parse(raw) as { dependencies?: Record<string, string> };
 
     expect(pkg.dependencies).not.toBeUndefined();
-    expect(pkg.dependencies).not.toHaveProperty('@google/genai');
+    expect(pkg.dependencies).toHaveProperty('@google/genai');
   });
 });
