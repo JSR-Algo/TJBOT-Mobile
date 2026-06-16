@@ -12,6 +12,7 @@ const FEATURES_WITH_ROUTES = [
   'course',
   'course-library',
   'purchase',
+  'lesson-demo',
   'lesson-session',
   'progress',
   'parent',
@@ -19,6 +20,10 @@ const FEATURES_WITH_ROUTES = [
   'robot-mgmt',
   'fallback',
 ] as const;
+
+function featureDir(feature: string): string {
+  return feature === 'lesson-demo' ? 'lessonDemo' : feature;
+}
 
 const ENTRY_ROLES = new Set(['tab', 'stack-entry', 'modal-entry', 'state-machine', 'fallback-entry']);
 
@@ -80,7 +85,7 @@ function screenFileToRoute(): ReadonlyMap<string, string> {
 describe('feature-owned navigation', () => {
   it('keeps route screen registration inside feature slices', () => {
     for (const feature of FEATURES_WITH_ROUTES) {
-      expect(existsSync(join(root, 'src', 'features', feature, 'navigation.ts'))).toBe(true);
+      expect(existsSync(join(root, 'src', 'features', featureDir(feature), 'navigation.ts'))).toBe(true);
     }
 
     const centralNavigators = [
@@ -117,7 +122,7 @@ describe('feature-owned navigation', () => {
     const featureRegistrySource = readFileSync(join(root, 'src', 'navigation', 'featureRegistry.ts'), 'utf8');
 
     for (const feature of FEATURES_WITH_ROUTES) {
-      expect(featureRegistrySource).toContain(`@/features/${feature}/navigation`);
+      expect(featureRegistrySource).toContain(`@/features/${featureDir(feature)}/navigation`);
     }
 
     expect(featureRouteEntriesSource).toContain('./featureRegistry');
@@ -162,7 +167,7 @@ describe('feature-owned navigation', () => {
     expect(featureRegistrySource).not.toContain("['Home', 'Devices', 'Library', 'Progress', 'Profile']");
 
     const tabOrders = FEATURES_WITH_ROUTES.flatMap((feature) => {
-      const navigationSource = readFileSync(join(root, 'src', 'features', feature, 'navigation.ts'), 'utf8');
+      const navigationSource = readFileSync(join(root, 'src', 'features', featureDir(feature), 'navigation.ts'), 'utf8');
       return Array.from(navigationSource.matchAll(/tabOrder:\s*(\d+)/g), match => Number(match[1]));
     });
     expect([...tabOrders].sort((left, right) => left - right)).toEqual([1, 2, 3, 4, 5]);
@@ -201,7 +206,7 @@ describe('feature-owned navigation', () => {
     const featureRegistrySource = readFileSync(join(root, 'src', 'navigation', 'featureRegistry.ts'), 'utf8');
 
     for (const feature of FEATURES_WITH_ROUTES) {
-      const navigationSource = readFileSync(join(root, 'src', 'features', feature, 'navigation.ts'), 'utf8');
+      const navigationSource = readFileSync(join(root, 'src', 'features', featureDir(feature), 'navigation.ts'), 'utf8');
       const exportName = `${feature.replace(/-/g, '_').toUpperCase()}_NAVIGATION`;
 
       expect(navigationSource).toContain(`export const ${exportName}`);
@@ -220,6 +225,7 @@ describe('feature-owned navigation', () => {
       ['course', 'protected'],
       ['course-library', 'protected'],
       ['purchase', 'protected'],
+      ['lesson-demo', 'protected'],
       ['lesson-session', 'protected'],
       ['progress', 'protected'],
       ['parent', 'protected'],
@@ -229,7 +235,7 @@ describe('feature-owned navigation', () => {
     ]);
 
     for (const [feature, rootBranch] of expectedRootBranches) {
-      const navigationSource = readFileSync(join(root, 'src', 'features', feature, 'navigation.ts'), 'utf8');
+      const navigationSource = readFileSync(join(root, 'src', 'features', featureDir(feature), 'navigation.ts'), 'utf8');
       expect(navigationSource).toContain(`rootBranch: '${rootBranch}'`);
     }
 

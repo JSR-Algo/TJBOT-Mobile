@@ -23,6 +23,7 @@ describe('route ownership', () => {
         'course',
         'course-library',
         'purchase',
+        'lesson-demo',
         'lesson-session',
         'progress',
         'parent',

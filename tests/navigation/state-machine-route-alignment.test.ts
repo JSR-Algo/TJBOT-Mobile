@@ -251,6 +251,7 @@ describe('state-machine route alignment', () => {
 
   it('maps every onboarding route to an onboarding state', () => {
     const expectedOnboardingStateIds = new Map([
+      [ROUTES.ParentConsentScreen, 'onb_coppa'],
       [ROUTES.ChildProfileScreen, 'onb_child'],
       [ROUTES.MicAskScreen, 'onb_mic'],
       [ROUTES.FirstLessonEntryScreen, 'onb_first_lesson'],

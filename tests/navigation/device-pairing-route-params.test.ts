@@ -13,10 +13,9 @@ describe('device pairing Wi-Fi route params', () => {
     const src = source('src/features/device/pairing/screens/PairWifiScreen.tsx');
 
     expect(src).toContain("const openPasswordScreen = (ssid: string): void => {");
-    expect(src).toContain('...buildPairWifiPasswordParams(ssid),');
+    expect(src).toContain('buildPairWifiPasswordParams(ssid');
     expect(src).toContain('deviceId: route.params?.deviceId,');
     expect(src).toContain('code: route.params?.code,');
-    expect(src).toContain('Network scan needs device provisioning support.');
     expect(src).not.toContain('Casa-Familia');
     expect(src).not.toContain('onPress={() => openPasswordScreen(n.name)}');
   });

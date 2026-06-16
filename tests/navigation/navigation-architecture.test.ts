@@ -337,9 +337,9 @@ describe('navigation architecture', () => {
     expect(guide).toContain('tabBarButtonTestID');
     expect(guide).toContain('modal-stack-back');
     expect(guide).toContain('modal-dismiss');
-    expect(guide).toContain('130 screen files');
-    expect(guide).toContain('122 routes registered');
-    expect(guide).toContain('122 feature route registrations');
+    expect(guide).toContain('136 screen files');
+    expect(guide).toContain('129 routes registered');
+    expect(guide).toContain('129 feature route registrations');
     expect(guide).toContain('0 duplicate screen registrations');
   });
 
@@ -360,11 +360,12 @@ describe('navigation architecture', () => {
     expect(Object.keys(inventory.routeMap)).toEqual(Object.keys(ROUTE_MAP));
     expect(inventory.deletedRoutes).toEqual([
       'retired app-navigation route aliases',
-      'legacy src/screens tree',
+      'legacy src/app/screens alias tree',
       'prototype StubScreen registrations',
       'ListenScreen alias',
       'SpeakScreen alias',
       'DevicePairWifiScreen alias',
+      'src/api/* shim aliases',
     ]);
     expect(inventory.mergedNavigators).toContain('src/app/navigation');
     expect(Object.keys(inventory.ownership).length).toBe(Object.keys(ROUTE_MAP).length);
@@ -403,6 +404,7 @@ describe('navigation architecture', () => {
           ROUTES.LoginScreen,
         ],
         onboarding: [
+          ROUTES.ParentConsentScreen,
           ROUTES.ChildProfileScreen,
           ROUTES.MicAskScreen,
           ROUTES.FirstLessonEntryScreen,
@@ -569,7 +571,7 @@ describe('navigation architecture', () => {
       routesMissingComponents: [],
     });
     expect(inventory.forwardCycleGovernance).toEqual({
-      cycleGroupCount: 4,
+      cycleGroupCount: 5,
       cycleGroups: {
         'course-dispatch-picker': [ROUTES.RobotReadyScreen, ROUTES.SendToRobotScreen],
         'device-pairing-retry': [
@@ -580,6 +582,11 @@ describe('navigation architecture', () => {
           ROUTES.PairSearchScreen,
           ROUTES.PairWifiPasswordScreen,
           ROUTES.PairWifiScreen,
+        ],
+        'lesson-demo-review': [
+          ROUTES.LessonRoadmapScreen,
+          ROUTES.LessonSessionScreen,
+          ROUTES.ParentLessonSummaryScreen,
         ],
         'lesson-exit-resume': [
           ROUTES.ExitConfirmScreen,
