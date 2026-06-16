@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { TouchableOpacity, Animated, StyleSheet, Text } from 'react-native';
+import { TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { Icon } from '@/design-system/icons';
 
 interface BigMicButtonProps {
   isActive: boolean;
@@ -52,7 +53,12 @@ export function BigMicButton({ isActive, disabled, onPress, color, reduceMotion 
           },
         ]}
       >
-        <Text style={styles.icon}>{isActive ? '⏹' : '🎙'}</Text>
+        <Icon
+          name={isActive ? 'Square' : 'Mic'}
+          size={40}
+          color="#FFFFFF"
+          accessibilityLabel={isActive ? 'Stop microphone' : 'Start microphone'}
+        />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -70,7 +76,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 16,
   },
-  icon: { fontSize: 40 },
   ring: {
     position: 'absolute',
     width: 120,

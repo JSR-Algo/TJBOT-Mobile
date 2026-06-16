@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, typography } from '@/design-system/tokens/legacy-semantic';
+import { Icon } from '@/design-system/icons';
 import { Button } from './Button';
 
 interface EmptyStateProps {
@@ -13,7 +14,7 @@ interface EmptyStateProps {
 export function EmptyState({ title, subtitle, ctaLabel, onCta }: EmptyStateProps): React.JSX.Element {
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>🤖</Text>
+      <Icon name="Bot" size={64} color={colors.textSecondary} accessibilityLabel="Robot" />
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {ctaLabel && onCta ? (
@@ -29,10 +30,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
   },
   title: {
     ...typography.h3,

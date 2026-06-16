@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { Icon } from '@/design-system/icons';
 
 const DV = {
   ink: '#1A1A1F',
@@ -43,7 +44,7 @@ export default function DeviceRow({ icon, title, body, right, onClick, danger }:
           </Text>
         ) : null}
       </Box>
-      {right ?? (onClick ? <ChevronRight color={DV.ink3} /> : null)}
+      {right ?? (onClick ? <Icon name="ChevronRight" size={14} color={DV.ink3} accessibilityLabel="Open" /> : null)}
     </>
   );
 
@@ -64,15 +65,6 @@ export default function DeviceRow({ icon, title, body, right, onClick, danger }:
     >
       {content}
     </TouchableOpacity>
-  );
-}
-
-function ChevronRight({ color }: { color: string }) {
-  const { Svg, Path } = require('react-native-svg');
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round">
-      <Path d="M9 6l6 6-6 6" />
-    </Svg>
   );
 }
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { Icon } from '@/design-system/icons';
 
 export const OB = {
   bg: '#F5F5F2',
@@ -41,7 +42,7 @@ export default function OnbShell({ children, step, total, onBack, title }: Props
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <BackIcon color={OB.ink2} />
+            <Icon name="ChevronLeft" size={18} color={OB.ink2} accessibilityLabel="Go back" />
           </TouchableOpacity>
         ) : null}
         <Text fontWeight="600" style={{ flex: 1, fontSize: 17, color: OB.ink, letterSpacing: -0.2 }}>
@@ -55,15 +56,6 @@ export default function OnbShell({ children, step, total, onBack, title }: Props
       </Box>
       {children}
     </ScrollView>
-  );
-}
-
-function BackIcon({ color }: { color: string }) {
-  const { Svg, Path } = require('react-native-svg');
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M15 18l-6-6 6-6" />
-    </Svg>
   );
 }
 

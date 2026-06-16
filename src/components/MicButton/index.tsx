@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Pressable } from '@/design-system/primitives/Pressable';
 import { Box } from '@/design-system/primitives/Box';
+import { Icon } from '@/design-system/icons';
 
 type Props = {
   on?: boolean;
@@ -21,25 +22,9 @@ export default function MicButton({ on, onClick, label }: Props) {
       accessibilityState={{ selected: Boolean(on) }}
     >
       <Box style={[styles.btn, { backgroundColor: bg }]}>
-        <MicSvg color={fg} />
+        <Icon name="Mic" size={32} color={fg} accessibilityLabel={label ?? (on ? 'Stop microphone' : 'Start microphone')} />
       </Box>
     </Pressable>
-  );
-}
-
-function MicSvg({ color }: { color: string }) {
-  const { Svg, Rect, Path } = require('react-native-svg');
-  return (
-    <Svg width={40} height={48} viewBox="0 0 24 28" fill="none">
-      <Rect x={8} y={2} width={8} height={14} rx={4} fill={color} />
-      <Path
-        d="M5 12 a7 7 0 0 0 14 0 M12 19 v5 M8 24 h8"
-        stroke={color}
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        fill="none"
-      />
-    </Svg>
   );
 }
 
