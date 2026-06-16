@@ -22,6 +22,14 @@ const CONSENT_POINTS = [
 
 const SIGN_IN_REQUIRED_MESSAGE = 'Sign in is required before parent consent. Sign out, sign in again, then return here.';
 
+/**
+ * Dev-only COPPA consent bypass token. In release builds this is always
+ * undefined, so the consent call never carries a hard-coded test token.
+ * Set EXPO_PUBLIC_COPPA_BYPASS_TOKEN in .env for staging backends that still
+ * require a token during development.
+ */
+const COPPA_BYPASS_TOKEN = __DEV__ ? process.env.EXPO_PUBLIC_COPPA_BYPASS_TOKEN : undefined;
+
 function consentErrorMessage(error: unknown): string {
   const normalized = normalizeError(error);
   if (
@@ -46,7 +54,7 @@ async function recordConsentWithRetry(): Promise<void> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      await authApi.sendConsent('tok_test_bypass');
+      await authApi.sendConsent(COPPA_BYPASS_TOKEN);
       return;
     } catch (error: unknown) {
       lastError = error;
