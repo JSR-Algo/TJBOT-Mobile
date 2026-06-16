@@ -1,10 +1,16 @@
-export type BlePermissionState = 'granted' | 'denied' | 'unavailable';
+export type BlePermissionState =
+  | 'granted'
+  | 'denied'
+  | 'unavailable'
+  | 'poweredOff'
+  | 'unauthorized';
 
 export interface BleDeviceCandidate {
   id: string;
   name: string | null;
   localName: string | null;
   serviceUUIDs: string[];
+  rssi: number | null;
 }
 
 export interface BleBootstrapResult {

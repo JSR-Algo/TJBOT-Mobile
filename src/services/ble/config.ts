@@ -1,7 +1,8 @@
 export const BLE_CONFIG = {
   SERVICE_UUID: '6E400001-B5A3-F393-E0A9-E50E24DCCA9E',
   ALLOWLIST_PREFIXES: ['TJBot', 'TBT'],
-  SCAN_TIMEOUT_MS: 10000,
+  SCAN_TIMEOUT_MS: 30000,
+  MIN_RSSI_THRESHOLD: -85,
   MANUFACTURER_ID: null as string | null,
 } as const;
 
@@ -43,8 +44,8 @@ export function isAllowlistedDevice(
 
   if (!prefixMatch) return false;
 
-  // Hardening: when service UUIDs are provided, require the provisioning service UUID.
-  if (serviceUUIDs !== undefined) {
+  // Hardening: when service UUIDs are advertised, require the provisioning service UUID.
+  if (serviceUUIDs && serviceUUIDs.length > 0) {
     if (!serviceUUIDs.includes(BLE_CONFIG.SERVICE_UUID)) {
       return false;
     }

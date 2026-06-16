@@ -1,8 +1,21 @@
 import { PermissionsAndroid, Platform } from 'react-native';
+import { BleManager } from 'react-native-ble-plx';
 import type { BlePermissionState } from './types';
 
 export async function requestBlePermissions(): Promise<BlePermissionState> {
   if (Platform.OS === 'ios') {
+    const manager = new BleManager();
+    const state = await new Promise<string>((resolve) => {
+      const subscription = manager.onStateChange((nextState) => {
+        resolve(nextState);
+        // Remove on next tick in case the listener fires synchronously
+        // before the subscription reference is assigned.
+        setImmediate(() => subscription.remove());
+      }, true);
+    });
+
+    if (state === 'PoweredOff') return 'poweredOff';
+    if (state === 'Unauthorized') return 'unauthorized';
     return 'granted';
   }
 

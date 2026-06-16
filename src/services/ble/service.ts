@@ -16,10 +16,18 @@ export function getBleManager(): BleManager {
 export async function initializeBle(): Promise<BleBootstrapResult> {
   const permission = await requestBlePermissions();
   if (permission !== 'granted') {
+    const reason =
+      permission === 'denied'
+        ? 'Bluetooth permission was denied.'
+        : permission === 'poweredOff'
+          ? 'Turn on Bluetooth to find your Robot.'
+          : permission === 'unauthorized'
+            ? 'Bluetooth is not authorized. Check Settings > Privacy > Bluetooth.'
+            : 'Bluetooth is unavailable on this platform.';
     return {
       permission,
       available: false,
-      reason: permission === 'denied' ? 'Bluetooth permission was denied.' : 'Bluetooth is unavailable on this platform.',
+      reason,
     };
   }
 
@@ -37,6 +45,7 @@ function toCandidate(device: Device): BleDeviceCandidate {
     name: device.name,
     localName: device.localName,
     serviceUUIDs: device.serviceUUIDs ?? [],
+    rssi: device.rssi ?? null,
   };
 }
 
@@ -86,7 +95,12 @@ export async function scanForTJBotDevices(timeoutMs: number = BLE_CONFIG.SCAN_TI
     });
   });
 
-  return splitDevicesByAllowlist([...seen.values()]);
+  const { allowed, blocked } = splitDevicesByAllowlist([...seen.values()]);
+  const strongEnough = allowed.filter(
+    (d) => (d.rssi ?? -100) >= BLE_CONFIG.MIN_RSSI_THRESHOLD,
+  );
+  const sorted = strongEnough.sort((a, b) => (b.rssi ?? -100) - (a.rssi ?? -100));
+  return { allowed: sorted, blocked };
 }
 
 export async function disposeBle(): Promise<void> {
