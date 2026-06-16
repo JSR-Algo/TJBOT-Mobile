@@ -148,7 +148,6 @@ async function loadClientHarness(): Promise<{
   }));
   jest.doMock('../../src/services/http/tokens', () => tokensMock);
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- Jest CommonJS require is needed after jest.doMock() in this non-ESM test environment.
   const clientModule = require('../../src/services/http/client') as typeof import('../../src/services/http/client');
   return { axiosMock, tokensMock, protectedAttempts, clientModule };
 }

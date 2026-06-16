@@ -41,7 +41,6 @@ const mockNav = {
   getState: () => ({} as never),
   addListener: jest.fn(() => jest.fn()),
   removeListener: jest.fn(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 const mockRoute = { key: 'test', name: 'TestRoute', params: undefined };

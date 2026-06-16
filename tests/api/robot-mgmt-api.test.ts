@@ -16,7 +16,6 @@ describe('robot management API', () => {
       },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { runMicTest } = require('@/services/api/robot-mgmt.api') as typeof import('@/services/api/robot-mgmt.api');
 
     await expect(runMicTest()).resolves.toEqual({ passed: false });
@@ -41,7 +40,6 @@ describe('robot management API', () => {
       },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { runMicTest } = require('@/services/api/robot-mgmt.api') as typeof import('@/services/api/robot-mgmt.api');
 
     const result = runMicTest();
@@ -68,7 +66,6 @@ describe('robot management API', () => {
       },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { runMicTest } = require('@/services/api/robot-mgmt.api') as typeof import('@/services/api/robot-mgmt.api');
 
     await expect(runMicTest()).resolves.toEqual({ passed: true });
@@ -93,7 +90,6 @@ describe('robot management API', () => {
       },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { runMicTest } = require('@/services/api/robot-mgmt.api') as typeof import('@/services/api/robot-mgmt.api');
 
     await expect(runMicTest()).resolves.toEqual({ passed: true });

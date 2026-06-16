@@ -22,7 +22,6 @@ import { ROUTES } from '../../../src/navigation/routes';
 // (`require` is needed inside jest.mock factories — top-level imports are
 // not in scope when the factory runs.)
 jest.mock('@react-navigation/native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactInner = require('react') as typeof import('react');
   return {
     useFocusEffect: (cb: () => undefined | (() => void)) => {
@@ -61,7 +60,6 @@ describe('useParentGateGuard', () => {
 
     renderHook(
       () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useParentGateGuard(navigation as any, 'ParentSummaryScreen');
       },
       { wrapper },
@@ -78,7 +76,6 @@ describe('useParentGateGuard', () => {
     const navigation = makeNavigation();
     renderHook(
       () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useParentGateGuard(navigation as any, 'ParentAccountPrivacyScreen');
       },
       { wrapper },
@@ -99,7 +96,6 @@ describe('useParentGateGuard', () => {
       () => {
         const session = useParentSession();
         combined = { session };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useParentGateGuard(navigation as any, 'ParentSummaryScreen');
       },
       { wrapper },

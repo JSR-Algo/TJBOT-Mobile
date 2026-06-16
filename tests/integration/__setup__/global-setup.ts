@@ -8,7 +8,6 @@
  */
 import { startMockBackend } from './mock-server';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const globalThis: any;
 
 export default async function globalSetup(): Promise<void> {

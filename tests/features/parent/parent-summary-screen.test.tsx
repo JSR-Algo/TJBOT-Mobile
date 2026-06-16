@@ -14,7 +14,6 @@ import { ParentSessionProvider } from '../../../src/features/parent/context/Pare
 // Treat useFocusEffect as useEffect so the load runs on mount without a
 // real NavigationContainer mounted.
 jest.mock('@react-navigation/native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactInner = require('react') as typeof import('react');
   return {
     useFocusEffect: (cb: () => undefined | (() => void)) => {
@@ -39,7 +38,6 @@ jest.mock('../../../src/services/api/parent.api', () => ({
 }));
 
 // Imported after mocks so the screen module picks up the mocked seams.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ParentSummaryScreen = require('../../../src/features/parent/screens/ParentSummaryScreen').default;
 
 function fakeNavigation() {
@@ -55,9 +53,7 @@ function fakeRoute() {
 }
 
 function renderScreen() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = fakeNavigation() as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const route = fakeRoute() as any;
   return render(
     <ParentSessionProvider>

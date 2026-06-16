@@ -8,7 +8,6 @@ import { act, render, waitFor } from '@testing-library/react-native';
 import { ParentSessionProvider } from '../../../src/features/parent/context/ParentSessionContext';
 
 jest.mock('@react-navigation/native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactInner = require('react') as typeof import('react');
   return {
     useFocusEffect: (cb: () => undefined | (() => void)) => {
@@ -29,7 +28,6 @@ jest.mock('../../../src/services/api/parent.api', () => ({
   getParentHistory: () => mockGetParentHistory(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ParentHistoryScreen = require('../../../src/features/parent/screens/ParentHistoryScreen').default;
 
 function renderScreen() {
@@ -37,7 +35,7 @@ function renderScreen() {
   const route = { key: 'h', name: 'ParentHistoryScreen', params: undefined };
   return render(
     <ParentSessionProvider>
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      { }
       <ParentHistoryScreen navigation={navigation as any} route={route as any} />
     </ParentSessionProvider>,
   );

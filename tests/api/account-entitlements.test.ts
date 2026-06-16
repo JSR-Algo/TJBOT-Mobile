@@ -26,7 +26,6 @@ describe('purchase entitlement refresh', () => {
       default: { get },
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { refreshEntitlementsAfterPurchase } = require('@/services/api/account') as typeof import('@/services/api/account');
 
     const [first, second] = await Promise.all([

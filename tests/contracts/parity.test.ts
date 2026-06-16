@@ -65,7 +65,6 @@ function tryRequire(modulePath: string): any | null {
   try {
     return require(modulePath);
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn(
       `[parity.test] skipping canonical module ${modulePath}: ${(err as Error).message}`,
     );

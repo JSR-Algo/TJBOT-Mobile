@@ -24,9 +24,7 @@
 import { Platform } from 'react-native';
 
 // Lazy runtime import — RNFS is only available in the Detox runner environment.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RNFS = any;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const RNFS: RNFS = (() => { try { return require('react-native-fs'); } catch { return null; } })();
 
 const OUTPUT_DIR: string = Platform.OS === 'ios'

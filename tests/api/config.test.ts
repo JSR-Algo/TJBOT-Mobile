@@ -57,7 +57,6 @@ describe('getApiBaseUrl resolution order', () => {
     // the module-under-test sees the requested value.
     (globalThis as unknown as { __DEV__: boolean }).__DEV__ = dev;
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('../../src/config');
     return mod.getApiBaseUrl as () => string;
   }
