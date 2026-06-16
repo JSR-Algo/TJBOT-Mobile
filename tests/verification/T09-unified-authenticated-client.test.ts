@@ -16,13 +16,16 @@ function makeFailingAdapter(failures: number, failStatus: number) {
   return jest.fn(async (config: any) => {
     calls += 1;
     if (calls <= failures) {
-      return {
+      const error = new Error('Temporary Failure');
+      (error as any).config = config;
+      (error as any).response = {
         data: { error: 'temporary failure' },
         status: failStatus,
         statusText: 'Temporary Failure',
         headers: {},
         config,
       };
+      throw error;
     }
     return {
       data: { ok: true },

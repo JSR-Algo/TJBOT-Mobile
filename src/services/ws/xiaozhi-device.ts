@@ -41,7 +41,7 @@ export type XiaozhiConnectParams = {
   onJson?: (msg: XiaozhiJsonMessage) => void;
   onBinary?: (data: ArrayBuffer) => void;
   onOpen?: () => void;
-  onClose?: (code: number, reason: string) => void;
+  onClose?: (code: number, reason: string, wasClean: boolean) => void;
   onError?: (error: Error) => void;
 };
 
@@ -99,8 +99,14 @@ export function connectXiaozhiDevice(params: XiaozhiConnectParams): XiaozhiDevic
     }
   };
 
-  ws.onerror = () => params.onError?.(new Error('Xiaozhi device WebSocket error'));
-  ws.onclose = (ev) => params.onClose?.(ev.code, ev.reason || '');
+  ws.onerror = (event) => {
+    const original = (event as any).error ?? (event as any).message ?? 'Xiaozhi device WebSocket error';
+    const error = new Error(typeof original === 'string' ? original : 'Xiaozhi device WebSocket error');
+    (error as any).cause = original instanceof Error ? original : undefined;
+    (error as any).original = original;
+    params.onError?.(error);
+  };
+  ws.onclose = (ev) => params.onClose?.(ev.code, ev.reason || '', ev.wasClean ?? false);
 
   const sendJson = (payload: XiaozhiJsonMessage): void => {
     if (ws.readyState !== WebSocket.OPEN) {

@@ -1,4 +1,4 @@
-import { createAuthenticatedAxios } from '../http/createAuthenticatedAxios';
+import { createAuthenticatedClient } from '../http/createAuthenticatedAxios';
 import { Config } from '../../config';
 import { backendContractUnavailable } from './undocumented-api-routes';
 import {
@@ -8,7 +8,8 @@ import {
 
 const AI_BASE_URL = Config.AI_BASE_URL;
 
-const { client: aiClient } = createAuthenticatedAxios(AI_BASE_URL, {
+const aiClient = createAuthenticatedClient({
+  baseURL: AI_BASE_URL,
   timeout: 15000,
 });
 
