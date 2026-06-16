@@ -27,7 +27,15 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
         navigation.navigate(ROUTES.HomeHubScreen);
       }
     }, 2400);
-    return () => clearTimeout(t);
+
+    const unsubscribeBeforeRemove = navigation.addListener('beforeRemove', () => {
+      clearTimeout(t);
+    });
+
+    return () => {
+      clearTimeout(t);
+      unsubscribeBeforeRemove();
+    };
   }, [attempt, failureTarget, maxAttempts, navigation]);
 
   return (
