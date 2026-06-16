@@ -41,10 +41,15 @@ module.exports = [
         destructuredArrayIgnorePattern: '^_',
         ignoreRestSiblings: true,
       }],
-      '@typescript-eslint/no-require-imports': 'off',
       'no-console': ['error', { allow: ['error', 'warn', 'info'] }],
       'no-debugger': 'error',
       'TJBot-voice/no-voice-timing-in-shared': 'error',
+    },
+  },
+  {
+    files: ['metro.config.js', 'babel.config.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
   {

@@ -7,7 +7,6 @@
     "start:reset": "node scripts/runtime/mobile-run.mjs start-reset",
     "android": "node scripts/runtime/mobile-run.mjs android",
     "ios": "node scripts/runtime/mobile-run.mjs ios",
-    "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ tests/",
     "test": "jest --selectProjects unit",
@@ -126,7 +125,6 @@
         "moduleNameMapper": {
           "^@/(.*)$": "<rootDir>/src/$1",
           "expo-secure-store": "<rootDir>/tests/__mocks__/expo-secure-store.ts",
-          "expo-av": "<rootDir>/tests/__mocks__/expo-av.ts",
           "expo-haptics": "<rootDir>/tests/__mocks__/expo-haptics.ts",
           "expo-audio": "<rootDir>/tests/__mocks__/expo-audio.ts",
           "expo-notifications": "<rootDir>/tests/__mocks__/expo-notifications.ts",
@@ -143,7 +141,7 @@
           "<rootDir>/.worktrees/"
         ],
         "transformIgnorePatterns": [
-          "node_modules/(?!(react-native|@react-native|@react-navigation|react-native-screens|react-native-safe-area-context|react-native-gesture-handler|expo-secure-store|expo)/)"
+          "node_modules/(?!(react-native|@react-native|@react-navigation|react-native-screens|react-native-safe-area-context|react-native-gesture-handler|expo-secure-store|expo|@orbital-systems/react-native-esp-idf-provisioning|@google/genai|lucide-react-native|posthog-react-native|@sentry/react-native|axios)/)"
         ]
       },
       {
@@ -157,7 +155,7 @@
           "<rootDir>/.worktrees/"
         ],
         "transformIgnorePatterns": [
-          "node_modules/(?!(react-native|@react-native|@react-navigation|react-native-screens|react-native-safe-area-context|react-native-gesture-handler|expo-secure-store|expo)/)"
+          "node_modules/(?!(react-native|@react-native|@react-navigation|react-native-screens|react-native-safe-area-context|react-native-gesture-handler|expo-secure-store|expo|@orbital-systems/react-native-esp-idf-provisioning|@google/genai|lucide-react-native|posthog-react-native|@sentry/react-native|axios)/)"
         ],
         "globalSetup": "<rootDir>/tests/integration/__setup__/global-setup.ts",
         "globalTeardown": "<rootDir>/tests/integration/__setup__/global-teardown.ts"
@@ -167,5 +165,10 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "browserslist": [
+    "last 2 versions",
+    "> 1%",
+    "not dead"
+  ],
   "packageManager": "npm@10.9.2"
 }

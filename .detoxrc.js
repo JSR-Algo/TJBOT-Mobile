@@ -6,14 +6,11 @@
  *   npm run detox:build:ios  && npm run detox:test:ios
  *   npm run detox:build:android && npm run detox:test:android
  *
- * Backend / AI endpoints are configurable per platform via env vars:
+ * Backend / AI / WebSocket endpoints are configurable per platform via env vars:
  *   E2E_IOS_API_URL, E2E_ANDROID_API_URL, E2E_IOS_AI_URL, E2E_ANDROID_AI_URL,
+ *   E2E_IOS_WS_URL, E2E_ANDROID_WS_URL,
  *   E2E_IOS_SIMULATOR_DEVICE_TYPE, E2E_ENABLE_VOICE_TEST_HARNESS.
- *
- * Required by tests/e2e-native-coverage-contract.test.ts. Metro config is
- * shared so e2e bundles match production transforms: require('./metro.config.js').
  */
-const metroConfig = require('./metro.config.js'); // eslint-disable-line @typescript-eslint/no-unused-vars
 
 const VOICE_HARNESS = process.env.E2E_ENABLE_VOICE_TEST_HARNESS === 'true' ? 'true' : 'false';
 const IOS_SIMULATOR_DEVICE_TYPE = process.env.E2E_IOS_SIMULATOR_DEVICE_TYPE || 'iPhone 17 Pro';
@@ -39,6 +36,7 @@ module.exports = {
       launchArgs: {
         TBOT_API_URL: process.env.E2E_IOS_API_URL || 'http://localhost:3000',
         TBOT_AI_URL: process.env.E2E_IOS_AI_URL || 'http://localhost:3001',
+        WS_URL: process.env.E2E_IOS_WS_URL || 'ws://localhost:3000',
         voiceHarness: VOICE_HARNESS,
       },
     },
@@ -51,6 +49,7 @@ module.exports = {
       launchArgs: {
         TBOT_API_URL: process.env.E2E_ANDROID_API_URL || 'http://10.0.2.2:3000',
         TBOT_AI_URL: process.env.E2E_ANDROID_AI_URL || 'http://10.0.2.2:3001',
+        WS_URL: process.env.E2E_ANDROID_WS_URL || 'ws://10.0.2.2:3000',
         voiceHarness: VOICE_HARNESS,
       },
     },

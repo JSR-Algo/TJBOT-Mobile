@@ -4,6 +4,7 @@ const CONFIG_PATH = path.resolve(__dirname, '../../react-native.config.js');
 
 function loadConfig(): Record<string, unknown> {
   // react-native.config.js is a CommonJS file with no native imports.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require(CONFIG_PATH) as Record<string, unknown>;
 }
 
