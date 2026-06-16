@@ -27,6 +27,7 @@ const REASONS: { ic: string; t: string; b: string; go: GoScreen }[] = [
 
 export default function PairFailedScreen({ navigation, route }: Props) {
   const params = route.params;
+  const error = typeof params?.error === 'string' && params.error.trim() ? params.error.trim() : null;
   return (
     <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
@@ -35,6 +36,9 @@ export default function PairFailedScreen({ navigation, route }: Props) {
         <Text style={styles.sub}>
           No worries — pairing usually works on the second try. Pick what likely happened:
         </Text>
+        {error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : null}
       </Box>
       <Box paddingHorizontal={16} paddingTop={20} gap={8}>
         {REASONS.map(r => (
@@ -89,6 +93,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   heading: { fontSize: 20, color: DV.ink, letterSpacing: -0.3, textAlign: 'center', marginTop: 20 },
   sub: { fontSize: 13, color: DV.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 6 },
+  errorText: { fontSize: 12, color: '#C0392B', textAlign: 'center', maxWidth: 300, lineHeight: 18, marginTop: 8 },
   reasonCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14, flexDirection: 'row', gap: 12, alignItems: 'center' },
   reasonIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#EEF1F5', flexShrink: 0 },
   reasonTitle: { fontSize: 14, color: DV.ink },

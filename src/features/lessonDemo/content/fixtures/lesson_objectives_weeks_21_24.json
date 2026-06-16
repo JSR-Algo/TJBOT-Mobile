@@ -1,0 +1,522 @@
+[
+  {
+    "lesson_id": "w21-d01-pronunciation-final-consonants",
+    "week": 21,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Hear and say short words with a tiny finish sound at the end (final consonants).",
+    "focus_items": ["cat", "book", "dog"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot says a word, the child repeats, then taps 'finish sound' when they hear the ending.",
+    "review_items": ["hello", "happy", "book"],
+    "reward_event": {
+      "type": "pronunciation_badge",
+      "badge_id": "pronunciation_endings_day1",
+      "message": "You practiced finish sounds today."
+    },
+    "fallback_lesson": {
+      "reason": "final_consonant_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: cat." },
+        { "type": "repeat", "prompt": "Your turn: cat." },
+        { "type": "choice", "prompt": "Did you hear the finish sound?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w21-d02-pronunciation-cluster-review",
+    "week": 21,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Say two-sound clusters slowly, then together (older kids only; younger kids listen and choose).",
+    "focus_items": ["desk", "milk"],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "Older kids say the two sounds, then the whole word; younger kids tap the matching picture after listening.",
+    "review_items": ["shirt", "hat", "park"],
+    "reward_event": {
+      "type": "pronunciation_badge",
+      "badge_id": "pronunciation_clusters_day2",
+      "message": "You tried tricky sounds with a calm voice."
+    },
+    "fallback_lesson": {
+      "reason": "cluster_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: desk." },
+        { "type": "repeat", "prompt": "Your turn: desk." },
+        { "type": "choice", "prompt": "Is desk a place word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-017"]
+  },
+  {
+    "lesson_id": "w21-d03-pronunciation-theta-review",
+    "week": 21,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Practice a gentle /th/ sound with a simple mouth cue (no technical burden).",
+    "focus_items": ["three", "thank"],
+    "vietnamese_l1_target": "theta",
+    "practice_method": "TeeBot models a quiet th sound, the child copies once, then chooses the correct word from two pictures.",
+    "review_items": ["three", "four", "five"],
+    "reward_event": {
+      "type": "pronunciation_badge",
+      "badge_id": "pronunciation_theta_day3",
+      "message": "You practiced a new sound today."
+    },
+    "fallback_lesson": {
+      "reason": "theta_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: three." },
+        { "type": "repeat", "prompt": "Your turn: three." },
+        { "type": "choice", "prompt": "Does three mean a number?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "method-005", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w21-d04-pronunciation-sentence-rhythm",
+    "week": 21,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Clap the strong word in a short sentence to feel English stress and rhythm.",
+    "focus_items": ["I am happy", "I like apples"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot says a short sentence; the child claps the strong word, then repeats the sentence once.",
+    "review_items": ["happy", "apple", "banana"],
+    "reward_event": {
+      "type": "pronunciation_badge",
+      "badge_id": "pronunciation_rhythm_day4",
+      "message": "You clapped the strong word. Nice rhythm."
+    },
+    "fallback_lesson": {
+      "reason": "sentence_rhythm_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I am happy." },
+        { "type": "repeat", "prompt": "Your turn: I am happy." },
+        { "type": "choice", "prompt": "Is happy a feeling word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-002", "app-016"]
+  },
+  {
+    "lesson_id": "w21-d05-pronunciation-review",
+    "week": 21,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review pronunciation targets with a friendly showcase for the parent and child.",
+    "focus_items": ["cat", "desk", "three"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot runs a tiny review: listen, repeat, and choose the correct word picture.",
+    "review_items": ["cat", "desk", "three"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "pronunciation_week_badge",
+      "message": "You finished a pronunciation week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "pronunciation_week_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: cat." },
+        { "type": "repeat", "prompt": "Your turn: cat." },
+        { "type": "choice", "prompt": "Is cat an animal?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w22-d01-questions-what-who",
+    "week": 22,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask and answer simple what and who questions using two picture cards.",
+    "focus_items": ["what", "who"],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "TeeBot asks 'What is it?' or 'Who is it?' and the child answers with one or two words.",
+    "review_items": ["mom", "dad", "robot"],
+    "reward_event": {
+      "type": "questions_badge",
+      "badge_id": "questions_wh_day1",
+      "message": "You asked a question in English today."
+    },
+    "fallback_lesson": {
+      "reason": "what_who_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: what." },
+        { "type": "repeat", "prompt": "Your turn: what." },
+        { "type": "choice", "prompt": "Is what a question word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w22-d02-questions-where-how-many",
+    "week": 22,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask and answer where and how many questions with a picture choice.",
+    "focus_items": ["where", "how many"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks 'Where is it?' or 'How many?' and the child answers with a place word or a number.",
+    "review_items": ["park", "home", "two"],
+    "reward_event": {
+      "type": "questions_badge",
+      "badge_id": "questions_where_howmany_day2",
+      "message": "You answered questions with a clear voice."
+    },
+    "fallback_lesson": {
+      "reason": "where_how_many_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: where." },
+        { "type": "repeat", "prompt": "Your turn: where." },
+        { "type": "choice", "prompt": "Is where a question word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-004", "app-017"]
+  },
+  {
+    "lesson_id": "w22-d03-questions-do-you-like",
+    "week": 22,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask Do you like ...? and answer yes or no using a preference interview.",
+    "focus_items": ["Do you like", "yes", "no"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "TeeBot asks 'Do you like apples?' and the child answers yes/no, then says one like.",
+    "review_items": ["apple", "banana", "milk"],
+    "reward_event": {
+      "type": "questions_badge",
+      "badge_id": "questions_like_day3",
+      "message": "You shared your choice in English."
+    },
+    "fallback_lesson": {
+      "reason": "do_you_like_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Do you like apples?" },
+        { "type": "repeat", "prompt": "Your turn: Do you like apples?" },
+        { "type": "choice", "prompt": "Is this a question?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "method-001", "app-016", "book-014"]
+  },
+  {
+    "lesson_id": "w22-d04-questions-can-you",
+    "week": 22,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Ask Can you ...? and answer with a short ability phrase in a playful interview.",
+    "focus_items": ["Can you", "run", "jump"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot asks 'Can you jump?' and the child answers 'Yes, I can.' or 'Not now.'",
+    "review_items": ["run", "jump", "swim"],
+    "reward_event": {
+      "type": "questions_badge",
+      "badge_id": "questions_can_day4",
+      "message": "You tried an English question today."
+    },
+    "fallback_lesson": {
+      "reason": "can_you_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Can you jump?" },
+        { "type": "repeat", "prompt": "Your turn: Can you jump?" },
+        { "type": "choice", "prompt": "Is jump an action word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w22-d05-questions-review",
+    "week": 22,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review question words and practice asking TeeBot one friendly question.",
+    "focus_items": ["what", "where", "Can you"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot shows a picture; the child chooses a question starter and asks once.",
+    "review_items": ["what", "where", "who"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "questions_week_badge",
+      "message": "You finished a questions week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "questions_week_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: what." },
+        { "type": "repeat", "prompt": "Your turn: what." },
+        { "type": "choice", "prompt": "Is what a question word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w23-d01-story-characters",
+    "week": 23,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and name a character word to start a tiny story.",
+    "focus_items": ["cat", "dog", "robot"],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "TeeBot says 'a cat' or 'a robot' and the child repeats once, then chooses the character card.",
+    "review_items": ["cat", "dog", "fish"],
+    "reward_event": {
+      "type": "story_badge",
+      "badge_id": "story_character_day1",
+      "message": "You picked a story character."
+    },
+    "fallback_lesson": {
+      "reason": "character_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: a cat." },
+        { "type": "repeat", "prompt": "Your turn: a cat." },
+        { "type": "choice", "prompt": "Is cat an animal?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w23-d02-story-places",
+    "week": 23,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say a place word for a story setting.",
+    "focus_items": ["park", "home", "school"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot shows a setting picture and asks 'Where?' The child answers with one place word.",
+    "review_items": ["park", "home", "school"],
+    "reward_event": {
+      "type": "story_badge",
+      "badge_id": "story_place_day2",
+      "message": "You chose a place for your story."
+    },
+    "fallback_lesson": {
+      "reason": "place_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: park." },
+        { "type": "repeat", "prompt": "Your turn: park." },
+        { "type": "choice", "prompt": "Is park a place?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-004", "app-017"]
+  },
+  {
+    "lesson_id": "w23-d03-story-actions",
+    "week": 23,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say an action word for what happens in the story.",
+    "focus_items": ["run", "jump", "fly"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot acts the verb; the child says the action word, then picks the matching card.",
+    "review_items": ["run", "jump", "swim"],
+    "reward_event": {
+      "type": "story_badge",
+      "badge_id": "story_action_day3",
+      "message": "You used an action word in English."
+    },
+    "fallback_lesson": {
+      "reason": "action_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: run." },
+        { "type": "repeat", "prompt": "Your turn: run." },
+        { "type": "choice", "prompt": "Is run an action?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "method-001", "app-016", "app-017"]
+  },
+  {
+    "lesson_id": "w23-d04-story-one-sentence",
+    "week": 23,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Build one short story sentence using a simple frame (The cat can run).",
+    "focus_items": ["The cat can run"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "TeeBot models the sentence; the child repeats once, then swaps one word (cat/dog).",
+    "review_items": ["cat", "dog", "run"],
+    "reward_event": {
+      "type": "story_badge",
+      "badge_id": "story_sentence_day4",
+      "message": "You made a story sentence."
+    },
+    "fallback_lesson": {
+      "reason": "story_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: The cat can run." },
+        { "type": "repeat", "prompt": "Your turn: The cat can run." },
+        { "type": "choice", "prompt": "Is cat the character?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "book-017"]
+  },
+  {
+    "lesson_id": "w23-d05-story-review",
+    "week": 23,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review story parts by building a three-step mini story: character, place, action.",
+    "focus_items": ["cat", "park", "run"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "The child picks three cards and says a short line for each with TeeBot support.",
+    "review_items": ["cat", "park", "run"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "story_week_badge",
+      "message": "You finished a story week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "story_week_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: cat." },
+        { "type": "repeat", "prompt": "Your turn: cat." },
+        { "type": "choice", "prompt": "Is cat an animal?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w24-d01-showcase-top-words",
+    "week": 24,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review the child's top mastered words with a fast, happy practice loop.",
+    "focus_items": ["hello", "happy", "red"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot cycles three familiar words: listen, repeat, choose the matching picture.",
+    "review_items": ["hello", "happy", "red"],
+    "reward_event": {
+      "type": "showcase_badge",
+      "badge_id": "showcase_top_day1",
+      "message": "You reviewed your strong words today."
+    },
+    "fallback_lesson": {
+      "reason": "top_words_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: hello." },
+        { "type": "repeat", "prompt": "Your turn: hello." },
+        { "type": "choice", "prompt": "Is hello a greeting?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w24-d02-showcase-weak-words",
+    "week": 24,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review a few weaker words with gentle short turns (no shame feedback).",
+    "focus_items": ["three", "fish", "green"],
+    "vietnamese_l1_target": "theta",
+    "practice_method": "TeeBot gives a tiny hint, then the child repeats once and chooses the right picture.",
+    "review_items": ["three", "fish", "green"],
+    "reward_event": {
+      "type": "showcase_badge",
+      "badge_id": "showcase_gentle_day2",
+      "message": "You practiced gently. Good effort."
+    },
+    "fallback_lesson": {
+      "reason": "weak_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: fish." },
+        { "type": "repeat", "prompt": "Your turn: fish." },
+        { "type": "choice", "prompt": "Is fish an animal?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "method-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w24-d03-showcase-favorite-theme",
+    "week": 24,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Practice a favorite theme chosen by the child to build confidence and autonomy.",
+    "focus_items": ["I like", "yes", "no"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "The child picks a theme card (animals, food, toys) and says one 'I like ...' sentence with help.",
+    "review_items": ["cat", "apple", "ball"],
+    "reward_event": {
+      "type": "showcase_badge",
+      "badge_id": "showcase_choice_day3",
+      "message": "You chose a theme and spoke in English."
+    },
+    "fallback_lesson": {
+      "reason": "favorite_theme_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I like apples." },
+        { "type": "repeat", "prompt": "Your turn: I like apples." },
+        { "type": "choice", "prompt": "Is apples food?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "book-015"]
+  },
+  {
+    "lesson_id": "w24-d04-showcase-parent-child-practice",
+    "week": 24,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Practice a parent-child repeat-and-answer moment to support home learning.",
+    "focus_items": ["Are you okay", "I am happy"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "TeeBot models a short dialogue; the parent repeats once with the child, then the child answers.",
+    "review_items": ["okay", "happy", "tired"],
+    "reward_event": {
+      "type": "showcase_badge",
+      "badge_id": "showcase_parent_day4",
+      "message": "You practiced with your parent. Nice teamwork."
+    },
+    "fallback_lesson": {
+      "reason": "parent_child_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Are you okay?" },
+        { "type": "repeat", "prompt": "Your turn: Are you okay?" },
+        { "type": "choice", "prompt": "Is okay a feeling word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w24-d05-showcase-review",
+    "week": 24,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review with a friendly five-question showcase and a next-level plan message for the parent.",
+    "focus_items": ["hello", "what", "cat"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks five friendly prompts: greet, name, choose, answer one question, and celebrate effort.",
+    "review_items": ["hello", "what", "cat"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "six_month_week_badge",
+      "message": "You finished a six-month showcase week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "final_showcase_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: hello." },
+        { "type": "repeat", "prompt": "Your turn: hello." },
+        { "type": "choice", "prompt": "Is hello a greeting?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-001", "app-016"]
+  }
+]

@@ -1,0 +1,530 @@
+[
+  {
+    "lesson_id": "w09-d01-apple-banana",
+    "week": 9,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say the foods apple and banana with a simple picture-choice routine.",
+    "focus_items": ["apple", "banana"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot names apple or banana, the child taps the right picture, then says the word.",
+    "review_items": ["cat", "dog", "run"],
+    "reward_event": {
+      "type": "food_badge",
+      "badge_id": "food_picker",
+      "message": "You named foods in English today."
+    },
+    "fallback_lesson": {
+      "reason": "food_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: apple." },
+        { "type": "repeat", "prompt": "Say: apple." },
+        {
+          "type": "choice",
+          "prompt": "Is apple a food?",
+          "choices": ["yes", "not now"]
+        }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "app-016", "method-001"]
+  },
+  {
+    "lesson_id": "w09-d02-rice-milk",
+    "week": 9,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say rice and milk with a family food context practice.",
+    "focus_items": ["rice", "milk"],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "Point to rice or milk when TeeBot says it, then say the word with a clear ending sound.",
+    "review_items": ["apple", "banana"],
+    "reward_event": {
+      "type": "food_badge",
+      "badge_id": "food_finder",
+      "message": "You found foods in English today."
+    },
+    "fallback_lesson": {
+      "reason": "food_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: milk." },
+        { "type": "repeat", "prompt": "Say: milk." },
+        {
+          "type": "choice",
+          "prompt": "Is milk a drink?",
+          "choices": ["yes", "not now"]
+        }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "app-017", "method-002"]
+  },
+  {
+    "lesson_id": "w09-d03-i-want-milk",
+    "week": 9,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I want milk to make a polite simple request.",
+    "focus_items": ["I want milk"],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "Choose a food picture, then say I want plus the food in one short sentence.",
+    "review_items": ["rice", "milk", "apple"],
+    "reward_event": {
+      "type": "request_badge",
+      "badge_id": "polite_requester",
+      "message": "You asked for something in English."
+    },
+    "fallback_lesson": {
+      "reason": "want_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I want milk." },
+        { "type": "repeat", "prompt": "Say: I want milk." },
+        { "type": "practice", "prompt": "Point to milk and say I want milk." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "app-016", "method-004"]
+  },
+  {
+    "lesson_id": "w09-d04-do-you-want-rice",
+    "week": 9,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer Do you want rice? with yes or no in a short role-play.",
+    "focus_items": ["Do you want rice?", "Yes, please"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks Do you want rice? and the child answers with yes or no and a polite phrase.",
+    "review_items": ["I want milk", "rice", "milk"],
+    "reward_event": {
+      "type": "roleplay_badge",
+      "badge_id": "food_roleplay",
+      "message": "You answered a food question in English."
+    },
+    "fallback_lesson": {
+      "reason": "food_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Do you want rice?" },
+        { "type": "repeat", "prompt": "Say: Do you want rice?" },
+        { "type": "choice", "prompt": "Answer with yes or no.", "choices": ["yes", "no"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-014", "app-017", "method-005"]
+  },
+  {
+    "lesson_id": "w09-d05-food-requests-review",
+    "week": 9,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review food requests by choosing a snack and saying I want plus the food.",
+    "focus_items": ["apple", "rice", "I want milk"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Pick a food card, say I want plus the food, then answer one Do you want...? question.",
+    "review_items": ["apple", "banana", "rice", "milk", "I want", "Do you want"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "polite_eater",
+      "message": "You completed your first food week."
+    },
+    "fallback_lesson": {
+      "reason": "week_nine_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: apple, banana, rice, milk." },
+        { "type": "repeat", "prompt": "Say: apple, banana, rice, milk." },
+        { "type": "practice", "prompt": "Say: I want milk." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-016", "book-017", "app-016"]
+  },
+  {
+    "lesson_id": "w10-d01-chicken-fish",
+    "week": 10,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say chicken and fish using picture and sound cues.",
+    "focus_items": ["chicken", "fish"],
+    "vietnamese_l1_target": "sh",
+    "practice_method": "Listen for chicken or fish, tap the picture, then say the word with TeeBot.",
+    "review_items": ["apple", "milk"],
+    "reward_event": {
+      "type": "food_badge",
+      "badge_id": "food_sound_matcher",
+      "message": "You matched food words in English."
+    },
+    "fallback_lesson": {
+      "reason": "food_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: fish." },
+        { "type": "repeat", "prompt": "Say: fish." },
+        { "type": "choice", "prompt": "Is fish a food?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "app-017", "method-001"]
+  },
+  {
+    "lesson_id": "w10-d02-water-juice",
+    "week": 10,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say water and juice with a simple drink choice activity.",
+    "focus_items": ["water", "juice"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot offers two drink pictures and asks which one; the child points and says the drink.",
+    "review_items": ["chicken", "fish"],
+    "reward_event": {
+      "type": "drink_badge",
+      "badge_id": "drink_chooser",
+      "message": "You chose drinks in English today."
+    },
+    "fallback_lesson": {
+      "reason": "drink_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: water." },
+        { "type": "repeat", "prompt": "Say: water." },
+        { "type": "choice", "prompt": "Is water a drink?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-012", "app-016", "method-002"]
+  },
+  {
+    "lesson_id": "w10-d03-i-like-apples",
+    "week": 10,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I like apples to share a simple preference.",
+    "focus_items": ["I like apples"],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "Pick one food you like, then say I like plus the food in one short sentence.",
+    "review_items": ["water", "juice"],
+    "reward_event": {
+      "type": "preference_badge",
+      "badge_id": "food_liker",
+      "message": "You shared what you like in English."
+    },
+    "fallback_lesson": {
+      "reason": "like_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I like apples." },
+        { "type": "repeat", "prompt": "Say: I like apples." },
+        { "type": "practice", "prompt": "Say: I like milk." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "app-016", "method-004"]
+  },
+  {
+    "lesson_id": "w10-d04-i-dont-like-fish",
+    "week": 10,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I don't like fish to answer honestly with kind feedback.",
+    "focus_items": ["I don't like fish"],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "TeeBot asks about a food; the child answers with I like or I don't like in one short sentence.",
+    "review_items": ["I like apples", "fish", "chicken"],
+    "reward_event": {
+      "type": "preference_badge",
+      "badge_id": "honest_answer",
+      "message": "You shared your choice in English."
+    },
+    "fallback_lesson": {
+      "reason": "dont_like_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I don't like fish." },
+        { "type": "repeat", "prompt": "Say: I don't like fish." },
+        { "type": "practice", "prompt": "Say: I like apples." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "app-017", "method-006"]
+  },
+  {
+    "lesson_id": "w10-d05-food-likes-review",
+    "week": 10,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review food likes by saying two likes and one no with I like and I don't like.",
+    "focus_items": ["I like apples", "I don't like fish"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "Say two I like sentences and one I don't like sentence with picture support and a gentle tone.",
+    "review_items": ["I like", "I don't like", "apple", "fish", "water"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "food_likes_week",
+      "message": "You completed your food likes week."
+    },
+    "fallback_lesson": {
+      "reason": "week_ten_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I like apples." },
+        { "type": "repeat", "prompt": "Say: I like apples." },
+        { "type": "practice", "prompt": "Say: I don't like fish." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-016", "book-017", "app-016"]
+  },
+  {
+    "lesson_id": "w11-d01-head-hand",
+    "week": 11,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Point to and say head and hand with a touch-and-say routine.",
+    "focus_items": ["head", "hand"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Touch head or hand when TeeBot says it, then repeat the word aloud.",
+    "review_items": ["apple", "I like apples"],
+    "reward_event": {
+      "type": "body_badge",
+      "badge_id": "body_pointer",
+      "message": "You named body words in English."
+    },
+    "fallback_lesson": {
+      "reason": "body_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: hand." },
+        { "type": "repeat", "prompt": "Say: hand." },
+        { "type": "choice", "prompt": "Is hand a body word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "app-016", "method-001"]
+  },
+  {
+    "lesson_id": "w11-d02-eyes-ears",
+    "week": 11,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Point to and say eyes and ears with a simple repeat-and-point routine.",
+    "focus_items": ["eyes", "ears"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Point to eyes or ears on a face picture, then say the word with TeeBot.",
+    "review_items": ["head", "hand"],
+    "reward_event": {
+      "type": "body_badge",
+      "badge_id": "face_words",
+      "message": "You practiced face words in English."
+    },
+    "fallback_lesson": {
+      "reason": "body_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: eyes." },
+        { "type": "repeat", "prompt": "Say: eyes." },
+        { "type": "choice", "prompt": "Are eyes on your face?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-012", "app-017", "method-002"]
+  },
+  {
+    "lesson_id": "w11-d03-my-hand-hurts",
+    "week": 11,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Say My hand hurts as a parent-safe health phrase practice.",
+    "focus_items": ["My hand hurts"],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "Point to a body part card and say My plus the body word plus hurts with gentle voice practice.",
+    "review_items": ["eyes", "ears", "hand"],
+    "reward_event": {
+      "type": "health_badge",
+      "badge_id": "safe_health_words",
+      "message": "You used safe health words in English."
+    },
+    "fallback_lesson": {
+      "reason": "my_phrase_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: My hand hurts." },
+        { "type": "repeat", "prompt": "Say: My hand hurts." },
+        { "type": "practice", "prompt": "Say: My head hurts." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "app-016", "method-004"]
+  },
+  {
+    "lesson_id": "w11-d04-are-you-tired",
+    "week": 11,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer Are you tired? with a short state check response.",
+    "focus_items": ["Are you tired?", "I am tired"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "TeeBot asks Are you tired? and the child answers with I am plus a feeling word.",
+    "review_items": ["happy", "sad", "I am happy"],
+    "reward_event": {
+      "type": "state_check_badge",
+      "badge_id": "state_checker",
+      "message": "You answered a state check in English."
+    },
+    "fallback_lesson": {
+      "reason": "state_check_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Are you tired?" },
+        { "type": "repeat", "prompt": "Say: Are you tired?" },
+        { "type": "practice", "prompt": "Answer: I am okay." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-014", "app-017", "method-005"]
+  },
+  {
+    "lesson_id": "w11-d05-body-words-review",
+    "week": 11,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review body words by listening, pointing, and saying one short sentence with My or I am.",
+    "focus_items": ["hand", "eyes", "I am tired"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot names a body word, the child points, then says one short My or I am sentence.",
+    "review_items": ["head", "hand", "eyes", "ears", "My", "I am"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "body_words_week",
+      "message": "You completed your body words week."
+    },
+    "fallback_lesson": {
+      "reason": "week_eleven_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: head, hand, eyes, ears." },
+        { "type": "repeat", "prompt": "Say: head, hand, eyes, ears." },
+        { "type": "practice", "prompt": "Say: My hand hurts." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-016", "book-017", "app-016"]
+  },
+  {
+    "lesson_id": "w12-d01-house-room",
+    "week": 12,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Name house and room with a simple home picture naming routine.",
+    "focus_items": ["house", "room"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot shows a house or room picture; the child points and says the word.",
+    "review_items": ["head", "hand"],
+    "reward_event": {
+      "type": "home_badge",
+      "badge_id": "home_namer",
+      "message": "You named home places in English."
+    },
+    "fallback_lesson": {
+      "reason": "home_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: house." },
+        { "type": "repeat", "prompt": "Say: house." },
+        { "type": "choice", "prompt": "Is house a place?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "app-016", "method-001"]
+  },
+  {
+    "lesson_id": "w12-d02-chair-table",
+    "week": 12,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say chair and table with an object matching activity.",
+    "focus_items": ["chair", "table"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "Match chair and table pictures to real objects, then say the word with TeeBot.",
+    "review_items": ["house", "room"],
+    "reward_event": {
+      "type": "home_badge",
+      "badge_id": "home_objects",
+      "message": "You matched home objects in English."
+    },
+    "fallback_lesson": {
+      "reason": "home_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: table." },
+        { "type": "repeat", "prompt": "Say: table." },
+        { "type": "choice", "prompt": "Is table furniture?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-012", "app-017", "method-002"]
+  },
+  {
+    "lesson_id": "w12-d03-it-is-on-the-table",
+    "week": 12,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use It is on the table to describe where an object is placed.",
+    "focus_items": ["It is on the table"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Place a small object on a table, then say It is on the table with TeeBot.",
+    "review_items": ["chair", "table", "It is"],
+    "reward_event": {
+      "type": "location_badge",
+      "badge_id": "on_the_table",
+      "message": "You described a location in English."
+    },
+    "fallback_lesson": {
+      "reason": "on_preposition_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: It is on the table." },
+        { "type": "repeat", "prompt": "Say: It is on the table." },
+        { "type": "practice", "prompt": "Put a toy on the table and say It is on the table." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "app-016", "method-004"]
+  },
+  {
+    "lesson_id": "w12-d04-where-is-it",
+    "week": 12,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer Where is it? using on with a simple choice response.",
+    "focus_items": ["Where is it?", "It is on the table"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks Where is it? and the child answers with It is on the table using picture support.",
+    "review_items": ["It is on the table", "on", "table"],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "where_question",
+      "message": "You answered a where question in English."
+    },
+    "fallback_lesson": {
+      "reason": "where_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Where is it?" },
+        { "type": "repeat", "prompt": "Say: Where is it?" },
+        { "type": "practice", "prompt": "Answer: It is on the table." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-014", "app-017", "method-005"]
+  },
+  {
+    "lesson_id": "w12-d05-home-location-review",
+    "week": 12,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review home words by naming one object and answering Where is it? with on the table.",
+    "focus_items": ["table", "on", "Where is it?"],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Name one home object, then answer one Where is it? question using on the table with gentle prompting.",
+    "review_items": ["house", "room", "chair", "table", "on", "Where is it?"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "home_helper_week",
+      "message": "You completed your home location week."
+    },
+    "fallback_lesson": {
+      "reason": "week_twelve_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: chair, table, house, room." },
+        { "type": "repeat", "prompt": "Say: chair, table, house, room." },
+        { "type": "practice", "prompt": "Answer: It is on the table." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-016", "book-017", "app-016"]
+  }
+]

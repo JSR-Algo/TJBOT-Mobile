@@ -107,13 +107,19 @@ export type EntitlementsSnapshot = {
   robotActivated: boolean;
 };
 
+const DEFAULT_ENTITLEMENTS: EntitlementsSnapshot = {
+  courses: [],
+  subscriptionStatus: 'inactive',
+  robotActivated: false,
+};
+
 let entitlementsInFlight: Promise<EntitlementsSnapshot> | null = null;
 
 export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSnapshot> {
   if (entitlementsInFlight) return entitlementsInFlight;
   entitlementsInFlight = (async () => {
     try {
-      const response = await client.get('/v1/account/entitlements');
+      const response = await client.get('/account/entitlements');
       const raw = unwrap<{
         courses?: string[];
         subscription_status?: string;
@@ -124,6 +130,10 @@ export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSn
         subscriptionStatus: raw.subscription_status ?? 'inactive',
         robotActivated: raw.robot_activated ?? false,
       };
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      if (status === 404) return DEFAULT_ENTITLEMENTS;
+      throw error;
     } finally {
       entitlementsInFlight = null;
     }
@@ -132,22 +142,22 @@ export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSn
 }
 
 export async function deleteAccount(password: string): Promise<void> {
-  await client.delete('/v1/account', { data: { password } });
+  await client.delete('/account', { data: { password } });
 }
 
 export async function exportData(): Promise<object> {
-  const response = await client.get('/v1/account/export');
+  const response = await client.get('/account/export');
   return response.data.data ?? response.data;
 }
 
 /**
  * Fetch the current user's account summary.
  *
- * Uses /v1/account/export until /v1/me is deployed under
+ * Uses /account/export until /me is deployed under
  * task-s5-backend-v1-me-endpoint.
  */
 export async function getAccountSummary(): Promise<User | null> {
-  const response = await client.get('/v1/account/export');
+  const response = await client.get('/account/export');
   const data = (response.data.data ?? response.data) as {
     account?: { id?: string; email?: string; name?: string };
   };
@@ -158,4 +168,13 @@ export async function getAccountSummary(): Promise<User | null> {
     email: account.email,
     name: account.name ?? '',
   };
+}
+
+/** True when Render already has COPPA consent for this parent account. */
+export async function isCoppaVerified(): Promise<boolean> {
+  const response = await client.get('/account/export');
+  const data = (response.data.data ?? response.data) as {
+    account?: { coppa_verified?: boolean };
+  };
+  return data?.account?.coppa_verified === true;
 }

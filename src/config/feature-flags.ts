@@ -33,3 +33,75 @@ export class FeatureSubscriptionDisabledError extends Error {
     this.name = 'FeatureSubscriptionDisabledError';
   }
 }
+
+// --- AI proxy -----------------------------------------------------------
+export const FEATURE_AI_PROXY: boolean = readEnvFlag('EXPO_PUBLIC_FEATURE_AI_PROXY');
+
+export function isAiProxyFeatureEnabled(): boolean {
+  return FEATURE_AI_PROXY;
+}
+
+export const FEATURE_AI_PROXY_DISABLED_CODE = 'FEATURE_AI_PROXY_DISABLED' as const;
+
+export class FeatureAiProxyDisabledError extends Error {
+  readonly code = FEATURE_AI_PROXY_DISABLED_CODE;
+
+  constructor(operation: string) {
+    super(`FEATURE_AI_PROXY_DISABLED: ${operation} is disabled in this build`);
+    this.name = 'FeatureAiProxyDisabledError';
+  }
+}
+
+// --- Lesson session ------------------------------------------------------
+export const FEATURE_LESSON_SESSION: boolean = readEnvFlag('EXPO_PUBLIC_FEATURE_LESSON_SESSION');
+
+export function isLessonSessionFeatureEnabled(): boolean {
+  return FEATURE_LESSON_SESSION;
+}
+
+export const FEATURE_LESSON_SESSION_DISABLED_CODE = 'FEATURE_LESSON_SESSION_DISABLED' as const;
+
+export class FeatureLessonSessionDisabledError extends Error {
+  readonly code = FEATURE_LESSON_SESSION_DISABLED_CODE;
+
+  constructor(operation: string) {
+    super(`FEATURE_LESSON_SESSION_DISABLED: ${operation} is disabled in this build`);
+    this.name = 'FeatureLessonSessionDisabledError';
+  }
+}
+
+// --- Home hub ------------------------------------------------------------
+export const FEATURE_HOME_HUB: boolean = readEnvFlag('EXPO_PUBLIC_FEATURE_HOME_HUB');
+
+export function isHomeHubFeatureEnabled(): boolean {
+  return FEATURE_HOME_HUB;
+}
+
+export const FEATURE_HOME_HUB_DISABLED_CODE = 'FEATURE_HOME_HUB_DISABLED' as const;
+
+export class FeatureHomeHubDisabledError extends Error {
+  readonly code = FEATURE_HOME_HUB_DISABLED_CODE;
+
+  constructor(operation: string) {
+    super(`FEATURE_HOME_HUB_DISABLED: ${operation} is disabled in this build`);
+    this.name = 'FeatureHomeHubDisabledError';
+  }
+}
+
+// --- Device management ---------------------------------------------------
+export const FEATURE_DEVICE_MANAGEMENT: boolean = readEnvFlag('EXPO_PUBLIC_FEATURE_DEVICE_MANAGEMENT');
+
+export function isDeviceManagementFeatureEnabled(): boolean {
+  return FEATURE_DEVICE_MANAGEMENT;
+}
+
+export const FEATURE_DEVICE_MANAGEMENT_DISABLED_CODE = 'FEATURE_DEVICE_MANAGEMENT_DISABLED' as const;
+
+export class FeatureDeviceManagementDisabledError extends Error {
+  readonly code = FEATURE_DEVICE_MANAGEMENT_DISABLED_CODE;
+
+  constructor(operation: string) {
+    super(`FEATURE_DEVICE_MANAGEMENT_DISABLED: ${operation} is disabled in this build`);
+    this.name = 'FeatureDeviceManagementDisabledError';
+  }
+}

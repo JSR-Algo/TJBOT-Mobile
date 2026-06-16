@@ -1,0 +1,6 @@
+{
+  "id": "lesson-demo",
+  "owner_lane": "B",
+  "flow": "docs/flows/domains/lesson-demo/flow.generated.mmd",
+  "edge_cases": {}
+}

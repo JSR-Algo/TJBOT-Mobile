@@ -31,13 +31,13 @@ export const NAVIGATION_ARCHITECTURE = [
 
 export const DELETED_LEGACY_ROUTES = [
   'retired app-navigation route aliases',
-  'legacy src/screens tree',
+  'legacy src/app/screens alias tree',
   'prototype StubScreen registrations',
   'ListenScreen alias',
   'SpeakScreen alias',
   'DevicePairWifiScreen alias',
+  'src/api/* shim aliases',
 ] as const;
-
 export const MERGED_LEGACY_NAVIGATORS = [
   'src/app/navigation',
   'src/screens',
@@ -107,6 +107,7 @@ const BUSINESS_FLOW_SEQUENCES = {
     ROUTES.LoginScreen,
   ],
   onboarding: [
+    ROUTES.ParentConsentScreen,
     ROUTES.ChildProfileScreen,
     ROUTES.MicAskScreen,
     ROUTES.FirstLessonEntryScreen,
@@ -570,6 +571,7 @@ export const NAVIGATION_SCREEN_COMPONENT_RESPONSIBILITY = {
 const FORWARD_CYCLE_GROUPS: readonly FeatureForwardCycleGroup[] = [
   'course-dispatch-picker',
   'device-pairing-retry',
+  'lesson-demo-review',
   'lesson-exit-resume',
   'network-retry',
 ] as const;
@@ -582,6 +584,7 @@ function forwardCycleGroups(): Record<FeatureForwardCycleGroup, readonly string[
   const grouped: Record<FeatureForwardCycleGroup, string[]> = {
     'course-dispatch-picker': [],
     'device-pairing-retry': [],
+    'lesson-demo-review': [],
     'lesson-exit-resume': [],
     'network-retry': [],
   };

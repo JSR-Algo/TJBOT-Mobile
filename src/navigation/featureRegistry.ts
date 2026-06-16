@@ -4,6 +4,7 @@ import { COURSE_NAVIGATION } from '@/features/course/navigation';
 import { DEVICE_NAVIGATION } from '@/features/device/navigation';
 import { FALLBACK_NAVIGATION } from '@/features/fallback/navigation';
 import { HOME_NAVIGATION } from '@/features/home/navigation';
+import { LESSON_DEMO_NAVIGATION } from '@/features/lessonDemo/navigation';
 import { LESSON_SESSION_NAVIGATION } from '@/features/lesson-session/navigation';
 import { ONBOARDING_NAVIGATION } from '@/features/onboarding/navigation';
 import { PARENT_NAVIGATION } from '@/features/parent/navigation';
@@ -20,6 +21,7 @@ export const FEATURE_NAVIGATION_REGISTRY: readonly FeatureNavigationConfig[] = [
   COURSE_NAVIGATION,
   COURSE_LIBRARY_NAVIGATION,
   PURCHASE_NAVIGATION,
+  LESSON_DEMO_NAVIGATION,
   LESSON_SESSION_NAVIGATION,
   PROGRESS_NAVIGATION,
   PARENT_NAVIGATION,

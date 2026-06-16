@@ -9,19 +9,25 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { pairDevice } from '@/services/api/device.api';
+import {
+  connectProvisionableDevice,
+  provisionWifi,
+  type ProvisioningError,
+} from '@/services/provisioning/espProvisioning';
 import { ROUTES } from '@/navigation/routes';
+import { clearPairingSession, getConnectedEspDevice } from '../pairingSession';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 
 const STEPS = [
   'Sending Wi-Fi to Robot',
-  'Connecting to Casa-Familia',
+  'Connecting to your network',
   'Logging in to your account',
   'Loading starter lesson',
 ] as const;
 
 export default function PairConnectingScreen({ navigation, route }: Props) {
-  const [i, setI] = React.useState(0);
+  const [stepIndex, setStepIndex] = React.useState(0);
   const [status, setStatus] = React.useState<'pairing' | 'complete' | 'failed'>('pairing');
   const params = route.params;
 
@@ -29,30 +35,72 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     const code = getParamString(params, 'code');
     const ssid = getParamString(params, 'ssid');
     const password = getParamString(params, 'password');
+    const espDeviceName = params?.espDeviceName;
+    const serial = params?.serial ?? params?.deviceId;
+
     if (!code || !ssid || !password) {
       setStatus('failed');
       return;
     }
+
     let cancelled = false;
-    void pairDevice({
-      serialNumber: params?.deviceId,
-      code,
-      wifiSsid: ssid,
-      wifiPassword: password,
-    }).then((result) => {
-      if (cancelled) return;
-      setI(STEPS.length - 1);
-      setStatus('complete');
-      navigation.navigate(ROUTES.PairSuccessScreen, { deviceId: result.deviceId });
-    }).catch(() => {
-      if (cancelled) return;
-      setStatus('failed');
-      navigation.navigate(ROUTES.PairFailedScreen, {
-        deviceId: params?.deviceId,
-        code,
-        ssid,
-      });
-    });
+    const advance = (index: number): void => {
+      if (!cancelled) setStepIndex(index);
+    };
+
+    const run = async (): Promise<void> => {
+      try {
+        advance(0);
+        let device = getConnectedEspDevice();
+        if (!device && espDeviceName) {
+          const connected = await connectProvisionableDevice({
+            deviceName: espDeviceName,
+            pairingCode: code,
+            username: serial ?? espDeviceName,
+          });
+          device = connected.device;
+        }
+
+        if (device) {
+          advance(1);
+          const result = await provisionWifi(device, ssid, password);
+          if (result.status?.toLowerCase() !== 'success') {
+            throw new Error(result.status ?? 'Wi-Fi provisioning failed');
+          }
+        }
+
+        advance(2);
+        const claim = await pairDevice({
+          serialNumber: serial,
+          code,
+          wifiSsid: ssid,
+          wifiPassword: password,
+        });
+
+        if (cancelled) return;
+        advance(3);
+        setStatus('complete');
+        clearPairingSession();
+        navigation.navigate(ROUTES.PairSuccessScreen, { deviceId: claim.deviceId });
+      } catch (err) {
+        if (cancelled) return;
+        setStatus('failed');
+        const message =
+          err instanceof Error
+            ? err.message
+            : (err as ProvisioningError)?.message ?? 'Pairing failed';
+        navigation.navigate(ROUTES.PairFailedScreen, {
+          deviceId: params?.deviceId,
+          serial: params?.serial,
+          espDeviceName: params?.espDeviceName,
+          code,
+          ssid,
+          error: message,
+        });
+      }
+    };
+
+    void run();
     return () => {
       cancelled = true;
     };
@@ -68,8 +116,8 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       </Box>
       <Box paddingHorizontal={16} paddingTop={24} gap={8}>
         {STEPS.map((s, idx) => {
-          const done = idx < i;
-          const active = idx === i;
+          const done = idx < stepIndex;
+          const active = idx === stepIndex;
           return (
             <Box key={s} style={styles.stepRow} flexDirection="row" gap={12} alignItems="center">
               <Box
@@ -87,7 +135,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
                   <Box style={styles.pendingDot} />
                 )}
               </Box>
-              <Text style={[styles.stepText, idx <= i && styles.stepTextActive]}>{s}</Text>
+              <Text style={[styles.stepText, idx <= stepIndex && styles.stepTextActive]}>{s}</Text>
             </Box>
           );
         })}

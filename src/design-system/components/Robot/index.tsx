@@ -73,26 +73,24 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent, acc
   const glowOpacity = useSharedValue(cfg.glow === 'on' ? 0.45 : 0.25);
 
   useEffect(() => {
-    const dur = cfg.bobDuration ?? 1600;
+    const cfg = CONFIGS[emotion];
     const easeIO = Easing.inOut(Easing.ease);
 
     bodyY.value = 0;
     bodyRotate.value = 0;
     antennaRotate.value = 0;
+    glowScale.value = 1;
+    glowOpacity.value = cfg.glow === 'off' ? 0 : 0.3;
 
     if (cfg.bodyAnim === 'bob') {
       bodyY.value = withRepeat(withSequence(
-        withTiming(-6, { duration: dur / 2, easing: easeIO }),
-        withTiming(0, { duration: dur / 2, easing: easeIO }),
+        withTiming(-3, { duration: cfg.bobDuration ?? 2000, easing: easeIO }),
+        withTiming(0, { duration: cfg.bobDuration ?? 2000, easing: easeIO }),
       ), -1, false);
     } else if (cfg.bodyAnim === 'bobStrong') {
       bodyY.value = withRepeat(withSequence(
-        withTiming(-12, { duration: 800, easing: easeIO }),
-        withTiming(0, { duration: 800, easing: easeIO }),
-      ), -1, false);
-      bodyRotate.value = withRepeat(withSequence(
-        withTiming(-1, { duration: 800, easing: easeIO }),
-        withTiming(1, { duration: 800, easing: easeIO }),
+        withTiming(-6, { duration: cfg.bobDuration ?? 1600, easing: easeIO }),
+        withTiming(0, { duration: cfg.bobDuration ?? 1600, easing: easeIO }),
       ), -1, false);
     } else if (cfg.bodyAnim === 'tilt') {
       bodyRotate.value = withRepeat(withSequence(
@@ -125,6 +123,8 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent, acc
         withTiming(cfg.glow === 'on' ? 0.45 : 0.25, { duration: glowDur / 2, easing: easeIO }),
       ), -1, false);
     }
+    // Reanimated shared values and derived config fields are stable for the lifetime of the emotion.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emotion]);
 
   const bodyStyle = useAnimatedStyle(() => ({

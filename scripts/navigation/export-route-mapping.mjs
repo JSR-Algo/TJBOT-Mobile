@@ -25,7 +25,7 @@ function featureNavigationFiles() {
   const featuresDir = join(root, 'src', 'features');
   return readdirSync(featuresDir)
     .map(feature => ({
-      owner: feature,
+      folder: feature,
       path: join(featuresDir, feature, 'navigation.ts'),
     }))
     .filter(entry => existsSync(entry.path));
@@ -80,9 +80,10 @@ function parseScreenArrays(owner, source) {
 
 function featureEntriesByRoute() {
   const entries = new Map();
-  for (const { owner, path } of featureNavigationFiles()) {
+  for (const { folder, path } of featureNavigationFiles()) {
     const source = readFileSync(path, 'utf8');
     const rootBranch = source.match(/\brootBranch:\s*'([^']+)'/)?.[1];
+    const owner = source.match(/\bowner:\s*'([^']+)'/)?.[1] ?? folder;
     if (!rootBranch) {
       throw new Error(`Missing rootBranch in ${path.replace(`${root}/`, '')}`);
     }

@@ -6,8 +6,20 @@ export const SECURE_STORE_OPTIONS = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED,
 } as const;
 
+const UNSET = Symbol('unset');
+let cachedAccessToken: string | null | typeof UNSET = UNSET;
+
+export function invalidateAccessTokenCache(): void {
+  cachedAccessToken = UNSET;
+}
+
 export async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY, SECURE_STORE_OPTIONS);
+  if (cachedAccessToken !== UNSET) {
+    return cachedAccessToken;
+  }
+  const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY, SECURE_STORE_OPTIONS);
+  cachedAccessToken = token;
+  return token;
 }
 
 export async function getRefreshToken(): Promise<string | null> {
@@ -15,6 +27,7 @@ export async function getRefreshToken(): Promise<string | null> {
 }
 
 export async function setTokens(accessToken: string, refreshToken: string): Promise<void> {
+  cachedAccessToken = accessToken;
   await Promise.all([
     SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken, SECURE_STORE_OPTIONS),
     SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken, SECURE_STORE_OPTIONS),
@@ -22,6 +35,7 @@ export async function setTokens(accessToken: string, refreshToken: string): Prom
 }
 
 export async function clearTokens(): Promise<void> {
+  cachedAccessToken = null;
   await Promise.all([
     SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY, SECURE_STORE_OPTIONS),
     SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY, SECURE_STORE_OPTIONS),
@@ -46,3 +60,4 @@ export const SECURE_STORE_KEYS = {
   refreshToken: REFRESH_TOKEN_KEY,
   user: 'TJBot_user',
 } as const;
+

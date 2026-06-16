@@ -26,8 +26,8 @@
       "developmentClient": false,
       "distribution": "internal",
       "env": {
-        "TBOT_API_URL": "https://tbot-backend-8wmh.onrender.com/v1",
-        "TBOT_AI_URL": "http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com/api/ai"
+        "TBOT_API_URL": "https://prerequisite-analysts-luther-review.trycloudflare.com/v1",
+        "TBOT_AI_URL": "https://prerequisite-analysts-luther-review.trycloudflare.com/v1/ai"
       },
       "ios": {},
       "android": {

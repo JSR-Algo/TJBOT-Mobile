@@ -12,3 +12,7 @@ export class BackendContractUnavailableError extends Error {
 export function backendContractUnavailable(operation: string): never {
   throw new BackendContractUnavailableError(operation);
 }
+
+export function isBackendContractUnavailableError(error: unknown): error is BackendContractUnavailableError {
+  return error instanceof BackendContractUnavailableError;
+}

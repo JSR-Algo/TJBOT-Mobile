@@ -2,9 +2,17 @@ import client from '../http/client';
 import { setTokens, clearTokens } from '../http/tokens';
 import { AuthTokens, User } from '../../types';
 
-export async function signup(name: string, email: string, password: string): Promise<{ access_token?: string }> {
+export async function signup(
+  name: string,
+  email: string,
+  password: string,
+): Promise<AuthTokens & { user?: User }> {
   const response = await client.post('/auth/signup', { name, email, password });
   const data = response.data.data ?? response.data;
+  // Signup returns access_token only; chain login so consent/child APIs get a refresh token.
+  if (data.access_token && !data.refresh_token) {
+    return login(email, password);
+  }
   if (data.access_token) {
     await setTokens(data.access_token, data.refresh_token ?? '');
   }

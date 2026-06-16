@@ -6,9 +6,13 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(APP_ROOT, '..');
+const WORKSPACE_ROOT = path.resolve(APP_ROOT, '..', '..');
 const BACKEND_OPENAPI_PATH = process.env.TBOT_BACKEND_OPENAPI_PATH
   ? path.resolve(APP_ROOT, process.env.TBOT_BACKEND_OPENAPI_PATH)
-  : path.join(REPO_ROOT, 'tbot-backend', 'openapi.json');
+  : resolveFirstExistingPath([
+      path.join(WORKSPACE_ROOT, 'backend', 'openapi.json'),
+      path.join(REPO_ROOT, 'tbot-backend', 'openapi.json'),
+    ]);
 const ARTIFACTS_DIR = path.join(APP_ROOT, 'artifacts');
 const JSON_ARTIFACT = path.join(ARTIFACTS_DIR, 'api-contract-sync-latest.json');
 const REPORT_ARTIFACT = path.join(ARTIFACTS_DIR, 'api-contract-sync-report.md');
@@ -26,6 +30,10 @@ const MOBILE_SCAN_DIRS = [
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 const CALL_RE = /\b(?:client|http|_aiClient|axios)\.(get|post|put|patch|delete)[\s\S]{0,180}?\(\s*(`([^`]+)`|'([^']+)'|"([^"]+)")/g;
+
+function resolveFirstExistingPath(candidates) {
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? candidates[0];
+}
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -57,11 +65,21 @@ function normalizeMobilePath(rawPath) {
   return withParams.startsWith('/v1/') ? withParams : `/v1${withParams}`;
 }
 
-function backendPathToRegex(pathPattern) {
-  const escaped = pathPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`^${escaped
-    .replace(/:([A-Za-z0-9_]+)/g, '[^/]+')
-    .replace(/\\\{[^}]+\\\}/g, '[^/]+')}$`);
+function pathSegments(routePath) {
+  return routePath.split('/').filter(Boolean);
+}
+
+function isRouteParam(segment) {
+  return /^:[A-Za-z0-9_]+$/.test(segment) || /^\{[^/]+\}$/.test(segment);
+}
+
+function backendPathMatches(pathPattern, mobilePath) {
+  const backendSegments = pathSegments(pathPattern);
+  const mobileSegments = pathSegments(mobilePath);
+  if (backendSegments.length !== mobileSegments.length) return false;
+  return backendSegments.every((segment, index) => (
+    isRouteParam(segment) || isRouteParam(mobileSegments[index]) || segment === mobileSegments[index]
+  ));
 }
 
 function extractMobileCalls() {
@@ -137,7 +155,7 @@ function compareEndpoint(a, b) {
 
 function findBackendMatch(call, backendRoutes) {
   return backendRoutes.find(
-    (route) => route.method === call.method && backendPathToRegex(route.path).test(call.path),
+    (route) => route.method === call.method && backendPathMatches(route.path, call.path),
   );
 }
 

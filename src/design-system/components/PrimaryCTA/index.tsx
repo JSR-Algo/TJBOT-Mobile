@@ -13,12 +13,13 @@ interface PrimaryCTAProps {
   disabled?: boolean;
   testID?: string;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
-export default function PrimaryCTA({ children, onPress, color = tokens.colors.coral, icon, disabled = false, testID, accessibilityLabel }: PrimaryCTAProps) {
+export default function PrimaryCTA({ children, onPress, color = tokens.colors.coral, icon, disabled = false, testID, accessibilityLabel, accessibilityHint }: PrimaryCTAProps) {
   const label = accessibilityLabel ?? (typeof children === 'string' ? children : undefined);
   return (
-    <Pressable haptic onPress={onPress} disabled={disabled} testID={testID} accessibilityLabel={label} style={styles.pressable}>
+    <Pressable haptic onPress={onPress} disabled={disabled} testID={testID} accessibilityLabel={label} accessibilityHint={accessibilityHint} style={styles.pressable}>
       <Box style={[styles.btn, { backgroundColor: color, ...tokens.shadows.button }]}>
         {icon}
         <Text style={styles.label}>{children}</Text>
@@ -26,6 +27,7 @@ export default function PrimaryCTA({ children, onPress, color = tokens.colors.co
     </Pressable>
   );
 }
+
 
 const styles = StyleSheet.create({
   pressable: {

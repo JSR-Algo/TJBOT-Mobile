@@ -1,0 +1,1760 @@
+{
+  "version": "1.0.0",
+  "source": "iOS Reference Library Audit",
+  "tasks": [
+    {
+      "id": "T00",
+      "slug": "gemini-voice-decision",
+      "title": "Gemini Live voice ship/remove decision",
+      "area": "meta",
+      "status": "BLOCKED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "registry-validation.md#the-gemini-fork-is-not-gated"
+      ],
+      "problem": "The Gemini Live voice path creates a mutually-exclusive fork in the task registry: T17/T20/T21 ship Gemini, while T18/T19 remove it. No single decision task forces the fleet to pick one branch, which will lead to planning deadlock.",
+      "scope": [],
+      "non_scope": [],
+      "acceptance_criteria": [
+        "Decision outcome is recorded as SHIP_GEMINI or REMOVE_GEMINI",
+        "Legal, product, and safety sign-off is captured for the chosen direction",
+        "T17-T21 are unblocked only after the decision is recorded and communicated"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": null,
+        "test_command": "Record decision in docs/audits/ios-reference-audit/tasks/T00-gemini-voice-decision.md",
+        "expected_before": "UNDECIDED",
+        "expected_after": "DECIDED"
+      },
+      "gates": [],
+      "coordination_required": true,
+      "notes": "T17-T21 are gated by this decision. Do not start those tasks until product and legal confirm the direction."
+    },
+    {
+      "id": "T01",
+      "slug": "canonical-env-schema",
+      "title": "Canonical env schema, EAS alignment, and Expo capabilities",
+      "area": "project-health",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "MASTER_AUDIT.md#cross-cutting-themes-2",
+        "reports/project-health.md#improvements"
+      ],
+      "problem": "Production env keys are fragmented across eas.json, metro.config.js, src/config.ts, and .detoxrc.js. eas.json production sets EXPO_PUBLIC_API_BASE_URL which src/config.ts ignores, so release builds silently fall back to a hardcoded Cloudflare tunnel. metro.config.js also mutates the source tree by writing src/__env__.ts at load time.",
+      "scope": [
+        "eas.json",
+        "src/config.ts",
+        "metro.config.js",
+        ".detoxrc.js",
+        "app.json",
+        "package.json",
+        "src/__env__.ts"
+      ],
+      "non_scope": [
+        "src/services/ws/realtime.ts",
+        ".env",
+        "ios/**",
+        "android/**"
+      ],
+      "acceptance_criteria": [
+        "eas.json production profile uses TBOT_API_URL, TBOT_AI_URL, and WS_URL keys consumed by src/config.ts",
+        "Hardcoded Cloudflare fallback removed from src/config.ts; production fallback is Render URL or fails closed",
+        "metro.config.js no longer writes src/__env__.ts; env injection uses Expo EXPO_PUBLIC_* handling or process.env",
+        ".detoxrc.js launchArgs align with the canonical env schema",
+        "app.json declares expo-notifications plugin, orientation, scheme, and iOS/Android background modes",
+        "package.json declares engines.node and a browserslist"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T01-canonical-env-schema.test.ts",
+        "test_command": "npx jest tests/verification/T01-canonical-env-schema.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G4"
+      ],
+      "coordination_required": true,
+      "notes": "Cross-repo coordination required: confirm canonical API/AI/WS URL contract with backend and Render deployment before merging EAS changes."
+    },
+    {
+      "id": "T02",
+      "slug": "jest-package-hygiene",
+      "title": "Jest, lint, and package hygiene",
+      "area": "project-health",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/project-health.md#improvements",
+        "reports/project-health.md#simplifications",
+        "reports/testing-quality.md#improvements"
+      ],
+      "problem": "package.json has duplicate build/typecheck scripts, a stale expo-av Jest mapper, a transform-ignore list that omits ESM packages used at runtime, and no engines/browserslist. eslint.config.js disables no-require-imports globally.",
+      "scope": [
+        "package.json",
+        "eslint.config.js"
+      ],
+      "non_scope": [
+        "src/**",
+        "tests/__mocks__/expo-av.ts"
+      ],
+      "acceptance_criteria": [
+        "Only one of build or typecheck scripts remains (keep typecheck)",
+        "expo-av moduleNameMapper removed from Jest config",
+        "transformIgnorePatterns whitelists @orbital-systems, @google/genai, lucide-react-native, posthog-react-native, @sentry/react-native, and axios",
+        "@typescript-eslint/no-require-imports override is scoped to metro.config.js and babel.config.js only",
+        "engines.node and browserslist are declared"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T02-jest-package-hygiene.test.ts",
+        "test_command": "npx jest tests/verification/T02-jest-package-hygiene.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "Touches package.json scripts and Jest config only; coordinate with T01 on package.json to avoid merge conflicts."
+    },
+    {
+      "id": "T03",
+      "slug": "restore-android-ble-autolinking",
+      "title": "Restore Android BLE autolinking",
+      "area": "ble-provisioning",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/project-health.md#improvements",
+        "reports/ble-provisioning.md#bottlenecks"
+      ],
+      "problem": "react-native.config.js opts react-native-ble-plx out of Android autolinking, disabling the core robot-pairing flow on Android.",
+      "scope": [
+        "react-native.config.js",
+        "package.json"
+      ],
+      "non_scope": [
+        "ios/**",
+        "src/services/ble/permissions.ts"
+      ],
+      "acceptance_criteria": [
+        "react-native-ble-plx is no longer opted out of Android autolinking",
+        "Either the library is upgraded to a React Native 0.83-compatible release or the override is replaced with a documented, time-boxed fallback",
+        "Android debug build succeeds"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T03-restore-android-ble-autolinking.test.ts",
+        "test_command": "npx jest tests/verification/T03-restore-android-ble-autolinking.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G5"
+      ],
+      "coordination_required": false,
+      "notes": "May require upgrading react-native-ble-plx or pinning the RN architecture; verify on an Android device/emulator. The Jest verification test asserts config correctness; the build_gate asserts native Android compilation.",
+      "build_gate": "npx react-native run-android"
+    },
+    {
+      "id": "T04",
+      "slug": "ble-scan-readiness-rssi-timeout",
+      "title": "BLE scan readiness, RSSI capture, and timeout alignment",
+      "area": "ble-provisioning",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/ble-provisioning.md#improvements",
+        "reports/ble-provisioning.md#top-3-quick-wins"
+      ],
+      "problem": "requestBlePermissions returns 'granted' unconditionally on iOS, so Bluetooth-off/denied users see silent scan failures. The scan also discards RSSI, picks the first allowlisted device regardless of proximity, and uses a 10 s timeout that diverges from the 30 s machine spec.",
+      "scope": [
+        "src/services/ble/permissions.ts",
+        "src/services/ble/types.ts",
+        "src/services/ble/service.ts",
+        "src/services/ble/config.ts",
+        "src/features/device/pairing/screens/PairSearchScreen.tsx",
+        "tests/verification/T04-ble-scan-readiness-rssi-timeout.test.ts"
+      ],
+      "non_scope": [
+        "src/services/provisioning/espProvisioning.ts",
+        "src/features/device/pairing/screens/PairWifiScreen.tsx",
+        "src/state/machines/devicePairing.machine.ts"
+      ],
+      "acceptance_criteria": [
+        "iOS permission helper checks CBCentralManager state and returns poweredOff/unauthorized when appropriate",
+        "BleDeviceCandidate includes rssi and toCandidate preserves it",
+        "scanForTJBotDevices sorts allowed candidates by descending RSSI and rejects signals below a configurable threshold",
+        "BLE_CONFIG.SCAN_TIMEOUT_MS is 30000 to match the XState machine spec",
+        "PairSearchScreen surfaces a clear 'Turn on Bluetooth' prompt when the state is not poweredOn"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T04-ble-scan-readiness-rssi-timeout.test.ts",
+        "test_command": "npx jest tests/verification/T04-ble-scan-readiness-rssi-timeout.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G5"
+      ],
+      "coordination_required": false,
+      "notes": "Mock react-native-ble-plx state subscription in tests; no backend contract change."
+    },
+    {
+      "id": "T05",
+      "slug": "ble-provisioning-cleanup-retry-errors",
+      "title": "BLE provisioning cleanup, retry, and error mapping",
+      "area": "ble-provisioning",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/ble-provisioning.md#improvements",
+        "reports/ble-provisioning.md#bottlenecks",
+        "MASTER_AUDIT.md#cross-cutting-themes-5"
+      ],
+      "problem": "PairWifiScreen and PairConnectingScreen only set a cancelled boolean on unmount, leaving native BLE/Wi-Fi operations running and potentially orphaning the robot. connectProvisionableDevice and provisionWifi are single-attempt, ProvisioningError has coarse codes, and PairFailedScreen shows generic recovery text.",
+      "scope": [
+        "src/features/device/pairing/screens/PairWifiScreen.tsx",
+        "src/features/device/pairing/screens/PairConnectingScreen.tsx",
+        "src/services/provisioning/espProvisioning.ts",
+        "src/features/device/pairing/screens/PairFailedScreen.tsx",
+        "src/state/machines/devicePairing.types.ts",
+        "tests/verification/T05-ble-provisioning-cleanup-retry-errors.test.ts"
+      ],
+      "non_scope": [
+        "src/features/device/pairing/pairingSession.ts",
+        "src/state/machines/devicePairing.machine.ts",
+        "src/services/api/device.api.ts"
+      ],
+      "acceptance_criteria": [
+        "PairWifiScreen useEffect cleanup calls device.disconnect() and stopProvisionSearch()",
+        "PairConnectingScreen useEffect cleanup disconnects the ESP device and stops search",
+        "connectProvisionableDevice and provisionWifi use a small retry helper for transient BLE disconnects",
+        "ProvisioningError codes map to the XState machine's E-PROV-001..005 codes",
+        "PairFailedScreen renders context-aware recovery actions based on the mapped error code",
+        "PairWifiScreen supports pull-to-refresh / 'Scan again' for the Wi-Fi list"
+      ],
+      "dependencies": [
+        "T04"
+      ],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T05-ble-provisioning-cleanup-retry-errors.test.ts",
+        "test_command": "npx jest tests/verification/T05-ble-provisioning-cleanup-retry-errors.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G5"
+      ],
+      "coordination_required": true,
+      "notes": "Cross-repo: confirm backend claim endpoint semantics before adding pre-provisioning claim logic."
+    },
+    {
+      "id": "T06",
+      "slug": "pairing-state-actor-store",
+      "title": "Move pairing mutable state into an actor/store",
+      "area": "ble-provisioning",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/ble-provisioning.md#improvements",
+        "reports/state-architecture.md#improvements",
+        "MASTER_AUDIT.md#cross-cutting-themes-1"
+      ],
+      "problem": "pairingSession.ts stores activeCandidate and connectedDevice as mutable module-level variables, which leaks across screen instances, survives unmount, and risks corruption on concurrent pairing attempts.",
+      "scope": [
+        "src/features/device/pairing/pairingSession.ts",
+        "src/features/device/pairing/pairingStore.ts"
+      ],
+      "non_scope": [
+        "src/features/device/pairing/screens/*",
+        "src/state/machines/devicePairing.machine.ts"
+      ],
+      "acceptance_criteria": [
+        "activeCandidate and connectedDevice live in a Zustand store or XState actor instead of module-level let bindings",
+        "The public API of pairingSession.ts (setPairingCandidate, getPairingCandidate, setConnectedEspDevice, getConnectedEspDevice, clearPairingSession) remains stable for existing screens",
+        "clearPairingSession still eagerly disconnects the ESP device",
+        "Unit tests verify store lifecycle and cleanup"
+      ],
+      "dependencies": [
+        "T05"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T06-pairing-state-actor-store.test.ts",
+        "test_command": "npx jest tests/verification/T06-pairing-state-actor-store.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G5"
+      ],
+      "coordination_required": false,
+      "notes": "Keep the existing imperative API so T05 screen changes are not invalidated."
+    },
+    {
+      "id": "T07",
+      "slug": "ble-allowlist-hardening",
+      "title": "Harden BLE allowlist with service UUID and manufacturer data",
+      "area": "ble-provisioning",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/ble-provisioning.md#bottlenecks"
+      ],
+      "problem": "isAllowlistedDevice only matches name/id prefixes, so a maliciously renamed peripheral could pass the filter. There is no validation of the advertised provisioning service UUID or manufacturer data.",
+      "scope": [
+        "src/services/ble/config.ts",
+        "src/services/ble/service.ts",
+        "tests/verification/T07-ble-allowlist-hardening.test.ts"
+      ],
+      "non_scope": [
+        "src/features/device/pairing/screens/*",
+        "src/services/provisioning/espProvisioning.ts"
+      ],
+      "acceptance_criteria": [
+        "isAllowlistedDevice also validates that the candidate advertises the configured SERVICE_UUID",
+        "Manufacturer-data check is added if firmware exposes a TJBot manufacturer ID",
+        "Existing allowlist prefixes remain supported for backwards compatibility",
+        "Unit tests reject renamed peripherals that do not expose the expected service UUID"
+      ],
+      "dependencies": [
+        "T05",
+        "T04"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T07-ble-allowlist-hardening.test.ts",
+        "test_command": "npx jest tests/verification/T07-ble-allowlist-hardening.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G5"
+      ],
+      "coordination_required": true,
+      "notes": "Coordination required: confirm firmware manufacturer data layout and service UUID before enforcing the new check."
+    },
+    {
+      "id": "T08",
+      "slug": "explicit-ws-url-contract",
+      "title": "Explicit realtime WebSocket URL and contract parity",
+      "area": "network-auth-ws",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/network-auth-ws.md#improvements",
+        "MASTER_AUDIT.md#cross-cutting-themes-2"
+      ],
+      "problem": "src/services/ws/realtime.ts derives the observer WebSocket root from the HTTP base URL with fragile path stripping, which is the likely source of the documented mobile/backend WebSocket path contract mismatch.",
+      "scope": [
+        "src/services/ws/realtime.ts",
+        "tests/verification/T08-explicit-ws-url-contract.test.ts"
+      ],
+      "non_scope": [
+        "src/services/ws/xiaozhi-device.ts",
+        "src/services/http/client.ts"
+      ],
+      "acceptance_criteria": [
+        "Config exposes a deterministic WS_URL resolution that uses ENV.WS_URL when set and falls back to a documented, backend-approved default",
+        "httpBaseToWsRoot derivation is removed or isolated behind a loud deprecation comment",
+        "buildObserverUrl uses the canonical WS_URL without fragile string manipulation",
+        "A contract test asserts that mobile's resolved observer path matches the backend OpenAPI/modular route contract"
+      ],
+      "dependencies": [
+        "T01"
+      ],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T08-explicit-ws-url-contract.test.ts",
+        "test_command": "npx jest tests/verification/T08-explicit-ws-url-contract.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G6"
+      ],
+      "coordination_required": true,
+      "notes": "Coordination required: confirm the exact backend observer WS path before changing the default. T08's WS URL work uses the canonical env schema established by T01."
+    },
+    {
+      "id": "T09",
+      "slug": "unified-authenticated-client",
+      "title": "Unify authenticated axios client, auth invalidation, and retry/idempotency",
+      "area": "network-auth-ws",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/network-auth-ws.md#improvements",
+        "reports/state-architecture.md#improvements",
+        "MASTER_AUDIT.md#cross-cutting-themes-3"
+      ],
+      "problem": "src/services/http/client.ts and src/services/api/ai.ts duplicate Bearer + 401 refresh logic; setAiAuthInvalidatedHandler is never registered, so AI-session expiry does not force the UI back to login. Retryable errors are only tagged, not retried, and request-id generation diverges from idempotency.js.",
+      "scope": [
+        "src/services/http/client.ts",
+        "src/services/api/ai.ts",
+        "src/services/http/refresh-queue.ts",
+        "src/services/http/idempotency.js",
+        "src/contexts/AuthContext.tsx",
+        "src/utils/errors.ts",
+        "tests/verification/T09-unified-authenticated-client.test.ts"
+      ],
+      "non_scope": [
+        "src/services/storage/secureStore.ts",
+        "src/api/*",
+        "src/services/ws/realtime.ts"
+      ],
+      "acceptance_criteria": [
+        "A single createAuthenticatedClient({ baseURL, timeout, normalizeErrors }) factory serves both REST and AI traffic",
+        "AuthContext registers one auth-invalidated handler that covers all authenticated clients",
+        "Retryable 429/503/504 responses are retried with exponential backoff for idempotent methods",
+        "Request-id generation is consolidated with idempotency.js and attached to mutating requests",
+        "AI stub functions (transcribe, chat, synthesize) use the shared client"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T09-unified-authenticated-client.test.ts",
+        "test_command": "npx jest tests/verification/T09-unified-authenticated-client.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G4"
+      ],
+      "coordination_required": true,
+      "notes": "Cross-repo auth contract: confirm refresh response shape and idempotency-key behavior with backend."
+    },
+    {
+      "id": "T10",
+      "slug": "ws-resilience-event-forwarding",
+      "title": "Forward raw WebSocket events and harden reconnect logic",
+      "area": "network-auth-ws",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/network-auth-ws.md#improvements"
+      ],
+      "problem": "realtime.ts and xiaozhi-device.ts replace original Error/CloseEvent data with generic strings, removing codes and reasons needed for production debugging. The reconnect loop has no jitter, no max attempt limit, and no offline awareness.",
+      "scope": [
+        "src/services/ws/realtime.ts",
+        "src/services/ws/xiaozhi-device.ts",
+        "tests/verification/T10-ws-resilience-event-forwarding.test.ts"
+      ],
+      "non_scope": [
+        "src/config.ts",
+        "src/services/http/client.ts"
+      ],
+      "acceptance_criteria": [
+        "onError callbacks receive the original error code/reason or a structured object",
+        "onClose callbacks receive code, reason, and wasClean",
+        "Reconnect delay includes jitter and caps attempts before surfacing a terminal error",
+        "Reconnect pauses while NetInfo reports offline and resumes when online",
+        "Telemetry includes raw close codes for production debugging"
+      ],
+      "dependencies": [
+        "T08"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T10-ws-resilience-event-forwarding.test.ts",
+        "test_command": "npx jest tests/verification/T10-ws-resilience-event-forwarding.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G6"
+      ],
+      "coordination_required": false,
+      "notes": "Mock WebSocket and @react-native-community/netinfo in tests."
+    },
+    {
+      "id": "T11",
+      "slug": "household-context-perf-cancellation",
+      "title": "Parallelize household fetches and replace arbitrary timeouts",
+      "area": "network-auth-ws",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/network-auth-ws.md#bottlenecks",
+        "reports/state-architecture.md#bottlenecks"
+      ],
+      "problem": "HouseholdContext.refresh() fetches households and children sequentially with a 12 s fallback timeout, blocking the cold start. There is no request cancellation on unmount and no cache for instantaneous hydration.",
+      "scope": [
+        "src/contexts/HouseholdContext.tsx",
+        "tests/verification/T11-household-context-perf-cancellation.test.ts"
+      ],
+      "non_scope": [
+        "src/services/api/households.ts",
+        "src/app/providers/QueryProvider.tsx"
+      ],
+      "acceptance_criteria": [
+        "refresh() fetches households and active-household children in parallel with Promise.all",
+        "An AbortController or axios cancel token aborts in-flight requests on unmount",
+        "The 12 s arbitrary timeout is removed or replaced by an operation-specific deadline with telemetry",
+        "The last known household list is cached in AsyncStorage for instantaneous hydration",
+        "Provider value object is memoized to avoid re-render cascades"
+      ],
+      "dependencies": [
+        "T09"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T11-household-context-perf-cancellation.test.tsx",
+        "test_command": "npx jest tests/verification/T11-household-context-perf-cancellation.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "Keep the existing public context API; changes are internal to refresh() and memoization."
+    },
+    {
+      "id": "T12",
+      "slug": "remove-api-shims-consolidate-storage",
+      "title": "Remove API shims and consolidate secure-storage wrappers",
+      "area": "network-auth-ws",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/network-auth-ws.md#simplifications",
+        "reports/state-architecture.md#simplifications"
+      ],
+      "problem": "src/api/client.ts, src/api/tokens.ts, and src/api/learning.ts are shallow re-exports that fragment import paths. src/services/http/tokens.ts and src/services/storage/secureStore.ts duplicate expo-secure-store wrappers.",
+      "scope": [
+        "src/api/client.ts",
+        "src/api/tokens.ts",
+        "src/api/learning.ts",
+        "src/services/storage/secureStore.ts",
+        "src/services/http/tokens.ts",
+        "src/contexts/AuthContext.tsx",
+        "src/contexts/HouseholdContext.tsx",
+        "tests/verification/T12-remove-api-shims-consolidate-storage.test.ts"
+      ],
+      "non_scope": [
+        "src/services/http/client.ts",
+        "src/services/api/ai.ts",
+        "src/services/http/refresh-queue.ts"
+      ],
+      "acceptance_criteria": [
+        "src/api/* files are deleted and all imports point to src/services/* directly",
+        "Token helpers in src/services/http/tokens.ts are moved into src/services/storage/secureStore.ts or use its typed helpers",
+        "AuthContext and HouseholdContext import storage helpers from the consolidated module",
+        "No source file imports from @/api/*"
+      ],
+      "dependencies": [
+        "T09",
+        "T11"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T12-remove-api-shims-consolidate-storage.test.ts",
+        "test_command": "npx jest tests/verification/T12-remove-api-shims-consolidate-storage.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "Sequential to T09/T11 because AuthContext and HouseholdContext are already touched by those tasks."
+    },
+    {
+      "id": "T13",
+      "slug": "delete-dead-state-wrappers-hooks",
+      "title": "Delete dead providers and unused hooks/components",
+      "area": "state-architecture",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/state-architecture.md#simplifications",
+        "MASTER_AUDIT.md#cross-cutting-themes-4"
+      ],
+      "problem": "AppProviders.tsx and ThemeProvider.tsx are unused wrappers; useOfflineSync.ts, useStreamingTranscript.ts, useVoiceActivity.ts, useLatencyBudget.ts, and LatencyHud.tsx have no production callers but still ship in the bundle and mislead new contributors.",
+      "scope": [
+        "src/app/providers/AppProviders.tsx",
+        "src/app/providers/ThemeProvider.tsx",
+        "src/hooks/useOfflineSync.ts",
+        "src/hooks/use-streaming-transcript.ts",
+        "src/hooks/use-voice-activity.ts",
+        "src/hooks/useLatencyBudget.ts",
+        "src/components/robot/LatencyHud.tsx",
+        "tests/verification/T13-delete-dead-state-wrappers-hooks.test.ts"
+      ],
+      "non_scope": [
+        "src/App.tsx",
+        "src/design-system/theme/*",
+        "src/api/*"
+      ],
+      "acceptance_criteria": [
+        "Listed files are deleted and git history is the only reference",
+        "No production source file imports any deleted symbol",
+        "npm test and typecheck still pass after deletion",
+        "Dead-code coverage of these files drops to zero"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T13-delete-dead-state-wrappers-hooks.test.ts",
+        "test_command": "npx jest tests/verification/T13-delete-dead-state-wrappers-hooks.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "If useVoiceActivity is later needed as a fallback, reintroduce it as part of T21 instead."
+    },
+    {
+      "id": "T14",
+      "slug": "voice-message-cap",
+      "title": "Cap voice assistant message history",
+      "area": "state-architecture",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/state-architecture.md#improvements",
+        "reports/audio-voice.md#bottlenecks"
+      ],
+      "problem": "voiceAssistantStore.addMessage appends every user/AI turn without a cap, causing memory pressure and slow transcript re-renders during long voice sessions.",
+      "scope": [
+        "src/state/voiceAssistantStore.ts",
+        "tests/verification/T14-voice-message-cap.test.ts"
+      ],
+      "non_scope": [
+        "src/hooks/useGeminiConversation.ts",
+        "src/components/gemini/TranscriptPanel.tsx"
+      ],
+      "acceptance_criteria": [
+        "addMessage caps the messages array (e.g., last 100 turns)",
+        "Oldest messages are evicted deterministically",
+        "Full history can still be fetched/persisted server-side if needed",
+        "Unit tests verify cap behavior"
+      ],
+      "dependencies": [],
+      "exclusions": [
+        "T18"
+      ],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T14-voice-message-cap.test.ts",
+        "test_command": "npx jest tests/verification/T14-voice-message-cap.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "Remove any __reset helpers used only to mutate the cap in tests."
+    },
+    {
+      "id": "T15",
+      "slug": "react-query-household-migration",
+      "title": "Migrate household server state to React Query with defaults",
+      "area": "state-architecture",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/state-architecture.md#improvements",
+        "reports/state-architecture.md#simplifications"
+      ],
+      "problem": "Server state lives inside HouseholdContext instead of React Query, so the app does not benefit from caching, background refetch, stale-while-revalidate, or optimistic updates. QueryClient is also created with no defaults.",
+      "scope": [
+        "src/app/providers/QueryProvider.tsx",
+        "src/contexts/HouseholdContext.tsx",
+        "src/features/home/hooks/useHomeState.ts",
+        "src/services/api/households.ts",
+        "tests/verification/T15-react-query-household-migration.test.tsx"
+      ],
+      "non_scope": [
+        "src/services/api/auth.ts",
+        "src/services/api/account.ts",
+        "src/features/device/**"
+      ],
+      "acceptance_criteria": [
+        "QueryProvider configures sensible defaults (1 retry, networkMode: 'online', refetchOnReconnect, staleTime per feature)",
+        "HouseholdContext uses useQuery/useMutation for households and children",
+        "Mutations invalidate the relevant query keys",
+        "Cold-start loading state is preserved while server state hydrates"
+      ],
+      "dependencies": [
+        "T11",
+        "T12"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T15-react-query-household-migration.test.tsx",
+        "test_command": "npx jest tests/verification/T15-react-query-household-migration.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "Build on T11's parallel fetch/cancellation work; do not duplicate it."
+    },
+    {
+      "id": "T16",
+      "slug": "wire-lesson-session-machine",
+      "title": "Wire lesson session screens to the lessonSessionMachine",
+      "area": "state-architecture",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/state-architecture.md#improvements",
+        "reports/state-architecture.md#bottlenecks",
+        "MASTER_AUDIT.md#cross-cutting-themes-1"
+      ],
+      "problem": "createLessonSessionMachine is exported and tested, but ConnectingScreen hard-codes a 1.8 s timeout before navigating to GreetingScreen regardless of whether the WebSocket/audio layer is ready.",
+      "scope": [
+        "src/state/machines/lessonSession.machine.ts",
+        "src/features/lesson-session/sessionContext.ts",
+        "src/features/lesson-session/screens/ConnectingScreen.tsx",
+        "tests/verification/T16-wire-lesson-session-machine.test.tsx"
+      ],
+      "non_scope": [
+        "src/services/ws/realtime.ts",
+        "src/features/lesson-session/screens/GreetingScreen.tsx"
+      ],
+      "acceptance_criteria": [
+        "ConnectingScreen consumes the lesson session actor state instead of a fixed timeout",
+        "Navigation to GreetingScreen happens on SESSION_STARTED or equivalent machine event",
+        "RECONNECTING and error terminals are observable from the screen",
+        "Machine state is provided via sessionContext to child screens"
+      ],
+      "dependencies": [
+        "T15",
+        "T10"
+      ],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T16-wire-lesson-session-machine.test.tsx",
+        "test_command": "npx jest tests/verification/T16-wire-lesson-session-machine.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "Coordinate with T08/T10 on WebSocket ready-state semantics."
+    },
+    {
+      "id": "T17",
+      "slug": "wire-gemini-conversation-screen",
+      "title": "Wire Gemini Live voice UI behind a feature gate",
+      "area": "audio-voice",
+      "status": "BLOCKED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/audio-voice.md#improvements",
+        "MASTER_AUDIT.md#cross-cutting-themes-4"
+      ],
+      "problem": "The Gemini Live layer (useGeminiConversation, src/components/gemini/*, native modules) is implemented but unreachable, creating dead code and false test confidence.",
+      "scope": [
+        "src/config/feature-flags.ts",
+        "src/navigation/routes.ts",
+        "src/navigation/featureRegistry.ts",
+        "src/features/gemini/navigation.ts",
+        "src/features/gemini/screens/GeminiConversationScreen.tsx",
+        "tests/verification/T17-wire-gemini-conversation-screen.test.tsx"
+      ],
+      "non_scope": [
+        "src/hooks/useGeminiConversation.ts",
+        "src/components/gemini/*",
+        "src/native/*",
+        "ios/**",
+        "android/**"
+      ],
+      "acceptance_criteria": [
+        "A feature flag gates the Gemini conversation screen/route",
+        "A navigable GeminiConversationScreen renders SukaAvatar, TranscriptPanel, and ControlBar",
+        "The route is registered only when the flag is enabled",
+        "No native modules are removed in this task"
+      ],
+      "dependencies": [
+        "T00"
+      ],
+      "exclusions": [
+        "T18",
+        "T19"
+      ],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T17-wire-gemini-conversation-screen.test.tsx",
+        "test_command": "npx jest tests/verification/T17-wire-gemini-conversation-screen.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": true,
+      "notes": "Product decision required: choose this task OR T18/T19. COPPA/copy and backend voice budget must be reviewed before enabling."
+    },
+    {
+      "id": "T18",
+      "slug": "delete-orphaned-gemini-js",
+      "title": "Delete the orphaned Gemini Live JS layer",
+      "area": "audio-voice",
+      "status": "BLOCKED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/audio-voice.md#improvements",
+        "reports/audio-voice.md#top-3-quick-wins",
+        "MASTER_AUDIT.md#cross-cutting-themes-4"
+      ],
+      "problem": "~3,500 lines of JS/TS for the Gemini voice path ship unused, including useGeminiConversation.ts, src/components/gemini/*, the PcmStreamPlayer shim, and native-module TypeScript wrappers.",
+      "scope": [
+        "src/hooks/useGeminiConversation.ts",
+        "src/hooks/use-streaming-transcript.ts",
+        "src/components/gemini/*",
+        "src/audio/PcmStreamPlayer.ts",
+        "src/services/audio/PcmStreamPlayer.ts",
+        "src/native/VoiceMic.ts",
+        "src/native/VoiceSession.ts",
+        "src/native/voice-session-events.ts",
+        "src/services/ai/liveMessageAudio.ts",
+        "src/state/voiceAssistantStore.ts",
+        "package.json",
+        "tests/verification/T18-delete-orphaned-gemini-js.test.ts"
+      ],
+      "non_scope": [
+        "ios/**",
+        "android/**",
+        "src/services/ai/safety/README.md"
+      ],
+      "acceptance_criteria": [
+        "Listed JS/TS files and the src/components/gemini directory are deleted",
+        "No production source imports deleted symbols",
+        "package.json removes unused Gemini-related dependencies if any",
+        "npm test and typecheck pass"
+      ],
+      "dependencies": [
+        "T00"
+      ],
+      "exclusions": [
+        "T17",
+        "T20",
+        "T21"
+      ],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T18-delete-orphaned-gemini-js.test.ts",
+        "test_command": "npx jest tests/verification/T18-delete-orphaned-gemini-js.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": true,
+      "notes": "Product decision required: choose this task (and T19) OR T17. Confirm with product/legal that the Gemini voice path is not needed for alpha."
+    },
+    {
+      "id": "T19",
+      "slug": "remove-gemini-native-modules",
+      "title": "Remove orphaned Gemini native modules and dependencies",
+      "area": "audio-voice",
+      "status": "BLOCKED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/audio-voice.md#improvements"
+      ],
+      "problem": "Custom iOS and Android native modules for VoiceMic, PcmStream, and VoiceSession are shipped but unused when the Gemini layer is removed.",
+      "scope": [
+        "ios/TJBotMobile/VoiceMic/**",
+        "ios/TJBotMobile/PcmStream/**",
+        "ios/TJBotMobile/VoiceSession/**",
+        "android/app/src/main/java/**/voicemic/**",
+        "android/app/src/main/java/**/pcmstream/**",
+        "android/app/src/main/java/**/voicesession/**",
+        "package.json",
+        "tests/verification/T19-remove-gemini-native-modules.test.ts"
+      ],
+      "non_scope": [
+        "src/**",
+        "ios/Podfile",
+        "android/settings.gradle"
+      ],
+      "acceptance_criteria": [
+        "Native module source directories are removed from iOS (VoiceMic/PcmStream/VoiceSession) and Android (voicemic/pcmstream/voicesession)",
+        "package.json no longer references dependencies only used by the Gemini native layer",
+        "iOS and Android debug builds succeed after cleanup"
+      ],
+      "dependencies": [
+        "T18",
+        "T00"
+      ],
+      "exclusions": [
+        "T17",
+        "T20",
+        "T21"
+      ],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T19-remove-gemini-native-modules.test.ts",
+        "test_command": "npx jest tests/verification/T19-remove-gemini-native-modules.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "Verify with the firmware/mobile build pipeline before deleting native directories. The Jest verification test asserts config correctness; the build_gate asserts native iOS and Android compilation.",
+      "build_gate": "npx react-native run-android && npx react-native run-ios"
+    },
+    {
+      "id": "T20",
+      "slug": "implement-safety-shim",
+      "title": "Implement the documented child-safety shim",
+      "area": "audio-voice",
+      "status": "BLOCKED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/audio-voice.md#improvements",
+        "src/services/ai/safety/README.md"
+      ],
+      "problem": "src/services/ai/safety/README.md documents a complete Layer 1/2/3 child-safety system, but the directory contains only the README. There is no deterministic input/output guard.",
+      "scope": [
+        "src/services/ai/safety/index.ts",
+        "src/services/ai/safety/inputBlocklist.ts",
+        "src/services/ai/safety/outputBlocklist.ts",
+        "src/services/ai/safety/persona.ts",
+        "src/services/ai/safety/schemas.ts",
+        "src/services/ai/safety/blocklist.v1.json",
+        "src/hooks/useGeminiConversation.ts",
+        "tests/verification/T20-implement-safety-shim.test.ts"
+      ],
+      "non_scope": [
+        "ios/**",
+        "android/**",
+        "src/services/ai/safety/README.md"
+      ],
+      "acceptance_criteria": [
+        "checkInput and checkOutput are deterministic, synchronous, and fail-closed",
+        "blocklist.v1.json has a verifiable integritySha256 and 80-120 regexes",
+        "assemblePersona substitutes age bracket, theme, and vocab deterministically and stays under 2 kB",
+        "Telemetry emits safety_block_event and safety_shim_error with no plaintext terms",
+        "The conversation hook calls checkInput on mic chunks and checkOutput on transcript chunks"
+      ],
+      "dependencies": [
+        "T17",
+        "T00"
+      ],
+      "exclusions": [
+        "T18",
+        "T19"
+      ],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T20-implement-safety-shim.test.ts",
+        "test_command": "npx jest tests/verification/T20-implement-safety-shim.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": true,
+      "notes": "Legal/safety must approve blocklist and persona content before merge; the verification test only checks structure/count, not content approval."
+    },
+    {
+      "id": "T21",
+      "slug": "unify-avatar-waveform-primitives",
+      "title": "Consolidate avatar and waveform primitives on Reanimated",
+      "area": "audio-voice",
+      "status": "BLOCKED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/audio-voice.md#simplifications",
+        "reports/ui-design-system.md#improvements",
+        "reports/ui-design-system.md#top-3-quick-wins"
+      ],
+      "problem": "Two competing visual languages exist (Gemini SukaAvatar/WaveVisualizer/ParticleEffect vs lesson-session Robot/WaveBars/RobotFace). They do not share primitives, duplicate animation logic, and bind the JS thread.",
+      "scope": [
+        "src/components/gemini/WaveVisualizer.tsx",
+        "src/components/gemini/SukaAvatar.tsx",
+        "src/components/gemini/ParticleEffect.tsx",
+        "src/design-system/components/Robot/index.tsx",
+        "src/design-system/components/WaveBars/index.tsx",
+        "src/design-system/components/LCDFace/index.tsx",
+        "src/components/robot/RobotFace.tsx",
+        "src/components/robot/RobotBody.tsx",
+        "src/components/robot/RobotAnimations.ts",
+        "tests/verification/T21-unify-avatar-waveform-primitives.test.tsx"
+      ],
+      "non_scope": [
+        "src/hooks/useGeminiConversation.ts",
+        "src/native/*",
+        "ios/**",
+        "android/**"
+      ],
+      "acceptance_criteria": [
+        "One canonical waveform component is used across voice and lesson paths",
+        "SukaAvatar, RobotFace, and RobotBody animation is driven by Reanimated worklets where possible",
+        "WaveVisualizer no longer recreates 16 Animated.Value/timing loops on every audioLevel change",
+        "reduceMotion is respected by all animated avatar/waveform components",
+        "Duplicate emoji/SVG inline icons are replaced by the icon library from T29"
+      ],
+      "dependencies": [
+        "T17",
+        "T29",
+        "T00"
+      ],
+      "exclusions": [
+        "T18",
+        "T19"
+      ],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T21-unify-avatar-waveform-primitives.test.tsx",
+        "test_command": "npx jest tests/verification/T21-unify-avatar-waveform-primitives.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G8"
+      ],
+      "coordination_required": false,
+      "notes": "Only run if T17 is chosen. If T18/T19 are chosen, delete the Gemini components instead of refactoring them."
+    },
+    {
+      "id": "T22",
+      "slug": "delete-legacy-screen-trees",
+      "title": "Delete legacy screen trees and phantom aliases",
+      "area": "navigation-screens",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/navigation-screens.md#improvements",
+        "reports/navigation-screens.md#top-3-quick-wins"
+      ],
+      "problem": "src/screens/* and src/app/screens/* contain dead screens with stale route names; src/navigation/types.ts still exports a LegacyMainStackParamList that only the dead screens use.",
+      "scope": [
+        "src/screens/dashboard/ParentDashboardScreen.tsx",
+        "src/screens/learning/ChildPracticeScreen.tsx",
+        "src/screens/learning/LessonPlannerScreen.tsx",
+        "src/app/screens/SpeakScreen.tsx",
+        "src/app/screens/ListenScreen.tsx",
+        "src/app/screens/DevicePairWifiScreen.tsx",
+        "src/navigation/types.ts",
+        "tests/verification/T22-delete-legacy-screen-trees.test.ts"
+      ],
+      "non_scope": [
+        "src/navigation/routes.ts",
+        "src/features/**",
+        "src/app/providers/*"
+      ],
+      "acceptance_criteria": [
+        "Legacy screen files and src/app/screens directory are deleted",
+        "LegacyMainStackParamList and MainStackScreenProps are removed from src/navigation/types.ts",
+        "No production source imports deleted symbols",
+        "Typecheck and navigation tests pass"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T22-delete-legacy-screen-trees.test.ts",
+        "test_command": "npx jest tests/verification/T22-delete-legacy-screen-trees.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G7"
+      ],
+      "coordination_required": false,
+      "notes": "Verify no deep-link or notification payload still references deleted route names."
+    },
+    {
+      "id": "T23",
+      "slug": "deep-link-fallback-logging",
+      "title": "Add unknown deep-link fallback and logging",
+      "area": "navigation-screens",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/navigation-screens.md#improvements"
+      ],
+      "problem": "Unknown TJBot:// deep links are silently dropped with no logging or fallback screen, making marketing-link and notification misconfigurations hard to debug.",
+      "scope": [
+        "src/navigation/linking.ts",
+        "src/navigation/AppNavigator.tsx",
+        "src/features/fallback/NotFoundScreen.tsx",
+        "tests/verification/T23-deep-link-fallback-logging.test.tsx"
+      ],
+      "non_scope": [
+        "src/navigation/routes.ts",
+        "src/navigation/RootStackNavigator.tsx"
+      ],
+      "acceptance_criteria": [
+        "navigationTargetForDeepLinkUrl returns a NotFoundScreen target for unknown paths instead of null",
+        "AppNavigator routes unrecognized URLs to the fallback screen",
+        "Unknown paths are logged to Sentry/analytics with the full URL",
+        "Existing notification deep links continue to work"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T23-deep-link-fallback-logging.test.tsx",
+        "test_command": "npx jest tests/verification/T23-deep-link-fallback-logging.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G7"
+      ],
+      "coordination_required": false,
+      "notes": "Keep the existing manual-notification path logic intact."
+    },
+    {
+      "id": "T24",
+      "slug": "nav-graph-alignment-test",
+      "title": "Add nav-graph-data.json alignment test",
+      "area": "navigation-screens",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P2",
+      "audit_sources": [
+        "reports/navigation-screens.md#improvements"
+      ],
+      "problem": "nav-graph-data.json contains 134 states but no edges, and it is not validated against ROUTE_MAP or feature state files, so visualizations and scripts drift from the runtime registry.",
+      "scope": [
+        "nav-graph-data.json",
+        "tests/verification/T24-nav-graph-alignment-test.test.ts"
+      ],
+      "non_scope": [
+        "src/navigation/routes.ts",
+        "src/navigation/inventory.ts"
+      ],
+      "acceptance_criteria": [
+        "A test asserts that every state entry in nav-graph-data.json maps to the same screen file recorded in ROUTE_MAP/feature states",
+        "Orphaned entries are listed and the test fails until they are removed or documented",
+        "Edges are populated from actual navigators or the file is retired"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T24-nav-graph-alignment-test.test.ts",
+        "test_command": "npx jest tests/verification/T24-nav-graph-alignment-test.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G7"
+      ],
+      "coordination_required": false,
+      "notes": "This is a regression-prevention test; it may require updating nav-graph-data.json rather than source code. The acceptance criterion involving edges is a product/tech-debt decision and may need escalation."
+    },
+    {
+      "id": "T25",
+      "slug": "lesson-session-params-refactor",
+      "title": "Extract LessonSessionParams and normalize route param types",
+      "area": "navigation-screens",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P2",
+      "audit_sources": [
+        "reports/navigation-screens.md#improvements",
+        "reports/navigation-screens.md#simplifications"
+      ],
+      "problem": "src/navigation/routes.ts repeats the same ~15-field lesson-session param shape 23 times and uses undefined | { ... } for optional params, which is verbose and error-prone.",
+      "scope": [
+        "src/navigation/routes.ts",
+        "tests/verification/T25-lesson-session-params-refactor.test.ts"
+      ],
+      "non_scope": [
+        "src/navigation/types.ts",
+        "src/features/lesson-session/screens/*"
+      ],
+      "acceptance_criteria": [
+        "A LessonSessionParams type is extracted and reused across all lesson-session screens",
+        "Optional route params use { field?: string } instead of undefined | { field?: string }",
+        "TypeScript still type-checks all navigation calls"
+      ],
+      "dependencies": [
+        "T17"
+      ],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T25-lesson-session-params-refactor.test.ts",
+        "test_command": "npx jest tests/verification/T25-lesson-session-params-refactor.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G7"
+      ],
+      "coordination_required": false,
+      "notes": "Coordinate with T17 if a Gemini route is added to routes.ts. T17 dependency is conditional: only include if the SHIP_GEMINI decision is made."
+    },
+    {
+      "id": "T26",
+      "slug": "modal-navigator-single-tab-host",
+      "title": "Refactor ModalNavigator to a single MainTabNavigator",
+      "area": "navigation-screens",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/navigation-screens.md#improvements",
+        "reports/navigation-screens.md#bottlenecks"
+      ],
+      "problem": "ModalNavigator mounts five independent MainTabNavigator instances (one per tab), bloating memory and complicating deep-link state handling.",
+      "scope": [
+        "src/navigation/ModalNavigator.tsx",
+        "src/navigation/MainTabNavigator.tsx",
+        "tests/navigation/modal-usage.test.ts",
+        "tests/navigation/main-tab-active-state.test.tsx",
+        "tests/verification/T26-modal-navigator-single-tab-host.test.tsx"
+      ],
+      "non_scope": [
+        "src/navigation/routes.ts",
+        "src/navigation/featureRegistry.ts"
+      ],
+      "acceptance_criteria": [
+        "ModalNavigator contains a single MainTabNavigator instance",
+        "Route params select the active tab on deep-link entry",
+        "Existing tab-level navigation tests are updated and pass",
+        "Memory snapshot shows only one tab host mounted at a time"
+      ],
+      "dependencies": [
+        "T25"
+      ],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "tests/verification/T26-modal-navigator-single-tab-host.test.tsx",
+        "test_command": "npx jest tests/verification/T26-modal-navigator-single-tab-host.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G7"
+      ],
+      "coordination_required": false,
+      "notes": "Update tests that assert the current tab-host-per-route structure."
+    },
+    {
+      "id": "T27",
+      "slug": "reconnecting-overlay-cleanup",
+      "title": "Harden ReconnectingOverlay timeout cleanup",
+      "area": "navigation-screens",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P2",
+      "audit_sources": [
+        "reports/navigation-screens.md#bottlenecks"
+      ],
+      "problem": "ReconnectingOverlay starts a 2400 ms timeout that can navigate away from a later screen if the overlay is dismissed before the timeout fires.",
+      "scope": [
+        "src/features/fallback/ReconnectingOverlay.tsx",
+        "tests/verification/T27-reconnecting-overlay-cleanup.test.tsx"
+      ],
+      "non_scope": [
+        "src/navigation/AppNavigator.tsx",
+        "src/features/fallback/navigation.ts"
+      ],
+      "acceptance_criteria": [
+        "The timeout is cleared on navigation.addListener('beforeRemove')",
+        "No navigation occurs after the overlay has been removed",
+        "The existing happy-path retry behavior is preserved"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T27-reconnecting-overlay-cleanup.test.tsx",
+        "test_command": "npx jest tests/verification/T27-reconnecting-overlay-cleanup.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G7"
+      ],
+      "coordination_required": false,
+      "notes": "Use RNTL to simulate navigation away before the timeout fires."
+    },
+    {
+      "id": "T28",
+      "slug": "unify-token-surface",
+      "title": "Unify design-token surface and migrate legacy imports",
+      "area": "ui-design-system",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/ui-design-system.md#improvements",
+        "reports/ui-design-system.md#top-3-quick-wins"
+      ],
+      "problem": "Two parallel token systems exist: low-level tokens/*.ts and legacy-semantic.ts. Production components mostly import legacy-semantic.ts while newer primitives consume low-level tokens, creating a two-authority problem.",
+      "scope": [
+        "src/design-system/tokens/legacy-semantic.ts",
+        "src/design-system/tokens/colors.ts",
+        "src/components/Button.tsx",
+        "src/components/Card.tsx",
+        "src/components/Input.tsx",
+        "src/components/OnboardingHeader.tsx",
+        "src/components/Device-tokens.ts",
+        "src/theme.ts",
+        "tests/verification/T28-unify-token-surface.test.ts"
+      ],
+      "non_scope": [
+        "src/navigation/MainTabNavigator.tsx",
+        "src/design-system/primitives/*",
+        "src/design-system/theme/*"
+      ],
+      "acceptance_criteria": [
+        "legacy-semantic.ts is re-implemented as a pure transform of low-level tokens",
+        "Components listed in scope import from the unified tokens and remove local ad-hoc palettes like Device-tokens.ts",
+        "No production component imports both token systems for the same semantic value",
+        "Visual regression tests or snapshot tests show no unintended style changes"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T28-unify-token-surface.test.ts",
+        "test_command": "npx jest tests/verification/T28-unify-token-surface.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G8"
+      ],
+      "coordination_required": false,
+      "notes": "MainTabNavigator token migration is handled by T26 to avoid overlapping edits."
+    },
+    {
+      "id": "T29",
+      "slug": "centralize-icon-library",
+      "title": "Centralize icon library and remove inline SVG/emoji",
+      "area": "ui-design-system",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/ui-design-system.md#improvements",
+        "reports/ui-design-system.md#top-3-quick-wins"
+      ],
+      "problem": "There is no central icon library; inline SVGs and emoji glyphs are scattered across components, hurting accessibility and cross-platform consistency.",
+      "scope": [
+        "src/design-system/icons/index.ts",
+        "src/components/ErrorMessage.tsx",
+        "src/components/EmptyState.tsx",
+        "src/components/gemini/BigMicButton.tsx",
+        "src/components/gemini/ControlBar.tsx",
+        "src/design-system/components/CircleBtn/index.tsx",
+        "src/design-system/components/PageHeader/index.tsx",
+        "src/components/DeviceRow/index.tsx",
+        "src/components/MicButton/index.tsx",
+        "src/components/OnbShell/index.tsx",
+        "tests/verification/T29-centralize-icon-library.test.tsx"
+      ],
+      "non_scope": [
+        "src/components/DeviceShell/index.tsx",
+        "src/navigation/*"
+      ],
+      "acceptance_criteria": [
+        "A typed Icon component backed by lucide-react-native is exported from src/design-system/icons",
+        "All components in scope replace inline SVG/emoji with Icon",
+        "Accessibility labels are preserved or improved",
+        "No inline emoji remain in the listed components"
+      ],
+      "dependencies": [
+        "T28"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T29-centralize-icon-library.test.tsx",
+        "test_command": "npx jest tests/verification/T29-centralize-icon-library.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G8"
+      ],
+      "coordination_required": false,
+      "notes": "lucide-react-native is already a dependency; this task is mostly find/replace and type checking."
+    },
+    {
+      "id": "T30",
+      "slug": "primitives-compliance",
+      "title": "Haptics, Box typing, and Text primitive compliance",
+      "area": "ui-design-system",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P2",
+      "audit_sources": [
+        "reports/ui-design-system.md#improvements"
+      ],
+      "problem": "Pressable uses React Native Vibration with a 10 ms duration; Box silently drops percentage widths and has no token resolution for borderColor; Text hard-codes 'Nunito' and ignores the typography.fonts token.",
+      "scope": [
+        "src/design-system/primitives/Pressable.tsx",
+        "src/design-system/primitives/Box.tsx",
+        "src/design-system/primitives/Text.tsx",
+        "tests/verification/T30-primitives-compliance.test.tsx"
+      ],
+      "non_scope": [
+        "src/design-system/tokens/*",
+        "src/components/*"
+      ],
+      "acceptance_criteria": [
+        "Pressable uses expo-haptics impactAsync with light impact, platform gating, and reduce-motion awareness",
+        "Box supports percentage width/height strings or restricts prop types; borderColor resolves tokens",
+        "Text derives font family from tokens.typography.fonts and supports lineHeight/letterSpacing props"
+      ],
+      "dependencies": [
+        "T28"
+      ],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T30-primitives-compliance.test.tsx",
+        "test_command": "npx jest tests/verification/T30-primitives-compliance.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G8"
+      ],
+      "coordination_required": false,
+      "notes": "expo-haptics is already mocked in tests."
+    },
+    {
+      "id": "T31",
+      "slug": "toast-reduce-motion",
+      "title": "Toast reduce-motion awareness and queue cap",
+      "area": "ui-design-system",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P2",
+      "audit_sources": [
+        "reports/ui-design-system.md#improvements"
+      ],
+      "problem": "Toast.tsx uses Animated for fade-in but not exit, and auto-dismiss timers do not respect reduced motion or cap queue length.",
+      "scope": [
+        "src/components/Toast.tsx",
+        "tests/verification/T31-toast-reduce-motion.test.tsx"
+      ],
+      "non_scope": [
+        "src/design-system/primitives/*",
+        "src/design-system/animations/*"
+      ],
+      "acceptance_criteria": [
+        "useReduceMotion() gates entrance/exit animations",
+        "Exit animation is symmetric with entrance",
+        "Visible toast queue length is capped to prevent off-screen stacking",
+        "Auto-dismiss timers are cleared on unmount"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T31-toast-reduce-motion.test.tsx",
+        "test_command": "npx jest tests/verification/T31-toast-reduce-motion.test.tsx",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G8"
+      ],
+      "coordination_required": false,
+      "notes": "Keep the existing ToastProvider public API unchanged."
+    },
+    {
+      "id": "T32",
+      "slug": "fix-failing-test-baseline",
+      "title": "Fix failing unit-test baseline and native mocks",
+      "area": "testing-quality",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/testing-quality.md#improvements",
+        "reports/testing-quality.md#top-3-quick-wins"
+      ],
+      "problem": "npm test currently reports 9 failed suites due to a broken openapi.json symlink, stale route-coverage expectations, a mismatched API-config assertion, an async race in parent-today-screen, and shallow native mocks.",
+      "scope": [
+        "scripts/api-contract-sync.mjs",
+        "tests/navigation/route-coverage-script.test.ts",
+        "tests/api/config.test.ts",
+        "tests/features/parent/parent-today-screen.test.tsx",
+        "tests/__mocks__/react-native-ble-plx.ts",
+        "tests/__mocks__/expo-audio.ts",
+        "tests/setup.ts",
+        "tests/verification/T32-fix-failing-test-baseline.test.ts"
+      ],
+      "non_scope": [
+        "scripts/check-api-contract-sync.mjs",
+        ".github/workflows/ci.yml"
+      ],
+      "acceptance_criteria": [
+        "scripts/api-contract-sync.mjs uses a checked-in or environment-configured OpenAPI fixture instead of a broken symlink",
+        "route-coverage-script test expectation matches the current screen/route count",
+        "tests/api/config.test.ts passes with the current hosted fallback URL",
+        "parent-today-screen test is deterministic (waits for loading state or mocks network)",
+        "Native mocks model stateful behavior (BLE manager state, audio permission granted by default)",
+        "npm test exits 0 (zero failed suites), with unit test fixes implemented as part of this task"
+      ],
+      "dependencies": [],
+      "exclusions": [],
+      "blast_radius": "HIGH",
+      "verification": {
+        "test_file": "scripts/verification/T32-fix-failing-test-baseline.js",
+        "test_command": "node scripts/verification/T32-fix-failing-test-baseline.js",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": false,
+      "notes": "This is the foundational testing task; all other verification tests depend on a green baseline."
+    },
+    {
+      "id": "T33",
+      "slug": "ci-contract-gate-docs-split",
+      "title": "Replace stub API-contract gate and split docs-integrity CI",
+      "area": "testing-quality",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P0",
+      "audit_sources": [
+        "reports/testing-quality.md#improvements",
+        "reports/testing-quality.md#simplifications",
+        "reports/project-health.md#improvements"
+      ],
+      "problem": "scripts/check-api-contract-sync.mjs is a 5-line stub that always exits 0, so the CI contract-sync gate passes without verifying backend/mobile drift. Docs-integrity validation is run inside the same job as build/test, blocking the whole pipeline on stale Mermaid headers.",
+      "scope": [
+        "scripts/check-api-contract-sync.mjs",
+        ".github/workflows/ci.yml",
+        "tests/verification/T33-ci-contract-gate-docs-split.test.ts"
+      ],
+      "non_scope": [
+        "scripts/api-contract-sync.mjs",
+        "scripts/flows/validate-go-calls.mjs",
+        "scripts/sequences/validate-sequences.mjs"
+      ],
+      "acceptance_criteria": [
+        "CI runs scripts/api-contract-sync.mjs instead of the stub and fails on endpoint drift",
+        "scripts/check-api-contract-sync.mjs is deleted or delegates to the real script",
+        "Docs-integrity checks (flows, sequences, ERD, usecases) run in a separate workflow/job",
+        "mobile-quality job focuses on lint, typecheck, unit/integration tests, and Expo config"
+      ],
+      "dependencies": [
+        "T32"
+      ],
+      "exclusions": [],
+      "blast_radius": "MEDIUM",
+      "verification": {
+        "test_file": "tests/verification/T33-ci-contract-gate-docs-split.test.ts",
+        "test_command": "npx jest tests/verification/T33-ci-contract-gate-docs-split.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "coordination_required": true,
+      "notes": "Coordination required: confirm backend OpenAPI fixture path and ownership with the Backend role."
+    },
+    {
+      "id": "T34",
+      "slug": "jest-coverage-thresholds",
+      "title": "Add Jest coverage thresholds",
+      "area": "testing-quality",
+      "status": "NOT_STARTED",
+      "owner": null,
+      "priority": "P1",
+      "audit_sources": [
+        "reports/testing-quality.md#improvements",
+        "reports/testing-quality.md#top-3-quick-wins"
+      ],
+      "problem": "Jest has no collectCoverage, coverageThreshold, or coveragePathIgnorePatterns, so the test suite grows without a coverage gate.",
+      "scope": [
+        "package.json",
+        ".github/workflows/ci.yml",
+        "tests/verification/T34-jest-coverage-thresholds.test.ts"
+      ],
+      "non_scope": [
+        "src/**",
+        "tests/**"
+      ],
+      "acceptance_criteria": [
+        "package.json adds collectCoverage and coverageThreshold for src/ (start at 50% lines)",
+        "coveragePathIgnorePatterns excludes generated, native, and dead code scheduled for deletion",
+        "CI has a coverage job that fails when coverage drops below the threshold",
+        "Coverage report is uploaded as an artifact"
+      ],
+      "dependencies": [
+        "T32",
+        "T33"
+      ],
+      "exclusions": [],
+      "blast_radius": "LOW",
+      "verification": {
+        "test_file": "tests/verification/T34-jest-coverage-thresholds.test.ts",
+        "test_command": "npx jest tests/verification/T34-jest-coverage-thresholds.test.ts",
+        "expected_before": "FAIL",
+        "expected_after": "PASS"
+      },
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G9"
+      ],
+      "coordination_required": false,
+      "notes": "Thresholds can be ratcheted up over time; the initial goal is preventing untested file growth."
+    }
+  ],
+  "notes": "T32 (fix-failing-test-baseline) is a fleet-wide integration prerequisite; no verification-bearing task should be started before T32 is green."
+}

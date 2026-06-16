@@ -48,8 +48,9 @@ export function childProfileSaveErrorMessage(saveError: unknown): string {
   return 'Could not save child profile. Check your connection and try again.';
 }
 
-export function allowsDevelopmentCoppaConsentBypass(isDev: boolean, apiBaseUrl: string): boolean {
-  return isDev && apiBaseUrl.includes('tbot-backend-8wmh.onrender.com');
+/** Render staging allows tok_test_bypass consent in dev and TestFlight builds. */
+export function allowsDevelopmentCoppaConsentBypass(_isDev: boolean, apiBaseUrl: string): boolean {
+  return apiBaseUrl.includes('tbot-backend-8wmh.onrender.com');
 }
 
 export async function saveOnboardingChildProfile(

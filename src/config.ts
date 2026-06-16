@@ -2,10 +2,11 @@
  * Runtime configuration — generated from .env by metro.config.js
  *
  * Backend URL resolution order (see getApiBaseUrl):
- *   1. ENV.TBOT_API_URL if set to anything except literal http://localhost:3000
+ *   1. ENV.EXPO_PUBLIC_TBOT_API_URL if set to anything except literal
+ *      http://localhost:3000
  *   2. (real device + __DEV__) auto-derive http://<metro-host>:3000 from the
  *      JS bundle URL — works on iPhone/Android over LAN with zero per-network
- *      .env edits. Set TBOT_API_URL explicitly to override.
+ *      .env edits. Set EXPO_PUBLIC_TBOT_API_URL explicitly to override.
  *   3. iOS Simulator / Android Emulator hardcoded loopbacks
  *   4. Hosted Render URL as final fallback (production builds)
  */
@@ -13,9 +14,11 @@ import { NativeModules, Platform } from 'react-native';
 import * as Device from 'expo-device';
 import { ENV } from './__env__';
 
+// Hosted backend fallback. Keep in sync with original-app/TJBOT-Mobile/.env
+// EXPO_PUBLIC_TBOT_* values.
 const HOSTED_API_ROOT = 'https://tbot-backend-8wmh.onrender.com';
 const HOSTED_API = `${HOSTED_API_ROOT}/v1`;
-const HOSTED_AI = `${HOSTED_API_ROOT}/api/ai`;
+const HOSTED_AI = `${HOSTED_API_ROOT}/v1/ai`;
 const IOS_SIMULATOR_API = 'http://127.0.0.1:3000/v1';
 const ANDROID_EMULATOR_API = 'http://10.0.2.2:3000/v1';
 const IOS_SIMULATOR_AI = 'http://127.0.0.1:3001/api/ai';
@@ -47,7 +50,7 @@ export function deriveDevHostFromBundleUrl(): string | null {
 }
 
 export function getApiBaseUrl(): string {
-  const explicit = ENV.TBOT_API_URL?.trim();
+  const explicit = ENV.EXPO_PUBLIC_TBOT_API_URL?.trim();
   // A literal `http://localhost:3000` in .env is treated as "user forgot to
   // set their LAN IP" because that value is unreachable on a real device.
   // The Simulator/Emulator branches below already cover those paths
@@ -55,7 +58,8 @@ export function getApiBaseUrl(): string {
   if (explicit && explicit !== LOOPBACK_TBOT_API) {
     return ensureV1(explicit);
   }
-  if (Device.isDevice && __DEV__) {
+  // Only auto-derive LAN backend when no explicit VPS/staging URL is configured.
+  if (Device.isDevice && __DEV__ && (!explicit || explicit === LOOPBACK_TBOT_API)) {
     const derived = deriveDevHostFromBundleUrl();
     if (derived) return ensureV1(`http://${derived}:3000`);
   }
@@ -65,11 +69,11 @@ export function getApiBaseUrl(): string {
 }
 
 export function getAiBaseUrl(): string {
-  const explicit = ENV.TBOT_AI_URL?.trim();
+  const explicit = ENV.EXPO_PUBLIC_TBOT_AI_URL?.trim();
   if (explicit && explicit !== `${LOOPBACK_TBOT_API}/api/ai`) {
     return explicit.replace(/\/+$/, '');
   }
-  if (Device.isDevice && __DEV__) {
+  if (Device.isDevice && __DEV__ && (!explicit || explicit === `${LOOPBACK_TBOT_API}/api/ai`)) {
     const derived = deriveDevHostFromBundleUrl();
     if (derived) return `http://${derived}:3001/api/ai`;
   }

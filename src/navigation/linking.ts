@@ -10,7 +10,6 @@ type NotificationsModule = Parameters<typeof getInitialNotificationUrl>[0];
 
 const SHOULD_LOAD_NATIVE_NOTIFICATIONS = !Config.QA_MODE || process.env.NODE_ENV === 'test';
 const Notifications: NotificationsModule | null = SHOULD_LOAD_NATIVE_NOTIFICATIONS
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   ? require('expo-notifications')
   : null;
 

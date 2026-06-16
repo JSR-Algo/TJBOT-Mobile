@@ -43,7 +43,13 @@ function toCandidate(device: Device): BleDeviceCandidate {
 export function splitDevicesByAllowlist(devices: BleDeviceCandidate[]): BleScanResult {
   return devices.reduce<BleScanResult>(
     (acc, device) => {
-      if (isAllowlistedDevice(device.id, device.name ?? device.localName)) {
+      if (
+        isAllowlistedDevice({
+          deviceId: device.id,
+          name: device.name ?? device.localName,
+          serviceUUIDs: device.serviceUUIDs,
+        })
+      ) {
         acc.allowed.push(device);
       } else {
         acc.blocked.push(device);
@@ -54,7 +60,7 @@ export function splitDevicesByAllowlist(devices: BleDeviceCandidate[]): BleScanR
   );
 }
 
-export async function scanForTJBotDevices(timeoutMs = BLE_CONFIG.SCAN_TIMEOUT_MS): Promise<BleScanResult> {
+export async function scanForTJBotDevices(timeoutMs: number = BLE_CONFIG.SCAN_TIMEOUT_MS): Promise<BleScanResult> {
   const manager = getBleManager();
   const seen = new Map<string, BleDeviceCandidate>();
 

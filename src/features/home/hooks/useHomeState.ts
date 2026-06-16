@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getHomeHub } from '@/services/api/home.api';
+import { FEATURE_HOME_HUB } from '@/config/feature-flags';
 import { ROUTES } from '@/navigation/routes';
 import type { RootStackParamList } from '@/navigation/routes';
 
@@ -27,6 +28,8 @@ export interface HomeStateCfg {
   ctaColor: string;
   ctaTarget: keyof RootStackParamList;
   ctaEnabled: boolean;
+  accessibilityLabel: string;
+  accessibilityHint: string;
   reviewBadge: number | null;
   courseBadge: number | null;
   dimSecondary?: boolean;
@@ -45,6 +48,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: null,
     ctaLabel: "Start Today's Lesson", ctaIcon: '▶', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.LessonReadyScreen, ctaEnabled: true,
+    accessibilityLabel: "Start Today's Lesson",
+    accessibilityHint: "Starts today's lesson",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -53,6 +58,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: null,
     ctaLabel: "Start Today's Lesson", ctaIcon: '▶', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.LessonReadyScreen, ctaEnabled: true,
+    accessibilityLabel: "Start Today's Lesson",
+    accessibilityHint: "Starts today's lesson",
     reviewBadge: null, courseBadge: null, forceGreet: true,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -61,6 +68,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Today's lesson is ready!", color: '#FF6F61' },
     ctaLabel: "Start Today's Lesson", ctaIcon: '▶', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.LessonReadyScreen, ctaEnabled: true,
+    accessibilityLabel: "Start Today's Lesson",
+    accessibilityHint: "Starts today's lesson",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -69,6 +78,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Done for today — great job!", color: '#6CE2B6' },
     ctaLabel: "See what you did today", ctaIcon: '★', ctaColor: '#6CE2B6',
     ctaTarget: ROUTES.TodayProgressScreen, ctaEnabled: true,
+    accessibilityLabel: "See what you did today",
+    accessibilityHint: "Shows today's progress",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -77,6 +88,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Robot needs the mic to play", color: '#FFC857' },
     ctaLabel: "Turn on the microphone", ctaIcon: '🎤', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.HomeHubScreen, ctaEnabled: true,
+    accessibilityLabel: "Turn on the microphone",
+    accessibilityHint: "Opens microphone settings",
     reviewBadge: null, courseBadge: null, dimSecondary: true,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -85,6 +98,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "We're reconnecting…", color: '#9AA9B5' },
     ctaLabel: "Try again", ctaIcon: '↻', ctaColor: '#7B8896',
     ctaTarget: ROUTES.HomeHubScreen, ctaEnabled: true,
+    accessibilityLabel: "Try again",
+    accessibilityHint: "Retries the connection",
     reviewBadge: null, courseBadge: null, dimSecondary: true,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -93,6 +108,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Robot last seen yesterday", color: '#9AA9B5' },
     ctaLabel: "Help with the robot", ctaIcon: '↻', ctaColor: '#7B8896',
     ctaTarget: ROUTES.HomeHubScreen, ctaEnabled: true,
+    accessibilityLabel: "Help with the robot",
+    accessibilityHint: "Helps reconnect Robot",
     reviewBadge: null, courseBadge: null, dimSecondary: true,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -101,6 +118,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "A grown-up paused the robot", color: '#FFC857' },
     ctaLabel: "Tell a grown-up", ctaIcon: '⏸', ctaColor: '#7B8896',
     ctaTarget: ROUTES.HomeHubScreen, ctaEnabled: false,
+    accessibilityLabel: "Tell a grown-up",
+    accessibilityHint: "Needs a grown-up to resume",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -109,6 +128,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Quiet hours are on right now", color: '#7B8896' },
     ctaLabel: "Try again later", ctaIcon: '🌙', ctaColor: '#7B8896',
     ctaTarget: ROUTES.HomeHubScreen, ctaEnabled: false,
+    accessibilityLabel: "Try again later",
+    accessibilityHint: "Returns during play hours",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -117,6 +138,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Add a child to begin", color: '#FFC857' },
     ctaLabel: "Set up a child", ctaIcon: '👶', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.ParentGateScreen, ctaEnabled: true,
+    accessibilityLabel: "Set up a child",
+    accessibilityHint: "Adds a child profile",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -125,6 +148,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Who's playing today?", color: '#FFC857' },
     ctaLabel: "Pick a child", ctaIcon: '👋', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.HomeHubScreen, ctaEnabled: true,
+    accessibilityLabel: "Pick a child",
+    accessibilityHint: "Chooses who is playing",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -133,6 +158,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Let's wake up the robot", color: '#FFC857' },
     ctaLabel: "Set up the robot", ctaIcon: '🤖', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.DeviceOverviewScreen, ctaEnabled: true,
+    accessibilityLabel: "Set up the robot",
+    accessibilityHint: "Wakes up Robot",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -141,6 +168,8 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Something went sideways", color: '#FF6F61' },
     ctaLabel: "Retry Home", ctaIcon: '↻', ctaColor: '#FF6F61',
     ctaTarget: ROUTES.HomeHubScreen, ctaEnabled: true,
+    accessibilityLabel: "Retry Home",
+    accessibilityHint: "Reloads the home screen",
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -227,12 +256,12 @@ export function deriveHomeState(input: DeriveHomeStateInput): DerivedHomeState {
 
   return { variant: 'idle', cfg: CFG.idle, showChildSelector: false, children };
 }
-
 export function useHomeState() {
   const { data, isLoading } = useQuery({
     queryKey: ['home', 'hub'],
     queryFn: getHomeHub,
     staleTime: 30_000,
+    enabled: FEATURE_HOME_HUB,
   });
   const variant: HomeVariant = (data?.variant as HomeVariant) ?? 'daily_available';
   return { variant, cfg: CFG[variant], data, isLoading };

@@ -21,6 +21,8 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   const code = getPairCode(params);
   const submit = () => navigation.navigate(ROUTES.PairConnectingScreen, {
     deviceId: params?.deviceId,
+    serial: params?.serial,
+    espDeviceName: params?.espDeviceName,
     code,
     ssid,
     password,

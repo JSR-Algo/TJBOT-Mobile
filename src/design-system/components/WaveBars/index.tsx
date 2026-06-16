@@ -41,6 +41,8 @@ function Bar({ color, active, delay, barHeight }: { color: string; active: boole
     } else {
       scaleY.value = withTiming(0.3);
     }
+    // `scaleY` is a Reanimated shared value (stable ref); only `active`/`delay` change behavior.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, delay]);
 
   const animStyle = useAnimatedStyle(() => ({

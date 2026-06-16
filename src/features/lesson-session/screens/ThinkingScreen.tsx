@@ -15,7 +15,7 @@ export default function ThinkingScreen({ navigation }: Props) {
   React.useEffect(() => {
     const t = setTimeout(() => navigation.navigate(ROUTES.SuccessScreen), 1600);
     return () => clearTimeout(t);
-  }, []);
+  }, [navigation]);
 
   return (
     <ScreenShell bg="#E8F4FF">

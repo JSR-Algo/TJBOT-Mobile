@@ -17,6 +17,8 @@ const args = process.argv.slice(2);
 const PARENT_PIN = '4729';
 const DEFAULT_LOCAL_API_URL = 'http://127.0.0.1:3000';
 const DEFAULT_LOCAL_AI_URL = 'http://127.0.0.1:3001/api/ai';
+const OPENAPI_RELATIVE_PATH = 'migrate-ui-ux-to-mobile-app-docs/api/openapi.json';
+const BACKEND_ROOT = path.resolve(__dirname, '..', '..', 'tbot-backend');
 
 const RAW_URL = args.find((a) => a.startsWith('--url='))?.split('=')[1]
   || process.env.TBOT_API_URL
@@ -31,7 +33,7 @@ const AI_URL = args.find((a) => a.startsWith('--ai-url='))?.split('=')[1]
   || DEFAULT_LOCAL_AI_URL;
 
 const PLAN_MODULES = [
-  ['Auth + Onboarding', ['SplashScreen', 'WelcomeScreen', 'LoginScreen', 'ChildProfileScreen'], ['/v1/auth/signup', '/v1/auth/consent', '/v1/auth/login', '/v1/households']],
+  ['Auth + Onboarding', ['SplashScreen', 'WelcomeScreen', 'LoginScreen', 'ParentConsentScreen', 'ChildProfileScreen'], ['/v1/auth/signup', '/v1/auth/consent', '/v1/auth/login', '/v1/households']],
   ['Home Dashboard', ['HomeHubScreen'], ['/v1/households']],
   ['Device Pairing', ['PairIntroScreen', 'PairSearchScreen', 'PairWifiScreen', 'PairSuccessScreen'], ['/v1/devices/household/:id']],
   ['Learning + AI Interaction', ['LessonReadyScreen', 'RobotListeningScreen', 'RobotSpeakingScreen'], ['/v1/learning/children/:id/session/today', '/api/ai/v1/llm/chat']],
@@ -75,8 +77,8 @@ function assertLocalAi(url) {
   if (!isLocalUrl(url)) throw new Error('local AI simulation URL required');
 }
 
-function readBackendEnvValue(backendRoot, key) {
-  const envPath = path.join(backendRoot, '.env');
+function readBackendEnvValue(key) {
+  const envPath = path.join(BACKEND_ROOT, '.env');
   if (!fs.existsSync(envPath)) return undefined;
   const line = fs.readFileSync(envPath, 'utf8').split('\n').find((row) => row.startsWith(`${key}=`));
   return line?.slice(key.length + 1).trim();
@@ -88,6 +90,21 @@ function readRunningBackendEnvValue(key) {
 
 function loadBackendModule(modulePath) {
   return require(modulePath);
+}
+
+function readDocumentedParentPin() {
+  const openApiPath = path.join(__dirname, '..', OPENAPI_RELATIVE_PATH);
+  if (!fs.existsSync(openApiPath)) return undefined;
+  const openApi = JSON.parse(fs.readFileSync(openApiPath, 'utf8'));
+  return openApi.paths?.['/v1/parent/auth']?.post?.requestBody?.content?.['application/json']?.examples?.default?.value?.pin;
+}
+
+function parentAuthContractBlockers() {
+  const documentedPin = readDocumentedParentPin();
+  if (typeof documentedPin === 'string' && documentedPin.trim().length > 0) return [];
+  return [
+    'documented parent PIN is missing from OpenAPI: /v1/parent/auth examples.default.value.pin',
+  ];
 }
 
 async function seedParentPin() {
@@ -107,11 +124,11 @@ function buildPlan() {
     backendLogSettleMs: 70000,
     contractFallbacksAllowed: false,
     schemaDriftCheckRequired: true,
-    openApiPath: 'migrate-ui-ux-to-mobile-app-docs/api/openapi.json',
+    openApiPath: OPENAPI_RELATIVE_PATH,
     documentedContracts: ['x-TJBot-modular-route-contract'],
     routeCoverage: { source: 'src/navigation/routes.ts', required: true },
     flowCoverage: PLAN_MODULES.map((module) => module.name),
-    backendBlockers: [],
+    backendBlockers: parentAuthContractBlockers(),
     schemaDrift: { required: true },
     unexpected5xx: [],
     modules: PLAN_MODULES,
@@ -153,10 +170,9 @@ if (reportJsonPath) {
   fs.writeFileSync(reportJsonPath, JSON.stringify(buildPlan(), null, 2));
 }
 
-const backendRoot = path.resolve(__dirname, '..', '..', 'tbot-backend');
 const FACTORY_TOKEN =
   readRunningBackendEnvValue('TBOT_FACTORY_TOKEN')
-  || readBackendEnvValue(backendRoot, 'TBOT_FACTORY_TOKEN')
+  || readBackendEnvValue('TBOT_FACTORY_TOKEN')
   || 'local-e2e-factory-token';
 
 let passed = 0;

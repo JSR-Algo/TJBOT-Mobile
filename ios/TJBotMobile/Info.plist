@@ -39,6 +39,8 @@
 	<string>TJBot uses Bluetooth to scan for and pair with your child's device during setup.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>TJBot uses your location to provide localised content for your child.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>TJBot communicates with your Robot on the local network during Wi-Fi setup.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>TJBot uses the microphone to listen to your child's voice and provide AI-powered responses.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

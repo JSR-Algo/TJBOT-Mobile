@@ -1,12 +1,46 @@
 import client from '@/services/http/client';
 
-import { backendContractUnavailable } from './undocumented-api-routes';
+import {
+  backendContractUnavailable,
+  BackendContractUnavailableError,
+  isBackendContractUnavailableError,
+} from './undocumented-api-routes';
+
+export { BackendContractUnavailableError, isBackendContractUnavailableError };
 
 export interface PairDeviceParams {
   code: string;
   wifiSsid: string;
   wifiPassword: string;
   serialNumber?: string;
+}
+
+export interface Device {
+  id: string;
+  serial_number: string;
+  hardware_revision: string;
+  state: 'UNPROVISIONED' | 'REGISTERED' | 'CLAIMED' | 'ACTIVE' | 'OFFLINE' | 'FACTORY_RESET';
+  status:
+    | 'factory_new'
+    | 'provisioning'
+    | 'active'
+    | 'offline'
+    | 'safe_mode'
+    | 'transferred'
+    | 'decommissioned'
+    | 'quarantined'
+    | null;
+  household_id: string | null;
+  lifecycle_state: 'unassigned' | 'assigned' | null;
+  last_seen_at: string | null;
+  firmware_version: string | null;
+  battery_level: number | null;
+  connectivity_metrics: {
+    connectivity_state?: string;
+    wifi_ssid?: string;
+    wifi_rssi?: number;
+  } | null;
+  created_at: string;
 }
 
 export interface DeviceStatus {
@@ -25,30 +59,15 @@ export interface FirmwareVersion {
   updateAvailable: boolean;
 }
 
-interface DeviceDto {
-  id?: string;
-  device_id?: string;
-  name?: string;
-  serial_number?: string;
-  status?: string;
-  battery_level?: number;
-  firmware_version?: string;
-  last_seen_at?: string;
-  connectivity_metrics?: {
-    connectivity_state?: string;
-    wifi_ssid?: string;
-  };
-}
-
-function normalizeDevice(dto: DeviceDto): DeviceStatus {
+function normalizeDevice(dto: Device): DeviceStatus {
   return {
-    id: dto.id ?? dto.device_id ?? '',
-    name: dto.name ?? dto.serial_number ?? dto.id ?? dto.device_id ?? 'TJBot',
-    online: dto.status === 'active' || dto.status === 'online' || dto.connectivity_metrics?.connectivity_state === 'online',
+    id: dto.id,
+    name: dto.serial_number,
+    online: dto.status === 'active' || dto.connectivity_metrics?.connectivity_state === 'online',
     batteryPercent: dto.battery_level ?? 0,
     charging: false,
     wifiSsid: dto.connectivity_metrics?.wifi_ssid,
-    lastSeenAt: dto.last_seen_at,
+    lastSeenAt: dto.last_seen_at ?? undefined,
   };
 }
 
@@ -62,10 +81,14 @@ export async function pairDevice(params: PairDeviceParams): Promise<{ deviceId: 
 
 export async function getDeviceStatus(deviceId: string): Promise<DeviceStatus> {
   if (deviceId === 'primary') {
-    const response = await client.get<{ data: DeviceDto[] }>('/devices/household/me');
-    return normalizeDevice(response.data.data[0] ?? {});
+    const response = await client.get<{ data: Device[] }>('/devices/household/me');
+    const primary = response.data.data[0];
+    if (!primary) {
+      throw new Error('No primary device found');
+    }
+    return normalizeDevice(primary);
   }
-  const response = await client.get<DeviceDto>(`/devices/${deviceId}`);
+  const response = await client.get<Device>(`/devices/${deviceId}`);
   return normalizeDevice(response.data);
 }
 
@@ -77,7 +100,11 @@ export async function runFirmwareUpdate(_deviceId: string): Promise<void> {
   backendContractUnavailable(`runFirmwareUpdate:${_deviceId}`);
 }
 
-export async function setDeviceWifi(_deviceId: string, _ssid: string, _password: string): Promise<void> {
+export async function setDeviceWifi(
+  _deviceId: string,
+  _ssid: string,
+  _password: string,
+): Promise<void> {
   backendContractUnavailable(`setDeviceWifi:${_deviceId}:${_ssid}:${_password.length}`);
 }
 
