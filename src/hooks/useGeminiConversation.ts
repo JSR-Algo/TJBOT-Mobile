@@ -68,6 +68,8 @@ export function useGeminiConversation(
   const reconnectRef = useRef<(() => void) | null>(null);
   const sessionResumptionHandleRef = useRef<string | null>(null);
   const sessionResumptionCachedAtMsRef = useRef<number>(0);
+  const startAudioCaptureRef = useRef<(() => void) | null>(null);
+  const startConversationRef = useRef<(() => Promise<void>) | null>(null);
 
   const sessionApi = useMemo(
     () => ({
@@ -100,7 +102,9 @@ export function useGeminiConversation(
       sessionApi.close();
       queueMicrotask(() => {
         if (store.getState().state !== 'RECONNECTING') return;
-        startConversation().catch((err) => {
+        const start = startConversationRef.current;
+        if (!start) return;
+        start().catch((err) => {
           telemetry.jsErrorBreadcrumb('gemini.reconnect.start', err);
           store.getState().setError('Kết nối lại thất bại.');
           store.getState().transition('ERROR_RECOVERABLE');
@@ -307,6 +311,7 @@ export function useGeminiConversation(
     audioStreamRef.current = null;
     store.getState().setAudioLevel(0);
   }
+  startAudioCaptureRef.current = _startAudioCapture;
 
   // ── Interrupt playback (T3.1 / P0-10 / P0-22) ──────────────────────────────
   const interruptPlayback = useCallback(() => {
@@ -367,7 +372,7 @@ export function useGeminiConversation(
   const sessionCallbacks = useMemo(
     () => ({
       onConnected: () => {
-        _startAudioCapture();
+        startAudioCaptureRef.current?.();
       },
       onDisconnected: (detail: {
         code: number | string | null;
@@ -377,7 +382,7 @@ export function useGeminiConversation(
       }) => {
         const s = store.getState();
         if (s.state !== 'IDLE' && s.state !== 'ERROR_RECOVERABLE') {
-          _stopAudioCapture();
+          stopAudioCaptureRef.current?.();
           playback.interrupt();
           s.setError(detail.reason || `Gemini Live ngắt kết nối (${detail.code ?? 'unknown'}).`);
           s.transition('ERROR_RECOVERABLE');
@@ -391,7 +396,7 @@ export function useGeminiConversation(
         status: number | string | null;
         errorString: string | null;
       }) => {
-        _stopAudioCapture();
+        stopAudioCaptureRef.current?.();
         playback.interrupt();
         const shownError =
           detail.message ||
@@ -695,20 +700,20 @@ export function useGeminiConversation(
           VoiceSession.onSessionRecovered(async (evt) => {
             telemetry.track('session', 'voice_session_recovered', { reason: evt.reason });
             if (isCapturingRef.current) {
-              _stopAudioCapture();
+              stopAudioCaptureRef.current?.();
             }
             await playback.interrupt();
             const currentState = store.getState().state;
             const activeStates = ['LISTENING', 'USER_SPEAKING', 'WAITING_AI', 'ASSISTANT_SPEAKING'] as const;
             const wasActive = (activeStates as readonly string[]).includes(currentState);
             if (evt.reason === 'mediaServicesReset') {
-              if (wasActive) _startAudioCapture();
+              if (wasActive) startAudioCaptureRef.current?.();
             } else if (evt.reason === 'interruptionEnded') {
-              _startAudioCapture();
+              startAudioCaptureRef.current?.();
             } else if (evt.reason === 'foregroundResume') {
               const diag = await VoiceMic.getDiagnostics();
               if (!diag?.tapInstalled || !diag?.engineRunning) {
-                _startAudioCapture();
+                startAudioCaptureRef.current?.();
               }
             }
           }),
@@ -730,6 +735,7 @@ export function useGeminiConversation(
 
     await session.connect(sessionCallbacks, isReconnect);
   }, [store, telemetry, playback, session, sessionCallbacks, wirePlaybackCallbacks]);
+  startConversationRef.current = startConversation;
 
   // ── Stop conversation ──────────────────────────────────────────────────────
   const stopConversation = useCallback(() => {
