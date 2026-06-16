@@ -1,11 +1,13 @@
+import { colors } from '@/design-system/tokens/legacy-semantic';
+
 export const DV = {
-  bg: '#F5F5F2',
-  card: '#FFFFFF',
-  ink: '#1A1A1F',
-  ink2: '#5A5A66',
-  ink3: '#8B8B96',
-  hair: 'rgba(0,0,0,0.07)',
-  accent: '#2A6FDB',
-  good: '#1F8A5B',
-  warn: '#C99227',
+  bg: colors.background,
+  card: colors.surface,
+  ink: colors.textPrimary,
+  ink2: colors.textSecondary,
+  ink3: colors.textMuted,
+  hair: colors.border,
+  accent: colors.primary,
+  good: colors.success,
+  warn: colors.warning,
 } as const;
