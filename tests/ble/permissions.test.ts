@@ -1,6 +1,15 @@
 import { PermissionsAndroid, Platform } from 'react-native';
 import { requestBlePermissions } from '../../src/services/ble/permissions';
 
+jest.mock('react-native-ble-plx', () => ({
+  BleManager: jest.fn().mockImplementation(() => ({
+    onStateChange: jest.fn().mockImplementation((callback) => {
+      callback('PoweredOn');
+      return { remove: jest.fn() };
+    }),
+  })),
+}));
+
 describe('BLE permissions', () => {
   const originalOS = Platform.OS;
   const originalVersion = Platform.Version;

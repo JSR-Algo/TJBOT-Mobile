@@ -571,7 +571,7 @@ describe('navigation architecture', () => {
       routesMissingComponents: [],
     });
     expect(inventory.forwardCycleGovernance).toEqual({
-      cycleGroupCount: 5,
+      cycleGroupCount: 6,
       cycleGroups: {
         'course-dispatch-picker': [ROUTES.RobotReadyScreen, ROUTES.SendToRobotScreen],
         'device-pairing-retry': [
@@ -595,6 +595,12 @@ describe('navigation architecture', () => {
           ROUTES.SuccessScreen,
           ROUTES.ThinkingScreen,
           ROUTES.UserSpeakingScreen,
+        ],
+        'lesson-summary-loop': [
+          ROUTES.ConnectingScreen,
+          ROUTES.LessonDoneScreen,
+          ROUTES.LessonReadyScreen,
+          ROUTES.LessonSummaryScreen,
         ],
         'network-retry': [ROUTES.NetworkErrorScreen, ROUTES.ReconnectingOverlay],
       },

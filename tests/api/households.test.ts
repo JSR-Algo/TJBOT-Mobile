@@ -80,7 +80,7 @@ describe('households child profile API', () => {
     });
 
     await expect(listChildren('household-1')).resolves.toHaveLength(1);
-    expect(mockedClient.get).toHaveBeenCalledWith('/households/household-1/children');
+    expect(mockedClient.get).toHaveBeenCalledWith('/households/household-1/children', { signal: undefined });
   });
 
   it('updates, archives, schedules deletion, and switches active child through backend routes', async () => {

@@ -1,6 +1,9 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { createActor } from 'xstate';
 import { ROUTES } from '@/navigation/routes';
+import * as SessionContext from '../../src/features/lesson-session/sessionContext';
+import { createLessonSessionMachine, noopLessonSessionServices } from '../../src/state/machines/lessonSession.machine';
 import ConnectingScreen from '../../src/features/lesson-session/screens/ConnectingScreen';
 import RobotListeningScreen from '../../src/features/lesson-session/screens/RobotListeningScreen';
 import RobotSpeakingScreen from '../../src/features/lesson-session/screens/RobotSpeakingScreen';
@@ -10,6 +13,17 @@ import UserSpeakingScreen from '../../src/features/lesson-session/screens/UserSp
 
 const navigate = jest.fn();
 const navigation = { navigate };
+
+const LessonSessionProvider = (SessionContext as any).LessonSessionProvider as
+  | typeof SessionContext.LessonSessionProvider
+  | undefined;
+
+function wrapWithSession(node: React.ReactElement): React.ReactElement {
+  if (!LessonSessionProvider) return node;
+  const machine = createLessonSessionMachine(noopLessonSessionServices);
+  const actor = createActor(machine).start();
+  return <LessonSessionProvider actor={actor}>{node}</LessonSessionProvider>;
+}
 
 describe('lesson-session reconnecting recovery', () => {
   beforeEach(() => {
@@ -47,7 +61,7 @@ describe('lesson-session reconnecting recovery', () => {
     expect(thinking.getByLabelText('Robot is thinking')).toBeTruthy();
     thinking.unmount();
 
-    const connecting = render(<ConnectingScreen navigation={navigation as never} route={{ params: undefined } as never} />);
+    const connecting = render(wrapWithSession(<ConnectingScreen navigation={navigation as never} route={{ params: undefined } as never} />));
     expect(connecting.getByLabelText('Robot connection is tuning in')).toBeTruthy();
     expect(connecting.getByLabelText('Connection activity')).toBeTruthy();
     connecting.unmount();
