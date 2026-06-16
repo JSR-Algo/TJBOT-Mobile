@@ -49,6 +49,24 @@ jobs:
         run: npm test -- --runInBand
       - name: Run mobile integration tests
         run: npm run test:integration
+      - name: Check token parity
+        run: npm run check:token-parity
+      - name: Check screen prop types
+        run: npm run check:screen-prop-types
+      - name: Validate Expo config
+        run: npx expo config --json > /tmp/expo-config.json
+
+  docs-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
       - name: Validate flows docs
         run: npm run flows:validate
       - name: Validate sequences docs
@@ -57,12 +75,6 @@ jobs:
         run: npm run erd:validate
       - name: Validate use cases docs
         run: npm run usecases:check
-      - name: Check token parity
-        run: npm run check:token-parity
-      - name: Check screen prop types
-        run: npm run check:screen-prop-types
-      - name: Validate Expo config
-        run: npx expo config --json > /tmp/expo-config.json
 
   mobile-api-contract-sync:
     runs-on: ubuntu-latest

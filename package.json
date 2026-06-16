@@ -15,7 +15,7 @@
     "test:state-machines": "jest --selectProjects unit --testPathPattern='tests/state-machines'",
     "test:navigation": "jest --selectProjects unit --testPathPattern='tests/navigation'",
     "test:screens": "jest --selectProjects unit --testPathPattern='tests/(screens|features)'",
-    "api:contract-sync:check": "node scripts/check-api-contract-sync.mjs",
+    "api:contract-sync:check": "node scripts/api-contract-sync.mjs --fail-on-drift",
     "build:android": "node scripts/runtime/mobile-run.mjs build-android",
     "build:ios": "node scripts/runtime/mobile-run.mjs build-ios",
     "release:ios:testflight": "bundle exec fastlane ios beta_ios",
