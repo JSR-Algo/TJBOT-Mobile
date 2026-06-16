@@ -176,7 +176,8 @@ describe('BI7 — §7.6 barge-in budget boundary', () => {
 import * as fs from 'fs';
 import * as path from 'path';
 
-const HOOK_PATH = path.resolve(__dirname, '../../src/hooks/useGeminiConversation.ts');
+// The budget watchdog moved into useGeminiTimers when the composer was split.
+const HOOK_PATH = path.resolve(__dirname, '../../src/hooks/useGeminiTimers.ts');
 const hook = fs.readFileSync(HOOK_PATH, 'utf8');
 
 describe('BI7 source contract — §7.6 budget wiring', () => {

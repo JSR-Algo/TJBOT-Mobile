@@ -203,6 +203,11 @@ export const FSM_TIMER_TABLE: Partial<Record<VoiceState, FsmTimerConfig>> = {
     errorMessage: 'Ngắt audio không phản hồi.',
     metricEvent: 'voice.assistant_turn.interrupted_timeout',
   },
+  ERROR_RECOVERABLE: {
+    deadlineMs: 5000,
+    fallbackState: 'IDLE',
+    metricEvent: 'voice.recoverable_auto_reset',
+  },
 };
 
 /**

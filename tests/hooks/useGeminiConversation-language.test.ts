@@ -21,7 +21,9 @@ const read = (rel: string): string =>
   fs.readFileSync(path.join(SRC, rel), 'utf8');
 
 describe('L1 — Gemini Live speechConfig carries a BCP-47 language hint', () => {
-  const hook = read('hooks/useGeminiConversation.ts');
+  // The Live connect call moved into useGeminiAudioSession when the composer
+  // was split into focused sub-hooks.
+  const hook = read('hooks/useGeminiAudioSession.ts');
 
   it('speechConfig contains languageCode: "vi-VN"', () => {
     expect(hook).toMatch(
