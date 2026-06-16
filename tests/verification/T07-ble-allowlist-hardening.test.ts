@@ -75,12 +75,14 @@ describe('T07: BLE allowlist hardening with service UUID and manufacturer data',
         name: 'TJBot Real',
         localName: 'TJBot Real',
         serviceUUIDs: [BLE_CONFIG.SERVICE_UUID],
+        rssi: -55,
       },
       {
         id: 'TJBot-FAKE',
         name: 'TJBot Real',
         localName: 'TJBot Real',
         serviceUUIDs: [],
+        rssi: -55,
       },
     ]);
 

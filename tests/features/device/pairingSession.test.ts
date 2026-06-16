@@ -8,6 +8,7 @@ describe('pairingSession helpers', () => {
         name: 'TJBot-2A8F',
         localName: null,
         serviceUUIDs: [],
+        rssi: -55,
       }),
     ).toBe('TJBot-2A8F');
   });
@@ -19,6 +20,7 @@ describe('pairingSession helpers', () => {
         name: 'TJBot-4721',
         localName: null,
         serviceUUIDs: [],
+        rssi: -55,
       }),
     ).toBe('4721');
   });
