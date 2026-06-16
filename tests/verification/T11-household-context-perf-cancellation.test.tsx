@@ -175,7 +175,7 @@ describe('HouseholdContext performance & cancellation (T11)', () => {
 
     expect(mockList).toHaveBeenCalledTimes(1);
     expect(mockListChildren).toHaveBeenCalledTimes(1);
-    expect(mockListChildren).toHaveBeenCalledWith('hh-1');
+    expect(mockListChildren).toHaveBeenCalledWith('hh-1', expect.any(AbortSignal));
   });
 
   it('aborts in-flight refresh requests on unmount with AbortController', async () => {
