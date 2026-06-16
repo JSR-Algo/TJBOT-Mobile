@@ -84,14 +84,8 @@ export function createAuthenticatedAxios(
   });
 
   client.interceptors.response.use(
-    (response) => {
-      // eslint-disable-next-line no-console
-      console.log('DEBUG response fulfilled', response.status, response.config?.url, client.defaults.validateStatus?.(response.status));
-      return response;
-    },
+    (response) => response,
     async (error) => {
-      // eslint-disable-next-line no-console
-      console.log('DEBUG response rejected', error?.response?.status, error?.config?.url, error?.message);
       const originalRequest = error.config as AxiosRequestConfig & {
         _retry?: boolean;
         _retryCount?: number;
