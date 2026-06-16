@@ -100,9 +100,12 @@ export function connectXiaozhiDevice(params: XiaozhiConnectParams): XiaozhiDevic
   };
 
   ws.onerror = (event) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const original = (event as any).error ?? (event as any).message ?? 'Xiaozhi device WebSocket error';
     const error = new Error(typeof original === 'string' ? original : 'Xiaozhi device WebSocket error');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (error as any).cause = original instanceof Error ? original : undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (error as any).original = original;
     params.onError?.(error);
   };
