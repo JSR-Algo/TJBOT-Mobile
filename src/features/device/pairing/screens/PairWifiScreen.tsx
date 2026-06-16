@@ -40,7 +40,11 @@ export default function PairWifiScreen({ navigation, route }: Props) {
           /* ignore */
         }
       }
-      stopProvisionSearch();
+      try {
+        stopProvisionSearch();
+      } catch {
+        /* ignore — native module may not be linked in tests */
+      }
     };
   }, []);
 

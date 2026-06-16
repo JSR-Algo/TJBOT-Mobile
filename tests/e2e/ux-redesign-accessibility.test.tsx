@@ -129,8 +129,12 @@ describe('mobile UX redesign accessibility coverage', () => {
     await expect(screen.findByText('Pairing failed')).resolves.toBeTruthy();
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       deviceId: 'TJBot-001',
+      serial: undefined,
+      espDeviceName: undefined,
       code: '123456',
       ssid: 'Casa Wi-Fi',
+      error: 'claim rejected',
+      errorCode: 'E-PROV-001',
     });
   });
 

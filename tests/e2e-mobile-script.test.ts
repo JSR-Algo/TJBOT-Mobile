@@ -186,7 +186,7 @@ describe('e2e-mobile local production gate', () => {
     const source = fs.readFileSync(SCRIPT, 'utf8');
 
     expect(source).toContain("readRunningBackendEnvValue('TBOT_FACTORY_TOKEN')");
-    expect(source).toContain("readBackendEnvValue(backendRoot, 'TBOT_FACTORY_TOKEN')");
+    expect(source).toContain("readBackendEnvValue('TBOT_FACTORY_TOKEN')");
     expect(source).toContain("'local-e2e-factory-token'");
   });
 
