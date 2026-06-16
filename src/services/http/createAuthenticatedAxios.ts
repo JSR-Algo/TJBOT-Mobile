@@ -22,7 +22,10 @@ const BASE_RETRY_DELAY_MS = 50;
 function isFreshAuthEndpoint(url: string | undefined): boolean {
   return (
     typeof url === 'string' &&
-    (url.includes('/parent/auth') || url.includes('/auth/login') || url.includes('/auth/register'))
+    (url.includes('/parent/auth') ||
+      url.includes('/auth/login') ||
+      url.includes('/auth/register') ||
+      url.includes('/auth/refresh'))
   );
 }
 
