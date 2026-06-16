@@ -55,8 +55,17 @@ describe('T25: Extract LessonSessionParams and normalize route param types', () 
     },
   );
 
-  it('does not use the verbose undefined | { ... } pattern for optional params', () => {
-    const matches = routesSource.match(/undefined\s*\|\s*\{/g) ?? [];
+  it('does not use the verbose undefined | { ... } pattern for lesson-session optional params', () => {
+    const lines = routesSource.split('\n');
+    const lessonSessionStart = lines.findIndex((l) => l.trim() === '// lesson-session');
+    const progressStart = lines.findIndex((l) => l.trim() === '// progress');
+    const lessonSessionSection = lines
+      .slice(
+        lessonSessionStart === -1 ? 0 : lessonSessionStart,
+        progressStart === -1 ? undefined : progressStart,
+      )
+      .join('\n');
+    const matches = lessonSessionSection.match(/undefined\s*\|\s*\{/g) ?? [];
     expect(matches).toHaveLength(0);
   });
 

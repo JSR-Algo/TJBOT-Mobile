@@ -9,16 +9,16 @@ const mockCapturedMainTabProps: Array<{
 }> = [];
 
 jest.mock('@/navigation/MainTabNavigator', () => {
-  const actual = jest.requireActual('@/navigation/MainTabNavigator');
+  const React = require('react');
+  const ReactNative = require('react-native');
   return {
-    ...actual,
     MainTabNavigator: (props: {
       initialTabName?: string;
       initialRouteName?: string;
       initialRouteParams?: unknown;
     }): React.JSX.Element => {
       mockCapturedMainTabProps.push(props);
-      return actual.MainTabNavigator(props);
+      return React.createElement(ReactNative.View, { testID: 'mainTabs' });
     },
   };
 });
@@ -28,29 +28,64 @@ jest.mock('@react-navigation/native-stack', () => ({
     const ReactNative = require('react-native');
     const React = require('react');
 
+    const createNavigation = () => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      replace: jest.fn(),
+      push: jest.fn(),
+      pop: jest.fn(),
+      popToTop: jest.fn(),
+      dispatch: jest.fn(),
+      setParams: jest.fn(),
+      setOptions: jest.fn(),
+      addListener: jest.fn(() => jest.fn()),
+      removeListener: jest.fn(),
+      isFocused: jest.fn(() => true),
+      canGoBack: jest.fn(() => true),
+      getId: jest.fn(),
+      getParent: jest.fn(),
+      getState: jest.fn(),
+    });
+
+    let currentInitialRouteName: string | undefined;
+
     return {
-      Navigator: ({ children }: { children: React.ReactNode }): React.JSX.Element =>
-        React.createElement(ReactNative.View, { testID: 'protectedStackNavigator' }, children),
+      Navigator: ({
+        children,
+        initialRouteName,
+      }: {
+        children: React.ReactNode;
+        initialRouteName?: string;
+      }): React.JSX.Element => {
+        currentInitialRouteName = initialRouteName;
+        return React.createElement(ReactNative.View, { testID: 'protectedStackNavigator' }, children);
+      },
+      Group: ({ children }: { children: React.ReactNode }): React.JSX.Element =>
+        React.createElement(ReactNative.View, { testID: 'modalGroup' }, children),
       Screen: ({
         name,
-        component: Component,
         children,
       }: {
         name: string;
         component?: React.ComponentType;
-        children?: React.ReactNode;
+        children?: React.ReactNode | ((props: { navigation: unknown; route: unknown }) => React.ReactNode);
+        initialParams?: Record<string, unknown>;
       }): React.JSX.Element | null => {
-        if (children) {
-          return React.createElement(ReactNative.View, { testID: `screen-${name}` }, children);
-        }
-        if (Component) {
+        const navigation = createNavigation();
+        const route = { key: `screen-${name}`, name, params: {} };
+        const isActive = name === currentInitialRouteName;
+
+        if (typeof children === 'function') {
           return React.createElement(
             ReactNative.View,
             { testID: `screen-${name}` },
-            React.createElement(Component),
+            isActive ? children({ navigation, route }) : null,
           );
         }
-        return null;
+        if (children) {
+          return React.createElement(ReactNative.View, { testID: `screen-${name}` }, isActive ? children : null);
+        }
+        return React.createElement(ReactNative.View, { testID: `screen-${name}` });
       },
     };
   },
