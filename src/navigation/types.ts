@@ -34,6 +34,7 @@ export type FeatureForwardCycleGroup =
   | 'device-pairing-retry'
   | 'lesson-demo-review'
   | 'lesson-exit-resume'
+  | 'lesson-summary-loop'
   | 'network-retry';
 
 export type FeatureTabName =

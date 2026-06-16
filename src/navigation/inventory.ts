@@ -573,6 +573,7 @@ const FORWARD_CYCLE_GROUPS: readonly FeatureForwardCycleGroup[] = [
   'device-pairing-retry',
   'lesson-demo-review',
   'lesson-exit-resume',
+  'lesson-summary-loop',
   'network-retry',
 ] as const;
 
@@ -586,6 +587,7 @@ function forwardCycleGroups(): Record<FeatureForwardCycleGroup, readonly string[
     'device-pairing-retry': [],
     'lesson-demo-review': [],
     'lesson-exit-resume': [],
+    'lesson-summary-loop': [],
     'network-retry': [],
   };
   for (const route of Object.values(ROUTE_MAP)) {
