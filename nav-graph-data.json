@@ -799,6 +799,48 @@
       "title": "Words Practiced",
       "g": "Progress",
       "kind": "happy"
+    },
+    "onb_coppa": {
+      "f": "src/features/onboarding/screens/ParentConsentScreen.tsx",
+      "title": "10 · Parent Consent",
+      "g": "Onboarding",
+      "kind": "happy"
+    },
+    "lesson_demo_home": {
+      "f": "src/features/lessonDemo/screens/LessonDemoHomeScreen.tsx",
+      "title": "Lesson Demo · Home",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "lesson_demo_roadmap": {
+      "f": "src/features/lessonDemo/screens/LessonRoadmapScreen.tsx",
+      "title": "Lesson Demo · Roadmap",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "lesson_demo_session": {
+      "f": "src/features/lessonDemo/screens/LessonSessionScreen.tsx",
+      "title": "Lesson Demo · Session",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "lesson_demo_showcase": {
+      "f": "src/features/lessonDemo/screens/LessonShowcaseScreen.tsx",
+      "title": "Lesson Demo · Showcase",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "parent_lesson_summary": {
+      "f": "src/features/lessonDemo/screens/ParentLessonSummaryScreen.tsx",
+      "title": "Lesson Demo · Parent Summary",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "robot_lesson_control": {
+      "f": "src/screens/robot-lesson/RobotLessonControlScreen.tsx",
+      "title": "Lesson Demo · Robot Control",
+      "g": "Lesson Demo",
+      "kind": "happy"
     }
   },
   "edges": [],
@@ -968,11 +1010,20 @@
       "connecting",
       "greeting",
       "lesson_ready"
+    ],
+    "Lesson Demo": [
+      "lesson_demo_home",
+      "lesson_demo_roadmap",
+      "lesson_demo_session",
+      "lesson_demo_showcase",
+      "parent_lesson_summary",
+      "robot_lesson_control"
     ]
   },
   "meta": {
     "version": "1.0.0",
     "generatedAt": "2026-05-26T05:15:09Z",
-    "sourceCommit": "97590a2dc8627d9966edd969cc056d87c1c21ccb"
+    "sourceCommit": "97590a2dc8627d9966edd969cc056d87c1c21ccb",
+    "retired": true
   }
 }
