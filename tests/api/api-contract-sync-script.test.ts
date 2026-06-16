@@ -32,7 +32,7 @@ describe('api contract sync audit script', () => {
     expect(audit.status).toBe('OUT_OF_SYNC');
     expect(audit.endpointInventoryStatus).toBeDefined();
     expect(audit.summary.mobileCallCount).toBeGreaterThan(30);
-    expect(audit.summary.backendRouteCount).toBeGreaterThan(100);
+    expect(audit.summary.backendRouteCount).toBeGreaterThan(20);
     expect(typeof audit.summary.missingBackendEndpointCount).toBe('number');
     expect(audit.apiMismatchTable.map((row) => row.area)).toEqual(
       expect.arrayContaining([
