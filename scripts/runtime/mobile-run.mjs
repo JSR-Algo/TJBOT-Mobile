@@ -32,9 +32,34 @@ const commands = {
     cwd: repoRoot,
   },
   'build-android': {
-    bin: './gradlew',
-    args: ['assembleDebug', ...args],
-    cwd: path.join(repoRoot, 'android'),
+    steps: [
+      {
+        bin: 'npx',
+        args: [
+          'expo',
+          'export:embed',
+          '--entry-file',
+          'index.js',
+          '--platform',
+          'android',
+          '--dev',
+          'true',
+          '--minify',
+          'false',
+          '--reset-cache',
+          '--bundle-output',
+          'android/app/src/main/assets/index.android.bundle',
+          '--assets-dest',
+          'android/app/src/main/res',
+        ],
+        cwd: repoRoot,
+      },
+      {
+        bin: './gradlew',
+        args: ['assembleDebug', ...args],
+        cwd: path.join(repoRoot, 'android'),
+      },
+    ],
   },
   'build-ios': {
     bin: 'xcodebuild',
@@ -73,15 +98,23 @@ if (command === 'doctor') {
 }
 
 const spec = commands[command];
-const result = spawnSync(spec.bin, spec.args, {
-  cwd: spec.cwd,
-  env,
-  stdio: 'inherit',
-});
+const steps = spec.steps ?? [spec];
 
-if (result.error) {
-  console.error(result.error.message);
-  process.exit(1);
+for (const step of steps) {
+  const result = spawnSync(step.bin, step.args, {
+    cwd: step.cwd,
+    env,
+    stdio: 'inherit',
+  });
+
+  if (result.error) {
+    console.error(result.error.message);
+    process.exit(1);
+  }
+
+  if ((result.status ?? 1) !== 0) {
+    process.exit(result.status ?? 1);
+  }
 }
 
-process.exit(result.status ?? 1);
+process.exit(0);

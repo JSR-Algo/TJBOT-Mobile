@@ -20,7 +20,7 @@ import {
   saveOnboardingChildProfile,
 } from '../childProfileSave';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen' | 'PairChildProfileScreen'>;
 
 const BUDDIES = [
   { id: 'panda', emoji: '🐼', label: 'Panda' },

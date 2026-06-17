@@ -252,8 +252,8 @@ describe('PairOfflineScreen', () => {
     expect(utils.getByText('Update Wi-Fi')).toBeTruthy();
     expect(utils.getByText('If your network changed or password rotated')).toBeTruthy();
     // Tip 3
-    expect(utils.getByText('Restart Robot')).toBeTruthy();
-    expect(utils.getByText('Hold the top button for 5 seconds')).toBeTruthy();
+    expect(utils.getByText('Open setup mode')).toBeTruthy();
+    expect(utils.getByText('Hold the top button for 5 seconds until Robot is ready to connect')).toBeTruthy();
   });
 
   it('primary CTA "Reconnect now" goes to PairSearchScreen WITH reconnectMode: true', () => {

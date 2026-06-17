@@ -14,8 +14,10 @@ import { markLocalDevicePaired } from '@/features/device/pairing/localPairedDevi
 //     undo the confirmed claim (no throw, reset still fires);
 //   - the stack is reset to [DeviceHome, PairSuccess] so Back can't walk back
 //     through the finished pairing screens;
-//   - a completeDeviceProvisioning rejection PROPAGATES (callers own the error UI)
-//     and the reset/cache side effects do NOT fire.
+//   - an already-completed/claimed physical-claim finalize rejection is treated
+//     as idempotent success (the robot is already owned by the household); and
+//   - unrelated completeDeviceProvisioning rejections PROPAGATE (callers own the
+//     error UI) and the reset/cache side effects do NOT fire.
 
 jest.mock('@/services/api/device.api', () => ({
   __esModule: true,
@@ -73,6 +75,16 @@ describe('finalizeDevicePairing', () => {
     });
   });
 
+  it('uses the supplied display name when the parent edits the robot name', async () => {
+    const reset = jest.fn();
+
+    await finalizeDevicePairing({ reset }, CONTEXT, 'child-9', 'Robot phòng ngủ');
+
+    expect(mockedComplete).toHaveBeenCalledWith(expect.objectContaining({
+      displayName: 'Robot phòng ngủ',
+    }));
+  });
+
   it('carries serialNumber=undefined through to PairSuccess when the context omits it', async () => {
     const reset = jest.fn();
 
@@ -91,8 +103,33 @@ describe('finalizeDevicePairing', () => {
     expect(reset).toHaveBeenCalledTimes(1);
   });
 
-  it('propagates a completeDeviceProvisioning rejection and does NOT mark paired or reset', async () => {
-    const err = Object.assign(new Error('boom'), { code: 'DEVICE_ALREADY_CLAIMED' });
+  it.each([
+    Object.assign(new Error('already claimed'), { code: 'DEVICE_ALREADY_CLAIMED' }),
+    Object.assign(new Error('already assigned'), { code: 'DEVICE_ALREADY_ASSIGNED' }),
+    Object.assign(new Error('already completed'), { code: 'PROVISIONING_ATTEMPT_ALREADY_COMPLETED' }),
+    Object.assign(new Error('claim already confirmed'), { code: 'CLAIM_ALREADY_CONFIRMED' }),
+    { response: { data: { code: 'DEVICE_ALREADY_CLAIMED' } } },
+    { response: { data: { error: { code: 'DEVICE_ALREADY_ASSIGNED' } } } },
+  ])('treats an already-finalized rejection as idempotent success', async (err) => {
+    mockedComplete.mockRejectedValue(err);
+    const reset = jest.fn();
+
+    await expect(finalizeDevicePairing({ reset }, CONTEXT, 'child-9')).resolves.toBeUndefined();
+    expect(mockedMarkLocal).toHaveBeenCalledWith('device-1');
+    expect(reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: { deviceId: 'device-1', serialNumber: 'TBT-2026-004217', provisioningAttemptId: 'claim-1' },
+        },
+      ],
+    });
+  });
+
+  it('propagates an unrelated completeDeviceProvisioning rejection and does NOT mark paired or reset', async () => {
+    const err = Object.assign(new Error('boom'), { code: 'BACKEND_5XX' });
     mockedComplete.mockRejectedValue(err);
     const reset = jest.fn();
 

@@ -192,7 +192,13 @@ export function useZeroCodeClaimFlow(
       }
       const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimed.claimId });
       if (isStale(gen)) return;
-      await sendClaimBootstrapTokenViaBle({ device: bleDevice, token: bootstrap.token });
+      await sendClaimBootstrapTokenViaBle({
+        device: bleDevice,
+        token: bootstrap.token,
+        // Push the backend device_id the attempt was created under so the robot
+        // claims/confirms under the same id (not its random Board UUID).
+        deviceId: claimed.deviceId || deviceId,
+      });
       if (isStale(gen)) return;
       await waitForPhysicalConfirm(claimed, gen);
     } catch (err) {

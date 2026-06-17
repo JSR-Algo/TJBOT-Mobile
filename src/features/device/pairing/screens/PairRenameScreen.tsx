@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { Pressable, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
@@ -9,7 +9,10 @@ import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { useHousehold } from '@/contexts/HouseholdContext';
-import { finalizeDevicePairing } from '../finalizeDevicePairing';
+import { getDeviceStatus } from '@/services/api/device.api';
+import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
+import { finalizeDevicePairing, finishDevicePairingSuccess } from '../finalizeDevicePairing';
+import { getPendingPairingContext } from '../pendingPairingContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
@@ -20,18 +23,51 @@ const BUDDIES = [
 ] as const;
 
 export default function PairRenameScreen({ navigation, route }: Props) {
+  useAppLanguage();
+  const defaultDisplayName = React.useMemo(() => translateCopy('Living-room Robot'), []);
   const [buddy, setBuddy] = React.useState(2);
   const [saving, setSaving] = React.useState(false);
+  const [displayName, setDisplayName] = React.useState(defaultDisplayName);
+  const nameInputRef = React.useRef<TextInput>(null);
   const { activeChild } = useHousehold();
 
   const save = async (): Promise<void> => {
     if (saving) return;
-    const deviceId = route.params?.deviceId;
-    const provisioningAttemptId = route.params?.provisioningAttemptId;
-    const serialNumber = route.params?.serialNumber;
+    setSaving(true);
+    const pendingContext = await getPendingPairingContext().catch(() => null);
+    const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
+    const provisioningAttemptId = route.params?.provisioningAttemptId ?? pendingContext?.provisioningAttemptId;
+    const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
     const childId = activeChild?.id; // active-child (defaults to children[0]); was hardcoded children[0]
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.info('[TBOT PairRename] save pressed', {
+        hasRouteDeviceId: Boolean(route.params?.deviceId),
+        hasPendingDeviceId: Boolean(pendingContext?.deviceId),
+        deviceId,
+        provisioningAttemptId,
+        serialNumber,
+        childId,
+      });
+    }
     // Genuine loss of pairing context — this IS a setup failure.
     if (!deviceId || !provisioningAttemptId) {
+      if (childId) {
+        try {
+          const householdDevice = await getDeviceStatus('primary', childId);
+          if (householdDevice.id) {
+            await finishDevicePairingSuccess(navigation, {
+              deviceId: householdDevice.id,
+              serialNumber,
+            });
+            return;
+          }
+        } catch {
+          // Fall through to the typed setup failure below. This recovery only
+          // applies when the backend already lists a paired household robot.
+        }
+      }
+      setSaving(false);
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
         serialNumber,
@@ -48,27 +84,31 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     // can FINISH this pairing once a child exists (instead of dropping them into
     // onboarding and abandoning the already-claimed robot).
     if (!childId) {
-      navigation.navigate(ROUTES.ChildProfileScreen, {
+      setSaving(false);
+      navigation.navigate(ROUTES.PairChildProfileScreen, {
         pairing: { deviceId, provisioningAttemptId, serialNumber },
       });
       return;
     }
-    setSaving(true);
     try {
       // Pairing finalize (complete + mark paired + reset to DeviceHome/Success) is
       // shared with the zero-child path so both terminate identically. Reset is
       // required here because this flow is entered from DeviceOverview, not
       // DeviceHome: a plain navigate would push Success on top of the whole pairing
       // stack and Back would walk back THROUGH finished pairing screens.
-      await finalizeDevicePairing(navigation, { deviceId, provisioningAttemptId, serialNumber }, childId);
+      await finalizeDevicePairing(navigation, { deviceId, provisioningAttemptId, serialNumber }, childId, displayName);
     } catch (error) {
       const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('[TBOT PairRename] save failed', { code, deviceId, provisioningAttemptId, childId });
+      }
       // A missing/mismatched child profile is a finalize-only problem — the robot
       // is already connected — so guide to creating a child (with pairing context
       // so the new child finishes this pairing) rather than reporting a
       // connection failure.
       if (code === 'CHILD_PROFILE_NOT_FOUND' || code === 'CHILD_PROFILE_HOUSEHOLD_MISMATCH') {
-        navigation.navigate(ROUTES.ChildProfileScreen, {
+        navigation.navigate(ROUTES.PairChildProfileScreen, {
           pairing: { deviceId, provisioningAttemptId, serialNumber },
         });
         return;
@@ -109,14 +149,31 @@ export default function PairRenameScreen({ navigation, route }: Props) {
       </Box>
       <Box paddingHorizontal={16} paddingTop={24}>
         <Text fontWeight="700" style={styles.sectionLabel}>Robot's name (optional)</Text>
-        <Box style={styles.nameCard} flexDirection="row" alignItems="center" gap={10}>
+        <Pressable
+          testID="robot-name-focus-target"
+          style={styles.nameCard}
+          onPress={() => nameInputRef.current?.focus()}
+        >
           <Text style={{ fontSize: 18 }}>🤖</Text>
-          <Text style={styles.nameText}>Living-room Robot</Text>
-        </Box>
+          <TextInput
+            ref={nameInputRef}
+            accessibilityLabel="Robot's name"
+            autoCorrect={false}
+            blurOnSubmit
+            editable={!saving}
+            maxLength={40}
+            onChangeText={setDisplayName}
+            placeholder="Living-room Robot"
+            returnKeyType="done"
+            selectTextOnFocus
+            style={styles.nameInput}
+            value={displayName}
+          />
+        </Pressable>
         <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={save}>{saving ? 'Saving...' : 'Save & continue'}</DeviceBigBtn>
+        <DeviceBigBtn onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save & continue'}</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
@@ -137,7 +194,7 @@ const styles = StyleSheet.create({
   buddyBtn: { width: '22%', aspectRatio: 1, borderRadius: 14, backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, alignItems: 'center', justifyContent: 'center', gap: 2 },
   buddyBtnSel: { backgroundColor: '#FFF1C2', borderWidth: 2, borderColor: '#FF6F61' },
   buddyName: { fontSize: 10, color: DV.ink },
-  nameCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14 },
-  nameText: { fontSize: 16, color: DV.ink, flex: 1 },
+  nameCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14, minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nameInput: { fontSize: 18, color: DV.ink, flex: 1, paddingVertical: 8, minHeight: 48 },
   nameHint: { fontSize: 12, color: DV.ink3, lineHeight: 22, marginTop: 8 },
 });

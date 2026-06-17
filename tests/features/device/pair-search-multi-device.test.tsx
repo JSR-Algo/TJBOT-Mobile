@@ -121,6 +121,7 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-owned',
+      provisioningTransport: 'ble',
     }));
     expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
@@ -147,6 +148,7 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-new',
+      provisioningTransport: 'ble',
     }));
   });
 
@@ -183,6 +185,7 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-b',
+      provisioningTransport: 'ble',
     }));
   });
 
@@ -200,6 +203,7 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-a',
+      provisioningTransport: 'ble',
     }));
     // No picker copy rendered on the fast path.
     expect(screen.queryByText('We found more than one Robot nearby. Pick the one you want to pair.')).toBeNull();
@@ -219,6 +223,7 @@ describe('PairSearchScreen multi-device picker', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-late',
+      provisioningTransport: 'ble',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
   });

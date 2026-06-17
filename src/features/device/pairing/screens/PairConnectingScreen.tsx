@@ -14,6 +14,7 @@ import { provisionWifiViaLocalBle } from '@/services/ble/service';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
 import { clearPairingBootstrapToken, consumePairingWifiPassword, getPairingBootstrapToken } from '../pairingSecretHandoff';
+import { savePendingPairingContext } from '../pendingPairingContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 type RuntimeProvisioningStatus = 'started' | 'ble_paired' | 'device_authenticated' | 'completed' | 'failed' | 'expired';
@@ -144,6 +145,11 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       clearPairingBootstrapToken(result.provisioningAttemptId);
       setI(PAIRING_STEP_COUNT);
       setStatus('authenticated');
+      await savePendingPairingContext({
+        deviceId: authenticated.deviceId,
+        serialNumber,
+        provisioningAttemptId: authenticated.provisioningAttemptId,
+      });
       navigation.navigate(ROUTES.PairRenameScreen, {
         deviceId: authenticated.deviceId,
         serialNumber,
@@ -308,6 +314,9 @@ async function runLocalBleProvisioning(params: {
     password: params.password,
     code: params.code,
     token,
+    // Push the backend device_id (the id the claim attempt was created under) so
+    // the robot claims/confirms under it instead of its random Board UUID.
+    deviceId: params.deviceId,
   });
 
   return { deviceId: params.deviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
@@ -336,7 +345,18 @@ async function waitForClaimConfirmed(claimId: string, poll: PollController, expi
 }> {
   let deadlineMs = resolveConfirmDeadlineMs(expiresAt);
   for (;;) {
-    const status = await getClaimStatus(claimId);
+    let status: Awaited<ReturnType<typeof getClaimStatus>>;
+    try {
+      status = await getClaimStatus(claimId);
+    } catch (error: unknown) {
+      if (!isRetryableClaimStatusPollError(error) || Date.now() >= deadlineMs) {
+        throw error;
+      }
+      if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
+      await sleep(PAIRING_POLL_INTERVAL_MS, poll);
+      if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
+      continue;
+    }
     if (status.expiresAt) {
       deadlineMs = readFutureDeadlineMs(status.expiresAt) ?? deadlineMs;
     }
@@ -352,6 +372,17 @@ async function waitForClaimConfirmed(claimId: string, poll: PollController, expi
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
   }
   throw Object.assign(new Error('Claim confirmation timed out'), { code: 'CLAIM_CONFIRM_TIMEOUT' });
+}
+
+function isRetryableClaimStatusPollError(error: unknown): boolean {
+  const record = asRecord(error);
+  const status = readNumber(record, 'status');
+  if (status === 401 || status === 408 || status === 429 || (typeof status === 'number' && status >= 500)) {
+    return true;
+  }
+  if (record?.retryable === true) return true;
+  const code = readString(record, 'code');
+  return code === 'NETWORK_ERROR' || code === 'RATE_LIMIT_EXCEEDED' || code === 'SERVICE_UNAVAILABLE' || code === 'GATEWAY_TIMEOUT' || code === 'INTERNAL_ERROR';
 }
 
 async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: PollController): Promise<{
@@ -453,6 +484,11 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 function readString(record: Record<string, unknown> | null | undefined, key: string): string | undefined {
   const value = record?.[key];
   return typeof value === 'string' ? value : undefined;
+}
+
+function readNumber(record: Record<string, unknown> | null | undefined, key: string): number | undefined {
+  const value = record?.[key];
+  return typeof value === 'number' ? value : undefined;
 }
 
 const styles = StyleSheet.create({

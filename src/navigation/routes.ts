@@ -115,6 +115,7 @@ export type RootStackParamList = {
   PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
   PairAddScreen: undefined;
   PairRenameScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
+  PairChildProfileScreen: undefined | { pairing?: { deviceId: string; provisioningAttemptId: string; serialNumber?: string } };
   PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
   PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'hotspot' | 'legacy_backend' };
   PairOfflineScreen: undefined;
@@ -249,6 +250,7 @@ export const ROUTES = {
   'PairCodeScreen': 'PairCodeScreen',
   'PairAddScreen': 'PairAddScreen',
   'PairRenameScreen': 'PairRenameScreen',
+  'PairChildProfileScreen': 'PairChildProfileScreen',
   'PairWifiScreen': 'PairWifiScreen',
   'PairWifiPasswordScreen': 'PairWifiPasswordScreen',
   'PairOfflineScreen': 'PairOfflineScreen',

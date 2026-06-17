@@ -1,6 +1,6 @@
 import { BleManager, Device } from 'react-native-ble-plx';
 import { buildBluFiCustomDataFrames, buildBluFiStationProvisioningFrames, buildBluFiWifiScanFrames, encodeTLV, parseBluFiConnReport } from './blufiProtocol';
-import { BLE_CONFIG, isAllowlistedDevice } from './config';
+import { BLE_CONFIG, isAllowlistedCandidate } from './config';
 import { requestBlePermissions } from './permissions';
 import type { BleBootstrapResult, BleDeviceCandidate, BleScanResult, LocalBleClaimTokenResult, LocalBleProvisioningResult, RobotWifiNetwork } from './types';
 
@@ -82,7 +82,7 @@ function toCandidate(device: Device): BleDeviceCandidate {
 export function splitDevicesByAllowlist(devices: BleDeviceCandidate[]): BleScanResult {
   return devices.reduce<BleScanResult>(
     (acc, device) => {
-      if (isAllowlistedDevice(device.id, device.name ?? device.localName, device.serviceUUIDs)) {
+      if (isAllowlistedCandidate(device)) {
         acc.allowed.push(device);
       } else {
         acc.blocked.push(device);
@@ -125,6 +125,15 @@ export async function scanForTJBotDevices(timeoutMs: number = BLE_CONFIG.SCAN_TI
       seen: seen.size,
       allowed: result.allowed.map(device => ({ id: device.id, name: device.name, localName: device.localName, serviceUUIDs: device.serviceUUIDs })),
       blockedCount: result.blocked.length,
+      blockedSamples: result.blocked.slice(0, 3).map(device => ({
+        id: device.id,
+        name: device.name,
+        localName: device.localName,
+        serviceUUIDs: device.serviceUUIDs,
+        hasManufacturerData: !!device.manufacturerData,
+        hasRawScanRecord: !!device.rawScanRecord,
+        serviceDataKeys: Object.keys(device.serviceData ?? {}),
+      })),
     });
   }
   return result;
@@ -164,6 +173,9 @@ export async function provisionWifiViaLocalBle(params: {
   password: string;
   code?: string;
   token?: string;
+  // Backend device_id this claim attempt was created under — pushed with the
+  // token (TLV tag 0x03) so the robot claims/confirms under the same id.
+  deviceId?: string;
   allowCredentialOnly?: boolean;
   connReportTimeoutMs?: number;
   connectDevice?: ConnectDevice;
@@ -211,6 +223,7 @@ export async function provisionWifiViaLocalBle(params: {
     if (params.token) {
       const entries = [{ tag: 0x01, value: params.token }];
       if (params.code) entries.push({ tag: 0x02, value: params.code });
+      if (params.deviceId) entries.push({ tag: 0x03, value: params.deviceId });
       const tlv = encodeTLV(entries);
       const { frames, endSequence } = buildBluFiCustomDataFrames({ tlv }, 0);
       await writeBluFiFrames(writer.bind(target), frames, {
@@ -260,6 +273,11 @@ export async function provisionWifiViaLocalBle(params: {
 export async function sendClaimBootstrapTokenViaBle(params: {
   device: BleDeviceCandidate;
   token: string;
+  // The backend device_id this claim attempt was created under. Pushed to the
+  // robot (TLV tag 0x03) so it claims/confirms under the SAME id, instead of its
+  // random firmware Board UUID which never matches the backend record -> pairing
+  // would otherwise hang at "waiting for robot to authenticate".
+  deviceId?: string;
   connectDevice?: ConnectDevice;
 }): Promise<LocalBleClaimTokenResult> {
   if (!CLAIM_BOOTSTRAP_TOKEN_PATTERN.test(params.token)) {
@@ -285,7 +303,12 @@ export async function sendClaimBootstrapTokenViaBle(params: {
         throw codedError('BLE_PROVISIONING_UNSUPPORTED', 'Robot BLE provisioning characteristic is unavailable.');
       }
 
-      const tlv = encodeTLV([{ tag: 0x01, value: params.token }]);
+      const tokenEntries: Array<{ tag: number; value: string }> = [{ tag: 0x01, value: params.token }];
+      if (params.deviceId) {
+        // tag 0x03 = claim device_id (the backend id the attempt was created under).
+        tokenEntries.push({ tag: 0x03, value: params.deviceId });
+      }
+      const tlv = encodeTLV(tokenEntries);
       const { frames } = buildBluFiCustomDataFrames({ tlv }, 0);
       await writeBluFiFrames(writer.bind(target), frames, {
         timeoutCode: 'BLE_CLAIM_TOKEN_SEND_FAILED',

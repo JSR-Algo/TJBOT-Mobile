@@ -8,16 +8,41 @@ import OnbBigBtn from '@/components/OnbBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { recordAiVoiceConsent } from '@/services/api/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MicAskScreen'>;
 
 const POINTS = [
   'Used only during a lesson',
+  'AI voice uses Google processing',
   'No recording is saved',
   'You can revoke it anytime in Settings',
 ] as const;
 
+const AI_VOICE_CONSENT_VERSION = 'ai-voice-google-v1';
+const GOOGLE_SUBPROCESSORS_VERSION = 'google-subprocessors-v1';
+
 export default function MicAskScreen({ navigation }: Props) {
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const continueWithConsent = async (): Promise<void> => {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await recordAiVoiceConsent({
+        consent_version: AI_VOICE_CONSENT_VERSION,
+        google_subprocessors_version: GOOGLE_SUBPROCESSORS_VERSION,
+      });
+      navigation.navigate(ROUTES.FirstLessonEntryScreen);
+    } catch {
+      setError('Consent must be saved before voice setup can continue.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <OnbShell title="Microphone" onBack={() => navigation.navigate(ROUTES.ChildProfileScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
@@ -42,9 +67,13 @@ export default function MicAskScreen({ navigation }: Props) {
           </Box>
         ))}
       </Box>
+      {error ? (
+        <Box paddingHorizontal={20} paddingTop={16}>
+          <Text accessibilityRole="alert" style={styles.error}>{error}</Text>
+        </Box>
+      ) : null}
       <Box paddingHorizontal={20} paddingTop={22} paddingBottom={30} gap={10}>
-        <OnbBigBtn onClick={() => navigation.navigate(ROUTES.FirstLessonEntryScreen)}>Continue</OnbBigBtn>
-        <OnbBigBtn secondary onClick={() => navigation.navigate(ROUTES.FirstLessonEntryScreen)}>Not now</OnbBigBtn>
+        <OnbBigBtn onClick={continueWithConsent}>{saving ? 'Saving...' : 'Continue'}</OnbBigBtn>
       </Box>
     </OnbShell>
   );
@@ -56,4 +85,5 @@ const styles = StyleSheet.create({
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 22, textAlign: 'center', maxWidth: 320 },
   pointRow: { backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, borderRadius: 12, padding: 14 },
   pointText: { fontSize: 14, color: OB.ink, flex: 1 },
+  error: { fontSize: 13, color: '#B42318', lineHeight: 19 },
 });

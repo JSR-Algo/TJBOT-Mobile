@@ -254,6 +254,7 @@ describe('normal add-robot route', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-owned',
+      provisioningTransport: 'ble',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
     expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
@@ -278,6 +279,7 @@ describe('normal add-robot route', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-owned',
+      provisioningTransport: 'ble',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
     expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
@@ -302,6 +304,7 @@ describe('normal add-robot route', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-owned',
+      provisioningTransport: 'ble',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
     expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
@@ -325,6 +328,7 @@ describe('normal add-robot route', () => {
       deviceId: 'device-9',
       provisioningAttemptId: 'attempt-9',
       bleDeviceId: 'ble-new',
+      provisioningTransport: 'ble',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
     expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
@@ -519,6 +523,26 @@ describe('isPhoneOnline (connectivity gate)', () => {
 // any in-flight async settles into a no-op, and navigates to PairIntro.
 // ---------------------------------------------------------------------------
 describe('cancelSearchToIntro (back-to-intro)', () => {
+  it('tells new-pair users to put Robot in setup mode while searching', async () => {
+    mockedScan.mockReturnValue(new Promise(() => {}));
+    const navigate = jest.fn();
+    const screen = renderSearch(navigate);
+
+    await waitFor(() => expect(screen.getByText('Looking nearby…')).toBeTruthy());
+
+    expect(screen.getByText('Make sure Robot is in setup mode and within 3 meters of your phone.')).toBeTruthy();
+  });
+
+  it('tells reconnect users to hold the top button before scanning', async () => {
+    mockedScan.mockReturnValue(new Promise(() => {}));
+    const navigate = jest.fn();
+    const screen = renderSearch(navigate, { reconnectMode: true });
+
+    await waitFor(() => expect(screen.getByText('Looking nearby…')).toBeTruthy());
+
+    expect(screen.getByText('Hold the top button for 5 seconds to open setup mode, then keep Robot within 3 meters.')).toBeTruthy();
+  });
+
   it('navigates to PairIntro when the back control is pressed during searching', async () => {
     // Never resolve the scan so the screen stays on the searching view with the
     // back affordance available.

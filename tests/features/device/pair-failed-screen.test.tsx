@@ -374,7 +374,7 @@ describe('PairFailedScreen always-on actions', () => {
 });
 
 // ===========================================================================
-// 7. Late-BLE-claim recovery effect — canRecoverLateBleClaim + getClaimStatus.
+// 7. Late zero-code claim recovery effect — canRecoverLateClaim + getClaimStatus.
 // ===========================================================================
 describe('PairFailedScreen late-BLE-claim recovery effect', () => {
   it('does NOT call getClaimStatus when params is undefined', async () => {
@@ -384,10 +384,16 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
     expect(mockedGetClaimStatus).not.toHaveBeenCalled();
   });
 
-  it('does NOT call getClaimStatus when transport is not ble', async () => {
-    renderScreen(lateBleClaimParams({ provisioningTransport: 'hotspot' }));
-    await waitFor(() => expect(true).toBe(true));
-    expect(mockedGetClaimStatus).not.toHaveBeenCalled();
+  it('recovers a confirmed claim even when provisioningTransport is missing from the failure payload', async () => {
+    mockedGetClaimStatus.mockResolvedValue(claimStatus({ status: 'CLAIM_CONFIRMED' }));
+    const { nav } = renderScreen(lateBleClaimParams({ provisioningTransport: undefined }));
+
+    await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalledWith('claim-1'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TBT-2026-004217',
+      provisioningAttemptId: 'claim-1',
+    });
   });
 
   it('does NOT call getClaimStatus when a code is present (live-code flow, not zero-code BLE)', async () => {

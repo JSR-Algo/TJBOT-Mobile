@@ -18,6 +18,7 @@ import {
   putPairingBootstrapToken,
   putPairingWifiPassword,
 } from '@/features/device/pairing/pairingSecretHandoff';
+import { savePendingPairingContext } from '@/features/device/pairing/pendingPairingContext';
 
 // ---------------------------------------------------------------------------
 // US-005 — mb-pair-connecting (PairConnectingScreen.tsx orchestration).
@@ -56,6 +57,11 @@ jest.mock('@/services/api/claim.api', () => ({
   requestClaim: jest.fn(),
 }));
 
+jest.mock('@/features/device/pairing/pendingPairingContext', () => ({
+  __esModule: true,
+  savePendingPairingContext: jest.fn(),
+}));
+
 const mockedProvisionWifiViaLocalBle = provisionWifiViaLocalBle as jest.MockedFunction<typeof provisionWifiViaLocalBle>;
 const mockedConfirmLocalBlePaired = confirmLocalBlePaired as jest.MockedFunction<typeof confirmLocalBlePaired>;
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
@@ -64,6 +70,7 @@ const mockedMintBootstrapToken = mintBootstrapToken as jest.MockedFunction<typeo
 const mockedPairDevice = pairDevice as jest.MockedFunction<typeof pairDevice>;
 const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
 const mockedRequestClaim = requestClaim as jest.MockedFunction<typeof requestClaim>;
+const mockedSavePendingPairingContext = savePendingPairingContext as jest.MockedFunction<typeof savePendingPairingContext>;
 
 async function advancePairingPolls(ms: number): Promise<void> {
   await act(async () => {
@@ -145,6 +152,7 @@ function navigatePayloadStrings(navigate: jest.Mock): string[] {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockedSavePendingPairingContext.mockResolvedValue(undefined);
   // Defaults: a BLE handoff resolves the local "credentials sent" handoff only.
   mockedProvisionWifiViaLocalBle.mockResolvedValue({
     deviceId: 'ble-device-1',
@@ -759,6 +767,51 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
     expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
   });
 
+  it('retries a transient 401 while polling claim status instead of failing a confirmed claim', async () => {
+    jest.useFakeTimers();
+    try {
+      seedSecrets('claim-1');
+      mockedGetClaimStatus
+        .mockRejectedValueOnce({
+          code: 'INVALID_CREDENTIALS',
+          message: 'Incorrect email or password.',
+          status: 401,
+          retryable: false,
+        })
+        .mockResolvedValueOnce({
+          claimId: 'claim-1',
+          deviceId: 'device-1',
+          status: 'CLAIM_CONFIRMED',
+          online: true,
+          expiresAt: null,
+          failureCode: null,
+        });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams() } as never}
+        />,
+      );
+
+      await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalledTimes(1));
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+
+      await advancePairingPolls(3000);
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+        deviceId: 'device-1',
+        serialNumber: SERIAL,
+        provisioningAttemptId: 'claim-1',
+      }));
+      expect(mockedGetClaimStatus).toHaveBeenCalledTimes(2);
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
   it('CLAIMED (idempotent terminal) also advances to PairRename', async () => {
     seedSecrets('claim-1');
     mockedGetClaimStatus.mockResolvedValue({
@@ -1061,6 +1114,47 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
     }));
     expect(mockedRequestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' });
     expect(mockedGetClaimStatus).toHaveBeenCalledWith('claim-confirmed-1');
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+  });
+
+  it('persists the confirmed pairing context before navigating to Rename', async () => {
+    putPairingWifiPassword('attempt-zc-1', WIFI_PASSWORD); // password only, no token
+    let resolveSave: (() => void) | undefined;
+    mockedSavePendingPairingContext.mockReturnValue(new Promise<void>((resolve) => {
+      resolveSave = resolve;
+    }));
+    mockedRequestClaim.mockResolvedValue({
+      claimId: 'claim-confirmed-1',
+      deviceId: 'device-1',
+      status: 'CLAIM_CONFIRMED',
+      message: 'Connection already confirmed.',
+      expiresAt: '2026-06-10T12:05:00.000Z',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ provisioningAttemptId: 'attempt-zc-1' }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedSavePendingPairingContext).toHaveBeenCalledWith({
+      deviceId: 'device-1',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-confirmed-1',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+
+    await act(async () => {
+      resolveSave?.();
+    });
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-confirmed-1',
+    }));
     expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
     expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
   });

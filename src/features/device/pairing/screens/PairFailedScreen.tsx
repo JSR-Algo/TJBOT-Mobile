@@ -13,6 +13,7 @@ import { ROUTES } from '@/navigation/routes';
 import { getClaimStatus } from '@/services/api/claim.api';
 import { openAppSettings, openBluetoothSettings, openWifiSettings } from '../deviceSettings';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import { savePendingPairingContext } from '../pendingPairingContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFailedScreen'>;
 
@@ -37,13 +38,18 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   const settingsAction = settingsActionForError(params?.errorCode);
 
   React.useEffect(() => {
-    if (!canRecoverLateBleClaim(params)) return;
+    if (!canRecoverLateClaim(params)) return;
     let cancelled = false;
     void getClaimStatus(params.provisioningAttemptId)
       .then((status) => {
         if (cancelled) return;
         const deviceId = status.deviceId || params.deviceId;
         if (status.status === 'CLAIM_CONFIRMED') {
+          void savePendingPairingContext({
+            deviceId,
+            serialNumber: params.serialNumber,
+            provisioningAttemptId: params.provisioningAttemptId,
+          });
           navigation.navigate(ROUTES.PairRenameScreen, {
             deviceId,
             serialNumber: params.serialNumber,
@@ -158,15 +164,13 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   );
 }
 
-function canRecoverLateBleClaim(params: Props['route']['params']): params is FailureParams & {
+function canRecoverLateClaim(params: Props['route']['params']): params is FailureParams & {
   deviceId: string;
   serialNumber: string;
   provisioningAttemptId: string;
-  provisioningTransport: 'ble';
 } {
   return !!(
-    params?.provisioningTransport === 'ble'
-    && params.deviceId
+    params?.deviceId
     && params.serialNumber
     && params.provisioningAttemptId
     && !params.code

@@ -59,6 +59,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           deviceId: attempt.deviceId,
           provisioningAttemptId: attempt.provisioningAttemptId,
           bleDeviceId: chosen.candidate.id,
+          provisioningTransport: 'ble',
         });
       } catch (error) {
         if (cancelledRef.current) return;
@@ -267,7 +268,11 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           </Svg>
         </Box>
         <Text fontWeight="600" style={styles.heading}>Looking nearby…</Text>
-        <Text style={styles.sub}>Make sure Robot is within 3 meters and showing a face.</Text>
+        <Text style={styles.sub}>
+          {reconnectMode
+            ? 'Hold the top button for 5 seconds to open setup mode, then keep Robot within 3 meters.'
+            : 'Make sure Robot is in setup mode and within 3 meters of your phone.'}
+        </Text>
         <TouchableOpacity onPress={cancelSearchToFailed} style={{ marginTop: 20 }}>
           <Text fontWeight="500" style={styles.link}>I don't see my Robot</Text>
         </TouchableOpacity>

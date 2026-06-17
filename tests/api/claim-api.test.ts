@@ -90,7 +90,13 @@ describe('zero-code claim API client', () => {
       expiresAt: null,
       failureCode: null,
     });
-    expect(get).toHaveBeenCalledWith('/claim/status/claim_01HXYZ');
+    expect(get).toHaveBeenCalledWith('/claim/status/claim_01HXYZ', {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, max-age=0',
+        Pragma: 'no-cache',
+      },
+      params: expect.objectContaining({ t: expect.any(String) }),
+    });
   });
 
   it('propagates claim request failures unchanged for downstream mapping', async () => {

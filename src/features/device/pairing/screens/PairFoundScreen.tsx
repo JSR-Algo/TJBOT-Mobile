@@ -12,6 +12,7 @@ import { ROUTES } from '@/navigation/routes';
 import { CLAIM_COPY } from '../claimCopy';
 import { describeClaimFailure, type ClaimStatusDescriptor } from '../claimStatus';
 import { putPairingBootstrapToken } from '../pairingSecretHandoff';
+import { savePendingPairingContext } from '../pendingPairingContext';
 import { useZeroCodeClaimFlow } from '../useZeroCodeClaimFlow';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
 import { requestClaim } from '@/services/api/claim.api';
@@ -48,6 +49,11 @@ export default function PairFoundScreen({ navigation, route }: Props) {
     deviceId,
     bleDevice,
     onConnected: (result) => {
+      void savePendingPairingContext({
+        deviceId: result.deviceId,
+        serialNumber,
+        provisioningAttemptId: provisioningAttemptId ?? '',
+      });
       navigation.navigate(ROUTES.PairRenameScreen, {
         deviceId: result.deviceId,
         serialNumber,
@@ -81,6 +87,11 @@ export default function PairFoundScreen({ navigation, route }: Props) {
             throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
           }
           if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
+            void savePendingPairingContext({
+              deviceId: claimed.deviceId || deviceId,
+              serialNumber,
+              provisioningAttemptId: claimed.claimId,
+            });
             navigation.navigate(ROUTES.PairRenameScreen, {
               deviceId: claimed.deviceId || deviceId,
               serialNumber,

@@ -288,6 +288,7 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       provisioningAttemptId: 'attempt-1',
       bleDeviceId: 'TBT-2026-004217',
+      provisioningTransport: 'ble',
     });
   });
 
@@ -556,6 +557,7 @@ describe('mobile UX redesign accessibility coverage', () => {
       password: 'secret123',
       code: '123456',
       token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+      deviceId: 'device-1',
     }));
     expect(apiMocks.confirmLocalBlePaired).toHaveBeenCalledWith({
       deviceId: 'device-1',
@@ -644,6 +646,8 @@ describe('mobile UX redesign accessibility coverage', () => {
       ssid: 'Casa Wi-Fi',
       password: 'secret123',
       token: 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC',
+      code: undefined,
+      deviceId: 'device-1',
     }));
     expect(apiMocks.confirmLocalBlePaired).not.toHaveBeenCalled();
     expect(apiMocks.mintBootstrapToken).not.toHaveBeenCalled();
@@ -687,6 +691,8 @@ describe('mobile UX redesign accessibility coverage', () => {
       ssid: 'Casa Wi-Fi',
       password: 'secret123',
       token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+      code: undefined,
+      deviceId: 'device-1',
     }));
     expect(apiMocks.confirmLocalBlePaired).not.toHaveBeenCalled();
     await expect(screen.findByText('Robot authenticated')).resolves.toBeTruthy();
@@ -736,6 +742,8 @@ describe('mobile UX redesign accessibility coverage', () => {
       ssid: 'Casa Wi-Fi',
       password: 'secret123',
       token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+      code: undefined,
+      deviceId: 'device-1',
     }));
     await waitFor(() => expect(claimMocks.getClaimStatus).toHaveBeenCalledWith('claim-1'));
     await expect(screen.findByText('Robot authenticated')).resolves.toBeTruthy();

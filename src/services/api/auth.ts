@@ -44,3 +44,17 @@ export async function sendConsent(stripeToken?: string): Promise<void> {
     timestamp: new Date().toISOString(),
   });
 }
+
+export type AiVoiceConsentPayload = {
+  consent_version: string;
+  google_subprocessors_version: string;
+};
+
+export type AiVoiceConsentResponse = {
+  consent_id: string;
+};
+
+export async function recordAiVoiceConsent(payload: AiVoiceConsentPayload): Promise<AiVoiceConsentResponse> {
+  const response = await client.post('/identity/ai-voice-consent', payload);
+  return response.data.data ?? response.data;
+}

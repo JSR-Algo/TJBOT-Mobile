@@ -1,4 +1,4 @@
-import { BLE_CONFIG, BLE_SCAN_SERVICE_UUIDS, isAllowlistedDevice } from '../../src/services/ble/config';
+import { BLE_CONFIG, BLE_SCAN_SERVICE_UUIDS, isAllowlistedCandidate, isAllowlistedDevice } from '../../src/services/ble/config';
 
 /**
  * Round-2 gap-fill suite for src/services/ble/config.ts.
@@ -146,6 +146,38 @@ describe('isAllowlistedDevice — BluFi service-UUID fallback (name lacks prefix
         '  0000FFFF-0000-1000-8000-00805F9B34FB  ',
       ]),
     ).toBe(true);
+  });
+});
+
+describe('isAllowlistedCandidate — Android raw advertisement fallback', () => {
+  test('admits a robot when Android exposes the TBOT local name only inside rawScanRecord', () => {
+    expect(isAllowlistedCandidate({
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: null,
+      localName: null,
+      serviceUUIDs: [],
+      rawScanRecord: 'BglUQk9ULQ==',
+    })).toBe(true);
+  });
+
+  test('admits a robot when Android exposes the BluFi UUID only inside rawScanRecord', () => {
+    expect(isAllowlistedCandidate({
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: null,
+      localName: null,
+      serviceUUIDs: [],
+      rawScanRecord: 'AwP//w==',
+    })).toBe(true);
+  });
+
+  test('blocks unrelated raw advertisements', () => {
+    expect(isAllowlistedCandidate({
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: null,
+      localName: null,
+      serviceUUIDs: [],
+      rawScanRecord: 'BAlTcGVha2Vy',
+    })).toBe(false);
   });
 });
 

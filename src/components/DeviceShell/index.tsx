@@ -26,6 +26,8 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
     <ScrollView
       testID={scrollTestID}
       style={[styles.root, { backgroundColor: DV.bg }]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       <Box
         testID={screenTestID}

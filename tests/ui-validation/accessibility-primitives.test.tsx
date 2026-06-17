@@ -138,6 +138,17 @@ describe('design-system accessibility primitives', () => {
     expect(parentScroll).toContain('"height":44');
   });
 
+  it('keeps DeviceShell taps available for text inputs inside the scroll view', () => {
+    const tree = renderSnapshot(
+      <DeviceShell title="Robot">
+        <Text>Body</Text>
+      </DeviceShell>,
+    );
+
+    expect(tree).toContain('"keyboardShouldPersistTaps":"handled"');
+    expect(tree).toContain('"keyboardDismissMode":"on-drag"');
+  });
+
   it('labels shared rows and cards used as navigation controls', () => {
     const row = renderSnapshot(
       <DeviceRow title="Wi-Fi" body="Robot network settings" onClick={() => undefined} />,

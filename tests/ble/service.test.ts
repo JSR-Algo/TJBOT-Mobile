@@ -132,6 +132,30 @@ describe('BLE service', () => {
     expect(mockStopDeviceScan).toHaveBeenCalled();
   });
 
+  test('scans Android raw advertisements when name and service UUID fields are empty', async () => {
+    mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => {
+      listener(null, {
+        id: 'AA:BB:CC:DD:EE:FF',
+        name: null,
+        localName: null,
+        serviceUUIDs: [],
+        rawScanRecord: 'BglUQk9ULQ==',
+      });
+      listener(null, {
+        id: 'ZZ:00:11:22:33:44',
+        name: null,
+        localName: null,
+        serviceUUIDs: [],
+        rawScanRecord: 'BAlTcGVha2Vy',
+      });
+    });
+
+    const result = await scanForTJBotDevices(1);
+
+    expect(result.allowed.map((d) => d.id)).toEqual(['AA:BB:CC:DD:EE:FF']);
+    expect(result.blocked.map((d) => d.id)).toEqual(['ZZ:00:11:22:33:44']);
+  });
+
   test('sends Wi-Fi credentials through a local BLE write instead of an HTTP bridge', async () => {
     const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
     const cancelConnection = jest.fn().mockResolvedValue(undefined);
@@ -317,6 +341,48 @@ describe('BLE service', () => {
     expect(writes[0]).toEqual(expect.arrayContaining([0x01, token.length]));
     expect(writes.some((frame) => frame[0] === 0x08 || frame[0] === 0x09 || frame[0] === 0x0d)).toBe(false);
     expect(cancelConnection).toHaveBeenCalled();
+  });
+
+  test('pushes the claim device_id as TLV tag 0x03 alongside the token when provided', async () => {
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      cancelConnection,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      cancelConnection,
+    });
+
+    const token = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+    const deviceId = '4206ee1a-1f1b-4437-9401-9ca2bc4adc69';
+
+    await sendClaimBootstrapTokenViaBle({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      token,
+      deviceId,
+      connectDevice: connect,
+    });
+
+    // Reassemble the custom-data TLV stream from the (possibly fragmented) frames:
+    // each frame is [type, frameControl, seq, dataLen, ...data]; a FRAGMENT(0x10)
+    // frame prefixes its chunk with a 2-byte total-length.
+    const FRAGMENT = 0x10;
+    const tlv: number[] = [];
+    for (const call of writeCharacteristicWithResponseForService.mock.calls) {
+      const frame = decodeBase64(call[2] as string);
+      const data = frame.slice(4);
+      tlv.push(...((frame[1] & FRAGMENT) ? data.slice(2) : data));
+    }
+    const idBytes = asciiBytes(deviceId);
+    const expected = [0x03, idBytes.length, ...idBytes];
+    const found = tlv.some((_, i) => expected.every((b, j) => tlv[i + j] === b));
+    expect(found).toBe(true);
+    // token TLV (tag 0x01) is still first
+    expect(tlv[0]).toBe(0x01);
+    expect(tlv[1]).toBe(token.length);
   });
 
   test('retries claim bootstrap token delivery after a transient BLE write failure', async () => {

@@ -241,6 +241,7 @@ describe('useZeroCodeClaimFlow reliability UX', () => {
     expect(mockedSendClaimBootstrapTokenViaBle).toHaveBeenCalledWith({
       device: BLE_DEVICE,
       token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+      deviceId: 'dev_1',
     });
     expect(mockedSendClaimBootstrapTokenViaBle.mock.invocationCallOrder[0]).toBeLessThan(
       mockedGetClaimStatus.mock.invocationCallOrder[0],

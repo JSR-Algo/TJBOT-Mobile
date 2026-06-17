@@ -21,6 +21,12 @@ import TrustScreen from '../../src/features/onboarding/screens/TrustScreen';
 import MicAskScreen from '../../src/features/onboarding/screens/MicAskScreen';
 import FirstLessonEntryScreen from '../../src/features/onboarding/screens/FirstLessonEntryScreen';
 import { ROUTES } from '../../src/navigation/routes';
+import * as authApi from '../../src/services/api/auth';
+
+jest.mock('../../src/services/api/auth', () => ({
+  sendConsent: jest.fn(async () => undefined),
+  recordAiVoiceConsent: jest.fn(async () => ({ consent_id: 'voice-consent-1' })),
+}));
 
 const mockNavigate = jest.fn();
 const mockReplace = jest.fn();
@@ -41,8 +47,7 @@ const mockNav = {
   getState: () => ({} as never),
   addListener: jest.fn(() => jest.fn()),
   removeListener: jest.fn(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-} as any;
+} as never;
 
 const mockRoute = { key: 'test', name: 'TestRoute', params: undefined };
 
@@ -229,28 +234,40 @@ describe('TrustScreen', () => {
 // ─── MicAskScreen ────────────────────────────────────────────────────────────
 
 describe('MicAskScreen', () => {
-  it('renders Continue + Not now CTAs', () => {
+  it('renders Continue without a skip CTA', () => {
     const { getByText } = render(
       <MicAskScreen navigation={mockNav} route={mockRoute as never} />
     );
     expect(getByText('Continue')).toBeTruthy();
-    expect(getByText('Not now')).toBeTruthy();
+    expect(() => getByText('Not now')).toThrow();
   });
 
-  it('navigates to FirstLessonEntryScreen when Not now pressed', () => {
+  it('records AI voice consent before navigating to FirstLessonEntryScreen', async () => {
     const { getByText } = render(
       <MicAskScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Not now'));
+    await act(async () => {
+      fireEvent.press(getByText('Continue'));
+    });
+    expect(authApi.recordAiVoiceConsent).toHaveBeenCalledWith({
+      consent_version: 'ai-voice-google-v1',
+      google_subprocessors_version: 'google-subprocessors-v1',
+    });
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.FirstLessonEntryScreen);
   });
 
-  it('navigates to FirstLessonEntryScreen when Continue pressed', () => {
-    const { getByText } = render(
+  it('blocks onboarding when AI voice consent cannot be saved', async () => {
+    jest.mocked(authApi.recordAiVoiceConsent).mockRejectedValueOnce(new Error('consent failed'));
+    const { getByText, findByText } = render(
       <MicAskScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Continue'));
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.FirstLessonEntryScreen);
+
+    await act(async () => {
+      fireEvent.press(getByText('Continue'));
+    });
+
+    expect(await findByText('Consent must be saved before voice setup can continue.')).toBeTruthy();
+    expect(mockNavigate).not.toHaveBeenCalledWith(ROUTES.FirstLessonEntryScreen);
   });
 });
 

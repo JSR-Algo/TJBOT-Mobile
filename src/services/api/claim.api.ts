@@ -130,6 +130,13 @@ function normalizeClaimStatus(dto: ClaimStatusResponseDto | undefined): ClaimSta
 export async function getClaimStatus(claimId: string): Promise<ClaimStatusResult> {
   const response = await client.get<ClaimStatusResponseDto>(
     `/claim/status/${encodeURIComponent(claimId)}`,
+    {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, max-age=0',
+        Pragma: 'no-cache',
+      },
+      params: { t: Date.now().toString() },
+    },
   );
   return normalizeClaimStatus(response.data);
 }
