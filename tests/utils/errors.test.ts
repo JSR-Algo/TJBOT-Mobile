@@ -62,4 +62,60 @@ describe('normalizeError', () => {
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(typeof result.message).toBe('string');
   });
+
+  it('preserves retryable, retryAfterSeconds, and traceId from root shape', () => {
+    const result = normalizeError({
+      response: {
+        status: 429,
+        headers: { 'retry-after': '120' },
+        data: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Too many requests',
+          retryable: true,
+          traceId: 'trace-abc',
+        },
+      },
+    });
+    expect(result.code).toBe('RATE_LIMIT_EXCEEDED');
+    expect(result.retryable).toBe(true);
+    expect(result.retryAfterSeconds).toBe(120);
+    expect(result.traceId).toBe('trace-abc');
+  });
+
+  it('preserves retryable, retryAfterSeconds, and traceId from nested error shape', () => {
+    const result = normalizeError({
+      response: {
+        status: 503,
+        headers: { 'Retry-After': '60' },
+        data: {
+          error: { code: 'SERVICE_UNAVAILABLE', message: 'Down for maintenance', retryable: true },
+          meta: { correlation_id: 'corr-xyz' },
+        },
+      },
+    });
+    expect(result.code).toBe('SERVICE_UNAVAILABLE');
+    expect(result.retryable).toBe(true);
+    expect(result.retryAfterSeconds).toBe(60);
+    expect(result.traceId).toBe('corr-xyz');
+  });
+
+  it('maps new backend auth/device codes to user-facing messages', () => {
+    const codes = [
+      'AUTH_REFRESH_REUSE',
+      'AUTH_TOKEN_EXPIRED',
+      'ACCOUNT_LOCKED',
+      'DEVICE_NOT_OWNED',
+      'DEVICE_NOT_CLAIMED',
+      'PAYMENT_FAILED',
+      'TOKEN_ALREADY_USED',
+      'TOKEN_EXPIRED',
+    ];
+    for (const code of codes) {
+      const result = normalizeError({
+        response: { status: 400, data: { error: { code } } },
+      });
+      expect(result.code).toBe(code);
+      expect(result.message).not.toBe(ERROR_MESSAGES.UNKNOWN_ERROR);
+    }
+  });
 });

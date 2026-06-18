@@ -10,6 +10,8 @@ import {
   sendCourseToRobot,
   unlockCourse,
 } from '@/services/api/course-library.api';
+import { getDeviceStatus } from '@/services/api/device.api';
+import { useHousehold } from '@/contexts/HouseholdContext';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 
 jest.mock('@/services/api/course-library.api', () => ({
@@ -18,9 +20,19 @@ jest.mock('@/services/api/course-library.api', () => ({
   getRobotSyncStatus: jest.fn(),
 }));
 
+jest.mock('@/services/api/device.api', () => ({
+  getDeviceStatus: jest.fn(),
+}));
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  ...jest.requireActual('@/contexts/HouseholdContext'),
+  useHousehold: jest.fn(),
+}));
+
 const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockedSendCourseToRobot = sendCourseToRobot as jest.MockedFunction<typeof sendCourseToRobot>;
 const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
+const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 
 function navigationFor() {
   return {
@@ -103,7 +115,16 @@ describe('course-library flow guards', () => {
   });
 
   it('does not show robot-ready success when send-to-robot mutation fails', async () => {
+    (useHousehold as jest.Mock).mockReturnValue({
+      children: [{ id: 'child_123', name: 'Milo' }],
+    });
     mockedSendCourseToRobot.mockRejectedValueOnce(new Error('sync route unavailable'));
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev_123',
+      name: 'TBOT',
+      online: true,
+      batteryPercent: 80,
+    });
     const navigation = navigationFor();
     render(
       <SendToRobotScreen
@@ -116,9 +137,9 @@ describe('course-library flow guards', () => {
       fireEvent.press(screen.getByText('Send to Robot'));
     });
 
-    expect(mockedSendCourseToRobot).toHaveBeenCalledWith('c_food');
+    expect(mockedSendCourseToRobot).toHaveBeenCalledWith('c_food', 'dev_123', 'child_123', expect.any(String));
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
-    expect(screen.getByText('Robot sync is unavailable. Try again when Robot is online.')).toBeTruthy();
+    expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeTruthy();
   });
 
   it('checks sync status before leaving NeedsSync', async () => {

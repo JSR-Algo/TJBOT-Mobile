@@ -2,6 +2,7 @@ export type { Order, OrderParams } from './purchase.api';
 export { createOrder, getOrder } from './purchase.api';
 export { pushCourseToDevice } from './device.api';
 import client from '@/services/http/client';
+import { attachRequestIdHeader } from '@/services/http/idempotency';
 import { backendContractUnavailable } from './undocumented-api-routes';
 
 export interface LibraryItem {
@@ -97,12 +98,30 @@ export async function purchaseCourse(_courseId: string): Promise<void> {
   backendContractUnavailable(`purchaseCourse:${_courseId}`);
 }
 
-export async function unlockCourse(courseId: string): Promise<void> {
-  await client.post(`/course-library/${courseId}/unlock`);
+export async function unlockCourse(courseId: string, requestId?: string): Promise<void> {
+  const url = `/course-library/${courseId}/unlock`;
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  if (headers) {
+    await client.post(url, {}, { headers });
+  } else {
+    await client.post(url, {});
+  }
 }
 
-export async function sendCourseToRobot(courseId: string): Promise<void> {
-  await client.post(`/course-library/${courseId}/send-to-robot`);
+export async function sendCourseToRobot(
+  courseId: string,
+  deviceId: string,
+  childId: string,
+  requestId?: string,
+): Promise<void> {
+  const url = `/course-library/${courseId}/send-to-robot`;
+  const payload = { device_id: deviceId, child_id: childId };
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  if (headers) {
+    await client.post(url, payload, { headers });
+  } else {
+    await client.post(url, payload);
+  }
 }
 
 export async function getRobotSyncStatus(courseId: string): Promise<RobotSyncStatus> {

@@ -99,6 +99,12 @@ describe('device API client', () => {
 
     await expect(unpairDevice('device-3')).resolves.toBeUndefined();
     expect(deleteRequest).toHaveBeenCalledWith('/devices/device-3');
+
+    deleteRequest.mockClear();
+    await unpairDevice('device-3', 'req-xyz');
+    expect(deleteRequest).toHaveBeenCalledWith('/devices/device-3', {
+      headers: { 'X-Request-Id': 'req-xyz' },
+    });
   });
 
   it('claims a BLE-discovered device through the documented claim route', async () => {
@@ -127,6 +133,27 @@ describe('device API client', () => {
     expect(post).toHaveBeenCalledWith('/devices/claim', {
       serial_number: 'TJBot-0001',
       ble_code: '4721',
+    });
+
+    post.mockClear();
+    post.mockResolvedValueOnce({
+      data: {
+        device_id: 'device-4',
+        household_id: 'household-1',
+        state: 'CLAIMED',
+      },
+    });
+    await pairDevice({
+      serialNumber: 'TJBot-0001',
+      code: '4721',
+      wifiSsid: 'Casa',
+      wifiPassword: 'secret-pass',
+    }, 'req-pair');
+    expect(post).toHaveBeenCalledWith('/devices/claim', {
+      serial_number: 'TJBot-0001',
+      ble_code: '4721',
+    }, {
+      headers: { 'X-Request-Id': 'req-pair' },
     });
   });
 

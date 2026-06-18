@@ -1,4 +1,5 @@
 import client from '@/services/http/client';
+import { attachRequestIdHeader } from '@/services/http/idempotency';
 
 import {
   backendContractUnavailable,
@@ -71,11 +72,15 @@ function normalizeDevice(dto: Device): DeviceStatus {
   };
 }
 
-export async function pairDevice(params: PairDeviceParams): Promise<{ deviceId: string }> {
-  const response = await client.post<{ device_id: string }>('/devices/claim', {
-    serial_number: params.serialNumber,
-    ble_code: params.code,
-  });
+export async function pairDevice(
+  params: PairDeviceParams,
+  requestId?: string,
+): Promise<{ deviceId: string }> {
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  const body = { serial_number: params.serialNumber, ble_code: params.code };
+  const response = headers
+    ? await client.post<{ device_id: string }>('/devices/claim', body, { headers })
+    : await client.post<{ device_id: string }>('/devices/claim', body);
   return { deviceId: response.data.device_id };
 }
 
@@ -108,8 +113,13 @@ export async function setDeviceWifi(
   backendContractUnavailable(`setDeviceWifi:${_deviceId}:${_ssid}:${_password.length}`);
 }
 
-export async function unpairDevice(deviceId: string): Promise<void> {
-  await client.delete(`/devices/${deviceId}`);
+export async function unpairDevice(deviceId: string, requestId?: string): Promise<void> {
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  if (headers) {
+    await client.delete(`/devices/${deviceId}`, { headers });
+  } else {
+    await client.delete(`/devices/${deviceId}`);
+  }
 }
 
 export async function pushCourseToDevice(_deviceId: string, _courseId: string): Promise<void> {

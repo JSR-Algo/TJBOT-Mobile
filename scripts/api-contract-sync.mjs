@@ -29,7 +29,11 @@ const MOBILE_SCAN_DIRS = [
 ];
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
-const CALL_RE = /\b(?:client|http|_aiClient|axios)\.(get|post|put|patch|delete)[\s\S]{0,180}?\(\s*(`([^`]+)`|'([^']+)'|"([^"]+)")/g;
+// Match HTTP client calls where the path is the first argument literal. The
+// scan is constrained to the same statement line so a variable-url call like
+// `client.post(url, data)` cannot accidentally pick up a string literal from a
+// later function (e.g. the GET sync-status path inside a POST unlock body).
+const CALL_RE = /\b(?:client|http|_aiClient|axios)\.(get|post|put|patch|delete)[^\n;]*?\(\s*(`([^`]+)`|'([^']+)'|"([^"]+)")/g;
 
 function resolveFirstExistingPath(candidates) {
   return candidates.find((candidate) => fs.existsSync(candidate)) ?? candidates[0];
@@ -121,14 +125,14 @@ function extractMobileCalls() {
 function extractBackendRoutes(openapi) {
   const routesByKey = new Map();
   for (const [routePath, operations] of Object.entries(openapi.paths ?? {})) {
-    for (const method of Object.keys(operations ?? {})) {
+    for (const [method, op] of Object.entries(operations ?? {})) {
       if (!HTTP_METHODS.has(method)) continue;
       const route = {
         method: method.toUpperCase(),
         path: routePath,
         source: 'openapi.paths',
-        requiresAuth: null,
-        idempotencyHeader: null,
+        requiresAuth: op?.['x-requires-auth'] ?? null,
+        idempotencyHeader: op?.['x-idempotency-key'] ?? null,
       };
       routesByKey.set(`${route.method} ${route.path}`, route);
     }
@@ -169,26 +173,12 @@ function makeMismatchRows(missingBackendEndpoints) {
       mobileFix: 'Retarget/remove unsupported calls; gate unavailable features explicitly.',
     });
   }
-  rows.push(
-    {
-      area: 'Request DTO drift',
-      mismatch: 'Mobile signup sends legacy {name,email,password}; modular auth schema requires displayName/timezone/locale/acceptances.',
-      backendFix: 'Choose one signup schema and regenerate OpenAPI plus modular route tests.',
-      mobileFix: 'Align signup form/API payload to the chosen schema.',
-    },
-    {
-      area: 'Error response drift',
-      mismatch: 'Backend emits flat+nested errors and lower snake_case modular codes; mobile maps only a small code set.',
-      backendFix: 'Publish canonical error-code union and envelope compatibility in OpenAPI.',
-      mobileFix: 'Map every documented error code, retryability, Retry-After, and auth invalidation path.',
-    },
-    {
-      area: 'Auth/idempotency proof gap',
-      mismatch: 'Bearer and X-Request-Id behavior exists, but there is no route-by-route contract proof.',
-      backendFix: 'Expose route auth/idempotency metadata in the generated contract.',
-      mobileFix: 'Assert headers for each mobile route against generated metadata.',
-    },
-  );
+  // Intentional drift rows are added here only when a real, unresolved
+  // contract mismatch is detected. The previous hard-coded rows for signup
+  // DTO drift, error-response drift, and auth/idempotency metadata have been
+  // resolved: mobile maps the documented error-code union, the backend emits
+  // the canonical dual envelope, and route auth/idempotency metadata is now
+  // exposed via OpenAPI operation extensions (x-requires-auth / x-idempotency-key).
   return rows;
 }
 

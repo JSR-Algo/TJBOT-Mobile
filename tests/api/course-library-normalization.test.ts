@@ -98,9 +98,26 @@ describe('course-library API', () => {
 
     mockedClient.post.mockResolvedValue({ data: { data: { courseId: 'c_food' } } });
     await unlockCourse('c_food');
-    await sendCourseToRobot('c_food');
-    expect(mockedClient.post).toHaveBeenCalledWith('/course-library/c_food/unlock');
-    expect(mockedClient.post).toHaveBeenCalledWith('/course-library/c_food/send-to-robot');
+    await sendCourseToRobot('c_food', 'device-123', 'child-123');
+    expect(mockedClient.post).toHaveBeenCalledWith('/course-library/c_food/unlock', {});
+    expect(mockedClient.post).toHaveBeenCalledWith('/course-library/c_food/send-to-robot', {
+      device_id: 'device-123',
+      child_id: 'child-123',
+    });
+
+    mockedClient.post.mockClear();
+    await sendCourseToRobot('c_food', 'device-123', 'child-123', 'req-abc');
+    await unlockCourse('c_food', 'req-abc');
+    expect(mockedClient.post).toHaveBeenCalledWith(
+      '/course-library/c_food/send-to-robot',
+      { device_id: 'device-123', child_id: 'child-123' },
+      { headers: { 'X-Request-Id': 'req-abc' } },
+    );
+    expect(mockedClient.post).toHaveBeenCalledWith(
+      '/course-library/c_food/unlock',
+      {},
+      { headers: { 'X-Request-Id': 'req-abc' } },
+    );
 
     mockedClient.get.mockResolvedValueOnce({ data: { data: { course_id: 'c_food', synced: false } } });
     await getRobotSyncStatus('c_food');

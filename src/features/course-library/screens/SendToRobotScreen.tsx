@@ -9,6 +9,10 @@ import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { useHousehold } from '@/contexts/HouseholdContext';
+import { useRequestId } from '@/services/http/idempotency';
+import { getDeviceStatus } from '@/services/api/device.api';
+import { normalizeError } from '@/utils/errors';
 import CL from '../components/CL';
 import LCDPreview from '../components/LCDPreview';
 import { sendCourseToRobot } from '@/services/api/course-library.api';
@@ -25,14 +29,25 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? 'c_food';
   const [pick, setPick] = React.useState(0);
   const [syncError, setSyncError] = React.useState<string | null>(null);
+  const { children } = useHousehold();
+  const activeChild = children[0] ?? null;
+  const requestId = useRequestId();
 
   const handleSend = async () => {
     setSyncError(null);
     try {
-      await sendCourseToRobot(courseId);
+      const [device, childId] = await Promise.all([
+        getDeviceStatus('primary'),
+        Promise.resolve(activeChild?.id),
+      ]);
+      if (!device?.id || !childId) {
+        setSyncError('Please finish child setup and pair Robot before sending a course.');
+        return;
+      }
+      await sendCourseToRobot(courseId, device.id, childId, requestId ?? undefined);
       navigation.navigate(ROUTES.RobotReadyScreen, { courseId });
-    } catch {
-      setSyncError('Robot sync is unavailable. Try again when Robot is online.');
+    } catch (err) {
+      setSyncError(normalizeError(err).message);
     }
   };
   return (

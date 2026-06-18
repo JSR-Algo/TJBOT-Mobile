@@ -36,7 +36,7 @@ module.exports = {
       launchArgs: {
         TBOT_API_URL: process.env.E2E_IOS_API_URL || 'http://localhost:3000',
         TBOT_AI_URL: process.env.E2E_IOS_AI_URL || 'http://localhost:3001',
-        WS_URL: process.env.E2E_IOS_WS_URL || 'ws://localhost:3000',
+        WS_URL: process.env.E2E_IOS_WS_URL,
         voiceHarness: VOICE_HARNESS,
       },
     },
@@ -49,7 +49,7 @@ module.exports = {
       launchArgs: {
         TBOT_API_URL: process.env.E2E_ANDROID_API_URL || 'http://10.0.2.2:3000',
         TBOT_AI_URL: process.env.E2E_ANDROID_AI_URL || 'http://10.0.2.2:3001',
-        WS_URL: process.env.E2E_ANDROID_WS_URL || 'ws://10.0.2.2:3000',
+        WS_URL: process.env.E2E_ANDROID_WS_URL,
         voiceHarness: VOICE_HARNESS,
       },
     },

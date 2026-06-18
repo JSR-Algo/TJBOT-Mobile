@@ -1,4 +1,5 @@
 import client from '../http/client';
+import { attachRequestIdHeader } from '../http/idempotency';
 import {
   FeatureSubscriptionDisabledError,
   isSubscriptionFeatureEnabled,
@@ -220,8 +221,14 @@ export async function getShippingStatus(orderId: string): Promise<ShippingStatus
   return mapShippingStatus(unwrap<RawShippingStatus>(response));
 }
 
-export async function activateRobot(activationCode: string): Promise<void> {
-  await client.post('/devices/activate', { activation_code: activationCode });
+export async function activateRobot(activationCode: string, requestId?: string): Promise<void> {
+  const payload = { activation_code: activationCode };
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  if (headers) {
+    await client.post('/devices/activate', payload, { headers });
+  } else {
+    await client.post('/devices/activate', payload);
+  }
 }
 
 export async function createCheckoutSession(

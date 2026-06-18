@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const args = process.argv.slice(2);
-const PARENT_PIN = '4729';
+const PARENT_PIN = '0000';
 const DEFAULT_LOCAL_API_URL = 'http://127.0.0.1:3000';
 const DEFAULT_LOCAL_AI_URL = 'http://127.0.0.1:3001/api/ai';
 const OPENAPI_RELATIVE_PATH = 'migrate-ui-ux-to-mobile-app-docs/api/openapi.json';
@@ -112,7 +112,7 @@ async function seedParentPin() {
   if (!databaseUrl) {
     return { ok: false, backendBlockers: ['parent PIN provisioning is unavailable: PIN_INCORRECT'] };
   }
-  const sql = 'insert into parent_pins (user_id, bcrypt_hash) values ($1, $2) on conflict (user_id) do update set bcrypt_hash = excluded.bcrypt_hash';
+  const sql = 'insert into parent_pins (household_id, parent_id, pin_hash) values ($1, $2, $3) on conflict (household_id, parent_id) do update set pin_hash = excluded.pin_hash';
   return { ok: true, sql, pin: PARENT_PIN };
 }
 

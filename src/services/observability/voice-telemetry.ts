@@ -197,7 +197,7 @@ export function track(
   const data: Record<string, unknown> = { ...safeFields, platform: Platform.OS };
 
   if (__DEV__) {
-    console.info(`[voice:${category}] ${event}`, safeFields ?? '');
+    console.info('[voice:%s] %s', category, event, safeFields ?? '');
   }
 
   if (Config.QA_MODE) {

@@ -11,6 +11,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
 import { activateRobot } from '@/services/api/purchase.api';
+import { useRequestId } from '@/services/http/idempotency';
 import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivateScreen'>;
@@ -23,6 +24,7 @@ export default function ActivateScreen({ navigation, route }: Props) {
   const vals = code.padEnd(6, '').slice(0, 6).split('');
   const filled = vals.every(Boolean);
   const orderId = route.params?.orderId;
+  const requestId = useRequestId();
 
   const handleKey = (k: string) => {
     if (k === 'CLR') { setCode(''); return; }
@@ -34,7 +36,7 @@ export default function ActivateScreen({ navigation, route }: Props) {
       return;
     }
     setSubmitting(true);
-    await activateRobot(code.toUpperCase());
+    await activateRobot(code.toUpperCase(), requestId ?? undefined);
     navigation.navigate(ROUTES.FirstCourseScreen, orderId ? { orderId } : undefined);
   };
 

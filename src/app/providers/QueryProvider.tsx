@@ -23,7 +23,7 @@ function isClientError(error: unknown): boolean {
 
 function routeQueryError(error: unknown, kind: 'query' | 'mutation'): void {
   if (__DEV__) {
-    console.error(`[QueryProvider] ${kind} error:`, error);
+    console.error('[QueryProvider] %s error:', kind, error);
   }
   // Skip logging expected client/configuration errors; still let callers handle them.
   if (isClientError(error)) return;

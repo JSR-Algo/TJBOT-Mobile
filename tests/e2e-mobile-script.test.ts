@@ -150,11 +150,11 @@ describe('e2e-mobile local production gate', () => {
     const documentedPin =
       openApi.paths?.['/v1/parent/auth']?.post?.requestBody?.content?.['application/json']?.examples?.default?.value?.pin;
 
-    expect(documentedPin).toBe('4729');
+    expect(documentedPin).toBe('0000');
     expect(source).toContain(`PARENT_PIN = '${documentedPin}'`);
     expect(source).toContain('pin: PARENT_PIN');
     expect(source).toContain('seedParentPin');
-    expect(source).toContain('parent_pins');
+    expect(source).toContain('parent_pins (household_id, parent_id, pin_hash)');
   });
 
   it('reports missing local parent PIN provisioning as an explicit backend blocker', () => {
@@ -169,7 +169,7 @@ describe('e2e-mobile local production gate', () => {
     const source = fs.readFileSync(SCRIPT, 'utf8');
 
     expect(source).toContain('seedParentPin');
-    expect(source).toContain('parent_pins (user_id, bcrypt_hash)');
+    expect(source).toContain('parent_pins (household_id, parent_id, pin_hash)');
     expect(source).toContain('TBOT_E2E_DATABASE_URL');
     expect(source).toContain('loadBackendModule');
   });
