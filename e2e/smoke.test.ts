@@ -19,6 +19,7 @@ import {
   completeFirstRunIntroIfVisible,
   dismissSavePasswordPromptIfVisible,
   ensureLoginScreen,
+  tapIdAfterScroll,
 } from './helpers/ui';
 import { assertLocalBackendReady, seedOnboardedAccount, stopLocalMockBackend } from './helpers/localServices';
 
@@ -63,17 +64,13 @@ describe('smoke: login → main tabs', () => {
     } catch {
       // iOS secure fields do not always expose a return key in Detox.
     }
-    if (device.getPlatform() === 'android') {
-      await device.pressBack();
-    } else {
-      try {
-        await element(by.id('loginScreenScroll')).scroll(220, 'down');
-      } catch {
-        // Already positioned at the CTA.
-      }
+    try {
+      await tapIdAfterScroll('submitButton', 'loginScreenScroll');
+    } catch {
+      await element(by.id('appRoot')).swipe('up', 'fast', 0.45);
+      await waitFor(element(by.id('submitButton'))).toExist().withTimeout(5000);
+      await element(by.id('submitButton')).tap();
     }
-    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
-    await element(by.id('submitButton')).tap();
     await dismissSavePasswordPromptIfVisible();
 
     await waitFor(element(by.id('homeTab')))

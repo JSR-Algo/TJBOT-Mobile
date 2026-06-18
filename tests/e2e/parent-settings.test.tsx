@@ -105,7 +105,7 @@ const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHouseho
 // Query + HouseholdContext; this helper supplies the query client for those
 // screens (the household + lesson-progress fetch are mocked module-wide).
 function renderWithQuery(ui: React.ReactElement) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 

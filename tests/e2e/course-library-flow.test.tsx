@@ -11,6 +11,7 @@ import {
   getCourses,
   getCurrentAssignment,
   getRobotSyncStatus,
+  enrollCourse,
   unlockCourse,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
@@ -31,6 +32,7 @@ jest.mock('@/services/api/course-library.api', () => {
     // P4: SendToRobotScreen + CourseDetail/CourseAdded read the published catalog.
     getCourses: jest.fn(),
     getCourseLessons: jest.fn(),
+    enrollCourse: jest.fn(),
   };
 });
 
@@ -43,6 +45,7 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 }));
 
 const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
+const mockedEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
@@ -99,7 +102,11 @@ describe('course-library flow guards', () => {
   });
 
   it('passes course id into the added screen after parent unlock succeeds', async () => {
-    mockedUnlockCourse.mockResolvedValueOnce(undefined);
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedEnrollCourse.mockResolvedValueOnce({
+      enrollment: { id: 'enr-1', courseId: 'c_food', childId: 'ch-1', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: null },
+      assignment: { id: 'asg-1', lessonId: 'lesson-1', lessonVersion: 1, state: 'ASSIGNED' },
+    });
     const navigation = navigationFor();
     render(
       <UnlockConfirmModal
@@ -115,8 +122,10 @@ describe('course-library flow guards', () => {
       fireEvent.press(screen.getByText('Confirm add'));
     });
 
-    expect(mockedUnlockCourse).toHaveBeenCalledWith('c_food');
-    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_food' });
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
+    expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
+    expect(mockedUnlockCourse).not.toHaveBeenCalled();
+    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_food', assignmentId: 'asg-1' });
   });
 
   it('starts the free add path from detail without billing plan selection', () => {

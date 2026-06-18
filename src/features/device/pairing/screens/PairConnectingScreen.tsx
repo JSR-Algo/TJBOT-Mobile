@@ -73,6 +73,16 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     const bootstrapToken = provisioningAttemptId ? getPairingBootstrapToken(provisioningAttemptId) : undefined;
     const canRunBleClaimProvisioning = transport === 'ble' && !!bleDeviceId;
     const canRunBleReconnectProvisioning = transport === 'ble_reconnect' && !!bleDeviceId;
+    logDevPairConnectingEvent('start', {
+      deviceId,
+      serialNumber,
+      provisioningAttemptId,
+      transport,
+      hasBleDeviceId: !!bleDeviceId,
+      hasCode: !!code,
+      hasBootstrapToken: !!bootstrapToken,
+      ssidPresent: !!ssid,
+    });
     if (!ssid || !deviceId || !serialNumber || !provisioningAttemptId || (!code && !canRunBleClaimProvisioning && !canRunBleReconnectProvisioning)) {
       setStatus('failed');
       navigation.navigate(ROUTES.PairFailedScreen, {
@@ -157,6 +167,15 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       });
     }).catch((error: unknown) => {
       if (cancelled) return;
+      const errorCode = errorCodeFrom(error, 'PAIRING_CONNECT_FAILED');
+      logDevPairConnectingEvent('failed', {
+        errorCode,
+        deviceId,
+        serialNumber,
+        provisioningAttemptId: recoveryAttemptId,
+        transport: params?.provisioningTransport,
+        hasBleDeviceId: !!bleDeviceId,
+      });
       setStatus('failed');
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
@@ -166,7 +185,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         ssid,
         bleDeviceId,
         provisioningTransport: params?.provisioningTransport,
-        errorCode: errorCodeFrom(error, 'PAIRING_CONNECT_FAILED'),
+        errorCode,
       });
     }).finally(() => {
       password = '';
@@ -251,6 +270,15 @@ async function runLocalBleProvisioning(params: {
   bootstrapToken?: string;
   credentialOnly?: boolean;
 }): Promise<ProvisioningRunResult> {
+  logDevPairConnectingEvent('local_ble_start', {
+    deviceId: params.deviceId,
+    serialNumber: params.serialNumber,
+    provisioningAttemptId: params.provisioningAttemptId,
+    bleDeviceId: params.bleDeviceId,
+    credentialOnly: params.credentialOnly === true,
+    hasCode: !!params.code,
+    hasBootstrapToken: !!params.bootstrapToken,
+  });
   if (params.credentialOnly) {
     await provisionWifiViaLocalBle({
       device: {
@@ -319,7 +347,19 @@ async function runLocalBleProvisioning(params: {
     deviceId: params.deviceId,
   });
 
+  logDevPairConnectingEvent('local_ble_handoff_complete', {
+    deviceId: params.deviceId,
+    provisioningAttemptId: claimId,
+    completionMode,
+  });
+
   return { deviceId: params.deviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+}
+
+function logDevPairConnectingEvent(stage: string, detail: Record<string, unknown>): void {
+  if (__DEV__) {
+    console.info('[TBOT PairConnecting]', { stage, ...detail });
+  }
 }
 
 // Cancellation handle shared with the poll loops: the effect cleanup flips

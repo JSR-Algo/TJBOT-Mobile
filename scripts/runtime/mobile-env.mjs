@@ -84,6 +84,24 @@ export function createMobileEnv(baseEnv = process.env) {
   return env;
 }
 
+export function createDetoxEnv(platform, baseEnv = process.env) {
+  const env = createMobileEnv(baseEnv);
+  env.E2E_LOCAL_API_URL ||= 'http://127.0.0.1:3300';
+  env.E2E_LOCAL_AI_URL ||= 'http://127.0.0.1:3301/api/ai';
+
+  if (platform === 'android') {
+    env.E2E_ANDROID_API_URL ||= 'http://10.0.2.2:3300';
+    env.E2E_ANDROID_AI_URL ||= 'http://10.0.2.2:3301/api/ai';
+  } else if (platform === 'ios') {
+    env.E2E_IOS_API_URL ||= 'http://127.0.0.1:3300';
+    env.E2E_IOS_AI_URL ||= 'http://127.0.0.1:3301/api/ai';
+  } else {
+    throw new Error(`Unsupported Detox platform: ${platform}`);
+  }
+
+  return env;
+}
+
 export function runtimeSummary(env = createMobileEnv()) {
   return {
     NODE_ENV: env.NODE_ENV || '',

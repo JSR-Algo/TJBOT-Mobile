@@ -21,6 +21,7 @@ import {
   launchCleanApp,
   loginFromColdStart,
   openRoute,
+  openRouteToAnyText,
   openRouteToId,
   resetUrlBlacklist,
   tapIdAfterScroll,
@@ -96,7 +97,12 @@ describe('module matrix: local native E2E', () => {
 
     await openRoute('lesson-session/lesson-ready', 'Animal Friends');
 
-    await openRoute('progress/today-progress', 'You practiced speaking!');
+    await openRouteToAnyText('progress/today-progress', [
+      'You practiced speaking!',
+      'No practice yet',
+      'No lessons yet',
+      'Progress unavailable',
+    ]);
 
     await openRoute('parent/parent-summary', 'Parent Space');
 

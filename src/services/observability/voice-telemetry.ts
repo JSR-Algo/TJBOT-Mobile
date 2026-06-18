@@ -111,6 +111,7 @@ function accumulateAgg(category: VoiceTelemetryCategory, event: string): void {
 // which imports from config.ts. We defer the require until first QA event so
 // the module graph stays acyclic at parse time.
 let _qaFlushScheduled = false;
+let _qaFlushTimer: ReturnType<typeof setTimeout> | null = null;
 const _qaQueue: Array<{ category: string; event: string; fields: Record<string, unknown> }> = [];
 
 const QA_FLUSH_MS = 2_000;
@@ -118,7 +119,8 @@ const QA_FLUSH_MS = 2_000;
 function scheduleQaFlush(): void {
   if (_qaFlushScheduled) return;
   _qaFlushScheduled = true;
-  setTimeout(() => {
+  _qaFlushTimer = setTimeout(() => {
+    _qaFlushTimer = null;
     _qaFlushScheduled = false;
     if (_qaQueue.length === 0) return;
     const batch = _qaQueue.splice(0, _qaQueue.length);
@@ -328,19 +330,37 @@ export function startVoiceTelemetry(): Unsub {
 }
 
 export function stopVoiceTelemetry(): void {
+  clearTelemetryTimers({ flushAggregates: true });
   if (!active) return;
-  // Flush any open aggregator windows before teardown.
-  for (const cat of Object.keys(agg) as VoiceTelemetryCategory[]) {
-    if (aggTimers[cat]) {
-      clearTimeout(aggTimers[cat]);
-    }
-    flushAgg(cat);
-  }
   for (const u of unsubs) {
     try { u(); } catch { /* best-effort */ }
   }
   unsubs = [];
   active = false;
+}
+
+function clearTelemetryTimers(options: { flushAggregates: boolean }): void {
+  for (const cat of Object.keys(aggTimers) as VoiceTelemetryCategory[]) {
+    const timer = aggTimers[cat];
+    if (timer) clearTimeout(timer);
+    delete aggTimers[cat];
+    if (options.flushAggregates) flushAgg(cat);
+    else delete agg[cat];
+  }
+  if (_qaFlushTimer) {
+    clearTimeout(_qaFlushTimer);
+    _qaFlushTimer = null;
+  }
+  _qaFlushScheduled = false;
+}
+
+export function resetVoiceTelemetryForTests(): void {
+  stopVoiceTelemetry();
+  clearTelemetryTimers({ flushAggregates: false });
+  _qaQueue.splice(0, _qaQueue.length);
+  for (const cat of Object.keys(sampleCounters) as VoiceTelemetryCategory[]) {
+    delete sampleCounters[cat];
+  }
 }
 
 /**

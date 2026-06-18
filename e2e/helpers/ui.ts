@@ -15,6 +15,7 @@ const DETOX_PERMISSIONS = {
   microphone: 'YES',
 } as const;
 let hasPerformedCleanInstall = false;
+let hasAttemptedIosPasswordPromptCoordinateDismissal = false;
 const NON_BLANK_SENTINELS = [
   'Get started',
   "Hi! I'm Robot.",
@@ -153,6 +154,7 @@ async function tapFirstVisibleLabel(labels: readonly string[], deadline: number)
 export async function clearIosKeychainForCleanLaunch(): Promise<void> {
   if (device.getPlatform() !== 'ios') return;
   await device.clearKeychain();
+  hasAttemptedIosPasswordPromptCoordinateDismissal = false;
 }
 
 export async function launchCleanApp(): Promise<void> {
@@ -255,8 +257,24 @@ export async function tapIdAfterScroll(id: string, scrollId = 'onboardingScroll'
   await waitFor(target)
     .toBeVisible(visiblePercent)
     .whileElement(by.id(scrollId))
-    .scroll(260, 'down');
+    .scroll(260, 'down', 0.5, 0.5);
   await target.tap();
+}
+
+async function tapTrustContinueButton(): Promise<void> {
+  await tapIdAfterScroll('trustContinueButton', 'onboardingScroll');
+  try {
+    await waitForId('loginScreenScroll', 5000);
+    return;
+  } catch {
+    if (device.getPlatform() !== 'android') {
+      await waitForId('loginScreenScroll', COLD_START_TIMEOUT_MS);
+      return;
+    }
+  }
+
+  await device.tap({ x: 540, y: 1710 });
+  await waitForId('loginScreenScroll', COLD_START_TIMEOUT_MS);
 }
 
 export async function tapFirstVisibleText(labels: readonly string[]): Promise<string> {
@@ -299,11 +317,29 @@ export async function tapId(id: string): Promise<void> {
 export async function dismissSavePasswordPromptIfVisible(): Promise<void> {
   if (device.getPlatform() !== 'ios') return;
   try {
-    await waitFor(element(by.id('homeTab'))).toExist().withTimeout(3000);
-    await new Promise<void>(resolve => setTimeout(resolve, 1000));
-    await device.tap({ x: 300, y: 1270 });
-  } catch {
+    const notNow = element(by.text('Not Now'));
+    await waitFor(notNow).toBeVisible().withTimeout(2000);
+    await notNow.tap();
     return;
+  } catch {
+    // iOS password prompts are system UI and are not always exposed to Detox matchers.
+  }
+
+  if (hasAttemptedIosPasswordPromptCoordinateDismissal) return;
+  hasAttemptedIosPasswordPromptCoordinateDismissal = true;
+
+  await sleep(500);
+  for (const point of [
+    { x: 130, y: 560 },
+    { x: 300, y: 1270 },
+  ]) {
+    try {
+      await device.tap(point);
+      await sleep(500);
+      return;
+    } catch {
+      // Try the next coordinate system used by current and older iOS simulators.
+    }
   }
 }
 
@@ -332,8 +368,7 @@ export async function completeFirstRunIntroIfVisible(timeout = 1500): Promise<vo
   for (let step = 0; step < 4; step += 1) {
     await tapId('introNextButton');
   }
-  await tapId('trustContinueButton');
-  await waitForId('emailInput', COLD_START_TIMEOUT_MS);
+  await tapTrustContinueButton();
 }
 
 async function launchUnauthenticatedApp(clearStoredAuth: boolean): Promise<void> {
@@ -350,6 +385,7 @@ async function launchUnauthenticatedApp(clearStoredAuth: boolean): Promise<void>
 
 async function waitForLoginInput(timeout: number): Promise<boolean> {
   try {
+    await waitForId('loginScreenScroll', timeout);
     await waitForId('emailInput', timeout);
     return true;
   } catch {
@@ -414,8 +450,10 @@ export async function loginFromColdStart(email: string, password: string): Promi
     await waitForId('emailInput', 1500);
     await tapId('submitButton');
   } catch {
+    await dismissSavePasswordPromptIfVisible();
     return;
   }
+  await dismissSavePasswordPromptIfVisible();
 }
 
 export async function completeOnboarding(): Promise<void> {
@@ -426,8 +464,9 @@ export async function completeOnboarding(): Promise<void> {
   } catch {
     // Continue through first-run onboarding when Home is not already available.
   }
+  await dismissSavePasswordPromptIfVisible();
   await waitForText('Pick a buddy and a starting level', COLD_START_TIMEOUT_MS);
-  await tapTextAfterScroll('4 – 6');
+  await tapIdAfterScroll('childAgeBand_PRE_K', 'onboardingScroll', 20);
   await tapIdAfterScroll('childProfileSaveButton');
   await waitForText('Robot needs the mic to listen');
   await tapFirstVisibleText(['Enable microphone', 'Continue', 'Not now']);
@@ -480,6 +519,10 @@ export async function openRoute(path: string, sentinelText: string): Promise<voi
     return;
   }
   await openRouteWithRetry(path, () => expectHealthyVisibleText(sentinelText));
+}
+
+export async function openRouteToAnyText(path: string, sentinelTexts: readonly string[]): Promise<void> {
+  await openRouteWithRetry(path, () => expectFirstVisibleText(sentinelTexts, COLD_START_TIMEOUT_MS));
 }
 
 export async function openRouteToId(path: string, id: string): Promise<void> {

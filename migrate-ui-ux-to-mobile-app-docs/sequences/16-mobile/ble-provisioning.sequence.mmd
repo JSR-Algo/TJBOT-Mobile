@@ -6,7 +6,8 @@ spec_anchor: /software/systems/16-parent-mobile-application#5-3-device-and-provi
 actors: [ParentApp, BLEDevice, Gateway, DeviceService, Device]
 apis:
   - POST /v1/devices/provision/start
-  - GET /v1/devices/:id
+  - POST /v1/devices/provision/connect
+  - GET /v1/devices/provision/:provisioningAttemptId/status
   - POST /v1/devices/provision/complete
 externals: [BLE]
 queues: []
@@ -17,12 +18,12 @@ failure_paths:
   - provision_not_ready
   - wifi_handshake_failed
   - device_status_poll_timeout
-idempotency: provisioningToken issued by /provision/start scopes the BLE session — /provision/complete uses {deviceId, childProfileId} which is naturally idempotent
+idempotency: provisioningAttemptId issued by /provision/start scopes the BLE session — /provision/complete uses {provisioningAttemptId, deviceId, childProfileId} and is guarded by attempt status
 retry: caller-side BLE scan retries on permission/timeout — never auto-retry /provision/complete on 4xx
-timeout: BLE handshake 30s — HTTP calls 10s — Wi-Fi handshake poll up to 60s (5s interval)
+timeout: BLE handshake 30s — HTTP calls 10s — provisioning status poll up to 5 minutes (3s interval)
 status: final
 ---
-%% HAND-CURATED. Normalized from spec sequenceDiagram at 16-parent-mobile-application.md#L397 — Device (Wi-Fi) shown as the cloud-bound peer that mTLS-handshakes after BLE credential write.
+%% HAND-CURATED. Normalized from the current mobile pairing implementation: BLE writes are a local BluFi handoff, but pairing success is cloud-authoritative only after the provisioning attempt reaches device_authenticated and /complete binds the child profile.
 sequenceDiagram
     autonumber
     participant ParentApp
@@ -42,28 +43,32 @@ sequenceDiagram
             BLEDevice-->>ParentApp: serial advert (e.g. TBT-2026-004217)
             ParentApp->>BLEDevice: connect and discover services and read serial char
             BLEDevice-->>ParentApp: serial confirmation
-            ParentApp->>Gateway: POST /v1/devices/provision/start {serialNumber}
+            ParentApp->>Gateway: POST /v1/devices/provision/start {serialNumber, appVersion, phonePlatform}
             Gateway->>DeviceService: forward
             alt already_assigned
                 DeviceService-->>Gateway: 409 already_assigned
                 Gateway-->>ParentApp: 409
             else ready
-                DeviceService-->>Gateway: 200 {provisioningToken, deviceId}
+                DeviceService-->>Gateway: 200 {provisioningAttemptId, deviceId, deviceStatus=provisioning}
                 Gateway-->>ParentApp: 200
-                ParentApp->>BLEDevice: write Wi-Fi credentials to provisioning characteristic
-                BLEDevice-->>ParentApp: ACK
-                Note over BLEDevice,Device: device connects to Wi-Fi, performs mTLS handshake with cloud (sys-02)
-                loop poll every 5s up to 60s
-                    ParentApp->>Gateway: GET /v1/devices/:id
+                ParentApp->>BLEDevice: BluFi negotiate security + optional bootstrap token/code TLV + Wi-Fi credentials
+                BLEDevice-->>ParentApp: optional conn_report success/fail
+                alt wifi_handshake_failed
+                    BLEDevice-->>ParentApp: conn_report fail
+                    ParentApp-->>ParentApp: surface retry-Wi-Fi-credentials prompt
+                else credentials accepted locally
+                    Note over BLEDevice,Device: device joins Wi-Fi, claims the provisioning attempt, then authenticates with cloud
+                end
+                loop poll every 3s up to 5 minutes
+                    ParentApp->>Gateway: GET /v1/devices/provision/:provisioningAttemptId/status
                     Gateway->>DeviceService: forward
-                    DeviceService-->>Gateway: {status: provisioning | online | offline}
+                    DeviceService-->>Gateway: {status: started | ble_paired | device_authenticated | completed | failed | expired}
                     Gateway-->>ParentApp: 200
                 end
-                alt wifi_handshake_failed
-                    Note over ParentApp: status stays "offline" past poll deadline
+                alt status failed or expired or poll timeout
                     ParentApp-->>ParentApp: surface retry-Wi-Fi-credentials prompt
-                else device online
-                    ParentApp->>Gateway: POST /v1/devices/provision/complete {deviceId, childProfileId}
+                else device_authenticated or completed
+                    ParentApp->>Gateway: POST /v1/devices/provision/complete {provisioningAttemptId, deviceId, assignChildProfileId, displayName}
                     Gateway->>DeviceService: forward
                     alt provision_not_ready
                         DeviceService-->>Gateway: 409 not_ready
@@ -77,4 +82,4 @@ sequenceDiagram
         end
     end
 
-    Note over ParentApp,Device: timeout — BLE handshake 30s, HTTP 10s, status poll up to 60s — never auto-retry /provision/complete on 4xx
+    Note over ParentApp,Device: timeout — BLE handshake 30s, HTTP 10s, status poll up to 5 minutes — Wi-Fi password remains in RAM only and is cleared after handoff

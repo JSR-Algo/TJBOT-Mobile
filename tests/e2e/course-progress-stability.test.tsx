@@ -20,10 +20,12 @@ import {
 } from '../../src/services/api/course.api';
 import {
   listLibrary,
+  enrollCourse,
   unlockCourse,
-} from '../../src/services/api/course-library.api';
+} from '@/services/api/course-library.api';
 import { getChildLessonProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
-import { useHousehold } from '@/contexts/HouseholdContext';
+import { useHousehold, useOptionalHousehold } from '@/contexts/HouseholdContext';
+import { getDeviceStatus } from '@/services/api/device.api';
 import { getBillingProviderStatus } from '../../src/services/api/purchase.api';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
 
@@ -46,8 +48,9 @@ jest.mock('../../src/services/api/course.api', () => ({
   getLessonList: jest.fn(),
 }));
 
-jest.mock('../../src/services/api/course-library.api', () => ({
+jest.mock('@/services/api/course-library.api', () => ({
   listLibrary: jest.fn(),
+  enrollCourse: jest.fn(),
   unlockCourse: jest.fn(),
   // P4: CourseDetailScreen overlays the published catalog onto static metadata.
   // Empty list → static fallback renders (preserves the c_animals assertion).
@@ -62,6 +65,11 @@ jest.mock('../../src/services/api/progress.api', () => ({
 jest.mock('@/contexts/HouseholdContext', () => ({
   __esModule: true,
   useHousehold: jest.fn(),
+  useOptionalHousehold: jest.fn(),
+}));
+
+jest.mock('@/services/api/device.api', () => ({
+  getDeviceStatus: jest.fn(),
 }));
 
 jest.mock('../../src/services/api/purchase.api', () => ({
@@ -82,9 +90,12 @@ jest.mock('../../src/services/api/purchase.api', () => ({
 const mockListCourseCatalog = listCourseCatalog as jest.MockedFunction<typeof listCourseCatalog>;
 const mockGetLessonList = getLessonList as jest.MockedFunction<typeof getLessonList>;
 const mockListLibrary = listLibrary as jest.MockedFunction<typeof listLibrary>;
+const mockEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
+const mockedUseOptionalHousehold = useOptionalHousehold as jest.MockedFunction<typeof useOptionalHousehold>;
+const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockGetBillingProviderStatus = getBillingProviderStatus as jest.MockedFunction<typeof getBillingProviderStatus>;
 
 const mockNavigate = jest.fn();
@@ -120,7 +131,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 // TanStack Query + HouseholdContext, so it needs both a QueryClientProvider
 // and a household with an active child.
 function renderProgress() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <TodayProgressScreen navigation={navigation as never} route={route as never} />
@@ -153,6 +164,7 @@ describe('course, course-library, and progress stable screen states', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
+    mockedUseOptionalHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
   });
 
   it('renders course catalog loading, empty, error, offline, locked, and unlocked states', async () => {
@@ -345,8 +357,9 @@ describe('course, course-library, and progress stable screen states', () => {
   });
 
   it('prevents duplicate unlock actions while entitlement request is pending', async () => {
-    const pending = deferred<void>();
-    mockUnlockCourse.mockReturnValueOnce(pending.promise);
+    const pending = deferred<Awaited<ReturnType<typeof enrollCourse>>>();
+    mockGetDeviceStatus.mockResolvedValueOnce({ id: 'device-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockEnrollCourse.mockReturnValueOnce(pending.promise);
 
     const screen = render(<UnlockConfirmModal navigation={navigation as never} route={unlockRoute as never} />);
     for (const key of ['7', '3', '5', '1']) {
@@ -354,13 +367,18 @@ describe('course, course-library, and progress stable screen states', () => {
     }
 
     fireEvent.press(screen.getByText('Confirm add'));
+    await waitFor(() => expect(screen.getByText('Adding...')).toBeTruthy());
     fireEvent.press(screen.getByText('Adding...'));
 
-    expect(mockUnlockCourse).toHaveBeenCalledTimes(1);
-    expect(mockUnlockCourse).toHaveBeenCalledWith('course-open');
+    await waitFor(() => expect(mockEnrollCourse).toHaveBeenCalledTimes(1));
+    expect(mockEnrollCourse).toHaveBeenCalledWith('course-open', { childId: 'child-1', deviceId: 'device-1' });
+    expect(mockUnlockCourse).not.toHaveBeenCalled();
 
-    pending.resolve(undefined);
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'course-open' }));
+    pending.resolve({
+      enrollment: { id: 'enroll-1', childId: 'child-1', courseId: 'course-open', deviceId: 'device-1', status: 'ACTIVE', currentLessonKey: null },
+      assignment: { id: 'assignment-1', lessonId: 'lesson-1', lessonVersion: 1, state: 'ASSIGNED' },
+    });
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'course-open', assignmentId: 'assignment-1' }));
   });
 
   it('renders the latest lesson with real step counts', async () => {

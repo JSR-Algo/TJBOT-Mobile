@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import type { NavigationProp } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import OnbShell, { OB } from '@/components/OnbShell';
@@ -12,7 +13,7 @@ import type { Child } from '@/types';
 import { Config } from '@/config';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import * as authApi from '@/services/api/auth';
-import { finalizeDevicePairing } from '@/features/device/pairing/finalizeDevicePairing';
+import { finalizeDevicePairing, type DevicePairingContext } from '@/features/device/pairing/finalizeDevicePairing';
 import {
   allowsDevelopmentCoppaConsentBypass,
   childProfileSaveErrorMessage,
@@ -20,7 +21,11 @@ import {
   saveOnboardingChildProfile,
 } from '../childProfileSave';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen' | 'PairChildProfileScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen'>;
+type ChildProfileContentProps = {
+  navigation: Pick<NavigationProp<RootStackParamList>, 'navigate' | 'reset'>;
+  route: { params?: { pairing?: DevicePairingContext } };
+};
 
 const BUDDIES = [
   { id: 'panda', emoji: '🐼', label: 'Panda' },
@@ -69,7 +74,7 @@ function dobFromAgeBand(bandId: AgeBandId): string {
   return `${birthYear}-07-01`;
 }
 
-export default function ChildProfileScreen({ navigation, route }: Props) {
+export function ChildProfileContent({ navigation, route }: ChildProfileContentProps): React.JSX.Element {
   const { language, t } = useAppLanguage();
   const { activeHousehold, addChild, createHousehold } = useHousehold();
   const [buddy, setBuddy] = React.useState<(typeof BUDDIES)[number]['id']>('panda');
@@ -145,7 +150,7 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
   };
 
   return (
-    <OnbShell title="Your child's buddy">
+    <OnbShell title="Your child's buddy" testID="onboardingScroll">
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text fontWeight="600" style={styles.heading}>Pick a buddy and a starting level</Text>
         <Text style={styles.sub}>
@@ -207,6 +212,7 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
                 accessibilityRole="button"
                 accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ selected: active }}
+                testID={`childAgeBand_${b.id}`}
               >
                 <Text fontWeight="700" style={[styles.ageBandText, active && { color: OB.accent }]}>{b.label}</Text>
               </TouchableOpacity>
@@ -274,6 +280,10 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
       </Box>
     </OnbShell>
   );
+}
+
+export default function ChildProfileScreen({ navigation, route }: Props): React.JSX.Element {
+  return <ChildProfileContent navigation={navigation} route={route} />;
 }
 
 const styles = StyleSheet.create({

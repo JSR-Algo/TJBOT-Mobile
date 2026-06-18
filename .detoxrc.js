@@ -19,9 +19,12 @@ const IOS_API_URL = process.env.E2E_IOS_API_URL || 'http://localhost:3000';
 const IOS_AI_URL = process.env.E2E_IOS_AI_URL || 'http://localhost:3001/api/ai';
 const ANDROID_API_URL = process.env.E2E_ANDROID_API_URL || 'http://10.0.2.2:3000';
 const ANDROID_AI_URL = process.env.E2E_ANDROID_AI_URL || 'http://10.0.2.2:3001/api/ai';
+const IS_ANDROID_CONFIGURATION = process.argv.join(' ').includes('android.emu.debug');
+const METRO_API_URL = IS_ANDROID_CONFIGURATION ? ANDROID_API_URL : IOS_API_URL;
+const METRO_AI_URL = IS_ANDROID_CONFIGURATION ? ANDROID_AI_URL : IOS_AI_URL;
 
-process.env.TBOT_API_URL = IOS_API_URL;
-process.env.TBOT_AI_URL = IOS_AI_URL;
+process.env.TBOT_API_URL = METRO_API_URL;
+process.env.TBOT_AI_URL = METRO_AI_URL;
 
 const metroConfig = require('./metro.config.js'); // eslint-disable-line @typescript-eslint/no-unused-vars
 
@@ -40,7 +43,7 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath:
-        'ios/build/Build/Products/Debug-iphonesimulator/TJBotMobile.app',
+        'ios/build/Build/Products/Debug-iphonesimulator/TJBOT.app',
       build:
         `TBOT_API_URL=${IOS_API_URL} TBOT_AI_URL=${IOS_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true xcodebuild -workspace ios/TJBotMobile.xcworkspace -scheme TJBotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- -destination 'generic/platform=iOS Simulator'`,
       launchArgs: {

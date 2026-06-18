@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 import path from 'node:path';
-import { createMobileEnv } from './mobile-env.mjs';
+import { createDetoxEnv, createMobileEnv } from './mobile-env.mjs';
+
+const packageJson = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 
 test('createMobileEnv preserves caller env and prepends discovered runtimes', () => {
   const env = createMobileEnv({
@@ -24,4 +27,25 @@ test('createMobileEnv preserves caller env and prepends discovered runtimes', ()
     assert.equal(env.ANDROID_SDK_ROOT, env.ANDROID_HOME);
     assert.ok(env.PATH.split(path.delimiter).includes(path.join(env.ANDROID_HOME, 'platform-tools')));
   }
+});
+
+test('Android Detox scripts use the shared mobile runtime environment', () => {
+  assert.equal(packageJson.scripts['detox:build:ios'], 'node scripts/runtime/mobile-run.mjs detox-build-ios');
+  assert.equal(packageJson.scripts['detox:test:ios'], 'node scripts/runtime/mobile-run.mjs detox-test-ios');
+  assert.equal(packageJson.scripts['detox:build:android'], 'node scripts/runtime/mobile-run.mjs detox-build-android');
+  assert.equal(packageJson.scripts['detox:test:android'], 'node scripts/runtime/mobile-run.mjs detox-test-android');
+});
+
+test('createDetoxEnv defaults to isolated local mock ports', () => {
+  const ios = createDetoxEnv('ios', { HOME: process.env.HOME, PATH: '/usr/bin' });
+  assert.equal(ios.E2E_LOCAL_API_URL, 'http://127.0.0.1:3300');
+  assert.equal(ios.E2E_LOCAL_AI_URL, 'http://127.0.0.1:3301/api/ai');
+  assert.equal(ios.E2E_IOS_API_URL, 'http://127.0.0.1:3300');
+  assert.equal(ios.E2E_IOS_AI_URL, 'http://127.0.0.1:3301/api/ai');
+
+  const android = createDetoxEnv('android', { HOME: process.env.HOME, PATH: '/usr/bin' });
+  assert.equal(android.E2E_LOCAL_API_URL, 'http://127.0.0.1:3300');
+  assert.equal(android.E2E_LOCAL_AI_URL, 'http://127.0.0.1:3301/api/ai');
+  assert.equal(android.E2E_ANDROID_API_URL, 'http://10.0.2.2:3300');
+  assert.equal(android.E2E_ANDROID_AI_URL, 'http://10.0.2.2:3301/api/ai');
 });

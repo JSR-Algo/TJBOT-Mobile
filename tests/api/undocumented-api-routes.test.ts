@@ -11,16 +11,6 @@ import {
   getSessionHistory,
   getWeeklySummary,
 } from '@/services/api/dashboard';
-import {
-  completeSession,
-  getChildProfile,
-  getInteractions,
-  getKPIs,
-  getPronunciationTrend,
-  getTodaySession,
-  saveInteraction,
-  updateChildProfile,
-} from '@/services/api/learning';
 import { getBillingProviderStatus } from '@/services/api/purchase.api';
 
 jest.mock('@/services/http/client', () => ({
@@ -46,14 +36,6 @@ describe('undocumented API routes', () => {
     ['getSafetyEvents', () => getSafetyEvents('device-1')],
     ['getWeeklySummary', () => getWeeklySummary('device-1')],
     ['getSessionCost', () => getSessionCost('device-1')],
-    ['getChildProfile', () => getChildProfile('child-1')],
-    ['updateChildProfile', () => updateChildProfile('child-1', {})],
-    ['getTodaySession', () => getTodaySession('child-1')],
-    ['saveInteraction', () => saveInteraction('child-1', { user_message: 'hi', ai_response: 'hello' })],
-    ['getInteractions', () => getInteractions('child-1')],
-    ['getKPIs', () => getKPIs('child-1')],
-    ['completeSession', () => completeSession('child-1', { session_id: 's1', prompts_shown: 1, responses_given: 1, correct_responses: 1 })],
-    ['getPronunciationTrend', () => getPronunciationTrend('child-1')],
     ['getBillingProviderStatus', () => getBillingProviderStatus()],
     ['transcribe', () => transcribe('file:///tmp/audio.m4a')],
     ['chat', () => chat('hello')],

@@ -1,6 +1,8 @@
 const BLUFI_TYPE_CTRL = 0x00;
 const BLUFI_TYPE_DATA = 0x01;
 
+const BLUFI_DATA_NEGOTIATE = 0x00;
+const BLUFI_CTRL_SET_SECURITY_MODE = 0x01;
 const BLUFI_CTRL_SET_WIFI_OPMODE = 0x02;
 const BLUFI_CTRL_CONNECT_TO_AP = 0x03;
 const BLUFI_CTRL_GET_WIFI_LIST = 0x09;
@@ -12,6 +14,12 @@ export const BLUFI_DATA_CUSTOM = 0x13;
 const BLUFI_FRAME_CONTROL_PLAIN = 0x00;
 const BLUFI_FRAME_CONTROL_FRAGMENT = 0x10;
 const BLUFI_WIFI_MODE_STA = 0x01;
+const BLUFI_DH_P_HEX = 'cf5cf5c38419a724957ff5dd323b9c45c3cdd261eb740f69aa94b8bb1a5c9640' +
+  '9153bd76b24222d03274e4725a5406092e9e82e9135c643cae98132b0d95f7d6' +
+  '5347c68afc1e677da90e51bbab5f5cf429c291b4ba39c6b2dc5e8c7231e46aa7' +
+  '728e87664532cdf547be20c9a3fa8342be6e34371a27c06f7dc0edddd2f86373';
+const BLUFI_DH_P_BYTES = 128;
+const BLUFI_SET_SECURITY_PLAINTEXT = 0x00;
 
 // ESP-IDF BluFi defaults to BLE MTU 23. Four header bytes plus two fragment
 // length bytes leaves 12 content bytes, matching BLUFI_FRAG_DATA_DEFAULT_LEN.
@@ -47,6 +55,35 @@ export function buildBluFiCustomDataFrames(
   const data = Array.from(params.tlv);
   const endSequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_CUSTOM), data, startSequence);
   return { frames: writes, endSequence };
+}
+
+export function buildBluFiSecurityNegotiationFrames(
+  options: { privateKey?: Uint8Array } = {},
+  startSequence: number,
+): { frames: string[]; endSequence: number } {
+  let sequence = startSequence;
+  const writes: string[] = [];
+  const p = hexToBytes(BLUFI_DH_P_HEX);
+  const g = [0x02];
+  const publicKey = leftPadBytes(bigIntToBytes(modPow(2n, resolveDhPrivateKey(options.privateKey), hexToBigInt(BLUFI_DH_P_HEX))), BLUFI_DH_P_BYTES);
+  const pgkLength = p.length + g.length + publicKey.length + 6;
+
+  sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_NEGOTIATE), [0x00, (pgkLength >> 8) & 0xff, pgkLength & 0xff], sequence);
+  sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_NEGOTIATE), [
+    0x01,
+    (p.length >> 8) & 0xff,
+    p.length & 0xff,
+    ...p,
+    (g.length >> 8) & 0xff,
+    g.length & 0xff,
+    ...g,
+    (publicKey.length >> 8) & 0xff,
+    publicKey.length & 0xff,
+    ...publicKey,
+  ], sequence);
+  sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_CTRL, BLUFI_CTRL_SET_SECURITY_MODE), [BLUFI_SET_SECURITY_PLAINTEXT], sequence);
+
+  return { frames: writes, endSequence: sequence };
 }
 
 export function buildBluFiStationProvisioningFrames(params: {
@@ -136,6 +173,86 @@ function buildType(type: number, subtype: number): number {
 
 function nextSequence(sequence: number): number {
   return (sequence + 1) & 0xff;
+}
+
+function resolveDhPrivateKey(provided?: Uint8Array): bigint {
+  const p = hexToBigInt(BLUFI_DH_P_HEX);
+  const raw = provided ?? randomBytes(BLUFI_DH_P_BYTES);
+  const key = bytesToBigInt(Array.from(raw));
+  return (key % (p - 3n)) + 2n;
+}
+
+function randomBytes(length: number): Uint8Array {
+  const bytes = new Uint8Array(length);
+  const cryptoSource = readCryptoSource();
+  if (cryptoSource) {
+    cryptoSource.getRandomValues(bytes);
+    return bytes;
+  }
+  for (let index = 0; index < bytes.length; index += 1) {
+    bytes[index] = Math.floor(Math.random() * 256) & 0xff;
+  }
+  return bytes;
+}
+
+function readCryptoSource(): { getRandomValues: (array: Uint8Array) => Uint8Array } | undefined {
+  const candidate: unknown = globalThis.crypto;
+  if (typeof candidate !== 'object' || candidate === null) return undefined;
+  const record = candidate as { getRandomValues?: unknown };
+  if (typeof record.getRandomValues !== 'function') return undefined;
+  const getRandomValues = record.getRandomValues;
+  return {
+    getRandomValues: (array: Uint8Array) => {
+      const result = getRandomValues.call(candidate, array);
+      return result instanceof Uint8Array ? result : array;
+    },
+  };
+}
+
+function hexToBigInt(hex: string): bigint {
+  return BigInt(`0x${hex}`);
+}
+
+function hexToBytes(hex: string): number[] {
+  const bytes: number[] = [];
+  for (let index = 0; index < hex.length; index += 2) {
+    bytes.push(Number.parseInt(hex.slice(index, index + 2), 16));
+  }
+  return bytes;
+}
+
+function bytesToBigInt(bytes: number[]): bigint {
+  let value = 0n;
+  for (const byte of bytes) {
+    value = (value << 8n) | BigInt(byte & 0xff);
+  }
+  return value;
+}
+
+function bigIntToBytes(value: bigint): number[] {
+  if (value === 0n) return [0];
+  let hex = value.toString(16);
+  if (hex.length % 2 !== 0) hex = `0${hex}`;
+  return hexToBytes(hex);
+}
+
+function leftPadBytes(bytes: number[], length: number): number[] {
+  if (bytes.length >= length) return bytes.slice(bytes.length - length);
+  return [...new Array<number>(length - bytes.length).fill(0), ...bytes];
+}
+
+function modPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
+  let result = 1n;
+  let currentBase = base % modulus;
+  let currentExponent = exponent;
+  while (currentExponent > 0n) {
+    if ((currentExponent & 1n) === 1n) {
+      result = (result * currentBase) % modulus;
+    }
+    currentBase = (currentBase * currentBase) % modulus;
+    currentExponent >>= 1n;
+  }
+  return result;
 }
 
 function utf8Bytes(value: string): number[] {

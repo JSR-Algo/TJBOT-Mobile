@@ -15,4 +15,14 @@ describe('Android BLE native linking', () => {
     expect(read('android/app/src/main/java/com/tjbotmobile/TbotReactHostProvider.kt')).toMatch(/import com\.bleplx\.BlePlxPackage[\s\S]*add\(BlePlxPackage\(\)\)/);
     expect(read('android/app/src/main/java/com/tjbotmobile/MainApplication.kt')).toMatch(/import com\.bleplx\.BlePlxPackage[\s\S]*add\(BlePlxPackage\(\)\)/);
   });
+
+  test('BootstrapApplication exposes the ReactApplication contract used by Detox Android', () => {
+    const bootstrap = read('android/app/src/main/java/com/tjbotmobile/BootstrapApplication.kt');
+
+    expect(read('android/app/src/main/AndroidManifest.xml')).toContain('android:name=".BootstrapApplication"');
+    expect(bootstrap).toContain('import com.facebook.react.ReactApplication');
+    expect(bootstrap).toContain('class BootstrapApplication : Application(), ReactApplication');
+    expect(bootstrap).toContain('override val reactHost: ReactHost');
+    expect(bootstrap).toContain('TJBotReactHostProvider.getReactHost()');
+  });
 });

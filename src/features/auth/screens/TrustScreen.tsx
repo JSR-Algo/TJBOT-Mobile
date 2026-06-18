@@ -35,7 +35,7 @@ const PROMISES = [
 
 export default function TrustScreen({ navigation }: Props) {
   return (
-    <OnbShell title="Our promise" onBack={() => navigation.navigate(ROUTES.IntroCelebrateScreen)}>
+    <OnbShell title="Our promise" testID="onboardingScroll" onBack={() => navigation.navigate(ROUTES.IntroCelebrateScreen)}>
       <Box paddingHorizontal={20} paddingTop={18} style={{ marginBottom: 8 }}>
         <Text fontWeight="600" style={styles.heading}>Made for kids 6–10. Designed with parents.</Text>
         <Text style={styles.sub}>Before we set things up, here's how we treat your child's privacy and time.</Text>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { QueryClientContext } from '@tanstack/react-query';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -26,7 +26,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
   // backend AuthGuard verifies the parent owns this child via req.auth.sub —
   // the client never trusts the household_id alone.
   const household = useOptionalHousehold();
-  const queryClient = useQueryClient();
+  const queryClient = React.useContext(QueryClientContext);
   const childId = household?.activeChild?.id;
   const [vals, setVals] = React.useState(['', '', '', '']);
   const [pending, setPending] = React.useState(false);
@@ -38,10 +38,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
     if (!ok || pending) return;
     setError(null);
     if (!childId) {
-      // No active child → enrollment has no target. Surface a friendly Vietnamese
-      // message — same parent-onboarding cue used by SendToRobotScreen for the
-      // childless-household state, just localized for the unlock modal.
-      setError('Vui lòng thêm bé vào tài khoản trước khi mở khoá khoá học.');
+      setError('Add a child to this account before unlocking a course.');
       return;
     }
     setPending(true);
@@ -63,7 +60,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         deviceId = undefined;
       }
       if (!deviceId) {
-        setError('Chưa có robot — kết nối robot trước khi mở khoá khoá học.');
+        setError('No Robot yet — connect Robot before unlocking a course.');
         return;
       }
       try {
@@ -72,17 +69,17 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         // the shared progress cache (SAME key ParentToday / ParentHistory /
         // TodayProgress read) plus the enrollment + current-assignment keys so
         // those screens refetch instead of showing stale pre-enroll data.
-        void queryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
-        void queryClient.invalidateQueries({ queryKey: ['enrollments', 'child', childId] });
-        void queryClient.invalidateQueries({ queryKey: ['assignment', 'device', deviceId, 'current'] });
+        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+        void queryClient?.invalidateQueries({ queryKey: ['enrollments', 'child', childId] });
+        void queryClient?.invalidateQueries({ queryKey: ['assignment', 'device', deviceId, 'current'] });
         navigation.replace(ROUTES.CourseAddedScreen, { courseId, assignmentId: assignment.id });
       } catch (err) {
         const normalized = normalizeError(err);
         if (normalized.code === 'NO_DEVICE') {
-          setError('Chưa có robot — kết nối robot trước khi mở khoá khoá học.');
+          setError('No Robot yet — connect Robot before unlocking a course.');
           return;
         }
-        setError('Không thể mở khoá khoá học. Vui lòng thử lại.');
+        setError('Could not unlock the course. Try again.');
       }
     } finally {
       setPending(false);

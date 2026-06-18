@@ -29,6 +29,7 @@
 
 import {
   encodeTLV,
+  buildBluFiSecurityNegotiationFrames,
   buildBluFiStationProvisioningFrames,
   buildBluFiCustomDataFrames,
   buildBluFiWifiScanFrames,
@@ -54,6 +55,8 @@ const TYPE_CTRL = 0x00;
 const TYPE_DATA = 0x01;
 
 const OP_SET_OP_MODE = typeByte(TYPE_CTRL, 0x02); // 0x08
+const OP_SET_SEC_MODE = typeByte(TYPE_CTRL, 0x01); // 0x04
+const OP_NEG = typeByte(TYPE_DATA, 0x00); // 0x01
 const OP_STA_SSID = typeByte(TYPE_DATA, 0x02); // 0x09
 const OP_STA_PASSWORD = typeByte(TYPE_DATA, 0x03); // 0x0d
 const OP_CONNECT_TO_AP = typeByte(TYPE_CTRL, 0x03); // 0x0c
@@ -75,6 +78,8 @@ describe('blufiProtocol — on-wire opcode constants (regression lock)', () => {
   // never silently shift opcodes the firmware decodes against.
   test('packed opcodes match the firmware-visible values', () => {
     expect(OP_SET_OP_MODE).toBe(0x08);
+    expect(OP_SET_SEC_MODE).toBe(0x04);
+    expect(OP_NEG).toBe(0x01);
     expect(OP_STA_SSID).toBe(0x09);
     expect(OP_STA_PASSWORD).toBe(0x0d);
     expect(OP_CONNECT_TO_AP).toBe(0x0c);
@@ -85,6 +90,27 @@ describe('blufiProtocol — on-wire opcode constants (regression lock)', () => {
 
   test('exported CUSTOM subtype constant is the raw subtype 0x13', () => {
     expect(BLUFI_DATA_CUSTOM).toBe(0x13);
+  });
+});
+
+describe('buildBluFiSecurityNegotiationFrames — ESP-IDF DH handshake prelude', () => {
+  test('emits NEG length, fragmented NEG p/g/public-key data, then SET_SEC_MODE', () => {
+    const { frames, endSequence } = buildBluFiSecurityNegotiationFrames({
+      privateKey: new Uint8Array([0x02]),
+    }, 7);
+    const decoded = frames.map(decode);
+
+    expect(decoded[0]).toEqual([OP_NEG, FC_PLAIN, 7, 0x03, 0x00, 0x01, 0x07]);
+    expect(decoded[1][0]).toBe(OP_NEG);
+    expect(decoded[1][1]).toBe(FC_FRAGMENT);
+    expect(decoded[1][2]).toBe(8);
+    expect(decoded[1].slice(4, 6)).toEqual([0x08, 0x01]);
+    expect(decoded[1][6]).toBe(0x01);
+    expect(decoded[1].slice(7, 9)).toEqual([0x00, 0x80]);
+
+    const setSecurity = decoded[decoded.length - 1];
+    expect(setSecurity).toEqual([OP_SET_SEC_MODE, FC_PLAIN, (endSequence + 255) & 0xff, 0x01, 0x00]);
+    expect(endSequence).toBe((setSecurity[2] + 1) & 0xff);
   });
 });
 

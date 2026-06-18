@@ -31,6 +31,7 @@ import {
   completeAgeGateIfVisible,
   completeFirstRunIntroIfVisible,
   ensureLoginScreen,
+  tapIdAfterScroll,
 } from './helpers/ui';
 import { assertLocalBackendReady, seedOnboardedAccount, stopLocalMockBackend } from './helpers/localServices';
 
@@ -78,17 +79,14 @@ async function tapSubmitButton(): Promise<void> {
       continue;
     }
   }
-  if (device.getPlatform() === 'android') {
-    await device.pressBack();
-  } else {
-    try {
-      await element(by.id('loginScreenScroll')).scroll(220, 'down');
-    } catch {
-      // Already positioned at the CTA.
-    }
+  try {
+    await tapIdAfterScroll('submitButton', 'loginScreenScroll');
+    return;
+  } catch {
+    await element(by.id('appRoot')).swipe('up', 'fast', 0.45);
+    await waitFor(element(by.id('submitButton'))).toExist().withTimeout(5000);
+    await element(by.id('submitButton')).tap();
   }
-  await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
-  await element(by.id('submitButton')).tap();
 }
 
 async function dismissSavePasswordPromptIfVisible(): Promise<void> {

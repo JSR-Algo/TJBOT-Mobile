@@ -9,4 +9,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  const telemetryPath = require.resolve('../src/services/observability/voice-telemetry');
+  const cachedTelemetry = require.cache[telemetryPath] as { exports?: { resetVoiceTelemetryForTests?: () => void } } | undefined;
+  cachedTelemetry?.exports?.resetVoiceTelemetryForTests?.();
 });

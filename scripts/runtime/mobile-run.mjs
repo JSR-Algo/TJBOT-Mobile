@@ -2,7 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createMobileEnv, runtimeSummary } from './mobile-env.mjs';
+import { createDetoxEnv, createMobileEnv, runtimeSummary } from './mobile-env.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../..');
@@ -79,6 +79,30 @@ const commands = {
     ],
     cwd: path.join(repoRoot, 'ios'),
   },
+  'detox-build-ios': {
+    bin: 'npx',
+    args: ['detox', 'build', '--configuration', 'ios.sim.debug', ...args],
+    cwd: repoRoot,
+    env: createDetoxEnv('ios'),
+  },
+  'detox-test-ios': {
+    bin: 'npx',
+    args: ['detox', 'test', '--configuration', 'ios.sim.debug', ...args],
+    cwd: repoRoot,
+    env: createDetoxEnv('ios'),
+  },
+  'detox-build-android': {
+    bin: 'npx',
+    args: ['detox', 'build', '--configuration', 'android.emu.debug', ...args],
+    cwd: repoRoot,
+    env: createDetoxEnv('android'),
+  },
+  'detox-test-android': {
+    bin: 'npx',
+    args: ['detox', 'test', '--configuration', 'android.emu.debug', ...args],
+    cwd: repoRoot,
+    env: createDetoxEnv('android'),
+  },
   pods: {
     bin: 'pod',
     args: ['install', ...args],
@@ -88,7 +112,7 @@ const commands = {
 };
 
 if (!command || !(command in commands)) {
-  console.error('Usage: node scripts/runtime/mobile-run.mjs <start|start-reset|android|ios|build-android|build-ios|pods|doctor> [args...]');
+  console.error('Usage: node scripts/runtime/mobile-run.mjs <start|start-reset|android|ios|build-android|build-ios|detox-build-android|detox-test-android|pods|doctor> [args...]');
   process.exit(2);
 }
 
@@ -103,7 +127,7 @@ const steps = spec.steps ?? [spec];
 for (const step of steps) {
   const result = spawnSync(step.bin, step.args, {
     cwd: step.cwd,
-    env,
+    env: step.env ?? env,
     stdio: 'inherit',
   });
 

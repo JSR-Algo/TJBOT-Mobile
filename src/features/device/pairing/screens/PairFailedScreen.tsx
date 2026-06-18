@@ -104,6 +104,10 @@ export default function PairFailedScreen({ navigation, route }: Props) {
               activeOpacity={0.7}
               onPress={() => {
                 if (r.go === ROUTES.PairWifiPasswordScreen) {
+                  if (needsFreshBleClaim(params)) {
+                    navigation.navigate(ROUTES.PairSearchScreen);
+                    return;
+                  }
                   if (params) navigation.navigate(ROUTES.PairWifiPasswordScreen, params);
                   else navigation.navigate(ROUTES.PairWifiPasswordScreen);
                   return;
@@ -179,6 +183,14 @@ function canRecoverLateClaim(params: Props['route']['params']): params is Failur
 
 function shouldShowReasonCards(errorCode: string | undefined): boolean {
   return errorCode !== 'DEVICE_ALREADY_ASSIGNED' && errorCode !== 'DEVICE_ALREADY_CLAIMED';
+}
+
+function needsFreshBleClaim(params: Props['route']['params']): boolean {
+  return !!(
+    params?.errorCode === 'NO_DEVICE_AVAILABLE'
+    && params.provisioningTransport === 'ble'
+    && !params.code
+  );
 }
 
 function settingsActionForError(errorCode: string | undefined): { label: string; onPress: () => void } | undefined {

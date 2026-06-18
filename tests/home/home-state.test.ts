@@ -16,7 +16,7 @@ describe('deriveHomeState', () => {
   });
 
   it('does not leave Home in loading state when the backend contract is unavailable', () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 

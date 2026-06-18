@@ -71,7 +71,7 @@ function makeAssignment(overrides: Partial<AssignmentProgress> = {}): Assignment
 function renderScreen() {
   const navigation = { navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() };
   const route = { key: 'h', name: 'ParentHistoryScreen', params: undefined };
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <ParentSessionProvider>

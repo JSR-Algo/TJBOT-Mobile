@@ -459,7 +459,7 @@ describe('purchase billing screens', () => {
     fireEvent.press(screen.getByText('Cancel subscription'));
     await screen.findByText('Subscription change saved.');
     expect(mockedCancelSubscription).toHaveBeenCalledWith(expect.stringMatching(/^sub-cancel-/));
-    await screen.findByText('Renews until 2026-06-16T00:00:00Z');
+    await screen.findByText('Renews until Jun 16, 2026');
 
     fireEvent.press(screen.getByText('Reactivate subscription'));
     expect(mockedReactivateSubscription).toHaveBeenCalledWith(expect.stringMatching(/^sub-reactivate-/));

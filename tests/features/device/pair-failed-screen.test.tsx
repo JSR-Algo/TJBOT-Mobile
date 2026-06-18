@@ -202,6 +202,22 @@ describe('PairFailedScreen reason-card navigation', () => {
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, params);
   });
 
+  it('"Wrong Wi-Fi password" rescans instead of retrying a zero-code BLE attempt that has lost its claim token', () => {
+    const params = {
+      errorCode: 'NO_DEVICE_AVAILABLE',
+      ssid: 'Casa',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: '656c46f2-882b-4738-bf6b-f82ae2e2f7d7',
+      bleDeviceId: '14:C1:9F:D1:A8:4A',
+      provisioningTransport: 'ble',
+    };
+    const { screen, nav } = renderScreen(params);
+    fireEvent.press(screen.getByText('Wrong Wi-Fi password'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+    expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, expect.anything());
+  });
+
   it('"Wrong Wi-Fi password" card navigates without params when route params is undefined', () => {
     const { screen, nav } = renderScreen(undefined);
     fireEvent.press(screen.getByText('Wrong Wi-Fi password'));

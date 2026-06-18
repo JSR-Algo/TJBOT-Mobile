@@ -76,7 +76,7 @@ function renderScreen(navigate: jest.Mock, reset: jest.Mock, params?: Record<str
 // The save handler short-circuits unless an age band is picked, so every flow
 // taps an age band first.
 function pickAgeAndSave(screen: ReturnType<typeof renderScreen>): void {
-  fireEvent.press(screen.getByText('4 – 6'));
+  fireEvent.press(screen.getByTestId('childAgeBand_PRE_K'));
   fireEvent.press(screen.getByTestId('childProfileSaveButton'));
 }
 
@@ -92,6 +92,8 @@ describe('ChildProfileScreen — from-pairing finalize', () => {
     const navigate = jest.fn();
     const reset = jest.fn();
     const screen = renderScreen(navigate, reset, { pairing: PAIRING });
+
+    expect(screen.getByTestId('onboardingScroll')).toBeTruthy();
 
     pickAgeAndSave(screen);
 

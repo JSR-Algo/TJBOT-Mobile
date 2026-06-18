@@ -168,7 +168,11 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
         <Text style={styles.dateLabel} i18n={false}>{formatTodayLabel(language)}</Text>
         {params.summaryDate ? <Text style={styles.dateLabel} i18n={false}>{summaryDateLabel(params.summaryDate, language)}</Text> : null}
         {params.deviceId ? <Text style={styles.dateLabel} i18n={false}>{summaryDeviceLabel(params.deviceId, language)}</Text> : null}
-        {activeChild?.name ? <Text style={styles.childLabel} i18n={false}>{activeChild.name}'s course dashboard</Text> : null}
+        {activeChild?.name ? (
+          <Text style={styles.childLabel} i18n={false}>
+            {translateTemplate("{{name}}'s course dashboard", { name: activeChild.name }, { locale: language })}
+          </Text>
+        ) : null}
         <Text fontWeight="600" style={styles.headline} i18n={!hasActivity}>
           {hasActivity ? weeklySummaryLabel(summary, language) : 'No lesson activity has synced yet.'}
         </Text>
@@ -202,12 +206,19 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
             <Box style={styles.insightCard} flex={1}>
               <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.stepSuccessPct}%</Text>
               <Text style={styles.insightLabel} i18n={false}>{qualityLabel(dashboard.stepSuccessPct)} quality</Text>
-              <Text style={styles.insightNote} i18n={false}>{dashboard.stepSuccessPct}% step success</Text>
+              <Text style={styles.insightNote} i18n={false}>
+                {translateTemplate('{{percent}}% step success', { percent: dashboard.stepSuccessPct }, { locale: language })}
+              </Text>
             </Box>
             <Box style={styles.insightCard} flex={1}>
               <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.completionRatePct}%</Text>
               <Text style={styles.insightLabel}>Completion</Text>
-              <Text style={styles.insightNote} i18n={false}>{dashboard.failedLessons} failed · {dashboard.activeLessons} active</Text>
+              <Text style={styles.insightNote} i18n={false}>
+                {translateTemplate('{{failed}} failed · {{active}} active', {
+                  failed: dashboard.failedLessons,
+                  active: dashboard.activeLessons,
+                }, { locale: language })}
+              </Text>
             </Box>
           </Box>
           <Text fontWeight="700" style={[styles.dashboardTitle, { marginTop: 14 }]}>Learning path</Text>

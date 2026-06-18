@@ -58,6 +58,7 @@ describe('native Detox E2E coverage contract', () => {
     const ageGateIndex = helperSource.indexOf('await completeAgeGateIfVisible(Math.min(timeout, SCREEN_TIMEOUT_MS));');
     const introIndex = helperSource.indexOf('await completeFirstRunIntroIfVisible(Math.min(timeout, SCREEN_TIMEOUT_MS));');
 
+    expect(helperSource).toContain("await waitForId('loginScreenScroll', timeout);");
     expect(loginProbeIndex).toBeGreaterThanOrEqual(0);
     expect(loginProbeIndex).toBeLessThan(ageGateIndex);
     expect(loginProbeIndex).toBeLessThan(introIndex);
@@ -81,9 +82,40 @@ describe('native Detox E2E coverage contract', () => {
     expect(loginScreen).toContain('testID="resetMessageText"');
   });
 
+  it('scrolls to the trust CTA during first-run intro completion', () => {
+    const helperSource = read('e2e/helpers/ui.ts');
+    const authTrustScreen = read('src/features/auth/screens/TrustScreen.tsx');
+    const onboardingTrustScreen = read('src/features/onboarding/screens/TrustScreen.tsx');
+
+    expect(helperSource).toContain("await tapIdAfterScroll('trustContinueButton', 'onboardingScroll'");
+    expect(helperSource).toContain("await device.tap({ x: 540, y: 1710 })");
+    expect(helperSource).toContain("await waitForId('loginScreenScroll', 5000)");
+    expect(authTrustScreen).toContain('<OnbShell title="Our promise" testID="onboardingScroll"');
+    expect(onboardingTrustScreen).toContain('<OnbShell title="Our promise" testID="onboardingScroll"');
+    expect(authTrustScreen).toContain('testID="trustContinueButton"');
+    expect(onboardingTrustScreen).toContain('testID="trustContinueButton"');
+  });
+
+  it('uses a scroll-aware submit tap in native auth specs', () => {
+    const authSpec = read('e2e/auth-signup-login.test.ts');
+    const smokeSpec = read('e2e/smoke.test.ts');
+
+    for (const spec of [authSpec, smokeSpec]) {
+      expect(spec).toContain('tapIdAfterScroll');
+      expect(spec).not.toContain('device.pressBack()');
+      expect(spec).toContain("await tapIdAfterScroll('submitButton', 'loginScreenScroll'");
+      expect(spec).toContain("element(by.id('appRoot')).swipe('up'");
+      expect(spec).toContain("waitFor(element(by.id('submitButton'))).toExist().withTimeout(5000)");
+      expect(spec).not.toContain("toBeVisible(50)");
+      expect(spec).not.toContain("waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000)");
+    }
+  });
+
   it('keeps Detox backend and AI endpoints configurable per platform', () => {
     const detoxConfig = read('.detoxrc.js');
     const packageJson = read('package.json');
+    const mobileRun = read('scripts/runtime/mobile-run.mjs');
+    const mobileEnv = read('scripts/runtime/mobile-env.mjs');
 
     expect(detoxConfig).toContain('process.env.E2E_IOS_API_URL');
     expect(detoxConfig).toContain('process.env.E2E_ANDROID_API_URL');
@@ -101,11 +133,31 @@ describe('native Detox E2E coverage contract', () => {
     expect(detoxConfig).toContain('EXPO_PUBLIC_VOICE_TEST_HARNESS=true');
     expect(detoxConfig).toContain('process.env.E2E_ENABLE_VOICE_TEST_HARNESS');
     expect(detoxConfig).toContain("require('./metro.config.js')");
-    expect(detoxConfig.indexOf('process.env.TBOT_API_URL = IOS_API_URL')).toBeGreaterThanOrEqual(0);
-    expect(detoxConfig.indexOf('process.env.TBOT_API_URL = IOS_API_URL')).toBeLessThan(detoxConfig.indexOf("const metroConfig = require('./metro.config.js')"));
+    expect(detoxConfig).toContain('const IS_ANDROID_CONFIGURATION');
+    expect(detoxConfig).toContain('const METRO_API_URL = IS_ANDROID_CONFIGURATION ? ANDROID_API_URL : IOS_API_URL;');
+    expect(detoxConfig).toContain('process.env.TBOT_API_URL = METRO_API_URL');
+    expect(detoxConfig).toContain('process.env.TBOT_AI_URL = METRO_AI_URL');
+    expect(detoxConfig.indexOf('process.env.TBOT_API_URL = METRO_API_URL')).toBeLessThan(detoxConfig.indexOf("const metroConfig = require('./metro.config.js')"));
     expect(detoxConfig).toContain('-Pe2eBundleDebug=true');
     expect(detoxConfig).toContain('generic/platform=iOS Simulator');
-    expect(packageJson).toContain('ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}');
+    expect(packageJson).toContain('"detox:build:android": "node scripts/runtime/mobile-run.mjs detox-build-android"');
+    expect(packageJson).toContain('"detox:test:android": "node scripts/runtime/mobile-run.mjs detox-test-android"');
+    expect(mobileRun).toContain("env: createDetoxEnv('android')");
+    expect(mobileEnv).toContain('env.ANDROID_SDK_ROOT = androidSdk');
+    expect(mobileEnv).toContain("path.join(androidSdk, 'platform-tools')");
+  });
+
+  it('keeps Android Detox runner dependencies on the androidTest classpath', () => {
+    const androidRootBuild = read('android/build.gradle');
+    const androidBuild = read('android/app/build.gradle');
+
+    expect(androidRootBuild).toContain('node_modules/detox/Detox-android');
+    expect(androidBuild).toContain('androidTestImplementation("com.wix:detox:');
+    expect(androidBuild).toContain('androidTestImplementation("androidx.test.ext:junit:');
+    expect(androidBuild).toContain('androidTestImplementation("androidx.test:rules:');
+    expect(androidBuild).toContain('androidTestImplementation("androidx.test:runner:');
+    expect(androidBuild).toContain('androidTestImplementation("junit:junit:');
+    expect(androidBuild).toContain('testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"');
   });
 
   it('keeps iOS Detox builds signed with a Keychain access group for SecureStore', () => {

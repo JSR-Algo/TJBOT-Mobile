@@ -89,6 +89,8 @@ describe('refresh-queue', () => {
       expect(token).toBe('AT-1');
       expect(mockedAxios.post).toHaveBeenCalledWith('https://api.example/v1/auth/refresh', {
         refresh_token: 'refresh-xyz',
+      }, {
+        timeout: 30000,
       });
     });
 
