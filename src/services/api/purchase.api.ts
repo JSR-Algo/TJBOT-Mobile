@@ -221,6 +221,7 @@ export async function getShippingStatus(orderId: string): Promise<ShippingStatus
   return mapShippingStatus(unwrap<RawShippingStatus>(response));
 }
 
+// Contract breadcrumb: paired with backend/src/devices/devices.controller.ts ActivateDeviceDto; verified by original-app/TJBOT-Mobile/tests/api/device-api.test.ts and backend/tests/devices-service.activate.spec.ts. Update both when this shape changes.
 export async function activateRobot(activationCode: string, requestId?: string): Promise<void> {
   const payload = { activation_code: activationCode };
   const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;

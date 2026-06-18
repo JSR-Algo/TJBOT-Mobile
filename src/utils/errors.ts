@@ -1,3 +1,4 @@
+// Contract breadcrumb: paired with backend/src/errors/error-code.ts; verified by original-app/TJBOT-Mobile/tests/utils/errors.test.ts and backend/tests/http-exception.filter.spec.ts. Update both when this mapping changes.
 export const ERROR_MESSAGES: Record<string, string> = {
   VALIDATION_ERROR: 'Please check the information you entered.',
   USER_EXISTS: 'An account with this email already exists.',

@@ -108,6 +108,7 @@ export async function unlockCourse(courseId: string, requestId?: string): Promis
   }
 }
 
+// Contract breadcrumb: paired with backend/src/course-library/dto/course-library.dto.ts SendToRobotDto; verified by original-app/TJBOT-Mobile/tests/api/course-library-normalization.test.ts and backend/tests/course-library.integration.spec.ts. Update both when this shape changes.
 export async function sendCourseToRobot(
   courseId: string,
   deviceId: string,

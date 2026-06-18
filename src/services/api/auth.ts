@@ -27,6 +27,7 @@ function unwrapResponseData<T>(responseData: unknown): T {
   return responseData as T;
 }
 
+// Contract breadcrumb: paired with backend/src/identity/auth.controller.ts SignupDto; verified by backend/tests/identity.integration.spec.ts and original-app/TJBOT-Mobile/tests/api/auth-api.test.ts. Update both when this shape changes.
 export async function signup(
   name: string,
   email: string,
