@@ -18,7 +18,8 @@ import ParentHistoryScreen from '../../src/features/parent/screens/ParentHistory
 import ParentAccountPrivacyScreen from '../../src/features/parent/screens/ParentAccountPrivacyScreen';
 import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
-import { getChildLessonProgress } from '../../src/services/api/progress.api';
+import { getChildLessonProgress, getChildProgress } from '../../src/services/api/progress.api';
+import { getChildProfile, updateChildProfile } from '../../src/services/api/learning';
 import { useHousehold } from '@/contexts/HouseholdContext';
 
 jest.setTimeout(120_000);
@@ -77,7 +78,14 @@ jest.mock('../../src/services/api/account', () => ({
 
 jest.mock('../../src/services/api/progress.api', () => ({
   __esModule: true,
+  getChildProgress: jest.fn(),
   getChildLessonProgress: jest.fn(),
+}));
+
+jest.mock('../../src/services/api/learning', () => ({
+  __esModule: true,
+  getChildProfile: jest.fn(),
+  updateChildProfile: jest.fn(),
 }));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
@@ -87,7 +95,10 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 
 const parentApiMock = parentApi as jest.Mocked<typeof parentApi>;
 const accountApiMock = accountApi as jest.Mocked<typeof accountApi>;
+const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getChildProgress>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
+const mockGetChildProfile = getChildProfile as jest.MockedFunction<typeof getChildProfile>;
+const mockUpdateChildProfile = updateChildProfile as jest.MockedFunction<typeof updateChildProfile>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 
 // ParentToday/History read the child-scoped lesson-progress feed via TanStack
@@ -96,6 +107,14 @@ const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHouseho
 function renderWithQuery(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+async function renderParentSettings() {
+  const screen = render(
+    <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
+  );
+  await screen.findByText('Mai');
+  return screen;
 }
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (reason: Error) => void } {
@@ -118,7 +137,30 @@ describe('Parent settings and gate', () => {
     parentApiMock.getParentToday.mockRejectedValue(new Error('Parent today API route not documented'));
     parentApiMock.getParentHistory.mockRejectedValue(new Error('Parent history API route not documented'));
     mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
-    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
+    mockGetChildProgress.mockResolvedValue({ childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [] });
+    mockGetChildLessonProgress.mockResolvedValue([]);
+    mockGetChildProfile.mockResolvedValue({
+      id: 'child-1',
+      name: 'Mai',
+      vocabulary_level: 'beginner',
+      speaking_confidence: 50,
+      listening_score: 40,
+      interests: ['animals'],
+      attention_span_seconds: 180,
+      learning_style: 'visual',
+      parent_career: 'engineer',
+    });
+    mockUpdateChildProfile.mockImplementation(async (_childId, dto) => ({
+      id: 'child-1',
+      name: 'Mai',
+      vocabulary_level: dto.vocabulary_level ?? 'beginner',
+      speaking_confidence: 50,
+      listening_score: 40,
+      interests: dto.interests ?? ['animals'],
+      attention_span_seconds: 180,
+      learning_style: dto.learning_style ?? 'visual',
+      parent_career: dto.parent_career ?? 'engineer',
+    }));
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],
       subscriptionStatus: 'none',
@@ -127,9 +169,7 @@ describe('Parent settings and gate', () => {
   });
 
   it('uses AuthContext logout for sign out so the root auth gate resets navigation', async () => {
-    const { getByText } = render(
-      <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
+    const { getByText } = await renderParentSettings();
 
     fireEvent.press(getByText('Sign out'));
 
@@ -137,10 +177,8 @@ describe('Parent settings and gate', () => {
     expect(mockNavigate).not.toHaveBeenCalledWith(ROUTES.LoginScreen);
   });
 
-  it('blocks plan status instead of rendering hardcoded or schema-less entitlement text', () => {
-    const { getAllByText, getByText, queryByText } = render(
-      <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
+  it('blocks plan status instead of rendering hardcoded or schema-less entitlement text', async () => {
+    const { getAllByText, getByText, queryByText } = await renderParentSettings();
 
     expect(getByText('Plan status')).toBeTruthy();
     expect(getAllByText('Unavailable').length).toBeGreaterThanOrEqual(1);
@@ -149,30 +187,42 @@ describe('Parent settings and gate', () => {
   });
 
   it('does not render prototype child profile or subscription data in parent settings', async () => {
-    const { getAllByText, queryByText } = render(
-      <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
+    const { getAllByText, queryByText } = await renderParentSettings();
 
     expect(queryByText('Mira')).toBeNull();
     expect(queryByText('7')).toBeNull();
     expect(queryByText('Active')).toBeNull();
-    expect(getAllByText('Unavailable').length).toBeGreaterThanOrEqual(9);
+    expect(getAllByText('Unavailable').length).toBeGreaterThanOrEqual(4);
   });
 
-  it('opens account privacy controls from settings', () => {
-    const { getByText } = render(
-      <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
+  it('lets parents update career and child interest filters used for lesson personalization', async () => {
+    const screen = await renderParentSettings();
+
+    expect(await screen.findByText('PERSONALITY FILTERS')).toBeTruthy();
+    expect(await screen.findByText('Engineer')).toBeTruthy();
+    expect(await screen.findByText('animals')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Teacher'));
+    });
+    expect(mockUpdateChildProfile).toHaveBeenCalledWith('child-1', expect.objectContaining({ parent_career: 'teacher' }));
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('space'));
+    });
+    expect(mockUpdateChildProfile).toHaveBeenCalledWith('child-1', expect.objectContaining({ interests: expect.arrayContaining(['space']) }));
+  });
+
+  it('opens account privacy controls from settings', async () => {
+    const { getByText } = await renderParentSettings();
 
     fireEvent.press(getByText('Account privacy'));
 
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
   });
 
-  it('labels parent settings rows with their action and current state for screen readers', () => {
-    const { getByLabelText } = render(
-      <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
+  it('labels parent settings rows with their action and current state for screen readers', async () => {
+    const { getByLabelText } = await renderParentSettings();
 
     fireEvent.press(getByLabelText('Open Safety & Privacy details'));
 
@@ -185,9 +235,7 @@ describe('Parent settings and gate', () => {
     await AsyncStorage.clear();
     await loadAppLanguagePreference();
 
-    const view = render(
-      <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
+    const view = await renderParentSettings();
 
     expect(view.getByText('Ngôn ngữ ứng dụng')).toBeTruthy();
     expect(view.getAllByText('Tiếng Việt').length).toBeGreaterThanOrEqual(1);
@@ -782,6 +830,7 @@ describe('Parent settings and gate', () => {
   });
 
   it('keeps today summary blocked instead of rendering hardcoded or guessed rows', async () => {
+    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     const { getByText, queryByText } = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
@@ -806,6 +855,7 @@ describe('Parent settings and gate', () => {
   });
 
   it('shows the today error state without stale data', async () => {
+    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     const timeout = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
@@ -815,6 +865,7 @@ describe('Parent settings and gate', () => {
   });
 
   it('labels parent back navigation with the destination screen', async () => {
+    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     const screen = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
@@ -826,6 +877,7 @@ describe('Parent settings and gate', () => {
   });
 
   it('keeps parent history blocked instead of rendering generated 30-day rows', async () => {
+    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     const { getByText, queryByText } = renderWithQuery(
       <ParentHistoryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
@@ -836,6 +888,7 @@ describe('Parent settings and gate', () => {
   });
 
   it('shows the history error state with a retry affordance and no generated stale rows', async () => {
+    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     const { getByLabelText, getByText, queryByText } = renderWithQuery(
       <ParentHistoryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );

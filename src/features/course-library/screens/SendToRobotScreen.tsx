@@ -22,6 +22,7 @@ import {
 import { getDeviceStatus } from '@/services/api/device.api';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { formatLessonCopy, getErrorMessage, normalizeError } from '@/utils/errors';
+import { lessonFitCopy } from '@/features/parent/courseInsights';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SendToRobotScreen'>;
 
@@ -72,7 +73,9 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           setCatalog({ kind: 'empty' });
           return;
         }
-        const lessonLists = await Promise.all(courses.map((course) => getCourseLessons(course.courseId)));
+        const lessonLists = await Promise.all(
+          courses.map((course) => getCourseLessons(course.courseId, childId ? { childId } : undefined)),
+        );
         if (!active) return;
         const lessonsByCourse: Record<string, PublishedLesson[]> = {};
         courses.forEach((course, i) => {
@@ -86,7 +89,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [childId]);
 
   // Resolve the active course: an explicit user pick wins, then the course passed
   // in via route params (deep-link from the library), then the first published
@@ -303,6 +306,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
               <Box style={styles.rowCard}>
                 {lessons.map((lesson, i) => {
                   const sel = lesson.lessonId === activeLessonId;
+                  const fitCopy = lessonFitCopy(lesson);
                   return (
                     <TouchableOpacity
                       key={lesson.lessonId}
@@ -318,6 +322,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
                         <Text style={styles.pickMeta}>
                           {lesson.manifestReady ? 'Ready to send' : 'Preparing on server'}
                         </Text>
+                        {fitCopy ? <Text style={styles.fitMeta} i18n={false}>{fitCopy}</Text> : null}
                       </Box>
                       {sel ? <Text fontWeight="800" style={styles.pickCheck}>✓</Text> : null}
                     </TouchableOpacity>
@@ -359,6 +364,7 @@ const styles = StyleSheet.create({
   pickBorder: { borderBottomWidth: 1, borderBottomColor: CL.hair },
   pickTitle: { fontSize: 14, color: CL.ink, lineHeight: 19 },
   pickMeta: { fontSize: 12, color: CL.ink2, marginTop: 2, lineHeight: 17 },
+  fitMeta: { fontSize: 12, color: CL.ink3, marginTop: 2, lineHeight: 17 },
   pickCheck: { fontSize: 16, color: CL.accent },
   hintText: { fontSize: 13, color: CL.ink2, lineHeight: 19 },
   errorText: { fontSize: 13, color: '#C0392B', lineHeight: 19 },

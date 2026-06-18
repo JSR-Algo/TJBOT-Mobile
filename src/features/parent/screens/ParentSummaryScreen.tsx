@@ -9,10 +9,14 @@ import PRow from '../components/PRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { getParentSummary, type ParentSummary } from '@/services/api/parent.api';
+import { getChildLessonProgress, getChildProgress } from '@/services/api/progress.api';
+import { getKPIs, getPronunciationTrend } from '@/services/api/learning';
 import { captureError } from '@/services/observability/sentry';
 import { localeDateTag, translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
+import { useHousehold } from '@/contexts/HouseholdContext';
+import { buildCourseInsightDashboard, qualityLabel, type CourseInsightDashboard } from '../courseInsights';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSummaryScreen'>;
 type SummaryParams = { deviceId?: string; summaryDate?: string };
@@ -34,18 +38,44 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
   const { language, t } = useAppLanguage();
   const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
   const [summary, setSummary] = React.useState<ParentSummary>(() => emptySummary());
+  const [dashboard, setDashboard] = React.useState<CourseInsightDashboard>(() => buildCourseInsightDashboard({}));
   const [errorState, setErrorState] = React.useState<SummaryErrorState>(() => defaultSummaryError());
   const params = (route.params ?? {}) as SummaryParams;
+  const { activeChild } = useHousehold();
+  const childId = activeChild?.id;
 
   const loadSummary = React.useCallback(() => {
     let active = true;
     setStatus('loading');
     getParentSummary()
-      .then((nextSummary) => {
+      .then(async (nextSummary) => {
         if (active) {
           const normalized = normalizeParentSummary(nextSummary);
           if (normalized) {
             setSummary(normalized);
+            if (childId) {
+              try {
+                const [progress, assignments, kpis, pronunciationTrend] = await Promise.allSettled([
+                  getChildProgress(childId),
+                  getChildLessonProgress(childId),
+                  getKPIs(childId),
+                  getPronunciationTrend(childId, 14),
+                ]);
+                if (active) {
+                  setDashboard(buildCourseInsightDashboard({
+                    progress: progress.status === 'fulfilled' ? progress.value : null,
+                    assignments: assignments.status === 'fulfilled' ? assignments.value : null,
+                    kpis: kpis.status === 'fulfilled' ? kpis.value : null,
+                    pronunciationTrend: pronunciationTrend.status === 'fulfilled' ? pronunciationTrend.value : null,
+                  }));
+                }
+              } catch (error) {
+                captureError(error);
+                if (active) setDashboard(buildCourseInsightDashboard({}));
+              }
+            } else {
+              setDashboard(buildCourseInsightDashboard({}));
+            }
             setStatus('success');
           } else {
             setErrorState(defaultSummaryError());
@@ -63,7 +93,7 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [childId]);
 
   React.useEffect(loadSummary, [loadSummary]);
 
@@ -138,6 +168,7 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
         <Text style={styles.dateLabel} i18n={false}>{formatTodayLabel(language)}</Text>
         {params.summaryDate ? <Text style={styles.dateLabel} i18n={false}>{summaryDateLabel(params.summaryDate, language)}</Text> : null}
         {params.deviceId ? <Text style={styles.dateLabel} i18n={false}>{summaryDeviceLabel(params.deviceId, language)}</Text> : null}
+        {activeChild?.name ? <Text style={styles.childLabel} i18n={false}>{activeChild.name}'s course dashboard</Text> : null}
         <Text fontWeight="600" style={styles.headline} i18n={!hasActivity}>
           {hasActivity ? weeklySummaryLabel(summary, language) : 'No lesson activity has synced yet.'}
         </Text>
@@ -164,6 +195,36 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
           </Box>
           <ChevronIcon />
         </TouchableOpacity>
+
+        <Box style={styles.dashboardBand}>
+          <Text fontWeight="700" style={styles.dashboardTitle}>Course quality</Text>
+          <Box flexDirection="row" gap={10} style={{ flexWrap: 'wrap' }}>
+            <Box style={styles.insightCard} flex={1}>
+              <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.stepSuccessPct}%</Text>
+              <Text style={styles.insightLabel} i18n={false}>{qualityLabel(dashboard.stepSuccessPct)} quality</Text>
+              <Text style={styles.insightNote} i18n={false}>{dashboard.stepSuccessPct}% step success</Text>
+            </Box>
+            <Box style={styles.insightCard} flex={1}>
+              <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.completionRatePct}%</Text>
+              <Text style={styles.insightLabel}>Completion</Text>
+              <Text style={styles.insightNote} i18n={false}>{dashboard.failedLessons} failed · {dashboard.activeLessons} active</Text>
+            </Box>
+          </Box>
+          <Text fontWeight="700" style={[styles.dashboardTitle, { marginTop: 14 }]}>Learning path</Text>
+          {dashboard.coursePath.length > 0 ? (
+            dashboard.coursePath.slice(0, 3).map((course) => (
+              <Box key={course.courseId} style={styles.pathRow}>
+                <Text style={styles.pathLabel} i18n={false}>{course.courseId} · {course.percent}%</Text>
+                <Text style={styles.pathMeta} i18n={false}>{course.lessonsCompleted}/{course.lessonsTotal} lessons</Text>
+              </Box>
+            ))
+          ) : (
+            <Text style={styles.insightNote}>No course path synced yet</Text>
+          )}
+          <Text style={[styles.insightNote, { marginTop: 10 }]} i18n={false}>
+            Pronunciation {dashboard.pronunciationTrend} · {dashboard.pronunciationScore}%
+          </Text>
+        </Box>
       </Box>
 
       <PRowGroup header="History">
@@ -326,6 +387,7 @@ function ChevronIcon() {
 
 const styles = StyleSheet.create({
   dateLabel: { fontSize: 13, color: PA.ink3, marginBottom: 6 },
+  childLabel: { fontSize: 13, color: PA.accent, marginBottom: 6, fontWeight: '600' },
   headline: { fontSize: 22, color: PA.ink, letterSpacing: -0.3, lineHeight: 29, marginBottom: 18 },
   statCard: { backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair, borderRadius: 12, padding: 12 },
   statVal: { fontSize: 22, color: PA.ink, letterSpacing: -0.3 },
@@ -334,5 +396,33 @@ const styles = StyleSheet.create({
     width: '100%', backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair,
     borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10,
   },
+  dashboardBand: {
+    marginTop: 14,
+    width: '100%',
+    backgroundColor: PA.card,
+    borderWidth: 1,
+    borderColor: PA.hair,
+    borderRadius: 12,
+    padding: 14,
+  },
+  dashboardTitle: { fontSize: 15, color: PA.ink, marginBottom: 10 },
+  insightCard: {
+    minWidth: 128,
+    backgroundColor: '#F7F8FA',
+    borderWidth: 1,
+    borderColor: PA.hair,
+    borderRadius: 10,
+    padding: 12,
+  },
+  insightValue: { fontSize: 24, color: PA.ink, lineHeight: 30 },
+  insightLabel: { fontSize: 12, color: PA.ink2, marginTop: 2 },
+  insightNote: { fontSize: 12, color: PA.ink3, marginTop: 4, lineHeight: 17 },
+  pathRow: {
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: PA.hair,
+  },
+  pathLabel: { fontSize: 13, color: PA.ink, fontWeight: '600' },
+  pathMeta: { fontSize: 12, color: PA.ink2, marginTop: 2 },
   retryText: { color: PA.accent, fontSize: 15, fontWeight: '500' },
 });

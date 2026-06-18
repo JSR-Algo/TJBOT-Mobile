@@ -147,9 +147,25 @@ export interface PublishedCourse {
 export interface PublishedLesson {
   lessonId: string;
   lessonVersion: number; // NUMBER (D-LV)
+  lessonType?: 'lesson';
   title: string;
   profile: string | null;
   manifestReady: boolean;
+  topicTags?: string[];
+  difficultyBand?: string | null;
+  estimatedDurationSec?: number | null;
+  monitorable?: boolean;
+  personalization?: {
+    rank: number;
+    reasonCode: 'interest_match' | 'personality_match' | 'neutral_order';
+    matchedTopics: string[];
+  };
+}
+
+type PublishedLessonPersonalization = NonNullable<PublishedLesson['personalization']>;
+
+export interface GetCourseLessonsOptions {
+  childId?: string;
 }
 
 export function normalizePublishedCoursesPayload(payload: unknown): PublishedCourse[] {
@@ -180,6 +196,22 @@ export function normalizePublishedLessonsPayload(payload: unknown): PublishedLes
 
   return rawList.map((raw) => {
     const r = asRecord(raw);
+    const personalizationRaw = asRecord(r.personalization);
+    const matchedTopicsRaw = personalizationRaw.matchedTopics ?? personalizationRaw.matched_topics;
+    const matchedTopics = Array.isArray(matchedTopicsRaw)
+      ? matchedTopicsRaw.filter((topic): topic is string => typeof topic === 'string')
+      : [];
+    const rawReasonCode = personalizationRaw.reasonCode ?? personalizationRaw.reason_code;
+    const reasonCode: PublishedLessonPersonalization['reasonCode'] | null = rawReasonCode === 'interest_match' || rawReasonCode === 'personality_match' || rawReasonCode === 'neutral_order'
+      ? rawReasonCode
+      : null;
+    const personalization: PublishedLesson['personalization'] = reasonCode
+      ? {
+          rank: Number(personalizationRaw.rank ?? 0),
+          reasonCode,
+          matchedTopics,
+        }
+      : undefined;
     return {
       lessonId: (r.lesson_id ?? r.lessonId ?? r.id ?? '') as string,
       lessonVersion: Number(r.lesson_version ?? r.lessonVersion ?? 0), // NUMBER (D-LV)
@@ -188,8 +220,36 @@ export function normalizePublishedLessonsPayload(payload: unknown): PublishedLes
       // do NOT fabricate 'espTft' — a null-profile lesson is not renderable/sendable.
       profile: (r.profile ?? null) as string | null,
       manifestReady: Boolean(r.manifest_ready ?? r.manifestReady ?? false),
+      ...normalizeLessonFilterMetadata(r),
+      ...(personalization ? { personalization } : {}),
     };
   });
+}
+
+function normalizeLessonFilterMetadata(r: Record<string, unknown>): Pick<PublishedLesson, 'lessonType' | 'topicTags' | 'difficultyBand' | 'estimatedDurationSec' | 'monitorable'> {
+  const metadata: Pick<PublishedLesson, 'lessonType' | 'topicTags' | 'difficultyBand' | 'estimatedDurationSec' | 'monitorable'> = {};
+  const lessonType = r.lesson_type ?? r.lessonType;
+  if (lessonType === 'lesson') metadata.lessonType = 'lesson';
+
+  const topicTagsRaw = r.topic_tags ?? r.topicTags;
+  if (Array.isArray(topicTagsRaw)) {
+    metadata.topicTags = topicTagsRaw.filter((topic): topic is string => typeof topic === 'string');
+  }
+
+  if ('difficulty_band' in r || 'difficultyBand' in r) {
+    const difficultyBand = r.difficulty_band ?? r.difficultyBand;
+    metadata.difficultyBand = typeof difficultyBand === 'string' ? difficultyBand : null;
+  }
+
+  if ('estimated_duration_sec' in r || 'estimatedDurationSec' in r) {
+    const estimatedDurationSec = Number(r.estimated_duration_sec ?? r.estimatedDurationSec);
+    metadata.estimatedDurationSec = Number.isFinite(estimatedDurationSec) && estimatedDurationSec > 0
+      ? estimatedDurationSec
+      : null;
+  }
+
+  if ('monitorable' in r) metadata.monitorable = Boolean(r.monitorable);
+  return metadata;
 }
 
 // Published course catalog — the parent's authored courses, AuthGuard-scoped.
@@ -199,8 +259,9 @@ export async function getCourses(): Promise<PublishedCourse[]> {
 }
 
 // Published lessons for one course, ordered as the backend returns them.
-export async function getCourseLessons(courseId: string): Promise<PublishedLesson[]> {
-  const response = await client.get(`/courses/${courseId}/lessons`);
+export async function getCourseLessons(courseId: string, options: GetCourseLessonsOptions = {}): Promise<PublishedLesson[]> {
+  const query = options.childId ? `?childId=${encodeURIComponent(options.childId)}` : '';
+  const response = await client.get(`/courses/${courseId}/lessons${query}`);
   return normalizePublishedLessonsPayload(response.data);
 }
 

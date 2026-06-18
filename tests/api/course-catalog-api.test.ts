@@ -82,6 +82,49 @@ describe('P4 — published course/lesson catalog API (GET /courses, GET /courses
       expect(typeof lessons[1]!.manifestReady).toBe('boolean');
     });
 
+    it('passes childId for personalized lesson ordering and normalizes safe personalization metadata', async () => {
+      mockedClient.get.mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              lessonId: 'w01-d02-barn-say-it',
+              lessonVersion: 1,
+              title: 'Barn — Say It',
+              profile: 'espTft',
+              manifestReady: true,
+              lessonType: 'lesson',
+              topicTags: ['animals', 'visual'],
+              difficultyBand: 'beginner',
+              estimatedDurationSec: 150,
+              monitorable: true,
+              personalization: { rank: 1, reasonCode: 'personality_match', matchedTopics: ['animals', 'visual'] },
+            },
+          ],
+          meta: { count: 1, personalized: true },
+        },
+      });
+
+      const lessons = await getCourseLessons('c_barn', { childId: 'child 1' });
+
+      expect(mockedClient.get).toHaveBeenCalledWith('/courses/c_barn/lessons?childId=child%201');
+      expect(lessons).toEqual([
+        {
+          lessonId: 'w01-d02-barn-say-it',
+          lessonVersion: 1,
+          title: 'Barn — Say It',
+          profile: 'espTft',
+          manifestReady: true,
+          lessonType: 'lesson',
+          topicTags: ['animals', 'visual'],
+          difficultyBand: 'beginner',
+          estimatedDurationSec: 150,
+          monitorable: true,
+          personalization: { rank: 1, reasonCode: 'personality_match', matchedTopics: ['animals', 'visual'] },
+        },
+      ]);
+      expect(JSON.stringify(lessons)).not.toContain('interests');
+    });
+
     it('coerces a string lessonVersion to a number and keeps profile null when absent (unbundled)', () => {
       expect(
         normalizePublishedLessonsPayload({

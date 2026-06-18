@@ -41,6 +41,25 @@ jest.mock('../../../src/services/api/parent.api', () => ({
   getParentSummary: () => mockGetParentSummary(),
 }));
 
+const mockGetChildProgress = jest.fn();
+const mockGetChildLessonProgress = jest.fn();
+jest.mock('../../../src/services/api/progress.api', () => ({
+  getChildProgress: (childId: string) => mockGetChildProgress(childId),
+  getChildLessonProgress: (childId: string) => mockGetChildLessonProgress(childId),
+}));
+
+const mockGetKPIs = jest.fn();
+const mockGetPronunciationTrend = jest.fn();
+jest.mock('../../../src/services/api/learning', () => ({
+  getKPIs: (childId: string) => mockGetKPIs(childId),
+  getPronunciationTrend: (childId: string, days?: number) => mockGetPronunciationTrend(childId, days),
+}));
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  __esModule: true,
+  useHousehold: () => ({ activeChild: { id: 'child-1', name: 'Mai' } }),
+}));
+
 // Imported after mocks so the screen module picks up the mocked seams.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ParentSummaryScreen = require('../../../src/features/parent/screens/ParentSummaryScreen').default;
@@ -72,6 +91,46 @@ function renderScreen() {
 describe('ParentSummaryScreen', () => {
   beforeEach(() => {
     mockGetParentSummary.mockReset();
+    mockGetChildProgress.mockReset();
+    mockGetChildLessonProgress.mockReset();
+    mockGetKPIs.mockReset();
+    mockGetPronunciationTrend.mockReset();
+    mockGetChildProgress.mockResolvedValue({
+      childId: 'child-1',
+      lessonsCompleted: 7,
+      currentStreakDays: 3,
+      masteredWords: 18,
+      byCourse: [{ courseId: 'animals', lessonsCompleted: 4, lessonsTotal: 10 }],
+    });
+    mockGetChildLessonProgress.mockResolvedValue([
+      {
+        assignmentId: 'assign-1',
+        deviceId: 'device-1',
+        childId: 'child-1',
+        lessonId: 'lesson-1',
+        lessonVersion: 1,
+        lessonTitle: 'Barn',
+        profile: 'espTft',
+        state: 'COMPLETED',
+        startedAt: '2026-06-18T08:00:00.000Z',
+        completedAt: '2026-06-18T08:05:00.000Z',
+        stepsCompleted: 5,
+        stepsSucceeded: 4,
+        lastEventAt: '2026-06-18T08:05:00.000Z',
+        createdAt: '2026-06-18T07:59:00.000Z',
+        updatedAt: '2026-06-18T08:05:00.000Z',
+      },
+    ]);
+    mockGetKPIs.mockResolvedValue({
+      vocab_words_this_week: 5,
+      speaking_confidence: 62,
+      engagement_score: 80,
+      retention_rate: 75,
+      sessions_this_week: 4,
+      daily_streak: 3,
+      weak_words: ['red'],
+    });
+    mockGetPronunciationTrend.mockResolvedValue({ avg_score: 71, trend: 'improving', points: [] });
   });
 
   it('does not render the failure copy when the API call succeeds', async () => {
@@ -161,5 +220,17 @@ describe('ParentSummaryScreen', () => {
 
     // After load, neither loading nor failure copy is on screen.
     expect(queryByText('Parent summary unavailable')).toBeNull();
+  });
+
+  it('renders course quality and learning path dashboards from child-scoped feeds', async () => {
+    mockGetParentSummary.mockResolvedValueOnce({ weekMinutes: 8, weekLessons: 1, streak: 2, topWords: ['hello'] });
+
+    const { findByText } = renderScreen();
+
+    await findByText('Course quality');
+    await findByText('80% step success');
+    await findByText('Learning path');
+    await findByText('animals · 40%');
+    await findByText('Pronunciation improving · 71%');
   });
 });
