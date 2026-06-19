@@ -8,11 +8,12 @@
     "orientation": "portrait",
     "scheme": "tjbots",
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      "expo-video"
     ],
     "ios": {
       "bundleIdentifier": "net.jasonle.tjbot",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "infoPlist": {
         "NSCameraUsageDescription": "TJBot uses the camera to scan setup codes when pairing your child's device.",
         "UIBackgroundModes": [

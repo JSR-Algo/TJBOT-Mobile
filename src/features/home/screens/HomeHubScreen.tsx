@@ -33,6 +33,11 @@ export default function HomeHubScreen({ navigation }: Props) {
       clearTimeout(greetTimer.current);
     }
     greetTimer.current = setTimeout(() => setGreet(false), 1800);
+    navigation.navigate(ROUTES.RobotFullscreenLessonScreen, {
+      lessonId: 'w01-d01-barn-say-it',
+      ageBand: '4-6',
+      autoStartVoice: true,
+    });
   };
   React.useEffect(() => () => clearTimeout(greetTimer.current!), []);
 
@@ -89,7 +94,7 @@ export default function HomeHubScreen({ navigation }: Props) {
           style={[styles.robotWrap, showingGreet && styles.robotWrapGreeting]}
           activeOpacity={0.9}
           accessibilityRole="button"
-          accessibilityLabel="Say hi to Robot"
+          accessibilityLabel="Talk to Robot and start barn lesson"
         >
           <Box style={styles.ringOuter} />
           <Box style={styles.ringInner} />
@@ -107,7 +112,7 @@ export default function HomeHubScreen({ navigation }: Props) {
         </TouchableOpacity>
 
         <Text fontWeight="800" style={styles.robotName}>Robot</Text>
-        <Text fontWeight="600" style={styles.tapHint}>Tap me to say hi</Text>
+        <Text fontWeight="600" style={styles.tapHint}>Tap me to talk</Text>
       </Box>
 
       <Box style={styles.primaryCta}>

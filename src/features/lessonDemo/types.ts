@@ -11,6 +11,12 @@ export type LessonStepType =
 
 export type RobotReadyState = 'idle' | 'listening' | 'modeling' | 'thinking' | 'celebrating';
 
+export interface LessonMedia {
+  videoSource: number;
+  posterSource?: number;
+  loop?: boolean;
+}
+
 export interface LessonChoice {
   id: string;
   label: string;
@@ -58,6 +64,7 @@ export interface LessonSession {
   steps: LessonStep[];
   sourceCardIds: string[];
   fallbackLessonId?: string;
+  media?: LessonMedia;
 }
 
 export interface LessonAttempt {

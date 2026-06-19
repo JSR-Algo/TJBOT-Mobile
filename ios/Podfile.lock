@@ -100,6 +100,8 @@ PODS:
     - ExpoModulesCore
   - ExpoSecureStore (55.0.11):
     - ExpoModulesCore
+  - ExpoVideo (55.0.17):
+    - ExpoModulesCore
   - fast_float (8.0.0)
   - FBLazyVector (0.83.4)
   - fmt (11.0.2)
@@ -3130,6 +3132,7 @@ DEPENDENCIES:
   - ExpoModulesJSI (from `../node_modules/expo-modules-core`)
   - ExpoNotifications (from `../node_modules/expo-notifications/ios`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
+  - ExpoVideo (from `../node_modules/expo-video/ios`)
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
@@ -3266,6 +3269,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-notifications/ios"
   ExpoSecureStore:
     :path: "../node_modules/expo-secure-store/ios"
+  ExpoVideo:
+    :path: "../node_modules/expo-video/ios"
   fast_float:
     :podspec: "../node_modules/react-native/third-party-podspecs/fast_float.podspec"
   FBLazyVector:
@@ -3461,6 +3466,7 @@ SPEC CHECKSUMS:
   ExpoModulesJSI: a998e176d28567273b540fa568505ff1c9aaacac
   ExpoNotifications: 71db05b1d1e1aaf6ead79f859faa1adfe3cc09ff
   ExpoSecureStore: 2410bec85e98b0718e21b8b012d4c3721ba8c0ed
+  ExpoVideo: 5e7aee124df2f7d9ffe1bd4dbf63119417b340a3
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 82d1d7996af4c5850242966eb81e73f9a6dfab1e
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd

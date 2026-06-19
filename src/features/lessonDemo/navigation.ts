@@ -7,6 +7,7 @@ import LessonRoadmapScreen from './screens/LessonRoadmapScreen';
 import LessonSessionScreen from './screens/LessonSessionScreen';
 import LessonShowcaseScreen from './screens/LessonShowcaseScreen';
 import ParentLessonSummaryScreen from './screens/ParentLessonSummaryScreen';
+import RobotFullscreenLessonScreen from './screens/RobotFullscreenLessonScreen';
 
 export const LESSON_DEMO_SCREENS = defineFeatureScreens([
   { name: ROUTES.LessonDemoHomeScreen, component: LessonDemoHomeScreen, role: 'stack-entry', stateMachineId: 'lesson_demo_home' },
@@ -15,6 +16,7 @@ export const LESSON_DEMO_SCREENS = defineFeatureScreens([
   { name: ROUTES.LessonShowcaseScreen, component: LessonShowcaseScreen, role: 'stack', backTarget: ROUTES.LessonDemoHomeScreen, stateMachineId: 'lesson_demo_showcase' },
   { name: ROUTES.ParentLessonSummaryScreen, component: ParentLessonSummaryScreen, role: 'stack', backTarget: ROUTES.LessonSessionScreen, forwardCycleGroup: 'lesson-demo-review', stateMachineId: 'parent_lesson_summary' },
   { name: ROUTES.RobotLessonControlScreen, component: RobotLessonControlScreen, role: 'stack', backTarget: ROUTES.LessonDemoHomeScreen, stateMachineId: 'robot_lesson_control' },
+  { name: ROUTES.RobotFullscreenLessonScreen, component: RobotFullscreenLessonScreen, role: 'stack', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'robot_fullscreen_lesson' },
 ]);
 
 export const LESSON_DEMO_NAVIGATION = {
