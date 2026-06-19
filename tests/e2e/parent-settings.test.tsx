@@ -30,6 +30,7 @@ const mockParentMarkGated = jest.fn();
 const mockParentTouchActivity = jest.fn();
 const mockParentClearGate = jest.fn();
 let mockParentSessionFresh = false;
+let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
 
 const mockNavigation = {
   navigate: mockNavigate,
@@ -129,6 +130,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
 
 describe('Parent settings and gate', () => {
   beforeEach(async () => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     jest.clearAllMocks();
     await AsyncStorage.clear();
     await setAppLanguage('en');
@@ -166,6 +168,17 @@ describe('Parent settings and gate', () => {
       subscriptionStatus: 'none',
       robotActivated: true,
     });
+  });
+
+  afterEach(async () => {
+    try {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it('uses AuthContext logout for sign out so the root auth gate resets navigation', async () => {

@@ -72,6 +72,8 @@ const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getCla
 const mockedRequestClaim = requestClaim as jest.MockedFunction<typeof requestClaim>;
 const mockedSavePendingPairingContext = savePendingPairingContext as jest.MockedFunction<typeof savePendingPairingContext>;
 
+let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
+
 async function advancePairingPolls(ms: number): Promise<void> {
   await act(async () => {
     await jest.advanceTimersByTimeAsync(ms);
@@ -151,6 +153,7 @@ function navigatePayloadStrings(navigate: jest.Mock): string[] {
 }
 
 beforeEach(() => {
+  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
   jest.clearAllMocks();
   mockedSavePendingPairingContext.mockResolvedValue(undefined);
   // Defaults: a BLE handoff resolves the local "credentials sent" handoff only.
@@ -184,13 +187,18 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  // Drain any leftover one-shot secrets so handoff TTL timers (and the
-  // module-level bootstrap-token map, which persists across tests) do not bleed
-  // across tests.
-  ['claim-1', 'attempt-1', 'attempt-rc-1', 'attempt-zc-1', 'claim-NEW'].forEach((id) => {
-    consumePairingWifiPassword(id);
-    clearPairingBootstrapToken(id);
-  });
+  try {
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  } finally {
+    consoleErrorSpy.mockRestore();
+    // Drain any leftover one-shot secrets so handoff TTL timers (and the
+    // module-level bootstrap-token map, which persists across tests) do not bleed
+    // across tests.
+    ['claim-1', 'attempt-1', 'attempt-rc-1', 'attempt-zc-1', 'claim-NEW'].forEach((id) => {
+      consumePairingWifiPassword(id);
+      clearPairingBootstrapToken(id);
+    });
+  }
 });
 
 // ===========================================================================
@@ -305,6 +313,7 @@ describe('PairConnectingScreen — pre-flight guards', () => {
 
   it('never renders final success on the initial pairing render', () => {
     seedSecrets('claim-1');
+    mockedProvisionWifiViaLocalBle.mockReturnValue(new Promise(() => undefined)); // initial-render assertion only
     mockedGetProvisioningAttemptStatus.mockReturnValue(new Promise(() => undefined)); // never resolves
     const navigate = jest.fn();
     const screen = render(

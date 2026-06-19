@@ -65,6 +65,13 @@ const mockedMarkLocal = markLocalDevicePaired as jest.MockedFunction<typeof mark
 const mockedGetPendingPairingContext = getPendingPairingContext as jest.MockedFunction<typeof getPendingPairingContext>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 
+let consoleInfoSpy: jest.SpiedFunction<typeof console.info>;
+let consoleWarnSpy: jest.SpiedFunction<typeof console.warn>;
+
+function callsWithoutLabel(calls: unknown[][], expectedLabel: string): unknown[][] {
+  return calls.filter(([label]) => label !== expectedLabel);
+}
+
 const FULL_PARAMS = {
   deviceId: 'device-1',
   serialNumber: 'TBT-2026-004217',
@@ -102,6 +109,8 @@ function renderScreen(navigate: jest.Mock, params?: Record<string, unknown>, res
 }
 
 beforeEach(() => {
+  consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+  consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   jest.clearAllMocks();
   // Default: a household with one assigned child and a resolving backend.
   householdWith([{ id: 'child-1' }]);
@@ -109,6 +118,16 @@ beforeEach(() => {
   mockedGetDeviceStatus.mockRejectedValue(Object.assign(new Error('no robot'), { code: 'DEVICE_NOT_FOUND' }));
   mockedGetPendingPairingContext.mockResolvedValue(null);
   mockedMarkLocal.mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+  try {
+    expect(callsWithoutLabel(consoleInfoSpy.mock.calls, '[TBOT PairRename] save pressed')).toEqual([]);
+    expect(callsWithoutLabel(consoleWarnSpy.mock.calls, '[TBOT PairRename] save failed')).toEqual([]);
+  } finally {
+    consoleInfoSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  }
 });
 
 // ---------------------------------------------------------------------------
