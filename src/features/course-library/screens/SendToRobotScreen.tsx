@@ -12,6 +12,7 @@ import CL from '../components/CL';
 import LCDPreview from '../components/LCDPreview';
 import {
   createAssignment,
+  enrollCourse,
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
@@ -37,6 +38,8 @@ type CatalogState =
   | { kind: 'ready'; courses: PublishedCourse[]; lessonsByCourse: Record<string, PublishedLesson[]> }
   | { kind: 'error'; message: string };
 
+type AssignmentMode = 'lesson' | 'course';
+
 export default function SendToRobotScreen({ navigation, route }: Props) {
   // childId = the parent-selected ACTIVE child (D-CHILD-RESOLUTION, ADR 0013 §N),
   // sent EXPLICITLY. For multi-child families the parent picks who they're
@@ -52,6 +55,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const setActiveChild = household?.setActiveChild;
 
   const [catalog, setCatalog] = React.useState<CatalogState>({ kind: 'loading' });
+  const [assignmentMode, setAssignmentMode] = React.useState<AssignmentMode>('lesson');
   const [selectedCourseId, setSelectedCourseId] = React.useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
   const [sending, setSending] = React.useState(false);
@@ -127,12 +131,18 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   // a RECOGNIZED profile (LESSON_PROFILES) so the assignment carries the
   // lesson's real render profile rather than silently coercing it to espTft
   // (MOB-3). The server READY gate remains authoritative for the actual preload.
-  const canSend =
-    hasChild &&
-    !!selectedLesson &&
-    selectedLesson.manifestReady &&
-    isLessonProfile(selectedLesson.profile) &&
-    !sending;
+  const canSend = assignmentMode === 'course'
+    ? hasChild && !!activeCourseId && !sending
+    : hasChild &&
+      !!selectedLesson &&
+      selectedLesson.manifestReady &&
+      isLessonProfile(selectedLesson.profile) &&
+      !sending;
+
+  const handleSelectMode = (mode: AssignmentMode) => {
+    setError(null);
+    setAssignmentMode(mode);
+  };
 
   const handleSelectCourse = (courseId: string) => {
     setError(null);
@@ -152,11 +162,15 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       setError('Add a child to this household before sending a lesson.');
       return;
     }
-    if (!selectedLesson) {
+    if (assignmentMode === 'course' && !activeCourseId) {
+      setError('Pick a course to assign to Robot.');
+      return;
+    }
+    if (assignmentMode === 'lesson' && !selectedLesson) {
       setError('Pick a lesson to send to Robot.');
       return;
     }
-    if (!selectedLesson.manifestReady || !isLessonProfile(selectedLesson.profile)) {
+    if (assignmentMode === 'lesson' && selectedLesson && (!selectedLesson.manifestReady || !isLessonProfile(selectedLesson.profile))) {
       setError('This lesson is still preparing on the server. Try again in a moment.');
       return;
     }
@@ -172,6 +186,18 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         setError(formatLessonCopy(getErrorMessage('ROBOT_OFFLINE'), { robot: device.name }));
         return;
       }
+      if (assignmentMode === 'course') {
+        if (!activeCourseId) return;
+        const { assignment } = await enrollCourse(activeCourseId, { childId, deviceId });
+        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+        navigation.navigate(ROUTES.RobotReadyScreen, {
+          deviceId,
+          assignmentId: assignment.id,
+          assignmentVersion: assignment.assignmentVersion,
+        });
+        return;
+      }
+      if (!selectedLesson) return;
       try {
         // The REAL lesson the parent picked drives the assignment + idempotency key.
         const assignment = await createAssignment({
@@ -220,8 +246,31 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   return (
     <DeviceShell title="Today's lesson" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
       <Text style={styles.intro}>
-        Pick a lesson to send to Robot — about 4 minutes when your child is ready.
+        Pick one lesson or assign the whole course to Robot.
       </Text>
+
+      <Box paddingHorizontal={16} paddingTop={18}>
+        <Box style={styles.modeSwitch}>
+          <TouchableOpacity
+            onPress={() => handleSelectMode('lesson')}
+            style={[styles.modeOption, assignmentMode === 'lesson' && styles.modeOptionSel]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: assignmentMode === 'lesson' }}
+            accessibilityLabel="Send one lesson"
+          >
+            <Text fontWeight="700" style={[styles.modeText, assignmentMode === 'lesson' && styles.modeTextSel]}>One lesson</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleSelectMode('course')}
+            style={[styles.modeOption, assignmentMode === 'course' && styles.modeOptionSel]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: assignmentMode === 'course' }}
+            accessibilityLabel="Send whole course"
+          >
+            <Text fontWeight="700" style={[styles.modeText, assignmentMode === 'course' && styles.modeTextSel]}>Whole course</Text>
+          </TouchableOpacity>
+        </Box>
+      </Box>
 
       {childrenList.length > 1 && (
         <Box paddingHorizontal={16} paddingTop={18}>
@@ -296,6 +345,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
             </Box>
           )}
 
+          {assignmentMode === 'lesson' && (
           <Box paddingHorizontal={16} paddingTop={18}>
             <Text fontWeight="700" style={styles.sectionLabel}>Lesson</Text>
             {lessons.length === 0 ? (
@@ -331,6 +381,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
               </Box>
             )}
           </Box>
+          )}
         </>
       )}
 
@@ -347,8 +398,8 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       )}
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn disabled={!canSend} onClick={handleSend}>
-          {sending ? 'Sending…' : 'Send to Robot'}
+        <DeviceBigBtn disabled={!canSend} onClick={handleSend} accessibilityLabel={assignmentMode === 'course' ? 'Assign course' : 'Send to Robot'}>
+          {sending ? 'Sending…' : assignmentMode === 'course' ? 'Assign course' : 'Send to Robot'}
         </DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -358,6 +409,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   intro: { fontSize: 13, color: CL.ink2, lineHeight: 20, paddingHorizontal: 20, paddingTop: 14 },
   sectionLabel: { fontSize: 11, color: CL.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  modeSwitch: { flexDirection: 'row', gap: 6, backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 8, padding: 4 },
+  modeOption: { flex: 1, minHeight: 40, borderRadius: 6, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  modeOptionSel: { backgroundColor: CL.accent },
+  modeText: { fontSize: 13, color: CL.ink2, lineHeight: 18 },
+  modeTextSel: { color: '#fff' },
   rowCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   pickRow: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12 },
   pickRowSel: { backgroundColor: '#E8F0FE' },

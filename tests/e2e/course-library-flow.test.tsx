@@ -105,7 +105,7 @@ describe('course-library flow guards', () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockedEnrollCourse.mockResolvedValueOnce({
       enrollment: { id: 'enr-1', courseId: 'c_food', childId: 'ch-1', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: null },
-      assignment: { id: 'asg-1', lessonId: 'lesson-1', lessonVersion: 1, state: 'ASSIGNED' },
+      assignment: { id: 'asg-1', assignmentVersion: 1, lessonId: 'lesson-1', lessonVersion: 1, state: 'ASSIGNED' },
     });
     const navigation = navigationFor();
     render(
@@ -220,6 +220,34 @@ describe('course-library flow guards', () => {
 
     expect(mockedCreateAssignment).toHaveBeenCalledWith({
       deviceId: 'dev-1', childId: 'ch-1', lessonId: 'w01-d02-barn-colors', lessonVersion: 3, profile: 'espTft',
+    });
+  });
+
+  it('enrolls the whole selected course when parent switches to course mode', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedEnrollCourse.mockResolvedValueOnce({
+      enrollment: { id: 'enr-1', courseId: 'c_barn', childId: 'ch-1', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d01' },
+      assignment: { id: 'asg-course-1', assignmentVersion: 1, lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, state: 'PRELOADING' },
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+    fireEvent.press(screen.getByLabelText('Send whole course'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Assign course'));
+    });
+
+    expect(mockedEnrollCourse).toHaveBeenCalledWith('c_barn', { childId: 'ch-1', deviceId: 'dev-1' });
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      deviceId: 'dev-1', assignmentId: 'asg-course-1', assignmentVersion: 1,
     });
   });
 

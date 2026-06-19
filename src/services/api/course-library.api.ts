@@ -511,6 +511,7 @@ export interface Enrollment {
 
 export interface AssignmentRef {
   id: string;
+  assignmentVersion: number;
   lessonId: string;
   lessonVersion: number; // NUMBER (D-LV) — same wire shape as createAssignment.
   state: AssignmentState;
@@ -540,6 +541,7 @@ export function normalizeAssignmentRefPayload(payload: unknown): AssignmentRef {
   const r = asRecord(payload);
   return {
     id: (r.id ?? r.assignment_id ?? r.assignmentId ?? '') as string,
+    assignmentVersion: Number(r.assignment_version ?? r.assignmentVersion ?? 0),
     lessonId: (r.lesson_id ?? r.lessonId ?? '') as string,
     lessonVersion: Number(r.lesson_version ?? r.lessonVersion ?? 0), // NUMBER (D-LV)
     state: toAssignmentState(r.state),

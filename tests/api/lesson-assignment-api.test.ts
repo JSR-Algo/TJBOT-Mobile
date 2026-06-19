@@ -6,6 +6,7 @@ import {
   isPreloadReady,
   lessonAssignmentIdempotencyKey,
   normalizeAssignmentPayload,
+  normalizeAssignmentRefPayload,
   normalizeCurrentAssignmentPayload,
   normalizePreloadStatusPayload,
   presentAssignmentState,
@@ -116,6 +117,26 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
         profile: 'espTft',
         state: 'ASSIGNED',
         createdAt: '2026-06-03T10:00:00Z',
+      });
+    });
+  });
+
+  describe('course enrollment assignment ref', () => {
+    it('normalizes assignmentVersion so course enrollment can resume RobotReady polling', () => {
+      expect(
+        normalizeAssignmentRefPayload({
+          id: 'asg-course-1',
+          assignment_version: 7,
+          lesson_id: 'w01-d01-barn-say-it',
+          lesson_version: 2,
+          state: 'PRELOADING',
+        }),
+      ).toEqual({
+        id: 'asg-course-1',
+        assignmentVersion: 7,
+        lessonId: 'w01-d01-barn-say-it',
+        lessonVersion: 2,
+        state: 'PRELOADING',
       });
     });
   });
