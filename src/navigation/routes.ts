@@ -1,3 +1,21 @@
+export type LessonSessionParams = {
+  courseId?: string;
+  courseTitle?: string;
+  unitId?: string;
+  unitTitle?: string;
+  lessonId?: string;
+  lessonTitle?: string;
+  contentVersion?: string;
+  mode?: 'lesson' | 'review' | 'mission';
+  activityIndex?: number;
+  activityTotal?: number;
+  beatIndex?: number;
+  lastPrompt?: string;
+  lastAcceptedProgress?: number;
+  voiceStateBeforeInterruption?: string;
+  resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect';
+};
+
 export type RootStackParamList = {
   // auth
   LoginScreen: undefined;
@@ -13,6 +31,7 @@ export type RootStackParamList = {
   IntroSpeakScreen: undefined;
   IntroRetryScreen: undefined;
   IntroCelebrateScreen: undefined;
+  ParentConsentScreen: undefined;
   // Optional `pairing` context lets the parent create a child mid-pairing and
   // then FINISH the pairing they started (PairRenameScreen → here when the
   // household has no child yet), instead of being dropped into onboarding. When
@@ -63,31 +82,39 @@ export type RootStackParamList = {
   PrivacyScreen: undefined;
   SubscriptionsScreen: undefined | { orderId?: string };
 
+  // lesson-demo
+  LessonDemoHomeScreen: undefined;
+  LessonRoadmapScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
+  LessonSessionScreen: undefined | { week?: number; day?: number; ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
+  LessonShowcaseScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
+  ParentLessonSummaryScreen: undefined | { lessonId?: string; ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
+  RobotLessonControlScreen: undefined | { deviceId?: string; lessonId?: string; sessionIndex?: number };
+
   // lesson-session
-  ConnectingScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  GreetingScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  LessonReadyScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  RobotListeningScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  UserSpeakingScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  RobotSpeakingScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  ThinkingScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  ActivityIntroScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  ActivityDoneScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  SuccessScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  LessonDoneScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect'; wordsLearned?: number };
-  ExitConfirmScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  RetryScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  SilenceScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  BargeinScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  GentleScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  OfftopicScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  SafetyScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  CostCappedScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  ParentStoppedScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  TimedOutScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  AudioErrorScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  AbandonedDisconnectScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  ReconnectingScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
+  ConnectingScreen: undefined | LessonSessionParams;
+  GreetingScreen: undefined | LessonSessionParams;
+  LessonReadyScreen: undefined | LessonSessionParams;
+  RobotListeningScreen: undefined | LessonSessionParams;
+  UserSpeakingScreen: undefined | LessonSessionParams;
+  RobotSpeakingScreen: undefined | LessonSessionParams;
+  ThinkingScreen: undefined | LessonSessionParams;
+  ActivityIntroScreen: undefined | LessonSessionParams;
+  ActivityDoneScreen: undefined | LessonSessionParams;
+  SuccessScreen: undefined | LessonSessionParams;
+  LessonDoneScreen: undefined | LessonSessionParams & { wordsLearned?: number };
+  ExitConfirmScreen: undefined | LessonSessionParams;
+  RetryScreen: undefined | LessonSessionParams;
+  SilenceScreen: undefined | LessonSessionParams;
+  BargeinScreen: undefined | LessonSessionParams;
+  GentleScreen: undefined | LessonSessionParams;
+  OfftopicScreen: undefined | LessonSessionParams;
+  SafetyScreen: undefined | LessonSessionParams;
+  CostCappedScreen: undefined | LessonSessionParams;
+  ParentStoppedScreen: undefined | LessonSessionParams;
+  TimedOutScreen: undefined | LessonSessionParams;
+  AudioErrorScreen: undefined | LessonSessionParams;
+  AbandonedDisconnectScreen: undefined | LessonSessionParams;
+  ReconnectingScreen: undefined | LessonSessionParams;
 
   // progress
   TodayProgressScreen: undefined;
@@ -172,6 +199,7 @@ export const ROUTES = {
   'IntroSpeakScreen': 'IntroSpeakScreen',
   'IntroRetryScreen': 'IntroRetryScreen',
   'IntroCelebrateScreen': 'IntroCelebrateScreen',
+  'ParentConsentScreen': 'ParentConsentScreen',
   'ChildProfileScreen': 'ChildProfileScreen',
   'FirstLessonEntryScreen': 'FirstLessonEntryScreen',
   'HomeHubScreen': 'HomeHubScreen',
@@ -205,6 +233,12 @@ export const ROUTES = {
   'FirstCourseScreen': 'FirstCourseScreen',
   'PrivacyScreen': 'PrivacyScreen',
   'SubscriptionsScreen': 'SubscriptionsScreen',
+  'LessonDemoHomeScreen': 'LessonDemoHomeScreen',
+  'LessonRoadmapScreen': 'LessonRoadmapScreen',
+  'LessonSessionScreen': 'LessonSessionScreen',
+  'LessonShowcaseScreen': 'LessonShowcaseScreen',
+  'ParentLessonSummaryScreen': 'ParentLessonSummaryScreen',
+  'RobotLessonControlScreen': 'RobotLessonControlScreen',
   'ConnectingScreen': 'ConnectingScreen',
   'GreetingScreen': 'GreetingScreen',
   'LessonReadyScreen': 'LessonReadyScreen',

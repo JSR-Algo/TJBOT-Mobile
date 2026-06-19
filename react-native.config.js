@@ -1,5 +1,5 @@
 /**
- * React Native autolinking overrides.
+ * React Native autolinking configuration.
  *
  * react-native-ble-plx@3.5.1 is incompatible with the RN 0.83 new-architecture
  * codegen pipeline — its `codegenConfig` is empty, so the generated
@@ -19,11 +19,5 @@
  * Remove this override and the manual Android link when ble-plx is upgraded.
  */
 module.exports = {
-  dependencies: {
-    'react-native-ble-plx': {
-      platforms: {
-        android: null,
-      },
-    },
-  },
+  dependencies: {},
 };

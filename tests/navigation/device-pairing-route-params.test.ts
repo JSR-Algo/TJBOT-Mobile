@@ -16,6 +16,7 @@ describe('device pairing Wi-Fi route params', () => {
     expect(src).toContain("const openPasswordScreen = (ssid: string): void => {");
     expect(src).toContain('...(route.params ?? {}),');
     expect(src).toContain('...buildPairWifiPasswordParams(ssid),');
+    expect(src).toContain('buildPairWifiPasswordParams(ssid');
     expect(src).toContain('scanRobotWifiNetworks');
     expect(src).toContain('No Robot-scanned networks found. Enter the network name manually.');
     expect(src).not.toContain('Network scan needs device provisioning support.');

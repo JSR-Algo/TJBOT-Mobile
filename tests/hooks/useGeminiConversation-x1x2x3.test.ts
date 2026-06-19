@@ -7,7 +7,7 @@
  *
  * X1: voiceMicVadStart fires → FSM transitions LISTENING → USER_SPEAKING
  * X2: voiceMicVadEnd fires → FSM transitions USER_SPEAKING → WAITING_AI
- * X3: voicePlaybackDrained fires → FSM transitions WAITING_AI → ASSISTANT_SPEAKING
+ * X3: voicePlaybackDrained fires → FSM transitions WAITING_AI/ASSISTANT_SPEAKING
  *     (or ASSISTANT_SPEAKING → stable via drain sentinel)
  *
  * These are CI-blocking, not release-authorizing. Physical-device matrix
@@ -86,19 +86,25 @@ describe('X2: voiceMicVadEnd drives USER_SPEAKING → WAITING_AI', () => {
 
 // ─── X3: voicePlaybackDrained → WAITING_AI/ASSISTANT_SPEAKING stable ────
 
+const PCM_PATH = path.resolve(__dirname, '../../src/services/audio/PcmStreamPlayer.ts');
+const pcmPlayer = fs.readFileSync(PCM_PATH, 'utf8');
+
 describe('X3: drain sentinel drives ASSISTANT_SPEAKING → LISTENING transition', () => {
   it('VOICE_EVENT_NAMES includes playbackDrained = voicePlaybackDrained', () => {
     expect(events).toMatch(/playbackDrained\s*:\s*'voicePlaybackDrained'/);
   });
 
-  it('hook references voiceResponseDrained / P0-11 drain path', () => {
-    // Drain is delivered via PcmStreamPlayer onPlaybackFinish callback (voiceResponseDrained).
-    // The hook comment at the turnComplete handler names this explicitly.
-    expect(hook).toMatch(/voiceResponseDrained/);
+  it('PcmStreamPlayer subscribes to voicePlaybackDrained and filters by turnGeneration', () => {
+    // Drain handling moved into PcmStreamPlayer when the composer was split.
+    // The native voicePlaybackDrained event is filtered by _turnGeneration and
+    // surfaced to the composer through the onPlaybackFinish callback.
+    expect(pcmPlayer).toMatch(/voicePlaybackDrained/);
+    expect(pcmPlayer).toMatch(/_turnGeneration/);
+    expect(pcmPlayer).toMatch(/handleNativeDrained/);
   });
 
-  it('drain drives ASSISTANT_SPEAKING → LISTENING with responseId guard', () => {
-    // P0-11: only transition when drained turn matches currentResponseId (stale-event guard)
+  it('composer wires onPlaybackFinish to drive ASSISTANT_SPEAKING → LISTENING', () => {
+    expect(hook).toMatch(/onPlaybackFinish\s*\(\(\)\s*=>\s*\{/);
     expect(hook).toMatch(/ASSISTANT_SPEAKING[\s\S]{0,500}LISTENING/);
     expect(hook).toMatch(/currentResponseId/);
   });

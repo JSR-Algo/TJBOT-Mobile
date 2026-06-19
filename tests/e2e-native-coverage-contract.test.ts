@@ -101,6 +101,7 @@ describe('native Detox E2E coverage contract', () => {
     expect(detoxConfig).toContain('EXPO_PUBLIC_VOICE_TEST_HARNESS=true');
     expect(detoxConfig).toContain('process.env.E2E_ENABLE_VOICE_TEST_HARNESS');
     expect(detoxConfig).toContain("require('./metro.config.js')");
+    expect(detoxConfig).toContain('WS_URL:');
     expect(detoxConfig.indexOf('process.env.TBOT_API_URL = IOS_API_URL')).toBeGreaterThanOrEqual(0);
     expect(detoxConfig.indexOf('process.env.TBOT_API_URL = IOS_API_URL')).toBeLessThan(detoxConfig.indexOf("const metroConfig = require('./metro.config.js')"));
     expect(detoxConfig).toContain('-Pe2eBundleDebug=true');

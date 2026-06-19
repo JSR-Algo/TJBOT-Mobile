@@ -116,14 +116,21 @@ const _qaQueue: Array<{ category: string; event: string; fields: Record<string, 
 const QA_FLUSH_MS = 2_000;
 
 function scheduleQaFlush(): void {
+  if (!Config.QA_MODE) {
+    // QA endpoint is gated by EXPO_PUBLIC_VOICE_TEST_HARNESS. Do not schedule
+    // if the feature is not explicitly enabled.
+    return;
+  }
   if (_qaFlushScheduled) return;
   _qaFlushScheduled = true;
   setTimeout(() => {
     _qaFlushScheduled = false;
-    if (_qaQueue.length === 0) return;
+    if (!Config.QA_MODE || _qaQueue.length === 0) {
+      _qaQueue.length = 0;
+      return;
+    }
     const batch = _qaQueue.splice(0, _qaQueue.length);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { default: apiClient } = require('../http/client') as {
         default: { post: (url: string, data: unknown) => Promise<unknown> };
       };
@@ -162,16 +169,35 @@ function shouldBreadcrumb(category: VoiceTelemetryCategory): boolean {
  * event     — dot-separated name, e.g. 'session.start', 'capture.chunk'.
  * fields    — optional structured payload (no PII, no audio bytes).
  */
+// Keys that may carry raw transcript/audio text. We keep lengths, timings,
+// IDs, and state metadata; only string-typed transcript-like values are
+// redacted so QA/Sentry breadcrumbs never leak PII.
+const PII_FIELD_PATTERN = /(?:transcript|text|audio|speech|utterance|prompt|inputText|outputText)/i;
+
+function sanitizeFields(
+  fields?: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  if (!fields) return undefined;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (PII_FIELD_PATTERN.test(key) && typeof value === 'string') {
+      out[key] = '[REDACTED]';
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
 export function track(
   category: VoiceTelemetryCategory,
   event: string,
   fields?: Record<string, unknown>,
 ): void {
-  const data: Record<string, unknown> = { ...fields, platform: Platform.OS };
+  const safeFields = sanitizeFields(fields);
+  const data: Record<string, unknown> = { ...safeFields, platform: Platform.OS };
 
   if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.info(`[voice:${category}] ${event}`, fields ?? '');
+    console.info('[voice:%s] %s', category, event, safeFields ?? '');
   }
 
   if (Config.QA_MODE) {
@@ -268,7 +294,7 @@ function nativeBreadcrumb(event: VoiceTelemetryEvent): void {
       category: sentryCategory,
       level,
       message: event.event,
-      data: { ...event, platform: Platform.OS },
+      data: { ...sanitizeFields(event as unknown as Record<string, unknown>), platform: Platform.OS },
       timestamp: Date.now() / 1000,
     });
   } catch {

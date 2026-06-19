@@ -35,6 +35,7 @@ describe('iOS app icon asset catalog', () => {
     for (const requiredIcon of requiredIPadAppStoreIcons) {
       expect(contents.images).toEqual(expect.arrayContaining([expect.objectContaining(requiredIcon)]));
     }
+    expect(contents.images.length).toBeGreaterThanOrEqual(1);
 
     for (const image of contents.images) {
       expect(image.filename).toBeTruthy();

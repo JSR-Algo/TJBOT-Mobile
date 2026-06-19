@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Pika Red LCD Face</title>
+  <style>
+    :root {
+      --bg: #010101;
+      --panel: #070707;
+      --panel-edge: #151515;
+      --red: #d7372f;
+      --red-soft: #a52220;
+      --red-dim: rgba(215, 55, 47, 0.26);
+      --red-faint: rgba(215, 55, 47, 0.12);
+      --ink: #f3d2ce;
+      --muted: #7b5854;
+      --chrome: #111;
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    body[data-kiosk="true"] {
+      padding: 0;
+      cursor: none;
+    }
+
+    .wrap {
+      width: min(100%, 1180px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 210px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    body[data-kiosk="true"] .wrap {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    .lcd {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 5 / 3;
+      overflow: hidden;
+      border-radius: 28px;
+      background:
+        radial-gradient(520px 260px at 50% 54%, var(--red-faint), transparent 68%),
+        linear-gradient(180deg, #070707, #010101 64%);
+      border: 1px solid rgba(215, 55, 47, 0.16);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.03),
+        inset 0 0 74px rgba(0,0,0,0.92),
+        0 28px 80px rgba(0,0,0,0.62);
+    }
+
+    body[data-kiosk="true"] .lcd {
+      width: 100vw;
+      height: 100vh;
+      aspect-ratio: auto;
+      border-radius: 0;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .lcd::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(112deg, rgba(255,255,255,0.045), transparent 22% 76%, rgba(255,255,255,0.025)),
+        repeating-linear-gradient(0deg, transparent 0 3px, rgba(215,55,47,0.018) 3px 4px);
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0.78;
+      mix-blend-mode: screen;
+    }
+
+    .face {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+      transform-origin: 400px 260px;
+      animation: faceBreathe 4.8s ease-in-out infinite;
+    }
+
+    .eye,
+    .lid,
+    .mouth,
+    .mark,
+    .pupil {
+      vector-effect: non-scaling-stroke;
+      transition:
+        transform 360ms cubic-bezier(.2,.9,.2,1),
+        opacity 220ms ease,
+        d 360ms cubic-bezier(.2,.9,.2,1),
+        rx 280ms ease,
+        ry 280ms ease;
+    }
+
+    .eye {
+      fill: none;
+      stroke: var(--red);
+      stroke-width: 16;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 11px rgba(215,55,47,0.34));
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .pupil {
+      fill: var(--red);
+      opacity: 0.52;
+      filter: drop-shadow(0 0 8px rgba(215,55,47,0.24));
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .lid {
+      fill: none;
+      stroke: var(--red);
+      stroke-width: 12;
+      stroke-linecap: round;
+      opacity: 0;
+      filter: drop-shadow(0 0 9px rgba(215,55,47,0.28));
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .mouth,
+    .mark {
+      fill: none;
+      stroke: var(--red);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 9px rgba(215,55,47,0.28));
+    }
+
+    .mark {
+      opacity: 0;
+      stroke-width: 9;
+    }
+
+    .soft-glow {
+      fill: var(--red);
+      opacity: 0.055;
+      filter: blur(24px);
+      transform-origin: center;
+      animation: glowPulse 3.6s ease-in-out infinite;
+    }
+
+    .blink-mask {
+      fill: #000;
+      opacity: 0;
+      animation: blink 5.8s infinite;
+    }
+
+    .state-idle .eye { animation: eyeIdle 4.8s ease-in-out infinite; }
+    .state-listening .eye { animation: listenPulse 1.15s ease-in-out infinite; }
+    .state-speaking .mouth { animation: speakMouth 520ms ease-in-out infinite; }
+    .state-speaking .pupil { animation: speakPulse 760ms ease-in-out infinite; }
+    .state-happy .eye { transform: translateY(-4px) scaleY(.78); }
+    .state-happy .pupil { opacity: 0; }
+    .state-curious .face { animation: curiousTilt 3.4s ease-in-out infinite; }
+    .state-curious .eye.left { transform: translate(10px, -9px) scale(1.04); }
+    .state-curious .eye.right { transform: translate(-8px, 8px) scale(.92); }
+    .state-confused .eye.left { transform: translateX(-8px) rotate(-8deg); }
+    .state-confused .eye.right { transform: translateX(8px) rotate(8deg); }
+    .state-sleepy .eye { transform: translateY(18px) scaleY(.36); opacity: .82; }
+    .state-sleepy .pupil { opacity: 0; }
+    .state-error .face { animation: errorJitter 120ms steps(2,end) infinite; }
+    .state-error .eye { stroke-width: 18; }
+    .state-error .pupil { opacity: 0; }
+
+    .state-listening #orbit,
+    .state-curious #question,
+    .state-confused #confusedMark,
+    .state-sleepy #sleepMark,
+    .state-error #errorMark {
+      opacity: 1;
+    }
+
+    .state-listening #orbit { animation: orbitPulse 1.4s ease-in-out infinite; }
+    .state-curious #question { animation: floatMark 1.7s ease-in-out infinite; }
+    .state-confused #confusedMark { animation: floatMark 1.4s ease-in-out infinite reverse; }
+    .state-sleepy #sleepMark { animation: sleepFloat 2.2s ease-in-out infinite; }
+    .state-error #errorMark { animation: errorFlash 400ms steps(2,end) infinite; }
+
+    .panel {
+      padding: 14px;
+      border: 1px solid rgba(215,55,47,0.18);
+      border-radius: 8px;
+      background: rgba(10,10,10,0.84);
+    }
+
+    body[data-kiosk="true"] .panel { display: none; }
+
+    .panel h1 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 650;
+      letter-spacing: 0;
+      color: var(--ink);
+    }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 7px;
+    }
+
+    button {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid rgba(215,55,47,0.18);
+      border-radius: 8px;
+      background: #050505;
+      color: var(--ink);
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    button[aria-pressed="true"] {
+      border-color: rgba(215,55,47,0.72);
+      background: rgba(215,55,47,0.16);
+      box-shadow: inset 0 0 18px rgba(215,55,47,0.09);
+    }
+
+    .hint {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    @keyframes faceBreathe {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-5px) scale(1.006); }
+    }
+
+    @keyframes eyeIdle {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(4px); }
+    }
+
+    @keyframes blink {
+      0%, 91%, 100% { opacity: 0; transform: scaleY(0); }
+      93%, 95% { opacity: 1; transform: scaleY(1); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { opacity: .045; transform: scale(.96); }
+      50% { opacity: .082; transform: scale(1.03); }
+    }
+
+    @keyframes listenPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.055); }
+    }
+
+    @keyframes orbitPulse {
+      0%, 100% { transform: scale(.94); opacity: .18; }
+      50% { transform: scale(1.05); opacity: .72; }
+    }
+
+    @keyframes speakMouth {
+      0%, 100% { transform: scaleY(.76); }
+      50% { transform: scaleY(1.22); }
+    }
+
+    @keyframes speakPulse {
+      0%, 100% { opacity: .38; transform: scale(.9); }
+      50% { opacity: .64; transform: scale(1.08); }
+    }
+
+    @keyframes curiousTilt {
+      0%, 100% { transform: rotate(-2deg) translateY(0); }
+      50% { transform: rotate(2.5deg) translateY(-5px); }
+    }
+
+    @keyframes floatMark {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes sleepFloat {
+      0% { transform: translate(0, 10px); opacity: 0; }
+      30%, 72% { opacity: .9; }
+      100% { transform: translate(18px, -18px); opacity: 0; }
+    }
+
+    @keyframes errorJitter {
+      0% { transform: translate(0, 0); }
+      50% { transform: translate(4px, -2px); }
+      100% { transform: translate(-3px, 2px); }
+    }
+
+    @keyframes errorFlash {
+      0%, 100% { opacity: .2; }
+      50% { opacity: 1; }
+    }
+
+    @media (max-width: 780px) {
+      body { overflow: auto; }
+      .wrap { grid-template-columns: 1fr; }
+      .panel { order: -1; }
+      .state-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      button { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="lcd" aria-label="Pika red robot face preview">
+      <svg class="face" viewBox="0 0 800 480" role="img" aria-label="Animated matte red robot eyes">
+        <ellipse class="soft-glow" cx="400" cy="250" rx="270" ry="118"></ellipse>
+
+        <g id="orbit" class="mark" transform-origin="400 238">
+          <path d="M238 238 C286 180 514 180 562 238"></path>
+          <path d="M238 238 C286 296 514 296 562 238"></path>
+        </g>
+
+        <g class="eye-pair">
+          <rect class="eye left" x="180" y="150" width="150" height="122" rx="44"></rect>
+          <rect class="eye right" x="470" y="150" width="150" height="122" rx="44"></rect>
+          <ellipse class="pupil left" cx="255" cy="211" rx="20" ry="28"></ellipse>
+          <ellipse class="pupil right" cx="545" cy="211" rx="20" ry="28"></ellipse>
+          <rect class="blink-mask" x="156" y="126" width="198" height="170" rx="38"></rect>
+          <rect class="blink-mask" x="446" y="126" width="198" height="170" rx="38"></rect>
+        </g>
+
+        <path id="mouth" class="mouth" d="M344 326 C374 350 426 350 456 326"></path>
+
+        <g id="question" class="mark">
+          <path d="M624 126 C646 106 680 118 680 146 C680 170 648 172 648 196"></path>
+          <path d="M648 224 L648 226"></path>
+        </g>
+
+        <g id="confusedMark" class="mark">
+          <path d="M612 304 L644 284 L676 304"></path>
+          <path d="M626 334 L654 318 L682 334"></path>
+        </g>
+
+        <g id="sleepMark" class="mark">
+          <path d="M596 126 H648 L598 174 H652"></path>
+          <path d="M652 82 H700 L654 126 H704"></path>
+        </g>
+
+        <g id="errorMark" class="mark">
+          <path d="M178 122 L326 282"></path>
+          <path d="M326 122 L178 282"></path>
+          <path d="M474 122 L622 282"></path>
+          <path d="M622 122 L474 282"></path>
+          <path d="M350 338 H450"></path>
+        </g>
+      </svg>
+    </section>
+
+    <aside class="panel" aria-label="Face state controls">
+      <h1>Pika Red LCD</h1>
+      <div class="state-grid" id="controls"></div>
+      <p class="hint">One matte red display color. Shape and motion carry the emotion.</p>
+    </aside>
+  </main>
+
+  <script>
+    const states = ["idle", "listening", "speaking", "happy", "curious", "confused", "sleepy", "error"];
+    const params = new URLSearchParams(window.location.search);
+    const body = document.body;
+    const controls = document.getElementById("controls");
+    const mouth = document.getElementById("mouth");
+    const cycle = params.get("cycle") === "1";
+    let current = states.includes(params.get("state")) ? params.get("state") : "idle";
+    let cycleTimer = null;
+
+    if (params.get("kiosk") === "1") {
+      body.dataset.kiosk = "true";
+    }
+
+    const mouthPaths = {
+      idle: "M344 326 C374 350 426 350 456 326",
+      listening: "M356 328 C382 344 418 344 444 328",
+      speaking: "M344 320 C370 344 430 344 456 320 C432 372 368 372 344 320",
+      happy: "M314 312 C354 374 446 374 486 312",
+      curious: "M360 332 C388 316 420 318 446 334",
+      confused: "M342 334 C370 318 398 350 426 334 C442 324 454 324 466 334",
+      sleepy: "M352 342 C384 354 416 354 448 342",
+      error: "M350 338 H450"
+    };
+
+    function setState(next) {
+      current = states.includes(next) ? next : "idle";
+      body.className = `state-${current}`;
+      mouth.setAttribute("d", mouthPaths[current]);
+      for (const button of controls.querySelectorAll("button")) {
+        button.setAttribute("aria-pressed", String(button.dataset.state === current));
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set("state", current);
+      if (cycle) url.searchParams.set("cycle", "1");
+      if (body.dataset.kiosk === "true") url.searchParams.set("kiosk", "1");
+      window.history.replaceState({}, "", url);
+    }
+
+    for (const state of states) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.state = state;
+      button.textContent = state;
+      button.addEventListener("click", () => {
+        if (cycleTimer) window.clearTimeout(cycleTimer);
+        setState(state);
+      });
+      controls.append(button);
+    }
+
+    setState(current);
+
+    function advanceCycle() {
+      let index = states.indexOf(current);
+      cycleTimer = window.setTimeout(() => {
+        index = (index + 1) % states.length;
+        setState(states[index]);
+        advanceCycle();
+      }, 1800);
+    }
+
+    if (cycle) {
+      advanceCycle();
+    }
+  </script>
+</body>
+</html>

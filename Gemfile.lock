@@ -227,5 +227,4 @@ PLATFORMS
 DEPENDENCIES
   fastlane (~> 2.230)
 
-BUNDLED WITH
-   1.17.2
+   2.4.22

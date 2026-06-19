@@ -1,0 +1,522 @@
+[
+  {
+    "lesson_id": "w17-d01-clothes-shirt-hat",
+    "week": 17,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say shirt and hat with a simple dress-and-name routine.",
+    "focus_items": ["shirt", "hat"],
+    "vietnamese_l1_target": "sh",
+    "practice_method": "TeeBot names shirt or hat, the child taps the matching picture, then says the word once with a quiet sh sound.",
+    "review_items": ["sunny", "happy", "book"],
+    "reward_event": {
+      "type": "clothes_badge",
+      "badge_id": "clothes_day1",
+      "message": "You named clothes in English today."
+    },
+    "fallback_lesson": {
+      "reason": "clothes_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: shirt." },
+        { "type": "repeat", "prompt": "Your turn: shirt." },
+        { "type": "choice", "prompt": "Is shirt clothes?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w17-d02-clothes-shoes-socks",
+    "week": 17,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say shoes and socks using a match-and-say routine.",
+    "focus_items": ["shoes", "socks"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Match shoes and socks pictures, then say each word with a small finish sound at the end.",
+    "review_items": ["shirt", "hat"],
+    "reward_event": {
+      "type": "clothes_badge",
+      "badge_id": "clothes_day2",
+      "message": "You matched clothes words in English today."
+    },
+    "fallback_lesson": {
+      "reason": "clothes_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: socks." },
+        { "type": "repeat", "prompt": "Your turn: socks." },
+        { "type": "choice", "prompt": "Are socks on your feet?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-005", "app-017"]
+  },
+  {
+    "lesson_id": "w17-d03-i-wear-a-hat",
+    "week": 17,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I wear a hat to talk about clothes in one short turn.",
+    "focus_items": ["I wear a hat"],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Choose a clothes picture and say I wear a plus the item, then swap to shoes and say I wear shoes.",
+    "review_items": ["hat", "shoes"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "wear_sentence",
+      "message": "You used a helper word in English today."
+    },
+    "fallback_lesson": {
+      "reason": "wear_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I wear a hat." },
+        { "type": "repeat", "prompt": "Your turn: I wear a hat." },
+        { "type": "practice", "prompt": "Say: I wear a shirt." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-014", "method-004", "app-016"]
+  },
+  {
+    "lesson_id": "w17-d04-what-are-you-wearing",
+    "week": 17,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer What are you wearing? with a short parent-safe English answer.",
+    "focus_items": ["What are you wearing?", "I am wearing a hat"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "TeeBot asks What are you wearing? and the child answers with I am wearing plus one clothes item from choices.",
+    "review_items": ["I wear a hat", "shirt", "shoes"],
+    "reward_event": {
+      "type": "roleplay_badge",
+      "badge_id": "clothes_roleplay",
+      "message": "You answered a clothes question in English today."
+    },
+    "fallback_lesson": {
+      "reason": "wearing_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: What are you wearing?" },
+        { "type": "repeat", "prompt": "Your turn: What are you wearing?" },
+        { "type": "choice", "prompt": "Choose an answer.", "choices": ["I am wearing a hat", "I am wearing shoes"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w17-d05-clothes-review",
+    "week": 17,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review clothes by naming two items and using one short wear sentence in a friendly weekly review.",
+    "focus_items": ["shirt", "shoes", "I wear a hat"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Do three mini turns: name a shirt, name shoes, then say I wear a hat, and celebrate effort.",
+    "review_items": ["shirt", "hat", "shoes", "socks", "I wear", "wearing"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "clothes_week_badge",
+      "message": "You finished a clothes week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "week_seventeen_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: shirt, hat, shoes, socks." },
+        { "type": "repeat", "prompt": "Your turn: shirt, hat, shoes, socks." },
+        { "type": "practice", "prompt": "Say: I wear a hat." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w18-d01-places-park-school",
+    "week": 18,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say park and school using a simple place picture practice.",
+    "focus_items": ["park", "school"],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "TeeBot names park or school, the child taps the matching picture, then says the word once slowly and then together.",
+    "review_items": ["shirt", "hat"],
+    "reward_event": {
+      "type": "places_badge",
+      "badge_id": "places_day1",
+      "message": "You named places in English today."
+    },
+    "fallback_lesson": {
+      "reason": "places_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: park." },
+        { "type": "repeat", "prompt": "Your turn: park." },
+        { "type": "choice", "prompt": "Is park a place?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "method-002", "app-016"]
+  },
+  {
+    "lesson_id": "w18-d02-places-home-store",
+    "week": 18,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say home and store with a short destination choice routine.",
+    "focus_items": ["home", "store"],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "TeeBot asks Where are we going? and the child chooses home or store and says the place.",
+    "review_items": ["park", "school"],
+    "reward_event": {
+      "type": "places_badge",
+      "badge_id": "places_day2",
+      "message": "You chose places in English today."
+    },
+    "fallback_lesson": {
+      "reason": "places_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: store." },
+        { "type": "repeat", "prompt": "Your turn: store." },
+        { "type": "practice", "prompt": "Say store again with two sounds at the start." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-005", "app-017"]
+  },
+  {
+    "lesson_id": "w18-d03-i-go-to-the-park",
+    "week": 18,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I go to the park to talk about going to a place.",
+    "focus_items": ["I go to the park"],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Pick a place and say I go to the plus the place, then swap to school and say I go to the school once for practice.",
+    "review_items": ["home", "park", "go"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "go_to_sentence",
+      "message": "You said a place sentence in English today."
+    },
+    "fallback_lesson": {
+      "reason": "go_to_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I go to the park." },
+        { "type": "repeat", "prompt": "Your turn: I go to the park." },
+        { "type": "practice", "prompt": "Say: I go to the school." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "method-004", "app-016"]
+  },
+  {
+    "lesson_id": "w18-d04-where-do-you-go",
+    "week": 18,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer Where do you go? with a short English place answer from choices.",
+    "focus_items": ["Where do you go?", "I go to the park"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks Where do you go? and the child answers with I go to plus one place from choices.",
+    "review_items": ["I go to the park", "park", "school"],
+    "reward_event": {
+      "type": "roleplay_badge",
+      "badge_id": "places_roleplay",
+      "message": "You answered a place question in English today."
+    },
+    "fallback_lesson": {
+      "reason": "where_do_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Where do you go?" },
+        { "type": "repeat", "prompt": "Your turn: Where do you go?" },
+        { "type": "choice", "prompt": "Choose an answer.", "choices": ["I go to the park", "I go to school"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-014", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w18-d05-places-routines-review",
+    "week": 18,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review places by planning a short day and naming where you go in a weekly review.",
+    "focus_items": ["park", "school", "I go to the park"],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "Say one place word, then one go-to sentence, then choose the matching place pictures to show understanding.",
+    "review_items": ["park", "school", "home", "store", "go", "Where do you go"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "places_week_badge",
+      "message": "You finished a places week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "week_eighteen_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: park, school, home, store." },
+        { "type": "repeat", "prompt": "Your turn: park, school, home, store." },
+        { "type": "practice", "prompt": "Say: I go to the park." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w19-d01-jobs-teacher-doctor",
+    "week": 19,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say teacher and doctor using a helper picture practice.",
+    "focus_items": ["teacher", "doctor"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot names teacher or doctor, the child taps the helper picture, then says the word with a steady rhythm.",
+    "review_items": ["park", "school"],
+    "reward_event": {
+      "type": "jobs_badge",
+      "badge_id": "jobs_day1",
+      "message": "You named helpers in English today."
+    },
+    "fallback_lesson": {
+      "reason": "jobs_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: teacher." },
+        { "type": "repeat", "prompt": "Your turn: teacher." },
+        { "type": "choice", "prompt": "Is teacher a job?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w19-d02-jobs-driver-cook",
+    "week": 19,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say driver and cook with a short role choice routine.",
+    "focus_items": ["driver", "cook"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Pick a picture for driver or cook, then say the word once with a clear ending sound.",
+    "review_items": ["teacher", "doctor"],
+    "reward_event": {
+      "type": "jobs_badge",
+      "badge_id": "jobs_day2",
+      "message": "You matched jobs in English today."
+    },
+    "fallback_lesson": {
+      "reason": "jobs_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: cook." },
+        { "type": "repeat", "prompt": "Your turn: cook." },
+        { "type": "choice", "prompt": "Does a cook make food?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-005", "app-017"]
+  },
+  {
+    "lesson_id": "w19-d03-she-is-a-teacher",
+    "week": 19,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence She is a teacher to describe a helper with a short sentence frame.",
+    "focus_items": ["She is a teacher"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Choose a helper picture, then say she is a teacher or he is a doctor from choices.",
+    "review_items": ["teacher", "doctor", "she", "he"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "job_sentence",
+      "message": "You used a full English sentence today."
+    },
+    "fallback_lesson": {
+      "reason": "be_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: She is a teacher." },
+        { "type": "repeat", "prompt": "Your turn: She is a teacher." },
+        { "type": "practice", "prompt": "Say: He is a doctor." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-014", "method-004", "app-016"]
+  },
+  {
+    "lesson_id": "w19-d04-who-helps-you",
+    "week": 19,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer Who helps you? by choosing a helper and naming the job in a short turn.",
+    "focus_items": ["Who helps you?", "A teacher helps me"],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "TeeBot asks Who helps you? and the child answers with a short sentence from choices like a teacher helps me.",
+    "review_items": ["She is a teacher", "teacher", "doctor"],
+    "reward_event": {
+      "type": "roleplay_badge",
+      "badge_id": "jobs_roleplay",
+      "message": "You answered a helper question in English today."
+    },
+    "fallback_lesson": {
+      "reason": "who_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Who helps you?" },
+        { "type": "repeat", "prompt": "Your turn: Who helps you?" },
+        { "type": "choice", "prompt": "Choose an answer.", "choices": ["a teacher helps me", "a doctor helps me"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w19-d05-jobs-review",
+    "week": 19,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review jobs by naming two helpers and using one short be sentence in a weekly review.",
+    "focus_items": ["teacher", "doctor", "She is a teacher"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Do three mini turns: name teacher, name doctor, then say she is a teacher, and celebrate effort.",
+    "review_items": ["teacher", "doctor", "driver", "cook", "she is", "who"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "jobs_week_badge",
+      "message": "You finished a jobs week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "week_nineteen_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: teacher, doctor, driver, cook." },
+        { "type": "repeat", "prompt": "Your turn: teacher, doctor, driver, cook." },
+        { "type": "practice", "prompt": "Say: She is a teacher." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w20-d01-nature-sun-moon",
+    "week": 20,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say sun and moon with a simple sky picture routine.",
+    "focus_items": ["sun", "moon"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot names sun or moon, the child taps the right picture, then says the word with a small finish sound.",
+    "review_items": ["teacher", "doctor"],
+    "reward_event": {
+      "type": "nature_badge",
+      "badge_id": "nature_day1",
+      "message": "You named nature words in English today."
+    },
+    "fallback_lesson": {
+      "reason": "nature_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: sun." },
+        { "type": "repeat", "prompt": "Your turn: sun." },
+        { "type": "choice", "prompt": "Is sun in the sky?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w20-d02-nature-tree-flower",
+    "week": 20,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say tree and flower with a short nature picture practice.",
+    "focus_items": ["tree", "flower"],
+    "vietnamese_l1_target": "consonant_clusters",
+    "practice_method": "Tap tree or flower when TeeBot says it, then say the word slowly and then together.",
+    "review_items": ["sun", "moon"],
+    "reward_event": {
+      "type": "nature_badge",
+      "badge_id": "nature_day2",
+      "message": "You found nature words in English today."
+    },
+    "fallback_lesson": {
+      "reason": "nature_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: tree." },
+        { "type": "repeat", "prompt": "Your turn: tree." },
+        { "type": "practice", "prompt": "Say tree again with a tiny tr start." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-005", "app-017"]
+  },
+  {
+    "lesson_id": "w20-d03-i-see-the-sun",
+    "week": 20,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I see the sun to talk about a nature picture in one short turn.",
+    "focus_items": ["I see the sun"],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Point to a nature picture and say I see the plus the item, then swap to moon and say I see the moon.",
+    "review_items": ["sun", "moon", "see"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "see_sentence",
+      "message": "You said a nature sentence in English today."
+    },
+    "fallback_lesson": {
+      "reason": "see_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I see the sun." },
+        { "type": "repeat", "prompt": "Your turn: I see the sun." },
+        { "type": "practice", "prompt": "Say: I see the moon." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "method-004", "app-016"]
+  },
+  {
+    "lesson_id": "w20-d04-what-is-in-the-sky",
+    "week": 20,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer What is in the sky? with a short English nature answer from choices.",
+    "focus_items": ["What is in the sky?", "The sun is in the sky"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "TeeBot asks What is in the sky? and the child answers with the sun or the moon from choices using is.",
+    "review_items": ["I see the sun", "sun", "moon"],
+    "reward_event": {
+      "type": "roleplay_badge",
+      "badge_id": "nature_roleplay",
+      "message": "You answered a sky question in English today."
+    },
+    "fallback_lesson": {
+      "reason": "what_is_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: What is in the sky?" },
+        { "type": "repeat", "prompt": "Your turn: What is in the sky?" },
+        { "type": "choice", "prompt": "Choose an answer.", "choices": ["the sun", "the moon"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w20-d05-nature-review",
+    "week": 20,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review nature by naming two sky words and using one short see sentence in a weekly review.",
+    "focus_items": ["sun", "tree", "I see the sun"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Do three mini turns: name sun, name tree, then say I see the sun, and celebrate effort.",
+    "review_items": ["sun", "moon", "tree", "flower", "I see", "what is"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "nature_week_badge",
+      "message": "You finished a nature week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "week_twenty_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: sun, moon, tree, flower." },
+        { "type": "repeat", "prompt": "Your turn: sun, moon, tree, flower." },
+        { "type": "practice", "prompt": "Say: I see the sun." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  }
+]

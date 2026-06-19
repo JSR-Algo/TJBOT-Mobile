@@ -17,7 +17,7 @@ import PairRenameScreen from '../../src/features/device/pairing/screens/PairRena
 import PairSuccessScreen from '../../src/features/device/pairing/screens/PairSuccessScreen';
 import { markLocalDevicePaired } from '../../src/features/device/pairing/localPairedDevice';
 import { putPairingBootstrapToken, putPairingWifiPassword } from '../../src/features/device/pairing/pairingSecretHandoff';
-import { completeDeviceProvisioning, confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken, pairDevice, startDeviceProvisioning } from '../../src/services/api/device.api';
+import { completeDeviceProvisioning, confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken, pairDevice, startDeviceProvisioning, type PairDeviceResult } from '../../src/services/api/device.api';
 import { getClaimStatus, requestClaim } from '../../src/services/api/claim.api';
 import { initializeBle, provisionWifiViaLocalBle, scanForTJBotDevices, scanRobotWifiNetworks } from '../../src/services/ble/service';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
@@ -119,7 +119,7 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       provisioningAttemptId: 'attempt-1',
       status: 'esp_bind_requested',
-    });
+    } as PairDeviceResult);
     apiMocks.confirmLocalBlePaired.mockResolvedValue({
       deviceId: 'device-1',
       provisioningAttemptId: 'attempt-1',

@@ -13,7 +13,6 @@ import { ROUTES } from '../../../src/navigation/routes';
 // (`require` is needed inside jest.mock factories — top-level imports are
 // not in scope when the factory runs.)
 jest.mock('@react-navigation/native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactInner = require('react') as typeof import('react');
   return {
     useFocusEffect: (cb: () => undefined | (() => void)) => {

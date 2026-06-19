@@ -2,6 +2,7 @@ const js = require('@eslint/js');
 const globals = require('globals');
 const tseslint = require('typescript-eslint');
 const reactHooks = require('eslint-plugin-react-hooks');
+const jestPlugin = require('eslint-plugin-jest');
 
 // P0-17 plan v2 §11.7 — TJBot custom rule banning FSM-affecting timers,
 // RNLAS imports, and Platform.OS branches in shared voice layers.
@@ -23,6 +24,7 @@ module.exports = [
     },
     plugins: {
       'react-hooks': reactHooks,
+      'jest': jestPlugin,
       'TJBot-voice': {
         rules: {
           'no-voice-timing-in-shared': TJBotVoiceRule,
@@ -50,6 +52,7 @@ module.exports = [
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      'jest/no-disabled-tests': 'warn',
     },
   },
 ];

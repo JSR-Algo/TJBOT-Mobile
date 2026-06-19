@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 
+/** Maximum in-memory messages retained per voice session (COPPA/PII safety). */
+export const VOICE_MESSAGE_HISTORY_CAP = 50;
+
 /**
  * Voice FSM v2 — 14 states (plan v2 §3.2). The store is the canonical
  * authority for what state we are in and which next state is allowed; it
@@ -54,6 +57,19 @@ export type VoiceState =
   | 'ENDED';
 
 export type AudioMode = 'unknown' | 'fast' | 'cautious' | 'full_buffer';
+
+/**
+ * FSM deadline-timer configuration (plan v2 §3.2 + §6.3).
+ * The store owns the table and the timeout action; hooks own the
+ * setTimeout scheduling (lint rule §11.7). Centralising the table
+ * makes the timer behaviour testable without mounting React effects.
+ */
+export interface FsmTimerConfig {
+  deadlineMs: number;
+  fallbackState: VoiceState;
+  errorMessage?: string;
+  metricEvent: string;
+}
 
 export type SessionId = string;
 export type Epoch = number;
@@ -133,6 +149,65 @@ const VALID_TRANSITIONS: Record<VoiceState, readonly VoiceState[]> = {
   ERROR_RECOVERABLE: ['IDLE', 'CONNECTING', 'ENDED'],
   ERROR_FATAL: ['ENDED'],
   ENDED: ['PREPARING_AUDIO'],
+};
+
+/**
+ * Per-state deadline timers (plan v2 §3.2 + §6.3). The store is the
+ * source of truth for *which* timers exist and *what* they do; hooks
+ * are only responsible for arming/clearing the setTimeout.
+ */
+export const FSM_TIMER_TABLE: Partial<Record<VoiceState, FsmTimerConfig>> = {
+  PREPARING_AUDIO: {
+    deadlineMs: 4000,
+    fallbackState: 'ERROR_RECOVERABLE',
+    errorMessage: 'Khởi động micro chậm.',
+    metricEvent: 'voice.fsm.timeout',
+  },
+  CONNECTING: {
+    deadlineMs: 10_000,
+    fallbackState: 'ERROR_RECOVERABLE',
+    errorMessage: 'Kết nối Gemini quá chậm.',
+    metricEvent: 'voice.fsm.timeout',
+  },
+  READY: {
+    deadlineMs: 2000,
+    fallbackState: 'ERROR_RECOVERABLE',
+    errorMessage: 'Micro không sẵn sàng.',
+    metricEvent: 'voice.fsm.timeout',
+  },
+  USER_SPEAKING: {
+    deadlineMs: 30_000,
+    fallbackState: 'ERROR_RECOVERABLE',
+    errorMessage: 'VAD bị kẹt.',
+    metricEvent: 'voice.fsm.timeout',
+  },
+  USER_SPEECH_FINALIZING: {
+    deadlineMs: 1000,
+    fallbackState: 'LISTENING',
+    metricEvent: 'voice.fsm.timeout',
+  },
+  WAITING_AI: {
+    deadlineMs: 8000,
+    fallbackState: 'LISTENING',
+    metricEvent: 'voice.fsm.timeout',
+  },
+  RECONNECTING: {
+    deadlineMs: 8000,
+    fallbackState: 'ERROR_RECOVERABLE',
+    errorMessage: 'Kết nối lại quá chậm.',
+    metricEvent: 'voice.fsm.timeout',
+  },
+  INTERRUPTED: {
+    deadlineMs: 800,
+    fallbackState: 'ERROR_RECOVERABLE',
+    errorMessage: 'Ngắt audio không phản hồi.',
+    metricEvent: 'voice.assistant_turn.interrupted_timeout',
+  },
+  ERROR_RECOVERABLE: {
+    deadlineMs: 5000,
+    fallbackState: 'IDLE',
+    metricEvent: 'voice.recoverable_auto_reset',
+  },
 };
 
 /**
@@ -251,6 +326,16 @@ export interface VoiceAssistantStore {
   setIsPoorNetwork: (poor: boolean) => void;
   stopSession: () => void;
   reset: () => void;
+  /**
+   * Read-only lookup for the FSM deadline timer attached to a state.
+   * Returns null when the state has no deadline (e.g. IDLE, LISTENING).
+   */
+  getFsmTimerConfig: (state: VoiceState) => FsmTimerConfig | null;
+  /**
+   * Apply the timeout action for a state. Safe to call when the FSM has
+   * already left the state — transition() will simply return false.
+   */
+  onFsmTimerExpired: (state: VoiceState) => void;
 }
 
 const INITIAL_STATE = {
@@ -392,13 +477,19 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
 
   addMessage: (role: 'user' | 'ai', text: string, interrupted?: boolean) => {
     if (!text.trim()) return;
-    set((s) => ({
-      messages: [
+    set((s) => {
+      const nextMessages = [
         ...s.messages,
         { role, text: text.trim(), ts: Date.now(), ...(interrupted ? { interrupted } : {}) },
-      ],
-      ...(role === 'user' ? { userTranscript: '' } : { aiTranscript: '' }),
-    }));
+      ];
+      if (nextMessages.length > VOICE_MESSAGE_HISTORY_CAP) {
+        nextMessages.splice(0, nextMessages.length - VOICE_MESSAGE_HISTORY_CAP);
+      }
+      return {
+        messages: nextMessages,
+        ...(role === 'user' ? { userTranscript: '' } : { aiTranscript: '' }),
+      };
+    });
   },
 
   setAudioLevel: (level: number) => set({ audioLevel: Math.max(0, Math.min(1, level)) }),
@@ -434,4 +525,21 @@ export const useVoiceAssistantStore = create<VoiceAssistantStore>((set, get) => 
     })),
 
   reset: () => set(INITIAL_STATE),
+
+  getFsmTimerConfig: (state: VoiceState): FsmTimerConfig | null =>
+    FSM_TIMER_TABLE[state] ?? null,
+
+  onFsmTimerExpired: (state: VoiceState): void => {
+    const config = FSM_TIMER_TABLE[state];
+    if (!config) return;
+    if (config.errorMessage) {
+      set({ error: config.errorMessage });
+    }
+    // WAITING_AI timeout closes the barge-in window so the next user
+    // utterance starts a fresh generation rather than a stale one.
+    if (state === 'WAITING_AI') {
+      set({ bargeInWindowOpen: false });
+    }
+    get().transition(config.fallbackState);
+  },
 }));

@@ -36,6 +36,13 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   const params = route.params;
   const copy = copyForError(params?.errorCode);
   const settingsAction = settingsActionForError(params?.errorCode);
+  const reasons = React.useMemo(() => {
+    if (params?.errorCode === 'E-PROV-001') {
+      // BLE timeout / connect failure — Wi-Fi password recovery is not relevant.
+      return REASONS.filter((reason) => reason.t !== 'Wrong Wi-Fi password');
+    }
+    return REASONS;
+  }, [params?.errorCode]);
 
   React.useEffect(() => {
     if (!canRecoverLateClaim(params)) return;
@@ -97,7 +104,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
       </Box>
       {shouldShowReasonCards(params?.errorCode) ? (
         <Box paddingHorizontal={16} paddingTop={20} gap={8}>
-          {REASONS.map(r => (
+          {reasons.map(r => (
             <TouchableOpacity
               key={r.t}
               style={styles.reasonCard}

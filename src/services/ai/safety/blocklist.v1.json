@@ -1,0 +1,45 @@
+{
+  "version": "v1.0.0",
+  "generatedAt": "2026-04-21T00:00:00Z",
+  "authoredBy": "safety-lead@TJBot",
+  "approvedBy": "legal-lead@TJBot",
+  "integritySha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "categories": {
+    "violence": [
+      "kill", "murder", "hurt", "attack", "fight", "weapon", "gun", "knife", "blood", "die",
+      "dead", "punch", "kick", "hit", "stab", "shoot", "bomb", "explode", "war", "battle"
+    ],
+    "sexual": [
+      "sex", "naked", "nude", "porn", "kiss me", "touch me", "private parts", "underwear",
+      "breast", "butt", "penis", "vagina", "sexy", "adult video", "strip", "hook up"
+    ],
+    "substance": [
+      "drug", "cocaine", "heroin", "marijuana", "weed", "alcohol", "beer", "wine", "drunk",
+      "high", "smoke", "cigarette", "vape", "pill", "overdose", "dealer"
+    ],
+    "self-harm": [
+      "suicide", "kill myself", "hurt myself", "cut myself", "end my life", "want to die",
+      "better off dead", "no reason to live", "self-harm", "self harm", "hang myself", "jump off"
+    ],
+    "pii": [
+      "\\b\\d{3}[-.]\\d{3}[-.]\\d{4}\\b",
+      "\\b\\d{4}[ -]?\\d{4}[ -]?\\d{4}[ -]?\\d{4}\\b",
+      "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+      "\\b\\d{1,5}\\s+\\w+\\s+(?:street|st|avenue|ave|road|rd|boulevard|blvd)\\b",
+      "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+      "\\b\\d{5}(?:-\\d{4})?\\b"
+    ],
+    "prompt-injection": [
+      "ignore (?:all )?previous instructions",
+      "ignore (?:all )?prior instructions",
+      "disregard (?:all )?previous instructions",
+      "you are now",
+      "new instructions",
+      "system prompt",
+      "override safety",
+      "bypass safety",
+      "ignore safety",
+      "ignore your instructions"
+    ]
+  }
+}

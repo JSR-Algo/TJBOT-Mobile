@@ -6,7 +6,7 @@ flowchart TD
   OnboardingCheck -- no --> Onboarding[OnboardingNavigator]
   OnboardingCheck -- yes --> Protected[ModalNavigator]
   Auth --> AuthInitial[SplashScreen]
-  Onboarding --> OnboardingInitial[ChildProfileScreen]
+  Onboarding --> OnboardingInitial[ParentConsentScreen]
   Protected --> ProtectedDefault[HomeHubScreen]
   Protected --> PendingDeviceSetup[DeviceOverviewScreen]
 
@@ -23,7 +23,8 @@ flowchart TD
 
   subgraph OnboardingNavigator
     Onboarding_MicAskScreen[MicAskScreen<br/>stackScreens / onboarding]
-    Onboarding_ChildProfileScreen[ChildProfileScreen<br/>stackScreens / onboarding-root]
+    Onboarding_ParentConsentScreen[ParentConsentScreen<br/>stackScreens / onboarding-root]
+    Onboarding_ChildProfileScreen[ChildProfileScreen<br/>stackScreens / onboarding]
     Onboarding_FirstLessonEntryScreen[FirstLessonEntryScreen<br/>stackScreens / onboarding]
   end
 
@@ -51,6 +52,12 @@ flowchart TD
     Protected_RobotReadyScreen[RobotReadyScreen<br/>stackScreens / stack]
     Protected_RunningScreen[RunningScreen<br/>stackScreens / stack]
     Protected_CompanionScreen[CompanionScreen<br/>stackScreens / stack]
+    Protected_LessonDemoHomeScreen[LessonDemoHomeScreen<br/>stackScreens / stack-entry]
+    Protected_LessonRoadmapScreen[LessonRoadmapScreen<br/>stackScreens / stack]
+    Protected_LessonSessionScreen[LessonSessionScreen<br/>stackScreens / stack]
+    Protected_LessonShowcaseScreen[LessonShowcaseScreen<br/>stackScreens / stack]
+    Protected_ParentLessonSummaryScreen[ParentLessonSummaryScreen<br/>stackScreens / stack]
+    Protected_RobotLessonControlScreen[RobotLessonControlScreen<br/>stackScreens / stack]
     Protected_ConnectingScreen[ConnectingScreen<br/>stackScreens / state-machine]
     Protected_GreetingScreen[GreetingScreen<br/>stackScreens / state-machine]
     Protected_LessonReadyScreen[LessonReadyScreen<br/>stackScreens / state-machine]

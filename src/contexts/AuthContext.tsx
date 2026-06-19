@@ -3,7 +3,6 @@ import { User } from '../types';
 import * as authApi from '../services/api/auth';
 import * as accountApi from '../services/api/account';
 import { setAuthInvalidatedHandler } from '../services/http/client';
-import { setAiAuthInvalidatedHandler } from '../services/api/ai';
 import {
   clearTokens,
   deleteSecureItem,
@@ -72,12 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     setAuthInvalidatedHandler(() => {
       void forceLogoutRef.current();
     });
-    setAiAuthInvalidatedHandler(() => {
-      void forceLogoutRef.current();
-    });
     return () => {
       setAuthInvalidatedHandler(null);
-      setAiAuthInvalidatedHandler(null);
     };
   }, []);
 

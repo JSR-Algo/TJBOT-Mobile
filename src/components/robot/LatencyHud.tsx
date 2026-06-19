@@ -12,9 +12,20 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
-import { LATENCY_TARGETS } from "../../hooks/useLatencyBudget";
-import type { LatencyBudgetSample } from "../../hooks/useLatencyBudget";
 import type { LatencyMetric } from "../../contracts/realtime-events";
+
+export interface LatencyBudgetSample {
+  readonly value_ms: number;
+  readonly within: "p50" | "p95" | "over";
+}
+
+const LATENCY_TARGETS: Record<LatencyMetric, { p50_ms: number; p95_ms: number }> = {
+  perceived_reaction_ms: { p50_ms: 250, p95_ms: 500 },
+  transcript_ms: { p50_ms: 600, p95_ms: 1200 },
+  first_audio_ms: { p50_ms: 600, p95_ms: 1200 },
+  full_completion_ms: { p50_ms: 800, p95_ms: 1500 },
+  interrupt_to_stop_ms: { p50_ms: 250, p95_ms: 500 },
+};
 
 interface LatencyHudProps {
   /**

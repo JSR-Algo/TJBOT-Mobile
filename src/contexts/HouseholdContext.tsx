@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Household, Child } from '../types';
@@ -8,6 +8,7 @@ import { normalizeError } from '../utils/errors';
 import type { RootStackParamList } from '../navigation/routes';
 
 const ONBOARDING_COMPLETE_KEY = 'onboarding_complete_v1';
+const HOUSEHOLDS_CACHE_KEY = '@tbot/household-context:households';
 
 // Mobile-local active-child selection. The backend active_child_id endpoint is
 // currently unreliable, so the app owns this choice locally and persists it.
@@ -86,6 +87,44 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     pendingDeviceSetup: false,
     protectedInitialRoute: undefined,
   });
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Hydrate persisted household list and onboarding flag before any API call,
+  // so returning users see cached data immediately while fresh data refreshes.
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([
+      readOnboardingCompleteFromStore(),
+      AsyncStorage.getItem(HOUSEHOLDS_CACHE_KEY),
+    ]).then(([persistedFlag, cachedHouseholds]) => {
+      if (cancelled) return;
+
+      setState((s) => {
+        if (s.households.length > 0) return s; // API already won the race
+        const households = cachedHouseholds ? (JSON.parse(cachedHouseholds) as Household[]) : [];
+        const nextOnboardingComplete = persistedFlag || s.onboardingComplete;
+        if (
+          households.length === 0 &&
+          s.households.length === 0 &&
+          s.activeHousehold === null &&
+          nextOnboardingComplete === s.onboardingComplete
+        ) {
+          return s;
+        }
+        return {
+          ...s,
+          households,
+          activeHousehold: households[0] ?? null,
+          onboardingComplete: nextOnboardingComplete,
+        };
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) {
@@ -94,22 +133,27 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     }
     setState((s) => ({ ...s, isLoading: true, error: null }));
 
-    // Safety timeout bumped 5s → 12s: Render free-tier cold start can take
-    // 8-10s, which previously kicked the user back to Onboarding.
-    const timeout = setTimeout(() => {
-      setState((s) => s.isLoading ? { ...s, isLoading: false } : s);
-    }, 12000);
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
-      const households = await householdsApi.list();
-      clearTimeout(timeout);
+      const activeHouseholdId = state.activeHousehold?.id;
+      const [households, childList] = await Promise.all([
+        householdsApi.list(controller.signal),
+        activeHouseholdId
+          ? householdsApi.listChildren(activeHouseholdId, controller.signal)
+          : Promise.resolve<Child[]>([]),
+      ]);
+
       const active = households[0] ?? null;
-      let childList: Child[] = [];
-      if (active) {
-        childList = await householdsApi.listChildren(active.id);
-      }
       const completed = households.length > 0;
-      if (completed) writeOnboardingCompleteToStore(true);
+      if (completed) {
+        writeOnboardingCompleteToStore(true);
+        AsyncStorage.setItem(HOUSEHOLDS_CACHE_KEY, JSON.stringify(households)).catch(
+          () => { /* cache write is best-effort */ },
+        );
+      }
       setState((s) => ({
         ...s,
         households,
@@ -119,23 +163,17 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
         onboardingComplete: s.onboardingComplete || completed,
       }));
     } catch (err) {
-      clearTimeout(timeout);
       const normalized = normalizeError(err);
       // On error, DO NOT flip onboardingComplete — a transient 401/timeout
       // used to force returning users back into Onboarding. Keep whatever
       // the persisted hydrate loaded.
       setState((s) => ({ ...s, error: normalized.message, isLoading: false }));
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
     }
-  }, [isAuthenticated]);
-
-  // Hydrate persisted onboardingComplete BEFORE any refresh runs, so cold
-  // start of a returning user doesn't briefly show onboarding while
-  // the API call is in flight.
-  useEffect(() => {
-    readOnboardingCompleteFromStore().then((persisted) => {
-      if (persisted) setState((s) => (s.onboardingComplete ? s : { ...s, onboardingComplete: true }));
-    });
-  }, []);
+  }, [isAuthenticated, state.activeHousehold?.id]);
 
   // Hydrate the persisted active-child pick. Stored as a raw id; resolution
   // against `children` (with children[0] fallback) happens at render below, so
@@ -154,17 +192,34 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     if (isAuthenticated) {
       refresh();
     } else {
-      setState((s) => ({
-        ...s,
-        households: [],
-        activeHousehold: null,
-        children: [],
-        pendingDeviceSetup: false,
-      }));
+      setState((s) => {
+        if (
+          s.households.length === 0 &&
+          s.activeHousehold === null &&
+          s.children.length === 0 &&
+          !s.pendingDeviceSetup
+        ) {
+          return s;
+        }
+        return {
+          ...s,
+          households: [],
+          activeHousehold: null,
+          children: [],
+          pendingDeviceSetup: false,
+        };
+      });
     }
   }, [isAuthenticated, authLoading, refresh]);
 
-  const createHousehold = async (name: string): Promise<Household> => {
+  // Cancel any in-flight refresh when the provider unmounts.
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  const createHousehold = useCallback(async (name: string): Promise<Household> => {
     const household = await householdsApi.create(name);
     // NOTE: Do NOT flip `onboardingComplete=true` here. The root stack
     // gates onboarding vs protected app on this flag, so toggling it
@@ -172,31 +227,33 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     // navigate forward to AddChild → InterestSetup → DeviceSetupIntro.
     // The flag is intentionally set only by `completeOnboarding()` at
     // DeviceSetupIntroScreen (Skip / Pair). Cold-start protection for
-    // returning users comes from the persisted-hydrate effect (line 104)
-    // plus refresh()'s own write-on-success at line 82 — the auth-loading
-    // guard at line 116 prevents the original B2 race that wiped the flag.
+    // returning users comes from the persisted-hydrate effect
+    // plus refresh()'s own write-on-success — the auth-loading
+    // guard prevents the original B2 race that wiped the flag.
     setState((s) => ({
       ...s,
       households: [...s.households, household],
       activeHousehold: s.activeHousehold ?? household,
     }));
     return household;
-  };
+  }, []);
 
-  const selectHousehold = (id: string) => {
-    const found = state.households.find((h) => h.id === id);
-    if (found) setState((s) => ({ ...s, activeHousehold: found }));
-  };
+  const selectHousehold = useCallback((id: string) => {
+    setState((s) => {
+      const found = s.households.find((h) => h.id === id);
+      return found ? { ...s, activeHousehold: found } : s;
+    });
+  }, []);
 
-  const setActiveChild = (id: string) => {
+  const setActiveChild = useCallback((id: string) => {
     // Only accept ids that are actually in the current children list; ignore
     // stale/foreign ids so the resolved activeChild can never go out of range.
     if (!state.children.some((c) => c.id === id)) return;
     writeActiveChildIdToStore(id);
     setState((s) => ({ ...s, activeChildId: id }));
-  };
+  }, [state.children]);
 
-  const addChild = async (
+  const addChild = useCallback(async (
     dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string },
     householdId?: string,
   ): Promise<Child> => {
@@ -205,16 +262,16 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     const child = await householdsApi.addChild(targetHouseholdId, dto);
     setState((s) => ({ ...s, children: [...s.children, child] }));
     return child;
-  };
+  }, [state.activeHousehold?.id]);
 
-  const completeOnboarding = (protectedInitialRoute?: keyof RootStackParamList, withDeviceSetup = false) => {
+  const completeOnboarding = useCallback((protectedInitialRoute?: keyof RootStackParamList, withDeviceSetup = false) => {
     writeOnboardingCompleteToStore(true);
     setState((s) => ({ ...s, onboardingComplete: true, pendingDeviceSetup: withDeviceSetup, protectedInitialRoute }));
-  };
+  }, []);
 
-  const clearPendingDeviceSetup = () => {
+  const clearPendingDeviceSetup = useCallback(() => {
     setState((s) => ({ ...s, pendingDeviceSetup: false }));
-  };
+  }, []);
 
   // Resolve the active child: the persisted pick when it's still present,
   // otherwise children[0]. This keeps single-child households byte-identical to
@@ -222,8 +279,20 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
   const activeChild =
     state.children.find((c) => c.id === state.activeChildId) ?? state.children[0] ?? null;
 
+  const value = useMemo<HouseholdContextValue>(() => ({
+    ...state,
+    activeChild,
+    setActiveChild,
+    createHousehold,
+    selectHousehold,
+    addChild,
+    refresh,
+    completeOnboarding,
+    clearPendingDeviceSetup,
+  }), [state, activeChild, setActiveChild, createHousehold, selectHousehold, addChild, refresh, completeOnboarding, clearPendingDeviceSetup]);
+
   return (
-    <HouseholdContext.Provider value={{ ...state, activeChild, setActiveChild, createHousehold, selectHousehold, addChild, refresh, completeOnboarding, clearPendingDeviceSetup }}>
+    <HouseholdContext.Provider value={value}>
       {children}
     </HouseholdContext.Provider>
   );

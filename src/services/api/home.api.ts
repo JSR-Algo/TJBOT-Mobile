@@ -1,3 +1,8 @@
+import {
+  FEATURE_HOME_HUB,
+  FeatureHomeHubDisabledError,
+} from '@/config/feature-flags';
+
 export const HOME_BACKEND_CONTRACT_AVAILABLE = false as const;
 
 export interface HomeHub {
@@ -16,9 +21,15 @@ export interface DailyState {
 }
 
 export async function getHomeHub(): Promise<HomeHub> {
+  if (!FEATURE_HOME_HUB) {
+    throw new FeatureHomeHubDisabledError('getHomeHub');
+  }
   throw new Error('not implemented');
 }
 
 export async function getDailyState(): Promise<DailyState> {
+  if (!FEATURE_HOME_HUB) {
+    throw new FeatureHomeHubDisabledError('getDailyState');
+  }
   throw new Error('not implemented');
 }

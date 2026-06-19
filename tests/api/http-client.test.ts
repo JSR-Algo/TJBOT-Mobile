@@ -148,7 +148,6 @@ async function loadClientHarness(): Promise<{
   }));
   jest.doMock('../../src/services/http/tokens', () => tokensMock);
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- Jest CommonJS require is needed after jest.doMock() in this non-ESM test environment.
   const clientModule = require('../../src/services/http/client') as typeof import('../../src/services/http/client');
   return { axiosMock, tokensMock, protectedAttempts, clientModule };
 }
@@ -218,7 +217,9 @@ describe('http client auth refresh behavior', () => {
     });
 
     expect(protectedAttempts[0]?.headers.Authorization).toBe('Bearer old-access');
-    expect(protectedAttempts[0]?.headers['X-Request-Id']).toMatch(/^mobile-/);
+    expect(protectedAttempts[0]?.headers['X-Request-Id']).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
     expect(protectedAttempts[1]?.headers['X-Request-Id']).toBe('stable-idempotency-key');
   });
 
@@ -236,7 +237,11 @@ describe('http client auth refresh behavior', () => {
   it('marks documented retryable statuses with retry metadata and Retry-After seconds', async () => {
     const { clientModule } = await loadClientHarness();
 
-    await expect(clientModule.default.get('/retryable-429')).rejects.toMatchObject({
+    // Use POST so the interceptor returns the normalized error immediately
+    // instead of entering the idempotent-GET retry loop.
+    await expect(
+      clientModule.default({ method: 'post', url: '/retryable-429', data: {} }),
+    ).rejects.toMatchObject({
       code: 'RATE_LIMIT_EXCEEDED',
       retryable: true,
       retryAfterSeconds: 7,

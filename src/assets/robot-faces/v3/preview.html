@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bibo v3 — 20 Soft 3D Mascot Variants</title>
+  <style>
+    :root {
+      --bg-deep: #03051A;
+      --bg-mid: #07102C;
+      --ink: #E8F5FF;
+      --muted: #8A99BD;
+      --line: rgba(168, 251, 255, 0.10);
+      --card: #0B1330;
+      --card-hi: #142046;
+      --accent: #4DD0E1;
+      --accent-2: #A8FBFF;
+      --shadow: 0 18px 50px rgba(0, 8, 30, 0.6);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(900px 600px at 12% -10%, #102046, transparent 60%),
+        radial-gradient(700px 500px at 110% 8%, #1A0E3A, transparent 55%),
+        linear-gradient(180deg, var(--bg-deep), var(--bg-mid));
+      color: var(--ink);
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      letter-spacing: -0.005em;
+      padding: clamp(20px, 4vw, 56px);
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0;
+      background-image: radial-gradient(circle, rgba(168,251,255,0.05) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+      pointer-events: none;
+    }
+    header { max-width: 1400px; margin: 0 auto 36px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(77, 208, 225, 0.08);
+      border: 1px solid rgba(77, 208, 225, 0.25);
+      color: var(--accent-2); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+      font-weight: 700;
+    }
+    .badge::before {
+      content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 12px var(--accent);
+    }
+    h1 {
+      font-size: clamp(32px, 4vw, 56px);
+      letter-spacing: -0.04em; margin: 14px 0 6px; font-weight: 800;
+      background: linear-gradient(100deg, #FFFFFF 10%, #A8FBFF 50%, #4DD0E1 90%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      line-height: 1;
+    }
+    p.lead { color: var(--muted); margin: 0; max-width: 64ch; font-size: 15px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 16px 24px; margin-top: 22px; color: var(--muted); font-size: 13px; }
+    .stats strong { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 700; }
+
+    main {
+      max-width: 1400px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: linear-gradient(160deg, var(--card) 0%, var(--card-hi) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms ease, box-shadow 240ms ease;
+    }
+    .card:hover { transform: translateY(-4px); border-color: rgba(168,251,255,0.22); box-shadow: 0 30px 70px rgba(0,8,30,0.7); }
+
+    .card-head {
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px; justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+    .num {
+      font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: 0.2em;
+      color: var(--muted); font-weight: 700;
+    }
+    .key {
+      font-family: "SF Mono", ui-monospace, monospace;
+      color: var(--accent-2);
+      background: rgba(77, 208, 225, 0.08);
+      border: 1px solid rgba(77, 208, 225, 0.22);
+      padding: 3px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      cursor: pointer; user-select: all;
+    }
+    .key:hover { background: rgba(77, 208, 225, 0.16); }
+
+    .sample {
+      width: 100%; aspect-ratio: 1 / 1; background: #000; display: block;
+    }
+    .sample img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .pellets {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 14px;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.25));
+      border-top: 1px solid var(--line);
+      justify-content: space-between;
+    }
+    .pellet-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .pellet-label {
+      font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--muted); font-weight: 700;
+    }
+    .lcd {
+      width: 132px; aspect-ratio: 5 / 3;
+      background: #03051A; border-radius: 10px;
+      box-shadow:
+        inset 0 0 0 2px #1a223e,
+        inset 0 0 16px rgba(77, 208, 225, 0.08),
+        0 4px 12px rgba(0, 0, 0, 0.5);
+      overflow: hidden; position: relative;
+    }
+    .lcd::after {
+      content: ""; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(168,251,255,0.025) 2px 3px);
+      pointer-events: none; mix-blend-mode: overlay;
+    }
+    .lcd img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .icon { width: 48px; height: 48px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.05); overflow: hidden; }
+    .icon.xs { width: 28px; height: 28px; border-radius: 7px; }
+    .icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .icon-row { display: flex; align-items: center; gap: 8px; }
+
+    footer {
+      max-width: 1400px; margin: 56px auto 0; padding-top: 24px;
+      border-top: 1px solid var(--line);
+      color: var(--muted); font-size: 13px;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    code {
+      font-family: "SF Mono", ui-monospace, monospace;
+      background: rgba(168,251,255,0.06);
+      border: 1px solid var(--line);
+      padding: 2px 8px; border-radius: 6px; color: var(--accent-2); font-size: 12px;
+    }
+    .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="badge">v3 · 20 soft-3D-mascot variants</span>
+    <h1>Bibo Palette Bake-off</h1>
+    <p class="lead">Same Pixar-style clay mascot kernel, 20 palette + form variants generated in parallel. Click any cyan key to copy it &mdash; tell me one and I'll iterate further (more poses, expressions, or finalize).</p>
+    <div class="stats">
+      <span>Source <strong>1024&times;1024</strong></span>
+      <span>LCD pellet <strong>132&times;79</strong> <em style="color:var(--muted)">(5:3)</em></span>
+      <span>Status icon <strong>48 &middot; 28</strong></span>
+      <span>Cost <strong>20 calls + 1 retry</strong></span>
+    </div>
+    <p class="hint">Click the cyan key to copy. Tap the big sample to open full-res.</p>
+  </header>
+
+  <main id="grid"></main>
+
+  <footer>
+    <span>Outputs: <code>./out/&lt;NN-key&gt;.jpg</code></span>
+    <span>Raw: <code>./out/&lt;NN-key&gt;.json</code></span>
+    <span>Re-run: <code>MINIMAX_KEY=… ./generate.sh</code></span>
+  </footer>
+
+  <script>
+    const VARIANTS = [
+      { n:'01', key:'mint-peach',       desc:'Mint head, peach accents'        },
+      { n:'02', key:'sky-cream',        desc:'Sky blue head, cream accents'    },
+      { n:'03', key:'lavender-butter',  desc:'Lavender head, butter accents'   },
+      { n:'04', key:'coral-mint',       desc:'Coral head, mint accents'        },
+      { n:'05', key:'rose-cream',       desc:'Rose head, cream body'           },
+      { n:'06', key:'lemon-mint',       desc:'Pale lemon head, mint accents'   },
+      { n:'07', key:'lilac-peach',      desc:'Lilac head, peach accents'       },
+      { n:'08', key:'aqua-sand',        desc:'Aqua head, sand-tan accents'     },
+      { n:'09', key:'bubblegum-vanilla',desc:'Bubblegum pink, vanilla'         },
+      { n:'10', key:'periwinkle-cream', desc:'Periwinkle blue, cream'          },
+      { n:'11', key:'pistachio-blush',  desc:'Pistachio green, blush'          },
+      { n:'12', key:'cornflower-cream', desc:'Cornflower blue, cream'          },
+      { n:'13', key:'apricot-sage',     desc:'Apricot, sage green'             },
+      { n:'14', key:'cherry-mint',      desc:'Cherry blossom pink, mint'       },
+      { n:'15', key:'mint-coral',       desc:'Mint head, coral accents'        },
+      { n:'16', key:'sky-rose',         desc:'Sky blue, rose accents'          },
+      { n:'17', key:'lemon-lilac',      desc:'Lemon, lilac, pom-pom antenna'   },
+      { n:'18', key:'mocha-cream',      desc:'Mocha, cream, bear ears'         },
+      { n:'19', key:'seafoam-blush',    desc:'Seafoam, blush, heart antenna'   },
+      { n:'20', key:'lavender-mint',    desc:'Lavender, mint, star antenna'    }
+    ];
+    const grid = document.getElementById('grid');
+    VARIANTS.forEach(v => {
+      const src = `out/${v.n}-${v.key}.jpg`;
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-head">
+          <span class="num">${v.n} / 20</span>
+          <span class="key" title="Click to copy">${v.key}</span>
+        </div>
+        <a class="sample" href="${src}" target="_blank" rel="noopener">
+          <img src="${src}" alt="${v.key}" loading="lazy">
+        </a>
+        <div class="pellets">
+          <div class="pellet-cell">
+            <span class="pellet-label">on lcd</span>
+            <div class="lcd"><img src="${src}" alt=""></div>
+          </div>
+          <div class="pellet-cell">
+            <span class="pellet-label">icons</span>
+            <div class="icon-row">
+              <div class="icon"><img src="${src}" alt=""></div>
+              <div class="icon xs"><img src="${src}" alt=""></div>
+            </div>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+    document.addEventListener('click', e => {
+      const el = e.target.closest('.key');
+      if (!el) return;
+      navigator.clipboard?.writeText(el.textContent.trim()).catch(() => {});
+      const orig = el.style.background;
+      el.style.background = 'rgba(168,251,255,0.4)';
+      setTimeout(() => el.style.background = orig, 300);
+    });
+  </script>
+</body>
+</html>

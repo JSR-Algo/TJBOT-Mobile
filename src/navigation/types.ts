@@ -1,4 +1,5 @@
 import type React from 'react';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
 
 export type FeatureRouteOwner =
@@ -9,6 +10,7 @@ export type FeatureRouteOwner =
   | 'course-library'
   | 'purchase'
   | 'lesson-session'
+  | 'lesson-demo'
   | 'progress'
   | 'parent'
   | 'device'
@@ -30,7 +32,9 @@ export type FeatureRouteRole =
 export type FeatureForwardCycleGroup =
   | 'course-dispatch-picker'
   | 'device-pairing-retry'
+  | 'lesson-demo-review'
   | 'lesson-exit-resume'
+  | 'lesson-summary-loop'
   | 'network-retry';
 
 export type FeatureTabName =
@@ -79,3 +83,14 @@ export function defineFeatureScreens<const Screens extends readonly FeatureStack
 ): Screens {
   return screens;
 }
+
+export type LearningStackParamList = RootStackParamList & {
+  LessonPlanner: { childId?: string };
+  ChildPractice: { childId: string; sessionId?: string };
+  LessonDemo: undefined;
+  Progress: undefined;
+};
+
+export type LearningScreenProps<
+  RouteName extends keyof LearningStackParamList = keyof LearningStackParamList,
+> = NativeStackScreenProps<LearningStackParamList, RouteName>;

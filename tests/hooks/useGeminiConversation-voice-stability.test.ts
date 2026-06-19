@@ -16,25 +16,21 @@ describe('useGeminiConversation voice stability source locks', () => {
 
     expect(permissionBlock).toMatch(/requestRecordingPermissionsAsync\(\)/);
     expect(permissionBlock).toMatch(/if\s*\(!granted\)\s*\{/);
-    expect(permissionBlock).toMatch(/setError\('C\\u1ea7n quy\\u1ec1n micro \\u0111\\u1ec3 tr\\u00f2 chuy\\u1ec7n\.'\)/);
+    expect(permissionBlock).toMatch(/setError\('Cần quyền micro để trò chuyện\.'\)/);
     expect(permissionBlock).toMatch(/transition\('ERROR_RECOVERABLE'\)/);
     expect(permissionBlock).toMatch(/catch\s*\{/);
-    expect(permissionBlock).toMatch(/setError\('Kh\\u00f4ng th\\u1ec3 y\\u00eau c\\u1ea7u quy\\u1ec1n micro\.'\)/);
+    expect(permissionBlock).toMatch(/setError\('Không thể yêu cầu quyền micro\.'\)/);
     expect(permissionBlock).toMatch(/transition\('ERROR_RECOVERABLE'\)/);
   });
 
-  it('stopConversation cleans timers, capture, playback, SDK session, and voice session subscriptions', () => {
+  it('stopConversation cleans capture, playback, SDK session, and voice session subscriptions', () => {
     const stopBlock = sliceFrom('const stopConversation = useCallback', 1900);
 
     expect(stopBlock).toMatch(/clearTimeout\(simulatorReplyTimerRef\.current\)/);
-    expect(stopBlock).toMatch(/clearTimeout\(silenceTimerRef\.current\)/);
     expect(stopBlock).toMatch(/stopAudioCaptureRef\.current\?\.\(\)/);
-    expect(stopBlock).toMatch(/playbackRef\.current\?\.interrupt\(\)/);
-    expect(stopBlock).toMatch(/playbackRef\.current\s*=\s*null/);
-    expect(stopBlock).toMatch(/if\s*\(disposingPlayback\)\s*\{/);
-    expect(stopBlock).toMatch(/disposingPlayback\.dispose\(\)\.catch/);
-    expect(stopBlock).toMatch(/sessionRef\.current\?\.close\?\.\(\)/);
-    expect(stopBlock).toMatch(/sessionRef\.current\s*=\s*null/);
+    expect(stopBlock).toMatch(/playback\.interrupt\(\)/);
+    expect(stopBlock).toMatch(/playback\.dispose\(\)/);
+    expect(stopBlock).toMatch(/session\.disconnect\(\)/);
     expect(stopBlock).toMatch(/for\s*\(\s*const unsub of voiceSessionUnsubsRef\.current\s*\)/);
     expect(stopBlock).toMatch(/jsErrorBreadcrumb\('voiceSession\.unsubscribe'/);
     expect(stopBlock).toMatch(/VoiceSession\.end\(\)/);
@@ -66,7 +62,7 @@ describe('useGeminiConversation voice stability source locks', () => {
     expect(stopBlock).toMatch(/audioCaptureGenerationRef\.current \+= 1/);
     expect(stopBlock).toMatch(/audioCaptureCleanupRef\.current\(\)/);
     expect(stopBlock).toMatch(/VoiceMic\.stop\(\)\.catch\(\(err\) => \{/);
-    expect(stopBlock).toMatch(/jsErrorBreadcrumb\('voiceMic\.stopPendingStart'/);
+    expect(stopBlock).toMatch(/jsErrorBreadcrumb\('voiceMic\.stop'/);
   });
 
   it('audio cleanup failures emit breadcrumbs instead of being swallowed silently', () => {

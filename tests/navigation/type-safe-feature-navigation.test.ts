@@ -201,11 +201,11 @@ describe('type-safe feature navigation', () => {
     const routeByScreenFile = registeredRouteByScreenFile();
     const offenders = Array.from(routeByScreenFile.entries()).flatMap(([file, routeName]) => {
       const source = readFileSync(file, 'utf8');
-      const routePropType = source.match(/NativeStackScreenProps<RootStackParamList,\s*'([^']+)'>/);
-      const declaredRoute = routePropType?.[1];
+      const routePropType = source.match(/NativeStackScreenProps<RootStackParamList,\s*'([^']+)'(?:\s*\|\s*'([^']+)')?>/);
+      const declaredRoutes = [routePropType?.[1], routePropType?.[2]].filter(Boolean);
 
-      if (declaredRoute === routeName) return [];
-      return [`${file.replace(`${root}/`, '')}: expected ${routeName}, got ${declaredRoute ?? 'missing NativeStackScreenProps'}`];
+      if (declaredRoutes.includes(routeName)) return [];
+      return [`${file.replace(`${root}/`, '')}: expected ${routeName}, got ${declaredRoutes.join(' | ') || 'missing NativeStackScreenProps'}`];
     });
 
     expect(offenders).toEqual([]);

@@ -59,6 +59,7 @@ export function pairingFinalizeErrorMessage(finalizeError: unknown): string {
   return 'Saved your child, but could not finish setting up the robot. Check your connection and try again.';
 }
 
+/** Render staging allows tok_test_bypass consent in dev and TestFlight builds. */
 export function allowsDevelopmentCoppaConsentBypass(isDev: boolean, apiBaseUrl: string): boolean {
   return isDev && apiBaseUrl.includes('tbot-backend-8wmh.onrender.com');
 }

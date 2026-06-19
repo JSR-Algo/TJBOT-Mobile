@@ -28,7 +28,7 @@ function routeParamDeclarations(): ReadonlyMap<string, RouteParamShape> {
     const params = paramLines.join('\n').trim().replace(/;\s*$/, '');
     if (params === 'undefined') {
       declarations.set(route, 'none');
-    } else if (/^undefined\s*\|\s*\{[\s\S]*\}$/.test(params)) {
+    } else if (/^undefined\s*\|\s*(\{[\s\S]*\}|[A-Za-z_]\w*(\s*&\s*\{[\s\S]*\})?)$/.test(params)) {
       declarations.set(route, 'optional-object');
     } else {
       declarations.set(route, 'invalid');

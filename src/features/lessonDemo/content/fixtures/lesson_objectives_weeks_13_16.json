@@ -1,0 +1,522 @@
+[
+  {
+    "lesson_id": "w13-d01-confidence-top-words-review",
+    "week": 13,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review a few strong month-one words with a short, confident say-and-choose routine.",
+    "focus_items": ["hello", "happy", "red"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot says a word, the child taps the matching picture, then says the word with a clear rhythm.",
+    "review_items": ["goodbye", "yes", "no", "blue"],
+    "reward_event": {
+      "type": "confidence_badge",
+      "badge_id": "month_one_strong_words",
+      "message": "You used English words with confidence today."
+    },
+    "fallback_lesson": {
+      "reason": "month_one_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: hello." },
+        { "type": "repeat", "prompt": "Your turn: hello." },
+        { "type": "choice", "prompt": "Is hello a greeting?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "method-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w13-d02-confidence-weak-words-practice",
+    "week": 13,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Practice a few harder month-one words with gentle repeat-and-choice support.",
+    "focus_items": ["three", "green"],
+    "vietnamese_l1_target": "theta",
+    "practice_method": "Say three and green slowly, then say them together once more with TeeBot.",
+    "review_items": ["one", "two", "red"],
+    "reward_event": {
+      "type": "effort_badge",
+      "badge_id": "gentle_practice",
+      "message": "Nice effort. You tried a new sound today."
+    },
+    "fallback_lesson": {
+      "reason": "gentle_repeat_support",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: three." },
+        { "type": "repeat", "prompt": "Your turn: three." },
+        { "type": "practice", "prompt": "Say three again with a tiny tongue tip." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-013", "method-005", "app-014"]
+  },
+  {
+    "lesson_id": "w13-d03-review-sentence-frames",
+    "week": 13,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use two familiar sentence frames to show feelings and likes in short friendly turns.",
+    "focus_items": ["I am happy", "I like apples"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Choose a feeling, say I am plus the feeling, then choose a food and say I like plus the food.",
+    "review_items": ["happy", "sad", "apple"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "month_one_sentences",
+      "message": "You said full English sentences today."
+    },
+    "fallback_lesson": {
+      "reason": "sentence_frame_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I am happy." },
+        { "type": "repeat", "prompt": "Your turn: I am happy." },
+        { "type": "practice", "prompt": "Say: I am happy." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w13-d04-month-one-mixed-choice-quiz",
+    "week": 13,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer quick month-one choice questions using short English responses.",
+    "focus_items": ["What color?", "How many?"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks a short question and the child answers with one or two English words from choices.",
+    "review_items": ["red", "blue", "one", "two", "three"],
+    "reward_event": {
+      "type": "quiz_badge",
+      "badge_id": "friendly_quizzer",
+      "message": "You answered questions in English today."
+    },
+    "fallback_lesson": {
+      "reason": "choice_quiz_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: What color?" },
+        { "type": "repeat", "prompt": "Your turn: What color?" },
+        { "type": "choice", "prompt": "Choose an answer.", "choices": ["red", "blue"] }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-015", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w13-d05-month-one-showcase-review",
+    "week": 13,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review month-one themes in a short friendly showcase with a weekly celebration.",
+    "focus_items": ["hello", "I am happy", "red"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "Do three mini turns: greeting, feelings sentence, and a color choice, then celebrate effort.",
+    "review_items": ["goodbye", "please", "thank you", "one", "two", "three"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "month_one_badge",
+      "message": "You finished a review week. Great practice."
+    },
+    "fallback_lesson": {
+      "reason": "month_one_week_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: hello, happy, red." },
+        { "type": "repeat", "prompt": "Your turn: hello, happy, red." },
+        { "type": "practice", "prompt": "Say: I am happy." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w14-d01-school-book-pen",
+    "week": 14,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say book and pen with a simple classroom object practice.",
+    "focus_items": ["book", "pen"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot names book or pen, the child taps the right picture, then says the word with a clear finish sound.",
+    "review_items": ["hello", "red"],
+    "reward_event": {
+      "type": "school_badge",
+      "badge_id": "school_objects_day1",
+      "message": "You named school objects in English today."
+    },
+    "fallback_lesson": {
+      "reason": "school_object_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: book." },
+        { "type": "repeat", "prompt": "Your turn: book." },
+        { "type": "choice", "prompt": "Is book a school thing?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w14-d02-school-bag-table",
+    "week": 14,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say bag and table using a match-and-say routine.",
+    "focus_items": ["bag", "table"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "Match bag and table pictures, then say each word once with TeeBot using a steady rhythm.",
+    "review_items": ["book", "pen"],
+    "reward_event": {
+      "type": "school_badge",
+      "badge_id": "school_objects_day2",
+      "message": "You matched school words in English today."
+    },
+    "fallback_lesson": {
+      "reason": "school_object_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: table." },
+        { "type": "repeat", "prompt": "Your turn: table." },
+        { "type": "choice", "prompt": "Is table furniture?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w14-d03-i-have-a-book",
+    "week": 14,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I have a book to talk about a school object.",
+    "focus_items": ["I have a book"],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Point to a book picture and say I have a book, then swap to pen and say I have a pen.",
+    "review_items": ["book", "pen", "bag"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "have_sentence",
+      "message": "You used a helper word in English today."
+    },
+    "fallback_lesson": {
+      "reason": "have_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I have a book." },
+        { "type": "repeat", "prompt": "Your turn: I have a book." },
+        { "type": "practice", "prompt": "Say: I have a pen." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-016", "method-005", "app-014"]
+  },
+  {
+    "lesson_id": "w14-d04-open-the-book",
+    "week": 14,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Follow the classroom command Open the book with a listen-and-do routine.",
+    "focus_items": ["Open the book"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot says Open the book, the child does the action with a pretend book, then repeats the command once.",
+    "review_items": ["I have a book", "book"],
+    "reward_event": {
+      "type": "command_badge",
+      "badge_id": "classroom_helper",
+      "message": "You followed an English command today."
+    },
+    "fallback_lesson": {
+      "reason": "classroom_command_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: Open the book." },
+        { "type": "repeat", "prompt": "Your turn: Open the book." },
+        { "type": "practice", "prompt": "Do the action and say: Open the book." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w14-d05-school-objects-review",
+    "week": 14,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review school objects by naming, matching, and using one short sentence.",
+    "focus_items": ["book", "pen", "I have a book"],
+    "vietnamese_l1_target": "articles",
+    "practice_method": "Name book and pen, then say one I have a book sentence with the small helper word a.",
+    "review_items": ["book", "pen", "bag", "table", "Open the book"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "school_ready",
+      "message": "You finished a school week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "week_fourteen_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: book, pen, bag, table." },
+        { "type": "repeat", "prompt": "Your turn: book, pen, bag, table." },
+        { "type": "practice", "prompt": "Say: I have a book." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w15-d01-routine-wake-up-eat",
+    "week": 15,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say wake up and eat using simple daily routine cards.",
+    "focus_items": ["wake up", "eat"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot shows two routine pictures; the child picks one and says the routine phrase.",
+    "review_items": ["book", "pen"],
+    "reward_event": {
+      "type": "routine_badge",
+      "badge_id": "morning_routines",
+      "message": "You talked about your day in English today."
+    },
+    "fallback_lesson": {
+      "reason": "routine_phrase_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: wake up." },
+        { "type": "repeat", "prompt": "Your turn: wake up." },
+        { "type": "practice", "prompt": "Say: wake up." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w15-d02-routine-go-play",
+    "week": 15,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say go and play using action choice and short repeats.",
+    "focus_items": ["go", "play"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot says go or play; the child acts it out, then says the word with a clear ending sound when needed.",
+    "review_items": ["wake up", "eat"],
+    "reward_event": {
+      "type": "routine_badge",
+      "badge_id": "action_routines",
+      "message": "You used action words in English today."
+    },
+    "fallback_lesson": {
+      "reason": "action_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: play." },
+        { "type": "repeat", "prompt": "Your turn: play." },
+        { "type": "choice", "prompt": "Is play an action?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w15-d03-i-go-to-school",
+    "week": 15,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence I go to school to talk about a daily routine.",
+    "focus_items": ["I go to school"],
+    "vietnamese_l1_target": "pronoun_omission",
+    "practice_method": "Point to a school picture and say I go to school, then swap to park and say I go to the park.",
+    "review_items": ["go", "play", "wake up"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "go_sentence",
+      "message": "You said who is doing it in English today."
+    },
+    "fallback_lesson": {
+      "reason": "go_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: I go to school." },
+        { "type": "repeat", "prompt": "Your turn: I go to school." },
+        { "type": "practice", "prompt": "Say: I go to school." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-015", "method-005", "app-014"]
+  },
+  {
+    "lesson_id": "w15-d04-what-do-you-do",
+    "week": 15,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer What do you do? with a simple routine phrase from choices.",
+    "focus_items": ["What do you do?"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks What do you do? and the child answers with wake up, eat, go, or play from picture choices.",
+    "review_items": ["I go to school", "wake up", "eat"],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "routine_answerer",
+      "message": "You answered a question in English today."
+    },
+    "fallback_lesson": {
+      "reason": "routine_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: What do you do?" },
+        { "type": "repeat", "prompt": "Your turn: What do you do?" },
+        { "type": "choice", "prompt": "Choose an answer.", "choices": ["wake up", "eat"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-001", "app-016"]
+  },
+  {
+    "lesson_id": "w15-d05-daily-routine-review",
+    "week": 15,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review daily routines by ordering three routine cards and saying one short sentence.",
+    "focus_items": ["wake up", "eat", "I go to school"],
+    "vietnamese_l1_target": "tense_aspect",
+    "practice_method": "Put wake up, eat, and go to school in order, then say I go to school as the final turn.",
+    "review_items": ["wake up", "eat", "go", "play", "What do you do?"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "routine_badge",
+      "message": "You finished a routine week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "week_fifteen_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: wake up, eat, go, play." },
+        { "type": "repeat", "prompt": "Your turn: wake up, eat, go, play." },
+        { "type": "practice", "prompt": "Say: I go to school." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w16-d01-weather-sunny-rainy",
+    "week": 16,
+    "day": 1,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say sunny and rainy using a weather icon practice.",
+    "focus_items": ["sunny", "rainy"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot shows a weather icon, the child chooses sunny or rainy, then says the word once.",
+    "review_items": ["hot", "cold"],
+    "reward_event": {
+      "type": "weather_badge",
+      "badge_id": "weather_words_day1",
+      "message": "You named weather words in English today."
+    },
+    "fallback_lesson": {
+      "reason": "weather_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: sunny." },
+        { "type": "repeat", "prompt": "Your turn: sunny." },
+        { "type": "choice", "prompt": "Is sunny a weather word?", "choices": ["yes", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-017", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w16-d02-weather-hot-cold",
+    "week": 16,
+    "day": 2,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Choose and say hot and cold using gestures and a two-choice routine.",
+    "focus_items": ["hot", "cold"],
+    "vietnamese_l1_target": "final_consonants",
+    "practice_method": "TeeBot asks hot or cold, the child chooses a picture, then says the word with a tiny finish sound.",
+    "review_items": ["sunny", "rainy"],
+    "reward_event": {
+      "type": "weather_badge",
+      "badge_id": "weather_words_day2",
+      "message": "You used weather words in English today."
+    },
+    "fallback_lesson": {
+      "reason": "weather_word_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: cold." },
+        { "type": "repeat", "prompt": "Your turn: cold." },
+        { "type": "choice", "prompt": "Is cold a feeling or weather word?", "choices": ["weather", "not now"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-016", "method-005", "app-016"]
+  },
+  {
+    "lesson_id": "w16-d03-it-is-sunny",
+    "week": 16,
+    "day": 3,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Use the sentence It is sunny to give a simple weather report.",
+    "focus_items": ["It is sunny"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Pick a weather icon, then say It is plus the weather word in one short sentence.",
+    "review_items": ["sunny", "rainy", "hot"],
+    "reward_event": {
+      "type": "sentence_frame_badge",
+      "badge_id": "weather_reporter",
+      "message": "You said a weather sentence in English today."
+    },
+    "fallback_lesson": {
+      "reason": "weather_sentence_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: It is sunny." },
+        { "type": "repeat", "prompt": "Your turn: It is sunny." },
+        { "type": "practice", "prompt": "Say: It is rainy." }
+      ]
+    },
+    "source_card_ids": ["framework-001", "book-017", "method-005", "app-014"]
+  },
+  {
+    "lesson_id": "w16-d04-how-is-the-weather",
+    "week": 16,
+    "day": 4,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Answer How is the weather? with a simple weather word from choices.",
+    "focus_items": ["How is the weather?"],
+    "vietnamese_l1_target": "stress_rhythm",
+    "practice_method": "TeeBot asks How is the weather? and the child answers sunny or rainy from picture choices, then repeats once.",
+    "review_items": ["It is sunny", "sunny", "rainy"],
+    "reward_event": {
+      "type": "question_badge",
+      "badge_id": "weather_answerer",
+      "message": "You answered a weather question in English today."
+    },
+    "fallback_lesson": {
+      "reason": "weather_question_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: How is the weather?" },
+        { "type": "repeat", "prompt": "Your turn: How is the weather?" },
+        { "type": "choice", "prompt": "Choose an answer.", "choices": ["sunny", "rainy"] }
+      ]
+    },
+    "source_card_ids": ["framework-004", "book-015", "method-001", "app-001"]
+  },
+  {
+    "lesson_id": "w16-d05-weather-feelings-review",
+    "week": 16,
+    "day": 5,
+    "age_band": "4-11",
+    "cefr_level": "Pre-A1",
+    "learning_objective": "Review weather by saying one weather sentence and one feelings sentence in a friendly two-turn practice.",
+    "focus_items": ["It is sunny", "I am happy"],
+    "vietnamese_l1_target": "copula_be",
+    "practice_method": "Say one weather report and one feelings sentence, then choose the matching pictures to show understanding.",
+    "review_items": ["sunny", "rainy", "hot", "cold", "happy", "sad"],
+    "reward_event": {
+      "type": "weekly_badge",
+      "badge_id": "weather_reporter_badge",
+      "message": "You finished a weather week. Nice practice."
+    },
+    "fallback_lesson": {
+      "reason": "week_sixteen_review",
+      "steps": [
+        { "type": "listen", "prompt": "Listen: sunny, rainy, hot, cold." },
+        { "type": "repeat", "prompt": "Your turn: sunny, rainy, hot, cold." },
+        { "type": "practice", "prompt": "Say: It is sunny." }
+      ]
+    },
+    "source_card_ids": ["framework-004", "framework-001", "method-005", "app-016"]
+  }
+]

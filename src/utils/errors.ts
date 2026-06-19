@@ -1,3 +1,4 @@
+// Contract breadcrumb: paired with backend/src/errors/error-code.ts; verified by original-app/TJBOT-Mobile/tests/utils/errors.test.ts and backend/tests/http-exception.filter.spec.ts. Update both when this mapping changes.
 export const ERROR_MESSAGES: Record<string, string> = {
   VALIDATION_ERROR: 'Please check the information you entered.',
   USER_EXISTS: 'An account with this email already exists.',
@@ -7,8 +8,16 @@ export const ERROR_MESSAGES: Record<string, string> = {
   PASSWORDS_DONT_MATCH: 'Passwords do not match.',
   INVALID_CREDENTIALS: 'Incorrect email or password.',
   HOUSEHOLD_NOT_FOUND: 'Household not found.',
+  HOUSEHOLD_ACCESS_DENIED: 'You do not have permission for this household.',
+  CHILD_PROFILE_NOT_FOUND: 'Child profile not found.',
   DEVICE_ALREADY_CLAIMED: 'This device is already paired to another account.',
+  DEVICE_NOT_FOUND: 'Device not found.',
+  DEVICE_NOT_CLAIMED: 'Device has not been paired yet.',
+  DEVICE_NOT_OWNED: 'This device is not linked to your account.',
+  INVALID_BLE_CODE: 'The pairing code is incorrect. Please check and try again.',
+  BLE_CODE_EXPIRED: 'The pairing code has expired. Please request a new one.',
   FORBIDDEN: 'You do not have permission for this action.',
+  UNAUTHORIZED: 'Please sign in to continue.',
   CONFLICT: 'Request already exists or cannot start yet.',
   GONE: 'This link or resource has expired.',
   RATE_LIMIT_EXCEEDED: 'Too many requests. Please wait a moment.',
@@ -17,6 +26,43 @@ export const ERROR_MESSAGES: Record<string, string> = {
   INTERNAL_ERROR: 'Something went wrong on our end. Please try again.',
   NETWORK_ERROR: 'Check your internet connection and try again.',
   UNKNOWN_ERROR: 'An unexpected error occurred. Please try again.',
+  AUTH_TOKEN_MISSING: 'Your session is missing. Please sign in again.',
+  AUTH_TOKEN_INVALID: 'Your session is invalid. Please sign in again.',
+  AUTH_TOKEN_EXPIRED: 'Your session expired. Please sign in again.',
+  AUTH_REFRESH_REUSE: 'Your session expired. Please sign in again.',
+  AUTH_SERVER_ERROR: 'Sign-in service error. Please try again later.',
+  FACTORY_AUTH_MISSING: 'Factory authentication is missing.',
+  FACTORY_AUTH_INVALID: 'Factory authentication is invalid.',
+  FACTORY_AUTH_NOT_CONFIGURED: 'Factory authentication is not configured.',
+
+  // Validation
+  INVALID_CERTIFICATE_PEM: 'Device certificate is invalid.',
+  INVALID_HARDWARE_REVISION: 'Device hardware revision is not supported.',
+  PAYLOAD_TOO_LARGE: 'The request is too large. Please try again.',
+  UNSUPPORTED_MEDIA_TYPE: 'This file type is not supported.',
+
+  // Certificate / crypto
+  CERT_EXPIRED: 'Device certificate has expired.',
+  CERT_NOT_YET_VALID: 'Device certificate is not yet valid.',
+  CERT_NOT_TRUSTED: 'Device certificate is not trusted.',
+  CA_NOT_CONFIGURED: 'Certificate authority is not configured.',
+  CERT_GENERATION_FAILED: 'Failed to generate device certificate.',
+
+  // Device registry
+  DEVICE_ALREADY_REGISTERED: 'This device is already registered.',
+
+  // Household / COPPA
+  EXPORT_JOB_FAILED: 'Could not export data. Please try again.',
+
+  // Rate limiting / infra
+  TOO_MANY_REQUESTS: 'Too many requests. Please wait a moment.',
+  BAD_GATEWAY: 'A connected service failed. Please try again.',
+  NOT_FOUND: 'The requested resource was not found.',
+
+  ACCOUNT_LOCKED: 'Account locked for security. Please try again later or contact support.',
+  PAYMENT_FAILED: 'Payment could not be processed. Please check your payment method.',
+  TOKEN_ALREADY_USED: 'This link or token has already been used.',
+  TOKEN_EXPIRED: 'This link or token has expired.',
   invalid_access_token: 'Your session expired. Please sign in again.',
   invalid_refresh_token: 'Your session expired. Please sign in again.',
   validation_failed: 'Please check the information you entered.',
@@ -128,6 +174,7 @@ export function normalizeError(error: unknown): AppError {
           message?: string | string[];
           statusCode?: number;
           code?: string;
+          retryable?: boolean;
           traceId?: string;
           meta?: { correlation_id?: string };
         };
@@ -173,7 +220,7 @@ export function normalizeError(error: unknown): AppError {
       return {
         code: data.code,
         message,
-        retryable: false,
+        retryable: typeof data.retryable === 'boolean' ? data.retryable : false,
         ...metadata,
       };
     }

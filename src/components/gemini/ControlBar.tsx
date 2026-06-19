@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Icon } from '@/design-system/icons';
 import type { VoiceState } from '../../state/voiceAssistantStore';
 
 interface ControlBarProps {
@@ -44,7 +45,7 @@ export function ControlBar({ voiceState, onMicPress, onSettingsPress, micDisable
         disabled={isConnected}
       >
         <View style={[styles.gearIcon, isConnected && styles.gearDisabled]}>
-          <Text style={styles.gearText}>{"⚙"}</Text>
+          <Icon name="Settings" size={18} color="#6B7280" accessibilityLabel="Settings" />
         </View>
       </TouchableOpacity>
 
@@ -60,10 +61,7 @@ export function ControlBar({ voiceState, onMicPress, onSettingsPress, micDisable
           disabled={micDisabled}
           activeOpacity={0.8}
         >
-          {/* Mic icon as pure View shapes */}
-          <View style={[styles.micHead, isActive && styles.micHeadActive]} />
-          <View style={[styles.micStand, isActive && styles.micStandActive]} />
-          <View style={[styles.micBase, isActive && styles.micBaseActive]} />
+          <Icon name="Mic" size={28} color="#FFFFFF" accessibilityLabel="Microphone" />
         </TouchableOpacity>
         <Text style={[styles.label, isError && styles.labelError]}>
           {label}
@@ -105,10 +103,6 @@ const styles = StyleSheet.create({
   gearDisabled: {
     opacity: 0.4,
   },
-  gearText: {
-    fontSize: 18,
-    color: '#6B7280',
-  },
   center: {
     alignItems: 'center',
     gap: 6,
@@ -133,34 +127,6 @@ const styles = StyleSheet.create({
   micButtonError: {
     backgroundColor: '#9CA3AF',
     shadowColor: '#9CA3AF',
-  },
-  // Mic icon built from 3 Views
-  micHead: {
-    width: 14,
-    height: 20,
-    borderRadius: 7,
-    backgroundColor: '#FFFFFF',
-  },
-  micHeadActive: {
-    backgroundColor: '#FEE2E2',
-  },
-  micStand: {
-    width: 2,
-    height: 6,
-    backgroundColor: '#FFFFFF',
-    marginTop: 1,
-  },
-  micStandActive: {
-    backgroundColor: '#FEE2E2',
-  },
-  micBase: {
-    width: 14,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  micBaseActive: {
-    backgroundColor: '#FEE2E2',
   },
   label: {
     fontSize: 12,

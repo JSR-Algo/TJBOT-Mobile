@@ -1,0 +1,192 @@
+{
+  "project": "TJBot-mobile",
+  "project_root": "/Users/thuanle/Documents/TamTMV/TbotREAL/original-app/TJBOT-Mobile",
+  "reference_root": "/Users/thuanle/Documents/TamTMV/TbotREAL/docs/reference/ios",
+  "output_dir": "/Users/thuanle/Documents/TamTMV/TbotREAL/original-app/TJBOT-Mobile/docs/audits/ios-reference-audit/reports",
+  "areas": [
+    {
+      "name": "project-health",
+      "title": "Project Structure, Dependencies & Tooling",
+      "tj_paths": [
+        "package.json",
+        "package-lock.json",
+        "app.json",
+        "eas.json",
+        "metro.config.js",
+        "babel.config.js",
+        "tsconfig.json",
+        "eslint.config.js",
+        "react-native.config.js",
+        "nav-graph-data.json",
+        "scripts"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/pointfreeco__swift-composable-architecture.md",
+        "docs/reference/ios/extractions/adessoTurkey__ios-sample-app-swiftui.md",
+        "docs/reference/ios/extractions/FaridSafi__react-native-gifted-chat.md",
+        "docs/reference/ios/extractions/oblador__react-native-vector-icons.md",
+        "docs/reference/ios/extractions/react-native-maps__react-native-maps.md",
+        "docs/reference/ios/extractions/TheWidlarzGroup__react-native-video.md"
+      ],
+      "focus": "dependency bloat, version risks, duplicate tooling, build config, script sprawl, project hygiene"
+    },
+    {
+      "name": "ble-provisioning",
+      "title": "BLE, Device Pairing & Wi-Fi Provisioning",
+      "tj_paths": [
+        "src/services/ble",
+        "src/services/provisioning",
+        "src/app/screens/DevicePairWifiScreen.tsx",
+        "src/contracts",
+        "src/features/device",
+        "tests/ble",
+        "tests/native"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/espressif__esp-idf-provisioning-ios.md",
+        "docs/reference/ios/extractions/futuristiclabs__react-native-esp32-idf-provisioning.md",
+        "docs/reference/ios/extractions/parkyang__bluetooth.md",
+        "docs/reference/ios/extractions/purpln__swiftui-bluetooth.md",
+        "docs/reference/ios/extractions/gundrabur__BLEScanner.md",
+        "docs/reference/ios/extractions/thomsmed__ble-chat-ios.md",
+        "docs/reference/ios/extractions/dan-rodrigues__mobile-fpga-bluetooth-demo.md",
+        "docs/reference/ios/extractions/stevenselcuk__fridge-monitor.md"
+      ],
+      "focus": "BLE scan/connect/pair flow, error recovery, permissions, provisioning reliability, concurrency bottlenecks"
+    },
+    {
+      "name": "audio-voice",
+      "title": "Audio Capture, Voice Pipeline & On-Device Speech",
+      "tj_paths": [
+        "src/audio",
+        "src/services/audio",
+        "src/services/ai",
+        "src/components/gemini",
+        "src/components/robot",
+        "src/debug/voiceDebugProbe.ts",
+        "tests/audio",
+        "tests/ai",
+        "tests/hooks"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/argmaxinc__argmax-oss-swift.md",
+        "docs/reference/ios/extractions/soniqo__speech-swift.md",
+        "docs/reference/ios/extractions/FluidInference__FluidAudio.md",
+        "docs/reference/ios/extractions/lbacaj__WalkWrite-opensource.md",
+        "docs/reference/ios/extractions/AudioKit__Waveform.md",
+        "docs/reference/ios/extractions/Otosaku__NeMoVAD-iOS.md",
+        "docs/reference/ios/extractions/andreapianidev__WalkieTalkie.md"
+      ],
+      "focus": "audio capture/playback, voice activity detection, latency, file size, on-device vs cloud, error handling"
+    },
+    {
+      "name": "state-architecture",
+      "title": "State Management, Feature Architecture & Data Flow",
+      "tj_paths": [
+        "src/state",
+        "src/features",
+        "src/contexts",
+        "src/app/providers",
+        "src/services",
+        "src/hooks",
+        "tests/state",
+        "tests/contexts",
+        "tests/learning"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/pointfreeco__swift-composable-architecture.md",
+        "docs/reference/ios/extractions/element-hq__element-x-ios.md",
+        "docs/reference/ios/extractions/jellyfin__Swiftfin.md",
+        "docs/reference/ios/extractions/FaridSafi__react-native-gifted-chat.md",
+        "docs/reference/ios/extractions/react-native-maps__react-native-maps.md"
+      ],
+      "focus": "XState vs Zustand vs Context, feature modularity, duplication, machine boundaries, side-effect layering"
+    },
+    {
+      "name": "network-auth-ws",
+      "title": "Networking, API Contracts, Auth & WebSocket",
+      "tj_paths": [
+        "src/api",
+        "src/services/http",
+        "src/services/ws",
+        "src/auth",
+        "src/contexts/AuthContext.tsx",
+        "src/contexts/HouseholdContext.tsx",
+        "tests/contracts",
+        "tests/integration",
+        "tests/security"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/element-hq__element-x-ios.md",
+        "docs/reference/ios/extractions/jellyfin__Swiftfin.md",
+        "docs/reference/ios/extractions/Finb__Bark.md",
+        "docs/reference/ios/extractions/jiacchen__V2Reader.md",
+        "docs/reference/ios/extractions/permissionlesstech__bitchat.md"
+      ],
+      "focus": "HTTP client duplication, token refresh, WebSocket path mismatch, retry/circuit-breaker, secure storage, error handling"
+    },
+    {
+      "name": "navigation-screens",
+      "title": "Navigation, Screens & User Flow",
+      "tj_paths": [
+        "src/app/navigation",
+        "src/navigation",
+        "src/app/RootNavigator.tsx",
+        "src/app/screens",
+        "src/screens",
+        "src/features/**/navigation.ts",
+        "nav-graph-data.json",
+        "tests/navigation"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/element-hq__element-x-ios.md",
+        "docs/reference/ios/extractions/jellyfin__Swiftfin.md",
+        "docs/reference/ios/extractions/tnantoka__edhita.md",
+        "docs/reference/ios/extractions/permissionlesstech__bitchat.md",
+        "docs/reference/ios/extractions/LiveContainer__LiveContainer.md"
+      ],
+      "focus": "route organization, deep links, modal usage, screen ownership, prop types, navigation state vs URL"
+    },
+    {
+      "name": "ui-design-system",
+      "title": "Design System, UI Components, Animation & Assets",
+      "tj_paths": [
+        "src/design-system",
+        "src/components",
+        "src/assets/robot-faces",
+        "src/components/robot",
+        "src/app/screens",
+        "tests/ui-validation",
+        "tests/components"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/AudioKit__Waveform.md",
+        "docs/reference/ios/extractions/awizemann__scarf.md",
+        "docs/reference/ios/extractions/iamvatsalpatel__RoomCapture-iOS-App.md",
+        "docs/reference/ios/extractions/Nazarzbs__100-Days-Of-SwiftUI-by-Nazar.md",
+        "docs/reference/ios/extractions/Shouheng88__AwesomeSwift.md"
+      ],
+      "focus": "token consistency, SVG assets, animation performance, reanimated/worklets, theme, primitive APIs, accessibility"
+    },
+    {
+      "name": "testing-quality",
+      "title": "Testing, Validation Scripts & Quality Gates",
+      "tj_paths": [
+        "tests",
+        "scripts/flows",
+        "scripts/sequences",
+        "scripts/erd",
+        "scripts/usecases",
+        "scripts/check-*.mjs",
+        "e2e",
+        ".detoxrc.js"
+      ],
+      "refs": [
+        "docs/reference/ios/extractions/element-hq__element-x-ios.md",
+        "docs/reference/ios/extractions/jellyfin__Swiftfin.md",
+        "docs/reference/ios/extractions/adessoTurkey__ios-sample-app-swiftui.md"
+      ],
+      "focus": "test coverage, validation script complexity, flaky e2e, mock quality, integration vs unit balance, CI gates"
+    }
+  ]
+}

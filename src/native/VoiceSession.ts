@@ -54,7 +54,6 @@ const emitter = Native ? new NativeEventEmitter(NativeModules.VoiceSessionModule
 
 function warnMissing(op: string): void {
   if (__DEV__) {
-    // eslint-disable-next-line no-console
     console.warn(`[VoiceSession] Native module missing on ${Platform.OS} — ${op} is a no-op`);
   }
 }

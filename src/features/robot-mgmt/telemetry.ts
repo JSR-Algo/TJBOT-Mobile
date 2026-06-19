@@ -2,10 +2,12 @@ import React from 'react';
 import {
   getDeviceStatus,
   getFirmwareVersion,
+  isBackendContractUnavailableError,
   type DeviceStatus,
 } from '@/services/api/device.api';
 
 export const ROBOT_DETAILS_ERROR_COPY = 'Robot details are temporarily unavailable.';
+export const ROBOT_DETAILS_COMING_SOON_COPY = 'Robot details are coming soon.';
 export const PRIMARY_ROBOT_ID = 'primary';
 
 const STALE_AFTER_MS = 5 * 60 * 1000;
@@ -34,6 +36,7 @@ export type RobotTelemetryState = {
   loading: boolean;
   errorMessage: string | null;
   failureReason: string | null;
+  featureUnavailable: boolean;
 };
 
 export function normalizeRobotTelemetry(input?: RobotTelemetryInput): NormalizedRobotTelemetry {
@@ -62,6 +65,7 @@ export function useRobotTelemetry(): RobotTelemetryState {
     loading: true,
     errorMessage: null,
     failureReason: null,
+    featureUnavailable: false,
   });
 
   React.useEffect(() => {
@@ -86,17 +90,20 @@ export function useRobotTelemetry(): RobotTelemetryState {
           loading: false,
           errorMessage: null,
           failureReason: null,
+          featureUnavailable: false,
         });
       } catch (error) {
         if (cancelled) {
           return;
         }
 
+        const featureUnavailable = isBackendContractUnavailableError(error);
         setState({
           telemetry: normalizeRobotTelemetry(undefined),
           loading: false,
-          errorMessage: ROBOT_DETAILS_ERROR_COPY,
+          errorMessage: featureUnavailable ? ROBOT_DETAILS_COMING_SOON_COPY : ROBOT_DETAILS_ERROR_COPY,
           failureReason: describeError(error),
+          featureUnavailable,
         });
       }
     }

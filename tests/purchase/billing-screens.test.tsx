@@ -399,7 +399,7 @@ describe('purchase billing screens', () => {
     fireEvent.press(screen.getByText('Activating Robot...'));
 
     expect(activateRobot).toHaveBeenCalledTimes(1);
-    expect(activateRobot).toHaveBeenCalledWith('ABC123');
+    expect(activateRobot).toHaveBeenCalledWith('ABC123', expect.any(String));
 
     fireEvent.press(screen.getByText('Activating Robot...'));
     expect(activateRobot).toHaveBeenCalledTimes(1);

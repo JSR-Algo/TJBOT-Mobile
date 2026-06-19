@@ -76,8 +76,8 @@ describe('BLE service', () => {
 
   test('enforces allowlist filtering before pairing', () => {
     const result = splitDevicesByAllowlist([
-      { id: 'TBot-Blufi-001', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
-      { id: 'XYZ-001', name: 'Speaker', localName: 'Speaker', serviceUUIDs: [BLE_CONFIG.SERVICE_UUID] },
+      { id: 'TBot-Blufi-001', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID], rssi: -55 },
+      { id: 'XYZ-001', name: 'Speaker', localName: 'Speaker', serviceUUIDs: [BLE_CONFIG.SERVICE_UUID], rssi: -65 },
     ]);
 
     expect(result.allowed).toHaveLength(1);
@@ -120,7 +120,7 @@ describe('BLE service', () => {
 
   test('scans without a service UUID filter so BluFi name-only advertisements are visible', async () => {
     mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => {
-      listener(null, { id: 'AA:BB:CC:DD:EE:FF', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: null });
+      listener(null, { id: 'AA:BB:CC:DD:EE:FF', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: null, rssi: -55 });
     });
 
     await expect(scanForTJBotDevices(1)).resolves.toMatchObject({
@@ -140,6 +140,7 @@ describe('BLE service', () => {
         localName: null,
         serviceUUIDs: [],
         rawScanRecord: 'BglUQk9ULQ==',
+        rssi: -55,
       });
       listener(null, {
         id: 'ZZ:00:11:22:33:44',
@@ -147,6 +148,7 @@ describe('BLE service', () => {
         localName: null,
         serviceUUIDs: [],
         rawScanRecord: 'BAlTcGVha2Vy',
+        rssi: -65,
       });
     });
 
@@ -1530,8 +1532,8 @@ describe('BLE service', () => {
 
   test('scanForTJBotDevices admits a serial-named robot by its advertised BluFi service UUID and blocks an unrelated device', async () => {
     mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => {
-      listener(null, { id: 'AA:BB:CC:DD:EE:FF', name: 'ES3C35P-001', localName: 'ES3C35P-001', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] });
-      listener(null, { id: 'ZZ:00:11:22:33:44', name: 'Speaker', localName: 'Speaker', serviceUUIDs: [BLE_CONFIG.SERVICE_UUID] });
+      listener(null, { id: 'AA:BB:CC:DD:EE:FF', name: 'ES3C35P-001', localName: 'ES3C35P-001', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID], rssi: -55 });
+      listener(null, { id: 'ZZ:00:11:22:33:44', name: 'Speaker', localName: 'Speaker', serviceUUIDs: [BLE_CONFIG.SERVICE_UUID], rssi: -65 });
     });
 
     const result = await scanForTJBotDevices(1);

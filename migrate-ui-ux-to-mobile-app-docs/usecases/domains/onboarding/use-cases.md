@@ -65,11 +65,11 @@
 - **Trigger:** Navigation arrives at `onb_coppa` between UC-A03 (Log In) and UC-A08 (Set Up Child Profile). Required only for first-time signups; returning parents whose existing consent.version equals the current `policy_version` skip this screen.
 - **Preconditions:** Parent JWT bound to `users.id`; current `policy_version` published by admin; no ACTIVE `coppa_consents` row matching `(user_id, current_policy_version)`.
 - **Main Flow:**
-  1. `CoppaConsentScreen` renders the policy text from `GET /v1/identity/coppa-policy?version=<current>` with scrollable body + data-minimization / retention / revocation bullets.
-  2. Parent taps the "I am the parent or legal guardian and I consent" checkbox + the "Confirm" CTA.
-  3. ParentApp POSTs `/v1/identity/coppa-consent` with `{user_id, version, accepted_locale, X-Request-Id}` — sequence `docs/sequences/01-identity/coppa-consent-record.sequence.mmd`.
-  4. IdentityService validates payload + creates `coppa_consents` row state=ACTIVE per ConsentForm FSM (`.omc/plans/state-machines-mobile-ux.md` §2.5).
-  5. Server returns `{consent_id, granted_at}`; ParentApp navigates to `onb_child` (UC-A08).
+  1. `ParentConsentScreen` renders the active parent-consent acknowledgement in the authenticated onboarding stack.
+  2. Parent types their name, checks the parent-consent box, and taps "Sign and continue".
+  3. ParentApp POSTs `/v1/auth/consent` with `{stripe_token, consent_given}` using the authenticated parent JWT.
+  4. IdentityService validates payload + marks the parent consent state ACTIVE per ConsentForm FSM (`.omc/plans/state-machines-mobile-ux.md` §2.5).
+  5. Server returns success; ParentApp navigates to `onb_child` (UC-A08).
 - **Postconditions:** `coppa_consents` row ACTIVE for `(user_id, current_policy_version)`. UC-A08 child profile creation is now FK-eligible via `children.coppa_consent_id`.
 - **Alt Flow:**
   1. Parent declines consent → navigates back to `onb_login` with toast "Consent required to create a child account"; no row written.

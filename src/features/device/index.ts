@@ -6,6 +6,7 @@ import PairCodeScreen from './pairing/screens/PairCodeScreen';
 import PairQrScanScreen from './pairing/screens/PairQrScanScreen';
 import PairAddScreen from './pairing/screens/PairAddScreen';
 import PairRenameScreen from './pairing/screens/PairRenameScreen';
+import PairChildProfileScreen from './pairing/screens/PairChildProfileScreen';
 import PairWifiScreen from './pairing/screens/PairWifiScreen';
 import PairWifiPasswordScreen from './pairing/screens/PairWifiPasswordScreen';
 import PairOfflineScreen from './pairing/screens/PairOfflineScreen';
@@ -37,6 +38,7 @@ export const SCREEN_MAP = {
   dv_pair_failed: PairFailedScreen,
   dv_pair_offline: PairOfflineScreen,
   dv_pair_rename: PairRenameScreen,
+  dv_pair_child: PairChildProfileScreen,
   dv_pair_first_lesson: PairFirstLessonScreen,
   dv_home: DeviceHomeScreen,
   dv_session: DeviceSessionScreen,

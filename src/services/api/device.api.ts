@@ -1,6 +1,13 @@
 import client from '@/services/http/client';
+import { attachRequestIdHeader } from '@/services/http/idempotency';
 
-import { backendContractUnavailable } from './undocumented-api-routes';
+import {
+  backendContractUnavailable,
+  BackendContractUnavailableError,
+  isBackendContractUnavailableError,
+} from './undocumented-api-routes';
+
+export { BackendContractUnavailableError, isBackendContractUnavailableError };
 
 export interface PairDeviceParams {
   deviceId: string;
@@ -66,6 +73,34 @@ export interface CompleteDeviceProvisioningResult {
     displayName: string;
     assignedChildProfileId: string;
   };
+}
+
+export interface Device {
+  id: string;
+  serial_number: string;
+  hardware_revision: string;
+  state: 'UNPROVISIONED' | 'REGISTERED' | 'CLAIMED' | 'ACTIVE' | 'OFFLINE' | 'FACTORY_RESET';
+  status:
+    | 'factory_new'
+    | 'provisioning'
+    | 'active'
+    | 'offline'
+    | 'safe_mode'
+    | 'transferred'
+    | 'decommissioned'
+    | 'quarantined'
+    | null;
+  household_id: string | null;
+  lifecycle_state: 'unassigned' | 'assigned' | null;
+  last_seen_at: string | null;
+  firmware_version: string | null;
+  battery_level: number | null;
+  connectivity_metrics: {
+    connectivity_state?: string;
+    wifi_ssid?: string;
+    wifi_rssi?: number;
+  } | null;
+  created_at: string;
 }
 
 export interface DeviceStatus {
@@ -159,16 +194,32 @@ export async function startDeviceProvisioning(params: ProvisionStartParams): Pro
   return response.data;
 }
 
-export async function pairDevice(params: PairDeviceParams): Promise<PairDeviceResult> {
-  const response = await client.post<PairDeviceResult>('/devices/provision/connect', {
-    deviceId: params.deviceId,
-    provisioningAttemptId: params.provisioningAttemptId,
-    serialNumber: params.serialNumber,
-    code: params.code,
-    wifiSsid: params.wifiSsid,
-    wifiPassword: params.wifiPassword,
-  });
-  return response.data;
+type ClaimDeviceParams = Pick<PairDeviceParams, 'serialNumber' | 'code' | 'wifiSsid' | 'wifiPassword'>;
+
+export async function pairDevice(params: PairDeviceParams): Promise<PairDeviceResult>;
+export async function pairDevice(params: ClaimDeviceParams, requestId?: string): Promise<{ deviceId: string }>;
+export async function pairDevice(
+  params: PairDeviceParams | ClaimDeviceParams,
+  requestId?: string,
+): Promise<PairDeviceResult | { deviceId: string }> {
+  if ('provisioningAttemptId' in params && 'deviceId' in params) {
+    const response = await client.post<PairDeviceResult>('/devices/provision/connect', {
+      deviceId: params.deviceId,
+      provisioningAttemptId: params.provisioningAttemptId,
+      serialNumber: params.serialNumber,
+      code: params.code,
+      wifiSsid: params.wifiSsid,
+      wifiPassword: params.wifiPassword,
+    });
+    return response.data;
+  }
+
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  const body = { serial_number: params.serialNumber, ble_code: params.code };
+  const response = headers
+    ? await client.post<{ device_id: string }>('/devices/claim', body, { headers })
+    : await client.post<{ device_id: string }>('/devices/claim', body);
+  return { deviceId: response.data.device_id };
 }
 
 export async function confirmLocalBlePaired(params: ConfirmLocalBlePairedParams): Promise<ConfirmLocalBlePairedResult> {
@@ -234,12 +285,21 @@ export async function runFirmwareUpdate(_deviceId: string): Promise<void> {
   backendContractUnavailable(`runFirmwareUpdate:${_deviceId}`);
 }
 
-export async function setDeviceWifi(_deviceId: string, _ssid: string, _password: string): Promise<void> {
-  backendContractUnavailable(`setDeviceWifi:${_deviceId}`);
+export async function setDeviceWifi(
+  _deviceId: string,
+  _ssid: string,
+  _password: string,
+): Promise<void> {
+  backendContractUnavailable(`setDeviceWifi:${_deviceId}:${_ssid}:${_password.length}`);
 }
 
-export async function unpairDevice(deviceId: string): Promise<void> {
-  await client.delete(`/devices/${deviceId}`);
+export async function unpairDevice(deviceId: string, requestId?: string): Promise<void> {
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  if (headers) {
+    await client.delete(`/devices/${deviceId}`, { headers });
+  } else {
+    await client.delete(`/devices/${deviceId}`);
+  }
 }
 
 export async function pushCourseToDevice(_deviceId: string, _courseId: string): Promise<void> {

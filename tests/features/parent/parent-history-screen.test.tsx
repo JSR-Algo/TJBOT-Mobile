@@ -38,7 +38,6 @@ jest.mock('@/services/api/progress.api', () => ({
 
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
-
 const ParentHistoryScreen = require('../../../src/features/parent/screens/ParentHistoryScreen').default;
 
 // The screen reads activeChild?.id. activeChild resolves to children[0] by

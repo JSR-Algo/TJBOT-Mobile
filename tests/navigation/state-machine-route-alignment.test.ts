@@ -80,6 +80,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.PairFailedScreen, 'dv_pair_failed'],
       [ROUTES.PairOfflineScreen, 'dv_pair_offline'],
       [ROUTES.PairRenameScreen, 'dv_pair_rename'],
+      [ROUTES.PairChildProfileScreen, 'dv_pair_child'],
       [ROUTES.PairFirstLessonScreen, 'dv_pair_first_lesson'],
       [ROUTES.DeviceSessionScreen, 'dv_session'],
       [ROUTES.DeviceLostScreen, 'dv_lost'],
@@ -252,6 +253,7 @@ describe('state-machine route alignment', () => {
 
   it('maps every onboarding route to an onboarding state', () => {
     const expectedOnboardingStateIds = new Map([
+      [ROUTES.ParentConsentScreen, 'onb_coppa'],
       [ROUTES.ChildProfileScreen, 'onb_child'],
       [ROUTES.MicAskScreen, 'onb_mic'],
       [ROUTES.FirstLessonEntryScreen, 'onb_first_lesson'],

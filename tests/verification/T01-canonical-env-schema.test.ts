@@ -1,0 +1,143 @@
+import fs from 'fs';
+import path from 'path';
+
+const PROJECT_ROOT = path.resolve(__dirname, '../..');
+
+function readText(relPath: string): string {
+  return fs.readFileSync(path.join(PROJECT_ROOT, relPath), 'utf-8');
+}
+
+/**
+ * Remove comment-only lines and trailing commas so we can parse JSON-like
+ * config files (e.g. eas.json) that contain comments.
+ */
+function sanitizeJson(raw: string): string {
+  return raw
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/,\s*([}\]])/g, '$1');
+}
+
+describe('T01 — canonical env schema, EAS alignment, and Expo capabilities', () => {
+  describe('eas.json', () => {
+    it('production profile exposes the canonical EXPO_PUBLIC_* env keys', () => {
+      const raw = readText('eas.json');
+      const parsed = JSON.parse(sanitizeJson(raw)) as {
+        build: Record<string, { env?: Record<string, string> }>;
+      };
+      const production = parsed.build.production;
+      expect(production).toBeDefined();
+      expect(production.env).toBeDefined();
+      expect(production.env).toHaveProperty('EXPO_PUBLIC_TBOT_API_URL');
+      expect(production.env).toHaveProperty('EXPO_PUBLIC_TBOT_AI_URL');
+      expect(production.env).toHaveProperty('EXPO_PUBLIC_WS_URL');
+    });
+
+    it('production profile no longer sets the ignored EXPO_PUBLIC_API_BASE_URL or EXPO_PUBLIC_DEMO_SCREEN keys', () => {
+      const raw = readText('eas.json');
+      expect(raw).not.toContain('EXPO_PUBLIC_API_BASE_URL');
+      expect(raw).not.toContain('EXPO_PUBLIC_DEMO_SCREEN');
+    });
+  });
+
+  describe('src/config.ts', () => {
+    it('does not import the generated src/__env__.ts module', () => {
+      const config = readText('src/config.ts');
+      expect(config).not.toMatch(/from\s+['"]\.\/(__env__|__env__\.ts)['"]/);
+      expect(config).not.toMatch(/import\s+.*ENV.*\s+from\s+['"]\.\/__env__/);
+    });
+
+    it('reads the canonical EXPO_PUBLIC_* env keys', () => {
+      const config = readText('src/config.ts');
+      expect(config).toContain('EXPO_PUBLIC_TBOT_API_URL');
+      expect(config).toContain('EXPO_PUBLIC_TBOT_AI_URL');
+      expect(config).toContain('EXPO_PUBLIC_WS_URL');
+    });
+
+    it('does not contain a hardcoded Cloudflare fallback', () => {
+      const config = readText('src/config.ts');
+      expect(config).not.toContain('trycloudflare.com');
+    });
+  });
+
+  describe('metro.config.js', () => {
+    it('no longer writes src/__env__.ts at load time', () => {
+      const metro = readText('metro.config.js');
+      expect(metro).not.toContain('writeFileSync');
+      expect(metro).not.toContain("src/__env__.ts");
+      expect(metro).not.toContain("'src/__env__.ts'");
+      expect(metro).not.toContain('loadEnv');
+    });
+  });
+
+  describe('.detoxrc.js', () => {
+    it('includes TBOT_API_URL, TBOT_AI_URL, and WS_URL in launchArgs', () => {
+      const detox = readText('.detoxrc.js');
+      const launchArgsMatch = detox.match(/launchArgs\s*:\s*\{[\s\S]*?\}/g);
+      expect(launchArgsMatch).toBeTruthy();
+      const allLaunchArgs = launchArgsMatch!.join('\n');
+      expect(allLaunchArgs).toContain('TBOT_API_URL');
+      expect(allLaunchArgs).toContain('TBOT_AI_URL');
+      expect(allLaunchArgs).toContain('WS_URL');
+    });
+
+    it('does not require metro.config.js', () => {
+      const detox = readText('.detoxrc.js');
+      expect(detox).not.toContain("require('./metro.config.js')");
+      expect(detox).not.toContain('require("./metro.config.js")');
+    });
+  });
+
+  describe('app.json', () => {
+    it('declares expo-notifications, orientation, scheme, and background modes', () => {
+      const parsed = JSON.parse(readText('app.json')) as {
+        expo: {
+          plugins?: unknown[];
+          orientation?: string;
+          scheme?: string;
+          ios?: { infoPlist?: { UIBackgroundModes?: string[] } };
+          android?: { permissions?: string[] };
+        };
+      };
+      const { expo } = parsed;
+      expect(expo.plugins).toBeDefined();
+      expect(Array.isArray(expo.plugins)).toBe(true);
+      expect(expo.orientation).toBeDefined();
+      expect(expo.scheme).toBeDefined();
+      expect(expo.ios?.infoPlist?.UIBackgroundModes).toBeDefined();
+      expect(expo.ios!.infoPlist!.UIBackgroundModes!.length).toBeGreaterThan(0);
+      expect(expo.android?.permissions).toBeDefined();
+      expect(expo.android!.permissions!.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('package.json', () => {
+    it('declares engines.node and a browserslist', () => {
+      const parsed = JSON.parse(readText('package.json')) as {
+        engines?: { node?: string };
+        browserslist?: unknown;
+      };
+      expect(parsed.engines?.node).toBeDefined();
+      expect(parsed.browserslist).toBeDefined();
+      const browserslist = Array.isArray(parsed.browserslist)
+        ? parsed.browserslist
+        : Object.values(parsed.browserslist || {});
+      expect(browserslist.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('src/__env__.ts', () => {
+    it('is no longer auto-generated by metro.config.js', () => {
+      const metro = readText('metro.config.js');
+      expect(metro).not.toContain('writeFileSync');
+      expect(metro).not.toContain("src/__env__.ts");
+    });
+
+    it('is a static re-export of EXPO_PUBLIC_* env vars', () => {
+      const env = readText('src/__env__.ts');
+      expect(env).toMatch(/process\.env\.EXPO_PUBLIC_TBOT_API_URL/);
+      expect(env).toMatch(/process\.env\.EXPO_PUBLIC_TBOT_AI_URL/);
+      expect(env).toMatch(/process\.env\.EXPO_PUBLIC_WS_URL/);
+      expect(env).not.toMatch(/AUTO-GENERATED by metro\.config\.js/);
+    });
+  });
+});

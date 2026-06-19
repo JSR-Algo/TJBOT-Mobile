@@ -90,7 +90,6 @@ async function sampleOnce(tick: number): Promise<void> {
 
   // Single-line JSON so Console.app + `pbpaste | jq` stays clean. Prefix
   // makes it trivially filterable with `log stream --predicate 'eventMessage
-  // CONTAINS "voice-debug-probe"'`.
-  // eslint-disable-next-line no-console
+  // CONTAINS "voice-debug-probe"'.
   console.info(TAG, JSON.stringify(row));
 }

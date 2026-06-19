@@ -32,6 +32,12 @@ jest.mock('@/services/http/client', () => ({
   },
 }));
 
+jest.mock('@/config/feature-flags', () => ({
+  FEATURE_AI_PROXY: true,
+  FeatureAiProxyDisabledError: jest.requireActual('@/config/feature-flags')
+    .FeatureAiProxyDisabledError,
+}));
+
 const mockedClient = client as jest.Mocked<typeof client>;
 
 describe('undocumented API routes', () => {

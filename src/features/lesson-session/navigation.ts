@@ -27,9 +27,9 @@ import type { FeatureNavigationConfig } from '@/navigation/types';
 import { defineFeatureScreens } from '@/navigation/types';
 
 export const LESSON_SESSION_SCREENS = defineFeatureScreens([
-  { name: ROUTES.ConnectingScreen, component: ConnectingScreen, role: 'state-machine', stateMachineId: 'connecting' },
+  { name: ROUTES.ConnectingScreen, component: ConnectingScreen, role: 'state-machine', stateMachineId: 'connecting', forwardCycleGroup: 'lesson-summary-loop' },
   { name: ROUTES.GreetingScreen, component: GreetingScreen, role: 'state-machine', stateMachineId: 'greeting' },
-  { name: ROUTES.LessonReadyScreen, component: LessonReadyScreen, role: 'state-machine', stateMachineId: 'lesson_ready' },
+  { name: ROUTES.LessonReadyScreen, component: LessonReadyScreen, role: 'state-machine', stateMachineId: 'lesson_ready', forwardCycleGroup: 'lesson-summary-loop' },
   { name: ROUTES.RobotListeningScreen, component: RobotListeningScreen, role: 'state-machine', stateMachineId: 'robot_listening', forwardCycleGroup: 'lesson-exit-resume' },
   { name: ROUTES.UserSpeakingScreen, component: UserSpeakingScreen, role: 'state-machine', stateMachineId: 'user_speaking', forwardCycleGroup: 'lesson-exit-resume' },
   { name: ROUTES.RobotSpeakingScreen, component: RobotSpeakingScreen, role: 'state-machine', stateMachineId: 'robot_speaking', forwardCycleGroup: 'lesson-exit-resume' },
@@ -37,7 +37,7 @@ export const LESSON_SESSION_SCREENS = defineFeatureScreens([
   { name: ROUTES.ActivityIntroScreen, component: ActivityIntroScreen, role: 'state-machine', stateMachineId: 'activity_intro' },
   { name: ROUTES.ActivityDoneScreen, component: ActivityDoneScreen, role: 'state-machine', stateMachineId: 'activity_done' },
   { name: ROUTES.SuccessScreen, component: SuccessScreen, role: 'state-machine', stateMachineId: 'success', forwardCycleGroup: 'lesson-exit-resume' },
-  { name: ROUTES.LessonDoneScreen, component: LessonDoneScreen, role: 'state-machine', stateMachineId: 'lesson_done' },
+  { name: ROUTES.LessonDoneScreen, component: LessonDoneScreen, role: 'state-machine', stateMachineId: 'lesson_done', forwardCycleGroup: 'lesson-summary-loop' },
   { name: ROUTES.ExitConfirmScreen, component: ExitConfirmScreen, role: 'state-machine', stateMachineId: 'exit_confirm', forwardCycleGroup: 'lesson-exit-resume' },
   { name: ROUTES.RetryScreen, component: RetryScreen, role: 'state-machine', stateMachineId: 'retry' },
   { name: ROUTES.SilenceScreen, component: SilenceScreen, role: 'state-machine', stateMachineId: 'silence' },

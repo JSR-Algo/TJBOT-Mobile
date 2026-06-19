@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "feature": "Teo LCD Face",
+  "screenAspect": "5:3",
+  "targetSize": [800, 480],
+  "renderer": "preview.html",
+  "runtime": "dependency-free HTML/CSS/SVG",
+  "states": [
+    "idle",
+    "listening",
+    "thinking",
+    "speaking",
+    "happy",
+    "curious",
+    "confused",
+    "sleepy",
+    "reconnecting",
+    "error"
+  ],
+  "themes": {
+    "teo": {
+      "name": "Teo Cyan",
+      "accent": "#65F3F8",
+      "accent2": "#A8FBFF",
+      "panel": "#092B3A"
+    },
+    "pink": {
+      "name": "Pink",
+      "accent": "#FF7AB8",
+      "accent2": "#FFD6EA",
+      "panel": "#351328"
+    },
+    "mint": {
+      "name": "Mint",
+      "accent": "#72F2B4",
+      "accent2": "#D7FFE9",
+      "panel": "#103527"
+    },
+    "violet": {
+      "name": "Violet",
+      "accent": "#A78BFA",
+      "accent2": "#E9DDFF",
+      "panel": "#21153E"
+    },
+    "amber": {
+      "name": "Amber",
+      "accent": "#FFD166",
+      "accent2": "#FFF1B8",
+      "panel": "#34270B"
+    }
+  },
+  "controlApi": {
+    "javascript": "window.TeoFace.setState('listening'); window.TeoFace.setTheme('pink');",
+    "postMessage": {
+      "state": "{ \"type\": \"teobot-face:set-state\", \"state\": \"speaking\" }",
+      "theme": "{ \"type\": \"teobot-face:set-theme\", \"theme\": \"pink\" }"
+    },
+    "query": "preview.html?state=happy&theme=teo&kiosk=1"
+  }
+}

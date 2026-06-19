@@ -13,6 +13,7 @@ export const STATES = [
   { id: 'dv_pair_failed',       title: 'Robot · Pair · failed',          group: 'Robot Device', kind: 'edge' },
   { id: 'dv_pair_offline',      title: 'Robot · Pair · offline',         group: 'Robot Device', kind: 'edge' },
   { id: 'dv_pair_rename',       title: 'Robot · Pair · rename & buddy',  group: 'Robot Device', kind: 'happy' },
+  { id: 'dv_pair_child',        title: 'Robot · Pair · child profile',   group: 'Robot Device', kind: 'happy' },
   { id: 'dv_pair_first_lesson', title: 'Robot · Pair · first lesson',    group: 'Robot Device', kind: 'happy' },
   { id: 'dv_home',              title: 'Robot · Device home',            group: 'Robot Device', kind: 'happy' },
   { id: 'dv_session',           title: 'Robot · Live session monitor',   group: 'Robot Device', kind: 'happy' },

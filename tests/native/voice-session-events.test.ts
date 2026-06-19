@@ -241,7 +241,9 @@ describe('P0-11 — drain-event drives ASSISTANT_SPEAKING → LISTENING', () => 
       'utf8',
     );
     expect(hook).toMatch(/responseTurnCompleteAtMsRef\.current\s*=\s*Date\.now\(\)/);
-    expect(hook).toMatch(/turnComplete[\s\S]{0,400}endTurn\(\)/);
+    // The composer callback is named onTurnComplete and delegates endTurn()
+    // to the useGeminiPlayback hook.
+    expect(hook).toMatch(/onTurnComplete[\s\S]{0,400}endTurn\(\)/);
   });
 
   it('silent-server-response: hook transitions WAITING_AI → LISTENING on turnComplete', () => {
@@ -259,13 +261,15 @@ describe('P0-11 — drain-event drives ASSISTANT_SPEAKING → LISTENING', () => 
       require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
       'utf8',
     );
-    expect(hook).toMatch(/playbackRef\.current\.onPlaybackFinish[\s\S]{0,800}ASSISTANT_SPEAKING[\s\S]{0,800}transition\(['"]LISTENING['"]\)/);
+    // The callback is wired via the player local returned by playback.ensureCreated().
+    expect(hook).toMatch(/onPlaybackFinish[\s\S]{0,800}ASSISTANT_SPEAKING[\s\S]{0,800}transition\(['"]LISTENING['"]\)/);
   });
 
   it('drain-timeout safety waits for turnComplete and does not force LISTENING', () => {
     const fs = require('fs');
+    // The ASSISTANT_SPEAKING drain-timeout watchdog moved to useGeminiTimers.
     const hook = fs.readFileSync(
-      require('path').join(__dirname, '../../src/hooks/useGeminiConversation.ts'),
+      require('path').join(__dirname, '../../src/hooks/useGeminiTimers.ts'),
       'utf8',
     );
     const idx = hook.indexOf("voice.assistant.drain_timeout");

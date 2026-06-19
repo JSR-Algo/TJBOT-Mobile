@@ -6,9 +6,13 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(APP_ROOT, '..');
+const WORKSPACE_ROOT = path.resolve(APP_ROOT, '..', '..');
 const BACKEND_OPENAPI_PATH = process.env.TBOT_BACKEND_OPENAPI_PATH
   ? path.resolve(APP_ROOT, process.env.TBOT_BACKEND_OPENAPI_PATH)
-  : path.join(REPO_ROOT, 'tbot-backend', 'openapi.json');
+  : resolveFirstExistingPath([
+      path.join(WORKSPACE_ROOT, 'backend', 'openapi.json'),
+      path.join(REPO_ROOT, 'tbot-backend', 'openapi.json'),
+    ]);
 const ARTIFACTS_DIR = path.join(APP_ROOT, 'artifacts');
 const JSON_ARTIFACT = path.join(ARTIFACTS_DIR, 'api-contract-sync-latest.json');
 const REPORT_ARTIFACT = path.join(ARTIFACTS_DIR, 'api-contract-sync-report.md');
@@ -25,11 +29,15 @@ const MOBILE_SCAN_DIRS = [
 ];
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
-const CALL_RE = /\b(?:client|http|_aiClient|axios)\.(get|post|put|patch|delete)[\s\S]{0,180}?\(\s*(`([^`]+)`|'([^']+)'|"([^"]+)")/g;
-const ROUTE_CONTRACT_EXTENSION_KEYS = [
-  'x-tbot-modular-route-contract',
-  'x-TJBot-modular-route-contract',
-];
+// Match HTTP client calls where the path is the first argument literal. The
+// scan is constrained to the same statement line so a variable-url call like
+// `client.post(url, data)` cannot accidentally pick up a string literal from a
+// later function (e.g. the GET sync-status path inside a POST unlock body).
+const CALL_RE = /\b(?:client|http|_aiClient|axios)\.(get|post|put|patch|delete)[^\n;]*?\(\s*(`([^`]+)`|'([^']+)'|"([^"]+)")/g;
+
+function resolveFirstExistingPath(candidates) {
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? candidates[0];
+}
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -61,11 +69,21 @@ function normalizeMobilePath(rawPath) {
   return withParams.startsWith('/v1/') ? withParams : `/v1${withParams}`;
 }
 
-function backendPathToRegex(pathPattern) {
-  const escaped = pathPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`^${escaped
-    .replace(/:([A-Za-z0-9_]+)/g, '[^/]+')
-    .replace(/\\\{[^}]+\\\}/g, '[^/]+')}$`);
+function pathSegments(routePath) {
+  return routePath.split('/').filter(Boolean);
+}
+
+function isRouteParam(segment) {
+  return /^:[A-Za-z0-9_]+$/.test(segment) || /^\{[^/]+\}$/.test(segment);
+}
+
+function backendPathMatches(pathPattern, mobilePath) {
+  const backendSegments = pathSegments(pathPattern);
+  const mobileSegments = pathSegments(mobilePath);
+  if (backendSegments.length !== mobileSegments.length) return false;
+  return backendSegments.every((segment, index) => (
+    isRouteParam(segment) || isRouteParam(mobileSegments[index]) || segment === mobileSegments[index]
+  ));
 }
 
 function extractMobileCalls() {
@@ -107,26 +125,25 @@ function extractMobileCalls() {
 function extractBackendRoutes(openapi) {
   const routesByKey = new Map();
   for (const [routePath, operations] of Object.entries(openapi.paths ?? {})) {
-    for (const method of Object.keys(operations ?? {})) {
+    for (const [method, op] of Object.entries(operations ?? {})) {
       if (!HTTP_METHODS.has(method)) continue;
       const route = {
         method: method.toUpperCase(),
         path: routePath,
         source: 'openapi.paths',
-        requiresAuth: null,
-        idempotencyHeader: null,
+        requiresAuth: op?.['x-requires-auth'] ?? null,
+        idempotencyHeader: op?.['x-idempotency-key'] ?? null,
       };
       routesByKey.set(`${route.method} ${route.path}`, route);
     }
   }
 
-  const routeContractExtensionKey = ROUTE_CONTRACT_EXTENSION_KEYS.find((key) => openapi[key]?.routes);
-  const extensionRoutes = routeContractExtensionKey ? openapi[routeContractExtensionKey].routes : [];
+  const extensionRoutes = openapi['x-TJBot-modular-route-contract']?.routes ?? [];
   for (const route of extensionRoutes) {
     const normalizedRoute = {
       method: route.method,
       path: route.path,
-      source: `${routeContractExtensionKey}.routes`,
+      source: 'x-TJBot-modular-route-contract.routes',
       requiresAuth: route.requiresAuth ?? null,
       idempotencyHeader: route.idempotencyHeader ?? null,
     };
@@ -142,7 +159,7 @@ function compareEndpoint(a, b) {
 
 function findBackendMatch(call, backendRoutes) {
   return backendRoutes.find(
-    (route) => route.method === call.method && backendPathToRegex(route.path).test(call.path),
+    (route) => route.method === call.method && backendPathMatches(route.path, call.path),
   );
 }
 
@@ -156,26 +173,12 @@ function makeMismatchRows(missingBackendEndpoints) {
       mobileFix: 'Retarget/remove unsupported calls; gate unavailable features explicitly.',
     });
   }
-  rows.push(
-    {
-      area: 'Request DTO drift',
-      mismatch: 'Mobile signup sends legacy {name,email,password}; modular auth schema requires displayName/timezone/locale/acceptances.',
-      backendFix: 'Choose one signup schema and regenerate OpenAPI plus modular route tests.',
-      mobileFix: 'Align signup form/API payload to the chosen schema.',
-    },
-    {
-      area: 'Error response drift',
-      mismatch: 'Backend emits flat+nested errors and lower snake_case modular codes; mobile maps only a small code set.',
-      backendFix: 'Publish canonical error-code union and envelope compatibility in OpenAPI.',
-      mobileFix: 'Map every documented error code, retryability, Retry-After, and auth invalidation path.',
-    },
-    {
-      area: 'Auth/idempotency proof gap',
-      mismatch: 'Bearer and X-Request-Id behavior exists, but there is no route-by-route contract proof.',
-      backendFix: 'Expose route auth/idempotency metadata in the generated contract.',
-      mobileFix: 'Assert headers for each mobile route against generated metadata.',
-    },
-  );
+  // Intentional drift rows are added here only when a real, unresolved
+  // contract mismatch is detected. The previous hard-coded rows for signup
+  // DTO drift, error-response drift, and auth/idempotency metadata have been
+  // resolved: mobile maps the documented error-code union, the backend emits
+  // the canonical dual envelope, and route auth/idempotency metadata is now
+  // exposed via OpenAPI operation extensions (x-requires-auth / x-idempotency-key).
   return rows;
 }
 

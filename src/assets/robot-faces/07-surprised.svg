@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240" role="img" aria-label="Surprised">
+  <title>Surprised</title>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#10183A"/><stop offset="100%" stop-color="#05081C"/>
+    </radialGradient>
+    <radialGradient id="eye" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#E0FFFF"/><stop offset="50%" stop-color="#4DD0E1"/><stop offset="100%" stop-color="#0E7C8C"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="240" fill="url(#bg)"/>
+  <g filter="url(#glow)">
+    <circle cx="140" cy="120" r="62" fill="url(#eye)"/>
+    <circle cx="260" cy="120" r="62" fill="url(#eye)"/>
+  </g>
+  <circle cx="124" cy="104" r="14" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="244" cy="104" r="14" fill="#FFFFFF" opacity="0.85"/>
+  <g fill="#FFFFFF" opacity="0.5">
+    <line x1="40" y1="120" x2="60" y2="120" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <line x1="340" y1="120" x2="360" y2="120" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <line x1="60" y1="60" x2="74" y2="74" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <line x1="326" y1="74" x2="340" y2="60" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>

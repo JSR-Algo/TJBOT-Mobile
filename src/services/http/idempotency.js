@@ -32,3 +32,14 @@ export function useRequestId() {
 export function attachIdempotencyHeader(headers = {}, requestId) {
   return { ...headers, 'Idempotency-Key': requestId };
 }
+
+/**
+ * Attach a client-generated X-Request-Id header for server-side request
+ * tracing and idempotency on non-idempotent mutating routes. Prefer
+ * `attachIdempotencyHeader` for true idempotency-key semantics; this helper
+ * is for routes that require a request ID but do not yet accept an
+ * Idempotency-Key.
+ */
+export function attachRequestIdHeader(headers = {}, requestId) {
+  return { ...headers, 'X-Request-Id': requestId };
+}

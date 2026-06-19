@@ -107,6 +107,12 @@ export type EntitlementsSnapshot = {
   robotActivated: boolean;
 };
 
+const DEFAULT_ENTITLEMENTS: EntitlementsSnapshot = {
+  courses: [],
+  subscriptionStatus: 'inactive',
+  robotActivated: false,
+};
+
 let entitlementsInFlight: Promise<EntitlementsSnapshot> | null = null;
 
 export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSnapshot> {
@@ -124,6 +130,10 @@ export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSn
         subscriptionStatus: raw.subscription_status ?? 'inactive',
         robotActivated: raw.robot_activated ?? false,
       };
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      if (status === 404) return DEFAULT_ENTITLEMENTS;
+      throw error;
     } finally {
       entitlementsInFlight = null;
     }
@@ -171,4 +181,13 @@ export async function getAccountSummary(): Promise<User | null> {
     email,
     name: name ?? '',
   };
+}
+
+/** True when Render already has COPPA consent for this parent account. */
+export async function isCoppaVerified(): Promise<boolean> {
+  const response = await client.get('/account/export');
+  const data = (response.data.data ?? response.data) as {
+    account?: { coppa_verified?: boolean };
+  };
+  return data?.account?.coppa_verified === true;
 }

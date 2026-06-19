@@ -14,8 +14,15 @@ import { join } from 'path';
  */
 
 describe('getApiBaseUrl resolution order', () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   it('generates TBOT_API_URL from EXPO_PUBLIC_API_BASE_URL for EAS production builds', () => {
@@ -75,8 +82,11 @@ describe('getApiBaseUrl resolution order', () => {
         EXPO_PUBLIC_POSTHOG_HOST: '',
         EXPO_PUBLIC_VOICE_TEST_HARNESS: '',
         EXPO_PUBLIC_VOICE_BARGE_IN_BUDGET_MS: '',
+        EXPO_PUBLIC_VOICE_CANCEL_UNACK_RECOVERY: '',
       },
     }));
+    process.env.EXPO_PUBLIC_TBOT_API_URL = envApiUrl;
+    process.env.EXPO_PUBLIC_TBOT_AI_URL = envAiUrl;
 
     jest.doMock('expo-device', () => ({ isDevice }));
 
@@ -185,7 +195,7 @@ describe('getApiBaseUrl resolution order', () => {
       dev: false,
     });
 
-    expect(getAiBaseUrl()).toBe('https://tbot-backend-8wmh.onrender.com/api/ai');
+    expect(getAiBaseUrl()).toBe('https://tbot-backend-8wmh.onrender.com/v1/ai');
   });
 
   it('malformed scriptURL falls through gracefully', () => {

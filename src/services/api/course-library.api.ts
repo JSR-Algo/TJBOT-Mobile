@@ -2,6 +2,7 @@ export type { Order, OrderParams } from './purchase.api';
 export { createOrder, getOrder } from './purchase.api';
 export { pushCourseToDevice } from './device.api';
 import client from '@/services/http/client';
+import { attachRequestIdHeader } from '@/services/http/idempotency';
 import { backendContractUnavailable } from './undocumented-api-routes';
 
 export interface LibraryItem {
@@ -97,23 +98,31 @@ export async function purchaseCourse(_courseId: string): Promise<void> {
   backendContractUnavailable(`purchaseCourse:${_courseId}`);
 }
 
-/**
- * @deprecated The `/course-library/:id/unlock` stub returns 410 GONE. The real
- * enrollment flow lives at POST `/v1/courses/:courseId/enroll` — call
- * {@link enrollCourse} instead. Retained as a no-op shim so older callers fall
- * through gracefully; new code MUST NOT call this.
- */
-export async function unlockCourse(courseId: string): Promise<void> {
-  await client.post(`/course-library/${courseId}/unlock`);
+export async function unlockCourse(courseId: string, requestId?: string): Promise<void> {
+  const url = `/course-library/${courseId}/unlock`;
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  if (headers) {
+    await client.post(url, {}, { headers });
+  } else {
+    await client.post(url, {});
+  }
 }
 
-/**
- * @deprecated The `/course-library/:id/send-to-robot` stub returns 410 GONE.
- * Use {@link createAssignment} (device-scoped lesson assignment) for the real
- * send-to-robot flow; for course enrollment use {@link enrollCourse}.
- */
-export async function sendCourseToRobot(courseId: string): Promise<void> {
-  await client.post(`/course-library/${courseId}/send-to-robot`);
+// Contract breadcrumb: paired with backend/src/course-library/dto/course-library.dto.ts SendToRobotDto; verified by original-app/TJBOT-Mobile/tests/api/course-library-normalization.test.ts and backend/tests/course-library.integration.spec.ts. Update both when this shape changes.
+export async function sendCourseToRobot(
+  courseId: string,
+  deviceId: string,
+  childId: string,
+  requestId?: string,
+): Promise<void> {
+  const url = `/course-library/${courseId}/send-to-robot`;
+  const payload = { device_id: deviceId, child_id: childId };
+  const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
+  if (headers) {
+    await client.post(url, payload, { headers });
+  } else {
+    await client.post(url, payload);
+  }
 }
 
 export async function getRobotSyncStatus(courseId: string): Promise<RobotSyncStatus> {

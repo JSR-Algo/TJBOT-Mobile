@@ -14,6 +14,7 @@ describe('ErrorMessage accessibility', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toBeTruthy();
-    expect(screen.getByText('⚠️ Network request failed')).toBeTruthy();
+    expect(screen.getByLabelText('Warning')).toBeTruthy();
+    expect(screen.getByText('Network request failed')).toBeTruthy();
   });
 });

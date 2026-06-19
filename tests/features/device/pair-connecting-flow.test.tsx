@@ -9,6 +9,7 @@ import {
   getProvisioningAttemptStatus,
   mintBootstrapToken,
   pairDevice,
+  type PairDeviceResult,
 } from '@/services/api/device.api';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
 import {
@@ -180,7 +181,7 @@ beforeEach(() => {
     deviceId: 'device-1',
     provisioningAttemptId: 'attempt-1',
     status: 'device_authenticated',
-  });
+  } as PairDeviceResult);
 });
 
 afterEach(() => {

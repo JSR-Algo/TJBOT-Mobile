@@ -11,16 +11,23 @@ import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
 import { runMicTest } from '@/services/api/robot-mgmt.api';
 import { ROUTES } from '@/navigation/routes';
+import { FEATURE_DEVICE_MANAGEMENT } from '@/config/feature-flags';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MicTestScreen'>;
 
-type Phase = 'idle' | 'listening' | 'pass' | 'fail';
+type Phase = 'idle' | 'listening' | 'pass' | 'fail' | 'disabled';
 const BARS = 14;
 
 export default function MicTestScreen({ navigation }: Props) {
-  const [phase, setPhase] = React.useState<Phase>('idle');
+  const [phase, setPhase] = React.useState<Phase>(
+    FEATURE_DEVICE_MANAGEMENT ? 'idle' : 'disabled',
+  );
 
   const start = React.useCallback(async () => {
+    if (!FEATURE_DEVICE_MANAGEMENT) {
+      setPhase('disabled');
+      return;
+    }
     setPhase('listening');
     try {
       const result = await runMicTest();
@@ -30,17 +37,28 @@ export default function MicTestScreen({ navigation }: Props) {
     }
   }, []);
 
-  const emotion = phase === 'listening' ? 'listening' : phase === 'pass' ? 'happy' : phase === 'fail' ? 'sad' : 'idle';
+  const emotion =
+    phase === 'disabled' ? 'sleep' :
+    phase === 'listening' ? 'listening' :
+    phase === 'pass' ? 'happy' :
+    phase === 'fail' ? 'sad' :
+    'idle';
   const heading =
+    phase === 'disabled' ? 'Device tools are off' :
     phase === 'idle' ? 'Ready to listen' :
     phase === 'listening' ? 'Listening...' :
     phase === 'pass' ? 'Mic test heard sound' :
     'A little too quiet';
   const sub =
-    phase === 'idle' ? "Stand about an arm's length from Robot, then tap Start." :
-    phase === 'listening' ? 'Try saying "Hello, Robot!"' :
-    phase === 'pass' ? 'You can run this test anytime if Robot seems quiet.' :
-    'Move closer to Robot and try again.';
+    phase === 'disabled'
+      ? 'Device management is disabled in this build. Enable it in feature flags to test the microphone.'
+      : phase === 'idle'
+      ? "Stand about an arm's length from Robot, then tap Start."
+      : phase === 'listening'
+      ? 'Try saying "Hello, Robot!"'
+      : phase === 'pass'
+      ? 'You can run this test anytime if Robot seems quiet.'
+      : 'Move closer to Robot and try again.';
 
   return (
     <DeviceShell title="Microphone test" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
@@ -78,6 +96,11 @@ export default function MicTestScreen({ navigation }: Props) {
           </>
         )}
         {phase === 'fail' && <DeviceBigBtn onClick={start}>Run test again</DeviceBigBtn>}
+        {phase === 'disabled' && (
+          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>
+            Back to Robot
+          </DeviceBigBtn>
+        )}
       </Box>
     </DeviceShell>
   );

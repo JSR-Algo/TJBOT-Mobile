@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
 import CourseAddedScreen from '@/features/course-library/screens/CourseAddedScreen';
 import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
@@ -12,6 +13,7 @@ import {
   getCurrentAssignment,
   getRobotSyncStatus,
   unlockCourse,
+  enrollCourse,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
@@ -23,6 +25,7 @@ jest.mock('@/services/api/course-library.api', () => {
   return {
     ...actual,
     unlockCourse: jest.fn(),
+    enrollCourse: jest.fn(),
     sendCourseToRobot: jest.fn(),
     getRobotSyncStatus: jest.fn(),
     // US-006 S11: SendToRobotScreen now assigns via the device-scoped lesson API.
@@ -43,6 +46,7 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 }));
 
 const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
+const mockedEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
@@ -64,6 +68,11 @@ function stubPublishedCatalog() {
   mockedGetCourseLessons.mockResolvedValue(SEED_LESSONS);
 }
 
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 function navigationFor() {
   return {
     navigate: jest.fn(),
@@ -81,6 +90,14 @@ describe('course-library flow guards', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     stubPublishedCatalog();
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+    });
+    mockedEnrollCourse.mockResolvedValue({ enrollment: { id: 'enroll-1' }, assignment: { id: 'assign-1' } } as never);
   });
 
   it('renders the course that was just added from route params', () => {
@@ -88,7 +105,7 @@ describe('course-library flow guards', () => {
     // proving the dynamic overlay never crashes on a non-published courseId.
     mockedGetCourses.mockResolvedValue([]);
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <CourseAddedScreen
         navigation={navigation as never}
         route={{ key: 'added', name: ROUTES.CourseAddedScreen, params: { courseId: 'c_animals' } } as never}
@@ -99,9 +116,8 @@ describe('course-library flow guards', () => {
   });
 
   it('passes course id into the added screen after parent unlock succeeds', async () => {
-    mockedUnlockCourse.mockResolvedValueOnce(undefined);
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <UnlockConfirmModal
         navigation={navigation as never}
         route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: { courseId: 'c_food' } } as never}
@@ -115,13 +131,13 @@ describe('course-library flow guards', () => {
       fireEvent.press(screen.getByText('Confirm add'));
     });
 
-    expect(mockedUnlockCourse).toHaveBeenCalledWith('c_food');
-    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_food' });
+    await waitFor(() => expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' }));
+    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_food', assignmentId: 'assign-1' });
   });
 
   it('starts the free add path from detail without billing plan selection', () => {
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <CourseDetailScreen
         navigation={navigation as never}
         route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
@@ -137,7 +153,7 @@ describe('course-library flow guards', () => {
 
   it('labels parent unlock keypad controls', () => {
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <UnlockConfirmModal
         navigation={navigation as never}
         route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: { courseId: 'c_food' } } as never}
@@ -161,7 +177,7 @@ describe('course-library flow guards', () => {
       lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, profile: 'espTft', state: 'PRELOADING', createdAt: null,
     });
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <SendToRobotScreen
         navigation={navigation as never}
         route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
@@ -195,7 +211,7 @@ describe('course-library flow guards', () => {
       lessonId: 'w01-d02-barn-colors', lessonVersion: 3, profile: 'espTft', state: 'PRELOADING', createdAt: null,
     });
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <SendToRobotScreen
         navigation={navigation as never}
         route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
@@ -218,7 +234,7 @@ describe('course-library flow guards', () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 504, data: { error: { code: 'ROBOT_OFFLINE' } } } });
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <SendToRobotScreen
         navigation={navigation as never}
         route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
@@ -244,7 +260,7 @@ describe('course-library flow guards', () => {
       lessonTitle: 'This Is a Barn', lessonVersion: 1, state: 'PRELOADING', childId: 'ch-1', profile: 'espTft',
     });
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <SendToRobotScreen
         navigation={navigation as never}
         route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
@@ -268,7 +284,7 @@ describe('course-library flow guards', () => {
   it('gates send when no lessons are published (no SEED_LESSON fallback)', async () => {
     mockedGetCourses.mockResolvedValue([]);
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <SendToRobotScreen
         navigation={navigation as never}
         route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
@@ -298,7 +314,7 @@ describe('course-library flow guards', () => {
       lessonId: 'pi-d01', lessonVersion: 2, profile: 'piTft', state: 'PRELOADING', createdAt: null,
     });
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <SendToRobotScreen
         navigation={navigation as never}
         route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
@@ -324,7 +340,7 @@ describe('course-library flow guards', () => {
       { lessonId: 'x-d01', lessonVersion: 1, title: 'X Lesson', profile: 'bogus', manifestReady: true },
     ]);
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <SendToRobotScreen
         navigation={navigation as never}
         route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
@@ -347,7 +363,7 @@ describe('course-library flow guards', () => {
       lastSyncAt: null,
     });
     const navigation = navigationFor();
-    render(
+    renderWithProviders(
       <NeedsSyncScreen
         navigation={navigation as never}
         route={{ key: 'needs-sync', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_food' } } as never}

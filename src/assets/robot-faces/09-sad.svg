@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 400 240" role="img" aria-label="Sad">
+  <title>Sad</title>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#10183A"/><stop offset="100%" stop-color="#05081C"/>
+    </radialGradient>
+    <linearGradient id="eye" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A8FBFF"/><stop offset="60%" stop-color="#4DD0E1"/><stop offset="100%" stop-color="#1FA9C2"/>
+    </linearGradient>
+    <linearGradient id="tear" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E0F7FA"/><stop offset="100%" stop-color="#5BC0EB"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="240" fill="url(#bg)"/>
+  <g filter="url(#glow)">
+    <path d="M100 100 Q140 80 180 110 L180 170 Q140 170 100 170 Z" fill="url(#eye)"/>
+    <path d="M220 110 Q260 80 300 100 L300 170 Q260 170 220 170 Z" fill="url(#eye)"/>
+  </g>
+  <ellipse cx="124" cy="128" rx="10" ry="7" fill="#FFFFFF" opacity="0.7"/>
+  <ellipse cx="276" cy="128" rx="10" ry="7" fill="#FFFFFF" opacity="0.7"/>
+  <g filter="url(#glow)">
+    <path d="M118 178 Q108 200 116 214 Q128 216 130 200 Z" fill="url(#tear)"/>
+  </g>
+  <ellipse cx="120" cy="190" rx="3" ry="5" fill="#FFFFFF" opacity="0.85"/>
+  <path d="M150 210 Q200 192 250 210" stroke="#4DD0E1" stroke-width="5" stroke-linecap="round" fill="none" filter="url(#glow)" opacity="0.7"/>
+</svg>

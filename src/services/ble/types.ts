@@ -1,4 +1,9 @@
-export type BlePermissionState = 'granted' | 'denied' | 'unavailable';
+export type BlePermissionState =
+  | 'granted'
+  | 'denied'
+  | 'unavailable'
+  | 'poweredOff'
+  | 'unauthorized';
 
 export interface BleDeviceCandidate {
   id: string;
@@ -8,6 +13,7 @@ export interface BleDeviceCandidate {
   manufacturerData?: string | null;
   rawScanRecord?: string | null;
   serviceData?: Record<string, string> | null;
+  rssi?: number | null;
 }
 
 export interface BleBootstrapResult {

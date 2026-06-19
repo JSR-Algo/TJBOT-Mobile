@@ -1,6 +1,25 @@
+import type { Device } from '@/services/api/device.api';
+
 describe('device API client', () => {
   it('loads the primary household device from the documented household route', async () => {
     jest.resetModules();
+    const primaryDevice: Device = {
+      id: 'device-1',
+      serial_number: 'TJBot-0001',
+      hardware_revision: 'rev-a',
+      state: 'ACTIVE',
+      status: 'active',
+      household_id: 'household-1',
+      lifecycle_state: 'assigned',
+      last_seen_at: '2026-05-16T00:00:00.000Z',
+      firmware_version: '1.0.0',
+      battery_level: 87,
+      connectivity_metrics: {
+        connectivity_state: 'online',
+        wifi_ssid: 'Casa',
+      },
+      created_at: '2026-05-16T00:00:00.000Z',
+    };
     const get = jest.fn().mockResolvedValueOnce({
       data: [
         {
@@ -74,15 +93,24 @@ describe('device API client', () => {
 
   it('loads a specific device from the documented device detail route', async () => {
     jest.resetModules();
-    const get = jest.fn().mockResolvedValueOnce({
-      data: {
-        id: 'device-2',
-        name: 'Kitchen Robot',
-        status: 'offline',
-        battery_level: 10,
-        firmware_version: '1.0.1',
-        last_seen_at: '2026-05-15T00:00:00.000Z',
+    const device: Device = {
+      id: 'device-2',
+      serial_number: 'Kitchen Robot',
+      hardware_revision: 'rev-b',
+      state: 'OFFLINE',
+      status: 'offline',
+      household_id: 'household-1',
+      lifecycle_state: 'assigned',
+      last_seen_at: '2026-05-15T00:00:00.000Z',
+      firmware_version: '1.0.1',
+      battery_level: 10,
+      connectivity_metrics: {
+        connectivity_state: 'offline',
       },
+      created_at: '2026-05-15T00:00:00.000Z',
+    };
+    const get = jest.fn().mockResolvedValueOnce({
+      data: device,
     });
 
     jest.doMock('@/services/http/client', () => ({
@@ -95,6 +123,7 @@ describe('device API client', () => {
     await expect(getDeviceStatus('device-2')).resolves.toEqual({
       id: 'device-2',
       name: 'Kitchen Robot',
+      serialNumber: 'Kitchen Robot',
       online: false,
       batteryPercent: 10,
       charging: false,
@@ -117,6 +146,12 @@ describe('device API client', () => {
 
     await expect(unpairDevice('device-3')).resolves.toBeUndefined();
     expect(deleteRequest).toHaveBeenCalledWith('/devices/device-3');
+
+    deleteRequest.mockClear();
+    await unpairDevice('device-3', 'req-xyz');
+    expect(deleteRequest).toHaveBeenCalledWith('/devices/device-3', {
+      headers: { 'X-Request-Id': 'req-xyz' },
+    });
   });
 
   it('starts consumer provisioning through the documented provisioning route', async () => {
@@ -189,6 +224,47 @@ describe('device API client', () => {
       wifiSsid: 'Casa',
       wifiPassword: 'secret-pass',
     });
+
+    post.mockClear();
+    post.mockResolvedValueOnce({
+      data: {
+        device_id: 'device-4',
+        household_id: 'household-1',
+        state: 'CLAIMED',
+      },
+    });
+    await pairDevice({
+      serialNumber: 'TJBot-0001',
+      code: '4721',
+      wifiSsid: 'Casa',
+      wifiPassword: 'secret-pass',
+    }, 'req-pair');
+    expect(post).toHaveBeenCalledWith('/devices/claim', {
+      serial_number: 'TJBot-0001',
+      ble_code: '4721',
+    }, {
+      headers: { 'X-Request-Id': 'req-pair' },
+    });
+  });
+
+  it('classifies unfinished backend flows as BackendContractUnavailableError', async () => {
+    jest.resetModules();
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
+    }));
+
+    const {
+      getFirmwareVersion,
+      isBackendContractUnavailableError,
+    } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getFirmwareVersion('device-5')).rejects.toMatchObject({
+      name: 'BackendContractUnavailableError',
+      code: 'BACKEND_CONTRACT_UNAVAILABLE',
+    });
+    expect(isBackendContractUnavailableError(new Error('network'))).toBe(false);
   });
 
   it('confirms local BLE handoff without sending Wi-Fi credentials', async () => {

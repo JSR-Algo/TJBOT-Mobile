@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "character": "Bibo",
+  "screenAspect": "5:3",
+  "viewBox": "0 0 400 240",
+  "renderSize": [1200, 720],
+  "palette": {
+    "bg": "#05081C",
+    "bgGlow": "#10183A",
+    "eye": "#4DD0E1",
+    "eyeHi": "#A8FBFF",
+    "accentWarm": "#FFEB3B",
+    "accentLove": "#FF5C8A",
+    "accentTear": "#5BC0EB"
+  },
+  "faces": [
+    { "id": "happy",      "file": "01-happy.svg",      "name": "Happy",      "mood": "joyful, smiling" },
+    { "id": "neutral",    "file": "02-neutral.svg",    "name": "Neutral",    "mood": "idle, attentive" },
+    { "id": "sleepy",     "file": "03-sleepy.svg",     "name": "Sleepy",     "mood": "drowsy, half-lidded" },
+    { "id": "excited",    "file": "04-excited.svg",    "name": "Excited",    "mood": "thrilled, sparkly" },
+    { "id": "love",       "file": "05-love.svg",       "name": "Love",       "mood": "smitten, hearts" },
+    { "id": "curious",    "file": "06-curious.svg",    "name": "Curious",    "mood": "inquisitive, asymmetric" },
+    { "id": "surprised",  "file": "07-surprised.svg",  "name": "Surprised",  "mood": "wide-eyed shock" },
+    { "id": "wink",       "file": "08-wink.svg",       "name": "Wink",       "mood": "playful wink" },
+    { "id": "sad",        "file": "09-sad.svg",        "name": "Sad",        "mood": "tearful droop" },
+    { "id": "confused",   "file": "10-confused.svg",   "name": "Confused",   "mood": "puzzled, mismatched" },
+    { "id": "determined", "file": "11-determined.svg", "name": "Determined", "mood": "focused, brow-down" },
+    { "id": "laughing",   "file": "12-laughing.svg",   "name": "Laughing",   "mood": "joy tears, ^_^" },
+    { "id": "thinking",   "file": "13-thinking.svg",   "name": "Thinking",   "mood": "processing, dots" },
+    { "id": "shy",        "file": "14-shy.svg",        "name": "Shy",        "mood": "blushing half-eyes" },
+    { "id": "listening",  "file": "15-listening.svg",  "name": "Listening",  "mood": "audio rings active" },
+    { "id": "singing",    "file": "16-singing.svg",    "name": "Singing",    "mood": "humming, music notes" },
+    { "id": "cool",       "file": "17-cool.svg",       "name": "Cool",       "mood": "shades on, smug smile" },
+    { "id": "starstruck", "file": "18-starstruck.svg", "name": "Starstruck", "mood": "amazed, star eyes" },
+    { "id": "sleeping",   "file": "19-sleeping.svg",   "name": "Sleeping",   "mood": "deeply asleep, zzz" },
+    { "id": "mischief",   "file": "20-mischief.svg",   "name": "Mischief",   "mood": "sneaky smirk" }
+  ]
+}

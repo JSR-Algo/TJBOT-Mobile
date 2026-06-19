@@ -1,11 +1,38 @@
 import type { RootStackParamList } from '@/navigation/routes';
 
 type PairWifiPasswordParams = NonNullable<RootStackParamList['PairWifiPasswordScreen']>;
+type PairWifiParams = NonNullable<RootStackParamList['PairWifiScreen']>;
 
 const FALLBACK_SSID = 'Selected network';
 
-export function buildPairWifiPasswordParams(ssid: string): PairWifiPasswordParams {
-  return { ssid: sanitizeSsid(ssid) };
+export function buildPairWifiParams(input: {
+  code: string;
+  deviceId?: string;
+  serialNumber?: string;
+  bleDeviceId?: string;
+}): PairWifiParams {
+  const params: PairWifiParams = { code: input.code };
+  if (input.deviceId) params.deviceId = input.deviceId;
+  if (input.serialNumber) params.serialNumber = input.serialNumber;
+  if (input.bleDeviceId) params.bleDeviceId = input.bleDeviceId;
+  return params;
+}
+
+export function buildPairWifiPasswordParams(
+  ssid: string,
+  context?: {
+    deviceId?: string;
+    code?: string;
+    serialNumber?: string;
+    bleDeviceId?: string;
+  },
+): PairWifiPasswordParams {
+  const params: PairWifiPasswordParams = { ssid: sanitizeSsid(ssid) };
+  if (context?.deviceId) params.deviceId = context.deviceId;
+  if (context?.code) params.code = context.code;
+  if (context?.serialNumber) params.serialNumber = context.serialNumber;
+  if (context?.bleDeviceId) params.bleDeviceId = context.bleDeviceId;
+  return params;
 }
 
 export function getPairWifiPasswordSsid(params: RootStackParamList['PairWifiPasswordScreen']): string {
@@ -26,8 +53,5 @@ function sanitizeSsid(value: string | undefined): string {
 }
 
 function hasControlCharacter(value: string): boolean {
-  return Array.from(value).some((char) => {
-    const codePoint = char.codePointAt(0);
-    return codePoint !== undefined && (codePoint <= 31 || codePoint === 127);
-  });
+  return /[\x00-\x1f\x7f]/.test(value);
 }

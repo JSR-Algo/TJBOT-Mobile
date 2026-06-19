@@ -71,10 +71,12 @@ export function MainTabNavigator({
       <Tab.Navigator
         initialRouteName={initialTabName}
         screenOptions={{
-          tabBarActiveTintColor: colors.primary,
+          headerShown: false,
+          tabBarActiveTintColor: '#4ECDC4',
           tabBarInactiveTintColor: colors.textMuted,
-          tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.surface },
-          tabBarLabelStyle: { ...typography.caption },
+          tabBarStyle: styles.tabBar,
+          tabBarItemStyle: styles.tabBarItem,
+          tabBarLabelStyle: styles.tabBarLabel,
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primary,
         }}
@@ -103,12 +105,39 @@ export function MainTabNavigator({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  tabBar: {
+    position: 'absolute',
+    left: 22,
+    right: 22,
+    bottom: 18,
+    height: 64,
+    borderTopWidth: 0,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 8,
+    shadowColor: '#A98F77',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.13,
+    shadowRadius: 22,
+    elevation: 6,
+  },
+  tabBarItem: {
+    borderRadius: 26,
+  },
+  tabBarLabel: {
+    ...typography.caption,
+    fontSize: 9,
+    fontWeight: '800',
+    marginTop: 0,
+  },
   tabIconContainer: {
-    width: 38,
-    height: 30,
+    width: 34,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 15,
+    borderRadius: 14,
     borderWidth: 1,
   },
   tabIconContainerFocused: {

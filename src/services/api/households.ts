@@ -6,8 +6,8 @@ function unwrap<T>(response: { data: { data?: T } | T }): T {
   return (body && typeof body === 'object' && 'data' in body && body.data !== undefined ? body.data : body) as T;
 }
 
-export async function list(): Promise<Household[]> {
-  const response = await client.get('/households');
+export async function list(signal?: AbortSignal): Promise<Household[]> {
+  const response = await client.get('/households', { signal });
   return unwrap<Household[]>(response);
 }
 
@@ -31,8 +31,8 @@ export async function addChild(
   return unwrap<Child>(response);
 }
 
-export async function listChildren(householdId: string): Promise<Child[]> {
-  const response = await client.get(`/households/${householdId}/children`);
+export async function listChildren(householdId: string, signal?: AbortSignal): Promise<Child[]> {
+  const response = await client.get(`/households/${householdId}/children`, { signal });
   return unwrap<Child[]>(response);
 }
 

@@ -55,14 +55,11 @@ describe('P0-1 — HW AEC re-enabled (VoiceMicModule.swift)', () => {
 describe('P0-1b — iOS prewarm does not steal the engine before VoiceMic', () => {
   const hook = read('hooks/useGeminiConversation.ts');
 
-  it('prewarm is now unconditional on all platforms (P0-5: preflight pre-arms voiceProcessing)', () => {
-    // P0-5: SharedVoiceEngine.preflight(voiceProcessing:true) runs before prewarm,
-    // so the iOS race (prewarm stealing engine with voiceProcessing=false) is fixed.
+  it('prewarm is now unconditional on all platforms', () => {
     // The Platform.OS !== 'ios' guard was intentionally removed.
     expect(hook).not.toMatch(/Platform\.OS\s*!==\s*['"]ios['"]/);
-    // Prewarm is called unconditionally; comment explains the prior race + fix.
+    // Prewarm is called unconditionally before connecting the Live session.
     expect(hook).toMatch(/prewarm/);
-    expect(hook).toMatch(/preflight/);
   });
 });
 
@@ -70,21 +67,14 @@ describe('P0-3 — activityHandling + model single source of truth', () => {
   const hook = read('hooks/useGeminiConversation.ts');
   const config = read('config.ts');
 
-  // P0-3 activityHandling is still in flux — device testing on 2026-04-23
-  // showed the explicit `realtimeInputConfig.activityHandling` config could
-  // drop the session into ERROR (UI bounced from LISTENING to IDLE on every
-  // tap). The rollback is field-level; the canonical model is back to 3.1.
-  // The rollback is intentional — START_OF_ACTIVITY_INTERRUPTS is the Live
-  // API's default server-side behaviour, so barge-in still functions; only
-  // the explicit client-side config is disabled until SDK compat is fixed.
-  // This test accepts either state: the code must either wire the config
-  // actively OR carry the ROLLED BACK marker explaining why not.
-  it('activityHandling is either wired live OR explicitly rolled back with rationale', () => {
-    // Active form: non-commented `realtimeInputConfig: { activityHandling: ... }`
-    const activeForm = /^(?!\s*\/\/).*realtimeInputConfig\s*:\s*\{[\s\S]*?activityHandling\s*:\s*ActivityHandling\.START_OF_ACTIVITY_INTERRUPTS/m;
-    // Rolled-back form: the ROLLED BACK marker + the commented activityHandling
-    const rolledBackForm = /ROLLED BACK[\s\S]*?activityHandling/;
-    expect(activeForm.test(hook) || rolledBackForm.test(hook)).toBe(true);
+  // P0-3 activityHandling was removed entirely after device testing on
+  // 2026-04-23 showed the explicit `realtimeInputConfig.activityHandling`
+  // config could drop the session into ERROR (UI bounced from LISTENING to
+  // IDLE on every tap). The Live API's default server-side behaviour still
+  // handles barge-in, so the explicit client-side config is not wired.
+  it('activityHandling config is not wired (relies on Live API default)', () => {
+    expect(hook).not.toMatch(/activityHandling/);
+    expect(hook).not.toMatch(/realtimeInputConfig/);
   });
 
   it('config.ts default model is gemini-3.1-flash-live-preview', () => {
@@ -188,14 +178,15 @@ describe('P0-7 — turn-generation fence on enqueue loop', () => {
   const src = read('hooks/useGeminiConversation.ts');
 
   it('captures turnGeneration before entering the audioParts for-loop', () => {
+    // After the sub-hook refactor the local `player` ref is used for the fence.
     expect(src).toMatch(
-      /const\s+turnAtEnqueue\s*=\s*playbackRef\.current\.turnGeneration/,
+      /const\s+turnAtEnqueue\s*=\s*player\.turnGeneration/,
     );
   });
 
   it('breaks the loop when turnGeneration has changed mid-iteration', () => {
     expect(src).toMatch(
-      /if\s*\(\s*playbackRef\.current\.turnGeneration\s*!==\s*turnAtEnqueue\s*\)\s*break/,
+      /if\s*\(\s*player\.turnGeneration\s*!==\s*turnAtEnqueue\s*\)\s*break/,
     );
   });
 });
@@ -379,13 +370,13 @@ describe('AEC-1 — JS subscriber for voiceAecAttachFailed (plan §4 Step 1)', (
 
 describe('CANCEL-RECOVERY — cancel_unack opt-in recovery (plan §4 Step 2)', () => {
   const config = read('config.ts');
-  const hook = read('hooks/useGeminiConversation.ts');
+  const hook = read('hooks/useGeminiTimers.ts');
 
   it('config.ts exports VOICE_CANCEL_UNACK_RECOVERY flag', () => {
     expect(config).toContain('VOICE_CANCEL_UNACK_RECOVERY');
   });
 
-  it('hook emits voice.barge_in.cancel_unacked.recovery_close telemetry', () => {
+  it('timer hook emits voice.barge_in.cancel_unacked.recovery_close telemetry', () => {
     expect(hook).toContain('voice.barge_in.cancel_unacked.recovery_close');
   });
 });

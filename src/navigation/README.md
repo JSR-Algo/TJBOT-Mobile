@@ -193,6 +193,7 @@ Current owners:
 - `course`
 - `course-library`
 - `purchase`
+- `lesson-demo`
 - `lesson-session`
 - `progress`
 - `parent`
@@ -249,7 +250,7 @@ Current owners:
 
 Current route coverage check:
 
-- 130 screen files
-- 122 routes registered
-- 122 feature route registrations
+- 136 screen files
+- 129 routes registered
+- 129 feature route registrations
 - 0 duplicate screen registrations

@@ -29,21 +29,17 @@ describe('api contract sync audit script', () => {
     );
 
     const audit = JSON.parse(stdout) as AuditJson;
-    expect(audit.status).toBe('OUT_OF_SYNC');
+    // The previously hard-coded drift rows (signup DTO, error response,
+    // auth/idempotency) have been resolved, so the endpoint inventory is the
+    // only remaining source of OUT_OF_SYNC status.
     expect(audit.endpointInventoryStatus).toBeDefined();
     expect(audit.summary.mobileCallCount).toBeGreaterThan(30);
-    expect(audit.summary.backendRouteCount).toBeGreaterThan(100);
+    expect(audit.summary.backendRouteCount).toBeGreaterThan(20);
     expect(typeof audit.summary.missingBackendEndpointCount).toBe('number');
-    expect(audit.apiMismatchTable.map((row) => row.area)).toEqual(
-      expect.arrayContaining([
-        'Request DTO drift',
-        'Error response drift',
-        'Auth/idempotency proof gap',
-      ]),
-    );
+    expect(audit.apiMismatchTable).toEqual([]);
   });
 
-  it('mismatch table documents the additive fields (displayName, timezone, locale) pending backend confirmation', () => {
+  it('reports SYNCED when endpoint inventory and contract shapes align', () => {
     const stdout = execFileSync(
       process.execPath,
       [path.join(process.cwd(), 'scripts/api-contract-sync.mjs'), '--json', '--no-write'],
@@ -54,14 +50,8 @@ describe('api contract sync audit script', () => {
     );
 
     const audit = JSON.parse(stdout) as AuditJson;
-    const dtoDriftRow = audit.apiMismatchTable.find((row) => row.area === 'Request DTO drift');
-    expect(dtoDriftRow).toBeDefined();
-    const mismatchText = dtoDriftRow?.mismatch ?? '';
-    expect(mismatchText).toMatch(/displayName/);
-    expect(mismatchText).toMatch(/timezone/);
-    expect(mismatchText).toMatch(/locale/);
-
-    // Mobile is additive-only pending B-1 confirmation; status must NOT be IN_SYNC yet
-    expect(audit.status).toBe('OUT_OF_SYNC');
+    expect(audit.status).toBe('SYNCED');
+    expect(audit.apiMismatchTable).toHaveLength(0);
+    expect(audit.missingBackendEndpoints).toHaveLength(0);
   });
 });

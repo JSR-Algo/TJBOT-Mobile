@@ -1,3 +1,6 @@
+import React from 'react';
+import type { LessonSessionActor } from '@/state/machines';
+
 export type LessonSessionMode = 'lesson' | 'review' | 'mission';
 
 export type LessonResumeReason =
@@ -76,4 +79,28 @@ export function getLessonResumeCopy(context: LessonSessionContext): string {
   }
 
   return context.lessonTitle;
+}
+
+const LessonSessionActorContext = React.createContext<LessonSessionActor | null>(null);
+
+export function LessonSessionProvider({
+  actor,
+  children,
+}: {
+  actor: LessonSessionActor;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return React.createElement(
+    LessonSessionActorContext.Provider,
+    { value: actor },
+    children,
+  );
+}
+
+export function useLessonSessionActor(): LessonSessionActor {
+  const actor = React.useContext(LessonSessionActorContext);
+  if (!actor) {
+    throw new Error('useLessonSessionActor must be used inside LessonSessionProvider');
+  }
+  return actor;
 }

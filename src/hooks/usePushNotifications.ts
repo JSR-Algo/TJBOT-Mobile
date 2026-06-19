@@ -9,9 +9,7 @@ let Notifications: typeof import('expo-notifications') | null = null;
 let Device: typeof import('expo-device') | null = null;
 
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = Config.QA_MODE ? null : require('expo-notifications');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Device = Config.QA_MODE ? null : require('expo-device');
 
   Notifications?.setNotificationHandler({

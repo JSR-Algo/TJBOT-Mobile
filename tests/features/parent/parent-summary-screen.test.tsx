@@ -17,7 +17,6 @@ import { setAppLanguage } from '../../../src/services/i18n/i18n';
 // Treat useFocusEffect as useEffect so the load runs on mount without a
 // real NavigationContainer mounted.
 jest.mock('@react-navigation/native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactInner = require('react') as typeof import('react');
   return {
     useFocusEffect: (cb: () => undefined | (() => void)) => {
@@ -61,7 +60,6 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 }));
 
 // Imported after mocks so the screen module picks up the mocked seams.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ParentSummaryScreen = require('../../../src/features/parent/screens/ParentSummaryScreen').default;
 
 type ParentSummaryRoute = RouteProp<RootStackParamList, typeof ROUTES.ParentSummaryScreen>;

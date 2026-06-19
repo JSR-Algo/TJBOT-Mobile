@@ -4,7 +4,9 @@ export const BLE_CONFIG = {
   BLUFI_WRITE_CHARACTERISTIC_UUID: '0000FF01-0000-1000-8000-00805F9B34FB',
   BLUFI_NOTIFY_CHARACTERISTIC_UUID: '0000FF02-0000-1000-8000-00805F9B34FB',
   ALLOWLIST_PREFIXES: ['TBot', 'TBOT', 'TBT', 'TJBot'],
-  SCAN_TIMEOUT_MS: 10000,
+  SCAN_TIMEOUT_MS: 30000,
+  MIN_RSSI_THRESHOLD: -85,
+  MANUFACTURER_ID: null as string | null,
 } as const;
 
 export const BLE_SCAN_SERVICE_UUIDS = [BLE_CONFIG.BLUFI_SERVICE_UUID, BLE_CONFIG.SERVICE_UUID] as const;
@@ -19,16 +21,49 @@ type AllowlistCandidate = {
   serviceData?: Record<string, string> | null;
 };
 
-export function isAllowlistedDevice(deviceId: string, name?: string | null, serviceUUIDs?: readonly string[] | null): boolean {
-  const normalizedId = deviceId.trim().toUpperCase();
-  const normalizedName = (name ?? '').trim().toUpperCase();
+interface AllowlistDeviceInput {
+  deviceId: string;
+  name?: string | null;
+  serviceUUIDs?: readonly string[] | string[];
+  manufacturerData?: string | null;
+}
+
+export function isAllowlistedDevice(deviceId: string, name?: string | null, serviceUUIDs?: readonly string[] | null): boolean;
+export function isAllowlistedDevice(device: AllowlistDeviceInput): boolean;
+export function isAllowlistedDevice(
+  deviceOrId: string | AllowlistDeviceInput,
+  maybeName?: string | null,
+  maybeServiceUUIDs?: readonly string[] | null,
+): boolean {
+  if (typeof deviceOrId === 'object') {
+    const { deviceId, name, serviceUUIDs, manufacturerData } = deviceOrId;
+    const normalizedId = deviceId.trim().toUpperCase();
+    const normalizedName = (name ?? '').trim().toUpperCase();
+    const prefixMatch = BLE_CONFIG.ALLOWLIST_PREFIXES.some((prefix) => {
+      const normalizedPrefix = prefix.trim().toUpperCase();
+      return normalizedId.startsWith(normalizedPrefix) || normalizedName.startsWith(normalizedPrefix);
+    });
+    if (!prefixMatch) return false;
+    if (serviceUUIDs !== undefined && !serviceUUIDs.includes(BLE_CONFIG.SERVICE_UUID)) {
+      return false;
+    }
+    if (BLE_CONFIG.MANUFACTURER_ID != null && manufacturerData !== undefined) {
+      if (manufacturerData !== BLE_CONFIG.MANUFACTURER_ID) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  const normalizedId = deviceOrId.trim().toUpperCase();
+  const normalizedName = (maybeName ?? '').trim().toUpperCase();
 
   if (matchesAllowlistPrefix(normalizedId) || matchesAllowlistPrefix(normalizedName)) return true;
 
   // Additive fallback: admit a real BluFi robot whose advertised name lacks a
   // TBOT-family prefix but whose advertised service UUIDs include the BluFi
   // service. Discovery must never depend solely on the advertised name string.
-  return hasBluFiServiceUuid(serviceUUIDs);
+  return hasBluFiServiceUuid(maybeServiceUUIDs);
 }
 
 export function isAllowlistedCandidate(candidate: AllowlistCandidate): boolean {
