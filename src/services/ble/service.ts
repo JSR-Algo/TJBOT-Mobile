@@ -155,7 +155,9 @@ const CLAIM_BOOTSTRAP_TOKEN_DELIVERY_ATTEMPTS = 2;
 const CLAIM_BOOTSTRAP_TOKEN_RETRY_DELAY_MS = 200;
 const BLE_GATT_OPERATION_TIMEOUT_MS = 10000;
 const BLUFI_WIFI_LIST_TYPE = 0x45;
+const BLUFI_ERROR_INFO_TYPE = 0x49;
 const BLUFI_FRAME_CONTROL_FRAGMENT = 0x10;
+const ESP_BLUFI_WIFI_SCAN_FAIL = 0x0b;
 const BLUFI_WIFI_SCAN_RESPONSE_TIMEOUT_MS = 15000;
 const BLUFI_SECURITY_RESPONSE_TIMEOUT_MS = 5000;
 const BLUFI_NEGOTIATE_TYPE = 0x01;
@@ -671,6 +673,11 @@ function parseBluFiWifiListFrame(base64Value: string | null | undefined, accumul
   const frame = decodeBase64(base64Value);
   if (!frame || frame.length < 4) return undefined;
   const [type, frameControl, , dataLength] = frame;
+
+  if (type === BLUFI_ERROR_INFO_TYPE && frame.length >= 4 + dataLength) {
+    return frame[4] === ESP_BLUFI_WIFI_SCAN_FAIL ? [] : undefined;
+  }
+
   if (type !== BLUFI_WIFI_LIST_TYPE || frame.length < 4 + dataLength) return undefined;
 
   const payload = frame.slice(4, 4 + dataLength);

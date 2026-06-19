@@ -656,6 +656,35 @@ describe('BLE service', () => {
     expect(cancelConnection).toHaveBeenCalled();
   });
 
+  test('treats ESP-IDF Wi-Fi scan-fail error-info as an empty Robot Wi-Fi list response', async () => {
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: (error: Error | null, characteristic: { value: string | null } | null) => void) => {
+      listener(null, { value: encodeBase64([0x49, 0x00, 0x00, 0x01, 0x0b]) });
+      return { remove };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    await expect(scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    })).resolves.toEqual([]);
+
+    expect(remove).toHaveBeenCalled();
+    expect(cancelConnection).toHaveBeenCalled();
+  });
+
   test('skips hidden SSID entries without dropping later Robot Wi-Fi scan results', async () => {
     const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
     const remove = jest.fn();

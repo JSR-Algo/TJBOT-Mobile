@@ -172,6 +172,19 @@ describe('PairWifiScreen — robot Wi-Fi scan over BLE', () => {
     expect(screen.getByText('Other network…')).toBeTruthy();
   });
 
+  it('treats firmware Wi-Fi scan-fail normalized to an empty list as manual fallback, not hard unavailable', async () => {
+    mockedScanRobotWifi.mockResolvedValue([]);
+    const navigate = jest.fn();
+    const screen = renderWifi(navigate, BLE_PARAMS);
+
+    await drainScanRetries();
+    expect(screen.queryByText('Robot scan unavailable. Enter the network name manually.')).toBeNull();
+    expect(
+      screen.getByText('No Robot-scanned networks found. Enter the network name manually.'),
+    ).toBeTruthy();
+    expect(mockedScanRobotWifi).toHaveBeenCalledTimes(3);
+  });
+
   it('surfaces manual entry immediately (no retry) when the robot scan REJECTS (unsupported/BLE error)', async () => {
     mockedScanRobotWifi.mockRejectedValue(Object.assign(new Error('x'), { code: 'BLE_WIFI_SCAN_UNSUPPORTED' }));
     const navigate = jest.fn();
