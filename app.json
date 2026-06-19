@@ -13,7 +13,7 @@
     ],
     "ios": {
       "bundleIdentifier": "net.jasonle.tjbot",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "infoPlist": {
         "NSCameraUsageDescription": "TJBot uses the camera to scan setup codes when pairing your child's device.",
         "UIBackgroundModes": [

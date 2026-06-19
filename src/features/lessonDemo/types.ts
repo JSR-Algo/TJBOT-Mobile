@@ -48,6 +48,7 @@ export interface ParentLessonSummary {
 
 export interface LessonSession {
   lessonId: string;
+  title?: string;
   week: number;
   day: number;
   month: number;

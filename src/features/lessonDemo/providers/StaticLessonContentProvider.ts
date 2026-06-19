@@ -1,7 +1,8 @@
 import {
-  BARN_SAY_IT_LESSON_ID,
   getBarnSayItLesson,
-} from '../content/barnSayItLesson';
+  getCuratedLessonById,
+  getCuratedLessonCatalog,
+} from '../content/curatedLegacyLessons';
 import {
   getDemoLessonById,
   getDemoLessonByWeekDay,
@@ -20,10 +21,7 @@ export class StaticLessonContentProvider implements LessonContentProvider {
   }
 
   getLessonById(lessonId: string, ageBand: LessonAgeBand = '7-9'): LessonSession | undefined {
-    if (lessonId === BARN_SAY_IT_LESSON_ID) {
-      return getBarnSayItLesson(ageBand);
-    }
-    return getDemoLessonById(lessonId, ageBand);
+    return getCuratedLessonById(lessonId, ageBand) ?? getDemoLessonById(lessonId, ageBand);
   }
 
   getLessonByWeekDay(week: number, day: number, ageBand: LessonAgeBand): LessonSession | undefined {
@@ -35,6 +33,9 @@ export class StaticLessonContentProvider implements LessonContentProvider {
   }
 
   getShowcaseLessons(ageBand: LessonAgeBand): LessonSession[] {
+    if (ageBand === '4-6') {
+      return getCuratedLessonCatalog(ageBand);
+    }
     return getShowcaseDemoLessons(ageBand);
   }
 }

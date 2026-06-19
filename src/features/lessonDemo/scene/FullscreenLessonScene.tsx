@@ -94,7 +94,7 @@ export function FullscreenLessonScene({
 
       <View style={styles.promptWrap} pointerEvents="none">
         <Text style={styles.stepMeta}>
-          Step {stepIndex + 1} of {totalSteps} · {step.title}
+          {lesson.title ? `${lesson.title} · ` : ''}Step {stepIndex + 1} of {totalSteps} · {step.title}
         </Text>
         <Text style={styles.prompt}>{step.prompt}</Text>
         {step.helperText ? <Text style={styles.helper}>{step.helperText}</Text> : null}

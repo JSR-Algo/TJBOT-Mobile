@@ -89,6 +89,7 @@ export type RootStackParamList = {
   LessonShowcaseScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
   ParentLessonSummaryScreen: undefined | { lessonId?: string; ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
   RobotLessonControlScreen: undefined | { deviceId?: string; lessonId?: string; sessionIndex?: number };
+  LessonPickScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
   RobotFullscreenLessonScreen: undefined | {
     lessonId?: string;
     ageBand?: import('@/features/lessonDemo/types').LessonAgeBand;
@@ -244,6 +245,7 @@ export const ROUTES = {
   'LessonShowcaseScreen': 'LessonShowcaseScreen',
   'ParentLessonSummaryScreen': 'ParentLessonSummaryScreen',
   'RobotLessonControlScreen': 'RobotLessonControlScreen',
+  'LessonPickScreen': 'LessonPickScreen',
   'RobotFullscreenLessonScreen': 'RobotFullscreenLessonScreen',
   'ConnectingScreen': 'ConnectingScreen',
   'GreetingScreen': 'GreetingScreen',

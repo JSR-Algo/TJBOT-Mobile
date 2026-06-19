@@ -113,6 +113,14 @@ export default function HomeHubScreen({ navigation }: Props) {
 
         <Text fontWeight="800" style={styles.robotName}>Robot</Text>
         <Text fontWeight="600" style={styles.tapHint}>Tap me to talk</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
+          accessibilityRole="button"
+          accessibilityLabel="Browse more English lessons"
+          style={styles.moreLessonsLink}
+        >
+          <Text fontWeight="700" style={styles.moreLessonsText}>More lessons</Text>
+        </TouchableOpacity>
       </Box>
 
       <Box style={styles.primaryCta}>
@@ -277,6 +285,16 @@ const styles = StyleSheet.create({
     marginTop: -8,
     textTransform: 'uppercase',
     letterSpacing: 0,
+  },
+  moreLessonsLink: {
+    marginTop: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  moreLessonsText: {
+    fontSize: 13,
+    color: referenceColors.primary,
+    textDecorationLine: 'underline',
   },
   primaryCta: {
     position: 'absolute',

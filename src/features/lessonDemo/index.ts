@@ -1,5 +1,7 @@
 export * from './types';
 export * from './content/barnSayItLesson';
+export * from './content/curatedLegacyLessons';
+export * from './content/legacyLessonBuilder';
 export * from './content/sixMonthLessonPack';
 export * from './lessonVoicePrompt';
 export * from './providers/StaticLessonContentProvider';
