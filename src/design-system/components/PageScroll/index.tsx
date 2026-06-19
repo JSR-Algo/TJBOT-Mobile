@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { tokens } from '@/design-system/tokens';
+import { referenceColors } from '@/design-system/referenceTheme';
 
 interface PageScrollProps {
   children?: React.ReactNode;
@@ -10,7 +10,7 @@ interface PageScrollProps {
 export default function PageScroll({ children, bg }: PageScrollProps) {
   return (
     <ScrollView
-      style={[styles.scroll, { backgroundColor: bg ?? tokens.colors.cream }]}
+      style={[styles.scroll, { backgroundColor: bg ?? referenceColors.bg }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >

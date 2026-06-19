@@ -1,23 +1,31 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { legacyNavigate } from '../legacyNavigation';
+import { referenceColors, referenceImages, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WelcomeScreen'>;
 
 export default function WelcomeScreen({ navigation }: Props) {
   return (
-    <ScreenShell bg="#F8F6F1">
+    <ScreenShell bg={referenceColors.bg}>
       <Box style={styles.content} alignItems="center">
-        <Robot emotion="greet" size={200} />
+        <Box style={styles.robotStage} alignItems="center" justifyContent="center">
+          <Box style={styles.robotRing} />
+          <Image
+            source={referenceImages.robotHead}
+            style={styles.robotImage}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
+        </Box>
         <Text fontWeight="800" style={styles.heroTitle}>Hi! I'm Robot.{'\n'}I help kids talk in English.</Text>
         <Box style={styles.parentNote} flexDirection="row" alignItems="center" gap={10}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -28,9 +36,9 @@ export default function WelcomeScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} gap={10}>
-        <PrimaryCTA onPress={() => legacyNavigate(navigation, ROUTES.IntroListenScreen)} color="#FF6F61">Get started</PrimaryCTA>
+        <PrimaryCTA onPress={() => legacyNavigate(navigation, ROUTES.IntroListenScreen)} color={referenceColors.primary}>Get started</PrimaryCTA>
         <TouchableOpacity onPress={() => legacyNavigate(navigation, ROUTES.LoginScreen)}>
-          <Text fontWeight="700" style={styles.loginText}>I already have an account</Text>
+          <Text fontWeight="800" style={styles.loginText}>I already have an account</Text>
         </TouchableOpacity>
       </Box>
     </ScreenShell>
@@ -38,10 +46,30 @@ export default function WelcomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  content: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: 120, paddingHorizontal: 28, paddingBottom: 230 },
-  heroTitle: { fontSize: 34, color: '#1A1A1F', textAlign: 'center', marginTop: 14, lineHeight: 38, letterSpacing: -0.4 },
-  parentNote: { marginTop: 22, backgroundColor: 'rgba(255,255,255,0.7)', padding: 14, borderRadius: 14, maxWidth: 300 },
-  parentText: { fontSize: 13, color: 'rgba(0,0,0,0.5)', flex: 1 },
+  content: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: 94, paddingHorizontal: 28, paddingBottom: 230 },
+  robotStage: { width: 226, height: 226, marginBottom: 4 },
+  robotRing: {
+    position: 'absolute',
+    width: 224,
+    height: 224,
+    borderRadius: 112,
+    backgroundColor: 'rgba(255,107,111,0.045)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,111,0.12)',
+  },
+  robotImage: { width: 190, height: 190, borderRadius: 95, ...referenceShadow.card },
+  heroTitle: { fontSize: 32, color: referenceColors.ink, textAlign: 'center', marginTop: 12, lineHeight: 37, letterSpacing: 0 },
+  parentNote: {
+    marginTop: 22,
+    backgroundColor: referenceColors.card,
+    padding: 15,
+    borderRadius: 22,
+    maxWidth: 310,
+    borderWidth: 1,
+    borderColor: referenceColors.line,
+    ...referenceShadow.card,
+  },
+  parentText: { fontSize: 13, color: referenceColors.inkSoft, flex: 1, lineHeight: 18 },
   footer: { position: 'absolute', left: 24, right: 24, bottom: 48 },
-  loginText: { fontSize: 15, color: 'rgba(0,0,0,0.5)', textAlign: 'center', padding: 8 },
+  loginText: { fontSize: 15, color: referenceColors.inkSoft, textAlign: 'center', padding: 8 },
 });

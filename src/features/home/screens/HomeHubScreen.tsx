@@ -1,14 +1,12 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
 import TopBar from '@/components/TopBar';
 import CircleBtn from '@/design-system/components/CircleBtn';
-import Robot from '@/design-system/components/Robot';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
-import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PulseRing from '@/design-system/components/PulseRing';
 import HomeStateChip from '../components/HomeStateChip';
 import HomeSecondaryButton from '../components/HomeSecondaryButton';
@@ -16,10 +14,13 @@ import { useHomeState } from '../hooks/useHomeState';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { referenceColors, referenceImages, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 
 export const HOME_HUB_ROBOT_STAGE_TOP_PADDING = 116;
+export const HOME_HUB_SECONDARY_ROW_BOTTOM = 116;
+export const HOME_HUB_PRIMARY_CTA_BOTTOM = 220;
 
 export default function HomeHubScreen({ navigation }: Props) {
   const { variant, cfg, isLoading } = useHomeState();
@@ -28,21 +29,21 @@ export default function HomeHubScreen({ navigation }: Props) {
 
   const onRobotTap = () => {
     setGreet(true);
-    clearTimeout(greetTimer.current!);
+    if (greetTimer.current) {
+      clearTimeout(greetTimer.current);
+    }
     greetTimer.current = setTimeout(() => setGreet(false), 1800);
   };
   React.useEffect(() => () => clearTimeout(greetTimer.current!), []);
 
   const showingGreet = greet || cfg.forceGreet;
-  const emotion = showingGreet ? 'greet' : cfg.emotion;
-
-  const bg = variant === 'offline' ? '#E8EEF3' : variant === 'completed_today' ? '#C5F1DD' : '#FFF5E6';
+  const bg = variant === 'offline' ? '#EFEDE8' : variant === 'completed_today' ? '#EEF8EF' : referenceColors.bg;
 
   if (isLoading) {
     return (
       <ScreenShell bg={bg}>
         <Box flex={1} alignItems="center" justifyContent="center">
-          <Robot emotion="idle" size={180} />
+          <Image source={referenceImages.robotHead} style={styles.loadingRobot} accessibilityIgnoresInvertColors />
         </Box>
       </ScreenShell>
     );
@@ -50,6 +51,7 @@ export default function HomeHubScreen({ navigation }: Props) {
 
   return (
     <ScreenShell bg={bg}>
+      <ReferenceDots />
       <TopBar
         left={
           <CircleBtn
@@ -82,18 +84,26 @@ export default function HomeHubScreen({ navigation }: Props) {
           ) : null}
         </Box>
 
-        <TouchableOpacity onPress={onRobotTap} style={styles.robotWrap} activeOpacity={0.9}>
+        <TouchableOpacity
+          onPress={onRobotTap}
+          style={[styles.robotWrap, showingGreet && styles.robotWrapGreeting]}
+          activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel="Say hi to Robot"
+        >
+          <Box style={styles.ringOuter} />
+          <Box style={styles.ringInner} />
           {variant === 'daily_available' && !showingGreet ? (
             <Box style={styles.pulseWrap}>
-              <PulseRing size={260} color="#FF6F61" />
+              <PulseRing size={258} color={referenceColors.primary} />
             </Box>
           ) : null}
-          <Robot emotion={emotion} size={220} accent={cfg.accent} />
-          {showingGreet ? (
-            <Box style={styles.speechWrap}>
-              <SpeechBubble color="#fff">Hi!</SpeechBubble>
-            </Box>
-          ) : null}
+          <Image
+            source={referenceImages.robotHead}
+            style={styles.robotImage}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
         </TouchableOpacity>
 
         <Text fontWeight="800" style={styles.robotName}>Robot</Text>
@@ -105,6 +115,7 @@ export default function HomeHubScreen({ navigation }: Props) {
           testID="homePrimaryCta"
           onPress={() => navigateHomeCtaTarget(navigation, cfg.ctaTarget)}
           color={cfg.ctaColor}
+          disabled={!cfg.ctaEnabled}
         >
           {cfg.ctaLabel}
         </PrimaryCTA>
@@ -143,6 +154,30 @@ function navigateHomeCtaTarget(
   navigation.navigate(ROUTES.HomeHubScreen);
 }
 
+function ReferenceDots(): React.JSX.Element {
+  return (
+    <Box pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+      {Array.from({ length: 64 }).map((_, index) => {
+        const row = Math.floor(index / 8);
+        const col = index % 8;
+        return (
+          <Box
+            key={index}
+            style={[
+              styles.dot,
+              {
+                left: 10 + col * 48,
+                top: 28 + row * 70,
+                opacity: row % 2 === 0 ? 0.22 : 0.14,
+              },
+            ]}
+          />
+        );
+      })}
+    </Box>
+  );
+}
+
 function UserIcon() {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
@@ -162,13 +197,92 @@ function SettingsIcon() {
 }
 
 const styles = StyleSheet.create({
-  robotStage: { paddingTop: HOME_HUB_ROBOT_STAGE_TOP_PADDING, paddingHorizontal: 24, paddingBottom: 280, gap: 14 },
-  greeting: { fontSize: 18, color: '#5C4F77' },
-  robotWrap: { position: 'relative', width: 240, height: 240, marginTop: 6, alignItems: 'center', justifyContent: 'center' },
-  pulseWrap: { position: 'absolute', top: -10, left: -10, right: -10, bottom: -10 },
-  speechWrap: { position: 'absolute', top: -10, alignSelf: 'center' },
-  robotName: { fontSize: 32, color: '#2B2140', letterSpacing: -0.4, marginTop: 4 },
-  tapHint: { fontSize: 13, color: '#5C4F77', marginTop: -6 },
-  primaryCta: { position: 'absolute', left: 24, right: 24, bottom: 128 },
-  secondaryRow: { position: 'absolute', left: 24, right: 24, bottom: 36 },
+  dot: {
+    position: 'absolute',
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: referenceColors.inkMuted,
+  },
+  loadingRobot: {
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+  },
+  robotStage: {
+    paddingTop: 116,
+    paddingHorizontal: 24,
+    paddingBottom: 290,
+    gap: 12,
+  },
+  greeting: {
+    fontSize: 20,
+    color: referenceColors.ink,
+  },
+  robotWrap: {
+    position: 'relative',
+    width: 272,
+    height: 272,
+    marginTop: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  robotWrapGreeting: {
+    transform: [{ translateY: -2 }],
+  },
+  ringOuter: {
+    position: 'absolute',
+    width: 270,
+    height: 270,
+    borderRadius: 135,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,111,0.08)',
+    backgroundColor: 'rgba(255,107,111,0.025)',
+  },
+  ringInner: {
+    position: 'absolute',
+    width: 224,
+    height: 224,
+    borderRadius: 112,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,111,0.12)',
+  },
+  pulseWrap: {
+    position: 'absolute',
+    top: 7,
+    left: 7,
+    right: 7,
+    bottom: 7,
+  },
+  robotImage: {
+    width: 228,
+    height: 228,
+    borderRadius: 114,
+    ...referenceShadow.card,
+  },
+  robotName: {
+    fontSize: 34,
+    color: referenceColors.ink,
+    letterSpacing: 0,
+    marginTop: 0,
+  },
+  tapHint: {
+    fontSize: 12,
+    color: referenceColors.inkSoft,
+    marginTop: -8,
+    textTransform: 'uppercase',
+    letterSpacing: 0,
+  },
+  primaryCta: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: HOME_HUB_PRIMARY_CTA_BOTTOM,
+  },
+  secondaryRow: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: HOME_HUB_SECONDARY_ROW_BOTTOM,
+  },
 });

@@ -1,13 +1,8 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
-
-const DV = {
-  ink: '#1A1A1F',
-  hair: 'rgba(0,0,0,0.07)',
-  accent: '#2A6FDB',
-} as const;
 
 type Props = {
   children?: React.ReactNode;
@@ -33,14 +28,14 @@ export default function DeviceBigBtn({ children, onClick, secondary, danger, dis
         accessibilityLabel={label}
         accessibilityState={{ disabled }}
       >
-        <Text fontWeight="500" style={{ fontSize: 16, color: DV.ink }}>
+        <Text fontWeight="800" style={styles.secondaryLabel}>
           {children}
         </Text>
       </TouchableOpacity>
     );
   }
 
-  const bg = danger ? '#C0392B' : DV.accent;
+  const bg = danger ? '#C0392B' : referenceColors.primary;
   return (
     <TouchableOpacity
       onPress={onClick}
@@ -51,7 +46,7 @@ export default function DeviceBigBtn({ children, onClick, secondary, danger, dis
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
     >
-      <Text fontWeight="600" style={{ fontSize: 16, color: '#fff' }}>
+      <Text fontWeight="800" style={styles.primaryLabel}>
         {children}
       </Text>
     </TouchableOpacity>
@@ -61,21 +56,20 @@ export default function DeviceBigBtn({ children, onClick, secondary, danger, dis
 const styles = StyleSheet.create({
   base: {
     width: '100%',
-    minHeight: 52,
-    borderRadius: 12,
+    minHeight: 58,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   secondary: {
-    backgroundColor: '#fff',
+    backgroundColor: referenceColors.card,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.07)',
+    borderColor: referenceColors.line,
   },
   primary: {
-    shadowColor: '#2A6FDB',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    elevation: 4,
+    ...referenceShadow.button,
   },
+  primaryLabel: { fontSize: 17, color: referenceColors.ctaInk },
+  secondaryLabel: { fontSize: 17, color: referenceColors.ink },
 });

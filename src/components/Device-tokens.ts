@@ -1,13 +1,21 @@
-import { colors } from '@/design-system/tokens/legacy-semantic';
+/**
+ * Device-surface tokens — bridged onto the TeeBot companion design-system.
+ *
+ * RE-SKIN: the key names are unchanged so every DeviceShell/DeviceRow/DeviceBigBtn
+ * consumer keeps compiling, but the VALUES now produce the companion identity:
+ * cream background, coral primary actions, plum-ink text (was gray bg + system blue).
+ * Single source of truth for base colors is `@/design-system/referenceTheme`.
+ */
+import { referenceColors } from '@/design-system/referenceTheme';
 
 export const DV = {
-  bg: colors.background,
-  card: colors.surface,
-  ink: colors.textPrimary,
-  ink2: colors.textSecondary,
-  ink3: colors.textMuted,
-  hair: colors.border,
-  accent: colors.primary,
-  good: colors.success,
-  warn: colors.warning,
+  bg: referenceColors.bg,
+  card: referenceColors.card,
+  ink: referenceColors.ink,
+  ink2: referenceColors.inkSoft,
+  ink3: referenceColors.inkMuted,
+  hair: referenceColors.line,
+  accent: referenceColors.primary,
+  good: referenceColors.success,
+  warn: '#D98E2B',
 } as const;

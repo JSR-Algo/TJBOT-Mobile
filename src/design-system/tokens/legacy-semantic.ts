@@ -5,20 +5,20 @@ import { radii as dsRadii } from './radii';
 import { shadows as dsShadows } from './shadows';
 
 export const colors = {
-  primary: palette.plum,
-  primaryLight: palette.cream2,
+  primary: palette.coral,
+  primaryLight: palette.coralSoft,
   primaryDark: palette.ink,
-  secondary: palette.coral,
+  secondary: palette.sky,
   success: palette.mint,
   warning: palette.sun,
   error: palette.coral,
-  background: palette.paper,
-  surface: palette.paper2,
+  background: palette.cream,
+  surface: palette.paper,
   textPrimary: palette.ink,
   textSecondary: palette.inkSoft,
-  textMuted: palette.inkSoft,
-  border: palette.cream2,
-  divider: palette.cream2,
+  textMuted: palette.inkMuted,
+  border: palette.line,
+  divider: palette.line,
 } as const;
 
 export const typography: Record<string, TextStyle> = {

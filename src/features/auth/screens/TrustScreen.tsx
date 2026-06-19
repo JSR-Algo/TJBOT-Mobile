@@ -7,6 +7,7 @@ import OnbShell, { OB } from '@/components/OnbShell';
 import OnbBigBtn from '@/components/OnbBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TrustScreen'>;
 
@@ -66,10 +67,10 @@ export default function TrustScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, color: OB.ink, letterSpacing: -0.3, lineHeight: 26, marginBottom: 6 },
+  heading: { fontSize: 22, color: OB.ink, letterSpacing: 0, lineHeight: 28, marginBottom: 6 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 22 },
-  promiseCard: { backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, borderRadius: 14, padding: 14 },
-  iconWrap: { width: 34, height: 34, borderRadius: 9, backgroundColor: '#EEF1F5', color: OB.ink, flexShrink: 0 },
+  promiseCard: { backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, borderRadius: 22, padding: 14, ...referenceShadow.card },
+  iconWrap: { width: 34, height: 34, borderRadius: 12, backgroundColor: referenceColors.secondarySoft, color: OB.ink, flexShrink: 0 },
   promiseTitle: { fontSize: 14, color: OB.ink, marginBottom: 3 },
   promiseBody: { fontSize: 13, color: OB.ink2, lineHeight: 20 },
   privacyNote: { fontSize: 12, color: OB.ink3, lineHeight: 22 },

@@ -61,14 +61,14 @@ export default function TrustScreen({ navigation }: Props) {
         </Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={14} paddingBottom={30}>
-        <OnbBigBtn onClick={() => legacyNavigate(navigation, ROUTES.MicAskScreen)}>Continue</OnbBigBtn>
+        <OnbBigBtn testID="trustContinueButton" onClick={() => legacyNavigate(navigation, ROUTES.MicAskScreen)}>Continue</OnbBigBtn>
       </Box>
     </OnbShell>
   );
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, color: OB.ink, letterSpacing: -0.3, lineHeight: 26, marginBottom: 6 },
+  heading: { fontSize: 22, color: OB.ink, letterSpacing: 0, lineHeight: 28, marginBottom: 6 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 22 },
   promiseCard: { backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, borderRadius: 14, padding: 14 },
   iconWrap: { width: 34, height: 34, borderRadius: 9, backgroundColor: '#EEF1F5', color: OB.ink, flexShrink: 0 },

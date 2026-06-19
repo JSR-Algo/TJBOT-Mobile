@@ -4,6 +4,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { Pressable } from '@/design-system/primitives/Pressable';
 import { tokens } from '@/design-system/tokens';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 interface PrimaryCTAProps {
@@ -22,7 +23,7 @@ export default function PrimaryCTA({ children, onPress, color = tokens.colors.co
   const label = labelSource ? translateCopy(labelSource, { locale: language }) : undefined;
   return (
     <Pressable haptic onPress={onPress} disabled={disabled} testID={testID} accessibilityLabel={label} style={styles.pressable}>
-      <Box style={[styles.btn, { backgroundColor: color, ...tokens.shadows.button }]}>
+      <Box style={[styles.btn, { backgroundColor: color, ...referenceShadow.button }]}>
         {icon}
         <Text style={styles.label}>{children}</Text>
       </Box>
@@ -45,9 +46,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
   },
   label: {
-    color: '#2B2140',
-    fontWeight: '700',
-    fontSize: 26,
+    color: referenceColors.ctaInk,
+    fontWeight: '800',
+    fontSize: 20,
     letterSpacing: 0,
     textAlign: 'center',
     flexShrink: 1,

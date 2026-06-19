@@ -3,8 +3,8 @@ import { StyleSheet } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CircleBtn from '@/design-system/components/CircleBtn';
-import { tokens } from '@/design-system/tokens';
-import { Icon } from '@/design-system/icons';
+import { referenceColors } from '@/design-system/referenceTheme';
+import { Path, Svg } from 'react-native-svg';
 
 interface PageHeaderProps {
   left?: React.ReactNode;
@@ -20,7 +20,9 @@ export default function PageHeader({ left, right, title, subtitle, onBack }: Pag
       <Box style={styles.row}>
         {left ?? (onBack ? (
           <CircleBtn size={42} onPress={onBack} ariaLabel="Back">
-            <Icon name="ChevronLeft" size={22} color={tokens.colors.ink} accessibilityLabel="Back" />
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={referenceColors.ink} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M15 5l-7 7 7 7" stroke={referenceColors.ink} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
           </CircleBtn>
         ) : <Box style={{ width: 42 }} />)}
         {right}
@@ -50,14 +52,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontWeight: '600',
     fontSize: 14,
-    color: tokens.colors.inkSoft,
+    color: referenceColors.inkSoft,
     textTransform: 'uppercase',
-    letterSpacing: 1.2,
+    letterSpacing: 0,
   },
   title: {
     fontWeight: '800',
     fontSize: 30,
-    color: tokens.colors.ink,
-    letterSpacing: -0.5,
+    color: referenceColors.ink,
+    letterSpacing: 0,
   },
 });

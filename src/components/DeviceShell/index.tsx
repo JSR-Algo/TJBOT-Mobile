@@ -2,15 +2,8 @@ import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors } from '@/design-system/referenceTheme';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
-
-const DV = {
-  bg: '#F5F5F2',
-  ink: '#1A1A1F',
-  ink2: '#5A5A66',
-  hair: 'rgba(0,0,0,0.07)',
-  accent: '#2A6FDB',
-} as const;
 
 type Props = {
   title?: string;
@@ -25,14 +18,13 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
   return (
     <ScrollView
       testID={scrollTestID}
-      style={[styles.root, { backgroundColor: DV.bg }]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      style={styles.root}
+      contentContainerStyle={styles.content}
     >
       <Box
         testID={screenTestID}
         collapsable={false}
-        style={[styles.header, { backgroundColor: DV.bg, borderBottomColor: DV.hair }]}
+        style={styles.header}
         flexDirection="row"
         alignItems="center"
         gap={12}
@@ -43,12 +35,12 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
             style={styles.backBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-              accessibilityLabel={translateCopy('Go back', { locale: language })}
+            accessibilityLabel={translateCopy('Go back', { locale: language })}
           >
-            <BackIcon color={DV.ink2} />
+            <BackIcon color={referenceColors.inkSoft} />
           </TouchableOpacity>
         ) : null}
-        <Text fontWeight="600" style={{ flex: 1, fontSize: 17, color: DV.ink, letterSpacing: -0.2 }}>
+        <Text fontWeight="800" style={styles.title}>
           {title}
         </Text>
       </Box>
@@ -67,19 +59,26 @@ function BackIcon({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: referenceColors.bg },
+  content: { paddingBottom: 20 },
   header: {
     position: 'relative',
     paddingTop: 56,
-    paddingBottom: 12,
+    paddingBottom: 8,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
     zIndex: 5,
+  },
+  title: {
+    flex: 1,
+    fontSize: 20,
+    color: referenceColors.ink,
+    letterSpacing: 0,
   },
   backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: 22,
+    backgroundColor: referenceColors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },

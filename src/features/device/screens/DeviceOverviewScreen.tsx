@@ -1,14 +1,14 @@
 import React from 'react';
-import { StyleSheet, ScrollView } from 'react-native';
+import { Image, StyleSheet, ScrollView } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
+import { referenceColors, referenceImages, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceOverviewScreen'>;
 
@@ -26,16 +26,29 @@ const WHY_ROWS = [
 export default function DeviceOverviewScreen({ navigation }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Box paddingTop={72} paddingHorizontal={24} style={{ marginBottom: 8 }}>
-        <Text fontWeight="800" style={styles.heroTitle}>One product.{'\n'}Two devices.</Text>
-        <Text style={styles.heroSub}>Robot is the child's speaking buddy. The phone is for the grown-up.</Text>
+      <Box paddingTop={70} paddingHorizontal={24} style={styles.header}>
+        <Text fontWeight="800" style={styles.screenTitle}>Robot</Text>
+        <Text style={styles.heroSub}>The speaking buddy handles lessons. This phone manages setup, courses, and safety.</Text>
       </Box>
 
-      <Box paddingHorizontal={24} alignItems="center" justifyContent="center" style={{ marginBottom: 24 }}>
-        <RobotDevice emotion="happy" size={180} accent="#FF6F61" />
+      <Box paddingHorizontal={20} style={styles.heroWrap}>
+        <Box style={styles.robotCard} alignItems="center">
+          <Image
+            source={referenceImages.robotHead}
+            style={styles.robotImage}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
+          <Text fontWeight="800" style={styles.robotName}>Robot</Text>
+          <Text fontWeight="700" style={styles.robotState}>Online · idle</Text>
+          <Box flexDirection="row" gap={10} style={styles.statRow}>
+            <StatusTile label="Battery" value="78%" tone="gold" />
+            <StatusTile label="Wi-Fi" value="Home" tone="teal" />
+          </Box>
+        </Box>
       </Box>
 
-      <Box paddingHorizontal={16} style={{ flexDirection: 'row', gap: 10, marginBottom: 0 }}>
+      <Box paddingHorizontal={16} style={styles.columns}>
         {COLUMNS.map((col, ci) => (
           <Box key={ci} flex={1} style={styles.colCard}>
             <Text fontWeight="700" style={[styles.colTitle, { color: col.color }]}>{col.t}</Text>
@@ -52,7 +65,7 @@ export default function DeviceOverviewScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={18}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Why a device, not a screen</Text>
+        <Text fontWeight="800" style={styles.sectionLabel}>Why a device, not a screen</Text>
         <Box style={styles.whyCard}>
           {WHY_ROWS.map((row, i) => (
             <Box key={i} flexDirection="row" gap={12} style={[styles.whyRow, i < WHY_ROWS.length - 1 && styles.whyBorder]} alignItems="flex-start">
@@ -68,26 +81,70 @@ export default function DeviceOverviewScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={60}>
+      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={110}>
         <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>Set up your Robot</DeviceBigBtn>
       </Box>
     </ScrollView>
   );
 }
 
+function StatusTile({ label, value, tone }: { label: string; value: string; tone: 'gold' | 'teal' }): React.JSX.Element {
+  const backgroundColor = tone === 'gold' ? referenceColors.goldSoft : referenceColors.secondarySoft;
+  const color = tone === 'gold' ? '#A26D11' : '#2C7E87';
+  return (
+    <Box style={[styles.statusTile, { backgroundColor }]} alignItems="center">
+      <Text fontWeight="800" style={[styles.statusValue, { color }]}>{value}</Text>
+      <Text fontWeight="800" style={styles.statusLabel}>{label}</Text>
+    </Box>
+  );
+}
+
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8F6F1' },
+  root: { flex: 1, backgroundColor: referenceColors.bg },
   content: { paddingBottom: 40 },
-  heroTitle: { fontSize: 30, color: DV.ink, letterSpacing: -0.4, lineHeight: 33, marginBottom: 8 },
-  heroSub: { fontSize: 14, color: DV.ink2, lineHeight: 22 },
-  colCard: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
-  colTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  colItem: { fontSize: 13, color: DV.ink, lineHeight: 18, flex: 1 },
-  sectionLabel: { fontSize: 11, color: DV.ink2, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  whyCard: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', paddingVertical: 4, paddingHorizontal: 4 },
+  header: { marginBottom: 12 },
+  screenTitle: { fontSize: 30, color: referenceColors.ink, lineHeight: 34, marginBottom: 8 },
+  heroSub: { fontSize: 14, color: referenceColors.inkSoft, lineHeight: 22 },
+  heroWrap: { marginBottom: 18 },
+  robotCard: {
+    backgroundColor: referenceColors.cardSoft,
+    borderRadius: referenceRadii.cardLarge,
+    borderWidth: 1,
+    borderColor: referenceColors.line,
+    padding: 20,
+    ...referenceShadow.card,
+  },
+  robotImage: { width: 154, height: 154, borderRadius: 77, marginBottom: 10 },
+  robotName: { fontSize: 26, color: referenceColors.ink },
+  robotState: { fontSize: 13, color: referenceColors.success, marginTop: 2 },
+  statRow: { width: '100%', marginTop: 16 },
+  statusTile: { flex: 1, borderRadius: 20, paddingVertical: 12 },
+  statusValue: { fontSize: 17 },
+  statusLabel: { fontSize: 10, color: referenceColors.inkMuted, textTransform: 'uppercase', marginTop: 2 },
+  columns: { flexDirection: 'row', gap: 10, marginBottom: 0 },
+  colCard: {
+    backgroundColor: referenceColors.card,
+    borderRadius: referenceRadii.card,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: referenceColors.line,
+    ...referenceShadow.card,
+  },
+  colTitle: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0, marginBottom: 8 },
+  colItem: { fontSize: 13, color: referenceColors.ink, lineHeight: 18, flex: 1 },
+  sectionLabel: { fontSize: 12, color: referenceColors.inkSoft, marginBottom: 8 },
+  whyCard: {
+    backgroundColor: referenceColors.card,
+    borderRadius: referenceRadii.card,
+    borderWidth: 1,
+    borderColor: referenceColors.line,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    ...referenceShadow.card,
+  },
   whyRow: { padding: 12 },
-  whyBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
-  whyIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F0EDE8', flexShrink: 0 },
-  whyTitle: { fontSize: 13, color: DV.ink, marginBottom: 2 },
-  whyBody: { fontSize: 12, color: DV.ink2, lineHeight: 18 },
+  whyBorder: { borderBottomWidth: 1, borderBottomColor: referenceColors.line },
+  whyIcon: { width: 36, height: 36, borderRadius: 14, backgroundColor: referenceColors.primarySoft, flexShrink: 0 },
+  whyTitle: { fontSize: 14, color: DV.ink, marginBottom: 2 },
+  whyBody: { fontSize: 12, color: DV.ink2, lineHeight: 18, paddingRight: 8 },
 });

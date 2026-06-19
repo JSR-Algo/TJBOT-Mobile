@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = {
   label: string;
@@ -22,8 +23,8 @@ export default function HomeSecondaryButton({ label, icon, onPress, badge, dim }
       accessibilityLabel={label}
       accessibilityState={{ disabled: Boolean(dim) }}
     >
-      <Text style={{ fontSize: 26, lineHeight: 30 }}>{icon}</Text>
-      <Text fontWeight="700" style={{ fontSize: 14, color: '#2B2140' }}>{label}</Text>
+      <Text style={styles.icon}>{icon}</Text>
+      <Text fontWeight="800" style={styles.label}>{label}</Text>
       {badge != null ? (
         <Box style={styles.badge} alignItems="center" justifyContent="center">
           <Text fontWeight="800" style={{ fontSize: 12, color: '#fff' }}>{badge}</Text>
@@ -35,14 +36,23 @@ export default function HomeSecondaryButton({ label, icon, onPress, badge, dim }
 
 const styles = StyleSheet.create({
   btn: {
-    flex: 1, height: 84, borderRadius: 22, backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center', gap: 4,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 14,
-    elevation: 2, position: 'relative',
+    flex: 1,
+    height: 82,
+    borderRadius: referenceRadii.tile,
+    backgroundColor: referenceColors.card,
+    borderWidth: 1,
+    borderColor: referenceColors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    position: 'relative',
+    ...referenceShadow.card,
   },
+  icon: { fontSize: 24, lineHeight: 28 },
+  label: { fontSize: 12, color: referenceColors.ink },
   badge: {
     position: 'absolute', top: 8, right: 10,
     minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11,
-    backgroundColor: '#FF6F61',
+    backgroundColor: referenceColors.primary,
   },
 });

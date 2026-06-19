@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors } from '@/design-system/referenceTheme';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 const DV = {
-  ink: '#1A1A1F',
-  ink2: '#5A5A66',
-  ink3: '#8B8B96',
-  hair: 'rgba(0,0,0,0.07)',
+  ink: referenceColors.ink,
+  ink2: referenceColors.inkSoft,
+  ink3: referenceColors.inkMuted,
+  hair: referenceColors.line,
 } as const;
 
 type Props = {
@@ -91,13 +92,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.07)',
+    borderBottomColor: DV.hair,
   },
   iconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 9,
-    backgroundColor: '#EEF1F5',
+    borderRadius: 14,
+    backgroundColor: referenceColors.secondarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },

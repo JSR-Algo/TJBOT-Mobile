@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = {
   children: React.ReactNode;
@@ -19,10 +20,14 @@ export default function HomeStateChip({ children, color = '#FF6F61' }: Props) {
 
 const styles = StyleSheet.create({
   chip: {
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,111,0.16)',
+    ...referenceShadow.card,
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  label: { fontSize: 13, color: '#5C4F77' },
+  label: { fontSize: 13, color: referenceColors.inkSoft },
 });

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View, ViewProps, DimensionValue } from 'react-native';
+import { View, ViewProps } from 'react-native';
 import { tokens } from '@/design-system/tokens';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
@@ -34,8 +34,8 @@ export interface BoxProps extends ViewProps {
   right?: number;
   bottom?: number;
   left?: number;
-  width?: DimensionValue;
-  height?: DimensionValue;
+  width?: number | string;
+  height?: number | string;
   opacity?: number;
   overflow?: 'visible' | 'hidden' | 'scroll';
 }
@@ -85,7 +85,7 @@ export const Box = memo(function Box({
         backgroundColor !== undefined && { backgroundColor: resolveColor(backgroundColor) },
         borderRadius !== undefined && { borderRadius },
         borderWidth !== undefined && { borderWidth },
-        borderColor !== undefined && { borderColor: resolveColor(borderColor) },
+        borderColor !== undefined && { borderColor },
         justifyContent !== undefined && { justifyContent },
         alignItems !== undefined && { alignItems },
         flexDirection !== undefined && { flexDirection },
@@ -94,8 +94,8 @@ export const Box = memo(function Box({
         right !== undefined && { right },
         bottom !== undefined && { bottom },
         left !== undefined && { left },
-        width !== undefined && { width },
-        height !== undefined && { height },
+        width !== undefined && { width: width as number },
+        height !== undefined && { height: height as number },
         opacity !== undefined && { opacity },
         overflow !== undefined && { overflow },
         style,

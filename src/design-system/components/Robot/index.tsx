@@ -58,12 +58,15 @@ interface RobotProps {
   accessibilityLabel?: string;
 }
 
-export default function Robot({ emotion = 'idle', size = 220, color, accent, accessibilityLabel }: RobotProps) {
+export default function Robot({ emotion = 'idle', size = 220, color, accessibilityLabel }: RobotProps) {
   const cfg = CONFIGS[emotion] ?? CONFIGS.idle;
   const W = size;
   const bodyColor = color ?? tokens.colors.bot.body;
   const bodyDark = tokens.colors.bot.body2;
-  const accentColor = accent ?? tokens.colors.coral;
+  // Brand consistency: the robot is always the coral TeeBot character. We ignore the
+  // per-screen `accent` prop so every screen shows one coral robot that matches the
+  // welcome hero (robot-head.png) instead of a different colour per screen.
+  const accentColor = tokens.colors.coral;
 
   // Body animation
   const bodyY = useSharedValue(0);
@@ -223,32 +226,20 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent, acc
             ...tokens.shadows.card,
           }}
         >
-          {/* ear blips */}
-          {cfg.ear && [0, 1].map(i => (
+          {/* Coral ears: always on, matching the TeeBot welcome robot. */}
+          {[0, 1].map(i => (
             <View
               key={i}
               style={{
                 position: 'absolute',
-                top: '42%',
-                ...(i ? { right: -W * 0.07 } : { left: -W * 0.07 }),
-                width: W * 0.14,
-                height: W * 0.14,
-                borderRadius: W * 0.07,
-                backgroundColor: bodyDark,
+                top: '36%',
+                ...(i ? { right: -W * 0.085 } : { left: -W * 0.085 }),
+                width: W * 0.17,
+                height: W * 0.22,
+                borderRadius: W * 0.085,
+                backgroundColor: accentColor,
               }}
-            >
-              <View
-                style={{
-                  position: 'absolute',
-                  top: '25%',
-                  left: '25%',
-                  right: '25%',
-                  bottom: '25%',
-                  borderRadius: 999,
-                  backgroundColor: accentColor,
-                }}
-              />
-            </View>
+            />
           ))}
 
           {/* eyes */}
@@ -345,6 +336,8 @@ function Eyes({ look, W }: { look: RobotConfig['eyes']; W: number }) {
 }
 
 function Mouth({ kind, W }: { kind: RobotConfig['mouth']; W: number }) {
+  // Coral smile to match the welcome robot (robot-head.png).
+  const mouthColor = tokens.colors.coral;
   const mouthW = W * 0.38;
   const mouthBase: import('react-native').ViewStyle = {
     position: 'absolute',
@@ -357,26 +350,26 @@ function Mouth({ kind, W }: { kind: RobotConfig['mouth']; W: number }) {
 
   if (kind === 'smile' || kind === 'smile-soft' || kind === 'open-smile' || kind === 'big-smile') {
     return (
-      <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, height: W * 0.07, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]} />
+      <View style={[mouthBase, { backgroundColor: mouthColor, height: W * 0.07, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]} />
     );
   }
   if (kind === 'talk') {
     return (
-      <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, height: W * 0.09 }]} />
+      <View style={[mouthBase, { backgroundColor: mouthColor, height: W * 0.09 }]} />
     );
   }
   if (kind === 'tiny' || kind === 'tiny-o') {
     return (
-      <View style={[mouthBase, { width: W * 0.12, left: '44%', height: W * 0.06, backgroundColor: tokens.colors.bot.eye }]} />
+      <View style={[mouthBase, { width: W * 0.12, left: '44%', height: W * 0.06, backgroundColor: mouthColor }]} />
     );
   }
   if (kind === 'frown-soft') {
     return (
-      <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, borderTopLeftRadius: 999, borderTopRightRadius: 999, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} />
+      <View style={[mouthBase, { backgroundColor: mouthColor, borderTopLeftRadius: 999, borderTopRightRadius: 999, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} />
     );
   }
   return (
-    <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, height: W * 0.04 }]} />
+    <View style={[mouthBase, { backgroundColor: mouthColor, height: W * 0.04 }]} />
   );
 }
 

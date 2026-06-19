@@ -9,6 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import IntroDots from './IntroDots';
 import { ROUTES } from '@/navigation/routes';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, keyof RootStackParamList>;
 
@@ -35,7 +36,7 @@ export default function IntroFrame({ navigation, idx, prev, next, bg, kicker, ti
           </Svg>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigate(ROUTES.TrustScreen)}>
-          <Text fontWeight="700" style={styles.skipText}>Skip</Text>
+          <Text fontWeight="800" style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </Box>
       <Box style={styles.center} alignItems="center" justifyContent="center">
@@ -46,7 +47,7 @@ export default function IntroFrame({ navigation, idx, prev, next, bg, kicker, ti
       </Box>
       <Box style={styles.footer} alignItems="center" gap={18}>
         <IntroDots idx={idx} />
-        <PrimaryCTA onPress={() => navigate(next)} color="#FF6F61">Next</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigate(next)} color={referenceColors.primary}>Next</PrimaryCTA>
       </Box>
     </ScreenShell>
   );
@@ -54,11 +55,19 @@ export default function IntroFrame({ navigation, idx, prev, next, bg, kicker, ti
 
 const styles = StyleSheet.create({
   navBar: { position: 'absolute', top: 64, left: 18, right: 18, zIndex: 5 },
-  backBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
-  skipText: { fontSize: 14, color: 'rgba(0,0,0,0.5)' },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: referenceColors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...referenceShadow.card,
+  },
+  skipText: { fontSize: 14, color: referenceColors.inkSoft },
   center: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: 120, paddingHorizontal: 28, paddingBottom: 220, gap: 18 },
-  kicker: { fontSize: 13, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: 1.5 },
-  title: { fontSize: 30, color: '#1A1A1F', textAlign: 'center', lineHeight: 33, letterSpacing: -0.3, maxWidth: 320 },
-  body: { fontSize: 15, color: 'rgba(0,0,0,0.5)', textAlign: 'center', maxWidth: 300, lineHeight: 22 },
+  kicker: { fontSize: 12, color: referenceColors.inkMuted, textTransform: 'uppercase', letterSpacing: 0 },
+  title: { fontSize: 30, color: referenceColors.ink, textAlign: 'center', lineHeight: 34, letterSpacing: 0, maxWidth: 320 },
+  body: { fontSize: 15, color: referenceColors.inkSoft, textAlign: 'center', maxWidth: 300, lineHeight: 22 },
   footer: { position: 'absolute', left: 24, right: 24, bottom: 48 },
 });

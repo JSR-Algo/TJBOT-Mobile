@@ -2,19 +2,22 @@ import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import { useAppLanguage } from '@/services/i18n/i18n';
 
+// RE-SKIN: bridged onto the local reference UI. Key names stay stable so all
+// onboarding consumers inherit the updated cream, coral, teal, and warm-card look.
 export const OB = {
-  bg: '#F5F5F2',
-  card: '#FFFFFF',
-  ink: '#1A1A1F',
-  ink2: '#5A5A66',
-  ink3: '#8B8B96',
-  hair: 'rgba(0,0,0,0.07)',
-  accent: '#2A6FDB',
-  good: '#1F8A5B',
-  danger: '#C0392B',
-  dangerSoft: '#FBE7E2',
+  bg: referenceColors.bg,
+  card: referenceColors.card,
+  ink: referenceColors.ink,
+  ink2: referenceColors.inkSoft,
+  ink3: referenceColors.inkMuted,
+  hair: referenceColors.line,
+  accent: referenceColors.primary,
+  good: referenceColors.success,
+  danger: referenceColors.primaryDeep,
+  dangerSoft: referenceColors.primarySoft,
 } as const;
 
 type Props = {
@@ -47,7 +50,7 @@ export default function OnbShell({ children, step, total, onBack, title, testID 
             <BackIcon color={OB.ink2} />
           </TouchableOpacity>
         ) : null}
-        <Text fontWeight="600" style={{ flex: 1, fontSize: 17, color: OB.ink, letterSpacing: -0.2 }}>
+        <Text fontWeight="700" style={{ flex: 1, fontSize: 17, color: OB.ink, letterSpacing: 0 }}>
           {title}
         </Text>
         {step != null && total != null ? (
@@ -82,8 +85,12 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: referenceColors.card,
+    borderWidth: 1,
+    borderColor: referenceColors.line,
+    ...referenceShadow.card,
   },
 });

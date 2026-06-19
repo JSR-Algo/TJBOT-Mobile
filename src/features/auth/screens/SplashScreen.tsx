@@ -1,11 +1,11 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceImages, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SplashScreen'>;
 
@@ -16,10 +16,15 @@ export default function SplashScreen({ navigation }: Props) {
   }, [navigation]);
 
   return (
-    <ScreenShell bg="#F8F6F1">
-      <Box style={StyleSheet.absoluteFillObject} alignItems="center" justifyContent="center" gap={18}>
-        <Robot emotion="happy" size={220} />
-        <Text fontWeight="800" style={styles.wordmark}>Robot</Text>
+    <ScreenShell bg={referenceColors.bg}>
+      <Box style={StyleSheet.absoluteFillObject} alignItems="center" justifyContent="center" gap={20}>
+        <Image
+          source={referenceImages.tjbotLogo}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel="TJBot Future Tech"
+          accessibilityIgnoresInvertColors
+        />
         <Text fontWeight="600" style={styles.tagline}>Voice English for kids</Text>
       </Box>
     </ScreenShell>
@@ -27,6 +32,6 @@ export default function SplashScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wordmark: { fontSize: 48, color: '#1A1A1F', letterSpacing: -0.5 },
-  tagline: { fontSize: 15, color: 'rgba(0,0,0,0.5)' },
+  logo: { width: 280, height: 271, borderRadius: 36, ...referenceShadow.card },
+  tagline: { fontSize: 15, color: referenceColors.inkSoft },
 });

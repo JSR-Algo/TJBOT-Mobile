@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
+import { referenceColors } from '@/design-system/referenceTheme';
 
 type Props = {
   children?: React.ReactNode;
@@ -10,12 +11,13 @@ type Props = {
 };
 
 export default function ScreenShell({ children, bg, onTap, testID }: Props) {
+  const backgroundColor = bg ?? referenceColors.bg;
   return (
     <Box
       flex={1}
-      backgroundColor={bg}
+      backgroundColor={backgroundColor}
       overflow="hidden"
-      style={[styles.root, bg ? { backgroundColor: bg } : undefined]}
+      style={[styles.root, { backgroundColor }]}
       onTouchEnd={onTap}
       testID={testID}
     >

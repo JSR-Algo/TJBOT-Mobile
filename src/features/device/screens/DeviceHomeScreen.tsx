@@ -11,6 +11,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
+import { referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
 import { getDeviceStatus, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '../pairing/localPairedDevice';
@@ -112,7 +113,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     <DeviceShell title="Devices">
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard} flexDirection="row" gap={16} alignItems="center">
-          <RobotDevice emotion="idle" size={108} accent="#FF6F61" />
+          <RobotDevice emotion="idle" size={108} accent={DV.accent} />
           <Box flex={1}>
             <Text fontWeight="600" style={[styles.statusText, { color: connectionColor }]} i18n={false}>{connectionLabel}</Text>
             <Text fontWeight="600" style={styles.readyText} i18n={false}>{device.name}</Text>
@@ -172,14 +173,14 @@ export default function DeviceHomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  emptyCard: { backgroundColor: DV.card, borderRadius: 18, padding: 22, borderWidth: 1, borderColor: DV.hair, gap: 14 },
+  emptyCard: { backgroundColor: DV.card, borderRadius: referenceRadii.card, padding: 22, borderWidth: 1, borderColor: DV.hair, gap: 14, ...referenceShadow.card },
   emptyTitle: { fontSize: 22, color: DV.ink, textAlign: 'center' },
   emptyBody: { fontSize: 14, color: DV.ink2, lineHeight: 21, textAlign: 'center' },
   errorText: { fontSize: 13, color: '#C0392B', paddingHorizontal: 14, paddingVertical: 10 },
-  heroCard: { backgroundColor: DV.card, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: DV.hair },
+  heroCard: { backgroundColor: DV.card, borderRadius: referenceRadii.card, padding: 18, borderWidth: 1, borderColor: DV.hair, ...referenceShadow.card },
   statusText: { fontSize: 13 },
   readyText: { fontSize: 18, color: DV.ink, marginTop: 2 },
   metaText: { fontSize: 12, color: DV.ink2 },
-  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  rowCard: { backgroundColor: DV.card, borderRadius: 14, borderWidth: 1, borderColor: DV.hair, paddingVertical: 4, paddingHorizontal: 4 },
+  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0, marginBottom: 8 },
+  rowCard: { backgroundColor: DV.card, borderRadius: referenceRadii.card, borderWidth: 1, borderColor: DV.hair, paddingVertical: 4, paddingHorizontal: 4, ...referenceShadow.card },
 });

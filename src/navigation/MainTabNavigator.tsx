@@ -5,9 +5,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
 import type { FeatureTabName, FeatureTabScreen } from './types';
-import { colors, typography } from '@/design-system/tokens/legacy-semantic';
 import { DEFAULT_MAIN_TAB_NAME, MAIN_TAB_SCREENS } from './featureRegistry';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { referenceColors, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
 type MainTabParamList = Record<FeatureTabName, undefined>;
@@ -26,7 +26,7 @@ export function MainTabIcon({ Icon, color, focused }: MainTabIconProps): React.J
       testID="mainTabIconContainer"
       style={[styles.tabIconContainer, focused ? styles.tabIconContainerFocused : styles.tabIconContainerIdle]}
     >
-      <Icon size={22} color={color} strokeWidth={focused ? 2.75 : 2} />
+      <Icon size={22} color={color} strokeWidth={focused ? 2.8 : 2.2} />
     </View>
   );
 }
@@ -72,13 +72,11 @@ export function MainTabNavigator({
         initialRouteName={initialTabName}
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#4ECDC4',
-          tabBarInactiveTintColor: colors.textMuted,
+          tabBarActiveTintColor: referenceColors.primary,
+          tabBarInactiveTintColor: referenceColors.inkMuted,
           tabBarStyle: styles.tabBar,
           tabBarItemStyle: styles.tabBarItem,
           tabBarLabelStyle: styles.tabBarLabel,
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.primary,
         }}
       >
         {tabRoutes.map(({ screen, component: Component }) => {
@@ -110,39 +108,37 @@ const styles = StyleSheet.create({
     left: 22,
     right: 22,
     bottom: 18,
-    height: 64,
-    borderTopWidth: 0,
-    borderRadius: 32,
-    backgroundColor: '#FFFFFF',
+    height: 78,
     paddingTop: 8,
     paddingBottom: 8,
     paddingHorizontal: 8,
-    shadowColor: '#A98F77',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.13,
-    shadowRadius: 22,
-    elevation: 6,
+    borderTopWidth: 0,
+    borderRadius: referenceRadii.nav,
+    backgroundColor: referenceColors.card,
+    borderWidth: 1,
+    borderColor: referenceColors.line,
+    ...referenceShadow.nav,
   },
   tabBarItem: {
-    borderRadius: 26,
+    borderRadius: 24,
   },
   tabBarLabel: {
-    ...typography.caption,
-    fontSize: 9,
+    fontSize: 10,
+    lineHeight: 13,
     fontWeight: '800',
-    marginTop: 0,
+    marginTop: 2,
   },
   tabIconContainer: {
-    width: 34,
-    height: 28,
+    width: 42,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 19,
     borderWidth: 1,
   },
   tabIconContainerFocused: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    backgroundColor: referenceColors.primarySoft,
+    borderColor: 'rgba(255,107,111,0.18)',
   },
   tabIconContainerIdle: {
     backgroundColor: 'transparent',

@@ -11,6 +11,7 @@ import { normalizeError } from '@/utils/errors';
 import * as authApi from '@/services/api/auth';
 import PasswordInput from '../components/PasswordInput';
 import PasswordChecklist from '../components/PasswordChecklist';
+import { referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
 import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LoginScreen'>;
@@ -57,6 +58,7 @@ export default function LoginScreen(_: Props) {
   const [forgotMode, setForgotMode] = React.useState(false);
   const [resetSending, setResetSending] = React.useState(false);
   const [resetMessage, setResetMessage] = React.useState<string | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
 
   const clearErrors = () => {
     setEmailError(null);
@@ -102,6 +104,7 @@ export default function LoginScreen(_: Props) {
       return;
     }
     clearErrors();
+    setSubmitting(true);
     try {
       if (mode === 'login') {
         await login(cleanEmail, password);
@@ -123,12 +126,14 @@ export default function LoginScreen(_: Props) {
       const suffix = isServerFault && traceId ? ` (Error ID: ${traceId.slice(0, 8)})` : '';
       const hint = isServerFault ? ' If this keeps happening, contact support with the Error ID.' : '';
       setGeneralError(`${message}${hint}${suffix}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const ctaLabel = forgotMode
     ? (resetSending ? 'Sending…' : 'Send reset email')
-    : isLoading
+      : submitting
       ? '…'
       : mode === 'signup'
         ? 'Create account'
@@ -179,12 +184,13 @@ export default function LoginScreen(_: Props) {
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
+            accessibilityLabel="Email"
             onChangeText={(value) => {
               setEmail(value);
               if (emailError) setEmailError(null);
               if (resetMessage) setResetMessage(null);
             }}
-            editable={!isLoading && !resetSending}
+            editable={!submitting && !resetSending}
           />
           {emailError ? (
             <Text accessibilityRole="alert" testID="emailErrorText" style={styles.fieldError}>{emailError}</Text>
@@ -200,7 +206,7 @@ export default function LoginScreen(_: Props) {
               placeholder="Password"
               testID="passwordInput"
               hasError={!!passwordError}
-              editable={!isLoading}
+              editable={!submitting}
             />
           ) : null}
 
@@ -214,7 +220,7 @@ export default function LoginScreen(_: Props) {
               placeholder="Confirm password"
               testID="confirmPasswordInput"
               hasError={!!passwordError}
-              editable={!isLoading}
+              editable={!submitting}
             />
           ) : null}
 
@@ -262,8 +268,9 @@ export default function LoginScreen(_: Props) {
         ) : null}
 
         <OnbBigBtn
+          testID="authSubmitButton"
           onClick={onSubmit}
-          testID="submitButton"
+          disabled={submitting || resetSending || isLoading}
         >
           {ctaLabel}
         </OnbBigBtn>
@@ -279,14 +286,14 @@ export default function LoginScreen(_: Props) {
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, color: OB.ink, marginBottom: 6, letterSpacing: -0.3 },
+  heading: { fontSize: 22, color: OB.ink, marginBottom: 6, letterSpacing: 0, lineHeight: 28 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 21 },
-  tabBar: { backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 10, padding: 3 },
-  tab: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  tabActive: { backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
+  tabBar: { backgroundColor: 'rgba(255,255,255,0.62)', borderRadius: referenceRadii.tile, padding: 4, borderWidth: 1, borderColor: OB.hair },
+  tab: { flex: 1, paddingVertical: 11, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  tabActive: { backgroundColor: OB.card, ...referenceShadow.card },
   input: {
     width: '100%', padding: 14, borderWidth: 1, borderColor: OB.hair,
-    borderRadius: 10, fontSize: 15, backgroundColor: '#fff', color: OB.ink,
+    borderRadius: 16, fontSize: 15, backgroundColor: OB.card, color: OB.ink,
   },
   inputError: { borderColor: OB.danger },
   fieldError: { fontSize: 13, color: OB.danger, lineHeight: 19 },

@@ -56,11 +56,11 @@ beforeEach(() => jest.clearAllMocks());
 // ─── SplashScreen ─────────────────────────────────────────────────────────────
 
 describe('SplashScreen', () => {
-  it('renders Robot wordmark + tagline', () => {
-    const { getByText } = render(
+  it('renders TJBOT brand logo + tagline', () => {
+    const { getByLabelText, getByText } = render(
       <SplashScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText('Robot')).toBeTruthy();
+    expect(getByLabelText('TJBot Future Tech')).toBeTruthy();
     expect(getByText('Voice English for kids')).toBeTruthy();
   });
 
