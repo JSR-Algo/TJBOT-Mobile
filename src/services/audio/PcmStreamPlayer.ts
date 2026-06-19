@@ -118,7 +118,7 @@ export class PcmStreamPlayer {
     if (!Native) {
       // Soft-fail: keep an empty shell so unit tests and the iOS side don't
       // crash. The hook still tries to feed audio but every call no-ops.
-      // eslint-disable-next-line no-console
+
       console.warn('[PcmStreamPlayer] Native PcmStreamModule missing — audio playback disabled');
     }
   }
@@ -165,7 +165,7 @@ export class PcmStreamPlayer {
             );
           } catch (err) {
             // Non-iOS or emitter unavailable — polling fallback still works.
-            // eslint-disable-next-line no-console
+
             console.warn(
               '[PcmStreamPlayer] voicePlaybackDrained subscription failed — using polling fallback',
               err,
@@ -174,7 +174,7 @@ export class PcmStreamPlayer {
         }
         return true;
       } catch (err) {
-        // eslint-disable-next-line no-console
+
         console.warn('[PcmStreamPlayer] init failed', err);
         return false;
       } finally {
@@ -211,7 +211,7 @@ export class PcmStreamPlayer {
     Native!.feed(base64, this.currentRid).catch((err) => {
       jsErrorBreadcrumb('pcmStream.feed', err, { fedFrames: this.fedFrames });
       if (__DEV__) {
-        // eslint-disable-next-line no-console
+
         console.warn('[PcmStreamPlayer] feed failed', err);
       }
     });
@@ -262,7 +262,7 @@ export class PcmStreamPlayer {
     // completes. See .omc/plans/ios-voice-drain-sentinel-2026-04-22.md.
     if (Native && typeof Native.endTurn === 'function') {
       Native.endTurn().catch((err) => {
-        // eslint-disable-next-line no-console
+
         console.warn(
           '[PcmStreamPlayer] native endTurn failed — using polling fallback',
           err,
@@ -277,7 +277,7 @@ export class PcmStreamPlayer {
       this.drainDeadlineTimer = setTimeout(() => {
         this.drainDeadlineTimer = null;
         if (this._turnGeneration !== generation || this.disposed) return;
-        // eslint-disable-next-line no-console
+
         console.warn('[PcmStreamPlayer] drain fallback fired — native event missed');
         this.fireFinish(generation);
       }, safetyMs);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen, type RenderAPI } from '@testing-library/react-native';
 import { PENDING_DEVICE_SETUP_ROUTE } from '@/navigation/featureRegistry';
 import { RootStackNavigator } from '@/navigation/RootStackNavigator';
 import { ROUTES } from '@/navigation/routes';
@@ -38,6 +38,15 @@ const mockHouseholdState: HouseholdState = {
 };
 
 const mockCreateElement = React.createElement;
+let consoleErrorSpy: jest.SpyInstance<void, Parameters<typeof console.error>>;
+
+async function renderRoot(element: React.ReactElement = <RootStackNavigator />): Promise<RenderAPI> {
+  const api = render(element);
+  await act(async () => {
+    await Promise.resolve();
+  });
+  return api;
+}
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => mockAuthState,
@@ -79,6 +88,7 @@ jest.mock('@/navigation/ModalNavigator', () => ({
 
 describe('RootNavigator', () => {
   beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     mockAuthState.isAuthenticated = false;
     mockAuthState.isLoading = false;
     mockHouseholdState.onboardingComplete = false;
@@ -89,8 +99,13 @@ describe('RootNavigator', () => {
     mockHouseholdState.children = [];
   });
 
+  afterEach(() => {
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
   it('shows auth stack when session is unauthenticated', async () => {
-    render(<RootStackNavigator />);
+    await renderRoot();
 
     expect(await screen.findByTestId('auth-stack')).toBeTruthy();
   });
@@ -98,16 +113,16 @@ describe('RootNavigator', () => {
   it('shows onboarding stack when authenticated session has not completed onboarding', async () => {
     mockAuthState.isAuthenticated = true;
 
-    render(<RootStackNavigator />);
+    await renderRoot();
 
     expect(await screen.findByTestId('onboarding-stack')).toBeTruthy();
   });
 
-  it('keeps the loading gate while authenticated household state resolves', () => {
+  it('keeps the loading gate while authenticated household state resolves', async () => {
     mockAuthState.isAuthenticated = true;
     mockHouseholdState.isLoading = true;
 
-    render(<RootStackNavigator />);
+    await renderRoot();
 
     expect(screen.queryByTestId('auth-stack')).toBeNull();
     expect(screen.queryByTestId('onboarding-stack')).toBeNull();
@@ -120,7 +135,7 @@ describe('RootNavigator', () => {
     mockHouseholdState.activeHousehold = { id: 'household-1' };
     mockHouseholdState.children = [{ id: 'child-1' }];
 
-    render(<RootStackNavigator />);
+    await renderRoot();
 
     expect((await screen.findByTestId('protected-stack')).props.children).toBe(ROUTES.HomeHubScreen);
   });
@@ -131,7 +146,7 @@ describe('RootNavigator', () => {
     mockHouseholdState.activeHousehold = null;
     mockHouseholdState.children = [];
 
-    render(<RootStackNavigator />);
+    await renderRoot();
 
     expect((await screen.findByTestId('protected-stack')).props.children).toBe(ROUTES.HomeHubScreen);
     expect(screen.queryByTestId('onboarding-stack')).toBeNull();
@@ -144,7 +159,7 @@ describe('RootNavigator', () => {
     mockHouseholdState.activeHousehold = { id: 'household-1' };
     mockHouseholdState.children = [{ id: 'child-1' }];
 
-    render(<RootStackNavigator />);
+    await renderRoot();
 
     expect((await screen.findByTestId('protected-stack')).props.children).toBe(PENDING_DEVICE_SETUP_ROUTE);
   });
@@ -156,7 +171,7 @@ describe('RootNavigator', () => {
     mockHouseholdState.activeHousehold = { id: 'household-1' };
     mockHouseholdState.children = [{ id: 'child-1' }];
 
-    render(<RootStackNavigator />);
+    await renderRoot();
 
     expect((await screen.findByTestId('protected-stack')).props.children).toBe(ROUTES.LessonReadyScreen);
   });
@@ -172,7 +187,7 @@ describe('RootNavigator', () => {
       params: { deviceId: 'device-1', summaryDate: '2026-05-16' },
     };
 
-    render(<RootStackNavigator pendingDeepLinkTarget={target} />);
+    await renderRoot(<RootStackNavigator pendingDeepLinkTarget={target} />);
 
     const protectedStack = await screen.findByTestId('protected-stack');
     expect(protectedStack.props.children).toBe(ROUTES.ParentSummaryScreen);

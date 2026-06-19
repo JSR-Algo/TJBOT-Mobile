@@ -16,14 +16,14 @@
 // the test-file top-level closure. Using globalThis as the shared-state bus
 // between the mocked NativeEventEmitter and the test's emit() helper.
 type Listener = (e: unknown) => void;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const __voiceTelemetryTestStore: Record<string, Listener[]> = ((globalThis as any).__voiceTelemetryListeners ??= {});
 
 jest.mock('react-native', () => {
   class FakeEmitter {
     addListener(name: string, cb: (e: unknown) => void): { remove: () => void } {
       const store: Record<string, Array<(e: unknown) => void>> =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         ((globalThis as any).__voiceTelemetryListeners ??= {});
       store[name] = store[name] ?? [];
       store[name].push(cb);

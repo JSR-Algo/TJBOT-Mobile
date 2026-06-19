@@ -39,7 +39,7 @@ jest.mock('react-native/Libraries/Utilities/BackHandler', () => ({
 // useFocusEffect: same simplification as the parent-gate-guard test —
 // behave as a regular useEffect so the back-handler registration runs.
 jest.mock('@react-navigation/native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+
   const ReactInner = require('react') as typeof import('react');
   return {
     useFocusEffect: (cb: () => undefined | (() => void)) => {
@@ -52,7 +52,7 @@ jest.mock('@react-navigation/native', () => {
 });
 
 // Imported lazily after mocks so the hook picks up our mocked modules.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+
 const { useLessonHardwareBack } = require('../../../src/features/lesson-session/hooks/useLessonHardwareBack') as typeof import('../../../src/features/lesson-session/hooks/useLessonHardwareBack');
 
 interface FakeNavigation {
@@ -71,7 +71,7 @@ describe('useLessonHardwareBack', () => {
   it('registers a hardware-back listener on focus', () => {
     const navigation = makeNavigation();
     renderHook(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       useLessonHardwareBack(navigation as any, 'LISTENING');
     });
     expect(backPressListener).not.toBeNull();
@@ -80,7 +80,7 @@ describe('useLessonHardwareBack', () => {
   it('routes hardware back to ExitConfirmScreen with the captured voice state', () => {
     const navigation = makeNavigation();
     renderHook(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       useLessonHardwareBack(navigation as any, 'USER_SPEAKING');
     });
 
@@ -99,7 +99,7 @@ describe('useLessonHardwareBack', () => {
     for (const voiceState of ['LISTENING', 'USER_SPEAKING', 'ASSISTANT_SPEAKING', 'WAITING_AI'] as const) {
       const navigation = makeNavigation();
       const { unmount } = renderHook(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         useLessonHardwareBack(navigation as any, voiceState);
       });
       backPressListener!();
@@ -114,7 +114,7 @@ describe('useLessonHardwareBack', () => {
   it('cleans up the listener on unmount', () => {
     const navigation = makeNavigation();
     const { unmount } = renderHook(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       useLessonHardwareBack(navigation as any, 'LISTENING');
     });
     expect(backPressListener).not.toBeNull();

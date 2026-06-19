@@ -208,7 +208,7 @@ export function useZeroCodeClaimFlow(
     } finally {
       inFlightRef.current = false;
     }
-  }, [bleDevice, enabled, deviceId, isStale, waitForPhysicalConfirm]);
+  }, [bleDevice, enabled, deviceId, isStale, onConnected, waitForPhysicalConfirm]);
 
   const connect = useCallback(() => {
     if (phase === 'claiming' || phase === 'waitingPhysicalConfirm' || phase === 'connected') return;

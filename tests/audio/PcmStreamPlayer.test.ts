@@ -197,7 +197,7 @@ type PcmStreamPlayerModule = typeof import('../../src/services/audio/PcmStreamPl
 function loadPlayer(): PcmStreamPlayerModule {
   let mod!: PcmStreamPlayerModule;
   jest.isolateModules(() => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     mod = require('../../src/services/audio/PcmStreamPlayer') as PcmStreamPlayerModule;
   });
   return mod;

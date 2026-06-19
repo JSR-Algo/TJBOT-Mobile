@@ -40,7 +40,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
     const childId = activeChild?.id; // active-child (defaults to children[0]); was hardcoded children[0]
     if (__DEV__) {
-      // eslint-disable-next-line no-console
+
       console.info('[TBOT PairRename] save pressed', {
         hasRouteDeviceId: Boolean(route.params?.deviceId),
         hasPendingDeviceId: Boolean(pendingContext?.deviceId),
@@ -100,7 +100,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     } catch (error) {
       const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
       if (__DEV__) {
-        // eslint-disable-next-line no-console
+
         console.warn('[TBOT PairRename] save failed', { code, deviceId, provisioningAttemptId, childId });
       }
       // A missing/mismatched child profile is a finalize-only problem — the robot

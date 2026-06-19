@@ -32,7 +32,7 @@ describe('getApiBaseUrl resolution order', () => {
         getDefaultConfig: () => ({ resolver: { sourceExts: [], resolverMainFields: [] } }),
       }));
 
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+
       require('../../metro.config.js');
 
       expect(readFileSync(generatedEnvPath, 'utf8')).toContain(
@@ -92,7 +92,7 @@ describe('getApiBaseUrl resolution order', () => {
     // the module-under-test sees the requested value.
     (globalThis as unknown as { __DEV__: boolean }).__DEV__ = dev;
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     return require('../../src/config') as Pick<typeof import('../../src/config'), 'getApiBaseUrl' | 'getAiBaseUrl'>;
   }
 

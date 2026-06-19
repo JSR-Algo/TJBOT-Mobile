@@ -46,7 +46,7 @@ jest.mock('react-native-screens', () => ({
 // Inline manual mock for react-native-reanimated (the package's own /mock
 // entry uses ES imports that jest can't transform). No-ops everything.
 jest.mock('react-native-reanimated', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+
   const React = require('react');
   const View = (props: Record<string, unknown>) =>
     React.createElement('View', props);
@@ -93,7 +93,7 @@ jest.mock('react-native-reanimated', () => {
 // inline SVG illustrations mount cleanly in jsdom. Avoids native-bridge
 // requirements for Path/Circle/etc.
 jest.mock('react-native-svg', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+
   const React = require('react');
   const stub = (name: string) => (props: Record<string, unknown>) =>
     React.createElement('Text', { testID: `svg-${name}`, ...props });
@@ -122,7 +122,7 @@ jest.mock('@react-native-community/netinfo', () => ({
 jest.mock('lucide-react-native', () => {
   // jest.mock factory runs before top-level imports resolve, so require() is the
   // only portable way to grab React here.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+
   const React = require('react');
   const makeIcon = (name: string) => (props: Record<string, unknown>) =>
     React.createElement('Text', { testID: `icon-${name}`, ...props });

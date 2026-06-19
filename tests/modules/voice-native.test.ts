@@ -55,7 +55,7 @@ jest.mock('@expo/config-plugins', () => ({
   },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+
 const withVoiceNative = require('../../modules/voice-native/withVoiceNative');
 
 describe('voice-native Expo config plugin', () => {

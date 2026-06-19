@@ -17,7 +17,7 @@ if (__DEV__) {
   // One-line dev banner so the developer can confirm in Metro logs which URL
   // resolved without needing to repro the bug. Stripped from production
   // bundles by Metro's __DEV__ dead-code elimination.
-  // eslint-disable-next-line no-console
+
   console.info('[api] baseURL =', BASE_URL);
 }
 

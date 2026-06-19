@@ -125,7 +125,7 @@ function scheduleQaFlush(): void {
     if (_qaQueue.length === 0) return;
     const batch = _qaQueue.splice(0, _qaQueue.length);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+
       const { default: apiClient } = require('../http/client') as {
         default: { post: (url: string, data: unknown) => Promise<unknown> };
       };
@@ -172,7 +172,7 @@ export function track(
   const data: Record<string, unknown> = { ...fields, platform: Platform.OS };
 
   if (__DEV__) {
-    // eslint-disable-next-line no-console
+
     console.info(`[voice:${category}] ${event}`, fields ?? '');
   }
 

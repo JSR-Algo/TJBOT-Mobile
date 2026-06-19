@@ -9,7 +9,7 @@
     "ios": "node scripts/runtime/mobile-run.mjs ios",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/ tests/",
+    "lint": "eslint src/ tests/ --max-warnings=0",
     "test": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",
     "test:state-machines": "jest --selectProjects unit --testPathPattern='tests/state/machines'",
