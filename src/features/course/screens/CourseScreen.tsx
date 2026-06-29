@@ -38,7 +38,7 @@ export default function CourseScreen({ navigation }: Props) {
 
   return (
     <PageScroll>
-      <PageHeader subtitle="My adventure" title="English with Robot" />
+      <PageHeader subtitle="My adventure" title="English with Robot" onBack={() => navigation.goBack()} />
       <Box paddingHorizontal={18} paddingBottom={30} gap={12}>
         {state.kind === 'loading' ? <Text style={styles.message}>Loading courses</Text> : null}
         {state.kind === 'error' ? (
@@ -97,7 +97,9 @@ function courseErrorState(error: unknown): LoadState {
       retryLabel: 'Retry Course refresh limited',
     };
   }
-  return { kind: 'error', title: 'Courses unavailable' };
+  // Generic / not-yet-implemented catalog failure: keep the screen escapable
+  // by always offering a Retry (the back affordance is wired on PageHeader).
+  return { kind: 'error', title: 'Courses unavailable', retryLabel: 'Retry Courses unavailable' };
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

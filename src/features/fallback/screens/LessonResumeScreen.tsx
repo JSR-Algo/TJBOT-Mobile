@@ -17,6 +17,10 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
   const checkpoint = route.params?.checkpoint;
   const lessonTitle = checkpoint?.lessonTitle ?? 'How are you?';
   const progressLabel = checkpoint?.progressLabel ?? '60%';
+  // Drive the bar width off the same label the text shows, so a data-bound
+  // "40%" label no longer sits over a hardcoded 60% fill. Clamp to 0–100;
+  // fall back to 0 when the label has no parseable percentage.
+  const progressPercent = parseProgressPercent(progressLabel);
   const activityLabel = checkpoint?.activityLabel;
   const resumeTarget = checkpoint?.resumeTarget ?? ROUTES.UserSpeakingScreen;
   const resumeLesson = (): void => {
@@ -50,7 +54,7 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
             <Text style={styles.progressLabel}>{progressLabel}</Text>
             {activityLabel ? <Text style={styles.progressLabel}>{activityLabel}</Text> : null}
             <Box style={styles.progressTrack} marginTop={6}>
-              <Box style={styles.progressFill} />
+              <Box style={[styles.progressFill, { width: `${progressPercent}%` }]} />
             </Box>
           </Box>
         </Box>
@@ -67,6 +71,17 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
   );
 }
 
+// Pull the leading numeric percent out of a label like "40%" / "Step 2 · 75%".
+// Returns 0 when nothing parseable is present so the bar collapses rather than
+// lying about progress; clamps to the 0–100 range.
+function parseProgressPercent(label: string): number {
+  const match = label.match(/(\d+(?:\.\d+)?)\s*%/);
+  if (!match) return 0;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
 const styles = StyleSheet.create({
   content: { paddingTop: 90, paddingBottom: 240, paddingHorizontal: 24, gap: 18 },
   card: { backgroundColor: '#fff', borderRadius: 24, padding: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2, width: '90%' },
@@ -75,6 +90,6 @@ const styles = StyleSheet.create({
   lessonTitle: { fontSize: 18, color: '#2B2140' },
   progressLabel: { fontSize: 13, color: '#5C4F77', marginTop: 2 },
   progressTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.06)', overflow: 'hidden' },
-  progressFill: { height: '100%', width: '60%', backgroundColor: '#6CE2B6', borderRadius: 3 },
+  progressFill: { height: '100%', backgroundColor: '#6CE2B6', borderRadius: 3 },
   cta: { position: 'absolute', left: 24, right: 24, bottom: 48 },
 });

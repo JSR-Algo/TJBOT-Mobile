@@ -8,15 +8,21 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonReadyScreen'>;
 
-export default function LessonReadyScreen({ navigation }: Props) {
+export default function LessonReadyScreen({ navigation, route }: Props) {
+  const { t } = useAppLanguage();
+  // Defensive read-side: show the real lesson title when the caller threads
+  // one through, else a localized generic instead of the wrong literal
+  // "Animal Friends". (Wiring every caller CTA is a separate task.)
+  const lessonTitle = route.params?.lessonTitle ?? t("Today's lesson");
   return (
     <ScreenShell>
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center">
-        <Text fontWeight="600" style={styles.lessonLabel}>Today's lesson</Text>
-        <Text fontWeight="800" style={styles.lessonTitle}>Animal Friends</Text>
+        <Text fontWeight="600" style={styles.lessonLabel}>{t("Today's lesson")}</Text>
+        <Text fontWeight="800" style={styles.lessonTitle}>{lessonTitle}</Text>
         <Robot emotion="happy" size={240} />
         <Box style={styles.headphonesPill} flexDirection="row" alignItems="center" gap={8}>
           <Text style={{ fontSize: 18 }}>🎧</Text>

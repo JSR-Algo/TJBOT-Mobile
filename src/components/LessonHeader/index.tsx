@@ -13,7 +13,7 @@ type Props = {
 export default function LessonHeader({ progress = 0.4, onExit }: Props) {
   return (
     <Box style={styles.root} flexDirection="row" alignItems="center" gap={12}>
-      <CircleBtn size={42} onPress={onExit} ariaLabel="exit">
+      <CircleBtn size={42} onPress={onExit} ariaLabel="Exit lesson">
         <CloseIcon />
       </CircleBtn>
       <View style={styles.track}>

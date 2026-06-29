@@ -8,6 +8,7 @@ import Screen from '@/components/Screen';
 import TopBar from '@/components/TopBar';
 import { ROUTES } from '@/navigation/routes';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import { openAppSettings } from '@/features/device/pairing/deviceSettings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AudioRecoveryScreen'>;
 
@@ -20,7 +21,7 @@ const STEPS = [
 export default function AudioRecoveryScreen({ navigation }: Props) {
   const { t } = useAppLanguage();
   return (
-    <Screen header={<TopBar title="Microphone access" onBack={() => navigation.navigate(ROUTES.MicMissingScreen)} />} scroll>
+    <Screen header={<TopBar title="Microphone access" onBack={() => navigation.goBack()} />} scroll>
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={8}>
         <Text fontWeight="600" style={styles.heading}>Microphone access is needed for speaking practice.</Text>
         <Text style={styles.sub}>
@@ -54,10 +55,9 @@ export default function AudioRecoveryScreen({ navigation }: Props) {
         <TouchableOpacity
           style={styles.primaryBtn}
           activeOpacity={0.8}
-          disabled
+          onPress={() => { void openAppSettings(); }}
           accessibilityRole="button"
-          accessibilityLabel={t('Open device Settings, Unavailable')}
-          accessibilityState={{ disabled: true }}
+          accessibilityLabel={t('Open device Settings')}
         >
           <Text fontWeight="600" style={{ fontSize: 15, color: '#fff' }}>Open device Settings</Text>
         </TouchableOpacity>

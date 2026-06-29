@@ -1655,5 +1655,15 @@
   "Robot status unavailable. Try again.": "Robot status unavailable. Try again.",
   "No paired Robot found.": "No paired Robot found.",
   "Could not erase Robot. Try again.": "Could not erase Robot. Try again.",
-  "Something else": "Something else"
+  "Something else": "Something else",
+  "One lesson": "One lesson",
+  "Whole course": "Whole course",
+  "Ready to send": "Ready to send",
+  "Preparing on server": "Preparing on server",
+  "Assign course": "Assign course",
+  "Confirm add": "Confirm add",
+  "Enter the number": "Enter the number",
+  "Adding...": "Adding...",
+  "Exit lesson": "Exit lesson",
+  "Pick one lesson or assign the whole course to Robot.": "Pick one lesson or assign the whole course to Robot."
 }

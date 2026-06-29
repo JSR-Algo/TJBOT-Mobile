@@ -13,11 +13,31 @@ import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ExitConfirmScreen'>;
 
-export default function ExitConfirmScreen({ navigation }: Props) {
+export default function ExitConfirmScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
+  // Resume to the screen matching the voice state captured before the
+  // interruption (forwarded as voiceStateBeforeInterruption from
+  // useLessonHardwareBack.ts:31) so "Keep playing" returns the child to where
+  // they actually were, not always Listening.
+  const resumeLesson = (): void => {
+    switch (route.params?.voiceStateBeforeInterruption) {
+      case 'ASSISTANT_SPEAKING':
+        navigation.navigate(ROUTES.RobotSpeakingScreen);
+        return;
+      case 'WAITING_AI':
+        navigation.navigate(ROUTES.ThinkingScreen);
+        return;
+      case 'USER_SPEAKING':
+        navigation.navigate(ROUTES.UserSpeakingScreen);
+        return;
+      case 'LISTENING':
+      default:
+        navigation.navigate(ROUTES.RobotListeningScreen);
+    }
+  };
   return (
     <ScreenShell>
-      <LessonHeader progress={0.34} onExit={() => {}} />
+      <LessonHeader progress={0.34} onExit={() => navigation.goBack()} />
       <Box style={styles.overlay} />
       <Box style={styles.sheet}>
         <Box style={{ marginTop: -90 }} alignItems="center">
@@ -26,7 +46,7 @@ export default function ExitConfirmScreen({ navigation }: Props) {
         <Text fontWeight="800" style={styles.title}>Stop the lesson?</Text>
         <Text fontWeight="600" style={styles.sub}>We can finish later.</Text>
         <Box gap={12} style={{ marginTop: 22 }}>
-          <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)} color="#7BD389">Keep playing</PrimaryCTA>
+          <PrimaryCTA onPress={resumeLesson} color="#7BD389">Keep playing</PrimaryCTA>
           <TouchableOpacity
             style={styles.stopBtn}
             onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}

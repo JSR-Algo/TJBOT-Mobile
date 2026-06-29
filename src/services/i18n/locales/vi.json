@@ -1877,5 +1877,15 @@
   "Robot status unavailable. Try again.": "Không có trạng thái Robot. Hãy thử lại.",
   "No paired Robot found.": "Không tìm thấy Robot đã ghép nối.",
   "Could not erase Robot. Try again.": "Không thể xóa Robot. Hãy thử lại.",
-  "Something else": "Vấn đề khác"
+  "Something else": "Vấn đề khác",
+  "One lesson": "Một bài học",
+  "Whole course": "Cả khóa học",
+  "Ready to send": "Sẵn sàng gửi",
+  "Preparing on server": "Đang chuẩn bị trên máy chủ",
+  "Assign course": "Giao khóa học",
+  "Confirm add": "Xác nhận thêm",
+  "Enter the number": "Nhập số",
+  "Adding...": "Đang thêm...",
+  "Exit lesson": "Thoát bài học",
+  "Pick one lesson or assign the whole course to Robot.": "Chọn một bài học hoặc giao cả khóa học cho Robot."
 }

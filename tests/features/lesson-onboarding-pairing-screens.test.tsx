@@ -70,13 +70,27 @@ describe('LessonDoneScreen', () => {
 });
 
 describe('LessonReadyScreen', () => {
-  it('renders the lesson title and headphones hint', () => {
+  it('renders the real lesson title from route params and the headphones hint', () => {
     const navigation = navigationFor();
-    render(<LessonReadyScreen navigation={navigation as never} route={routeFor('LessonReadyScreen')} />);
+    const route = {
+      key: 'LessonReadyScreen-key',
+      name: ROUTES.LessonReadyScreen,
+      params: { lessonTitle: 'Animal Friends' },
+    } as never;
+    render(<LessonReadyScreen navigation={navigation as never} route={route} />);
 
     expect(screen.getByText("Today's lesson")).toBeTruthy();
     expect(screen.getByText('Animal Friends')).toBeTruthy();
     expect(screen.getByText('Wear headphones if you can')).toBeTruthy();
+  });
+
+  it('falls back to a localized generic title (not a hardcoded literal) when no lessonTitle param', () => {
+    const navigation = navigationFor();
+    render(<LessonReadyScreen navigation={navigation as never} route={routeFor('LessonReadyScreen')} />);
+
+    // No "Animal Friends" literal leak; label + title both show the generic.
+    expect(screen.queryByText('Animal Friends')).toBeNull();
+    expect(screen.getAllByText("Today's lesson").length).toBeGreaterThanOrEqual(1);
   });
 
   it('primary CTA navigates to the connecting screen', () => {

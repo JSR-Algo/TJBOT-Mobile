@@ -37,10 +37,10 @@ export default function SafetyRedirectScreen({ navigation }: Props) {
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Need help?</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          onPress={() => navigation.navigate(ROUTES.ParentGateScreen, { next: ROUTES.ParentSummaryScreen })}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={t('Back to home')}
+          accessibilityLabel={t('Get a grown-up')}
         >
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Get a grown-up</Text>
         </TouchableOpacity>
