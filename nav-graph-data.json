@@ -186,6 +186,12 @@
       "g": "Robot Device",
       "kind": "happy"
     },
+    "dv_pair_child": {
+      "f": "src/features/device/pairing/screens/PairChildProfileScreen.tsx",
+      "title": "Robot · Pair · child profile",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
     "dv_pair_code": {
       "f": "src/features/device/pairing/screens/PairCodeScreen.tsx",
       "title": "Robot · Pair · confirm code",
@@ -227,6 +233,12 @@
       "title": "Robot · Pair · offline",
       "g": "Robot Device",
       "kind": "edge"
+    },
+    "dv_pair_qr_scan": {
+      "f": "src/features/device/pairing/screens/PairQrScanScreen.tsx",
+      "title": "Robot · Pair · QR scan",
+      "g": "Robot Device",
+      "kind": "happy"
     },
     "dv_pair_rename": {
       "f": "src/features/device/pairing/screens/PairRenameScreen.tsx",
@@ -936,6 +948,7 @@
       "dv_lost",
       "dv_overview",
       "dv_pair_add",
+      "dv_pair_child",
       "dv_pair_code",
       "dv_pair_connecting",
       "dv_pair_failed",
@@ -943,6 +956,7 @@
       "dv_pair_found",
       "dv_pair_intro",
       "dv_pair_offline",
+      "dv_pair_qr_scan",
       "dv_pair_rename",
       "dv_pair_search",
       "dv_pair_success",
@@ -972,7 +986,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-05-26T05:15:09Z",
-    "sourceCommit": "97590a2dc8627d9966edd969cc056d87c1c21ccb"
+    "generatedAt": "2026-06-23T08:18:36Z",
+    "sourceCommit": "66187eedf8c2dda2d7e94e819ea88e5531fd53a6"
   }
 }

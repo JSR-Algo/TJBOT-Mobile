@@ -17,7 +17,7 @@ export default function ThinkingScreen({ navigation }: Props) {
   // ExitConfirm, not silently pop the stack (MOB-2).
   useLessonHardwareBack(navigation, 'WAITING_AI');
   React.useEffect(() => {
-    const t = setTimeout(() => navigation.navigate(ROUTES.SuccessScreen), 1600);
+    const t = setTimeout(() => navigation.navigate(ROUTES.SuccessScreen), 900);
     return () => clearTimeout(t);
   }, [navigation]);
 

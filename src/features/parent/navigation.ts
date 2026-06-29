@@ -6,6 +6,7 @@ import ParentSafetyScreen from './screens/ParentSafetyScreen';
 import ParentSettingsScreen from './screens/ParentSettingsScreen';
 import ParentAccountPrivacyScreen from './screens/ParentAccountPrivacyScreen';
 import ParentLockedOutScreen from './screens/ParentLockedOutScreen';
+import AddChildScreen from './screens/AddChildScreen';
 import { User } from 'lucide-react-native';
 import { ROUTES } from '@/navigation/routes';
 import type { FeatureNavigationConfig } from '@/navigation/types';
@@ -31,6 +32,7 @@ export const PARENT_SCREENS = defineFeatureScreens([
   { name: ROUTES.ParentSettingsScreen, component: ParentSettingsScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_settings' },
   { name: ROUTES.ParentAccountPrivacyScreen, component: ParentAccountPrivacyScreen, role: 'stack', backTarget: ROUTES.ParentSettingsScreen, stateMachineId: 'parent_account_privacy' },
   { name: ROUTES.ParentLockedOutScreen, component: ParentLockedOutScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'parent_locked_out' },
+  { name: ROUTES.AddChildScreen, component: AddChildScreen, role: 'stack', backTarget: ROUTES.ParentSettingsScreen, stateMachineId: 'parent_add_child' },
 ]);
 
 export const PARENT_NAVIGATION = {

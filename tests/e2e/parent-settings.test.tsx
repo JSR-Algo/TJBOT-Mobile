@@ -20,6 +20,7 @@ import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
 import { getChildLessonProgress, getChildProgress } from '../../src/services/api/progress.api';
 import { getChildProfile, updateChildProfile } from '../../src/services/api/learning';
+import { updateChild } from '../../src/services/api/households';
 import { useHousehold } from '@/contexts/HouseholdContext';
 
 jest.setTimeout(120_000);
@@ -29,6 +30,7 @@ const mockLogout = jest.fn();
 const mockParentMarkGated = jest.fn();
 const mockParentTouchActivity = jest.fn();
 const mockParentClearGate = jest.fn();
+const mockHouseholdRefresh = jest.fn();
 let mockParentSessionFresh = false;
 let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
 
@@ -89,6 +91,11 @@ jest.mock('../../src/services/api/learning', () => ({
   updateChildProfile: jest.fn(),
 }));
 
+jest.mock('../../src/services/api/households', () => ({
+  __esModule: true,
+  updateChild: jest.fn(),
+}));
+
 jest.mock('@/contexts/HouseholdContext', () => ({
   __esModule: true,
   useHousehold: jest.fn(),
@@ -100,6 +107,7 @@ const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getC
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
 const mockGetChildProfile = getChildProfile as jest.MockedFunction<typeof getChildProfile>;
 const mockUpdateChildProfile = updateChildProfile as jest.MockedFunction<typeof updateChildProfile>;
+const mockUpdateChild = updateChild as jest.MockedFunction<typeof updateChild>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 
 // ParentToday/History read the child-scoped lesson-progress feed via TanStack
@@ -114,7 +122,7 @@ async function renderParentSettings() {
   const screen = render(
     <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
   );
-  await screen.findByText('Mai');
+  await screen.findByLabelText('Child name');
   return screen;
 }
 
@@ -138,7 +146,11 @@ describe('Parent settings and gate', () => {
     parentApiMock.getParentSummary.mockRejectedValue(new Error('Parent summary API route not documented'));
     parentApiMock.getParentToday.mockRejectedValue(new Error('Parent today API route not documented'));
     parentApiMock.getParentHistory.mockRejectedValue(new Error('Parent history API route not documented'));
-    mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
+    mockedUseHousehold.mockReturnValue({
+      children: [{ id: 'child-1', household_id: 'household-1', name: 'Mai' }],
+      activeChild: { id: 'child-1', household_id: 'household-1', name: 'Mai' },
+      refresh: mockHouseholdRefresh,
+    } as never);
     mockGetChildProgress.mockResolvedValue({ childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [] });
     mockGetChildLessonProgress.mockResolvedValue([]);
     mockGetChildProfile.mockResolvedValue({
@@ -163,6 +175,7 @@ describe('Parent settings and gate', () => {
       learning_style: dto.learning_style ?? 'visual',
       parent_career: dto.parent_career ?? 'engineer',
     }));
+    mockUpdateChild.mockResolvedValue({ id: 'child-1', household_id: 'household-1', name: 'Bong', birth_year: 2020, age_gate_passed: true, created_at: '2026-06-19T00:00:00.000Z' });
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],
       subscriptionStatus: 'none',
@@ -224,6 +237,20 @@ describe('Parent settings and gate', () => {
       fireEvent.press(screen.getByText('space'));
     });
     expect(mockUpdateChildProfile).toHaveBeenCalledWith('child-1', expect.objectContaining({ interests: expect.arrayContaining(['space']) }));
+  });
+
+  it('lets parents edit the child display name used by robot personalization', async () => {
+    const screen = await renderParentSettings();
+
+    const input = await screen.findByLabelText('Child name');
+    fireEvent.changeText(input, 'Bong');
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Save child name'));
+    });
+
+    expect(mockUpdateChild).toHaveBeenCalledWith('household-1', 'child-1', { display_name: 'Bong' });
+    expect(mockHouseholdRefresh).toHaveBeenCalledTimes(1);
   });
 
   it('opens account privacy controls from settings', async () => {

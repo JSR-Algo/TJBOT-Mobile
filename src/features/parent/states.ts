@@ -7,4 +7,5 @@ export const STATES = [
   { id: 'parent_safety', title: 'Safety & Privacy', group: 'Parent', kind: 'happy' },
   { id: 'parent_settings', title: 'Parent Settings', group: 'Parent', kind: 'happy' },
   { id: 'parent_account_privacy', title: 'Account Privacy', group: 'Parent', kind: 'edge' },
+  { id: 'parent_add_child', title: 'Add Child', group: 'Parent', kind: 'happy' },
 ] as const;

@@ -1,7 +1,7 @@
-<!-- GENERATED FROM nav-graph-data.json sha=f0475d686227. Do not edit by hand. -->
+<!-- GENERATED FROM nav-graph-data.json sha=ae1ed0de7840. Do not edit by hand. -->
 # User Flow — Index
 
-> Generated from `nav-graph-data.json` (sha `f0475d686227`). DO NOT EDIT.
+> Generated from `nav-graph-data.json` (sha `ae1ed0de7840`). DO NOT EDIT.
 
 ## Global overview
 
@@ -15,7 +15,7 @@
 | `auth` | A | 8 | [flow.generated.mmd](./domains/auth/flow.generated.mmd) | [README.md](./domains/auth/README.md) | [calls.generated.json](./domains/auth/calls.generated.json) |
 | `course` | B | 7 | [flow.generated.mmd](./domains/course/flow.generated.mmd) | [README.md](./domains/course/README.md) | [calls.generated.json](./domains/course/calls.generated.json) |
 | `course-library` | C | 12 | [flow.generated.mmd](./domains/course-library/flow.generated.mmd) | [README.md](./domains/course-library/README.md) | [calls.generated.json](./domains/course-library/calls.generated.json) |
-| `device` | D | 20 | [flow.generated.mmd](./domains/device/flow.generated.mmd) | [README.md](./domains/device/README.md) | [calls.generated.json](./domains/device/calls.generated.json) |
+| `device` | D | 22 | [flow.generated.mmd](./domains/device/flow.generated.mmd) | [README.md](./domains/device/README.md) | [calls.generated.json](./domains/device/calls.generated.json) |
 | `fallback` | D | 10 | [flow.generated.mmd](./domains/fallback/flow.generated.mmd) | [README.md](./domains/fallback/README.md) | [calls.generated.json](./domains/fallback/calls.generated.json) |
 | `home` | B | 13 | [flow.generated.mmd](./domains/home/flow.generated.mmd) | [README.md](./domains/home/README.md) | [calls.generated.json](./domains/home/calls.generated.json) |
 | `lesson-session` | B | 24 | [flow.generated.mmd](./domains/lesson-session/flow.generated.mmd) | [README.md](./domains/lesson-session/README.md) | [calls.generated.json](./domains/lesson-session/calls.generated.json) |
@@ -33,7 +33,7 @@
 
 ## Counts
 
-- States: 134
+- States: 136
 - Edges:  0
 - Groups: 16
 - Domains: 12

@@ -101,11 +101,15 @@ describe('course-library flow guards', () => {
     expect(screen.getByText(/My Animal Friends/)).toBeTruthy();
   });
 
-  it('passes course id into the added screen after parent unlock succeeds', async () => {
+  it('passes course assignment metadata into the added screen after parent unlock succeeds', async () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockedEnrollCourse.mockResolvedValueOnce({
       enrollment: { id: 'enr-1', courseId: 'c_food', childId: 'ch-1', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: null },
-      assignment: { id: 'asg-1', assignmentVersion: 1, lessonId: 'lesson-1', lessonVersion: 1, state: 'ASSIGNED' },
+      assignment: {
+        id: 'asg-1', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
+        lessonId: 'lesson-1', lessonTitle: '', lessonVersion: 1,
+        manifestChecksum: 'sha256:lesson-1', profile: 'espTft', state: 'ASSIGNED',
+      },
     });
     const navigation = navigationFor();
     render(
@@ -125,7 +129,65 @@ describe('course-library flow guards', () => {
     expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
     expect(mockedUnlockCourse).not.toHaveBeenCalled();
-    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_food', assignmentId: 'asg-1' });
+    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, {
+      courseId: 'c_food',
+      deviceId: 'dev-1',
+      assignmentId: 'asg-1',
+      assignmentVersion: 1,
+      manifestChecksum: 'sha256:lesson-1',
+    });
+  });
+
+  it('opens the already-created lesson assignment from the added screen without re-sending', async () => {
+    const navigation = navigationFor();
+    render(
+      <CourseAddedScreen
+        navigation={navigation as never}
+        route={{
+          key: 'added',
+          name: ROUTES.CourseAddedScreen,
+          params: {
+            courseId: 'c_food',
+            deviceId: 'dev-1',
+            assignmentId: 'asg-1',
+            assignmentVersion: 1,
+            manifestChecksum: 'sha256:lesson-1',
+          },
+        } as never}
+      />,
+    );
+
+    fireEvent.press(screen.getByText("Open today's lesson"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      deviceId: 'dev-1',
+      assignmentId: 'asg-1',
+      assignmentVersion: 1,
+      manifestChecksum: 'sha256:lesson-1',
+    });
+  });
+
+  it('does not leave unlock flow when backend says the course lesson assets are not playable yet', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedEnrollCourse.mockRejectedValueOnce({ response: { status: 422, data: { error: { code: 'LESSON_NOT_PLAYABLE' } } } });
+    const navigation = navigationFor();
+    render(
+      <UnlockConfirmModal
+        navigation={navigation as never}
+        route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    for (const digit of ['7', '3', '5', '1']) {
+      fireEvent.press(screen.getByText(digit));
+    }
+    await act(async () => {
+      fireEvent.press(screen.getByText('Confirm add'));
+    });
+
+    expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
+    expect(navigation.replace).not.toHaveBeenCalledWith(ROUTES.CourseAddedScreen, expect.anything());
+    expect(screen.getByText('This course is still preparing on the server. Try again in a moment.')).toBeTruthy();
   });
 
   it('starts the free add path from detail without billing plan selection', () => {
@@ -167,7 +229,7 @@ describe('course-library flow guards', () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockedCreateAssignment.mockResolvedValueOnce({
       assignmentId: 'asg-1', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
-      lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, profile: 'espTft', state: 'PRELOADING', createdAt: null,
+      lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', profile: 'espTft', state: 'PRELOADING', createdAt: null,
     });
     const navigation = navigationFor();
     render(
@@ -191,7 +253,7 @@ describe('course-library flow guards', () => {
     const sentParams = mockedCreateAssignment.mock.calls[0]![0];
     expect(typeof sentParams.lessonVersion).toBe('number');
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
-      deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1,
+      deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, manifestChecksum: 'sha256:w01-d01',
     });
   });
 
@@ -201,7 +263,7 @@ describe('course-library flow guards', () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockedCreateAssignment.mockResolvedValueOnce({
       assignmentId: 'asg-2', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
-      lessonId: 'w01-d02-barn-colors', lessonVersion: 3, profile: 'espTft', state: 'PRELOADING', createdAt: null,
+      lessonId: 'w01-d02-barn-colors', lessonVersion: 3, manifestChecksum: 'sha256:w01-d02', profile: 'espTft', state: 'PRELOADING', createdAt: null,
     });
     const navigation = navigationFor();
     render(
@@ -227,7 +289,11 @@ describe('course-library flow guards', () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockedEnrollCourse.mockResolvedValueOnce({
       enrollment: { id: 'enr-1', courseId: 'c_barn', childId: 'ch-1', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d01' },
-      assignment: { id: 'asg-course-1', assignmentVersion: 1, lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, state: 'PRELOADING' },
+      assignment: {
+        id: 'asg-course-1', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
+        lessonId: 'w01-d01-barn-say-it', lessonTitle: 'This Is a Barn', lessonVersion: 1,
+        manifestChecksum: 'sha256:w01-d01', profile: 'espTft', state: 'PRELOADING',
+      },
     });
     const navigation = navigationFor();
     render(
@@ -247,8 +313,35 @@ describe('course-library flow guards', () => {
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_barn', { childId: 'ch-1', deviceId: 'dev-1' });
     expect(mockedCreateAssignment).not.toHaveBeenCalled();
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
-      deviceId: 'dev-1', assignmentId: 'asg-course-1', assignmentVersion: 1,
+      deviceId: 'dev-1', assignmentId: 'asg-course-1', assignmentVersion: 1, manifestChecksum: 'sha256:w01-d01',
     });
+  });
+
+  it('gates whole-course assignment when any published lesson is still preparing', async () => {
+    mockedGetCourseLessons.mockResolvedValueOnce([
+      { lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, title: 'This Is a Barn', profile: 'espTft', manifestReady: true },
+      { lessonId: 'w01-d02-barn-colors', lessonVersion: 3, title: 'Barn Colors', profile: 'espTft', manifestReady: false },
+    ]);
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+    fireEvent.press(screen.getByLabelText('Send whole course'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Assign course'));
+    });
+
+    expect(mockedEnrollCourse).not.toHaveBeenCalled();
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    expect(screen.getByText('This course is still preparing on the server. Try again in a moment.')).toBeTruthy();
   });
 
   it('does not navigate to robot-ready when the assignment fails, and shows the lesson error copy', async () => {
@@ -278,7 +371,7 @@ describe('course-library flow guards', () => {
     mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
     mockedGetCurrentAssignment.mockResolvedValueOnce({
       assignmentId: 'asg-existing', assignmentVersion: 4, lessonId: 'w01-d01-barn-say-it',
-      lessonTitle: 'This Is a Barn', lessonVersion: 1, state: 'PRELOADING', childId: 'ch-1', profile: 'espTft',
+      lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state: 'PRELOADING', childId: 'ch-1', profile: 'espTft',
     });
     const navigation = navigationFor();
     render(
@@ -296,7 +389,7 @@ describe('course-library flow guards', () => {
 
     expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
-      deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4,
+      deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4, manifestChecksum: 'sha256:w01-d01',
     });
   });
 
@@ -321,19 +414,14 @@ describe('course-library flow guards', () => {
     expect(mockedCreateAssignment).not.toHaveBeenCalled();
   });
 
-  // MOB-3: a non-espTft published lesson must carry its REAL profile, not be
-  // silently coerced to espTft (which would pin the wrong asset bundle / render
-  // profile and fail the backend bundle check).
-  it('sends a piTft lesson with profile=piTft (not coerced to espTft)', async () => {
+  // Current production renderer is espTft-only. Even if stale/malformed catalog
+  // data marks a reserved piTft profile ready, the mobile app must not consume the
+  // robot's active assignment slot with a lesson the firmware cannot render.
+  it('gates send for a piTft lesson even when stale catalog data marks it ready', async () => {
     mockedGetCourses.mockResolvedValue([{ courseId: 'c_pi', title: 'Pi Course', lessonCount: 1 }]);
     mockedGetCourseLessons.mockResolvedValue([
       { lessonId: 'pi-d01', lessonVersion: 2, title: 'Pi Lesson', profile: 'piTft', manifestReady: true },
     ]);
-    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
-    mockedCreateAssignment.mockResolvedValueOnce({
-      assignmentId: 'asg-pi', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-1',
-      lessonId: 'pi-d01', lessonVersion: 2, profile: 'piTft', state: 'PRELOADING', createdAt: null,
-    });
     const navigation = navigationFor();
     render(
       <SendToRobotScreen
@@ -348,9 +436,9 @@ describe('course-library flow guards', () => {
       fireEvent.press(screen.getByText('Send to Robot'));
     });
 
-    expect(mockedCreateAssignment).toHaveBeenCalledWith({
-      deviceId: 'dev-1', childId: 'ch-1', lessonId: 'pi-d01', lessonVersion: 2, profile: 'piTft',
-    });
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
+    expect(screen.getByText('This lesson is still preparing on the server. Try again in a moment.')).toBeTruthy();
   });
 
   // MOB-3: an unrecognized profile is not sendable — the assign path must not

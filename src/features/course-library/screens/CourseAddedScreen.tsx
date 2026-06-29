@@ -19,12 +19,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CourseAddedScreen'>;
 export default function CourseAddedScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? 'c_food';
   // assignmentId is set by the enroll-course flow (UnlockConfirmModal →
-  // enrollCourse → { enrollment, assignment }). It's only used as a presence
-  // signal here — RobotReadyScreen polls the live assignment by deviceId via
-  // getCurrentAssignment (no extra wiring needed). When present, swap the
-  // "Send today's lesson now" copy so the parent knows the lesson is already
-  // queued on the robot.
+  // enrollCourse → { enrollment, assignment }). When the matching device and
+  // version are present, open the already-created assignment instead of sending
+  // the course a second time.
   const assignmentId = route.params?.assignmentId;
+  const deviceId = route.params?.deviceId;
+  const assignmentVersion = route.params?.assignmentVersion;
+  const manifestChecksum = route.params?.manifestChecksum;
+  const canOpenAssignment = Boolean(
+    deviceId &&
+    assignmentId &&
+    assignmentVersion &&
+    typeof manifestChecksum === 'string' &&
+    manifestChecksum.trim().length > 0,
+  );
   const hasAssignment = Boolean(assignmentId);
   // Static catalog supplies the LCD emotion; the published catalog overlays the
   // REAL course title for authored courses. `?? COURSES[2]` guards against a
@@ -78,7 +86,18 @@ export default function CourseAddedScreen({ navigation, route }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen, { courseId })}>
+        <DeviceBigBtn onClick={() => {
+          if (canOpenAssignment) {
+            navigation.navigate(ROUTES.RobotReadyScreen, {
+              deviceId,
+              assignmentId,
+              assignmentVersion,
+              manifestChecksum,
+            });
+            return;
+          }
+          navigation.navigate(ROUTES.SendToRobotScreen, { courseId });
+        }}>
           {hasAssignment ? "Open today's lesson" : "Send today's lesson now"}
         </DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Back to Robot home</DeviceBigBtn>

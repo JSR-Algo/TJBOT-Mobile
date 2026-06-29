@@ -4,6 +4,7 @@ import { ROUTES } from '@/navigation/routes';
 import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
 import {
   createAssignment,
+  enrollCourse,
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
@@ -18,6 +19,7 @@ jest.mock('@/services/api/course-library.api', () => {
   return {
     ...actual,
     createAssignment: jest.fn(),
+    enrollCourse: jest.fn(),
     getCurrentAssignment: jest.fn(),
     getCourses: jest.fn(),
     getCourseLessons: jest.fn(),
@@ -33,6 +35,7 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 }));
 
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
+const mockedEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
@@ -185,6 +188,174 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
       expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
       // The token-free STEP_TIMEOUT copy renders verbatim (robot name is a no-op here).
       expect(screen.getByText('Something interrupted the lesson. Tap to restart.')).toBeTruthy();
+    });
+  });
+
+  // ── Whole-course renderability gate ───────────────────────────────────────
+  // Course assignment must be all-or-nothing for the current robot renderer. A
+  // single non-espTft lesson would strand the child mid-course, so even stale
+  // catalog rows with manifestReady=true must keep course-mode gated.
+  describe('whole-course renderability gate', () => {
+    it.each([
+      ['null profile', null],
+      ['mobile profile', 'mobile'],
+      ['piTft profile', 'piTft'],
+      ['unknown profile', 'bogus'],
+    ])('blocks course assignment when any lesson has %s despite manifestReady=true', async (_label, profile) => {
+      mockedGetCourseLessons.mockResolvedValueOnce([
+        { lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, title: 'This Is a Barn', profile: 'espTft', manifestReady: true },
+        { lessonId: 'w01-d02-barn-colors', lessonVersion: 3, title: 'Barn Colors', profile, manifestReady: true },
+      ] as never);
+      renderSend();
+
+      await waitFor(() => expect(screen.getByText('Barn Colors')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Send whole course'));
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Assign course'));
+      });
+
+      expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+      expect(mockedEnrollCourse).not.toHaveBeenCalled();
+      expect(mockedCreateAssignment).not.toHaveBeenCalled();
+      expect(screen.getByText('This course is still preparing on the server. Try again in a moment.')).toBeTruthy();
+    });
+
+    it.each([
+      ['NaN lessonVersion', Number.NaN],
+      ['zero lessonVersion', 0],
+      ['negative lessonVersion', -1],
+      ['fractional lessonVersion', 1.5],
+    ])('blocks course assignment when any lesson has %s', async (_label, lessonVersion) => {
+      mockedGetCourseLessons.mockResolvedValueOnce([
+        { lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, title: 'This Is a Barn', profile: 'espTft', manifestReady: true },
+        { lessonId: 'w01-d02-barn-colors', lessonVersion, title: 'Barn Colors', profile: 'espTft', manifestReady: true },
+      ] as never);
+      renderSend();
+
+      await waitFor(() => expect(screen.getByText('Barn Colors')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Send whole course'));
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Assign course'));
+      });
+
+      expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+      expect(mockedEnrollCourse).not.toHaveBeenCalled();
+      expect(mockedCreateAssignment).not.toHaveBeenCalled();
+      expect(screen.getByText('This course is still preparing on the server. Try again in a moment.')).toBeTruthy();
+    });
+  });
+
+  describe('lesson version guard', () => {
+    it('does not assign a lesson when the catalog lessonVersion is not a positive integer', async () => {
+      mockedGetCourseLessons.mockResolvedValueOnce([
+        { lessonId: 'w01-d01-barn-say-it', lessonVersion: Number.NaN, title: 'This Is a Barn', profile: 'espTft', manifestReady: true },
+      ] as never);
+      renderSend();
+
+      await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByText('Send to Robot'));
+      });
+
+      expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+      expect(mockedCreateAssignment).not.toHaveBeenCalled();
+      expect(screen.getByText('This lesson is still preparing on the server. Try again in a moment.')).toBeTruthy();
+    });
+  });
+
+  // ── Course-mode enrollCourse ASSIGNMENT_CONFLICT recovers like lesson mode ───
+  // A course enroll can race with a previous assign/enroll request for the same
+  // device. Match lesson-mode recovery: refetch the current assignment and resume
+  // RobotReady from the fresh assignment_version instead of stranding the parent
+  // on generic error copy.
+  //
+  // To reach course mode we press the "Send whole course" mode toggle; the CTA
+  // then renders as "Assign course". courseReady is satisfied because SEED_LESSONS
+  // is manifestReady with a recognized (espTft) profile.
+  describe('course-mode enrollCourse ASSIGNMENT_CONFLICT recovery', () => {
+    it('refetches the current assignment and navigates to robot-ready from the fresh version', async () => {
+      mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      mockedEnrollCourse.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
+      mockedGetCurrentAssignment.mockResolvedValueOnce({
+        assignmentId: 'asg-course-existing',
+        assignmentVersion: 7,
+        lessonId: 'w01-d01-barn-say-it',
+        lessonTitle: 'This Is a Barn',
+        lessonVersion: 1,
+        manifestChecksum: 'sha256:w01-d01',
+        state: 'PRELOADING',
+        childId: 'ch-1',
+        profile: 'espTft',
+      });
+      const navigation = renderSend();
+
+      await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+      // Switch to whole-course mode; the CTA becomes "Assign course".
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Send whole course'));
+      });
+
+      await act(async () => {
+        fireEvent.press(screen.getByText('Assign course'));
+      });
+
+      expect(mockedEnrollCourse).toHaveBeenCalled();
+      expect(mockedCreateAssignment).not.toHaveBeenCalled();
+      expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
+      expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+        deviceId: 'dev-1',
+        assignmentId: 'asg-course-existing',
+        assignmentVersion: 7,
+        manifestChecksum: 'sha256:w01-d01',
+      });
+      expect(screen.queryByText('An unexpected error occurred. Please try again.')).toBeNull();
+    });
+
+    it('navigates to robot-ready on a SUCCESSFUL course enroll (proves the conflict assertions above are non-tautological)', async () => {
+      mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      // Same code path, but enroll succeeds → the screen MUST navigate forward and
+      // MUST NOT show the generic error. This proves the negative assertions in the
+      // conflict test are driven by the rejection, not by an unreachable CTA.
+      mockedEnrollCourse.mockResolvedValueOnce({
+        enrollment: { id: 'enr-1', childId: 'ch-1', courseId: 'c_barn', state: 'active' },
+        assignment: {
+          id: 'asg-1',
+          assignmentVersion: 3,
+          lessonId: 'w01-d01-barn-say-it',
+          lessonVersion: 1,
+          manifestChecksum: 'sha256:w01-d01',
+          state: 'assigned',
+        },
+      } as never);
+      const navigation = renderSend();
+
+      await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Send whole course'));
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Assign course'));
+      });
+
+      expect(mockedEnrollCourse).toHaveBeenCalled();
+      // Forward navigation uses the enroll's assignment ref (id + assignmentVersion).
+      expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+        deviceId: 'dev-1',
+        assignmentId: 'asg-1',
+        assignmentVersion: 3,
+        manifestChecksum: 'sha256:w01-d01',
+      });
+      // No error copy on the happy path.
+      expect(screen.queryByText('An unexpected error occurred. Please try again.')).toBeNull();
     });
   });
 });

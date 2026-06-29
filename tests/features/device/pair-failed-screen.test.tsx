@@ -196,7 +196,14 @@ describe('PairFailedScreen reason cards visibility', () => {
 // ===========================================================================
 describe('PairFailedScreen reason-card navigation', () => {
   it('"Wrong Wi-Fi password" card forwards the original params to PairWifiPasswordScreen', () => {
-    const params = { errorCode: 'WIFI_AUTH_FAILED', ssid: 'Casa', deviceId: 'device-1' };
+    const params = {
+      errorCode: 'WIFI_AUTH_FAILED',
+      ssid: 'Casa',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: '656c46f2-882b-4738-bf6b-f82ae2e2f7d7',
+      code: '123456',
+    };
     const { screen, nav } = renderScreen(params);
     fireEvent.press(screen.getByText('Wrong Wi-Fi password'));
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, params);
@@ -218,12 +225,11 @@ describe('PairFailedScreen reason-card navigation', () => {
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, expect.anything());
   });
 
-  it('"Wrong Wi-Fi password" card navigates without params when route params is undefined', () => {
+  it('"Wrong Wi-Fi password" rescans when route params are undefined', () => {
     const { screen, nav } = renderScreen(undefined);
     fireEvent.press(screen.getByText('Wrong Wi-Fi password'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen);
-    // The single-arg overload must be used — not an (route, undefined) call.
-    expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, undefined);
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+    expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, expect.anything());
   });
 
   it('"Robot is too far" card routes to PairSearchScreen', () => {

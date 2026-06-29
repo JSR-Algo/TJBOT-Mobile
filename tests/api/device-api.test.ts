@@ -728,6 +728,40 @@ describe('device API client', () => {
     });
   });
 
+  it('selects the household robot bound to the active child instead of the first robot', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: [
+        {
+          id: 'device-for-other-child',
+          status: 'active',
+          battery_level: 62,
+          serial_number: 'TBOT-OTHER',
+          assigned_child_profile_id: 'child-other',
+        },
+        {
+          id: 'device-for-active-child',
+          status: 'active',
+          battery_level: 91,
+          serial_number: 'TBOT-ACTIVE',
+          assigned_child_profile_id: 'child-active',
+        },
+      ],
+    });
+    jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
+
+    const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getDeviceStatus('primary', 'child-active')).resolves.toMatchObject({
+      id: 'device-for-active-child',
+      name: 'TBOT-ACTIVE',
+      serialNumber: 'TBOT-ACTIVE',
+      batteryPercent: 91,
+      assignedChildProfileId: 'child-active',
+    });
+    expect(get).toHaveBeenCalledWith('/devices/household/me');
+  });
+
   it('trims a padded serial number and omits serialNumber when it is blank', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({

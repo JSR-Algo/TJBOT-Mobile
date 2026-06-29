@@ -171,6 +171,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.ParentSafetyScreen, 'parent_safety'],
       [ROUTES.ParentSettingsScreen, 'parent_settings'],
       [ROUTES.ParentAccountPrivacyScreen, 'parent_account_privacy'],
+      [ROUTES.AddChildScreen, 'parent_add_child'],
     ]);
     const actualParentStateIds = new Map(
       Object.values(ROUTE_MAP)

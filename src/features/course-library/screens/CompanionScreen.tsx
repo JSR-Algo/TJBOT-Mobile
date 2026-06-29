@@ -84,7 +84,12 @@ export default function CompanionScreen({ navigation, route }: Props) {
   }, [deviceId]);
 
   const completed = finished || assignment?.state === 'COMPLETED';
-  const lessonTitle = assignment?.lessonTitle?.trim() ? assignment.lessonTitle : "Today's lesson";
+  const lessonTitle =
+    assignment?.lessonTitle?.trim()
+      ? assignment.lessonTitle
+      : route.params?.lessonTitle?.trim()
+        ? route.params.lessonTitle
+        : "Today's lesson";
   const presentation = completed
     ? presentAssignmentState('COMPLETED')
     : assignment
@@ -95,7 +100,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
     : 'Lesson running on Robot';
 
   return (
-    <DeviceShell title="What Robot sees" onBack={() => navigation.navigate(ROUTES.RunningScreen, { deviceId, assignmentId: assignment?.assignmentId })}>
+    <DeviceShell title="What Robot sees" onBack={() => navigation.navigate(ROUTES.RunningScreen, { deviceId, assignmentId: assignment?.assignmentId, lessonTitle })}>
       <Text style={styles.intro}>
         A live mirror of Robot's face. <Text fontWeight="600" style={{ color: CL.ink }}>No transcript</Text> — what your child says stays between them.
       </Text>

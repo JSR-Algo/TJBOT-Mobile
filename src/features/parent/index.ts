@@ -1,3 +1,4 @@
+import AddChildScreen from './screens/AddChildScreen';
 import ParentAccountPrivacyScreen from './screens/ParentAccountPrivacyScreen';
 import ParentGateScreen from './screens/ParentGateScreen';
 import ParentHistoryScreen from './screens/ParentHistoryScreen';
@@ -18,4 +19,5 @@ export const SCREEN_MAP = {
   parent_safety: ParentSafetyScreen,
   parent_settings: ParentSettingsScreen,
   parent_account_privacy: ParentAccountPrivacyScreen,
+  parent_add_child: AddChildScreen,
 };

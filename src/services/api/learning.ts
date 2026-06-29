@@ -79,6 +79,7 @@ export interface CompleteSessionDto {
 }
 
 export interface UpdateProfileDto {
+  name?: string;
   interests?: string[];
   learning_style?: 'visual' | 'audio' | 'interactive';
   vocabulary_level?: 'beginner' | 'basic' | 'intermediate' | 'advanced';

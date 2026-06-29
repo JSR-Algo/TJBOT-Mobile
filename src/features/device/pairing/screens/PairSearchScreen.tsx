@@ -64,6 +64,42 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       } catch (error) {
         if (cancelledRef.current) return;
         const errorCode = errorCodeFrom(error, 'PROVISIONING_START_FAILED');
+        const zeroCodeRecovery = await resolveZeroCodeClaimableRecovery(chosen, errorCode);
+        if (cancelledRef.current) return;
+        if (zeroCodeRecovery) {
+          logDevPairSearchEvent('provision start recovered via zero-code claim list', {
+            serialNumber: chosen.serialNumber,
+            errorCode,
+            deviceId: zeroCodeRecovery.deviceId,
+          });
+          navigation.navigate(ROUTES.PairFoundScreen, {
+            serialNumber: chosen.serialNumber,
+            deviceId: zeroCodeRecovery.deviceId,
+            provisioningAttemptId: undefined,
+            bleDeviceId: chosen.candidate.id,
+            provisioningTransport: 'ble',
+          });
+          return;
+        }
+        if (errorCode === 'DEVICE_NOT_FOUND') {
+          // Offline Wi-Fi reconnect: the robot is advertising BluFi (we found it via
+          // scan) but the backend has no device record for its serial, so the claim
+          // flow can't start. The firmware still applies Wi-Fi credentials received
+          // over BluFi WITHOUT a backend token (Blufi::StartStationConnectFromCredentials),
+          // so fall through to a credential-only Wi-Fi handoff. The synthetic ids key
+          // only the local Wi-Fi password store; nothing else hits the backend here.
+          logDevPairSearchEvent('provision start DEVICE_NOT_FOUND -> offline BLE Wi-Fi', {
+            serialNumber: chosen.serialNumber,
+          });
+          navigation.navigate(ROUTES.PairWifiScreen, {
+            serialNumber: chosen.serialNumber,
+            deviceId: chosen.serialNumber,
+            provisioningAttemptId: `offline:${chosen.serialNumber}`,
+            bleDeviceId: chosen.candidate.id,
+            provisioningTransport: 'ble_offline',
+          });
+          return;
+        }
         logDevPairSearchEvent('provision start failed', {
           serialNumber: chosen.serialNumber,
           errorCode,
@@ -279,6 +315,29 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       </Box>
     </DeviceShell>
   );
+}
+
+const ZERO_CODE_RECOVERABLE_PROVISION_ERRORS = new Set([
+  'DEVICE_ALREADY_ASSIGNED',
+  'DEVICE_ALREADY_CLAIMED',
+  'DEVICE_ALREADY_OWNED',
+  'DEVICE_PROVISIONING_IN_PROGRESS',
+]);
+
+async function resolveZeroCodeClaimableRecovery(
+  chosen: RobotCandidate,
+  errorCode: string,
+): Promise<AvailableClaimDevice | null> {
+  if (!isZeroCodeClaimEnabled() || !ZERO_CODE_RECOVERABLE_PROVISION_ERRORS.has(errorCode)) {
+    return null;
+  }
+  const available = await listAvailableClaimDevicesForDiscovery();
+  const chosenSerial = normalizeSerial(chosen.serialNumber);
+  return available.find((device) => normalizeSerial(device.displayName) === chosenSerial) ?? null;
+}
+
+function normalizeSerial(value: string | undefined): string {
+  return (value ?? '').trim().toUpperCase();
 }
 
 // Resolve BLE scan candidates to those with a parseable serial, de-duplicated by

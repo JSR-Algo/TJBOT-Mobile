@@ -166,6 +166,19 @@
         "globalSetup": "<rootDir>/tests/integration/__setup__/global-setup.ts",
         "globalTeardown": "<rootDir>/tests/integration/__setup__/global-teardown.ts"
       }
-    ]
+    ],
+    "collectCoverageFrom": [
+      "src/**/*[Ll]esson*",
+      "src/**/*[Cc]ourse*",
+      "src/**/*[Pp]rogress*"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 100,
+        "branches": 100,
+        "functions": 100,
+        "lines": 100
+      }
+    }
   }
 }

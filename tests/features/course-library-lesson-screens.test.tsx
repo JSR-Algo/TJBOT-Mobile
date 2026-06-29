@@ -39,7 +39,7 @@ function preload(state: PreloadStatus['state']): PreloadStatus {
 }
 
 function current(state: CurrentAssignment['state']): CurrentAssignment {
-  return { assignmentId: 'asg-1', assignmentVersion: 1, lessonId: 'w01-d01-barn-say-it', lessonTitle: 'This Is a Barn', lessonVersion: 1, state, childId: 'ch-1', profile: 'espTft' };
+  return { assignmentId: 'asg-1', assignmentVersion: 1, lessonId: 'w01-d01-barn-say-it', lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state, childId: 'ch-1', profile: 'espTft' };
 }
 
 describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {

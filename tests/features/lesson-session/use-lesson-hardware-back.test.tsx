@@ -121,4 +121,39 @@ describe('useLessonHardwareBack', () => {
     unmount();
     expect(backPressListener).toBeNull();
   });
+
+  // Re-firing 'focus' after the immediate mount-attach must hit attach()'s
+  // `if (subscription) return;` early-return (source line 39): the guard is
+  // already attached, so a second attach must be a no-op rather than
+  // registering a duplicate BackHandler listener.
+  it('does not double-attach when a focus event fires after the mount attach', () => {
+    let addCount = 0;
+    let focusCb: (() => void) | undefined;
+    const navigation = {
+      navigate: jest.fn(),
+      addListener: (event: string, cb: () => void) => {
+        if (event === 'focus') focusCb = cb;
+        return jest.fn();
+      },
+    };
+    // Count every BackHandler.addEventListener('hardwareBackPress') call.
+    const BackHandler = require('react-native/Libraries/Utilities/BackHandler').default;
+    const realAdd = BackHandler.addEventListener;
+    BackHandler.addEventListener = (event: string, cb: () => boolean) => {
+      if (event === 'hardwareBackPress') addCount += 1;
+      return realAdd(event, cb);
+    };
+    try {
+      renderHook(() => {
+        useLessonHardwareBack(navigation as any, 'LISTENING');
+      });
+      expect(addCount).toBe(1); // mount attach
+      // Simulate a focus event after mount — attach() is invoked again but
+      // returns early because a subscription already exists.
+      focusCb?.();
+      expect(addCount).toBe(1); // still one — no duplicate registration
+    } finally {
+      BackHandler.addEventListener = realAdd;
+    }
+  });
 });

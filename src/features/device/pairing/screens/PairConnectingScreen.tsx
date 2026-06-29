@@ -73,6 +73,10 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     const bootstrapToken = provisioningAttemptId ? getPairingBootstrapToken(provisioningAttemptId) : undefined;
     const canRunBleClaimProvisioning = transport === 'ble' && !!bleDeviceId;
     const canRunBleReconnectProvisioning = transport === 'ble_reconnect' && !!bleDeviceId;
+    // Offline Wi-Fi: robot found over BLE but unknown to the backend (DEVICE_NOT_FOUND).
+    // Same credential-only BluFi handoff as reconnect, but no backend device exists to
+    // poll afterwards — completion is the resolved BluFi handoff itself.
+    const canRunBleOfflineProvisioning = transport === 'ble_offline' && !!bleDeviceId;
     logDevPairConnectingEvent('start', {
       deviceId,
       serialNumber,
@@ -83,7 +87,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       hasBootstrapToken: !!bootstrapToken,
       ssidPresent: !!ssid,
     });
-    if (!ssid || !deviceId || !serialNumber || !provisioningAttemptId || (!code && !canRunBleClaimProvisioning && !canRunBleReconnectProvisioning)) {
+    if (!ssid || !deviceId || !serialNumber || !provisioningAttemptId || (!code && !canRunBleClaimProvisioning && !canRunBleReconnectProvisioning && !canRunBleOfflineProvisioning)) {
       setStatus('failed');
       navigation.navigate(ROUTES.PairFailedScreen, {
         ...failureContext(params),
@@ -106,7 +110,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     // leaks (keeping the Jest worker / RN event loop alive after the screen is
     // gone — the "worker failed to exit gracefully" symptom).
     const poll: PollController = { cancelled: false, timer: undefined };
-    const run = (transport === 'ble' || transport === 'ble_reconnect') && bleDeviceId
+    const run = (transport === 'ble' || transport === 'ble_reconnect' || transport === 'ble_offline') && bleDeviceId
       ? runLocalBleProvisioning({
         deviceId,
         serialNumber,
@@ -116,7 +120,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         password,
         bleDeviceId,
         bootstrapToken,
-        credentialOnly: transport === 'ble_reconnect',
+        credentialOnly: transport === 'ble_reconnect' || transport === 'ble_offline',
       })
       : runBackendProvisioning({ deviceId, serialNumber, provisioningAttemptId, code: code as string, ssid, password });
 
@@ -135,6 +139,17 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       if (cancelled) return;
       setI(PAIRING_STEP_COUNT - 1);
       if (result.completionMode === 'device_online') {
+        if (transport === 'ble_offline') {
+          // No backend device exists to poll. The resolved credential-only BluFi
+          // handoff (Wi-Fi creds accepted; the robot's conn-report was not
+          // STA_CONN_FAIL, else provisionWifiViaLocalBle would have thrown) IS the
+          // completion signal for this path. Show success and stop.
+          clearPairingBootstrapToken(result.provisioningAttemptId);
+          setI(PAIRING_STEP_COUNT);
+          setStatus('authenticated');
+          navigation.navigate(ROUTES.PairSuccessScreen, { serialNumber });
+          return;
+        }
         await waitForDeviceOnline(result.deviceId, poll);
         if (cancelled) return;
         clearPairingBootstrapToken(result.provisioningAttemptId);

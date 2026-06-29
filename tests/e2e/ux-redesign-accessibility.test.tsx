@@ -171,14 +171,30 @@ describe('mobile UX redesign accessibility coverage', () => {
     expect(exit.getByLabelText('Stop lesson for now')).toBeTruthy();
   });
 
-  it('labels pairing choice cards and failure reasons', () => {
+  it('labels pairing choice cards and routes password recovery only when pairing context exists', () => {
     const add = render(<PairAddScreen navigation={navigation as never} route={{ params: undefined } as never} />);
     fireEvent.press(add.getByLabelText('Pair a new Robot'));
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairIntroScreen);
 
     const failed = render(<PairFailedScreen navigation={navigation as never} route={{ params: undefined } as never} />);
     fireEvent.press(failed.getByLabelText('Fix wrong Wi-Fi password'));
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen);
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+
+    const failedWithContext = render(
+      <PairFailedScreen
+        navigation={navigation as never}
+        route={{ params: { deviceId: 'device-1', serialNumber: 'TJBot-001', provisioningAttemptId: 'attempt-1', ssid: 'Casa Wi-Fi', bleDeviceId: 'ble-device-1', provisioningTransport: 'ble' } } as never}
+      />,
+    );
+    fireEvent.press(failedWithContext.getByLabelText('Fix wrong Wi-Fi password'));
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TJBot-001',
+      provisioningAttemptId: 'attempt-1',
+      ssid: 'Casa Wi-Fi',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble',
+    });
   });
 
   it('opens Android Wi-Fi settings from a phone Wi-Fi readiness failure', async () => {

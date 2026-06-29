@@ -74,11 +74,15 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
     };
   }, [deviceId]);
 
-  const ready = preload ? isPreloadReady(preload) : false;
+  const manifestChecksum = assignment?.manifestChecksum ?? route.params?.manifestChecksum;
+  const hasManifestChecksum = typeof manifestChecksum === 'string' && manifestChecksum.trim().length > 0;
+  const assignmentId = assignment?.assignmentId ?? route.params?.assignmentId;
+  const preloadMatchesAssignment = Boolean(preload && assignmentId && preload.assignmentId === assignmentId);
+  const ready = preload ? isPreloadReady(preload) && hasManifestChecksum && preloadMatchesAssignment : false;
   const lessonTitle = assignment?.lessonTitle?.trim() ? assignment.lessonTitle : "Today's lesson";
   const presentation = preload ? presentAssignmentState(preload.state) : null;
   const errorCopy = preload?.errorCode ? formatLessonCopy(getErrorMessage(preload.errorCode)) : null;
-  const statusCopy = presentation ? formatLessonCopy(presentation.copy, { lesson: lessonTitle }) : 'Getting things ready…';
+  const statusCopy = hasManifestChecksum && preloadMatchesAssignment && presentation ? formatLessonCopy(presentation.copy, { lesson: lessonTitle }) : 'Getting things ready…';
 
   return (
     <DeviceShell title="Robot is ready">
@@ -138,7 +142,7 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
           onClick={() =>
             navigation.navigate(ROUTES.RunningScreen, {
               deviceId,
-              assignmentId: route.params?.assignmentId,
+              assignmentId,
               lessonTitle,
             })
           }

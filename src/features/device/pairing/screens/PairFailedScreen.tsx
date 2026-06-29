@@ -104,12 +104,11 @@ export default function PairFailedScreen({ navigation, route }: Props) {
               activeOpacity={0.7}
               onPress={() => {
                 if (r.go === ROUTES.PairWifiPasswordScreen) {
-                  if (needsFreshBleClaim(params)) {
+                  if (needsFreshBleClaim(params) || !canRetryWifiPassword(params)) {
                     navigation.navigate(ROUTES.PairSearchScreen);
                     return;
                   }
-                  if (params) navigation.navigate(ROUTES.PairWifiPasswordScreen, params);
-                  else navigation.navigate(ROUTES.PairWifiPasswordScreen);
+                  navigation.navigate(ROUTES.PairWifiPasswordScreen, params);
                   return;
                 }
                 if (r.go === ROUTES.PairSearchScreen) {
@@ -190,6 +189,19 @@ function needsFreshBleClaim(params: Props['route']['params']): boolean {
     params?.errorCode === 'NO_DEVICE_AVAILABLE'
     && params.provisioningTransport === 'ble'
     && !params.code
+  );
+}
+
+function canRetryWifiPassword(params: Props['route']['params']): params is FailureParams {
+  if (!params?.deviceId || !params.serialNumber || !params.provisioningAttemptId || !params.ssid) {
+    return false;
+  }
+
+  if (params.code) return true;
+
+  return !!(
+    params.bleDeviceId
+    && (params.provisioningTransport === 'ble' || params.provisioningTransport === 'ble_reconnect')
   );
 }
 

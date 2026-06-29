@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ParentScroll, { PA } from '../components/ParentScroll';
@@ -14,6 +14,7 @@ import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { captureError } from '@/services/observability/sentry';
 import { useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 import { getChildProfile, updateChildProfile, type ChildProfile, type UpdateProfileDto } from '@/services/api/learning';
+import { updateChild } from '@/services/api/households';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSettingsScreen'>;
 
@@ -38,7 +39,7 @@ function languageLabel(locale: AppLocale): string {
 export default function ParentSettingsScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentSettingsScreen);
   const { logout } = useAuth();
-  const { activeChild } = useHousehold();
+  const { activeChild, refresh } = useHousehold();
   const [mic, setMic] = React.useState(false);
   const [sound, setSound] = React.useState(false);
   const [haptics, setHaptics] = React.useState(false);
@@ -48,8 +49,12 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   const [profile, setProfile] = React.useState<ChildProfile | null>(null);
   const [profileSaving, setProfileSaving] = React.useState(false);
   const [profileSaveFailed, setProfileSaveFailed] = React.useState(false);
+  const [childNameDraft, setChildNameDraft] = React.useState('');
+  const [childNameSaving, setChildNameSaving] = React.useState(false);
+  const [childNameSaveFailed, setChildNameSaveFailed] = React.useState(false);
   const { language, setLanguage, t } = useAppLanguage();
   const childId = activeChild?.id;
+  const householdId = activeChild?.household_id;
 
   React.useEffect(() => {
     let mounted = true;
@@ -67,6 +72,10 @@ export default function ParentSettingsScreen({ navigation }: Props) {
       });
     return () => { mounted = false; };
   }, [childId]);
+
+  React.useEffect(() => {
+    setChildNameDraft(activeChild?.name ?? profile?.name ?? '');
+  }, [activeChild?.name, profile?.name]);
 
   const updateLanguage = React.useCallback(async (nextLanguage: AppLocale): Promise<void> => {
     setSavingLanguage(nextLanguage);
@@ -96,6 +105,29 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     }
   }, [childId, profileSaving]);
 
+  const saveChildName = React.useCallback(async (): Promise<void> => {
+    const nextName = childNameDraft.trim();
+    if (!childId || childNameSaving || nextName.length === 0) return;
+    setChildNameSaving(true);
+    setChildNameSaveFailed(false);
+    try {
+      if (householdId) {
+        await updateChild(householdId, childId, { display_name: nextName });
+        await refresh();
+      } else {
+        const nextProfile = await updateChildProfile(childId, { name: nextName });
+        setProfile(nextProfile);
+      }
+      setProfile((current) => current ? { ...current, name: nextName } : current);
+      setChildNameDraft(nextName);
+    } catch (error) {
+      captureError(error);
+      setChildNameSaveFailed(true);
+    } finally {
+      setChildNameSaving(false);
+    }
+  }, [childId, childNameDraft, childNameSaving, householdId, refresh]);
+
   const toggleInterest = React.useCallback((interest: string) => {
     const current = profile?.interests ?? [];
     const next = current.includes(interest)
@@ -104,11 +136,8 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     void saveProfile({ interests: next });
   }, [profile?.interests, saveProfile]);
 
-  const unavailableRows = [
-    'Child name',
+  const unavailableProfileRows = [
     'Child age',
-    'Learning level',
-    'Lesson length',
     'Daily reminder',
     'Plan status',
     'Billing portal',
@@ -149,12 +178,48 @@ export default function ParentSettingsScreen({ navigation }: Props) {
       </PRowGroup>
 
       <PRowGroup header="Profile and plan">
-        <PRow label="Child name" value={activeChild?.name ?? profile?.name ?? 'Unavailable'} />
+        <Box style={styles.nameEditor}>
+          <Text fontWeight="600" style={styles.filterTitle}>Child name</Text>
+          <Box flexDirection="row" gap={8} alignItems="center">
+            <TextInput
+              accessibilityLabel="Child name"
+              value={childNameDraft}
+              onChangeText={setChildNameDraft}
+              editable={!childNameSaving && !!childId}
+              maxLength={64}
+              placeholder="Child name"
+              style={styles.nameInput}
+            />
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ disabled: childNameSaving || !childId || childNameDraft.trim().length === 0 }}
+              disabled={childNameSaving || !childId || childNameDraft.trim().length === 0}
+              onPress={() => { void saveChildName(); }}
+              style={[styles.saveNameButton, (childNameSaving || !childId || childNameDraft.trim().length === 0) && styles.disabledButton]}
+              activeOpacity={0.7}
+            >
+              <Text fontWeight="600" style={styles.saveNameButtonText}>Save child name</Text>
+            </TouchableOpacity>
+          </Box>
+          {childNameSaveFailed ? <Text style={styles.profileError}>Child name could not be saved. Try again.</Text> : null}
+        </Box>
         <PRow label="Learning level" value={profile?.vocabulary_level ?? 'Unavailable'} />
         <PRow label="Lesson length" value={profile?.attention_span_seconds ? `${Math.round(profile.attention_span_seconds / 60)} min` : 'Unavailable'} />
-        {unavailableRows.slice(3).map((label, index) => (
-          <PRow key={label} label={label} value="Unavailable" isLast={index === unavailableRows.slice(3).length - 1} />
+        {unavailableProfileRows.map((label, index) => (
+          <PRow key={label} label={label} value="Unavailable" isLast={index === unavailableProfileRows.length - 1} />
         ))}
+        <Box style={styles.nameEditor}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Add another child"
+            onPress={() => navigation.navigate(ROUTES.AddChildScreen)}
+            style={styles.saveNameButton}
+            activeOpacity={0.7}
+            testID="addChildButton"
+          >
+            <Text fontWeight="600" style={styles.saveNameButtonText}>+ Add another child</Text>
+          </TouchableOpacity>
+        </Box>
       </PRowGroup>
 
       <PRowGroup header="Personality filters" footer="These signals personalize lesson ordering without exposing the raw child profile in lesson cards.">
@@ -244,6 +309,26 @@ const styles = StyleSheet.create({
     borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center',
   },
   personalityBlock: { paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff' },
+  nameEditor: { paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff' },
+  nameInput: {
+    flex: 1,
+    minHeight: 40,
+    borderWidth: 1,
+    borderColor: PA.hair,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    color: PA.ink,
+    backgroundColor: '#fff',
+  },
+  saveNameButton: {
+    minHeight: 40,
+    justifyContent: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: PA.accent,
+  },
+  saveNameButtonText: { color: '#fff', fontSize: 13 },
+  disabledButton: { opacity: 0.5 },
   personalityBorder: { borderTopWidth: 1, borderTopColor: PA.hair },
   filterTitle: { fontSize: 14, color: PA.ink, marginBottom: 10 },
   chipWrap: { flexWrap: 'wrap' },

@@ -159,6 +159,8 @@ const BLUFI_ERROR_INFO_TYPE = 0x49;
 const BLUFI_FRAME_CONTROL_FRAGMENT = 0x10;
 const ESP_BLUFI_WIFI_SCAN_FAIL = 0x0b;
 const BLUFI_WIFI_SCAN_RESPONSE_TIMEOUT_MS = 15000;
+const BLE_WIFI_SCAN_ATTEMPTS = 2;
+const BLE_WIFI_SCAN_RETRY_DELAY_MS = 300;
 const BLUFI_SECURITY_RESPONSE_TIMEOUT_MS = 5000;
 const BLUFI_NEGOTIATE_TYPE = 0x01;
 // Firmware conn-report conn_state values (payload[1] after reassembly).
@@ -400,33 +402,90 @@ export async function scanRobotWifiNetworks(params: {
   connectDevice?: ConnectDevice;
 }): Promise<RobotWifiNetwork[]> {
   const connectDevice = params.connectDevice ?? connectBleDevice;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= BLE_WIFI_SCAN_ATTEMPTS; attempt += 1) {
+    try {
+      return await scanRobotWifiNetworksOnce(params.device, connectDevice, attempt);
+    } catch (error) {
+      lastError = error;
+      logBleWifiScan('failed', { attempt, code: errorCode(error), message: errorMessage(error) });
+      if (!isRetryableWifiScanError(error) || attempt >= BLE_WIFI_SCAN_ATTEMPTS) {
+        throw normalizeWifiScanError(error);
+      }
+      await delay(BLE_WIFI_SCAN_RETRY_DELAY_MS);
+    }
+  }
+
+  throw normalizeWifiScanError(lastError);
+}
+
+async function scanRobotWifiNetworksOnce(
+  device: BleDeviceCandidate,
+  connectDevice: ConnectDevice,
+  attempt: number,
+): Promise<RobotWifiNetwork[]> {
   let connected: LocalProvisioningDevice | undefined;
   try {
+    logBleWifiScan('connect_start', { attempt, deviceId: device.id, name: device.name ?? device.localName ?? null });
     connected = await withBleOperationTimeout(
-      connectDevice(params.device.id),
+      connectDevice(device.id),
       'BLE_WIFI_SCAN_FAILED',
       'Robot BLE Wi-Fi scan notification failed.',
     );
+    logBleWifiScan('connected', { attempt, deviceId: device.id });
     const discovered = await withBleOperationTimeout(
       connected.discoverAllServicesAndCharacteristics(),
       'BLE_WIFI_SCAN_FAILED',
       'Robot BLE Wi-Fi scan notification failed.',
     );
+    logBleWifiScan('services_discovered', { attempt, deviceId: device.id });
     const { writer, target } = resolveBluFiWriter(discovered, connected);
     const { monitor, target: monitorTarget } = resolveBluFiMonitor(discovered, connected);
     if (!writer || !monitor) {
+      logBleWifiScan('characteristic_missing', { attempt, hasWriter: !!writer, hasMonitor: !!monitor });
       throw codedError('BLE_WIFI_SCAN_UNSUPPORTED', 'Robot BLE Wi-Fi scan notification characteristic is unavailable.');
     }
 
     const scanResult = waitForBluFiWifiList(monitor.bind(monitorTarget));
+    logBleWifiScan('write_scan_request', { attempt });
     await writeBluFiFrames(writer.bind(target), buildBluFiWifiScanFrames(), {
       timeoutCode: 'BLE_WIFI_SCAN_FAILED',
       timeoutMessage: 'Robot BLE Wi-Fi scan notification failed.',
     });
-    return await scanResult;
+    const networks = await scanResult;
+    logBleWifiScan('scan_result', { attempt, count: networks.length });
+    return networks;
   } finally {
     await connected?.cancelConnection?.().catch(() => undefined);
   }
+}
+
+function logBleWifiScan(stage: string, detail: Record<string, unknown>): void {
+  if (__DEV__) {
+    console.info('[TBOT BLE WiFiScan]', { stage, ...detail });
+  }
+}
+
+function isRetryableWifiScanError(error: unknown): boolean {
+  return !hasCode(error) || error.code === 'BLE_WIFI_SCAN_FAILED';
+}
+
+function normalizeWifiScanError(error: unknown): Error & { code: string } {
+  if (hasCode(error) && (error.code === 'BLE_WIFI_SCAN_FAILED' || error.code === 'BLE_WIFI_SCAN_UNSUPPORTED')) {
+    return error instanceof Error
+      ? Object.assign(error, { code: error.code })
+      : codedError(error.code, 'Robot BLE Wi-Fi scan notification failed.');
+  }
+  return codedError('BLE_WIFI_SCAN_FAILED', 'Robot BLE Wi-Fi scan notification failed.');
+}
+
+function errorCode(error: unknown): string {
+  return hasCode(error) ? error.code : 'unknown';
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'unknown';
 }
 
 async function connectBleDevice(deviceId: string): Promise<LocalProvisioningDevice> {

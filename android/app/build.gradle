@@ -70,6 +70,11 @@ react {
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
 def enableProguardInReleaseBuilds = false
+def releaseStoreFile = findProperty("TBOT_RELEASE_STORE_FILE") ?: System.getenv("TBOT_RELEASE_STORE_FILE")
+def releaseStorePassword = findProperty("TBOT_RELEASE_STORE_PASSWORD") ?: System.getenv("TBOT_RELEASE_STORE_PASSWORD")
+def releaseKeyAlias = findProperty("TBOT_RELEASE_KEY_ALIAS") ?: System.getenv("TBOT_RELEASE_KEY_ALIAS")
+def releaseKeyPassword = findProperty("TBOT_RELEASE_KEY_PASSWORD") ?: System.getenv("TBOT_RELEASE_KEY_PASSWORD")
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -107,6 +112,14 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
@@ -115,9 +128,7 @@ android {
             multiDexKeepProguard file('multidex-config.pro')
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
             multiDexKeepFile file('multidex-keep.txt')
             multiDexKeepProguard file('multidex-config.pro')
             minifyEnabled enableProguardInReleaseBuilds

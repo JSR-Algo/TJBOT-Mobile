@@ -1,6 +1,7 @@
 import client from '@/services/http/client';
 import {
   createAssignment,
+  enrollCourse,
   getCurrentAssignment,
   getPreloadStatus,
   isPreloadReady,
@@ -8,6 +9,7 @@ import {
   normalizeAssignmentPayload,
   normalizeAssignmentRefPayload,
   normalizeCurrentAssignmentPayload,
+  normalizeEnrollmentPayload,
   normalizePreloadStatusPayload,
   presentAssignmentState,
   type AssignmentState,
@@ -42,6 +44,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
               child_id: 'ch-1',
               lesson_id: 'w01-d01-barn-say-it',
               lesson_version: 1,
+              manifest_checksum: 'sha256:direct-assignment-v1',
               profile: 'espTft',
               state: 'PRELOADING',
               created_at: '2026-06-03T10:00:00Z',
@@ -73,6 +76,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
       expect(result.assignmentId).toBe('asg-1');
       expect(result.assignmentVersion).toBe(1);
       expect(typeof result.assignmentVersion).toBe('number');
+      expect(result.manifestChecksum).toBe('sha256:direct-assignment-v1');
       expect(result.state).toBe('PRELOADING');
     });
 
@@ -101,6 +105,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
               child_id: 'ch-9',
               lesson_id: 'w01-d01-barn-say-it',
               lesson_version: 2,
+              manifest_checksum: 'sha256:snake-direct-v2',
               profile: 'espTft',
               state: 'ASSIGNED',
               created_at: '2026-06-03T10:00:00Z',
@@ -114,6 +119,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
         childId: 'ch-9',
         lessonId: 'w01-d01-barn-say-it',
         lessonVersion: 2,
+        manifestChecksum: 'sha256:snake-direct-v2',
         profile: 'espTft',
         state: 'ASSIGNED',
         createdAt: '2026-06-03T10:00:00Z',
@@ -122,6 +128,58 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
   });
 
   describe('course enrollment assignment ref', () => {
+    it('POSTs the course enroll path with childId and deviceId, then normalizes the assigned first lesson', async () => {
+      mockedClient.post.mockResolvedValueOnce({
+        data: {
+          data: {
+            enrollment: {
+              id: 'enr-1',
+              child_id: 'ch-1',
+              course_id: 'c_barn',
+              device_id: 'dev-1',
+              status: 'ACTIVE',
+              current_lesson_key: 'w01-d01',
+            },
+            assignment: {
+              assignment_id: 'asg-course-1',
+              assignment_version: 2,
+              lesson_id: 'w01-d01-barn-say-it',
+              lesson_version: 1,
+              state: 'PRELOADING',
+            },
+          },
+        },
+      });
+
+      const result = await enrollCourse('c_barn', { childId: 'ch-1', deviceId: 'dev-1' });
+
+      expect(mockedClient.post).toHaveBeenCalledWith('/courses/c_barn/enroll', { childId: 'ch-1', deviceId: 'dev-1' });
+      expect(result).toEqual({
+        enrollment: {
+          id: 'enr-1',
+          childId: 'ch-1',
+          courseId: 'c_barn',
+          deviceId: 'dev-1',
+          status: 'ACTIVE',
+          currentLessonKey: 'w01-d01',
+        },
+        assignment: {
+          id: 'asg-course-1',
+          assignmentVersion: 2,
+          deviceId: '',
+          childId: '',
+          lessonId: 'w01-d01-barn-say-it',
+          lessonTitle: '',
+          lessonVersion: 1,
+          manifestChecksum: null,
+          profile: 'espTft',
+          state: 'PRELOADING',
+        },
+      });
+      expect(typeof result.assignment.assignmentVersion).toBe('number');
+      expect(typeof result.assignment.lessonVersion).toBe('number');
+    });
+
     it('normalizes assignmentVersion so course enrollment can resume RobotReady polling', () => {
       expect(
         normalizeAssignmentRefPayload({
@@ -134,10 +192,65 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
       ).toEqual({
         id: 'asg-course-1',
         assignmentVersion: 7,
+        deviceId: '',
+        childId: '',
         lessonId: 'w01-d01-barn-say-it',
+        lessonTitle: '',
         lessonVersion: 2,
+        manifestChecksum: null,
+        profile: 'espTft',
         state: 'PRELOADING',
       });
+    });
+
+    it('preserves the full backend assignment contract from course enrollment for robot-ready polling', async () => {
+      mockedClient.post.mockResolvedValueOnce({
+        data: {
+          data: {
+            enrollment: {
+              id: 'enr-1',
+              child_id: 'ch-1',
+              course_id: 'c_barn',
+              device_id: 'dev-1',
+              status: 'ACTIVE',
+              current_lesson_key: 'w01-d01',
+            },
+            assignment: {
+              assignment_id: 'asg-course-1',
+              assignment_version: 7,
+              device_id: 'dev-1',
+              child_id: 'ch-1',
+              lesson_id: 'w01-d01-barn-say-it',
+              lesson_title: 'This Is a Barn',
+              lesson_version: 2,
+              manifest_checksum: 'sha256:lesson-manifest-v2',
+              profile: 'espTft',
+              state: 'PRELOADING',
+            },
+          },
+        },
+      });
+
+      const result = await enrollCourse('c_barn', { childId: 'ch-1', deviceId: 'dev-1' });
+
+      expect(result.assignment).toEqual({
+        id: 'asg-course-1',
+        assignmentVersion: 7,
+        deviceId: 'dev-1',
+        childId: 'ch-1',
+        lessonId: 'w01-d01-barn-say-it',
+        lessonTitle: 'This Is a Barn',
+        lessonVersion: 2,
+        manifestChecksum: 'sha256:lesson-manifest-v2',
+        profile: 'espTft',
+        state: 'PRELOADING',
+      });
+    });
+
+    it('normalizes lowercase backend enrollment statuses without reopening completed courses as active', () => {
+      expect(normalizeEnrollmentPayload({ id: 'enr-1', status: 'active' }).status).toBe('ACTIVE');
+      expect(normalizeEnrollmentPayload({ id: 'enr-2', status: 'completed' }).status).toBe('COMPLETED');
+      expect(normalizeEnrollmentPayload({ id: 'enr-3', status: 'cancelled' }).status).toBe('CANCELLED');
     });
   });
 
@@ -213,6 +326,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
               lessonId: 'w01-d01-barn-say-it',
               lessonTitle: 'This Is a Barn',
               lessonVersion: 1,
+              manifestChecksum: 'sha256:current-assignment-v1',
               state: 'READY',
               childId: 'ch-1',
               profile: 'espTft',
@@ -223,6 +337,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
       const current = await getCurrentAssignment('dev-1');
       expect(mockedClient.get).toHaveBeenCalledWith('/devices/dev-1/assignment/current');
       expect(current?.lessonTitle).toBe('This Is a Barn');
+      expect(current?.manifestChecksum).toBe('sha256:current-assignment-v1');
       expect(current?.state).toBe('READY');
     });
 

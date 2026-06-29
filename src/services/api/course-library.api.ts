@@ -318,6 +318,14 @@ export function isLessonProfile(value: string | null | undefined): value is Less
   return typeof value === 'string' && (LESSON_PROFILES as readonly string[]).includes(value);
 }
 
+export function isRenderableLessonProfile(value: string | null | undefined): value is 'espTft' {
+  return value === 'espTft';
+}
+
+export function isAssignablePublishedLesson(lesson: Pick<PublishedLesson, 'manifestReady' | 'profile' | 'lessonVersion'>): boolean {
+  return lesson.manifestReady && isRenderableLessonProfile(lesson.profile) && Number.isInteger(lesson.lessonVersion) && lesson.lessonVersion > 0;
+}
+
 export interface CreateAssignmentParams {
   deviceId: string;
   lessonId: string;
@@ -333,6 +341,7 @@ export interface LessonAssignment {
   childId: string;
   lessonId: string;
   lessonVersion: number;
+  manifestChecksum: string | null;
   profile: string;
   state: AssignmentState;
   createdAt: string | null;
@@ -344,6 +353,7 @@ export interface CurrentAssignment {
   lessonId: string;
   lessonTitle: string;
   lessonVersion: number;
+  manifestChecksum: string | null;
   state: AssignmentState;
   childId: string;
   profile: string;
@@ -375,6 +385,7 @@ export function normalizeAssignmentPayload(payload: unknown): LessonAssignment {
     childId: (r.child_id ?? r.childId ?? '') as string,
     lessonId: (r.lesson_id ?? r.lessonId ?? '') as string,
     lessonVersion: Number(r.lesson_version ?? r.lessonVersion ?? 0),
+    manifestChecksum: (r.manifest_checksum ?? r.manifestChecksum ?? null) as string | null,
     profile: (r.profile ?? 'espTft') as string,
     state: toAssignmentState(r.state),
     createdAt: (r.created_at ?? r.createdAt ?? null) as string | null,
@@ -388,11 +399,12 @@ export function normalizeCurrentAssignmentPayload(payload: unknown): CurrentAssi
   const r = asRecord(envelope.assignment ?? envelope);
   if (!r.assignment_id && !r.assignmentId) return null;
   return {
-    assignmentId: (r.assignment_id ?? r.assignmentId ?? '') as string,
+    assignmentId: (r.assignment_id ?? r.assignmentId ?? /* istanbul ignore next -- unreachable: line 400 returned null unless one of assignment_id/assignmentId is truthy */ '') as string,
     assignmentVersion: Number(r.assignment_version ?? r.assignmentVersion ?? 0),
     lessonId: (r.lesson_id ?? r.lessonId ?? '') as string,
     lessonTitle: (r.lesson_title ?? r.lessonTitle ?? '') as string,
     lessonVersion: Number(r.lesson_version ?? r.lessonVersion ?? 0),
+    manifestChecksum: (r.manifest_checksum ?? r.manifestChecksum ?? null) as string | null,
     state: toAssignmentState(r.state),
     childId: (r.child_id ?? r.childId ?? '') as string,
     profile: (r.profile ?? 'espTft') as string,
@@ -512,16 +524,22 @@ export interface Enrollment {
 export interface AssignmentRef {
   id: string;
   assignmentVersion: number;
+  deviceId: string;
+  childId: string;
   lessonId: string;
+  lessonTitle: string;
   lessonVersion: number; // NUMBER (D-LV) — same wire shape as createAssignment.
+  manifestChecksum: string | null;
+  profile: string;
   state: AssignmentState;
 }
 
 const ENROLLMENT_STATUSES: readonly EnrollmentStatus[] = ['ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED'];
 
 function toEnrollmentStatus(value: unknown): EnrollmentStatus {
-  return typeof value === 'string' && (ENROLLMENT_STATUSES as readonly string[]).includes(value)
-    ? (value as EnrollmentStatus)
+  const normalized = typeof value === 'string' ? value.toUpperCase() : '';
+  return (ENROLLMENT_STATUSES as readonly string[]).includes(normalized)
+    ? (normalized as EnrollmentStatus)
     : 'ACTIVE';
 }
 
@@ -542,8 +560,13 @@ export function normalizeAssignmentRefPayload(payload: unknown): AssignmentRef {
   return {
     id: (r.id ?? r.assignment_id ?? r.assignmentId ?? '') as string,
     assignmentVersion: Number(r.assignment_version ?? r.assignmentVersion ?? 0),
+    deviceId: (r.device_id ?? r.deviceId ?? '') as string,
+    childId: (r.child_id ?? r.childId ?? '') as string,
     lessonId: (r.lesson_id ?? r.lessonId ?? '') as string,
+    lessonTitle: (r.lesson_title ?? r.lessonTitle ?? '') as string,
     lessonVersion: Number(r.lesson_version ?? r.lessonVersion ?? 0), // NUMBER (D-LV)
+    manifestChecksum: (r.manifest_checksum ?? r.manifestChecksum ?? null) as string | null,
+    profile: (r.profile ?? 'espTft') as string,
     state: toAssignmentState(r.state),
   };
 }

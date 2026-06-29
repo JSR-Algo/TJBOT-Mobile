@@ -2,6 +2,7 @@ import client from '@/services/http/client';
 import {
   getCourseDetail,
   getRobotSyncStatus,
+  isAssignablePublishedLesson,
   listLibrary,
   normalizeCourseLibraryDetailPayload,
   normalizeCourseLibraryPayload,
@@ -108,5 +109,21 @@ describe('course-library API', () => {
 
     expect(mockedClient.get).not.toHaveBeenCalledWith(expect.stringContaining('/billing'));
     expect(mockedClient.post).not.toHaveBeenCalledWith(expect.stringContaining('/billing'));
+  });
+
+  describe('published lesson assignability gate', () => {
+    it('allows only manifest-ready espTft lessons with a positive integer lessonVersion', () => {
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'espTft', lessonVersion: 1 })).toBe(true);
+
+      expect(isAssignablePublishedLesson({ manifestReady: false, profile: 'espTft', lessonVersion: 1 })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: null, lessonVersion: 1 })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'mobile', lessonVersion: 1 })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'piTft', lessonVersion: 1 })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'bogus', lessonVersion: 1 })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'espTft', lessonVersion: Number.NaN })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'espTft', lessonVersion: 0 })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'espTft', lessonVersion: -1 })).toBe(false);
+      expect(isAssignablePublishedLesson({ manifestReady: true, profile: 'espTft', lessonVersion: 1.5 })).toBe(false);
+    });
   });
 });

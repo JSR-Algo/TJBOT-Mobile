@@ -128,7 +128,7 @@ export default function RunningScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
         {!completed && (
-          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { deviceId, assignmentId: assignment?.assignmentId })}>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { deviceId, assignmentId: assignment?.assignmentId, lessonTitle })}>
             See what's happening
           </DeviceBigBtn>
         )}

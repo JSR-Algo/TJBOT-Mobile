@@ -71,16 +71,20 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
     actions: {
       assignSessionStartArgs: assign({
         idempotencyKey: ({ event }) =>
+          /* istanbul ignore next -- defensive type-narrow: this action is wired ONLY to IDLE→START_SESSION, so the `: null` arm is unreachable through the machine; kept for the LessonSessionEvent union narrowing the compiler requires. */
           event.type === 'START_SESSION' ? event.idempotencyKey : null,
       }),
       assignSessionStartedIds: assign({
         sessionId: ({ event }) =>
+          /* istanbul ignore next -- defensive type-narrow: wired ONLY to CONNECTING→SESSION_STARTED; `: null` arm unreachable through the machine. */
           event.type === 'SESSION_STARTED' ? event.sessionId : null,
         deviceSessionId: ({ event }) =>
+          /* istanbul ignore next -- defensive type-narrow: wired ONLY to CONNECTING→SESSION_STARTED; `: null` arm unreachable through the machine. */
           event.type === 'SESSION_STARTED' ? event.deviceSessionId : null,
       }),
       assignInterruptedReason: assign({
         interruptedReason: ({ event }) =>
+          /* istanbul ignore next -- defensive type-narrow: wired ONLY to ACTIVE→INTERRUPT; `: null` arm unreachable through the machine. */
           event.type === 'INTERRUPT' ? event.reason : null,
         bargeinCount: ({ context, event }) =>
           event.type === 'INTERRUPT' && event.reason === 'bargein'
@@ -112,6 +116,7 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
       }),
       assignEndReasonFromEvent: assign({
         endReason: ({ event }) =>
+          /* istanbul ignore next -- defensive type-narrow: this action only ever runs on a reason-guarded SESSION_END root transition; the `: null` arm is unreachable through the machine. */
           event.type === 'SESSION_END' ? event.reason : null,
       }),
       assignEndReasonUserExit: assign({

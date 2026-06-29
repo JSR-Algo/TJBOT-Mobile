@@ -6,8 +6,8 @@
     "slug": "TJBot-mobile",
     "version": "1.0.0",
     "ios": {
-      "bundleIdentifier": "net.jasonle.tjbot",
-      "buildNumber": "5",
+      "bundleIdentifier": "tjbot",
+      "buildNumber": "7",
       "infoPlist": {
         "NSCameraUsageDescription": "TJBot uses the camera to scan setup codes when pairing your child's device."
       }

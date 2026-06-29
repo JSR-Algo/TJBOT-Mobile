@@ -72,11 +72,21 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
         void queryClient?.invalidateQueries({ queryKey: ['enrollments', 'child', childId] });
         void queryClient?.invalidateQueries({ queryKey: ['assignment', 'device', deviceId, 'current'] });
-        navigation.replace(ROUTES.CourseAddedScreen, { courseId, assignmentId: assignment.id });
+        navigation.replace(ROUTES.CourseAddedScreen, {
+          courseId,
+          deviceId: assignment.deviceId,
+          assignmentId: assignment.id,
+          assignmentVersion: assignment.assignmentVersion,
+          manifestChecksum: assignment.manifestChecksum,
+        });
       } catch (err) {
         const normalized = normalizeError(err);
         if (normalized.code === 'NO_DEVICE') {
           setError('No Robot yet — connect Robot before unlocking a course.');
+          return;
+        }
+        if (normalized.code === 'LESSON_NOT_PLAYABLE') {
+          setError('This course is still preparing on the server. Try again in a moment.');
           return;
         }
         setError('Could not unlock the course. Try again.');

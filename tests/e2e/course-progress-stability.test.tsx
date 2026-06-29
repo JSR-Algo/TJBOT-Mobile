@@ -376,9 +376,19 @@ describe('course, course-library, and progress stable screen states', () => {
 
     pending.resolve({
       enrollment: { id: 'enroll-1', childId: 'child-1', courseId: 'course-open', deviceId: 'device-1', status: 'ACTIVE', currentLessonKey: null },
-      assignment: { id: 'assignment-1', lessonId: 'lesson-1', lessonVersion: 1, state: 'ASSIGNED' },
+      assignment: {
+        id: 'assignment-1', assignmentVersion: 1, deviceId: 'device-1', childId: 'child-1',
+        lessonId: 'lesson-1', lessonTitle: 'Greetings', lessonVersion: 1,
+        manifestChecksum: null, profile: 'espTft', state: 'ASSIGNED',
+      },
     });
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'course-open', assignmentId: 'assignment-1' }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, {
+      courseId: 'course-open',
+      deviceId: 'device-1',
+      assignmentId: 'assignment-1',
+      assignmentVersion: 1,
+      manifestChecksum: null,
+    }));
   });
 
   it('renders the latest lesson with real step counts', async () => {

@@ -1030,9 +1030,68 @@ describe('BLE service', () => {
 
     const scanExpectation = expect(scan).rejects.toMatchObject({ code: 'BLE_WIFI_SCAN_FAILED' });
     await jest.advanceTimersByTimeAsync(15000);
+    await jest.advanceTimersByTimeAsync(300);
+    await jest.advanceTimersByTimeAsync(15000);
     await scanExpectation;
     expect(remove).toHaveBeenCalled();
     expect(cancelConnection).toHaveBeenCalled();
+    expect(connect).toHaveBeenCalledTimes(2);
+
+    jest.useRealTimers();
+  });
+
+  test('retries a transient Robot Wi-Fi scan service-discovery timeout before surfacing unavailable', async () => {
+    jest.useFakeTimers();
+
+    const firstCancel = jest.fn().mockResolvedValue(undefined);
+    const firstDiscover = jest.fn(() => new Promise(() => undefined));
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: (error: Error | null, characteristic: { value: string | null } | null) => void) => {
+      listener(null, { value: encodeBase64([0x45, 0x04, 0x00, 0x06, 0x05, 0xc9, ...asciiBytes('Casa')]) });
+      return { remove };
+    });
+    const secondCancel = jest.fn().mockResolvedValue(undefined);
+    const secondDiscover = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection: secondCancel,
+    });
+    const connect = jest.fn()
+      .mockResolvedValueOnce({
+        discoverAllServicesAndCharacteristics: firstDiscover,
+        cancelConnection: firstCancel,
+      })
+      .mockResolvedValueOnce({
+        discoverAllServicesAndCharacteristics: secondDiscover,
+        writeCharacteristicWithResponseForService,
+        monitorCharacteristicForService,
+        cancelConnection: secondCancel,
+      });
+
+    const scan = scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    });
+
+    await jest.advanceTimersByTimeAsync(0);
+    expect(firstDiscover).toHaveBeenCalled();
+
+    const scanExpectation = expect(scan).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
+    await jest.advanceTimersByTimeAsync(10000);
+    await jest.advanceTimersByTimeAsync(300);
+    await jest.advanceTimersByTimeAsync(0);
+    await scanExpectation;
+
+    expect(connect).toHaveBeenCalledTimes(2);
+    expect(firstCancel).toHaveBeenCalled();
+    expect(secondDiscover).toHaveBeenCalled();
+    expect(writeCharacteristicWithResponseForService).toHaveBeenCalledWith(
+      BLE_CONFIG.BLUFI_SERVICE_UUID,
+      BLE_CONFIG.BLUFI_WRITE_CHARACTERISTIC_UUID,
+      expect.any(String),
+    );
+    expect(secondCancel).toHaveBeenCalled();
 
     jest.useRealTimers();
   });

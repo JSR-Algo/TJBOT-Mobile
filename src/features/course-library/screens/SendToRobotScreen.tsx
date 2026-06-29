@@ -16,6 +16,7 @@ import {
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
+  isAssignablePublishedLesson,
   isLessonProfile,
   type PublishedCourse,
   type PublishedLesson,
@@ -126,17 +127,21 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     [lessons, activeLessonId],
   );
 
+  const selectedLessonReady = Boolean(selectedLesson && isAssignablePublishedLesson(selectedLesson));
+
+  const courseReady = React.useMemo(
+    () => lessons.length > 0 && lessons.every((lesson) => isAssignablePublishedLesson(lesson)),
+    [lessons],
+  );
+
   // Gate send on the catalog's readiness hint: a lesson with no renderable
-  // bundle (manifestReady=false / profile=null) is not sendable. We also require
-  // a RECOGNIZED profile (LESSON_PROFILES) so the assignment carries the
-  // lesson's real render profile rather than silently coercing it to espTft
-  // (MOB-3). The server READY gate remains authoritative for the actual preload.
+  // espTft bundle (manifestReady=false / profile!=espTft) is not sendable. The
+  // server READY gate remains authoritative for the actual preload.
   const canSend = assignmentMode === 'course'
-    ? hasChild && !!activeCourseId && !sending
+    ? hasChild && !!activeCourseId && courseReady && !sending
     : hasChild &&
       !!selectedLesson &&
-      selectedLesson.manifestReady &&
-      isLessonProfile(selectedLesson.profile) &&
+      selectedLessonReady &&
       !sending;
 
   const handleSelectMode = (mode: AssignmentMode) => {
@@ -166,11 +171,15 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       setError('Pick a course to assign to Robot.');
       return;
     }
+    if (assignmentMode === 'course' && !courseReady) {
+      setError('This course is still preparing on the server. Try again in a moment.');
+      return;
+    }
     if (assignmentMode === 'lesson' && !selectedLesson) {
       setError('Pick a lesson to send to Robot.');
       return;
     }
-    if (assignmentMode === 'lesson' && selectedLesson && (!selectedLesson.manifestReady || !isLessonProfile(selectedLesson.profile))) {
+    if (assignmentMode === 'lesson' && selectedLesson && !isAssignablePublishedLesson(selectedLesson)) {
       setError('This lesson is still preparing on the server. Try again in a moment.');
       return;
     }
@@ -188,13 +197,32 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       }
       if (assignmentMode === 'course') {
         if (!activeCourseId) return;
-        const { assignment } = await enrollCourse(activeCourseId, { childId, deviceId });
-        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
-        navigation.navigate(ROUTES.RobotReadyScreen, {
-          deviceId,
-          assignmentId: assignment.id,
-          assignmentVersion: assignment.assignmentVersion,
-        });
+        try {
+          const { assignment } = await enrollCourse(activeCourseId, { childId, deviceId });
+          void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+          navigation.navigate(ROUTES.RobotReadyScreen, {
+            deviceId,
+            assignmentId: assignment.id,
+            assignmentVersion: assignment.assignmentVersion,
+            manifestChecksum: assignment.manifestChecksum,
+          });
+        } catch (err) {
+          const normalized = normalizeError(err);
+          if (normalized.code === 'ASSIGNMENT_CONFLICT') {
+            const current = await getCurrentAssignment(deviceId);
+            if (current) {
+              void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+              navigation.navigate(ROUTES.RobotReadyScreen, {
+                deviceId,
+                assignmentId: current.assignmentId,
+                assignmentVersion: current.assignmentVersion,
+                manifestChecksum: current.manifestChecksum,
+              });
+              return;
+            }
+          }
+          setError(formatLessonCopy(getErrorMessage(normalized.code), { robot: device.name }));
+        }
         return;
       }
       if (!selectedLesson) return;
@@ -218,6 +246,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           deviceId,
           assignmentId: assignment.assignmentId,
           assignmentVersion: assignment.assignmentVersion,
+          manifestChecksum: assignment.manifestChecksum,
         });
       } catch (err) {
         const normalized = normalizeError(err);
@@ -230,6 +259,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
               deviceId,
               assignmentId: current.assignmentId,
               assignmentVersion: current.assignmentVersion,
+              manifestChecksum: current.manifestChecksum,
             });
             return;
           }
@@ -370,7 +400,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
                       <Box flex={1}>
                         <Text fontWeight="600" style={styles.pickTitle}>{lesson.title}</Text>
                         <Text style={styles.pickMeta}>
-                          {lesson.manifestReady ? 'Ready to send' : 'Preparing on server'}
+                          {isAssignablePublishedLesson(lesson) ? 'Ready to send' : 'Preparing on server'}
                         </Text>
                         {fitCopy ? <Text style={styles.fitMeta} i18n={false}>{fitCopy}</Text> : null}
                       </Box>
@@ -381,6 +411,16 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
               </Box>
             )}
           </Box>
+          )}
+          {assignmentMode === 'lesson' && selectedLesson && !selectedLessonReady && (
+            <Box paddingHorizontal={20} paddingTop={18}>
+              <Text style={styles.hintText}>This lesson is still preparing on the server. Try again in a moment.</Text>
+            </Box>
+          )}
+          {assignmentMode === 'course' && !courseReady && (
+            <Box paddingHorizontal={20} paddingTop={18}>
+              <Text style={styles.hintText}>This course is still preparing on the server. Try again in a moment.</Text>
+            </Box>
           )}
         </>
       )}

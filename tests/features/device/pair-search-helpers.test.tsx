@@ -236,6 +236,25 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 // status is not proof that the firmware is already claimed.
 // ---------------------------------------------------------------------------
 describe('normal add-robot route', () => {
+  it('recovers an already-assigned legacy start error when the scanned robot is zero-code claimable', async () => {
+    mockedListAvailable.mockResolvedValue([availableDevice('TBOT-14C19FD1AC20', '91deb5af-c1c0-416b-956d-266d510eac5e')]);
+    mockedStartProvisioning.mockRejectedValue({ response: { data: { code: 'DEVICE_ALREADY_ASSIGNED' } } });
+    mockedScan.mockResolvedValue({ allowed: [candidate('ble-new', 'TBOT-14C19FD1AC20')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate);
+
+    await waitFor(() => expect(mockedStartProvisioning).toHaveBeenCalledWith({ serialNumber: 'TBOT-14C19FD1AC20' }));
+    await waitFor(() => expect(mockedListAvailable).toHaveBeenCalled());
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFoundScreen, {
+      serialNumber: 'TBOT-14C19FD1AC20',
+      deviceId: '91deb5af-c1c0-416b-956d-266d510eac5e',
+      provisioningAttemptId: undefined,
+      bleDeviceId: 'ble-new',
+      provisioningTransport: 'ble',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+  });
+
   it('starts a fresh claim even when the backend primary serial matches the scanned Robot', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-owned',
