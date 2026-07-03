@@ -120,7 +120,8 @@ function toPosixRelative(filePath) {
 }
 
 function normalizeMobilePath(rawPath) {
-  const withoutQuery = rawPath.split('?')[0];
+  const withoutDynamicQuery = rawPath.replace(/([^/])\$\{[^}]+\}$/, '$1');
+  const withoutQuery = withoutDynamicQuery.split('?')[0];
   const withParams = withoutQuery
     .replace(/\$\{[^}]+\}/g, ':param')
     .replace(/\{[^}]+\}/g, ':param');
