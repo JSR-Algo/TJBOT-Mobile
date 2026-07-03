@@ -94,6 +94,12 @@ available.
   move `WAITING_AI` back to listening, queued-audio drains remain
   playback-finish authoritative, and `PcmStreamPlayer` keeps its native-drain
   timeout fallback when the native playback-drained event is missed.
+- First child lesson handoff now shows a starter lesson preview card on
+  `FirstLessonEntryScreen` before the child taps `Yes!`; the CTA still enters
+  `SendToRobotScreen`, not the hidden demo lesson-session path.
+- I18n catalog coverage now includes the previously flagged lesson/course,
+  pairing, fallback, and parent strings so `npm run i18n:check` reports zero
+  hardcoded user-facing strings.
 
 ## Evidence collected
 
@@ -172,6 +178,15 @@ available.
 | Touched-file whitespace after progress focus refresh | `git diff --check -- src/features/progress/hooks/useChildLessonProgressQuery.ts tests/features/progress/use-child-lesson-progress-query.test.tsx tests/e2e/course-progress-stability.test.tsx tests/e2e/parent-settings.test.tsx src/features/progress/screens/TodayProgressScreen.tsx src/features/parent/screens/ParentTodayScreen.tsx src/features/parent/screens/ParentHistoryScreen.tsx tests/features/progress/today-progress-screen.test.tsx tests/features/parent/parent-today-screen.test.tsx tests/features/parent/parent-history-screen.test.tsx src/features/course-library/screens/RobotReadyScreen.tsx src/features/course-library/screens/RunningScreen.tsx src/features/course-library/screens/CompanionScreen.tsx src/state/machines/lessonSession.machine.ts tests/state/machines/lessonSession.machine.test.ts` | exit 0 |
 | TURN_COMPLETE adapter/state GREEN | `npx jest --selectProjects unit --runTestsByPath tests/state/machines/lessonSession.machine.test.ts tests/state/machines/lessonSessionRealtimeAdapter.test.ts tests/navigation/state-machine-executable-alignment.test.ts --runInBand` | 3 suites passed; 39 tests passed |
 | Gemini playback/reconnect guard GREEN | `npx jest --selectProjects unit --runTestsByPath tests/audio/PcmStreamPlayer.test.ts tests/native/voice-session-events.test.ts tests/hooks/useGeminiConversation-timers.test.ts tests/hooks/useGeminiConversation-reconnect.test.ts --runInBand` | 4 suites passed; 68 tests passed |
+| Starter lesson preview focused GREEN | `npx jest --selectProjects unit --runTestsByPath tests/features/lesson-onboarding-pairing-screens.test.tsx --runInBand` | 1 suite passed; 14 tests passed |
+| TypeScript after starter preview/i18n | `npx tsc --noEmit` | exit 0 |
+| ESLint after starter preview/i18n | `npm run lint` | exit 0; `eslint src/ tests/ --max-warnings=0` |
+| I18n hardcoded scan/parity | `npm run i18n:check` | hardcoded total 0; EN keys 1753; VI keys 1753; delta 0 |
+| Use-case checker after starter preview | `npm run usecases:check` | checked 154 use cases; failures 0 |
+| PR validator bundle after starter preview | `npm run flows:validate && npm run sequences:fast && npm run erd:validate && npm run check:token-parity && npm run check:route-coverage && npm run check:screen-prop-types` | all checks passed; 15 generated flow files, 102 sequences, 109 DBML files, 7 token files, 133 screen files, 125 routes |
+| Full unit suite after starter preview | `npm test -- --runInBand` | 192 suites passed, 1 skipped; 2075 tests passed, 19 skipped |
+| Integration suite after starter preview | `npm run test:integration` | 1 suite passed; 3 tests passed |
+| Whitespace/secret scan after starter preview | `git diff --check` plus diff secret/conflict-marker scan | exit 0; no hits |
 
 ## Remaining risk
 

@@ -133,6 +133,19 @@ describe('FirstCourseScreen', () => {
 });
 
 describe('FirstLessonEntryScreen', () => {
+  it('renders a starter lesson preview before the child starts', () => {
+    mockedUseOptionalHousehold.mockReturnValue(undefined);
+    const navigation = navigationFor();
+    render(
+      <FirstLessonEntryScreen navigation={navigation as never} route={routeFor('FirstLessonEntryScreen')} />,
+    );
+
+    expect(screen.getByText('Starter lesson')).toBeTruthy();
+    expect(screen.getByText('Hello Friends')).toBeTruthy();
+    expect(screen.getByText('Say hello to Panda')).toBeTruthy();
+    expect(screen.getByLabelText('Starter lesson preview with Robot and hello word cards')).toBeTruthy();
+  });
+
   it('without a household provider, falls back to legacyNavigate → SendToRobotScreen', () => {
     mockedUseOptionalHousehold.mockReturnValue(undefined);
     const navigation = navigationFor();

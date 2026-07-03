@@ -53,11 +53,12 @@
 - **Trigger:** Navigation arrives at `onb_first_lesson` after UC-A08 (Set Up Child Profile taps "Save and meet Robot").
 - **Preconditions:** Child profile configured (buddy + level); navigation is on `onb_first_lesson`.
 - **Main Flow:**
-  1. `FirstLessonEntryScreen` renders a warm-up prompt "Hand the phone to your child" at the top (`FirstLessonEntryScreen.jsx:13-16`).
-  2. Robot appears in `greet` emotion with speech bubble "Hi there! Want to play?" (`FirstLessonEntryScreen.jsx:26-27`).
-  3. Subtitle "About 3 minutes · headphones if you have them" is shown (`FirstLessonEntryScreen.jsx:31`).
-  4. Child taps "Yes!" → `go('lesson_ready')` fires, handing off to lesson-session domain (`FirstLessonEntryScreen.jsx:35`).
-- **Postconditions:** Navigation enters lesson-session domain at `lesson_ready`; onboarding flow is complete.
+  1. `FirstLessonEntryScreen` renders a warm-up prompt "Hand the phone to your child" at the top.
+  2. Robot appears in `greet` emotion with speech bubble "Hi there! Want to play?".
+  3. A starter lesson preview card shows "Starter lesson", "Hello Friends", and "Say hello to Panda" with an illustrative Robot/word-card sample image.
+  4. Subtitle "About 3 minutes · headphones if you have them" is shown.
+  5. Child taps "Yes!" → onboarding completes and the app enters `SendToRobotScreen`, the production robot assignment flow.
+- **Postconditions:** Navigation enters the robot assignment flow; onboarding flow is complete.
 
 ## UC-O05 — Record Parental Consent
 
