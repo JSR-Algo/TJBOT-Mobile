@@ -35,6 +35,72 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
+function stripJsTsComments(source) {
+  let out = '';
+  let state = 'code';
+  let escaped = false;
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1];
+
+    if (state === 'lineComment') {
+      if (char === '\n' || char === '\r') {
+        out += char;
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (state === 'blockComment') {
+      if (char === '\n' || char === '\r') out += char;
+      if (char === '*' && next === '/') {
+        index += 1;
+        state = 'code';
+      }
+      continue;
+    }
+
+    out += char;
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (state !== 'code') {
+      if (char === '\\') {
+        escaped = true;
+      } else if (
+        (state === 'singleQuote' && char === "'") ||
+        (state === 'doubleQuote' && char === '"') ||
+        (state === 'template' && char === '`')
+      ) {
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (char === '/' && next === '/') {
+      out = out.slice(0, -1);
+      index += 1;
+      state = 'lineComment';
+    } else if (char === '/' && next === '*') {
+      out = out.slice(0, -1);
+      index += 1;
+      state = 'blockComment';
+    } else if (char === "'") {
+      state = 'singleQuote';
+    } else if (char === '"') {
+      state = 'doubleQuote';
+    } else if (char === '`') {
+      state = 'template';
+    }
+  }
+
+  return out;
+}
+
 function walkFiles(dir) {
   if (!fs.existsSync(dir)) return [];
   const out = [];
@@ -71,7 +137,7 @@ function backendPathToRegex(pathPattern) {
 function extractMobileCalls() {
   const callsByKey = new Map();
   for (const filePath of MOBILE_SCAN_DIRS.flatMap(walkFiles)) {
-    const source = fs.readFileSync(filePath, 'utf8');
+    const source = stripJsTsComments(fs.readFileSync(filePath, 'utf8'));
     CALL_RE.lastIndex = 0;
     let match;
     while ((match = CALL_RE.exec(source)) !== null) {

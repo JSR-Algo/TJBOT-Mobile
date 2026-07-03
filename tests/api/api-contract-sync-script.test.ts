@@ -64,4 +64,25 @@ describe('api contract sync audit script', () => {
     // Mobile is additive-only pending B-1 confirmation; status must NOT be IN_SYNC yet
     expect(audit.status).toBe('OUT_OF_SYNC');
   });
+
+  it('ignores HTTP calls inside comments when building the mobile endpoint inventory', () => {
+    const stdout = execFileSync(
+      process.execPath,
+      [path.join(process.cwd(), 'scripts/api-contract-sync.mjs'), '--json', '--no-write'],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      },
+    );
+
+    const audit = JSON.parse(stdout) as AuditJson;
+    const missingPaths = audit.missingBackendEndpoints.map((endpoint) => `${endpoint.method} ${endpoint.path}`);
+    expect(missingPaths).not.toEqual(
+      expect.arrayContaining([
+        'POST /v1/stt/transcribe',
+        'POST /v1/llm/chat',
+        'POST /v1/tts/synthesize',
+      ]),
+    );
+  });
 });
