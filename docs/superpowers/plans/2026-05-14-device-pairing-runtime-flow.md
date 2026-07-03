@@ -1,5 +1,13 @@
 # Device Pairing Runtime Flow Implementation Plan
 
+> **SUPERSEDED by G13 (2026-06-30 robot Android production-readiness work).**
+> Do not implement this plan as written. The current pairing runtime source of
+> truth is the `Pair*Screen` flow plus `claimEntryPoints.ts`, not a restored
+> `devicePairingMachine`. The old `E-PROV` / `ProvisioningErrorCode` taxonomy
+> and `CLAIM_PENDING` 60s machine timeout are historical only; current runtime
+> docs and tests use the G07 claim taxonomy plus the real 3000ms poll / 300s
+> confirm behavior.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make TJBot mobile pairing feel certain: parent always knows whether phone is finding Robot, checking BLE code, sending Wi-Fi, waiting for Robot online, recovering from failure, or managing runtime status.
