@@ -16,6 +16,8 @@ import {
   type AssignmentState,
   type CurrentAssignment,
 } from '@/services/api/course-library.api';
+import { openRealtime, type RealtimeConnection } from '@/services/ws/realtime';
+import { captureError } from '@/services/observability/sentry';
 import { formatLessonCopy } from '@/utils/errors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanionScreen'>;
@@ -41,6 +43,8 @@ export default function CompanionScreen({ navigation, route }: Props) {
   const [assignmentStale, setAssignmentStale] = React.useState(false);
   const [retryNonce, setRetryNonce] = React.useState(0);
   const sawLiveRef = React.useRef(false);
+  const sessionId = assignment?.sessionId ?? route.params?.sessionId;
+  const observerSessionId = sessionId?.trim() ? sessionId.trim() : null;
 
   React.useEffect(() => {
     if (!deviceId) return;
@@ -98,6 +102,34 @@ export default function CompanionScreen({ navigation, route }: Props) {
     };
   }, [deviceId, retryNonce]);
 
+  React.useEffect(() => {
+    if (!observerSessionId) return;
+    let active = true;
+    let connection: RealtimeConnection | null = null;
+
+    void openRealtime(observerSessionId, {
+      onFrame: (frame) => {
+        if (isCompletedRealtimeFrame(frame)) setFinished(true);
+      },
+    }).then(
+      (nextConnection) => {
+        if (!active) {
+          nextConnection.close(1000, 'screen unmounted');
+          return;
+        }
+        connection = nextConnection;
+      },
+      (error) => {
+        captureError(toError(error));
+      },
+    );
+
+    return () => {
+      active = false;
+      connection?.close(1000, 'screen unmounted');
+    };
+  }, [observerSessionId]);
+
   const retryCurrentAssignment = React.useCallback(() => {
     setAssignment(null);
     setFinished(false);
@@ -116,7 +148,6 @@ export default function CompanionScreen({ navigation, route }: Props) {
         ? route.params.lessonTitle
         : "Today's lesson";
   const assignmentId = assignment?.assignmentId ?? route.params?.assignmentId;
-  const sessionId = assignment?.sessionId ?? route.params?.sessionId;
   const presentation = completed
     ? presentAssignmentState('COMPLETED')
     : assignment
@@ -176,6 +207,25 @@ export default function CompanionScreen({ navigation, route }: Props) {
       <Box height={30} />
     </DeviceShell>
   );
+}
+
+function isCompletedRealtimeFrame(frame: unknown): boolean {
+  if (typeof frame !== 'object' || frame === null) return false;
+  const type = stringProp(frame, 'type');
+  return (
+    stringProp(frame, 'state') === 'COMPLETED' ||
+    stringProp(frame, 'current_state') === 'COMPLETED' ||
+    (type === 'session.end' && stringProp(frame, 'end_reason') === 'complete')
+  );
+}
+
+function stringProp(value: object, key: string): string | null {
+  const prop = Reflect.get(value, key);
+  return typeof prop === 'string' ? prop : null;
+}
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
 }
 
 const styles = StyleSheet.create({

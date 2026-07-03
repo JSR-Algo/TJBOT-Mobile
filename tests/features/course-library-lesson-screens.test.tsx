@@ -11,6 +11,7 @@ import {
   type CurrentAssignment,
   type PreloadStatus,
 } from '@/services/api/course-library.api';
+import { openRealtime, type OpenRealtimeOptions, type RealtimeConnection } from '@/services/ws/realtime';
 
 // Partial mock — keep the pure helpers (isPreloadReady / presentAssignmentState)
 // real, mock ONLY the two network reads.
@@ -19,8 +20,19 @@ jest.mock('@/services/api/course-library.api', () => {
   return { ...actual, getPreloadStatus: jest.fn(), getCurrentAssignment: jest.fn() };
 });
 
+jest.mock('@/services/ws/realtime', () => ({ openRealtime: jest.fn() }));
+
 const mockedGetPreloadStatus = getPreloadStatus as jest.MockedFunction<typeof getPreloadStatus>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
+const mockedOpenRealtime = openRealtime as jest.MockedFunction<typeof openRealtime>;
+
+type CapturedRealtimeAttach = {
+  readonly sessionId: string;
+  readonly options: OpenRealtimeOptions;
+  readonly close: jest.Mock<void, [number?, string?]>;
+};
+
+const realtimeAttaches: CapturedRealtimeAttach[] = [];
 
 function navigationFor() {
   return {
@@ -43,6 +55,16 @@ function current(state: CurrentAssignment['state']): CurrentAssignment {
   return { assignmentId: 'asg-1', sessionId: null, assignmentVersion: 1, lessonId: 'w01-d01-barn-say-it', lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state, childId: 'ch-1', profile: 'espTft' };
 }
 
+function currentWithSession(state: CurrentAssignment['state'], sessionId: string | null): CurrentAssignment {
+  return { ...current(state), sessionId };
+}
+
+function emitRealtimeFrame(frame: unknown): void {
+  const latest = realtimeAttaches.at(-1);
+  if (!latest) throw new Error('No realtime observer attached');
+  latest.options.onFrame?.(frame);
+}
+
 async function advancePolls(count: number): Promise<void> {
   for (let i = 0; i < count; i += 1) {
     await act(async () => {
@@ -56,6 +78,17 @@ async function advancePolls(count: number): Promise<void> {
 describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
+    realtimeAttaches.length = 0;
+    mockedOpenRealtime.mockImplementation((sessionId, options = {}) => {
+      const close = jest.fn<void, [number?, string?]>();
+      realtimeAttaches.push({ sessionId, options, close });
+      const connection: RealtimeConnection = {
+        url: `wss://example.test/realtime/v1/observer/${sessionId}`,
+        close,
+        send: jest.fn<void, [unknown]>(),
+      };
+      return Promise.resolve(connection);
+    });
     // These assertions are on English copy; a sibling suite may have left the
     // shared i18n singleton in vi. Pin the locale so the suite is order-stable.
     await setAppLanguage('en');
@@ -190,6 +223,68 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     }
   });
 
+  it('RunningScreen attaches observer from route sessionId and closes it on unmount', async () => {
+    mockedGetCurrentAssignment.mockResolvedValue(null);
+    const navigation = navigationFor();
+    const rendered = render(
+      <RunningScreen
+        navigation={navigation as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', sessionId: 'session-route-1' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedOpenRealtime).toHaveBeenCalledWith('session-route-1', expect.objectContaining({ onFrame: expect.any(Function) })));
+    expect(realtimeAttaches).toHaveLength(1);
+
+    rendered.unmount();
+
+    expect(realtimeAttaches[0].close).toHaveBeenCalledWith(1000, 'screen unmounted');
+  });
+
+  it('RunningScreen attaches observer from current assignment sessionId and renders completion from terminal frame', async () => {
+    mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-current-1'));
+    const navigation = navigationFor();
+    render(
+      <RunningScreen
+        navigation={navigation as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedOpenRealtime).toHaveBeenCalledWith('session-current-1', expect.objectContaining({ onFrame: expect.any(Function) })));
+
+    act(() => {
+      emitRealtimeFrame({ type: 'session.end', end_reason: 'complete' });
+    });
+
+    expect(screen.getByText('Finished! 🎉')).toBeTruthy();
+    expect(mockedGetCurrentAssignment).toHaveBeenCalledTimes(1);
+  });
+
+  it('RunningScreen keeps polling fallback when route sessionId is blank', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetCurrentAssignment.mockResolvedValue(null);
+      const navigation = navigationFor();
+      render(
+        <RunningScreen
+          navigation={navigation as never}
+          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', sessionId: '   ' } } as never}
+        />,
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      await advancePolls(1);
+
+      expect(mockedOpenRealtime).not.toHaveBeenCalled();
+      expect(mockedGetCurrentAssignment).toHaveBeenCalledTimes(2);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('RunningScreen stops infinite pre-live null polling without faking completion', async () => {
     jest.useFakeTimers();
     try {
@@ -267,6 +362,44 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('CompanionScreen attaches observer from route sessionId and closes it on unmount', async () => {
+    mockedGetCurrentAssignment.mockResolvedValue(null);
+    const navigation = navigationFor();
+    const rendered = render(
+      <CompanionScreen
+        navigation={navigation as never}
+        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', sessionId: 'session-route-2' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedOpenRealtime).toHaveBeenCalledWith('session-route-2', expect.objectContaining({ onFrame: expect.any(Function) })));
+    expect(realtimeAttaches).toHaveLength(1);
+
+    rendered.unmount();
+
+    expect(realtimeAttaches[0].close).toHaveBeenCalledWith(1000, 'screen unmounted');
+  });
+
+  it('CompanionScreen attaches observer from current assignment sessionId and renders completion from terminal frame', async () => {
+    mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-current-2'));
+    const navigation = navigationFor();
+    render(
+      <CompanionScreen
+        navigation={navigation as never}
+        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedOpenRealtime).toHaveBeenCalledWith('session-current-2', expect.objectContaining({ onFrame: expect.any(Function) })));
+
+    act(() => {
+      emitRealtimeFrame({ type: 'session.end', end_reason: 'complete' });
+    });
+
+    expect(screen.getByText('Finished! 🎉')).toBeTruthy();
+    expect(mockedGetCurrentAssignment).toHaveBeenCalledTimes(1);
   });
 
   it('CompanionScreen stops infinite missing-assignment polling and keeps recovery local', async () => {
