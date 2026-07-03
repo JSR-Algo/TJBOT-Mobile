@@ -33,16 +33,22 @@ const STATIC_CHECKS = [
 ] as const;
 
 const POLL_INTERVAL_MS = 2500;
+const MAX_PRELOAD_SETTLING_POLLS = 18;
 
 export default function RobotReadyScreen({ navigation, route }: Props) {
   const deviceId = route.params?.deviceId;
+  const missingDeviceId = !deviceId;
   const [preload, setPreload] = React.useState<PreloadStatus | null>(null);
   const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
+  const [preloadStalled, setPreloadStalled] = React.useState(false);
+  const [retryNonce, setRetryNonce] = React.useState(0);
 
   React.useEffect(() => {
     if (!deviceId) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let settlingPolls = 0;
+    setPreloadStalled(false);
 
     const poll = async () => {
       try {
@@ -60,10 +66,22 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
           status.state !== 'FAILED' &&
           status.state !== 'COMPLETED' &&
           !status.errorCode;
-        if (settling) timer = setTimeout(poll, POLL_INTERVAL_MS);
+        if (settling) {
+          settlingPolls += 1;
+          if (settlingPolls >= MAX_PRELOAD_SETTLING_POLLS) {
+            setPreloadStalled(true);
+            return;
+          }
+          timer = setTimeout(poll, POLL_INTERVAL_MS);
+        }
       } catch {
-        // Transient read failure — retry on the same cadence.
-        if (active) timer = setTimeout(poll, POLL_INTERVAL_MS);
+        if (!active) return;
+        settlingPolls += 1;
+        if (settlingPolls >= MAX_PRELOAD_SETTLING_POLLS) {
+          setPreloadStalled(true);
+          return;
+        }
+        timer = setTimeout(poll, POLL_INTERVAL_MS);
       }
     };
 
@@ -72,17 +90,33 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [deviceId]);
+  }, [deviceId, retryNonce]);
+
+  const retryPreloadCheck = React.useCallback(() => {
+    setPreload(null);
+    setAssignment(null);
+    setPreloadStalled(false);
+    setRetryNonce((value) => value + 1);
+  }, []);
 
   const manifestChecksum = assignment?.manifestChecksum ?? route.params?.manifestChecksum;
   const hasManifestChecksum = typeof manifestChecksum === 'string' && manifestChecksum.trim().length > 0;
   const assignmentId = assignment?.assignmentId ?? route.params?.assignmentId;
+  const sessionId = assignment?.sessionId ?? undefined;
   const preloadMatchesAssignment = Boolean(preload && assignmentId && preload.assignmentId === assignmentId);
-  const ready = preload ? isPreloadReady(preload) && hasManifestChecksum && preloadMatchesAssignment : false;
+  const ready = !missingDeviceId && preload && !preloadStalled
+    ? isPreloadReady(preload) && hasManifestChecksum && preloadMatchesAssignment
+    : false;
   const lessonTitle = assignment?.lessonTitle?.trim() ? assignment.lessonTitle : "Today's lesson";
   const presentation = preload ? presentAssignmentState(preload.state) : null;
   const errorCopy = preload?.errorCode ? formatLessonCopy(getErrorMessage(preload.errorCode)) : null;
-  const statusCopy = hasManifestChecksum && preloadMatchesAssignment && presentation ? formatLessonCopy(presentation.copy, { lesson: lessonTitle }) : 'Getting things ready…';
+  const statusCopy = missingDeviceId
+    ? "We can't prepare Robot because no device was selected."
+    : preloadStalled
+    ? 'Robot is taking longer than expected.'
+    : hasManifestChecksum && preloadMatchesAssignment && presentation
+      ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
+      : 'Getting things ready…';
 
   return (
     <DeviceShell title="Robot is ready">
@@ -137,19 +171,30 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn
-          disabled={!ready}
-          onClick={() =>
-            navigation.navigate(ROUTES.RunningScreen, {
-              deviceId,
-              assignmentId,
-              lessonTitle,
-            })
-          }
-        >
-          {ready ? 'Hand it to your child' : 'Preparing…'}
-        </DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Pick a different lesson</DeviceBigBtn>
+        {missingDeviceId ? (
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Pick a different lesson</DeviceBigBtn>
+        ) : (
+          <DeviceBigBtn
+            disabled={!ready && !preloadStalled}
+            onClick={() => {
+              if (preloadStalled) {
+                retryPreloadCheck();
+                return;
+              }
+              navigation.navigate(ROUTES.RunningScreen, {
+                deviceId,
+                assignmentId,
+                sessionId,
+                lessonTitle,
+              });
+            }}
+          >
+            {ready ? 'Hand it to your child' : preloadStalled ? 'Try again' : 'Preparing…'}
+          </DeviceBigBtn>
+        )}
+        {!missingDeviceId && (
+          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Pick a different lesson</DeviceBigBtn>
+        )}
       </Box>
     </DeviceShell>
   );

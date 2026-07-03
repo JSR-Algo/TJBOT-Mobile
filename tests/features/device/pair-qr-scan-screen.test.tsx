@@ -473,4 +473,29 @@ describe('back navigation', () => {
     fireEvent.press(getByLabelText('Go back'));
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairFoundScreen, INBOUND_PARAMS);
   });
+
+  it('goes back to reconnect search for reconnect params even when device context exists', () => {
+    mockPermission = GRANTED;
+    const navigate = jest.fn();
+    const { getByLabelText } = renderScreen(navigate, {
+      ...INBOUND_PARAMS,
+      provisioningTransport: 'ble_reconnect',
+    });
+
+    fireEvent.press(getByLabelText('Go back'));
+
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen, expect.anything());
+  });
+
+  it('goes back to PairSearchScreen when no found Robot context exists', () => {
+    mockPermission = GRANTED;
+    const navigate = jest.fn();
+    const { getByLabelText } = renderScreen(navigate, undefined);
+
+    fireEvent.press(getByLabelText('Go back'));
+
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen, expect.anything());
+  });
 });

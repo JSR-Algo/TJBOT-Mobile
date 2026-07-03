@@ -26,6 +26,7 @@
 
 - `parent.api.js` exports `getParentSummary`, `getParentToday`, `getParentHistory`, `getSafetyConfig`, `updateSafetyConfig`, `getSettings`, `updateSettings` — all throw `not implemented`. No `parent.store.js` found on disk.
 - UC-PR05 also calls `updateSafetyConfig` on mutation path; primary fetch export cited in table.
+- UC-PR06 keeps the generic parent-settings table row sentinel for `parent.api.js`, but its AI voice consent subsection is backed by real mobile exports in `src/services/api/auth.ts`: `recordAiVoiceConsent` (`POST /v1/identity/ai-voice-consent`) and `withdrawAiVoiceConsent` (`POST /v1/identity/ai-voice-consent/withdraw`). These actions stay inside `parent_settings`; no new route or backend contract was added.
 - UC-PR07 (Help & FAQ) is static content; no API endpoint required.
 - Events column stays sentinel until an event bus is designed.
 - Domain ADR Pointer is `—` for all rows; when backend lands, create `decisions/NNNN-backend-parent-summary.md`.

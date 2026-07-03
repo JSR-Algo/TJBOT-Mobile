@@ -1,3 +1,6 @@
+import client from '@/services/http/client';
+import { backendContractUnavailable } from './undocumented-api-routes';
+
 export interface Course {
   id: string;
   title: string;
@@ -105,7 +108,12 @@ export function normalizeLessonListPayload(payload: unknown): LessonDetail[] {
     const id = (r.lesson_id ?? r.id ?? '') as string;
     const unitId = (r.unit_id ?? r.unitId ?? '') as string;
     const title = (r.name ?? r.title ?? '') as string;
-    const durationMinutes = Number(r.duration_minutes ?? r.durationMinutes ?? 0);
+    const estimatedDurationSec = Number(r.estimated_duration_sec ?? r.estimatedDurationSec ?? 0);
+    const durationMinutes = Number(
+      r.duration_minutes ??
+      r.durationMinutes ??
+      (estimatedDurationSec > 0 ? Math.ceil(estimatedDurationSec / 60) : 0),
+    );
     const wordsCount = Number(r.words_count ?? r.wordsCount ?? 0);
     const explicitStatus = (r.status ?? r.state) as string | undefined;
     const locked = Boolean(r.locked);
@@ -133,33 +141,38 @@ export function normalizeCourseDetailPayload(payload: unknown): CourseDetail {
 }
 
 export async function listCourseCatalog(): Promise<CourseCatalogItem[]> {
-  throw new Error('not implemented');
+  const response = await client.get('/courses');
+  return normalizeCourseCatalogPayload(response.data);
 }
 
 export async function getCourse(_courseId: string): Promise<Course> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`getCourse:${_courseId}`);
 }
 
 export async function getLevel(_levelId: string): Promise<Level> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`getLevel:${_levelId}`);
 }
 
 export async function getUnit(_unitId: string): Promise<Unit> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`getUnit:${_unitId}`);
 }
 
 export async function getLessonDetail(_lessonId: string): Promise<LessonDetail> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`getLessonDetail:${_lessonId}`);
 }
 
-export async function getLessonList(_unitId: string): Promise<LessonDetail[]> {
-  throw new Error('not implemented');
+export async function getLessonList(courseId: string): Promise<LessonDetail[]> {
+  const response = await client.get(`/courses/${courseId}/lessons`);
+  return normalizeLessonListPayload(response.data).map((lesson) => ({
+    ...lesson,
+    unitId: lesson.unitId || courseId,
+  }));
 }
 
 export async function getReviewQueue(_userId: string): Promise<ReviewQueueItem[]> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`getReviewQueue:${_userId}`);
 }
 
 export async function getDailyMission(_userId: string): Promise<DailyMission> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`getDailyMission:${_userId}`);
 }

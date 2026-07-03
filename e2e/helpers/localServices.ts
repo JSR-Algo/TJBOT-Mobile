@@ -122,8 +122,14 @@ export async function seedOnboardedAccount(email: string, password: string): Pro
 
   const child = await requestJson('POST', `${apiV1Root()}/households/${householdId}/children`, {
     name: 'Detox Child',
+    // Backend requires a valid ISO-8601 date_of_birth and constrains
+    // learning_style to visual | audio | interactive (see
+    // src/services/api/households.ts + tbot-backend child DTO). The prior
+    // fixture (no date_of_birth, learning_style: 'balanced') 400'd against the
+    // real backend and aborted the whole auth suite in beforeAll.
+    date_of_birth: '2019-05-01',
     vocabulary_level: 'beginner',
-    learning_style: 'balanced',
+    learning_style: 'interactive',
   }, headers);
   const childStatus = getStatus(child);
   if (childStatus < 200 || childStatus >= 300) {
@@ -401,7 +407,7 @@ async function startMockBackend(): Promise<void> {
         return send(res, 200, {
           data: Array.from(children.values())
             .filter((child) => child.householdId === householdId)
-            .map(({ id, name }) => ({ id, name, vocabulary_level: 'beginner', learning_style: 'balanced' })),
+            .map(({ id, name }) => ({ id, name, vocabulary_level: 'beginner', learning_style: 'interactive' })),
         });
       }
       if (childrenMatch && method === 'POST') {
@@ -413,7 +419,7 @@ async function startMockBackend(): Promise<void> {
         const body = await readBody(req);
         const child = { id: uid('ch'), householdId, name: stringField(body, 'name') || 'Detox Child' };
         children.set(child.id, child);
-        return send(res, 201, { data: { ...child, vocabulary_level: 'beginner', learning_style: 'balanced' } });
+        return send(res, 201, { data: { ...child, vocabulary_level: 'beginner', learning_style: 'interactive' } });
       }
 
       if (method === 'POST' && path === '/v1/profile/active-child') {

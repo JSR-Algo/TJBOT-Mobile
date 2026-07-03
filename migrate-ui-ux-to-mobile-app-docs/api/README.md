@@ -10,7 +10,7 @@ Placeholders only. No backend wired. Every exported function in `src/services/ap
 |---|---|
 | `src/services/api/<domain>.api.js` | Per-domain placeholder functions. |
 | `src/services/http/` | Shared HTTP client. **Empty today** — `client.js` not yet authored. |
-| `src/services/websocket/realtime.js` | Realtime placeholder for `lesson-session`. |
+| `src/services/ws/realtime.{ts,js}` | Parent observer WebSocket transport for realtime session mirror. |
 
 ## Per-domain placeholders
 
@@ -131,11 +131,13 @@ For each `throw new Error('not implemented')`:
 
 ## WebSocket surface
 
-`src/services/websocket/realtime.js` exposes `openRealtime(sessionId)` (placeholder, throws). Intended for the realtime activity loop in `src/features/lesson-session/`.
+`src/services/ws/realtime.{ts,js}` exposes `openRealtime(sessionId)` for the read-only parent observer lane (`/realtime/v1/observer/{sessionId}`). It validates the observer session id and bearer token before opening a socket, derives `ws`/`wss` from the configured API origin, parses JSON frames, bounds reconnect attempts, re-reads the access token on reconnect, keeps retrying after transient reconnect socket-construction failures while budget remains, and reports terminal reconnect/socket errors through `onError`.
+
+Production course mirror screens can carry an optional observer `sessionId` through the local current-assignment/mobile route path, but production auto-attach still requires backend/session handoff proof that the authoritative realtime `sessionId` is emitted in live assignment/session state. Do not pass lesson `assignmentId` into this observer endpoint; when no authoritative `sessionId` is present, `RunningScreen` and `CompanionScreen` must keep using bounded current-assignment polling as the fail-closed fallback.
 
 ## Still TBD
 
 - HTTP client implementation (`src/services/http/client.js` not yet authored).
 - Auth token storage/refresh strategy.
-- WebSocket protocol (frames, heartbeat, reconnection).
+- Production proof that backend/session handoff emits authoritative observer `sessionId` and mobile auto-attaches in a live environment.
 - Per-call argument shapes — placeholders use unnamed `args` parameters.

@@ -2,7 +2,7 @@
 
 **Type:** External system.
 
-**Source evidence:** `openRealtime(sessionId)` stub in `src/services/websocket/realtime.js`. Triggered from `src/features/lesson-session/ConnectingPage.jsx`.
+**Source evidence:** `openRealtime` is implemented in `src/services/ws/realtime.{ts,js}` for the mobile observer lane. Production sessionId auto-attach and realtime provider wiring are not confirmed in source (KD10).
 
 **Provider identity:** **NOT CONFIRMED IN SOURCE** (KD10).
 

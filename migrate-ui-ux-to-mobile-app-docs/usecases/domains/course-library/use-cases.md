@@ -82,22 +82,26 @@
 - **Trigger:** Parent taps "Send today's lesson now" on UC-CL05, or navigates to `cl_send` from device home.
 - **Preconditions:** A course is bound to Robot (UC-CL05 completed at some point); Robot is online.
 - **Main Flow:**
-  1. `SendToRobotPage` renders `DvShell title="Today's lesson"` (`SendToRobotScreen.jsx:17`) and shows lesson picker rows (`SendToRobotScreen.jsx:11`).
-  2. Parent picks a lesson (state-only `pick` index — `SendToRobotScreen.jsx:11`).
-  3. Parent taps "Send to Robot" → app pushes lesson via `course-library.api.js → sendCourseToRobot` (cross-domain delegate to Robot — see cross-domain-edges.json: UC-CL06→ACTOR:Robot); navigation transitions to `cl_robot_ready` (UC-CL07) — `SendToRobotScreen.jsx:54`.
-- **Postconditions:** Lesson is queued on Robot; navigation lands on `cl_robot_ready`.
+  1. `SendToRobotScreen` renders `DeviceShell title="Today's lesson"` and fetches the published course/lesson catalog.
+  2. Parent picks a lesson or whole-course assignment; the screen gates sending until an active child, renderable lesson profile, positive lesson version, and Robot device are available.
+  3. Parent taps "Send to Robot" / "Assign course" → app creates or resumes the assignment via `createAssignment` / `enrollCourse` and conflict-refetches `getCurrentAssignment` when needed.
+  4. On assignment metadata success, navigation transitions to `cl_robot_ready` (UC-CL07) with `deviceId`, `assignmentId`, `assignmentVersion`, and `manifestChecksum`.
+- **Postconditions:** Lesson assignment is queued for Robot; navigation lands on `cl_robot_ready` with enough route state to verify preload.
 
 ## UC-CL07 — Confirm Robot Ready
 
 - **Goal:** Confirm to Parent the lesson is on Robot and prompt the hand-off to the child.
-- **Trigger:** UC-CL06 send completed; navigation arrived at `cl_robot_ready` (`RobotReadyPage`).
-- **Preconditions:** UC-CL06 succeeded.
+- **Trigger:** UC-CL06 send completed; navigation arrived at `cl_robot_ready` (`RobotReadyScreen`).
+- **Preconditions:** UC-CL06 succeeded and passed `deviceId` plus assignment metadata.
 - **Main Flow:**
-  1. `RobotReadyPage` renders `DvShell title="Robot is ready"` (`RobotReadyScreen.jsx:11`) with the celebrating Robot.
-  2. Parent taps "Hand it to your child" → navigation transitions to `cl_running` (UC-CL08) — `RobotReadyScreen.jsx:50`.
+  1. `RobotReadyScreen` renders `DeviceShell title="Robot is ready"` and polls `getPreloadStatus(deviceId)` + `getCurrentAssignment(deviceId)`.
+  2. The "Hand it to your child" CTA remains disabled until preload is `READY`, the assignment matches, and `manifestChecksum` is present.
+  3. Parent taps "Hand it to your child" → navigation transitions to `cl_running` (UC-CL08).
 - **Postconditions:** Parent handed Robot to the child; navigation lands on the running-lesson surface.
 - **Alt Flow:**
-  1. Parent taps "Pick a different lesson" → returns to `cl_send` (UC-CL06) — `RobotReadyScreen.jsx:51`.
+  1. Parent taps "Pick a different lesson" → returns to `cl_send` (UC-CL06).
+  2. If preload stays nonterminal or backend reads fail past the settling budget, the screen shows "Robot is taking longer than expected." and enables "Try again" without enabling handoff.
+  3. If route state is missing `deviceId`, the screen does not poll backend and shows "We can't prepare Robot because no device was selected." with a "Pick a different lesson" recovery action.
 
 ## UC-CL08 — Monitor Lesson Running on Robot
 

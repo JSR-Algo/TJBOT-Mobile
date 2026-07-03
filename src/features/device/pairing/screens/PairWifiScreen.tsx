@@ -10,7 +10,7 @@ import { ROUTES } from '@/navigation/routes';
 import { scanRobotWifiNetworks } from '@/services/ble/service';
 import type { RobotWifiNetwork } from '@/services/ble/types';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
-import { buildPairWifiPasswordParams } from '../routeParams';
+import { buildPairSearchRetryParams, buildPairWifiPasswordParams } from '../routeParams';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairWifiScreen'>;
 
@@ -82,9 +82,17 @@ export default function PairWifiScreen({ navigation, route }: Props) {
       ...buildPairWifiPasswordParams(ssid),
     });
   };
+  const goBack = (): void => {
+    const retryParams = buildPairSearchRetryParams(route.params);
+    if (retryParams) {
+      navigation.navigate(ROUTES.PairSearchScreen, retryParams);
+      return;
+    }
+    navigation.navigate(ROUTES.PairFoundScreen, route.params);
+  };
 
   return (
-    <DeviceShell title="Connect to Wi-Fi" onBack={() => navigation.navigate(ROUTES.PairFoundScreen, route.params)}>
+    <DeviceShell title="Connect to Wi-Fi" onBack={goBack}>
       <Box paddingHorizontal={20} paddingTop={18}>
         <Box style={styles.whyBox}>
           <Text style={styles.whyText}>

@@ -44,18 +44,24 @@ export function normalizeCourseLibraryPayload(payload: unknown): LibraryItem[] {
       ? envelope!.courses
       : [];
 
-  return rawList.map((raw) => {
-    const r = (raw ?? {}) as Record<string, unknown>;
-    return {
-      courseId: (r.course_id ?? r.courseId ?? r.id ?? '') as string,
-      title: (r.title ?? r.name ?? '') as string,
-      language: (r.language ?? 'en') as string,
-      price: 0,
-      owned: true,
-      syncedToDevice: Boolean(r.synced_to_device ?? r.syncedToDevice ?? r.synced ?? false),
-      locked: false,
-    };
-  });
+  return rawList
+    .map((raw) => {
+      const r = (raw ?? {}) as Record<string, unknown>;
+      return {
+        courseId: (r.course_id ?? r.courseId ?? r.id ?? '') as string,
+        title: (r.title ?? r.name ?? '') as string,
+        language: (r.language ?? 'en') as string,
+        price: 0,
+        owned: true,
+        syncedToDevice: Boolean(r.synced_to_device ?? r.syncedToDevice ?? r.synced ?? false),
+        locked: false,
+      };
+    })
+    // Drop rows with no resolvable id: a blank courseId collides on the React
+    // list key AND, when tapped, navigates CourseDetail with `courseId: ''`,
+    // which its `?? COURSE` fallback silently resolves to an unrelated hardcoded
+    // course. Better to hide an unidentifiable row than open the wrong one.
+    .filter((item) => item.courseId.length > 0);
 }
 
 export function normalizeCourseLibraryDetailPayload(payload: unknown): CourseDetail {
@@ -349,6 +355,7 @@ export interface LessonAssignment {
 
 export interface CurrentAssignment {
   assignmentId: string;
+  sessionId: string | null;
   assignmentVersion: number;
   lessonId: string;
   lessonTitle: string;
@@ -400,6 +407,7 @@ export function normalizeCurrentAssignmentPayload(payload: unknown): CurrentAssi
   if (!r.assignment_id && !r.assignmentId) return null;
   return {
     assignmentId: (r.assignment_id ?? r.assignmentId ?? /* istanbul ignore next -- unreachable: line 400 returned null unless one of assignment_id/assignmentId is truthy */ '') as string,
+    sessionId: (r.session_id ?? r.sessionId ?? null) as string | null,
     assignmentVersion: Number(r.assignment_version ?? r.assignmentVersion ?? 0),
     lessonId: (r.lesson_id ?? r.lessonId ?? '') as string,
     lessonTitle: (r.lesson_title ?? r.lessonTitle ?? '') as string,

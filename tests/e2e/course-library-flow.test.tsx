@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
 import CourseAddedScreen from '@/features/course-library/screens/CourseAddedScreen';
 import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
@@ -15,6 +16,7 @@ import {
   unlockCourse,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
+import { authenticateParent } from '@/services/api/parent.api';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 
 // Keep the pure helpers (e.g. isLessonProfile / presentAssignmentState) real —
@@ -40,6 +42,10 @@ jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
 }));
 
+jest.mock('@/services/api/parent.api', () => ({
+  authenticateParent: jest.fn(),
+}));
+
 jest.mock('@/contexts/HouseholdContext', () => ({
   useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } })),
 }));
@@ -50,6 +56,7 @@ const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeo
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
+const mockedAuthenticateParent = authenticateParent as jest.MockedFunction<typeof authenticateParent>;
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
 const mockedGetCourseLessons = getCourseLessons as jest.MockedFunction<typeof getCourseLessons>;
 
@@ -80,10 +87,19 @@ function navigationFor() {
   };
 }
 
+function renderWithQueryClient(element: React.ReactElement, queryClient: QueryClient) {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {element}
+    </QueryClientProvider>,
+  );
+}
+
 describe('course-library flow guards', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     stubPublishedCatalog();
+    mockedAuthenticateParent.mockResolvedValue({ authenticated: true });
   });
 
   it('renders the course that was just added from route params', () => {
@@ -119,13 +135,17 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    for (const digit of ['7', '3', '5', '1']) {
+    expect(screen.queryByText('7 3 5 1')).toBeNull();
+    expect(screen.queryByText('Type the number below')).toBeNull();
+
+    for (const digit of ['2', '4', '6', '8']) {
       fireEvent.press(screen.getByText(digit));
     }
     await act(async () => {
       fireEvent.press(screen.getByText('Confirm add'));
     });
 
+    expect(mockedAuthenticateParent).toHaveBeenCalledWith({ pin: '2468' });
     expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
     expect(mockedUnlockCourse).not.toHaveBeenCalled();
@@ -136,6 +156,52 @@ describe('course-library flow guards', () => {
       assignmentVersion: 1,
       manifestChecksum: 'sha256:lesson-1',
     });
+  });
+
+  it('blocks course enrollment when the parent PIN is wrong', async () => {
+    mockedAuthenticateParent.mockResolvedValueOnce({ authenticated: false });
+    const navigation = navigationFor();
+    render(
+      <UnlockConfirmModal
+        navigation={navigation as never}
+        route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    for (const digit of ['1', '1', '1', '1']) {
+      fireEvent.press(screen.getByText(digit));
+    }
+    await act(async () => {
+      fireEvent.press(screen.getByText('Confirm add'));
+    });
+
+    expect(mockedAuthenticateParent).toHaveBeenCalledWith({ pin: '1111' });
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    expect(mockedEnrollCourse).not.toHaveBeenCalled();
+    expect(navigation.replace).not.toHaveBeenCalledWith(ROUTES.CourseAddedScreen, expect.anything());
+    expect(screen.getByText('Parent PIN was not accepted. Try again.')).toBeTruthy();
+  });
+
+  it('does not fall back to the demo course when unlock route has no courseId', async () => {
+    const navigation = navigationFor();
+    render(
+      <UnlockConfirmModal
+        navigation={navigation as never}
+        route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: undefined } as never}
+      />,
+    );
+
+    for (const digit of ['2', '4', '6', '8']) {
+      fireEvent.press(screen.getByText(digit));
+    }
+    await act(async () => {
+      fireEvent.press(screen.getByText('Confirm add'));
+    });
+
+    expect(mockedAuthenticateParent).not.toHaveBeenCalled();
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    expect(mockedEnrollCourse).not.toHaveBeenCalledWith('c_food', expect.anything());
+    expect(screen.getByText('Choose a course before unlocking it.')).toBeTruthy();
   });
 
   it('opens the already-created lesson assignment from the added screen without re-sending', async () => {
@@ -178,7 +244,7 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    for (const digit of ['7', '3', '5', '1']) {
+    for (const digit of ['2', '4', '6', '8']) {
       fireEvent.press(screen.getByText(digit));
     }
     await act(async () => {
@@ -371,7 +437,7 @@ describe('course-library flow guards', () => {
     mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
     mockedGetCurrentAssignment.mockResolvedValueOnce({
       assignmentId: 'asg-existing', assignmentVersion: 4, lessonId: 'w01-d01-barn-say-it',
-      lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state: 'PRELOADING', childId: 'ch-1', profile: 'espTft',
+      sessionId: null, lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state: 'PRELOADING', childId: 'ch-1', profile: 'espTft',
     });
     const navigation = navigationFor();
     render(
@@ -388,6 +454,36 @@ describe('course-library flow guards', () => {
     });
 
     expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4, manifestChecksum: 'sha256:w01-d01',
+    });
+  });
+
+  it('invalidates child progress before opening the recovered assignment after assignment conflict', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
+    mockedGetCurrentAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-existing', assignmentVersion: 4, lessonId: 'w01-d01-barn-say-it',
+      sessionId: null, lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state: 'PRELOADING', childId: 'ch-1', profile: 'espTft',
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+    const navigation = navigationFor();
+    renderWithQueryClient(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+      queryClient,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['lesson-progress', 'child', 'ch-1'] });
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
       deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4, manifestChecksum: 'sha256:w01-d01',
     });

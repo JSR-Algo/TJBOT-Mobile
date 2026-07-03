@@ -50,11 +50,39 @@ export type AiVoiceConsentPayload = {
   google_subprocessors_version: string;
 };
 
+export const AI_VOICE_CONSENT_VERSION = 'ai-voice-google-v1' as const;
+export const GOOGLE_SUBPROCESSORS_VERSION = 'google-subprocessors-v1' as const;
+
+export type AiVoiceConsentStatus = 'active' | 'withdrawn';
+
 export type AiVoiceConsentResponse = {
   consent_id: string;
+  household_id?: string;
+  consent_version?: string;
+  google_subprocessors_version?: string;
+  status?: AiVoiceConsentStatus;
+  granted_at?: string;
 };
 
 export async function recordAiVoiceConsent(payload: AiVoiceConsentPayload): Promise<AiVoiceConsentResponse> {
   const response = await client.post('/identity/ai-voice-consent', payload);
+  return response.data.data ?? response.data;
+}
+
+export type WithdrawAiVoiceConsentPayload = {
+  reason?: string;
+};
+
+export type WithdrawAiVoiceConsentResponse = {
+  consent_id: string;
+  household_id?: string;
+  status: 'withdrawn';
+  withdrawn_at: string;
+};
+
+export async function withdrawAiVoiceConsent(
+  payload: WithdrawAiVoiceConsentPayload = {},
+): Promise<WithdrawAiVoiceConsentResponse> {
+  const response = await client.post('/identity/ai-voice-consent/withdraw', payload);
   return response.data.data ?? response.data;
 }

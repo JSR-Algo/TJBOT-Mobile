@@ -21,7 +21,7 @@ export const FALLBACK_SCREENS = defineFeatureScreens([
   { name: ROUTES.SafetyRedirectScreen, component: SafetyRedirectScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'safety_redirect' },
   { name: ROUTES.HelpFaqScreen, component: HelpFaqScreen, role: 'fallback-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'help_faq' },
   { name: ROUTES.KidSettingsScreen, component: KidSettingsScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'kid_settings' },
-  { name: ROUTES.LessonResumeScreen, component: LessonResumeScreen, role: 'stack', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'lesson_resume' },
+  { name: ROUTES.LessonResumeScreen, component: LessonResumeScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'lesson_resume' },
 ]);
 
 export const FALLBACK_MODAL_SCREENS = defineFeatureScreens([

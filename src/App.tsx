@@ -13,6 +13,7 @@ import { QueryProvider } from './app/providers/QueryProvider';
 import { ParentSessionProvider } from './features/parent/context/ParentSessionContext';
 import * as SecureStore from 'expo-secure-store';
 import { initAnalytics, setAnalyticsUserRole } from './services/observability/analytics';
+import { applyStoredAnalyticsPreference } from './services/observability/analyticsPreference';
 import { initSentry, setSentryUserRole } from './services/observability/sentry';
 import { startVoiceTelemetry } from './services/observability/voice-telemetry';
 import { useLoadAppLanguagePreference } from './services/i18n/i18n';
@@ -57,6 +58,12 @@ function AppInner(): React.JSX.Element {
     // and tears down its listeners on unmount.
     const stop = startVoiceTelemetry();
     return stop;
+  }, []);
+
+  useEffect(() => {
+    // Honor a parent's stored analytics opt-out after the role-based init has
+    // run at module load, so the Settings toggle persists across launches.
+    void applyStoredAnalyticsPreference();
   }, []);
 
   return (

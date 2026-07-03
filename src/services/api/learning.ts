@@ -1,4 +1,5 @@
 import client from '@/services/http/client';
+import { toFiniteNumber, toNonNegativeNumber } from '@/utils/number';
 
 /**
  * Thrown by learning APIs when the backend endpoint isn't deployed yet.
@@ -168,10 +169,10 @@ export function normalizeChildProfilePayload(payload: unknown): ChildProfile {
     id: typeof raw.id === 'string' ? raw.id : '',
     name: typeof raw.name === 'string' ? raw.name : '',
     vocabulary_level: safeLevel(raw.vocabulary_level ?? raw.vocabularyLevel),
-    speaking_confidence: Number(raw.speaking_confidence ?? raw.speakingConfidence ?? 0),
-    listening_score: Number(raw.listening_score ?? raw.listeningScore ?? 0),
+    speaking_confidence: toNonNegativeNumber(raw.speaking_confidence ?? raw.speakingConfidence),
+    listening_score: toNonNegativeNumber(raw.listening_score ?? raw.listeningScore),
     interests: safeStringArray(raw.interests),
-    attention_span_seconds: Number(raw.attention_span_seconds ?? raw.attentionSpanSeconds ?? 0),
+    attention_span_seconds: toNonNegativeNumber(raw.attention_span_seconds ?? raw.attentionSpanSeconds),
     learning_style: safeStyle(raw.learning_style ?? raw.learningStyle),
     parent_career: typeof parentCareer === 'string' ? parentCareer : parentCareer === null ? null : undefined,
   };
@@ -180,12 +181,12 @@ export function normalizeChildProfilePayload(payload: unknown): ChildProfile {
 export function normalizeKpisPayload(payload: unknown): KPIs {
   const raw = asRecord(payload);
   return {
-    vocab_words_this_week: Number(raw.vocab_words_this_week ?? raw.vocabWordsThisWeek ?? 0),
-    speaking_confidence: Number(raw.speaking_confidence ?? raw.speakingConfidence ?? 0),
-    engagement_score: Number(raw.engagement_score ?? raw.engagementScore ?? 0),
-    retention_rate: Number(raw.retention_rate ?? raw.retentionRate ?? 0),
-    sessions_this_week: Number(raw.sessions_this_week ?? raw.sessionsThisWeek ?? 0),
-    daily_streak: Number(raw.daily_streak ?? raw.dailyStreak ?? 0),
+    vocab_words_this_week: toNonNegativeNumber(raw.vocab_words_this_week ?? raw.vocabWordsThisWeek),
+    speaking_confidence: toNonNegativeNumber(raw.speaking_confidence ?? raw.speakingConfidence),
+    engagement_score: toNonNegativeNumber(raw.engagement_score ?? raw.engagementScore),
+    retention_rate: toNonNegativeNumber(raw.retention_rate ?? raw.retentionRate),
+    sessions_this_week: toNonNegativeNumber(raw.sessions_this_week ?? raw.sessionsThisWeek),
+    daily_streak: toNonNegativeNumber(raw.daily_streak ?? raw.dailyStreak),
     weak_words: safeStringArray(raw.weak_words ?? raw.weakWords),
   };
 }
@@ -196,13 +197,13 @@ export function normalizePronunciationTrendPayload(payload: unknown): Pronunciat
   const points = Array.isArray(pointsRaw)
     ? pointsRaw.map((point) => {
         const p = point && typeof point === 'object' ? point as Record<string, unknown> : {};
-        return { date: typeof p.date === 'string' ? p.date : '', score: Number(p.score ?? 0) };
+        return { date: typeof p.date === 'string' ? p.date : '', score: toFiniteNumber(p.score) };
       })
     : [];
   const trend = raw.trend === 'improving' || raw.trend === 'declining' ? raw.trend : 'stable';
   return {
     points,
-    avg_score: Number(raw.avg_score ?? raw.avgScore ?? 0),
+    avg_score: toNonNegativeNumber(raw.avg_score ?? raw.avgScore),
     trend,
   };
 }

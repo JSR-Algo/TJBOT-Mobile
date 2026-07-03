@@ -23,7 +23,12 @@ import {
 import { mintBootstrapToken } from '@/services/api/device.api';
 import { sendClaimBootstrapTokenViaBle } from '@/services/ble/service';
 import type { BleDeviceCandidate } from '@/services/ble/types';
-import { describeClaimFailure, type ClaimStatusDescriptor } from './claimStatus';
+import {
+  CLAIM_CONFIRM_TIMEOUT_MS,
+  CLAIM_POLL_INTERVAL_MS,
+  describeClaimFailure,
+  type ClaimStatusDescriptor,
+} from './claimStatus';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
 
 export type ZeroCodeClaimPhase =
@@ -66,9 +71,6 @@ export interface UseZeroCodeClaimFlowParams {
   onConnected?: (result: { deviceId: string }) => void;
 }
 
-const DEFAULT_POLL_INTERVAL_MS = 3000;
-const DEFAULT_CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
-
 async function defaultPollClaimStatus(claimId: string): Promise<ClaimStatusResult> {
   return getClaimStatus(claimId);
 }
@@ -98,7 +100,7 @@ export function useZeroCodeClaimFlow(
   const {
     deviceId,
     bleDevice,
-    pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+    pollIntervalMs = CLAIM_POLL_INTERVAL_MS,
     maxPollAttempts,
     pollClaimStatus = defaultPollClaimStatus,
     onConnected,
@@ -154,13 +156,7 @@ export function useZeroCodeClaimFlow(
         await sleep(pollIntervalMs);
       }
       if (isStale(gen)) return;
-      setError({
-        code: 'CLAIM_CONFIRM_TIMEOUT',
-        title: 'Waiting on your Robot',
-        body: 'Your Robot has not confirmed yet. Make sure it is powered on and try again.',
-        retryable: true,
-        recovery: 'connect',
-      });
+      setError(describeClaimFailure({ code: 'CLAIM_CONFIRM_TIMEOUT', message: 'Robot did not confirm in time.', status: 410 }));
       setPhase('failed');
     },
     [isStale, maxPollAttempts, onConnected, pollClaimStatus, pollIntervalMs],
@@ -242,7 +238,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 function resolveDeadlineMs(expiresAt?: string | null): number {
-  return readFutureDeadlineMs(expiresAt) ?? Date.now() + DEFAULT_CONFIRM_TIMEOUT_MS;
+  return readFutureDeadlineMs(expiresAt) ?? Date.now() + CLAIM_CONFIRM_TIMEOUT_MS;
 }
 
 function readFutureDeadlineMs(expiresAt?: string | null): number | null {

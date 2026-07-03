@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, render, waitFor } from '@testing-library/react-native';
 import PairConnectingScreen from '@/features/device/pairing/screens/PairConnectingScreen';
+import PairFailedScreen from '@/features/device/pairing/screens/PairFailedScreen';
 import { ROUTES } from '@/navigation/routes';
 import { provisionWifiViaLocalBle } from '@/services/ble/service';
 import {
@@ -11,6 +12,7 @@ import {
   pairDevice,
 } from '@/services/api/device.api';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
+import { describeClaimFailure } from '@/features/device/pairing/claimStatus';
 import {
   clearPairingBootstrapToken,
   consumePairingWifiPassword,
@@ -126,6 +128,21 @@ function bleReconnectParams(overrides: Record<string, unknown> = {}) {
     ssid: SSID,
     bleDeviceId: 'ble-device-1',
     provisioningTransport: 'ble_reconnect',
+    ...overrides,
+  } as never;
+}
+
+// Offline BLE starts after the backend returned DEVICE_NOT_FOUND. The route
+// carries synthetic ids used for local secret handoff, so backend liveness must
+// be explicitly re-checked before any final success screen.
+function bleOfflineParams(overrides: Record<string, unknown> = {}) {
+  return {
+    deviceId: SERIAL,
+    serialNumber: SERIAL,
+    provisioningAttemptId: `offline:${SERIAL}`,
+    ssid: SSID,
+    bleDeviceId: 'ble-device-1',
+    provisioningTransport: 'ble_offline',
     ...overrides,
   } as never;
 }
@@ -292,9 +309,10 @@ describe('PairConnectingScreen — pre-flight guards', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
   });
 
-  it('routes to PairFailed when the one-shot Wi-Fi password is missing (consumed/expired)', async () => {
+  it('routes back to PairWifiPassword when the one-shot Wi-Fi password is missing (consumed/expired)', async () => {
     // Bootstrap token seeded but the Wi-Fi password handoff is absent: the
-    // screen must fail closed rather than send a blank password over BLE.
+    // screen must re-prompt rather than send a blank password over BLE or show
+    // a generic missing-context error.
     putPairingBootstrapToken('claim-1', BOOTSTRAP_TOKEN);
     const navigate = jest.fn();
     render(
@@ -305,9 +323,23 @@ describe('PairConnectingScreen — pre-flight guards', () => {
     );
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairWifiPasswordScreen,
+      expect.objectContaining({
+        deviceId: 'device-1',
+        serialNumber: SERIAL,
+        provisioningAttemptId: 'claim-1',
+        code: PROVISIONING_CODE,
+        ssid: SSID,
+        bleDeviceId: 'ble-device-1',
+        provisioningTransport: 'ble',
+        errorCode: 'WIFI_PASSWORD_EXPIRED',
+      }),
+    ));
+    expect(navigate).not.toHaveBeenCalledWith(
       ROUTES.PairFailedScreen,
       expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
-    ));
+    );
+    expect(JSON.stringify(navigate.mock.calls)).not.toContain(WIFI_PASSWORD);
     expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
   });
 
@@ -1043,6 +1075,44 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
   });
 
+  it('keeps claim-domain recovery parity when DEVICE_ALREADY_OWNED reaches PairFailed through PairConnecting', async () => {
+    seedSecrets('claim-1');
+    mockedGetClaimStatus.mockResolvedValue({
+      claimId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'FAILED',
+      online: false,
+      expiresAt: null,
+      failureCode: 'DEVICE_ALREADY_OWNED',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'DEVICE_ALREADY_OWNED' }),
+    ));
+
+    const [, failedParams] = navigate.mock.calls.find(([route]) => route === ROUTES.PairFailedScreen) ?? [];
+    const descriptor = describeClaimFailure({ code: 'DEVICE_ALREADY_OWNED', message: 'owned', status: 409 });
+    const failed = render(
+      <PairFailedScreen
+        navigation={{ navigate: jest.fn(), reset: jest.fn() } as never}
+        route={{ params: failedParams } as never}
+      />,
+    );
+
+    expect(failed.getByText(descriptor.title)).toBeTruthy();
+    expect(failed.getByText(descriptor.body)).toBeTruthy();
+    expect(failed.queryByText('Wrong Wi-Fi password')).toBeNull();
+    expect(failed.queryByText('Robot looks asleep')).toBeNull();
+  });
+
   it('[late-claim id] a re-minted claim id is forwarded to PairFailed on a confirmation failure (not the stale route id)', async () => {
     // Production zero-code path that reaches this screen WITHOUT a pre-minted
     // token and with a non-claim attempt id (e.g. the bootstrap-token handoff
@@ -1248,6 +1318,81 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
     // Robot offline => no home nav, screen still says hang-tight.
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
     expect(screen.queryByText('Robot authenticated')).toBeNull();
+  });
+});
+
+// ===========================================================================
+// 5b. BLE offline path: credential handoff is provisional until backend liveness.
+// ===========================================================================
+describe('PairConnectingScreen — BLE offline (credential-only) path', () => {
+  it('[no fake success] credential-only handoff without backend online confirmation routes to PairFailed, not PairSuccess', async () => {
+    jest.useFakeTimers();
+    try {
+      putPairingWifiPassword(`offline:${SERIAL}`, WIFI_PASSWORD);
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: SERIAL,
+        name: SERIAL,
+        online: false,
+        batteryPercent: 0,
+      });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleOfflineParams() } as never}
+        />,
+      );
+
+      await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(
+        expect.objectContaining({ allowCredentialOnly: true, ssid: SSID, password: WIFI_PASSWORD }),
+      ));
+
+      await advancePairingPolls(20 * 3000);
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({
+          errorCode: 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT',
+          bleDeviceId: 'ble-device-1',
+          provisioningTransport: 'ble_offline',
+          serialNumber: SERIAL,
+        }),
+      ));
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
+      expect(mockedGetDeviceStatus).toHaveBeenCalled();
+    } finally {
+      consumePairingWifiPassword(`offline:${SERIAL}`);
+      clearPairingBootstrapToken(`offline:${SERIAL}`);
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('[slow offline-first success] backend online confirmation is required before PairSuccess', async () => {
+    putPairingWifiPassword(`offline:${SERIAL}`, WIFI_PASSWORD);
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-registered-after-wifi',
+      name: SERIAL,
+      online: true,
+      batteryPercent: 70,
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleOfflineParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairSuccessScreen, {
+      deviceId: 'device-registered-after-wifi',
+      serialNumber: SERIAL,
+      provisioningAttemptId: `offline:${SERIAL}`,
+    }));
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith(SERIAL);
+    expect(mockedGetDeviceStatus.mock.invocationCallOrder[0]).toBeLessThan(
+      navigate.mock.invocationCallOrder.find((_, index) => navigate.mock.calls[index]?.[0] === ROUTES.PairSuccessScreen) ?? Number.MAX_SAFE_INTEGER,
+    );
   });
 });
 

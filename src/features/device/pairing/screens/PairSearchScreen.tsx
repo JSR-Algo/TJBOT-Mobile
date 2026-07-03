@@ -176,12 +176,19 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       }
 
       let resolved: RobotCandidate[] = [];
+      let lastScanFailureCode: string | undefined;
       for (let attempt = 1; attempt <= MAX_BLE_DISCOVERY_ATTEMPTS; attempt += 1) {
         const scan = await scanForTJBotDevices().catch((error: unknown) => {
+          lastScanFailureCode = errorCodeFrom(error, 'BLE_SCAN_ERROR');
           logDevPairSearchEvent('ble scan failed', { scanAttempt: attempt, ...devErrorSummary(error) });
           return undefined;
         });
         if (cancelledRef.current) return;
+        if (lastScanFailureCode === 'BLE_SCAN_THROTTLED') {
+          navigation.navigate(ROUTES.PairFailedScreen, { errorCode: lastScanFailureCode });
+          return;
+        }
+        if (scan) lastScanFailureCode = undefined;
 
         resolved = resolveRobotCandidates(scan?.allowed ?? []);
         if (__DEV__) {
@@ -193,6 +200,11 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           });
         }
         if (resolved.length > 0) break;
+      }
+
+      if (resolved.length === 0 && lastScanFailureCode) {
+        navigation.navigate(ROUTES.PairFailedScreen, { errorCode: lastScanFailureCode });
+        return;
       }
 
       if (resolved.length === 0 && isZeroCodeClaimEnabled()) {

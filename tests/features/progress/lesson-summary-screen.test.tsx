@@ -1,5 +1,5 @@
 // LessonSummaryScreen shows the end-of-lesson recap with two CTAs:
-//   - "Keep going →" (PrimaryCTA) -> navigate(LessonReadyScreen)
+//   - "Keep going" (PrimaryCTA) -> navigate(SendToRobotScreen)
 //   - "Stop for today" (TouchableOpacity) -> navigate(HomeHubScreen)
 // The two onPress handlers (source lines 46-47) were uncovered. These tests
 // render the screen and fire each press to drive both navigation calls.
@@ -25,10 +25,10 @@ describe('LessonSummaryScreen', () => {
     expect(screen.getByText('12 stars')).toBeTruthy();
   });
 
-  it('"Keep going" routes to LessonReadyScreen', () => {
+  it('"Keep going" routes to SendToRobotScreen', () => {
     const navigation = renderScreen();
-    fireEvent.press(screen.getByText('Keep going →'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+    fireEvent.press(screen.getByText('Keep going'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 
   it('"Stop for today" routes to HomeHubScreen', () => {

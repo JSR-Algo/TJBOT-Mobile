@@ -13,49 +13,47 @@ import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewEntryScreen'>;
 
-const WORDS = ['Hello', 'Hi', 'Friend', 'Happy'];
-const EMOJIS = ['👋', '🙋', '👫', '😊'];
-
 export default function ReviewEntryScreen({ navigation }: Props) {
   return (
     <PageScroll>
       <PageHeader
         onBack={() => navigation.navigate(ROUTES.HomeHubScreen)}
         subtitle="Quick review"
-        title="Words to revisit"
+        title="Ask Robot for review"
       />
 
       <Box paddingHorizontal={24} paddingBottom={16} alignItems="center" gap={10}>
         <Robot emotion="curious" size={170} />
-        <SpeechBubble>4 words want to say hi again!</SpeechBubble>
+        <SpeechBubble>Robot will choose review words from live progress.</SpeechBubble>
       </Box>
 
-      <Box paddingHorizontal={24} paddingBottom={16} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        {WORDS.map((w, i) => (
-          <Box key={w} style={styles.wordCard} width="47%">
-            <Text style={{ fontSize: 34 }}>{EMOJIS[i]}</Text>
-            <Text fontWeight="800" style={styles.wordText}>{w}</Text>
-            <Box flexDirection="row" alignItems="center" gap={6}>
-              <Box style={styles.wordDot} />
-              <Text fontWeight="700" style={styles.wordMeta}>Practice</Text>
-            </Box>
-          </Box>
-        ))}
+      <Box paddingHorizontal={24} paddingBottom={16}>
+        <Box style={styles.statusCard}>
+          <Text fontWeight="800" style={styles.statusTitle}>No review words yet</Text>
+          <Text fontWeight="600" style={styles.statusBody}>
+            Start with Robot so this list is based on real lesson progress.
+          </Text>
+        </Box>
       </Box>
 
       <Box paddingHorizontal={24} paddingBottom={30}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FFC857">Start Review</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.SendToRobotScreen)} color="#FFC857">Start Review</PrimaryCTA>
       </Box>
     </PageScroll>
   );
 }
 
 const styles = StyleSheet.create({
-  wordCard: {
-    backgroundColor: '#fff', borderRadius: 20, padding: 18, gap: 6,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6,
+  statusCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 18,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
   },
-  wordText: { fontSize: 22, color: '#2B2140' },
-  wordDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFC857' },
-  wordMeta: { fontSize: 12, color: '#8B8B96' },
+  statusTitle: { fontSize: 18, color: '#2B2140' },
+  statusBody: { fontSize: 14, color: '#5C4F77', lineHeight: 20 },
 });

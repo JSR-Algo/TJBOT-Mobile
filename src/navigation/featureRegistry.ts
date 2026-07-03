@@ -11,7 +11,12 @@ import { PROGRESS_NAVIGATION } from '@/features/progress/navigation';
 import { PURCHASE_NAVIGATION } from '@/features/purchase/navigation';
 import { ROBOT_MGMT_NAVIGATION } from '@/features/robot-mgmt/navigation';
 import type { RootStackParamList } from './routes';
-import type { FeatureNavigationConfig, FeatureRootBranch, FeatureStackScreen, FeatureTabScreen } from './types';
+import type { FeatureNavigationConfig, FeatureRootBranch, FeatureRouteOwner, FeatureStackScreen, FeatureTabScreen } from './types';
+
+type ProductionRouteEntry = {
+  readonly owner: FeatureRouteOwner;
+  readonly screen: FeatureStackScreen;
+};
 
 export const FEATURE_NAVIGATION_REGISTRY: readonly FeatureNavigationConfig[] = [
   AUTH_NAVIGATION,
@@ -43,6 +48,20 @@ function initialRouteFor(rootBranch: FeatureRootBranch): keyof RootStackParamLis
 }
 
 const PROTECTED_NAVIGATION_CONFIGS = featuresByRootBranch('protected');
+
+function isProductionVisibleScreen(screen: FeatureStackScreen): boolean {
+  return screen.productionVisible !== false;
+}
+
+export function isProductionNavigableRoute(route: keyof RootStackParamList): boolean {
+  return FEATURE_NAVIGATION_REGISTRY.some(feature =>
+    [
+      ...feature.stackScreens,
+      ...feature.modalScreens,
+      ...(feature.tabScreen ? [feature.tabScreen] : []),
+    ].some(screen => screen.name === route && isProductionVisibleScreen(screen)),
+  );
+}
 
 function pendingDeviceSetupRoute(): keyof RootStackParamList {
   const routes = FEATURE_NAVIGATION_REGISTRY.flatMap(feature =>
@@ -79,3 +98,25 @@ const MAIN_TAB_ROUTE_NAMES: ReadonlySet<keyof RootStackParamList> = new Set(MAIN
 export const PROTECTED_STACK_SCREENS: readonly FeatureStackScreen[] = PROTECTED_NAVIGATION_CONFIGS
   .flatMap(feature => feature.stackScreens)
   .filter(screen => !MAIN_TAB_ROUTE_NAMES.has(screen.name));
+export const PROTECTED_MOUNTED_STACK_SCREENS: readonly FeatureStackScreen[] =
+  PROTECTED_STACK_SCREENS.filter(isProductionVisibleScreen);
+export const PROTECTED_MOUNTED_MODAL_SCREENS: readonly FeatureStackScreen[] =
+  PROTECTED_MODAL_SCREENS.filter(isProductionVisibleScreen);
+export const PRODUCTION_HIDDEN_ROUTE_NAMES: readonly (keyof RootStackParamList)[] =
+  FEATURE_NAVIGATION_REGISTRY.flatMap(feature => [
+    ...feature.stackScreens,
+    ...feature.modalScreens,
+    ...(feature.tabScreen ? [feature.tabScreen] : []),
+  ])
+    .filter(screen => !isProductionVisibleScreen(screen))
+    .map(screen => screen.name);
+export const PRODUCTION_LINKING_ROUTE_ENTRIES: readonly ProductionRouteEntry[] =
+  FEATURE_NAVIGATION_REGISTRY.flatMap(feature =>
+    [
+      ...feature.stackScreens,
+      ...feature.modalScreens,
+      ...(feature.tabScreen ? [feature.tabScreen] : []),
+    ]
+      .filter(isProductionVisibleScreen)
+      .map(screen => ({ owner: feature.owner, screen })),
+  );

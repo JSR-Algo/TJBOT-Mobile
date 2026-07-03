@@ -1,12 +1,12 @@
-import { BLE_CONFIG, BLE_SCAN_SERVICE_UUIDS, isAllowlistedCandidate, isAllowlistedDevice } from '../../src/services/ble/config';
+import { BLE_CONFIG, isAllowlistedCandidate, isAllowlistedDevice } from '../../src/services/ble/config';
 
 /**
  * Round-2 gap-fill suite for src/services/ble/config.ts.
  *
  * Asserts the REAL behavior of isAllowlistedDevice() across the three admission
  * paths (id prefix, name prefix, BluFi service-UUID fallback) plus the block
- * path, and locks the BLE_SCAN_SERVICE_UUIDS scan tuple content + order so a
- * regression in either the values or the ordering is caught.
+ * path. The discovery scan is intentionally unfiltered in service.ts so
+ * name-only and raw-advert robots remain visible on Android.
  */
 describe('ble/config — BLE_CONFIG constants', () => {
   test('ALLOWLIST_PREFIXES has the expected TBOT-family entries', () => {
@@ -19,28 +19,9 @@ describe('ble/config — BLE_CONFIG constants', () => {
   });
 });
 
-describe('ble/config — BLE_SCAN_SERVICE_UUIDS tuple lock', () => {
-  test('contains exactly the BluFi then Nordic-UART service UUIDs in that order', () => {
-    // Order is load-bearing: discovery scans BluFi first, then the legacy
-    // Nordic-UART service. Lock both content and order.
-    expect(BLE_SCAN_SERVICE_UUIDS).toEqual([
-      '0000FFFF-0000-1000-8000-00805F9B34FB',
-      '6E400001-B5A3-F393-E0A9-E50E24DCCA9E',
-    ]);
-  });
-
-  test('tuple entries are sourced from BLE_CONFIG (no drift)', () => {
-    expect(BLE_SCAN_SERVICE_UUIDS[0]).toBe(BLE_CONFIG.BLUFI_SERVICE_UUID);
-    expect(BLE_SCAN_SERVICE_UUIDS[1]).toBe(BLE_CONFIG.SERVICE_UUID);
-  });
-
-  test('has exactly two entries', () => {
-    expect(BLE_SCAN_SERVICE_UUIDS).toHaveLength(2);
-  });
-
-  test('BluFi service UUID is first (scanned before legacy UART)', () => {
-    expect(BLE_SCAN_SERVICE_UUIDS[0]).toBe(BLE_CONFIG.BLUFI_SERVICE_UUID);
-    expect(BLE_SCAN_SERVICE_UUIDS.indexOf(BLE_CONFIG.SERVICE_UUID)).toBe(1);
+describe('ble/config — discovery scan posture', () => {
+  test('does not export a UUID filter tuple because discovery must stay unfiltered', () => {
+    expect('BLE_SCAN_SERVICE_UUIDS' in jest.requireActual('../../src/services/ble/config')).toBe(false);
   });
 });
 

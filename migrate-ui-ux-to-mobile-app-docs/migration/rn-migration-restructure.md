@@ -501,7 +501,7 @@ This change preserves visual output exactly (same property values; CSS-var refer
 ### 6.1 1:1 mappable (no refactor when RN comes)
 - All `src/services/api/*.api.js` — pure async functions, no DOM.
 - All `src/store/*.store.js` — zustand works on RN unchanged.
-- `src/services/http/idempotency.js`, `src/services/websocket/realtime.js` — server-side talk only.
+- `src/services/http/idempotency.js`, `src/services/ws/realtime.{ts,js}` — server-side talk only; realtime observer production attach still requires KD10 proof.
 - Design-system tokens (`colors.js`, `spacing.js`, `typography.js`, `radii.js`).
 - Feature `index.js` barrels + `states.js` state catalogues.
 - Component prop shapes, business logic in hooks, JSX trees that already only call primitives.

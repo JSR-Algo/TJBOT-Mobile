@@ -80,6 +80,7 @@ describe('BLE permissions', () => {
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         expect.objectContaining({
           title: 'Bluetooth permission required',
+          message: 'TBOT needs Bluetooth access to discover and pair with your Robot.',
           buttonPositive: 'Allow',
         }),
       );

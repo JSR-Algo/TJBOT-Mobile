@@ -49,6 +49,7 @@ function parseRouteEntry(owner, bucket, block) {
     owner,
     bucket,
     role,
+    productionVisible: !block.includes('productionVisible: false') && !/\.\.\.HIDDEN_[A-Z_]+_ROUTE/.test(block),
     backTarget,
     forwardCycleGroup,
     stateMachineId,
@@ -148,8 +149,9 @@ export function buildRouteMapping() {
       bucket: entry.bucket,
       role: entry.role,
       backBehavior: backBehaviorFor(entry),
-      deepLinkPath: deepLinkPathFor(entry),
     };
+    if (!entry.productionVisible) routes[route].productionVisible = false;
+    if (entry.productionVisible) routes[route].deepLinkPath = deepLinkPathFor(entry);
     if (entry.backTarget) routes[route].backTarget = entry.backTarget;
     if (entry.forwardCycleGroup) routes[route].forwardCycleGroup = entry.forwardCycleGroup;
     if (entry.stateMachineId) routes[route].stateMachineId = entry.stateMachineId;

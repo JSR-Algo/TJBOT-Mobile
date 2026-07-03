@@ -51,7 +51,7 @@
 
 ## UC-DP09
 
-- **timeout**: Each connecting sub-stage (send Wi-Fi / DHCP / account login / starter lesson) must have a bounded timeout; current 900 ms prototype stub is unrealistic.
+- **timeout**: Each connecting sub-stage (send Wi-Fi / DHCP / account login / backend online confirmation) must have a bounded timeout; local BLE `STA_CONN_SUCCESS` is not final success.
 - **error**: Sub-stage failure must route to UC-DP11 with the specific failed sub-stage preserved for diagnosis.
 - **retry**: Recovery must allow re-entering the failed sub-stage without restarting the whole sequence.
 

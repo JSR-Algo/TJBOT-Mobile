@@ -90,13 +90,21 @@ const COMPLETE_OK: CompleteDeviceProvisioningResult = {
   },
 };
 
-// The screen reads `activeChild?.id` from the household context (the resolved
-// active child, which the real context derives as the persisted pick or
-// children[0]). We mirror that resolution here — activeChild = children[0] when
-// present — so the mock matches the context contract the screen depends on.
-function householdWith(children: Array<{ id: string }> | undefined): void {
-  const activeChild = children && children.length > 0 ? children[0] : null;
-  mockedUseHousehold.mockReturnValue({ children, activeChild } as never);
+function child(id: string, name = id): { id: string; name: string } {
+  return { id, name };
+}
+
+// The real context resolves `activeChild` with a children[0] fallback, but also
+// exposes `activeChildId` so flows can distinguish an explicit parent choice
+// from that fallback.
+function householdWith(children: Array<{ id: string; name?: string }> | undefined, activeChildId: string | null = null): void {
+  const activeChild = children?.find((c) => c.id === activeChildId) ?? (children && children.length > 0 ? children[0] : null);
+  mockedUseHousehold.mockReturnValue({
+    children,
+    activeChild,
+    activeChildId,
+    setActiveChild: jest.fn(),
+  } as never);
 }
 
 // The happy path finalizes pairing via navigation.reset (DeviceHome + PairSuccess),
@@ -122,8 +130,13 @@ beforeEach(() => {
 
 afterEach(() => {
   try {
-    expect(callsWithoutLabel(consoleInfoSpy.mock.calls, '[TBOT PairRename] save pressed')).toEqual([]);
-    expect(callsWithoutLabel(consoleWarnSpy.mock.calls, '[TBOT PairRename] save failed')).toEqual([]);
+    expect(
+      callsWithoutLabel(
+        callsWithoutLabel(consoleInfoSpy.mock.calls, '[TBOT PairRename] save pressed'),
+        '[TBOT PairRename] save failed',
+      ),
+    ).toEqual([]);
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
   } finally {
     consoleInfoSpy.mockRestore();
     consoleWarnSpy.mockRestore();
@@ -306,17 +319,21 @@ describe('PairRenameScreen — missing-context gate (PAIRING_CONTEXT_MISSING)', 
     expect(mockedComplete).not.toHaveBeenCalled();
   });
 
-  it('uses the active child as the assignee when several children exist', async () => {
-    householdWith([{ id: 'child-A' }, { id: 'child-B' }, { id: 'child-C' }]);
+  it('does not silently bind to children[0] when several children exist without an explicit selection', async () => {
+    householdWith([child('child-A', 'An'), child('child-B', 'Binh'), child('child-C', 'Chi')]);
     const navigate = jest.fn();
     const screen = renderScreen(navigate, FULL_PARAMS);
 
     fireEvent.press(screen.getByText('Save & continue'));
 
+    expect(mockedComplete).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+
+    fireEvent.press(screen.getByText('Binh'));
+    fireEvent.press(screen.getByText('Save & continue'));
+
     await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(1));
-    // The resolved active child (children[0] here) is the assignee — not the last,
-    // not an arbitrary one.
-    expect(mockedComplete).toHaveBeenCalledWith(expect.objectContaining({ assignChildProfileId: 'child-A' }));
+    expect(mockedComplete).toHaveBeenCalledWith(expect.objectContaining({ assignChildProfileId: 'child-B' }));
   });
 
   it('routes to PairFailed with PAIRING_CONTEXT_MISSING when route.params is entirely undefined', async () => {

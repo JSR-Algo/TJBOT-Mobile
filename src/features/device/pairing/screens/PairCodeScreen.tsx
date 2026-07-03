@@ -9,6 +9,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import { buildPairSearchRetryParams } from '../routeParams';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairCodeScreen'>;
 
@@ -16,6 +17,14 @@ export default function PairCodeScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
   const [code, setCode] = React.useState('');
   const params = route.params;
+  const restartSearch = () => {
+    const retryParams = buildPairSearchRetryParams(params);
+    if (retryParams) {
+      navigation.navigate(ROUTES.PairSearchScreen, retryParams);
+      return;
+    }
+    navigation.navigate(ROUTES.PairSearchScreen);
+  };
   const submit = () => {
     if (!/^\d{6}$/.test(code)) return;
     navigation.navigate(ROUTES.PairWifiScreen, { ...(params ?? {}), code });
@@ -48,7 +57,12 @@ export default function PairCodeScreen({ navigation, route }: Props) {
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
         <DeviceBigBtn onClick={submit}>Confirm & continue</DeviceBigBtn>
-        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.PairSearchScreen)} style={styles.mismatchBtn}>
+        <TouchableOpacity
+          onPress={restartSearch}
+          style={styles.mismatchBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Codes don't match"
+        >
           <Text fontWeight="500" style={styles.mismatchText}>Codes don't match</Text>
         </TouchableOpacity>
       </Box>

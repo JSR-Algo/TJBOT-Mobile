@@ -30,8 +30,8 @@ const AI_URL = args.find((a) => a.startsWith('--ai-url='))?.split('=')[1]
   || DEFAULT_LOCAL_AI_URL;
 
 const PLAN_MODULES = [
-  ['Auth + Onboarding', ['SplashScreen', 'WelcomeScreen', 'LoginScreen', 'ChildProfileScreen'], ['/v1/auth/signup', '/v1/auth/consent', '/v1/auth/login', '/v1/households']],
-  ['Home Dashboard', ['HomeHubScreen'], ['/v1/households']],
+  ['Auth + Onboarding', ['SplashScreen', 'WelcomeScreen', 'LoginScreen', 'ChildProfileScreen'], ['/v1/auth/signup', '/v1/auth/login', '/v1/households/:householdId/children']],
+  ['Home Dashboard', ['HomeHubScreen'], ['/v1/me']],
   ['Device Pairing', ['PairIntroScreen', 'PairSearchScreen', 'PairFoundScreen', 'PairCodeScreen', 'PairWifiScreen', 'PairConnectingScreen', 'PairSuccessScreen', 'PairFailedScreen'], ['/v1/devices/provision/start', '/v1/devices/provision/connect', '/v1/devices/:deviceId']],
   ['Learning + AI Interaction', ['LessonReadyScreen', 'RobotListeningScreen', 'RobotSpeakingScreen'], ['/v1/learning/children/:id/session/today', '/api/ai/v1/llm/chat']],
   ['Progress', ['TodayProgressScreen', 'WordsPracticedScreen'], ['/v1/learning/children/:id/kpis']],
@@ -240,28 +240,29 @@ async function run() {
 
   const signupResult = await step('POST /auth/signup', async () => {
     const res = await request('POST', `${API}/auth/signup`, {
-      email, password, name: 'Mobile E2E User',
+      email,
+      password,
+      displayName: 'Mobile E2E User',
+      timezone: 'Asia/Ho_Chi_Minh',
+      locale: 'en-US',
+      acceptances: {
+        terms: true,
+        privacy: true,
+        coppa: true,
+      },
     });
     assert(res.status === 201, `Expected 201, got ${res.status}: ${JSON.stringify(res.body)}`);
     const data = res.body.data ?? res.body;
     assert(data.access_token, 'No access_token in signup response');
+    assert(data.household?.id, 'No household id in signup response');
     // OBSOLETE 2026-04-17: `partial:true` field removed from signup response
     // (post-email-verification-removal contract). Do not re-add this assertion.
     accessToken = data.access_token;
+    householdId = data.household.id;
     return data;
   });
 
   if (!signupResult) { printSummary(); return; }
-
-  await step('POST /auth/consent (COPPA)', async () => {
-    const res = await request('POST', `${API}/auth/consent`, {
-      stripe_token: 'tok_test_bypass',
-      consent_given: true,
-    }, { Authorization: `Bearer ${accessToken}` });
-    assert(res.status === 200, `Expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
-    const data = res.body.data ?? res.body;
-    assert(data.coppa_verified === true, 'coppa_verified should be true');
-  });
 
   const loginResult = await step('POST /auth/login (full token)', async () => {
     const res = await request('POST', `${API}/auth/login`, { email, password });
@@ -274,44 +275,30 @@ async function run() {
 
   if (!loginResult) { printSummary(); return; }
 
-  // ─── ONBOARDING FLOW ──────────────────────────────────────────────────────
-  console.log('\n🏠 Onboarding Flow');
-
-  const hhResult = await step('POST /households (create household)', async () => {
-    const res = await request('POST', `${API}/households`, {
-      name: 'Mobile Test Family',
-    }, { Authorization: `Bearer ${accessToken}` });
-    assert(res.status === 201, `Expected 201, got ${res.status}: ${JSON.stringify(res.body)}`);
-    const data = res.body.data ?? res.body;
-    assert(data.id, 'No household id');
-    householdId = data.id;
-    return data;
-  });
-
-  if (!hhResult) { printSummary(); return; }
-
   const childResult = await step('POST /households/:id/children (add child)', async () => {
     const res = await request('POST', `${API}/households/${householdId}/children`, {
-      name: 'Emma',
-      date_of_birth: '2018-06-15',
-    }, { Authorization: `Bearer ${accessToken}` });
+      nickname: 'Emma',
+      ageBand: 'age_6_7',
+    }, {
+      Authorization: `Bearer ${accessToken}`,
+      'x-request-id': `mobile-e2e-child-${Date.now()}`,
+    });
     assert(res.status === 201, `Expected 201, got ${res.status}: ${JSON.stringify(res.body)}`);
     const data = res.body.data ?? res.body;
-    assert(data.id, 'No child id');
-    childId = data.id;
+    assert(data.childProfile?.id, 'No child id');
+    childId = data.childProfile.id;
     return data;
   });
 
   // ─── DASHBOARD DATA ───────────────────────────────────────────────────────
   console.log('\n📊 Dashboard Data');
 
-  await step('GET /households (visible in dashboard)', async () => {
-    const res = await request('GET', `${API}/households`, null,
+  await step('GET /me (profile visible in dashboard)', async () => {
+    const res = await request('GET', `${API}/me`, null,
       { Authorization: `Bearer ${accessToken}` });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = res.body.data ?? res.body;
-    const households = Array.isArray(data) ? data : [data];
-    assert(households.length > 0, 'No households returned');
+    assert(data.userId, 'No profile id returned');
   });
 
   await softStep('GET /devices/household/:id (household devices)', async () => {

@@ -22,7 +22,7 @@ Parents can control safety, see progress, and understand what happened without b
 2. `ParentTodayScreen` explains today's activity in parent language: lesson topic, time, speaking turns, words practiced, and next review.
 3. `ParentHistoryScreen` shows activity over time with filters for child, date range, and topic when the household has enough data.
 4. `ParentSafetyScreen` explains privacy and safety in plain language and links to policy/support.
-5. `ParentSettingsScreen` groups parent-editable controls by language, child profile, lesson limits, audio/feedback, privacy, subscription, and support.
+5. `ParentSettingsScreen` groups parent-editable controls by language, child profile, lesson limits, AI voice consent, audio/feedback, privacy, subscription, and support.
 6. Parent entry points open parent surfaces directly because this mobile app is parent-operated.
 
 ## Progress Summary Hierarchy
@@ -44,6 +44,7 @@ Child-facing progress screens may be warmer, but they must not drive parent deci
 | Daily time | Daily lesson time | Standard limit | Show minutes and effect on lessons, not quota jargon. |
 | Quiet hours | Quiet hours | Enabled when configured | Explain that voice lessons cannot start during quiet hours. |
 | Microphone | Voice practice | On | Explain that voice practice pauses when off. |
+| AI voice consent | AI voice lessons | Explicit parent grant required before Robot listens during lessons | Allow and pause actions live in `ParentSettingsScreen`; save failure stays inline and does not navigate away. |
 | Sound effects | Sound effects | On | Child-facing feedback only; does not affect safety. |
 | Haptics | Haptics | On | Local device feedback only. |
 | Reminders | Practice reminder | Parent-selected time | Parent controls reminder timing. |
@@ -109,8 +110,9 @@ Review needed should always give one clear primary action:
 7. Offline parent/progress summaries show last cached update time.
 8. Parent progress copy contains no diagnosis terms: delay, disorder, risk, therapy, assessment, abnormal.
 9. Safety settings explain effect in parent language and do not expose filter, model, or backend internals.
-10. Review needed primary CTA starts review practice; secondary CTA returns home.
-11. Celebration copy is effort-based and does not require rewards, streaks, or stickers to continue.
+10. Parent settings exposes AI voice lesson allow/pause actions inside `ParentSettingsScreen`; it does not create a separate voice setup route after onboarding.
+11. Review needed primary CTA starts review practice; secondary CTA returns home.
+12. Celebration copy is effort-based and does not require rewards, streaks, or stickers to continue.
 
 ## Current Implementation Review Notes
 

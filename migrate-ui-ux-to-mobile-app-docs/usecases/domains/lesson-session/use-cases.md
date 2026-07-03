@@ -26,13 +26,13 @@
 
 - **Goal:** Establish the realtime voice transport so Robot can speak and listen.
 - **Trigger:** UC-L01 transitioned to `connecting` (`LessonReadyScreen.jsx` → `go('connecting')`).
-- **Preconditions:** `useLessonStore.sessionId` is being created; microphone permission granted; voice provider NOT CONFIRMED in source (KD10).
+- **Preconditions:** `useLessonStore.sessionId` is being created; microphone permission granted; `openRealtime` observer transport exists in `src/services/ws/realtime.{ts,js}`; production provider/sessionId auto-attach is NOT CONFIRMED in source (KD10).
 - **Main Flow:**
-  1. `ConnectingScreen` renders the connecting indicator (`ConnectingScreen.jsx`).
-  2. (Hypothetical) client opens the realtime voice channel via `src/services/websocket/realtime.js → openRealtime` — TBD per `lesson-session.usecase.puml:77`.
-  3. Voice channel reaches "open" state — connection delegated to external service (see cross-domain-edges.json: UC-L02→ACTOR:RealtimeVoiceService).
-  4. After 1800 ms timer (`ConnectingScreen.jsx:11`), client navigates to `greeting` → UC-L03.
-- **Postconditions:** Voice transport is open; navigation lands on `greeting`; `useLessonStore.lastTurnState` ready for first turn.
+  1. `ConnectingScreen` renders the connecting indicator (`src/features/lesson-session/screens/ConnectingScreen.tsx`).
+  2. Client attaches the mobile observer lane via `src/services/ws/realtime.{ts,js} → openRealtime` when a production `sessionId` is available.
+  3. Voice observer channel reaches "open" state — connection delegated to external service (see cross-domain-edges.json: UC-L02→ACTOR:RealtimeVoiceService).
+  4. Client navigates to `greeting` only after observer/open evidence or an explicit offline fallback path; legacy timer-only auto-advance is not production evidence.
+- **Postconditions:** Voice observer transport is open or a recoverable fallback state is active; navigation lands on `greeting`; `useLessonStore.lastTurnState` ready for first turn.
 - **Error Flow:**
   1. Connection failure or timeout → UC-L19 Recover from Audio Error.
 

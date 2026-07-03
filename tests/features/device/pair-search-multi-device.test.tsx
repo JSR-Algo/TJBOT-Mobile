@@ -3,7 +3,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 import PairSearchScreen from '@/features/device/pairing/screens/PairSearchScreen';
 import { ROUTES } from '@/navigation/routes';
-import { getDeviceStatus, startDeviceProvisioning } from '@/services/api/device.api';
+import { getDeviceStatus, startDeviceProvisioning, type DeviceStatus } from '@/services/api/device.api';
 import { listAvailableClaimDevices } from '@/services/api/claim.api';
 import { initializeBle, scanForTJBotDevices } from '@/services/ble/service';
 
@@ -50,6 +50,16 @@ const mockedNetInfoFetch = NetInfo.fetch as jest.MockedFunction<typeof NetInfo.f
 
 function candidate(id: string, serial: string) {
   return { id, name: serial, localName: serial, serviceUUIDs: [] };
+}
+
+function deviceStatus(overrides: Partial<DeviceStatus>): DeviceStatus {
+  return {
+    id: 'device-owned',
+    name: 'TBOT-OWNED',
+    online: false,
+    batteryPercent: 0,
+    ...overrides,
+  };
 }
 
 function renderSearch(navigate: jest.Mock, params?: React.ComponentProps<typeof PairSearchScreen>['route']['params']) {
@@ -101,13 +111,12 @@ describe('PairSearchScreen multi-device picker', () => {
   });
 
   it('routes a normal scan of the already paired primary robot to PairFound so claim token delivery still runs', async () => {
-    mockedGetDeviceStatus.mockResolvedValue({
-      id: 'device-owned',
+    mockedGetDeviceStatus.mockResolvedValue(deviceStatus({
       name: 'Van phong Tam',
       serialNumber: 'TBOT-OWNED',
       online: true,
       batteryPercent: 77,
-    } as unknown as Awaited<ReturnType<typeof getDeviceStatus>>);
+    }));
     mockedScan.mockResolvedValue({
       allowed: [candidate('ble-owned', 'TBOT-OWNED')],
       blocked: [],
@@ -128,13 +137,12 @@ describe('PairSearchScreen multi-device picker', () => {
   });
 
   it('keeps the normal new-pairing path when the scanned robot is not the paired primary robot', async () => {
-    mockedGetDeviceStatus.mockResolvedValue({
-      id: 'device-owned',
+    mockedGetDeviceStatus.mockResolvedValue(deviceStatus({
       name: 'Van phong Tam',
       serialNumber: 'TBOT-OWNED',
       online: true,
       batteryPercent: 77,
-    } as unknown as Awaited<ReturnType<typeof getDeviceStatus>>);
+    }));
     mockedScan.mockResolvedValue({
       allowed: [candidate('ble-new', 'TBOT-NEW')],
       blocked: [],

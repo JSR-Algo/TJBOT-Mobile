@@ -19,9 +19,11 @@ import { formatLessonCopy } from '@/utils/errors';
 type Props = NativeStackScreenProps<RootStackParamList, 'RunningScreen'>;
 
 const POLL_INTERVAL_MS = 2500;
+const MAX_CURRENT_ASSIGNMENT_SETTLING_POLLS = 18;
 
 export default function RunningScreen({ navigation, route }: Props) {
   const deviceId = route.params?.deviceId;
+  const missingDeviceId = !deviceId;
   const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
   // Completion projection. The current-assignment endpoint only returns rows in
   // an ACTIVE state (ASSIGNED/PRELOADING/READY/RUNNING/PAUSED); the instant a
@@ -31,12 +33,16 @@ export default function RunningScreen({ navigation, route }: Props) {
   // can never emit (the progress_events stream is the authoritative completion
   // source; this is its live projection, plan M3).
   const [finished, setFinished] = React.useState(false);
+  const [assignmentStale, setAssignmentStale] = React.useState(false);
+  const [retryNonce, setRetryNonce] = React.useState(0);
   const sawLiveRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!deviceId) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let settlingPolls = 0;
+    setAssignmentStale(false);
 
     const poll = async () => {
       try {
@@ -45,30 +51,38 @@ export default function RunningScreen({ navigation, route }: Props) {
         const live = current && current.state !== 'COMPLETED' && current.state !== 'FAILED' && current.state !== 'CANCELLED';
         if (live) {
           sawLiveRef.current = true;
+          settlingPolls = 0;
           setAssignment(current);
           timer = setTimeout(poll, POLL_INTERVAL_MS);
           return;
         }
-        // Terminal: either an explicit terminal-state object, or null after we
-        // had observed a live assignment. Both mean the lesson is done — render
-        // the completion UI and stop polling.
+        // Terminal: explicit failure/cancel stops polling but must not render
+        // completion. Only COMPLETED or live->null means success.
         if (current) setAssignment(current);
-        const terminal =
-          current?.state === 'COMPLETED' ||
-          current?.state === 'FAILED' ||
-          current?.state === 'CANCELLED' ||
-          (current === null && sawLiveRef.current);
-        if (terminal) {
+        const successfulTerminal = current?.state === 'COMPLETED' || (current === null && sawLiveRef.current);
+        if (successfulTerminal) {
           setFinished(true);
           return;
         }
+        if (current?.state === 'FAILED' || current?.state === 'CANCELLED') return;
         // Non-terminal: most importantly current===null && !sawLiveRef.current,
         // the read-after-write race right after createAssignment where the
         // assignment isn't visible yet. Keep polling — stopping here would
         // freeze the UI on 'Lesson playing' forever.
+        settlingPolls += 1;
+        if (settlingPolls >= MAX_CURRENT_ASSIGNMENT_SETTLING_POLLS) {
+          setAssignmentStale(true);
+          return;
+        }
         timer = setTimeout(poll, POLL_INTERVAL_MS);
       } catch {
-        if (active) timer = setTimeout(poll, POLL_INTERVAL_MS);
+        if (!active) return;
+        settlingPolls += 1;
+        if (settlingPolls >= MAX_CURRENT_ASSIGNMENT_SETTLING_POLLS) {
+          setAssignmentStale(true);
+          return;
+        }
+        timer = setTimeout(poll, POLL_INTERVAL_MS);
       }
     };
 
@@ -77,7 +91,15 @@ export default function RunningScreen({ navigation, route }: Props) {
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [deviceId]);
+  }, [deviceId, retryNonce]);
+
+  const retryCurrentAssignment = React.useCallback(() => {
+    setAssignment(null);
+    setFinished(false);
+    setAssignmentStale(false);
+    sawLiveRef.current = false;
+    setRetryNonce((value) => value + 1);
+  }, []);
 
   const lessonTitle =
     assignment?.lessonTitle?.trim()
@@ -85,7 +107,11 @@ export default function RunningScreen({ navigation, route }: Props) {
       : route.params?.lessonTitle?.trim()
         ? route.params.lessonTitle
         : "Today's lesson";
-  const completed = finished || assignment?.state === 'COMPLETED';
+  const assignmentId = assignment?.assignmentId ?? route.params?.assignmentId;
+  const sessionId = assignment?.sessionId ?? route.params?.sessionId;
+  const terminalUnsuccessful = assignment?.state === 'FAILED' || assignment?.state === 'CANCELLED';
+  const statusUnavailable = assignmentStale || missingDeviceId || terminalUnsuccessful;
+  const completed = !statusUnavailable && (finished || assignment?.state === 'COMPLETED');
   // When completion was inferred from the live terminal→null transition the
   // polled object is not COMPLETED, so resolve the completion copy explicitly.
   const presentation = completed
@@ -93,20 +119,25 @@ export default function RunningScreen({ navigation, route }: Props) {
     : assignment
       ? presentAssignmentState(assignment.state)
       : null;
-  const statusCopy = presentation
-    ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
-    : 'Lesson playing';
+  const statusCopy = terminalUnsuccessful
+    ? 'Robot could not finish this lesson.'
+    : statusUnavailable
+      ? "We can't confirm the lesson on Robot yet."
+    : presentation
+      ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
+      : 'Lesson playing';
+  const statusLabel = completed ? statusCopy : terminalUnsuccessful ? 'Needs attention' : statusUnavailable ? 'Waiting' : 'Lesson playing';
 
   return (
-    <DeviceShell title={completed ? 'Lesson finished' : 'Lesson is on Robot'}>
+    <DeviceShell title={completed ? 'Lesson finished' : statusUnavailable ? 'Lesson status unavailable' : 'Lesson is on Robot'}>
       <Box paddingTop={36} paddingHorizontal={24} alignItems="center">
         <Box style={styles.robotWrap} alignItems="center" justifyContent="center">
-          <RobotDevice emotion={completed ? 'happy' : 'speak'} size={170} accent="#FF6F61" />
+          <RobotDevice emotion={completed ? 'happy' : statusUnavailable ? 'think' : 'speak'} size={170} accent="#FF6F61" />
         </Box>
-        <Box style={[styles.statusBadge, completed && styles.statusBadgeDone]}>
-          <Box style={[styles.statusDot, completed && styles.statusDotDone]} />
-          <Text fontWeight="700" style={[styles.statusText, completed && styles.statusTextDone]}>
-            {completed ? statusCopy : 'Lesson playing'}
+        <Box style={[styles.statusBadge, completed && styles.statusBadgeDone, statusUnavailable && styles.statusBadgeStale]}>
+          <Box style={[styles.statusDot, completed && styles.statusDotDone, statusUnavailable && styles.statusDotStale]} />
+          <Text fontWeight="700" style={[styles.statusText, completed && styles.statusTextDone, statusUnavailable && styles.statusTextStale]}>
+            {statusLabel}
           </Text>
         </Box>
         <Text fontWeight="600" style={styles.heading}>{lessonTitle}</Text>
@@ -127,11 +158,12 @@ export default function RunningScreen({ navigation, route }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        {!completed && (
-          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { deviceId, assignmentId: assignment?.assignmentId, lessonTitle })}>
+        {!completed && !statusUnavailable && (
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { deviceId, assignmentId, sessionId, lessonTitle })}>
             See what's happening
           </DeviceBigBtn>
         )}
+        {assignmentStale && !missingDeviceId && <DeviceBigBtn onClick={retryCurrentAssignment}>Try again</DeviceBigBtn>}
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Done for now</DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -145,10 +177,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF4D9', paddingVertical: 5, paddingHorizontal: 11, borderRadius: 999, marginTop: 14,
   },
   statusBadgeDone: { backgroundColor: '#E6F4EE' },
+  statusBadgeStale: { backgroundColor: '#F2F4F7' },
   statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#E8A33C' },
   statusDotDone: { backgroundColor: '#1F8A5B' },
+  statusDotStale: { backgroundColor: '#667085' },
   statusText: { fontSize: 11, color: '#8A6A12' },
   statusTextDone: { color: '#1F8A5B' },
+  statusTextStale: { color: '#475467' },
   heading: { fontSize: 22, color: CL.ink, letterSpacing: -0.3, textAlign: 'center', marginTop: 14 },
   sub: { fontSize: 13, color: CL.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 20, marginTop: 6 },
   noteCard: { backgroundColor: '#F8F6F1', borderRadius: 12, padding: 14 },

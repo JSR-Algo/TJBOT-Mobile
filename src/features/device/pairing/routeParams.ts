@@ -1,6 +1,10 @@
 import type { RootStackParamList } from '@/navigation/routes';
 
 type PairWifiPasswordParams = NonNullable<RootStackParamList['PairWifiPasswordScreen']>;
+type PairingRetryParams = {
+  provisioningAttemptId?: string;
+  provisioningTransport?: PairWifiPasswordParams['provisioningTransport'];
+} | undefined;
 
 const FALLBACK_SSID = 'Selected network';
 
@@ -10,6 +14,21 @@ export function buildPairWifiPasswordParams(ssid: string): PairWifiPasswordParam
 
 export function getPairWifiPasswordSsid(params: RootStackParamList['PairWifiPasswordScreen']): string {
   return sanitizeSsid(params?.ssid);
+}
+
+export function buildPairSearchRetryParams(params: PairingRetryParams): RootStackParamList['PairSearchScreen'] {
+  if (!params) return undefined;
+  if (params.provisioningTransport === 'ble_reconnect' || params.provisioningTransport === 'ble_offline') {
+    return { reconnectMode: true };
+  }
+  if (params.provisioningAttemptId?.startsWith('reconnect:') || params.provisioningAttemptId?.startsWith('offline:')) {
+    return { reconnectMode: true };
+  }
+  return undefined;
+}
+
+export function hasPairFoundContext(params: RootStackParamList['PairQrScanScreen']): boolean {
+  return !!(params?.deviceId || params?.serialNumber || params?.bleDeviceId);
 }
 
 function sanitizeSsid(value: string | undefined): string {

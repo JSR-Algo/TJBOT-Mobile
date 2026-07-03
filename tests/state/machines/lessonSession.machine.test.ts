@@ -160,6 +160,51 @@ describe('LessonSession machine — each end_reason drives the correct terminal'
   });
 });
 
+describe('LessonSession machine — backend turn-complete frames', () => {
+  it('TURN_COMPLETE clears ACTIVE.THINKING back to listening without terminal completion', () => {
+    const actor = buildActor();
+    bringToActive(actor);
+    actor.send({ type: 'GREETING_DONE' });
+    actor.send({ type: 'INTRO_DONE' });
+    actor.send({ type: 'REPLY_READY' });
+    actor.send({ type: 'VAD_SPEECH' });
+    actor.send({ type: 'VAD_END' });
+    expect(path(actor)).toBe('ACTIVE.THINKING');
+
+    actor.send({
+      type: 'TURN_COMPLETE',
+      turnId: 'turn-1',
+      responseText: '',
+    });
+
+    expect(path(actor)).toBe('ACTIVE.ROBOT_LISTENING');
+    expect(actor.getSnapshot().status).toBe('active');
+    expect(actor.getSnapshot().context.endReason).toBeNull();
+    actor.stop();
+  });
+
+  it('stale TURN_COMPLETE does not start or complete a session', () => {
+    const actor = buildActor();
+    actor.send({
+      type: 'TURN_COMPLETE',
+      turnId: 'turn-1',
+      responseText: '',
+    });
+    expect(path(actor)).toBe('IDLE');
+    expect(actor.getSnapshot().context.endReason).toBeNull();
+
+    actor.send({ type: 'START_SESSION', idempotencyKey: IDEMPOTENCY_KEY });
+    actor.send({
+      type: 'TURN_COMPLETE',
+      turnId: 'turn-1',
+      responseText: '',
+    });
+    expect(path(actor)).toBe('CONNECTING');
+    expect(actor.getSnapshot().context.endReason).toBeNull();
+    actor.stop();
+  });
+});
+
 describe('LessonSession machine — RECONNECTING is server-authoritative', () => {
   it('enters RECONNECTING on WS_DISCONNECT and exits to ACTIVE on WS_RESUMED', () => {
     const actor = buildActor();
@@ -294,18 +339,38 @@ describe('LessonSession machine — invalid transitions (plan §5)', () => {
     actor.stop();
   });
 
-  it('IDLE → COMPLETED is server-blocked, not client-blocked (plan §5: "Server: state guard in realtime-orchestrator")', () => {
-    // Per plan §5 the IDLE → COMPLETED block lives in the realtime
-    // orchestrator, NOT the mobile machine — the mobile state is a mirror,
-    // not the authority. We document that the client currently mirrors a
-    // (contract-violating) server SESSION_END from IDLE, and rely on the
-    // server-side guard to prevent the event from ever being emitted. If
-    // this assertion changes (e.g. add a `guard: hasSession` to the root
-    // SESSION_END transitions) update the plan reference here too.
+  it('stale server terminal events before SESSION_STARTED do not terminate the local machine', () => {
     const actor = buildActor();
     expect(path(actor)).toBe('IDLE');
     actor.send({ type: 'SESSION_END', reason: 'complete' });
-    expect(path(actor)).toBe('COMPLETED');
+    expect(path(actor)).toBe('IDLE');
+    actor.send({ type: 'SAFETY_BLOCK' });
+    expect(path(actor)).toBe('IDLE');
+    actor.stop();
+  });
+
+  it('stale server terminal events during CONNECTING do not bypass SESSION_STARTED', () => {
+    const actor = buildActor();
+    actor.send({ type: 'START_SESSION', idempotencyKey: IDEMPOTENCY_KEY });
+    expect(path(actor)).toBe('CONNECTING');
+    actor.send({ type: 'SESSION_END', reason: 'parent_stop' });
+    expect(path(actor)).toBe('CONNECTING');
+    actor.send({ type: 'SAFETY_BLOCK' });
+    expect(path(actor)).toBe('CONNECTING');
+    actor.stop();
+  });
+
+  it('stale server terminal events in AUDIO_FAILED do not override local recovery', () => {
+    const actor = buildActor();
+    actor.send({ type: 'START_SESSION', idempotencyKey: IDEMPOTENCY_KEY });
+    actor.send({ type: 'WS_FAIL', code: 'ws_fail' });
+    expect(path(actor)).toBe('AUDIO_FAILED');
+    actor.send({ type: 'SESSION_END', reason: 'timeout' });
+    expect(path(actor)).toBe('AUDIO_FAILED');
+    actor.send({ type: 'SAFETY_BLOCK' });
+    expect(path(actor)).toBe('AUDIO_FAILED');
+    actor.send({ type: 'RETRY' });
+    expect(path(actor)).toBe('CONNECTING');
     actor.stop();
   });
 });

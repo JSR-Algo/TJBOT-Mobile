@@ -113,18 +113,19 @@
 - **Trigger:** Navigation arrived at `dv_pair_connecting` from UC-DP08.
 - **Preconditions:** UC-DP08 collected an SSID + password; Robot is still in pairing mode.
 - **Main Flow:**
-  1. `PairConnectingPage` mounts and steps through 4 sub-stages: send Wi-Fi to Robot → connecting to SSID → logging in to account → loading starter lesson (`PairConnectingScreen.jsx:8-13`).
-  2. Each sub-stage advances on a ~900 ms timer in the prototype; real wiring would await Robot ack + Wi-Fi DHCP + account login OK (`device.api.js → setDeviceWifi`, plus an unbuilt account-bind call — KD8).
-  3. Final step transitions to `dv_pair_success` (UC-DP10) on a ~1.1 s timer.
-- **Postconditions:** Navigation lands on `dv_pair_success`; Robot is on Wi-Fi and bound to the account.
+  1. `PairConnectingScreen` mounts and sends the Wi-Fi credentials through the active transport without putting the password in navigation params, logs, analytics, or persistent storage.
+  2. BLE handoff statuses such as `wifi_credentials_sent` and firmware `STA_CONN_SUCCESS` are provisional local signals only; the app continues polling backend device status/provisioning state.
+  3. For `ble_offline`, the app must receive backend online confirmation for the Robot before navigating to `dv_pair_success`; a credential-only handoff that never checks in routes to UC-DP11 with an offline-backend-confirmation timeout.
+  4. For backend-backed claim/provisioning paths, the app waits for cloud-authoritative completion (`device_authenticated` / claim-confirmed state and device online status) before the final success screen.
+- **Postconditions:** Navigation lands on `dv_pair_success` only after backend confirmation proves Robot is online and bound to the account.
 - **Error Flow:**
-  1. Any sub-stage failure → UC-DP11 Pairing Failed Recovery (recovery cards specifically address Wi-Fi password and battery / range — `PairFailedScreen.jsx:21-25`).
+  1. Any sub-stage failure or missing backend confirmation → UC-DP11 Pairing Failed Recovery with the specific failed sub-stage preserved for diagnosis.
 
 ## UC-DP10 — Pairing Success
 
 - **Goal:** Confirm to Parent that Robot is paired, online, and the starter course is loaded.
-- **Trigger:** UC-DP09 connect-orchestration finished successfully; navigation arrived at `dv_pair_success`.
-- **Preconditions:** UC-DP09 completed all 4 sub-stages.
+- **Trigger:** UC-DP09 connect-orchestration finished successfully after backend confirmation; navigation arrived at `dv_pair_success`.
+- **Preconditions:** UC-DP09 confirmed Robot is online and account-bound through backend-authoritative state.
 - **Main Flow:**
   1. `PairSuccessPage` shows the celebrating Robot + 3 reassurance rows (Robot listens & speaks / starter course is loaded / audio is not saved) — `PairSuccessScreen.jsx:11-30`.
   2. Parent taps the primary CTA → navigation transitions to `dv_pair_rename` (UC-DP13) per `UC_DP_OK ..> UC_DP_RENAME`.

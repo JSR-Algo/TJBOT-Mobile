@@ -19,7 +19,7 @@
 | **KD7** | 11 actors include speed-bump-distinguished Child/Parent. | Keep both; document gating semantics in `actors/`. |
 | **KD8** | Pairing radio (BLE vs Wi-Fi probe) NOT CONFIRMED IN SOURCE. | UC-DP04 backend cell → `BACKEND_NOT_DESIGNED`. |
 | **KD9** | Payment provider identity (Stripe? Adyen?) NOT CONFIRMED. | UC-BU08/09 backend cells → `BACKEND_NOT_DESIGNED`. |
-| **KD10** | Realtime voice provider NOT CONFIRMED (`openRealtime` is a stub). | UC-L02 backend cell → `BACKEND_NOT_DESIGNED`. |
+| **KD10** | Realtime voice provider/runtime wiring NOT CONFIRMED. `openRealtime` now implements the parent observer WebSocket transport, but production mirror screens still lack an authoritative backend `sessionId` to attach to. | UC-L02 backend cell remains `BACKEND_NOT_DESIGNED` until the sys-04 observer contract is mounted and wired. |
 | **KD11** | Course-lock client-side only (`l.state === 'locked'`); no server enforcement. | `course-library/edge-cases.md` `unauthorized` rationale: "client-side gate only — server enforcement deferred." |
 | **KD12** | Two parallel UC ID schemas exist (`UC-LL-NN` vs `UC_<PREFIX>_<VERB>`). | Resolved by D2: legacy IDs canonical, puml IDs as `aliases: []`. |
 | **KD13** | UC-A06 button-only — could be demoted to "affordance" rather than UC. | Decision NOW: **keep as UC** with `status: button-only`. Backlog entry proposes demotion to "affordance" (owner=Lane A, target=next sprint). Resolution recorded in ADR-0005 §Follow-up. |
@@ -37,7 +37,7 @@
 | Logout UI affordance | `logout()` action exists in store but **no button** found in any screen → UC-A10 listed for completeness. |
 | Pairing radio (BLE vs Wi-Fi probe) | UI shows "within 3 meters" + radio animation. Underlying transport NOT CONFIRMED IN SOURCE CODE. |
 | Payment provider identity (Stripe? Adyen?) | NOT CONFIRMED IN SOURCE CODE — only `processPayment()` stub. |
-| Realtime voice provider | NOT CONFIRMED IN SOURCE CODE — `openRealtime()` stub in `src/services/websocket/realtime.js`. |
+| Realtime voice provider | PARTIAL IN SOURCE CODE — `openRealtime()` exists in `src/services/ws/realtime.ts` for the parent observer lane, but provider identity and production `sessionId` wiring are not confirmed. |
 | Course-lock enforcement | Client-side only (`l.state === 'locked'`). Server-side enforcement NOT CONFIRMED IN SOURCE CODE. |
 | Idempotency-Key usage | Confirmed in `src/services/http/idempotency.js`; specific endpoints attached at NOT CONFIRMED IN SOURCE CODE. |
 | Reset Password (UC-A06) | Button only — button target is `onb_login`, no API call. → UNKNOWN USE CASE (label only). |

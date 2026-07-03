@@ -43,7 +43,7 @@ export default function LessonSummaryScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FF6F61">Keep going →</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.SendToRobotScreen)} color="#FF6F61">Keep going</PrimaryCTA>
         <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7} style={styles.stopBtn}>
           <Text fontWeight="700" style={{ fontSize: 18, color: '#5C4F77' }}>Stop for today</Text>
         </TouchableOpacity>

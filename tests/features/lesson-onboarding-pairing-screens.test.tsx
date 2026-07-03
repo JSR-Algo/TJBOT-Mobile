@@ -47,7 +47,7 @@ describe('LessonDoneScreen', () => {
     render(<LessonDoneScreen navigation={navigation as never} route={routeFor('LessonDoneScreen')} />);
 
     expect(screen.getByText('You did it!')).toBeTruthy();
-    expect(screen.getByText(/You learned 3 words today/)).toBeTruthy();
+    expect(screen.getByText(/Robot saved today's progress/)).toBeTruthy();
     // Three star glyphs are rendered by the [0,1,2].map.
     expect(screen.getAllByText('⭐')).toHaveLength(3);
   });
@@ -133,7 +133,7 @@ describe('FirstCourseScreen', () => {
 });
 
 describe('FirstLessonEntryScreen', () => {
-  it('without a household provider, falls back to legacyNavigate → LessonReadyScreen', () => {
+  it('without a household provider, falls back to legacyNavigate → SendToRobotScreen', () => {
     mockedUseOptionalHousehold.mockReturnValue(undefined);
     const navigation = navigationFor();
     render(
@@ -142,10 +142,10 @@ describe('FirstLessonEntryScreen', () => {
 
     expect(screen.getByText('Hand the phone to your child')).toBeTruthy();
     fireEvent.press(screen.getByText('Yes!'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 
-  it('with a household provider, calls completeOnboarding(LessonReadyScreen) and does NOT legacy-navigate', () => {
+  it('with a household provider, calls completeOnboarding(SendToRobotScreen) and does NOT legacy-navigate', () => {
     const completeOnboarding = jest.fn();
     mockedUseOptionalHousehold.mockReturnValue({ completeOnboarding } as never);
     const navigation = navigationFor();
@@ -154,7 +154,7 @@ describe('FirstLessonEntryScreen', () => {
     );
 
     fireEvent.press(screen.getByText('Yes!'));
-    expect(completeOnboarding).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+    expect(completeOnboarding).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 });

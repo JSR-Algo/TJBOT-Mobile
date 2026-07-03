@@ -70,6 +70,22 @@ export function isAnalyticsEnabled(): boolean {
   return analyticsEnabled;
 }
 
+/**
+ * Parent-controlled analytics consent switch (Settings → Privacy). Flips the
+ * live PostHog opt state AND the in-process gate so `trackEvent` stops/starts
+ * immediately. Persisting the parent's choice across launches is the caller's
+ * responsibility (Settings writes it to AsyncStorage and re-applies on boot).
+ */
+export function setAnalyticsCollectionEnabled(enabled: boolean): void {
+  analyticsEnabled = enabled;
+  if (!client) return;
+  if (enabled) {
+    void client.optIn();
+  } else {
+    void client.optOut();
+  }
+}
+
 export function getAnalyticsClient(): PostHog | null {
   return client;
 }

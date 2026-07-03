@@ -14,6 +14,22 @@ import {
   type LessonDetail,
 } from '@/services/api/course.api';
 
+// CourseLibraryScreen now loads via useFocusEffect (refetch-on-tab-focus).
+// Outside a NavigationContainer that hook throws, so treat it as a plain effect.
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+  const ReactInner = require('react') as typeof import('react');
+  return {
+    ...actual,
+    useFocusEffect: (cb: () => undefined | (() => void)) => {
+      ReactInner.useEffect(() => {
+        const cleanup = cb();
+        return typeof cleanup === 'function' ? cleanup : undefined;
+      }, [cb]);
+    },
+  };
+});
+
 // Mock ONLY the network reads each screen depends on; keep all presentation /
 // state-machine code real so these branches are exercised the way prod runs.
 jest.mock('@/services/api/course-library.api', () => {
@@ -173,7 +189,8 @@ describe('CourseCard — state coercion + non-pressable locked variant', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// CourseScreen — line 67: the per-course onPress navigating to LevelScreen.
+// CourseScreen — line 67: the per-course onPress navigating to the real
+// course-library detail screen instead of the static LevelScreen prototype.
 // Reaching it needs a `ready` state with an unlocked course row.
 // ───────────────────────────────────────────────────────────────────────────
 describe('CourseScreen — course row onPress (line 67)', () => {
@@ -190,7 +207,7 @@ describe('CourseScreen — course row onPress (line 67)', () => {
     };
   }
 
-  it('pressing an unlocked course navigates to LevelScreen with its id as levelId', async () => {
+  it('pressing an unlocked course navigates to CourseDetailScreen with its courseId', async () => {
     mockedListCourseCatalog.mockResolvedValue([catalogItem({ id: 'cat-77', title: 'Adventure One' })]);
     const navigation = navigationFor();
     render(
@@ -202,7 +219,8 @@ describe('CourseScreen — course row onPress (line 67)', () => {
 
     await waitFor(() => expect(screen.getByText('Adventure One')).toBeTruthy());
     fireEvent.press(screen.getByText('Adventure One'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LevelScreen, { levelId: 'cat-77' });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseDetailScreen, { courseId: 'cat-77' });
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.LevelScreen, expect.anything());
   });
 
   it('a locked course renders the Locked label (locked-text arm of line 76-78)', async () => {

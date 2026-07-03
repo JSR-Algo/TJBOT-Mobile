@@ -1,6 +1,6 @@
 {
   "generated": "2026-05-14",
-  "edgeCount": 180,
+  "edgeCount": 202,
   "source": "src/features/**/*.{ts,tsx}",
   "routeSource": "src/features/*/navigation.ts",
   "forwardEdges": [
@@ -138,15 +138,15 @@
       "sourceFeature": "onboarding",
       "targetFeature": "onboarding",
       "file": "src/features/onboarding/screens/ChildProfileScreen.tsx",
-      "lineNumber": 102
+      "lineNumber": 148
     },
     {
-      "sourceRoute": "ConnectingScreen",
-      "targetRoute": "GreetingScreen",
-      "sourceFeature": "lesson-session",
-      "targetFeature": "lesson-session",
-      "file": "src/features/lesson-session/screens/ConnectingScreen.tsx",
-      "lineNumber": 16
+      "sourceRoute": "CourseAddedScreen",
+      "targetRoute": "RobotReadyScreen",
+      "sourceFeature": "course-library",
+      "targetFeature": "course-library",
+      "file": "src/features/course-library/screens/CourseAddedScreen.tsx",
+      "lineNumber": 91
     },
     {
       "sourceRoute": "CourseAddedScreen",
@@ -154,7 +154,7 @@
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/screens/CourseAddedScreen.tsx",
-      "lineNumber": 50
+      "lineNumber": 99
     },
     {
       "sourceRoute": "CourseCompleteScreen",
@@ -170,7 +170,7 @@
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/screens/CourseDetailScreen.tsx",
-      "lineNumber": 74
+      "lineNumber": 100
     },
     {
       "sourceRoute": "CourseLibraryScreen",
@@ -206,17 +206,17 @@
     },
     {
       "sourceRoute": "CourseScreen",
-      "targetRoute": "LevelScreen",
+      "targetRoute": "CourseDetailScreen",
       "sourceFeature": "course",
-      "targetFeature": "course",
+      "targetFeature": "course-library",
       "file": "src/features/course/screens/CourseScreen.tsx",
       "lineNumber": 67
     },
     {
       "sourceRoute": "DailyMissionScreen",
-      "targetRoute": "LessonReadyScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "course",
-      "targetFeature": "lesson-session",
+      "targetFeature": "course-library",
       "file": "src/features/course/screens/DailyMissionScreen.tsx",
       "lineNumber": 65
     },
@@ -226,7 +226,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/screens/DeviceHomeScreen.tsx",
-      "lineNumber": 122
+      "lineNumber": 143
     },
     {
       "sourceRoute": "DeviceHomeScreen",
@@ -234,7 +234,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/screens/DeviceHomeScreen.tsx",
-      "lineNumber": 119
+      "lineNumber": 140
     },
     {
       "sourceRoute": "DeviceHomeScreen",
@@ -242,7 +242,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/screens/DeviceHomeScreen.tsx",
-      "lineNumber": 110
+      "lineNumber": 131
     },
     {
       "sourceRoute": "DeviceHomeScreen",
@@ -250,7 +250,23 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/screens/DeviceHomeScreen.tsx",
-      "lineNumber": 78
+      "lineNumber": 64
+    },
+    {
+      "sourceRoute": "DeviceHomeScreen",
+      "targetRoute": "PairAddScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/screens/DeviceHomeScreen.tsx",
+      "lineNumber": 79
+    },
+    {
+      "sourceRoute": "DeviceHomeScreen",
+      "targetRoute": "PairAddScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/screens/DeviceHomeScreen.tsx",
+      "lineNumber": 94
     },
     {
       "sourceRoute": "DeviceOverviewScreen",
@@ -266,7 +282,31 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/ExitConfirmScreen.tsx",
-      "lineNumber": 29
+      "lineNumber": 35
+    },
+    {
+      "sourceRoute": "ExitConfirmScreen",
+      "targetRoute": "RobotSpeakingScreen",
+      "sourceFeature": "lesson-session",
+      "targetFeature": "lesson-session",
+      "file": "src/features/lesson-session/screens/ExitConfirmScreen.tsx",
+      "lineNumber": 25
+    },
+    {
+      "sourceRoute": "ExitConfirmScreen",
+      "targetRoute": "ThinkingScreen",
+      "sourceFeature": "lesson-session",
+      "targetFeature": "lesson-session",
+      "file": "src/features/lesson-session/screens/ExitConfirmScreen.tsx",
+      "lineNumber": 28
+    },
+    {
+      "sourceRoute": "ExitConfirmScreen",
+      "targetRoute": "UserSpeakingScreen",
+      "sourceFeature": "lesson-session",
+      "targetFeature": "lesson-session",
+      "file": "src/features/lesson-session/screens/ExitConfirmScreen.tsx",
+      "lineNumber": 31
     },
     {
       "sourceRoute": "FactoryResetScreen",
@@ -274,7 +314,7 @@
       "sourceFeature": "robot-mgmt",
       "targetFeature": "robot-mgmt",
       "file": "src/features/robot-mgmt/screens/FactoryResetScreen.tsx",
-      "lineNumber": 58
+      "lineNumber": 91
     },
     {
       "sourceRoute": "FirstCourseScreen",
@@ -286,9 +326,9 @@
     },
     {
       "sourceRoute": "FirstLessonEntryScreen",
-      "targetRoute": "LessonReadyScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "onboarding",
-      "targetFeature": "lesson-session",
+      "targetFeature": "course-library",
       "file": "src/features/onboarding/screens/FirstLessonEntryScreen.tsx",
       "lineNumber": 22
     },
@@ -362,15 +402,7 @@
       "sourceFeature": "home",
       "targetFeature": "device",
       "file": "src/features/home/screens/HomeHubScreen.tsx",
-      "lineNumber": 140
-    },
-    {
-      "sourceRoute": "HomeHubScreen",
-      "targetRoute": "LessonReadyScreen",
-      "sourceFeature": "home",
-      "targetFeature": "lesson-session",
-      "file": "src/features/home/screens/HomeHubScreen.tsx",
-      "lineNumber": 128
+      "lineNumber": 144
     },
     {
       "sourceRoute": "HomeHubScreen",
@@ -387,6 +419,14 @@
       "targetFeature": "progress",
       "file": "src/features/home/screens/HomeHubScreen.tsx",
       "lineNumber": 115
+    },
+    {
+      "sourceRoute": "HomeHubScreen",
+      "targetRoute": "SendToRobotScreen",
+      "sourceFeature": "home",
+      "targetFeature": "course-library",
+      "file": "src/features/home/screens/HomeHubScreen.tsx",
+      "lineNumber": 128
     },
     {
       "sourceRoute": "HowItWorksScreen",
@@ -446,9 +486,9 @@
     },
     {
       "sourceRoute": "LessonDetailScreen",
-      "targetRoute": "LessonReadyScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "course",
-      "targetFeature": "lesson-session",
+      "targetFeature": "course-library",
       "file": "src/features/course/screens/LessonDetailScreen.tsx",
       "lineNumber": 58
     },
@@ -458,7 +498,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "progress",
       "file": "src/features/lesson-session/screens/LessonDoneScreen.tsx",
-      "lineNumber": 30
+      "lineNumber": 36
     },
     {
       "sourceRoute": "LessonListScreen",
@@ -474,7 +514,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/LessonReadyScreen.tsx",
-      "lineNumber": 27
+      "lineNumber": 33
     },
     {
       "sourceRoute": "LessonResumeScreen",
@@ -482,7 +522,7 @@
       "sourceFeature": "fallback",
       "targetFeature": "lesson-session",
       "file": "src/features/fallback/screens/LessonResumeScreen.tsx",
-      "lineNumber": 32
+      "lineNumber": 36
     },
     {
       "sourceRoute": "LessonResumeScreen",
@@ -490,7 +530,7 @@
       "sourceFeature": "fallback",
       "targetFeature": "lesson-session",
       "file": "src/features/fallback/screens/LessonResumeScreen.tsx",
-      "lineNumber": 24
+      "lineNumber": 28
     },
     {
       "sourceRoute": "LessonResumeScreen",
@@ -498,7 +538,7 @@
       "sourceFeature": "fallback",
       "targetFeature": "lesson-session",
       "file": "src/features/fallback/screens/LessonResumeScreen.tsx",
-      "lineNumber": 28
+      "lineNumber": 32
     },
     {
       "sourceRoute": "LessonResumeScreen",
@@ -506,13 +546,13 @@
       "sourceFeature": "fallback",
       "targetFeature": "lesson-session",
       "file": "src/features/fallback/screens/LessonResumeScreen.tsx",
-      "lineNumber": 35
+      "lineNumber": 39
     },
     {
       "sourceRoute": "LessonSummaryScreen",
-      "targetRoute": "LessonReadyScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "progress",
-      "targetFeature": "lesson-session",
+      "targetFeature": "course-library",
       "file": "src/features/progress/screens/LessonSummaryScreen.tsx",
       "lineNumber": 46
     },
@@ -530,15 +570,7 @@
       "sourceFeature": "onboarding",
       "targetFeature": "onboarding",
       "file": "src/features/onboarding/screens/MicAskScreen.tsx",
-      "lineNumber": 46
-    },
-    {
-      "sourceRoute": "MicAskScreen",
-      "targetRoute": "FirstLessonEntryScreen",
-      "sourceFeature": "onboarding",
-      "targetFeature": "onboarding",
-      "file": "src/features/onboarding/screens/MicAskScreen.tsx",
-      "lineNumber": 47
+      "lineNumber": 38
     },
     {
       "sourceRoute": "MicMissingScreen",
@@ -746,7 +778,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairConnectingScreen.tsx",
-      "lineNumber": 60
+      "lineNumber": 101
     },
     {
       "sourceRoute": "PairConnectingScreen",
@@ -754,7 +786,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairConnectingScreen.tsx",
-      "lineNumber": 69
+      "lineNumber": 195
     },
     {
       "sourceRoute": "PairConnectingScreen",
@@ -762,7 +794,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairConnectingScreen.tsx",
-      "lineNumber": 97
+      "lineNumber": 92
     },
     {
       "sourceRoute": "PairConnectingScreen",
@@ -770,7 +802,31 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairConnectingScreen.tsx",
-      "lineNumber": 89
+      "lineNumber": 178
+    },
+    {
+      "sourceRoute": "PairConnectingScreen",
+      "targetRoute": "PairSuccessScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairConnectingScreen.tsx",
+      "lineNumber": 150
+    },
+    {
+      "sourceRoute": "PairFailedScreen",
+      "targetRoute": "PairQrScanScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
+      "lineNumber": 151
+    },
+    {
+      "sourceRoute": "PairFailedScreen",
+      "targetRoute": "PairRenameScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
+      "lineNumber": 53
     },
     {
       "sourceRoute": "PairFailedScreen",
@@ -778,7 +834,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
-      "lineNumber": 59
+      "lineNumber": 108
     },
     {
       "sourceRoute": "PairFailedScreen",
@@ -786,7 +842,15 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
-      "lineNumber": 91
+      "lineNumber": 115
+    },
+    {
+      "sourceRoute": "PairFailedScreen",
+      "targetRoute": "PairSearchScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
+      "lineNumber": 155
     },
     {
       "sourceRoute": "PairFailedScreen",
@@ -794,15 +858,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
-      "lineNumber": 54
-    },
-    {
-      "sourceRoute": "PairFailedScreen",
-      "targetRoute": "PairWifiPasswordScreen",
-      "sourceFeature": "device",
-      "targetFeature": "device",
-      "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
-      "lineNumber": 55
+      "lineNumber": 111
     },
     {
       "sourceRoute": "PairFailedScreen",
@@ -810,7 +866,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
-      "lineNumber": 87
+      "lineNumber": 144
     },
     {
       "sourceRoute": "PairFailedScreen",
@@ -818,7 +874,7 @@
       "sourceFeature": "device",
       "targetFeature": "robot-mgmt",
       "file": "src/features/device/pairing/screens/PairFailedScreen.tsx",
-      "lineNumber": 95
+      "lineNumber": 159
     },
     {
       "sourceRoute": "PairFoundScreen",
@@ -826,7 +882,39 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairFoundScreen.tsx",
-      "lineNumber": 39
+      "lineNumber": 124
+    },
+    {
+      "sourceRoute": "PairFoundScreen",
+      "targetRoute": "PairQrScanScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.tsx",
+      "lineNumber": 69
+    },
+    {
+      "sourceRoute": "PairFoundScreen",
+      "targetRoute": "PairQrScanScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.tsx",
+      "lineNumber": 76
+    },
+    {
+      "sourceRoute": "PairFoundScreen",
+      "targetRoute": "PairRenameScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.tsx",
+      "lineNumber": 57
+    },
+    {
+      "sourceRoute": "PairFoundScreen",
+      "targetRoute": "PairRenameScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.tsx",
+      "lineNumber": 95
     },
     {
       "sourceRoute": "PairFoundScreen",
@@ -834,7 +922,15 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairFoundScreen.tsx",
-      "lineNumber": 40
+      "lineNumber": 182
+    },
+    {
+      "sourceRoute": "PairFoundScreen",
+      "targetRoute": "PairWifiScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairFoundScreen.tsx",
+      "lineNumber": 104
     },
     {
       "sourceRoute": "PairIntroScreen",
@@ -878,11 +974,19 @@
     },
     {
       "sourceRoute": "PairRenameScreen",
-      "targetRoute": "PairFailedScreen",
+      "targetRoute": "PairChildProfileScreen",
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairRenameScreen.tsx",
-      "lineNumber": 35
+      "lineNumber": 111
+    },
+    {
+      "sourceRoute": "PairRenameScreen",
+      "targetRoute": "PairChildProfileScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairRenameScreen.tsx",
+      "lineNumber": 88
     },
     {
       "sourceRoute": "PairRenameScreen",
@@ -890,7 +994,15 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairRenameScreen.tsx",
-      "lineNumber": 58
+      "lineNumber": 116
+    },
+    {
+      "sourceRoute": "PairRenameScreen",
+      "targetRoute": "PairFailedScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairRenameScreen.tsx",
+      "lineNumber": 71
     },
     {
       "sourceRoute": "PairSearchScreen",
@@ -898,7 +1010,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
-      "lineNumber": 28
+      "lineNumber": 108
     },
     {
       "sourceRoute": "PairSearchScreen",
@@ -906,7 +1018,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
-      "lineNumber": 39
+      "lineNumber": 134
     },
     {
       "sourceRoute": "PairSearchScreen",
@@ -914,7 +1026,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
-      "lineNumber": 58
+      "lineNumber": 160
     },
     {
       "sourceRoute": "PairSearchScreen",
@@ -922,7 +1034,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
-      "lineNumber": 74
+      "lineNumber": 172
     },
     {
       "sourceRoute": "PairSearchScreen",
@@ -930,7 +1042,15 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
-      "lineNumber": 93
+      "lineNumber": 210
+    },
+    {
+      "sourceRoute": "PairSearchScreen",
+      "targetRoute": "PairFailedScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
+      "lineNumber": 250
     },
     {
       "sourceRoute": "PairSearchScreen",
@@ -938,7 +1058,31 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
-      "lineNumber": 65
+      "lineNumber": 57
+    },
+    {
+      "sourceRoute": "PairSearchScreen",
+      "targetRoute": "PairFoundScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
+      "lineNumber": 75
+    },
+    {
+      "sourceRoute": "PairSearchScreen",
+      "targetRoute": "PairWifiScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
+      "lineNumber": 125
+    },
+    {
+      "sourceRoute": "PairSearchScreen",
+      "targetRoute": "PairWifiScreen",
+      "sourceFeature": "device",
+      "targetFeature": "device",
+      "file": "src/features/device/pairing/screens/PairSearchScreen.tsx",
+      "lineNumber": 94
     },
     {
       "sourceRoute": "PairSuccessScreen",
@@ -962,7 +1106,7 @@
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/pairing/screens/PairWifiScreen.tsx",
-      "lineNumber": 71
+      "lineNumber": 80
     },
     {
       "sourceRoute": "ParentGateScreen",
@@ -1022,11 +1166,19 @@
     },
     {
       "sourceRoute": "ParentSettingsScreen",
+      "targetRoute": "AddChildScreen",
+      "sourceFeature": "parent",
+      "targetFeature": "parent",
+      "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
+      "lineNumber": 215
+    },
+    {
+      "sourceRoute": "ParentSettingsScreen",
       "targetRoute": "ParentAccountPrivacyScreen",
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
-      "lineNumber": 124
+      "lineNumber": 294
     },
     {
       "sourceRoute": "ParentSettingsScreen",
@@ -1034,7 +1186,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
-      "lineNumber": 112
+      "lineNumber": 282
     },
     {
       "sourceRoute": "ParentSummaryScreen",
@@ -1042,7 +1194,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 170
+      "lineNumber": 242
     },
     {
       "sourceRoute": "ParentSummaryScreen",
@@ -1050,7 +1202,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 175
+      "lineNumber": 247
     },
     {
       "sourceRoute": "ParentSummaryScreen",
@@ -1058,7 +1210,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 130
+      "lineNumber": 107
     },
     {
       "sourceRoute": "ParentSummaryScreen",
@@ -1066,7 +1218,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 176
+      "lineNumber": 127
     },
     {
       "sourceRoute": "ParentSummaryScreen",
@@ -1074,7 +1226,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 77
+      "lineNumber": 160
     },
     {
       "sourceRoute": "ParentSummaryScreen",
@@ -1082,7 +1234,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 97
+      "lineNumber": 248
     },
     {
       "sourceRoute": "ParentSummaryScreen",
@@ -1090,7 +1242,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 155
+      "lineNumber": 190
     },
     {
       "sourceRoute": "PrivacyScreen",
@@ -1150,17 +1302,17 @@
     },
     {
       "sourceRoute": "ReviewEntryScreen",
-      "targetRoute": "LessonReadyScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "course",
-      "targetFeature": "lesson-session",
+      "targetFeature": "course-library",
       "file": "src/features/course/screens/ReviewEntryScreen.tsx",
       "lineNumber": 47
     },
     {
       "sourceRoute": "ReviewNeededScreen",
-      "targetRoute": "LessonReadyScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "progress",
-      "targetFeature": "lesson-session",
+      "targetFeature": "course-library",
       "file": "src/features/progress/screens/ReviewNeededScreen.tsx",
       "lineNumber": 50
     },
@@ -1170,7 +1322,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/RobotListeningScreen.tsx",
-      "lineNumber": 20
+      "lineNumber": 24
     },
     {
       "sourceRoute": "RobotListeningScreen",
@@ -1178,7 +1330,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/RobotListeningScreen.tsx",
-      "lineNumber": 32
+      "lineNumber": 36
     },
     {
       "sourceRoute": "RobotReadyScreen",
@@ -1186,7 +1338,7 @@
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/screens/RobotReadyScreen.tsx",
-      "lineNumber": 58
+      "lineNumber": 143
     },
     {
       "sourceRoute": "RobotSpeakingScreen",
@@ -1194,7 +1346,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/RobotSpeakingScreen.tsx",
-      "lineNumber": 20
+      "lineNumber": 24
     },
     {
       "sourceRoute": "RobotSpeakingScreen",
@@ -1202,7 +1354,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/RobotSpeakingScreen.tsx",
-      "lineNumber": 30
+      "lineNumber": 34
     },
     {
       "sourceRoute": "RobotStatusScreen",
@@ -1258,7 +1410,7 @@
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/screens/RunningScreen.tsx",
-      "lineNumber": 42
+      "lineNumber": 131
     },
     {
       "sourceRoute": "SafetyRedirectScreen",
@@ -1269,12 +1421,44 @@
       "lineNumber": 32
     },
     {
+      "sourceRoute": "SafetyRedirectScreen",
+      "targetRoute": "ParentGateScreen",
+      "sourceFeature": "fallback",
+      "targetFeature": "parent",
+      "file": "src/features/fallback/screens/SafetyRedirectScreen.tsx",
+      "lineNumber": 40
+    },
+    {
       "sourceRoute": "SendToRobotScreen",
       "targetRoute": "RobotReadyScreen",
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/screens/SendToRobotScreen.tsx",
-      "lineNumber": 33
+      "lineNumber": 203
+    },
+    {
+      "sourceRoute": "SendToRobotScreen",
+      "targetRoute": "RobotReadyScreen",
+      "sourceFeature": "course-library",
+      "targetFeature": "course-library",
+      "file": "src/features/course-library/screens/SendToRobotScreen.tsx",
+      "lineNumber": 215
+    },
+    {
+      "sourceRoute": "SendToRobotScreen",
+      "targetRoute": "RobotReadyScreen",
+      "sourceFeature": "course-library",
+      "targetFeature": "course-library",
+      "file": "src/features/course-library/screens/SendToRobotScreen.tsx",
+      "lineNumber": 245
+    },
+    {
+      "sourceRoute": "SendToRobotScreen",
+      "targetRoute": "RobotReadyScreen",
+      "sourceFeature": "course-library",
+      "targetFeature": "course-library",
+      "file": "src/features/course-library/screens/SendToRobotScreen.tsx",
+      "lineNumber": 258
     },
     {
       "sourceRoute": "ShippingScreen",
@@ -1330,7 +1514,7 @@
       "sourceFeature": "purchase",
       "targetFeature": "purchase",
       "file": "src/features/purchase/screens/SubscriptionsScreen.tsx",
-      "lineNumber": 103
+      "lineNumber": 105
     },
     {
       "sourceRoute": "SubscriptionsScreen",
@@ -1338,7 +1522,7 @@
       "sourceFeature": "purchase",
       "targetFeature": "purchase",
       "file": "src/features/purchase/screens/SubscriptionsScreen.tsx",
-      "lineNumber": 98
+      "lineNumber": 100
     },
     {
       "sourceRoute": "SuccessScreen",
@@ -1363,14 +1547,6 @@
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/ThinkingScreen.tsx",
       "lineNumber": 23
-    },
-    {
-      "sourceRoute": "ThinkingScreen",
-      "targetRoute": "SuccessScreen",
-      "sourceFeature": "lesson-session",
-      "targetFeature": "lesson-session",
-      "file": "src/features/lesson-session/screens/ThinkingScreen.tsx",
-      "lineNumber": 16
     },
     {
       "sourceRoute": "TrustScreen",
@@ -1402,7 +1578,7 @@
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/UnlockConfirmModal.tsx",
-      "lineNumber": 33
+      "lineNumber": 121
     },
     {
       "sourceRoute": "UserSpeakingScreen",
@@ -1410,7 +1586,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/UserSpeakingScreen.tsx",
-      "lineNumber": 21
+      "lineNumber": 25
     },
     {
       "sourceRoute": "UserSpeakingScreen",
@@ -1418,7 +1594,7 @@
       "sourceFeature": "lesson-session",
       "targetFeature": "lesson-session",
       "file": "src/features/lesson-session/screens/UserSpeakingScreen.tsx",
-      "lineNumber": 35
+      "lineNumber": 39
     },
     {
       "sourceRoute": "VoiceFailedScreen",

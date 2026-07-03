@@ -3,7 +3,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
 import type { FeatureStackScreen, FeatureTabScreen } from './types';
 import { MainTabNavigator } from './MainTabNavigator';
-import { MAIN_TAB_SCREENS, PROTECTED_DEFAULT_ROUTE, PROTECTED_MODAL_SCREENS, PROTECTED_STACK_SCREENS } from './featureRegistry';
+import {
+  MAIN_TAB_SCREENS,
+  PROTECTED_DEFAULT_ROUTE,
+  PROTECTED_MOUNTED_MODAL_SCREENS,
+  PROTECTED_MOUNTED_STACK_SCREENS,
+  isProductionNavigableRoute,
+} from './featureRegistry';
 import { MODAL_STACK_SCREEN_OPTIONS, PROTECTED_STACK_SCREEN_OPTIONS } from './options';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -19,18 +25,21 @@ type Props = {
 };
 
 export function ModalNavigator({ initialRouteName = PROTECTED_DEFAULT_ROUTE, initialRouteParams }: Props): React.JSX.Element {
+  const productionInitialRouteName = isProductionNavigableRoute(initialRouteName)
+    ? initialRouteName
+    : PROTECTED_DEFAULT_ROUTE;
   const renderTabHostScreen = (screen: FeatureTabScreen): React.JSX.Element =>
-    renderTabHostScreenWithInitial(screen, initialRouteName, initialRouteParams);
+    renderTabHostScreenWithInitial(screen, productionInitialRouteName, initialRouteParams);
   const renderProtectedStackScreen = (screen: FeatureStackScreen): React.JSX.Element =>
-    renderStackScreen(screen, initialRouteName, initialRouteParams);
+    renderStackScreen(screen, productionInitialRouteName, initialRouteParams);
 
   return (
-    <Stack.Navigator initialRouteName={initialRouteName} screenOptions={PROTECTED_STACK_SCREEN_OPTIONS}>
+    <Stack.Navigator initialRouteName={productionInitialRouteName} screenOptions={PROTECTED_STACK_SCREEN_OPTIONS}>
       {MAIN_TAB_SCREENS.map(renderTabHostScreen)}
-      {PROTECTED_STACK_SCREENS.map(renderProtectedStackScreen)}
+      {PROTECTED_MOUNTED_STACK_SCREENS.map(renderProtectedStackScreen)}
 
       <Stack.Group screenOptions={MODAL_STACK_SCREEN_OPTIONS}>
-        {PROTECTED_MODAL_SCREENS.map(renderProtectedStackScreen)}
+        {PROTECTED_MOUNTED_MODAL_SCREENS.map(renderProtectedStackScreen)}
       </Stack.Group>
     </Stack.Navigator>
   );

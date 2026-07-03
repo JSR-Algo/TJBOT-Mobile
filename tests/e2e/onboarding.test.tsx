@@ -3,7 +3,7 @@
  *
  * TJBot mobile kid-intro flow:
  *   Splash → Welcome → IntroListen → IntroSpeak → IntroRetry → IntroCelebrate
- *           → Trust → MicAsk → FirstLessonEntry → LessonReady (lesson-session)
+ *           → Trust → MicAsk → FirstLessonEntry → SendToRobot (course-library)
  *
  * Production parent-setup screens (HouseholdCreate/AddChild/InterestSetup/
  * DeviceSetupIntro/VoiceTest/CoppaConsent) retired in PR5 per user directive;
@@ -283,11 +283,11 @@ describe('FirstLessonEntryScreen', () => {
     expect(getByText('Yes!')).toBeTruthy();
   });
 
-  it('navigates to LessonReadyScreen when Yes! pressed', () => {
+  it('navigates to SendToRobotScreen when Yes! pressed', () => {
     const { getByText } = render(
       <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />
     );
     fireEvent.press(getByText('Yes!'));
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 });

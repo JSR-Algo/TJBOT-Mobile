@@ -6,7 +6,6 @@ import LessonResumeScreen from '@/features/fallback/screens/LessonResumeScreen';
 import BuyCourseScreen from '@/features/course-library/screens/BuyCourseScreen';
 import CourseLockedScreen from '@/features/course-library/screens/CourseLockedScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
-import COURSES from '@/features/course-library/components/courses';
 import { getCourses, type PublishedCourse } from '@/services/api/course-library.api';
 
 // CourseDetailScreen reads the published catalog on mount. Keep every other
@@ -84,12 +83,12 @@ describe('LCDLessonTurnScreen — lesson-turn LCD gallery render', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// LessonResumeScreen — resume-fallback. Covers the resumeTarget routing ladder
-// (lines 22-36) for all four branches, the activityLabel conditional (line 51),
-// and both bottom CTAs (lines 59-64). Defaults applied when no checkpoint.
+// LessonResumeScreen — resume-fallback. Covers the safe resume target resolver,
+// the activityLabel conditional, and both bottom CTAs. Defaults applied when no
+// checkpoint.
 // ───────────────────────────────────────────────────────────────────────────
 describe('LessonResumeScreen — resume routing + render', () => {
-  it('uses default lesson copy and resumes to UserSpeakingScreen when no checkpoint', () => {
+  it('uses default lesson copy and resumes to SendToRobotScreen when no checkpoint', () => {
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -102,12 +101,11 @@ describe('LessonResumeScreen — resume routing + render', () => {
     expect(screen.getByText('How are you?')).toBeTruthy();
     expect(screen.getByText('60%')).toBeTruthy();
 
-    // resumeTarget default → UserSpeakingScreen (line 35, fall-through).
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UserSpeakingScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 
-  it('resumes to RobotListeningScreen and renders activityLabel when checkpoint provides them', () => {
+  it('resumes to SendToRobotScreen and renders activityLabel when checkpoint provides them', () => {
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -117,7 +115,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
             lessonTitle: 'Colors at the Park',
             progressLabel: '40%',
             activityLabel: 'Activity 2 of 3',
-            resumeTarget: ROUTES.RobotListeningScreen,
+            resumeTarget: ROUTES.SendToRobotScreen,
           },
         })}
       />,
@@ -129,24 +127,24 @@ describe('LessonResumeScreen — resume routing + render', () => {
     expect(screen.getByText('Activity 2 of 3')).toBeTruthy();
 
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotListeningScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 
-  it('resumes to RobotSpeakingScreen branch (lines 27-29)', () => {
+  it('resumes to HomeHubScreen when checkpoint explicitly requests home', () => {
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
         navigation={navigation as never}
         route={routeFor(ROUTES.LessonResumeScreen, {
-          checkpoint: { resumeTarget: ROUTES.RobotSpeakingScreen },
+          checkpoint: { resumeTarget: ROUTES.HomeHubScreen },
         })}
       />,
     );
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotSpeakingScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
-  it('resumes to ActivityIntroScreen branch (lines 31-33)', () => {
+  it('coerces legacy hidden resume targets to SendToRobotScreen', () => {
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -157,7 +155,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
       />,
     );
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ActivityIntroScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 
   it('"Stop for now" + TopBar back both route to HomeHubScreen (lines 39, 62)', () => {

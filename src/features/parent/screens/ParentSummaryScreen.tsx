@@ -12,7 +12,7 @@ import { getParentSummary, type ParentSummary } from '@/services/api/parent.api'
 import { getChildLessonProgress, getChildProgress } from '@/services/api/progress.api';
 import { getKPIs, getPronunciationTrend } from '@/services/api/learning';
 import { captureError } from '@/services/observability/sentry';
-import { localeDateTag, translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
+import { localeDateTag, translateCopy, translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { useHousehold } from '@/contexts/HouseholdContext';
@@ -39,63 +39,76 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
   const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
   const [summary, setSummary] = React.useState<ParentSummary>(() => emptySummary());
   const [dashboard, setDashboard] = React.useState<CourseInsightDashboard>(() => buildCourseInsightDashboard({}));
+  // 'ok' — at least one child data source resolved; 'degraded' — a child is
+  // selected but EVERY course-data source failed, so the band must show an
+  // error+retry instead of all-zeros that look identical to a brand-new child;
+  // 'none' — no child selected (nothing to show, not an error).
+  const [dashboardHealth, setDashboardHealth] = React.useState<'ok' | 'degraded' | 'none'>('none');
   const [errorState, setErrorState] = React.useState<SummaryErrorState>(() => defaultSummaryError());
   const params = (route.params ?? {}) as SummaryParams;
   const { activeChild } = useHousehold();
   const childId = activeChild?.id;
+  // Monotonic request id: a stale in-flight load (after unmount or a newer
+  // retry) is ignored on every setState. Replaces the leaky `active` closure —
+  // the old code's Retry called loadSummary() directly and discarded the
+  // returned canceller, so its `active` flag never flipped.
+  const reqIdRef = React.useRef(0);
 
   const loadSummary = React.useCallback(() => {
-    let active = true;
+    const myId = ++reqIdRef.current;
+    const isCurrent = () => reqIdRef.current === myId;
     setStatus('loading');
     getParentSummary()
       .then(async (nextSummary) => {
-        if (active) {
-          const normalized = normalizeParentSummary(nextSummary);
-          if (normalized) {
-            setSummary(normalized);
-            if (childId) {
-              try {
-                const [progress, assignments, kpis, pronunciationTrend] = await Promise.allSettled([
-                  getChildProgress(childId),
-                  getChildLessonProgress(childId),
-                  getKPIs(childId),
-                  getPronunciationTrend(childId, 14),
-                ]);
-                if (active) {
-                  setDashboard(buildCourseInsightDashboard({
-                    progress: progress.status === 'fulfilled' ? progress.value : null,
-                    assignments: assignments.status === 'fulfilled' ? assignments.value : null,
-                    kpis: kpis.status === 'fulfilled' ? kpis.value : null,
-                    pronunciationTrend: pronunciationTrend.status === 'fulfilled' ? pronunciationTrend.value : null,
-                  }));
-                }
-              } catch (error) {
-                captureError(error);
-                if (active) setDashboard(buildCourseInsightDashboard({}));
-              }
-            } else {
-              setDashboard(buildCourseInsightDashboard({}));
-            }
-            setStatus('success');
-          } else {
-            setErrorState(defaultSummaryError());
-            setStatus('error');
-          }
+        if (!isCurrent()) return;
+        const normalized = normalizeParentSummary(nextSummary);
+        if (!normalized) {
+          setErrorState(defaultSummaryError());
+          setStatus('error');
+          return;
         }
+        setSummary(normalized);
+        if (childId) {
+          const [progress, assignments, kpis, pronunciationTrend] = await Promise.allSettled([
+            getChildProgress(childId),
+            getChildLessonProgress(childId),
+            getKPIs(childId),
+            getPronunciationTrend(childId, 14),
+          ]);
+          if (!isCurrent()) return;
+          const results = [progress, assignments, kpis, pronunciationTrend];
+          const anyResolved = results.some((r) => r.status === 'fulfilled');
+          results
+            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+            .forEach((r) => captureError(r.reason));
+          setDashboard(buildCourseInsightDashboard({
+            progress: progress.status === 'fulfilled' ? progress.value : null,
+            assignments: assignments.status === 'fulfilled' ? assignments.value : null,
+            kpis: kpis.status === 'fulfilled' ? kpis.value : null,
+            pronunciationTrend: pronunciationTrend.status === 'fulfilled' ? pronunciationTrend.value : null,
+          }));
+          setDashboardHealth(anyResolved ? 'ok' : 'degraded');
+        } else {
+          setDashboard(buildCourseInsightDashboard({}));
+          setDashboardHealth('none');
+        }
+        setStatus('success');
       })
       .catch((error: unknown) => {
         captureError(error);
-        if (active) {
-          setErrorState(classifySummaryError(error));
-          setStatus('error');
-        }
+        if (!isCurrent()) return;
+        setErrorState(classifySummaryError(error));
+        setStatus('error');
       });
-    return () => {
-      active = false;
-    };
   }, [childId]);
 
-  React.useEffect(loadSummary, [loadSummary]);
+  React.useEffect(() => {
+    loadSummary();
+    return () => {
+      // Invalidate any in-flight load when deps change or the screen unmounts.
+      reqIdRef.current += 1;
+    };
+  }, [loadSummary]);
 
   if (status === 'loading') {
     return (
@@ -190,6 +203,8 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
           onPress={() => navigation.navigate(ROUTES.ParentTodayScreen)}
           style={styles.todayCard}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={t("Today's practice")}
         >
           <Box flex={1}>
             <Text fontWeight="500" style={{ fontSize: 15, color: PA.ink }}>Today's practice</Text>
@@ -202,39 +217,65 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
 
         <Box style={styles.dashboardBand}>
           <Text fontWeight="700" style={styles.dashboardTitle}>Course quality</Text>
-          <Box flexDirection="row" gap={10} style={{ flexWrap: 'wrap' }}>
-            <Box style={styles.insightCard} flex={1}>
-              <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.stepSuccessPct}%</Text>
-              <Text style={styles.insightLabel} i18n={false}>{qualityLabel(dashboard.stepSuccessPct)} quality</Text>
-              <Text style={styles.insightNote} i18n={false}>
-                {translateTemplate('{{percent}}% step success', { percent: dashboard.stepSuccessPct }, { locale: language })}
-              </Text>
+          {dashboardHealth === 'degraded' ? (
+            <Box gap={8}>
+              <Text fontWeight="700" style={styles.insightLabel}>Couldn't load course data</Text>
+              <Text style={styles.insightNote}>Course details are temporarily unavailable.</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={t('Try again')}
+                onPress={loadSummary}
+                activeOpacity={0.7}
+                style={styles.bandRetry}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.retryText}>Try again</Text>
+              </TouchableOpacity>
             </Box>
-            <Box style={styles.insightCard} flex={1}>
-              <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.completionRatePct}%</Text>
-              <Text style={styles.insightLabel}>Completion</Text>
-              <Text style={styles.insightNote} i18n={false}>
-                {translateTemplate('{{failed}} failed · {{active}} active', {
-                  failed: dashboard.failedLessons,
-                  active: dashboard.activeLessons,
+          ) : (
+            <>
+              <Box flexDirection="row" gap={10} style={{ flexWrap: 'wrap' }}>
+                <Box style={styles.insightCard} flex={1}>
+                  <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.stepSuccessPct}%</Text>
+                  <Text style={styles.insightLabel} i18n={false}>
+                    {translateTemplate('{{label}} quality', {
+                      label: translateCopy(qualityLabel(dashboard.stepSuccessPct), { locale: language }),
+                    }, { locale: language })}
+                  </Text>
+                  <Text style={styles.insightNote} i18n={false}>
+                    {translateTemplate('{{percent}}% step success', { percent: dashboard.stepSuccessPct }, { locale: language })}
+                  </Text>
+                </Box>
+                <Box style={styles.insightCard} flex={1}>
+                  <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.completionRatePct}%</Text>
+                  <Text style={styles.insightLabel}>Completion</Text>
+                  <Text style={styles.insightNote} i18n={false}>
+                    {translateTemplate('{{failed}} failed · {{active}} active', {
+                      failed: dashboard.failedLessons,
+                      active: dashboard.activeLessons,
+                    }, { locale: language })}
+                  </Text>
+                </Box>
+              </Box>
+              <Text fontWeight="700" style={[styles.dashboardTitle, { marginTop: 14 }]}>Learning path</Text>
+              {dashboard.coursePath.length > 0 ? (
+                dashboard.coursePath.slice(0, 3).map((course) => (
+                  <Box key={course.courseId} style={styles.pathRow}>
+                    <Text style={styles.pathLabel} i18n={false}>{course.courseId} · {course.percent}%</Text>
+                    <Text style={styles.pathMeta} i18n={false}>{course.lessonsCompleted}/{course.lessonsTotal} lessons</Text>
+                  </Box>
+                ))
+              ) : (
+                <Text style={styles.insightNote}>No course path synced yet</Text>
+              )}
+              <Text style={[styles.insightNote, { marginTop: 10 }]} i18n={false}>
+                {translateTemplate('Pronunciation: {{trend}} · {{score}}%', {
+                  trend: pronunciationTrendLabel(dashboard.pronunciationTrend, language),
+                  score: dashboard.pronunciationScore,
                 }, { locale: language })}
               </Text>
-            </Box>
-          </Box>
-          <Text fontWeight="700" style={[styles.dashboardTitle, { marginTop: 14 }]}>Learning path</Text>
-          {dashboard.coursePath.length > 0 ? (
-            dashboard.coursePath.slice(0, 3).map((course) => (
-              <Box key={course.courseId} style={styles.pathRow}>
-                <Text style={styles.pathLabel} i18n={false}>{course.courseId} · {course.percent}%</Text>
-                <Text style={styles.pathMeta} i18n={false}>{course.lessonsCompleted}/{course.lessonsTotal} lessons</Text>
-              </Box>
-            ))
-          ) : (
-            <Text style={styles.insightNote}>No course path synced yet</Text>
+            </>
           )}
-          <Text style={[styles.insightNote, { marginTop: 10 }]} i18n={false}>
-            Pronunciation {dashboard.pronunciationTrend} · {dashboard.pronunciationScore}%
-          </Text>
         </Box>
       </Box>
 
@@ -249,7 +290,14 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
       </PRowGroup>
 
       <Box paddingHorizontal={24} paddingTop={18} paddingBottom={36} alignItems="center">
-        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('Return to child play area')}
+          style={styles.returnLink}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Text style={{ color: PA.accent, fontSize: 15, fontWeight: '500' }}>Return to child play area</Text>
         </TouchableOpacity>
       </Box>
@@ -356,6 +404,11 @@ function summaryDeviceLabel(deviceId: string, locale: AppLocale): string {
   return translateTemplate('Robot: {{deviceId}}', { deviceId }, { locale });
 }
 
+function pronunciationTrendLabel(trend: CourseInsightDashboard['pronunciationTrend'], locale: AppLocale): string {
+  if (trend === 'none') return '—';
+  return translateCopy(trend, { locale });
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null ? value as Record<string, unknown> : null;
 }
@@ -436,4 +489,6 @@ const styles = StyleSheet.create({
   pathLabel: { fontSize: 13, color: PA.ink, fontWeight: '600' },
   pathMeta: { fontSize: 12, color: PA.ink2, marginTop: 2 },
   retryText: { color: PA.accent, fontSize: 15, fontWeight: '500' },
+  bandRetry: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
+  returnLink: { minHeight: 44, justifyContent: 'center' },
 });

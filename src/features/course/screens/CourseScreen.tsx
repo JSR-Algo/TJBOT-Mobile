@@ -64,7 +64,7 @@ export default function CourseScreen({ navigation }: Props) {
           <TouchableOpacity
             key={course.id}
             disabled={course.locked}
-            onPress={() => navigation.navigate(ROUTES.LevelScreen, { levelId: course.id })}
+            onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.id })}
             style={[styles.courseRow, course.locked && styles.lockedRow]}
             accessibilityRole="button"
             accessibilityState={{ disabled: course.locked }}

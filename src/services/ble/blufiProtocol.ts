@@ -1,3 +1,7 @@
+import CryptoJS from 'crypto-js';
+import 'crypto-js/mode-cfb';
+import 'crypto-js/pad-nopadding';
+
 const BLUFI_TYPE_CTRL = 0x00;
 const BLUFI_TYPE_DATA = 0x01;
 
@@ -12,6 +16,8 @@ const BLUFI_DATA_STA_PASSWORD = 0x03;
 export const BLUFI_DATA_CUSTOM = 0x13;
 
 const BLUFI_FRAME_CONTROL_PLAIN = 0x00;
+const BLUFI_FRAME_CONTROL_ENCRYPTED = 0x01;
+const BLUFI_FRAME_CONTROL_CHECKSUM = 0x02;
 const BLUFI_FRAME_CONTROL_FRAGMENT = 0x10;
 const BLUFI_WIFI_MODE_STA = 0x01;
 const BLUFI_DH_P_HEX = 'cf5cf5c38419a724957ff5dd323b9c45c3cdd261eb740f69aa94b8bb1a5c9640' +
@@ -19,11 +25,15 @@ const BLUFI_DH_P_HEX = 'cf5cf5c38419a724957ff5dd323b9c45c3cdd261eb740f69aa94b8bb
   '5347c68afc1e677da90e51bbab5f5cf429c291b4ba39c6b2dc5e8c7231e46aa7' +
   '728e87664532cdf547be20c9a3fa8342be6e34371a27c06f7dc0edddd2f86373';
 const BLUFI_DH_P_BYTES = 128;
-const BLUFI_SET_SECURITY_PLAINTEXT = 0x00;
+const BLUFI_SET_SECURITY_DATA_CHECKSUM_ENCRYPTED = 0x03;
 
 // ESP-IDF BluFi defaults to BLE MTU 23. Four header bytes plus two fragment
 // length bytes leaves 12 content bytes, matching BLUFI_FRAG_DATA_DEFAULT_LEN.
 const BLUFI_FRAGMENT_CONTENT_BYTES = 12;
+
+export type BluFiSession = {
+  readonly key: Uint8Array;
+};
 
 /**
  * Encodes a list of TLV items into a flat byte array.
@@ -48,24 +58,25 @@ export function encodeTLV(items: Array<{ tag: number; value: Uint8Array | string
  * thread it into subsequent frame groups (e.g. station provisioning frames).
  */
 export function buildBluFiCustomDataFrames(
-  params: { tlv: Uint8Array },
+  params: { tlv: Uint8Array; session?: BluFiSession },
   startSequence: number,
 ): { frames: string[]; endSequence: number } {
   const writes: string[] = [];
   const data = Array.from(params.tlv);
-  const endSequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_CUSTOM), data, startSequence);
+  const endSequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_CUSTOM), data, startSequence, params.session);
   return { frames: writes, endSequence };
 }
 
 export function buildBluFiSecurityNegotiationFrames(
   options: { privateKey?: Uint8Array } = {},
   startSequence: number,
-): { frames: string[]; endSequence: number } {
+): { frames: string[]; endSequence: number; privateKey: Uint8Array } {
   let sequence = startSequence;
   const writes: string[] = [];
   const p = hexToBytes(BLUFI_DH_P_HEX);
   const g = [0x02];
-  const publicKey = leftPadBytes(bigIntToBytes(modPow(2n, resolveDhPrivateKey(options.privateKey), hexToBigInt(BLUFI_DH_P_HEX))), BLUFI_DH_P_BYTES);
+  const privateKey = options.privateKey ?? randomBytes(BLUFI_DH_P_BYTES);
+  const publicKey = leftPadBytes(bigIntToBytes(modPow(2n, resolveDhPrivateKey(privateKey), hexToBigInt(BLUFI_DH_P_HEX))), BLUFI_DH_P_BYTES);
   const pgkLength = p.length + g.length + publicKey.length + 6;
 
   sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_NEGOTIATE), [0x00, (pgkLength >> 8) & 0xff, pgkLength & 0xff], sequence);
@@ -81,15 +92,32 @@ export function buildBluFiSecurityNegotiationFrames(
     publicKey.length & 0xff,
     ...publicKey,
   ], sequence);
-  sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_CTRL, BLUFI_CTRL_SET_SECURITY_MODE), [BLUFI_SET_SECURITY_PLAINTEXT], sequence);
+  sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_CTRL, BLUFI_CTRL_SET_SECURITY_MODE), [BLUFI_SET_SECURITY_DATA_CHECKSUM_ENCRYPTED], sequence);
 
-  return { frames: writes, endSequence: sequence };
+  return { frames: writes, endSequence: sequence, privateKey };
+}
+
+export function deriveBluFiSession(params: { privateKey: Uint8Array; peerPublicKey: Uint8Array }): BluFiSession {
+  if (params.peerPublicKey.length !== BLUFI_DH_P_BYTES) {
+    throw new Error('BluFi peer public key is invalid.');
+  }
+  const p = hexToBigInt(BLUFI_DH_P_HEX);
+  const peerPublicKey = bytesToBigInt(Array.from(params.peerPublicKey));
+  if (peerPublicKey <= 1n || peerPublicKey >= p - 1n) {
+    throw new Error('BluFi peer public key is invalid.');
+  }
+  const secret = leftPadBytes(
+    bigIntToBytes(modPow(peerPublicKey, resolveDhPrivateKey(params.privateKey), p)),
+    BLUFI_DH_P_BYTES,
+  );
+  return { key: wordArrayToBytes(CryptoJS.MD5(bytesToWordArray(secret))) };
 }
 
 export function buildBluFiStationProvisioningFrames(params: {
   ssid: string;
   password: string;
   startSequence?: number;
+  session?: BluFiSession;
 }): string[] {
   let sequence = params.startSequence ?? 0;
   const writes: string[] = [];
@@ -98,14 +126,14 @@ export function buildBluFiStationProvisioningFrames(params: {
 
   const ssidBytes = utf8Bytes(params.ssid);
   try {
-    sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_STA_SSID), ssidBytes, sequence);
+    sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_STA_SSID), ssidBytes, sequence, params.session);
   } finally {
     ssidBytes.fill(0);
   }
 
   const passwordBytes = utf8Bytes(params.password);
   try {
-    sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_STA_PASSWORD), passwordBytes, sequence);
+    sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_DATA, BLUFI_DATA_STA_PASSWORD), passwordBytes, sequence, params.session);
   } finally {
     passwordBytes.fill(0);
   }
@@ -138,7 +166,7 @@ export function parseBluFiConnReport(frameBytes: number[]): { connState: number 
   return { connState: payload[1] };
 }
 
-function appendBluFiFrames(writes: string[], type: number, data: number[], startSequence: number): number {
+function appendBluFiFrames(writes: string[], type: number, data: number[], startSequence: number, session?: BluFiSession): number {
   let sequence = startSequence;
 
   if (data.length === 0) {
@@ -152,12 +180,12 @@ function appendBluFiFrames(writes: string[], type: number, data: number[], start
     if (remaining > BLUFI_FRAGMENT_CONTENT_BYTES) {
       const chunk = data.slice(offset, offset + BLUFI_FRAGMENT_CONTENT_BYTES);
       const frameData = [remaining & 0xff, (remaining >> 8) & 0xff, ...chunk];
-      writes.push(bytesToBase64([type, BLUFI_FRAME_CONTROL_FRAGMENT, sequence, frameData.length, ...frameData]));
+      writes.push(bytesToBase64(buildBluFiFrame(type, BLUFI_FRAME_CONTROL_FRAGMENT, sequence, frameData, session)));
       offset += BLUFI_FRAGMENT_CONTENT_BYTES;
       remaining -= BLUFI_FRAGMENT_CONTENT_BYTES;
     } else {
       const frameData = data.slice(offset, offset + remaining);
-      writes.push(bytesToBase64([type, BLUFI_FRAME_CONTROL_PLAIN, sequence, frameData.length, ...frameData]));
+      writes.push(bytesToBase64(buildBluFiFrame(type, BLUFI_FRAME_CONTROL_PLAIN, sequence, frameData, session)));
       offset += remaining;
       remaining = 0;
     }
@@ -165,6 +193,24 @@ function appendBluFiFrames(writes: string[], type: number, data: number[], start
   }
 
   return sequence;
+}
+
+function buildBluFiFrame(type: number, frameControl: number, sequence: number, data: number[], session?: BluFiSession): number[] {
+  if (!session || data.length === 0) {
+    return [type, frameControl, sequence, data.length, ...data];
+  }
+
+  const checksum = crc16Be([sequence, data.length, ...data]);
+  const encrypted = aesCfb128Encrypt(session.key, sequence, data);
+  return [
+    type,
+    frameControl | BLUFI_FRAME_CONTROL_ENCRYPTED | BLUFI_FRAME_CONTROL_CHECKSUM,
+    sequence,
+    data.length,
+    ...encrypted,
+    checksum & 0xff,
+    (checksum >> 8) & 0xff,
+  ];
 }
 
 function buildType(type: number, subtype: number): number {
@@ -189,10 +235,7 @@ function randomBytes(length: number): Uint8Array {
     cryptoSource.getRandomValues(bytes);
     return bytes;
   }
-  for (let index = 0; index < bytes.length; index += 1) {
-    bytes[index] = Math.floor(Math.random() * 256) & 0xff;
-  }
-  return bytes;
+  throw new Error('BluFi secure negotiation requires crypto.getRandomValues');
 }
 
 function readCryptoSource(): { getRandomValues: (array: Uint8Array) => Uint8Array } | undefined {
@@ -227,6 +270,51 @@ function bytesToBigInt(bytes: number[]): bigint {
     value = (value << 8n) | BigInt(byte & 0xff);
   }
   return value;
+}
+
+function bytesToWordArray(bytes: number[]): CryptoJS.lib.WordArray {
+  const words: number[] = [];
+  for (let index = 0; index < bytes.length; index += 4) {
+    words.push(
+      ((bytes[index] ?? 0) << 24)
+      | ((bytes[index + 1] ?? 0) << 16)
+      | ((bytes[index + 2] ?? 0) << 8)
+      | (bytes[index + 3] ?? 0),
+    );
+  }
+  return CryptoJS.lib.WordArray.create(words, bytes.length);
+}
+
+function wordArrayToBytes(wordArray: CryptoJS.lib.WordArray): Uint8Array {
+  const bytes: number[] = [];
+  for (let index = 0; index < wordArray.sigBytes; index += 1) {
+    const word = wordArray.words[index >>> 2] ?? 0;
+    bytes.push((word >>> (24 - (index % 4) * 8)) & 0xff);
+  }
+  return new Uint8Array(bytes);
+}
+
+function aesCfb128Encrypt(key: Uint8Array, sequence: number, data: number[]): number[] {
+  const iv = new Array<number>(16).fill(0);
+  iv[0] = sequence & 0xff;
+  const result = CryptoJS.AES.encrypt(bytesToWordArray(data), bytesToWordArray(Array.from(key)), {
+    iv: bytesToWordArray(iv),
+    mode: CryptoJS.mode.CFB,
+    padding: CryptoJS.pad.NoPadding,
+  });
+  return Array.from(wordArrayToBytes(result.ciphertext));
+}
+
+function crc16Be(bytes: number[]): number {
+  let crc = 0;
+  for (const byte of bytes) {
+    crc ^= (byte & 0xff) << 8;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc & 0x8000) !== 0 ? ((crc << 1) ^ 0x1021) : (crc << 1);
+      crc &= 0xffff;
+    }
+  }
+  return crc;
 }
 
 function bigIntToBytes(value: bigint): number[] {

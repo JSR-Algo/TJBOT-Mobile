@@ -25,6 +25,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   const [customSsid, setCustomSsid] = React.useState(manualSsid ? '' : routeSsid);
   const ssid = manualSsid ? customSsid.trim() : routeSsid;
   const code = getPairCode(params);
+  const introCopy = getIntroCopy(params);
   const submit = () => {
     if (!ssid || !password) return;
     const provisioningAttemptId = getProvisioningAttemptId(params);
@@ -44,7 +45,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
     <DeviceShell title={manualSsid ? 'Network name' : ssid} onBack={() => navigation.navigate(ROUTES.PairWifiScreen, withoutPassword(params))}>
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text style={styles.intro}>
-          Enter the Wi-Fi password. Robot will remember it — your child won't need to.
+          {introCopy}
         </Text>
       </Box>
       {manualSsid ? (
@@ -104,6 +105,13 @@ function getPairCode(params: Props['route']['params']): string | undefined {
 function getProvisioningAttemptId(params: Props['route']['params']): string | undefined {
   if (!params || !('provisioningAttemptId' in params) || typeof params.provisioningAttemptId !== 'string') return undefined;
   return params.provisioningAttemptId;
+}
+
+function getIntroCopy(params: Props['route']['params']): string {
+  if (params?.errorCode === 'WIFI_PASSWORD_EXPIRED') {
+    return 'Wi-Fi password expired. Enter it again to continue.';
+  }
+  return "Enter the Wi-Fi password. Robot will remember it — your child won't need to.";
 }
 
 function withoutPassword(params: Props['route']['params']): RootStackParamList['PairWifiScreen'] {

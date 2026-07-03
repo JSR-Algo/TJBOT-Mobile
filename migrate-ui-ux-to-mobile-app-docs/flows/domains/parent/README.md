@@ -7,7 +7,7 @@
 
 ## Purpose
 
-Gated parent dashboard. PIN authentication protects child safety and account settings from accidental kid access. Covers usage summaries, history, safety/privacy controls, and a path to robot management.
+Gated parent dashboard. PIN authentication protects child safety and account settings from accidental kid access. Covers usage summaries, history, safety/privacy controls, AI voice consent controls, and a path to robot management.
 
 ## Journey narrative
 
@@ -17,9 +17,9 @@ From `parent_summary`, parents can:
 - View today's practice (`parent_today`)
 - Browse the 30-day history (`parent_history`)
 - Review safety & privacy settings (`parent_safety`)
-- Access account/notification settings (`parent_settings`)
+- Access parent settings (`parent_settings`), including language, child profile, analytics/privacy, account privacy, and AI voice consent allow/pause actions
 
-All detail screens back to `parent_summary`. `parent_settings` also exposes a direct link to `parent_safety`. From `parent_summary`, a "Home" CTA exits to `home_hub_idle`.
+All detail screens back to `parent_summary`. `parent_settings` also exposes a direct link to `parent_safety` and keeps AI voice consent changes inside the settings screen; it does not create a separate voice setup route. From `parent_summary`, a "Home" CTA exits to `home_hub_idle`.
 
 Robot management and course-library are cross-domain exits accessible from `parent_summary` / `parent_settings` (handled in `shared/cross-domain.flow.mmd`).
 
@@ -32,7 +32,7 @@ Robot management and course-library are cross-domain exits accessible from `pare
 | `parent_today` | happy | Practiced Today | Today's session breakdown |
 | `parent_history` | happy | Past 30 Days | 30-day learning history |
 | `parent_safety` | happy | Safety & Privacy | Safety & privacy settings |
-| `parent_settings` | happy | Parent Settings | Account / notification settings |
+| `parent_settings` | happy | Parent Settings | Language, profile, privacy/account settings, AI voice consent |
 
 ## Edge-case mapping
 

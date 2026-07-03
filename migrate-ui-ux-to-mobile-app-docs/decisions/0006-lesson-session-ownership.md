@@ -105,7 +105,7 @@ In priority order:
 | `state-machines-mobile-ux.md` §8.2 services row | Already lists `realtime-orchestrator` as sole writer; no edit needed. |
 | `src/features/lesson-session/index.js` | Add comment block: "Phone-runtime screens. Production path is `course-library/RunningScreen`. Gated by `__USE_PHONE_RUNTIME__`." |
 | `src/features/course-library/screens/CompanionScreen.tsx` | Replace fake `setTimeout` phase cycle with observer-WS event subscription. |
-| `src/services/websocket/realtime.ts` | Currently stub. Re-spec: client side opens **observer** lane only (`wss://realtime/v1/observer/{session_id}`). |
+| `src/services/ws/realtime.{ts,js}` | Implements the mobile **observer** lane client. Production sessionId/provider/live attach proof remains required before promoting UC-L02 backend cells. |
 | `docs/sequences/04-realtime/session-start-mobile.sequence.mmd` | NEW. ParentApp → Gateway → RealtimeService → MQTT publish → Device. surface=`mobile`. |
 | `docs/sequences/04-realtime/observer-attach.sequence.mmd` | NEW. ParentApp → Gateway → RealtimeService → observer WS upgrade. surface=`mobile`. |
 | `docs/sequences/04-realtime/turn-pipeline.sequence.mmd` | EXISTS, surface=`device`. Add note: phone is downstream observer subscriber, not a turn-pipeline participant. |

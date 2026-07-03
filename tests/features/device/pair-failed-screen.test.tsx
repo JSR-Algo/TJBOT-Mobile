@@ -4,6 +4,8 @@ import PairFailedScreen from '@/features/device/pairing/screens/PairFailedScreen
 import { ROUTES } from '@/navigation/routes';
 import { getClaimStatus } from '@/services/api/claim.api';
 import { openAppSettings, openBluetoothSettings, openWifiSettings } from '@/features/device/pairing/deviceSettings';
+import { CLAIM_STATUS } from '@/features/device/pairing/claimStatus';
+import { captureError } from '@/services/observability/sentry';
 
 // ---------------------------------------------------------------------------
 // US-005 round-2 gap fill — exhaustive behavioural coverage for
@@ -28,10 +30,16 @@ jest.mock('@/features/device/pairing/deviceSettings', () => ({
   openAppSettings: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('@/services/observability/sentry', () => ({
+  __esModule: true,
+  captureError: jest.fn(),
+}));
+
 const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
 const mockedOpenWifiSettings = openWifiSettings as jest.MockedFunction<typeof openWifiSettings>;
 const mockedOpenBluetoothSettings = openBluetoothSettings as jest.MockedFunction<typeof openBluetoothSettings>;
 const mockedOpenAppSettings = openAppSettings as jest.MockedFunction<typeof openAppSettings>;
+const mockedCaptureError = captureError as jest.MockedFunction<typeof captureError>;
 
 type Nav = { navigate: jest.Mock; reset: jest.Mock };
 
@@ -98,19 +106,27 @@ describe('PairFailedScreen copyForError matrix', () => {
     { errorCode: 'BLE_PERMISSION_DENIED', heading: 'Allow Bluetooth access', bodyIncludes: 'Allow Nearby devices and Location' },
     { errorCode: 'BLE_SERVICE_UNAVAILABLE', heading: "We couldn't start Bluetooth setup", bodyIncludes: 'Close and reopen the app' },
     { errorCode: 'BLE_SCAN_TIMEOUT', heading: "We couldn't see Robot nearby", bodyIncludes: 'make sure it is in setup mode' },
-    { errorCode: 'DEVICE_NOT_FOUND', heading: "We couldn't find that Robot", bodyIncludes: 'Use the live code and serial' },
-    { errorCode: 'INVALID_BLE_CODE', heading: "That code didn't match", bodyIncludes: 'Check the 6-digit code shown on Robot' },
+    { errorCode: 'BLE_SCAN_ERROR', heading: "Bluetooth scan didn't start", bodyIncludes: 'Turn Bluetooth off and on' },
+    { errorCode: 'BLE_SCAN_THROTTLED', heading: 'Bluetooth needs a short break', bodyIncludes: 'started too often' },
+    { errorCode: 'DEVICE_NOT_FOUND', heading: CLAIM_STATUS.NO_DEVICE_AVAILABLE.title, bodyIncludes: CLAIM_STATUS.NO_DEVICE_AVAILABLE.body },
+    { errorCode: 'INVALID_BLE_CODE', heading: CLAIM_STATUS.CLAIM_INVALID_CODE.title, bodyIncludes: CLAIM_STATUS.CLAIM_INVALID_CODE.body },
+    { errorCode: 'CLAIM_CONFIRM_TIMEOUT', heading: CLAIM_STATUS.CLAIM_CONFIRM_TIMEOUT.title, bodyIncludes: CLAIM_STATUS.CLAIM_CONFIRM_TIMEOUT.body },
     { errorCode: 'PROVISIONING_ATTEMPT_NOT_READY', heading: 'Robot is not ready yet', bodyIncludes: 'Keep Robot powered on and close by' },
     { errorCode: 'DEVICE_AUTH_NOT_VERIFIED', heading: 'Robot is not ready yet', bodyIncludes: 'Keep Robot powered on and close by' },
     { errorCode: 'BLE_PROVISIONING_UNSUPPORTED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
     { errorCode: 'BLE_PROVISIONING_FAILED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
+    { errorCode: 'BLE_PROVISIONING_DISCONNECTED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
+    { errorCode: 'BLE_PROVISIONING_GATT_ERROR', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
+    { errorCode: 'BLE_PROVISIONING_WRITE_TIMEOUT', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
+    { errorCode: 'BLE_PROVISIONING_MTU_ERROR', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
     { errorCode: 'PAIRING_CONNECT_FAILED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Retry nearby' },
     { errorCode: 'ESP_SERVER_UNAVAILABLE', heading: "We couldn't reach setup service", bodyIncludes: 'unavailable right now' },
     { errorCode: 'PROVISIONING_START_FAILED', heading: "We couldn't start pairing", bodyIncludes: 'keep Bluetooth on, then try scanning again' },
     { errorCode: 'PROVISIONING_TIMEOUT', heading: 'Setup timed out', bodyIncludes: 'Move Robot closer to Wi-Fi' },
+    { errorCode: 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT', heading: 'Robot has not checked in yet', bodyIncludes: 'did not appear online' },
     { errorCode: 'WIFI_AUTH_FAILED', heading: 'Wi-Fi password did not work', bodyIncludes: 'check capitalization' },
     { errorCode: 'DEVICE_ALREADY_ASSIGNED', heading: 'Robot is already paired', bodyIncludes: 'assigned to another account' },
-    { errorCode: 'DEVICE_ALREADY_CLAIMED', heading: 'Robot is already paired', bodyIncludes: 'assigned to another account' },
+    { errorCode: 'DEVICE_ALREADY_CLAIMED', heading: CLAIM_STATUS.DEVICE_ALREADY_CLAIMED.title, bodyIncludes: CLAIM_STATUS.DEVICE_ALREADY_CLAIMED.body },
   ];
 
   it.each(cases)('renders distinct heading "$heading" for $errorCode', ({ errorCode, heading, bodyIncludes }) => {
@@ -141,18 +157,16 @@ describe('PairFailedScreen copyForError matrix', () => {
     // distinct families is caught.
     const headings = cases.map(c => c.heading);
     const unique = new Set(headings);
-    // 19 mapped codes collapse to 15 distinct headings via three intentional
+    // 27 mapped codes collapse to 20 distinct headings via two intentional
     // shared families:
-    //   - BLE_PROVISIONING_UNSUPPORTED / BLE_PROVISIONING_FAILED /
-    //     PAIRING_CONNECT_FAILED  -> "Robot didn't accept setup over Bluetooth" (3 -> 1)
+    //   - BLE_PROVISIONING_* / PAIRING_CONNECT_FAILED
+    //     -> "Robot didn't accept setup over Bluetooth" (7 -> 1)
     //   - PROVISIONING_ATTEMPT_NOT_READY / DEVICE_AUTH_NOT_VERIFIED -> "Robot is not ready yet" (2 -> 1)
-    //   - DEVICE_ALREADY_ASSIGNED / DEVICE_ALREADY_CLAIMED -> "Robot is already paired" (2 -> 1)
-    // 19 - (3-1) - (2-1) - (2-1) = 15.
-    expect(unique.size).toBe(15);
-    // The three shared headings must each still be reachable.
+    // 27 - (7-1) - (2-1) = 20.
+    expect(unique.size).toBe(20);
+    // The two shared local headings must each still be reachable.
     expect(unique.has("Robot didn't accept setup over Bluetooth")).toBe(true);
     expect(unique.has('Robot is not ready yet')).toBe(true);
-    expect(unique.has('Robot is already paired')).toBe(true);
   });
 });
 
@@ -238,16 +252,57 @@ describe('PairFailedScreen reason-card navigation', () => {
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
   });
 
+  it('"Robot is too far" keeps reconnect mode for offline Wi-Fi recovery', () => {
+    const params = {
+      errorCode: 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: 'offline:device-1',
+      ssid: 'Casa',
+      bleDeviceId: '14:C1:9F:D1:A8:4A',
+      provisioningTransport: 'ble_offline',
+    };
+    const { screen, nav } = renderScreen(params);
+    fireEvent.press(screen.getByText('Robot is too far'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+  });
+
   it('"Robot looks asleep" card routes to PairIntroScreen', () => {
     const { screen, nav } = renderScreen(undefined);
     fireEvent.press(screen.getByText('Robot looks asleep'));
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairIntroScreen);
   });
 
+  it('"Robot looks asleep" keeps reconnect search for reconnect failures', () => {
+    const { screen, nav } = renderScreen({
+      errorCode: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: 'reconnect:device-1',
+      bleDeviceId: '14:C1:9F:D1:A8:4A',
+      provisioningTransport: 'ble_reconnect',
+    });
+    fireEvent.press(screen.getByText('Robot looks asleep'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+  });
+
   it('"Battery is low" card routes to PairIntroScreen', () => {
     const { screen, nav } = renderScreen(undefined);
     fireEvent.press(screen.getByText('Battery is low'));
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairIntroScreen);
+  });
+
+  it('"Battery is low" keeps reconnect search for offline Wi-Fi failures', () => {
+    const { screen, nav } = renderScreen({
+      errorCode: 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: 'offline:device-1',
+      bleDeviceId: '14:C1:9F:D1:A8:4A',
+      provisioningTransport: 'ble_offline',
+    });
+    fireEvent.press(screen.getByText('Battery is low'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
   });
 });
 
@@ -373,10 +428,39 @@ describe('PairFailedScreen always-on actions', () => {
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairQrScanScreen);
   });
 
+  it('"Scan QR or enter code" carries recovery context into QR/code fallback', () => {
+    const params = {
+      errorCode: 'WIFI_CONNECT_FAILED',
+      deviceId: 'device-1',
+      serialNumber: 'TBT-2026-004217',
+      provisioningAttemptId: 'claim-1',
+      ssid: 'Casa',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble',
+    };
+    const { screen, nav } = renderScreen(params);
+    fireEvent.press(screen.getByLabelText('Scan QR or enter code'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairQrScanScreen, params);
+  });
+
   it('"Try again" routes to PairSearchScreen', () => {
     const { screen, nav } = renderScreen(undefined);
     fireEvent.press(screen.getByText('Try again'));
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+  });
+
+  it('"Try again" keeps reconnect mode for a reconnect failure', () => {
+    const { screen, nav } = renderScreen({
+      errorCode: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: 'reconnect:device-1',
+      ssid: 'Casa',
+      bleDeviceId: '14:C1:9F:D1:A8:4A',
+      provisioningTransport: 'ble_reconnect',
+    });
+    fireEvent.press(screen.getByText('Try again'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
   });
 
   it('"Contact support" routes to SupportScreen with the wifi/robot_offline context', () => {
@@ -392,6 +476,19 @@ describe('PairFailedScreen always-on actions', () => {
     expect(screen.getByLabelText('Scan QR or enter code')).toBeTruthy();
     expect(screen.getByText('Try again')).toBeTruthy();
     expect(screen.getByLabelText('Contact support')).toBeTruthy();
+  });
+
+  it('header back keeps reconnect search for reconnect failures', () => {
+    const { screen, nav } = renderScreen({
+      errorCode: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: 'reconnect:device-1',
+      bleDeviceId: '14:C1:9F:D1:A8:4A',
+      provisioningTransport: 'ble_reconnect',
+    });
+    fireEvent.press(screen.getByLabelText('Go back'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
   });
 });
 
@@ -525,12 +622,14 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
   });
 
-  it('keeps the recovery screen usable (no crash, no nav) when getClaimStatus rejects', async () => {
-    mockedGetClaimStatus.mockRejectedValue(new Error('network down'));
+  it('keeps the recovery screen usable and reports the status failure when getClaimStatus rejects', async () => {
+    const error = new Error('network down');
+    mockedGetClaimStatus.mockRejectedValue(error);
     const { screen, nav } = renderScreen(lateBleClaimParams());
     await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalled());
     // The failure screen still renders its generic copy and stays put.
     expect(screen.getByText("We couldn't reach your Robot")).toBeTruthy();
+    expect(mockedCaptureError).toHaveBeenCalledWith(error);
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
   });

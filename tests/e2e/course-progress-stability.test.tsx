@@ -23,9 +23,11 @@ import {
   enrollCourse,
   unlockCourse,
 } from '@/services/api/course-library.api';
-import { getChildLessonProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
+import { getChildLessonProgress, getChildProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
+import { getKPIs, getPronunciationTrend } from '@/services/api/learning';
 import { useHousehold, useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { getDeviceStatus } from '@/services/api/device.api';
+import { authenticateParent } from '@/services/api/parent.api';
 import { getBillingProviderStatus } from '../../src/services/api/purchase.api';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
 
@@ -42,6 +44,27 @@ jest.mock('@/config/feature-flags', () => ({
     }
   },
 }));
+
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+  const ReactInner = require('react') as typeof import('react');
+  return {
+    ...actual,
+    useFocusEffect: (cb: () => undefined | (() => void)) => {
+      ReactInner.useEffect(() => {
+        const cleanup = cb();
+        return typeof cleanup === 'function' ? cleanup : undefined;
+      }, [cb]);
+    },
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      replace: jest.fn(),
+    }),
+    useRoute: () => ({ params: {} }),
+    NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
 
 jest.mock('../../src/services/api/course.api', () => ({
   listCourseCatalog: jest.fn(),
@@ -60,6 +83,17 @@ jest.mock('@/services/api/course-library.api', () => ({
 
 jest.mock('../../src/services/api/progress.api', () => ({
   getChildLessonProgress: jest.fn(),
+  getChildProgress: jest.fn(),
+}));
+
+// TodayProgressScreen's dashboard hook also fans out the learning KPIs and
+// pronunciation trend as fault-tolerant enrichment. Mock them so these render
+// tests exercise the real hook without hitting the network; the assignment feed
+// remains the backbone the assertions below care about.
+jest.mock('@/services/api/learning', () => ({
+  __esModule: true,
+  getKPIs: jest.fn(),
+  getPronunciationTrend: jest.fn(),
 }));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
@@ -70,6 +104,10 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 
 jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
+}));
+
+jest.mock('@/services/api/parent.api', () => ({
+  authenticateParent: jest.fn(),
 }));
 
 jest.mock('../../src/services/api/purchase.api', () => ({
@@ -93,9 +131,13 @@ const mockListLibrary = listLibrary as jest.MockedFunction<typeof listLibrary>;
 const mockEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
+const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getChildProgress>;
+const mockGetKPIs = getKPIs as jest.MockedFunction<typeof getKPIs>;
+const mockGetPronunciationTrend = getPronunciationTrend as jest.MockedFunction<typeof getPronunciationTrend>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockedUseOptionalHousehold = useOptionalHousehold as jest.MockedFunction<typeof useOptionalHousehold>;
 const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
+const mockAuthenticateParent = authenticateParent as jest.MockedFunction<typeof authenticateParent>;
 const mockGetBillingProviderStatus = getBillingProviderStatus as jest.MockedFunction<typeof getBillingProviderStatus>;
 
 const mockNavigate = jest.fn();
@@ -165,6 +207,15 @@ describe('course, course-library, and progress stable screen states', () => {
     jest.clearAllMocks();
     mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
     mockedUseOptionalHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
+    mockAuthenticateParent.mockResolvedValue({ authenticated: true });
+    // Dashboard enrichment sources: default to a zeroed aggregate + rejected KPI/
+    // trend so the assignment feed (the backbone these tests assert on) stays the
+    // only signal. buildCourseInsightDashboard tolerates the nulls.
+    mockGetChildProgress.mockResolvedValue({
+      childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [],
+    });
+    mockGetKPIs.mockRejectedValue(new Error('kpis not under test'));
+    mockGetPronunciationTrend.mockRejectedValue(new Error('trend not under test'));
   });
 
   it('renders course catalog loading, empty, error, offline, locked, and unlocked states', async () => {
@@ -362,7 +413,7 @@ describe('course, course-library, and progress stable screen states', () => {
     mockEnrollCourse.mockReturnValueOnce(pending.promise);
 
     const screen = render(<UnlockConfirmModal navigation={navigation as never} route={unlockRoute as never} />);
-    for (const key of ['7', '3', '5', '1']) {
+    for (const key of ['2', '4', '6', '8']) {
       fireEvent.press(screen.getByText(key));
     }
 
@@ -371,6 +422,7 @@ describe('course, course-library, and progress stable screen states', () => {
     fireEvent.press(screen.getByText('Adding...'));
 
     await waitFor(() => expect(mockEnrollCourse).toHaveBeenCalledTimes(1));
+    expect(mockAuthenticateParent).toHaveBeenCalledWith({ pin: '2468' });
     expect(mockEnrollCourse).toHaveBeenCalledWith('course-open', { childId: 'child-1', deviceId: 'device-1' });
     expect(mockUnlockCourse).not.toHaveBeenCalled();
 
@@ -397,21 +449,28 @@ describe('course, course-library, and progress stable screen states', () => {
     const screen = renderProgress();
     expect(screen.getByText('Loading progress')).toBeTruthy();
     await waitFor(() => expect(screen.getByText('Greetings')).toBeTruthy());
-    expect(screen.getByText('2')).toBeTruthy();
-    expect(screen.getByText('3')).toBeTruthy();
+    // Real step counts surface as "2 of 3 steps" — in both the quality-note and
+    // the today's-lesson card for a single-assignment feed — plus the live state
+    // label as a pill.
+    expect(screen.getAllByText('2 of 3 steps').length).toBeGreaterThan(0);
     expect(screen.getByText('In progress')).toBeTruthy();
   });
 
   it('renders progress empty and failed refresh states without showing stale metrics', async () => {
     mockGetChildLessonProgress.mockResolvedValueOnce([]);
     const empty = renderProgress();
-    await waitFor(() => expect(empty.getByText('No lessons yet')).toBeTruthy());
+    // Empty account still gets the dashboard scaffold (zeroed cards + first-run
+    // hint), not a bare "no data" line.
+    await waitFor(() =>
+      expect(empty.getByText('Finish a lesson on Robot to fill in your progress.')).toBeTruthy(),
+    );
+    expect(empty.getByText('Day streak')).toBeTruthy();
     empty.unmount();
 
     mockGetChildLessonProgress.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'timeout of 30000ms exceeded' });
     const failed = renderProgress();
     await waitFor(() => expect(failed.getByText('Progress unavailable')).toBeTruthy());
-    expect(failed.queryByText('steps right')).toBeNull();
+    expect(failed.queryByText('Day streak')).toBeNull();
   });
 
   it('labels purchase plan controls for assistive technology', async () => {

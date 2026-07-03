@@ -1,11 +1,11 @@
 import { createActor, SimulatedClock } from 'xstate';
 import { ROUTE_MAP } from '@/navigation/routeMap';
 import { ROUTES } from '@/navigation/routes';
-import { devicePairingMachine } from '@/state/machines/devicePairing.machine';
 import { createLessonSessionMachine, noopLessonSessionServices } from '@/state/machines/lessonSession.machine';
 import { onboardingMachine } from '@/state/machines/onboarding.machine';
 import type { OnboardingServices } from '@/state/machines/onboarding.types';
 import { parentApprovalMachine } from '@/state/machines/parentApproval.machine';
+import * as stateMachineExports from '@/state/machines';
 
 function routeStateId(route: keyof typeof ROUTE_MAP): string {
   const stateMachineId = Reflect.get(ROUTE_MAP[route], 'stateMachineId');
@@ -33,6 +33,10 @@ const pendingOnboardingServices: OnboardingServices = {
 };
 
 describe('executable state-machine route alignment', () => {
+  it('does not expose device pairing as a separate executable XState machine', () => {
+    expect(Object.keys(stateMachineExports).filter((key) => key.includes('DevicePairing') || key.includes('devicePairing'))).toEqual([]);
+  });
+
   it('projects onboarding machine states to feature route state IDs only', () => {
     const clock = new SimulatedClock();
     const actor = createActor(onboardingMachine, {
@@ -74,40 +78,34 @@ describe('executable state-machine route alignment', () => {
     actor.stop();
   });
 
-  it('projects device pairing machine states to feature route state IDs only', () => {
-    const actor = createActor(devicePairingMachine, { input: { userId: 'user-1' } });
-    actor.start();
-    const projections: Array<readonly [unknown, string]> = [[actor.getSnapshot().value, routeStateId(ROUTES.PairAddScreen)]];
-
-    actor.send({ type: 'TAP_ADD' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairIntroScreen)]);
-    actor.send({ type: 'TAP_START_SCAN' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairSearchScreen)]);
-    actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-001', displayCode: '123456' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairFoundScreen)]);
-    actor.send({ type: 'USER_MATCHES_CODE' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairWifiScreen)]);
-    actor.send({ type: 'SSID_PICKED', ssid: 'Home' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairWifiPasswordScreen)]);
-    actor.send({ type: 'PW_SUBMITTED', password: 'secret123' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairConnectingScreen)]);
-    actor.send({ type: 'ROBOT_ACKS_CREDS' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairConnectingScreen)]);
-    actor.send({ type: 'SERVER_CLAIM_OK', deviceId: 'device-1' });
-    projections.push([actor.getSnapshot().value, routeStateId(ROUTES.PairSuccessScreen)]);
-
-    expect(projections).toEqual([
-      ['IDLE', 'dv_pair_add'],
-      ['AWAITING_ROBOT', 'dv_pair_intro'],
-      ['SCANNING', 'dv_pair_search'],
-      ['DEVICE_FOUND', 'dv_pair_found'],
-      ['AWAITING_WIFI', 'dv_pair_wifi'],
-      ['AWAITING_WIFI_PW', 'dv_pair_wifi_pw'],
-      ['PROVISIONING', 'dv_pair_connecting'],
-      ['CLAIM_PENDING', 'dv_pair_connecting'],
-      ['CLAIMED', 'dv_pair_success'],
+  it('maps runtime device pairing screens to route state IDs without a parallel machine', () => {
+    expect([
+      [ROUTES.PairAddScreen, routeStateId(ROUTES.PairAddScreen)],
+      [ROUTES.PairIntroScreen, routeStateId(ROUTES.PairIntroScreen)],
+      [ROUTES.PairSearchScreen, routeStateId(ROUTES.PairSearchScreen)],
+      [ROUTES.PairFoundScreen, routeStateId(ROUTES.PairFoundScreen)],
+      [ROUTES.PairQrScanScreen, routeStateId(ROUTES.PairQrScanScreen)],
+      [ROUTES.PairCodeScreen, routeStateId(ROUTES.PairCodeScreen)],
+      [ROUTES.PairWifiScreen, routeStateId(ROUTES.PairWifiScreen)],
+      [ROUTES.PairWifiPasswordScreen, routeStateId(ROUTES.PairWifiPasswordScreen)],
+      [ROUTES.PairConnectingScreen, routeStateId(ROUTES.PairConnectingScreen)],
+      [ROUTES.PairSuccessScreen, routeStateId(ROUTES.PairSuccessScreen)],
+      [ROUTES.PairRenameScreen, routeStateId(ROUTES.PairRenameScreen)],
+      [ROUTES.PairFailedScreen, routeStateId(ROUTES.PairFailedScreen)],
+    ]).toEqual([
+      [ROUTES.PairAddScreen, 'dv_pair_add'],
+      [ROUTES.PairIntroScreen, 'dv_pair_intro'],
+      [ROUTES.PairSearchScreen, 'dv_pair_search'],
+      [ROUTES.PairFoundScreen, 'dv_pair_found'],
+      [ROUTES.PairQrScanScreen, 'dv_pair_qr_scan'],
+      [ROUTES.PairCodeScreen, 'dv_pair_code'],
+      [ROUTES.PairWifiScreen, 'dv_pair_wifi'],
+      [ROUTES.PairWifiPasswordScreen, 'dv_pair_wifi_pw'],
+      [ROUTES.PairConnectingScreen, 'dv_pair_connecting'],
+      [ROUTES.PairSuccessScreen, 'dv_pair_success'],
+      [ROUTES.PairRenameScreen, 'dv_pair_rename'],
+      [ROUTES.PairFailedScreen, 'dv_pair_failed'],
     ]);
-    actor.stop();
   });
 
   it('projects lesson-session machine states and interrupt reasons to feature route state IDs only', () => {

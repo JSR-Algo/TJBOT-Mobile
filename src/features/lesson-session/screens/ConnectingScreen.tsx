@@ -7,16 +7,10 @@ import ScreenShell from '@/components/ScreenShell';
 import WaveBars from '@/design-system/components/WaveBars';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ConnectingScreen'>;
 
-export default function ConnectingScreen({ navigation }: Props) {
-  React.useEffect(() => {
-    const t = setTimeout(() => navigation.navigate(ROUTES.GreetingScreen), 1800);
-    return () => clearTimeout(t);
-  }, [navigation]);
-
+export default function ConnectingScreen(_props: Props) {
   return (
     <ScreenShell bg="#E8F4FF">
       <Box accessible accessibilityLabel="Robot connection is tuning in" flex={1}>

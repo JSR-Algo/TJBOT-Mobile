@@ -1,16 +1,16 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ParentScroll, { PA } from '../components/ParentScroll';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { getChildLessonProgress, type AssignmentProgress } from '@/services/api/progress.api';
+import type { AssignmentProgress } from '@/services/api/progress.api';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { translateTemplate, useAppLanguage, localeDateTag } from '@/services/i18n/i18n';
+import { useChildLessonProgressQuery } from '@/features/progress/hooks/useChildLessonProgressQuery';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentHistoryScreen'>;
 
@@ -46,11 +46,7 @@ export default function ParentHistoryScreen({ navigation }: Props) {
   const { activeChild } = useHousehold();
   const childId = activeChild?.id;
 
-  const query = useQuery({
-    queryKey: ['lesson-progress', 'child', childId],
-    queryFn: () => getChildLessonProgress(childId as string),
-    enabled: typeof childId === 'string' && childId.length > 0,
-  });
+  const query = useChildLessonProgressQuery(childId);
 
   const back = () => navigation.navigate(ROUTES.ParentSummaryScreen);
 

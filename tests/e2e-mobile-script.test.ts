@@ -148,6 +148,52 @@ describe('e2e-mobile local production gate', () => {
     expect(source).toContain("'local-e2e-factory-token'");
   });
 
+  it('sends the modular signup contract to the real backend gate', () => {
+    const source = fs.readFileSync(SCRIPT, 'utf8');
+
+    const signupBlock = source.slice(
+      source.indexOf("request('POST', `${API}/auth/signup`"),
+      source.indexOf('assert(res.status === 201', source.indexOf("request('POST', `${API}/auth/signup`")),
+    );
+
+    expect(signupBlock).toContain('displayName');
+    expect(signupBlock).toContain('timezone');
+    expect(signupBlock).toContain('locale');
+    expect(signupBlock).toContain('acceptances');
+    expect(signupBlock).not.toContain('name,');
+  });
+
+  it('uses the signup household instead of a legacy household create route', () => {
+    const source = fs.readFileSync(SCRIPT, 'utf8');
+
+    expect(source).toContain('data.household?.id');
+    expect(source).not.toContain('/auth/consent');
+    expect(source).not.toContain("POST /households (create household)");
+  });
+
+  it('sends the modular child create contract with a request id', () => {
+    const source = fs.readFileSync(SCRIPT, 'utf8');
+
+    const childBlock = source.slice(
+      source.indexOf("request('POST', `${API}/households/${householdId}/children`"),
+      source.indexOf('assert(res.status === 201', source.indexOf("request('POST', `${API}/households/${householdId}/children`")),
+    );
+
+    expect(childBlock).toContain('nickname');
+    expect(childBlock).toContain('ageBand');
+    expect(childBlock).toContain('x-request-id');
+    expect(childBlock).not.toContain('date_of_birth');
+    expect(source).toContain('data.childProfile?.id');
+  });
+
+  it('uses the modular profile endpoint for dashboard visibility', () => {
+    const source = fs.readFileSync(SCRIPT, 'utf8');
+
+    expect(source).toContain("GET /me (profile visible in dashboard)");
+    expect(source).toContain('data.userId');
+    expect(source).not.toContain("GET /households (visible in dashboard)");
+  });
+
   it('rejects non-local backend URLs', () => {
     expect(() => runPlan(['--url=https://staging.TJBot.ai'])).toThrow(/local backend/i);
   });

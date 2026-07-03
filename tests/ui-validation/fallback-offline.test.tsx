@@ -68,7 +68,7 @@ describe('fallback and offline UI stability', () => {
       },
     };
 
-    expect(resumeRoute.params.checkpoint.resumeTarget).toBe(ROUTES.UserSpeakingScreen);
+    expect(resumeRoute.params.checkpoint.resumeTarget).toBe(ROUTES.SendToRobotScreen);
   });
 
   it('renders network fallback and navigates only through route constants', () => {
@@ -206,7 +206,7 @@ describe('fallback and offline UI stability', () => {
     const checkpoint = {
       lessonTitle: 'How are you?',
       progressLabel: '60%',
-      resumeTarget: ROUTES.UserSpeakingScreen,
+      resumeTarget: ROUTES.SendToRobotScreen,
       reason: 'voice_failed' as const,
     };
 
@@ -219,8 +219,9 @@ describe('fallback and offline UI stability', () => {
 
     expect(voice.getByText('Robot voice paused')).toBeTruthy();
     expect(voice.getByText('Your progress is safe. The voice session was interrupted.')).toBeTruthy();
-    fireEvent.press(voice.getByText('Resume lesson'));
-    expect(voiceNavigation.navigate).toHaveBeenCalledWith(ROUTES.LessonResumeScreen, { checkpoint });
+    fireEvent.press(voice.getByText('Send to robot'));
+    expect(voiceNavigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(voiceNavigation.navigate).not.toHaveBeenCalledWith(ROUTES.LessonResumeScreen, { checkpoint });
   });
 
   it('renders lesson resume from checkpoint and navigates to target', () => {
@@ -228,7 +229,7 @@ describe('fallback and offline UI stability', () => {
     const checkpoint = {
       lessonTitle: 'How are you?',
       progressLabel: '60%',
-      resumeTarget: ROUTES.UserSpeakingScreen,
+      resumeTarget: ROUTES.SendToRobotScreen,
       reason: 'voice_failed' as const,
       activityLabel: 'Speaking practice',
     };
@@ -244,7 +245,29 @@ describe('fallback and offline UI stability', () => {
     expect(screen.getByText('60%')).toBeTruthy();
     expect(screen.getByText('Speaking practice')).toBeTruthy();
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UserSpeakingScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UserSpeakingScreen);
+  });
+
+  it('coerces legacy hidden lesson resume targets to robot assignment', () => {
+    const navigation = createNavigation();
+    const legacyCheckpoint = {
+      lessonTitle: 'How are you?',
+      progressLabel: '60%',
+      resumeTarget: ROUTES.RobotListeningScreen,
+      reason: 'voice_failed' as const,
+    };
+
+    const screen = render(
+      <LessonResumeScreen
+        navigation={navigation as never}
+        route={{ key: ROUTES.LessonResumeScreen, name: ROUTES.LessonResumeScreen, params: { checkpoint: legacyCheckpoint } } as never}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Keep going'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotListeningScreen);
   });
 
   it('does not promise resume when voice checkpoint is missing', () => {

@@ -164,7 +164,7 @@ describe('RootNavigator', () => {
     expect((await screen.findByTestId('protected-stack')).props.children).toBe(PENDING_DEVICE_SETUP_ROUTE);
   });
 
-  it('starts protected stack at requested first lesson route after onboarding completion', async () => {
+  it('falls back to the default protected route when stale state requests the hidden lesson prototype', async () => {
     mockAuthState.isAuthenticated = true;
     mockHouseholdState.onboardingComplete = true;
     mockHouseholdState.protectedInitialRoute = ROUTES.LessonReadyScreen;
@@ -173,7 +173,7 @@ describe('RootNavigator', () => {
 
     await renderRoot();
 
-    expect((await screen.findByTestId('protected-stack')).props.children).toBe(ROUTES.LessonReadyScreen);
+    expect((await screen.findByTestId('protected-stack')).props.children).toBe(ROUTES.HomeHubScreen);
   });
 
   it('preserves pending deep-link params when protected stack becomes available', async () => {

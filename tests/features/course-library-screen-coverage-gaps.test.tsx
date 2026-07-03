@@ -61,6 +61,7 @@ function preload(state: PreloadStatus['state']): PreloadStatus {
 function current(state: CurrentAssignment['state']): CurrentAssignment {
   return {
     assignmentId: 'asg-1',
+    sessionId: null,
     assignmentVersion: 1,
     lessonId: 'w01-d01-barn-say-it',
     lessonTitle: 'This Is a Barn',
@@ -69,6 +70,13 @@ function current(state: CurrentAssignment['state']): CurrentAssignment {
     state,
     childId: 'ch-1',
     profile: 'espTft',
+  };
+}
+
+function currentWithSession(state: CurrentAssignment['state']): CurrentAssignment {
+  return {
+    ...current(state),
+    sessionId: 'sess-1',
   };
 }
 
@@ -279,7 +287,7 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
 describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
   it('READY: the primary CTA navigates to RunningScreen carrying deviceId/assignmentId/lessonTitle', async () => {
     mockedGetPreloadStatus.mockResolvedValue(preload('READY'));
-    mockedGetCurrentAssignment.mockResolvedValue(current('READY'));
+    mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('READY'));
     const navigation = navigationFor();
     render(
       <RobotReadyScreen
@@ -299,11 +307,12 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
       deviceId: 'dev-9',
       assignmentId: 'asg-1',
+      sessionId: 'sess-1',
       lessonTitle: 'This Is a Barn',
     });
   });
 
-  it('READY: the primary CTA falls back to the polled current assignmentId when route params omit it', async () => {
+  it('READY: sessionId null does not block the primary CTA or synthesize assignmentId as sessionId', async () => {
     mockedGetPreloadStatus.mockResolvedValue(preload('READY'));
     mockedGetCurrentAssignment.mockResolvedValue(current('READY'));
     const navigation = navigationFor();
@@ -319,6 +328,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
       deviceId: 'dev-9',
       assignmentId: 'asg-1',
+      sessionId: undefined,
       lessonTitle: 'This Is a Barn',
     });
   });
@@ -620,6 +630,26 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
   });
 
   it('while live, "See what\'s happening" navigates to CompanionScreen with assignment identity and lesson title', async () => {
+    mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING'));
+    const navigation = navigationFor();
+    render(
+      <RunningScreen
+        navigation={navigation as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText("See what's happening")).toBeTruthy());
+    fireEvent.press(screen.getByText("See what's happening"));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CompanionScreen, {
+      deviceId: 'dev-7',
+      assignmentId: 'asg-1',
+      sessionId: 'sess-1',
+      lessonTitle: 'This Is a Barn',
+    });
+  });
+
+  it('while live, sessionId null keeps the companion CTA on polling fallback without synthesizing assignmentId', async () => {
     mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
     const navigation = navigationFor();
     render(
@@ -634,6 +664,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CompanionScreen, {
       deviceId: 'dev-7',
       assignmentId: 'asg-1',
+      sessionId: undefined,
       lessonTitle: 'This Is a Barn',
     });
   });
@@ -712,24 +743,38 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
   });
 
   it('no deviceId → the poll effect returns early and never reads the network (line 37)', () => {
-    const navigation = navigationFor();
-    render(
-      <RunningScreen
-        navigation={navigation as never}
-        route={
-          {
-            key: 'run',
-            name: ROUTES.RunningScreen,
-            params: { lessonTitle: 'Counting Sheep' },
-          } as never
-        }
-      />,
-    );
+    jest.useFakeTimers();
+    try {
+      const navigation = navigationFor();
+      render(
+        <RunningScreen
+          navigation={navigation as never}
+          route={
+            {
+              key: 'run',
+              name: ROUTES.RunningScreen,
+              params: { lessonTitle: 'Counting Sheep' },
+            } as never
+          }
+        />,
+      );
 
-    expect(mockedGetCurrentAssignment).not.toHaveBeenCalled();
-    // With no assignment yet, the heading falls back to the route lessonTitle
-    // (the route-param arm of the lessonTitle ternary, line 85).
-    expect(screen.getByText('Counting Sheep')).toBeTruthy();
+      act(() => {
+        jest.advanceTimersByTime(10000);
+      });
+
+      expect(mockedGetCurrentAssignment).not.toHaveBeenCalled();
+      // With no assignment yet, the heading falls back to the route lessonTitle
+      // (the route-param arm of the lessonTitle ternary, line 85).
+      expect(screen.getByText('Counting Sheep')).toBeTruthy();
+      expect(screen.getByText('Lesson status unavailable')).toBeTruthy();
+      expect(screen.getByText("We can't confirm the lesson on Robot yet.")).toBeTruthy();
+      expect(screen.queryByText('Lesson playing')).toBeNull();
+      expect(screen.queryByText("See what's happening")).toBeNull();
+      expect(screen.queryByText('Try again')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('an explicit COMPLETED assignment object renders Finished directly (line 55 + terminal arm)', async () => {
@@ -794,6 +839,74 @@ describe('CompanionScreen — read-after-write race', () => {
       expect(mockedGetCurrentAssignment).toHaveBeenCalledTimes(2);
       expect(screen.getByText('This Is a Barn')).toBeTruthy();
       expect(screen.queryByText('Finished! 🎉')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('no deviceId → does not render a fake live mirror or poll current assignment', () => {
+    jest.useFakeTimers();
+    try {
+      const navigation = navigationFor();
+      render(
+        <CompanionScreen
+          navigation={navigation as never}
+          route={{
+            key: 'comp',
+            name: ROUTES.CompanionScreen,
+            params: { lessonTitle: 'Counting Sheep' },
+          } as never}
+        />,
+      );
+
+      act(() => {
+        jest.advanceTimersByTime(10000);
+      });
+
+      expect(mockedGetCurrentAssignment).not.toHaveBeenCalled();
+      expect(screen.getByText('Counting Sheep')).toBeTruthy();
+      expect(screen.getByText('Waiting')).toBeTruthy();
+      expect(screen.getByText("We can't confirm the live mirror yet.")).toBeTruthy();
+      expect(screen.queryByText('Live')).toBeNull();
+      expect(screen.queryByText('Lesson running on Robot')).toBeNull();
+      expect(screen.queryByText('Try again')).toBeNull();
+      expect(screen.queryByText('Back to lesson status')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('stale after a live read does not keep rendering the previous live mirror copy', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetCurrentAssignment
+        .mockResolvedValueOnce(current('RUNNING'))
+        .mockRejectedValue(new Error('current-assignment unavailable'));
+      const navigation = navigationFor();
+      render(
+        <CompanionScreen
+          navigation={navigation as never}
+          route={{
+            key: 'comp',
+            name: ROUTES.CompanionScreen,
+            params: { deviceId: 'dev-1', lessonTitle: 'Counting Sheep' },
+          } as never}
+        />,
+      );
+
+      await waitFor(() => expect(screen.getByText('Lesson running on Robot')).toBeTruthy());
+
+      for (let poll = 0; poll < 18; poll += 1) {
+        await act(async () => {
+          await jest.advanceTimersByTimeAsync(2500);
+        });
+      }
+
+      expect(mockedGetCurrentAssignment).toHaveBeenCalledTimes(19);
+      expect(screen.getByText('Waiting')).toBeTruthy();
+      expect(screen.getByText("We can't confirm the live mirror yet.")).toBeTruthy();
+      expect(screen.queryByText('Lesson running on Robot')).toBeNull();
+      expect(screen.queryByText('Live')).toBeNull();
     } finally {
       jest.useRealTimers();
     }

@@ -19,7 +19,8 @@
   },
   "include": [
     "src/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "app.json"
   ],
   "exclude": [
     "node_modules"

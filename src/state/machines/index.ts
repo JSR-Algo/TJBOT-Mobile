@@ -1,6 +1,4 @@
 // re-exports
-export { devicePairingMachine, DevicePairingServices } from './devicePairing.machine';
-export type { DevicePairingContext, DevicePairingEvent, DevicePairingState, ProvisioningErrorCode } from './devicePairing.types';
 export { parentApprovalMachine, ParentApprovalServices } from './parentApproval.machine';
 export type { ParentApprovalContext, ParentApprovalEvent, DashboardSubState } from './parentApproval.types';
 export {
@@ -17,3 +15,4 @@ export type {
   InterruptReason,
   AudioFailureCode,
 } from './lessonSession.types';
+export { lessonSessionEventFromRealtimeFrame } from './lessonSessionRealtimeAdapter';

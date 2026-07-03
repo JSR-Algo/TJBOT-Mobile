@@ -236,6 +236,17 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 // status is not proof that the firmware is already claimed.
 // ---------------------------------------------------------------------------
 describe('normal add-robot route', () => {
+  it('routes Android scan throttling to PairFailed without retrying scans', async () => {
+    mockedScan.mockRejectedValue(Object.assign(new Error('too frequent'), { code: 'BLE_SCAN_THROTTLED' }));
+    const navigate = jest.fn();
+    renderSearch(navigate);
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      errorCode: 'BLE_SCAN_THROTTLED',
+    }));
+    expect(mockedScan).toHaveBeenCalledTimes(1);
+  });
+
   it('recovers an already-assigned legacy start error when the scanned robot is zero-code claimable', async () => {
     mockedListAvailable.mockResolvedValue([availableDevice('TBOT-14C19FD1AC20', '91deb5af-c1c0-416b-956d-266d510eac5e')]);
     mockedStartProvisioning.mockRejectedValue({ response: { data: { code: 'DEVICE_ALREADY_ASSIGNED' } } });

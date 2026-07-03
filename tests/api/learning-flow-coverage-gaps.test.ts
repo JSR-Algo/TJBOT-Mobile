@@ -248,30 +248,75 @@ describe('learning-flow API coverage gaps', () => {
     });
   });
 
-  // ── course.api.ts: undesigned-backend stubs (136-164) ──────────────────────
-  describe('course.api stubs reject until the backend is designed', () => {
-    it('rejects with "not implemented"', async () => {
-      await expect(listCourseCatalog()).rejects.toThrow('not implemented');
-      await expect(getCourse('c1')).rejects.toThrow('not implemented');
-      await expect(getLevel('lv1')).rejects.toThrow('not implemented');
-      await expect(getUnit('u1')).rejects.toThrow('not implemented');
-      await expect(getLessonDetail('l1')).rejects.toThrow('not implemented');
-      await expect(getLessonList('u1')).rejects.toThrow('not implemented');
-      await expect(getCourseReviewQueue('user1')).rejects.toThrow('not implemented');
-      await expect(getDailyMission('user1')).rejects.toThrow('not implemented');
+  // ── course.api.ts: public catalog reads + explicit unavailable contracts ───
+  describe('course.api public catalog reads', () => {
+    it('GETs /courses and normalizes the catalog without seed literals', async () => {
+      mockedClient.get.mockResolvedValueOnce({
+        data: {
+          data: {
+            courses: [
+              { course_id: 'c_barn', title: 'Barn Friends', lesson_count: 2 },
+              { course_id: 'c_food', title: 'Yummy Words', lesson_count: 5 },
+            ],
+          },
+        },
+      });
+
+      await expect(listCourseCatalog()).resolves.toEqual([
+        { id: 'c_barn', title: 'Barn Friends', language: 'en', levelCount: 0, lessonCount: 2, locked: false, progress: 0 },
+        { id: 'c_food', title: 'Yummy Words', language: 'en', levelCount: 0, lessonCount: 5, locked: false, progress: 0 },
+      ]);
+      expect(mockedClient.get).toHaveBeenCalledWith('/courses');
+    });
+
+    it('GETs /courses/:courseId/lessons and normalizes public lessons', async () => {
+      mockedClient.get.mockResolvedValueOnce({
+        data: {
+          data: {
+            lessons: [
+              { lesson_id: 'w01-d01-barn-say-it', title: 'This Is a Barn', estimated_duration_sec: 180, status: 'ready' },
+            ],
+          },
+        },
+      });
+
+      await expect(getLessonList('c_barn')).resolves.toEqual([
+        {
+          id: 'w01-d01-barn-say-it',
+          unitId: 'c_barn',
+          title: 'This Is a Barn',
+          durationMinutes: 3,
+          wordsCount: 0,
+          state: 'ready',
+          stars: 0,
+        },
+      ]);
+      expect(mockedClient.get).toHaveBeenCalledWith('/courses/c_barn/lessons');
     });
   });
 
-  // ── lesson-session.api.ts: undesigned-backend stubs (30-46) ────────────────
+  describe('course.api routes without documented backend contracts', () => {
+    it('rejects with BackendContractUnavailableError instead of raw not-implemented throws', async () => {
+      await expect(getCourse('c1')).rejects.toBeInstanceOf(BackendContractUnavailableError);
+      await expect(getLevel('lv1')).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+      await expect(getUnit('u1')).rejects.toThrow('getUnit:u1');
+      await expect(getLessonDetail('l1')).rejects.toThrow('getLessonDetail:l1');
+      await expect(getCourseReviewQueue('user1')).rejects.toThrow('getReviewQueue:user1');
+      await expect(getDailyMission('user1')).rejects.toThrow('getDailyMission:user1');
+    });
+  });
+
+  // ── lesson-session.api.ts: explicit unavailable REST contract (WS-only) ───
   // Lesson runtime is WS-only BY DESIGN; this REST surface is an undesigned
-  // placeholder that must reject rather than fabricate a session.
-  describe('lesson-session.api stubs reject until the backend is designed', () => {
-    it('rejects with "not implemented"', async () => {
-      await expect(startSession({ lessonId: 'l1', childId: 'ch-1' })).rejects.toThrow('not implemented');
-      await expect(endSession('s1')).rejects.toThrow('not implemented');
-      await expect(sendUtterance({ sessionId: 's1', audioBase64: 'AAA=' })).rejects.toThrow('not implemented');
-      await expect(getActivityList('s1')).rejects.toThrow('not implemented');
-      await expect(reportSafetyEvent({ sessionId: 's1', kind: 'k', utterance: 'u' })).rejects.toThrow('not implemented');
+  // placeholder that must reject with a typed contract error rather than
+  // fabricate a session or crash with a raw "not implemented".
+  describe('lesson-session.api REST surface rejects with typed backend-contract errors', () => {
+    it('rejects with BackendContractUnavailableError', async () => {
+      await expect(startSession({ lessonId: 'l1', childId: 'ch-1' })).rejects.toBeInstanceOf(BackendContractUnavailableError);
+      await expect(endSession('s1')).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+      await expect(sendUtterance({ sessionId: 's1', audioBase64: 'AAA=' })).rejects.toThrow('sendUtterance:s1');
+      await expect(getActivityList('s1')).rejects.toThrow('getActivityList:s1');
+      await expect(reportSafetyEvent({ sessionId: 's1', kind: 'k', utterance: 'u' })).rejects.toThrow('reportSafetyEvent:s1:k');
     });
   });
 });

@@ -37,6 +37,22 @@ import {
   type LessonDetail,
 } from '@/services/api/course.api';
 
+// CourseLibraryScreen loads via useFocusEffect; outside a NavigationContainer
+// that hook throws, so mock it to behave like a plain mount effect.
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+  const ReactInner = require('react') as typeof import('react');
+  return {
+    ...actual,
+    useFocusEffect: (cb: () => undefined | (() => void)) => {
+      ReactInner.useEffect(() => {
+        const cleanup = cb();
+        return typeof cleanup === 'function' ? cleanup : undefined;
+      }, [cb]);
+    },
+  };
+});
+
 jest.mock('@/services/api/course-library.api', () => {
   const actual = jest.requireActual('@/services/api/course-library.api');
   return { ...actual, getCourses: jest.fn(), listLibrary: jest.fn() };

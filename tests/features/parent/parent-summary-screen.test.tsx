@@ -89,6 +89,13 @@ function renderScreen() {
 }
 
 describe('ParentSummaryScreen', () => {
+  afterAll(async () => {
+    // A "renders in Vietnamese" case flips the app locale; reset it so the
+    // shared i18n singleton doesn't leak vi into later suites (e.g. the history
+    // screen asserting on English "Loading history").
+    await setAppLanguage('en');
+  });
+
   beforeEach(() => {
     mockGetParentSummary.mockReset();
     mockGetChildProgress.mockReset();
@@ -231,6 +238,24 @@ describe('ParentSummaryScreen', () => {
     await findByText('80% step success');
     await findByText('Learning path');
     await findByText('animals · 40%');
-    await findByText('Pronunciation improving · 71%');
+    await findByText('Pronunciation: improving · 71%');
+  });
+
+  it('shows a course-data error + retry (not silent zeros) when every child source fails', async () => {
+    mockGetParentSummary.mockResolvedValue({ weekMinutes: 8, weekLessons: 1, streak: 2, topWords: ['hello'] });
+    // All four child-scoped sources reject → the band must degrade, not render
+    // 0%/0% that a parent can't distinguish from a brand-new child.
+    mockGetChildProgress.mockRejectedValue(new Error('404'));
+    mockGetChildLessonProgress.mockRejectedValue(new Error('404'));
+    mockGetKPIs.mockRejectedValue(new Error('500'));
+    mockGetPronunciationTrend.mockRejectedValue(new Error('offline'));
+
+    const { findByText, queryByText } = renderScreen();
+
+    await findByText('Course quality');
+    await findByText("Couldn't load course data");
+    expect(queryByText('80% step success')).toBeNull();
+    // Retry affordance present.
+    await findByText('Try again');
   });
 });

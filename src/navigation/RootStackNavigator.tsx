@@ -6,7 +6,7 @@ import { colors } from '@/design-system/tokens/legacy-semantic';
 import AgeScreen from '@/navigation/AgeScreen';
 import { readAgeAnswer, type AgeAnswer } from '@/features/onboarding/ageGate';
 import { AuthNavigator } from './AuthNavigator';
-import { PENDING_DEVICE_SETUP_ROUTE, PROTECTED_DEFAULT_ROUTE } from './featureRegistry';
+import { PENDING_DEVICE_SETUP_ROUTE, PROTECTED_DEFAULT_ROUTE, isProductionNavigableRoute } from './featureRegistry';
 import { ModalNavigator } from './ModalNavigator';
 import type { NavigationDeepLinkTarget } from './linking';
 import { OnboardingNavigator } from './OnboardingNavigator';
@@ -67,9 +67,13 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
   if (!isAuthenticated) return <AuthNavigator key="auth" />;
   if (!onboardingComplete) return <OnboardingNavigator key="onboarding" />;
 
-  const initialTarget: NavigationDeepLinkTarget = pendingDeepLinkTarget ?? {
-    name: pendingDeviceSetup ? PENDING_DEVICE_SETUP_ROUTE : protectedInitialRoute,
-  };
+  const requestedInitialRoute = pendingDeviceSetup ? PENDING_DEVICE_SETUP_ROUTE : protectedInitialRoute;
+  const productionInitialRoute = isProductionNavigableRoute(requestedInitialRoute)
+    ? requestedInitialRoute
+    : PROTECTED_DEFAULT_ROUTE;
+  const initialTarget: NavigationDeepLinkTarget = pendingDeepLinkTarget && isProductionNavigableRoute(pendingDeepLinkTarget.name)
+    ? pendingDeepLinkTarget
+    : { name: productionInitialRoute };
 
   return <ModalNavigator key="protected" initialRouteName={initialTarget.name} initialRouteParams={initialTarget.params} />;
 }

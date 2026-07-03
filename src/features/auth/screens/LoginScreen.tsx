@@ -8,6 +8,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { useAuth } from '@/contexts/AuthContext';
 import { normalizeError } from '@/utils/errors';
+import { Config } from '@/config';
 import * as authApi from '@/services/api/auth';
 import PasswordInput from '../components/PasswordInput';
 import PasswordChecklist from '../components/PasswordChecklist';
@@ -178,6 +179,15 @@ export default function LoginScreen(_: Props) {
             style={[styles.input, emailError ? styles.inputError : null]}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            // Real users get email autofill; QA_MODE (E2E harness) suppresses it
+            // so iOS never surfaces the "Save Password" system dialog, which is
+            // opaque to Detox matchers and blocks post-login navigation asserts.
+            // Mirrors the PasswordInput QA_MODE autofill suppression.
+            autoComplete={Config.QA_MODE ? 'off' : 'email'}
+            textContentType={Config.QA_MODE ? 'none' : 'emailAddress'}
+            importantForAutofill={Config.QA_MODE ? 'no' : undefined}
             value={email}
             onChangeText={(value) => {
               setEmail(value);

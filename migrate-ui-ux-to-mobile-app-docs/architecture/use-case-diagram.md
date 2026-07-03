@@ -18,7 +18,7 @@ Method: code-evidence only. No invented features. Anything ambiguous is marked.
 | **Guest (Unauthenticated User)** | `src/features/onboarding/*` and `src/features/auth/LoginPage.jsx` — pre-login surface. Auth store state `anonymous` (`src/store/auth.store.js`). |
 | **Authenticated User** | Auth store state `authenticated` (`src/store/auth.store.js`); selector `isAuthenticated()`. |
 | **Robot Device** *(external system)* | Pairing scan, firmware OTA, course sync, LCD turns. Evidence: `src/features/device/Pair*.jsx`, `src/features/robot-mgmt/*`, `src/services/api/device.api.js`. |
-| **Realtime Voice Service** *(external system)* | `openRealtime(sessionId)` in `src/services/websocket/realtime.js`. Triggered from `ConnectingPage.jsx`. |
+| **Realtime Voice Service** *(external system)* | `openRealtime` in `src/services/ws/realtime.{ts,js}` implements the mobile observer lane. Production sessionId auto-attach/provider wiring is still unconfirmed (KD10). |
 | **Google OAuth** *(external system)* | "Continue with Google" button in `src/features/auth/LoginPage.jsx`. |
 | **Apple Sign-In** *(external system)* | "Continue with Apple" button in `src/features/auth/LoginPage.jsx`. |
 | **Payment Provider** *(external system)* | Apple Pay + Visa rows in `src/features/purchase/CheckoutPage.jsx`; stub `processPayment()` in `purchase.api.js`. Specific provider NOT CONFIRMED IN SOURCE CODE. |
@@ -78,7 +78,7 @@ Method: code-evidence only. No invented features. Anything ambiguous is marked.
 
 ### LESSON SESSION (voice + activity loop)
 - UC-L01 Start Voice Session (`LessonReadyPage` "I'm ready!")
-- UC-L02 Connect to Realtime Voice (`ConnectingPage` auto-advance — system call to Realtime Voice Service via `openRealtime`)
+- UC-L02 Connect to Realtime Voice (mobile observer attach via `openRealtime`; legacy timer-only auto-advance is not production evidence)
 - UC-L03 Receive Robot Greeting (`GreetingPage`)
 - UC-L04 Begin Activity (`ActivityIntroPage`)
 - UC-L05 Listen to Robot Speech (`RobotSpeakingPage`)
@@ -507,7 +507,7 @@ UC_F04 ..> UC_F05 : <<extend>>
 | Logout UI affordance | `logout()` action exists in store but **no button** found in any screen → UC-A10 listed for completeness. |
 | Pairing radio (BLE vs Wi-Fi probe) | UI shows "within 3 meters" + radio animation. Underlying transport NOT CONFIRMED IN SOURCE CODE. |
 | Payment provider identity (Stripe? Adyen?) | NOT CONFIRMED IN SOURCE CODE — only `processPayment()` stub. |
-| Realtime voice provider | NOT CONFIRMED IN SOURCE CODE — `openRealtime()` stub in `src/services/websocket/realtime.js`. |
+| Realtime voice provider | NOT CONFIRMED IN SOURCE CODE — `openRealtime()` exists in `src/services/ws/realtime.{ts,js}`, but provider/sessionId/live attach wiring is unproven. |
 | Course-lock enforcement | Client-side only (`l.state === 'locked'`). Server-side enforcement NOT CONFIRMED IN SOURCE CODE. |
 | Idempotency-Key usage | Confirmed in `src/services/http/idempotency.js`; specific endpoints attached at NOT CONFIRMED IN SOURCE CODE. |
 | Reset Password (UC-A06) | Button only — button target is `onb_login`, no API call. → UNKNOWN USE CASE (label only). |

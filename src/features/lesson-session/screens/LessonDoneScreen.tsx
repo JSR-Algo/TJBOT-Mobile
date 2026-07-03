@@ -11,7 +11,13 @@ import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonDoneScreen'>;
 
-export default function LessonDoneScreen({ navigation }: Props) {
+export default function LessonDoneScreen({ navigation, route }: Props) {
+  const wordsLearned = route.params?.wordsLearned;
+  const summaryText =
+    typeof wordsLearned === 'number' && wordsLearned > 0
+      ? `You practiced ${wordsLearned} words today.\nSee you tomorrow!`
+      : "Robot saved today's progress.\nSee you tomorrow!";
+
   return (
     <ScreenShell bg="#FFF8E1">
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={14}>
@@ -23,7 +29,7 @@ export default function LessonDoneScreen({ navigation }: Props) {
           ))}
         </Box>
         <Box style={styles.summaryCard}>
-          <Text fontWeight="700" style={styles.summaryText}>You learned 3 words today.{'\n'}See you tomorrow! 👋</Text>
+          <Text fontWeight="700" style={styles.summaryText}>{summaryText}</Text>
         </Box>
       </Box>
       <Box style={styles.footer} gap={12}>

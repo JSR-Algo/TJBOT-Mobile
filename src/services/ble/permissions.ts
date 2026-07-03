@@ -15,7 +15,7 @@ export async function requestBlePermissions(): Promise<BlePermissionState> {
       PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       {
         title: 'Bluetooth permission required',
-        message: 'TJBot needs Bluetooth access to discover and pair with your device.',
+        message: 'TBOT needs Bluetooth access to discover and pair with your Robot.',
         buttonPositive: 'Allow',
       },
     );

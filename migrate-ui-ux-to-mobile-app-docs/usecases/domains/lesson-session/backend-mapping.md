@@ -33,9 +33,9 @@
 
 - All cells sentinel because:
   - `src/services/api/lesson-session.api.js` exports (`startSession`, `endSession`, `sendUtterance`, `getActivityList`, `reportSafetyEvent`) all throw `not implemented`.
-  - The realtime voice transport (`src/services/websocket/realtime.js → openRealtime`) is referenced in puml comments but the file is not present in source — voice provider unconfirmed (KD10).
+  - The mobile observer transport (`src/services/ws/realtime.{ts,js} → openRealtime`) exists and is locally tested, but production sessionId auto-attach and realtime provider wiring are not confirmed in source (KD10).
   - No `decisions/NNNN-backend-lesson-session.md` ADR exists yet.
-- KD10 specifically: UC-L02 (Connect Realtime Voice) MUST stay `BACKEND_NOT_DESIGNED` until the voice provider decision lands.
+- KD10 specifically: UC-L02 (Connect Realtime Voice) MUST stay `BACKEND_NOT_DESIGNED` until provider/sessionId/live attach evidence lands with the backend decision.
 - Cross-references for review (cells if backend lands):
   - UC-L01: would cite `lesson-session.api.js → startSession` (Endpoint), `lesson.store.js → start` (Service).
   - UC-L07: would cite `lesson-session.api.js → sendUtterance` (Endpoint).

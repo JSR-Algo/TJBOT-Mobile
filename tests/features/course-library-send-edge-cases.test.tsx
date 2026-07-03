@@ -164,6 +164,60 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
       // …but with nothing to resume, it must not navigate forward.
       expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
     });
+
+    it('does not navigate when the recovered lesson assignment belongs to another child', async () => {
+      mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
+      mockedGetCurrentAssignment.mockResolvedValueOnce({
+        assignmentId: 'asg-other-child',
+        sessionId: null,
+        assignmentVersion: 4,
+        lessonId: 'w01-d01-barn-say-it',
+        lessonTitle: 'This Is a Barn',
+        lessonVersion: 1,
+        manifestChecksum: 'sha256:w01-d01',
+        state: 'PRELOADING',
+        childId: 'ch-2',
+        profile: 'espTft',
+      });
+      const navigation = renderSend();
+
+      await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByText('Send to Robot'));
+      });
+
+      expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
+      expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+    });
+
+    it('does not navigate when the recovered lesson assignment is for a different lesson version', async () => {
+      mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      mockedCreateAssignment.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
+      mockedGetCurrentAssignment.mockResolvedValueOnce({
+        assignmentId: 'asg-wrong-version',
+        sessionId: null,
+        assignmentVersion: 4,
+        lessonId: 'w01-d01-barn-say-it',
+        lessonTitle: 'This Is a Barn',
+        lessonVersion: 2,
+        manifestChecksum: 'sha256:w01-d01-v2',
+        state: 'PRELOADING',
+        childId: 'ch-1',
+        profile: 'espTft',
+      });
+      const navigation = renderSend();
+
+      await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByText('Send to Robot'));
+      });
+
+      expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
+      expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+    });
   });
 
   // ── STEP_TIMEOUT → error copy at the screen ────────────────────────────────
@@ -285,6 +339,7 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
       mockedEnrollCourse.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
       mockedGetCurrentAssignment.mockResolvedValueOnce({
         assignmentId: 'asg-course-existing',
+        sessionId: null,
         assignmentVersion: 7,
         lessonId: 'w01-d01-barn-say-it',
         lessonTitle: 'This Is a Barn',
@@ -317,6 +372,39 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
         manifestChecksum: 'sha256:w01-d01',
       });
       expect(screen.queryByText('An unexpected error occurred. Please try again.')).toBeNull();
+    });
+
+    it('does not navigate when the recovered course conflict assignment is outside the selected course', async () => {
+      mockedGetCourseLessons.mockResolvedValueOnce([
+        { lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, title: 'This Is a Barn', profile: 'espTft', manifestReady: true },
+      ]);
+      mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      mockedEnrollCourse.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
+      mockedGetCurrentAssignment.mockResolvedValueOnce({
+        assignmentId: 'asg-other-course',
+        sessionId: null,
+        assignmentVersion: 7,
+        lessonId: 'w99-d01-space',
+        lessonTitle: 'Space',
+        lessonVersion: 1,
+        manifestChecksum: 'sha256:space',
+        state: 'PRELOADING',
+        childId: 'ch-1',
+        profile: 'espTft',
+      });
+      const navigation = renderSend();
+
+      await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Send whole course'));
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Assign course'));
+      });
+
+      expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
+      expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
     });
 
     it('navigates to robot-ready on a SUCCESSFUL course enroll (proves the conflict assertions above are non-tautological)', async () => {

@@ -9,13 +9,17 @@ import { ParentSessionProvider } from '../../../src/features/parent/context/Pare
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { getChildLessonProgress, type AssignmentProgress } from '@/services/api/progress.api';
 
+let latestFocusEffect: (() => void | (() => void)) | null = null;
+
 jest.mock('@react-navigation/native', () => {
   const ReactInner = require('react') as typeof import('react');
   return {
     useFocusEffect: (cb: () => undefined | (() => void)) => {
       ReactInner.useEffect(() => {
-        const cleanup = cb();
-        return typeof cleanup === 'function' ? cleanup : undefined;
+        latestFocusEffect = cb;
+        return () => {
+          latestFocusEffect = null;
+        };
       }, [cb]);
     },
   };
@@ -83,6 +87,7 @@ function renderScreen() {
 describe('ParentTodayScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    latestFocusEffect = null;
     householdWith([{ id: 'child-1' }]);
   });
 
@@ -126,5 +131,30 @@ describe('ParentTodayScreen', () => {
     await waitFor(() => {
       expect(queryByText("Loading today's progress")).toBeNull();
     });
+  });
+
+  it('refetches child lesson progress on later screen focus', async () => {
+    mockGetChildLessonProgress
+      .mockResolvedValueOnce([makeAssignment({ lessonTitle: 'First active lesson' })])
+      .mockResolvedValueOnce([makeAssignment({ lessonTitle: 'Fresh active lesson' })]);
+
+    const { findByText, queryByText } = renderScreen();
+    await findByText('First active lesson');
+    expect(mockGetChildLessonProgress).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      latestFocusEffect?.();
+      await Promise.resolve();
+    });
+    expect(mockGetChildLessonProgress).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      latestFocusEffect?.();
+      await Promise.resolve();
+    });
+
+    await findByText('Fresh active lesson');
+    expect(queryByText('First active lesson')).toBeNull();
+    expect(mockGetChildLessonProgress).toHaveBeenCalledTimes(2);
   });
 });

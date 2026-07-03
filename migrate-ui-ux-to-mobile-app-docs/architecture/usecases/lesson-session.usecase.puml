@@ -74,5 +74,5 @@ end note
 
 ' Files: src/features/lesson-session/*Page.jsx
 ' Store: src/store/lesson.store.js
-' WS:   src/services/websocket/realtime.js  (openRealtime — TBD)
+' WS:   src/services/ws/realtime.{ts,js}  (openRealtime observer lane; production attach unproven)
 @enduml

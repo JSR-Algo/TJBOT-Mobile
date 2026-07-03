@@ -16,6 +16,7 @@ import {
   MAIN_TAB_SCREENS,
   ONBOARDING_INITIAL_ROUTE,
   PENDING_DEVICE_SETUP_ROUTE,
+  PRODUCTION_LINKING_ROUTE_ENTRIES,
   PROTECTED_MODAL_SCREENS,
   PROTECTED_STACK_SCREENS,
   PROTECTED_DEFAULT_ROUTE,
@@ -73,7 +74,7 @@ describe('navigation architecture', () => {
     expect(screens).toBeDefined();
     if (!screens) return;
 
-    const routeNames = Object.keys(ROUTE_MAP).sort();
+    const routeNames = PRODUCTION_LINKING_ROUTE_ENTRIES.map(entry => entry.screen.name).sort();
     const linkingNames = Object.keys(screens).sort();
     const paths = Object.values(screens).filter((path): path is string => typeof path === 'string');
 
@@ -316,7 +317,7 @@ describe('navigation architecture', () => {
     expect(artifact.edgeCount).toBeGreaterThan(0);
     expect(artifact.forwardEdges).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ sourceRoute: ROUTES.HomeHubScreen, targetRoute: ROUTES.LessonReadyScreen }),
+        expect.objectContaining({ sourceRoute: ROUTES.HomeHubScreen, targetRoute: ROUTES.SendToRobotScreen }),
         expect.objectContaining({ sourceRoute: ROUTES.PairIntroScreen, targetRoute: ROUTES.PairSearchScreen }),
         expect.objectContaining({ sourceRoute: ROUTES.PurchaseIntroScreen, targetRoute: ROUTES.HowItWorksScreen }),
       ]),
@@ -488,13 +489,15 @@ describe('navigation architecture', () => {
     });
     expect(inventory.deterministicRouting).toEqual({
       routeCount: Object.keys(ROUTE_MAP).length,
-      deepLinkPathCount: Object.keys(ROUTE_MAP).length,
+      deepLinkPathCount: Object.keys(NAVIGATION_LINKING_CONFIG.config.screens).length,
       duplicateDeepLinkPaths: [],
     });
     expect(inventory.deepLinkCoverage).toEqual({
       routeCount: Object.keys(ROUTE_MAP).length,
-      deepLinkPathCount: Object.keys(ROUTE_MAP).length,
-      routesMissingDeepLinks: [],
+      deepLinkPathCount: Object.keys(NAVIGATION_LINKING_CONFIG.config.screens).length,
+      routesMissingDeepLinks: Object.keys(ROUTE_MAP)
+        .filter(route => !Object.hasOwn(NAVIGATION_LINKING_CONFIG.config.screens, route))
+        .sort(),
       deepLinksMissingRouteMapEntries: [],
       invalidDeepLinkPaths: [],
     });

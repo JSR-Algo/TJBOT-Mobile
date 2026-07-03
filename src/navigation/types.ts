@@ -49,6 +49,8 @@ export type FeatureStackScreen<RouteName extends keyof RootStackParamList = keyo
   readonly name: RouteName;
   readonly component: React.ElementType;
   readonly role: FeatureRouteRole;
+  readonly productionVisible?: boolean;
+  readonly productionHiddenReason?: 'backend-contract-unavailable' | 'static-prototype-hidden';
   readonly backTarget?: keyof RootStackParamList;
   readonly forwardCycleGroup?: FeatureForwardCycleGroup;
   readonly stateMachineId?: string;

@@ -31,7 +31,10 @@ jest.mock('@/services/ble/service', () => ({
 }));
 
 import {
+  CLAIM_CONFIRM_TIMEOUT_MS,
+  CLAIM_POLL_INTERVAL_MS,
   describeClaimFailure,
+  describeKnownClaimFailureCode,
   CLAIM_STATUS,
 } from '@/features/device/pairing/claimStatus';
 import {
@@ -137,6 +140,20 @@ describe('describeClaimFailure error-code mapping', () => {
     const d = describeClaimFailure({ code: 'SOMETHING_NEW', message: 'x' });
     expect(d).toBe(CLAIM_STATUS.CLAIM_UNKNOWN);
     expect(d.retryable).toBe(true);
+  });
+
+  it.each([
+    'DEVICE_ALREADY_CLAIMED',
+    'DEVICE_NOT_FOUND',
+    'INVALID_BLE_CODE',
+    'CLAIM_CONFIRM_TIMEOUT',
+  ])('uses the same descriptor for hook failures and PairFailedScreen route code %s', (code) => {
+    expect(describeKnownClaimFailureCode(code)).toBe(describeClaimFailure({ code, message: 'x' }));
+  });
+
+  it('exports the shared claim poll cadence and deadline constants', () => {
+    expect(CLAIM_POLL_INTERVAL_MS).toBe(3000);
+    expect(CLAIM_CONFIRM_TIMEOUT_MS).toBe(5 * 60 * 1000);
   });
 });
 

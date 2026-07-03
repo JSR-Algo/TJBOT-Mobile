@@ -11,9 +11,12 @@ import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { getClaimStatus } from '@/services/api/claim.api';
+import { captureError } from '@/services/observability/sentry';
 import { openAppSettings, openBluetoothSettings, openWifiSettings } from '../deviceSettings';
 import { useAppLanguage } from '@/services/i18n/i18n';
 import { savePendingPairingContext } from '../pendingPairingContext';
+import { describeKnownClaimFailureCode } from '../claimStatus';
+import { buildPairSearchRetryParams } from '../routeParams';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFailedScreen'>;
 
@@ -36,6 +39,22 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   const params = route.params;
   const copy = copyForError(params?.errorCode);
   const settingsAction = settingsActionForError(params?.errorCode);
+  const navigateToSearch = React.useCallback(() => {
+    const retryParams = buildPairSearchRetryParams(params);
+    if (retryParams) {
+      navigation.navigate(ROUTES.PairSearchScreen, retryParams);
+      return;
+    }
+    navigation.navigate(ROUTES.PairSearchScreen);
+  }, [navigation, params]);
+  const navigateToPrep = React.useCallback(() => {
+    const retryParams = buildPairSearchRetryParams(params);
+    if (retryParams) {
+      navigation.navigate(ROUTES.PairSearchScreen, retryParams);
+      return;
+    }
+    navigation.navigate(ROUTES.PairIntroScreen);
+  }, [navigation, params]);
 
   React.useEffect(() => {
     if (!canRecoverLateClaim(params)) return;
@@ -78,7 +97,8 @@ export default function PairFailedScreen({ navigation, route }: Props) {
           });
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        captureError(error);
         // Keep the recovery screen usable when the status check is unavailable.
       });
     return () => {
@@ -87,7 +107,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   }, [navigation, params]);
 
   return (
-    <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
+    <DeviceShell title="Pairing didn't work" onBack={navigateToPrep}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="gentle" size={160} accent="#FF6F61" />
         <Text fontWeight="600" style={styles.heading}>{copy.heading}</Text>
@@ -105,17 +125,17 @@ export default function PairFailedScreen({ navigation, route }: Props) {
               onPress={() => {
                 if (r.go === ROUTES.PairWifiPasswordScreen) {
                   if (needsFreshBleClaim(params) || !canRetryWifiPassword(params)) {
-                    navigation.navigate(ROUTES.PairSearchScreen);
+                    navigateToSearch();
                     return;
                   }
                   navigation.navigate(ROUTES.PairWifiPasswordScreen, params);
                   return;
                 }
                 if (r.go === ROUTES.PairSearchScreen) {
-                  navigation.navigate(ROUTES.PairSearchScreen);
+                  navigateToSearch();
                   return;
                 }
-                navigation.navigate(ROUTES.PairIntroScreen);
+                navigateToPrep();
               }}
               accessibilityRole="button"
               accessibilityLabel={t(r.t === 'Wrong Wi-Fi password' ? 'Fix wrong Wi-Fi password' : r.t)}
@@ -148,11 +168,11 @@ export default function PairFailedScreen({ navigation, route }: Props) {
         <DeviceBigBtn
           secondary
           accessibilityLabel="Scan QR or enter code"
-          onClick={() => navigation.navigate(ROUTES.PairQrScanScreen)}
+          onClick={() => params ? navigation.navigate(ROUTES.PairQrScanScreen, params) : navigation.navigate(ROUTES.PairQrScanScreen)}
         >
           Scan QR or enter code
         </DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Try again</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={navigateToSearch}>Try again</DeviceBigBtn>
         <DeviceBigBtn
           secondary
           accessibilityLabel="Contact support"
@@ -181,7 +201,11 @@ function canRecoverLateClaim(params: Props['route']['params']): params is Failur
 }
 
 function shouldShowReasonCards(errorCode: string | undefined): boolean {
-  return errorCode !== 'DEVICE_ALREADY_ASSIGNED' && errorCode !== 'DEVICE_ALREADY_CLAIMED';
+  const claimFailure = describeKnownClaimFailureCode(errorCode);
+  if (claimFailure?.recovery === 'support' || claimFailure?.recovery === 'none') {
+    return false;
+  }
+  return errorCode !== 'DEVICE_ALREADY_ASSIGNED';
 }
 
 function needsFreshBleClaim(params: Props['route']['params']): boolean {
@@ -220,6 +244,14 @@ function settingsActionForError(errorCode: string | undefined): { label: string;
 }
 
 function copyForError(errorCode: string | undefined): { heading: string; body: string } {
+  const claimFailure = describeKnownClaimFailureCode(errorCode);
+  if (claimFailure) {
+    return {
+      heading: claimFailure.title,
+      body: claimFailure.body,
+    };
+  }
+
   switch (errorCode) {
     case 'WIFI_UNAVAILABLE':
       return {
@@ -251,21 +283,20 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
         heading: "We couldn't see Robot nearby",
         body: 'Move Robot within 1-2 m, make sure it is in setup mode, then scan again.',
       };
-    case 'DEVICE_NOT_FOUND':
+    case 'BLE_SCAN_THROTTLED':
       return {
-        heading: "We couldn't find that Robot",
-        body: 'Use the live code and serial from the Robot screen, then try scanning again.',
+        heading: 'Bluetooth needs a short break',
+        body: 'Android paused nearby scans because they were started too often. Wait a moment, then try again.',
+      };
+    case 'BLE_SCAN_ERROR':
+      return {
+        heading: "Bluetooth scan didn't start",
+        body: 'Turn Bluetooth off and on, keep Robot nearby, then try scanning again.',
       };
     case 'DEVICE_ALREADY_ASSIGNED':
-    case 'DEVICE_ALREADY_CLAIMED':
       return {
         heading: 'Robot is already paired',
         body: 'This Robot is assigned to another account. Contact support if this is your device.',
-      };
-    case 'INVALID_BLE_CODE':
-      return {
-        heading: "That code didn't match",
-        body: 'Check the 6-digit code shown on Robot and enter the latest code.',
       };
     case 'PROVISIONING_ATTEMPT_NOT_READY':
     case 'DEVICE_AUTH_NOT_VERIFIED':
@@ -275,6 +306,10 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
       };
     case 'BLE_PROVISIONING_UNSUPPORTED':
     case 'BLE_PROVISIONING_FAILED':
+    case 'BLE_PROVISIONING_DISCONNECTED':
+    case 'BLE_PROVISIONING_GATT_ERROR':
+    case 'BLE_PROVISIONING_WRITE_TIMEOUT':
+    case 'BLE_PROVISIONING_MTU_ERROR':
     case 'PAIRING_CONNECT_FAILED':
       return {
         heading: "Robot didn't accept setup over Bluetooth",
@@ -294,6 +329,11 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
       return {
         heading: 'Setup timed out',
         body: 'Move Robot closer to Wi-Fi and your phone, then try again.',
+      };
+    case 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT':
+      return {
+        heading: 'Robot has not checked in yet',
+        body: 'The Wi-Fi details were sent, but Robot did not appear online. Keep it powered on and try pairing again.',
       };
     case 'WIFI_AUTH_FAILED':
       return {

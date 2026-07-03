@@ -3,11 +3,11 @@ export const BLE_CONFIG = {
   BLUFI_SERVICE_UUID: '0000FFFF-0000-1000-8000-00805F9B34FB',
   BLUFI_WRITE_CHARACTERISTIC_UUID: '0000FF01-0000-1000-8000-00805F9B34FB',
   BLUFI_NOTIFY_CHARACTERISTIC_UUID: '0000FF02-0000-1000-8000-00805F9B34FB',
+  // TBOT/TBot are current branding, TBT is the field serial prefix, and TJBot
+  // remains accepted for legacy devices that may still advertise the old name.
   ALLOWLIST_PREFIXES: ['TBot', 'TBOT', 'TBT', 'TJBot'],
   SCAN_TIMEOUT_MS: 10000,
 } as const;
-
-export const BLE_SCAN_SERVICE_UUIDS = [BLE_CONFIG.BLUFI_SERVICE_UUID, BLE_CONFIG.SERVICE_UUID] as const;
 
 type AllowlistCandidate = {
   id: string;

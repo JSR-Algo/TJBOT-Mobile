@@ -29,7 +29,7 @@ export default function VoiceFailedScreen({ navigation, route }: Props) {
       </Box>
       <Box style={styles.cta} gap={10}>
         {checkpoint ? (
-          <PrimaryCTA color="#FF6F61" onPress={() => navigation.navigate(ROUTES.LessonResumeScreen, { checkpoint })}>Resume lesson</PrimaryCTA>
+          <PrimaryCTA color="#FF6F61" onPress={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Send to robot</PrimaryCTA>
         ) : null}
         <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7}>
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Back home</Text>

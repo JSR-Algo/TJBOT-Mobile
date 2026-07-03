@@ -1,3 +1,5 @@
+import { backendContractUnavailable } from './undocumented-api-routes';
+
 export interface SessionStartParams {
   lessonId: string;
   childId: string;
@@ -27,21 +29,21 @@ export interface SafetyEvent {
 }
 
 export async function startSession(_params: SessionStartParams): Promise<Session> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`startSession:${_params.lessonId}:${_params.childId}`);
 }
 
 export async function endSession(_sessionId: string): Promise<void> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`endSession:${_sessionId}`);
 }
 
 export async function sendUtterance(_params: UtteranceParams): Promise<{ response: string }> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`sendUtterance:${_params.sessionId}`);
 }
 
 export async function getActivityList(_sessionId: string): Promise<Activity[]> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`getActivityList:${_sessionId}`);
 }
 
 export async function reportSafetyEvent(_event: SafetyEvent): Promise<void> {
-  throw new Error('not implemented');
+  backendContractUnavailable(`reportSafetyEvent:${_event.sessionId}:${_event.kind}`);
 }

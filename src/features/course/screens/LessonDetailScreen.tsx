@@ -55,7 +55,7 @@ export default function LessonDetailScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingBottom={30}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FF6F61">Start Lesson</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.SendToRobotScreen)} color="#FF6F61">Start Lesson</PrimaryCTA>
       </Box>
     </PageScroll>
   );

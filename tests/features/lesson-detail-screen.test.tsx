@@ -3,7 +3,7 @@
  *
  * It is a static presentational screen: it renders a hardcoded ACTIVITIES
  * list and wires two navigation callbacks (back → UnitScreen, CTA →
- * LessonReadyScreen). This test renders it and exercises both callbacks,
+ * SendToRobotScreen). This test renders it and exercises both callbacks,
  * covering the component body + the two arrow functions (lines 23-58).
  */
 
@@ -48,10 +48,10 @@ describe('LessonDetailScreen', () => {
     expect(screen.getByText('Start Lesson')).toBeTruthy();
   });
 
-  it('CTA press navigates to LessonReadyScreen (line 58 callback)', () => {
+  it('CTA press navigates to SendToRobotScreen (line 58 callback)', () => {
     const navigation = renderScreen();
     fireEvent.press(screen.getByText('Start Lesson'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 
   it('back press navigates to UnitScreen (line 26 callback)', () => {

@@ -197,21 +197,25 @@ describe('progress.api normalizer fallback branches', () => {
 
 describe('course-library.api normalizer fallback branches', () => {
   // library list: bare-array envelope + id/courseId/name fallbacks + synced alt keys (41-58)
-  it('library list accepts a bare array and resolves id/name/synced fallbacks', () => {
+  it('library list accepts a bare array, resolves fallbacks, and drops id-less rows', () => {
     const out = normalizeCourseLibraryPayload([
       { id: 'lib1', name: 'Via Name', synced: true },
       null,
     ]);
-    expect(out[0]).toEqual({
-      courseId: 'lib1',
-      title: 'Via Name',
-      language: 'en',
-      price: 0,
-      owned: true,
-      syncedToDevice: true,
-      locked: false,
-    });
-    expect(out[1].courseId).toBe('');
+    // The `null` row resolves to an empty courseId and is filtered out — a
+    // blank id would collide on the React list key and, if tapped, navigate to
+    // the wrong (fallback) course. Only the identifiable row survives.
+    expect(out).toEqual([
+      {
+        courseId: 'lib1',
+        title: 'Via Name',
+        language: 'en',
+        price: 0,
+        owned: true,
+        syncedToDevice: true,
+        locked: false,
+      },
+    ]);
   });
 
   it('library list returns [] for an envelope without courses/array', () => {

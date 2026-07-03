@@ -11,6 +11,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import { buildPairSearchRetryParams, hasPairFoundContext } from '../routeParams';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairQrScanScreen'>;
 
@@ -75,9 +76,22 @@ export default function PairQrScanScreen({ navigation, route }: Props): React.JS
     navigation.navigate(ROUTES.PairCodeScreen, params);
   }, [navigation, params]);
 
+  const handleBack = React.useCallback(() => {
+    const retryParams = buildPairSearchRetryParams(params);
+    if (retryParams) {
+      navigation.navigate(ROUTES.PairSearchScreen, retryParams);
+      return;
+    }
+    if (hasPairFoundContext(params)) {
+      navigation.navigate(ROUTES.PairFoundScreen, params);
+      return;
+    }
+    navigation.navigate(ROUTES.PairSearchScreen);
+  }, [navigation, params]);
+
   if (!permission) {
     return (
-      <DeviceShell title={t('Scan QR Code')} onBack={() => navigation.navigate(ROUTES.PairFoundScreen, params)}>
+      <DeviceShell title={t('Scan QR Code')} onBack={handleBack}>
         <Box paddingHorizontal={20} paddingTop={40} alignItems="center">
           <Text style={styles.permissionText}>{t('Checking camera permission...')}</Text>
         </Box>
@@ -87,7 +101,7 @@ export default function PairQrScanScreen({ navigation, route }: Props): React.JS
 
   if (!permission.granted) {
     return (
-      <DeviceShell title={t('Scan QR Code')} onBack={() => navigation.navigate(ROUTES.PairFoundScreen, params)}>
+      <DeviceShell title={t('Scan QR Code')} onBack={handleBack}>
         <Box paddingHorizontal={20} paddingTop={32} gap={20}>
           <Text style={styles.permissionText}>
             {t('Camera access is needed. Enter the code manually.')}
@@ -104,7 +118,7 @@ export default function PairQrScanScreen({ navigation, route }: Props): React.JS
   }
 
   return (
-    <DeviceShell title={t('Scan QR Code')} onBack={() => navigation.navigate(ROUTES.PairFoundScreen, params)}>
+    <DeviceShell title={t('Scan QR Code')} onBack={handleBack}>
       <Box flex={1}>
         <Box paddingHorizontal={20} paddingTop={16} paddingBottom={12}>
           <Text style={styles.instruction}>

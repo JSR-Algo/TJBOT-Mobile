@@ -1,5 +1,6 @@
 import client from '@/services/http/client';
 import type { AssignmentState } from '@/services/api/course-library.api';
+import { toFiniteNumber, toNonNegativeNumber } from '@/utils/number';
 
 export interface TodayProgress {
   minutesDone: number;
@@ -61,19 +62,19 @@ function pickEnvelope<T>(payload: unknown): T | undefined {
 
 export function normalizeProgressSummaryPayload(payload: unknown): ProgressSummary {
   const envelope = pickEnvelope<Record<string, unknown>>(payload) ?? {};
-  const minutesDone = Number(envelope.minutes_done ?? envelope.minutesDone ?? 0);
-  const minutesGoal = Number(envelope.minutes_goal ?? envelope.minutesGoal ?? 0);
-  const lessonsCompleted = Number(envelope.lessons_completed ?? envelope.lessonsCompleted ?? 0);
-  const speakingTurns = Number(envelope.speaking_turns ?? envelope.speakingTurns ?? 0);
-  const starsToday = Number(envelope.stars_today ?? envelope.starsToday ?? 0);
-  const streakDays = Number(envelope.streak_days ?? envelope.streakDays ?? 0);
+  const minutesDone = toNonNegativeNumber(envelope.minutes_done ?? envelope.minutesDone);
+  const minutesGoal = toNonNegativeNumber(envelope.minutes_goal ?? envelope.minutesGoal);
+  const lessonsCompleted = toNonNegativeNumber(envelope.lessons_completed ?? envelope.lessonsCompleted);
+  const speakingTurns = toNonNegativeNumber(envelope.speaking_turns ?? envelope.speakingTurns);
+  const starsToday = toNonNegativeNumber(envelope.stars_today ?? envelope.starsToday);
+  const streakDays = toNonNegativeNumber(envelope.streak_days ?? envelope.streakDays);
   const wordsRaw = (envelope.words ?? []) as unknown[];
   const words = Array.isArray(wordsRaw) ? wordsRaw.filter((w): w is string => typeof w === 'string') : [];
-  const reviewDueCount = Number(envelope.review_due_count ?? envelope.reviewDueCount ?? 0);
+  const reviewDueCount = toNonNegativeNumber(envelope.review_due_count ?? envelope.reviewDueCount);
   const weeklyRaw = (envelope.weekly_bars ?? envelope.weeklyBars ?? []) as unknown[];
   const weeklyBars =
     Array.isArray(weeklyRaw) && weeklyRaw.length === 7
-      ? weeklyRaw.map((n) => Number(n) || 0)
+      ? weeklyRaw.map((n) => toFiniteNumber(n))
       : [...EMPTY_WEEK];
   return {
     minutesDone,
@@ -155,16 +156,16 @@ export function normalizeChildProgressPayload(payload: unknown): ChildProgress {
         const c = (entry ?? {}) as Record<string, unknown>;
         return {
           courseId: (c.course_id ?? c.courseId ?? '') as string,
-          lessonsCompleted: Number(c.lessons_completed ?? c.lessonsCompleted ?? 0),
-          lessonsTotal: Number(c.lessons_total ?? c.lessonsTotal ?? 0),
+          lessonsCompleted: toNonNegativeNumber(c.lessons_completed ?? c.lessonsCompleted),
+          lessonsTotal: toNonNegativeNumber(c.lessons_total ?? c.lessonsTotal),
         };
       })
     : [];
   return {
     childId: (envelope.child_id ?? envelope.childId ?? '') as string,
-    lessonsCompleted: Number(summary.lessons_completed ?? summary.lessonsCompleted ?? 0),
-    currentStreakDays: Number(summary.current_streak_days ?? summary.currentStreakDays ?? 0),
-    masteredWords: Number(summary.mastered_words ?? summary.masteredWords ?? 0),
+    lessonsCompleted: toNonNegativeNumber(summary.lessons_completed ?? summary.lessonsCompleted),
+    currentStreakDays: toNonNegativeNumber(summary.current_streak_days ?? summary.currentStreakDays),
+    masteredWords: toNonNegativeNumber(summary.mastered_words ?? summary.masteredWords),
     byCourse,
   };
 }
@@ -222,14 +223,14 @@ function normalizeAssignmentProgress(entry: unknown): AssignmentProgress {
     deviceId: (r.deviceId ?? '') as string,
     childId: (r.childId ?? '') as string,
     lessonId: (r.lessonId ?? '') as string,
-    lessonVersion: Number(r.lessonVersion ?? 0),
+    lessonVersion: toNonNegativeNumber(r.lessonVersion),
     lessonTitle: typeof lessonTitle === 'string' ? lessonTitle : null,
     profile: (r.profile ?? '') as string,
     state: toAssignmentState(r.state),
     startedAt: (r.startedAt ?? null) as string | null,
     completedAt: (r.completedAt ?? null) as string | null,
-    stepsCompleted: Number(r.stepsCompleted ?? 0),
-    stepsSucceeded: Number(r.stepsSucceeded ?? 0),
+    stepsCompleted: toNonNegativeNumber(r.stepsCompleted),
+    stepsSucceeded: toNonNegativeNumber(r.stepsSucceeded),
     lastEventAt: (r.lastEventAt ?? null) as string | null,
     createdAt: (r.createdAt ?? '') as string,
     updatedAt: (r.updatedAt ?? '') as string,

@@ -19,10 +19,10 @@ export default function FirstLessonEntryScreen(_props: Props) {
   const household = useOptionalHousehold();
   const handleStart = () => {
     if (household) {
-      household.completeOnboarding(ROUTES.LessonReadyScreen);
+      household.completeOnboarding(ROUTES.SendToRobotScreen);
       return;
     }
-    legacyNavigate(_props.navigation, ROUTES.LessonReadyScreen);
+    legacyNavigate(_props.navigation, ROUTES.SendToRobotScreen);
   };
 
   return (

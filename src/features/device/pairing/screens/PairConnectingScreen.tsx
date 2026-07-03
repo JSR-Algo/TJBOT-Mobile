@@ -15,6 +15,10 @@ import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
 import { clearPairingBootstrapToken, consumePairingWifiPassword, getPairingBootstrapToken } from '../pairingSecretHandoff';
 import { savePendingPairingContext } from '../pendingPairingContext';
+import {
+  CLAIM_CONFIRM_TIMEOUT_MS,
+  CLAIM_POLL_INTERVAL_MS,
+} from '../claimStatus';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 type RuntimeProvisioningStatus = 'started' | 'ble_paired' | 'device_authenticated' | 'completed' | 'failed' | 'expired';
@@ -31,10 +35,9 @@ type ProvisioningRunResult = {
   claimExpiresAt?: string | null;
 };
 
-const PAIRING_POLL_INTERVAL_MS = 3000;
+const DEVICE_STATUS_POLL_INTERVAL_MS = CLAIM_POLL_INTERVAL_MS;
 const DEVICE_ONLINE_MAX_POLL_ATTEMPTS = 20;
-const CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
-const CONFIRM_MAX_POLL_ATTEMPTS = Math.ceil(CONFIRM_TIMEOUT_MS / PAIRING_POLL_INTERVAL_MS) + 1;
+const PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS = Math.ceil(CLAIM_CONFIRM_TIMEOUT_MS / DEVICE_STATUS_POLL_INTERVAL_MS) + 1;
 
 const PROVISIONING_STATUSES = [
   'started',
@@ -74,8 +77,8 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     const canRunBleClaimProvisioning = transport === 'ble' && !!bleDeviceId;
     const canRunBleReconnectProvisioning = transport === 'ble_reconnect' && !!bleDeviceId;
     // Offline Wi-Fi: robot found over BLE but unknown to the backend (DEVICE_NOT_FOUND).
-    // Same credential-only BluFi handoff as reconnect, but no backend device exists to
-    // poll afterwards — completion is the resolved BluFi handoff itself.
+    // Same credential-only BluFi handoff as reconnect, but the handoff is only
+    // provisional; backend online confirmation is required before final success.
     const canRunBleOfflineProvisioning = transport === 'ble_offline' && !!bleDeviceId;
     logDevPairConnectingEvent('start', {
       deviceId,
@@ -98,9 +101,9 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     let password = consumePairingWifiPassword(provisioningAttemptId);
     if (!password) {
       setStatus('failed');
-      navigation.navigate(ROUTES.PairFailedScreen, {
+      navigation.navigate(ROUTES.PairWifiPasswordScreen, {
         ...failureContext(params),
-        errorCode: 'PAIRING_CONTEXT_MISSING',
+        errorCode: 'WIFI_PASSWORD_EXPIRED',
       });
       return;
     }
@@ -140,14 +143,20 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       setI(PAIRING_STEP_COUNT - 1);
       if (result.completionMode === 'device_online') {
         if (transport === 'ble_offline') {
-          // No backend device exists to poll. The resolved credential-only BluFi
-          // handoff (Wi-Fi creds accepted; the robot's conn-report was not
-          // STA_CONN_FAIL, else provisionWifiViaLocalBle would have thrown) IS the
-          // completion signal for this path. Show success and stop.
+          const onlineDevice = await waitForDeviceOnline(
+            result.deviceId,
+            poll,
+            'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT',
+          );
+          if (cancelled) return;
           clearPairingBootstrapToken(result.provisioningAttemptId);
           setI(PAIRING_STEP_COUNT);
           setStatus('authenticated');
-          navigation.navigate(ROUTES.PairSuccessScreen, { serialNumber });
+          navigation.navigate(ROUTES.PairSuccessScreen, {
+            deviceId: onlineDevice.id || result.deviceId,
+            serialNumber,
+            provisioningAttemptId: result.provisioningAttemptId,
+          });
           return;
         }
         await waitForDeviceOnline(result.deviceId, poll);
@@ -382,16 +391,20 @@ function logDevPairConnectingEvent(stage: string, detail: Record<string, unknown
 // the screen.
 type PollController = { cancelled: boolean; timer: ReturnType<typeof setTimeout> | undefined };
 
-async function waitForDeviceOnline(deviceId: string, poll: PollController): Promise<void> {
+async function waitForDeviceOnline(
+  deviceId: string,
+  poll: PollController,
+  timeoutCode = 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
+): Promise<Awaited<ReturnType<typeof getDeviceStatus>>> {
   for (let attempt = 0; attempt < DEVICE_ONLINE_MAX_POLL_ATTEMPTS; attempt += 1) {
     const status = await getDeviceStatus(deviceId);
-    if (status.online) return;
-    if (poll.cancelled) return;
+    if (status.online) return status;
+    if (poll.cancelled) return status;
     if (attempt === DEVICE_ONLINE_MAX_POLL_ATTEMPTS - 1) break;
-    await sleep(PAIRING_POLL_INTERVAL_MS, poll);
-    if (poll.cancelled) return;
+    await sleep(DEVICE_STATUS_POLL_INTERVAL_MS, poll);
+    if (poll.cancelled) return status;
   }
-  throw Object.assign(new Error('Device did not come online'), { code: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT' });
+  throw Object.assign(new Error('Device did not come online'), { code: timeoutCode });
 }
 
 async function waitForClaimConfirmed(claimId: string, poll: PollController, expiresAt?: string | null): Promise<{
@@ -408,7 +421,7 @@ async function waitForClaimConfirmed(claimId: string, poll: PollController, expi
         throw error;
       }
       if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
-      await sleep(PAIRING_POLL_INTERVAL_MS, poll);
+      await sleep(CLAIM_POLL_INTERVAL_MS, poll);
       if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
       continue;
     }
@@ -423,7 +436,7 @@ async function waitForClaimConfirmed(claimId: string, poll: PollController, expi
     }
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
     if (Date.now() >= deadlineMs) break;
-    await sleep(PAIRING_POLL_INTERVAL_MS, poll);
+    await sleep(CLAIM_POLL_INTERVAL_MS, poll);
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId: claimId };
   }
   throw Object.assign(new Error('Claim confirmation timed out'), { code: 'CLAIM_CONFIRM_TIMEOUT' });
@@ -444,7 +457,7 @@ async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: P
   deviceId: string;
   provisioningAttemptId: string;
 }> {
-  for (let attempt = 0; attempt < CONFIRM_MAX_POLL_ATTEMPTS; attempt += 1) {
+  for (let attempt = 0; attempt < PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS; attempt += 1) {
     const status = parseProvisioningStatus(await getProvisioningAttemptStatus(provisioningAttemptId));
     if (status.status === 'device_authenticated' || status.status === 'completed') {
       return { deviceId: status.deviceId, provisioningAttemptId: status.provisioningAttemptId };
@@ -453,15 +466,15 @@ async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: P
       throw Object.assign(new Error('Provisioning failed'), { code: status.failureCode ?? 'PROVISIONING_FAILED' });
     }
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId };
-    if (attempt === CONFIRM_MAX_POLL_ATTEMPTS - 1) break;
-    await sleep(PAIRING_POLL_INTERVAL_MS, poll);
+    if (attempt === PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS - 1) break;
+    await sleep(DEVICE_STATUS_POLL_INTERVAL_MS, poll);
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId };
   }
   throw Object.assign(new Error('Provisioning timed out'), { code: 'PROVISIONING_TIMEOUT' });
 }
 
 function resolveConfirmDeadlineMs(expiresAt?: string | null): number {
-  return readFutureDeadlineMs(expiresAt) ?? Date.now() + CONFIRM_TIMEOUT_MS;
+  return readFutureDeadlineMs(expiresAt) ?? Date.now() + CLAIM_CONFIRM_TIMEOUT_MS;
 }
 
 function readFutureDeadlineMs(expiresAt?: string | null): number | null {

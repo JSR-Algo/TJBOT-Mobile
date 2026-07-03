@@ -9,10 +9,8 @@ export type RecoveryReason =
   | 'app_error';
 
 export type ResumeTarget =
-  | typeof ROUTES.RobotListeningScreen
-  | typeof ROUTES.UserSpeakingScreen
-  | typeof ROUTES.RobotSpeakingScreen
-  | typeof ROUTES.ActivityIntroScreen;
+  | typeof ROUTES.SendToRobotScreen
+  | typeof ROUTES.HomeHubScreen;
 
 export type LessonCheckpoint = {
   readonly lessonTitle: string;
@@ -43,7 +41,7 @@ export function fallbackCheckpoint(): LessonCheckpoint {
   return {
     lessonTitle: 'How are you?',
     progressLabel: '60%',
-    resumeTarget: ROUTES.UserSpeakingScreen,
+    resumeTarget: ROUTES.SendToRobotScreen,
     reason: 'voice_failed',
     activityLabel: 'Speaking practice',
   };

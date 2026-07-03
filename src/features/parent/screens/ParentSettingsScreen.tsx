@@ -1,5 +1,9 @@
 import React from 'react';
-import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Alert, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+// Read the shipped version straight from app config (static JSON) instead of
+// expo-constants — the latter is an ESM native module that Jest can't parse and
+// that adds no value for a build-time-constant string.
+import appConfig from '../../../../app.json';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ParentScroll, { PA } from '../components/ParentScroll';
@@ -12,9 +16,17 @@ import { useHousehold } from '@/contexts/HouseholdContext';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { captureError } from '@/services/observability/sentry';
+import { isAnalyticsEnabled } from '@/services/observability/analytics';
+import { getAnalyticsPreference, setAnalyticsPreference } from '@/services/observability/analyticsPreference';
 import { useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 import { getChildProfile, updateChildProfile, type ChildProfile, type UpdateProfileDto } from '@/services/api/learning';
-import { updateChild } from '@/services/api/households';
+import { updateChild, deleteChild } from '@/services/api/households';
+import {
+  AI_VOICE_CONSENT_VERSION,
+  GOOGLE_SUBPROCESSORS_VERSION,
+  recordAiVoiceConsent,
+  withdrawAiVoiceConsent,
+} from '@/services/api/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSettingsScreen'>;
 
@@ -23,6 +35,9 @@ const LANG_OPTIONS: { v: AppLocale; label: string }[] = [
   { v: 'en', label: 'English' },
 ];
 
+// `value` is the wire/enum stored on the backend; `label` is an i18n key routed
+// through the DS Text (both en + vi keys exist), so the visible chip localizes
+// while the persisted value stays stable.
 const CAREER_OPTIONS = [
   { value: 'teacher', label: 'Teacher' },
   { value: 'engineer', label: 'Engineer' },
@@ -30,7 +45,16 @@ const CAREER_OPTIONS = [
   { value: 'business', label: 'Business' },
 ] as const;
 
-const INTEREST_OPTIONS = ['animals', 'space', 'music', 'sports', 'stories', 'numbers'] as const;
+const INTEREST_OPTIONS = [
+  { value: 'animals', label: 'Animals' },
+  { value: 'space', label: 'Space' },
+  { value: 'music', label: 'Music' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'stories', label: 'Stories' },
+  { value: 'numbers', label: 'Numbers' },
+] as const;
+
+const VOICE_CONSENT_WITHDRAW_REASON = 'Parent paused AI voice lessons from mobile settings.';
 
 function languageLabel(locale: AppLocale): string {
   return LANG_OPTIONS.find(option => option.v === locale)?.label ?? 'Tiếng Việt';
@@ -40,42 +64,87 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentSettingsScreen);
   const { logout } = useAuth();
   const { activeChild, refresh } = useHousehold();
-  const [mic, setMic] = React.useState(false);
-  const [sound, setSound] = React.useState(false);
-  const [haptics, setHaptics] = React.useState(false);
-  const [analytics, setAnalytics] = React.useState(false);
+  const [analytics, setAnalytics] = React.useState(isAnalyticsEnabled());
   const [savingLanguage, setSavingLanguage] = React.useState<AppLocale | null>(null);
   const [languageSaveFailed, setLanguageSaveFailed] = React.useState(false);
   const [profile, setProfile] = React.useState<ChildProfile | null>(null);
+  const [profileLoading, setProfileLoading] = React.useState(false);
+  const [profileLoadFailed, setProfileLoadFailed] = React.useState(false);
   const [profileSaving, setProfileSaving] = React.useState(false);
   const [profileSaveFailed, setProfileSaveFailed] = React.useState(false);
   const [childNameDraft, setChildNameDraft] = React.useState('');
   const [childNameSaving, setChildNameSaving] = React.useState(false);
   const [childNameSaveFailed, setChildNameSaveFailed] = React.useState(false);
+  const [voiceConsentSaving, setVoiceConsentSaving] = React.useState<'grant' | 'withdraw' | null>(null);
+  const [voiceConsentMessage, setVoiceConsentMessage] = React.useState<string | null>(null);
+  const [voiceConsentSaveFailed, setVoiceConsentSaveFailed] = React.useState(false);
   const { language, setLanguage, t } = useAppLanguage();
   const childId = activeChild?.id;
   const householdId = activeChild?.household_id;
+  // Guards against a fetch resolving after childId changed / unmount.
+  const profileReqRef = React.useRef(0);
 
-  React.useEffect(() => {
-    let mounted = true;
+  const loadProfile = React.useCallback(() => {
     if (!childId) {
       setProfile(null);
-      return () => { mounted = false; };
+      setProfileLoading(false);
+      setProfileLoadFailed(false);
+      return;
     }
+    const myId = ++profileReqRef.current;
+    setProfileLoading(true);
+    setProfileLoadFailed(false);
     getChildProfile(childId)
       .then((nextProfile) => {
-        if (mounted) setProfile(nextProfile);
+        if (profileReqRef.current !== myId) return;
+        setProfile(nextProfile);
+        setProfileLoading(false);
       })
       .catch((error) => {
         captureError(error);
-        if (mounted) setProfile(null);
+        if (profileReqRef.current !== myId) return;
+        // Keep it explicit: a fetch failure must NOT look like an empty profile,
+        // or the parent could tap chips and overwrite real saved data unseen.
+        setProfile(null);
+        setProfileLoading(false);
+        setProfileLoadFailed(true);
       });
-    return () => { mounted = false; };
   }, [childId]);
+
+  React.useEffect(() => {
+    loadProfile();
+    return () => { profileReqRef.current += 1; };
+  }, [loadProfile]);
+
+  // Personalization chips are only safe to edit once we actually know the saved
+  // profile. Block editing while loading or after a load failure.
+  const profileEditingDisabled = !childId || profileLoading || profileLoadFailed || profileSaving;
 
   React.useEffect(() => {
     setChildNameDraft(activeChild?.name ?? profile?.name ?? '');
   }, [activeChild?.name, profile?.name]);
+
+  // Hydrate the analytics switch from the parent's persisted choice (falls back
+  // to the current role-based enable state when nothing is stored).
+  React.useEffect(() => {
+    let mounted = true;
+    getAnalyticsPreference()
+      .then((pref) => {
+        if (mounted) setAnalytics(pref ?? isAnalyticsEnabled());
+      })
+      .catch(() => {
+        if (mounted) setAnalytics(isAnalyticsEnabled());
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  const onToggleAnalytics = React.useCallback((next: boolean) => {
+    // Optimistic: reflect immediately, then persist + flip the live client. A
+    // storage failure is captured inside setAnalyticsPreference; the live gate
+    // still changes so collection stops/starts right away.
+    setAnalytics(next);
+    void setAnalyticsPreference(next);
+  }, []);
 
   const updateLanguage = React.useCallback(async (nextLanguage: AppLocale): Promise<void> => {
     setSavingLanguage(nextLanguage);
@@ -136,14 +205,76 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     void saveProfile({ interests: next });
   }, [profile?.interests, saveProfile]);
 
-  const unavailableProfileRows = [
-    'Child age',
-    'Daily reminder',
-    'Plan status',
-    'Billing portal',
-    'Help center',
-    'App version',
-  ] as const;
+  const allowVoiceLessons = React.useCallback(async (): Promise<void> => {
+    if (voiceConsentSaving) return;
+    setVoiceConsentSaving('grant');
+    setVoiceConsentMessage(null);
+    setVoiceConsentSaveFailed(false);
+    try {
+      await recordAiVoiceConsent({
+        consent_version: AI_VOICE_CONSENT_VERSION,
+        google_subprocessors_version: GOOGLE_SUBPROCESSORS_VERSION,
+      });
+      setVoiceConsentMessage('Voice setup saved. Robot can listen during lessons.');
+    } catch (error) {
+      captureError(error);
+      setVoiceConsentSaveFailed(true);
+    } finally {
+      setVoiceConsentSaving(null);
+    }
+  }, [voiceConsentSaving]);
+
+  const pauseVoiceLessons = React.useCallback(async (): Promise<void> => {
+    if (voiceConsentSaving) return;
+    setVoiceConsentSaving('withdraw');
+    setVoiceConsentMessage(null);
+    setVoiceConsentSaveFailed(false);
+    try {
+      await withdrawAiVoiceConsent({ reason: VOICE_CONSENT_WITHDRAW_REASON });
+      setVoiceConsentMessage('Voice lessons paused. Robot will ask a parent before listening.');
+    } catch (error) {
+      captureError(error);
+      setVoiceConsentSaveFailed(true);
+    } finally {
+      setVoiceConsentSaving(null);
+    }
+  }, [voiceConsentSaving]);
+
+  const confirmSignOut = React.useCallback(() => {
+    Alert.alert(
+      t('Sign out?'),
+      t('You will need to sign in again to manage your child.'),
+      [
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Sign out'), style: 'destructive', onPress: () => { void logout(); } },
+      ],
+    );
+  }, [logout, t]);
+
+  const confirmDeleteData = React.useCallback(() => {
+    if (!childId) return;
+    Alert.alert(
+      t("Delete child's data?"),
+      t('This schedules deletion of your child’s learning data. This cannot be undone.'),
+      [
+        { text: t('Cancel'), style: 'cancel' },
+        {
+          text: t('Delete'),
+          style: 'destructive',
+          onPress: () => {
+            deleteChild(childId)
+              .then(() => { void refresh(); })
+              .catch((error) => {
+                captureError(error);
+                Alert.alert(t('Delete failed'), t('Could not delete right now. Please try again.'));
+              });
+          },
+        },
+      ],
+    );
+  }, [childId, refresh, t]);
+
+  const appVersion = (appConfig as { expo?: { version?: string } }).expo?.version ?? '';
 
   return (
     <ParentScroll title="Settings" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
@@ -203,11 +334,16 @@ export default function ParentSettingsScreen({ navigation }: Props) {
           </Box>
           {childNameSaveFailed ? <Text style={styles.profileError}>Child name could not be saved. Try again.</Text> : null}
         </Box>
-        <PRow label="Learning level" value={profile?.vocabulary_level ?? 'Unavailable'} />
-        <PRow label="Lesson length" value={profile?.attention_span_seconds ? `${Math.round(profile.attention_span_seconds / 60)} min` : 'Unavailable'} />
-        {unavailableProfileRows.map((label, index) => (
-          <PRow key={label} label={label} value="Unavailable" isLast={index === unavailableProfileRows.length - 1} />
-        ))}
+        <PRow label="Learning level" value={profile?.vocabulary_level ?? '—'} />
+        <PRow
+          label="Lesson length"
+          value={profile?.attention_span_seconds ? `${Math.round(profile.attention_span_seconds / 60)} ${t('min')}` : '—'}
+          isLast
+        />
+        {/* Removed dead placeholder rows (Child age / Daily reminder / Plan /
+            Billing / Help / App version) that only rendered "Unavailable" with
+            no backing data or route. Real ones are wired below (delete data,
+            app version). */}
         <Box style={styles.nameEditor}>
           <TouchableOpacity
             accessibilityRole="button"
@@ -223,7 +359,21 @@ export default function ParentSettingsScreen({ navigation }: Props) {
       </PRowGroup>
 
       <PRowGroup header="Personality filters" footer="These signals personalize lesson ordering without exposing the raw child profile in lesson cards.">
-        <Box style={styles.personalityBlock}>
+        {profileLoadFailed ? (
+          <Box style={styles.personalityBlock} gap={8}>
+            <Text style={styles.profileError}>Couldn't load profile. Try again.</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('Try again')}
+              onPress={loadProfile}
+              style={styles.saveNameButton}
+              activeOpacity={0.7}
+            >
+              <Text fontWeight="600" style={styles.saveNameButtonText}>Try again</Text>
+            </TouchableOpacity>
+          </Box>
+        ) : null}
+        <Box style={styles.personalityBlock} accessibilityRole="radiogroup" accessible>
           <Text fontWeight="600" style={styles.filterTitle}>Parent career</Text>
           <Box flexDirection="row" gap={8} style={styles.chipWrap}>
             {CAREER_OPTIONS.map((option) => {
@@ -231,14 +381,14 @@ export default function ParentSettingsScreen({ navigation }: Props) {
               return (
                 <TouchableOpacity
                   key={option.value}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected, disabled: profileSaving }}
-                  disabled={profileSaving || !childId}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected, disabled: profileEditingDisabled }}
+                  disabled={profileEditingDisabled}
                   onPress={() => { void saveProfile({ parent_career: option.value }); }}
-                  style={[styles.chip, selected && styles.chipSelected]}
+                  style={[styles.chip, selected && styles.chipSelected, profileEditingDisabled && !selected && styles.chipDisabled]}
                   activeOpacity={0.7}
                 >
-                  <Text fontWeight="600" style={[styles.chipText, selected && styles.chipTextSelected]} i18n={false}>{option.label}</Text>
+                  <Text fontWeight="600" style={[styles.chipText, selected && styles.chipTextSelected]}>{option.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -247,19 +397,19 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         <Box style={[styles.personalityBlock, styles.personalityBorder]}>
           <Text fontWeight="600" style={styles.filterTitle}>Child interests</Text>
           <Box flexDirection="row" gap={8} style={styles.chipWrap}>
-            {INTEREST_OPTIONS.map((interest) => {
-              const selected = profile?.interests.includes(interest) ?? false;
+            {INTEREST_OPTIONS.map((option) => {
+              const selected = profile?.interests.includes(option.value) ?? false;
               return (
                 <TouchableOpacity
-                  key={interest}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected, disabled: profileSaving }}
-                  disabled={profileSaving || !childId}
-                  onPress={() => toggleInterest(interest)}
-                  style={[styles.chip, selected && styles.chipSelected]}
+                  key={option.value}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected, disabled: profileEditingDisabled }}
+                  disabled={profileEditingDisabled}
+                  onPress={() => toggleInterest(option.value)}
+                  style={[styles.chip, selected && styles.chipSelected, profileEditingDisabled && !selected && styles.chipDisabled]}
                   activeOpacity={0.7}
                 >
-                  <Text fontWeight="600" style={[styles.chipText, selected && styles.chipTextSelected]} i18n={false}>{interest}</Text>
+                  <Text fontWeight="600" style={[styles.chipText, selected && styles.chipTextSelected]}>{option.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -268,14 +418,8 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         </Box>
       </PRowGroup>
 
-      <PRowGroup header="Audio & feedback" footer="Microphone is required for speaking practice. Turning it off pauses voice lessons.">
-        <PRow icon="🎤" label="Microphone" toggle={mic} onToggle={setMic} />
-        <PRow icon="🔊" label="Sound effects" toggle={sound} onToggle={setSound} />
-        <PRow icon="📳" label="Haptics" toggle={haptics} onToggle={setHaptics} isLast />
-      </PRowGroup>
-
-      <PRowGroup header="Privacy">
-        <PRow icon="📊" label="Anonymous usage analytics" toggle={analytics} onToggle={setAnalytics} />
+      <PRowGroup header="Privacy" footer="Anonymous analytics help us improve lessons. No child names, audio, or personal data are ever collected.">
+        <PRow icon="📊" label="Anonymous usage analytics" toggle={analytics} onToggle={onToggleAnalytics} />
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={t('Open Safety & Privacy details')}
@@ -284,18 +428,58 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         >
           <PRow icon="🛡" label="Safety & Privacy details" chevron />
         </TouchableOpacity>
-        <PRow icon="🗑" label="Delete child's data" value="Unavailable" chevron isLast />
+        <PRow
+          icon="🗑"
+          label="Delete child's data"
+          danger
+          chevron
+          onPress={childId ? confirmDeleteData : undefined}
+          value={childId ? undefined : '—'}
+          isLast
+        />
+      </PRowGroup>
+
+      <PRowGroup header="Voice setup" footer="Required before Robot listens during lessons.">
+        <Box style={styles.voiceConsentBlock}>
+          <Text fontWeight="600" style={styles.filterTitle}>AI voice lessons</Text>
+          <Box flexDirection="row" gap={8} style={styles.voiceConsentActions}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Allow voice lessons"
+              accessibilityState={{ disabled: voiceConsentSaving !== null }}
+              disabled={voiceConsentSaving !== null}
+              onPress={() => { void allowVoiceLessons(); }}
+              style={[styles.voiceConsentButton, voiceConsentSaving !== null && styles.disabledButton]}
+              activeOpacity={0.7}
+            >
+              <Text fontWeight="600" style={styles.voiceConsentButtonText}>{voiceConsentSaving === 'grant' ? 'Saving...' : 'Allow voice lessons'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Pause voice lessons"
+              accessibilityState={{ disabled: voiceConsentSaving !== null }}
+              disabled={voiceConsentSaving !== null}
+              onPress={() => { void pauseVoiceLessons(); }}
+              style={[styles.voiceConsentButton, styles.voiceConsentSecondaryButton, voiceConsentSaving !== null && styles.disabledButton]}
+              activeOpacity={0.7}
+            >
+              <Text fontWeight="600" style={styles.voiceConsentSecondaryText}>{voiceConsentSaving === 'withdraw' ? 'Saving...' : 'Pause voice lessons'}</Text>
+            </TouchableOpacity>
+          </Box>
+          {voiceConsentMessage ? <Text style={styles.voiceConsentSuccess}>{voiceConsentMessage}</Text> : null}
+          {voiceConsentSaveFailed ? <Text accessibilityRole="alert" style={styles.profileError}>Voice setup could not be saved. Try again.</Text> : null}
+        </Box>
       </PRowGroup>
 
       <PRowGroup header="Support">
-        <PRow icon="?" label="Help center" value="Unavailable" chevron />
-        <PRow icon="✉" label="Contact support" value="Unavailable" chevron />
-        <PRow icon="ⓘ" label="About Robot English" value="Unavailable" chevron />
-        <PRow icon="🛡" label="Account privacy" chevron onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen as never)} isLast />
+        {/* Dead Help/Contact/About rows removed until backed by a route; only
+            the real Account-privacy destination + app version remain. */}
+        <PRow icon="🛡" label="Account privacy" chevron onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen as never)} />
+        <PRow icon="ⓘ" label="App version" value={appVersion || '—'} isLast />
       </PRowGroup>
 
       <PRowGroup>
-        <PRow label="Sign out" danger onPress={() => { void logout(); }} isLast />
+        <PRow label="Sign out" danger onPress={confirmSignOut} isLast />
       </PRowGroup>
 
       <Box height={36} />
@@ -310,6 +494,19 @@ const styles = StyleSheet.create({
   },
   personalityBlock: { paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff' },
   nameEditor: { paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff' },
+  voiceConsentBlock: { paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff' },
+  voiceConsentActions: { flexWrap: 'wrap' },
+  voiceConsentButton: {
+    minHeight: 40,
+    justifyContent: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: PA.accent,
+  },
+  voiceConsentSecondaryButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: PA.hair },
+  voiceConsentButtonText: { color: '#fff', fontSize: 13 },
+  voiceConsentSecondaryText: { color: PA.ink, fontSize: 13 },
+  voiceConsentSuccess: { fontSize: 13, color: PA.good, marginTop: 10 },
   nameInput: {
     flex: 1,
     minHeight: 40,
@@ -342,6 +539,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   chipSelected: { backgroundColor: PA.accent, borderColor: PA.accent },
+  chipDisabled: { opacity: 0.5 },
   chipText: { fontSize: 13, color: PA.ink },
   chipTextSelected: { color: '#fff' },
   profileError: { fontSize: 13, color: '#C0392B', marginTop: 10 },

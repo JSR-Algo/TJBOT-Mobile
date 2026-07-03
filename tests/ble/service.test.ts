@@ -156,18 +156,30 @@ describe('BLE service', () => {
     expect(result.blocked.map((d) => d.id)).toEqual(['ZZ:00:11:22:33:44']);
   });
 
+  test('rejects BLE_SCAN_ERROR when the native discovery callback reports a scan failure', async () => {
+    mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => {
+      listener(Object.assign(new Error('Adapter unavailable'), { errorCode: 1 }), null);
+    });
+
+    await expect(scanForTJBotDevices(1)).rejects.toMatchObject({
+      code: 'BLE_SCAN_ERROR',
+    });
+    expect(mockStopDeviceScan).toHaveBeenCalled();
+  });
+
+  test('rejects BLE_SCAN_THROTTLED for Android scan-too-frequently failures', async () => {
+    mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => {
+      listener(new Error('Cannot start scanning operation because scanning is too frequently'), null);
+    });
+
+    await expect(scanForTJBotDevices(1)).rejects.toMatchObject({
+      code: 'BLE_SCAN_THROTTLED',
+    });
+    expect(mockStopDeviceScan).toHaveBeenCalled();
+  });
+
   test('sends Wi-Fi credentials through a local BLE write instead of an HTTP bridge', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, cancelConnection, connect } = createSecureProvisioningMocks();
 
     await expect(provisionWifiViaLocalBle({
       device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
@@ -196,10 +208,12 @@ describe('BLE service', () => {
     const connectAp = writes.find((frame) => frame[0] === 0x0c);
     expect(opMode?.slice(0, 2)).toEqual([0x08, 0x00]);
     expect(opMode?.slice(3)).toEqual([0x01, 0x01]);
-    expect(ssid?.slice(0, 2)).toEqual([0x09, 0x00]);
-    expect(ssid?.slice(3)).toEqual([0x04, ...asciiBytes('Casa')]);
-    expect(password?.slice(0, 2)).toEqual([0x0d, 0x00]);
-    expect(password?.slice(3)).toEqual([0x0b, ...asciiBytes('secret-pass')]);
+    expect(ssid?.slice(0, 2)).toEqual([0x09, 0x03]);
+    expect(ssid?.[3]).toBe(0x04);
+    expect(password?.slice(0, 2)).toEqual([0x0d, 0x03]);
+    expect(password?.[3]).toBe(0x0b);
+    expect(hasByteSequence(writes.flat(), asciiBytes('Casa'))).toBe(false);
+    expect(hasByteSequence(writes.flat(), asciiBytes('secret-pass'))).toBe(false);
     expect(connectAp?.slice(0, 2)).toEqual([0x0c, 0x00]);
     expect(connectAp?.slice(3)).toEqual([0x00]);
     expect(cancelConnection).toHaveBeenCalled();
@@ -224,10 +238,7 @@ describe('BLE service', () => {
   });
 
   test('preserves exact Wi-Fi password bytes for local BLE provisioning', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({ writeCharacteristicWithResponseForService });
-    const connect = jest.fn().mockResolvedValue({ discoverAllServicesAndCharacteristics, cancelConnection });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     await provisionWifiViaLocalBle({
       device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
@@ -240,22 +251,13 @@ describe('BLE service', () => {
     const passwordFrame = writeCharacteristicWithResponseForService.mock.calls
       .map((call) => decodeBase64(call[2] as string))
       .find((frame) => frame[0] === 0x0d);
-    expect(passwordFrame?.slice(0, 2)).toEqual([0x0d, 0x00]);
-    expect(passwordFrame?.slice(3)).toEqual([0x06, ...asciiBytes(' pass ')]);
+    expect(passwordFrame?.slice(0, 2)).toEqual([0x0d, 0x03]);
+    expect(passwordFrame?.[3]).toBe(0x06);
+    expect(hasByteSequence(passwordFrame ?? [], asciiBytes(' pass '))).toBe(false);
   });
 
   test('writes custom-data TLV frame before SSID/PASSWD frames when token is present', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     // 43-char base64url token as specified in plan
     const token = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
@@ -289,17 +291,7 @@ describe('BLE service', () => {
   });
 
   test('negotiates BluFi security before sending token and Wi-Fi credentials', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     await provisionWifiViaLocalBle({
       device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
@@ -367,7 +359,7 @@ describe('BLE service', () => {
     expect(writtenTypes).not.toContain(0x0d);
     expect(writtenTypes).not.toContain(0x0c);
 
-    for (const listener of listeners) listener(null, { value: encodeBase64([0x01, 0x00, 0x00, 0x00]) });
+    for (const listener of listeners) listener(null, { value: mockSecurityResponseFrame() });
     await flushPromises();
     await flushPromises();
 
@@ -383,18 +375,49 @@ describe('BLE service', () => {
     expect(cancelConnection).toHaveBeenCalled();
   });
 
-  test('allows pending-claim Wi-Fi provisioning with a bootstrap token and no pairing code', async () => {
+  test('rejects malformed robot DH response before writing protected token or credential frames', async () => {
     const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: BleNotifyListener) => {
+      listener(null, { value: encodeBase64([0x01, 0x00, 0x00, 0x00]) });
+      return { remove };
+    });
     const cancelConnection = jest.fn().mockResolvedValue(undefined);
     const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
       writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
       cancelConnection,
     });
     const connect = jest.fn().mockResolvedValue({
       discoverAllServicesAndCharacteristics,
       writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
       cancelConnection,
     });
+
+    await expect(provisionWifiViaLocalBle({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      ssid: 'Casa',
+      password: 'secret-pass',
+      token: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      code: '123456',
+      connectDevice: connect,
+    })).rejects.toMatchObject({ code: 'BLE_PROVISIONING_GATT_ERROR' });
+
+    const writtenTypes = writeCharacteristicWithResponseForService.mock.calls.map((call) => decodeBase64(call[2] as string)[0]);
+    const customDataType = (0x01 & 0x03) | (BLUFI_DATA_CUSTOM << 2);
+    expect(writtenTypes).not.toContain(0x04);
+    expect(writtenTypes).not.toContain(customDataType);
+    expect(writtenTypes).not.toContain(0x08);
+    expect(writtenTypes).not.toContain(0x09);
+    expect(writtenTypes).not.toContain(0x0d);
+    expect(writtenTypes).not.toContain(0x0c);
+    expect(remove).toHaveBeenCalled();
+    expect(cancelConnection).toHaveBeenCalled();
+  });
+
+  test('allows pending-claim Wi-Fi provisioning with a bootstrap token and no pairing code', async () => {
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
     const token = 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC';
 
     await expect(provisionWifiViaLocalBle({
@@ -408,26 +431,16 @@ describe('BLE service', () => {
     const allWrites = writeCharacteristicWithResponseForService.mock.calls.map((call) => decodeBase64(call[2] as string));
     const customDataType = (0x01 & 0x03) | (BLUFI_DATA_CUSTOM << 2);
     const customFrames = allWrites.filter((frame) => frame[0] === customDataType);
-    const tlvBytes = reassembleBluFiData(customFrames);
-    expect(findTlvValue(tlvBytes, 0x01)).toEqual(asciiBytes(token));
-    expect(findTlvValue(tlvBytes, 0x02)).toBeUndefined();
+    expect(customFrames.length).toBeGreaterThan(0);
+    expect(customFrames.every((frame) => (frame[1] & 0x03) === 0x03)).toBe(true);
+    expect(hasByteSequence(customFrames.flat(), asciiBytes(token))).toBe(false);
     expect(allWrites.some((frame) => frame[0] === 0x08)).toBe(true);
     expect(allWrites.some((frame) => frame[0] === 0x09)).toBe(true);
     expect(allWrites.some((frame) => frame[0] === 0x0d)).toBe(true);
   });
 
   test('sends a claim bootstrap token as custom-data only for physical confirmation', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, cancelConnection, connect } = createSecureProvisioningMocks();
 
     const token = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
 
@@ -443,25 +456,17 @@ describe('BLE service', () => {
 
     const writes = writeCharacteristicWithResponseForService.mock.calls.map((call) => decodeBase64(call[2] as string));
     const customDataType = (0x01 & 0x03) | (BLUFI_DATA_CUSTOM << 2);
+    const customFrames = writes.filter((frame) => frame[0] === customDataType);
     expect(writes.length).toBeGreaterThan(0);
-    expect(writes.every((frame) => frame[0] === customDataType)).toBe(true);
-    expect(writes[0]).toEqual(expect.arrayContaining([0x01, token.length]));
+    expect(customFrames.length).toBeGreaterThan(0);
+    expect(customFrames.every((frame) => (frame[1] & 0x03) === 0x03)).toBe(true);
+    expect(hasByteSequence(writes.flat(), asciiBytes(token))).toBe(false);
     expect(writes.some((frame) => frame[0] === 0x08 || frame[0] === 0x09 || frame[0] === 0x0d)).toBe(false);
     expect(cancelConnection).toHaveBeenCalled();
   });
 
   test('pushes the claim device_id as TLV tag 0x03 alongside the token when provided', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     const token = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
     const deviceId = '4206ee1a-1f1b-4437-9401-9ca2bc4adc69';
@@ -473,47 +478,44 @@ describe('BLE service', () => {
       connectDevice: connect,
     });
 
-    // Reassemble the custom-data TLV stream from the (possibly fragmented) frames:
-    // each frame is [type, frameControl, seq, dataLen, ...data]; a FRAGMENT(0x10)
-    // frame prefixes its chunk with a 2-byte total-length.
-    const FRAGMENT = 0x10;
-    const tlv: number[] = [];
-    for (const call of writeCharacteristicWithResponseForService.mock.calls) {
-      const frame = decodeBase64(call[2] as string);
-      const data = frame.slice(4);
-      tlv.push(...((frame[1] & FRAGMENT) ? data.slice(2) : data));
-    }
     const idBytes = asciiBytes(deviceId);
-    const expected = [0x03, idBytes.length, ...idBytes];
-    const found = tlv.some((_, i) => expected.every((b, j) => tlv[i + j] === b));
-    expect(found).toBe(true);
-    // token TLV (tag 0x01) is still first
-    expect(tlv[0]).toBe(0x01);
-    expect(tlv[1]).toBe(token.length);
+    const writes = writeCharacteristicWithResponseForService.mock.calls.map((call) => decodeBase64(call[2] as string));
+    const customDataType = (0x01 & 0x03) | (BLUFI_DATA_CUSTOM << 2);
+    const customFrames = writes.filter((frame) => frame[0] === customDataType);
+    expect(customFrames.length).toBeGreaterThan(0);
+    expect(customFrames.every((frame) => (frame[1] & 0x03) === 0x03)).toBe(true);
+    expect(hasByteSequence(writes.flat(), asciiBytes(token))).toBe(false);
+    expect(hasByteSequence(writes.flat(), idBytes)).toBe(false);
   });
 
   test('retries claim bootstrap token delivery after a transient BLE write failure', async () => {
     const firstWrite = jest.fn().mockRejectedValueOnce(new Error('GATT write failed'));
     const firstCancel = jest.fn().mockResolvedValue(undefined);
+    const firstMonitor = createSecurityMonitor();
     const firstDiscover = jest.fn().mockResolvedValue({
       writeCharacteristicWithResponseForService: firstWrite,
+      monitorCharacteristicForService: firstMonitor,
       cancelConnection: firstCancel,
     });
     const secondWrite = jest.fn().mockResolvedValue({});
     const secondCancel = jest.fn().mockResolvedValue(undefined);
+    const secondMonitor = createSecurityMonitor();
     const secondDiscover = jest.fn().mockResolvedValue({
       writeCharacteristicWithResponseForService: secondWrite,
+      monitorCharacteristicForService: secondMonitor,
       cancelConnection: secondCancel,
     });
     const connect = jest.fn()
       .mockResolvedValueOnce({
         discoverAllServicesAndCharacteristics: firstDiscover,
         writeCharacteristicWithResponseForService: firstWrite,
+        monitorCharacteristicForService: firstMonitor,
         cancelConnection: firstCancel,
       })
       .mockResolvedValueOnce({
         discoverAllServicesAndCharacteristics: secondDiscover,
         writeCharacteristicWithResponseForService: secondWrite,
+        monitorCharacteristicForService: secondMonitor,
         cancelConnection: secondCancel,
       });
 
@@ -543,8 +545,10 @@ describe('BLE service', () => {
     });
     const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
     const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const monitorCharacteristicForService = createSecurityMonitor();
     const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
       writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
       cancelConnection,
     });
     const connect = jest.fn()
@@ -552,6 +556,7 @@ describe('BLE service', () => {
       .mockResolvedValueOnce({
         discoverAllServicesAndCharacteristics,
         writeCharacteristicWithResponseForService,
+        monitorCharacteristicForService,
         cancelConnection,
       });
 
@@ -592,7 +597,7 @@ describe('BLE service', () => {
     expect(connect).not.toHaveBeenCalled();
   });
 
-  test('times out a stuck BLE service discovery during Wi-Fi provisioning', async () => {
+  test('maps a stuck BLE service discovery during Wi-Fi provisioning to BLE_PROVISIONING_GATT_ERROR', async () => {
     jest.useFakeTimers();
     const cancelConnection = jest.fn().mockResolvedValue(undefined);
     const discoverAllServicesAndCharacteristics = jest.fn(() => new Promise(() => undefined));
@@ -616,7 +621,7 @@ describe('BLE service', () => {
 
     await jest.advanceTimersByTimeAsync(10000);
 
-    expect(observed).toHaveBeenCalledWith(expect.objectContaining({ code: 'BLE_PROVISIONING_FAILED' }));
+    expect(observed).toHaveBeenCalledWith(expect.objectContaining({ code: 'BLE_PROVISIONING_GATT_ERROR' }));
     expect(cancelConnection).toHaveBeenCalled();
     jest.useRealTimers();
   });
@@ -754,17 +759,7 @@ describe('BLE service', () => {
   // ---------------------------------------------------------------------------
 
   test('[MB1] writes BluFi custom TLV tag 0x01 = bootstrap_token when a token exists', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     const token = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
@@ -779,26 +774,14 @@ describe('BLE service', () => {
     const allWrites = writeCharacteristicWithResponseForService.mock.calls.map((call) => decodeBase64(call[2] as string));
     const customDataType = (0x01 & 0x03) | (BLUFI_DATA_CUSTOM << 2);
 
-    // The custom-data TLV is fragmented across one-or-more frames (BLE MTU 23 →
-    // 12 content bytes per fragment). Reassemble it the way firmware does.
-    const tlvBytes = reassembleBluFiData(allWrites.filter((frame) => frame[0] === customDataType));
-    expect(tlvBytes.length).toBeGreaterThan(0);
-    // tag 0x01 (bootstrap_token), len = token byte length, then the token bytes.
-    expect(findTlvValue(tlvBytes, 0x01)).toEqual(asciiBytes(token));
+    const customFrames = allWrites.filter((frame) => frame[0] === customDataType);
+    expect(customFrames.length).toBeGreaterThan(0);
+    expect(customFrames.every((frame) => (frame[1] & 0x03) === 0x03)).toBe(true);
+    expect(hasByteSequence(customFrames.flat(), [0x01, token.length, ...asciiBytes(token)])).toBe(false);
   });
 
   test('[MB2] writes BluFi custom TLV tag 0x02 = provisioning_code alongside the bootstrap token (claim flow)', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     // The real claim flow ALWAYS mints/forwards a bootstrap token whenever a
     // provisioning code is present (PairConnectingScreen.tsx mints a token before
@@ -821,28 +804,15 @@ describe('BLE service', () => {
     const allWrites = writeCharacteristicWithResponseForService.mock.calls.map((call) => decodeBase64(call[2] as string));
     const customDataType = (0x01 & 0x03) | (BLUFI_DATA_CUSTOM << 2);
 
-    // Both the token (0x01) and the provisioning_code (0x02) must appear in the
-    // reassembled custom-data block.
     const customFrames = allWrites.filter((frame) => frame[0] === customDataType);
     expect(customFrames.length).toBeGreaterThan(0);
-    const tlvBytes = reassembleBluFiData(customFrames);
-    expect(findTlvValue(tlvBytes, 0x01)).toEqual(asciiBytes(token));
-    // tag 0x02 (provisioning_code), len 6, then the 6 ASCII code digits.
-    expect(findTlvValue(tlvBytes, 0x02)).toEqual(asciiBytes('123456'));
+    expect(customFrames.every((frame) => (frame[1] & 0x03) === 0x03)).toBe(true);
+    expect(hasByteSequence(customFrames.flat(), [0x01, token.length, ...asciiBytes(token)])).toBe(false);
+    expect(hasByteSequence(customFrames.flat(), [0x02, 6, ...asciiBytes('123456')])).toBe(false);
   });
 
   test('[MB3] custom TLV frames are written BEFORE the station credential (SSID/password) frames', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     const token = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
@@ -870,17 +840,7 @@ describe('BLE service', () => {
   });
 
   test('[MB4] return status is wifi_credentials_sent (a local handoff), NOT a final success/claim-complete status', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { connect } = createSecureProvisioningMocks();
 
     const result = await provisionWifiViaLocalBle({
       device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
@@ -901,7 +861,7 @@ describe('BLE service', () => {
     expect(['claim_confirmed', 'device_authenticated', 'completed', 'online', 'paired']).not.toContain(result.status);
   });
 
-  test('[MB5] a BLE write failure maps to BLE_PROVISIONING_FAILED without leaking credential values into errors/logs', async () => {
+  test('[MB5] a BLE write failure maps to BLE_PROVISIONING_GATT_ERROR without leaking credential values into errors/logs', async () => {
     const secretPassword = 'sup3r-secret-wifi-pw';
     const secretToken = 'ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ';
     const secretCode = '987654';
@@ -915,13 +875,16 @@ describe('BLE service', () => {
     try {
       const writeCharacteristicWithResponseForService = jest.fn().mockRejectedValue(new Error('GATT write failed'));
       const cancelConnection = jest.fn().mockResolvedValue(undefined);
+      const monitorCharacteristicForService = createSecurityMonitor();
       const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
         writeCharacteristicWithResponseForService,
+        monitorCharacteristicForService,
         cancelConnection,
       });
       const connect = jest.fn().mockResolvedValue({
         discoverAllServicesAndCharacteristics,
         writeCharacteristicWithResponseForService,
+        monitorCharacteristicForService,
         cancelConnection,
       });
 
@@ -935,8 +898,9 @@ describe('BLE service', () => {
         connectDevice: connect,
       }).catch((error) => { captured = error; });
 
-      // Typed failure with the documented provisioning code.
-      expect((captured as { code?: string }).code).toBe('BLE_PROVISIONING_FAILED');
+      // Typed sub-code with the documented static provisioning message.
+      expect((captured as { code?: string }).code).toBe('BLE_PROVISIONING_GATT_ERROR');
+      expect((captured as Error).message).toBe('Robot did not accept local Wi-Fi provisioning.');
 
       // No credential value leaks into the thrown error (message/code/serialized).
       const serializedError = JSON.stringify(captured) + String((captured as Error).message) + String((captured as { code?: string }).code);
@@ -1108,7 +1072,7 @@ describe('BLE service', () => {
   // conn-report frame: [type=0x3D, frameControl=0x00, sequence, dataLength=2, opmode, conn_state]
   const connReportFrame = (connState: number): string =>
     encodeBase64([0x3d, 0x00, 0x00, 0x02, 0x01, connState]);
-  const securityResponseFrame = (): string => encodeBase64([0x01, 0x00, 0x00, 0x00]);
+  const securityResponseFrame = (): string => mockSecurityResponseFrame();
 
   test('rejects Wi-Fi provisioning with WIFI_CONNECT_FAILED when the robot reports STA_CONN_FAIL (conn_state=1)', async () => {
     const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
@@ -1344,17 +1308,7 @@ describe('BLE service', () => {
   });
 
   test('allowCredentialOnly lets a credentials-only Wi-Fi push proceed without a code or token', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     await expect(provisionWifiViaLocalBle({
       device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
@@ -1369,17 +1323,17 @@ describe('BLE service', () => {
     const customDataType = (0x01 & 0x03) | (BLUFI_DATA_CUSTOM << 2);
     expect(allWrites.some((frame) => frame[0] === customDataType)).toBe(false);
     expect(allWrites.some((frame) => frame[0] === 0x08)).toBe(true); // SET_WIFI_OPMODE
-    expect(allWrites.some((frame) => frame[0] === 0x09)).toBe(true); // STA_SSID
-    expect(allWrites.some((frame) => frame[0] === 0x0d)).toBe(true); // STA_PASSWORD
+    expect(allWrites.some((frame) => frame[0] === 0x09 && (frame[1] & 0x03) === 0x03)).toBe(true); // STA_SSID
+    expect(allWrites.some((frame) => frame[0] === 0x0d && (frame[1] & 0x03) === 0x03)).toBe(true); // STA_PASSWORD
   });
 
   // ===========================================================================
-  // US-005 gap-fill: provisionWifiViaLocalBle BLE timeout / failure paths all
-  // collapse to the single typed BLE_PROVISIONING_FAILED code, the GATT link is
-  // always released (cancelConnection), and NO credential value leaks.
+  // US-005/G15 gap-fill: provisionWifiViaLocalBle BLE timeout / failure paths
+  // use typed sub-codes, the GATT link is always released (cancelConnection),
+  // and NO credential value leaks.
   // ===========================================================================
 
-  test('maps a stuck BLE connect to BLE_PROVISIONING_FAILED (10s GATT timeout)', async () => {
+  test('maps a stuck BLE connect to BLE_PROVISIONING_GATT_ERROR (10s GATT timeout)', async () => {
     jest.useFakeTimers();
     // connectDevice never resolves: the 10s GATT op timeout must fire.
     const connect = jest.fn(() => new Promise<never>(() => undefined));
@@ -1395,23 +1349,26 @@ describe('BLE service', () => {
 
     await jest.advanceTimersByTimeAsync(10000);
 
-    expect(observed).toHaveBeenCalledWith(expect.objectContaining({ code: 'BLE_PROVISIONING_FAILED' }));
+    expect(observed).toHaveBeenCalledWith(expect.objectContaining({ code: 'BLE_PROVISIONING_GATT_ERROR' }));
     expect(connect).toHaveBeenCalledTimes(1);
     jest.useRealTimers();
   });
 
-  test('maps a stuck BluFi frame write to BLE_PROVISIONING_FAILED and still releases the GATT link', async () => {
+  test('maps a stuck BluFi frame write to BLE_PROVISIONING_WRITE_TIMEOUT and still releases the GATT link', async () => {
     jest.useFakeTimers();
     // The write hangs forever; the per-op timeout must fire and tear the link down.
     const writeCharacteristicWithResponseForService = jest.fn(() => new Promise<never>(() => undefined));
     const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const monitorCharacteristicForService = createSecurityMonitor();
     const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
       writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
       cancelConnection,
     });
     const connect = jest.fn().mockResolvedValue({
       discoverAllServicesAndCharacteristics,
       writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
       cancelConnection,
     });
     const observed = jest.fn();
@@ -1428,12 +1385,12 @@ describe('BLE service', () => {
     await jest.advanceTimersByTimeAsync(0);
     await jest.advanceTimersByTimeAsync(10000);
 
-    expect(observed).toHaveBeenCalledWith(expect.objectContaining({ code: 'BLE_PROVISIONING_FAILED' }));
+    expect(observed).toHaveBeenCalledWith(expect.objectContaining({ code: 'BLE_PROVISIONING_WRITE_TIMEOUT' }));
     expect(cancelConnection).toHaveBeenCalled();
     jest.useRealTimers();
   });
 
-  test('maps a native coded BLE connect failure (identity loss) to BLE_PROVISIONING_FAILED, not the raw native code', async () => {
+  test('maps a native coded BLE connect failure (identity loss) to BLE_PROVISIONING_DISCONNECTED, not the raw native code', async () => {
     // A robot that resets its BLE identity mid-pair throws a NATIVE coded error.
     // The service must normalize this to its documented typed code rather than
     // re-throwing the uncontrolled native error object, so the UI never keys off
@@ -1455,8 +1412,8 @@ describe('BLE service', () => {
       connectDevice: connect,
     }).catch((error) => { captured = error; });
 
-    // Documented typed code — NOT the native 'DeviceDisconnected'.
-    expect((captured as { code?: string }).code).toBe('BLE_PROVISIONING_FAILED');
+    // Documented typed sub-code — NOT the native 'DeviceDisconnected'.
+    expect((captured as { code?: string }).code).toBe('BLE_PROVISIONING_DISCONNECTED');
     expect((captured as { code?: string }).code).not.toBe('DeviceDisconnected');
     // The original native error object is not propagated, and no credential leaks.
     expect(captured).not.toBe(nativeError);
@@ -1464,6 +1421,37 @@ describe('BLE service', () => {
     for (const secret of [secretPassword, secretCode]) {
       expect(serialized).not.toContain(secret);
     }
+  });
+
+  test('maps native MTU negotiation failures to BLE_PROVISIONING_MTU_ERROR without leaking native strings', async () => {
+    const nativeError = new Error('MTU 517 negotiation failed on Android stack');
+    const writeCharacteristicWithResponseForService = jest.fn().mockRejectedValue(nativeError);
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const monitorCharacteristicForService = createSecurityMonitor();
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    let captured: unknown;
+    await provisionWifiViaLocalBle({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      ssid: 'Casa',
+      password: 'secret-pass',
+      code: '123456',
+      connectDevice: connect,
+    }).catch((error) => { captured = error; });
+
+    expect((captured as { code?: string }).code).toBe('BLE_PROVISIONING_MTU_ERROR');
+    expect((captured as Error).message).toBe('Robot did not accept local Wi-Fi provisioning.');
+    expect(String((captured as Error).message)).not.toContain('MTU 517');
   });
 
   test('rejects with BLE_PROVISIONING_UNSUPPORTED when the connected device exposes no write characteristic', async () => {
@@ -1483,7 +1471,7 @@ describe('BLE service', () => {
     expect(cancelConnection).toHaveBeenCalled();
   });
 
-  test('a BLE connect failure surfaces BLE_PROVISIONING_FAILED without leaking any credential into the error', async () => {
+  test('a generic BLE connect failure surfaces BLE_PROVISIONING_GATT_ERROR without leaking any credential into the error', async () => {
     const secretPassword = 'sup3r-secret-wifi-pw';
     const secretToken = 'ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ';
     const secretCode = '987654';
@@ -1501,7 +1489,7 @@ describe('BLE service', () => {
       connectDevice: connect,
     }).catch((error) => { captured = error; });
 
-    expect((captured as { code?: string }).code).toBe('BLE_PROVISIONING_FAILED');
+    expect((captured as { code?: string }).code).toBe('BLE_PROVISIONING_GATT_ERROR');
     const serialized = JSON.stringify(captured) + String((captured as Error).message) + String((captured as { code?: string }).code);
     for (const secret of [secretPassword, secretToken, secretCode, secretSsid]) {
       expect(serialized).not.toContain(secret);
@@ -1516,17 +1504,7 @@ describe('BLE service', () => {
   // ===========================================================================
 
   test('sequence numbers are a single monotonic stream from the custom-data TLV through the station frames', async () => {
-    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-    const cancelConnection = jest.fn().mockResolvedValue(undefined);
-    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
-    const connect = jest.fn().mockResolvedValue({
-      discoverAllServicesAndCharacteristics,
-      writeCharacteristicWithResponseForService,
-      cancelConnection,
-    });
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
     // A token long enough to force custom-data fragmentation (>12 content bytes).
     const token = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
@@ -1558,16 +1536,7 @@ describe('BLE service', () => {
 
     try {
       const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
-      const cancelConnection = jest.fn().mockResolvedValue(undefined);
-      const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
-        writeCharacteristicWithResponseForService,
-        cancelConnection,
-      });
-      const connect = jest.fn().mockResolvedValue({
-        discoverAllServicesAndCharacteristics,
-        writeCharacteristicWithResponseForService,
-        cancelConnection,
-      });
+      const { connect } = createSecureProvisioningMocks({ writeCharacteristicWithResponseForService });
 
       const result = await provisionWifiViaLocalBle({
         device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
@@ -1709,13 +1678,16 @@ describe('BLE service', () => {
     const secretToken = 'ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ';
     const writeCharacteristicWithResponseForService = jest.fn().mockRejectedValue(new Error(`GATT write failed for ${secretToken}`));
     const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const monitorCharacteristicForService = createSecurityMonitor();
     const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
       writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
       cancelConnection,
     });
     const connect = jest.fn().mockResolvedValue({
       discoverAllServicesAndCharacteristics,
       writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
       cancelConnection,
     });
 
@@ -1818,38 +1790,85 @@ function flushPromises(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
 }
 
-// Reassemble the data payload from a sequence of BluFi frames of the same type.
-// Fragment frames (frameControl bit 0x10) carry a 2-byte total-length prefix
-// followed by a chunk; the terminating plain frame carries the final chunk.
-// Frame layout: [type, frameControl, sequence, dataLength, ...data].
-function reassembleBluFiData(frames: number[][]): number[] {
-  const out: number[] = [];
-  for (const frame of frames) {
-    const frameControl = frame[1];
-    const dataLength = frame[3];
-    const data = frame.slice(4, 4 + dataLength);
-    if ((frameControl & 0x10) !== 0) {
-      // First two bytes of a fragment are the total remaining length — skip them.
-      out.push(...data.slice(2));
-    } else {
-      out.push(...data);
-    }
-  }
-  return out;
+type BleNotifyCharacteristic = { value: string | null };
+type BleNotifyListener = (error: Error | null, characteristic: BleNotifyCharacteristic | null) => void;
+type BleWriteMock = jest.Mock<Promise<unknown>, [string, string, string]>;
+type BleCancelMock = jest.Mock;
+type BleMonitorMock = jest.Mock<{ remove: jest.Mock<void, []> }, [string, string, BleNotifyListener]>;
+
+function createSecureProvisioningMocks(options: {
+  writeCharacteristicWithResponseForService?: BleWriteMock;
+  connState?: number;
+  notifyError?: Error;
+} = {}): {
+  writeCharacteristicWithResponseForService: BleWriteMock;
+  cancelConnection: BleCancelMock;
+  monitorCharacteristicForService: BleMonitorMock;
+  discoverAllServicesAndCharacteristics: jest.Mock<Promise<{
+    writeCharacteristicWithResponseForService: BleWriteMock;
+    monitorCharacteristicForService: BleMonitorMock;
+    cancelConnection: BleCancelMock;
+  }>, []>;
+  connect: jest.Mock;
+} {
+  const writeCharacteristicWithResponseForService = options.writeCharacteristicWithResponseForService ?? jest.fn<Promise<unknown>, [string, string, string]>().mockResolvedValue({});
+  const cancelConnection = jest.fn().mockResolvedValue(undefined);
+  const monitorCharacteristicForService = createSecurityMonitor({
+    connState: options.connState ?? 0,
+    notifyError: options.notifyError,
+  });
+  const discoverAllServicesAndCharacteristics = jest.fn<Promise<{
+    writeCharacteristicWithResponseForService: BleWriteMock;
+    monitorCharacteristicForService: BleMonitorMock;
+    cancelConnection: BleCancelMock;
+  }>, []>().mockResolvedValue({
+    writeCharacteristicWithResponseForService,
+    monitorCharacteristicForService,
+    cancelConnection,
+  });
+  const connect = jest.fn().mockResolvedValue({
+    discoverAllServicesAndCharacteristics,
+    writeCharacteristicWithResponseForService,
+    monitorCharacteristicForService,
+    cancelConnection,
+  });
+
+  return {
+    writeCharacteristicWithResponseForService,
+    cancelConnection,
+    monitorCharacteristicForService,
+    discoverAllServicesAndCharacteristics,
+    connect,
+  };
 }
 
-// Walk a flat TLV blob ([tag, len, ...value]*) and return the value bytes for
-// the first item matching the requested tag, or undefined if absent.
-function findTlvValue(tlv: number[], tag: number): number[] | undefined {
-  let offset = 0;
-  while (offset + 1 < tlv.length) {
-    const itemTag = tlv[offset];
-    const itemLen = tlv[offset + 1];
-    const value = tlv.slice(offset + 2, offset + 2 + itemLen);
-    if (itemTag === tag) return value;
-    offset += 2 + itemLen;
-  }
-  return undefined;
+function createSecurityMonitor(options: { connState?: number; notifyError?: Error } = {}): BleMonitorMock {
+  const remove = jest.fn<void, []>();
+  return jest.fn<{ remove: jest.Mock<void, []> }, [string, string, BleNotifyListener]>(
+    (_serviceUuid: string, _characteristicUuid: string, listener: BleNotifyListener) => {
+      listener(null, { value: mockSecurityResponseFrame() });
+      if (options.connState !== undefined) {
+        listener(null, { value: encodeBase64([0x3d, 0x00, 0x00, 0x02, 0x01, options.connState]) });
+      }
+      if (options.notifyError) {
+        listener(options.notifyError, null);
+      }
+      return { remove };
+    },
+  );
+}
+
+function mockSecurityResponseFrame(): string {
+  return encodeBase64([0x01, 0x00, 0x00, 128, ...mockPeerPublicKey()]);
+}
+
+function mockPeerPublicKey(): number[] {
+  return new Array<number>(128).fill(0x02);
+}
+
+function hasByteSequence(bytes: number[], sequence: number[]): boolean {
+  if (sequence.length === 0 || bytes.length < sequence.length) return false;
+  return bytes.some((_, index) => sequence.every((byte, sequenceIndex) => bytes[index + sequenceIndex] === byte));
 }
 
 function decodeBase64(value: string): number[] {

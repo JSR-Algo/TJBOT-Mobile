@@ -281,6 +281,18 @@ describe('codes-don\'t-match affordance', () => {
 
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
   });
+
+  it('keeps reconnect mode for an offline/reconnect mismatch', () => {
+    const navigate = jest.fn();
+    const utils = renderScreen(navigate, {
+      ...INBOUND_PARAMS,
+      provisioningTransport: 'ble_reconnect',
+    });
+
+    fireEvent.press(utils.getByText("Codes don't match"));
+
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+  });
 });
 
 // ---------------------------------------------------------------------------

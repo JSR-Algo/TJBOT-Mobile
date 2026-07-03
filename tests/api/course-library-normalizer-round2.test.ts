@@ -150,6 +150,7 @@ describe('assignment / current / preload — pickEnvelope ?? {} and alt-key arms
           lesson_title: 'Snake Lesson',
           lesson_version: 2,
           manifest_checksum: 'sha256:abc',
+          session_id: 'sess-snake',
           state: 'RUNNING',
           child_id: 'ch-7',
           profile: 'piTft',
@@ -164,6 +165,7 @@ describe('assignment / current / preload — pickEnvelope ?? {} and alt-key arms
       lessonTitle: 'Snake Lesson',
       lessonVersion: 2,
       manifestChecksum: 'sha256:abc',
+      sessionId: 'sess-snake',
       state: 'RUNNING',
       childId: 'ch-7',
       profile: 'piTft',
@@ -236,6 +238,7 @@ describe('normalizers — terminal default arms when every alt-key is absent', (
     const c = normalizeCurrentAssignmentPayload({ data: { assignment: { assignment_id: 'only-id' } } });
     expect(c).toEqual({
       assignmentId: 'only-id',
+      sessionId: null,
       assignmentVersion: 0,
       lessonId: '',
       lessonTitle: '',

@@ -1,5 +1,5 @@
 import { BleManager, Device } from 'react-native-ble-plx';
-import { buildBluFiCustomDataFrames, buildBluFiSecurityNegotiationFrames, buildBluFiStationProvisioningFrames, buildBluFiWifiScanFrames, encodeTLV, parseBluFiConnReport } from './blufiProtocol';
+import { buildBluFiCustomDataFrames, buildBluFiSecurityNegotiationFrames, buildBluFiStationProvisioningFrames, buildBluFiWifiScanFrames, deriveBluFiSession, encodeTLV, parseBluFiConnReport } from './blufiProtocol';
 import { BLE_CONFIG, isAllowlistedCandidate } from './config';
 import { requestBlePermissions } from './permissions';
 import type { BleBootstrapResult, BleDeviceCandidate, BleScanResult, LocalBleClaimTokenResult, LocalBleProvisioningResult, RobotWifiNetwork } from './types';
@@ -97,17 +97,19 @@ export async function scanForTJBotDevices(timeoutMs: number = BLE_CONFIG.SCAN_TI
   const manager = getBleManager();
   const seen = new Map<string, BleDeviceCandidate>();
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => {
       manager.stopDeviceScan();
       resolve();
     }, timeoutMs);
 
+    // Intentionally unfiltered: Android can expose BluFi robots as name-only or
+    // raw-advert records without serviceUUIDs, and service.test locks that path.
     manager.startDeviceScan(null, null, (error, device) => {
       if (error) {
         clearTimeout(timer);
         manager.stopDeviceScan();
-        resolve();
+        reject(normalizeScanError(error));
         return;
       }
 
@@ -139,6 +141,15 @@ export async function scanForTJBotDevices(timeoutMs: number = BLE_CONFIG.SCAN_TI
   return result;
 }
 
+function normalizeScanError(error: unknown): Error & { code: string } {
+  const message = errorMessage(error);
+  return codedError(isScanThrottleError(message) ? 'BLE_SCAN_THROTTLED' : 'BLE_SCAN_ERROR', message || 'Bluetooth scan failed.');
+}
+
+function isScanThrottleError(message: string): boolean {
+  return /too frequent|too frequently|scanning.*frequent|scan.*throttl/i.test(message);
+}
+
 type LocalProvisioningDevice = Pick<Device, 'discoverAllServicesAndCharacteristics'>
   & Partial<Pick<Device, 'writeCharacteristicWithResponseForService' | 'cancelConnection' | 'monitorCharacteristicForService'>>;
 
@@ -154,6 +165,7 @@ const CLAIM_BOOTSTRAP_TOKEN_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
 const CLAIM_BOOTSTRAP_TOKEN_DELIVERY_ATTEMPTS = 2;
 const CLAIM_BOOTSTRAP_TOKEN_RETRY_DELAY_MS = 200;
 const BLE_GATT_OPERATION_TIMEOUT_MS = 10000;
+const BLE_PROVISIONING_STATIC_MESSAGE = 'Robot did not accept local Wi-Fi provisioning.';
 const BLUFI_WIFI_LIST_TYPE = 0x45;
 const BLUFI_ERROR_INFO_TYPE = 0x49;
 const BLUFI_FRAME_CONTROL_FRAGMENT = 0x10;
@@ -215,14 +227,14 @@ export async function provisionWifiViaLocalBle(params: {
   try {
     connected = await withBleOperationTimeout(
       connectDevice(params.device.id),
-      'BLE_PROVISIONING_FAILED',
-      'Robot did not accept local Wi-Fi provisioning.',
+      'BLE_PROVISIONING_GATT_ERROR',
+      BLE_PROVISIONING_STATIC_MESSAGE,
     );
     logBleProvision('connected', { deviceId: params.device.id });
     const discovered = await withBleOperationTimeout(
       connected.discoverAllServicesAndCharacteristics(),
-      'BLE_PROVISIONING_FAILED',
-      'Robot did not accept local Wi-Fi provisioning.',
+      'BLE_PROVISIONING_GATT_ERROR',
+      BLE_PROVISIONING_STATIC_MESSAGE,
     );
     logBleProvision('services_discovered', { deviceId: params.device.id });
     const { writer, target } = resolveBluFiWriter(discovered, connected);
@@ -231,36 +243,33 @@ export async function provisionWifiViaLocalBle(params: {
       throw codedError('BLE_PROVISIONING_UNSUPPORTED', 'Robot BLE provisioning characteristic is unavailable.');
     }
 
-    // Subscribe to the notify char BEFORE writing the station frames so an early
-    // conn-report is not missed. If the device cannot monitor (e.g. older mocks /
-    // platforms), connReport stays null and we fall back to the backend-poll path.
+    // Subscribe to the notify char BEFORE writing protected frames: encrypted
+    // BluFi needs the robot DH public key, and conn-report can arrive early.
     const { monitor, target: monitorTarget } = resolveBluFiMonitor(discovered, connected);
     const boundMonitor = monitor?.bind(monitorTarget);
-    securityResponse = boundMonitor
-      ? waitForBluFiSecurityResponse(boundMonitor, BLUFI_SECURITY_RESPONSE_TIMEOUT_MS)
-      : null;
+    if (!boundMonitor) {
+      throw codedError('BLE_PROVISIONING_UNSUPPORTED', 'Robot BLE provisioning notification characteristic is unavailable.');
+    }
+    securityResponse = waitForBluFiSecurityResponse(boundMonitor, BLUFI_SECURITY_RESPONSE_TIMEOUT_MS);
     logBleProvision('monitor_ready', { hasMonitor: !!boundMonitor });
-    connReport = boundMonitor
-      ? waitForBluFiConnReport(boundMonitor, params.connReportTimeoutMs ?? BLUFI_CONN_REPORT_TIMEOUT_MS)
-      : null;
+    connReport = waitForBluFiConnReport(boundMonitor, params.connReportTimeoutMs ?? BLUFI_CONN_REPORT_TIMEOUT_MS);
 
     const security = buildBluFiSecurityNegotiationFrames({}, 0);
     const setSecurityFrame = security.frames[security.frames.length - 1];
     const negotiateFrames = security.frames.slice(0, -1);
-    logBleProvision('write_security_negotiate', { frames: securityResponse ? negotiateFrames.length : security.frames.length });
-    await writeBluFiFrames(writer.bind(target), securityResponse ? negotiateFrames : security.frames, {
-      timeoutCode: 'BLE_PROVISIONING_FAILED',
-      timeoutMessage: 'Robot did not accept local Wi-Fi provisioning.',
+    logBleProvision('write_security_negotiate', { frames: negotiateFrames.length });
+    await writeBluFiFrames(writer.bind(target), negotiateFrames, {
+      timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
+      timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
     });
-    if (securityResponse && setSecurityFrame) {
-      logBleProvision('await_security_response', { timeoutMs: BLUFI_SECURITY_RESPONSE_TIMEOUT_MS });
-      await securityResponse.result;
-      logBleProvision('security_response_received', {});
-      await writeBluFiFrames(writer.bind(target), [setSecurityFrame], {
-        timeoutCode: 'BLE_PROVISIONING_FAILED',
-        timeoutMessage: 'Robot did not accept local Wi-Fi provisioning.',
-      });
-    }
+    logBleProvision('await_security_response', { timeoutMs: BLUFI_SECURITY_RESPONSE_TIMEOUT_MS });
+    const peerPublicKey = await securityResponse.result;
+    const session = deriveBluFiSession({ privateKey: security.privateKey, peerPublicKey: new Uint8Array(peerPublicKey) });
+    logBleProvision('security_response_received', { publicKeyBytes: peerPublicKey.length });
+    await writeBluFiFrames(writer.bind(target), setSecurityFrame ? [setSecurityFrame] : [], {
+      timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
+      timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
+    });
 
     let startSequence = security.endSequence;
     if (params.token) {
@@ -268,19 +277,19 @@ export async function provisionWifiViaLocalBle(params: {
       if (params.code) entries.push({ tag: 0x02, value: params.code });
       if (params.deviceId) entries.push({ tag: 0x03, value: params.deviceId });
       const tlv = encodeTLV(entries);
-      const { frames, endSequence } = buildBluFiCustomDataFrames({ tlv }, startSequence);
+      const { frames, endSequence } = buildBluFiCustomDataFrames({ tlv, session }, startSequence);
       logBleProvision('write_custom_data', { frames: frames.length, tags: entries.map((entry) => entry.tag) });
       await writeBluFiFrames(writer.bind(target), frames, {
-        timeoutCode: 'BLE_PROVISIONING_FAILED',
-        timeoutMessage: 'Robot did not accept local Wi-Fi provisioning.',
+        timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
+        timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
       });
       startSequence = endSequence;
     }
 
     logBleProvision('write_station_credentials', { startSequence });
-    await writeBluFiFrames(writer.bind(target), buildBluFiStationProvisioningFrames({ ssid, password, startSequence }), {
-      timeoutCode: 'BLE_PROVISIONING_FAILED',
-      timeoutMessage: 'Robot did not accept local Wi-Fi provisioning.',
+    await writeBluFiFrames(writer.bind(target), buildBluFiStationProvisioningFrames({ ssid, password, startSequence, session }), {
+      timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
+      timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
     });
 
     if (connReport) {
@@ -302,17 +311,9 @@ export async function provisionWifiViaLocalBle(params: {
     logBleProvision('handoff_complete', { deviceId: params.device.id });
     return { deviceId: params.device.id, status: 'wifi_credentials_sent', transport: 'ble-blufi' };
   } catch (error) {
-    // Pass through only this service's OWN typed provisioning codes. A native BLE
-    // coded error (e.g. { code: 'DeviceDisconnected' }) must be normalized to the
-    // documented BLE_PROVISIONING_FAILED so callers/UI never key off an
-    // uncontrolled native code and no native error object (whose message/fields
-    // we do not control) leaks past the static-message boundary.
-    if (isProvisioningServiceError(error)) {
-      logBleProvision('failed', { code: error.code });
-      throw error;
-    }
-    logBleProvision('failed', { code: 'BLE_PROVISIONING_FAILED' });
-    throw codedError('BLE_PROVISIONING_FAILED', 'Robot did not accept local Wi-Fi provisioning.');
+    const normalized = normalizeProvisioningError(error);
+    logBleProvision('failed', { code: normalized.code });
+    throw normalized;
   } finally {
     // Tear down a still-pending conn-report wait (e.g. a write failed before any
     // report arrived) so no subscription/timer dangles past cancelConnection.
@@ -345,6 +346,7 @@ export async function sendClaimBootstrapTokenViaBle(params: {
   const connectDevice = params.connectDevice ?? connectBleDevice;
   for (let attempt = 0; attempt < CLAIM_BOOTSTRAP_TOKEN_DELIVERY_ATTEMPTS; attempt += 1) {
     let connected: LocalProvisioningDevice | undefined;
+    let securityResponse: SecurityResponseWait | null = null;
     try {
       connected = await withBleOperationTimeout(
         connectDevice(params.device.id),
@@ -360,14 +362,33 @@ export async function sendClaimBootstrapTokenViaBle(params: {
       if (!writer) {
         throw codedError('BLE_PROVISIONING_UNSUPPORTED', 'Robot BLE provisioning characteristic is unavailable.');
       }
+      const { monitor, target: monitorTarget } = resolveBluFiMonitor(discovered, connected);
+      const boundMonitor = monitor?.bind(monitorTarget);
+      if (!boundMonitor) {
+        throw codedError('BLE_PROVISIONING_UNSUPPORTED', 'Robot BLE provisioning notification characteristic is unavailable.');
+      }
 
       const tokenEntries: Array<{ tag: number; value: string }> = [{ tag: 0x01, value: params.token }];
       if (params.deviceId) {
         // tag 0x03 = claim device_id (the backend id the attempt was created under).
         tokenEntries.push({ tag: 0x03, value: params.deviceId });
       }
+      securityResponse = waitForBluFiSecurityResponse(boundMonitor, BLUFI_SECURITY_RESPONSE_TIMEOUT_MS);
+      const security = buildBluFiSecurityNegotiationFrames({}, 0);
+      const setSecurityFrame = security.frames[security.frames.length - 1];
+      const negotiateFrames = security.frames.slice(0, -1);
+      await writeBluFiFrames(writer.bind(target), negotiateFrames, {
+        timeoutCode: 'BLE_CLAIM_TOKEN_SEND_FAILED',
+        timeoutMessage: 'Robot did not accept the claim token.',
+      });
+      const peerPublicKey = await securityResponse.result;
+      const session = deriveBluFiSession({ privateKey: security.privateKey, peerPublicKey: new Uint8Array(peerPublicKey) });
+      await writeBluFiFrames(writer.bind(target), setSecurityFrame ? [setSecurityFrame] : [], {
+        timeoutCode: 'BLE_CLAIM_TOKEN_SEND_FAILED',
+        timeoutMessage: 'Robot did not accept the claim token.',
+      });
       const tlv = encodeTLV(tokenEntries);
-      const { frames } = buildBluFiCustomDataFrames({ tlv }, 0);
+      const { frames } = buildBluFiCustomDataFrames({ tlv, session }, security.endSequence);
       await writeBluFiFrames(writer.bind(target), frames, {
         timeoutCode: 'BLE_CLAIM_TOKEN_SEND_FAILED',
         timeoutMessage: 'Robot did not accept the claim token.',
@@ -381,6 +402,7 @@ export async function sendClaimBootstrapTokenViaBle(params: {
       }
       await delay(CLAIM_BOOTSTRAP_TOKEN_RETRY_DELAY_MS);
     } finally {
+      securityResponse?.cancel();
       if (connected?.cancelConnection) {
         try {
           await connected.cancelConnection();
@@ -532,8 +554,8 @@ async function writeBluFiFrames(
   writer: BluFiWriter,
   frames: string[],
   options: { timeoutCode: string; timeoutMessage: string } = {
-    timeoutCode: 'BLE_PROVISIONING_FAILED',
-    timeoutMessage: 'Robot did not accept local Wi-Fi provisioning.',
+    timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
+    timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
   },
 ): Promise<void> {
   for (const frame of frames) {
@@ -565,6 +587,11 @@ function withBleOperationTimeout<T>(operation: Promise<T>, code: string, message
 }
 
 type BluFiListAccumulator = {
+  expectedLength?: number;
+  chunks: number[];
+};
+
+type BluFiSecurityAccumulator = {
   expectedLength?: number;
   chunks: number[];
 };
@@ -620,17 +647,18 @@ type ConnReportWait = {
 };
 
 type SecurityResponseWait = {
-  result: Promise<void>;
+  result: Promise<number[]>;
   cancel: () => void;
 };
 
 function waitForBluFiSecurityResponse(monitor: BluFiMonitor, timeoutMs: number): SecurityResponseWait {
   let settled = false;
   const monitorState: { subscription?: BluFiMonitorSubscription; removeWhenReady: boolean } = { removeWhenReady: false };
-  let finish: (error?: Error) => void = () => undefined;
+  const accumulator: BluFiSecurityAccumulator = { chunks: [] };
+  let finish: (value: number[] | Error) => void = () => undefined;
 
-  const result = new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => finish(codedError('BLE_PROVISIONING_FAILED', 'Robot did not accept local Wi-Fi provisioning.')), timeoutMs);
+  const result = new Promise<number[]>((resolve, reject) => {
+    const timer = setTimeout(() => finish(codedError('BLE_PROVISIONING_WRITE_TIMEOUT', BLE_PROVISIONING_STATIC_MESSAGE)), timeoutMs);
 
     const removeSubscription = (): void => {
       if (monitorState.subscription) {
@@ -640,13 +668,13 @@ function waitForBluFiSecurityResponse(monitor: BluFiMonitor, timeoutMs: number):
       }
     };
 
-    finish = (error?: Error): void => {
+    finish = (value: number[] | Error): void => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       removeSubscription();
-      if (error) reject(error);
-      else resolve();
+      if (value instanceof Error) reject(value);
+      else resolve(value);
     };
 
     monitorState.subscription = monitor(
@@ -655,20 +683,46 @@ function waitForBluFiSecurityResponse(monitor: BluFiMonitor, timeoutMs: number):
       (error, characteristic) => {
         if (settled) return;
         if (error) {
-          finish(codedError('BLE_PROVISIONING_FAILED', 'Robot did not accept local Wi-Fi provisioning.'));
+          finish(normalizeProvisioningError(error));
           return;
         }
 
-        const frame = decodeBase64(characteristic?.value ?? '');
-        if (!frame || frame.length < 4) return;
-        if (frame[0] === BLUFI_NEGOTIATE_TYPE) finish();
+        const parsed = parseBluFiSecurityResponseFrame(characteristic?.value, accumulator);
+        if (parsed) finish(parsed);
       },
     );
 
     if (monitorState.removeWhenReady) monitorState.subscription.remove();
   });
 
-  return { result, cancel: () => finish() };
+  return { result, cancel: () => finish(codedError('BLE_PROVISIONING_WRITE_TIMEOUT', BLE_PROVISIONING_STATIC_MESSAGE)) };
+}
+
+function parseBluFiSecurityResponseFrame(base64Value: string | null | undefined, accumulator: BluFiSecurityAccumulator): number[] | undefined {
+  if (!base64Value) return undefined;
+  const frame = decodeBase64(base64Value);
+  if (!frame || frame.length < 4) return undefined;
+  const [type, frameControl, , dataLength] = frame;
+  if (type !== BLUFI_NEGOTIATE_TYPE || frame.length < 4 + dataLength) return undefined;
+
+  const payload = frame.slice(4, 4 + dataLength);
+  const isFragment = (frameControl & BLUFI_FRAME_CONTROL_FRAGMENT) !== 0;
+  if (isFragment) {
+    if (payload.length < 2) return undefined;
+    if (accumulator.expectedLength === undefined) {
+      accumulator.expectedLength = payload[0] | (payload[1] << 8);
+    }
+    accumulator.chunks.push(...payload.slice(2));
+    return undefined;
+  }
+
+  if (accumulator.expectedLength !== undefined) {
+    accumulator.chunks.push(...payload);
+    if (accumulator.chunks.length !== accumulator.expectedLength) return undefined;
+    return [...accumulator.chunks];
+  }
+
+  return payload;
 }
 
 function waitForBluFiConnReport(monitor: BluFiMonitor, timeoutMs: number): ConnReportWait {
@@ -850,9 +904,13 @@ function hasCode(error: unknown): error is { code: string } {
 
 // This service's OWN typed provisioning error codes. Only these are re-thrown
 // from the provisioning catch block; any other coded error (notably native BLE
-// codes such as DeviceDisconnected) is normalized to BLE_PROVISIONING_FAILED.
+// codes such as DeviceDisconnected) is normalized to a static-message sub-code.
 const PROVISIONING_SERVICE_ERROR_CODES = new Set<string>([
   'BLE_PROVISIONING_FAILED',
+  'BLE_PROVISIONING_DISCONNECTED',
+  'BLE_PROVISIONING_GATT_ERROR',
+  'BLE_PROVISIONING_WRITE_TIMEOUT',
+  'BLE_PROVISIONING_MTU_ERROR',
   'BLE_PROVISIONING_UNSUPPORTED',
   'WIFI_CONNECT_FAILED',
   'WIFI_SSID_INVALID',
@@ -863,6 +921,32 @@ const PROVISIONING_SERVICE_ERROR_CODES = new Set<string>([
 
 function isProvisioningServiceError(error: unknown): error is { code: string } {
   return hasCode(error) && PROVISIONING_SERVICE_ERROR_CODES.has(error.code);
+}
+
+function normalizeProvisioningError(error: unknown): Error & { code: string } {
+  if (isProvisioningServiceError(error)) {
+    return error instanceof Error
+      ? Object.assign(error, { code: error.code })
+      : codedError(error.code, BLE_PROVISIONING_STATIC_MESSAGE);
+  }
+  return codedError(classifyNativeProvisioningError(error), BLE_PROVISIONING_STATIC_MESSAGE);
+}
+
+function classifyNativeProvisioningError(error: unknown): string {
+  const code = hasCode(error) ? error.code : '';
+  const message = errorMessage(error);
+  const joined = `${code} ${message}`.toLowerCase();
+
+  if (/disconnect|disconnected|connection lost|not connected|cancelled|canceled/.test(joined)) {
+    return 'BLE_PROVISIONING_DISCONNECTED';
+  }
+  if (/\bmtu\b|maximum transmission unit/.test(joined)) {
+    return 'BLE_PROVISIONING_MTU_ERROR';
+  }
+  if (/timeout|timed out/.test(joined)) {
+    return 'BLE_PROVISIONING_WRITE_TIMEOUT';
+  }
+  return 'BLE_PROVISIONING_GATT_ERROR';
 }
 
 function isTerminalClaimTokenDeliveryError(error: unknown): boolean {

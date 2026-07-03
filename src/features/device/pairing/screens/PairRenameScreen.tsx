@@ -13,6 +13,7 @@ import { getDeviceStatus } from '@/services/api/device.api';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 import { finalizeDevicePairing, finishDevicePairingSuccess } from '../finalizeDevicePairing';
 import { getPendingPairingContext } from '../pendingPairingContext';
+import type { Child } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
@@ -29,16 +30,32 @@ export default function PairRenameScreen({ navigation, route }: Props) {
   const [saving, setSaving] = React.useState(false);
   const [displayName, setDisplayName] = React.useState(defaultDisplayName);
   const nameInputRef = React.useRef<TextInput>(null);
-  const { activeChild } = useHousehold();
+  const { activeChild, activeChildId, children, setActiveChild } = useHousehold();
+  const explicitActiveChildId = React.useMemo(
+    () => (activeChildId && children.some((child) => child.id === activeChildId) ? activeChildId : null),
+    [activeChildId, children],
+  );
+  const [selectedChildId, setSelectedChildId] = React.useState<string | null>(
+    () => explicitActiveChildId ?? (children.length === 1 ? children[0]?.id ?? null : null),
+  );
+  React.useEffect(() => {
+    setSelectedChildId((current) => {
+      if (current && children.some((child) => child.id === current)) return current;
+      return explicitActiveChildId ?? (children.length === 1 ? children[0]?.id ?? null : null);
+    });
+  }, [children, explicitActiveChildId]);
+  const needsExplicitChildSelection = children.length > 1;
+  const selectedChild = children.find((child) => child.id === selectedChildId) ?? null;
 
   const save = async (): Promise<void> => {
     if (saving) return;
+    if (needsExplicitChildSelection && !selectedChildId) return;
     setSaving(true);
     const pendingContext = await getPendingPairingContext().catch(() => null);
     const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
     const provisioningAttemptId = route.params?.provisioningAttemptId ?? pendingContext?.provisioningAttemptId;
     const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
-    const childId = activeChild?.id; // active-child (defaults to children[0]); was hardcoded children[0]
+    const childId = needsExplicitChildSelection ? selectedChildId : activeChild?.id;
     if (__DEV__) {
 
       console.info('[TBOT PairRename] save pressed', {
@@ -100,8 +117,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     } catch (error) {
       const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
       if (__DEV__) {
-
-        console.warn('[TBOT PairRename] save failed', { code, deviceId, provisioningAttemptId, childId });
+        console.info('[TBOT PairRename] save failed', { code, deviceId, provisioningAttemptId, childId });
       }
       // A missing/mismatched child profile is a finalize-only problem — the robot
       // is already connected — so guide to creating a child (with pairing context
@@ -131,6 +147,34 @@ export default function PairRenameScreen({ navigation, route }: Props) {
           Pick the avatar your child will see on Robot's face. <Text fontWeight="600" style={{ color: DV.ink }}>We don't ask for your child's name or photo.</Text>
         </Text>
       </Box>
+      {needsExplicitChildSelection ? (
+        <Box paddingHorizontal={16} paddingTop={20}>
+          <Text fontWeight="700" style={styles.sectionLabel}>Child</Text>
+          <Box style={styles.childGrid}>
+            {children.map((child) => (
+              <TouchableOpacity
+                key={child.id}
+                accessibilityLabel={`Pair Robot with ${childLabel(child)}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: child.id === selectedChildId }}
+                activeOpacity={0.7}
+                onPress={() => {
+                  setSelectedChildId(child.id);
+                  setActiveChild(child.id);
+                }}
+                style={[styles.childBtn, child.id === selectedChildId && styles.childBtnSel]}
+              >
+                <Text fontWeight="600" style={[styles.childName, child.id === selectedChildId && styles.childNameSel]}>
+                  {childLabel(child)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </Box>
+          <Text style={styles.nameHint}>
+            Choose which child this Robot should belong to.
+          </Text>
+        </Box>
+      ) : null}
       <Box paddingHorizontal={16} paddingTop={20}>
         <Text fontWeight="700" style={styles.sectionLabel}>Buddy</Text>
         <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -173,10 +217,17 @@ export default function PairRenameScreen({ navigation, route }: Props) {
         <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save & continue'}</DeviceBigBtn>
+        <DeviceBigBtn onClick={save} disabled={saving || (needsExplicitChildSelection && !selectedChild)}>
+          {saving ? 'Saving...' : 'Save & continue'}
+        </DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
+}
+
+function childLabel(child: Pick<Child, 'id'> & Partial<Pick<Child, 'name'>>): string {
+  const name = child.name?.trim();
+  return name && name.length > 0 ? name : child.id;
 }
 
 function errorCodeFrom(error: unknown, fallback: string): string {
@@ -191,6 +242,11 @@ function errorCodeFrom(error: unknown, fallback: string): string {
 const styles = StyleSheet.create({
   intro: { fontSize: 14, color: DV.ink2, lineHeight: 22 },
   sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  childGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  childBtn: { minHeight: 44, borderRadius: 12, backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+  childBtnSel: { backgroundColor: '#EEF5FF', borderWidth: 2, borderColor: DV.accent },
+  childName: { fontSize: 14, color: DV.ink },
+  childNameSel: { color: DV.accent },
   buddyBtn: { width: '22%', aspectRatio: 1, borderRadius: 14, backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, alignItems: 'center', justifyContent: 'center', gap: 2 },
   buddyBtnSel: { backgroundColor: '#FFF1C2', borderWidth: 2, borderColor: '#FF6F61' },
   buddyName: { fontSize: 10, color: DV.ink },

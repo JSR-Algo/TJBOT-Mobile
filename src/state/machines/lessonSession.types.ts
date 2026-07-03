@@ -114,6 +114,12 @@ export type LessonSessionEvent =
   | { type: 'VAD_END' }
   | { type: 'PROMPT_AGAIN' }
   | { type: 'REPLY_READY' }
+  | {
+      type: 'TURN_COMPLETE';
+      turnId: string;
+      responseText: string;
+      fallback?: boolean;
+    }
   | { type: 'ACTIVITY_COMPLETE' }
   | { type: 'NEXT_ACTIVITY' }
   // ── interruption (carries the discriminator) ───────────────────────────

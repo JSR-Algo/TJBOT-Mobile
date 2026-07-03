@@ -2,7 +2,7 @@ import type { LinkingOptions } from '@react-navigation/native';
 import { Linking } from 'react-native';
 import { Config } from '../config';
 import { getInitialNotificationUrl } from '../services/notifications/deepLink';
-import { FEATURE_ROUTE_ENTRIES } from './featureRouteEntries';
+import { PRODUCTION_LINKING_ROUTE_ENTRIES } from './featureRegistry';
 import { ROUTES } from './routes';
 import type { RootStackParamList } from './routes';
 
@@ -14,7 +14,7 @@ const Notifications: NotificationsModule | null = SHOULD_LOAD_NATIVE_NOTIFICATIO
   ? require('expo-notifications')
   : null;
 
-type RouteLinkingScreens = Record<keyof RootStackParamList, string>;
+type RouteLinkingScreens = Partial<Record<keyof RootStackParamList, string>>;
 
 function slugRouteName(route: string): string {
   return route
@@ -25,7 +25,7 @@ function slugRouteName(route: string): string {
 }
 
 export const NAVIGATION_LINKING_SCREENS = Object.fromEntries(
-  FEATURE_ROUTE_ENTRIES.map(entry => [entry.screen.name, `${entry.owner}/${slugRouteName(entry.screen.name)}`] as const),
+  PRODUCTION_LINKING_ROUTE_ENTRIES.map(entry => [entry.screen.name, `${entry.owner}/${slugRouteName(entry.screen.name)}`] as const),
 ) as RouteLinkingScreens;
 
 const ROUTE_NAMES_BY_LINK_PATH = new Map<string, keyof RootStackParamList>(

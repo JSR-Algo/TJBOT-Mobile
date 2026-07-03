@@ -327,6 +327,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
               lessonTitle: 'This Is a Barn',
               lessonVersion: 1,
               manifestChecksum: 'sha256:current-assignment-v1',
+              sessionId: 'sess-current-1',
               state: 'READY',
               childId: 'ch-1',
               profile: 'espTft',
@@ -338,7 +339,63 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
       expect(mockedClient.get).toHaveBeenCalledWith('/devices/dev-1/assignment/current');
       expect(current?.lessonTitle).toBe('This Is a Barn');
       expect(current?.manifestChecksum).toBe('sha256:current-assignment-v1');
+      expect(current?.sessionId).toBe('sess-current-1');
       expect(current?.state).toBe('READY');
+    });
+
+    it('preserves a camelCase null sessionId without blocking the current assignment', () => {
+      const current = normalizeCurrentAssignmentPayload({
+        data: {
+          assignment: {
+            assignmentId: 'asg-null-session',
+            assignmentVersion: 2,
+            lessonId: 'w01-d01-barn-say-it',
+            lessonTitle: 'This Is a Barn',
+            lessonVersion: 1,
+            manifestChecksum: 'sha256:current-assignment-v1',
+            sessionId: null,
+            state: 'READY',
+            childId: 'ch-1',
+            profile: 'espTft',
+          },
+        },
+      });
+
+      expect(current).toEqual({
+        assignmentId: 'asg-null-session',
+        assignmentVersion: 2,
+        lessonId: 'w01-d01-barn-say-it',
+        lessonTitle: 'This Is a Barn',
+        lessonVersion: 1,
+        manifestChecksum: 'sha256:current-assignment-v1',
+        sessionId: null,
+        state: 'READY',
+        childId: 'ch-1',
+        profile: 'espTft',
+      });
+    });
+
+    it('preserves a camelCase sessionId from the backend current-assignment envelope', () => {
+      const current = normalizeCurrentAssignmentPayload({
+        data: {
+          assignment: {
+            assignmentId: 'asg-running-session',
+            assignmentVersion: 3,
+            lessonId: 'w01-d01-barn-say-it',
+            lessonTitle: 'This Is a Barn',
+            lessonVersion: 1,
+            manifestChecksum: 'sha256:current-assignment-v1',
+            sessionId: '99999999-9999-4999-8999-999999999999',
+            state: 'RUNNING',
+            childId: 'ch-1',
+            profile: 'espTft',
+          },
+        },
+      });
+
+      expect(current?.sessionId).toBe('99999999-9999-4999-8999-999999999999');
+      expect(current?.assignmentId).toBe('asg-running-session');
+      expect(current?.state).toBe('RUNNING');
     });
 
     it('returns null when the device has no active assignment', () => {

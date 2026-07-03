@@ -46,8 +46,8 @@ export type RootStackParamList = {
   // back-compat with the existing browse entry.
   SendToRobotScreen: undefined | { courseId?: string };
   RobotReadyScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; lessonTitle?: string; manifestChecksum?: string | null };
-  RunningScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; lessonTitle?: string };
-  CompanionScreen: undefined | { deviceId?: string; assignmentId?: string; lessonTitle?: string };
+  RunningScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
+  CompanionScreen: undefined | { deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
 
   // purchase
   PurchaseIntroScreen: undefined;

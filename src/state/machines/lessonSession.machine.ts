@@ -140,18 +140,32 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
       }),
     },
     guards: {
-      endReasonComplete: ({ event }) =>
-        event.type === 'SESSION_END' && event.reason === 'complete',
-      endReasonTimeout: ({ event }) =>
-        event.type === 'SESSION_END' && event.reason === 'timeout',
-      endReasonCostLimit: ({ event }) =>
-        event.type === 'SESSION_END' && event.reason === 'cost_limit',
-      endReasonBargeLimit: ({ event }) =>
-        event.type === 'SESSION_END' && event.reason === 'barge_limit',
-      endReasonParentStop: ({ event }) =>
-        event.type === 'SESSION_END' && event.reason === 'parent_stop',
-      endReasonDisconnectTimeout: ({ event }) =>
-        event.type === 'SESSION_END' && event.reason === 'disconnect_timeout',
+      endReasonComplete: ({ context, event }) =>
+        Boolean(context.sessionId && context.deviceSessionId) &&
+        event.type === 'SESSION_END' &&
+        event.reason === 'complete',
+      endReasonTimeout: ({ context, event }) =>
+        Boolean(context.sessionId && context.deviceSessionId) &&
+        event.type === 'SESSION_END' &&
+        event.reason === 'timeout',
+      endReasonCostLimit: ({ context, event }) =>
+        Boolean(context.sessionId && context.deviceSessionId) &&
+        event.type === 'SESSION_END' &&
+        event.reason === 'cost_limit',
+      endReasonBargeLimit: ({ context, event }) =>
+        Boolean(context.sessionId && context.deviceSessionId) &&
+        event.type === 'SESSION_END' &&
+        event.reason === 'barge_limit',
+      endReasonParentStop: ({ context, event }) =>
+        Boolean(context.sessionId && context.deviceSessionId) &&
+        event.type === 'SESSION_END' &&
+        event.reason === 'parent_stop',
+      endReasonDisconnectTimeout: ({ context, event }) =>
+        Boolean(context.sessionId && context.deviceSessionId) &&
+        event.type === 'SESSION_END' &&
+        event.reason === 'disconnect_timeout',
+      hasStartedSession: ({ context }) =>
+        Boolean(context.sessionId && context.deviceSessionId),
     },
     actors: {
       startSession: fromPromise<
@@ -216,6 +230,7 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
         },
       ],
       SAFETY_BLOCK: {
+        guard: 'hasStartedSession',
         target: '.SAFETY_HALT',
         actions: 'assignEndReasonSafetyHalt',
       },
@@ -304,6 +319,7 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
           THINKING: {
             on: {
               REPLY_READY: { target: 'ROBOT_SPEAKING' },
+              TURN_COMPLETE: { target: 'ROBOT_LISTENING' },
               ACTIVITY_COMPLETE: { target: 'ACTIVITY_DONE' },
             },
           },

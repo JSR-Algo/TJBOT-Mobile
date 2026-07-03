@@ -30,12 +30,15 @@
 import {
   encodeTLV,
   buildBluFiSecurityNegotiationFrames,
+  deriveBluFiSession,
   buildBluFiStationProvisioningFrames,
   buildBluFiCustomDataFrames,
   buildBluFiWifiScanFrames,
   parseBluFiConnReport,
   BLUFI_DATA_CUSTOM,
 } from '../../src/services/ble/blufiProtocol';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Test helpers (no production code under test — pure decode + assertion aids).
@@ -44,6 +47,10 @@ import {
 /** Decode a base64 GATT-write frame back into raw bytes. */
 function decode(frame: string): number[] {
   return Array.from(Buffer.from(frame, 'base64'));
+}
+
+function validPeerPublicKey(): Uint8Array {
+  return new Uint8Array(new Array<number>(128).fill(0x02));
 }
 
 /** On-wire BluFi type byte: (frameType & 0x03) | (subType << 2). */
@@ -65,7 +72,11 @@ const OP_CUSTOM_DATA = typeByte(TYPE_DATA, 0x13); // 0x4d
 const OP_CONN_REPORT = typeByte(TYPE_DATA, 0x0f); // 0x3d
 
 const FC_PLAIN = 0x00;
+const FC_ENC = 0x01;
+const FC_CHECK = 0x02;
 const FC_FRAGMENT = 0x10;
+const FC_SECURE = FC_ENC | FC_CHECK;
+const FC_SECURE_FRAGMENT = FC_SECURE | FC_FRAGMENT;
 const WIFI_MODE_STA = 0x01;
 
 /** ESP-IDF default: 12 content bytes per fragmented chunk (MTU 23 math). */
@@ -109,8 +120,92 @@ describe('buildBluFiSecurityNegotiationFrames — ESP-IDF DH handshake prelude',
     expect(decoded[1].slice(7, 9)).toEqual([0x00, 0x80]);
 
     const setSecurity = decoded[decoded.length - 1];
-    expect(setSecurity).toEqual([OP_SET_SEC_MODE, FC_PLAIN, (endSequence + 255) & 0xff, 0x01, 0x00]);
+    expect(setSecurity).toEqual([OP_SET_SEC_MODE, FC_PLAIN, (endSequence + 255) & 0xff, 0x01, 0x03]);
     expect(endSequence).toBe((setSecurity[2] + 1) & 0xff);
+  });
+
+  test('hard-fails without WebCrypto instead of falling back to Math.random for DH entropy', () => {
+    const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+    const source = readFileSync(join(process.cwd(), 'src/services/ble/blufiProtocol.ts'), 'utf-8');
+
+    Object.defineProperty(globalThis, 'crypto', {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      expect(() => buildBluFiSecurityNegotiationFrames({}, 0)).toThrow(/crypto.getRandomValues/);
+      expect(source).not.toContain('Math.random');
+    } finally {
+      if (originalCryptoDescriptor) {
+        Object.defineProperty(globalThis, 'crypto', originalCryptoDescriptor);
+      } else {
+        Reflect.deleteProperty(globalThis, 'crypto');
+      }
+    }
+  });
+});
+
+describe('BluFi secure data frames — encrypted credential/token path', () => {
+  test('station credentials use encrypted+checksum frame control and no plaintext bytes', () => {
+    const session = deriveBluFiSession({
+      privateKey: new Uint8Array([0x02]),
+      peerPublicKey: validPeerPublicKey(),
+    });
+
+    const frames = buildBluFiStationProvisioningFrames({
+      ssid: 'net',
+      password: 'pw',
+      startSequence: 5,
+      session,
+    }).map(decode);
+
+    const ssid = frames.find((frame) => frame[0] === OP_STA_SSID);
+    const password = frames.find((frame) => frame[0] === OP_STA_PASSWORD);
+
+    expect(ssid?.[1]).toBe(FC_SECURE);
+    expect(password?.[1]).toBe(FC_SECURE);
+    expect(ssid?.slice(4)).not.toEqual(ascii('net'));
+    expect(password?.slice(4)).not.toEqual(ascii('pw'));
+    expect(ssid?.length).toBe(4 + 3 + 2);
+    expect(password?.length).toBe(4 + 2 + 2);
+  });
+
+  test('custom data uses encrypted+checksum frame control and no plaintext TLV bytes', () => {
+    const session = deriveBluFiSession({
+      privateKey: new Uint8Array([0x02]),
+      peerPublicKey: validPeerPublicKey(),
+    });
+    const tlv = encodeTLV([{ tag: 0x01, value: 'AB' }]);
+
+    const { frames } = buildBluFiCustomDataFrames({ tlv, session }, 0);
+    const custom = decode(frames[0]);
+
+    expect(custom[0]).toBe(OP_CUSTOM_DATA);
+    expect(custom[1]).toBe(FC_SECURE);
+    expect(custom.slice(4)).not.toEqual([0x01, 0x02, 0x41, 0x42]);
+    expect(custom.length).toBe(4 + tlv.length + 2);
+  });
+
+  test('fragmented sensitive frames preserve FRAG while adding encrypted+checksum bits', () => {
+    const session = deriveBluFiSession({
+      privateKey: new Uint8Array([0x02]),
+      peerPublicKey: validPeerPublicKey(),
+    });
+
+    const frames = buildBluFiStationProvisioningFrames({
+      ssid: 'A'.repeat(20),
+      password: 'p',
+      startSequence: 0,
+      session,
+    }).map(decode);
+    const ssidFrag = frames[1];
+    const ssidTail = frames[2];
+
+    expect(ssidFrag[0]).toBe(OP_STA_SSID);
+    expect(ssidFrag[1]).toBe(FC_SECURE_FRAGMENT);
+    expect(ssidTail[0]).toBe(OP_STA_SSID);
+    expect(ssidTail[1]).toBe(FC_SECURE);
   });
 });
 

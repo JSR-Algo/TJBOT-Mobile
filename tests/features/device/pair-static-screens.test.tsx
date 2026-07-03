@@ -256,6 +256,13 @@ describe('PairOfflineScreen', () => {
     expect(utils.getByText('Hold the top button for 5 seconds until Robot is ready to connect')).toBeTruthy();
   });
 
+  it('"Update Wi-Fi" is an accessible recovery action that re-enters reconnect search', () => {
+    const { utils, navigate } = renderOffline();
+    fireEvent.press(utils.getByLabelText('Update Wi-Fi for offline Robot'));
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+  });
+
   it('primary CTA "Reconnect now" goes to PairSearchScreen WITH reconnectMode: true', () => {
     const { utils, navigate } = renderOffline();
     fireEvent.press(utils.getByText('Reconnect now'));

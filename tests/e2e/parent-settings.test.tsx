@@ -1,6 +1,6 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Linking } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
@@ -16,10 +16,11 @@ import ParentSummaryScreen from '../../src/features/parent/screens/ParentSummary
 import ParentTodayScreen from '../../src/features/parent/screens/ParentTodayScreen';
 import ParentHistoryScreen from '../../src/features/parent/screens/ParentHistoryScreen';
 import ParentAccountPrivacyScreen from '../../src/features/parent/screens/ParentAccountPrivacyScreen';
+import * as authApi from '../../src/services/api/auth';
 import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
 import { getChildLessonProgress, getChildProgress } from '../../src/services/api/progress.api';
-import { getChildProfile, updateChildProfile } from '../../src/services/api/learning';
+import { getChildProfile, updateChildProfile, getKPIs, getPronunciationTrend } from '../../src/services/api/learning';
 import { updateChild } from '../../src/services/api/households';
 import { useHousehold } from '@/contexts/HouseholdContext';
 
@@ -41,6 +42,27 @@ const mockNavigation = {
 
 const mockRoute = { key: 'parent-settings', name: ROUTES.ParentSettingsScreen, params: undefined };
 const mockParentGateRoute = { key: 'parent-gate', name: ROUTES.ParentGateScreen, params: undefined };
+
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+  const ReactInner = require('react') as typeof import('react');
+  return {
+    ...actual,
+    useFocusEffect: (cb: () => undefined | (() => void)) => {
+      ReactInner.useEffect(() => {
+        const cleanup = cb();
+        return typeof cleanup === 'function' ? cleanup : undefined;
+      }, [cb]);
+    },
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      replace: jest.fn(),
+    }),
+    useRoute: () => ({ params: {} }),
+    NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -70,6 +92,14 @@ jest.mock('../../src/services/api/parent.api', () => ({
   updateSettings: jest.fn(),
 }));
 
+jest.mock('../../src/services/api/auth', () => ({
+  __esModule: true,
+  AI_VOICE_CONSENT_VERSION: 'ai-voice-google-v1',
+  GOOGLE_SUBPROCESSORS_VERSION: 'google-subprocessors-v1',
+  recordAiVoiceConsent: jest.fn(),
+  withdrawAiVoiceConsent: jest.fn(),
+}));
+
 jest.mock('../../src/services/api/account', () => ({
   cancelAccountDeletion: jest.fn(),
   getAccountDeletionStatus: jest.fn(),
@@ -89,6 +119,11 @@ jest.mock('../../src/services/api/learning', () => ({
   __esModule: true,
   getChildProfile: jest.fn(),
   updateChildProfile: jest.fn(),
+  // ParentSummaryScreen's course-quality band fans out KPIs + pronunciation
+  // trend (fault-tolerant). Mock them so the summary render path doesn't throw
+  // on an undefined seam.
+  getKPIs: jest.fn(),
+  getPronunciationTrend: jest.fn(),
 }));
 
 jest.mock('../../src/services/api/households', () => ({
@@ -102,10 +137,13 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 }));
 
 const parentApiMock = parentApi as jest.Mocked<typeof parentApi>;
+const authApiMock = authApi as jest.Mocked<typeof authApi>;
 const accountApiMock = accountApi as jest.Mocked<typeof accountApi>;
 const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getChildProgress>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
 const mockGetChildProfile = getChildProfile as jest.MockedFunction<typeof getChildProfile>;
+const mockGetKPIs = getKPIs as jest.MockedFunction<typeof getKPIs>;
+const mockGetPronunciationTrend = getPronunciationTrend as jest.MockedFunction<typeof getPronunciationTrend>;
 const mockUpdateChildProfile = updateChildProfile as jest.MockedFunction<typeof updateChildProfile>;
 const mockUpdateChild = updateChild as jest.MockedFunction<typeof updateChild>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
@@ -146,6 +184,20 @@ describe('Parent settings and gate', () => {
     parentApiMock.getParentSummary.mockRejectedValue(new Error('Parent summary API route not documented'));
     parentApiMock.getParentToday.mockRejectedValue(new Error('Parent today API route not documented'));
     parentApiMock.getParentHistory.mockRejectedValue(new Error('Parent history API route not documented'));
+    authApiMock.recordAiVoiceConsent.mockResolvedValue({
+      consent_id: 'voice-consent-1',
+      household_id: 'household-1',
+      consent_version: 'ai-voice-google-v1',
+      google_subprocessors_version: 'google-subprocessors-v1',
+      status: 'active',
+      granted_at: '2026-07-02T00:00:00.000Z',
+    });
+    authApiMock.withdrawAiVoiceConsent.mockResolvedValue({
+      consent_id: 'voice-consent-1',
+      household_id: 'household-1',
+      status: 'withdrawn',
+      withdrawn_at: '2026-07-02T00:05:00.000Z',
+    });
     mockedUseHousehold.mockReturnValue({
       children: [{ id: 'child-1', household_id: 'household-1', name: 'Mai' }],
       activeChild: { id: 'child-1', household_id: 'household-1', name: 'Mai' },
@@ -153,6 +205,11 @@ describe('Parent settings and gate', () => {
     } as never);
     mockGetChildProgress.mockResolvedValue({ childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [] });
     mockGetChildLessonProgress.mockResolvedValue([]);
+    mockGetKPIs.mockResolvedValue({
+      vocab_words_this_week: 0, speaking_confidence: 0, engagement_score: 0,
+      retention_rate: 0, sessions_this_week: 0, daily_streak: 0, weak_words: [],
+    });
+    mockGetPronunciationTrend.mockResolvedValue({ points: [], avg_score: 0, trend: 'none' as never });
     mockGetChildProfile.mockResolvedValue({
       id: 'child-1',
       name: 'Mai',
@@ -194,39 +251,51 @@ describe('Parent settings and gate', () => {
     }
   });
 
-  it('uses AuthContext logout for sign out so the root auth gate resets navigation', async () => {
+  it('confirms before sign out, then uses AuthContext logout so the root auth gate resets navigation', async () => {
+    // Sign out is destructive: it must go through an Alert confirm, not fire on
+    // the first tap. Capture the alert and invoke its destructive button.
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const { getByText } = await renderParentSettings();
 
     fireEvent.press(getByText('Sign out'));
+    // Tapping the row only opens the confirm — no logout yet.
+    expect(mockLogout).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+
+    const buttons = alertSpy.mock.calls[0][2] ?? [];
+    const confirm = buttons.find((b) => b?.style === 'destructive');
+    await act(async () => {
+      confirm?.onPress?.();
+      await Promise.resolve();
+    });
 
     expect(mockLogout).toHaveBeenCalledTimes(1);
     expect(mockNavigate).not.toHaveBeenCalledWith(ROUTES.LoginScreen);
+    alertSpy.mockRestore();
   });
 
-  it('blocks plan status instead of rendering hardcoded or schema-less entitlement text', async () => {
-    const { getAllByText, getByText, queryByText } = await renderParentSettings();
+  it('does not ship dead placeholder rows (plan status / prototype data / mass "Unavailable")', async () => {
+    const { queryByText } = await renderParentSettings();
 
-    expect(getByText('Plan status')).toBeTruthy();
-    expect(getAllByText('Unavailable').length).toBeGreaterThanOrEqual(1);
+    // These dead "Unavailable" rows were removed for production: a settings
+    // screen full of unbacked placeholders reads as broken.
+    expect(queryByText('Plan status')).toBeNull();
+    expect(queryByText('Billing portal')).toBeNull();
+    expect(queryByText('Child age')).toBeNull();
+    // Never surface prototype/hardcoded entitlement or child data.
     expect(queryByText('Robot English Plus')).toBeNull();
     expect(queryByText('Active')).toBeNull();
-  });
-
-  it('does not render prototype child profile or subscription data in parent settings', async () => {
-    const { getAllByText, queryByText } = await renderParentSettings();
-
     expect(queryByText('Mira')).toBeNull();
-    expect(queryByText('7')).toBeNull();
-    expect(queryByText('Active')).toBeNull();
-    expect(getAllByText('Unavailable').length).toBeGreaterThanOrEqual(4);
   });
 
   it('lets parents update career and child interest filters used for lesson personalization', async () => {
     const screen = await renderParentSettings();
 
     expect(await screen.findByText('PERSONALITY FILTERS')).toBeTruthy();
+    // Chip labels are now localized (en identity keys) — enum values stay the
+    // wire payload.
     expect(await screen.findByText('Engineer')).toBeTruthy();
-    expect(await screen.findByText('animals')).toBeTruthy();
+    expect(await screen.findByText('Animals')).toBeTruthy();
 
     await act(async () => {
       fireEvent.press(screen.getByText('Teacher'));
@@ -234,7 +303,7 @@ describe('Parent settings and gate', () => {
     expect(mockUpdateChildProfile).toHaveBeenCalledWith('child-1', expect.objectContaining({ parent_career: 'teacher' }));
 
     await act(async () => {
-      fireEvent.press(screen.getByText('space'));
+      fireEvent.press(screen.getByText('Space'));
     });
     expect(mockUpdateChildProfile).toHaveBeenCalledWith('child-1', expect.objectContaining({ interests: expect.arrayContaining(['space']) }));
   });
@@ -259,6 +328,45 @@ describe('Parent settings and gate', () => {
     fireEvent.press(getByText('Account privacy'));
 
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
+  });
+
+  it('lets parents allow AI voice lessons from settings so Robot leaves voice setup block', async () => {
+    const screen = await renderParentSettings();
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Allow voice lessons'));
+    });
+
+    expect(authApiMock.recordAiVoiceConsent).toHaveBeenCalledWith({
+      consent_version: 'ai-voice-google-v1',
+      google_subprocessors_version: 'google-subprocessors-v1',
+    });
+    expect(await screen.findByText('Voice setup saved. Robot can listen during lessons.')).toBeTruthy();
+  });
+
+  it('lets parents pause AI voice lessons from settings', async () => {
+    const screen = await renderParentSettings();
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Pause voice lessons'));
+    });
+
+    expect(authApiMock.withdrawAiVoiceConsent).toHaveBeenCalledWith({
+      reason: 'Parent paused AI voice lessons from mobile settings.',
+    });
+    expect(await screen.findByText('Voice lessons paused. Robot will ask a parent before listening.')).toBeTruthy();
+  });
+
+  it('shows retry copy when AI voice setup cannot be saved', async () => {
+    authApiMock.recordAiVoiceConsent.mockRejectedValueOnce(new Error('consent failed'));
+    const screen = await renderParentSettings();
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Allow voice lessons'));
+    });
+
+    expect(await screen.findByText('Voice setup could not be saved. Try again.')).toBeTruthy();
+    expect(screen.queryByText('Voice setup saved. Robot can listen during lessons.')).toBeNull();
   });
 
   it('labels parent settings rows with their action and current state for screen readers', async () => {

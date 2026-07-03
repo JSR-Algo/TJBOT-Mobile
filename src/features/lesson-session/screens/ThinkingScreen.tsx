@@ -16,10 +16,6 @@ export default function ThinkingScreen({ navigation }: Props) {
   // Android hardware-back during this active voice turn must funnel through
   // ExitConfirm, not silently pop the stack (MOB-2).
   useLessonHardwareBack(navigation, 'WAITING_AI');
-  React.useEffect(() => {
-    const t = setTimeout(() => navigation.navigate(ROUTES.SuccessScreen), 900);
-    return () => clearTimeout(t);
-  }, [navigation]);
 
   return (
     <ScreenShell bg="#E8F4FF">

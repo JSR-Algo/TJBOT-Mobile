@@ -1,5 +1,6 @@
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { setAppLanguage } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
 import RobotReadyScreen from '@/features/course-library/screens/RobotReadyScreen';
 import RunningScreen from '@/features/course-library/screens/RunningScreen';
@@ -39,12 +40,25 @@ function preload(state: PreloadStatus['state']): PreloadStatus {
 }
 
 function current(state: CurrentAssignment['state']): CurrentAssignment {
-  return { assignmentId: 'asg-1', assignmentVersion: 1, lessonId: 'w01-d01-barn-say-it', lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state, childId: 'ch-1', profile: 'espTft' };
+  return { assignmentId: 'asg-1', sessionId: null, assignmentVersion: 1, lessonId: 'w01-d01-barn-say-it', lessonTitle: 'This Is a Barn', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', state, childId: 'ch-1', profile: 'espTft' };
+}
+
+async function advancePolls(count: number): Promise<void> {
+  for (let i = 0; i < count; i += 1) {
+    await act(async () => {
+      jest.advanceTimersByTime(2500);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+  }
 }
 
 describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    // These assertions are on English copy; a sibling suite may have left the
+    // shared i18n singleton in vi. Pin the locale so the suite is order-stable.
+    await setAppLanguage('en');
   });
 
   // §10.4 — Preload-status render (kills fake-ready, DIV-MOBILE-FAKEREADY).
@@ -82,6 +96,54 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     await waitFor(() => expect(screen.getByText('Ready for today')).toBeTruthy());
     expect(screen.getByText('Hand it to your child')).toBeTruthy();
     expect(screen.getByText('This Is a Barn')).toBeTruthy();
+  });
+
+  it('RobotReadyScreen stops infinite PRELOADING and offers retry without enabling handoff', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetPreloadStatus.mockResolvedValue(preload('PRELOADING'));
+      mockedGetCurrentAssignment.mockResolvedValue(current('PRELOADING'));
+      const navigation = navigationFor();
+      render(
+        <RobotReadyScreen
+          navigation={navigation as never}
+          route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1' } } as never}
+        />,
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      await advancePolls(18);
+
+      expect(screen.getAllByText('Robot is taking longer than expected.').length).toBeGreaterThan(0);
+      expect(screen.getByText('Try again')).toBeTruthy();
+      expect(screen.queryByText('Hand it to your child')).toBeNull();
+
+      fireEvent.press(screen.getByText('Try again'));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(mockedGetPreloadStatus).toHaveBeenCalledTimes(19);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('RobotReadyScreen does not strand the parent when route state is missing deviceId', () => {
+    const navigation = navigationFor();
+    render(
+      <RobotReadyScreen
+        navigation={navigation as never}
+        route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { assignmentId: 'asg-1' } } as never}
+      />,
+    );
+
+    expect(mockedGetPreloadStatus).not.toHaveBeenCalled();
+    expect(mockedGetCurrentAssignment).not.toHaveBeenCalled();
+    expect(screen.getAllByText("We can't prepare Robot because no device was selected.").length).toBeGreaterThan(0);
+    expect(screen.getByText('Pick a different lesson')).toBeTruthy();
+    expect(screen.queryByText('Preparing…')).toBeNull();
   });
 
   // §10.4 — Progress surface: "Finished!" terminal state.
@@ -128,6 +190,50 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     }
   });
 
+  it('RunningScreen stops infinite pre-live null polling without faking completion', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetCurrentAssignment.mockResolvedValue(null);
+      const navigation = navigationFor();
+      render(
+        <RunningScreen
+          navigation={navigation as never}
+          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', lessonTitle: 'Counting Sheep' } } as never}
+        />,
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      await advancePolls(18);
+
+      expect(screen.getByText("We can't confirm the lesson on Robot yet.")).toBeTruthy();
+      expect(screen.getByText('Try again')).toBeTruthy();
+      expect(screen.queryByText('Finished! 🎉')).toBeNull();
+      expect(screen.queryByText("See what's happening")).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it.each(['FAILED', 'CANCELLED'] as const)('RunningScreen does not render %s as lesson success', async (state) => {
+    mockedGetCurrentAssignment.mockResolvedValue(current(state));
+    const navigation = navigationFor();
+    render(
+      <RunningScreen
+        navigation={navigation as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1'));
+
+    expect(screen.queryByText('Finished! 🎉')).toBeNull();
+    expect(screen.queryByText('Lesson finished')).toBeNull();
+    expect(screen.queryByText("Today's lesson is complete.")).toBeNull();
+    expect(screen.queryByText("See what's happening")).toBeNull();
+  });
+
   it('CompanionScreen switches the face to happy on the live RUNNING→null transition (MOB-1)', async () => {
     jest.useFakeTimers();
     try {
@@ -161,6 +267,49 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('CompanionScreen stops infinite missing-assignment polling and keeps recovery local', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetCurrentAssignment.mockResolvedValue(null);
+      const navigation = navigationFor();
+      render(
+        <CompanionScreen
+          navigation={navigation as never}
+          route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', lessonTitle: 'Counting Sheep' } } as never}
+        />,
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      await advancePolls(18);
+
+      expect(screen.getByText("We can't confirm the live mirror yet.")).toBeTruthy();
+      expect(screen.getByText('Try again')).toBeTruthy();
+      expect(screen.getByText('Back to lesson status')).toBeTruthy();
+      expect(screen.queryByText('Finished! 🎉')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it.each(['FAILED', 'CANCELLED'] as const)('CompanionScreen does not render %s as lesson success', async (state) => {
+    mockedGetCurrentAssignment.mockResolvedValue(current(state));
+    const navigation = navigationFor();
+    render(
+      <CompanionScreen
+        navigation={navigation as never}
+        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1'));
+
+    expect(screen.queryByText('Finished! 🎉')).toBeNull();
+    expect(screen.queryByText('Robot is leading the lesson. You can put your phone away.')).toBeNull();
+    expect(screen.getByText('No transcript')).toBeTruthy();
   });
 
   it('CompanionScreen preserves the "No transcript" guarantee while showing live state', async () => {

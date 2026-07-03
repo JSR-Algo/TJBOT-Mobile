@@ -24,6 +24,14 @@ _Source: `docs/usecases/domains/auth/backend-mapping.md`_
 | UC-A08 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-A09 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-A10 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A11 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A12 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A13 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A14 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A15 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A16 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A17 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-A18 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 
 ---
 
@@ -149,9 +157,7 @@ _Source: `docs/usecases/domains/device-mgmt/backend-mapping.md`_
 
 _Source: `docs/usecases/domains/device-pairing/backend-mapping.md`_
 
-> Every cell is `BACKEND_NOT_DESIGNED` (D3 sentinel). The prototype's `device.api.js` exports throw `not implemented`; no `decisions/NNNN-backend-device-pairing.md` ADR exists yet. Domain ADR Pointer is `—` per HR-6 state-based rule.
->
-> KD8: pairing radio transport (BLE / Wi-Fi probe / etc.) is NOT CONFIRMED IN SOURCE — UC-DP04 in particular is sentinel until that decision lands.
+> Table cells stay sentinel until a canonical backend ADR exists for this docs workspace. The live TBOT connection work is recorded in Notes so the validator contract remains intact while the mobile implementation consumes the confirmed claim API.
 
 | UC ID | Endpoint | Service | DB Entity | Events | Domain ADR Pointer |
 |---|---|---|---|---|---|
@@ -174,13 +180,11 @@ _Source: `docs/usecases/domains/device-pairing/backend-mapping.md`_
 
 ## Notes
 
-- Cells stay sentinel because (a) `device.api.js` exports all throw `not implemented` (`pairDevice`, `getDeviceStatus`, `setDeviceWifi`, `unpairDevice`, etc.), and (b) no domain ADR exists.
-- Once the pairing radio transport decision lands (KD8) and a `decisions/NNNN-backend-device-pairing.md` ADR is created, candidate cell promotions:
-  - UC-DP04 (Scan): `device.api.js → pairDevice` (Endpoint), pairing-discovery store action TBD (Service), `Robot` (Entity, per `docs/erd/README.md`).
-  - UC-DP09 (Connect): `device.api.js → setDeviceWifi` (Endpoint), `device.store.js → bindRobot` action TBD (Service), `Robot` (Entity).
-  - UC-DP10 (Success): emits `robot.paired` event TBD (Events).
-  - UC-DP13 (Rename): `device.api.js → ` rename action TBD; would update `Robot.buddy` (Entity).
-- KD8 holds UC-DP04 sentinel until the radio transport is confirmed.
+- UC-DP04 uses `startDeviceProvisioning` in `src/services/api/device.api.ts` to create the discovered Robot context, but this docs table remains sentinel until a backend ADR promotes the row.
+- UC-DP05 is now the default ownership path in code: `PairFoundScreen` calls `useZeroCodeClaimFlow`, which consumes `requestClaim` and `getClaimStatus` from `src/services/api/claim.api.ts`. It does not require the parent to type or scan a code unless the claim flow fails.
+- UC-DP05 requires a BLE candidate from UC-DP04 because the fresh claim bootstrap token is delivered over BluFi (`sendClaimBootstrapTokenViaBle`). `/claim/available-devices` can label or observe claimable devices, but it must not create a backend-only `PairFoundScreen` candidate because the app would have no BLE handle for token delivery.
+- UC-DP06 remains fallback-only. It must not expose raw IPs, ports, OTA URLs, WebSocket URLs, MAC addresses, or tokens to the parent.
+- UC-DP09 through UC-DP13 still depend on the existing provisioning-complete flow for Wi-Fi and local pairing cache behavior.
 
 ---
 
@@ -277,6 +281,7 @@ _Source: `docs/usecases/domains/lesson-session/backend-mapping.md`_
 | UC-L19 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-L20 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-L21 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-L22 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 
 ---
 
@@ -284,15 +289,39 @@ _Source: `docs/usecases/domains/lesson-session/backend-mapping.md`_
 
 - All cells sentinel because:
   - `src/services/api/lesson-session.api.js` exports (`startSession`, `endSession`, `sendUtterance`, `getActivityList`, `reportSafetyEvent`) all throw `not implemented`.
-  - The realtime voice transport (`src/services/websocket/realtime.js → openRealtime`) is referenced in puml comments but the file is not present in source — voice provider unconfirmed (KD10).
+  - The mobile observer transport (`src/services/ws/realtime.{ts,js} → openRealtime`) exists and is locally tested, but production sessionId auto-attach and realtime provider wiring are not confirmed in source (KD10).
   - No `decisions/NNNN-backend-lesson-session.md` ADR exists yet.
-- KD10 specifically: UC-L02 (Connect Realtime Voice) MUST stay `BACKEND_NOT_DESIGNED` until the voice provider decision lands.
+- KD10 specifically: UC-L02 (Connect Realtime Voice) MUST stay `BACKEND_NOT_DESIGNED` until provider/sessionId/live attach evidence lands with the backend decision.
 - Cross-references for review (cells if backend lands):
   - UC-L01: would cite `lesson-session.api.js → startSession` (Endpoint), `lesson.store.js → start` (Service).
   - UC-L07: would cite `lesson-session.api.js → sendUtterance` (Endpoint).
   - UC-L16: would cite `lesson-session.api.js → endSession` (Endpoint), `lesson.store.js → end` (Service).
   - UC-L21: would cite `lesson-session.api.js → reportSafetyEvent` (Endpoint).
 - Per dry-run rationale: Lane B promotes any cell off sentinel only by also creating `decisions/NNNN-backend-lesson-session.md` and updating the row's ADR pointer in the same PR (state-based check enforces).
+
+---
+
+## Domain — `mobile-shell`
+
+_Source: `docs/usecases/domains/mobile-shell/backend-mapping.md`_
+
+> Every cell is either a real export from `src/services/api/*.api.ts`, a real action from a store, a `docs/erd/README.md` entity-sketch entry, or the literal sentinel `BACKEND_NOT_DESIGNED`. Cited file paths must exist on disk (verified by `check-backend-sentinel.mjs`).
+
+**Domain ADR Pointer rule:** `—` when every cell in the row is sentinel. Otherwise must cite `decisions/NNNN-backend-mobile-shell.md`.
+
+---
+
+| UC ID | Endpoint | Service | DB Entity | Events | Domain ADR Pointer |
+|---|---|---|---|---|---|
+| UC-MOBILE01 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+
+---
+
+## Notes
+
+- UC-MOBILE01 deep-link routing is primarily client-side. The optional server validation endpoint (`GET /v1/mobile/deep-link/validate?path=<route>`) is not yet wired; sequence `docs/sequences/16-mobile/push-deep-link.sequence.mmd` documents the intended contract.
+- FCM delivery itself is owned by `sys-10-notifications` (sequence `10-notifications/sqs-worker-pipeline.sequence.mmd`); this domain is the consumer side.
+- When backend lands: Endpoint will cite `mobile.api.ts → validateDeepLink`; Domain ADR Pointer must reference a new `decisions/NNNN-backend-mobile-shell.md`.
 
 ---
 
@@ -308,6 +337,7 @@ _Source: `docs/usecases/domains/onboarding/backend-mapping.md`_
 | UC-O02 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-O03 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-O04 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-O05 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 
 ---
 
@@ -361,6 +391,11 @@ _Source: `docs/usecases/domains/parent-summary/backend-mapping.md`_
 | UC-PR05 | getSafetyConfig | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-PR06 | getSettings | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-PR07 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-PR08 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-PR09 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-PR10 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-PR11 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-PR12 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 
 ---
 
@@ -429,6 +464,15 @@ _Source: `docs/usecases/domains/purchase/backend-mapping.md`_
 | UC-BU12 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-BU13 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-BU14 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-BU15 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-BU16 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-BU17 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-SUB01 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-SUB02 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-SUB03 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-SUB04 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-SUB05 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-INV01 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 
 ---
 

@@ -1,5 +1,5 @@
 import client from '@/services/http/client';
-import { recordAiVoiceConsent } from '@/services/api/auth';
+import { recordAiVoiceConsent, withdrawAiVoiceConsent } from '@/services/api/auth';
 
 jest.mock('@/services/http/client', () => ({
   __esModule: true,
@@ -28,6 +28,30 @@ describe('AI voice consent API', () => {
     expect(mockedClient.post).toHaveBeenCalledWith('/identity/ai-voice-consent', {
       consent_version: 'ai-voice-google-v1',
       google_subprocessors_version: 'google-subprocessors-v1',
+    });
+  });
+
+  it('withdraws AI voice consent with a parent reason', async () => {
+    mockedClient.post.mockResolvedValueOnce({
+      data: {
+        data: {
+          consent_id: 'voice-consent-1',
+          status: 'withdrawn',
+          withdrawn_at: '2026-07-02T00:00:00.000Z',
+        },
+      },
+    });
+
+    await expect(withdrawAiVoiceConsent({
+      reason: 'Parent paused AI voice lessons from mobile settings.',
+    })).resolves.toEqual({
+      consent_id: 'voice-consent-1',
+      status: 'withdrawn',
+      withdrawn_at: '2026-07-02T00:00:00.000Z',
+    });
+
+    expect(mockedClient.post).toHaveBeenCalledWith('/identity/ai-voice-consent/withdraw', {
+      reason: 'Parent paused AI voice lessons from mobile settings.',
     });
   });
 });

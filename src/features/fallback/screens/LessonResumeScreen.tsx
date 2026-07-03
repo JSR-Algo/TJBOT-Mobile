@@ -22,21 +22,13 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
   // fall back to 0 when the label has no parseable percentage.
   const progressPercent = parseProgressPercent(progressLabel);
   const activityLabel = checkpoint?.activityLabel;
-  const resumeTarget = checkpoint?.resumeTarget ?? ROUTES.UserSpeakingScreen;
+  const resumeTarget = resolveSafeResumeTarget(checkpoint?.resumeTarget);
   const resumeLesson = (): void => {
-    if (resumeTarget === ROUTES.RobotListeningScreen) {
-      navigation.navigate(ROUTES.RobotListeningScreen);
+    if (resumeTarget === ROUTES.HomeHubScreen) {
+      navigation.navigate(ROUTES.HomeHubScreen);
       return;
     }
-    if (resumeTarget === ROUTES.RobotSpeakingScreen) {
-      navigation.navigate(ROUTES.RobotSpeakingScreen);
-      return;
-    }
-    if (resumeTarget === ROUTES.ActivityIntroScreen) {
-      navigation.navigate(ROUTES.ActivityIntroScreen);
-      return;
-    }
-    navigation.navigate(ROUTES.UserSpeakingScreen);
+    navigation.navigate(ROUTES.SendToRobotScreen);
   };
   return (
     <ScreenShell bg="#C5F1DD">
@@ -80,6 +72,10 @@ function parseProgressPercent(label: string): number {
   const value = Number(match[1]);
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, value));
+}
+
+function resolveSafeResumeTarget(target: unknown): typeof ROUTES.SendToRobotScreen | typeof ROUTES.HomeHubScreen {
+  return target === ROUTES.HomeHubScreen ? ROUTES.HomeHubScreen : ROUTES.SendToRobotScreen;
 }
 
 const styles = StyleSheet.create({

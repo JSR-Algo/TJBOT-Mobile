@@ -18,6 +18,7 @@ import {
   getCurrentAssignment,
   isAssignablePublishedLesson,
   isLessonProfile,
+  type CurrentAssignment,
   type PublishedCourse,
   type PublishedLesson,
 } from '@/services/api/course-library.api';
@@ -40,6 +41,17 @@ type CatalogState =
   | { kind: 'error'; message: string };
 
 type AssignmentMode = 'lesson' | 'course';
+
+function currentMatchesLesson(current: CurrentAssignment, childId: string, lesson: PublishedLesson): boolean {
+  return current.childId === childId &&
+    current.lessonId === lesson.lessonId &&
+    current.lessonVersion === lesson.lessonVersion;
+}
+
+function currentMatchesCourse(current: CurrentAssignment, childId: string, courseLessons: PublishedLesson[]): boolean {
+  return current.childId === childId &&
+    courseLessons.some((lesson) => current.lessonId === lesson.lessonId && current.lessonVersion === lesson.lessonVersion);
+}
 
 export default function SendToRobotScreen({ navigation, route }: Props) {
   // childId = the parent-selected ACTIVE child (D-CHILD-RESOLUTION, ADR 0013 §N),
@@ -210,7 +222,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           const normalized = normalizeError(err);
           if (normalized.code === 'ASSIGNMENT_CONFLICT') {
             const current = await getCurrentAssignment(deviceId);
-            if (current) {
+            if (current && currentMatchesCourse(current, childId, lessons)) {
               void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
               navigation.navigate(ROUTES.RobotReadyScreen, {
                 deviceId,
@@ -254,7 +266,8 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         // the fresh assignment_version; never blind-retry a stale create.
         if (normalized.code === 'ASSIGNMENT_CONFLICT') {
           const current = await getCurrentAssignment(deviceId);
-          if (current) {
+          if (current && currentMatchesLesson(current, childId, selectedLesson)) {
+            void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
             navigation.navigate(ROUTES.RobotReadyScreen, {
               deviceId,
               assignmentId: current.assignmentId,

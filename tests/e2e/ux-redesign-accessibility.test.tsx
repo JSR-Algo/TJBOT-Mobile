@@ -381,14 +381,15 @@ describe('mobile UX redesign accessibility coverage', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, { errorCode: 'BLE_UNAVAILABLE' });
   });
 
-  it('routes BLE scan exceptions to scan-timeout copy', async () => {
-    bleMocks.scanForTJBotDevices.mockRejectedValue(new Error('Bluetooth powered off'));
+  it('routes BLE scan exceptions to scan-error copy instead of scan-timeout copy', async () => {
+    bleMocks.scanForTJBotDevices.mockRejectedValue(Object.assign(new Error('Bluetooth powered off'), { code: 'BLE_SCAN_ERROR' }));
 
     render(<PairSearchScreen navigation={navigation as never} route={{ params: undefined } as never} />);
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
-      errorCode: 'BLE_SCAN_TIMEOUT',
+      errorCode: 'BLE_SCAN_ERROR',
     }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
     expect(apiMocks.startDeviceProvisioning).not.toHaveBeenCalled();
   });
 
@@ -949,7 +950,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     }));
   });
 
-  it('fails fast when the transient Wi-Fi password handoff is missing', async () => {
+  it('re-prompts when the transient Wi-Fi password handoff is missing', async () => {
     const screen = render(
       <PairConnectingScreen
         navigation={navigation as never}
@@ -959,12 +960,36 @@ describe('mobile UX redesign accessibility coverage', () => {
 
     await expect(screen.findByText('Pairing failed')).resolves.toBeTruthy();
     expect(apiMocks.pairDevice).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
       provisioningAttemptId: 'attempt-missing',
       code: '123456',
       ssid: 'Casa Wi-Fi',
+      bleDeviceId: undefined,
+      provisioningTransport: undefined,
+      errorCode: 'WIFI_PASSWORD_EXPIRED',
+    });
+  });
+
+  it('fails fast when required pairing context is missing', async () => {
+    const screen = render(
+      <PairConnectingScreen
+        navigation={navigation as never}
+        route={{ params: { deviceId: 'device-1', serialNumber: 'TJBot-001', code: '123456', ssid: 'Casa Wi-Fi' } } as never}
+      />,
+    );
+
+    await expect(screen.findByText('Pairing failed')).resolves.toBeTruthy();
+    expect(apiMocks.pairDevice).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TJBot-001',
+      provisioningAttemptId: undefined,
+      code: '123456',
+      ssid: 'Casa Wi-Fi',
+      bleDeviceId: undefined,
+      provisioningTransport: undefined,
       errorCode: 'PAIRING_CONTEXT_MISSING',
     });
   });

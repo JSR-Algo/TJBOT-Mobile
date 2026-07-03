@@ -27,6 +27,9 @@ export interface ClaimStatusDescriptor {
   recovery: ClaimRecoveryAction;
 }
 
+export const CLAIM_POLL_INTERVAL_MS = 3000;
+export const CLAIM_CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
+
 const DEVICE_ALREADY_CLAIMED: ClaimStatusDescriptor = {
   code: 'DEVICE_ALREADY_CLAIMED',
   title: 'Already connected elsewhere',
@@ -217,6 +220,11 @@ export function describeClaimFailure(error: unknown): ClaimStatusDescriptor {
   }
 
   return CLAIM_UNKNOWN;
+}
+
+export function describeKnownClaimFailureCode(errorCode: string | undefined): ClaimStatusDescriptor | null {
+  if (!errorCode) return null;
+  return CODE_MAP[errorCode] ?? null;
 }
 
 // Exported for tests/telemetry that need to assert on specific descriptors.

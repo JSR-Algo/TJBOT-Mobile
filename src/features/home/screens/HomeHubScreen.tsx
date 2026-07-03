@@ -124,8 +124,12 @@ function navigateHomeCtaTarget(
   navigation: Props['navigation'],
   target: keyof RootStackParamList,
 ): void {
-  if (target === ROUTES.LessonReadyScreen) {
-    navigation.navigate(ROUTES.LessonReadyScreen);
+  if (target === ROUTES.SendToRobotScreen) {
+    navigation.navigate(ROUTES.SendToRobotScreen);
+    return;
+  }
+  if (target === ROUTES.CourseLibraryScreen) {
+    navigation.navigate(ROUTES.CourseLibraryScreen);
     return;
   }
   if (target === ROUTES.TodayProgressScreen) {

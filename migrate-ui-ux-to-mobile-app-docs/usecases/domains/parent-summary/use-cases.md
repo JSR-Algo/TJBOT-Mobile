@@ -64,16 +64,17 @@
 
 ## UC-PR06 — Configure Parent Settings
 
-- **Goal:** Parent adjusts account-level settings (notification preferences, language, linked robot) and can navigate to robot management.
+- **Goal:** Parent adjusts parent-controlled settings (language, child profile, privacy/account controls, and AI voice consent) from the `parent_settings` screen.
 - **Trigger:** Parent taps the settings icon in the `ParentSummaryPage` header (puml note: `[header]` from UC-PR02).
-- **Preconditions:** Passed parent-gate (UC-PR01) within current session. `getSettings()` API is reachable.
+- **Preconditions:** Passed parent-gate (UC-PR01) within current session.
 - **Main Flow:**
-  1. `ParentSettingsPage` mounts and calls `getSettings()` from `src/services/api/parent.api.js`.
-  2. UI renders notification toggle, language picker, and "Manage Robot" CTA.
-  3. Parent edits settings; changes are saved via `updateSettings()` on blur/toggle.
-  4. "Manage Robot" CTA navigates to robot-mgmt domain (`UC_RM_VIEW` — puml exit note).
-  5. Back navigation returns to UC-PR02.
-- **Postconditions:** Settings updated if changed; navigation may exit to robot-mgmt domain.
+  1. `ParentSettingsPage` mounts in the parent flow as state `parent_settings`.
+  2. UI renders language, child profile, personality filters, privacy/account controls, and the AI voice lesson consent section.
+  3. Parent taps "Allow voice lessons"; app records active AI voice consent through `recordAiVoiceConsent()`.
+  4. Parent taps "Pause voice lessons"; app withdraws active AI voice consent through `withdrawAiVoiceConsent()`.
+  5. Save success or failure is shown inline on `parent_settings`; the flow does not navigate to a separate voice setup screen.
+  6. Back navigation returns to UC-PR02.
+- **Postconditions:** Parent setting changes are persisted when the backing API succeeds; voice consent remains parent-controlled inside `parent_settings`.
 
 ---
 

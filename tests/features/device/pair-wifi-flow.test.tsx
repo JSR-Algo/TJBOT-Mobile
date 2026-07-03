@@ -276,6 +276,20 @@ describe('PairWifiScreen — robot Wi-Fi scan over BLE', () => {
     expect(forwardedParams).not.toHaveProperty('networks');
     expect(JSON.stringify(forwardedParams)).not.toContain('Neighbor');
   });
+
+  it('back from reconnect Wi-Fi returns to reconnect search, not the new-pairing found screen', () => {
+    const navigate = jest.fn();
+    const screen = renderWifi(navigate, {
+      ...BLE_PARAMS,
+      provisioningAttemptId: 'reconnect:device-1',
+      provisioningTransport: 'ble_reconnect',
+    });
+
+    fireEvent.press(screen.getByLabelText('Go back'));
+
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen, expect.anything());
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -299,6 +313,17 @@ describe('PairWifiPasswordScreen — password handoff is transient + BLE-bound',
     fireEvent.press(screen.getByText('Connect Robot'));
     expect(navigate).not.toHaveBeenCalled();
     expect(mockedPutPassword).not.toHaveBeenCalled();
+  });
+
+  it('shows clear re-prompt copy when the transient Wi-Fi password expired', () => {
+    const navigate = jest.fn();
+    const screen = renderPassword(navigate, {
+      ...BLE_PARAMS,
+      ssid: 'HomeNet',
+      errorCode: 'WIFI_PASSWORD_EXPIRED',
+    });
+
+    expect(screen.getByText('Wi-Fi password expired. Enter it again to continue.')).toBeTruthy();
   });
 
   it('on submit, stashes the password as a TRANSIENT handoff keyed by the provisioning attempt', () => {
