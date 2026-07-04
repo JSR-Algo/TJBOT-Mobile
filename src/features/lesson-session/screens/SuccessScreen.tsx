@@ -18,7 +18,7 @@ export default function SuccessScreen({ navigation }: Props) {
     <ScreenShell bg="#E8F8F0">
       <LessonHeader progress={0.45} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
-        <Robot emotion="success" size={240} accent="#E8A33C" />
+        <Robot emotion="success" size={150} accent="#E8A33C" />
         <SpeechBubble color="#fff">
           <Text style={{ color: '#7BD389' }}>Nice speaking!</Text>{'\n'}
           <Text style={styles.saidText}>You said "cat" 🐱</Text>
@@ -38,6 +38,6 @@ export default function SuccessScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   center: { paddingTop: 120, paddingHorizontal: 24, paddingBottom: 200 },
-  saidText: { fontSize: 18, color: 'rgba(0,0,0,0.5)' },
+  saidText: { fontSize: 13.5, color: 'rgba(0,0,0,0.5)' },
   footer: { position: 'absolute', left: 24, right: 24, bottom: 48 },
 });

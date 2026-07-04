@@ -6,7 +6,7 @@ import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { PR } from '../purchase.local-tokens';
+import { parentColors } from '@/design-system/tokens';
 import PRStepTab from '../components/PRStepTab';
 import { ROUTES } from '@/navigation/routes';
 
@@ -53,12 +53,12 @@ export default function IncludedScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 24, color: PR.ink, letterSpacing: -0.4, textAlign: 'center', lineHeight: 29, marginTop: 18 },
-  listCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 16, overflow: 'hidden' },
+  heading: { fontSize: 24, color: parentColors.ink, letterSpacing: -0.4, textAlign: 'center', lineHeight: 29, marginTop: 18 },
+  listCard: { backgroundColor: parentColors.card, borderWidth: 1, borderColor: parentColors.line, borderRadius: 16, overflow: 'hidden' },
   listRow: { flexDirection: 'row', gap: 14, paddingVertical: 14, paddingHorizontal: 16 },
-  listBorder: { borderBottomWidth: 1, borderBottomColor: PR.hair },
-  listIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: PR.warm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  listTitle: { fontSize: 14, color: PR.ink },
-  listBody: { fontSize: 12, color: PR.ink2, marginTop: 2, lineHeight: 18 },
-  note: { fontSize: 12, color: PR.ink2, lineHeight: 20, textAlign: 'center', paddingHorizontal: 20, paddingTop: 18 },
+  listBorder: { borderBottomWidth: 1, borderBottomColor: parentColors.line },
+  listIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: parentColors.card2, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  listTitle: { fontSize: 14, color: parentColors.ink },
+  listBody: { fontSize: 12, color: parentColors.ink2, marginTop: 2, lineHeight: 18 },
+  note: { fontSize: 12, color: parentColors.ink2, lineHeight: 20, textAlign: 'center', paddingHorizontal: 20, paddingTop: 18 },
 });

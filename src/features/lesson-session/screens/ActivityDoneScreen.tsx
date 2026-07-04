@@ -9,6 +9,7 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { gardenColors } from '@/design-system/tokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivityDoneScreen'>;
 
@@ -20,7 +21,7 @@ export default function ActivityDoneScreen({ navigation }: Props) {
       <LessonHeader progress={0.6} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Text fontWeight="800" style={styles.doneTitle}>Activity done!</Text>
-        <Robot emotion="success" size={220} accent="#E8A33C" />
+        <Robot emotion="success" size={140} accent="#E8A33C" />
         <Box flexDirection="row" gap={14}>
           {ANIMALS.map(e => (
             <Box key={e} style={styles.animalCard} alignItems="center" justifyContent="center">
@@ -31,7 +32,7 @@ export default function ActivityDoneScreen({ navigation }: Props) {
         <Text fontWeight="700" style={styles.friendsText}>3 new word friends!</Text>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)} color="#FF6F61">Keep going →</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)} color={gardenColors.coral}>Keep going →</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

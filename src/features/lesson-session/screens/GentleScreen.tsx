@@ -10,6 +10,7 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { gardenColors } from '@/design-system/tokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GentleScreen'>;
 
@@ -18,11 +19,11 @@ export default function GentleScreen({ navigation }: Props) {
     <ScreenShell bg="#F5F5F2">
       <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
-        <Robot emotion="gentle" size={220} accent="#E8A33C" />
+        <Robot emotion="gentle" size={140} accent="#E8A33C" />
         <SpeechBubble>Let's try that together.{'\n'}"cat" 🐱</SpeechBubble>
       </Box>
       <Box style={styles.footer} gap={12}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)} color="#FF6F61">Try again</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotListeningScreen)} color={gardenColors.coral}>Try again</PrimaryCTA>
         <TouchableOpacity onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)}>
           <Text fontWeight="700" style={styles.hearAgainText}>Hear it again</Text>
         </TouchableOpacity>
@@ -33,6 +34,6 @@ export default function GentleScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   center: { paddingTop: 120, paddingHorizontal: 24, paddingBottom: 200 },
-  footer: { position: 'absolute', left: 24, right: 24, bottom: 48 },
+  footer: { position: 'absolute', left: 24, right: 24, bottom: 48, flexDirection: 'column' },
   hearAgainText: { fontSize: 16, color: 'rgba(0,0,0,0.5)', textAlign: 'center', padding: 8 },
 });

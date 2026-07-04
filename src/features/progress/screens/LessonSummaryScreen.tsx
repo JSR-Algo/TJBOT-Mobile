@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import RobotImage from '@/components/RobotImage';
 import PageScroll from '@/design-system/components/PageScroll';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
@@ -23,7 +23,7 @@ export default function LessonSummaryScreen({ navigation }: Props) {
       <Box paddingHorizontal={24} paddingTop={80} paddingBottom={14} alignItems="center" gap={8}>
         <Text fontWeight="600" style={styles.tag}>LESSON DONE</Text>
         <Text fontWeight="800" style={styles.headline}>Great effort!</Text>
-        <Robot emotion="success" size={200} accent="#FFC857" />
+        <RobotImage variant="body" size={140} />
       </Box>
 
       <Box paddingHorizontal={24} paddingBottom={14}>

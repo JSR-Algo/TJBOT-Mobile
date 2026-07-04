@@ -1,13 +1,13 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
-import DeviceShell from '@/components/DeviceShell';
+import ScreenShell from '@/components/ScreenShell';
+import { RobotImage } from '@/components/RobotImage';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { DV } from '@/components/Device-tokens';
+import { gardenColors, gardenRadii } from '@/design-system/tokens';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
 import { confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken, pairDevice } from '@/services/api/device.api';
 import { provisionWifiViaLocalBle } from '@/services/ble/service';
@@ -182,21 +182,37 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
   }, [navigation, params, ssid]);
 
   return (
-    <DeviceShell title="Connecting Robot…">
+    <ScreenShell>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="reconnect" size={180} accent="#FF6F61" />
+        <RobotImage variant="body" size={180} />
         <Text fontWeight="600" style={styles.heading}>
           {status === 'authenticated' ? 'Robot authenticated' : status === 'failed' ? 'Pairing failed' : 'Hang tight — about 30 seconds'}
         </Text>
+        <Text style={styles.subheading}>
+          {status === 'authenticated' ? '' : status === 'failed' ? '' : 'Setting up your robot now…'}
+        </Text>
       </Box>
-      <Box paddingHorizontal={16} paddingTop={24} gap={8}>
+      <Box paddingHorizontal={24} paddingTop={28} alignItems="center">
+        <View style={[styles.progressTrack, { maxWidth: 200 }]}>
+          <View style={[styles.progressFill, { width: `${(i / PAIRING_STEP_COUNT) * 100}%` }]} />
+        </View>
+      </Box>
+      <Box paddingHorizontal={16} paddingTop={20} gap={8}>
         {steps.map((s, idx) => {
           const done = idx < i;
           const active = idx === i;
           return (
-            <Box key={s} style={styles.stepRow} flexDirection="row" gap={12} alignItems="center">
+            <Box
+              key={s}
+              style={[styles.stepChip, active && styles.stepChipActive]}
+              flexDirection="row"
+              gap={10}
+              alignItems="center"
+              paddingHorizontal={12}
+              paddingVertical={10}
+            >
               <Box
-                style={[styles.stepDot, done && styles.stepDone, active && styles.stepActive]}
+                style={[styles.stepDot, done && styles.stepDone, active && styles.stepActivePulse]}
                 alignItems="center"
                 justifyContent="center"
               >
@@ -210,12 +226,12 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
                   <Box style={styles.pendingDot} />
                 )}
               </Box>
-              <Text style={[styles.stepText, idx <= i && styles.stepTextActive]} i18n={false}>{s}</Text>
+              <Text style={[styles.stepText, done && styles.stepTextDone, active && styles.stepTextActive]} i18n={false}>{s}</Text>
             </Box>
           );
         })}
       </Box>
-    </DeviceShell>
+    </ScreenShell>
   );
 }
 
@@ -492,13 +508,65 @@ function readNumber(record: Record<string, unknown> | null | undefined, key: str
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 18, color: DV.ink, textAlign: 'center', marginTop: 24 },
-  stepRow: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14 },
-  stepDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#EEF1F5', flexShrink: 0 },
-  stepDone: { backgroundColor: DV.good },
-  stepActive: { backgroundColor: DV.accent },
-  blinkDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  pendingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: DV.ink3 },
-  stepText: { fontSize: 14, color: DV.ink3, flex: 1 },
-  stepTextActive: { color: DV.ink },
+  heading: { fontSize: 20, fontWeight: '600', color: gardenColors.ink, textAlign: 'center', marginTop: 12 },
+  subheading: { fontSize: 14, color: gardenColors.inkSoft, textAlign: 'center', marginTop: 12 },
+  progressTrack: {
+    height: 8,
+    backgroundColor: gardenColors.paper,
+    borderRadius: 4,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: gardenColors.coral,
+    borderRadius: 4,
+  },
+  stepChip: {
+    backgroundColor: gardenColors.paper,
+    borderWidth: 1,
+    borderColor: gardenColors.line,
+    borderRadius: gardenRadii.chip,
+  },
+  stepChipActive: {
+    backgroundColor: gardenColors.skySoft,
+    borderColor: gardenColors.sky,
+  },
+  stepDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: gardenColors.line,
+    flexShrink: 0,
+  },
+  stepDone: {
+    backgroundColor: gardenColors.mint,
+  },
+  stepActivePulse: {
+    backgroundColor: gardenColors.sky,
+  },
+  blinkDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: gardenColors.sky,
+  },
+  pendingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: gardenColors.inkMuted,
+  },
+  stepText: {
+    fontSize: 13,
+    color: gardenColors.inkSoft,
+    flex: 1,
+  },
+  stepTextDone: {
+    color: gardenColors.inkSoft,
+  },
+  stepTextActive: {
+    color: gardenColors.ink,
+    fontWeight: '500',
+  },
 });

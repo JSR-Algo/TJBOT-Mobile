@@ -64,6 +64,7 @@ export const referenceShadow = {
 export const referenceImages = {
   tjbotLogo: require('../assets/brand/tjbot-logo.png') as ImageSourcePropType,
   robotHead: require('../assets/mascot/tee-head.png') as ImageSourcePropType,
+  robotBody: require('../assets/mascot/tee-body.png') as ImageSourcePropType,
   courseFarm: require('../assets/design-reference/course-farm.png') as ImageSourcePropType,
   courseCoders: require('../assets/design-reference/course-coders.png') as ImageSourcePropType,
   courseSpace: require('../assets/design-reference/course-space.png') as ImageSourcePropType,

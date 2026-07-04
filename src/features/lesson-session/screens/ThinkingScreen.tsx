@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import RobotImage from '@/components/RobotImage';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
 import { Box } from '@/design-system/primitives/Box';
@@ -26,7 +26,7 @@ export default function ThinkingScreen({ navigation }: Props) {
       <Box accessible accessibilityLabel="Robot is thinking" flex={1}>
         <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
         <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={24}>
-          <Robot emotion="think" size={220} />
+          <RobotImage variant="head" size={140} />
           <Text fontWeight="700" style={styles.thinking}>Thinking…</Text>
         </Box>
       </Box>

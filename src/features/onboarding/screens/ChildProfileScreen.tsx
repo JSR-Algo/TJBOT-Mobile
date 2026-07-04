@@ -270,7 +270,7 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : null}
-        <OnbBigBtn testID="childProfileSaveButton" onClick={saveChildProfile}>{saving ? 'Saving...' : 'Save and meet Robot'}</OnbBigBtn>
+        <OnbBigBtn testID="childProfileSaveButton" onClick={saveChildProfile}>{saving ? 'Saving...' : 'Save and meet Tee'}</OnbBigBtn>
       </Box>
     </OnbShell>
   );

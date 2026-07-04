@@ -3,17 +3,15 @@ import {
   ActivityIndicator,
   Animated,
   Image,
-  ImageBackground,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import PulseRing from '@/design-system/components/PulseRing';
 import { referenceImages } from '@/design-system/referenceTheme';
 import { useGeminiConversation } from '@/hooks/useGeminiConversation';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
@@ -30,6 +28,7 @@ import {
   type VoiceReadinessIssue,
 } from '../voiceReadiness';
 import { diagnosticLog } from '@/services/observability/diagnosticLog';
+import { gardenColors, gardenRadii } from '@/design-system/tokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotCompanionScreen'>;
 
@@ -37,7 +36,6 @@ const CTA_REVEAL_MS = 4500;
 
 export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.Element {
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
   const ageBand = (route.params?.ageBand ?? '4-6') as LessonAgeBand;
   const lessonId = route.params?.lessonId ?? BARN_SAY_IT_LESSON_ID;
   const autoStartVoice = route.params?.autoStartVoice ?? true;
@@ -55,18 +53,14 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
   const ctaPulse = useRef(new Animated.Value(1)).current;
 
   const voiceState = useVoiceAssistantStore((state) => state.state);
-  const aiTranscript = useVoiceAssistantStore((state) => state.aiTranscript);
   const voiceError = useVoiceAssistantStore((state) => state.error);
 
-  const isSpeaking = voiceState === 'ASSISTANT_SPEAKING' || voiceState === 'WAITING_AI';
   const voiceActive = voiceState !== 'IDLE' && voiceState !== 'ENDED' && voiceState !== 'ERROR_FATAL';
 
   const systemInstruction = useMemo(() => buildCompanionVoicePrompt(lesson), [lesson]);
   const { startConversation, stopConversation } = useGeminiConversation({ systemInstruction });
 
-  const robotSize = Math.min(width * 0.72, height * 0.42, 360);
   const lessonTitle = lesson.title ?? lesson.theme;
-  const poster = lesson.media?.posterSource ?? referenceImages.robotHead;
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -180,112 +174,97 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
     });
   }, [displayedError, lesson.lessonId, readinessIssue, voiceState]);
 
-  const robotScale = breathe.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, isSpeaking ? 1.05 : 1.025],
-  });
-
   return (
     <View testID="robot-companion-screen" style={styles.root}>
       <StatusBar hidden />
-
-      <ImageBackground source={poster} style={StyleSheet.absoluteFill} resizeMode="cover">
-        <View style={styles.scrim} pointerEvents="none" />
-      </ImageBackground>
-
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Close chat with Robot"
-          onPress={handleExit}
-          style={styles.iconButton}
-        >
-          <Text style={styles.iconButtonText}>✕</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={voiceActive ? 'Stop talking to Robot' : 'Talk to Robot'}
-          onPress={handleVoiceToggle}
-          style={[styles.iconButton, voiceActive ? styles.iconButtonActive : null]}
-        >
-          {voiceState === 'CONNECTING' || voiceState === 'PREPARING_AUDIO' ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.iconButtonText}>{voiceActive ? '🎙️' : '🤖'}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.header, { paddingTop: insets.top + 64 }]} pointerEvents="none">
-        <Text style={styles.eyebrow}>Just chatting</Text>
-        <Text style={styles.upNext}>Up next: {lessonTitle}</Text>
-        <Text style={styles.hint}>Talk with Robot like a friend. Tap Start lesson when you are ready.</Text>
-      </View>
-
-      <View style={[styles.robotStage, { bottom: height * 0.22 }]}>
-        {voiceActive ? (
-          <View style={[styles.pulseWrap, { width: robotSize + 40, height: robotSize + 40 }]}>
-            <PulseRing size={robotSize + 40} color={isSpeaking ? '#FF6B6F' : '#4CC9F0'} />
+      <ScrollView contentContainerStyle={styles.scrollContent} scrollEnabled={false}>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerText}>
+              <Text style={styles.headerTitle}>Just chatting</Text>
+              <Text style={styles.headerSubtitle}>Up next: {lessonTitle}</Text>
+            </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Close chat with Robot"
+              onPress={handleExit}
+              style={styles.closeBtn}
+            >
+              <Text style={styles.closeBtnText}>✕</Text>
+            </TouchableOpacity>
           </View>
-        ) : null}
-        <Animated.View style={{ transform: [{ scale: robotScale }] }}>
+        </View>
+
+        {/* Main content area */}
+        <View style={styles.contentArea}>
+          {/* Speech bubble */}
+          <View style={styles.bubble}>
+            <Text style={styles.bubbleText}>Say it with me: <Text style={styles.bubbleWord}>"barn"</Text> 🏠</Text>
+          </View>
+
+          {/* Robot body */}
           <Image
-            source={referenceImages.robotHead}
-            style={{ width: robotSize, height: robotSize, borderRadius: robotSize / 2 }}
+            source={referenceImages.robotBody}
+            style={styles.robot}
             resizeMode="contain"
             accessibilityIgnoresInvertColors
           />
-        </Animated.View>
-      </View>
 
-      {aiTranscript ? (
-        <View style={[styles.transcript, { bottom: insets.bottom + 120 }]} pointerEvents="none">
-          <Text style={styles.transcriptText} numberOfLines={4}>
-            {aiTranscript}
-          </Text>
+          {/* Tap to speak button */}
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={voiceActive ? 'Stop talking to Robot' : 'Tap to speak'}
+            onPress={handleVoiceToggle}
+            style={styles.speakBtn}
+          >
+            {voiceState === 'CONNECTING' || voiceState === 'PREPARING_AUDIO' ? (
+              <ActivityIndicator color={gardenColors.ink} />
+            ) : (
+              <Text style={styles.speakBtnText}>🎤 Tap to speak</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Start lesson button */}
+          {showStartCta ? (
+            <Animated.View style={{ transform: [{ scale: ctaPulse }] }}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Start lesson ${lessonTitle}`}
+                onPress={handleStartLesson}
+                style={styles.startLessonBtn}
+              >
+                <Text style={styles.startLessonBtnText}>Start lesson</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ) : null}
         </View>
-      ) : null}
 
-      {displayedError ? (
-        <View style={[styles.errorBanner, { top: insets.top + 64 }]}>
-          <Text style={styles.errorText}>{displayedError}</Text>
-          {readinessIssue === 'mic_blocked' || readinessIssue === 'mic_denied' ? (
+        {/* Error banner */}
+        {displayedError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{displayedError}</Text>
+            {readinessIssue === 'mic_blocked' || readinessIssue === 'mic_denied' ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Open microphone settings"
+                onPress={openAppSettings}
+                style={styles.errorAction}
+              >
+                <Text style={styles.errorActionText}>Open Settings</Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Open microphone settings"
-              onPress={openAppSettings}
+              accessibilityLabel="Open diagnostic log"
+              onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen)}
               style={styles.errorAction}
             >
-              <Text style={styles.errorActionText}>Open Settings</Text>
+              <Text style={styles.errorActionText}>Open diagnostic log</Text>
             </TouchableOpacity>
-          ) : null}
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Open diagnostic log"
-            onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen)}
-            style={styles.errorAction}
-          >
-            <Text style={styles.errorActionText}>Open diagnostic log</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Animated.View style={[styles.ctaWrap, showStartCta ? { transform: [{ scale: ctaPulse }] } : styles.ctaHidden]}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={`Start lesson ${lessonTitle}`}
-            onPress={handleStartLesson}
-            style={styles.startButton}
-            disabled={!showStartCta}
-          >
-            <Text style={styles.startButtonText}>Start lesson</Text>
-          </TouchableOpacity>
-        </Animated.View>
-        {!showStartCta ? (
-          <Text style={styles.waitHint}>Robot is saying hi…</Text>
+          </View>
         ) : null}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -295,101 +274,118 @@ export default RobotCompanionScreen;
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#1A2430',
+    backgroundColor: gardenColors.paper,
   },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(14, 26, 36, 0.58)',
-  },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconButtonActive: {
-    backgroundColor: 'rgba(255,107,111,0.72)',
-  },
-  iconButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
   },
   header: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    gap: 6,
-    zIndex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 32,
+    paddingTop: 0,
   },
-  eyebrow: {
-    color: 'rgba(255,255,255,0.72)',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+  headerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  upNext: {
-    color: '#FFFFFF',
-    fontSize: 26,
+  headerText: {
+    flex: 1,
+    gap: 4,
+  },
+  headerTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: gardenColors.inkSoft,
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    fontSize: 22,
     fontWeight: '800',
-    lineHeight: 32,
+    color: gardenColors.ink,
+    lineHeight: 28,
   },
-  hint: {
-    color: 'rgba(255,255,255,0.86)',
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  robotStage: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: gardenColors.bg2,
   },
-  pulseWrap: {
-    position: 'absolute',
+  closeBtnText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: gardenColors.ink,
+  },
+  contentArea: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 24,
+    paddingVertical: 32,
   },
-  transcript: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+  bubble: {
+    backgroundColor: gardenColors.cream,
+    borderRadius: gardenRadii.card,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    maxWidth: '85%',
   },
-  transcriptText: {
-    color: 'rgba(255,255,255,0.92)',
-    fontSize: 15,
-    lineHeight: 20,
+  bubbleText: {
+    fontSize: 16,
     fontWeight: '600',
+    color: gardenColors.ink,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  bubbleWord: {
+    fontWeight: '800',
+    color: gardenColors.sky,
+  },
+  robot: {
+    width: 220,
+    height: 260,
+  },
+  speakBtn: {
+    backgroundColor: gardenColors.coral,
+    borderRadius: gardenRadii.chip,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  speakBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  startLessonBtn: {
+    backgroundColor: gardenColors.sky,
+    borderRadius: gardenRadii.chip,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  startLessonBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   errorBanner: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    backgroundColor: 'rgba(120, 24, 24, 0.82)',
-    borderRadius: 12,
-    padding: 10,
-    zIndex: 2,
+    backgroundColor: '#DA5B5F',
+    borderRadius: gardenRadii.card,
+    padding: 12,
+    marginBottom: 16,
   },
   errorText: {
     color: '#FFFFFF',
@@ -402,44 +398,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: gardenRadii.cta,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   errorActionText: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    gap: 8,
-  },
-  ctaWrap: {
-    width: '100%',
-  },
-  ctaHidden: {
-    opacity: 0.35,
-  },
-  startButton: {
-    width: '100%',
-    borderRadius: 20,
-    backgroundColor: '#FF6B6F',
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  startButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  waitHint: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    fontWeight: '600',
   },
 });

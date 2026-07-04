@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import RobotImage from '@/components/RobotImage';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
@@ -29,7 +29,7 @@ export default function WordsPracticedScreen({ navigation }: Props) {
       <PageHeader onBack={() => navigation.navigate(ROUTES.TodayProgressScreen)} subtitle="Today" title="Words Practiced" />
 
       <Box paddingHorizontal={24} paddingBottom={8} flexDirection="row" alignItems="center" gap={12}>
-        <Robot emotion="happy" size={80} />
+        <RobotImage variant="body" size={60} />
         <Box style={styles.bubble} flex={1}>
           <Text fontWeight="700" style={{ fontSize: 14, color: '#2B2140', lineHeight: 20 }}>
             These words got stronger today.

@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import RobotImage from '@/components/RobotImage';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
@@ -24,7 +24,7 @@ export default function RobotSpeakingScreen({ navigation }: Props) {
       <LessonHeader progress={0.25} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Text fontWeight="700" style={styles.listenLabel}>Listen 👂</Text>
-        <Robot emotion="speak" size={220} />
+        <RobotImage variant="head" size={140} />
         <SpeechBubble>This is a cat.{'\n'}🐱</SpeechBubble>
         <Box accessible accessibilityLabel="Robot voice waveform" style={{ marginTop: 8 }}>
           <WaveBars color="#6FC1FF" height={20} count={12} />

@@ -37,7 +37,7 @@ export default function FirstLessonEntryScreen(_props: Props) {
         <OnboardingClayRobot size={190} showRing />
         <SpeechBubble>Hi there!{'\n'}Want to play?</SpeechBubble>
         <Box style={styles.timePill}>
-          <Text fontWeight="700" style={styles.timePillText}>About 3 minutes · headphones if you have them</Text>
+          <Text fontWeight="700" style={styles.timePillText}>⏱ About 3 minutes · headphones</Text>
         </Box>
       </Box>
       <Box style={styles.footer}>

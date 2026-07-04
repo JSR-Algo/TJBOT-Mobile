@@ -1,20 +1,15 @@
 import React from 'react';
-import { Image, StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
-import TopBar from '@/components/TopBar';
-import CircleBtn from '@/design-system/components/CircleBtn';
-import PrimaryCTA from '@/design-system/components/PrimaryCTA';
-import PulseRing from '@/design-system/components/PulseRing';
 import HomeStateChip from '../components/HomeStateChip';
-import HomeSecondaryButton from '../components/HomeSecondaryButton';
 import { useHomeState } from '../hooks/useHomeState';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
-import { referenceColors, referenceImages, referenceShadow } from '@/design-system/referenceTheme';
+import { referenceColors, referenceImages } from '@/design-system/referenceTheme';
+import { gardenColors, gardenRadii } from '@/design-system/tokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 
@@ -24,24 +19,6 @@ export const HOME_HUB_PRIMARY_CTA_BOTTOM = 220;
 
 export default function HomeHubScreen({ navigation }: Props) {
   const { variant, cfg, isLoading } = useHomeState();
-  const [greet, setGreet] = React.useState(false);
-  const greetTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const onRobotTap = () => {
-    setGreet(true);
-    if (greetTimer.current) {
-      clearTimeout(greetTimer.current);
-    }
-    greetTimer.current = setTimeout(() => setGreet(false), 1800);
-    navigation.navigate(ROUTES.RobotCompanionScreen, {
-      lessonId: 'w01-d01-barn-say-it',
-      ageBand: '4-6',
-      autoStartVoice: true,
-    });
-  };
-  React.useEffect(() => () => clearTimeout(greetTimer.current!), []);
-
-  const showingGreet = greet || cfg.forceGreet;
   const bg = variant === 'offline' ? '#EFEDE8' : variant === 'completed_today' ? '#EEF8EF' : referenceColors.bg;
 
   if (isLoading) {
@@ -56,90 +33,192 @@ export default function HomeHubScreen({ navigation }: Props) {
 
   return (
     <ScreenShell bg={bg}>
-      <ReferenceDots />
-      <TopBar
-        left={
-          <CircleBtn
-            size={44}
-            accessibilityLabel="Open parent dashboard"
-            onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
-          >
-            <UserIcon />
-          </CircleBtn>
-        }
-        right={
-          <CircleBtn
-            size={44}
-            accessibilityLabel="Open parent settings"
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header with greeting and avatar */}
+        <Box style={styles.headerRow} flexDirection="row" alignItems="center" justifyContent="space-between">
+          <Box flexDirection="row" alignItems="center" gap={12}>
+            <Text fontWeight="700" style={styles.greeting}>Hi, friend! 👋</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
+              accessibilityRole="button"
+              accessibilityLabel="Open parent dashboard"
+            >
+              <Image source={referenceImages.robotHead} style={styles.smallAvatar} resizeMode="contain" />
+            </TouchableOpacity>
+          </Box>
+          <TouchableOpacity
             onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
+            accessibilityRole="button"
+            accessibilityLabel="Open parent settings"
           >
-            <SettingsIcon />
-          </CircleBtn>
-        }
-      />
+            <Text fontWeight="700" style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
+        </Box>
 
-      <Box style={[StyleSheet.absoluteFillObject, styles.robotStage]} alignItems="center" justifyContent="flex-start">
-        <Text fontWeight="700" style={styles.greeting}>
-          {variant === 'completed_today' ? 'Hi again!' : variant === 'offline' ? 'Hold on…' : 'Hi, friend!'}
-        </Text>
-
-        <Box style={{ minHeight: 32, alignItems: 'center', justifyContent: 'center' }}>
+        {/* Ready chip */}
+        <Box style={styles.chipRow}>
           {cfg.chip ? (
             <HomeStateChip color={cfg.chip.color}>{cfg.chip.text}</HomeStateChip>
           ) : null}
         </Box>
 
-        <TouchableOpacity
-          onPress={onRobotTap}
-          style={[styles.robotWrap, showingGreet && styles.robotWrapGreeting]}
-          activeOpacity={0.9}
-          accessibilityRole="button"
-          accessibilityLabel="Talk to Robot before barn lesson"
-        >
-          <Box style={styles.ringOuter} />
-          <Box style={styles.ringInner} />
-          {variant === 'daily_available' && !showingGreet ? (
-            <Box style={styles.pulseWrap}>
-              <PulseRing size={258} color={referenceColors.primary} />
+        {/* Hero section - Today's lesson */}
+        <Box style={styles.heroCard}>
+          <Box style={styles.heroTextWrap}>
+            <Text fontWeight="700" style={styles.eyebrow}>Today's lesson</Text>
+            <Text fontWeight="800" style={styles.heroTitle}>Barn & Farm words</Text>
+            <Text fontWeight="700" style={styles.heroSubtitle}>Learn 4 words with sounds</Text>
+
+            {/* Progress bar */}
+            <Box style={styles.progressTrack}>
+              <Box style={[styles.progressFill, { width: '0%' }]} />
             </Box>
-          ) : null}
-          <Image
-            source={referenceImages.robotHead}
-            style={styles.robotImage}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-        </TouchableOpacity>
+            <Text fontWeight="700" style={styles.progressLabel}>Not started</Text>
+          </Box>
 
-        <Text fontWeight="800" style={styles.robotName}>Robot</Text>
-        <Text fontWeight="600" style={styles.tapHint}>Tap me to talk</Text>
-        <TouchableOpacity
-          onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
-          accessibilityRole="button"
-          accessibilityLabel="Browse more English lessons"
-          style={styles.moreLessonsLink}
-        >
-          <Text fontWeight="700" style={styles.moreLessonsText}>More lessons</Text>
-        </TouchableOpacity>
-      </Box>
+          {/* Robot body positioned right - tappable to start companion chat */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate(ROUTES.RobotCompanionScreen, {
+              lessonId: 'w01-d01-barn-say-it',
+              ageBand: '4-6',
+              autoStartVoice: true,
+            })}
+            style={styles.heroRobotTouchable}
+            accessibilityRole="button"
+            accessibilityLabel="Talk to Robot before barn lesson"
+          >
+            <Image
+              source={referenceImages.robotBody}
+              style={styles.heroRobot}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
+          </TouchableOpacity>
 
-      <Box style={styles.primaryCta}>
-        <PrimaryCTA
-          testID="homePrimaryCta"
-          onPress={() => navigateHomeCtaTarget(navigation, cfg.ctaTarget)}
-          color={cfg.ctaColor}
-          disabled={!cfg.ctaEnabled}
-        >
-          {cfg.ctaLabel}
-        </PrimaryCTA>
-      </Box>
+          {/* Start lesson CTA */}
+          <TouchableOpacity
+            onPress={() => navigateHomeCtaTarget(navigation, cfg.ctaTarget)}
+            style={styles.heroCta}
+            testID="homePrimaryCta"
+            accessibilityRole="button"
+            accessibilityLabel="Start lesson"
+          >
+            <Text fontWeight="800" style={styles.heroCtaText}>▶ Start lesson</Text>
+          </TouchableOpacity>
+        </Box>
 
-      <Box style={styles.secondaryRow} flexDirection="row" gap={10}>
-        <HomeSecondaryButton label="Course"   icon="🗺️" onPress={() => navigation.navigate(ROUTES.CourseScreen)}         dim={cfg.dimSecondary} />
-        <HomeSecondaryButton label="Review"   icon="🔁" onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}   dim={cfg.dimSecondary} badge={cfg.reviewBadge} />
-        <HomeSecondaryButton label="Progress" icon="⭐" onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)} dim={cfg.dimSecondary} />
-        <HomeSecondaryButton label="Robot"    icon="🤖" onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)} dim={cfg.dimSecondary} />
-      </Box>
+        {/* Streak card */}
+        <Box style={styles.streakCard} flexDirection="row" gap={12} alignItems="center">
+          <Box style={styles.streakIcon}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+          </Box>
+          <Box flex={1}>
+            <Text fontWeight="800" style={styles.streakBig}>1-day streak</Text>
+            <Text fontWeight="700" style={styles.streakSmall}>Keep it going!</Text>
+          </Box>
+        </Box>
+
+        {/* Quick actions */}
+        <Text fontWeight="700" style={styles.quickActionsLabel}>Quick actions</Text>
+        <Box style={styles.quickActionsGrid}>
+          <TouchableOpacity
+            style={styles.qaCard}
+            onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
+            accessibilityRole="button"
+            accessibilityLabel="Browse lessons"
+          >
+            <Text style={styles.qaIcon}>📚</Text>
+            <Text fontWeight="700" style={styles.qaLabel}>Lessons</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.qaCard}
+            onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
+            accessibilityRole="button"
+            accessibilityLabel="Review words"
+          >
+            <Text style={styles.qaIcon}>🔁</Text>
+            <Text fontWeight="700" style={styles.qaLabel}>Review</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.qaCard}
+            onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
+            accessibilityRole="button"
+            accessibilityLabel="View progress"
+          >
+            <Text style={styles.qaIcon}>⭐</Text>
+            <Text fontWeight="700" style={styles.qaLabel}>Progress</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.qaCard}
+            onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
+            accessibilityRole="button"
+            accessibilityLabel="Robot"
+          >
+            <Text style={styles.qaIcon}>🤖</Text>
+            <Text fontWeight="700" style={styles.qaLabel}>Robot</Text>
+          </TouchableOpacity>
+        </Box>
+
+        {/* My Garden card */}
+        <Box style={styles.gardenCard}>
+          <Text fontWeight="800" style={styles.gardenTitle}>My Garden 🌱</Text>
+          <Box style={styles.gardenContent} flexDirection="row" gap={12} alignItems="center">
+            <Box style={styles.gardenAvatar}>
+              <Image source={referenceImages.robotBody} style={styles.gardenAvatarImg} resizeMode="contain" />
+            </Box>
+            <Box flex={1}>
+              <Text fontWeight="800" style={styles.gardenLevel}>Level 1</Text>
+              <Text fontWeight="600" style={styles.gardenSub}>4 seeds · keep watering</Text>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Bottom nav */}
+        <Box style={styles.navContainer}>
+          <Box style={styles.navPill}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Home tab"
+              accessibilityState={{ disabled: true }}
+            >
+              <Box style={styles.navItem}>
+                <Text style={styles.navItemIcon}>🏠</Text>
+                <Text fontWeight="700" style={styles.navItemLabel}>Home</Text>
+              </Box>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
+              accessibilityRole="button"
+              accessibilityLabel="Learn tab"
+            >
+              <Box style={styles.navItem}>
+                <Text style={styles.navItemIcon}>📚</Text>
+                <Text fontWeight="700" style={styles.navItemLabel}>Learn</Text>
+              </Box>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
+              accessibilityRole="button"
+              accessibilityLabel="Garden tab"
+            >
+              <Box style={styles.navItem}>
+                <Text style={styles.navItemIcon}>🌱</Text>
+                <Text fontWeight="700" style={styles.navItemLabel}>Garden</Text>
+              </Box>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
+              accessibilityRole="button"
+              accessibilityLabel="Robot tab"
+            >
+              <Box style={styles.navItem}>
+                <Text style={styles.navItemIcon}>🤖</Text>
+                <Text fontWeight="700" style={styles.navItemLabel}>Robot</Text>
+              </Box>
+            </TouchableOpacity>
+          </Box>
+        </Box>
+      </ScrollView>
     </ScreenShell>
   );
 }
@@ -167,145 +246,221 @@ function navigateHomeCtaTarget(
   navigation.navigate(ROUTES.HomeHubScreen);
 }
 
-function ReferenceDots(): React.JSX.Element {
-  return (
-    <Box pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-      {Array.from({ length: 64 }).map((_, index) => {
-        const row = Math.floor(index / 8);
-        const col = index % 8;
-        return (
-          <Box
-            key={index}
-            style={[
-              styles.dot,
-              {
-                left: 10 + col * 48,
-                top: 28 + row * 70,
-                opacity: row % 2 === 0 ? 0.22 : 0.14,
-              },
-            ]}
-          />
-        );
-      })}
-    </Box>
-  );
-}
-
-function UserIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={8} r={4} />
-      <Path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-    </Svg>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={3} />
-      <Path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" />
-    </Svg>
-  );
-}
-
 const styles = StyleSheet.create({
-  dot: {
-    position: 'absolute',
-    width: 3,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: referenceColors.inkMuted,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 120,
   },
   loadingRobot: {
     width: 190,
     height: 190,
     borderRadius: 95,
   },
-  robotStage: {
-    paddingTop: 116,
-    paddingHorizontal: 24,
-    paddingBottom: 290,
-    gap: 12,
+  headerRow: {
+    paddingVertical: 12,
+    paddingHorizontal: 0,
   },
   greeting: {
-    fontSize: 20,
-    color: referenceColors.ink,
+    fontSize: 18,
+    color: gardenColors.ink,
   },
-  robotWrap: {
+  smallAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  settingsIcon: {
+    fontSize: 24,
+    color: gardenColors.ink,
+  },
+  chipRow: {
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  heroCard: {
+    backgroundColor: gardenColors.paper,
+    borderRadius: gardenRadii.card,
+    padding: 16,
+    marginBottom: 16,
     position: 'relative',
-    width: 272,
-    height: 272,
-    marginTop: 6,
+    overflow: 'hidden',
+  },
+  heroTextWrap: {
+    flex: 1,
+    marginBottom: 12,
+  },
+  eyebrow: {
+    fontSize: 12,
+    color: gardenColors.inkSoft,
+    marginBottom: 4,
+  },
+  heroTitle: {
+    fontSize: 20,
+    color: gardenColors.ink,
+    marginBottom: 4,
+    lineHeight: 22,
+  },
+  heroSubtitle: {
+    fontSize: 13,
+    color: gardenColors.inkSoft,
+    marginBottom: 12,
+  },
+  progressTrack: {
+    height: 4,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: gardenColors.mint,
+  },
+  progressLabel: {
+    fontSize: 12,
+    color: gardenColors.inkSoft,
+  },
+  heroRobotTouchable: {
+    position: 'absolute',
+    right: 0,
+    bottom: -6,
+    height: 150,
+    width: 100,
+  },
+  heroRobot: {
+    height: '100%',
+    width: '100%',
+  },
+  heroCta: {
+    backgroundColor: gardenColors.coral,
+    borderRadius: gardenRadii.cta,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  heroCtaText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  streakCard: {
+    backgroundColor: gardenColors.sun,
+    borderRadius: gardenRadii.card,
+    padding: 14,
+    marginBottom: 16,
+  },
+  streakIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: gardenColors.sun,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  robotWrapGreeting: {
-    transform: [{ translateY: -2 }],
+  streakEmoji: {
+    fontSize: 20,
   },
-  ringOuter: {
-    position: 'absolute',
-    width: 270,
-    height: 270,
-    borderRadius: 135,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,111,0.08)',
-    backgroundColor: 'rgba(255,107,111,0.025)',
+  streakBig: {
+    fontSize: 16,
+    color: gardenColors.ink,
   },
-  ringInner: {
-    position: 'absolute',
-    width: 224,
-    height: 224,
-    borderRadius: 112,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,111,0.12)',
-  },
-  pulseWrap: {
-    position: 'absolute',
-    top: 7,
-    left: 7,
-    right: 7,
-    bottom: 7,
-  },
-  robotImage: {
-    width: 228,
-    height: 228,
-    borderRadius: 114,
-    ...referenceShadow.card,
-  },
-  robotName: {
-    fontSize: 34,
-    color: referenceColors.ink,
-    letterSpacing: 0,
-    marginTop: 0,
-  },
-  tapHint: {
+  streakSmall: {
     fontSize: 12,
-    color: referenceColors.inkSoft,
-    marginTop: -8,
-    textTransform: 'uppercase',
-    letterSpacing: 0,
+    color: gardenColors.inkSoft,
   },
-  moreLessonsLink: {
-    marginTop: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  moreLessonsText: {
+  quickActionsLabel: {
     fontSize: 13,
-    color: referenceColors.primary,
-    textDecorationLine: 'underline',
+    color: gardenColors.inkSoft,
+    marginBottom: 8,
+    marginLeft: 4,
   },
-  primaryCta: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: HOME_HUB_PRIMARY_CTA_BOTTOM,
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
   },
-  secondaryRow: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: HOME_HUB_SECONDARY_ROW_BOTTOM,
+  qaCard: {
+    width: '23%',
+    backgroundColor: gardenColors.paper,
+    borderRadius: gardenRadii.card,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qaIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  qaLabel: {
+    fontSize: 12,
+    color: gardenColors.ink,
+    textAlign: 'center',
+  },
+  gardenCard: {
+    backgroundColor: gardenColors.cream2,
+    borderRadius: gardenRadii.card,
+    padding: 14,
+    marginBottom: 16,
+  },
+  gardenTitle: {
+    fontSize: 12,
+    color: gardenColors.inkSoft,
+    marginBottom: 10,
+  },
+  gardenContent: {
+    alignItems: 'center',
+  },
+  gardenAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: gardenColors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  gardenAvatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  gardenLevel: {
+    fontSize: 13,
+    color: gardenColors.ink,
+  },
+  gardenSub: {
+    fontSize: 11,
+    color: gardenColors.inkSoft,
+  },
+  navContainer: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  navPill: {
+    flexDirection: 'row',
+    backgroundColor: gardenColors.paper,
+    borderRadius: gardenRadii.navpill,
+    height: 78,
+    gap: 0,
+    paddingHorizontal: 8,
+    justifyContent: 'space-around',
+  },
+  navItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  navItemIcon: {
+    fontSize: 18,
+    marginBottom: 2,
+  },
+  navItemLabel: {
+    fontSize: 11,
+    color: gardenColors.ink,
   },
 });

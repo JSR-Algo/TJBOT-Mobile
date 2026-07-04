@@ -2,13 +2,12 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import RmChip from '../components/RmChip';
-import { RM } from '../components/RM';
+import { parentColors, parentRadii, parentShadows } from '@/design-system/tokens';
 import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotStatusScreen'>;
@@ -16,16 +15,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RobotStatusScreen'>;
 export default function RobotStatusScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Robot status" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
+      {/* Hero card with status */}
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard} flexDirection="row" gap={12} alignItems="center">
-          <RobotDevice emotion="happy" size={72} accent="#FF6F61" />
+          <Text style={styles.heroEmoji}>🤖</Text>
           <Box flex={1}>
-            <RmChip>● Everything is working</RmChip>
+            <Box marginBottom={6}>
+              <RmChip>● Everything is working</RmChip>
+            </Box>
             <Text style={styles.heroBody}>Last checked just now. Robot is ready for a lesson.</Text>
           </Box>
         </Box>
       </Box>
 
+      {/* Details section */}
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Details</Text>
         <Box style={styles.rowCard}>
@@ -40,6 +43,7 @@ export default function RobotStatusScreen({ navigation }: Props) {
         </Box>
       </Box>
 
+      {/* Privacy note */}
       <Box paddingHorizontal={16} paddingTop={18} paddingBottom={30}>
         <Box style={styles.noteCard}>
           <Text style={styles.noteText}>
@@ -52,10 +56,46 @@ export default function RobotStatusScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  heroCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, padding: 14 },
-  heroBody: { fontSize: 13, color: RM.ink2, lineHeight: 20, marginTop: 6 },
-  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
-  noteCard: { backgroundColor: '#EEF1F5', borderRadius: 12, padding: 14 },
-  noteText: { fontSize: 12, color: RM.ink2, lineHeight: 20 },
+  heroCard: {
+    backgroundColor: parentColors.blush,
+    borderRadius: parentRadii.hero,
+    padding: 14,
+    ...parentShadows.card,
+  },
+  heroEmoji: {
+    fontSize: 48,
+    flexShrink: 0,
+  },
+  heroBody: {
+    fontSize: 13,
+    color: parentColors.ink1,
+    lineHeight: 20,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    color: parentColors.ink2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    fontWeight: '700',
+  },
+  rowCard: {
+    backgroundColor: parentColors.card,
+    borderWidth: 1,
+    borderColor: parentColors.line,
+    borderRadius: parentRadii.card,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    ...parentShadows.card,
+  },
+  noteCard: {
+    backgroundColor: parentColors.card2,
+    borderRadius: parentRadii.card,
+    padding: 14,
+  },
+  noteText: {
+    fontSize: 12,
+    color: parentColors.ink2,
+    lineHeight: 20,
+  },
 });

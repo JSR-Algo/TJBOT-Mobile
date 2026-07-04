@@ -1,12 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Pressable, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import DeviceShell from '@/components/DeviceShell';
-import DeviceBigBtn from '@/components/DeviceBigBtn';
+import ScreenShell from '@/components/ScreenShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { DV } from '@/components/Device-tokens';
+import { gardenColors, gardenRadii, gardenShadows } from '@/design-system/tokens';
 import { ROUTES } from '@/navigation/routes';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { getDeviceStatus } from '@/services/api/device.api';
@@ -125,30 +124,30 @@ export default function PairRenameScreen({ navigation, route }: Props) {
   };
 
   return (
-    <DeviceShell title="Choose a Buddy">
-      <Box paddingHorizontal={20} paddingTop={18}>
-        <Text style={styles.intro}>
-          Pick the avatar your child will see on Robot's face. <Text fontWeight="600" style={{ color: DV.ink }}>We don't ask for your child's name or photo.</Text>
-        </Text>
+    <ScreenShell>
+      <Box paddingHorizontal={20} paddingTop={16} paddingBottom={0}>
+        <Text fontWeight="600" style={styles.title}>Choose a Buddy</Text>
+        <Text style={styles.subtitle}>We don't ask for your child's name or photo.</Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={20}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Buddy</Text>
-        <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <Text fontWeight="600" style={styles.sectionLabel}>Buddy</Text>
+        <View style={styles.buddyGrid}>
           {BUDDIES.map((b, i) => (
             <TouchableOpacity
               key={b.n}
               style={[styles.buddyBtn, i === buddy && styles.buddyBtnSel]}
               activeOpacity={0.7}
               onPress={() => setBuddy(i)}
+              testID={`buddy-${i}`}
             >
-              <Text style={{ fontSize: 28 }}>{b.ic}</Text>
-              <Text fontWeight="600" style={styles.buddyName}>{b.n}</Text>
+              <Text style={{ fontSize: 24 }}>{b.ic}</Text>
+              <Text style={styles.buddyName}>{b.n}</Text>
             </TouchableOpacity>
           ))}
-        </Box>
+        </View>
       </Box>
-      <Box paddingHorizontal={16} paddingTop={24}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Robot's name (optional)</Text>
+      <Box paddingHorizontal={16} paddingTop={20}>
+        <Text fontWeight="600" style={styles.sectionLabel}>Robot's name (optional)</Text>
         <Pressable
           testID="robot-name-focus-target"
           style={styles.nameCard}
@@ -170,12 +169,22 @@ export default function PairRenameScreen({ navigation, route }: Props) {
             value={displayName}
           />
         </Pressable>
-        <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
+        <Text style={styles.nameHint}>Helpful if you have more than one robot.</Text>
       </Box>
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save & continue'}</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} alignItems="center">
+        <TouchableOpacity
+          style={[styles.ctaButton, saving && styles.ctaButtonDisabled]}
+          onPress={save}
+          disabled={saving}
+          activeOpacity={0.9}
+          testID="save-buddy-btn"
+        >
+          <Text style={styles.ctaText} fontWeight="600">
+            {saving ? 'Saving...' : 'Save & continue'}
+          </Text>
+        </TouchableOpacity>
       </Box>
-    </DeviceShell>
+    </ScreenShell>
   );
 }
 
@@ -189,12 +198,17 @@ function errorCodeFrom(error: unknown, fallback: string): string {
 }
 
 const styles = StyleSheet.create({
-  intro: { fontSize: 14, color: DV.ink2, lineHeight: 22 },
-  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  buddyBtn: { width: '22%', aspectRatio: 1, borderRadius: 14, backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  buddyBtnSel: { backgroundColor: '#FFF1C2', borderWidth: 2, borderColor: '#FF6F61' },
-  buddyName: { fontSize: 10, color: DV.ink },
-  nameCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14, minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  nameInput: { fontSize: 18, color: DV.ink, flex: 1, paddingVertical: 8, minHeight: 48 },
-  nameHint: { fontSize: 12, color: DV.ink3, lineHeight: 22, marginTop: 8 },
+  title: { fontSize: 24, fontWeight: '600', color: gardenColors.ink, marginBottom: 8 },
+  subtitle: { fontSize: 14, color: gardenColors.inkSoft, lineHeight: 22 },
+  sectionLabel: { fontSize: 11, color: gardenColors.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  buddyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
+  buddyBtn: { width: '22%', borderRadius: gardenRadii.chip, backgroundColor: gardenColors.paper, borderWidth: 1, borderColor: gardenColors.line, alignItems: 'center', justifyContent: 'center', padding: 8, gap: 4 },
+  buddyBtnSel: { backgroundColor: gardenColors.sun, borderWidth: 2, borderColor: gardenColors.coral },
+  buddyName: { fontSize: 11, color: gardenColors.ink, fontWeight: '500', marginTop: 4 },
+  nameCard: { backgroundColor: gardenColors.paper, borderWidth: 1, borderColor: gardenColors.line, borderRadius: gardenRadii.card, padding: 14, minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nameInput: { fontSize: 16, color: gardenColors.ink, flex: 1, paddingVertical: 8, minHeight: 48 },
+  nameHint: { fontSize: 12, color: gardenColors.inkMuted, lineHeight: 20, marginTop: 8 },
+  ctaButton: { backgroundColor: gardenColors.coral, borderRadius: gardenRadii.cta, paddingHorizontal: 20, paddingVertical: 14, minWidth: 200, alignItems: 'center', ...gardenShadows.cta },
+  ctaButtonDisabled: { opacity: 0.6 },
+  ctaText: { fontSize: 16, color: gardenColors.paper },
 });

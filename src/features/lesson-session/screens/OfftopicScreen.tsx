@@ -17,7 +17,7 @@ export default function OfftopicScreen({ navigation }: Props) {
     <ScreenShell>
       <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
-        <Robot emotion="happy" size={220} />
+        <Robot emotion="happy" size={140} />
         <SpeechBubble>Oh fun! 🐱{'\n'}Let's stay with the cat for now.</SpeechBubble>
       </Box>
       <Box style={styles.footer}>

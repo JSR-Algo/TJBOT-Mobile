@@ -9,6 +9,7 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { gardenColors } from '@/design-system/tokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivityIntroScreen'>;
 
@@ -16,7 +17,7 @@ const TOTAL = 5;
 
 function ProgressDots({ total, current }: { total: number; current: number }) {
   return (
-    <Box flexDirection="row" gap={8} justifyContent="center">
+    <Box flexDirection="row" gap={10} justifyContent="center">
       {Array.from({ length: total }, (_, i) => (
         <Box
           key={i}
@@ -43,7 +44,7 @@ export default function ActivityIntroScreen({ navigation }: Props) {
         <Box style={styles.activityBadge}>
           <Text fontWeight="700" style={styles.activityBadgeText}>Activity 1 of {TOTAL}</Text>
         </Box>
-        <Robot emotion="happy" size={200} />
+        <Robot emotion="happy" size={120} />
         <Text fontWeight="800" style={styles.title}>Let's name some animals!</Text>
         <Box flexDirection="row" gap={14}>
           {['🐱', '🐶', '🐰'].map(e => (
@@ -52,7 +53,7 @@ export default function ActivityIntroScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)} color="#FF6F61">Start</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)} color={gardenColors.coral}>Start</PrimaryCTA>
       </Box>
     </ScreenShell>
   );
@@ -62,11 +63,11 @@ const styles = StyleSheet.create({
   dotsRow: { position: 'absolute', top: 120, left: 0, right: 0 },
   center: { paddingTop: 160, paddingHorizontal: 24, paddingBottom: 200 },
   activityBadge: { backgroundColor: '#fff', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 999 },
-  activityBadgeText: { fontSize: 14, color: '#FF6F61', textTransform: 'uppercase', letterSpacing: 1 },
-  title: { fontSize: 28, color: '#1A1A1F', textAlign: 'center' },
-  dot: { height: 12, borderRadius: 8 },
+  activityBadgeText: { fontSize: 14, color: gardenColors.coral, textTransform: 'uppercase', letterSpacing: 1 },
+  title: { fontSize: 28, color: gardenColors.ink, textAlign: 'center' },
+  dot: { height: 12, borderRadius: 6 },
   dotDone: { width: 12, backgroundColor: '#7BD389' },
-  dotActive: { width: 28, backgroundColor: '#FF6F61' },
+  dotActive: { width: 28, backgroundColor: gardenColors.coral },
   dotPending: { width: 12, backgroundColor: 'rgba(0,0,0,0.1)' },
   footer: { position: 'absolute', left: 24, right: 24, bottom: 48 },
 });

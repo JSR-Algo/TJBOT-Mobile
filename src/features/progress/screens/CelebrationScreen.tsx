@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import RobotImage from '@/components/RobotImage';
 import PageScroll from '@/design-system/components/PageScroll';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
@@ -39,13 +39,10 @@ export default function CelebrationScreen({ navigation }: Props) {
       </Box>
 
       <Box position="relative" paddingTop={80} paddingHorizontal={24} paddingBottom={16} alignItems="center" gap={14}>
+        <Text style={{ fontSize: 26, letterSpacing: 5 }}>⭐⭐⭐</Text>
+        <RobotImage variant="body" size={180} />
         <Text fontWeight="800" style={styles.hero}>You did it!</Text>
-        <Robot emotion="success" size={240} accent="#FF6F61" />
-        <Box style={styles.msgCard}>
-          <Text fontWeight="700" style={styles.msg}>
-            You finished today's lesson.{'\n'}Great effort speaking out loud!
-          </Text>
-        </Box>
+        <Text style={styles.msg}>You finished today's lesson. Great effort speaking out loud!</Text>
 
         <Box style={styles.stickerCard} flexDirection="row" alignItems="center" gap={14}>
           <Box style={styles.stickerIcon} alignItems="center" justifyContent="center">

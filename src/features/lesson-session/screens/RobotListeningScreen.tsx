@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import RobotImage from '@/components/RobotImage';
 import ScreenShell from '@/components/ScreenShell';
 import LessonHeader from '@/components/LessonHeader';
 import PulseRing from '@/design-system/components/PulseRing';
@@ -28,7 +28,7 @@ export default function RobotListeningScreen({ navigation }: Props) {
         <Box style={styles.pulseWrap} alignItems="center" justifyContent="center">
           <PulseRing size={240} color="#FF6F61" />
           <Box style={StyleSheet.absoluteFillObject} alignItems="center" justifyContent="center">
-            <Robot emotion="listen" size={200} />
+            <RobotImage variant="head" size={150} />
           </Box>
         </Box>
       </Box>

@@ -8,8 +8,8 @@ import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { PR } from '../purchase.local-tokens';
-import RobotHero from '../components/RobotHero';
+import RobotImage from '@/components/RobotImage';
+import { parentColors } from '@/design-system/tokens';
 import { getOrder, type Order } from '@/services/api/purchase.api';
 import { refreshEntitlementsAfterPurchase } from '@/services/api/account';
 import { ROUTES } from '@/navigation/routes';
@@ -91,7 +91,7 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
     <DeviceShell title="Order placed">
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <Box style={styles.checkCircle}>
-          <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={PR.good} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+          <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={parentColors.success} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
             <Path d="M5 12l5 5 9-10" />
           </Svg>
         </Box>
@@ -103,7 +103,7 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.orderTile}>
-          <RobotHero size={84} accent="#FF6F61" halo={false} />
+          <RobotImage variant="body" size={80} />
           <Box flex={1}>
             <Text fontWeight="700" style={styles.orderLabel}>Order #{order.id}</Text>
             <Text fontWeight="600" style={styles.orderTitle}>Robot · Cream</Text>
@@ -125,7 +125,7 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={20}>
         <Box style={styles.emailCard}>
           <Text style={styles.emailText}>
-            We just emailed your receipt to <Text fontWeight="600" style={{ color: PR.ink }}>sarah@example.com</Text>.
+            We just emailed your receipt to <Text fontWeight="600" style={{ color: parentColors.ink }}>sarah@example.com</Text>.
           </Text>
         </Box>
       </Box>
@@ -139,18 +139,18 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  checkCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#E6F4EE', alignItems: 'center', justifyContent: 'center' },
-  heading: { fontSize: 26, color: PR.ink, letterSpacing: -0.4, textAlign: 'center', lineHeight: 30, marginTop: 18 },
-  sub: { fontSize: 14, color: PR.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 8 },
+  checkCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: parentColors.okBg, alignItems: 'center', justifyContent: 'center' },
+  heading: { fontSize: 26, color: parentColors.ink, letterSpacing: -0.4, textAlign: 'center', lineHeight: 30, marginTop: 18 },
+  sub: { fontSize: 14, color: parentColors.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 8 },
   orderTile: {
-    backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 14,
+    backgroundColor: parentColors.card, borderWidth: 1, borderColor: parentColors.line, borderRadius: 14,
     padding: 14, flexDirection: 'row', gap: 12, alignItems: 'center',
   },
-  orderLabel: { fontSize: 11, color: PR.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
-  orderTitle: { fontSize: 14, color: PR.ink, marginTop: 3 },
-  orderSub: { fontSize: 12, color: PR.ink2, marginTop: 2 },
-  sectionLabel: { fontSize: 11, color: PR.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  rowCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
-  emailCard: { backgroundColor: PR.warm, borderRadius: 12, padding: 14 },
-  emailText: { fontSize: 12, color: PR.ink2, lineHeight: 20 },
+  orderLabel: { fontSize: 11, color: parentColors.ink2, textTransform: 'uppercase', letterSpacing: 0.5 },
+  orderTitle: { fontSize: 14, color: parentColors.ink, marginTop: 3 },
+  orderSub: { fontSize: 12, color: parentColors.ink2, marginTop: 2 },
+  sectionLabel: { fontSize: 11, color: parentColors.ink2, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  rowCard: { backgroundColor: parentColors.card, borderWidth: 1, borderColor: parentColors.line, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
+  emailCard: { backgroundColor: parentColors.card2, borderRadius: 12, padding: 14 },
+  emailText: { fontSize: 12, color: parentColors.ink2, lineHeight: 20 },
 });
