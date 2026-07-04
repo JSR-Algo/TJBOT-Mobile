@@ -571,7 +571,11 @@ final class VoiceSessionModule: RCTEventEmitter {
   }
 
   private static func allowsHwAecForCurrentDevice() -> Bool {
-    return !["iPhone12,8", "iPhone13,1"].contains(deviceModelCode())
+    // Keep in sync with VoiceMicModule.aecFallbackModels. iPad mini
+    // (A17 Pro) added 2026-07-04: its speaker route reports
+    // VoiceProcessingIsSupported=false, so pre-arming voiceProcessing
+    // here leaves SharedVoiceEngine dead (mic AND playback silent).
+    return !["iPhone12,8", "iPhone13,1", "iPad16,1", "iPad16,2"].contains(deviceModelCode())
   }
 
   private static func deviceModelCode() -> String {

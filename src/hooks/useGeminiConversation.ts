@@ -316,7 +316,14 @@ export function useGeminiConversation(
             backend: 'native',
             err: String(err),
           });
-          store.getState().setError('Micro không khả dụng.');
+          // Surface the native reject code so on-device failures are
+          // diagnosable from the screen (E_MIC_PERMISSION_DENIED vs
+          // E_MIC_PERMISSION_OR_AUDIO_SESSION vs E_MIC_START behave
+          // very differently) instead of one opaque string.
+          const nativeCode = (err as { code?: string } | null)?.code;
+          store
+            .getState()
+            .setError(`Micro không khả dụng.${nativeCode ? ` (${nativeCode})` : ''}`);
           store.getState().transition('ERROR_RECOVERABLE');
         });
     } catch {

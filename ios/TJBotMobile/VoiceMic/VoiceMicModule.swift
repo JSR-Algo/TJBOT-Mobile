@@ -100,6 +100,13 @@ final class VoiceMicModule: RCTEventEmitter {
   private static let aecFallbackModels: Set<String> = [
     "iPhone12,8",  // iPhone SE (2nd gen)
     "iPhone13,1",  // iPhone 12 mini
+    // iPad mini (A17 Pro): speaker route reports
+    // VoiceProcessingIsSupported=false (device log 2026-07-04);
+    // setVoiceProcessingEnabled(true) makes engine.start() silently
+    // no-op → engineDidNotStart → mic + playback both dead.
+    // Keep in sync with VoiceSessionModule.allowsHwAecForCurrentDevice.
+    "iPad16,1",  // iPad mini (A17 Pro) wifi
+    "iPad16,2",  // iPad mini (A17 Pro) cellular
   ]
 
   // MARK: - State (serial queue guarded)
@@ -341,26 +348,56 @@ final class VoiceMicModule: RCTEventEmitter {
         }
       } catch SharedVoiceEngineError.engineDidNotStart {
         // engine.start() returned without throwing but the engine is
-        // not running. Most common cause on physical iOS devices is a
-        // denied microphone permission — iOS does not raise an error
-        // there; the call silently no-ops, the FSM strands at READY,
-        // and the user sees "Micro không sẵn sàng" with no clue what
-        // to do. Surface a precise, user-actionable rejection so the
-        // hook can render a meaningful message and a triage breadcrumb
-        // is left in os_log.
-        NSLog(
-          "[TJBotVoice-debug] engine.start() silent no-op — likely mic permission denied or AVAudioSession interrupted"
-        )
+        // not running. Two distinct causes share this signature:
+        //   1. mic permission denied — historically the common one, but
+        //      start() is now gated by ensureMicPermission, so when we
+        //      get here permission is GRANTED;
+        //   2. voiceProcessingIO failed to commission — on hardware
+        //      whose route reports VoiceProcessingIsSupported=false
+        //      (seen on iPad mini A17 Pro), engine.start() with
+        //      voiceProcessing=true silently no-ops. The old code
+        //      rejected straight away with a permission-flavored
+        //      message and never tried plain capture.
+        // So: when HW AEC was requested, retry once without
+        // voiceProcessing before surfacing an error.
         os_log(
-          "[A1] engineDidNotStart — engine.start() returned but isRunning=false (mic permission?)",
-          log: self.log, type: .error
+          "[A1] engineDidNotStart voiceProcessing=%{public}@ — trying AEC fallback",
+          log: self.log, type: .error, useHwAec ? "true" : "false"
         )
-        reject(
-          "E_MIC_PERMISSION_OR_AUDIO_SESSION",
-          "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
-          nil
-        )
-        return
+        if useHwAec && SharedVoiceEngine.shared.stopIfIdleForReconfigure() {
+          self.emitAecAttachFailed(
+            reason: "engine_did_not_start_hw_aec",
+            modelCode: modelCode
+          )
+          useHwAec = false
+          self.effectiveAecMode = "off"
+          do {
+            try SharedVoiceEngine.shared.ensureStarted(voiceProcessing: false)
+            os_log("[A1] post-engineDidNotStart fallback ok engineRunning=%{public}@",
+                   log: self.log, type: .default,
+                   SharedVoiceEngine.shared.isRunning() ? "true" : "false")
+          } catch {
+            NSLog(
+              "[TJBotVoice-debug] engine.start() no-op persisted after AEC fallback: \(error)"
+            )
+            reject(
+              "E_MIC_PERMISSION_OR_AUDIO_SESSION",
+              "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
+              error
+            )
+            return
+          }
+        } else {
+          NSLog(
+            "[TJBotVoice-debug] engine.start() silent no-op — likely mic permission denied or AVAudioSession interrupted (no fallback: useHwAec=\(useHwAec))"
+          )
+          reject(
+            "E_MIC_PERMISSION_OR_AUDIO_SESSION",
+            "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
+            nil
+          )
+          return
+        }
       } catch {
         os_log("[A1] ensureStarted FAILED err=%{public}@",
                log: self.log, type: .error, String(describing: error))
@@ -415,22 +452,49 @@ final class VoiceMicModule: RCTEventEmitter {
                nativeFormat.sampleRate, Int(nativeFormat.channelCount))
       } catch SharedVoiceEngineError.engineDidNotStart {
         // engine.start() returned success but the audio unit died
-        // before installInputTap ran (Apple bug, most often denied mic
-        // permission). Same actionable error as the ensureStarted-time
-        // catch — same code path the FSM expects.
-        NSLog(
-          "[TJBotVoice-debug] installInputTap rejected — engine died between start() and tap install"
-        )
+        // before installInputTap ran. Same dual-cause signature as the
+        // ensureStarted-time catch: permission is granted by the time
+        // we get here, so a flaky voiceProcessingIO is the prime
+        // suspect — retry once without voiceProcessing before erroring.
         os_log(
-          "[A1] installInputTap engineDidNotStart — engine flipped to isRunning=false post-start",
-          log: self.log, type: .error
+          "[A1] installInputTap engineDidNotStart voiceProcessing=%{public}@ — trying AEC fallback",
+          log: self.log, type: .error, useHwAec ? "true" : "false"
         )
-        reject(
-          "E_MIC_PERMISSION_OR_AUDIO_SESSION",
-          "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
-          nil
-        )
-        return
+        if useHwAec && SharedVoiceEngine.shared.stopIfIdleForReconfigure() {
+          self.emitAecAttachFailed(
+            reason: "tap_engine_did_not_start_hw_aec",
+            modelCode: modelCode
+          )
+          useHwAec = false
+          self.effectiveAecMode = "off"
+          do {
+            try SharedVoiceEngine.shared.ensureStarted(voiceProcessing: false)
+            nativeFormat = try installInputTap()
+            os_log("[A1] post-tap-engineDidNotStart fallback nativeRate=%{public}f channels=%{public}d",
+                   log: self.log, type: .default,
+                   nativeFormat.sampleRate, Int(nativeFormat.channelCount))
+          } catch {
+            NSLog(
+              "[TJBotVoice-debug] installInputTap still failing after AEC fallback: \(error)"
+            )
+            reject(
+              "E_MIC_PERMISSION_OR_AUDIO_SESSION",
+              "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
+              error
+            )
+            return
+          }
+        } else {
+          NSLog(
+            "[TJBotVoice-debug] installInputTap rejected — engine died between start() and tap install (no fallback: useHwAec=\(useHwAec))"
+          )
+          reject(
+            "E_MIC_PERMISSION_OR_AUDIO_SESSION",
+            "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
+            nil
+          )
+          return
+        }
       } catch {
         os_log("[A1] installInputTap FAILED err=%{public}@",
                log: self.log, type: .error, String(describing: error))
