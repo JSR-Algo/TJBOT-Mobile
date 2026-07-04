@@ -4,6 +4,7 @@ import ParentHistoryScreen from './screens/ParentHistoryScreen';
 import ParentLockedOutScreen from './screens/ParentLockedOutScreen';
 import ParentSafetyScreen from './screens/ParentSafetyScreen';
 import ParentSettingsScreen from './screens/ParentSettingsScreen';
+import ParentDiagnosticLogScreen from './screens/ParentDiagnosticLogScreen';
 import ParentSummaryScreen from './screens/ParentSummaryScreen';
 import ParentTodayScreen from './screens/ParentTodayScreen';
 
@@ -17,5 +18,6 @@ export const SCREEN_MAP = {
   parent_history: ParentHistoryScreen,
   parent_safety: ParentSafetyScreen,
   parent_settings: ParentSettingsScreen,
+  parent_diagnostic_log: ParentDiagnosticLogScreen,
   parent_account_privacy: ParentAccountPrivacyScreen,
 };

@@ -77,13 +77,19 @@ function isRouteParam(segment) {
   return /^:[A-Za-z0-9_]+$/.test(segment) || /^\{[^/]+\}$/.test(segment);
 }
 
+function segmentsMatch(backendSegment, mobileSegment) {
+  const backendIsParam = isRouteParam(backendSegment);
+  const mobileIsParam = isRouteParam(mobileSegment);
+  if (backendIsParam && mobileIsParam) return true;
+  if (backendIsParam || mobileIsParam) return false;
+  return backendSegment === mobileSegment;
+}
+
 function backendPathMatches(pathPattern, mobilePath) {
   const backendSegments = pathSegments(pathPattern);
   const mobileSegments = pathSegments(mobilePath);
   if (backendSegments.length !== mobileSegments.length) return false;
-  return backendSegments.every((segment, index) => (
-    isRouteParam(segment) || isRouteParam(mobileSegments[index]) || segment === mobileSegments[index]
-  ));
+  return backendSegments.every((segment, index) => segmentsMatch(segment, mobileSegments[index]));
 }
 
 function extractMobileCalls() {

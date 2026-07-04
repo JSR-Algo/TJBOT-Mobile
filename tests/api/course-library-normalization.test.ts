@@ -1,5 +1,6 @@
 import client from '@/services/http/client';
 import {
+  enrollCourse,
   getCourseDetail,
   getRobotSyncStatus,
   listLibrary,
@@ -125,5 +126,29 @@ describe('course-library API', () => {
 
     expect(mockedClient.get).not.toHaveBeenCalledWith(expect.stringContaining('/billing'));
     expect(mockedClient.post).not.toHaveBeenCalledWith(expect.stringContaining('/billing'));
+  });
+
+  it('uses local investor-demo library data without a protected backend token', async () => {
+    process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+    try {
+      await expect(listLibrary()).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ courseId: 'c_barn', owned: true }),
+        ]),
+      );
+      await expect(getCourseDetail('c_barn')).resolves.toMatchObject({ courseId: 'c_barn' });
+      await expect(getRobotSyncStatus('c_barn')).resolves.toMatchObject({ courseId: 'c_barn', synced: true });
+      await expect(enrollCourse('c_barn', {
+        childId: 'investor-demo-child',
+        deviceId: 'investor-demo-robot',
+      })).resolves.toMatchObject({
+        enrollment: { courseId: 'c_barn', status: 'ACTIVE' },
+        assignment: { id: 'demo-assignment-ready', state: 'READY' },
+      });
+      expect(mockedClient.get).not.toHaveBeenCalled();
+      expect(mockedClient.post).not.toHaveBeenCalled();
+    } finally {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+    }
   });
 });

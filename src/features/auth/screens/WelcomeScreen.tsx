@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
@@ -7,7 +7,8 @@ import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { referenceColors, referenceImages, referenceShadow } from '@/design-system/referenceTheme';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
+import OnboardingClayRobot from '@/features/onboarding/components/OnboardingClayRobot';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WelcomeScreen'>;
 
@@ -15,15 +16,7 @@ export default function WelcomeScreen({ navigation }: Props) {
   return (
     <ScreenShell bg={referenceColors.bg} testID="welcomeScreen">
       <Box style={styles.content} alignItems="center">
-        <Box style={styles.robotStage} alignItems="center" justifyContent="center">
-          <Box style={styles.robotRing} />
-          <Image
-            source={referenceImages.robotHead}
-            style={styles.robotImage}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-        </Box>
+        <OnboardingClayRobot size={190} showRing testID="welcome-clay-robot" />
         <Text fontWeight="800" style={styles.heroTitle}>Hi! I'm Robot.{'\n'}I help kids talk in English.</Text>
         <Box style={styles.parentNote} flexDirection="row" alignItems="center" gap={10}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -48,17 +41,6 @@ export default function WelcomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   content: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: 94, paddingHorizontal: 28, paddingBottom: 230 },
-  robotStage: { width: 226, height: 226, marginBottom: 4 },
-  robotRing: {
-    position: 'absolute',
-    width: 224,
-    height: 224,
-    borderRadius: 112,
-    backgroundColor: 'rgba(255,107,111,0.045)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,111,0.12)',
-  },
-  robotImage: { width: 190, height: 190, borderRadius: 95, ...referenceShadow.card },
   heroTitle: { fontSize: 32, color: referenceColors.ink, textAlign: 'center', marginTop: 12, lineHeight: 37, letterSpacing: 0 },
   parentNote: {
     marginTop: 22,

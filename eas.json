@@ -18,19 +18,18 @@
       "distribution": "store",
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://tbot-backend-8wmh.onrender.com/v1",
-        "EXPO_PUBLIC_DEMO_SCREEN": "false",
-        "EXPO_PUBLIC_TBOT_API_URL": "https://api.TJBot.io/v1",
-        "EXPO_PUBLIC_TBOT_AI_URL": "https://api.TJBot.io/v1/ai",
-        "EXPO_PUBLIC_WS_URL": "wss://api.TJBot.io"
+        "EXPO_PUBLIC_TBOT_API_URL": "https://tbot-backend-8wmh.onrender.com/v1",
+        "EXPO_PUBLIC_TBOT_AI_URL": "https://tbot-backend-8wmh.onrender.com/v1/ai",
+        "EXPO_PUBLIC_WS_URL": "wss://tbot-backend-8wmh.onrender.com"
       }
     },
     "staging-device": {
       "developmentClient": false,
       "distribution": "internal",
       "env": {
-        "TBOT_API_URL": "https://prerequisite-analysts-luther-review.trycloudflare.com/v1",
-        "TBOT_AI_URL": "https://prerequisite-analysts-luther-review.trycloudflare.com/v1/ai"
+        "EXPO_PUBLIC_TBOT_API_URL": "https://tbot-backend-8wmh.onrender.com/v1",
+        "EXPO_PUBLIC_TBOT_AI_URL": "https://tbot-backend-8wmh.onrender.com/v1/ai",
+        "EXPO_PUBLIC_WS_URL": "wss://tbot-backend-8wmh.onrender.com"
       },
       "ios": {},
       "android": {

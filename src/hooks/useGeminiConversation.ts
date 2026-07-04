@@ -31,6 +31,8 @@ import { useGeminiAudioSession, type SessionResumptionUpdate } from './useGemini
 import { useGeminiPlayback } from './useGeminiPlayback';
 import { useGeminiTimers } from './useGeminiTimers';
 import { useVoiceTelemetry } from './useVoiceTelemetry';
+import { resolveGeminiUserError } from '../services/observability/geminiErrorMessages';
+import { logGeminiEvent } from '../services/observability/diagnosticLog';
 
 const SIMULATOR_CHAT_TIMEOUT_MS = 1500;
 const SIMULATOR_TEST_PROMPT = 'Xin chào! Tớ là bạn mới.';
@@ -319,7 +321,7 @@ export function useGeminiConversation(
         });
     } catch {
       telemetry.track('capture', 'audio_capture_unavailable');
-      store.getState().setError('Micro không khả dụng.');
+      store.getState().setError('Microphone is not available. Close other apps using the mic and try again.');
       store.getState().transition('ERROR_RECOVERABLE');
     }
   }
@@ -404,7 +406,32 @@ export function useGeminiConversation(
   const sessionCallbacks = useMemo(
     () => ({
       onConnected: () => {
-        startAudioCaptureRef.current?.();
+        const promoteReadyToListening = () => {
+          const s = store.getState();
+          if (s.state !== 'READY') return;
+          if (engineReadyRef.current) {
+            engineReadyRef.current = false;
+            s.transition('LISTENING');
+            return;
+          }
+          if (!isCapturingRef.current) return;
+          void VoiceMic.getDiagnostics().then((diag) => {
+            const cur = store.getState();
+            if (cur.state !== 'READY') return;
+            if (
+              diag?.tapInstalled &&
+              diag?.engineRunning &&
+              (diag.framesDelivered ?? 0) > 0
+            ) {
+              cur.transition('LISTENING');
+            }
+          });
+        };
+
+        if (!isCapturingRef.current) {
+          startAudioCaptureRef.current?.();
+        }
+        promoteReadyToListening();
       },
       onDisconnected: (detail: {
         code: number | string | null;
@@ -430,13 +457,14 @@ export function useGeminiConversation(
       }) => {
         stopAudioCaptureRef.current?.();
         playback.interrupt();
-        const shownError =
+        const rawError =
           detail.message ||
           detail.reason ||
-          detail.code ||
           detail.errorString ||
-          'Lỗi kết nối Gemini';
-        store.getState().setError(String(shownError));
+          (detail.code != null ? String(detail.code) : null);
+        const shownError = resolveGeminiUserError(rawError, 'Lỗi kết nối Gemini');
+        logGeminiEvent('live_error', shownError, detail as Record<string, unknown>, 'error');
+        store.getState().setError(shownError);
         store.getState().transition('ERROR_RECOVERABLE');
       },
       onAudioParts: (audioParts: { data: string; index: number }[]) => {
@@ -768,6 +796,18 @@ export function useGeminiConversation(
     (playback.playbackRef.current as { prewarm?: () => Promise<void> } | null)?.prewarm?.().catch(() => {
       /* non-fatal */
     });
+
+    // Leave PREPARING_AUDIO before token fetch / WebSocket connect so the
+    // 8s PREPARING_AUDIO FSM timer does not fire while the network is slow.
+    if (!isReconnect) {
+      transition('CONNECTING');
+    }
+
+    // Warm the native mic while Gemini connects so iPad engineReady does not
+    // miss the READY deadline.
+    if (!isReconnect && VoiceMic.isAvailable) {
+      startAudioCaptureRef.current?.();
+    }
 
     await session.connect(sessionCallbacks, isReconnect);
   }, [store, telemetry, playback, session, sessionCallbacks, wirePlaybackCallbacks]);

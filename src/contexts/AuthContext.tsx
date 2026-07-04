@@ -46,13 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const forceLogout = useCallback(async () => {
     try {
       await clearTokens();
-    } catch {
-      // non-blocking
+    } catch (error) {
+      captureError(error);
     }
     try {
       await deleteSecureItem(SECURE_STORE_KEYS.user);
-    } catch {
-      // non-blocking
+    } catch (error) {
+      captureError(error);
     }
     try {
       await clearLocalPairedDevice();
@@ -118,20 +118,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         if (!user) {
           try {
             user = await getSecureJson<User>(SECURE_STORE_KEYS.user);
-          } catch {
+          } catch (error) {
+            captureError(error);
             user = null;
           }
         } else {
           try {
             await setSecureJson(SECURE_STORE_KEYS.user, user);
-          } catch {
-            // non-blocking
+          } catch (error) {
+            captureError(error);
           }
         }
 
         clearTimeout(timeout);
         setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }));
-      } catch {
+      } catch (error) {
+        captureError(error);
         clearTimeout(timeout);
         setState((s) => ({ ...s, isLoading: false }));
       }
@@ -142,35 +144,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
   const login = async (email: string, password: string) => {
     setState((s) => ({ ...s, error: null }));
-    try {
-      const data = await authApi.login(email, password);
-      // The staging backend's POST /v1/auth/login response does not currently
-      // include a `user` object. Fall back to fetching the authenticated
-      // account so the Profile screen and header avatar always have real data
-      // instead of the `?`/`—` placeholder fallback.
-      let user: User | null = data.user ?? null;
-      if (!user) {
-        try {
-          user = await accountApi.getAccountSummary();
-        } catch {
-          user = null;
+
+    // Exponential backoff retry for timeout/network errors on login POST.
+    // Timeout can occur when Render dyno is cold-starting (~30s) or on slow
+    // network paths. Up to 2 retries with 2-3s delays accommodate these conditions.
+    const maxRetries = 2;
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const data = await authApi.login(email, password);
+        // The staging backend's POST /v1/auth/login response does not currently
+        // include a `user` object. Fall back to fetching the authenticated
+        // account so the Profile screen and header avatar always have real data
+        // instead of the `?`/`—` placeholder fallback.
+        let user: User | null = data.user ?? null;
+        if (!user) {
+          try {
+            user = await accountApi.getAccountSummary();
+          } catch (error) {
+            captureError(error);
+            user = null;
+          }
         }
-      }
-      if (user) {
-        try {
-          await setSecureJson(SECURE_STORE_KEYS.user, user);
-        } catch {
-          // non-blocking
+        if (user) {
+          try {
+            await setSecureJson(SECURE_STORE_KEYS.user, user);
+          } catch (error) {
+            captureError(error);
+          }
+          identifyAnalyticsUser(user.id, user.email);
         }
-        identifyAnalyticsUser(user.id, user.email);
+        trackEvent('mobile.login.success');
+        setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
+        return; // Success — exit retry loop
+      } catch (err) {
+        lastError = err;
+        const normalized = normalizeError(err);
+
+        // Only retry on timeout/network errors; always fail immediately on auth errors
+        const isTimeoutError =
+          typeof normalized.code === 'string' && normalized.code === 'NETWORK_ERROR';
+        const hasMoreRetries = attempt < maxRetries;
+
+        if (!isTimeoutError || !hasMoreRetries) {
+          // Auth error or final retry exhausted — fail and show error
+          setState((s) => ({ ...s, error: normalized.message }));
+          throw err;
+        }
+
+        // Wait before retry: 2^attempt seconds (2s, 4s)
+        const delayMs = Math.pow(2, attempt) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        // Loop continues to next attempt
       }
-      trackEvent('mobile.login.success');
-      setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
-    } catch (err) {
-      const normalized = normalizeError(err);
-      setState((s) => ({ ...s, error: normalized.message }));
-      throw err;
     }
+
+    // Exhausted all retries without success (should not reach here due to throw above)
+    setState((s) => ({
+      ...s,
+      error: normalizeError(lastError).message,
+    }));
+    throw lastError;
   };
 
   const logout = async () => {
@@ -179,8 +214,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     // leave the UI stuck on an authenticated screen.
     try {
       await authApi.logout();
-    } catch {
-      // swallow — local cleanup still runs below
+    } catch (error) {
+      captureError(error);
     }
     await forceLogout();
   };
@@ -196,14 +231,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         let user: User | null = null;
         try {
           user = await accountApi.getAccountSummary();
-        } catch {
+        } catch (error) {
+          captureError(error);
           user = { id: '', email, name };
         }
         if (user) {
           try {
             await setSecureJson(SECURE_STORE_KEYS.user, user);
-          } catch {
-            // non-blocking
+          } catch (error) {
+            captureError(error);
           }
           identifyAnalyticsUser(user.id, user.email);
         }

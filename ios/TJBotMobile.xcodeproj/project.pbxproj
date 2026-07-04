@@ -22,6 +22,7 @@
 		9475E8F4DFB7471291FC40B8 /* VoiceMicModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66995590EE4FB9CD11B21587 /* VoiceMicModule.swift */; };
 		949E32A97359AC868382A1CC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641093E933E3175931169B50 /* ExpoModulesProvider.swift */; };
 		AFC3D3FEF28D45C081262290 /* VoiceMicModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */; };
+		B1C2D3E4F5A60718293A4B5C /* MetroBundlerSession.m in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293A4B5D /* MetroBundlerSession.m */; };
 		D5D4243715E85F02397B186D /* VoiceSessionModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC442A2893028AD18D950524 /* VoiceSessionModuleTests.swift */; };
 		E9F771B944F96C6F72141DCD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */; };
 		F2CEF5C6B9C5FA9EBC000578 /* PcmStreamModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 536EF3757A90E484408046CC /* PcmStreamModule.m */; };
@@ -60,6 +61,7 @@
 		761780EF2CA45674006654EE /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = TJBotMobile/main.m; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = TJBotMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9931D7340BCEDF165A264606 /* VoiceSessionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceSessionModule.m; path = TJBotMobile/VoiceSession/VoiceSessionModule.m; sourceTree = "<group>"; };
+		B1C2D3E4F5A60718293A4B5D /* MetroBundlerSession.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = MetroBundlerSession.m; path = TJBotMobile/MetroBundlerSession/MetroBundlerSession.m; sourceTree = "<group>"; };
 		B3B47F9F1C2E046CC0542C3E /* TJBotMobile-Bridging-Header.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = "TJBotMobile-Bridging-Header.h"; path = "TJBotMobile/TJBotMobile-Bridging-Header.h"; sourceTree = "<group>"; };
 		C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSessionModule.swift; path = TJBotMobile/VoiceSession/VoiceSessionModule.swift; sourceTree = "<group>"; };
 		D783AF6183CE806AE0D29295 /* libPods-TJBotMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TJBotMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,6 +108,7 @@
 				12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */,
 				96EA55884C1DA82D0CEA71AD /* VoiceMic */,
 				373454D9219514033F7FA62A /* PcmStream */,
+				B1C2D3E4F5A60718293A4B5E /* MetroBundlerSession */,
 			);
 			name = TJBotMobile;
 			sourceTree = "<group>";
@@ -201,6 +204,14 @@
 				0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */,
 			);
 			name = VoiceMic;
+			sourceTree = "<group>";
+		};
+		B1C2D3E4F5A60718293A4B5E /* MetroBundlerSession */ = {
+			isa = PBXGroup;
+			children = (
+				B1C2D3E4F5A60718293A4B5D /* MetroBundlerSession.m */,
+			);
+			name = MetroBundlerSession;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -433,6 +444,7 @@
 				AFC3D3FEF28D45C081262290 /* VoiceMicModule.m in Sources */,
 				50E1E75E41D9734678B670F3 /* PcmStreamModule.swift in Sources */,
 				F2CEF5C6B9C5FA9EBC000578 /* PcmStreamModule.m in Sources */,
+				B1C2D3E4F5A60718293A4B5C /* MetroBundlerSession.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -467,8 +479,8 @@
 				CODE_SIGN_ENTITLEMENTS = TJBotMobile/TJBotMobile.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = EG7TK62A7Q;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = B45DG8CLV9;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = TJBotMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -484,7 +496,6 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = net.jasonle.tjbot;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = net.jasonle.tjbot;
 				PRODUCT_NAME = TJBOT;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -504,8 +515,8 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = TJBotMobile/TJBotMobile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = EG7TK62A7Q;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = B45DG8CLV9;
 				INFOPLIST_FILE = TJBotMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -520,7 +531,6 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = net.jasonle.tjbot;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = net.jasonle.tjbot;
 				PRODUCT_NAME = TJBOT;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -538,7 +548,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = EG7TK62A7Q;
+				DEVELOPMENT_TEAM = B45DG8CLV9;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -732,7 +742,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = EG7TK62A7Q;
+				DEVELOPMENT_TEAM = B45DG8CLV9;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -1,5 +1,7 @@
 import client from '@/services/http/client';
 import { attachRequestIdHeader } from '@/services/http/idempotency';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
+import { INVESTOR_DEMO_DEVICE } from '@/demo/investorDemoSeed';
 
 import {
   backendContractUnavailable,
@@ -185,6 +187,10 @@ function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceD
   return devices[0] ?? {};
 }
 
+function cloneDemoDevice(): DeviceStatus {
+  return { ...INVESTOR_DEMO_DEVICE };
+}
+
 export async function startDeviceProvisioning(params: ProvisionStartParams): Promise<ProvisionStartResult> {
   const response = await client.post<ProvisionStartResult>('/devices/provision/start', {
     serialNumber: params.serialNumber,
@@ -267,6 +273,10 @@ export async function completeDeviceProvisioning(params: CompleteDeviceProvision
 // matches (single robot, no childId, or backend not yet surfacing the binding —
 // see residual). Pass-through deviceIds (a real device id) ignore childId.
 export async function getDeviceStatus(deviceId: string, childId?: string): Promise<DeviceStatus> {
+  if (isInvestorDemoEnabled() && (deviceId === 'primary' || deviceId === INVESTOR_DEMO_DEVICE.id)) {
+    const device = cloneDemoDevice();
+    return childId && childId !== device.assignedChildProfileId ? { ...device, id: '' } : device;
+  }
   if (deviceId === 'primary') {
     const response = await client.get<DeviceDto[] | { data?: DeviceDto[] }>('/devices/household/me');
     const payload = response.data;

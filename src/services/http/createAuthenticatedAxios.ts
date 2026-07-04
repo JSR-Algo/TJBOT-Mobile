@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } 
 import { getAccessToken, invalidateAccessTokenCache } from './tokens';
 import { normalizeError, type AppError } from '../../utils/errors';
 import { newRequestId } from './idempotency';
+import { logApiFailure, diagnosticLog } from '../observability/diagnosticLog';
 import {
   isRefreshing,
   setRefreshing,
@@ -148,6 +149,43 @@ export function createAuthenticatedAxios(
       }
 
       const normalized = withRetryMetadata(normalizeError(error), status);
+      const url = typeof originalRequest.url === 'string' ? originalRequest.url : undefined;
+      // TEMPORARY DIAGNOSTICS: when there is NO HTTP status the request never
+      // reached the server (timeout / DNS / TLS / connection refused / offline).
+      // normalizeError collapses all of these to a generic NETWORK_ERROR, losing
+      // the one signal that tells them apart: the raw axios `code`
+      // (ECONNABORTED = timeout vs ERR_NETWORK = could-not-connect) and message.
+      // Capture them verbatim as an `error` entry so the direct-Telegram relay
+      // reports the exact cause. Remove with the temporary diagnostics layer
+      // (docs/TEMP-DIAGNOSTICS-REMOVAL.md).
+      if (status === undefined) {
+        const raw = error as { code?: string; message?: string; cause?: unknown };
+        diagnosticLog({
+          severity: 'error',
+          category: 'api',
+          event: 'transport_failure',
+          message: `${raw.code ?? 'NETWORK'}: ${raw.message ?? 'request failed'} → ${
+            originalRequest.method?.toUpperCase() ?? '?'
+          } ${url ?? '?'}`,
+          detail: {
+            axiosCode: raw.code,
+            rawMessage: raw.message,
+            cause: raw.cause === undefined ? undefined : String(raw.cause),
+            method: originalRequest.method,
+            url,
+            baseURL,
+            timeoutMs: originalRequest.timeout,
+          },
+        });
+      }
+      logApiFailure(
+        originalRequest.method,
+        url,
+        status,
+        normalized.code,
+        normalized.message,
+        normalized.traceId,
+      );
       return Promise.reject(normalized);
     },
   );

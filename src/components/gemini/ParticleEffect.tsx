@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 const PARTICLE_COUNT = 6;
 const COLORS = ['#F9A8D4', '#FDE68A', '#A78BFA', '#6EE7B7', '#93C5FD', '#FCA5A5'];
@@ -9,36 +10,17 @@ interface ParticleProps {
   reduceMotion?: boolean;
 }
 
-function Particle({ color, delay }: { color: string; delay: number }) {
-  const translateY = useRef(new Animated.Value(0)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    const xTarget = (Math.random() - 0.5) * 80;
-    const anim = Animated.sequence([
-      Animated.delay(delay),
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: -60, duration: 1200, useNativeDriver: true }),
-        Animated.timing(translateX, { toValue: xTarget, duration: 1200, useNativeDriver: true }),
-      ]),
-      Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
-    ]);
-    anim.start();
-    return () => anim.stop();
-  }, [delay, opacity, scale, translateY, translateX]);
-
+function Particle({ color, index }: { color: string; index: number }) {
+  const xTarget = (index - (PARTICLE_COUNT - 1) / 2) * 14;
+  const yTarget = -34 - index * 4;
   return (
     <Animated.View
       style={[
         styles.particle,
         {
           backgroundColor: color,
-          opacity,
-          transform: [{ translateY }, { translateX }, { scale }],
+          opacity: 0.85,
+          transform: [{ translateX: xTarget }, { translateY: yTarget }, { scale: 1 }],
         },
       ]}
     />
@@ -54,7 +36,7 @@ export function ParticleEffect({ active, reduceMotion = false }: ParticleProps) 
         <Particle
           key={i}
           color={COLORS[i % COLORS.length]}
-          delay={i * 100}
+          index={i}
         />
       ))}
     </View>

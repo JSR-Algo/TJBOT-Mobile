@@ -6,7 +6,7 @@ import type { NavigationDeepLinkTarget } from './linking';
 import { RootStackNavigator } from './RootStackNavigator';
 import type { RootStackParamList } from './routes';
 
-const navigationRef = createNavigationContainerRef<RootStackParamList>();
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 function targetRouteIsMounted(target: NavigationDeepLinkTarget): boolean {
   if (!navigationRef.isReady()) return false;

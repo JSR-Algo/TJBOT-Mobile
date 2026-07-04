@@ -41,6 +41,6 @@ describe('PasswordInput', () => {
     const wrapper = UNSAFE_getByType(View);
     const flatStyle = wrapper.props.style?.flat?.() ?? wrapper.props.style;
     const styleStr = JSON.stringify(flatStyle);
-    expect(styleStr).toContain('#C0392B');
+    expect(styleStr).toContain('#F95F50');
   });
 });

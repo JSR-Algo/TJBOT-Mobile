@@ -7,15 +7,89 @@ import ScreenShell from '@/components/ScreenShell';
 import WaveBars from '@/design-system/components/WaveBars';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonSessionActor } from '../sessionContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ConnectingScreen'>;
+type SessionRoute =
+  | typeof ROUTES.GreetingScreen
+  | typeof ROUTES.ReconnectingScreen
+  | typeof ROUTES.AudioErrorScreen;
+
+function createIdempotencyKey(): string {
+  return `lesson-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export default function ConnectingScreen({ navigation }: Props) {
+  const actor = useLessonSessionActor();
+  const lastNavigatedRouteRef = React.useRef<SessionRoute | null>(null);
+  const sessionBootstrapRef = React.useRef(false);
+
   React.useEffect(() => {
-    const t = setTimeout(() => navigation.navigate(ROUTES.GreetingScreen), 1800);
-    return () => clearTimeout(t);
-  }, [navigation]);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const maybeEmitSessionStarted = () => {
+      if (!isInvestorDemoEnabled()) return;
+      if (sessionBootstrapRef.current || !actor.getSnapshot().matches('CONNECTING')) return;
+      sessionBootstrapRef.current = true;
+      timer = setTimeout(() => {
+        actor.send({
+          type: 'SESSION_STARTED',
+          sessionId: 'demo-session',
+          deviceSessionId: 'demo-device-session',
+        });
+      }, 600);
+    };
+
+    const snapshot = actor.getSnapshot();
+    if (snapshot.matches('IDLE')) {
+      actor.send({ type: 'START_SESSION', idempotencyKey: createIdempotencyKey() });
+    } else {
+      maybeEmitSessionStarted();
+    }
+
+    const subscription = actor.subscribe(() => {
+      maybeEmitSessionStarted();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (timer) clearTimeout(timer);
+    };
+  }, [actor]);
+
+  React.useEffect(() => {
+    const routeForState = (value: unknown): SessionRoute | null => {
+      if (value === 'RECONNECTING') return ROUTES.ReconnectingScreen;
+      if (value === 'AUDIO_FAILED') return ROUTES.AudioErrorScreen;
+      if (typeof value === 'object' && value !== null && 'ACTIVE' in value) {
+        return ROUTES.GreetingScreen;
+      }
+      return null;
+    };
+
+    const navigateToRoute = (route: SessionRoute) => {
+      if (route === ROUTES.GreetingScreen) {
+        navigation.navigate(ROUTES.GreetingScreen);
+      } else if (route === ROUTES.ReconnectingScreen) {
+        navigation.navigate(ROUTES.ReconnectingScreen);
+      } else {
+        navigation.navigate(ROUTES.AudioErrorScreen);
+      }
+    };
+
+    const syncRoute = (snapshot: { value: unknown }) => {
+      const nextRoute = routeForState(snapshot.value);
+      if (!nextRoute || lastNavigatedRouteRef.current === nextRoute) return;
+      lastNavigatedRouteRef.current = nextRoute;
+      navigateToRoute(nextRoute);
+    };
+
+    syncRoute(actor.getSnapshot());
+    const subscription = actor.subscribe(syncRoute);
+    return () => subscription.unsubscribe();
+  }, [actor, navigation]);
 
   return (
     <ScreenShell bg="#E8F4FF">

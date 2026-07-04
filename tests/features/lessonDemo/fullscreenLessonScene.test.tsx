@@ -21,6 +21,7 @@ describe('FullscreenLessonScene', () => {
 
     expect(screen.getByTestId('fullscreen-lesson-scene')).toBeTruthy();
     expect(screen.getByTestId('mock-video-view')).toBeTruthy();
+    expect(screen.getByTestId('fullscreen-clay-robot')).toBeTruthy();
     expect(screen.getByText(step.prompt)).toBeTruthy();
   });
 });

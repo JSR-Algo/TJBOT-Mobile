@@ -5,6 +5,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveOwnedApiRoot } from './runtime/owned-backend-url.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const envPath = path.join(repoRoot, '.env');
@@ -19,8 +20,7 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const apiRoot = (env.TBOT_API_URL || 'https://tbot-backend-8wmh.onrender.com/v1').replace(/\/+$/, '');
-const apiBase = /\/v\d+$/.test(apiRoot) ? apiRoot : `${apiRoot}/v1`;
+const apiBase = resolveOwnedApiRoot(env);
 
 async function check(label, url, init) {
   const started = Date.now();

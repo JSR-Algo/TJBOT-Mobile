@@ -10,12 +10,14 @@ export interface StyledTextProps extends TextProps {
   color?: string;
   fontWeight?: '400' | '500' | '600' | '700' | '800';
   textAlign?: 'auto' | 'left' | 'right' | 'center' | 'justify';
+  lineHeight?: number;
+  letterSpacing?: number;
   i18n?: boolean;
   i18nPersona?: TranslationPersona;
 }
 
 export const Text = memo(function Text({
-  variant, color, fontWeight, textAlign, style, children, i18n = true, i18nPersona = 'parent', ...rest
+  variant, color, fontWeight, textAlign, lineHeight, letterSpacing, style, children, i18n = true, i18nPersona = 'parent', ...rest
 }: StyledTextProps) {
   useAppLanguage();
   const fontSize = variant ? tokens.typography.fontSizes[variant] : undefined;
@@ -23,11 +25,13 @@ export const Text = memo(function Text({
   return (
     <RNText
       style={[
-        { fontFamily: 'Nunito' },
+        { fontFamily: tokens.typography.fonts.kid },
         fontSize !== undefined && { fontSize },
         color !== undefined && { color },
         fontWeight !== undefined && { fontWeight },
         textAlign !== undefined && { textAlign },
+        lineHeight !== undefined && { lineHeight },
+        letterSpacing !== undefined && { letterSpacing },
         style,
       ]}
       {...rest}

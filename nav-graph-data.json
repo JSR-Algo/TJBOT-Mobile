@@ -216,6 +216,12 @@
       "g": "Robot Device",
       "kind": "happy"
     },
+    "dv_pair_qr_scan": {
+      "f": "src/features/device/pairing/screens/PairQrScanScreen.tsx",
+      "title": "Robot · Pair · QR scan",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
     "dv_pair_intro": {
       "f": "src/features/device/pairing/screens/PairIntroScreen.tsx",
       "title": "Robot · Pair · turn on",
@@ -231,6 +237,12 @@
     "dv_pair_rename": {
       "f": "src/features/device/pairing/screens/PairRenameScreen.tsx",
       "title": "Robot · Pair · rename & buddy",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
+    "dv_pair_child": {
+      "f": "src/features/device/pairing/screens/PairChildProfileScreen.tsx",
+      "title": "Robot · Pair · child profile",
       "g": "Robot Device",
       "kind": "happy"
     },
@@ -529,6 +541,12 @@
       "title": "Parent Settings",
       "g": "Parent",
       "kind": "happy"
+    },
+    "parent_diagnostic_log": {
+      "f": "src/features/parent/screens/ParentDiagnosticLogScreen.tsx",
+      "title": "Diagnostic Log",
+      "g": "Parent",
+      "kind": "edge"
     },
     "parent_stopped": {
       "f": "src/features/lesson-session/screens/ParentStoppedScreen.tsx",
@@ -830,6 +848,24 @@
       "g": "Lesson Demo",
       "kind": "happy"
     },
+    "lesson_pick": {
+      "f": "src/features/lessonDemo/screens/LessonPickScreen.tsx",
+      "title": "Lesson Demo · Pick a lesson",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "robot_companion": {
+      "f": "src/features/lessonDemo/screens/RobotCompanionScreen.tsx",
+      "title": "Lesson Demo · Robot companion",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "robot_fullscreen_lesson": {
+      "f": "src/features/lessonDemo/screens/RobotFullscreenLessonScreen.tsx",
+      "title": "Lesson Demo · Fullscreen lesson",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
     "parent_lesson_summary": {
       "f": "src/features/lessonDemo/screens/ParentLessonSummaryScreen.tsx",
       "title": "Lesson Demo · Parent Summary",
@@ -936,6 +972,7 @@
       "parent_locked_out",
       "parent_safety",
       "parent_settings",
+      "parent_diagnostic_log",
       "parent_summary",
       "parent_today"
     ],
@@ -983,9 +1020,11 @@
       "dv_pair_failed",
       "dv_pair_first_lesson",
       "dv_pair_found",
+      "dv_pair_qr_scan",
       "dv_pair_intro",
       "dv_pair_offline",
       "dv_pair_rename",
+      "dv_pair_child",
       "dv_pair_search",
       "dv_pair_success",
       "dv_pair_wifi",
@@ -1016,7 +1055,10 @@
       "lesson_demo_roadmap",
       "lesson_demo_session",
       "lesson_demo_showcase",
+      "lesson_pick",
       "parent_lesson_summary",
+      "robot_companion",
+      "robot_fullscreen_lesson",
       "robot_lesson_control"
     ]
   },

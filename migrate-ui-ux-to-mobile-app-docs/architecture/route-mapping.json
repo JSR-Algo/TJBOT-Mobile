@@ -1,6 +1,6 @@
 {
   "generated": "2026-05-12",
-  "routeCount": 131,
+  "routeCount": 135,
   "navigators": {
     "AuthNavigator": "unauthenticated auth routes",
     "OnboardingNavigator": "authenticated setup routes before protected app",
@@ -557,6 +557,39 @@
       "backTarget": "LessonDemoHomeScreen",
       "stateMachineId": "robot_lesson_control"
     },
+    "LessonPickScreen": {
+      "feature": "lesson-demo",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-demo/lesson-pick",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "lesson_pick"
+    },
+    "RobotCompanionScreen": {
+      "feature": "lesson-demo",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-demo/robot-companion",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "robot_companion"
+    },
+    "RobotFullscreenLessonScreen": {
+      "feature": "lesson-demo",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "lesson-demo/robot-fullscreen-lesson",
+      "backTarget": "RobotCompanionScreen",
+      "stateMachineId": "robot_fullscreen_lesson"
+    },
     "ConnectingScreen": {
       "feature": "lesson-session",
       "rootBranch": "protected",
@@ -565,6 +598,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/connecting",
+      "forwardCycleGroup": "lesson-summary-loop",
       "stateMachineId": "connecting"
     },
     "GreetingScreen": {
@@ -585,6 +619,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/lesson-ready",
+      "forwardCycleGroup": "lesson-summary-loop",
       "stateMachineId": "lesson_ready"
     },
     "RobotListeningScreen": {
@@ -670,6 +705,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/lesson-done",
+      "forwardCycleGroup": "lesson-summary-loop",
       "stateMachineId": "lesson_done"
     },
     "ExitConfirmScreen": {
@@ -832,6 +868,7 @@
       "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "progress/lesson-summary",
+      "forwardCycleGroup": "lesson-summary-loop",
       "stateMachineId": "lesson_summary"
     },
     "ReviewNeededScreen": {
@@ -919,6 +956,17 @@
       "deepLinkPath": "parent/parent-settings",
       "backTarget": "ParentSummaryScreen",
       "stateMachineId": "parent_settings"
+    },
+    "ParentDiagnosticLogScreen": {
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-diagnostic-log",
+      "backTarget": "ParentSettingsScreen",
+      "stateMachineId": "parent_diagnostic_log"
     },
     "ParentAccountPrivacyScreen": {
       "feature": "parent",
@@ -1045,7 +1093,6 @@
       "backBehavior": "stack-back",
       "deepLinkPath": "device/pair-child-profile",
       "backTarget": "PairRenameScreen",
-      "forwardCycleGroup": "device-pairing-retry",
       "stateMachineId": "dv_pair_child"
     },
     "PairWifiScreen": {

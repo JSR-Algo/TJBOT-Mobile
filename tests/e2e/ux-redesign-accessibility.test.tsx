@@ -317,11 +317,12 @@ describe('mobile UX redesign accessibility coverage', () => {
   it('requires Bluetooth before scanning when Wi-Fi is ready', async () => {
     bleMocks.initializeBle.mockResolvedValue({ permission: 'granted', available: false, reason: 'Bluetooth is off.' });
 
-    render(<PairSearchScreen navigation={navigation as never} route={{ params: undefined } as never} />);
+    const screen = render(<PairSearchScreen navigation={navigation as never} route={{ params: undefined } as never} />);
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+    await waitFor(() => expect(screen.getByText('Turn on Bluetooth')).toBeTruthy());
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'BLE_POWERED_OFF',
-    }));
+    });
     expect(bleMocks.scanForTJBotDevices).not.toHaveBeenCalled();
   });
 

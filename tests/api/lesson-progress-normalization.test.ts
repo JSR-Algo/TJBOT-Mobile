@@ -1,5 +1,6 @@
 import client from '@/services/http/client';
 import {
+  getChildLessonProgress,
   getChildProgress,
   normalizeChildProgressPayload,
   normalizeProgressSummaryPayload,
@@ -75,5 +76,23 @@ describe('US-006 S11 — aggregate child progress (M3 surface-b)', () => {
     mockedClient.get.mockResolvedValueOnce({ data: { data: { childId: 'ch-1', summary: {}, byCourse: [] } } });
     await getChildProgress('ch-1');
     expect(mockedClient.get).toHaveBeenCalledWith('/learning/children/ch-1/progress');
+  });
+
+  it('uses local investor-demo progress without a protected backend token', async () => {
+    process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+    try {
+      await expect(getChildProgress('investor-demo-child')).resolves.toMatchObject({
+        childId: 'investor-demo-child',
+        lessonsCompleted: expect.any(Number),
+      });
+      await expect(getChildLessonProgress('investor-demo-child')).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ childId: 'investor-demo-child', lessonTitle: expect.any(String) }),
+        ]),
+      );
+      expect(mockedClient.get).not.toHaveBeenCalled();
+    } finally {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+    }
   });
 });

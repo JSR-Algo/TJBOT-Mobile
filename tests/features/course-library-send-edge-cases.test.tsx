@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
 import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
 import {
@@ -63,11 +64,14 @@ function navigationFor() {
 }
 
 function renderSend(navigation = navigationFor()) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <SendToRobotScreen
-      navigation={navigation as never}
-      route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
-    />,
+    <QueryClientProvider client={queryClient}>
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />
+    </QueryClientProvider>,
   );
   return navigation;
 }

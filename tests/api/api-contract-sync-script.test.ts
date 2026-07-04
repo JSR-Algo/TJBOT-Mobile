@@ -39,6 +39,22 @@ describe('api contract sync audit script', () => {
     expect(audit.apiMismatchTable).toEqual([]);
   });
 
+  it('does not false-match literal backend segments against mobile :param wildcards', () => {
+    const stdout = execFileSync(
+      process.execPath,
+      [
+        path.join(process.cwd(), 'scripts/api-contract-sync.mjs'),
+        '--json',
+        '--no-write',
+      ],
+      { cwd: process.cwd(), encoding: 'utf8' },
+    );
+    const audit = JSON.parse(stdout) as AuditJson;
+    const missingPaths = audit.missingBackendEndpoints.map((entry) => entry.path);
+    expect(missingPaths).not.toContain('/v1/devices/:param/assignments');
+    expect(missingPaths).not.toContain('/v1/devices/:param/preload-status');
+  });
+
   it('reports SYNCED when endpoint inventory and contract shapes align', () => {
     const stdout = execFileSync(
       process.execPath,

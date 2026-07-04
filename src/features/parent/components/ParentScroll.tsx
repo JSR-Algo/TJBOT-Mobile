@@ -5,15 +5,18 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
+// redesign-2026: parent lane aligned to Wispr-Flow (kit.css .lane-parent /
+// DESIGN.md §8). Off-white surface, charcoal ink, purple accent. Single source
+// for all 9 parent/ screens.
 export const PA = {
-  bg: '#F5F5F2',
+  bg: '#F5F5F0',
   card: '#FFFFFF',
-  ink: '#1A1A1F',
+  ink: '#1C1C1E',
   ink2: '#5A5A66',
-  ink3: '#8B8B96',
-  hair: 'rgba(0,0,0,0.07)',
-  accent: '#2A6FDB',
-  good: '#1F8A5B',
+  ink3: '#8E8E93',
+  hair: 'rgba(28,28,30,0.08)',
+  accent: '#6B4EFF',
+  good: '#34C759',
   warn: '#A06900',
 } as const;
 

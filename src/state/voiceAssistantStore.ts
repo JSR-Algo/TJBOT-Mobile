@@ -160,19 +160,19 @@ export const FSM_TIMER_TABLE: Partial<Record<VoiceState, FsmTimerConfig>> = {
   PREPARING_AUDIO: {
     deadlineMs: 4000,
     fallbackState: 'ERROR_RECOVERABLE',
-    errorMessage: 'Khởi động micro chậm.',
+    errorMessage: 'Microphone is taking too long to start. Tap the robot button to try again.',
     metricEvent: 'voice.fsm.timeout',
   },
   CONNECTING: {
     deadlineMs: 10_000,
     fallbackState: 'ERROR_RECOVERABLE',
-    errorMessage: 'Kết nối Gemini quá chậm.',
+    errorMessage: 'Robot voice is taking too long to connect. Check Wi‑Fi and try again.',
     metricEvent: 'voice.fsm.timeout',
   },
   READY: {
     deadlineMs: 2000,
     fallbackState: 'ERROR_RECOVERABLE',
-    errorMessage: 'Micro không sẵn sàng.',
+    errorMessage: 'Microphone is not ready yet. Close other apps using the mic, then tap the robot button.',
     metricEvent: 'voice.fsm.timeout',
   },
   USER_SPEAKING: {

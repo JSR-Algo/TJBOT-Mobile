@@ -15,6 +15,12 @@ import * as SecureStore from 'expo-secure-store';
 import { initAnalytics, setAnalyticsUserRole } from './services/observability/analytics';
 import { initSentry, setSentryUserRole } from './services/observability/sentry';
 import { startVoiceTelemetry } from './services/observability/voice-telemetry';
+import { installDiagnosticHooks } from './services/observability/installDiagnosticHooks';
+import { installDiagnosticErrorRelay } from './services/observability/installDiagnosticErrorRelay';
+import { DiagnosticCaptureRoot } from './components/DiagnosticCaptureRoot';
+import { DiagnosticErrorBanner } from './components/DiagnosticErrorBanner';
+import { DiagnosticOverlayButton } from './components/DiagnosticOverlayButton';
+import { LessonSessionHost } from './features/lesson-session/LessonSessionHost';
 import { useLoadAppLanguagePreference } from './services/i18n/i18n';
 
 type ResolvedRole = 'child' | 'teen' | 'adult' | 'unknown';
@@ -52,21 +58,33 @@ function AppInner(): React.JSX.Element {
   usePushNotifications();
 
   useEffect(() => {
+    const stopDiagnostics = installDiagnosticHooks();
+    const stopErrorRelay = installDiagnosticErrorRelay();
     // Subscribe native voice-stack events to Sentry breadcrumbs (sys-16).
     // Safe in dev/sim where the native modules are absent — idempotent
     // and tears down its listeners on unmount.
-    const stop = startVoiceTelemetry();
-    return stop;
+    const stopVoice = startVoiceTelemetry();
+    return () => {
+      stopVoice();
+      stopErrorRelay();
+      stopDiagnostics();
+    };
   }, []);
 
   return (
-    <HouseholdProvider>
-      <ParentSessionProvider>
-        <InteractionProvider>
-          <AppNavigator />
-        </InteractionProvider>
-      </ParentSessionProvider>
-    </HouseholdProvider>
+    <DiagnosticCaptureRoot>
+      <LessonSessionHost>
+        <HouseholdProvider>
+          <ParentSessionProvider>
+            <InteractionProvider>
+              <AppNavigator />
+              <DiagnosticErrorBanner />
+              <DiagnosticOverlayButton />
+            </InteractionProvider>
+          </ParentSessionProvider>
+        </HouseholdProvider>
+      </LessonSessionHost>
+    </DiagnosticCaptureRoot>
   );
 }
 

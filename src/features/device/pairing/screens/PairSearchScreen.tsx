@@ -30,11 +30,13 @@ interface RobotCandidate {
 }
 
 type SearchState = 'searching' | 'choosing' | 'provisioning';
+type SearchBlocker = 'bluetoothOff' | null;
 const MAX_BLE_DISCOVERY_ATTEMPTS = 3;
 
 export default function PairSearchScreen({ navigation, route }: Props) {
   const cancelledRef = React.useRef(false);
   const [searchState, setSearchState] = React.useState<SearchState>('searching');
+  const [searchBlocker, setSearchBlocker] = React.useState<SearchBlocker>(null);
   const [candidates, setCandidates] = React.useState<RobotCandidate[]>([]);
   const reconnectMode = route.params?.reconnectMode === true;
 
@@ -133,6 +135,10 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       });
       if (cancelledRef.current) return;
       if (!bootstrap?.available) {
+        if (bootstrap?.permission === 'poweredOff' || bootstrap?.reason === 'Bluetooth is off.') {
+          setSearchBlocker('bluetoothOff');
+          return;
+        }
         navigation.navigate(ROUTES.PairFailedScreen, {
           errorCode: bleBootstrapErrorCode(bootstrap, bleBootstrapFailed),
         });
@@ -213,6 +219,27 @@ export default function PairSearchScreen({ navigation, route }: Props) {
     cancelledRef.current = true;
     navigation.navigate(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
   }, [navigation]);
+
+  const retryBluetoothSearch = React.useCallback(() => {
+    setSearchBlocker(null);
+    navigation.replace(ROUTES.PairSearchScreen, route.params);
+  }, [navigation, route.params]);
+
+  if (searchBlocker === 'bluetoothOff') {
+    return (
+      <DeviceShell title="Bluetooth is off" onBack={cancelSearchToIntro}>
+        <Box paddingTop={40} paddingHorizontal={24} paddingBottom={30} alignItems="center" gap={16}>
+          <Text fontWeight="600" style={styles.heading}>Turn on Bluetooth</Text>
+          <Text style={styles.sub}>
+            Bluetooth is off. Enable it in Control Center or Settings, then try pairing again.
+          </Text>
+          <TouchableOpacity onPress={retryBluetoothSearch} style={{ marginTop: 20 }}>
+            <Text fontWeight="500" style={styles.link}>Try again</Text>
+          </TouchableOpacity>
+        </Box>
+      </DeviceShell>
+    );
+  }
 
   if (searchState === 'choosing') {
     return (
@@ -358,7 +385,7 @@ function bleBootstrapErrorCode(
 
 function logDevPairSearchEvent(message: string, payload: Record<string, unknown>): void {
   if (__DEV__) {
-    console.info(`[TBOT PairSearch] ${message}`, payload);
+    console.info('[TBOT PairSearch]', message, payload);
   }
 }
 

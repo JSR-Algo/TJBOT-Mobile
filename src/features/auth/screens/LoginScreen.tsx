@@ -268,7 +268,7 @@ export default function LoginScreen(_: Props) {
         ) : null}
 
         <OnbBigBtn
-          testID="authSubmitButton"
+          testID="submitButton"
           onClick={onSubmit}
           disabled={submitting || resetSending || isLoading}
         >

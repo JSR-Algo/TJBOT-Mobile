@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import {
   Animated,
-  Image,
   ImageBackground,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import ClayRobotScreen from '@/components/ClayRobotScreen';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { referenceImages } from '@/design-system/referenceTheme';
 import PulseRing from '@/design-system/components/PulseRing';
@@ -107,11 +107,11 @@ export function FullscreenLessonScene({
           </View>
         ) : null}
         <Animated.View style={{ transform: [{ scale: robotScale }] }}>
-          <Image
-            source={referenceImages.robotHead}
-            style={{ width: robotSize, height: robotSize, borderRadius: robotSize / 2 }}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
+          <ClayRobotScreen
+            mood={step.robotState}
+            size={robotSize}
+            isSpeaking={isSpeaking}
+            testID="fullscreen-clay-robot"
           />
         </Animated.View>
       </View>

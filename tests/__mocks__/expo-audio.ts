@@ -19,4 +19,9 @@ export const createAudioPlayer = jest.fn(() => ({
 }));
 
 export const setAudioModeAsync = jest.fn().mockResolvedValue(undefined);
+export const getRecordingPermissionsAsync = jest.fn().mockResolvedValue({
+  granted: true,
+  status: 'granted',
+  canAskAgain: true,
+});
 export const requestRecordingPermissionsAsync = jest.fn().mockResolvedValue({ granted: false });

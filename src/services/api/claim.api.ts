@@ -192,7 +192,7 @@ export interface BootstrapConfig {
   apiUrl: string;
   espServerUrl: string;
   otaUrl: string;
-  /** Realtime WebSocket URL — consume this; never construct a ws:// by hand. */
+  /** Realtime WebSocket URL — consume this; never hardcode the scheme by hand. */
   wsUrl: string;
   pairing: BootstrapPairingConfig;
 }

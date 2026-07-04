@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -63,6 +63,8 @@ function Bar({ color, active, delay, barHeight }: { color: string; active: boole
   );
 }
 
+const MemoBar = React.memo(Bar);
+
 export default function WaveBars({
   count = 14,
   color = tokens.colors.coral,
@@ -72,6 +74,10 @@ export default function WaveBars({
   accessibilityLabel,
 }: WaveBarsProps) {
   const animateActive = active && !reduceMotion;
+  const barDelays = useMemo(
+    () => Array.from({ length: count }, (_, i) => Math.round((i * 0.07 % 1) * 1000)),
+    [count],
+  );
   return (
     <Box
       flexDirection="row"
@@ -80,12 +86,12 @@ export default function WaveBars({
       accessibilityLabel={accessibilityLabel}
       style={{ height }}
     >
-      {Array.from({ length: count }).map((_, i) => (
-        <Bar
+      {barDelays.map((delay, i) => (
+        <MemoBar
           key={i}
           color={color}
           active={animateActive}
-          delay={Math.round((i * 0.07 % 1) * 1000)}
+          delay={delay}
           barHeight={height}
         />
       ))}

@@ -2,8 +2,9 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
 import WaveBars from '@/design-system/components/WaveBars';
+import { referenceColors } from '@/design-system/referenceTheme';
+import OnboardingClayRobot from '@/features/onboarding/components/OnboardingClayRobot';
 import IntroFrame from '../components/IntroFrame';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -22,12 +23,12 @@ export default function IntroSpeakScreen({ navigation }: Props) {
       body="Robot replies out loud, so kids hear how words really sound."
       illo={(
         <Box style={styles.illoWrap} flexDirection="row" alignItems="center" justifyContent="center" gap={14}>
-          <Robot emotion="speak" size={160} accent="#7BD389" />
+          <OnboardingClayRobot size={140} />
           <Box gap={8}>
             <Box style={styles.bubble}>
               <Text fontWeight="700" style={styles.bubbleText}>"Hello!"</Text>
             </Box>
-            <WaveBars count={8} color="#7BD389" height={26} />
+            <WaveBars count={8} color={referenceColors.primary} height={26} />
           </Box>
         </Box>
       )}

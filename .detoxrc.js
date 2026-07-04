@@ -20,11 +20,6 @@ const ANDROID_API_URL = process.env.E2E_ANDROID_API_URL || 'http://10.0.2.2:3000
 const ANDROID_AI_URL = process.env.E2E_ANDROID_AI_URL || 'http://10.0.2.2:3001/api/ai';
 const ANDROID_WS_URL = process.env.E2E_ANDROID_WS_URL;
 
-process.env.TBOT_API_URL = IOS_API_URL;
-process.env.TBOT_AI_URL = IOS_AI_URL;
-
-const metroConfig = require('./metro.config.js'); // eslint-disable-line @typescript-eslint/no-unused-vars
-
 /** @type {Detox.DetoxConfig} */
 module.exports = {
   testRunner: {
@@ -42,7 +37,7 @@ module.exports = {
       binaryPath:
         'ios/build/Build/Products/Debug-iphonesimulator/TJBotMobile.app',
       build:
-        `TBOT_API_URL=${IOS_API_URL} TBOT_AI_URL=${IOS_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true xcodebuild -workspace ios/TJBotMobile.xcworkspace -scheme TJBotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- -destination 'generic/platform=iOS Simulator'`,
+        `EXPO_PUBLIC_TBOT_API_URL=${IOS_API_URL} EXPO_PUBLIC_TBOT_AI_URL=${IOS_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true xcodebuild -workspace ios/TJBotMobile.xcworkspace -scheme TJBotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- -destination 'generic/platform=iOS Simulator'`,
       launchArgs: {
         TBOT_API_URL: IOS_API_URL,
         TBOT_AI_URL: IOS_AI_URL,
@@ -54,7 +49,7 @@ module.exports = {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
       build:
-        `cd android && TBOT_API_URL=${ANDROID_API_URL} TBOT_AI_URL=${ANDROID_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug -Pe2eBundleDebug=true && cd ..`,
+        `cd android && EXPO_PUBLIC_TBOT_API_URL=${ANDROID_API_URL} EXPO_PUBLIC_TBOT_AI_URL=${ANDROID_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug -Pe2eBundleDebug=true && cd ..`,
       reversePorts: [8081],
       launchArgs: {
         TBOT_API_URL: ANDROID_API_URL,

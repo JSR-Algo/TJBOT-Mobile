@@ -13,13 +13,13 @@ describe('main tab active state', () => {
     expect(containerStyle).toEqual(
       expect.objectContaining({
         backgroundColor: colors.primaryLight,
-        borderColor: colors.primary,
+        borderColor: 'rgba(255,107,111,0.18)',
       }),
     );
 
     const icon = screen.getByTestId('icon-Home');
     expect(icon.props.color).toBe(colors.primary);
-    expect(icon.props.strokeWidth).toBe(2.75);
+    expect(icon.props.strokeWidth).toBe(2.8);
   });
 
   it('keeps inactive tab icons muted without the selected indicator', () => {
@@ -35,6 +35,6 @@ describe('main tab active state', () => {
 
     const icon = screen.getByTestId('icon-Home');
     expect(icon.props.color).toBe(colors.textMuted);
-    expect(icon.props.strokeWidth).toBe(2);
+    expect(icon.props.strokeWidth).toBe(2.2);
   });
 });

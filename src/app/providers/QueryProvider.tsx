@@ -21,12 +21,44 @@ function isClientError(error: unknown): boolean {
   return false;
 }
 
-function routeQueryError(error: unknown, kind: 'query' | 'mutation'): void {
-  if (__DEV__) {
-    console.error('[QueryProvider] %s error:', kind, error);
+function hasExpectedQueryErrorCode(error: unknown): boolean {
+  if (error == null || typeof error !== 'object') return false;
+  const code = (error as Record<string, unknown>).code;
+  return (
+    code === 'INVALID_CREDENTIALS' ||
+    code === 'NETWORK_ERROR' ||
+    code === 'RATE_LIMIT_EXCEEDED' ||
+    code === 'SERVICE_UNAVAILABLE' ||
+    code === 'GATEWAY_TIMEOUT'
+  );
+}
+
+function isExpectedQueryError(error: unknown): boolean {
+  if (isClientError(error) || hasExpectedQueryErrorCode(error)) return true;
+  if (error instanceof Error && error.message === 'No refresh token') return true;
+  return false;
+}
+
+function describeQueryError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error != null && typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const code = typeof record.code === 'string' ? record.code : undefined;
+    const status = typeof record.status === 'number' ? record.status : undefined;
+    return [code, status].filter(Boolean).join(':') || 'object';
   }
-  // Skip logging expected client/configuration errors; still let callers handle them.
-  if (isClientError(error)) return;
+  return String(error);
+}
+
+function routeQueryError(error: unknown, kind: 'query' | 'mutation'): void {
+  const expected = isExpectedQueryError(error);
+  if (__DEV__) {
+    const log = expected ? console.info : console.error;
+    log('[QueryProvider] %s %s:', kind, expected ? 'handled error' : 'unexpected error', describeQueryError(error));
+  }
+  // Skip capture for expected screen-level API/auth/network states; callers own
+  // the visible fallback. Unexpected failures still go to Sentry and dev logs.
+  if (expected) return;
   captureError(error);
 }
 
@@ -46,6 +78,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       networkMode: 'online',
+      gcTime: process.env.NODE_ENV === 'test' ? 0 : undefined,
       retry: defaultRetry,
     },
     mutations: {

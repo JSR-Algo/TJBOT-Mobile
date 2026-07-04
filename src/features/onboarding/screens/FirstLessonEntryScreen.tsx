@@ -3,8 +3,8 @@ import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
+import OnboardingClayRobot from '../components/OnboardingClayRobot';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
@@ -34,7 +34,7 @@ export default function FirstLessonEntryScreen(_props: Props) {
         <Text fontWeight="700" style={styles.parentText}>Hand the phone to your child</Text>
       </Box>
       <Box style={styles.hero} alignItems="center">
-        <Robot emotion="greet" size={220} accent="#FF6F61" />
+        <OnboardingClayRobot size={190} showRing />
         <SpeechBubble>Hi there!{'\n'}Want to play?</SpeechBubble>
         <Box style={styles.timePill}>
           <Text fontWeight="700" style={styles.timePillText}>About 3 minutes · headphones if you have them</Text>

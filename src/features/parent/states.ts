@@ -6,5 +6,6 @@ export const STATES = [
   { id: 'parent_history', title: 'Past 30 Days', group: 'Parent', kind: 'happy' },
   { id: 'parent_safety', title: 'Safety & Privacy', group: 'Parent', kind: 'happy' },
   { id: 'parent_settings', title: 'Parent Settings', group: 'Parent', kind: 'happy' },
+  { id: 'parent_diagnostic_log', title: 'Diagnostic Log', group: 'Parent', kind: 'edge' },
   { id: 'parent_account_privacy', title: 'Account Privacy', group: 'Parent', kind: 'edge' },
 ] as const;

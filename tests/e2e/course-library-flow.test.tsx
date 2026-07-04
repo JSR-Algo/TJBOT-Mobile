@@ -12,7 +12,6 @@ import {
   getCourses,
   getCurrentAssignment,
   getRobotSyncStatus,
-  unlockCourse,
   enrollCourse,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
@@ -45,7 +44,6 @@ jest.mock('@/contexts/HouseholdContext', () => ({
   useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } })),
 }));
 
-const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockedEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;

@@ -1,3 +1,7 @@
+// Unit tests default to the normal app path. Investor-demo mode is exercised by
+// dedicated tests that mock the flag explicitly.
+process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+
 // Silence React Navigation warnings in tests
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
@@ -42,6 +46,13 @@ jest.mock('react-native-gesture-handler', () => ({
 jest.mock('react-native-screens', () => ({
   enableScreens: jest.fn(),
 }));
+
+jest.mock('expo-linear-gradient', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const LinearGradient = (props: Record<string, unknown>) => React.createElement(View, props);
+  return { LinearGradient };
+});
 
 // Inline manual mock for react-native-reanimated (the package's own /mock
 // entry uses ES imports that jest can't transform). No-ops everything.

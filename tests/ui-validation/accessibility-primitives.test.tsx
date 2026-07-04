@@ -70,7 +70,7 @@ describe('design-system accessibility primitives', () => {
 
     expect(enabled).toContain('"accessibilityRole":"button"');
     expect(enabled).toContain('"accessibilityLabel":"Connect Robot"');
-    expect(enabled).toContain('"minHeight":52');
+    expect(enabled).toContain('"minHeight":58');
     expect(disabled).toContain('"accessibilityState":{"disabled":true}');
     expect(disabled).toContain('"accessibilityLabel":"Connecting..."');
   });

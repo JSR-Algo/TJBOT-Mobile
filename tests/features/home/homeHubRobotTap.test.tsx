@@ -30,14 +30,14 @@ describe('HomeHub robot tap', () => {
     jest.clearAllMocks();
   });
 
-  it('launches the fullscreen barn lesson with voice enabled', () => {
+  it('opens companion chat before the barn lesson', () => {
     const screen = render(
       <HomeHubScreen navigation={navigation as never} route={{ key: 'home', name: ROUTES.HomeHubScreen }} />,
     );
 
-    fireEvent.press(screen.getByLabelText('Talk to Robot and start barn lesson'));
+    fireEvent.press(screen.getByLabelText('Talk to Robot before barn lesson'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotFullscreenLessonScreen, {
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotCompanionScreen, {
       lessonId: 'w01-d01-barn-say-it',
       ageBand: '4-6',
       autoStartVoice: true,

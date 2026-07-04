@@ -341,7 +341,7 @@ final class VoiceMicModule: RCTEventEmitter {
         )
         reject(
           "E_MIC_PERMISSION_OR_AUDIO_SESSION",
-          "Microphone unavailable — check Settings → TJBotMobile → Microphone, then reopen the app",
+          "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
           nil
         )
         return
@@ -411,7 +411,7 @@ final class VoiceMicModule: RCTEventEmitter {
         )
         reject(
           "E_MIC_PERMISSION_OR_AUDIO_SESSION",
-          "Microphone unavailable — check Settings → TJBotMobile → Microphone, then reopen the app",
+          "Microphone unavailable — check Settings → TJBot → Microphone, then reopen the app",
           nil
         )
         return

@@ -1,0 +1,18 @@
+diff --git a/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js b/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js
+index 3f40772..c7e4fab 100644
+--- a/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js
++++ b/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js
+@@ -134,8 +134,11 @@ function withWebPolyfills(config, { getMetroBundler }) {
+         return [
+             ...polyfills,
+             ...virtualModulesPolyfills,
+-            // Removed on server platforms during the transform.
+-            require.resolve('expo/virtual/streams.js')
++            // PATCH (TJBot): expo/virtual/streams.js polyfill removed. Its inline
++            // UMD helpers transform into require() calls that crash Hermes with
++            // "[runtime not ready]: Property 'require' doesn't exist" before the
++            // module registry loads. RN 0.83 + Hermes provides streams natively.
++            // Re-apply after any node_modules reinstall (see metro.config.js note).
+         ];
+     };
+     return {

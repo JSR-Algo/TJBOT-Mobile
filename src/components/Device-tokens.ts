@@ -17,5 +17,5 @@ export const DV = {
   hair: referenceColors.line,
   accent: referenceColors.primary,
   good: referenceColors.success,
-  warn: '#D98E2B',
+  warn: referenceColors.gold,
 } as const;

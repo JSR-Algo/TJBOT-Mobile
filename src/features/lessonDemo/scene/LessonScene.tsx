@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { RobotBody } from '../../../components/robot/RobotBody';
+import ClayRobotScreen from '@/components/ClayRobotScreen';
 import { colors, radius, spacing, typography } from '../../../theme';
 import type { LessonSession, LessonStep } from '../types';
 import { resolveLessonSceneScript, type LessonSceneScript } from './lessonSceneScript';
@@ -123,7 +123,7 @@ export function LessonScene({
         <GrassParallax />
 
         <View style={styles.robotStage}>
-          <TeeBotSprite script={script} disableAnimations={__disableAnimations || reducedMotion} />
+          <TeeBotSprite script={script} />
         </View>
 
         <Animated.View
@@ -180,27 +180,15 @@ function GrassParallax(): React.JSX.Element {
   );
 }
 
-function TeeBotSprite({
-  script,
-  disableAnimations,
-}: {
-  script: LessonSceneScript;
-  disableAnimations: boolean;
-}): React.JSX.Element {
+function TeeBotSprite({ script }: { script: LessonSceneScript }): React.JSX.Element {
   return (
     <View style={styles.robotWrap} testID={`lesson-scene-teebot-${script.robotPose}`}>
-      <RobotBody
-        motion={script.robotMotion}
-        bodyColor="#F7F7F1"
-        size={150}
-        __disableAnimations={disableAnimations}
+      <ClayRobotScreen
+        mood={script.robotPose}
+        size={148}
+        isSpeaking={script.robotPose === 'point' || script.robotPose === 'wave'}
+        testID={`lesson-scene-clay-${script.robotPose}`}
       />
-      <View style={styles.facePlate} pointerEvents="none">
-        <View style={styles.eye} />
-        <View style={styles.eye} />
-        <View style={styles.mouth} />
-      </View>
-      <View style={styles.chestGlow} pointerEvents="none" />
     </View>
   );
 }
@@ -401,46 +389,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-  facePlate: {
-    position: 'absolute',
-    top: 38,
-    left: 47,
-    width: 64,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#071116',
-    borderWidth: 1,
-    borderColor: '#DDE7EA',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  eye: {
-    width: 13,
-    height: 13,
-    borderRadius: 7,
-    backgroundColor: '#28F4F4',
-  },
-  mouth: {
-    position: 'absolute',
-    bottom: 6,
-    width: 10,
-    height: 5,
-    borderBottomWidth: 2,
-    borderBottomColor: '#28F4F4',
-    borderRadius: 8,
-  },
-  chestGlow: {
-    position: 'absolute',
-    bottom: 34,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#28F4F4',
-    borderWidth: 3,
-    borderColor: '#B8FFFF',
-  },
+
   petStage: {
     position: 'absolute',
     right: 36,

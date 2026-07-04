@@ -56,9 +56,10 @@ interface RobotProps {
   color?: string;
   accent?: string;
   accessibilityLabel?: string;
+  reduceMotion?: boolean;
 }
 
-export default function Robot({ emotion = 'idle', size = 220, color, accessibilityLabel }: RobotProps) {
+export default function Robot({ emotion = 'idle', size = 220, color, accessibilityLabel, reduceMotion = false }: RobotProps) {
   const cfg = CONFIGS[emotion] ?? CONFIGS.idle;
   const W = size;
   const bodyColor = color ?? tokens.colors.bot.body;
@@ -82,6 +83,12 @@ export default function Robot({ emotion = 'idle', size = 220, color, accessibili
     bodyY.value = 0;
     bodyRotate.value = 0;
     antennaRotate.value = 0;
+
+    if (reduceMotion) {
+      glowOpacity.value = cfg.glow === 'on' ? 0.45 : 0.25;
+      glowScale.value = 1;
+      return;
+    }
 
     if (cfg.bodyAnim === 'bob') {
       bodyY.value = withRepeat(withSequence(
@@ -129,7 +136,7 @@ export default function Robot({ emotion = 'idle', size = 220, color, accessibili
       ), -1, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- animation re-runs only on emotion change; cfg derives from emotion and shared values are stable refs
-  }, [emotion]);
+  }, [emotion, reduceMotion]);
 
   const bodyStyle = useAnimatedStyle(() => ({
     transform: [

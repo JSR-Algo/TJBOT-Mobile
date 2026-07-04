@@ -3,6 +3,7 @@ import { DevSettings, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components';
 import theme from '@/design-system/tokens/legacy-semantic';
 import { captureError } from './sentry';
+import { diagnosticLog } from './diagnosticLog';
 
 interface RootErrorBoundaryProps {
   children: React.ReactNode;
@@ -21,6 +22,13 @@ export class RootErrorBoundary extends React.Component<RootErrorBoundaryProps, R
 
   componentDidCatch(error: Error): void {
     captureError(error);
+    diagnosticLog({
+      severity: 'error',
+      category: 'runtime',
+      event: 'react_boundary',
+      message: error.message,
+      detail: { name: error.name },
+    });
   }
 
   private handleRestart = (): void => {

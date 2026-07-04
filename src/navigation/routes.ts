@@ -16,6 +16,12 @@ export type LessonSessionParams = {
   resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect';
 };
 
+export type RobotLessonDemoParams = {
+  lessonId?: string;
+  ageBand?: import('@/features/lessonDemo/types').LessonAgeBand;
+  autoStartVoice?: boolean;
+};
+
 export type RootStackParamList = {
   // auth
   LoginScreen: undefined;
@@ -90,11 +96,8 @@ export type RootStackParamList = {
   ParentLessonSummaryScreen: undefined | { lessonId?: string; ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
   RobotLessonControlScreen: undefined | { deviceId?: string; lessonId?: string; sessionIndex?: number };
   LessonPickScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
-  RobotFullscreenLessonScreen: undefined | {
-    lessonId?: string;
-    ageBand?: import('@/features/lessonDemo/types').LessonAgeBand;
-    autoStartVoice?: boolean;
-  };
+  RobotCompanionScreen: undefined | RobotLessonDemoParams;
+  RobotFullscreenLessonScreen: undefined | RobotLessonDemoParams;
 
   // lesson-session
   ConnectingScreen: undefined | LessonSessionParams;
@@ -136,6 +139,7 @@ export type RootStackParamList = {
   ParentHistoryScreen: undefined;
   ParentSafetyScreen: undefined;
   ParentSettingsScreen: undefined;
+  ParentDiagnosticLogScreen: undefined;
   ParentAccountPrivacyScreen: undefined;
   ParentLockedOutScreen: undefined;
 
@@ -246,6 +250,7 @@ export const ROUTES = {
   'ParentLessonSummaryScreen': 'ParentLessonSummaryScreen',
   'RobotLessonControlScreen': 'RobotLessonControlScreen',
   'LessonPickScreen': 'LessonPickScreen',
+  'RobotCompanionScreen': 'RobotCompanionScreen',
   'RobotFullscreenLessonScreen': 'RobotFullscreenLessonScreen',
   'ConnectingScreen': 'ConnectingScreen',
   'GreetingScreen': 'GreetingScreen',
@@ -282,6 +287,7 @@ export const ROUTES = {
   'ParentHistoryScreen': 'ParentHistoryScreen',
   'ParentSafetyScreen': 'ParentSafetyScreen',
   'ParentSettingsScreen': 'ParentSettingsScreen',
+  'ParentDiagnosticLogScreen': 'ParentDiagnosticLogScreen',
   'ParentAccountPrivacyScreen': 'ParentAccountPrivacyScreen',
   'ParentLockedOutScreen': 'ParentLockedOutScreen',
   'PairIntroScreen': 'PairIntroScreen',

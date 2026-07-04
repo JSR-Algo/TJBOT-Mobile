@@ -25,6 +25,7 @@ const mockGetAccountSummary = jest.fn<Promise<User>, []>(async () => {
 const mockResetAnalytics = jest.fn();
 const mockLogin = jest.fn<Promise<{ user?: User }>, [string, string]>();
 const mockClearLocalPairedDevice = jest.fn<Promise<void>, []>(async () => undefined);
+const mockCaptureError = jest.fn<void, [unknown]>();
 
 jest.mock('../../src/services/http/client', () => ({
   setAuthInvalidatedHandler: (handler: (() => void) | null) => mockSetAuthInvalidatedHandler(handler),
@@ -53,6 +54,10 @@ jest.mock('../../src/services/observability/analytics', () => ({
   identifyAnalyticsUser: jest.fn(),
   resetAnalytics: () => mockResetAnalytics(),
   trackEvent: jest.fn(),
+}));
+
+jest.mock('../../src/services/observability/sentry', () => ({
+  captureError: (error: unknown) => mockCaptureError(error),
 }));
 
 jest.mock('../../src/features/device/pairing/localPairedDevice', () => ({
@@ -129,6 +134,59 @@ describe('AuthContext auth invalidation handler', () => {
     expect(mockDeleteSecureItem).toHaveBeenCalledWith('TJBot_user');
     expect(mockClearLocalPairedDevice).toHaveBeenCalled();
     expect(mockResetAnalytics).toHaveBeenCalled();
+  });
+
+  it('captures cleanup failures without blocking local auth invalidation', async () => {
+    const clearTokensError = new Error('token cleanup failed');
+    const deleteUserError = new Error('cached user cleanup failed');
+    const pairedDeviceError = new Error('paired device cleanup failed');
+    mockClearTokens.mockRejectedValueOnce(clearTokensError);
+    mockDeleteSecureItem.mockRejectedValueOnce(deleteUserError);
+    mockClearLocalPairedDevice.mockRejectedValueOnce(pairedDeviceError);
+
+    const { getByTestId } = render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('auth-state').props.children).toBe('AUTH');
+    });
+
+    await act(async () => {
+      mockAuthInvalidatedHandler?.();
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('auth-state').props.children).toBe('NO_AUTH');
+    });
+    expect(mockResetAnalytics).toHaveBeenCalled();
+    expect(mockCaptureError).toHaveBeenCalledWith(clearTokensError);
+    expect(mockCaptureError).toHaveBeenCalledWith(deleteUserError);
+    expect(mockCaptureError).toHaveBeenCalledWith(pairedDeviceError);
+  });
+
+  it('captures cached profile write failures while keeping the hydrated session usable', async () => {
+    const profile: User = {
+      id: 'user-from-api',
+      email: 'parent@example.test',
+      name: 'Parent',
+    };
+    const cacheError = new Error('secure cache write failed');
+    mockGetAccountSummary.mockResolvedValueOnce(profile);
+    mockSetSecureJson.mockRejectedValueOnce(cacheError);
+
+    const { getByTestId } = render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('auth-state').props.children).toBe('AUTH');
+    });
+    expect(mockCaptureError).toHaveBeenCalledWith(cacheError);
   });
 
   it('clears local auth state when stored token is rejected during hydration', async () => {

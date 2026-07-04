@@ -222,7 +222,13 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         <PRow icon="🗑" label="Delete child's data" value="Unavailable" chevron isLast />
       </PRowGroup>
 
-      <PRowGroup header="Support">
+      <PRowGroup header="Support" footer="Errors auto-send a screenshot and log to Telegram via the VPS. Open Diagnostic log to resend manually.">
+        <PRow
+          icon="🩺"
+          label="Diagnostic log"
+          chevron
+          onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen as never)}
+        />
         <PRow icon="?" label="Help center" value="Unavailable" chevron />
         <PRow icon="✉" label="Contact support" value="Unavailable" chevron />
         <PRow icon="ⓘ" label="About Robot English" value="Unavailable" chevron />

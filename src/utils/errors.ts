@@ -24,6 +24,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   GATEWAY_TIMEOUT: 'The server took too long to respond. Please try again.',
   SERVICE_UNAVAILABLE: 'Service is temporarily unavailable. Please try again later.',
   INTERNAL_ERROR: 'Something went wrong on our end. Please try again.',
+  GEMINI_KEY_LEAKED:
+    'Google disabled the server Gemini API key (reported leaked). Rotate GOOGLE_GEMINI_API_KEY on Render.',
   NETWORK_ERROR: 'Check your internet connection and try again.',
   UNKNOWN_ERROR: 'An unexpected error occurred. Please try again.',
   AUTH_TOKEN_MISSING: 'Your session is missing. Please sign in again.',
@@ -143,7 +145,9 @@ function isTransportFailureMessage(message: string): boolean {
     message.includes('Network Error') ||
     message.includes('ECONNREFUSED') ||
     message.includes('ENOTFOUND') ||
-    message.includes('timeout')
+    message.includes('timeout') ||
+    message.includes('ECONNABORTED') ||
+    message.includes('ETIMEDOUT')
   );
 }
 

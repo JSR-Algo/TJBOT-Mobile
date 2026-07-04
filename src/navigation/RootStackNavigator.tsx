@@ -2,9 +2,10 @@ import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHousehold } from '@/contexts/HouseholdContext';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
 import { colors } from '@/design-system/tokens/legacy-semantic';
 import AgeScreen from '@/navigation/AgeScreen';
-import { readAgeAnswer, type AgeAnswer } from '@/features/onboarding/ageGate';
+import { readAgeAnswer, roleForAgeBand, type AgeAnswer } from '@/features/onboarding/ageGate';
 import { AuthNavigator } from './AuthNavigator';
 import { PENDING_DEVICE_SETUP_ROUTE, PROTECTED_DEFAULT_ROUTE } from './featureRegistry';
 import { ModalNavigator } from './ModalNavigator';
@@ -21,6 +22,7 @@ type AgeGateState =
   | { status: 'answered'; answer: AgeAnswer };
 
 export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): React.JSX.Element {
+  const investorDemo = isInvestorDemoEnabled();
   const { isAuthenticated, isLoading } = useAuth();
   const {
     isLoading: householdLoading,
@@ -28,9 +30,21 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
     pendingDeviceSetup,
     protectedInitialRoute = PROTECTED_DEFAULT_ROUTE,
   } = useHousehold();
-  const [ageGate, setAgeGate] = React.useState<AgeGateState>({ status: 'loading' });
+  const [ageGate, setAgeGate] = React.useState<AgeGateState>(
+    investorDemo
+      ? {
+          status: 'answered',
+          answer: {
+            band: '18_PLUS',
+            role: roleForAgeBand('18_PLUS'),
+            answeredAt: '2026-06-20T00:00:00.000Z',
+          },
+        }
+      : { status: 'loading' },
+  );
 
   React.useEffect(() => {
+    if (investorDemo) return undefined;
     let cancelled = false;
     readAgeAnswer().then(
       (answer) => {
@@ -45,7 +59,20 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [investorDemo]);
+
+  if (investorDemo) {
+    const initialTarget: NavigationDeepLinkTarget = pendingDeepLinkTarget ?? {
+      name: PROTECTED_DEFAULT_ROUTE,
+    };
+    return (
+      <ModalNavigator
+        key="protected-investor-demo"
+        initialRouteName={initialTarget.name}
+        initialRouteParams={initialTarget.params}
+      />
+    );
+  }
 
   if (ageGate.status === 'loading' || isLoading || (isAuthenticated && householdLoading)) {
     return (

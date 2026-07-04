@@ -1,5 +1,11 @@
 import client from '@/services/http/client';
 import type { AssignmentState } from '@/services/api/course-library.api';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
+import {
+  INVESTOR_DEMO_ASSIGNMENTS,
+  INVESTOR_DEMO_CHILD,
+  INVESTOR_DEMO_CHILD_PROGRESS,
+} from '@/demo/investorDemoSeed';
 
 export interface TodayProgress {
   minutesDone: number;
@@ -169,7 +175,21 @@ export function normalizeChildProgressPayload(payload: unknown): ChildProgress {
   };
 }
 
+function isInvestorDemoChild(childId: string): boolean {
+  return isInvestorDemoEnabled() && childId === INVESTOR_DEMO_CHILD.id;
+}
+
+function cloneChildProgress(progress: ChildProgress): ChildProgress {
+  return {
+    ...progress,
+    byCourse: progress.byCourse.map((course) => ({ ...course })),
+  };
+}
+
 export async function getChildProgress(childId: string): Promise<ChildProgress> {
+  if (isInvestorDemoChild(childId)) {
+    return cloneChildProgress(INVESTOR_DEMO_CHILD_PROGRESS);
+  }
   const response = await client.get(`/learning/children/${childId}/progress`);
   return normalizeChildProgressPayload(response.data);
 }
@@ -242,7 +262,14 @@ export function normalizeChildLessonProgressPayload(payload: unknown): Assignmen
   return Array.isArray(rows) ? rows.map(normalizeAssignmentProgress) : [];
 }
 
+function cloneAssignmentProgress(assignments: readonly AssignmentProgress[]): AssignmentProgress[] {
+  return assignments.map((assignment) => ({ ...assignment }));
+}
+
 export async function getChildLessonProgress(childId: string): Promise<AssignmentProgress[]> {
+  if (isInvestorDemoChild(childId)) {
+    return cloneAssignmentProgress(INVESTOR_DEMO_ASSIGNMENTS);
+  }
   const response = await client.get(`/children/${childId}/lesson-progress`);
   return normalizeChildLessonProgressPayload(response.data);
 }

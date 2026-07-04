@@ -9,9 +9,11 @@ import { useRef, useCallback, useMemo } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai/web';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import { Config } from '../config';
-import apiClient from '../services/http/client';
 import { extractInlineAudioParts, type InlineAudioPart } from '../services/ai/liveMessageAudio';
 import type { UseVoiceTelemetryReturn } from './useVoiceTelemetry';
+import { logGeminiEvent } from '../services/observability/diagnosticLog';
+import { resolveGeminiUserError } from '../services/observability/geminiErrorMessages';
+import { resolveGeminiApiKey } from '../services/gemini/resolveGeminiApiKey';
 
 const HANDLE_MAX_AGE_MS = 5 * 60 * 1000;
 
@@ -149,25 +151,57 @@ export function useGeminiAudioSession(
       sessionWsOpenMsRef.current = null;
       firstAudioAtMsRef.current = null;
 
-      if (!isReconnect) {
+      if (!isReconnect && store.getState().state === 'PREPARING_AUDIO') {
         store.getState().transition('CONNECTING');
       }
 
       let apiKey: string;
       try {
-        const { data } = await apiClient.post<{ token: string }>('/gemini/token', {});
-        if (!data?.token || typeof data.token !== 'string') {
-          throw new Error('Token response missing token');
-        }
-        apiKey = data.token;
+        const resolved = await resolveGeminiApiKey();
+        apiKey = resolved.apiKey;
         telemetry.track('session', 'token_fetch_success', {
-          tokenType: apiKey.startsWith('AIza') ? 'api_key' : 'ephemeral_token',
+          tokenType:
+            resolved.source === 'demo_env'
+              ? 'demo_env_key'
+              : apiKey.startsWith('AIza')
+                ? 'api_key'
+                : 'ephemeral_token',
+          source: resolved.source,
         });
+        if (resolved.source === 'demo_env') {
+          logGeminiEvent('demo_key_active', 'Using local .env Gemini demo key (Render token skipped).', {
+            model: Config.GEMINI_LIVE_MODEL,
+          });
+        }
       } catch (err) {
+        const errMessage = err instanceof Error ? err.message : String(err);
+        const responseData =
+          err && typeof err === 'object' && 'response' in err
+            ? (err as { response?: { status?: number; data?: unknown } }).response
+            : undefined;
+        const responseText =
+          typeof responseData?.data === 'string'
+            ? responseData.data
+            : JSON.stringify(responseData?.data ?? '');
+        const combined = `${errMessage} ${responseText}`;
+        logGeminiEvent(
+          'token_fetch_failed',
+          resolveGeminiUserError(combined, 'Could not fetch Gemini voice token from server.'),
+          {
+            status: responseData?.status,
+            apiBase: Config.API_BASE_URL,
+          },
+          'error',
+        );
         telemetry.track('session', 'token_fetch_failed', {
-          message: err instanceof Error ? err.message : 'unknown',
+          message: errMessage,
         });
-        store.getState().setError('Không thể kết nối Gemini. Vui lòng thử lại.');
+        store.getState().setError(
+          resolveGeminiUserError(
+            combined,
+            'Could not connect to Robot voice. Check your internet and sign-in, then try again.',
+          ),
+        );
         store.getState().transition('ERROR_RECOVERABLE');
         return;
       }
@@ -309,10 +343,19 @@ export function useGeminiAudioSession(
         sessionRef.current = session;
         telemetry.track('session', 'session_connected');
       } catch (err) {
+        const errMessage = err instanceof Error ? err.message : String(err);
+        logGeminiEvent(
+          'genai_connect_failed',
+          resolveGeminiUserError(errMessage, 'Could not open Gemini Live session.'),
+          { model: Config.GEMINI_LIVE_MODEL },
+          'error',
+        );
         telemetry.track('error', 'genai_connect_failed', {
-          message: err instanceof Error ? err.message : 'unknown',
+          message: errMessage,
         });
-        store.getState().setError('Không thể kết nối Gemini Live.');
+        store.getState().setError(
+          resolveGeminiUserError(errMessage, 'Không thể kết nối Gemini Live.'),
+        );
         store.getState().transition('ERROR_RECOVERABLE');
       }
     },

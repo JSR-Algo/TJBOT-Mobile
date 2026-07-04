@@ -89,6 +89,22 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
       expect(body.profile).toBe('espTft');
     });
 
+    it('uses local investor-demo assignment data without a protected backend token', async () => {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+      try {
+        await expect(createAssignment({
+          deviceId: 'investor-demo-robot',
+          childId: 'investor-demo-child',
+          lessonId: 'demo-barn-animals',
+          lessonVersion: 1,
+          profile: 'espTft',
+        })).resolves.toMatchObject({ assignmentId: 'demo-assignment-ready', state: 'READY' });
+        expect(mockedClient.post).not.toHaveBeenCalled();
+      } finally {
+        process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+      }
+    });
+
     it('normalizes snake_case assignment envelopes to camelCase', () => {
       expect(
         normalizeAssignmentPayload({
@@ -178,6 +194,24 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
     it('omits errorCode when the server sends none', () => {
       const status = normalizePreloadStatusPayload({ data: { preload: { assignment_id: 'a', state: 'PRELOADING' } } });
       expect('errorCode' in status).toBe(false);
+    });
+
+    it('uses local investor-demo ready state without protected backend reads', async () => {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+      try {
+        await expect(getPreloadStatus('investor-demo-robot')).resolves.toMatchObject({
+          assignmentId: 'demo-assignment-ready',
+          state: 'READY',
+          criticalReady: 3,
+        });
+        await expect(getCurrentAssignment('investor-demo-robot')).resolves.toMatchObject({
+          assignmentId: 'demo-assignment-ready',
+          lessonTitle: expect.any(String),
+        });
+        expect(mockedClient.get).not.toHaveBeenCalled();
+      } finally {
+        process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+      }
     });
   });
 

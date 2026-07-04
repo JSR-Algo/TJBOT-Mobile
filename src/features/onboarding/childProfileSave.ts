@@ -59,9 +59,16 @@ export function pairingFinalizeErrorMessage(finalizeError: unknown): string {
   return 'Saved your child, but could not finish setting up the robot. Check your connection and try again.';
 }
 
-/** Render staging allows tok_test_bypass consent in dev and TestFlight builds. */
+/** Owned backend dev/staging surfaces allow tok_test_bypass consent in __DEV__ only. */
 export function allowsDevelopmentCoppaConsentBypass(isDev: boolean, apiBaseUrl: string): boolean {
-  return isDev && apiBaseUrl.includes('tbot-backend-8wmh.onrender.com');
+  if (!isDev) return false;
+  const normalized = apiBaseUrl.toLowerCase();
+  return (
+    normalized.includes('localhost') ||
+    normalized.includes('127.0.0.1') ||
+    normalized.includes('trycloudflare.com') ||
+    normalized.includes('api.tjbot.io')
+  );
 }
 
 export async function saveOnboardingChildProfile(

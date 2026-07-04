@@ -1,3 +1,6 @@
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
+import { INVESTOR_DEMO_LIBRARY } from '@/demo/investorDemoSeed';
+
 export interface Course {
   id: string;
   title: string;
@@ -133,6 +136,17 @@ export function normalizeCourseDetailPayload(payload: unknown): CourseDetail {
 }
 
 export async function listCourseCatalog(): Promise<CourseCatalogItem[]> {
+  if (isInvestorDemoEnabled()) {
+    return INVESTOR_DEMO_LIBRARY.map((item) => ({
+      id: item.courseId,
+      title: item.title,
+      language: item.language,
+      levelCount: 2,
+      lessonCount: 6,
+      locked: item.locked ?? false,
+      progress: item.owned ? 0.35 : 0,
+    }));
+  }
   throw new Error('not implemented');
 }
 

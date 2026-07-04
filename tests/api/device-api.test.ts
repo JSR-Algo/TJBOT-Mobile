@@ -3,23 +3,6 @@ import type { Device } from '@/services/api/device.api';
 describe('device API client', () => {
   it('loads the primary household device from the documented household route', async () => {
     jest.resetModules();
-    const primaryDevice: Device = {
-      id: 'device-1',
-      serial_number: 'TJBot-0001',
-      hardware_revision: 'rev-a',
-      state: 'ACTIVE',
-      status: 'active',
-      household_id: 'household-1',
-      lifecycle_state: 'assigned',
-      last_seen_at: '2026-05-16T00:00:00.000Z',
-      firmware_version: '1.0.0',
-      battery_level: 87,
-      connectivity_metrics: {
-        connectivity_state: 'online',
-        wifi_ssid: 'Casa',
-      },
-      created_at: '2026-05-16T00:00:00.000Z',
-    };
     const get = jest.fn().mockResolvedValueOnce({
       data: [
         {
@@ -55,6 +38,29 @@ describe('device API client', () => {
       lastSeenAt: '2026-05-16T00:00:00.000Z',
     });
     expect(get).toHaveBeenCalledWith('/devices/household/me');
+  });
+
+  it('uses local investor-demo device status without a protected backend token', async () => {
+    jest.resetModules();
+    process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+    const get = jest.fn();
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { get },
+    }));
+
+    try {
+      const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+      await expect(getDeviceStatus('primary', 'investor-demo-child')).resolves.toMatchObject({
+        id: 'investor-demo-robot',
+        online: true,
+        assignedChildProfileId: 'investor-demo-child',
+      });
+      expect(get).not.toHaveBeenCalled();
+    } finally {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+    }
   });
 
   it('keeps Wi-Fi RSSI from household device connectivity metrics when SSID is absent', async () => {

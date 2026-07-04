@@ -16,7 +16,7 @@ export function LessonPickScreen({ navigation, route }: Props): React.JSX.Elemen
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.eyebrow}>English lessons</Text>
       <Text style={styles.title}>Pick a lesson</Text>
-      <Text style={styles.subtitle}>Each lesson has fullscreen video, Robot voice, and nine practice steps.</Text>
+      <Text style={styles.subtitle}>Chat with Robot first, then jump into fullscreen video and nine practice steps.</Text>
 
       <View style={styles.grid}>
         {lessons.map((lesson) => (
@@ -25,7 +25,7 @@ export function LessonPickScreen({ navigation, route }: Props): React.JSX.Elemen
             accessibilityRole="button"
             accessibilityLabel={`Start ${lesson.title ?? lesson.theme}`}
             style={styles.card}
-            onPress={() => navigation.navigate(ROUTES.RobotFullscreenLessonScreen, {
+            onPress={() => navigation.navigate(ROUTES.RobotCompanionScreen, {
               lessonId: lesson.lessonId,
               ageBand,
               autoStartVoice: true,

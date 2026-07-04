@@ -170,6 +170,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.ParentHistoryScreen, 'parent_history'],
       [ROUTES.ParentSafetyScreen, 'parent_safety'],
       [ROUTES.ParentSettingsScreen, 'parent_settings'],
+      [ROUTES.ParentDiagnosticLogScreen, 'parent_diagnostic_log'],
       [ROUTES.ParentAccountPrivacyScreen, 'parent_account_privacy'],
     ]);
     const actualParentStateIds = new Map(

@@ -4,6 +4,16 @@ export { pushCourseToDevice } from './device.api';
 import client from '@/services/http/client';
 import { attachRequestIdHeader } from '@/services/http/idempotency';
 import { backendContractUnavailable } from './undocumented-api-routes';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
+import {
+  INVESTOR_DEMO_ASSIGNMENTS,
+  INVESTOR_DEMO_CHILD,
+  INVESTOR_DEMO_COURSE_DETAILS,
+  INVESTOR_DEMO_DEVICE,
+  INVESTOR_DEMO_LIBRARY,
+  INVESTOR_DEMO_PUBLISHED_COURSES,
+  INVESTOR_DEMO_PUBLISHED_LESSONS,
+} from '@/demo/investorDemoSeed';
 
 export interface LibraryItem {
   courseId: string;
@@ -84,12 +94,40 @@ export function normalizeRobotSyncStatusPayload(payload: unknown): RobotSyncStat
   };
 }
 
+function cloneLibraryItems(items: readonly LibraryItem[]): LibraryItem[] {
+  return items.map((item) => ({ ...item }));
+}
+
+function clonePublishedCourses(courses: readonly PublishedCourse[]): PublishedCourse[] {
+  return courses.map((course) => ({ ...course }));
+}
+
+function clonePublishedLessons(lessons: readonly PublishedLesson[]): PublishedLesson[] {
+  return lessons.map((lesson) => ({
+    ...lesson,
+    topicTags: lesson.topicTags ? [...lesson.topicTags] : undefined,
+    personalization: lesson.personalization
+      ? {
+          ...lesson.personalization,
+          matchedTopics: [...lesson.personalization.matchedTopics],
+        }
+      : undefined,
+  }));
+}
+
 export async function listLibrary(): Promise<LibraryItem[]> {
+  if (isInvestorDemoEnabled()) {
+    return cloneLibraryItems(INVESTOR_DEMO_LIBRARY);
+  }
   const response = await client.get('/course-library');
   return normalizeCourseLibraryPayload(response.data);
 }
 
 export async function getCourseDetail(courseId: string): Promise<CourseDetail> {
+  if (isInvestorDemoEnabled()) {
+    const detail = INVESTOR_DEMO_COURSE_DETAILS.find((course) => course.courseId === courseId);
+    if (detail) return { ...detail };
+  }
   const response = await client.get(`/course-library/${courseId}`);
   return normalizeCourseLibraryDetailPayload(response.data);
 }
@@ -126,6 +164,14 @@ export async function sendCourseToRobot(
 }
 
 export async function getRobotSyncStatus(courseId: string): Promise<RobotSyncStatus> {
+  if (isInvestorDemoEnabled()) {
+    const libraryItem = INVESTOR_DEMO_LIBRARY.find((course) => course.courseId === courseId);
+    return {
+      courseId,
+      synced: Boolean(libraryItem?.syncedToDevice),
+      lastSyncAt: libraryItem?.syncedToDevice ? '2026-06-22T10:48:00.000Z' : null,
+    };
+  }
   const response = await client.get(`/course-library/${courseId}/sync-status`);
   return normalizeRobotSyncStatusPayload(response.data);
 }
@@ -263,14 +309,22 @@ function normalizeLessonFilterMetadata(r: Record<string, unknown>): Pick<Publish
 
 // Published course catalog — the parent's authored courses, AuthGuard-scoped.
 export async function getCourses(): Promise<PublishedCourse[]> {
+  if (isInvestorDemoEnabled()) {
+    return clonePublishedCourses(INVESTOR_DEMO_PUBLISHED_COURSES);
+  }
   const response = await client.get('/courses');
   return normalizePublishedCoursesPayload(response.data);
 }
 
 // Published lessons for one course, ordered as the backend returns them.
 export async function getCourseLessons(courseId: string, options: GetCourseLessonsOptions = {}): Promise<PublishedLesson[]> {
-  const query = options.childId ? `?childId=${encodeURIComponent(options.childId)}` : '';
-  const response = await client.get(`/courses/${courseId}/lessons${query}`);
+  if (isInvestorDemoEnabled()) {
+    const lessons = INVESTOR_DEMO_PUBLISHED_LESSONS[courseId] ?? [];
+    return clonePublishedLessons(lessons);
+  }
+  const response = await client.get(`/courses/${courseId}/lessons`, {
+    ...(options.childId ? { params: { childId: options.childId } } : {}),
+  });
   return normalizePublishedLessonsPayload(response.data);
 }
 
@@ -446,6 +500,23 @@ export function lessonAssignmentIdempotencyKey(params: Pick<CreateAssignmentPara
 
 // M1 — assign one lesson to one device for one child. Device-scoped bare path.
 export async function createAssignment(params: CreateAssignmentParams): Promise<LessonAssignment> {
+  if (
+    isInvestorDemoEnabled() &&
+    params.deviceId === INVESTOR_DEMO_DEVICE.id &&
+    params.childId === INVESTOR_DEMO_CHILD.id
+  ) {
+    return {
+      assignmentId: 'demo-assignment-ready',
+      assignmentVersion: 1,
+      deviceId: params.deviceId,
+      childId: params.childId,
+      lessonId: params.lessonId,
+      lessonVersion: params.lessonVersion,
+      profile: params.profile ?? 'espTft',
+      state: 'READY',
+      createdAt: '2026-06-22T10:48:00.000Z',
+    };
+  }
   const body = {
     lessonId: params.lessonId,
     lessonVersion: params.lessonVersion, // NUMBER (D-LV)
@@ -460,12 +531,40 @@ export async function createAssignment(params: CreateAssignmentParams): Promise<
 
 // M2 — poll target. Server is the READY/timeout authority.
 export async function getPreloadStatus(deviceId: string): Promise<PreloadStatus> {
+  if (isInvestorDemoEnabled() && deviceId === INVESTOR_DEMO_DEVICE.id) {
+    return {
+      assignmentId: 'demo-assignment-ready',
+      state: 'READY',
+      profile: 'espTft',
+      criticalTotal: 3,
+      criticalReady: 3,
+      assets: [
+        { assetId: 'demo-face', state: 'READY', checksumOk: true },
+        { assetId: 'demo-audio', state: 'READY', checksumOk: true },
+        { assetId: 'demo-script', state: 'READY', checksumOk: true },
+      ],
+    };
+  }
   const response = await client.get(`/devices/${deviceId}/preload-status`);
   return normalizePreloadStatusPayload(response.data);
 }
 
 // M2 — current (non-terminal) assignment; carries denormalized lessonTitle.
 export async function getCurrentAssignment(deviceId: string): Promise<CurrentAssignment | null> {
+  if (isInvestorDemoEnabled() && deviceId === INVESTOR_DEMO_DEVICE.id) {
+    const assignment = INVESTOR_DEMO_ASSIGNMENTS[0];
+    if (!assignment) return null;
+    return {
+      assignmentId: assignment.assignmentId,
+      assignmentVersion: 1,
+      lessonId: assignment.lessonId,
+      lessonTitle: assignment.lessonTitle ?? "Today's lesson",
+      lessonVersion: assignment.lessonVersion,
+      state: assignment.state,
+      childId: assignment.childId,
+      profile: assignment.profile,
+    };
+  }
   const response = await client.get(`/devices/${deviceId}/assignment/current`);
   return normalizeCurrentAssignmentPayload(response.data);
 }
@@ -565,6 +664,29 @@ export async function enrollCourse(
   courseId: string,
   body: { childId: string; deviceId?: string },
 ): Promise<{ enrollment: Enrollment; assignment: AssignmentRef }> {
+  if (
+    isInvestorDemoEnabled() &&
+    body.childId === INVESTOR_DEMO_CHILD.id &&
+    body.deviceId === INVESTOR_DEMO_DEVICE.id
+  ) {
+    const lesson = INVESTOR_DEMO_PUBLISHED_LESSONS[courseId]?.[0] ?? INVESTOR_DEMO_PUBLISHED_LESSONS.c_barn?.[0];
+    return {
+      enrollment: {
+        id: `demo-enrollment-${courseId}`,
+        childId: body.childId,
+        courseId,
+        deviceId: body.deviceId ?? null,
+        status: 'ACTIVE',
+        currentLessonKey: lesson?.lessonId ?? null,
+      },
+      assignment: {
+        id: 'demo-assignment-ready',
+        lessonId: lesson?.lessonId ?? 'demo-barn-animals',
+        lessonVersion: lesson?.lessonVersion ?? 1,
+        state: 'READY',
+      },
+    };
+  }
   const response = await client.post(`/courses/${courseId}/enroll`, body);
   const envelope = pickEnvelope<Record<string, unknown>>(response.data) ?? {};
   return {
@@ -576,6 +698,20 @@ export async function enrollCourse(
 // List a child's enrollments. AuthGuard-scoped: backend verifies the caller is
 // the parent of `childId` (req.auth.sub → child ownership).
 export async function listChildEnrollments(childId: string): Promise<{ enrollments: Enrollment[] }> {
+  if (isInvestorDemoEnabled() && childId === INVESTOR_DEMO_CHILD.id) {
+    return {
+      enrollments: [
+        {
+          id: 'demo-enrollment-c_barn',
+          childId,
+          courseId: 'c_barn',
+          deviceId: INVESTOR_DEMO_DEVICE.id,
+          status: 'ACTIVE',
+          currentLessonKey: 'demo-barn-animals',
+        },
+      ],
+    };
+  }
   const response = await client.get(`/children/${childId}/enrollments`);
   const envelope = pickEnvelope<{ enrollments?: unknown[] }>(response.data) ?? {};
   const rawList: unknown[] = Array.isArray(envelope)

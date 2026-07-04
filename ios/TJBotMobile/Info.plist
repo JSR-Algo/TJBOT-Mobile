@@ -55,6 +55,10 @@
 	<string>TJBot uses your location to provide localised content for your child.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>TJBot communicates with your Robot on the local network during Wi-Fi setup.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_metro._tcp</string>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>TJBot uses the microphone to listen to your child's voice and provide AI-powered responses.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

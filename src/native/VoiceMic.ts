@@ -115,7 +115,9 @@ function getEmitter(): NativeEventEmitter | null {
 export const VoiceMic = {
   async start(opts: VoiceMicStartOptions): Promise<void> {
     const native = getNative();
-    if (!native) return;
+    if (!native) {
+      return;
+    }
     await native.start(opts);
   },
 

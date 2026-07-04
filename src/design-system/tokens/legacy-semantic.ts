@@ -41,10 +41,10 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 8,
+  sm: dsRadii.sm,
   md: dsRadii.chip,
-  lg: 16,
-  xl: 24,
+  lg: dsRadii.lg,
+  xl: dsRadii.xl,
   full: dsRadii.button,
 } as const;
 

@@ -28,7 +28,7 @@ i18next.use(initReactI18next).init({
   lng: DEFAULT_APP_LOCALE,
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
-  compatibilityJSON: 'v4',
+  compatibilityJSON: 'v3',
 });
 
 export function isAppLocale(value: string | null | undefined): value is AppLocale {

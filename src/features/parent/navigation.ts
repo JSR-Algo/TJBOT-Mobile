@@ -4,6 +4,7 @@ import ParentTodayScreen from './screens/ParentTodayScreen';
 import ParentHistoryScreen from './screens/ParentHistoryScreen';
 import ParentSafetyScreen from './screens/ParentSafetyScreen';
 import ParentSettingsScreen from './screens/ParentSettingsScreen';
+import ParentDiagnosticLogScreen from './screens/ParentDiagnosticLogScreen';
 import ParentAccountPrivacyScreen from './screens/ParentAccountPrivacyScreen';
 import ParentLockedOutScreen from './screens/ParentLockedOutScreen';
 import { User } from 'lucide-react-native';
@@ -29,6 +30,7 @@ export const PARENT_SCREENS = defineFeatureScreens([
   { name: ROUTES.ParentHistoryScreen, component: ParentHistoryScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_history' },
   { name: ROUTES.ParentSafetyScreen, component: ParentSafetyScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_safety' },
   { name: ROUTES.ParentSettingsScreen, component: ParentSettingsScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_settings' },
+  { name: ROUTES.ParentDiagnosticLogScreen, component: ParentDiagnosticLogScreen, role: 'stack-entry', backTarget: ROUTES.ParentSettingsScreen, stateMachineId: 'parent_diagnostic_log' },
   { name: ROUTES.ParentAccountPrivacyScreen, component: ParentAccountPrivacyScreen, role: 'stack', backTarget: ROUTES.ParentSettingsScreen, stateMachineId: 'parent_account_privacy' },
   { name: ROUTES.ParentLockedOutScreen, component: ParentLockedOutScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'parent_locked_out' },
 ]);

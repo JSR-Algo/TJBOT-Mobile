@@ -54,6 +54,20 @@ describe('P4 — published course/lesson catalog API (GET /courses, GET /courses
       expect(normalizePublishedCoursesPayload({ data: {} })).toEqual([]);
       expect(normalizePublishedCoursesPayload(null)).toEqual([]);
     });
+
+    it('uses the local investor-demo course catalog without a protected backend token', async () => {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+      try {
+        await expect(getCourses()).resolves.toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ courseId: 'c_barn', lessonCount: expect.any(Number) }),
+          ]),
+        );
+        expect(mockedClient.get).not.toHaveBeenCalled();
+      } finally {
+        process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+      }
+    });
   });
 
   describe('getCourseLessons', () => {
@@ -71,7 +85,7 @@ describe('P4 — published course/lesson catalog API (GET /courses, GET /courses
 
       const lessons = await getCourseLessons('c_barn');
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/courses/c_barn/lessons');
+      expect(mockedClient.get).toHaveBeenCalledWith('/courses/c_barn/lessons', {});
       expect(lessons).toEqual([
         { lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, title: 'This Is a Barn', profile: 'espTft', manifestReady: true },
         { lessonId: 'w01-d02-barn-colors', lessonVersion: 3, title: 'Barn Colors', profile: 'espTft', manifestReady: false },
@@ -106,7 +120,7 @@ describe('P4 — published course/lesson catalog API (GET /courses, GET /courses
 
       const lessons = await getCourseLessons('c_barn', { childId: 'child 1' });
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/courses/c_barn/lessons?childId=child%201');
+      expect(mockedClient.get).toHaveBeenCalledWith('/courses/c_barn/lessons', { params: { childId: 'child 1' } });
       expect(lessons).toEqual([
         {
           lessonId: 'w01-d02-barn-say-it',
@@ -131,6 +145,20 @@ describe('P4 — published course/lesson catalog API (GET /courses, GET /courses
           lessons: [{ lesson_id: 'l1', lesson_version: '2', title: 'L1' }],
         }),
       ).toEqual([{ lessonId: 'l1', lessonVersion: 2, title: 'L1', profile: null, manifestReady: false }]);
+    });
+
+    it('uses local investor-demo lessons without a protected backend token', async () => {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+      try {
+        await expect(getCourseLessons('c_barn', { childId: 'investor-demo-child' })).resolves.toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ lessonId: 'demo-barn-animals', manifestReady: true }),
+          ]),
+        );
+        expect(mockedClient.get).not.toHaveBeenCalled();
+      } finally {
+        process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+      }
     });
 
     it('returns an empty list for a course with no published lessons', () => {

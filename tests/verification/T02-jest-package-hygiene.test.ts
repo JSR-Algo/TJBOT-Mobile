@@ -4,9 +4,11 @@ import path from 'path';
 const projectRoot = path.resolve(__dirname, '../..');
 const packageJsonPath = path.join(projectRoot, 'package.json');
 const eslintConfigPath = path.join(projectRoot, 'eslint.config.js');
+const detoxJestConfigPath = path.join(projectRoot, 'e2e/jest.config.js');
 
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 const eslintSource = fs.readFileSync(eslintConfigPath, 'utf-8');
+const detoxJestConfigSource = fs.readFileSync(detoxJestConfigPath, 'utf-8');
 
 // Normalize a transformIgnorePatterns regex string into a RegExp we can test.
 function patternToRegExp(pattern: string): RegExp {
@@ -32,6 +34,14 @@ describe('T02: Jest, lint, and package hygiene', () => {
     it('has at least one jest project defined', () => {
       expect(projects.length).toBeGreaterThan(0);
     });
+
+    it.each(projects.map((p: any, idx: number) => [p.displayName ?? `project-${idx}`, p]) as Array<[string, any] >)(
+      '%s: resolves @ alias to src',
+      (_name: string, project: any) => {
+        const mappers = project.moduleNameMapper ?? {};
+        expect(mappers['^@/(.*)$']).toBe('<rootDir>/src/$1');
+      },
+    );
 
     it.each(projects.map((p: any, idx: number) => [p.displayName ?? `project-${idx}`, p]) as Array<[string, any] >)(
       '%s: removes expo-av moduleNameMapper',
@@ -72,6 +82,12 @@ describe('T02: Jest, lint, and package hygiene', () => {
         }
       },
     );
+  });
+
+  describe('Detox jest config', () => {
+    it('resolves @ alias to src', () => {
+      expect(detoxJestConfigSource).toContain("'^@/(.*)$': '<rootDir>/src/$1'");
+    });
   });
 
   describe('package.json environment declarations', () => {

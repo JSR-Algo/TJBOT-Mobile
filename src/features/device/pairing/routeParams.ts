@@ -53,5 +53,8 @@ function sanitizeSsid(value: string | undefined): string {
 }
 
 function hasControlCharacter(value: string): boolean {
-  return /[\x00-\x1f\x7f]/.test(value);
+  return Array.from(value).some((char) => {
+    const codePoint = char.charCodeAt(0);
+    return codePoint <= 0x1f || codePoint === 0x7f;
+  });
 }

@@ -38,10 +38,12 @@ describe('child profile onboarding save', () => {
     })).toBe('Verify parental consent before creating a child profile.');
   });
 
-  it('allows the development consent bypass only on the hosted staging API', () => {
-    expect(allowsDevelopmentCoppaConsentBypass(true, 'https://tbot-backend-8wmh.onrender.com/v1')).toBe(true);
-    expect(allowsDevelopmentCoppaConsentBypass(false, 'https://tbot-backend-8wmh.onrender.com/v1')).toBe(false);
-    expect(allowsDevelopmentCoppaConsentBypass(true, 'https://api.TJBot.io/v1')).toBe(false);
+  it('allows the development consent bypass only on owned dev/staging API surfaces', () => {
+    expect(allowsDevelopmentCoppaConsentBypass(true, 'http://localhost:3000/v1')).toBe(true);
+    expect(allowsDevelopmentCoppaConsentBypass(true, 'https://api.TJBot.io/v1')).toBe(true);
+    expect(allowsDevelopmentCoppaConsentBypass(true, 'https://demo.trycloudflare.com/v1')).toBe(true);
+    expect(allowsDevelopmentCoppaConsentBypass(false, 'http://localhost:3000/v1')).toBe(false);
+    expect(allowsDevelopmentCoppaConsentBypass(true, 'https://tbot-backend-8wmh.onrender.com/v1')).toBe(false);
   });
 
   it('records development COPPA consent and retries once on staging dev builds', async () => {

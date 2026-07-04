@@ -4,7 +4,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CircleBtn from '@/design-system/components/CircleBtn';
 import { referenceColors } from '@/design-system/referenceTheme';
-import { Path, Svg } from 'react-native-svg';
+import { Icon } from '@/design-system/icons';
 
 interface PageHeaderProps {
   left?: React.ReactNode;
@@ -20,9 +20,7 @@ export default function PageHeader({ left, right, title, subtitle, onBack }: Pag
       <Box style={styles.row}>
         {left ?? (onBack ? (
           <CircleBtn size={42} onPress={onBack} ariaLabel="Back">
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={referenceColors.ink} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M15 5l-7 7 7 7" stroke={referenceColors.ink} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
+            <Icon name="ChevronLeft" size={18} color={referenceColors.ink} strokeWidth={2.8} />
           </CircleBtn>
         ) : <Box style={{ width: 42 }} />)}
         {right}

@@ -57,6 +57,12 @@ describe('T01 — canonical env schema, EAS alignment, and Expo capabilities', (
       const config = readText('src/config.ts');
       expect(config).not.toContain('trycloudflare.com');
     });
+
+    it('does not fall back to the legacy teammate Render backend', () => {
+      const config = readText('src/config.ts');
+      expect(config).not.toContain('tbot-backend-8wmh.onrender.com');
+      expect(config).toContain('ownedBackend');
+    });
   });
 
   describe('metro.config.js', () => {

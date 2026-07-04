@@ -194,14 +194,14 @@ describe('http client auth refresh behavior', () => {
     expect(axiosMock.post).not.toHaveBeenCalled();
   });
 
-  it('uses deterministic base URL and 30s timeout from Config', async () => {
+  it('uses deterministic base URL and 60s timeout from Config', async () => {
     const { axiosMock, clientModule } = await loadClientHarness();
 
     expect(clientModule.BASE_URL).toBe('https://api.test/v1');
     expect(axiosMock.create).toHaveBeenCalledWith(
       expect.objectContaining({
         baseURL: 'https://api.test/v1',
-        timeout: 30000,
+        timeout: 60000,
       }),
     );
   });

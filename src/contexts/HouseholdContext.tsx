@@ -6,6 +6,8 @@ import * as householdsApi from '../services/api/households';
 import { useAuth } from './AuthContext';
 import { normalizeError } from '../utils/errors';
 import type { RootStackParamList } from '../navigation/routes';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
+import { INVESTOR_DEMO_CHILD, INVESTOR_DEMO_HOUSEHOLD } from '@/demo/investorDemoSeed';
 
 const ONBOARDING_COMPLETE_KEY = 'onboarding_complete_v1';
 const HOUSEHOLDS_CACHE_KEY = '@tbot/household-context:households';
@@ -74,24 +76,42 @@ interface HouseholdContextValue extends HouseholdState {
 
 const HouseholdContext = createContext<HouseholdContextValue | undefined>(undefined);
 
-export function HouseholdProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const [state, setState] = useState<HouseholdState>({
-    households: [],
-    activeHousehold: null,
-    children: [],
-    activeChildId: null,
+function investorDemoHouseholdState(): HouseholdState {
+  return {
+    households: [INVESTOR_DEMO_HOUSEHOLD],
+    activeHousehold: INVESTOR_DEMO_HOUSEHOLD,
+    children: [INVESTOR_DEMO_CHILD],
+    activeChildId: INVESTOR_DEMO_CHILD.id,
     isLoading: false,
     error: null,
-    onboardingComplete: false,
+    onboardingComplete: true,
     pendingDeviceSetup: false,
     protectedInitialRoute: undefined,
-  });
+  };
+}
+
+export function HouseholdProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const investorDemo = isInvestorDemoEnabled();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [state, setState] = useState<HouseholdState>(
+    investorDemo ? investorDemoHouseholdState() : {
+      households: [],
+      activeHousehold: null,
+      children: [],
+      activeChildId: null,
+      isLoading: false,
+      error: null,
+      onboardingComplete: false,
+      pendingDeviceSetup: false,
+      protectedInitialRoute: undefined,
+    },
+  );
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Hydrate persisted household list and onboarding flag before any API call,
   // so returning users see cached data immediately while fresh data refreshes.
   useEffect(() => {
+    if (investorDemo) return undefined;
     let cancelled = false;
 
     Promise.all([
@@ -124,9 +144,10 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [investorDemo]);
 
   const refresh = useCallback(async () => {
+    if (investorDemo) return;
     if (!isAuthenticated) {
       setState((s) => ({ ...s, isLoading: false }));
       return;
@@ -173,18 +194,20 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
         abortControllerRef.current = null;
       }
     }
-  }, [isAuthenticated, state.activeHousehold?.id]);
+  }, [investorDemo, isAuthenticated, state.activeHousehold?.id]);
 
   // Hydrate the persisted active-child pick. Stored as a raw id; resolution
   // against `children` (with children[0] fallback) happens at render below, so
   // a stale id never selects a child that no longer exists.
   useEffect(() => {
+    if (investorDemo) return undefined;
     readActiveChildIdFromStore().then((id) => {
       if (id) setState((s) => (s.activeChildId ? s : { ...s, activeChildId: id }));
     });
-  }, []);
+  }, [investorDemo]);
 
   useEffect(() => {
+    if (investorDemo) return undefined;
     // Wait for AuthContext to finish hydrating SecureStore before deciding
     // whether to refresh or clear account-scoped household data. The device
     // first-run flag remains independent from auth state.
@@ -210,7 +233,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
         };
       });
     }
-  }, [isAuthenticated, authLoading, refresh]);
+  }, [investorDemo, isAuthenticated, authLoading, refresh]);
 
   // Cancel any in-flight refresh when the provider unmounts.
   useEffect(() => {

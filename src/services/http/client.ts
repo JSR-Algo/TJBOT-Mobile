@@ -14,7 +14,7 @@ if (__DEV__) {
 }
 
 const { client, setAuthInvalidatedHandler } = createAuthenticatedAxios(BASE_URL, {
-  timeout: 30000,
+  timeout: 60000,
   validateStatus: (status) => (status >= 200 && status < 300) || status === 307,
 });
 

@@ -1,4 +1,11 @@
 import client from '@/services/http/client';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
+import {
+  INVESTOR_DEMO_CHILD,
+  INVESTOR_DEMO_CHILD_PROFILE,
+  INVESTOR_DEMO_KPIS,
+  INVESTOR_DEMO_PRONUNCIATION_TREND,
+} from '@/demo/investorDemoSeed';
 
 /**
  * Thrown by learning APIs when the backend endpoint isn't deployed yet.
@@ -86,11 +93,21 @@ export interface UpdateProfileDto {
 }
 
 export async function getChildProfile(childId: string): Promise<ChildProfile> {
+  if (isInvestorDemoChild(childId)) {
+    return { ...INVESTOR_DEMO_CHILD_PROFILE };
+  }
   const response = await client.get(`/learning/children/${encodeURIComponent(childId)}/profile`);
   return normalizeChildProfilePayload(response.data);
 }
 
 export async function updateChildProfile(childId: string, dto: UpdateProfileDto): Promise<ChildProfile> {
+  if (isInvestorDemoChild(childId)) {
+    return {
+      ...INVESTOR_DEMO_CHILD_PROFILE,
+      ...dto,
+      interests: dto.interests ?? INVESTOR_DEMO_CHILD_PROFILE.interests,
+    };
+  }
   const response = await client.put(`/learning/children/${encodeURIComponent(childId)}/profile`, dto);
   return normalizeChildProfilePayload(response.data);
 }
@@ -118,10 +135,17 @@ export async function getInteractions(childId: string, limit = 50): Promise<Arra
     ai_response: string;
     confidence_signal: number;
     created_at: string;
-  }>>(response.data);
+}>>(response.data);
+}
+
+function isInvestorDemoChild(childId: string): boolean {
+  return isInvestorDemoEnabled() && childId === INVESTOR_DEMO_CHILD.id;
 }
 
 export async function getKPIs(childId: string): Promise<KPIs> {
+  if (isInvestorDemoChild(childId)) {
+    return { ...INVESTOR_DEMO_KPIS, weak_words: [...INVESTOR_DEMO_KPIS.weak_words] };
+  }
   const response = await client.get(`/learning/children/${encodeURIComponent(childId)}/kpis`);
   return normalizeKpisPayload(response.data);
 }
@@ -131,6 +155,13 @@ export async function completeSession(childId: string, dto: CompleteSessionDto):
 }
 
 export async function getPronunciationTrend(childId: string, days = 7): Promise<PronunciationTrend> {
+  if (isInvestorDemoChild(childId)) {
+    const points = INVESTOR_DEMO_PRONUNCIATION_TREND.points.slice(-days);
+    return {
+      ...INVESTOR_DEMO_PRONUNCIATION_TREND,
+      points: points.map((point) => ({ ...point })),
+    };
+  }
   const response = await client.get(`/learning/children/${encodeURIComponent(childId)}/pronunciation-trend?days=${encodeURIComponent(String(days))}`);
   return normalizePronunciationTrendPayload(response.data);
 }

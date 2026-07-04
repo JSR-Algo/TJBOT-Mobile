@@ -19,5 +19,11 @@
  * Remove this override and the manual Android link when ble-plx is upgraded.
  */
 module.exports = {
-  dependencies: {},
+  dependencies: {
+    'react-native-ble-plx': {
+      platforms: {
+        android: null,
+      },
+    },
+  },
 };

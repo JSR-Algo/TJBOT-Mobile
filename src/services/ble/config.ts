@@ -44,7 +44,7 @@ export function isAllowlistedDevice(
       return normalizedId.startsWith(normalizedPrefix) || normalizedName.startsWith(normalizedPrefix);
     });
     if (!prefixMatch) return false;
-    if (serviceUUIDs !== undefined && !serviceUUIDs.includes(BLE_CONFIG.SERVICE_UUID)) {
+    if (serviceUUIDs !== undefined && !hasAllowedServiceEvidence(serviceUUIDs, prefixMatch)) {
       return false;
     }
     if (BLE_CONFIG.MANUFACTURER_ID != null && manufacturerData !== undefined) {
@@ -67,8 +67,14 @@ export function isAllowlistedDevice(
 }
 
 export function isAllowlistedCandidate(candidate: AllowlistCandidate): boolean {
-  if (isAllowlistedDevice(candidate.id, candidate.name, candidate.serviceUUIDs)) return true;
-  if (candidate.localName && matchesAllowlistPrefix(candidate.localName.trim().toUpperCase())) return true;
+  const serviceUUIDs = candidate.serviceUUIDs ?? [];
+  const advertisedNames = [candidate.id, candidate.name, candidate.localName]
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.trim().toUpperCase());
+  const prefixMatch = advertisedNames.some(matchesAllowlistPrefix);
+  if (hasBluFiServiceUuid(serviceUUIDs)) return true;
+  if (prefixMatch && hasTbotServiceUuid(serviceUUIDs)) return true;
+  if (serviceUUIDs.length === 0 && advertisedNames.some(isLegacyBlufiName)) return true;
 
   const serviceDataEntries = Object.entries(candidate.serviceData ?? {});
   if (hasBluFiServiceUuid(serviceDataEntries.map(([uuid]) => uuid))) return true;
@@ -91,6 +97,20 @@ function matchesAllowlistPrefix(value: string): boolean {
 function hasBluFiServiceUuid(serviceUUIDs?: readonly string[] | null): boolean {
   const normalizedBlufi = BLE_CONFIG.BLUFI_SERVICE_UUID.trim().toUpperCase();
   return (serviceUUIDs ?? []).some((uuid) => uuid.trim().toUpperCase() === normalizedBlufi);
+}
+
+function hasAllowedServiceEvidence(serviceUUIDs: readonly string[], prefixMatch: boolean): boolean {
+  if (hasBluFiServiceUuid(serviceUUIDs)) return true;
+  return prefixMatch && hasTbotServiceUuid(serviceUUIDs);
+}
+
+function hasTbotServiceUuid(serviceUUIDs?: readonly string[] | null): boolean {
+  const normalizedService = BLE_CONFIG.SERVICE_UUID.trim().toUpperCase();
+  return (serviceUUIDs ?? []).some((uuid) => uuid.trim().toUpperCase() === normalizedService);
+}
+
+function isLegacyBlufiName(value: string): boolean {
+  return value.startsWith('TBOT-BLUFI') || value.startsWith('TBT-BLUFI');
 }
 
 function rawAdvertMatchesAllowlist(value?: string | null): boolean {

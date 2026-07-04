@@ -12,16 +12,19 @@
  */
 import { NativeModules, Platform } from 'react-native';
 import * as Device from 'expo-device';
-import { ENV } from './__env__';
+import {
+  LOCAL_OWNED_AI_V1,
+  LOCAL_OWNED_API_V1,
+  OWNED_AI_V1,
+  OWNED_API_V1,
+} from './constants/ownedBackend';
 
-// Hosted backend fallback. Keep in sync with original-app/TJBOT-Mobile/.env
-// EXPO_PUBLIC_TBOT_* values.
-const HOSTED_API_ROOT = 'https://tbot-backend-8wmh.onrender.com';
-const HOSTED_API = `${HOSTED_API_ROOT}/v1`;
-const HOSTED_AI = `${HOSTED_API_ROOT}/v1/ai`;
-const IOS_SIMULATOR_API = 'http://127.0.0.1:3000/v1';
+// Owned TeeBot backend fallback when no explicit env or LAN derivation applies.
+const HOSTED_API = OWNED_API_V1;
+const HOSTED_AI = OWNED_AI_V1;
+const IOS_SIMULATOR_API = LOCAL_OWNED_API_V1;
 const ANDROID_EMULATOR_API = 'http://10.0.2.2:3000/v1';
-const IOS_SIMULATOR_AI = 'http://127.0.0.1:3001/api/ai';
+const IOS_SIMULATOR_AI = LOCAL_OWNED_AI_V1;
 const ANDROID_EMULATOR_AI = 'http://10.0.2.2:3001/api/ai';
 
 const LOOPBACK_TBOT_API = 'http://localhost:3000';
@@ -73,10 +76,7 @@ export function getApiBaseUrl(): string {
 }
 
 export function getAiBaseUrl(): string {
-  const explicit = (
-    (process.env.EXPO_PUBLIC_TBOT_AI_URL as string | undefined) ??
-    ENV.TBOT_AI_URL
-  )?.trim();
+  const explicit = (process.env.EXPO_PUBLIC_TBOT_AI_URL as string | undefined)?.trim();
   const normalizedExplicit = explicit?.replace(/\/+$/, '');
   if (
     normalizedExplicit &&

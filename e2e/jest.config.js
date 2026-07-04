@@ -20,6 +20,9 @@ module.exports = {
   verbose: true,
   modulePathIgnorePatterns: ['<rootDir>/.worktrees/'],
   watchPathIgnorePatterns: ['<rootDir>/.worktrees/'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
   transform: {
     '\\.tsx?$': ['babel-jest', { configFile: babelConfigFile }],
   },

@@ -86,4 +86,21 @@ describe('learning API', () => {
     expect(mockedClient.get).toHaveBeenNthCalledWith(1, '/learning/children/child-1/kpis');
     expect(mockedClient.get).toHaveBeenNthCalledWith(2, '/learning/children/child-1/pronunciation-trend?days=14');
   });
+
+  it('uses local investor-demo analytics without a protected backend token', async () => {
+    process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'true';
+    try {
+      await expect(getKPIs('investor-demo-child')).resolves.toMatchObject({
+        engagement_score: expect.any(Number),
+        weak_words: expect.any(Array),
+      });
+      await expect(getPronunciationTrend('investor-demo-child', 3)).resolves.toMatchObject({
+        trend: 'improving',
+        points: expect.any(Array),
+      });
+      expect(mockedClient.get).not.toHaveBeenCalled();
+    } finally {
+      process.env.EXPO_PUBLIC_INVESTOR_DEMO = 'false';
+    }
+  });
 });

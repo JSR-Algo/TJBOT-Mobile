@@ -234,6 +234,7 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
 
       <PRowGroup header="Account">
         <PRow icon="🛡" label="Safety & Privacy" chevron onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)} />
+        <PRow icon="🩺" label="Diagnostic log" chevron onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen)} />
         <PRow icon="⚙" label="Settings" chevron onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)} isLast />
       </PRowGroup>
 

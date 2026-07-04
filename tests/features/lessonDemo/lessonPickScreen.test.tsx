@@ -14,7 +14,7 @@ describe('LessonPickScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('lists curated lessons and opens fullscreen player on tap', () => {
+  it('lists curated lessons and opens companion chat on tap', () => {
     const screen = render(
       <LessonPickScreen
         navigation={navigation as never}
@@ -29,7 +29,7 @@ describe('LessonPickScreen', () => {
 
     fireEvent.press(screen.getByLabelText('Start Happy and Sad'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotFullscreenLessonScreen, {
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotCompanionScreen, {
       lessonId: HAPPY_SAD_LESSON_ID,
       ageBand: '4-6',
       autoStartVoice: true,

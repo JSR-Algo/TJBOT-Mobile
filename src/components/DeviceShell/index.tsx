@@ -4,6 +4,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { referenceColors } from '@/design-system/referenceTheme';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
+import { Icon } from '@/design-system/icons';
 
 type Props = {
   title?: string;
@@ -20,6 +21,8 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
       testID={scrollTestID}
       style={styles.root}
       contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       <Box
         testID={screenTestID}
@@ -37,7 +40,7 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
             accessibilityRole="button"
             accessibilityLabel={translateCopy('Go back', { locale: language })}
           >
-            <BackIcon color={referenceColors.inkSoft} />
+            <Icon name="ChevronLeft" size={18} color={referenceColors.inkSoft} />
           </TouchableOpacity>
         ) : null}
         <Text fontWeight="800" style={styles.title}>
@@ -46,15 +49,6 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
       </Box>
       {children}
     </ScrollView>
-  );
-}
-
-function BackIcon({ color }: { color: string }) {
-  const { Svg, Path } = require('react-native-svg');
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M15 18l-6-6 6-6" />
-    </Svg>
   );
 }
 

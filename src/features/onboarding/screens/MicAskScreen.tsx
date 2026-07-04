@@ -9,6 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
 import { recordAiVoiceConsent } from '@/services/api/auth';
+import { ensureMicPermission } from '@/features/lessonDemo/voiceReadiness';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MicAskScreen'>;
 
@@ -35,6 +36,11 @@ export default function MicAskScreen({ navigation }: Props) {
         consent_version: AI_VOICE_CONSENT_VERSION,
         google_subprocessors_version: GOOGLE_SUBPROCESSORS_VERSION,
       });
+      const micGranted = await ensureMicPermission();
+      if (!micGranted) {
+        setError('Microphone permission is required. Tap Continue again and choose Allow.');
+        return;
+      }
       navigation.navigate(ROUTES.FirstLessonEntryScreen);
     } catch {
       setError('Consent must be saved before voice setup can continue.');

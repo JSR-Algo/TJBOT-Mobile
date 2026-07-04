@@ -33,7 +33,7 @@ export default function HomeHubScreen({ navigation }: Props) {
       clearTimeout(greetTimer.current);
     }
     greetTimer.current = setTimeout(() => setGreet(false), 1800);
-    navigation.navigate(ROUTES.RobotFullscreenLessonScreen, {
+    navigation.navigate(ROUTES.RobotCompanionScreen, {
       lessonId: 'w01-d01-barn-say-it',
       ageBand: '4-6',
       autoStartVoice: true,
@@ -94,7 +94,7 @@ export default function HomeHubScreen({ navigation }: Props) {
           style={[styles.robotWrap, showingGreet && styles.robotWrapGreeting]}
           activeOpacity={0.9}
           accessibilityRole="button"
-          accessibilityLabel="Talk to Robot and start barn lesson"
+          accessibilityLabel="Talk to Robot before barn lesson"
         >
           <Box style={styles.ringOuter} />
           <Box style={styles.ringInner} />

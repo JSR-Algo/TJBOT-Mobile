@@ -21,7 +21,6 @@ import {
 import {
   enrollCourse,
   listLibrary,
-  unlockCourse,
 } from '../../src/services/api/course-library.api';
 import { getDeviceStatus } from '../../src/services/api/device.api';
 import { getChildLessonProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
@@ -90,7 +89,6 @@ jest.mock('../../src/services/api/purchase.api', () => ({
 const mockListCourseCatalog = listCourseCatalog as jest.MockedFunction<typeof listCourseCatalog>;
 const mockGetLessonList = getLessonList as jest.MockedFunction<typeof getLessonList>;
 const mockListLibrary = listLibrary as jest.MockedFunction<typeof listLibrary>;
-const mockUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;

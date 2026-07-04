@@ -1,7 +1,7 @@
 export const colors = {
   cream: '#FBF4EA',
   cream2: '#FFF8EF',
-  coral: '#FF6B6F',
+  coral: '#FF6F61',
   coralSoft: '#FFE1DD',
   sky: '#62C8D2',
   skySoft: '#DDF7F8',

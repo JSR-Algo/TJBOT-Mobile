@@ -39,6 +39,10 @@ const mockHouseholdState: HouseholdState = {
 
 const mockCreateElement = React.createElement;
 
+jest.mock('@/config/investorDemo', () => ({
+  isInvestorDemoEnabled: jest.fn(() => false),
+}));
+
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => mockAuthState,
 }));
@@ -50,6 +54,7 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 jest.mock('@/features/onboarding/ageGate', () => ({
   readAgeAnswer: jest.fn(() => Promise.resolve({ band: 'over13' })),
   writeAgeAnswer: jest.fn(() => Promise.resolve()),
+  roleForAgeBand: jest.fn(() => 'adult'),
   AGE_BANDS: [],
 }));
 
