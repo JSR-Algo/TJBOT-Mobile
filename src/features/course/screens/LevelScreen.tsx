@@ -69,7 +69,7 @@ export default function LevelScreen({ navigation }: Props) {
       />
 
       <Box paddingHorizontal={24} paddingBottom={14} flexDirection="row" alignItems="center" gap={12}>
-        <Robot emotion="happy" size={80} />
+        <Robot emotion="idle" size={80} />
         <Box style={styles.bubble} flex={1}>
           <Text fontWeight="700" style={styles.bubbleText}>You're on Unit 3 — let's go!</Text>
         </Box>

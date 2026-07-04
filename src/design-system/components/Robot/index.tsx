@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { type ImageSourcePropType, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,7 +8,6 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
 import { tokens } from '@/design-system/tokens';
 import { Text } from '@/design-system/primitives/Text';
 
@@ -22,32 +21,39 @@ type RobotEmotion = typeof ROBOT_EMOTES[number];
 interface RobotConfig {
   bodyAnim: 'bob' | 'bobStrong' | 'tilt' | 'think' | 'none';
   bobDuration?: number;
-  mouth: 'smile-soft' | 'smile' | 'open-smile' | 'tiny' | 'talk' | 'big-smile' | 'tiny-o' | 'frown-soft' | 'flat';
-  eyes: 'open' | 'up' | 'happy' | 'gentle' | 'curious' | 'closed';
-  cheek: boolean;
-  antennaAnim: boolean;
-  antennaDuration?: number;
   glow: 'on' | 'soft' | 'off';
-  wave?: boolean;
-  dots?: boolean;
-  sparks?: boolean;
   zzz?: boolean;
-  ear?: boolean;
+  pose: ImageSourcePropType;
 }
 
+// The white cat-eared TeeBot with the black LCD face (source of truth per
+// 2026-07-04 direction; master art lives in TbotREAL
+// docs/lesson-library/assets/robot-alive/poses). One photographic pose per
+// emotion so different screens naturally show different robot pictures.
+const POSES = {
+  idle: require('../../../assets/mascot/alive-idle.png') as ImageSourcePropType,
+  wave: require('../../../assets/mascot/alive-wave.png') as ImageSourcePropType,
+  celebrate: require('../../../assets/mascot/alive-celebrate.png') as ImageSourcePropType,
+  listening: require('../../../assets/mascot/alive-listening.png') as ImageSourcePropType,
+  teach: require('../../../assets/mascot/alive-teach.png') as ImageSourcePropType,
+  thinking: require('../../../assets/mascot/alive-thinking.png') as ImageSourcePropType,
+  cards: require('../../../assets/mascot/alive-cards.png') as ImageSourcePropType,
+  side: require('../../../assets/mascot/alive-side.png') as ImageSourcePropType,
+} as const;
+
 const CONFIGS: Record<RobotEmotion, RobotConfig> = {
-  idle:    { bodyAnim: 'bob',       bobDuration: 3600, mouth: 'smile-soft', eyes: 'open',    cheek: true,  antennaAnim: false,                           glow: 'soft' },
-  happy:   { bodyAnim: 'bob',       bobDuration: 2400, mouth: 'smile',      eyes: 'open',    cheek: true,  antennaAnim: true,  antennaDuration: 2000,    glow: 'soft' },
-  greet:   { bodyAnim: 'bobStrong',                    mouth: 'open-smile', eyes: 'open',    cheek: true,  antennaAnim: true,  antennaDuration: 1400,    glow: 'on',   wave: true },
-  listen:  { bodyAnim: 'tilt',                         mouth: 'tiny',       eyes: 'open',    cheek: false, antennaAnim: true,  antennaDuration: 1800,    glow: 'on',   ear: true },
-  think:   { bodyAnim: 'think',                        mouth: 'tiny',       eyes: 'up',      cheek: false, antennaAnim: false,                           glow: 'on',   dots: true },
-  speak:   { bodyAnim: 'bob',       bobDuration: 2000, mouth: 'talk',       eyes: 'open',    cheek: true,  antennaAnim: true,  antennaDuration: 1600,    glow: 'on' },
-  success: { bodyAnim: 'bobStrong',                    mouth: 'big-smile',  eyes: 'happy',   cheek: true,  antennaAnim: true,  antennaDuration: 800,     glow: 'on',   sparks: true },
-  gentle:  { bodyAnim: 'bob',       bobDuration: 3000, mouth: 'smile-soft', eyes: 'gentle',  cheek: true,  antennaAnim: false,                           glow: 'soft' },
-  curious: { bodyAnim: 'tilt',                         mouth: 'tiny-o',     eyes: 'curious', cheek: true,  antennaAnim: true,  antennaDuration: 2000,    glow: 'soft' },
-  sleep:   { bodyAnim: 'bob',       bobDuration: 5000, mouth: 'smile-soft', eyes: 'closed',  cheek: false, antennaAnim: false,                           glow: 'off',  zzz: true },
-  sad:     { bodyAnim: 'none',                         mouth: 'frown-soft', eyes: 'gentle',  cheek: false, antennaAnim: false,                           glow: 'off' },
-  worry:   { bodyAnim: 'tilt',                         mouth: 'flat',       eyes: 'gentle',  cheek: false, antennaAnim: false,                           glow: 'soft' },
+  idle:    { bodyAnim: 'bob',       bobDuration: 3600, glow: 'soft', pose: POSES.idle },
+  happy:   { bodyAnim: 'bob',       bobDuration: 2400, glow: 'soft', pose: POSES.celebrate },
+  greet:   { bodyAnim: 'bobStrong',                    glow: 'on',   pose: POSES.wave },
+  listen:  { bodyAnim: 'tilt',                         glow: 'on',   pose: POSES.listening },
+  think:   { bodyAnim: 'think',                        glow: 'on',   pose: POSES.thinking },
+  speak:   { bodyAnim: 'bob',       bobDuration: 2000, glow: 'on',   pose: POSES.teach },
+  success: { bodyAnim: 'bobStrong',                    glow: 'on',   pose: POSES.celebrate },
+  gentle:  { bodyAnim: 'bob',       bobDuration: 3000, glow: 'soft', pose: POSES.idle },
+  curious: { bodyAnim: 'tilt',                         glow: 'soft', pose: POSES.cards },
+  sleep:   { bodyAnim: 'bob',       bobDuration: 5000, glow: 'off',  pose: POSES.side, zzz: true },
+  sad:     { bodyAnim: 'none',                         glow: 'off',  pose: POSES.thinking },
+  worry:   { bodyAnim: 'tilt',                         glow: 'soft', pose: POSES.thinking },
 };
 
 interface RobotProps {
@@ -59,20 +65,15 @@ interface RobotProps {
   reduceMotion?: boolean;
 }
 
-export default function Robot({ emotion = 'idle', size = 220, color, accessibilityLabel, reduceMotion = false }: RobotProps) {
+export default function Robot({ emotion = 'idle', size = 220, accessibilityLabel, reduceMotion = false }: RobotProps) {
   const cfg = CONFIGS[emotion] ?? CONFIGS.idle;
   const W = size;
-  const bodyColor = color ?? tokens.colors.bot.body;
-  const bodyDark = tokens.colors.bot.body2;
-  // Brand consistency: the robot is always the coral TeeBot character. We ignore the
-  // per-screen `accent` prop so every screen shows one coral robot that matches the
-  // welcome hero (robot-head.png) instead of a different colour per screen.
+  // Brand consistency: every screen shows the one white cat-eared TeeBot, so
+  // the per-screen `accent`/`color` props only tint the ambient glow.
   const accentColor = tokens.colors.coral;
 
-  // Body animation
   const bodyY = useSharedValue(0);
   const bodyRotate = useSharedValue(0);
-  const antennaRotate = useSharedValue(0);
   const glowScale = useSharedValue(1);
   const glowOpacity = useSharedValue(cfg.glow === 'on' ? 0.45 : 0.25);
 
@@ -82,7 +83,6 @@ export default function Robot({ emotion = 'idle', size = 220, color, accessibili
 
     bodyY.value = 0;
     bodyRotate.value = 0;
-    antennaRotate.value = 0;
 
     if (reduceMotion) {
       glowOpacity.value = cfg.glow === 'on' ? 0.45 : 0.25;
@@ -116,14 +116,6 @@ export default function Robot({ emotion = 'idle', size = 220, color, accessibili
       ), -1, false);
     }
 
-    if (cfg.antennaAnim && cfg.antennaDuration) {
-      const aDur = cfg.antennaDuration;
-      antennaRotate.value = withRepeat(withSequence(
-        withTiming(-4, { duration: aDur / 2, easing: easeIO }),
-        withTiming(4, { duration: aDur / 2, easing: easeIO }),
-      ), -1, false);
-    }
-
     if (cfg.glow !== 'off') {
       const glowDur = cfg.glow === 'on' ? 2400 : 4000;
       glowScale.value = withRepeat(withSequence(
@@ -135,7 +127,7 @@ export default function Robot({ emotion = 'idle', size = 220, color, accessibili
         withTiming(cfg.glow === 'on' ? 0.45 : 0.25, { duration: glowDur / 2, easing: easeIO }),
       ), -1, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation re-runs only on emotion change; cfg derives from emotion and shared values are stable refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation re-runs only on emotion/reduceMotion change; cfg derives from emotion and shared values are stable refs
   }, [emotion, reduceMotion]);
 
   const bodyStyle = useAnimatedStyle(() => ({
@@ -145,17 +137,10 @@ export default function Robot({ emotion = 'idle', size = 220, color, accessibili
     ],
   }));
 
-  const antennaStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${antennaRotate.value}deg` }],
-  }));
-
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: glowScale.value }],
     opacity: glowOpacity.value,
   }));
-
-  const headW = W * 0.78;
-  const headH = W * 0.86;
 
   return (
     <View
@@ -186,207 +171,15 @@ export default function Robot({ emotion = 'idle', size = 220, color, accessibili
         </View>
       ))}
 
-      <Animated.View
+      <Animated.Image
+        source={cfg.pose}
+        resizeMode="contain"
+        accessibilityIgnoresInvertColors
         style={[
-          {
-            position: 'relative',
-            width: headW,
-            height: headH,
-          },
+          { width: W, height: W * 1.05 },
           bodyStyle,
         ]}
-      >
-        {/* antenna */}
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              left: headW / 2 - 2,
-              top: -W * 0.04,
-              alignItems: 'center',
-            },
-            antennaStyle,
-          ]}
-        >
-          <View style={{ width: 4, height: W * 0.13, backgroundColor: bodyDark, borderRadius: 2 }} />
-          <View
-            style={{
-              width: W * 0.13,
-              height: W * 0.13,
-              borderRadius: W * 0.065,
-              backgroundColor: accentColor,
-              marginTop: -W * 0.02,
-            }}
-          />
-        </Animated.View>
-
-        {/* head */}
-        <View
-          style={{
-            position: 'absolute',
-            top: W * 0.08,
-            left: 0,
-            right: 0,
-            height: W * 0.78,
-            borderRadius: headW * 0.46,
-            backgroundColor: bodyColor,
-            ...tokens.shadows.card,
-          }}
-        >
-          {/* Coral ears: always on, matching the TeeBot welcome robot. */}
-          {[0, 1].map(i => (
-            <View
-              key={i}
-              style={{
-                position: 'absolute',
-                top: '36%',
-                ...(i ? { right: -W * 0.085 } : { left: -W * 0.085 }),
-                width: W * 0.17,
-                height: W * 0.22,
-                borderRadius: W * 0.085,
-                backgroundColor: accentColor,
-              }}
-            />
-          ))}
-
-          {/* eyes */}
-          <Eyes look={cfg.eyes} W={W} />
-
-          {/* cheeks */}
-          {cfg.cheek && (
-            <>
-              <View style={[styles.cheek, { top: '56%', left: '18%' }]} />
-              <View style={[styles.cheek, { top: '56%', right: '18%' }]} />
-            </>
-          )}
-
-          {/* mouth */}
-          <Mouth kind={cfg.mouth} W={W} />
-
-          {/* thinking dots */}
-          {cfg.dots && (
-            <View style={{ position: 'absolute', right: -W * 0.2, top: '8%', flexDirection: 'row', gap: 4, padding: 8, paddingHorizontal: 12, backgroundColor: '#fff', borderRadius: 14, ...tokens.shadows.card }}>
-              {[0, 1, 2].map(i => (
-                <View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.inkSoft }} />
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* arm wave */}
-        {cfg.wave && (
-          <View
-            style={{
-              position: 'absolute',
-              right: -W * 0.1,
-              top: W * 0.35,
-              width: W * 0.22,
-              height: W * 0.1,
-              borderRadius: 999,
-              backgroundColor: bodyDark,
-            }}
-          />
-        )}
-      </Animated.View>
+      />
     </View>
   );
 }
-
-function Eyes({ look, W }: { look: RobotConfig['eyes']; W: number }) {
-  const eyeBase: import('react-native').ViewStyle = {
-    position: 'absolute',
-    top: '34%',
-    width: W * 0.13,
-    height: W * 0.16,
-    borderRadius: W * 0.08,
-    backgroundColor: tokens.colors.bot.eye,
-  };
-
-  if (look === 'closed' || look === 'happy') {
-    return (
-      <Svg style={{ position: 'absolute', top: '38%', left: 0, right: 0 }} width={W * 0.78} height={W * 0.13}>
-        <Path d={look === 'closed' ? 'M 5 8 Q 15 2 25 8' : 'M 5 12 Q 15 2 25 12'} stroke={tokens.colors.bot.eye} strokeWidth={3} fill="none" strokeLinecap="round" />
-        <Path d={look === 'closed' ? 'M 35 8 Q 45 2 55 8' : 'M 35 12 Q 45 2 55 12'} stroke={tokens.colors.bot.eye} strokeWidth={3} fill="none" strokeLinecap="round" />
-      </Svg>
-    );
-  }
-  if (look === 'up') {
-    return (
-      <>
-        <View style={[eyeBase, { left: '22%', top: '28%' }]} />
-        <View style={[eyeBase, { right: '22%', top: '28%' }]} />
-      </>
-    );
-  }
-  if (look === 'gentle') {
-    return (
-      <>
-        <View style={[eyeBase, { left: '22%', width: W * 0.11, height: W * 0.13 }]} />
-        <View style={[eyeBase, { right: '22%', width: W * 0.11, height: W * 0.13 }]} />
-      </>
-    );
-  }
-  if (look === 'curious') {
-    return (
-      <>
-        <View style={[eyeBase, { left: '20%', width: W * 0.14, height: W * 0.18 }]} />
-        <View style={[eyeBase, { right: '20%', width: W * 0.14, height: W * 0.18 }]} />
-      </>
-    );
-  }
-  return (
-    <>
-      <View style={[eyeBase, { left: '22%' }]} />
-      <View style={[eyeBase, { right: '22%' }]} />
-    </>
-  );
-}
-
-function Mouth({ kind, W }: { kind: RobotConfig['mouth']; W: number }) {
-  // Coral smile to match the welcome robot (robot-head.png).
-  const mouthColor = tokens.colors.coral;
-  const mouthW = W * 0.38;
-  const mouthBase: import('react-native').ViewStyle = {
-    position: 'absolute',
-    bottom: '20%',
-    left: '31%',
-    width: mouthW,
-    height: W * 0.06,
-    borderRadius: 999,
-  };
-
-  if (kind === 'smile' || kind === 'smile-soft' || kind === 'open-smile' || kind === 'big-smile') {
-    return (
-      <View style={[mouthBase, { backgroundColor: mouthColor, height: W * 0.07, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]} />
-    );
-  }
-  if (kind === 'talk') {
-    return (
-      <View style={[mouthBase, { backgroundColor: mouthColor, height: W * 0.09 }]} />
-    );
-  }
-  if (kind === 'tiny' || kind === 'tiny-o') {
-    return (
-      <View style={[mouthBase, { width: W * 0.12, left: '44%', height: W * 0.06, backgroundColor: mouthColor }]} />
-    );
-  }
-  if (kind === 'frown-soft') {
-    return (
-      <View style={[mouthBase, { backgroundColor: mouthColor, borderTopLeftRadius: 999, borderTopRightRadius: 999, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} />
-    );
-  }
-  return (
-    <View style={[mouthBase, { backgroundColor: mouthColor, height: W * 0.04 }]} />
-  );
-}
-
-const styles = StyleSheet.create({
-  cheek: {
-    position: 'absolute',
-    width: 22,
-    height: 14,
-    borderRadius: 999,
-    backgroundColor: tokens.colors.bot.cheek,
-    opacity: 0.7,
-  },
-});

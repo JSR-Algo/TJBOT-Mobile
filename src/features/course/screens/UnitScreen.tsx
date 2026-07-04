@@ -42,7 +42,7 @@ export default function UnitScreen({ navigation }: Props) {
               <Box style={styles.chipSky}><Text fontWeight="700" style={styles.chipSkyText}>2 phrases</Text></Box>
             </Box>
           </Box>
-          <Robot emotion="happy" size={86} />
+          <Robot emotion="speak" size={86} />
         </Box>
       </Box>
 
