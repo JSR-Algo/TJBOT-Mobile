@@ -23,12 +23,16 @@ const CONSENT_POINTS = [
 const SIGN_IN_REQUIRED_MESSAGE = 'Sign in is required before parent consent. Sign out, sign in again, then return here.';
 
 /**
- * Dev-only COPPA consent bypass token. In release builds this is always
- * undefined, so the consent call never carries a hard-coded test token.
- * Set EXPO_PUBLIC_COPPA_BYPASS_TOKEN in .env for staging backends that still
- * require a token during development.
+ * COPPA consent bypass token.
+ * Dev builds: EXPO_PUBLIC_COPPA_BYPASS_TOKEN from .env (unchanged).
+ * OTA-beta release builds (2026-07-03, uncommitted worktree patch): the hosted
+ * backend runs Stripe in placeholder mode and mints mock charges for any token,
+ * so a fixed mock token clears /auth/consent. Remove this fallback when the
+ * real Stripe card flow ships — App Store builds must not carry it.
  */
-const COPPA_BYPASS_TOKEN = __DEV__ ? process.env.EXPO_PUBLIC_COPPA_BYPASS_TOKEN : undefined;
+const COPPA_BYPASS_TOKEN = __DEV__
+  ? process.env.EXPO_PUBLIC_COPPA_BYPASS_TOKEN
+  : 'tok_mock_ota_beta';
 
 function consentErrorMessage(error: unknown): string {
   const normalized = normalizeError(error);

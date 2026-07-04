@@ -243,7 +243,23 @@ final class VoiceMicModule: RCTEventEmitter {
       return
     }
 
-    stateQueue.async { [weak self] in
+    // Microphone permission gate (2026-07-04 fix). AVAudioEngine.start() does
+    // NOT trigger the iOS permission prompt — without an explicit request the
+    // permission stays `.undetermined`, the engine silently no-ops, TJBot never
+    // appears under Settings → Microphone, and the user is stranded on
+    // "Micro không khả dụng" with no way to grant. Request explicitly so first
+    // run shows the system "Allow Microphone" dialog.
+    Self.ensureMicPermission { [weak self] granted in
+      guard let self = self else { return }
+      guard granted else {
+        reject(
+          "E_MIC_PERMISSION_DENIED",
+          "Microphone permission is off — enable it in Settings → TJBot → Microphone, then reopen the app",
+          nil
+        )
+        return
+      }
+      self.stateQueue.async { [weak self] in
       guard let self = self else { return }
       // `[A1]` lines are active-device diagnostics; keep them at `.default`
       // so Console.app shows them without enabling "Include Info Messages".
@@ -487,6 +503,35 @@ final class VoiceMicModule: RCTEventEmitter {
         self.effectiveAecMode, sampleRate, nativeFormat.sampleRate
       )
       resolve(nil)
+      }
+    }
+  }
+
+  /// Requests the iOS microphone permission, invoking `completion(granted)`
+  /// once the state is determined. Uses `AVAudioApplication` on iOS 17+ and
+  /// falls back to `AVAudioSession` on older systems. Idempotent: returns the
+  /// cached decision when already granted/denied, only prompting when the
+  /// state is `.undetermined`.
+  private static func ensureMicPermission(_ completion: @escaping (Bool) -> Void) {
+    if #available(iOS 17.0, *) {
+      switch AVAudioApplication.shared.recordPermission {
+      case .granted: completion(true)
+      case .denied: completion(false)
+      case .undetermined:
+        AVAudioApplication.requestRecordPermission { granted in completion(granted) }
+      @unknown default:
+        AVAudioApplication.requestRecordPermission { granted in completion(granted) }
+      }
+    } else {
+      let session = AVAudioSession.sharedInstance()
+      switch session.recordPermission {
+      case .granted: completion(true)
+      case .denied: completion(false)
+      case .undetermined:
+        session.requestRecordPermission { granted in completion(granted) }
+      @unknown default:
+        session.requestRecordPermission { granted in completion(granted) }
+      }
     }
   }
 
