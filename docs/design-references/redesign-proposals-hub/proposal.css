@@ -1,0 +1,539 @@
+/* ============================================================================
+   TJBot Mobile · Redesign Proposals Hub
+   Token-only. No raw hex outside the palette below.
+   Two lanes never mix on one surface:
+     .lane-child   — Garden Blue storybook
+     .lane-parent  — Wispr Flow operational
+   Source of truth: DESIGN.md §4 (Garden) + §8.2 (Wispr Flow)
+                    docs/design-references/redesign-2026/preview/kit.css
+   ============================================================================ */
+
+:root {
+  /* Garden Blue (child) — DESIGN.md §4 */
+  --c-bg:        #CFEFF4;
+  --c-bg-2:      #BCE7F0;
+  --c-cream:     #FBF4EA;
+  --c-cream-2:   #FFF8EF;
+  --c-paper:     #FFFFFF;
+  --c-ink:       #3A3937;
+  --c-ink-soft:  #6F6861;
+  --c-ink-mute:  #9A928A;
+  --c-coral:     #FF6F61;
+  --c-coral-soft:#FFE1DD;
+  --c-sky:       #3FB6C4;
+  --c-sky-soft:  #DDF7F8;
+  --c-mint:      #3FB37A;
+  --c-mint-soft: #DFF7EA;
+  --c-sun:       #F7C047;
+  --c-sun-soft:  #FCEFC9;
+  --c-plum:      #8B7BE8;
+  --c-line:      rgba(83, 67, 53, 0.10);
+  --c-shadow:    0 8px 22px rgba(58, 57, 55, 0.10);
+
+  /* Wispr Flow (parent) — DESIGN.md §8.2 */
+  --p-bg:        #F5F5F0;
+  --p-card:      #FFFFFF;
+  --p-card-2:    #F0F0F0;
+  --p-ink:       #1C1C1E;
+  --p-ink-1:     #3A3A3C;
+  --p-ink-2:     #8E8E93;
+  --p-line:      rgba(28, 28, 30, 0.08);
+  --p-accent:    #6B4EFF;
+  --p-accent-soft:#EAE6FF;
+  --p-success:   #34C759;
+  --p-warning:   #FF9500;
+  --p-danger:    #FF3B30;
+  --p-blush:     #FCE8E6;
+  --p-cream:     #FFFBE6;
+  --p-shadow:    0 2px 12px rgba(0, 0, 0, 0.06);
+
+  /* Shared */
+  --hub-bg:      #e9eaee;
+  --hub-ink:     #1b1d24;
+  --hub-ink-2:   #555a66;
+  --hub-rule:    #d8dade;
+  --hub-pill:    #fff;
+  --hub-shadow:  0 22px 44px rgba(0, 0, 0, 0.06);
+  --radius-card: 22px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--hub-bg);
+  color: var(--hub-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.masthead {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 14px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hub-ink-2);
+}
+.eyebrow .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-sky);
+}
+.eyebrow .lane-tag { color: var(--hub-ink-2); }
+h1 {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 8px 0 6px;
+}
+h1 b { color: var(--c-coral); font-weight: 800; }
+.lead { color: var(--hub-ink-2); max-width: 920px; line-height: 1.6; }
+.lead code {
+  background: rgba(58, 57, 55, 0.08);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12.5px;
+}
+.rules {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  color: var(--hub-ink-2);
+  font-size: 13px;
+}
+.rules code {
+  background: rgba(58, 57, 55, 0.08);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+}
+.status {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--hub-pill);
+  border: 1px solid var(--hub-rule);
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: var(--hub-ink-2);
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+}
+
+/* Layout */
+.layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Left nav */
+.leftnav {
+  position: sticky;
+  top: 14px;
+  align-self: start;
+  font-size: 12.5px;
+}
+.leftnav h3 {
+  margin: 18px 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hub-ink-2);
+  border-bottom: 1px solid var(--hub-rule);
+  padding-bottom: 6px;
+}
+.leftnav .ct {
+  font-weight: 600;
+  color: var(--hub-ink-2);
+}
+.leftnav ol {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+.leftnav li a {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  text-decoration: none;
+  color: var(--hub-ink);
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.leftnav li a:hover { background: rgba(58, 57, 55, 0.05); }
+.leftnav .idx {
+  display: inline-block;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--hub-ink-2);
+  min-width: 22px;
+}
+.leftnav .route {
+  display: block;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--hub-ink-2);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Surface card */
+.surface {
+  margin-top: 26px;
+  padding: 18px 18px 22px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: var(--hub-shadow);
+  border-left: 4px solid var(--hub-rule);
+}
+.surface.lane-child  { border-left-color: var(--c-sky); }
+.surface.lane-parent { border-left-color: var(--p-accent); }
+.surface.lane-shared { border-left-color: var(--c-mint); }
+.surface > header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  border-bottom: 1px solid var(--hub-rule);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+.surface .num {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: var(--hub-ink-2);
+}
+.surface h2 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--hub-ink);
+}
+.surface .route {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--hub-ink-2);
+  margin-left: auto;
+}
+.lane-pill {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fff;
+  text-transform: uppercase;
+}
+.lane-pill-child  { background: var(--c-sky); }
+.lane-pill-parent { background: var(--p-accent); }
+.lane-pill-shared { background: var(--c-mint); }
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+.col h4 {
+  margin: 8px 0 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hub-ink-2);
+}
+.col h4:not(:first-child) { margin-top: 14px; }
+
+/* Live capture */
+.live {
+  margin: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0c0d10;
+  border: 1px solid var(--hub-rule);
+  position: relative;
+}
+.live img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.live figcaption,
+.live .ph {
+  font-size: 11px;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  padding: 6px 10px;
+  background: rgba(11, 13, 16, 0.75);
+  color: #d6d8de;
+}
+.live figcaption { color: #d6d8de; }
+.live.placeholder {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(
+    45deg, #f6f6f7, #f6f6f7 10px, #ececef 10px, #ececef 20px
+  );
+}
+.live.placeholder .ph {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 22px;
+  text-align: center;
+  max-width: 80%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  color: var(--hub-ink);
+}
+.live.placeholder .ph span {
+  display: block;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  color: var(--c-coral);
+  margin-bottom: 6px;
+}
+.live.placeholder .ph small {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: var(--hub-ink-2);
+  line-height: 1.45;
+}
+
+/* Notes (right column) */
+ul.wrong, ul.prop, ol.auth {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 12.5px;
+  color: var(--hub-ink);
+}
+ul.wrong li {
+  padding: 5px 0 5px 18px;
+  position: relative;
+  border-bottom: 1px dotted var(--hub-rule);
+}
+ul.wrong li:last-child { border-bottom: 0; }
+ul.wrong li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--p-danger);
+}
+ul.prop li {
+  padding: 5px 0 5px 18px;
+  position: relative;
+  border-bottom: 1px dotted var(--hub-rule);
+}
+ul.prop li:last-child { border-bottom: 0; }
+ul.prop li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--p-accent);
+}
+ol.auth li {
+  padding: 3px 0 3px 22px;
+  position: relative;
+  font-size: 11.5px;
+  color: var(--hub-ink-2);
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+}
+ol.auth li::before {
+  counter-increment: auth;
+  content: counter(auth) ".";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  font-weight: 800;
+  color: var(--hub-ink);
+}
+ol.auth { counter-reset: auth; }
+
+/* Mock (right column) */
+.mock {
+  display: flex;
+  flex-direction: column;
+}
+.mock-frame {
+  border-radius: 32px;
+  border: 1px solid var(--hub-rule);
+  min-height: 460px;
+  padding: 22px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.mock-frame.lane-child {
+  background: linear-gradient(180deg, var(--c-bg), var(--c-bg-2));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+}
+.mock-frame.lane-parent {
+  background: var(--p-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+}
+.mock-frame.lane-shared {
+  background: #0c0d10;
+  color: #f5f7ff;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+}
+.mock-cap {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--hub-ink-2);
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+}
+.mock-placeholder {
+  font-size: 12px;
+  color: var(--hub-ink-2);
+}
+.mock-placeholder code {
+  background: rgba(58, 57, 55, 0.08);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11.5px;
+}
+
+/* Mock chrome (child phone) */
+.mock .ph-frame {
+  border-radius: 22px;
+  background: var(--c-paper);
+  border: 1px solid var(--c-line);
+  padding: 14px 14px 18px;
+  box-shadow: var(--c-shadow);
+  max-width: 320px;
+  margin: 0 auto;
+}
+.mock .ph-card {
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--c-cream);
+  box-shadow: var(--c-shadow);
+  margin-bottom: 10px;
+}
+.mock .ph-cta {
+  border-radius: 999px;
+  background: var(--c-coral);
+  color: #fff;
+  text-align: center;
+  font-weight: 800;
+  padding: 11px 14px;
+  font-size: 13px;
+  margin-top: 10px;
+}
+.mock .ph-title { font-weight: 800; color: var(--c-ink); font-size: 15px; }
+.mock .ph-sub   { color: var(--c-ink-soft); font-size: 12px; margin-top: 2px; }
+.mock .ph-pill {
+  display: inline-block;
+  background: #fff;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--c-ink);
+  margin-right: 6px;
+}
+
+/* Parent mock chrome */
+.mock .pa-card {
+  background: var(--p-card);
+  border-radius: 18px;
+  border: 1px solid var(--p-line);
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--p-shadow);
+}
+.mock .pa-h {
+  font-family: Georgia, "New York", ui-serif, serif;
+  font-weight: 500;
+  color: var(--p-ink);
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+.mock .pa-sub { font-size: 12.5px; color: var(--p-ink-1); }
+.mock .pa-stat { font-family: Georgia, "New York", ui-serif, serif; font-weight: 500; color: var(--p-success); font-size: 28px; }
+.mock .pa-cta {
+  border-radius: 999px;
+  background: var(--p-ink);
+  color: #fff;
+  text-align: center;
+  font-weight: 600;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-top: 12px;
+}
+.mock .pa-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--p-line);
+  padding: 9px 0;
+  font-size: 13px;
+  color: var(--p-ink);
+}
+.mock .pa-toggle .on {
+  width: 38px; height: 22px; border-radius: 999px;
+  background: var(--p-accent); position: relative;
+}
+.mock .pa-toggle .on::after {
+  content: "";
+  position: absolute;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  right: 2px; top: 2px;
+}
+.mock .pa-chip {
+  display: inline-block;
+  background: var(--p-accent-soft);
+  color: var(--p-accent);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.foot {
+  max-width: 1280px;
+  margin: 32px auto 24px;
+  padding: 14px 24px;
+  color: var(--hub-ink-2);
+  font-size: 12px;
+  border-top: 1px solid var(--hub-rule);
+}
+.foot code {
+  background: rgba(58, 57, 55, 0.08);
+  border-radius: 4px;
+  padding: 1px 6px;
+}

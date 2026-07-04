@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TJBot redesign — North Star (kit + 2 lanes)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<style>
+/* =========================================================================
+   TJBot design-system KIT (redesign-2026)  — single source of visual truth
+   Two lanes, never mixed on one screen:
+   • CHILD  (.lane-child)  — Garden-Blue storybook · Nunito · tokens from src/design-system/tokens/colors.ts
+   • PARENT (.lane-parent) — Wispr-Flow operational · Fraunces serif + system sans · DESIGN.md §8 tokens
+   ========================================================================= */
+:root{
+  /* ---- CHILD lane tokens (Garden Blue + warm accents) ---- */
+  --c-bg:#CFEFF4; --c-bg-2:#BCE7F0;            /* garden sky page */
+  --c-cream:#FBF4EA; --c-cream2:#FFF8EF; --c-paper:#FFFFFF;
+  --c-ink:#3A3937; --c-ink-soft:#6F6861; --c-ink-mute:#9A928A;
+  --c-coral:#FF6F61; --c-coral-soft:#FFE1DD;
+  --c-sky:#3FB6C4; --c-sky-soft:#DDF7F8;
+  --c-mint:#3FB37A; --c-mint-soft:#DFF7EA;
+  --c-sun:#F7C047; --c-sun-soft:#FCEFC9;
+  --c-plum:#8B7BE8; --c-line:rgba(83,67,53,.10);
+  --c-shadow:0 8px 22px rgba(58,57,55,.10);
+  /* ---- PARENT lane tokens (DESIGN.md §8 Wispr Flow) ---- */
+  --p-bg:#F5F5F0; --p-card:#FFFFFF; --p-card-2:#F0F0F0;
+  --p-ink:#1C1C1E; --p-ink-1:#3A3A3C; --p-ink-2:#8E8E93;
+  --p-line:rgba(28,28,30,.08);
+  --p-accent:#6B4EFF; --p-accent-soft:#EAE6FF;
+  --p-success:#34C759; --p-warning:#FF9500; --p-danger:#FF3B30;
+  --p-blush:#FCE8E6; --p-cream:#FFFBE6;
+  --p-shadow:0 2px 12px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaee;font-family:Nunito,system-ui,sans-serif;color:#222;padding:34px 20px 60px}
+.masthead{max-width:1080px;margin:0 auto 26px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b6f7a}
+.eyebrow .dot{width:8px;height:8px;border-radius:50%;background:#3FB6C4}
+.masthead h1{font-size:30px;font-weight:900;letter-spacing:-.02em;margin:8px 0 6px;color:#1b1d24}
+.masthead h1 b{color:#6B4EFF}
+.masthead p{font-size:14.5px;color:#555a66;line-height:1.6;max-width:880px}
+.masthead code{background:#fff;border:1px solid #dfe1e7;border-radius:5px;padding:1px 6px;font-size:12.5px}
+.stage{display:flex;gap:30px;justify-content:center;flex-wrap:wrap;align-items:flex-start;max-width:1080px;margin:0 auto}
+.col{display:flex;flex-direction:column;align-items:center;gap:12px}
+.col .tag{font-size:13px;font-weight:800;color:#3a3d46}
+.col .tag span{font-weight:600;color:#8a8f9a}
+
+/* phone frame */
+.phone{width:390px;height:844px;border-radius:46px;background:#0c0d10;padding:10px;box-shadow:0 30px 60px rgba(0,0,0,.22);flex:none}
+.screen{width:100%;height:100%;border-radius:38px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.statusbar{flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:14px;font-weight:700}
+.statusbar .island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:108px;height:28px;background:#0c0d10;border-radius:16px}
+.scroll{flex:1;overflow:hidden;position:relative}
+.body{padding:8px 20px 18px}
+
+/* ============ CHILD lane ============ */
+.lane-child .screen{background:linear-gradient(180deg,var(--c-bg) 0%,var(--c-bg-2) 100%);font-family:Nunito,sans-serif}
+.lane-child .statusbar{color:var(--c-ink)}
+.ch-head{display:flex;align-items:flex-start;justify-content:space-between;padding:6px 2px 2px}
+.ch-hi{font-size:30px;font-weight:900;letter-spacing:-.02em;color:var(--c-ink);line-height:1.05}
+.ch-sub{font-size:15px;font-weight:600;color:var(--c-ink-soft);margin-top:4px}
+.ch-iconbtn{width:46px;height:46px;border-radius:50%;background:#fff;border:1px solid var(--c-line);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:var(--c-shadow)}
+/* hero lesson card */
+.ch-hero{margin-top:16px;background:var(--c-cream);border-radius:30px;padding:20px 20px 18px;position:relative;box-shadow:var(--c-shadow);overflow:hidden}
+.ch-eyebrow{display:inline-block;background:#fff;border-radius:999px;padding:7px 14px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--c-coral)}
+.ch-hero h2{font-size:27px;font-weight:900;letter-spacing:-.02em;color:var(--c-ink);margin:13px 0 8px;line-height:1.1}
+.ch-hero p{font-size:15px;font-weight:600;color:var(--c-ink-soft);line-height:1.45;max-width:78%}
+.ch-vocab{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+.ch-vocab span{background:#fff;border-radius:999px;padding:8px 15px;font-size:14px;font-weight:700;color:var(--c-ink);box-shadow:0 2px 5px rgba(58,57,55,.06)}
+.ch-meta{display:flex;gap:9px;margin-top:16px}
+.ch-meta .m{display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:700;color:var(--c-ink-soft)}
+.ch-robot{position:absolute;right:14px;bottom:74px;width:74px;height:74px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--c-shadow);font-size:38px}
+/* ONE primary action — dominant */
+.ch-cta{margin-top:18px;height:58px;border-radius:18px;background:var(--c-coral);color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;font-size:17px;font-weight:800;box-shadow:0 10px 20px rgba(255,111,97,.32)}
+.ch-progress{display:flex;align-items:center;gap:10px;margin-top:14px}
+.ch-progress .track{flex:1;height:9px;border-radius:5px;background:#fff;overflow:hidden}
+.ch-progress .fill{height:100%;width:35%;background:var(--c-mint);border-radius:5px}
+.ch-progress .lbl{font-size:12.5px;font-weight:800;color:var(--c-ink-soft)}
+/* streak strip — one row */
+.ch-streak{margin-top:16px;background:var(--c-sun-soft);border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.ch-streak .flame{width:42px;height:42px;border-radius:50%;background:var(--c-sun);display:flex;align-items:center;justify-content:center;font-size:21px;flex:none}
+.ch-streak .big{font-size:18px;font-weight:900;color:var(--c-ink)}
+.ch-streak .small{font-size:13px;font-weight:600;color:var(--c-ink-soft);margin-top:1px}
+.ch-streak .chips{margin-left:auto;display:flex;gap:6px}
+.ch-streak .chips b{background:#fff;border-radius:10px;padding:6px 9px;font-size:12px;font-weight:800;color:var(--c-ink-soft)}
+/* quick actions — secondary */
+.ch-qa-h{font-size:14px;font-weight:800;color:var(--c-ink-soft);margin:20px 2px 10px;letter-spacing:.01em}
+.ch-qa{display:flex;gap:10px}
+.ch-qa .q{flex:1;background:#fff;border-radius:18px;padding:14px 6px;text-align:center;box-shadow:0 3px 8px rgba(58,57,55,.06)}
+.ch-qa .q .ic{font-size:24px}
+.ch-qa .q .t{font-size:12.5px;font-weight:800;color:var(--c-ink);margin-top:6px}
+/* floating pill nav (replaces flat bar) */
+.ch-nav{position:absolute;left:0;right:0;bottom:0;padding:8px 16px 22px;display:flex;align-items:center;gap:10px}
+.ch-pill{flex:1;display:flex;background:#fff;border-radius:26px;box-shadow:0 6px 18px rgba(58,57,55,.14);padding:9px 6px}
+.ch-pill .t{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--c-ink-mute);font-size:10px;font-weight:800}
+.ch-pill .t.on{color:var(--c-coral)}
+.ch-pill .t.on .ic{background:var(--c-coral-soft);border-radius:12px}
+.ch-pill .ic{width:38px;height:26px;display:flex;align-items:center;justify-content:center}
+
+/* ============ PARENT lane ============ */
+.lane-parent .screen{background:var(--p-bg);font-family:-apple-system,"Segoe UI",Roboto,sans-serif}
+.lane-parent .statusbar{color:var(--p-ink)}
+.pa-top{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 2px}
+.pa-top .greet{font-size:13px;font-weight:600;color:var(--p-ink-2)}
+.pa-top h1{font-family:Fraunces,Georgia,serif;font-size:30px;font-weight:600;letter-spacing:-.01em;color:var(--p-ink);line-height:1.15}
+.pa-ava{width:42px;height:42px;border-radius:50%;background:linear-gradient(140deg,#DCB872,#C0843C);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none}
+/* progress hero */
+.pa-hero{margin-top:16px;background:var(--p-card-2);border-radius:28px;padding:24px 22px}
+.pa-hero .stat{font-family:Fraunces,Georgia,serif;font-size:42px;font-weight:600;color:var(--p-success);line-height:1}
+.pa-hero .stat small{font-size:18px;color:var(--p-ink-1);font-weight:600}
+.pa-hero .desc{font-size:15px;color:var(--p-ink-1);margin-top:6px;line-height:1.4}
+.pa-chips{display:flex;gap:8px;margin-top:16px}
+.pa-chips .chip{background:var(--p-card);border-radius:12px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--p-ink-1)}
+.pa-dots{display:flex;gap:6px;justify-content:center;margin-top:14px}
+.pa-dots i{width:6px;height:6px;border-radius:50%;background:var(--p-ink-2);opacity:.4}
+.pa-dots i.on{opacity:1;background:var(--p-accent)}
+.pa-sec{font-size:13px;font-weight:600;color:var(--p-ink-2);margin:22px 4px 8px}
+/* device status card (blush) */
+.pa-device{background:var(--p-blush);border-radius:24px;padding:20px}
+.pa-device .row{display:flex;align-items:center;gap:12px}
+.pa-device .dico{width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:21px}
+.pa-device .name{font-size:17px;font-weight:600;color:var(--p-ink)}
+.pa-device .seen{font-size:12.5px;color:var(--p-ink-2);margin-top:2px}
+/* status chip — text + icon, never color alone */
+.pa-status{margin-left:auto;display:flex;align-items:center;gap:6px;background:#E6F9EC;color:#1A7F3C;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700}
+.pa-status .d{width:8px;height:8px;border-radius:50%;background:#1A7F3C}
+/* charcoal pill primary — ONE per screen */
+.pa-btn{margin-top:16px;height:48px;border-radius:999px;background:var(--p-ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
+/* action card (cream) */
+.pa-action{margin-top:14px;background:var(--p-cream);border-radius:24px;padding:20px}
+.pa-action h3{font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:600;color:var(--p-ink)}
+.pa-action p{font-size:14px;color:var(--p-ink-1);margin-top:6px;line-height:1.45}
+.pa-link{display:inline-block;margin-top:12px;color:var(--p-accent);font-size:15px;font-weight:600}
+/* parent floating pill nav */
+.pa-nav{position:absolute;left:0;right:0;bottom:0;padding:8px 14px 22px;display:flex;justify-content:center}
+.pa-navpill{background:#fff;border-radius:20px;box-shadow:var(--p-shadow);padding:8px 8px;display:flex;gap:4px;width:100%}
+.pa-navpill .t{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--p-ink-2);font-size:12px;font-weight:600;padding:8px 6px;border-radius:14px}
+.pa-navpill .t.on{background:var(--p-accent-soft);color:var(--p-accent)}
+
+.svg{width:22px;height:22px;display:block}
+.sb{display:inline-flex;gap:6px;align-items:center}
+.sb svg{height:12px;width:auto;fill:currentColor}
+.note{max-width:1080px;margin:30px auto 0;font-size:13px;color:#555a66;line-height:1.65}
+.note b{color:#2a2d36}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <span class="eyebrow"><span class="dot"></span>TJBot · North-Star preview · redesign-2026</span>
+  <h1>One <b>kit</b>, two lanes — the look to lock before all 143 screens</h1>
+  <p>Both screens are built from the shared design-system kit (CSS tokens only — no hardcoded values), fixing the audit's top failures: <b>one dominant primary action</b>, <b>state shown as text + icon</b> (not color alone), <b>44px targets</b>, <b>floating-pill nav</b> per <code>DESIGN.md §8</code>, and strict <b>lane separation</b>. Child = Garden-Blue / Nunito; Parent = Wispr-Flow / Fraunces serif.</p>
+</header>
+
+<div class="stage">
+  <!-- ============ CHILD: Home ============ -->
+  <div class="col">
+    <div class="tag">Child lane <span>— Home (Garden Blue)</span></div>
+    <div class="phone lane-child"><div class="screen">
+      <div class="statusbar"><div class="island"></div><span>9:41</span><span class="sb"><svg viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 16 12"><path d="M8 11 1 4.6a10 10 0 0 1 14 0z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><svg viewBox="0 0 26 12"><rect x="1" y="1" width="21" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="3" width="15" height="6" rx="1.5"/><rect x="23.5" y="4" width="2" height="4" rx="1"/></svg></span></div>
+      <div class="scroll"><div class="body">
+        <div class="ch-head">
+          <div><div class="ch-hi">Hi, Mia! 👋</div><div class="ch-sub">Ready for today's adventure?</div></div>
+          <div class="ch-iconbtn">🔔</div>
+        </div>
+
+        <div class="ch-hero">
+          <span class="ch-eyebrow">Today's lesson</span>
+          <h2>At the sunny market</h2>
+          <p>Learn yummy words for fruits and colors!</p>
+          <div class="ch-vocab"><span>🍎 apple</span><span>🍌 banana</span><span>🍊 orange</span></div>
+          <div class="ch-meta"><div class="m">⏱ 5 min</div><div class="m">📖 4 steps</div></div>
+          <div class="ch-robot">🤖</div>
+          <div class="ch-cta">▶ Start lesson</div>
+          <div class="ch-progress"><div class="track"><div class="fill"></div></div><div class="lbl">Step 0 / 4</div></div>
+        </div>
+
+        <div class="ch-streak">
+          <div class="flame">🔥</div>
+          <div><div class="big">1-day streak</div><div class="small">Best: 5 days · keep it going!</div></div>
+          <div class="chips"><b>⭐ 40 XP</b><b>📅 Mon</b></div>
+        </div>
+
+        <div class="ch-qa-h">Quick actions</div>
+        <div class="ch-qa">
+          <div class="q"><div class="ic">📚</div><div class="t">Lessons</div></div>
+          <div class="q"><div class="ic">💬</div><div class="t">Talk</div></div>
+          <div class="q"><div class="ic">🌱</div><div class="t">Garden</div></div>
+          <div class="q"><div class="ic">🤖</div><div class="t">My Robot</div></div>
+        </div>
+      </div></div>
+      <div class="ch-nav"><div class="ch-pill">
+        <div class="t on"><span class="ic">🏠</span>Home</div>
+        <div class="t"><span class="ic">📚</span>Learn</div>
+        <div class="t"><span class="ic">🌱</span>Garden</div>
+        <div class="t"><span class="ic">🤖</span>Robot</div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- ============ PARENT: Today ============ -->
+  <div class="col">
+    <div class="tag">Parent lane <span>— Today (Wispr Flow)</span></div>
+    <div class="phone lane-parent"><div class="screen">
+      <div class="statusbar"><div class="island"></div><span>9:41</span><span class="sb"><svg viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 16 12"><path d="M8 11 1 4.6a10 10 0 0 1 14 0z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><svg viewBox="0 0 26 12"><rect x="1" y="1" width="21" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="3" width="15" height="6" rx="1.5"/><rect x="23.5" y="4" width="2" height="4" rx="1"/></svg></span></div>
+      <div class="scroll"><div class="body">
+        <div class="pa-top">
+          <div><div class="greet">Good morning</div><h1>Today</h1></div>
+          <div class="pa-ava">MA</div>
+        </div>
+
+        <div class="pa-hero">
+          <div class="stat">12 <small>lessons this week</small></div>
+          <div class="desc">Mia practiced <b>28 new words</b> and stayed <b>76% engaged</b>.</div>
+          <div class="pa-chips"><span class="chip">🔥 5-day streak</span><span class="chip">⭐ 340 XP</span><span class="chip">📅 Mon–Fri</span></div>
+          <div class="pa-dots"><i class="on"></i><i></i><i></i></div>
+        </div>
+
+        <div class="pa-sec">Your robot</div>
+        <div class="pa-device">
+          <div class="row">
+            <div class="dico">🤖</div>
+            <div><div class="name">Mia's TJBot</div><div class="seen">Last active 2 min ago</div></div>
+            <div class="pa-status"><span class="d"></span>Online</div>
+          </div>
+          <div class="pa-btn">Start a lesson together</div>
+        </div>
+
+        <div class="pa-sec">Next step</div>
+        <div class="pa-action">
+          <h3>Review this week's words</h3>
+          <p>A 3-minute recap helps Mia remember the 28 new words from this week.</p>
+          <span class="pa-link">See progress →</span>
+        </div>
+      </div></div>
+      <div class="pa-nav"><div class="pa-navpill">
+        <div class="t on">🏠 Today</div>
+        <div class="t">📈 Progress</div>
+        <div class="t">🤖 Device</div>
+        <div class="t">👤 Account</div>
+      </div></div>
+    </div></div>
+  </div>
+</div>
+
+<p class="note">
+  <b>What changed vs today's app (from the 143-screen audit):</b> tokens replace hardcoded colors · one dominant CTA per screen (child "Start lesson" coral; parent "Start a lesson together" charcoal) · device status is a <b>text + icon</b> chip, not a bare green dot · the flat 5-icon bar becomes a <b>floating pill</b> · child & parent palettes are strictly separated. This is iteration 1 — the look to approve before I generate the rest.
+</p>
+</body>
+</html>

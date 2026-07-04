@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TJBot Mobile — Redesign Proposals Hub</title>
+  <link rel="stylesheet" href="./proposal.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="eyebrow">
+      <span class="dot"></span>
+      <span class="lane-tag" id="lane-tag">CHILD · PARENT · SHARED</span>
+    </div>
+    <h1>TJBot Mobile — Redesign <b>Proposals Hub</b></h1>
+    <p class="lead">
+      Side-by-side proposal for every primary surface in <code>original-app/TJBOT-Mobile</code>.
+      The <b>LEFT</b> column is the running app captured on the iPad Pro 13-inch (M5) simulator
+      (UDID <code id="udid">…</code>, iOS 26.3) at 1366×1024 after waiting 60s for the
+      active screen to settle. The <b>RIGHT</b> column is the proposed redesign rendered
+      with the in-house kit tokens lifted from
+      <code>docs/design-references/redesign-2026/preview/kit.css</code> and
+      <code>DESIGN.md</code> §4 (Garden Blue child) / §8.2 (Wispr Flow parent).
+      All proposed mockups share those tokens; no emoji, no Tailwind, no raw hex outside
+      the token palette.
+    </p>
+    <ul class="rules">
+      <li><span id="n-surface">…</span> surfaces mapped from <code>src/navigation/routes.ts</code></li>
+      <li><span id="n-captured">…</span> captured on iPad Pro 13-inch (M5) simulator today</li>
+      <li><span id="n-pending">…</span> awaiting live capture (need a fresh sim build or human-tap step)</li>
+      <li>Tokens: Garden Blue child · Wispr Flow parent · two-lane separation enforced</li>
+      <li>Verification gates per wave: <code>tsc --noEmit</code> · <code>npm run lint</code> · <code>npm run check:token-parity</code> · <code>npm test</code></li>
+      <li>↑ Captures use a 60s post-navigation settle per audit baseline (waiting rule)</li>
+    </ul>
+    <p class="status" id="status">Loading surface catalog…</p>
+  </header>
+
+  <div class="layout">
+    <nav class="leftnav" aria-label="Surfaces">
+      <h3>CHILD <span class="ct" id="ct-child">…</span></h3>
+      <ol id="nav-child"></ol>
+      <h3>PARENT <span class="ct" id="ct-parent">…</span></h3>
+      <ol id="nav-parent"></ol>
+      <h3>SHARED <span class="ct" id="ct-shared">…</span></h3>
+      <ol id="nav-shared"></ol>
+    </nav>
+
+    <main>
+      <div id="sections"></div>
+    </main>
+  </div>
+
+  <footer class="foot">
+    Hub source: <code>docs/design-references/redesign-proposals-hub/</code>.
+    Capture script: <code>tools/capture-mobile-surfaces.mjs</code> (idempotent; rerun-safe).
+    Authority: <code>DESIGN.md</code> · <code>BEHAVIOR.md</code> · <code>ENGLISH_LEARNING.md</code> · <code>AGENTS.md</code> §2 Mobile lane.
+  </footer>
+
+  <script src="./data.js"></script>
+  <script>
+    // Minimal vanilla render. No framework. Keeps the doc auditable.
+    (function () {
+      const data = window.TJBOT_HUB;
+      if (!data) {
+        document.getElementById('status').textContent =
+          'FATAL: data.js did not load. Open this page from a local web server.';
+        return;
+      }
+
+      // Render counters
+      const totals = { CHILD: 0, PARENT: 0, SHARED: 0 };
+      const captured = { CHILD: 0, PARENT: 0, SHARED: 0 };
+      const pending = { CHILD: 0, PARENT: 0, SHARED: 0 };
+      for (const s of data.surfaces) {
+        totals[s.lane] = (totals[s.lane] || 0) + 1;
+        if (s.captured) captured[s.lane] = (captured[s.lane] || 0) + 1;
+        else pending[s.lane] = (pending[s.lane] || 0) + 1;
+      }
+      const n = (x) => Object.values(x).reduce((a, b) => a + b, 0);
+      document.getElementById('n-surface').textContent = n(totals);
+      document.getElementById('n-captured').textContent = n(captured);
+      document.getElementById('n-pending').textContent = n(pending);
+      document.getElementById('ct-child').textContent = '· ' + totals.CHILD;
+      document.getElementById('ct-parent').textContent = '· ' + totals.PARENT;
+      document.getElementById('ct-shared').textContent = '· ' + totals.SHARED;
+      document.getElementById('udid').textContent = data.captureEnv.udid || '…';
+      document.getElementById('status').textContent =
+        'Catalog: ' + n(totals) + ' surfaces · ' +
+        n(captured) + ' captured · ' + n(pending) + ' pending · ' +
+        'kit version ' + data.kitVersion + ' · captured ' +
+        new Date(data.captureEnv.isoDate).toISOString().replace('T', ' ').slice(0, 16);
+
+      // Left nav
+      const lanes = ['CHILD', 'PARENT', 'SHARED'];
+      const navMap = {};
+      for (const ln of lanes) {
+        navMap[ln] = document.getElementById('nav-' + ln.toLowerCase());
+      }
+      const sections = document.getElementById('sections');
+      data.surfaces.forEach((s, idx) => {
+        const sec = document.createElement('section');
+        sec.id = s.id;
+        sec.className = 'surface lane-' + s.lane.toLowerCase();
+        sec.innerHTML = surfaceHTML(s, idx);
+        sections.appendChild(sec);
+
+        const li = document.createElement('li');
+        const cap = s.captured ? '✓' : '…';
+        li.innerHTML =
+          '<a href="#' + s.id + '"><span class="idx">' + s.num + '</span> ' +
+          cap + ' ' + escapeHTML(s.title) +
+          '<span class="route">' + escapeHTML(s.route) + '</span></a>';
+        navMap[s.lane].appendChild(li);
+      });
+
+      function surfaceHTML(s, idx) {
+        const liveBlock = s.captured
+          ? '<figure class="live"><img src="' + s.capture + '" alt="' +
+              escapeHTML(s.title) + ' — live capture on iPad Pro 13-inch (M5)" />' +
+            '<figcaption>LIVE · ' + s.captureEnv.waitMs + 'ms post-route settle</figcaption></figure>'
+          : '<figure class="live placeholder"><div class="ph">' +
+              '<span>awaiting live capture</span>' +
+              '<small>' + escapeHTML(s.captureBlocker || 'iOS Simulator signing wall (see capture script)') +
+              '</small></div>' +
+            '<figcaption>PLACEHOLDER · rerun <code>capture-mobile-surfaces.mjs</code> after next clean sim build</figcaption></figure>';
+
+        return [
+          '<header>',
+            '<span class="num">' + s.num + '</span>',
+            '<span class="lane-pill lane-pill-' + s.lane.toLowerCase() + '">' + s.lane + '</span>',
+            '<h2>' + escapeHTML(s.title) + '</h2>',
+            '<code class="route">' + escapeHTML(s.route) + '</code>',
+          '</header>',
+          '<div class="grid">',
+            '<div class="col live-col">', liveBlock, '</div>',
+            '<div class="col notes">',
+              '<h4>What is wrong</h4>',
+              '<ul class="wrong">', s.wrong.map((w) => '<li>' + escapeHTML(w) + '</li>').join(''), '</ul>',
+              '<h4>Proposed</h4>',
+              '<ul class="prop">', s.proposed.map((w) => '<li>' + escapeHTML(w) + '</li>').join(''), '</ul>',
+              '<h4>Authority</h4>',
+              '<ol class="auth">', s.authority.map((w) => '<li>' + escapeHTML(w) + '</li>').join(''), '</ol>',
+            '</div>',
+            '<div class="col mock">',
+              '<div class="mock-frame ', s.lane.toLowerCase(), '" data-lane="' + s.lane.toLowerCase() + '">',
+                s.mockHTML || '<p class="mock-placeholder">Mockup pending. See <code>' + escapeHTML(s.route) + '</code> in <code>' + escapeHTML(s.feature || 'src/') + '</code>.</p>',
+              '</div>',
+              '<div class="mock-cap">Proposed mockup · in-house tokens · ' + s.lane.toLowerCase() + ' lane</div>',
+            '</div>',
+          '</div>'
+        ].join('');
+      }
+
+      function escapeHTML(s) {
+        return String(s).replace(/[&<>"']/g, (c) => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+      }
+    })();
+  </script>
+</body>
+</html>

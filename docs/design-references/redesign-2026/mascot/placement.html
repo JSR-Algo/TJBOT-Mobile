@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TJBot mascot — placement preview (head + body)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --c-bg:#CFEFF4; --c-bg-2:#BCE7F0; --c-cream:#FBF4EA; --c-paper:#FFF;
+  --c-ink:#3A3937; --c-ink-soft:#6F6861; --c-ink-mute:#9A928A;
+  --c-coral:#FF6F61; --c-coral-soft:#FFE1DD; --c-sky:#3FB6C4; --c-sky-soft:#DDF7F8;
+  --c-mint:#3FB37A; --c-sun:#F7C047; --c-sun-soft:#FCEFC9; --c-line:rgba(83,67,53,.10);
+  --c-shadow:0 8px 22px rgba(58,57,55,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaee;font-family:Nunito,system-ui,sans-serif;color:#222;padding:34px 20px 70px}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b6f7a}
+.eyebrow .dot{width:8px;height:8px;border-radius:50%;background:#3FB6C4}
+h1.title{font-size:30px;font-weight:900;letter-spacing:-.02em;margin:8px 0 6px;color:#1b1d24}
+h1.title b{color:#FF6F61}
+.lead{font-size:14.5px;color:#555a66;line-height:1.6;max-width:920px}
+.lead code{background:#fff;border:1px solid #dfe1e7;border-radius:5px;padding:1px 6px;font-size:12.5px}
+h2.sec{font-size:18px;font-weight:900;color:#23262e;margin:40px 0 4px;letter-spacing:-.01em}
+.sub{font-size:13.5px;color:#6b6f7a;margin-bottom:16px}
+
+/* asset panel */
+.assets{display:flex;gap:16px;flex-wrap:wrap}
+.asset{border-radius:22px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;border:1px solid #e2e3e8;background:#fff}
+.asset .frame{width:230px;height:230px;border-radius:18px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.asset .gardensky{background:linear-gradient(180deg,#CFEFF4,#BCE7F0)}
+.asset .deep{background:#2E4AAA}
+.asset .offwhite{background:#F5F5F0}
+.asset .lbl{font-size:13px;font-weight:800;color:#3a3d46}
+.asset .lbl span{font-weight:600;color:#8a8f9a}
+.asset img.body{height:210px;width:auto}
+.asset img.head{height:170px;width:auto}
+
+/* phone */
+.grid{display:flex;gap:26px;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.col .cap{font-size:13px;font-weight:800;color:#3a3d46;text-align:center}
+.col .cap span{display:block;font-weight:600;color:#8a8f9a;font-size:12px;margin-top:2px}
+.phone{width:300px;height:650px;border-radius:40px;background:#0c0d10;padding:8px;box-shadow:0 22px 44px rgba(0,0,0,.2)}
+.screen{width:100%;height:100%;border-radius:33px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--c-bg),var(--c-bg-2));font-family:Nunito}
+.sb{flex:none;height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;font-weight:700;color:var(--c-ink)}
+.sb .island{position:absolute;left:50%;top:8px;transform:translateX(-50%);width:84px;height:22px;background:#0c0d10;border-radius:14px}
+.sb svg{height:10px;fill:var(--c-ink)}
+.body{flex:1;padding:8px 16px;overflow:hidden;position:relative}
+
+.head-circle{border-radius:50%;background:#fff;border:1px solid var(--c-line);overflow:hidden;display:flex;align-items:flex-end;justify-content:center;flex:none}
+.head-circle img{width:118%;height:auto;margin-bottom:-8%}
+
+/* home hero */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 2px}
+.hdr .hi{font-size:22px;font-weight:900;color:var(--c-ink)}
+.hero{margin-top:12px;background:var(--c-cream);border-radius:24px;padding:16px;position:relative;box-shadow:var(--c-shadow);overflow:hidden;min-height:188px}
+.hero .eg{display:inline-block;background:#fff;border-radius:999px;padding:5px 11px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--c-coral)}
+.hero h3{font-size:20px;font-weight:900;color:var(--c-ink);margin:9px 0 5px;max-width:62%;line-height:1.1}
+.hero p{font-size:13px;font-weight:600;color:var(--c-ink-soft);max-width:60%}
+.hero .body-img{position:absolute;right:-6px;bottom:-6px;height:150px;width:auto;filter:drop-shadow(0 6px 10px rgba(58,57,55,.18))}
+.cta{margin-top:14px;height:48px;border-radius:15px;background:var(--c-coral);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;box-shadow:0 8px 16px rgba(255,111,97,.3)}
+.center{display:flex;flex-direction:column;align-items:center;text-align:center}
+.ring{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.7) 40%,rgba(255,255,255,0) 70%);display:flex;align-items:flex-end;justify-content:center;margin-top:8px}
+.ring img{height:190px;width:auto;filter:drop-shadow(0 8px 12px rgba(58,57,55,.2))}
+.big-title{font-size:22px;font-weight:900;color:var(--c-ink);margin-top:6px;line-height:1.15;padding:0 10px}
+.muted{font-size:13.5px;font-weight:600;color:var(--c-ink-soft);margin-top:7px;padding:0 18px;line-height:1.45}
+.bubble{background:#fff;border-radius:18px;border-bottom-left-radius:6px;padding:11px 14px;font-size:13.5px;font-weight:700;color:var(--c-ink);box-shadow:var(--c-shadow);max-width:78%}
+.chatrow{display:flex;align-items:flex-end;gap:9px;margin-top:12px}
+.gardencard{margin-top:12px;background:#E7F4EC;border-radius:22px;padding:16px;min-height:300px;position:relative}
+.gardencard h3{font-size:16px;font-weight:900;color:#2f6b53}
+.seed{display:inline-block;width:46px;height:54px;background:#cfe6d6;border-radius:8px;margin:6px}
+.garden-bot{position:absolute;right:8px;bottom:8px;height:120px;width:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.15))}
+.stars{font-size:26px;letter-spacing:4px}
+.confetti{position:absolute;inset:0;background-image:radial-gradient(circle,#FF6F61 2px,transparent 3px),radial-gradient(circle,#F7C047 2px,transparent 3px),radial-gradient(circle,#3FB6C4 2px,transparent 3px);background-size:60px 60px,80px 80px,70px 70px;background-position:0 0,30px 20px,10px 40px;opacity:.5}
+.nav{position:absolute;left:0;right:0;bottom:0;padding:7px 12px 16px;display:flex;gap:8px}
+.navpill{flex:1;display:flex;background:#fff;border-radius:22px;box-shadow:0 6px 16px rgba(58,57,55,.14);padding:7px 4px}
+.navpill .t{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--c-ink-mute);font-size:9px;font-weight:800}
+.navpill .t.on{color:var(--c-coral)}
+.tag{position:absolute;top:8px;left:8px;background:rgba(11,13,16,.62);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:.04em;z-index:5}
+.map{margin-top:16px;background:#fff;border:1px solid #e2e3e8;border-radius:16px;overflow:hidden}
+.map .r{display:flex;gap:14px;padding:12px 16px;border-top:1px solid #eef0f3;font-size:13px}
+.map .r:first-child{border-top:none;background:#f7f8fa;font-weight:800}
+.map .k{width:120px;flex:none;font-weight:800;color:#23262e}
+.map .v{color:#555a66;line-height:1.5}
+.pill{display:inline-block;background:#FFE1DD;color:#c2410c;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:800}
+.pill.head{background:#DDF7F8;color:#0e7490}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow"><span class="dot"></span>TJBot · mascot placement · redesign-2026</span>
+  <h1 class="title">Where the <b>cat-robot</b> goes — head + body</h1>
+  <p class="lead">Your image is split into two swappable assets: <code>tee-head.png</code> (small spots) and <code>tee-body.png</code> (hero/character spots). Swap those two files and the robot updates everywhere it's wired. Below: the assets, then in-context mockups of the main places it appears, then the full placement map (every screen).</p>
+
+  <h2 class="sec">1 · The two assets</h2>
+  <div class="sub">Same robot, two crops — transparent PNGs that sit on any lane background.</div>
+  <div class="assets">
+    <div class="asset"><div class="frame gardensky"><img class="body" src="./tee-body.png" alt="body"/></div><div class="lbl">tee-body.png <span>· hero / character</span></div></div>
+    <div class="asset"><div class="frame deep"><img class="body" src="./tee-body.png" alt="body"/></div><div class="lbl">on deep blue <span>· e.g. pairing</span></div></div>
+    <div class="asset"><div class="frame gardensky"><img class="head" src="./tee-head.png" alt="head"/></div><div class="lbl">tee-head.png <span>· avatar / chat</span></div></div>
+    <div class="asset"><div class="frame offwhite"><img class="head" src="./tee-head.png" alt="head"/></div><div class="lbl">on parent off-white <span>· header avatar</span></div></div>
+  </div>
+
+  <h2 class="sec">2 · In-context — where it lands</h2>
+  <div class="sub">Mockups in the approved north-star vibe, with the real mascot dropped in.</div>
+  <div class="grid">
+
+    <!-- Home hero: body -->
+    <div class="col"><div class="cap">Home hero <span>HomeHubScreen · body</span></div>
+    <div class="phone"><div class="screen">
+      <span class="tag">BODY</span>
+      <div class="sb"><div class="island"></div><span>9:41</span><svg viewBox="0 0 26 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg></div>
+      <div class="body">
+        <div class="hdr"><div class="hi">Hi, Mia! 👋</div><div class="head-circle" style="width:42px;height:42px"><img src="./tee-head.png"/></div></div>
+        <div class="hero">
+          <span class="eg">Today's lesson</span>
+          <h3>At the sunny market</h3>
+          <p>Fruits &amp; colors!</p>
+          <img class="body-img" src="./tee-body.png"/>
+          <div class="cta">▶ Start lesson</div>
+        </div>
+      </div>
+      <div class="nav"><div class="navpill"><div class="t on">🏠<br>Home</div><div class="t">📚<br>Learn</div><div class="t">🌱<br>Garden</div><div class="t">🤖<br>Robot</div></div></div>
+    </div></div></div>
+
+    <!-- Onboarding welcome: body + ring -->
+    <div class="col"><div class="cap">Onboarding <span>Welcome · body + ring</span></div>
+    <div class="phone"><div class="screen">
+      <span class="tag">BODY</span>
+      <div class="sb"><div class="island"></div><span>9:41</span><svg viewBox="0 0 26 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg></div>
+      <div class="body center" style="justify-content:center;height:100%;padding-top:40px">
+        <div class="ring"><img src="./tee-body.png"/></div>
+        <div class="big-title">Hi! I'm Tee.<br>I help kids talk in English.</div>
+        <div class="muted">A gentle voice buddy for ages 6–10.</div>
+        <div class="cta" style="margin:22px 18px 0;align-self:stretch">Get started</div>
+      </div>
+    </div></div></div>
+
+    <!-- Lesson companion: body + bubble -->
+    <div class="col"><div class="cap">Lesson companion <span>RobotCompanion · body</span></div>
+    <div class="phone"><div class="screen">
+      <span class="tag">BODY</span>
+      <div class="sb"><div class="island"></div><span>9:41</span><svg viewBox="0 0 26 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg></div>
+      <div class="body center" style="justify-content:flex-end;height:100%;padding-bottom:24px">
+        <div class="bubble" style="align-self:flex-start;margin-bottom:6px">Say it with me: <b>"barn"</b> 🏠</div>
+        <img src="./tee-body.png" style="height:300px;width:auto;filter:drop-shadow(0 10px 16px rgba(58,57,55,.2))"/>
+        <div class="cta" style="align-self:stretch;margin:14px 8px 0">🎤 Tap to speak</div>
+      </div>
+    </div></div></div>
+
+    <!-- Garden companion: body bottom -->
+    <div class="col"><div class="cap">Personality Garden <span>companion · body</span></div>
+    <div class="phone"><div class="screen">
+      <span class="tag">BODY</span>
+      <div class="sb"><div class="island"></div><span>9:41</span><svg viewBox="0 0 26 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg></div>
+      <div class="body">
+        <div class="hi" style="font-size:20px;font-weight:900;color:#2f6b53">Our Garden 🌱</div>
+        <div class="gardencard">
+          <h3>Garden Level 1</h3>
+          <div style="margin-top:6px"><span class="seed"></span><span class="seed"></span><span class="seed"></span><span class="seed"></span></div>
+          <img class="garden-bot" src="./tee-body.png"/>
+        </div>
+      </div>
+      <div class="nav"><div class="navpill"><div class="t">🏠<br>Home</div><div class="t">📚<br>Learn</div><div class="t on">🌱<br>Garden</div><div class="t">🤖<br>Robot</div></div></div>
+    </div></div></div>
+
+    <!-- Celebration: body + stars -->
+    <div class="col"><div class="cap">Celebration <span>Success · body</span></div>
+    <div class="phone"><div class="screen">
+      <span class="tag">BODY</span>
+      <div class="confetti"></div>
+      <div class="sb"><div class="island"></div><span>9:41</span><svg viewBox="0 0 26 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg></div>
+      <div class="body center" style="justify-content:center;height:100%;position:relative;z-index:2">
+        <div class="stars">⭐⭐⭐</div>
+        <img src="./tee-body.png" style="height:240px;width:auto;margin-top:8px;filter:drop-shadow(0 10px 16px rgba(58,57,55,.2))"/>
+        <div class="big-title" style="margin-top:10px">Great job, Mia!</div>
+        <div class="muted">You learned 4 new words!</div>
+        <div class="cta" style="align-self:stretch;margin:20px 18px 0">Keep going</div>
+      </div>
+    </div></div></div>
+
+    <!-- Head: chat + avatar -->
+    <div class="col"><div class="cap">Chat &amp; avatars <span>tee-chat · head</span></div>
+    <div class="phone"><div class="screen">
+      <span class="tag" style="background:rgba(14,116,144,.8)">HEAD</span>
+      <div class="sb"><div class="island"></div><span>9:41</span><svg viewBox="0 0 26 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg></div>
+      <div class="body">
+        <div class="hdr" style="margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><div class="head-circle" style="width:38px;height:38px"><img src="./tee-head.png"/></div><div class="hi" style="font-size:16px">Tee</div></div></div>
+        <div class="chatrow"><div class="head-circle" style="width:32px;height:32px"><img src="./tee-head.png"/></div><div class="bubble">Hi Mia! Want to practice "apple"? 🍎</div></div>
+        <div class="chatrow" style="justify-content:flex-end"><div class="bubble" style="background:var(--c-coral);color:#fff;border-bottom-right-radius:6px;border-bottom-left-radius:18px">Yes!</div></div>
+        <div class="chatrow"><div class="head-circle" style="width:32px;height:32px"><img src="./tee-head.png"/></div><div class="bubble">Great! Say it with me 🎤</div></div>
+        <div style="margin-top:14px;font-size:11px;font-weight:800;color:var(--c-ink-mute)">↑ head used at 32–42px for avatars &amp; chat</div>
+      </div>
+    </div></div></div>
+
+  </div>
+
+  <h2 class="sec">3 · Full placement map</h2>
+  <div class="sub">Every screen the robot appears on (see <code>ROBOT-PLACEMENT.md</code> for the system-by-system breakdown).</div>
+  <div class="map">
+    <div class="r"><div class="k">Use</div><div class="v">Screens</div></div>
+    <div class="r"><div class="k"><span class="pill">BODY</span> Onboarding</div><div class="v">Welcome, FirstLessonEntry, IntroCelebrate, IntroListen, IntroSpeak, IntroRetry, ChildProfile (auth + onboarding)</div></div>
+    <div class="r"><div class="k"><span class="pill">BODY</span> Home/Garden</div><div class="v">HomeHub hero, Personality Garden companion</div></div>
+    <div class="r"><div class="k"><span class="pill">BODY</span> Lessons</div><div class="v">RobotCompanion, RobotFullscreenLesson, FullscreenLessonScene, LessonScene, ActivityIntro, ActivityDone, Success, Gentle, Offtopic</div></div>
+    <div class="r"><div class="k"><span class="pill">BODY</span> Progress</div><div class="v">Celebration, LessonSummary, WordsPracticed</div></div>
+    <div class="r"><div class="k"><span class="pill">BODY</span> Device</div><div class="v">PairSuccess, PairConnecting, PairRename, MyRobot, RobotStatus</div></div>
+    <div class="r"><div class="k"><span class="pill">BODY</span> Purchase</div><div class="v">OrderConfirm, Included, Arrived</div></div>
+    <div class="r"><div class="k"><span class="pill head">HEAD</span> Avatars</div><div class="v">HomeHub header, Parent Today/Account, profile rows</div></div>
+    <div class="r"><div class="k"><span class="pill head">HEAD</span> Chat / speaker</div><div class="v">tee-chat / RobotCompanion bubbles, lesson "Watch Tee" speaker chip</div></div>
+    <div class="r"><div class="k"><span class="pill head">HEAD</span> Live face</div><div class="v">RobotListening, RobotSpeaking, Thinking, Retry, Connecting, Reconnecting (drawn face keeps live animation; static = head)</div></div>
+  </div>
+</div>
+</body>
+</html>
