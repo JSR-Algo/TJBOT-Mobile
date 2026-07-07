@@ -12,7 +12,7 @@
  */
 import { useRef, useCallback, useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
-import { requestRecordingPermissionsAsync } from 'expo-audio';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
 import * as Device from 'expo-device';
 import * as Haptics from 'expo-haptics';
 import { VoiceSession } from '../native/VoiceSession';
@@ -35,6 +35,14 @@ import { resolveGeminiUserError } from '../services/observability/geminiErrorMes
 import { logGeminiEvent } from '../services/observability/diagnosticLog';
 
 const SIMULATOR_CHAT_TIMEOUT_MS = 1500;
+/**
+ * Speak-first greeting kickoff (2026-07-06): Gemini Live never takes the
+ * first turn on its own — this text turn nudges it so TeeBot greets the
+ * child by voice instead of waiting silently for mic audio.
+ */
+const GREETING_KICKOFF_TURN =
+  '[app-event] The child just arrived and is looking at you. ' +
+  'Greet them warmly by voice right now, then begin.';
 const SIMULATOR_TEST_PROMPT = 'Xin chào! Tớ là bạn mới.';
 const SIMULATOR_FALLBACK_REPLY =
   'Simulator không hỗ trợ micro live ổn định. Mình đã chuyển sang chế độ test văn bản để bạn vẫn kiểm tra được màn Gemini.';
@@ -102,6 +110,18 @@ export function useGeminiConversation(
   const sessionResumptionCachedAtMsRef = useRef<number>(0);
   const startAudioCaptureRef = useRef<(() => void) | null>(null);
   const startConversationRef = useRef<(() => Promise<void>) | null>(null);
+  /**
+   * Speak-first (2026-07-06): mic permission is requested in PARALLEL with the
+   * session connect and never blocks or dead-ends it. false = speak-only mode
+   * (dialog still up, or denied) — capture is skipped until permission lands.
+   */
+  const micGrantedRef = useRef(false);
+  /**
+   * Monotonic voice-run id, bumped on every start AND stop. A permission
+   * callback from a previous run may still record the device-level truth in
+   * micGrantedRef, but must not emit UI effects into a newer run.
+   */
+  const voiceRunIdRef = useRef(0);
 
   const sessionApi = useMemo(
     () => ({
@@ -186,6 +206,14 @@ export function useGeminiConversation(
 
   // ── Audio capture ──────────────────────────────────────────────────────────
   function _startAudioCapture(): void {
+    if (!micGrantedRef.current) {
+      // Speak-only mode: starting VoiceMic without permission rejects with
+      // E_MIC_PERMISSION_DENIED and would dead-end the session in
+      // ERROR_RECOVERABLE. Capture starts when the parallel permission
+      // request resolves granted.
+      telemetry.track('capture', 'audio_capture_skipped_no_mic_permission');
+      return;
+    }
     if (isCapturingRef.current || audioCaptureCleanupRef.current !== null) return;
     const captureGeneration = audioCaptureGenerationRef.current + 1;
     audioCaptureGenerationRef.current = captureGeneration;
@@ -416,6 +444,13 @@ export function useGeminiConversation(
         const promoteReadyToListening = () => {
           const s = store.getState();
           if (s.state !== 'READY') return;
+          if (!micGrantedRef.current) {
+            // Speak-only mode: no mic engine will ever report ready — promote
+            // now so the READY 2s deadline cannot kill the session while
+            // TeeBot is greeting. VAD attaches later if permission lands.
+            s.transition('LISTENING');
+            return;
+          }
           if (engineReadyRef.current) {
             engineReadyRef.current = false;
             s.transition('LISTENING');
@@ -475,6 +510,12 @@ export function useGeminiConversation(
         store.getState().transition('ERROR_RECOVERABLE');
       },
       onAudioParts: (audioParts: { data: string; index: number }[]) => {
+        if (store.getState().state === 'READY') {
+          // Model audio (e.g. the speak-first greeting) can land before the
+          // mic engine promotes READY → LISTENING; promote here so the FSM
+          // can legally reach ASSISTANT_SPEAKING.
+          store.getState().transition('LISTENING');
+        }
         const s = store.getState();
         if (s.bargeInWindowOpen) {
           telemetry.track('playback', 'voice.assistant.chunk.dropped_barge_in', {
@@ -685,6 +726,7 @@ export function useGeminiConversation(
     if (state !== 'IDLE' && state !== 'ERROR_RECOVERABLE' && state !== 'RECONNECTING') return;
     const isReconnect = state === 'RECONNECTING';
     simulatorRunIdRef.current += 1;
+    voiceRunIdRef.current += 1;
     isUserTalkingRef.current = false;
     if (simulatorReplyTimerRef.current) {
       clearTimeout(simulatorReplyTimerRef.current);
@@ -731,22 +773,73 @@ export function useGeminiConversation(
       return;
     }
 
-    // Device path
+    // Device path — speak-first (2026-07-06): mic permission is requested in
+    // PARALLEL and never blocks or dead-ends the session. TeeBot must greet
+    // through the speaker even while the iOS mic dialog is still up (or after
+    // deny); capture starts the moment permission lands. The old awaited gate
+    // also tripped the 4s PREPARING_AUDIO deadline whenever the dialog sat
+    // unanswered — the exact silent-iPad failure.
     if (!isReconnect) {
       transition('PREPARING_AUDIO');
       telemetry.track('session', 'mic_permission_requested');
+      const permissionRunId = voiceRunIdRef.current;
+      requestRecordingPermissionsAsync()
+        .then(({ granted }) => {
+          // Stale-run guard: only the run that ASKED may record its result.
+          // A permission promise from a superseded run (stop→start, or a slow
+          // iOS dialog answered after a newer run began) must not write
+          // micGrantedRef — a stale value could flip the flag under the live
+          // run and make a later capture restart (VoiceSession recovery /
+          // reconnect) skip the mic, leaving the session silently deaf.
+          if (voiceRunIdRef.current !== permissionRunId) return;
+          micGrantedRef.current = granted;
+          telemetry.track(
+            'session',
+            granted ? 'mic_permission_granted' : 'mic_permission_denied_speak_only',
+          );
+          if (!granted) {
+            // Speak-first by design (owner-decreed): deny NEVER errors the FSM
+            // or stops the robot's voice — parent-facing notice only.
+            setError(
+              'Bé chưa bật micro — TeeBot vẫn nói được. Bật micro trong Cài đặt để trò chuyện.',
+            );
+            return;
+          }
+          // Capture is gated on a LIVE session state, which makes it correct
+          // for whichever run is active now, and _startAudioCapture is
+          // idempotent — a stale resolution cannot double-start or revive a
+          // stopped session (stop() leaves the FSM outside these states).
+          const currentState = store.getState().state;
+          if (
+            (currentState === 'CONNECTING' || currentState === 'READY' || currentState === 'LISTENING') &&
+            VoiceMic.isAvailable &&
+            !isCapturingRef.current
+          ) {
+            startAudioCaptureRef.current?.();
+          }
+        })
+        .catch((err) => {
+          telemetry.jsErrorBreadcrumb('voice.micPermission.request', err);
+          // Speak-first: a permission-API failure behaves like "not granted"
+          // (speak-only) and NEVER dead-ends the FSM — but surface a notice for
+          // the asking run so a real mic problem is not silently swallowed.
+          if (voiceRunIdRef.current === permissionRunId) {
+            setError(
+              'Không kiểm tra được micro — TeeBot vẫn nói được. Thử bật micro trong Cài đặt.',
+            );
+          }
+        });
+    } else if (VoiceMic.isAvailable) {
+      // Reconnect: mic permission may have changed while disconnected (parent
+      // toggled Settings → TJBot → Microphone). Refresh WITHOUT prompting so a
+      // revoked mic degrades to speak-only instead of dead-ending the reconnect
+      // with E_MIC_PERMISSION_DENIED. Speak-first: never errors the FSM.
       try {
-        const { granted } = await requestRecordingPermissionsAsync();
-        if (!granted) {
-          setError('Cần quyền micro để trò chuyện.');
-          transition('ERROR_RECOVERABLE');
-          return;
-        }
-        telemetry.track('session', 'mic_permission_granted');
-      } catch {
-        setError('Không thể yêu cầu quyền micro.');
-        transition('ERROR_RECOVERABLE');
-        return;
+        const { granted } = await getRecordingPermissionsAsync();
+        micGrantedRef.current = granted;
+      } catch (err) {
+        telemetry.jsErrorBreadcrumb('voice.micPermission.reconnectRefresh', err);
+        micGrantedRef.current = false;
       }
     }
 
@@ -817,6 +910,16 @@ export function useGeminiConversation(
     }
 
     await session.connect(sessionCallbacks, isReconnect);
+
+    // Speak-first greeting: only on a fresh session (resumed sessions keep
+    // their conversation) and only when connect actually succeeded.
+    if (!isReconnect) {
+      const postConnectState = store.getState().state;
+      if (postConnectState === 'READY' || postConnectState === 'LISTENING') {
+        const sent = session.sendTextTurn(GREETING_KICKOFF_TURN);
+        telemetry.track('session', 'greeting_kickoff_sent', { sent });
+      }
+    }
   }, [store, telemetry, playback, session, sessionCallbacks, wirePlaybackCallbacks]);
   startConversationRef.current = startConversation;
 
@@ -824,6 +927,10 @@ export function useGeminiConversation(
   const stopConversation = useCallback(() => {
     telemetry.track('session', 'session_stop_requested', { state: store.getState().state });
     simulatorRunIdRef.current += 1;
+    voiceRunIdRef.current += 1;
+    // Re-derived by the next start's permission request (resolves in ms when
+    // already answered); reset so no run ever inherits a stale grant.
+    micGrantedRef.current = false;
     if (simulatorReplyTimerRef.current) {
       clearTimeout(simulatorReplyTimerRef.current);
       simulatorReplyTimerRef.current = null;

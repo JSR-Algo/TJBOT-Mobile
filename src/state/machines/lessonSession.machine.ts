@@ -74,10 +74,20 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
           event.type === 'START_SESSION' ? event.idempotencyKey : null,
       }),
       assignSessionStartedIds: assign({
-        sessionId: ({ event }) =>
-          event.type === 'SESSION_STARTED' ? event.sessionId : null,
-        deviceSessionId: ({ event }) =>
-          event.type === 'SESSION_STARTED' ? event.deviceSessionId : null,
+        sessionId: ({ event }) => {
+          if (event.type === 'SESSION_STARTED') return event.sessionId;
+          if (event.type === 'xstate.done.actor.startSession') {
+            return (event.output as { sessionId?: string } | undefined)?.sessionId ?? null;
+          }
+          return null;
+        },
+        deviceSessionId: ({ event }) => {
+          if (event.type === 'SESSION_STARTED') return event.deviceSessionId;
+          if (event.type === 'xstate.done.actor.startSession') {
+            return (event.output as { deviceSessionId?: string } | undefined)?.deviceSessionId ?? null;
+          }
+          return null;
+        },
       }),
       assignInterruptedReason: assign({
         interruptedReason: ({ event }) =>
@@ -236,6 +246,10 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
           input: ({ context }) => ({
             idempotencyKey: context.idempotencyKey ?? '',
           }),
+          onDone: {
+            target: 'ACTIVE',
+            actions: 'assignSessionStartedIds',
+          },
           onError: {
             target: 'AUDIO_FAILED',
             actions: assign({

@@ -1,0 +1,21 @@
+diff --git a/node_modules/expo-video/ios/VideoManager.swift b/node_modules/expo-video/ios/VideoManager.swift
+index 0b82a77..fcce885 100644
+--- a/node_modules/expo-video/ios/VideoManager.swift
++++ b/node_modules/expo-video/ios/VideoManager.swift
+@@ -72,6 +72,16 @@ class VideoManager {
+ 
+   private func setAudioSession() {
+     let audioSession = AVAudioSession.sharedInstance()
++
++    // TJBot patch (sys-16): never steal the audio session from an active
++    // voice conversation. VoiceSessionModule owns the session during robot
++    // lessons (.playAndRecord); muted decorative lesson videos must not
++    // clobber it to .playback/.moviePlayback or the mic engine fails with
++    // E_MIC_START ("Micro không khả dụng"). See patches/expo-video+*.patch.
++    if audioSession.category == .playAndRecord {
++      return
++    }
++
+     let audioMixingMode = findAudioMixingMode()
+     var audioSessionCategoryOptions: AVAudioSession.CategoryOptions = audioSession.categoryOptions
+ 

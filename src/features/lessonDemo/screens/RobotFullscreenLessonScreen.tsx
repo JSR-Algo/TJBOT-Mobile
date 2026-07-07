@@ -18,7 +18,6 @@ import { staticLessonContentProvider, useLessonDemoProgressStore } from '../inde
 import { FullscreenLessonScene } from '../scene/FullscreenLessonScene';
 import type { LessonAgeBand } from '../types';
 import {
-  ensureMicPermission,
   openAppSettings,
   probeVoiceReadiness,
   voiceReadinessMessage,
@@ -72,17 +71,14 @@ export function RobotFullscreenLessonScreen({ navigation, route }: Props): React
     (async () => {
       const issue = await probeVoiceReadiness();
       if (cancelled) return;
-      if (issue === 'mic_blocked' || issue === 'auth_missing') {
+      if (issue === 'auth_missing') {
         setReadinessIssue(issue);
         return;
       }
-      const granted = await ensureMicPermission();
-      if (cancelled) return;
-      if (!granted) {
-        setReadinessIssue('mic_blocked');
-        return;
-      }
-      setReadinessIssue(null);
+      // Speak-first (2026-07-06): start immediately — TeeBot greets through
+      // the speaker while the voice hook requests mic permission in parallel.
+      // A blocked mic shows the Settings banner but never silences the robot.
+      setReadinessIssue(issue);
       setVoiceStarted(true);
       void startConversation();
     })();
@@ -118,16 +114,12 @@ export function RobotFullscreenLessonScreen({ navigation, route }: Props): React
     }
     void (async () => {
       const issue = await probeVoiceReadiness();
-      if (issue === 'mic_blocked' || issue === 'auth_missing') {
+      if (issue === 'auth_missing') {
         setReadinessIssue(issue);
         return;
       }
-      const granted = await ensureMicPermission();
-      if (!granted) {
-        setReadinessIssue('mic_blocked');
-        return;
-      }
-      setReadinessIssue(null);
+      // Speak-first: never gate the robot's voice on the mic (see auto-start).
+      setReadinessIssue(issue);
       setVoiceStarted(true);
       void startConversation();
     })();
