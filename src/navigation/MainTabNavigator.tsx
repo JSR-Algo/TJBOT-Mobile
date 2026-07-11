@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Image, View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,8 +7,23 @@ import type { RootStackParamList } from './routes';
 import type { FeatureTabName, FeatureTabScreen } from './types';
 import { DEFAULT_MAIN_TAB_NAME, MAIN_TAB_SCREENS } from './featureRegistry';
 import { OfflineBanner } from '@/components/OfflineBanner';
-import { referenceColors, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
-import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
+
+const SLEEK = {
+  foreground: '#2D3436',
+  muted: '#636E72',
+  primary: '#FF6B6B',
+  primarySoft: 'rgba(255,107,107,0.1)',
+  border: '#EBDCC7',
+  card: '#FFFFFF',
+} as const;
+
+const SLEEK_TAB_ICONS: Record<FeatureTabName, string> = {
+  Home: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/PXjVCPzUvhp.png',
+  Devices: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/fQZCerpIKya.png',
+  Library: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/OWCzyfe01f8.png',
+  Progress: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/NpznCUpnBV4.png',
+  Profile: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/VeUK4fwA0aM.png',
+};
 
 type MainTabParamList = Record<FeatureTabName, undefined>;
 
@@ -18,15 +33,24 @@ type MainTabIconProps = {
   Icon: FeatureTabScreen['tabIcon'];
   color: string;
   focused: boolean;
+  imageUri?: string;
 };
 
-export function MainTabIcon({ Icon, color, focused }: MainTabIconProps): React.JSX.Element {
+export function MainTabIcon({ Icon, color, focused, imageUri }: MainTabIconProps): React.JSX.Element {
   return (
     <View
       testID="mainTabIconContainer"
       style={[styles.tabIconContainer, focused ? styles.tabIconContainerFocused : styles.tabIconContainerIdle]}
     >
-      <Icon size={22} color={color} strokeWidth={focused ? 2.8 : 2.2} />
+      {imageUri ? (
+        <Image
+          source={{ uri: imageUri }}
+          style={[styles.sleekTabImage, !focused && styles.sleekTabImageIdle]}
+          resizeMode="contain"
+        />
+      ) : (
+        <Icon size={22} color={color} strokeWidth={focused ? 2.8 : 2.2} />
+      )}
     </View>
   );
 }
@@ -59,7 +83,6 @@ export function MainTabNavigator({
   initialRouteName,
   initialRouteParams,
 }: Props): React.JSX.Element {
-  const { language } = useAppLanguage();
   const tabRoutes = MAIN_TAB_SCREENS.map(screen => ({
     screen,
     component: createTabRouteScreen(screen, initialRouteName, initialRouteParams),
@@ -72,8 +95,8 @@ export function MainTabNavigator({
         initialRouteName={initialTabName}
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: referenceColors.primary,
-          tabBarInactiveTintColor: referenceColors.inkMuted,
+          tabBarActiveTintColor: SLEEK.primary,
+          tabBarInactiveTintColor: SLEEK.muted,
           tabBarStyle: styles.tabBar,
           tabBarItemStyle: styles.tabBarItem,
           tabBarLabelStyle: styles.tabBarLabel,
@@ -87,10 +110,16 @@ export function MainTabNavigator({
               name={screen.tabName}
               component={Component}
               options={{
-                title: translateCopy(screen.title, { locale: language }),
+                title: screen.title,
+                tabBarLabel: screen.title,
                 tabBarButtonTestID: screen.tabBarButtonTestID,
                 tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-                  <MainTabIcon Icon={Icon} color={color} focused={focused} />
+                  <MainTabIcon
+                    Icon={Icon}
+                    color={color}
+                    focused={focused}
+                    imageUri={SLEEK_TAB_ICONS[screen.tabName]}
+                  />
                 ),
               }}
             />
@@ -105,43 +134,52 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   tabBar: {
     position: 'absolute',
-    left: 22,
-    right: 22,
-    bottom: 18,
-    height: 78,
+    alignSelf: 'center',
+    bottom: 24,
+    height: 84,
+    maxWidth: 520,
+    width: '88%',
     paddingTop: 8,
     paddingBottom: 8,
     paddingHorizontal: 8,
     borderTopWidth: 0,
-    borderRadius: referenceRadii.nav,
-    backgroundColor: referenceColors.card,
+    borderRadius: 40,
+    backgroundColor: SLEEK.card,
     borderWidth: 1,
-    borderColor: referenceColors.line,
-    ...referenceShadow.nav,
+    borderColor: 'rgba(235,220,199,0.6)',
+    shadowColor: '#2D3436',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 8,
   },
   tabBarItem: {
-    borderRadius: 24,
+    borderRadius: 32,
   },
   tabBarLabel: {
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 9,
+    lineHeight: 12,
     fontWeight: '800',
-    marginTop: 2,
+    marginTop: 1,
   },
   tabIconContainer: {
-    width: 42,
-    height: 34,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 19,
-    borderWidth: 1,
+    borderRadius: 16,
   },
   tabIconContainerFocused: {
-    backgroundColor: referenceColors.primarySoft,
-    borderColor: 'rgba(255,107,111,0.18)',
+    backgroundColor: SLEEK.primarySoft,
   },
   tabIconContainerIdle: {
     backgroundColor: 'transparent',
-    borderColor: 'transparent',
+  },
+  sleekTabImage: {
+    width: 28,
+    height: 28,
+  },
+  sleekTabImageIdle: {
+    opacity: 0.6,
   },
 });

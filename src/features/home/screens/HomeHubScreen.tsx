@@ -3,219 +3,160 @@ import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
-import HomeStateChip from '../components/HomeStateChip';
-import { useHomeState } from '../hooks/useHomeState';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
-import { referenceColors, referenceImages } from '@/design-system/referenceTheme';
-import { gardenColors, gardenRadii } from '@/design-system/tokens';
+import { referenceImages } from '@/design-system/referenceTheme';
+import { useHomeState } from '../hooks/useHomeState';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 
-export const HOME_HUB_ROBOT_STAGE_TOP_PADDING = 116;
-export const HOME_HUB_SECONDARY_ROW_BOTTOM = 116;
-export const HOME_HUB_PRIMARY_CTA_BOTTOM = 220;
+const SLEEK = {
+  background: '#FAF5EB',
+  foreground: '#2D3436',
+  muted: '#636E72',
+  primary: '#FF6B6B',
+  border: '#EBDCC7',
+  card: '#FFFFFF',
+} as const;
 
-export default function HomeHubScreen({ navigation }: Props) {
-  const { variant, cfg, isLoading } = useHomeState();
-  const bg = variant === 'offline' ? '#EFEDE8' : variant === 'completed_today' ? '#EEF8EF' : referenceColors.bg;
+// Exported directly from Sleek Home Hub v8. These are the original design
+// assets, intentionally loaded as HTTPS images rather than regenerated icons.
+const SLEEK_ASSETS = {
+  robotHead: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/ai/head-transparent-vLXmmtgCXxT.png',
+  course: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/dRwsfXpz3xq.png',
+  review: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/oZRoaunYiL8.png',
+  progress: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/NpznCUpnBV4.png',
+} as const;
+
+export const HOME_HUB_ROBOT_STAGE_TOP_PADDING = 32;
+export const HOME_HUB_SECONDARY_ROW_BOTTOM = 130;
+export const HOME_HUB_PRIMARY_CTA_BOTTOM = 28;
+
+type QuickActionProps = {
+  imageUri: string;
+  label: string;
+  accessibilityLabel: string;
+  onPress: () => void;
+};
+
+function SleekQuickAction({ imageUri, label, accessibilityLabel, onPress }: QuickActionProps): React.JSX.Element {
+  return (
+    <TouchableOpacity
+      style={styles.quickAction}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+    >
+      <Box style={styles.quickActionImageWrap}>
+        <Image source={{ uri: imageUri }} style={styles.quickActionImage} resizeMode="contain" />
+      </Box>
+      <Text i18n={false} fontWeight="800" style={styles.quickActionLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+export default function HomeHubScreen({ navigation }: Props): React.JSX.Element {
+  const { cfg, isLoading } = useHomeState();
 
   if (isLoading) {
     return (
-      <ScreenShell bg={bg}>
+      <ScreenShell bg={SLEEK.background} gradient={false}>
         <Box flex={1} alignItems="center" justifyContent="center">
-          <Image source={referenceImages.robotHead} style={styles.loadingRobot} accessibilityIgnoresInvertColors />
+          <Image source={{ uri: SLEEK_ASSETS.robotHead }} style={styles.loadingRobot} accessibilityIgnoresInvertColors />
         </Box>
       </ScreenShell>
     );
   }
 
   return (
-    <ScreenShell bg={bg}>
+    <ScreenShell bg={SLEEK.background} gradient={false}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header with greeting and avatar */}
-        <Box style={styles.headerRow} flexDirection="row" alignItems="center" justifyContent="space-between">
-          <Box flexDirection="row" alignItems="center" gap={12}>
-            <Text fontWeight="700" style={styles.greeting}>Hi, friend! 👋</Text>
+        <Box style={styles.canvas}>
+          <Box style={styles.header} flexDirection="row" alignItems="center" justifyContent="space-between">
             <TouchableOpacity
+              style={styles.headerButton}
               onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
               accessibilityRole="button"
-              accessibilityLabel="Open parent dashboard"
+              accessibilityLabel="Open profile"
             >
-              <Image source={referenceImages.robotHead} style={styles.smallAvatar} resizeMode="contain" />
+              <Image source={referenceImages.robotHead} style={styles.headerAvatar} resizeMode="contain" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
+              accessibilityRole="button"
+              accessibilityLabel="Open parent settings"
+            >
+              <Text i18n={false} fontWeight="800" style={styles.settingsGlyph}>⚙</Text>
             </TouchableOpacity>
           </Box>
-          <TouchableOpacity
-            onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
-            accessibilityRole="button"
-            accessibilityLabel="Open parent settings"
-          >
-            <Text fontWeight="700" style={styles.settingsIcon}>⚙️</Text>
-          </TouchableOpacity>
-        </Box>
 
-        {/* Ready chip */}
-        <Box style={styles.chipRow}>
-          {cfg.chip ? (
-            <HomeStateChip color={cfg.chip.color}>{cfg.chip.text}</HomeStateChip>
-          ) : null}
-        </Box>
+          <Text i18n={false} fontWeight="800" style={styles.greeting}>Hi, friend!</Text>
 
-        {/* Hero section - Today's lesson */}
-        <Box style={styles.heroCard}>
-          <Box style={styles.heroTextWrap}>
-            <Text fontWeight="700" style={styles.eyebrow}>Today's lesson</Text>
-            <Text fontWeight="800" style={styles.heroTitle}>Barn & Farm words</Text>
-            <Text fontWeight="700" style={styles.heroSubtitle}>Learn 4 words with sounds</Text>
-
-            {/* Progress bar */}
-            <Box style={styles.progressTrack}>
-              <Box style={[styles.progressFill, { width: '0%' }]} />
-            </Box>
-            <Text fontWeight="700" style={styles.progressLabel}>Not started</Text>
+          <Box style={styles.readyPill} flexDirection="row" alignItems="center" gap={8}>
+            <Box style={styles.readyDot} />
+            <Text i18n={false} fontWeight="800" style={styles.readyCopy}>
+              {cfg.chip?.text ?? "Today's lesson is ready!"}
+            </Text>
           </Box>
 
-          {/* Robot body positioned right - tappable to start companion chat */}
           <TouchableOpacity
+            style={styles.robotStage}
             onPress={() => navigation.navigate(ROUTES.RobotCompanionScreen, {
               lessonId: 'w01-d01-barn-say-it',
               ageBand: '4-6',
               autoStartVoice: true,
             })}
-            style={styles.heroRobotTouchable}
             accessibilityRole="button"
             accessibilityLabel="Talk to Robot before barn lesson"
           >
+            <Box style={styles.haloLarge} />
+            <Box style={styles.haloMid} />
+            <Box style={styles.haloSmall} />
             <Image
-              source={referenceImages.robotBody}
-              style={styles.heroRobot}
+              source={{ uri: SLEEK_ASSETS.robotHead }}
+              style={styles.robotHead}
               resizeMode="contain"
               accessibilityIgnoresInvertColors
             />
           </TouchableOpacity>
 
-          {/* Start lesson CTA */}
+          <Box style={styles.robotCopy}>
+            <Text i18n={false} fontWeight="800" style={styles.robotName}>Robot</Text>
+            <Text i18n={false} fontWeight="800" style={styles.robotHint}>TAP ME TO SAY HI</Text>
+          </Box>
+
           <TouchableOpacity
             onPress={() => navigateHomeCtaTarget(navigation, cfg.ctaTarget)}
-            style={styles.heroCta}
+            style={[styles.primaryCta, !cfg.ctaEnabled && styles.primaryCtaDisabled]}
+            disabled={!cfg.ctaEnabled}
             testID="homePrimaryCta"
             accessibilityRole="button"
-            accessibilityLabel="Start lesson"
+            accessibilityLabel={cfg.ctaLabel}
           >
-            <Text fontWeight="800" style={styles.heroCtaText}>▶ Start lesson</Text>
+            <Text i18n={false} fontWeight="800" style={styles.primaryCtaText}>{cfg.ctaLabel}</Text>
           </TouchableOpacity>
-        </Box>
 
-        {/* Streak card */}
-        <Box style={styles.streakCard} flexDirection="row" gap={12} alignItems="center">
-          <Box style={styles.streakIcon}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-          </Box>
-          <Box flex={1}>
-            <Text fontWeight="800" style={styles.streakBig}>1-day streak</Text>
-            <Text fontWeight="700" style={styles.streakSmall}>Keep it going!</Text>
-          </Box>
-        </Box>
-
-        {/* Quick actions */}
-        <Text fontWeight="700" style={styles.quickActionsLabel}>Quick actions</Text>
-        <Box style={styles.quickActionsGrid}>
-          <TouchableOpacity
-            style={styles.qaCard}
-            onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
-            accessibilityRole="button"
-            accessibilityLabel="Browse lessons"
-          >
-            <Text style={styles.qaIcon}>📚</Text>
-            <Text fontWeight="700" style={styles.qaLabel}>Lessons</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.qaCard}
-            onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
-            accessibilityRole="button"
-            accessibilityLabel="Review words"
-          >
-            <Text style={styles.qaIcon}>🔁</Text>
-            <Text fontWeight="700" style={styles.qaLabel}>Review</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.qaCard}
-            onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
-            accessibilityRole="button"
-            accessibilityLabel="View progress"
-          >
-            <Text style={styles.qaIcon}>⭐</Text>
-            <Text fontWeight="700" style={styles.qaLabel}>Progress</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.qaCard}
-            onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
-            accessibilityRole="button"
-            accessibilityLabel="Robot"
-          >
-            <Text style={styles.qaIcon}>🤖</Text>
-            <Text fontWeight="700" style={styles.qaLabel}>Robot</Text>
-          </TouchableOpacity>
-        </Box>
-
-        {/* My Garden card */}
-        <Box style={styles.gardenCard}>
-          <Text fontWeight="800" style={styles.gardenTitle}>My Garden 🌱</Text>
-          <Box style={styles.gardenContent} flexDirection="row" gap={12} alignItems="center">
-            <Box style={styles.gardenAvatar}>
-              <Image source={referenceImages.robotBody} style={styles.gardenAvatarImg} resizeMode="contain" />
-            </Box>
-            <Box flex={1}>
-              <Text fontWeight="800" style={styles.gardenLevel}>Level 1</Text>
-              <Text fontWeight="600" style={styles.gardenSub}>4 seeds · keep watering</Text>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Bottom nav */}
-        <Box style={styles.navContainer}>
-          <Box style={styles.navPill}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Home tab"
-              accessibilityState={{ disabled: true }}
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>🏠</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Home</Text>
-              </Box>
-            </TouchableOpacity>
-            <TouchableOpacity
+          <Box style={styles.quickActions}>
+            <SleekQuickAction
+              imageUri={SLEEK_ASSETS.course}
+              label="Course"
+              accessibilityLabel="Browse lessons"
               onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
-              accessibilityRole="button"
-              accessibilityLabel="Learn tab"
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>📚</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Learn</Text>
-              </Box>
-            </TouchableOpacity>
-            <TouchableOpacity
+            />
+            <SleekQuickAction
+              imageUri={SLEEK_ASSETS.review}
+              label="Review"
+              accessibilityLabel="Review words"
+              onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
+            />
+            <SleekQuickAction
+              imageUri={SLEEK_ASSETS.progress}
+              label="Progress"
+              accessibilityLabel="View progress"
               onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
-              accessibilityRole="button"
-              accessibilityLabel="Garden tab"
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>🌱</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Garden</Text>
-              </Box>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
-              accessibilityRole="button"
-              accessibilityLabel="Robot tab"
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>🤖</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Robot</Text>
-              </Box>
-            </TouchableOpacity>
+            />
           </Box>
         </Box>
       </ScrollView>
@@ -248,219 +189,199 @@ function navigateHomeCtaTarget(
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 120,
+    alignItems: 'center',
+    paddingBottom: HOME_HUB_SECONDARY_ROW_BOTTOM,
+  },
+  canvas: {
+    width: '100%',
+    maxWidth: 520,
+    paddingHorizontal: 24,
+    paddingTop: 20,
   },
   loadingRobot: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
+    width: 224,
+    height: 224,
   },
-  headerRow: {
-    paddingVertical: 12,
-    paddingHorizontal: 0,
+  header: {
+    height: 52,
+    marginBottom: 16,
+  },
+  headerButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+    backgroundColor: SLEEK.card,
+    borderWidth: 1,
+    borderColor: 'rgba(235,220,199,0.45)',
+    shadowColor: '#2D3436',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+  },
+  settingsGlyph: {
+    color: SLEEK.foreground,
+    fontSize: 25,
+    lineHeight: 28,
   },
   greeting: {
-    fontSize: 18,
-    color: gardenColors.ink,
-  },
-  smallAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  settingsIcon: {
+    color: SLEEK.foreground,
     fontSize: 24,
-    color: gardenColors.ink,
-  },
-  chipRow: {
-    minHeight: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  heroCard: {
-    backgroundColor: gardenColors.paper,
-    borderRadius: gardenRadii.card,
-    padding: 16,
-    marginBottom: 16,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  heroTextWrap: {
-    flex: 1,
-    marginBottom: 12,
-  },
-  eyebrow: {
-    fontSize: 12,
-    color: gardenColors.inkSoft,
-    marginBottom: 4,
-  },
-  heroTitle: {
-    fontSize: 20,
-    color: gardenColors.ink,
-    marginBottom: 4,
-    lineHeight: 22,
-  },
-  heroSubtitle: {
-    fontSize: 13,
-    color: gardenColors.inkSoft,
-    marginBottom: 12,
-  },
-  progressTrack: {
-    height: 4,
-    backgroundColor: 'rgba(0,0,0,0.08)',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: gardenColors.mint,
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: gardenColors.inkSoft,
-  },
-  heroRobotTouchable: {
-    position: 'absolute',
-    right: 0,
-    bottom: -6,
-    height: 150,
-    width: 100,
-  },
-  heroRobot: {
-    height: '100%',
-    width: '100%',
-  },
-  heroCta: {
-    backgroundColor: gardenColors.coral,
-    borderRadius: gardenRadii.cta,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
-  heroCtaText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  streakCard: {
-    backgroundColor: gardenColors.sun,
-    borderRadius: gardenRadii.card,
-    padding: 14,
-    marginBottom: 16,
-  },
-  streakIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: gardenColors.sun,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  streakEmoji: {
-    fontSize: 20,
-  },
-  streakBig: {
-    fontSize: 16,
-    color: gardenColors.ink,
-  },
-  streakSmall: {
-    fontSize: 12,
-    color: gardenColors.inkSoft,
-  },
-  quickActionsLabel: {
-    fontSize: 13,
-    color: gardenColors.inkSoft,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
-  },
-  qaCard: {
-    width: '23%',
-    backgroundColor: gardenColors.paper,
-    borderRadius: gardenRadii.card,
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qaIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  qaLabel: {
-    fontSize: 12,
-    color: gardenColors.ink,
+    lineHeight: 30,
     textAlign: 'center',
-  },
-  gardenCard: {
-    backgroundColor: gardenColors.cream2,
-    borderRadius: gardenRadii.card,
-    padding: 14,
     marginBottom: 16,
   },
-  gardenTitle: {
-    fontSize: 12,
-    color: gardenColors.inkSoft,
-    marginBottom: 10,
-  },
-  gardenContent: {
-    alignItems: 'center',
-  },
-  gardenAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+  readyPill: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderColor: 'rgba(255,107,107,0.2)',
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: gardenColors.line,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 26,
+    shadowColor: '#2D3436',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  readyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: SLEEK.primary,
+  },
+  readyCopy: {
+    color: 'rgba(45,52,54,0.8)',
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  robotStage: {
+    width: 288,
+    height: 288,
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    marginTop: HOME_HUB_ROBOT_STAGE_TOP_PADDING,
+    marginBottom: 20,
   },
-  gardenAvatarImg: {
-    width: '100%',
-    height: '100%',
+  haloLarge: {
+    position: 'absolute',
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.05)',
   },
-  gardenLevel: {
-    fontSize: 13,
-    color: gardenColors.ink,
+  haloMid: {
+    position: 'absolute',
+    width: 288,
+    height: 288,
+    borderRadius: 144,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.1)',
   },
-  gardenSub: {
-    fontSize: 11,
-    color: gardenColors.inkSoft,
+  haloSmall: {
+    position: 'absolute',
+    width: 316,
+    height: 316,
+    borderRadius: 158,
+    backgroundColor: 'rgba(255,107,107,0.05)',
   },
-  navContainer: {
+  robotHead: {
+    zIndex: 1,
+    width: 224,
+    height: 224,
+    shadowColor: '#2D3436',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
+  robotCopy: {
     alignItems: 'center',
-    marginTop: 12,
+    marginBottom: 32,
   },
-  navPill: {
+  robotName: {
+    color: SLEEK.foreground,
+    fontSize: 36,
+    lineHeight: 42,
+    marginBottom: 4,
+  },
+  robotHint: {
+    color: SLEEK.muted,
+    fontSize: 14,
+    letterSpacing: 1,
+    lineHeight: 18,
+  },
+  primaryCta: {
+    alignItems: 'center',
+    backgroundColor: SLEEK.primary,
+    borderRadius: 40,
+    justifyContent: 'center',
+    minHeight: 76,
+    marginBottom: HOME_HUB_PRIMARY_CTA_BOTTOM,
+    shadowColor: SLEEK.primary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 6,
+  },
+  primaryCtaDisabled: {
+    opacity: 0.48,
+  },
+  primaryCtaText: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    lineHeight: 29,
+  },
+  quickActions: {
     flexDirection: 'row',
-    backgroundColor: gardenColors.paper,
-    borderRadius: gardenRadii.navpill,
-    height: 78,
-    gap: 0,
-    paddingHorizontal: 8,
-    justifyContent: 'space-around',
+    gap: 16,
+    marginBottom: 24,
   },
-  navItem: {
+  quickAction: {
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: SLEEK.card,
+    borderColor: 'rgba(235,220,199,0.45)',
+    borderRadius: 32,
+    borderWidth: 1,
     flex: 1,
+    minHeight: 138,
+    justifyContent: 'center',
+    padding: 16,
+    shadowColor: '#2D3436',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  navItemIcon: {
-    fontSize: 18,
-    marginBottom: 2,
+  quickActionImageWrap: {
+    alignItems: 'center',
+    backgroundColor: SLEEK.card,
+    borderColor: 'rgba(235,220,199,0.25)',
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 56,
+    justifyContent: 'center',
+    marginBottom: 8,
+    width: 56,
   },
-  navItemLabel: {
-    fontSize: 11,
-    color: gardenColors.ink,
+  quickActionImage: {
+    height: 44,
+    width: 44,
+  },
+  quickActionLabel: {
+    color: SLEEK.foreground,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
   },
 });
