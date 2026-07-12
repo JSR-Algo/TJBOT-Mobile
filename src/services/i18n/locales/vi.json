@@ -1985,5 +1985,56 @@
   "Start with Robot so timing comes from real lesson history.": "Bắt đầu với Robot để lịch ôn tập lấy từ lịch sử bài học thật.",
   "Starter lesson preview with Robot and hello word cards": "Hình xem trước bài học khởi đầu với Robot và thẻ từ chào hỏi",
   "Starter lesson": "Bài học khởi đầu",
-  "Say hello to Panda": "Chào Panda"
+  "Say hello to Panda": "Chào Panda",
+  "Reward is waiting to sync": "Phần thưởng đang chờ đồng bộ",
+  "Your lesson is saved. We will show the award when the robot reconnects.": "Bài học đã được lưu. Phần thưởng sẽ hiện khi robot kết nối lại.",
+  "Reward unavailable": "Chưa thể tải phần thưởng",
+  "Reward needs parent attention": "Phần thưởng cần phụ huynh kiểm tra",
+  "Check the child assigned to this robot, then contact support if the reward remains unavailable.": "Hãy kiểm tra trẻ được gán cho robot này, sau đó liên hệ hỗ trợ nếu phần thưởng vẫn chưa khả dụng.",
+  "Celebrate reward": "Mừng phần thưởng",
+  "Lesson reward": "Phần thưởng bài học",
+  "Your lesson is safe. Check again when the robot is online.": "Bài học đã được lưu an toàn. Hãy kiểm tra lại khi robot trực tuyến.",
+  "Reward earned": "Phần thưởng đã nhận",
+  "New reward": "Phần thưởng mới",
+  "Leaderboard": "Bảng xếp hạng",
+  "This week": "Tuần này",
+  "All time": "Toàn thời gian",
+  "Loading leaderboard": "Đang tải bảng xếp hạng",
+  "Leaderboard unavailable": "Chưa thể tải bảng xếp hạng",
+  "No robots have joined yet.": "Chưa có robot nào tham gia.",
+  "Your robot": "Robot của bạn",
+  "Load more": "Tải thêm",
+  "Private by default": "Mặc định riêng tư",
+  "Visible on leaderboard": "Đang hiển thị trên bảng xếp hạng",
+  "Rewards and history stay private until you join.": "Phần thưởng và lịch sử vẫn riêng tư cho đến khi bạn tham gia.",
+  "Child name, robot name and masked parent email are visible.": "Tên bé, tên robot và email phụ huynh đã che bớt sẽ được hiển thị.",
+  "Join leaderboard": "Tham gia bảng xếp hạng",
+  "Leave leaderboard": "Rời bảng xếp hạng",
+  "View leaderboard": "Xem bảng xếp hạng",
+  "Rewards": "Phần thưởng",
+  "Loading reward totals": "Đang tải tổng phần thưởng",
+  "Reward totals unavailable": "Chưa thể tải tổng phần thưởng",
+  "Total XP": "Tổng XP",
+  "Coins": "Xu",
+  "Day streak": "Chuỗi ngày",
+  "Reward history": "Lịch sử phần thưởng",
+  "Loading reward history": "Đang tải lịch sử phần thưởng",
+  "Reward history unavailable": "Chưa thể tải lịch sử phần thưởng",
+  "No rewards yet.": "Chưa có phần thưởng.",
+  "Rewards & leaderboard": "Phần thưởng và bảng xếp hạng",
+  "Open leaderboard": "Mở bảng xếp hạng",
+  "Load more reward history": "Tải thêm lịch sử phần thưởng",
+  "Retry leaderboard": "Thử tải lại bảng xếp hạng",
+  "Load more leaderboard rows": "Tải thêm thứ hạng",
+  "Open reward history": "Mở lịch sử phần thưởng",
+  "Retry reward": "Thử tải lại phần thưởng",
+  "XP ·": "XP ·",
+  "See lesson reward": "Xem phần thưởng bài học"
+  ,"Leaderboard preference loading": "Đang tải lựa chọn bảng xếp hạng"
+  ,"Loading leaderboard preference": "Đang tải lựa chọn bảng xếp hạng"
+  ,"Leaderboard preference unavailable": "Chưa thể tải lựa chọn bảng xếp hạng"
+  ,"Retry leaderboard preference": "Thử tải lại lựa chọn bảng xếp hạng"
+  ,"Leaderboard preference could not be saved.": "Chưa thể lưu lựa chọn bảng xếp hạng."
+  ,"Join leaderboard for {{robot}}": "Cho {{robot}} tham gia bảng xếp hạng"
+  ,"Leave leaderboard for {{robot}}": "Cho {{robot}} rời bảng xếp hạng"
 }

@@ -366,6 +366,7 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
       expect(mockedCreateAssignment).not.toHaveBeenCalled();
       expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
       expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+        childId: 'ch-1',
         deviceId: 'dev-1',
         assignmentId: 'asg-course-existing',
         assignmentVersion: 7,
@@ -437,6 +438,7 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
       expect(mockedEnrollCourse).toHaveBeenCalled();
       // Forward navigation uses the enroll's assignment ref (id + assignmentVersion).
       expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+        childId: 'ch-1',
         deviceId: 'dev-1',
         assignmentId: 'asg-1',
         assignmentVersion: 3,

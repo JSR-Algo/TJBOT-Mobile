@@ -1763,5 +1763,56 @@
   "Start with Robot so timing comes from real lesson history.": "Start with Robot so timing comes from real lesson history.",
   "Starter lesson preview with Robot and hello word cards": "Starter lesson preview with Robot and hello word cards",
   "Starter lesson": "Starter lesson",
-  "Say hello to Panda": "Say hello to Panda"
+  "Say hello to Panda": "Say hello to Panda",
+  "Reward is waiting to sync": "Reward is waiting to sync",
+  "Your lesson is saved. We will show the award when the robot reconnects.": "Your lesson is saved. We will show the award when the robot reconnects.",
+  "Reward unavailable": "Reward unavailable",
+  "Reward needs parent attention": "Reward needs parent attention",
+  "Check the child assigned to this robot, then contact support if the reward remains unavailable.": "Check the child assigned to this robot, then contact support if the reward remains unavailable.",
+  "Celebrate reward": "Celebrate reward",
+  "Lesson reward": "Lesson reward",
+  "Your lesson is safe. Check again when the robot is online.": "Your lesson is safe. Check again when the robot is online.",
+  "Reward earned": "Reward earned",
+  "New reward": "New reward",
+  "Leaderboard": "Leaderboard",
+  "This week": "This week",
+  "All time": "All time",
+  "Loading leaderboard": "Loading leaderboard",
+  "Leaderboard unavailable": "Leaderboard unavailable",
+  "No robots have joined yet.": "No robots have joined yet.",
+  "Your robot": "Your robot",
+  "Load more": "Load more",
+  "Private by default": "Private by default",
+  "Visible on leaderboard": "Visible on leaderboard",
+  "Rewards and history stay private until you join.": "Rewards and history stay private until you join.",
+  "Child name, robot name and masked parent email are visible.": "Child name, robot name and masked parent email are visible.",
+  "Join leaderboard": "Join leaderboard",
+  "Leave leaderboard": "Leave leaderboard",
+  "View leaderboard": "View leaderboard",
+  "Rewards": "Rewards",
+  "Loading reward totals": "Loading reward totals",
+  "Reward totals unavailable": "Reward totals unavailable",
+  "Total XP": "Total XP",
+  "Coins": "Coins",
+  "Day streak": "Day streak",
+  "Reward history": "Reward history",
+  "Loading reward history": "Loading reward history",
+  "Reward history unavailable": "Reward history unavailable",
+  "No rewards yet.": "No rewards yet.",
+  "Rewards & leaderboard": "Rewards & leaderboard",
+  "Open leaderboard": "Open leaderboard",
+  "Load more reward history": "Load more reward history",
+  "Retry leaderboard": "Retry leaderboard",
+  "Load more leaderboard rows": "Load more leaderboard rows",
+  "Open reward history": "Open reward history",
+  "Retry reward": "Retry reward",
+  "XP ·": "XP ·",
+  "See lesson reward": "See lesson reward"
+  ,"Leaderboard preference loading": "Leaderboard preference loading"
+  ,"Loading leaderboard preference": "Loading leaderboard preference"
+  ,"Leaderboard preference unavailable": "Leaderboard preference unavailable"
+  ,"Retry leaderboard preference": "Retry leaderboard preference"
+  ,"Leaderboard preference could not be saved.": "Leaderboard preference could not be saved."
+  ,"Join leaderboard for {{robot}}": "Join leaderboard for {{robot}}"
+  ,"Leave leaderboard for {{robot}}": "Leave leaderboard for {{robot}}"
 }

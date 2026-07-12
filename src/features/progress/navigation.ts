@@ -3,6 +3,7 @@ import WordsPracticedScreen from './screens/WordsPracticedScreen';
 import LessonSummaryScreen from './screens/LessonSummaryScreen';
 import ReviewNeededScreen from './screens/ReviewNeededScreen';
 import CelebrationScreen from './screens/CelebrationScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
 import { TrendingUp } from 'lucide-react-native';
 import { ROUTES } from '@/navigation/routes';
 import type { FeatureNavigationConfig } from '@/navigation/types';
@@ -25,6 +26,7 @@ export const PROGRESS_SCREENS = defineFeatureScreens([
   { name: ROUTES.LessonSummaryScreen, component: LessonSummaryScreen, role: 'stack-entry', stateMachineId: 'lesson_summary' },
   { name: ROUTES.ReviewNeededScreen, component: ReviewNeededScreen, role: 'stack-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'review_needed' },
   { name: ROUTES.CelebrationScreen, component: CelebrationScreen, role: 'state-machine', stateMachineId: 'celebration' },
+  { name: ROUTES.LeaderboardScreen, component: LeaderboardScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'leaderboard' },
 ]);
 
 export const PROGRESS_NAVIGATION = {

@@ -103,7 +103,10 @@ describe('lesson production readiness entry points', () => {
       const navigation = navigationFor();
       const view = render(item.render(navigation));
       fireEvent.press(view.getByText(item.cta));
-      expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+      expect(
+        navigation.navigate.mock.calls.some(([route]) => route === ROUTES.SendToRobotScreen)
+        || navigation.replace.mock.calls.some(([route]) => route === ROUTES.SendToRobotScreen),
+      ).toBe(true);
       expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
       view.unmount();
     }

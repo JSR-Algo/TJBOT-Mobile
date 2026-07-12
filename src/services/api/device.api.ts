@@ -137,15 +137,15 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
 // Pick the device bound to the active child from a household list. The binding
 // (assignedChildProfileId) is only present when the backend surfaces the
 // devices.assigned_child_profile_id column — see the residual note. When no
-// device matches (single-device household, no childId, or the column is not
-// surfaced), fall back to the first-listed device, keeping the long-standing
-// single-robot behavior byte-identical.
+// device matches for an explicit child, return no device. Selecting another
+// household robot would cross the child/robot ownership boundary.
 function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceDto {
   if (childId) {
     const bound = devices.find(
       (d) => (d.assigned_child_profile_id ?? d.assignedChildProfileId) === childId,
     );
     if (bound) return bound;
+    return {};
   }
   return devices[0] ?? {};
 }
@@ -212,9 +212,8 @@ export async function completeDeviceProvisioning(params: CompleteDeviceProvision
 // When deviceId === 'primary', resolves the household's device for the given
 // active child (childId). In a multi-robot household this prevents a lesson from
 // being routed to the wrong robot: the device whose assignedChildProfileId
-// matches childId wins, falling back to the first-listed device when none
-// matches (single robot, no childId, or backend not yet surfacing the binding —
-// see residual). Pass-through deviceIds (a real device id) ignore childId.
+// matches childId wins. An explicit child never falls back to another device.
+// Pass-through deviceIds (a real device id) ignore childId.
 export async function getDeviceStatus(deviceId: string, childId?: string): Promise<DeviceStatus> {
   if (deviceId === 'primary') {
     const response = await client.get<DeviceDto[] | { data?: DeviceDto[] }>('/devices/household/me');

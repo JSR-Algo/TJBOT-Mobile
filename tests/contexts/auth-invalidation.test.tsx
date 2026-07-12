@@ -25,6 +25,10 @@ const mockGetAccountSummary = jest.fn<Promise<User>, []>(async () => {
 const mockResetAnalytics = jest.fn();
 const mockLogin = jest.fn<Promise<{ user?: User }>, [string, string]>();
 const mockClearLocalPairedDevice = jest.fn<Promise<void>, []>(async () => undefined);
+const mockClearRewardSeenQueue = jest.fn<Promise<void>, [string | null]>(async () => undefined);
+const mockSetRewardQueueAccount = jest.fn<void, [string | null]>();
+const mockReplayRewardSeenQueue = jest.fn<Promise<void>, []>(async () => undefined);
+const mockRemoveQueries = jest.fn();
 
 jest.mock('../../src/services/http/client', () => ({
   setAuthInvalidatedHandler: (handler: (() => void) | null) => mockSetAuthInvalidatedHandler(handler),
@@ -57,6 +61,16 @@ jest.mock('../../src/services/observability/analytics', () => ({
 
 jest.mock('../../src/features/device/pairing/localPairedDevice', () => ({
   clearLocalPairedDevice: () => mockClearLocalPairedDevice(),
+}));
+
+jest.mock('../../src/features/rewards/offline/rewardSeenQueue', () => ({
+  clearRewardSeenQueue: (accountId: string | null) => mockClearRewardSeenQueue(accountId),
+  setRewardQueueAccount: (accountId: string | null) => mockSetRewardQueueAccount(accountId),
+  replayRewardSeenQueue: () => mockReplayRewardSeenQueue(),
+}));
+
+jest.mock('../../src/services/query/queryClient', () => ({
+  appQueryClient: { removeQueries: (options: unknown) => mockRemoveQueries(options) },
 }));
 
 import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
@@ -128,7 +142,17 @@ describe('AuthContext auth invalidation handler', () => {
     expect(mockClearTokens).toHaveBeenCalled();
     expect(mockDeleteSecureItem).toHaveBeenCalledWith('TJBot_user');
     expect(mockClearLocalPairedDevice).toHaveBeenCalled();
+    expect(mockClearRewardSeenQueue).not.toHaveBeenCalled();
+    expect(mockSetRewardQueueAccount).toHaveBeenLastCalledWith(null);
+    expect(mockRemoveQueries).toHaveBeenCalledWith({ queryKey: ['rewards'] });
     expect(mockResetAnalytics).toHaveBeenCalled();
+  });
+
+  it('replays the active account reward queue after auth hydration', async () => {
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+
+    await waitFor(() => expect(mockSetRewardQueueAccount).toHaveBeenCalledWith('user-1'));
+    expect(mockReplayRewardSeenQueue).toHaveBeenCalledTimes(1);
   });
 
   it('clears local auth state when stored token is rejected during hydration', async () => {
@@ -148,6 +172,8 @@ describe('AuthContext auth invalidation handler', () => {
     expect(mockClearTokens).toHaveBeenCalled();
     expect(mockDeleteSecureItem).toHaveBeenCalledWith('TJBot_user');
     expect(mockClearLocalPairedDevice).toHaveBeenCalled();
+    expect(mockClearRewardSeenQueue).not.toHaveBeenCalled();
+    expect(mockReplayRewardSeenQueue).not.toHaveBeenCalled();
     expect(mockResetAnalytics).toHaveBeenCalled();
   });
 });

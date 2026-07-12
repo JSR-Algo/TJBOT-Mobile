@@ -162,7 +162,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
       : 'Lesson running on Robot';
 
   return (
-    <DeviceShell title="What Robot sees" onBack={() => navigation.navigate(ROUTES.RunningScreen, { deviceId, assignmentId, sessionId, lessonTitle })}>
+    <DeviceShell title="What Robot sees" onBack={() => navigation.goBack()}>
       <Text style={styles.intro}>
         A live mirror of Robot's face. <Text fontWeight="600" style={{ color: CL.ink }}>No transcript</Text> — what your child says stays between them.
       </Text>
@@ -190,11 +190,25 @@ export default function CompanionScreen({ navigation, route }: Props) {
       {assignmentStale && !missingDeviceId && (
         <Box paddingHorizontal={20} paddingTop={18} gap={10}>
           <DeviceBigBtn onClick={retryCurrentAssignment}>Try again</DeviceBigBtn>
-          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.RunningScreen, { deviceId, assignmentId, sessionId, lessonTitle })}>
+          <DeviceBigBtn secondary onClick={() => navigation.goBack()}>
             Back to lesson status
           </DeviceBigBtn>
         </Box>
       )}
+
+      {completed && assignmentId && deviceId && assignment?.lessonId ? (
+        <Box paddingHorizontal={20} paddingTop={18}>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.LessonSummaryScreen, {
+            childId: route.params?.childId,
+            assignmentId,
+            deviceId,
+            lessonId: assignment.lessonId,
+            sessionId: sessionId ?? undefined,
+          })}>
+            See lesson reward
+          </DeviceBigBtn>
+        </Box>
+      ) : null}
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>If you need to</Text>

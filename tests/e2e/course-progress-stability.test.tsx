@@ -548,7 +548,7 @@ describe('course, course-library, and progress stable screen states', () => {
     expect(screens[0].getByText('Words Practiced')).toBeTruthy();
     expect(screens[1].getByText('Great effort!')).toBeTruthy();
     expect(screens[2].getByText("Let's visit again")).toBeTruthy();
-    expect(screens[3].getByText('You did it!')).toBeTruthy();
+    expect(screens[3].getByText('Reward is waiting to sync')).toBeTruthy();
 
     screens.forEach(screen => screen.unmount());
   });

@@ -213,6 +213,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           const { assignment } = await enrollCourse(activeCourseId, { childId, deviceId });
           void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
           navigation.navigate(ROUTES.RobotReadyScreen, {
+            childId,
             deviceId,
             assignmentId: assignment.id,
             assignmentVersion: assignment.assignmentVersion,
@@ -225,6 +226,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
             if (current && currentMatchesCourse(current, childId, lessons)) {
               void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
               navigation.navigate(ROUTES.RobotReadyScreen, {
+                childId,
                 deviceId,
                 assignmentId: current.assignmentId,
                 assignmentVersion: current.assignmentVersion,
@@ -255,6 +257,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         // so those screens refetch instead of showing stale pre-send data.
         void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
         navigation.navigate(ROUTES.RobotReadyScreen, {
+          childId,
           deviceId,
           assignmentId: assignment.assignmentId,
           assignmentVersion: assignment.assignmentVersion,
@@ -269,6 +272,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           if (current && currentMatchesLesson(current, childId, selectedLesson)) {
             void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
             navigation.navigate(ROUTES.RobotReadyScreen, {
+              childId,
               deviceId,
               assignmentId: current.assignmentId,
               assignmentVersion: current.assignmentVersion,

@@ -27,6 +27,8 @@ import {
   recordAiVoiceConsent,
   withdrawAiVoiceConsent,
 } from '@/services/api/auth';
+import { rewardKeys } from '@/features/rewards/hooks/useRewards';
+import { appQueryClient } from '@/services/query/queryClient';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSettingsScreen'>;
 
@@ -189,6 +191,12 @@ export default function ParentSettingsScreen({ navigation }: Props) {
       }
       setProfile((current) => current ? { ...current, name: nextName } : current);
       setChildNameDraft(nextName);
+      await Promise.all([
+        appQueryClient.invalidateQueries({ queryKey: rewardKeys.all }),
+        appQueryClient.invalidateQueries({ queryKey: rewardKeys.device(childId) }),
+        appQueryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] }),
+        appQueryClient.invalidateQueries({ queryKey: ['child-progress-dashboard', 'child', childId] }),
+      ]);
     } catch (error) {
       captureError(error);
       setChildNameSaveFailed(true);

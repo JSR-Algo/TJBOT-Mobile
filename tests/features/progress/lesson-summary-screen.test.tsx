@@ -9,6 +9,12 @@ import { render, fireEvent, screen } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
 import LessonSummaryScreen from '@/features/progress/screens/LessonSummaryScreen';
 
+jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeChild: { id: 'child-1', name: 'Mai' } }) }));
+jest.mock('@/features/rewards/hooks/useRewards', () => ({
+  useActiveChildRobotQuery: () => ({ data: { id: 'robot-1', name: 'Tee' }, isError: false }),
+  useRewardForCompletionQuery: () => ({ data: null, isError: false, refetch: jest.fn() }),
+}));
+
 function renderScreen() {
   const navigation = { navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() };
   const route = { key: 's', name: ROUTES.LessonSummaryScreen, params: undefined };
@@ -19,21 +25,22 @@ function renderScreen() {
 }
 
 describe('LessonSummaryScreen', () => {
-  it('renders the recap rows', () => {
+  it('renders the persisted-reward waiting state without static awards', () => {
     renderScreen();
     expect(screen.getByText('Great effort!')).toBeTruthy();
-    expect(screen.getByText('12 stars')).toBeTruthy();
+    expect(screen.getByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('12 stars')).toBeNull();
   });
 
   it('"Keep going" routes to SendToRobotScreen', () => {
     const navigation = renderScreen();
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
   });
 
   it('"Stop for today" routes to HomeHubScreen', () => {
     const navigation = renderScreen();
     fireEvent.press(screen.getByText('Stop for today'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
+    expect(navigation.replace).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 });

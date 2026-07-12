@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
@@ -11,10 +11,23 @@ import RmStat from '../components/RmStat';
 import RmChip from '../components/RmChip';
 import { RM } from '../components/RM';
 import { ROUTES } from '@/navigation/routes';
+import { useHousehold } from '@/contexts/HouseholdContext';
+import { useActiveChildRobotQuery, useLeaderboardPreferenceMutation, useLeaderboardPreferenceQuery } from '@/features/rewards/hooks/useRewards';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyRobotScreen'>;
 
 export default function MyRobotScreen({ navigation }: Props) {
+  const { activeChild } = useHousehold();
+  const { language, t } = useAppLanguage();
+  const robotQuery = useActiveChildRobotQuery(activeChild?.id);
+  const robot = robotQuery.data;
+  const preferenceQuery = useLeaderboardPreferenceQuery(robot?.id);
+  const preferenceMutation = useLeaderboardPreferenceMutation(robot?.id);
+  const preferenceResolved = Boolean(preferenceQuery.data) && !preferenceQuery.isError;
+  const optedIn = preferenceQuery.data?.optedIn === true;
+  const robotName = robot?.name ?? 'Robot';
+
   return (
     <DeviceShell title="My Robot" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
@@ -22,10 +35,49 @@ export default function MyRobotScreen({ navigation }: Props) {
           <RobotDevice emotion="happy" size={96} accent="#FF6F61" />
           <Box flex={1} style={{ minWidth: 0 }}>
             <Text fontWeight="600" style={styles.pairedLabel}>Paired Robot</Text>
-            <Text fontWeight="600" style={styles.robotName}>Buddy Panda</Text>
-            <Text style={styles.robotMeta}>ROB-2A8F · Cream</Text>
-            <Box marginTop={8}><RmChip>● Online · all good</RmChip></Box>
+            <Text fontWeight="600" style={styles.robotName} i18n={false}>{robotName}</Text>
+            <Text style={styles.robotMeta} i18n={false}>{activeChild?.name ?? 'No child assigned'}</Text>
+            <Box marginTop={8}><RmChip>{robot?.online ? '● Online · all good' : '○ Offline'}</RmChip></Box>
           </Box>
+        </Box>
+      </Box>
+
+      <Box paddingHorizontal={16} paddingTop={16}>
+        <Text fontWeight="700" style={styles.sectionLabel}>Leaderboard</Text>
+        <Box style={styles.leaderboardCard} gap={10}>
+          {preferenceQuery.isLoading ? (
+            <TouchableOpacity accessibilityRole="switch" accessibilityLabel={t('Leaderboard preference loading')} accessibilityState={{ checked: false, disabled: true, busy: true }} disabled style={styles.preferenceButton}>
+              <Text fontWeight="700" style={styles.preferenceText}>Loading leaderboard preference</Text>
+            </TouchableOpacity>
+          ) : preferenceQuery.isError ? (
+            <Box gap={8}>
+              <Text fontWeight="700" style={styles.leaderboardTitle}>Leaderboard preference unavailable</Text>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('Retry leaderboard preference')} onPress={() => { void preferenceQuery.refetch(); }} style={styles.preferenceButton}>
+                <Text fontWeight="700" style={styles.preferenceText}>Try again</Text>
+              </TouchableOpacity>
+            </Box>
+          ) : preferenceResolved ? (
+            <>
+              <Text fontWeight="700" style={styles.leaderboardTitle}>{optedIn ? 'Visible on leaderboard' : 'Private by default'}</Text>
+              <Text style={styles.leaderboardBody}>
+                {optedIn ? 'Child name, robot name and masked parent email are visible.' : 'Rewards and history stay private until you join.'}
+              </Text>
+              <TouchableOpacity
+                accessibilityRole="switch"
+                accessibilityLabel={translateTemplate(optedIn ? 'Leave leaderboard for {{robot}}' : 'Join leaderboard for {{robot}}', { robot: robotName }, { locale: language })}
+                accessibilityState={{ checked: optedIn, disabled: !robot || preferenceMutation.isPending }}
+                disabled={!robot || preferenceMutation.isPending}
+                onPress={() => preferenceMutation.mutate(!optedIn)}
+                style={[styles.preferenceButton, optedIn && styles.preferenceButtonOn]}
+              >
+                <Text fontWeight="700" style={styles.preferenceText}>{optedIn ? 'Leave leaderboard' : 'Join leaderboard'}</Text>
+              </TouchableOpacity>
+              {preferenceMutation.isError ? <Text accessibilityLiveRegion="polite">Leaderboard preference could not be saved.</Text> : null}
+            </>
+          ) : null}
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open leaderboard" onPress={() => navigation.navigate(ROUTES.LeaderboardScreen)}>
+            <Text fontWeight="700" style={styles.leaderboardLink}>View leaderboard</Text>
+          </TouchableOpacity>
         </Box>
       </Box>
 
@@ -84,4 +136,11 @@ const styles = StyleSheet.create({
   robotMeta: { fontSize: 12, color: RM.ink2, marginTop: 2 },
   sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
+  leaderboardCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, padding: 16 },
+  leaderboardTitle: { fontSize: 16, color: RM.ink },
+  leaderboardBody: { fontSize: 13, color: RM.ink2, lineHeight: 19 },
+  preferenceButton: { minHeight: 46, borderRadius: 12, backgroundColor: '#E7E9ED', alignItems: 'center', justifyContent: 'center' },
+  preferenceButtonOn: { backgroundColor: '#FFE1DC' },
+  preferenceText: { color: RM.ink },
+  leaderboardLink: { color: '#A84337', textAlign: 'center', padding: 8 },
 });

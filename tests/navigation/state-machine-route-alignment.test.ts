@@ -130,6 +130,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.LessonSummaryScreen, 'lesson_summary'],
       [ROUTES.ReviewNeededScreen, 'review_needed'],
       [ROUTES.CelebrationScreen, 'celebration'],
+      [ROUTES.LeaderboardScreen, 'leaderboard'],
     ]);
     const actualProgressStateIds = new Map(
       Object.values(ROUTE_MAP)
@@ -168,6 +169,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.ParentSummaryScreen, 'parent_summary'],
       [ROUTES.ParentTodayScreen, 'parent_today'],
       [ROUTES.ParentHistoryScreen, 'parent_history'],
+      [ROUTES.ParentRewardsScreen, 'parent_rewards'],
       [ROUTES.ParentSafetyScreen, 'parent_safety'],
       [ROUTES.ParentSettingsScreen, 'parent_settings'],
       [ROUTES.ParentAccountPrivacyScreen, 'parent_account_privacy'],

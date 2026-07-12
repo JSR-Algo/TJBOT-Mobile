@@ -218,6 +218,13 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       expect(screen.getByText('This Is a Barn')).toBeTruthy();
       // three-streams: the progress surface renders the privacy guarantee, never a transcript.
       expect(screen.getByText(/Audio is never saved/)).toBeTruthy();
+      fireEvent.press(screen.getByText('See lesson reward'));
+      expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen, {
+        assignmentId: 'asg-1',
+        deviceId: 'dev-1',
+        lessonId: 'w01-d01-barn-say-it',
+        sessionId: undefined,
+      });
     } finally {
       jest.useRealTimers();
     }
@@ -259,6 +266,13 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
 
     expect(screen.getByText('Finished! 🎉')).toBeTruthy();
     expect(mockedGetCurrentAssignment).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByText('See lesson reward'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen, {
+      assignmentId: 'asg-1',
+      deviceId: 'dev-1',
+      lessonId: 'w01-d01-barn-say-it',
+      sessionId: 'session-current-1',
+    });
   });
 
   it('RunningScreen keeps polling fallback when route sessionId is blank', async () => {
@@ -400,6 +414,13 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
 
     expect(screen.getByText('Finished! 🎉')).toBeTruthy();
     expect(mockedGetCurrentAssignment).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByText('See lesson reward'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen, {
+      assignmentId: 'asg-1',
+      deviceId: 'dev-1',
+      lessonId: 'w01-d01-barn-say-it',
+      sessionId: 'session-current-2',
+    });
   });
 
   it('CompanionScreen stops infinite missing-assignment polling and keeps recovery local', async () => {
