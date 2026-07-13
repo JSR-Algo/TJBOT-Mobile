@@ -1,16 +1,16 @@
 # iOS Runbook 05 - Physical Device Signing
 
-Last verified: 2026-07-10  
-App workspace: mobile repo root (`TJBOT-Mobile`)  
-Default physical device: `00008130-0019745E02F0001C` (iPad)  
-Default Apple development team override (build-time only): `EG7TK62A7Q`  
+Last verified: 2026-07-10
+App workspace: mobile repo root (`TJBOT-Mobile`)
+Default physical device: `00008130-0019745E02F0001C` (iPad)
+Default Apple development team override (build-time only): `EG7TK62A7Q`
 Bundle id: `net.jasonle.tjbot`
 
 This runbook signs and installs the app on a connected iPad or iPhone without
 writing `DEVELOPMENT_TEAM` into the shared Xcode project. The project can keep a
 shared/CI team value, while local physical builds pass the team at build time.
 
-> Monorepo mirror: `TbotREAL/docs/runbooks/ios/05-physical-device-signing.md`  
+> Monorepo mirror: `TbotREAL/docs/runbooks/ios/05-physical-device-signing.md`
 > Keep both copies aligned when the monorepo integration lane can accept a docs PR.
 
 ## Default: Release (self-contained, no Metro)
