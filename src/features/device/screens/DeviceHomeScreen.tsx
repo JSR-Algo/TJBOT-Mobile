@@ -1,9 +1,8 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
@@ -11,7 +10,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
-import { referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
+import { referenceImages, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
 import { getDeviceStatus, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '../pairing/localPairedDevice';
@@ -32,7 +31,7 @@ function getDeviceStatusForScreen(deviceId: string): Promise<DeviceStatus> {
 }
 
 export default function DeviceHomeScreen({ navigation }: Props) {
-  const { language } = useAppLanguage();
+  const { language, t } = useAppLanguage();
   const queryClient = useQueryClient();
   const localDeviceQuery = useQuery({
     queryKey: ['devices', 'local-paired-id'],
@@ -73,7 +72,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       <DeviceShell title="Devices">
         <Box paddingHorizontal={20} paddingTop={28}>
           <Box style={styles.emptyCard} alignItems="center">
-            <RobotDevice emotion="sad" size={112} accent="#FF6F61" />
+            <Image source={referenceImages.robotHead} style={styles.emptyRobot} resizeMode="contain" accessibilityLabel="Robot" />
             <Text fontWeight="700" style={styles.emptyTitle}>Robot status unavailable</Text>
             <Text style={styles.emptyBody}>Check your connection and try again.</Text>
             <DeviceBigBtn onClick={() => { void deviceQuery.refetch(); }}>Try again</DeviceBigBtn>
@@ -89,7 +88,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       <DeviceShell title="Devices">
         <Box paddingHorizontal={20} paddingTop={28}>
           <Box style={styles.emptyCard} alignItems="center">
-            <RobotDevice emotion="happy" size={124} accent="#FF6F61" />
+            <Image source={referenceImages.robotHead} style={styles.emptyRobot} resizeMode="contain" accessibilityLabel="Robot" />
             <Text fontWeight="700" style={styles.emptyTitle}>No Robot connected</Text>
             <Text style={styles.emptyBody}>Connect Robot to this account before starting lessons.</Text>
             <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>Connect Robot</DeviceBigBtn>
@@ -113,7 +112,9 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     <DeviceShell title="Devices">
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard} flexDirection="row" gap={16} alignItems="center">
-          <RobotDevice emotion="idle" size={108} accent={DV.accent} />
+          <Box style={styles.robotWell} alignItems="center" justifyContent="center">
+            <Image source={referenceImages.robotHead} style={styles.heroRobot} resizeMode="contain" accessibilityLabel={t('Connected Robot')} />
+          </Box>
           <Box flex={1}>
             <Text fontWeight="600" style={[styles.statusText, { color: connectionColor }]} i18n={false}>{connectionLabel}</Text>
             <Text fontWeight="600" style={styles.readyText} i18n={false}>{device.name}</Text>
@@ -173,14 +174,17 @@ export default function DeviceHomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  emptyCard: { backgroundColor: DV.card, borderRadius: referenceRadii.card, padding: 22, borderWidth: 1, borderColor: DV.hair, gap: 14, ...referenceShadow.card },
-  emptyTitle: { fontSize: 22, color: DV.ink, textAlign: 'center' },
+  emptyCard: { backgroundColor: DV.card, borderRadius: 32, padding: 26, borderWidth: 1, borderColor: DV.hair, gap: 14, ...referenceShadow.card },
+  emptyRobot: { width: 150, height: 150 },
+  emptyTitle: { fontSize: 24, color: DV.ink, textAlign: 'center' },
   emptyBody: { fontSize: 14, color: DV.ink2, lineHeight: 21, textAlign: 'center' },
   errorText: { fontSize: 13, color: '#C0392B', paddingHorizontal: 14, paddingVertical: 10 },
-  heroCard: { backgroundColor: DV.card, borderRadius: referenceRadii.card, padding: 18, borderWidth: 1, borderColor: DV.hair, ...referenceShadow.card },
-  statusText: { fontSize: 13 },
-  readyText: { fontSize: 18, color: DV.ink, marginTop: 2 },
+  heroCard: { backgroundColor: DV.card, borderRadius: 32, padding: 20, borderWidth: 1, borderColor: DV.hair, ...referenceShadow.card },
+  robotWell: { width: 116, height: 116, borderRadius: 30, backgroundColor: '#FFF7F2', overflow: 'hidden' },
+  heroRobot: { width: 108, height: 108 },
+  statusText: { fontSize: 13, backgroundColor: '#DFF7EA', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, alignSelf: 'flex-start', overflow: 'hidden' },
+  readyText: { fontSize: 20, color: DV.ink, marginTop: 8 },
   metaText: { fontSize: 12, color: DV.ink2 },
-  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0, marginBottom: 8 },
-  rowCard: { backgroundColor: DV.card, borderRadius: referenceRadii.card, borderWidth: 1, borderColor: DV.hair, paddingVertical: 4, paddingHorizontal: 4, ...referenceShadow.card },
+  sectionLabel: { fontSize: 12, color: DV.ink2, letterSpacing: 0, marginBottom: 10 },
+  rowCard: { backgroundColor: DV.card, borderRadius: referenceRadii.cardLarge, borderWidth: 1, borderColor: DV.hair, paddingVertical: 6, paddingHorizontal: 6, ...referenceShadow.card },
 });

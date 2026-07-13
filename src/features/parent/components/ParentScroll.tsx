@@ -5,17 +5,17 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 
-// redesign-2026: parent lane aligned to Wispr-Flow (kit.css .lane-parent /
-// DESIGN.md §8). Off-white surface, charcoal ink, purple accent. Single source
+// redesign-2026: parent lane aligned to the Sleek warm visual system in
+// DESIGN.md §8. Cream surface, charcoal ink, coral accent. Single source
 // for all 9 parent/ screens.
 export const PA = {
-  bg: '#F5F5F0',
+  bg: '#FAF5EB',
   card: '#FFFFFF',
-  ink: '#1C1C1E',
-  ink2: '#5A5A66',
-  ink3: '#8E8E93',
-  hair: 'rgba(28,28,30,0.08)',
-  accent: '#6B4EFF',
+  ink: '#2D3436',
+  ink2: '#636E72',
+  ink3: '#9A928A',
+  hair: '#EBDCC7',
+  accent: '#FF6B6B',
   good: '#34C759',
   warn: '#A06900',
 } as const;
@@ -30,7 +30,11 @@ type Props = {
 export default function ParentScroll({ children, title, onBack, right }: Props) {
   const { language } = useAppLanguage();
   return (
-    <ScrollView style={[styles.root, { backgroundColor: PA.bg }]}>
+    <ScrollView
+      style={[styles.root, { backgroundColor: PA.bg }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
       {title !== undefined ? (
         <Box
           style={[styles.header, { backgroundColor: PA.bg, borderBottomColor: PA.hair }]}
@@ -51,7 +55,7 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
               </Svg>
             </TouchableOpacity>
           ) : null}
-          <Text fontWeight="600" style={{ flex: 1, fontSize: 17, color: PA.ink, letterSpacing: -0.2 }}>{title}</Text>
+          <Text fontWeight="800" style={{ flex: 1, fontSize: 29, color: PA.ink, letterSpacing: -0.2 }}>{title}</Text>
           {right}
         </Box>
       ) : null}
@@ -62,9 +66,24 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: {
-    paddingTop: 56, paddingBottom: 12, paddingHorizontal: 20,
-    borderBottomWidth: 1, zIndex: 5,
+  content: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    paddingBottom: 130,
   },
-  backBtn: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  header: {
+    paddingTop: 56, paddingBottom: 18, paddingHorizontal: 24,
+    borderBottomWidth: 0, zIndex: 5,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: PA.card,
+    borderWidth: 1,
+    borderColor: PA.hair,
+  },
 });
