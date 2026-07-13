@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { LOCAL_OWNED_AI_V1, LOCAL_OWNED_API_V1, OWNED_AI_V1, OWNED_API_V1 } from '../../src/constants/ownedBackend';
+import { LOCAL_OWNED_API_V1, OWNED_AI_V1, OWNED_API_V1 } from '../../src/constants/ownedBackend';
 
 /**
  * Resolution-order tests for src/config.ts::getApiBaseUrl()

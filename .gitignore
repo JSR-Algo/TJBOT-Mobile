@@ -2,6 +2,7 @@ node_modules/
 .expo/
 dist/
 .env
+ios/.xcode.env.local
 ios/Pods/
 ios/build/
 ios/build-sim/

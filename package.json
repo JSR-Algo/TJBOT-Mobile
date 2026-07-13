@@ -61,7 +61,7 @@
     "navigation:forward-edges": "node scripts/navigation/export-forward-edges.mjs",
     "check:screen-prop-types": "node scripts/check-screen-prop-types.mjs",
     "check:token-parity": "node scripts/check-token-parity.mjs",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && node scripts/runtime/ensure-runtime-env.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.49.0",

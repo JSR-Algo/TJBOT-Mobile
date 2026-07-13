@@ -22,7 +22,7 @@ import {
 } from "@/design-system/sleekHomeLayout";
 import { useHomeState } from "../hooks/useHomeState";
 
-type Props = NativeStackScreenProps<RootStackParamList, "HomeHubScreen">;
+type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 
 const SLEEK = {
   background: "#FAF5EB",
