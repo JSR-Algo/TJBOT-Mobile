@@ -16,7 +16,7 @@ import { normalizeError } from '../utils/errors';
 import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../services/observability/analytics';
 import { captureError } from '@/services/observability/sentry';
 import { clearLocalPairedDevice } from '@/features/device/pairing/localPairedDevice';
-import { replayRewardSeenQueue, setRewardQueueAccount } from '@/features/rewards/offline/rewardSeenQueue';
+import { setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
 import { appQueryClient } from '@/services/query/queryClient';
 
 interface AuthState {
@@ -53,12 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       appQueryClient.removeQueries({ queryKey: ['rewards'] });
     }
     rewardAccountRef.current = accountId;
-    setRewardQueueAccount(accountId);
-    try {
-      await replayRewardSeenQueue();
-    } catch (error) {
-      captureError(error);
-    }
+    setRewardQueueScope(accountId, null);
   }, []);
 
   const forceLogout = useCallback(async () => {
@@ -78,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       captureError(error);
     }
     rewardAccountRef.current = null;
-    setRewardQueueAccount(null);
+    setRewardQueueScope(null, null);
     appQueryClient.removeQueries({ queryKey: ['rewards'] });
     resetAnalytics();
     setState({ user: null, isLoading: false, isAuthenticated: false, error: null });

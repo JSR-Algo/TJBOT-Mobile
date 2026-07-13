@@ -62,4 +62,16 @@ describe('reward seen queue', () => {
     expect(mockAcknowledge).toHaveBeenCalledWith('house-2-reward');
     expect(mockAcknowledge).not.toHaveBeenCalledWith('house-1-reward');
   });
+
+  it('waits for household hydration before replaying a pending account queue', async () => {
+    await enqueueRewardSeen('pending-reward');
+    setRewardQueueScope('parent-1', null);
+    await replayRewardSeenQueue();
+    expect(mockAcknowledge).not.toHaveBeenCalled();
+
+    setRewardQueueScope('parent-1', 'house-1');
+    mockAcknowledge.mockResolvedValue({ rewardId: 'pending-reward', seen: true, seenAt: '2026-07-13T00:00:00.000Z' });
+    await replayRewardSeenQueue();
+    expect(mockAcknowledge).toHaveBeenCalledTimes(1);
+  });
 });

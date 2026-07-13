@@ -3,8 +3,9 @@ import { getDeviceStatus, type DeviceStatus } from '@/services/api/device.api';
 import { acknowledgeRewardSeen, getRewardHistory, getRewardInbox, type RewardHistory, type RewardInbox, type RewardTotals } from '@/services/api/rewards.api';
 import { getLeaderboard, updateLeaderboardPreference, type LeaderboardPage, type LeaderboardPeriod } from '@/services/api/leaderboard.api';
 import { updateChildDisplayName } from '@/services/api/households';
-import { enqueueRewardSeen, getRewardQueueScope, setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
+import { enqueueRewardSeen, getRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
 import { appQueryClient } from '@/services/query/queryClient';
+import type { AppError } from '@/utils/errors';
 
 export const rewardKeys = {
   all: ['rewards'] as const,
@@ -19,8 +20,15 @@ export const rewardKeys = {
 
 function scope(householdScope: string): { accountId: string; householdScope: string } {
   const active = getRewardQueueScope();
-  setRewardQueueScope(active.accountId, householdScope);
   return { accountId: active.accountId, householdScope };
+}
+
+export function shouldQueueSeenAcknowledgement(error: unknown): boolean {
+  if (error === null || typeof error !== 'object' || !('code' in error)) return false;
+  const appError = error as AppError;
+  if (appError.code === 'NETWORK_ERROR') return true;
+  if (appError.retryable !== true) return false;
+  return appError.status === 429 || (typeof appError.status === 'number' && appError.status >= 500);
 }
 
 export function useActiveChildRobotQuery(childId?: string): UseQueryResult<DeviceStatus, Error> {
@@ -48,7 +56,7 @@ export function useLeaderboardPreferenceMutation(householdScope: string, deviceI
 }
 export function useAcknowledgeRewardMutation(householdScope: string) {
   const queryClient = useQueryClient(); const current = scope(householdScope);
-  return useMutation({ mutationFn: acknowledgeRewardSeen, onError: async (_error, rewardId) => enqueueRewardSeen(rewardId), onSuccess: async () => queryClient.invalidateQueries({ queryKey: rewardKeys.scope(current.accountId, current.householdScope) }) });
+  return useMutation({ mutationFn: acknowledgeRewardSeen, onError: async (error, rewardId) => { if (shouldQueueSeenAcknowledgement(error)) await enqueueRewardSeen(rewardId); }, onSuccess: async () => queryClient.invalidateQueries({ queryKey: rewardKeys.scope(current.accountId, current.householdScope) }) });
 }
 export function useUpdateChildDisplayNameMutation(householdScope: string, childId?: string) {
   const queryClient = useQueryClient(); const current = scope(householdScope);

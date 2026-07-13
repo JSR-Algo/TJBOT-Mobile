@@ -26,7 +26,7 @@ const mockResetAnalytics = jest.fn();
 const mockLogin = jest.fn<Promise<{ user?: User }>, [string, string]>();
 const mockClearLocalPairedDevice = jest.fn<Promise<void>, []>(async () => undefined);
 const mockClearRewardSeenQueue = jest.fn<Promise<void>, [string | null]>(async () => undefined);
-const mockSetRewardQueueAccount = jest.fn<void, [string | null]>();
+const mockSetRewardQueueScope = jest.fn<void, [string | null, string | null]>();
 const mockReplayRewardSeenQueue = jest.fn<Promise<void>, []>(async () => undefined);
 const mockRemoveQueries = jest.fn();
 
@@ -65,7 +65,7 @@ jest.mock('../../src/features/device/pairing/localPairedDevice', () => ({
 
 jest.mock('../../src/features/rewards/offline/rewardSeenQueue', () => ({
   clearRewardSeenQueue: (accountId: string | null) => mockClearRewardSeenQueue(accountId),
-  setRewardQueueAccount: (accountId: string | null) => mockSetRewardQueueAccount(accountId),
+  setRewardQueueScope: (accountId: string | null, householdId: string | null) => mockSetRewardQueueScope(accountId, householdId),
   replayRewardSeenQueue: () => mockReplayRewardSeenQueue(),
 }));
 
@@ -143,16 +143,16 @@ describe('AuthContext auth invalidation handler', () => {
     expect(mockDeleteSecureItem).toHaveBeenCalledWith('TJBot_user');
     expect(mockClearLocalPairedDevice).toHaveBeenCalled();
     expect(mockClearRewardSeenQueue).not.toHaveBeenCalled();
-    expect(mockSetRewardQueueAccount).toHaveBeenLastCalledWith(null);
+    expect(mockSetRewardQueueScope).toHaveBeenLastCalledWith(null, null);
     expect(mockRemoveQueries).toHaveBeenCalledWith({ queryKey: ['rewards'] });
     expect(mockResetAnalytics).toHaveBeenCalled();
   });
 
-  it('replays the active account reward queue after auth hydration', async () => {
+  it('sets account scope without replaying before household hydration', async () => {
     render(<AuthProvider><AuthProbe /></AuthProvider>);
 
-    await waitFor(() => expect(mockSetRewardQueueAccount).toHaveBeenCalledWith('user-1'));
-    expect(mockReplayRewardSeenQueue).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockSetRewardQueueScope).toHaveBeenCalledWith('user-1', null));
+    expect(mockReplayRewardSeenQueue).not.toHaveBeenCalled();
   });
 
   it('clears local auth state when stored token is rejected during hydration', async () => {
