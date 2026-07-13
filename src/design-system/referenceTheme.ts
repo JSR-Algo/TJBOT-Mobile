@@ -1,24 +1,21 @@
 import type { ImageSourcePropType, ViewStyle } from 'react-native';
 
-// redesign-2026: child lane reskinned to Garden-Blue (kit.css .lane-child).
-// Screen background is now the sky base (#CFEFF4) — ScreenShell paints it as a
-// sky gradient. Hero/warm cards stay cream via bgWarm. Coral/sky/mint/sun
-// refined to the approved kit values. Keys unchanged → 36 ScreenShell screens
-// adopt the new palette with no per-screen edits.
+// Sleek warm child lane. Keys stay stable so ScreenShell consumers inherit the
+// cream canvas, coral action color, and softly bordered white cards together.
 export const referenceColors = {
-  bg: '#CFEFF4',
-  bgWarm: '#FBF4EA',
+  bg: '#FAF5EB',
+  bgWarm: '#FFF9F0',
   card: '#FFFFFF',
   cardSoft: 'rgba(255,255,255,0.86)',
   ink: '#3A3937',
   inkSoft: '#6F6861',
   inkMuted: '#9A928A',
-  primary: '#FF6F61',
-  primaryDeep: '#F95F50',
-  primarySoft: '#FFE1DD',
-  ctaInk: '#2B2140',
-  coralShadow: 'rgba(255,111,97,0.28)',
-  line: 'rgba(83,67,53,0.10)',
+  primary: '#FF6B6B',
+  primaryDeep: '#F45757',
+  primarySoft: '#FFE5E5',
+  ctaInk: '#FFFFFF',
+  coralShadow: 'rgba(255,107,107,0.28)',
+  line: '#EBDCC7',
   secondary: '#3FB6C4',
   secondarySoft: '#DDF7F8',
   lavender: '#8B7BE8',
@@ -73,25 +70,22 @@ export const referenceImages = {
 } as const;
 
 /* =========================================================================
-   redesign-2026 — TWO LANES (kit.css), additive.
-   Screens opt into these during their redesign wave; the legacy
-   `referenceColors` above stays until each screen is migrated + previewed,
-   so the app keeps building while waves land one feature area at a time.
-   Source of truth: docs/design-references/redesign-2026/preview/kit.css
+   Sleek warm shared lanes. Screens retain their semantic token names while
+   inheriting one cream, charcoal, coral, and white-card visual language.
    ========================================================================= */
 
-// ---- Garden-Blue CHILD lane (.lane-child) — Nunito, sky gradient, cream cards.
+// ---- Sleek warm CHILD lane — Nunito, cream canvas, white cards, coral CTA.
 export const gardenColors = {
-  bg: '#CFEFF4',
-  bg2: '#BCE7F0',
+  bg: '#FAF5EB',
+  bg2: '#F5ECDD',
   cream: '#FBF4EA',
   cream2: '#FFF8EF',
   paper: '#FFFFFF',
   ink: '#3A3937',
   inkSoft: '#6F6861',
   inkMuted: '#9A928A',
-  coral: '#FF6F61',
-  coralSoft: '#FFE1DD',
+  coral: '#FF6B6B',
+  coralSoft: '#FFE5E5',
   sky: '#3FB6C4',
   skySoft: '#DDF7F8',
   mint: '#3FB37A',
@@ -99,17 +93,17 @@ export const gardenColors = {
   sun: '#F7C047',
   sunSoft: '#FCEFC9',
   plum: '#8B7BE8',
-  line: 'rgba(83,67,53,0.10)',
+  line: '#EBDCC7',
   // status pill bg/fg (st-ok / st-warn / st-bad)
   okBg: '#DFF7EA',
   okFg: '#1B7A4F',
   warnBg: '#FCEFC9',
   warnFg: '#9A7D12',
-  badBg: '#FFE1DD',
+  badBg: '#FFE5E5',
   badFg: '#C2410C',
 } as const;
 
-// Gradient stops for the child backdrop (top → bottom), for LinearGradient.
+// Subtle cream backdrop stops (top → bottom), for LinearGradient.
 export const gardenGradient = [gardenColors.bg, gardenColors.bg2] as const;
 
 export const gardenShadow = {
@@ -146,24 +140,24 @@ export const gardenRadii = {
   iconbtn: 999,
 } as const;
 
-// ---- Wispr-Flow PARENT lane (.lane-parent) — DESIGN.md §8, off-white, charcoal
-// pill CTA, purple accent. NOTE: Fraunces serif headings require font bundling
+// ---- Sleek warm PARENT lane — DESIGN.md §8, cream, charcoal, coral CTA.
+// NOTE: Fraunces serif headings require font bundling
 // (tracked in REDESIGN-PLAN.md, scheduled with the parent-area wave).
 export const parentColors = {
-  bg: '#F5F5F0',
+  bg: '#FAF5EB',
   card: '#FFFFFF',
-  card2: '#F0F0F0',
+  card2: '#FFF9F0',
   ink: '#1C1C1E',
   ink1: '#3A3A3C',
   ink2: '#8E8E93',
-  line: 'rgba(28,28,30,0.08)',
-  accent: '#6B4EFF',
-  accentSoft: '#EAE6FF',
+  line: '#EBDCC7',
+  accent: '#FF6B6B',
+  accentSoft: '#FFE5E5',
   success: '#34C759',
   warning: '#FF9500',
   danger: '#FF3B30',
-  blush: '#FCE8E6',
-  cream: '#FFFBE6',
+  blush: '#FFE5E5',
+  cream: '#FFF4D6',
   // status pill bg/fg (p-ok / p-warn / p-bad)
   okBg: '#E6F9EC',
   okFg: '#1A7F3C',

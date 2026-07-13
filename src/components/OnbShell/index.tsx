@@ -33,7 +33,12 @@ type Props = {
 export default function OnbShell({ children, step, total, onBack, title, testID }: Props) {
   const { t } = useAppLanguage();
   return (
-    <ScrollView style={[styles.root, { backgroundColor: OB.bg }]} testID={testID}>
+    <ScrollView
+      style={[styles.root, { backgroundColor: OB.bg }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      testID={testID}
+    >
       <Box
         style={[styles.header, { backgroundColor: OB.bg, borderBottomColor: OB.hair }]}
         flexDirection="row"
@@ -67,6 +72,12 @@ export default function OnbShell({ children, step, total, onBack, title, testID 
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  content: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    paddingBottom: 130,
+  },
   header: {
     paddingTop: 56,
     paddingBottom: 12,
