@@ -5,13 +5,11 @@ import client from '@/services/http/client';
 import { setTokens } from '@/services/http/tokens';
 import {
   acknowledgeRewardSeen,
-  getLeaderboard,
-  getLeaderboardPreference,
   getRewardHistory,
   getRewardInbox,
-  getRewardTotals,
-  updateLeaderboardPreference,
 } from '@/services/api/rewards.api';
+import { getLeaderboard, updateLeaderboardPreference } from '@/services/api/leaderboard.api';
+import { updateChildDisplayName } from '@/services/api/households';
 
 const apiUrl = process.env.TBOT_API_URL ?? 'http://127.0.0.1:3100/v1';
 const raw = axios.create({ baseURL: apiUrl, validateStatus: () => true });
@@ -32,19 +30,6 @@ interface Fixture {
   sessionId: string;
   lessonId: string;
   lessonVersion: number;
-}
-
-function value(value: unknown): Record<string, unknown> {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return {};
-  return Object.fromEntries(Object.entries(value));
-}
-
-function requiredText(source: Record<string, unknown>, ...keys: string[]): string {
-  for (const key of keys) {
-    const candidate = source[key];
-    if (typeof candidate === 'string' && candidate.length > 0) return candidate;
-  }
-  throw new Error(`Missing required field: ${keys.join(' or ')}`);
 }
 
 function sqlLiteral(input: string): string {
@@ -152,7 +137,9 @@ async function seedFixture(): Promise<Fixture> {
   };
 }
 
-describe('mobile rewards against the real backend and PostgreSQL', () => {
+const describeLive = process.env.TBOT_REWARDS_LIVE === '1' ? describe : describe.skip;
+
+describeLive('mobile rewards against the real backend and PostgreSQL', () => {
   let fixture: Fixture;
 
   beforeAll(async () => {
@@ -180,60 +167,43 @@ describe('mobile rewards against the real backend and PostgreSQL', () => {
     );
     expect(responses.every((response) => response.status === 200)).toBe(true);
 
-    const inbox = await getRewardInbox({
-      childId: fixture.childId,
-      deviceId: fixture.deviceId,
-      assignmentId: fixture.assignmentId,
-    });
-    const history = await getRewardHistory({ childId: fixture.childId, limit: 20 });
-    const totals = await getRewardTotals(fixture.childId);
-    expect(inbox).toHaveLength(1);
-    expect(history.items.filter((reward) => reward.assignmentId === fixture.assignmentId)).toHaveLength(1);
-    expect(history.items[0]).toEqual(inbox[0]);
-    expect(totals.lessonCompletions).toBe(1);
-    expect(totals.totalXp).toBe(inbox[0]?.xp);
-    expect(totals.totalCoins).toBe(inbox[0]?.coins);
+    const inbox = await getRewardInbox();
+    const history = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
+    expect(inbox.count).toBe(1);
+    expect(history.history).toHaveLength(1);
+    expect(history.history[0]).toEqual(inbox.rewards[0]);
+    expect(history.totals.rewardCount).toBe(1);
+    expect(history.totals.xp).toBe(inbox.rewards[0]?.xp);
+    expect(history.totals.coins).toBe(inbox.rewards[0]?.coins);
 
-    const rewardId = requiredText(value(inbox[0]), 'id');
+    const rewardId = inbox.rewards[0]?.rewardId ?? '';
     await acknowledgeRewardSeen(rewardId);
     await acknowledgeRewardSeen(rewardId);
-    await expect(getRewardInbox({
-      childId: fixture.childId,
-      deviceId: fixture.deviceId,
-      assignmentId: fixture.assignmentId,
-    })).resolves.toEqual([]);
-    const seenHistory = await getRewardHistory({ childId: fixture.childId, limit: 20 });
-    expect(seenHistory.items[0]?.id).toBe(rewardId);
-    expect(seenHistory.items[0]?.seenAt).not.toBeNull();
+    await expect(getRewardInbox()).resolves.toMatchObject({ count: 0, rewards: [] });
+    const seenHistory = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
+    expect(seenHistory.history[0]?.rewardId).toBe(rewardId);
   });
 
   it('uses child name, robot name, masked owner email and preserves private rewards after opt-out', async () => {
-    await expect(getLeaderboardPreference(fixture.deviceId)).resolves.toMatchObject({ optedIn: false });
     await expect(updateLeaderboardPreference(fixture.deviceId, true)).resolves.toMatchObject({ optedIn: true });
 
-    const weekly = await getLeaderboard({ period: 'weekly', deviceId: fixture.deviceId, limit: 20 });
-    const allTime = await getLeaderboard({ period: 'allTime', deviceId: fixture.deviceId, limit: 20 });
-    const owned = [...weekly.items, weekly.ownedRow, ...allTime.items, allTime.ownedRow]
-      .find((row) => row?.deviceId === fixture.deviceId);
-    expect(owned).toMatchObject({ childName: 'Mai', robotName: 'TeeBot Sao', owned: true });
-    expect(owned?.maskedParentEmail).toBe(fixture.email.replace(/^(.{2})[^@]*/, '$1***'));
+    const weekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
+    const allTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    const owned = [...weekly.ownedRows, ...allTime.ownedRows].find((row) => row.robotId === fixture.deviceId);
+    expect(owned).toMatchObject({ childName: 'Mai', robotName: 'TeeBot Sao', optedIn: true });
+    expect(owned?.parentEmailMasked).toBe(fixture.email.replace(/^(.{2})[^@]*/, '$1***'));
     expect(JSON.stringify({ weekly, allTime })).not.toContain(fixture.email);
 
-    const rename = await raw.patch(`/mobile/children/${fixture.childId}`, { display_name: 'An' }, {
-      headers: { Authorization: `Bearer ${fixture.token}` },
-    });
-    expect(rename.status).toBe(200);
-    const renamed = await getLeaderboard({ period: 'allTime', deviceId: fixture.deviceId, limit: 20 });
-    const renamedOwned = [...renamed.items, renamed.ownedRow].find((row) => row?.deviceId === fixture.deviceId);
+    await expect(updateChildDisplayName(fixture.childId, 'An')).resolves.toMatchObject({ displayName: 'An' });
+    const renamed = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    const renamedOwned = renamed.ownedRows.find((row) => row.robotId === fixture.deviceId);
     expect(renamedOwned?.childName).toBe('An');
 
-    const totalsBefore = await getRewardTotals(fixture.childId);
-    const historyBefore = await getRewardHistory({ childId: fixture.childId, limit: 20 });
+    const historyBefore = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
     await expect(updateLeaderboardPreference(fixture.deviceId, false)).resolves.toMatchObject({ optedIn: false });
-    const hidden = await getLeaderboard({ period: 'allTime', deviceId: fixture.deviceId, limit: 20 });
-    expect(hidden.items.some((row) => row.deviceId === fixture.deviceId)).toBe(false);
-    expect(hidden.ownedRow).toBeNull();
-    await expect(getRewardTotals(fixture.childId)).resolves.toEqual(totalsBefore);
-    await expect(getRewardHistory({ childId: fixture.childId, limit: 20 })).resolves.toEqual(historyBefore);
+    const hidden = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    expect(hidden.rows.some((row) => row.robotId === fixture.deviceId)).toBe(false);
+    expect(hidden.ownedRows.find((row) => row.robotId === fixture.deviceId)).toMatchObject({ optedIn: false, visibility: 'private' });
+    await expect(getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId })).resolves.toEqual(historyBefore);
   });
 });

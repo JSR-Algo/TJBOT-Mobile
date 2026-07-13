@@ -49,8 +49,10 @@ function rowAt(value: unknown, path: string, owned: boolean): LeaderboardRow | O
   const rankStatus = item.rankStatus;
   if (rankStatus !== 'current' && rankStatus !== 'refreshing' && rankStatus !== 'private') throw invalid(`${path}.rankStatus`);
   const email = text(item.parentEmailMasked, `${path}.parentEmailMasked`);
-  const [local, domain, extra] = email.split('@');
-  if (extra !== undefined || !local || !domain || (local.length > 1 && !local.endsWith('***'))) throw invalid(`${path}.parentEmailMasked`);
+  if (email !== '[hidden]') {
+    const [local, domain, extra] = email.split('@');
+    if (extra !== undefined || !local || !domain || (local.length > 1 && !local.endsWith('***'))) throw invalid(`${path}.parentEmailMasked`);
+  }
   if (!Array.isArray(item.badges)) throw invalid(`${path}.badges`);
   const base: LeaderboardRow = {
     rank: item.rank === null ? null : integer(item.rank, `${path}.rank`, 1),

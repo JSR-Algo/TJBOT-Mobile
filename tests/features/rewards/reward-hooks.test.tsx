@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { getRewardHistory, getRewardInbox } from '@/services/api/rewards.api';
 import { getLeaderboard } from '@/services/api/leaderboard.api';
 import { rewardKeys, useLeaderboardQuery, useRewardHistoryQuery, useRewardInboxQuery } from '@/features/rewards/hooks/useRewards';
-import { setRewardQueueAccount } from '@/features/rewards/offline/rewardSeenQueue';
+import { setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
 
 jest.mock('@/services/api/rewards.api', () => ({ getRewardHistory: jest.fn(), getRewardInbox: jest.fn(), acknowledgeRewardSeen: jest.fn() }));
 jest.mock('@/services/api/leaderboard.api', () => ({ getLeaderboard: jest.fn(), updateLeaderboardPreference: jest.fn() }));
@@ -20,32 +20,32 @@ function wrapper(): React.ComponentType<React.PropsWithChildren> {
 }
 
 describe('authoritative reward hooks', () => {
-  beforeEach(() => { jest.clearAllMocks(); setRewardQueueAccount('parent-1'); });
+  beforeEach(() => { jest.clearAllMocks(); setRewardQueueScope('parent-1', 'house-1'); });
 
   it('partitions keys by authenticated account, child, device, period and page', () => {
-    expect(rewardKeys.history('parent-1', 'c1', 'r1')).not.toEqual(rewardKeys.history('parent-2', 'c1', 'r1'));
-    expect(rewardKeys.history('parent-1', 'c1', 'r1')).not.toEqual(rewardKeys.history('parent-1', 'c2', 'r1'));
-    expect(rewardKeys.leaderboard('parent-1', 'weekly', 1, 20)).not.toEqual(rewardKeys.leaderboard('parent-1', 'allTime', 1, 20));
-    expect(rewardKeys.leaderboard('parent-1', 'weekly', 1, 20)).not.toEqual(rewardKeys.leaderboard('parent-1', 'weekly', 2, 20));
+    expect(rewardKeys.history('parent-1', 'house-1', 'c1', 'r1')).not.toEqual(rewardKeys.history('parent-2', 'house-1', 'c1', 'r1'));
+    expect(rewardKeys.history('parent-1', 'house-1', 'c1', 'r1')).not.toEqual(rewardKeys.history('parent-1', 'house-2', 'c1', 'r1'));
+    expect(rewardKeys.totals('parent-1', 'house-1', 'c1', 'r1')).not.toEqual(rewardKeys.history('parent-1', 'house-1', 'c1', 'r1'));
+    expect(rewardKeys.leaderboard('parent-1', 'house-1', 'weekly', 1, 20)).not.toEqual(rewardKeys.leaderboard('parent-1', 'house-1', 'allTime', 1, 20));
   });
 
   it('loads private history with exact optional filters', async () => {
     mockHistory.mockResolvedValueOnce({ totals: { xp: 0, coins: 0, rewardCount: 0, refreshing: false }, history: [] });
-    const { result } = renderHook(() => useRewardHistoryQuery('child-1', 'robot-1'), { wrapper: wrapper() });
+    const { result } = renderHook(() => useRewardHistoryQuery('house-1', 'child-1', 'robot-1'), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockHistory).toHaveBeenCalledWith({ childId: 'child-1', deviceId: 'robot-1' });
   });
 
   it('loads the account-scoped inbox without private selectors', async () => {
     mockInbox.mockResolvedValueOnce({ rewards: [], count: 0 });
-    const { result } = renderHook(() => useRewardInboxQuery(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useRewardInboxQuery('house-1'), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockInbox).toHaveBeenCalledWith();
   });
 
   it('loads exact leaderboard pages independently', async () => {
     mockLeaderboard.mockResolvedValueOnce({ period: 'weekly', rows: [], ownedRows: [], pagination: { page: 2, pageSize: 10, totalRows: 0, totalPages: 0 } });
-    const { result } = renderHook(() => useLeaderboardQuery('weekly', 2, 10), { wrapper: wrapper() });
+    const { result } = renderHook(() => useLeaderboardQuery('house-1', 'weekly', 2, 10), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockLeaderboard).toHaveBeenCalledWith({ period: 'weekly', page: 2, pageSize: 10 });
   });

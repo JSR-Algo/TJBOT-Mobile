@@ -55,6 +55,12 @@ describe('authoritative rewards APIs', () => {
     await expect(getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 })).rejects.toMatchObject({ code: 'INVALID_API_RESPONSE' });
   });
 
+  it.each(['[hidden]', 'a@example.com', 'ma***@example.com'])('accepts backend-masked email %s', async (parentEmailMasked) => {
+    const row = { rank: 1, rankStatus: 'current', robotId: 'r1', childName: 'May', robotName: 'Tee', parentEmailMasked, xp: 1, completedLessonCount: 1, currentStreakDays: 1, badges: [] };
+    mockedClient.get.mockResolvedValueOnce({ data: { data: { period: 'weekly', rows: [row], ownedRows: [], pagination: { page: 1, pageSize: 20, totalRows: 1, totalPages: 1 } } } });
+    await expect(getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 })).resolves.toMatchObject({ rows: [{ parentEmailMasked }] });
+  });
+
   it('acknowledges seen with a stable request id and no reward mutation body', async () => {
     mockedClient.post.mockResolvedValueOnce({ data: { data: { rewardId: 'reward-1', seen: true, seenAt: '2026-07-12T09:35:00.000Z' } } });
     await acknowledgeRewardSeen('reward-1');

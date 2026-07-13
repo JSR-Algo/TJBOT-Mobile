@@ -18,7 +18,7 @@ failure_paths:
   - cross_household_forbidden
   - offline_seen_ack_queued
 idempotency: reward seen acknowledgement uses a stable reward-derived request ID; preference and child-name mutations are never queued
-retry: cached reads may refresh after reconnect; only reward seen acknowledgement replays from the account-partitioned local queue
+retry: cached reads may refresh after reconnect; only reward seen acknowledgement replays from the account-and-household-partitioned local queue
 timeout: authenticated HTTP client default 30 seconds
 status: final
 ---
@@ -37,7 +37,7 @@ sequenceDiagram
         ParentApp->>Gateway: POST /v1/mobile/rewards/{rewardId}/seen + stable request ID
         Gateway-->>ParentApp: 200 seen receipt
     else offline acknowledgement
-        ParentApp->>ParentApp: queue reward ID once under authenticated account key
+        ParentApp->>ParentApp: queue reward ID once under authenticated account and household key
         Note over ParentApp: rename and leaderboard preference are never queued
     end
 

@@ -4,18 +4,24 @@ import { captureError } from '@/services/observability/sentry';
 
 const REWARD_SEEN_QUEUE_PREFIX = '@TJBot/reward_seen_queue';
 let activeAccountId: string | null = null;
+let activeHouseholdScope: string | null = null;
 
 export function setRewardQueueAccount(accountId: string | null): void {
+  setRewardQueueScope(accountId, null);
+}
+
+export function setRewardQueueScope(accountId: string | null, householdScope: string | null): void {
   activeAccountId = accountId?.trim() || null;
+  activeHouseholdScope = householdScope?.trim() || null;
 }
 
-export function getRewardQueueAccount(): string {
-  return activeAccountId ?? 'anonymous';
+export function getRewardQueueScope(): { accountId: string; householdScope: string } {
+  return { accountId: activeAccountId ?? 'anonymous', householdScope: activeHouseholdScope ?? 'no-household' };
 }
 
-function queueKey(accountId: string | null = activeAccountId): string {
-  if (!accountId) throw new Error('REWARD_QUEUE_ACCOUNT_REQUIRED');
-  return `${REWARD_SEEN_QUEUE_PREFIX}/${encodeURIComponent(accountId)}`;
+function queueKey(accountId: string | null = activeAccountId, householdScope: string | null = activeHouseholdScope): string {
+  if (!accountId || !householdScope) throw new Error('REWARD_QUEUE_SCOPE_REQUIRED');
+  return `${REWARD_SEEN_QUEUE_PREFIX}/${encodeURIComponent(accountId)}/${encodeURIComponent(householdScope)}`;
 }
 
 async function readQueue(): Promise<string[]> {
@@ -36,7 +42,7 @@ export async function enqueueRewardSeen(rewardId: string): Promise<void> {
 }
 
 export async function replayRewardSeenQueue(): Promise<void> {
-  if (!activeAccountId) return;
+  if (!activeAccountId || !activeHouseholdScope) return;
   const queue = await readQueue();
   const remaining: string[] = [];
   for (const rewardId of queue) {
@@ -50,7 +56,7 @@ export async function replayRewardSeenQueue(): Promise<void> {
   await writeQueue(remaining);
 }
 
-export async function clearRewardSeenQueue(accountId: string | null = activeAccountId): Promise<void> {
-  if (!accountId) return;
-  await AsyncStorage.removeItem(queueKey(accountId));
+export async function clearRewardSeenQueue(accountId: string | null = activeAccountId, householdScope: string | null = activeHouseholdScope): Promise<void> {
+  if (!accountId || !householdScope) return;
+  await AsyncStorage.removeItem(queueKey(accountId, householdScope));
 }
