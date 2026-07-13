@@ -10,17 +10,18 @@
 
 ## UC-RM01 — View My Robot
 
-- **Goal:** Parent opens the Robot diagnostics hub (status chips + drill-down rows for sound, mic, software, support).
+- **Goal:** Parent reviews every owned robot's authoritative reward identity and controls each robot's public leaderboard privacy.
 - **Trigger:** Parent taps "My Robot" from `parent_settings`, landing on `rm_my_robot` (`MyRobotPage`).
-- **Preconditions:** Parent passed UC-PR01; a Robot is paired.
+- **Preconditions:** Parent passed UC-PR01; the authenticated household scope is available.
 - **Main Flow:**
-  1. `MyRobotPage` mounts and renders the Robot identity hero (`MyRobotScreen.jsx:11-` per `DvShell title="My Robot"`).
-  2. Page renders the 4 stat tiles (battery / Wi-Fi / courses / mic — `MyRobotScreen.jsx:31-34`) — each row routes to the corresponding deep-dive.
-  3. Page renders the action rows: sound & volume, microphone test, etc. (`MyRobotScreen.jsx:42-`).
-  4. Parent taps a row → routes to UC-RM02..UC-RM12 as applicable.
-- **Postconditions:** Parent has a hub view of Robot health; navigation may transition to a deep-dive screen.
+  1. `MyRobotScreen` reads the weekly leaderboard response and renders every `ownedRows` robot, including opted-out private rows.
+  2. Each card shows only backend-returned child, robot, XP, lesson count, streak state, masked email, and visibility; missing device telemetry is not guessed.
+  3. Each card exposes an independently focusable switch that writes the preference for that exact device ID. The non-interactive summary header carries the screen-reader summary so it cannot swallow the switch.
+  4. Neutral actions open the server-backed detailed-status route and parent-confirmed factory-reset flow without claiming battery, Wi-Fi, courses, microphone, care, firmware, or support state on this hub.
+- **Postconditions:** Every owned robot retains private rewards while its public preference reflects the latest server-confirmed mutation.
 - **Alt Flow:**
-  1. Parent taps back → returns to `parent_settings` (cross-domain — see cross-domain-edges.json).
+  1. Loading, error/retry, and empty-owned-robot states remain explicit and translated.
+  2. Parent taps back → returns to the parent summary.
 
 ## UC-RM02 — View Robot Status
 

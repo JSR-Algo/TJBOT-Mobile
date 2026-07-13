@@ -1867,4 +1867,12 @@
   ,"Detailed robot status": "Detailed robot status"
   ,"Open factory reset": "Open factory reset"
   ,"Opens the parent-confirmed reset flow without claiming device status": "Opens the parent-confirmed reset flow without claiming device status"
+  ,"Rank: {{rank}}": "Rank: {{rank}}"
+  ,"Rank refreshing: {{rank}}": "Rank refreshing: {{rank}}"
+  ,"Lessons: {{count}}": "Lessons: {{count}}"
+  ,"Streak days: {{count}}": "Streak days: {{count}}"
+  ,"Badges: {{badges}}": "Badges: {{badges}}"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}"
+  ,"{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}.": "{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}."
 }

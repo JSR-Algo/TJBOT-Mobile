@@ -73,10 +73,13 @@ function PeriodTab({ label, accessibilityLabel, selected, onPress }: { label: st
 
 function LeaderboardRowView({ row, owned, language }: { row: LeaderboardRow | OwnedLeaderboardRow; owned: boolean; language: 'vi' | 'en' }): React.JSX.Element {
   const privateRow = row.rankStatus === 'private';
-  const rankText = privateRow ? 'Private robot' : row.rankStatus === 'refreshing' ? `Rank ${row.rank ?? '—'} is refreshing` : `Rank ${row.rank ?? '—'}`;
-  const streakText = row.currentStreakDays === null ? 'Streak refreshing' : `${row.currentStreakDays} day streak`;
-  const badgesText = row.badges.length > 0 ? row.badges.join(', ') : 'No badges yet';
-  const label = translateTemplate(owned ? 'Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}' : '{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}', { rank: rankText, child: row.childName, robot: row.robotName, xp: row.xp, lessons: row.completedLessonCount, streak: streakText, badges: badgesText, email: row.parentEmailMasked }, { locale: language });
+  const rankText = privateRow
+    ? translateTemplate('Private robot', {}, { locale: language })
+    : translateTemplate(row.rankStatus === 'refreshing' ? 'Rank refreshing: {{rank}}' : 'Rank: {{rank}}', { rank: row.rank ?? '—' }, { locale: language });
+  const lessonsText = translateTemplate('Lessons: {{count}}', { count: row.completedLessonCount }, { locale: language });
+  const streakText = row.currentStreakDays === null ? translateTemplate('Streak refreshing', {}, { locale: language }) : translateTemplate('Streak days: {{count}}', { count: row.currentStreakDays }, { locale: language });
+  const badgesText = row.badges.length > 0 ? translateTemplate('Badges: {{badges}}', { badges: row.badges.join(', ') }, { locale: language }) : translateTemplate('No badges yet', {}, { locale: language });
+  const label = translateTemplate(owned ? 'Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}' : '{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}', { rank: rankText, child: row.childName, robot: row.robotName, xp: row.xp, lessons: lessonsText, streak: streakText, badges: badgesText, email: row.parentEmailMasked }, { locale: language });
   return (
     <Box accessible accessibilityLabel={label} style={[styles.row, owned && styles.owned]} flexDirection="row" alignItems="center" gap={12}>
       <Text fontWeight="800" style={styles.rank} i18n={false}>{privateRow ? '—' : `#${row.rank ?? '…'}`}</Text>
@@ -84,8 +87,9 @@ function LeaderboardRowView({ row, owned, language }: { row: LeaderboardRow | Ow
         {owned ? <Text fontWeight="800" style={styles.ownedLabel}>{privateRow ? 'Private robot' : 'Your robot'}</Text> : null}
         <Text fontWeight="700" i18n={false}>{row.childName} · {row.robotName}</Text>
         <Text style={styles.email} i18n={false}>{row.parentEmailMasked}</Text>
-        <Text style={styles.detail} i18n={false}>{row.completedLessonCount} lessons · {row.currentStreakDays === null ? 'Streak refreshing' : `${row.currentStreakDays} day streak`}</Text>
-        <Text style={styles.detail} i18n={row.badges.length === 0}>{row.badges.length > 0 ? row.badges.join(' · ') : 'No badges yet'}</Text>
+        <Text style={styles.detail}>{lessonsText}</Text>
+        <Text style={styles.detail}>{streakText}</Text>
+        <Text style={styles.detail}>{badgesText}</Text>
         {row.rankStatus === 'refreshing' ? <Text style={styles.refreshing}>Rank refreshing</Text> : null}
       </Box>
       <Text fontWeight="800" i18n={false}>{row.xp} XP</Text>

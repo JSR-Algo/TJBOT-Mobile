@@ -8,9 +8,9 @@
 
 ## UC-RM01
 
-- **error**: Hub must degrade gracefully if the per-tile telemetry calls fail — show "—" rather than crash the row.
-- **timeout**: Stat tiles must show "checking…" and then "offline" within bounded time if telemetry stalls.
-- **retry**: A pull-to-refresh / explicit refresh affordance must re-run the per-tile fetches.
+- **error**: Owned-row fetch or preference mutation failure must retain the last server-confirmed visibility and expose a translated retry/error state.
+- **retry**: Retry re-fetches owned rows; preference writes remain device-scoped and are never queued offline.
+- **validation**: Empty owned rows are explicit, opted-out rows remain manageable, nullable streaks say refreshing, and absent battery/Wi-Fi/course/mic values are never fabricated.
 
 ## UC-RM02
 

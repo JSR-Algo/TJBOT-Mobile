@@ -1,6 +1,7 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import LeaderboardScreen from '@/features/rewards/screens/LeaderboardView';
+import { setAppLanguage } from '@/services/i18n/i18n';
 
 const mockLeaderboard = jest.fn();
 jest.mock('@/contexts/HouseholdContext', () => ({
@@ -33,12 +34,15 @@ describe('LeaderboardScreen', () => {
     });
   });
 
+  afterEach(async () => { await act(async () => { await setAppLanguage('en'); }); });
+
   it('renders backend-masked identity and a non-colour owned-row announcement', () => {
     renderScreen();
     expect(screen.getAllByText('ma***@example.com')).toHaveLength(2);
-    expect(screen.getByLabelText('Your robot. Rank 41 is refreshing. Mai with robot Tee. 90 XP. 3 lessons. 2 day streak. Badges: first-lesson. Parent ma***@example.com')).toBeTruthy();
-    expect(screen.getAllByText('3 lessons · 2 day streak')).toHaveLength(2);
-    expect(screen.getAllByText('first-lesson')).toHaveLength(2);
+    expect(screen.getByLabelText('Your robot. Rank refreshing: 41. Mai with robot Tee. 90 XP. Lessons: 3. Streak days: 2. Badges: first-lesson. Parent ma***@example.com')).toBeTruthy();
+    expect(screen.getAllByText('Lessons: 3')).toHaveLength(2);
+    expect(screen.getAllByText('Streak days: 2')).toHaveLength(2);
+    expect(screen.getAllByText('Badges: first-lesson')).toHaveLength(2);
   });
 
   it('switches period, refreshes, and requests only bounded pages', () => {
@@ -59,5 +63,16 @@ describe('LeaderboardScreen', () => {
     expect(screen.getByText('Private robot')).toBeTruthy();
     expect(screen.getByText('[hidden]')).toBeTruthy();
     expect(screen.getByText('No badges yet')).toBeTruthy();
+  });
+
+  it('localizes visible and accessibility leaderboard summaries without English leakage', async () => {
+    await act(async () => { await setAppLanguage('vi'); });
+    mockLeaderboard.mockReturnValue({ data: { period: 'weekly', rows: [], ownedRows: [{ ...owned, rank: null, rankStatus: 'refreshing', currentStreakDays: null, badges: [] }], pagination: { page: 1, pageSize: 25, totalRows: 0, totalPages: 0 } }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
+    renderScreen();
+    expect(screen.getByText('Bài học: 3')).toBeTruthy();
+    expect(screen.getAllByText('Đang làm mới chuỗi ngày').length).toBeGreaterThan(0);
+    expect(screen.getByText('Chưa có huy hiệu')).toBeTruthy();
+    const summary = screen.getByLabelText(/Robot của bạn.*Bài học: 3.*Đang làm mới chuỗi ngày.*Chưa có huy hiệu/);
+    expect(summary.props.accessibilityLabel).not.toMatch(/lessons|day streak|Badges|refreshing/i);
   });
 });

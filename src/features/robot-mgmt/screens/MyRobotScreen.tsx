@@ -42,9 +42,11 @@ function OwnedRobotCard({ row, householdScope }: { row: OwnedLeaderboardRow; hou
   const { language, t } = useAppLanguage();
   const mutation = useLeaderboardPreferenceMutation(householdScope, row.robotId);
   const status = row.optedIn ? t('Visible on leaderboard') : t('Private robot');
+  const lessonsText = translateTemplate('Lessons: {{count}}', { count: row.completedLessonCount }, { locale: language });
+  const streakText = row.currentStreakDays === null ? t('Streak refreshing') : translateTemplate('Streak days: {{count}}', { count: row.currentStreakDays }, { locale: language });
   return (
-    <Box style={styles.card} gap={12} accessible accessibilityLabel={ownedRobotLabel(row, language)}>
-      <Box flexDirection="row" gap={12} alignItems="center">
+    <Box testID={`owned-robot-card-${row.robotId}`} style={styles.card} gap={12}>
+      <Box flexDirection="row" gap={12} alignItems="center" accessible accessibilityLabel={ownedRobotLabel(row, language)}>
         <RobotDevice emotion="happy" size={72} accent="#FF6F61" />
         <Box flex={1}>
           <Text fontWeight="800" style={styles.robotName} i18n={false}>{row.robotName}</Text>
@@ -54,7 +56,8 @@ function OwnedRobotCard({ row, householdScope }: { row: OwnedLeaderboardRow; hou
         <Text fontWeight="800" i18n={false}>{row.xp} XP</Text>
       </Box>
       <Text style={styles.body}>{row.optedIn ? 'Child name, robot name and masked parent email are visible.' : 'Rewards and history stay private even when your robot is hidden.'}</Text>
-      <Text style={styles.meta} i18n={false}>{row.completedLessonCount} lessons · {row.currentStreakDays === null ? t('Streak refreshing') : `${row.currentStreakDays} day streak`}</Text>
+      <Text style={styles.meta}>{lessonsText}</Text>
+      <Text style={styles.meta}>{streakText}</Text>
       <Text style={styles.meta} i18n={false}>{row.parentEmailMasked}</Text>
       <TouchableOpacity accessibilityRole="switch" accessibilityLabel={translateTemplate(row.optedIn ? 'Leave leaderboard for {{robot}}' : 'Join leaderboard for {{robot}}', { robot: row.robotName }, { locale: language })} accessibilityHint={t(row.optedIn ? 'Hides this robot from public rankings while private rewards remain available' : 'Shows this robot with masked parent email in public rankings')} accessibilityState={{ checked: row.optedIn, disabled: mutation.isPending, busy: mutation.isPending }} disabled={mutation.isPending} onPress={() => mutation.mutate(!row.optedIn)} style={[styles.preference, row.optedIn && styles.preferenceOn]}><Text fontWeight="700">{row.optedIn ? 'Leave leaderboard' : 'Join leaderboard'}</Text></TouchableOpacity>
       {mutation.isError ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite">Leaderboard preference could not be saved.</Text> : null}
@@ -63,8 +66,10 @@ function OwnedRobotCard({ row, householdScope }: { row: OwnedLeaderboardRow; hou
 }
 
 function ownedRobotLabel(row: OwnedLeaderboardRow, locale: AppLocale): string {
-  const streak = row.currentStreakDays === null ? 'Streak refreshing' : row.currentStreakDays;
-  return translateTemplate('{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}} lessons. {{streak}} day streak.', { robot: row.robotName, child: row.childName, visibility: row.optedIn ? 'Visible on leaderboard' : 'Private robot', xp: row.xp, lessons: row.completedLessonCount, streak }, { locale });
+  const visibility = translateTemplate(row.optedIn ? 'Visible on leaderboard' : 'Private robot', {}, { locale });
+  const lessons = translateTemplate('Lessons: {{count}}', { count: row.completedLessonCount }, { locale });
+  const streak = row.currentStreakDays === null ? translateTemplate('Streak refreshing', {}, { locale }) : translateTemplate('Streak days: {{count}}', { count: row.currentStreakDays }, { locale });
+  return translateTemplate('{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}.', { robot: row.robotName, child: row.childName, visibility, xp: row.xp, lessons, streak }, { locale });
 }
 
 const styles = StyleSheet.create({ intro: { color: RM.ink2, lineHeight: 20 }, card: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 16, padding: 16 }, robotName: { fontSize: 18, color: RM.ink }, meta: { color: RM.ink2, marginTop: 3 }, status: { color: '#8A3D22', marginTop: 6 }, body: { color: RM.ink2, lineHeight: 19 }, preference: { minHeight: 48, borderRadius: 12, backgroundColor: '#E7E9ED', alignItems: 'center', justifyContent: 'center' }, preferenceOn: { backgroundColor: '#FFE1DC' }, retry: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: RM.hair }, leaderboardLink: { minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: RM.hair, alignItems: 'center', justifyContent: 'center' }, dangerLink: { minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: '#B42318', alignItems: 'center', justifyContent: 'center' }, dangerText: { color: '#B42318' } });

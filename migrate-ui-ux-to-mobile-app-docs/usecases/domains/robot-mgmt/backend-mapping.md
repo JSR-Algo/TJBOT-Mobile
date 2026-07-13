@@ -4,7 +4,7 @@
 
 | UC ID | Endpoint | Service | DB Entity | Events | Domain ADR Pointer |
 |---|---|---|---|---|---|
-| UC-RM01 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
+| UC-RM01 | `leaderboard.api.ts → getLeaderboard, updateLeaderboardPreference` | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | authenticated owned-row read and per-device preference audit | `decisions/0001-backend-progress.md` |
 | UC-RM02 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-RM03 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-RM04 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
@@ -21,7 +21,8 @@
 
 ## Notes
 
-- Cells stay sentinel because (a) `robot-mgmt.api.js` exports throw `not implemented` (`getRobotStatus`, `getBattery`, `getStorage`, `runMicTest`, `runSpeakerTest`, `factoryReset`, `getSupportInfo`), and (b) no domain ADR exists.
+- UC-RM01 is backed only by the authoritative leaderboard owned-row and preference exports. It intentionally does not consume the prototype robot-health exports or display their static values.
+- Remaining cells stay sentinel because `robot-mgmt.api.js` exports throw `not implemented` (`getRobotStatus`, `getBattery`, `getStorage`, `runMicTest`, `runSpeakerTest`, `factoryReset`, `getSupportInfo`).
 - Once a `decisions/NNNN-backend-robot-mgmt.md` ADR is created, candidate cell promotions:
   - UC-RM02 (Status): `robot-mgmt.api.js → getRobotStatus` (Endpoint); would surface a status rollup.
   - UC-RM03 (Battery): `robot-mgmt.api.js → getBattery` (Endpoint).

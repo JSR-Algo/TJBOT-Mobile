@@ -18,6 +18,8 @@ Status: implementation evidence for human review; agents do not mark tasks DONE.
 | Assignment/session correlation | Reward DTO requires assignment and session IDs; summary never falls back to an older unseen reward for the same child/robot | API malformed-receipt tests and older-receipt screen regression |
 | Complete leaderboard rows | Public and owned rows expose lesson count, nullable/refreshing streak, badge summary, and equivalent accessibility wording | leaderboard screen tests |
 | All-owned privacy management | Robot management maps every backend-owned row to its own device-scoped preference mutation and contains no static device-health truth | robot preference screen tests and i18n scan |
+| Bilingual dynamic summaries | Rank, lesson count, nullable streak, badge summary, owned visibility, and accessibility labels use exact vi/en templates without constructed English fragments | bilingual leaderboard and robot preference tests; i18n parity |
+| Independent switch focus | Owned robot card container is not accessible; a non-interactive header owns the summary label and each switch remains separately focusable with checked state, label, and hint | structural accessibility test in `robot-preference.test.tsx` |
 
 ## Manual / environment-dependent evidence
 

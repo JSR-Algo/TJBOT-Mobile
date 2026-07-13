@@ -2089,4 +2089,12 @@
   ,"Detailed robot status": "Trạng thái robot chi tiết"
   ,"Open factory reset": "Mở khôi phục cài đặt gốc"
   ,"Opens the parent-confirmed reset flow without claiming device status": "Mở quy trình đặt lại có phụ huynh xác nhận mà không khẳng định trạng thái thiết bị"
+  ,"Rank: {{rank}}": "Hạng: {{rank}}"
+  ,"Rank refreshing: {{rank}}": "Đang làm mới hạng: {{rank}}"
+  ,"Lessons: {{count}}": "Bài học: {{count}}"
+  ,"Streak days: {{count}}": "Số ngày chuỗi: {{count}}"
+  ,"Badges: {{badges}}": "Huy hiệu: {{badges}}"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "Robot của bạn. {{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Phụ huynh {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "{{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Phụ huynh {{email}}"
+  ,"{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}.": "{{robot}} của {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}."
 }
