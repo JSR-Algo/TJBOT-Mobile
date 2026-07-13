@@ -143,7 +143,7 @@ function crossFeatureInteriorViolations(mapping, edges) {
 function hiddenRoutes(mapping, edges) {
   const inbound = new Set(edges.map(edge => edge.targetRoute));
   return Object.entries(mapping.routes)
-    .filter(([route, entry]) => !inbound.has(route) && !staticEntryRoles.has(entry.role))
+    .filter(([route, entry]) => entry.productionVisible !== false && !inbound.has(route) && !staticEntryRoles.has(entry.role))
     .map(([route]) => route)
     .sort();
 }

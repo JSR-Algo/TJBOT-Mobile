@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { ROUTE_MAP } from '@/navigation/routeMap';
+import { isProductionNavigableRoute } from '@/navigation/featureRegistry';
 
 const root = join(__dirname, '..', '..');
 
@@ -69,6 +70,7 @@ describe('route reachability', () => {
   it('has no hidden routes without static inbound navigation or explicit entry role', () => {
     const inbound = inboundRoutes();
     const hiddenRoutes = routeKeys().filter((route) => {
+      if (!isProductionNavigableRoute(route as keyof typeof ROUTE_MAP)) return false;
       if (inbound.has(route)) return false;
       const entry = ROUTE_MAP[route as keyof typeof ROUTE_MAP];
       return !STATIC_ENTRY_ROLES.has(entry.role);

@@ -73,6 +73,11 @@ describe('production-hidden routes', () => {
     expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.UnitScreen);
     expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.LessonListScreen);
     expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.LessonDetailScreen);
+    expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.RobotBatteryScreen);
+    expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.RobotStorageScreen);
+    expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.RobotFirmwareScreen);
+    expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.MicTestScreen);
+    expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(ROUTES.SpeakerTestScreen);
 
     const mountedRoutes = PROTECTED_MOUNTED_STACK_SCREENS.map(screen => screen.name);
     for (const route of PRODUCTION_HIDDEN_ROUTE_NAMES) {

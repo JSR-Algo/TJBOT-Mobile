@@ -204,7 +204,7 @@ Current owners:
 
 - No legacy app-navigation system.
 - No central imports from `src/features/*/screens`.
-- No hidden routes without forward inbound navigation or explicit entry role.
+- No production-visible routes without forward inbound navigation or explicit entry role; contract-blocked prototypes must declare `productionVisible: false` and a reason.
 - Forward-edge artifact must report zero hidden routes and zero reciprocal
   cycle violations.
 - Back-only links (`backTarget`, `onBack`, `prev`) do not count as reachability.

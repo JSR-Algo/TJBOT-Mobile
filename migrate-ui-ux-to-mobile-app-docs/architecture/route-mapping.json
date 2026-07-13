@@ -1174,7 +1174,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/robot-battery",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_battery"
     },
@@ -1185,7 +1185,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/robot-storage",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_storage"
     },
@@ -1196,7 +1196,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/robot-firmware",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_firmware"
     },
@@ -1229,7 +1229,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/mic-test",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_mic_test"
     },
@@ -1240,7 +1240,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/speaker-test",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_speaker_test"
     },

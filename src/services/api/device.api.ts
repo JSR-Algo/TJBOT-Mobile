@@ -72,7 +72,7 @@ export interface DeviceStatus {
   id: string;
   name: string;
   serialNumber?: string;
-  online: boolean;
+  online: boolean | null;
   batteryPercent: number;
   wifiSsid?: string;
   wifiRssi?: number;
@@ -118,11 +118,17 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
   const wifiRssi = dto.connectivity_metrics?.wifi_rssi;
   const serialNumber = dto.serial_number?.trim();
   const assignedChildProfileId = dto.assigned_child_profile_id ?? dto.assignedChildProfileId;
+  const connectivityState = dto.connectivity_metrics?.connectivity_state;
+  const operationalState = dto.status === 'active' || dto.status === 'online' || connectivityState === 'online'
+    ? 'online'
+    : dto.status === 'offline' || connectivityState === 'offline'
+      ? 'offline'
+      : null;
   return {
     id: dto.id ?? dto.device_id ?? '',
     name: dto.name ?? dto.serial_number ?? dto.id ?? dto.device_id ?? 'TJBot',
     ...(serialNumber ? { serialNumber } : {}),
-    online: dto.status === 'active' || dto.status === 'online' || dto.connectivity_metrics?.connectivity_state === 'online',
+    online: operationalState === null ? null : operationalState === 'online',
     batteryPercent: dto.battery_level ?? 0,
     charging: false,
     wifiSsid: dto.connectivity_metrics?.wifi_ssid,

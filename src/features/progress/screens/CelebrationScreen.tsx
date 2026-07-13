@@ -15,18 +15,20 @@ import { useHousehold } from '@/contexts/HouseholdContext';
 import type { JsonValue } from '@/services/api/rewards.api';
 import { isRewardSeenQueued } from '@/features/rewards/offline/rewardSeenQueue';
 import { captureError } from '@/services/observability/sentry';
+import { translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CelebrationScreen'>;
 const CONFETTI_COLORS = ['#FF6F61', '#0D8F68', '#1778B5', '#fff', '#6B4A9B'];
 
-function reasonLabel(reason: JsonValue): string {
-  if (reason === 'lesson_completion') return 'Lesson completed';
-  if (reason && typeof reason === 'object' && !Array.isArray(reason) && reason.label === 'lesson_completion') return 'Lesson completed';
-  return typeof reason === 'string' ? reason : 'Lesson completed';
+function reasonLabel(reason: JsonValue, locale: AppLocale): string {
+  if (reason === 'lesson_completion') return translateTemplate('Lesson completed', {}, { locale });
+  if (reason && typeof reason === 'object' && !Array.isArray(reason) && reason.label === 'lesson_completion') return translateTemplate('Lesson completed', {}, { locale });
+  return typeof reason === 'string' ? reason : translateTemplate('Lesson completed', {}, { locale });
 }
 
 export default function CelebrationScreen({ navigation, route }: Props): React.JSX.Element {
   const reduceMotion = useReduceMotion();
+  const { language, t } = useAppLanguage();
   const { activeHousehold } = useHousehold();
   const inbox = useRewardInboxQuery(activeHousehold?.id ?? '');
   const candidate = inbox.data?.rewards.find(item => item.rewardId === route.params?.rewardId);
@@ -58,20 +60,24 @@ export default function CelebrationScreen({ navigation, route }: Props): React.J
     return <PageScroll bg="#FFC857"><Box padding={24} paddingTop={100} gap={12} accessibilityLiveRegion="polite"><Text fontWeight="800" style={styles.hero}>Reward is waiting to sync</Text><Text style={styles.msg}>Your lesson is safe. Check again when the robot is online.</Text><PrimaryCTA onPress={() => navigation.replace(ROUTES.HomeHubScreen)} color="#C34C3F">Back to Robot Home</PrimaryCTA></Box></PageScroll>;
   }
 
-  const childName = reward.child.displayName ?? 'Child';
-  const robotName = reward.robot.displayName ?? 'Robot';
-  const streak = reward.streak?.currentDays ?? 0;
+  const childName = reward.child.displayName ?? t('Child');
+  const robotName = reward.robot.displayName ?? t('Robot');
+  const xpText = translateTemplate('XP: {{count}}', { count: reward.xp }, { locale: language });
+  const coinsText = translateTemplate('Coins: {{count}}', { count: reward.coins }, { locale: language });
+  const streakText = reward.streak === null ? t('Streak unavailable') : reward.streak.currentDays === null ? t('Streak refreshing') : translateTemplate('Streak days: {{count}}', { count: reward.streak.currentDays }, { locale: language });
+  const reasonText = reasonLabel(reward.reason, language);
+  const summary = translateTemplate('{{child}} and {{robot}}. {{xp}}. {{coins}}. {{streak}}. {{reason}}.', { child: childName, robot: robotName, xp: xpText, coins: coinsText, streak: streakText, reason: reasonText }, { locale: language });
   return (
     <PageScroll bg="#FFC857">
       {reduceMotion ? <Box testID="celebration-static-stars" accessible={false} importantForAccessibility="no-hide-descendants" style={styles.staticStars}><Text accessible={false} style={styles.staticStarText}>★  ★  ★</Text></Box> : <Box testID="celebration-confetti" accessible={false} importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFillObject, styles.confettiLayer]} overflow="hidden">{Array.from({ length: 24 }).map((_, i) => <Box key={i} style={[styles.confetti, { left: `${(i * 37) % 100}%`, top: `${(i * 17) % 80}%`, backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length], transform: [{ rotate: `${i * 23}deg` }] } satisfies ViewStyle]} />)}</Box>}
       <Box position="relative" paddingTop={80} paddingHorizontal={24} paddingBottom={16} alignItems="center" gap={14} accessibilityLiveRegion="polite">
         <Text fontWeight="800" style={styles.hero}>You did it!</Text>
         <Robot emotion="success" size={220} accent="#C34C3F" />
-        <Box style={styles.stickerCard} accessible accessibilityLabel={`${childName} and ${robotName}. ${reward.xp} XP, ${reward.coins} coins, ${streak} day streak. ${reasonLabel(reward.reason)}`}>
+        <Box style={styles.stickerCard} accessible accessibilityLabel={summary}>
           <Text fontWeight="800" style={styles.name} i18n={false}>{childName} · {robotName}</Text>
-          <Text fontWeight="800" style={styles.reward} i18n={false}>{reward.xp} XP · {reward.coins} coins</Text>
-          <Text style={styles.msg} i18n={false}>{streak} day streak</Text>
-          <Text style={styles.msg}>{reasonLabel(reward.reason)}</Text>
+          <Text fontWeight="800" style={styles.reward}>{xpText} · {coinsText}</Text>
+          <Text style={styles.msg}>{streakText}</Text>
+          <Text style={styles.msg}>{reasonText}</Text>
           {reward.badges.map(badge => <Text key={badge} fontWeight="700" style={styles.badge} i18n={false}>{badge}</Text>)}
         </Box>
       </Box>

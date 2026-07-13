@@ -1,7 +1,8 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import LessonSummaryScreen from '@/features/progress/screens/LessonSummaryScreen';
 import CelebrationScreen from '@/features/progress/screens/CelebrationScreen';
+import { setAppLanguage } from '@/services/i18n/i18n';
 
 const mockInbox = jest.fn();
 const mockMutate = jest.fn();
@@ -20,12 +21,13 @@ const navigation = () => ({ navigate: jest.fn(), replace: jest.fn(), goBack: jes
 
 describe('persisted reward surfaces', () => {
   beforeEach(() => { jest.clearAllMocks(); mockReduceMotion = true; mockQueuedSeen = false; mockInbox.mockReturnValue({ data: { rewards: [reward], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() }); });
+  afterEach(async () => { await act(async () => { await setAppLanguage('en'); }); });
 
   it('renders XP, coins, badge, streak, child, robot, and reason from the persisted inbox', async () => {
     render(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never} />);
-    expect(await screen.findByText('30 XP · 5 coins')).toBeTruthy();
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
     expect(screen.getByText('Mai · Tee')).toBeTruthy();
-    expect(screen.getByText('3 day streak')).toBeTruthy();
+    expect(screen.getByText('Streak days: 3')).toBeTruthy();
     expect(screen.getByText('brave-speaker')).toBeTruthy();
     expect(screen.getByText('Lesson completed')).toBeTruthy();
   });
@@ -34,7 +36,7 @@ describe('persisted reward surfaces', () => {
     mockQueuedSeen = true;
     render(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never} />);
     expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
-    expect(screen.queryByText('30 XP · 5 coins')).toBeNull();
+    expect(screen.queryByText('XP: 30 · Coins: 5')).toBeNull();
     expect(mockMutate).not.toHaveBeenCalled();
   });
 
@@ -66,5 +68,22 @@ describe('persisted reward surfaces', () => {
     render(<LessonSummaryScreen navigation={navigation() as never} route={{ key: 's', name: 'LessonSummaryScreen', params: { childId: 'child-1', deviceId: 'robot-1' } } as never} />);
     fireEvent.press(screen.getByLabelText('Retry reward'));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { locale: 'en' as const, streak: null, expected: 'Streak unavailable', absent: 'Streak days: 0' },
+    { locale: 'vi' as const, streak: null, expected: 'Chưa có dữ liệu chuỗi ngày', absent: 'Số ngày chuỗi: 0' },
+    { locale: 'en' as const, streak: { currentDays: null, bestDays: 5 }, expected: 'Streak refreshing', absent: 'Streak days: 0' },
+    { locale: 'vi' as const, streak: { currentDays: null, bestDays: 5 }, expected: 'Đang làm mới chuỗi ngày', absent: 'Số ngày chuỗi: 0' },
+    { locale: 'en' as const, streak: { currentDays: 0, bestDays: 5 }, expected: 'Streak days: 0', absent: 'Streak refreshing' },
+    { locale: 'vi' as const, streak: { currentDays: 0, bestDays: 5 }, expected: 'Số ngày chuỗi: 0', absent: 'Đang làm mới chuỗi ngày' },
+  ])('preserves nullable streak truth in $locale for $expected', async ({ locale, streak, expected, absent }) => {
+    await act(async () => { await setAppLanguage(locale); });
+    mockInbox.mockReturnValue({ data: { rewards: [{ ...reward, streak }], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() });
+    render(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never} />);
+    expect(await screen.findByText(expected)).toBeTruthy();
+    expect(screen.queryByText(absent)).toBeNull();
+    const summary = screen.getByLabelText(new RegExp(expected));
+    if (locale === 'vi') expect(summary.props.accessibilityLabel).not.toMatch(/coins|day streak|Lesson completed|refreshing/i);
   });
 });

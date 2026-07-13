@@ -22,9 +22,10 @@
 ## Notes
 
 - UC-RM01 is backed only by the authoritative leaderboard owned-row and preference exports. It intentionally does not consume the prototype robot-health exports or display their static values.
+- UC-RM02 deliberately consumes only the existing household-device projection. Although the normalized device type contains defaulted telemetry fields, the screen renders only name, optional serial number, and nullable online/offline state.
+- UC-RM03, UC-RM05, UC-RM06, UC-RM08, and UC-RM09 remain production-hidden with `backend-contract-unavailable`; their prototype values/actions are not mounted or deep-linked.
 - Remaining cells stay sentinel because `robot-mgmt.api.js` exports throw `not implemented` (`getRobotStatus`, `getBattery`, `getStorage`, `runMicTest`, `runSpeakerTest`, `factoryReset`, `getSupportInfo`).
 - Once a `decisions/NNNN-backend-robot-mgmt.md` ADR is created, candidate cell promotions:
-  - UC-RM02 (Status): `robot-mgmt.api.js → getRobotStatus` (Endpoint); would surface a status rollup.
   - UC-RM03 (Battery): `robot-mgmt.api.js → getBattery` (Endpoint).
   - UC-RM05 (Installed Courses): `robot-mgmt.api.js → getStorage` (Endpoint); references `Course` (Entity, per `docs/erd/README.md`).
   - UC-RM06 (Update Software): `device.api.js → runFirmwareUpdate` (Endpoint, shared with UC-DM04).

@@ -14,10 +14,16 @@ import { localeDateTag, translateTemplate, useAppLanguage } from '@/services/i18
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentRewardsScreen'>;
 
-function reasonLabel(reason: JsonValue): string {
-  if (typeof reason === 'string') return reason === 'lesson_completion' ? 'Lesson completed' : reason;
-  if (reason && typeof reason === 'object' && !Array.isArray(reason) && typeof reason.label === 'string') return reason.label === 'lesson_completion' ? 'Lesson completed' : reason.label;
-  return 'Lesson completed';
+function reasonLabel(reason: JsonValue, language: 'vi' | 'en'): string {
+  if (typeof reason === 'string') return reason === 'lesson_completion' ? translateTemplate('Lesson completed', {}, { locale: language }) : reason;
+  if (reason && typeof reason === 'object' && !Array.isArray(reason) && typeof reason.label === 'string') return reason.label === 'lesson_completion' ? translateTemplate('Lesson completed', {}, { locale: language }) : reason.label;
+  return translateTemplate('Lesson completed', {}, { locale: language });
+}
+
+function streakLabel(reward: RewardReceipt, language: 'vi' | 'en'): string {
+  if (reward.streak === null) return translateTemplate('Streak unavailable', {}, { locale: language });
+  if (reward.streak.currentDays === null) return translateTemplate('Streak refreshing', {}, { locale: language });
+  return translateTemplate('Streak days: {{count}}', { count: reward.streak.currentDays }, { locale: language });
 }
 
 export default function ParentRewardsScreen({ navigation }: Props): React.JSX.Element {
@@ -66,11 +72,17 @@ function groupRewards(rewards: RewardReceipt[]): { key: string; label: string; r
 }
 
 function Totals({ totals }: { totals: { xp: number; coins: number; rewardCount: number; refreshing: boolean } }): React.JSX.Element {
-  return <Box style={styles.totalCard} flexDirection="row" justifyContent="space-between" accessible accessibilityLabel={`${totals.xp} XP, ${totals.coins} coins, ${totals.rewardCount} rewards`}><Stat value={`${totals.xp} XP`} label="Total XP" /><Stat value={`${totals.coins}`} label="Coins" /><Stat value={`${totals.rewardCount}`} label="Rewards" />{totals.refreshing ? <Text accessibilityLiveRegion="polite">Totals refreshing</Text> : null}</Box>;
+  const { language } = useAppLanguage();
+  const label = translateTemplate('{{xp}}. {{coins}}. Rewards: {{count}}.', { xp: translateTemplate('XP: {{count}}', { count: totals.xp }, { locale: language }), coins: translateTemplate('Coins: {{count}}', { count: totals.coins }, { locale: language }), count: totals.rewardCount }, { locale: language });
+  return <Box style={styles.totalCard} flexDirection="row" justifyContent="space-between" accessible accessibilityLabel={label}><Stat value={`${totals.xp} XP`} label="Total XP" /><Stat value={`${totals.coins}`} label="Coins" /><Stat value={`${totals.rewardCount}`} label="Rewards" />{totals.refreshing ? <Text accessibilityLiveRegion="polite">Totals refreshing</Text> : null}</Box>;
 }
 function RewardRow({ reward, language }: { reward: RewardReceipt; language: 'vi' | 'en' }): React.JSX.Element {
-  const reason = reasonLabel(reward.reason);
-  return <Box style={styles.rewardRow} accessible accessibilityLabel={`${reason}, ${reward.xp} XP, ${reward.coins} coins`}><Text fontWeight="700">{reason}</Text><Text style={styles.meta} i18n={false}>{reward.xp} XP · {reward.coins} coins</Text>{reward.badges.map(badge => <Text key={badge} style={styles.badge} i18n={false}>{badge}</Text>)}<Text style={styles.date} i18n={false}>{new Date(reward.awardedAt).toLocaleDateString(localeDateTag(language))}</Text></Box>;
+  const reason = reasonLabel(reward.reason, language);
+  const xp = translateTemplate('XP: {{count}}', { count: reward.xp }, { locale: language });
+  const coins = translateTemplate('Coins: {{count}}', { count: reward.coins }, { locale: language });
+  const streak = streakLabel(reward, language);
+  const label = translateTemplate('{{reason}}. {{xp}}. {{coins}}. {{streak}}.', { reason, xp, coins, streak }, { locale: language });
+  return <Box style={styles.rewardRow} accessible accessibilityLabel={label}><Text fontWeight="700">{reason}</Text><Text style={styles.meta}>{xp} · {coins}</Text><Text style={styles.meta}>{streak}</Text>{reward.badges.map(badge => <Text key={badge} style={styles.badge} i18n={false}>{badge}</Text>)}<Text style={styles.date} i18n={false}>{new Date(reward.awardedAt).toLocaleDateString(localeDateTag(language))}</Text></Box>;
 }
 function Stat({ value, label }: { value: string; label: string }): React.JSX.Element { return <Box alignItems="center"><Text fontWeight="800" style={styles.statValue} i18n={false}>{value}</Text><Text style={styles.statLabel}>{label}</Text></Box>; }
 function Retry({ onPress }: { onPress: () => void }): React.JSX.Element { return <Box gap={6}><Text fontWeight="700">Reward history unavailable</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry reward history" accessibilityHint="Fetches reward history again" onPress={onPress}><Text style={styles.link}>Try again</Text></TouchableOpacity></Box>; }

@@ -721,7 +721,7 @@ describe('device API client', () => {
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
     const result = await getDeviceStatus('primary');
-    expect(result).toMatchObject({ id: '', name: 'TJBot', online: false, batteryPercent: 0 });
+    expect(result).toMatchObject({ id: '', name: 'TJBot', online: null, batteryPercent: 0 });
     expect(get).toHaveBeenCalledWith('/devices/household/me');
   });
 
