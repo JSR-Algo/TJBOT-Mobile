@@ -36,7 +36,9 @@ describe('LeaderboardScreen', () => {
   it('renders backend-masked identity and a non-colour owned-row announcement', () => {
     renderScreen();
     expect(screen.getAllByText('ma***@example.com')).toHaveLength(2);
-    expect(screen.getByLabelText('Your robot. Rank 41 is refreshing. Mai with robot Tee. 90 XP. Parent ma***@example.com')).toBeTruthy();
+    expect(screen.getByLabelText('Your robot. Rank 41 is refreshing. Mai with robot Tee. 90 XP. 3 lessons. 2 day streak. Badges: first-lesson. Parent ma***@example.com')).toBeTruthy();
+    expect(screen.getAllByText('3 lessons · 2 day streak')).toHaveLength(2);
+    expect(screen.getAllByText('first-lesson')).toHaveLength(2);
   });
 
   it('switches period, refreshes, and requests only bounded pages', () => {
@@ -52,9 +54,10 @@ describe('LeaderboardScreen', () => {
   });
 
   it('keeps an opted-out owned robot private and outside public rows', () => {
-    mockLeaderboard.mockReturnValue({ data: { period: 'weekly', rows: [], ownedRows: [{ ...owned, rank: null, rankStatus: 'private', optedIn: false, visibility: 'private', parentEmailMasked: '[hidden]' }], pagination: { page: 1, pageSize: 25, totalRows: 0, totalPages: 0 } }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
+    mockLeaderboard.mockReturnValue({ data: { period: 'weekly', rows: [], ownedRows: [{ ...owned, rank: null, rankStatus: 'private', optedIn: false, visibility: 'private', parentEmailMasked: '[hidden]', badges: [] }], pagination: { page: 1, pageSize: 25, totalRows: 0, totalPages: 0 } }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
     renderScreen();
     expect(screen.getByText('Private robot')).toBeTruthy();
     expect(screen.getByText('[hidden]')).toBeTruthy();
+    expect(screen.getByText('No badges yet')).toBeTruthy();
   });
 });

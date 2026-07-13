@@ -34,6 +34,8 @@ sequenceDiagram
 
     ParentApp->>Gateway: GET /v1/mobile/rewards/inbox + Bearer
     Gateway-->>ParentApp: 200 unseen persisted rewards
+    ParentApp->>ParentApp: correlate exact assignmentId and optional route sessionId
+    Note over ParentApp: never substitute an older reward for the same child and robot
     alt online acknowledgement
         ParentApp->>Gateway: POST /v1/mobile/rewards/{rewardId}/seen + stable request ID
         Gateway-->>ParentApp: 200 seen receipt
@@ -45,6 +47,7 @@ sequenceDiagram
     ParentApp->>Gateway: GET /v1/mobile/leaderboard?period&page&pageSize + Bearer
     Gateway-->>ParentApp: 200 public rows, owned rows, pagination
     ParentApp->>ParentApp: reject unmasked email or unexpected public fields
+    ParentApp->>ParentApp: render lessons, nullable streak state, badges, and every owned robot
 
     ParentApp->>Gateway: PUT /v1/mobile/devices/{deviceId}/leaderboard-preference {optedIn}
     Gateway-->>ParentApp: 200 persisted preference

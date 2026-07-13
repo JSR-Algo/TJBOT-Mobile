@@ -15,7 +15,7 @@ jest.mock('@/features/rewards/hooks/useRewards', () => ({
 jest.mock('@/design-system/animations/useReduceMotion', () => ({ useReduceMotion: () => mockReduceMotion }));
 jest.mock('@/features/rewards/offline/rewardSeenQueue', () => ({ isRewardSeenQueued: () => Promise.resolve(mockQueuedSeen) }));
 
-const reward = { rewardId: 'reward-1', child: { id: 'child-1', displayName: 'Mai' }, robot: { id: 'robot-1', displayName: 'Tee' }, xp: 30, coins: 5, badges: ['brave-speaker'], reason: 'lesson_completion', policyVersion: 'v1', streak: { currentDays: 3, bestDays: 5 }, awardedAt: '2026-07-13T01:00:00.000Z' };
+const reward = { rewardId: 'reward-1', assignmentId: 'assignment-1', sessionId: 'session-1', child: { id: 'child-1', displayName: 'Mai' }, robot: { id: 'robot-1', displayName: 'Tee' }, xp: 30, coins: 5, badges: ['brave-speaker'], reason: 'lesson_completion', policyVersion: 'v1', streak: { currentDays: 3, bestDays: 5 }, awardedAt: '2026-07-13T01:00:00.000Z' };
 const navigation = () => ({ navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() });
 
 describe('persisted reward surfaces', () => {
@@ -50,6 +50,14 @@ describe('persisted reward surfaces', () => {
     render(<LessonSummaryScreen navigation={navigation() as never} route={{ key: 's', name: 'LessonSummaryScreen', params: { childId: 'child-1', deviceId: 'robot-1' } } as never} />);
     expect(screen.getByText('Reward is waiting to sync')).toBeTruthy();
     expect(screen.queryByText(/XP/)).toBeNull();
+  });
+
+  it('selects the exact assignment and session instead of an older unseen reward for the same child and robot', () => {
+    const older = { ...reward, rewardId: 'reward-old', assignmentId: 'assignment-old', sessionId: 'session-old', xp: 99 };
+    mockInbox.mockReturnValue({ data: { rewards: [older, reward], count: 2 }, isLoading: false, isError: false, refetch: jest.fn() });
+    render(<LessonSummaryScreen navigation={navigation() as never} route={{ key: 's', name: 'LessonSummaryScreen', params: { childId: 'child-1', deviceId: 'robot-1', assignmentId: 'assignment-1', sessionId: 'session-1' } } as never} />);
+    expect(screen.getByText('30 XP · 5 coins')).toBeTruthy();
+    expect(screen.queryByText('99 XP · 5 coins')).toBeNull();
   });
 
   it('offers retry when inbox refresh fails', () => {

@@ -12,7 +12,7 @@ export interface LeaderboardRow {
   parentEmailMasked: string;
   xp: number;
   completedLessonCount: number;
-  currentStreakDays: number;
+  currentStreakDays: number | null;
   badges: string[];
 }
 export interface OwnedLeaderboardRow extends LeaderboardRow { optedIn: boolean; visibility: 'public' | 'private' }
@@ -63,7 +63,7 @@ function rowAt(value: unknown, path: string, owned: boolean): LeaderboardRow | O
     parentEmailMasked: email,
     xp: integer(item.xp, `${path}.xp`),
     completedLessonCount: integer(item.completedLessonCount, `${path}.completedLessonCount`),
-    currentStreakDays: integer(item.currentStreakDays, `${path}.currentStreakDays`),
+    currentStreakDays: item.currentStreakDays === null ? null : integer(item.currentStreakDays, `${path}.currentStreakDays`),
     badges: item.badges.map((badge, index) => text(badge, `${path}.badges[${index}]`)),
   };
   if (!owned) return base;

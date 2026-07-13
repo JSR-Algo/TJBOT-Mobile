@@ -74,7 +74,9 @@ function PeriodTab({ label, accessibilityLabel, selected, onPress }: { label: st
 function LeaderboardRowView({ row, owned, language }: { row: LeaderboardRow | OwnedLeaderboardRow; owned: boolean; language: 'vi' | 'en' }): React.JSX.Element {
   const privateRow = row.rankStatus === 'private';
   const rankText = privateRow ? 'Private robot' : row.rankStatus === 'refreshing' ? `Rank ${row.rank ?? '—'} is refreshing` : `Rank ${row.rank ?? '—'}`;
-  const label = translateTemplate(owned ? 'Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}' : '{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}', { rank: rankText, child: row.childName, robot: row.robotName, xp: row.xp, email: row.parentEmailMasked }, { locale: language });
+  const streakText = row.currentStreakDays === null ? 'Streak refreshing' : `${row.currentStreakDays} day streak`;
+  const badgesText = row.badges.length > 0 ? row.badges.join(', ') : 'No badges yet';
+  const label = translateTemplate(owned ? 'Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}' : '{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}', { rank: rankText, child: row.childName, robot: row.robotName, xp: row.xp, lessons: row.completedLessonCount, streak: streakText, badges: badgesText, email: row.parentEmailMasked }, { locale: language });
   return (
     <Box accessible accessibilityLabel={label} style={[styles.row, owned && styles.owned]} flexDirection="row" alignItems="center" gap={12}>
       <Text fontWeight="800" style={styles.rank} i18n={false}>{privateRow ? '—' : `#${row.rank ?? '…'}`}</Text>
@@ -82,6 +84,8 @@ function LeaderboardRowView({ row, owned, language }: { row: LeaderboardRow | Ow
         {owned ? <Text fontWeight="800" style={styles.ownedLabel}>{privateRow ? 'Private robot' : 'Your robot'}</Text> : null}
         <Text fontWeight="700" i18n={false}>{row.childName} · {row.robotName}</Text>
         <Text style={styles.email} i18n={false}>{row.parentEmailMasked}</Text>
+        <Text style={styles.detail} i18n={false}>{row.completedLessonCount} lessons · {row.currentStreakDays === null ? 'Streak refreshing' : `${row.currentStreakDays} day streak`}</Text>
+        <Text style={styles.detail} i18n={row.badges.length === 0}>{row.badges.length > 0 ? row.badges.join(' · ') : 'No badges yet'}</Text>
         {row.rankStatus === 'refreshing' ? <Text style={styles.refreshing}>Rank refreshing</Text> : null}
       </Box>
       <Text fontWeight="800" i18n={false}>{row.xp} XP</Text>
@@ -92,5 +96,5 @@ function LeaderboardRowView({ row, owned, language }: { row: LeaderboardRow | Ow
 const styles = StyleSheet.create({
   tabs: { backgroundColor: '#E9ECEF', padding: 4, borderRadius: 14 }, tab: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 10 }, tabSelected: { backgroundColor: '#fff' }, tabText: { color: PA.ink2 }, tabTextSelected: { color: PA.ink },
   refresh: { minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: '#FFF2DB' },
-  row: { padding: 14, borderRadius: 14, backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair }, owned: { borderColor: PA.accent, borderWidth: 2, backgroundColor: '#FFF7ED' }, rank: { width: 42, fontSize: 18, color: PA.ink }, email: { color: PA.ink2, fontSize: 12, marginTop: 2 }, ownedLabel: { color: '#8A3D22', fontSize: 12, marginBottom: 3 }, refreshing: { color: PA.ink2, fontSize: 12, marginTop: 3 }, ownSeparator: { color: PA.ink2, textAlign: 'center', marginVertical: 6 }, link: { color: PA.accent }, pageButton: { minWidth: 88, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: PA.hair },
+  row: { padding: 14, borderRadius: 14, backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair }, owned: { borderColor: PA.accent, borderWidth: 2, backgroundColor: '#FFF7ED' }, rank: { width: 42, fontSize: 18, color: PA.ink }, email: { color: PA.ink2, fontSize: 12, marginTop: 2 }, detail: { color: PA.ink2, fontSize: 12, marginTop: 4 }, ownedLabel: { color: '#8A3D22', fontSize: 12, marginBottom: 3 }, refreshing: { color: PA.ink2, fontSize: 12, marginTop: 3 }, ownSeparator: { color: PA.ink2, textAlign: 'center', marginVertical: 6 }, link: { color: PA.accent }, pageButton: { minWidth: 88, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: PA.hair },
 });

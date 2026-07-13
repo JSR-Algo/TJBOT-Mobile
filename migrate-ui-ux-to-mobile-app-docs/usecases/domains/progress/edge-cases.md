@@ -35,7 +35,7 @@
 
 - **error**: Inbox failure keeps the lesson completion safe and offers retry without displaying guessed XP, coins, badge, or streak values.
 - **retry**: Seen acknowledgement retries only through the idempotent account-and-household scoped queue; award mutations never enter that queue.
-- **validation**: A route reward ID missing from the unseen inbox renders waiting-to-sync instead of another reward.
+- **validation**: Missing assignment/session correlation or an exact reward ID missing from the unseen inbox renders waiting-to-sync instead of another same-child/robot reward.
 
 ## UC-P06
 
@@ -45,9 +45,9 @@
 ## UC-P07
 
 - **retry**: Refresh revalidates the selected period and bounded page without appending duplicate owned rows.
-- **validation**: Private, refreshing, and outside-page owned rows remain distinguishable without relying on colour alone.
+- **validation**: Private, refreshing, nullable streak, empty badges, and outside-page owned rows remain distinguishable without relying on colour alone.
 
 ## UC-P08
 
 - **error**: Rename, active-child selection, and preference failures preserve the last server-confirmed state and remain visible to the parent.
-- **validation**: Empty names, foreign child IDs, and unresolved robot IDs cannot be submitted from enabled controls.
+- **validation**: Empty names, foreign child IDs, and unresolved robot IDs cannot be submitted from enabled controls; every owned row gets a device-scoped preference control and no absent device metric is guessed.

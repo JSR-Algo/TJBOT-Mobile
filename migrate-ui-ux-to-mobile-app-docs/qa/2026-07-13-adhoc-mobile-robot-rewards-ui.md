@@ -15,6 +15,9 @@ Status: implementation evidence for human review; agents do not mark tasks DONE.
 | Per-robot public preference | `MyRobotScreen.tsx` derives preference from authoritative owned rows and never queues the mutation | `tests/features/rewards/robot-preference.test.tsx` |
 | Accessibility and vi/en parity | Interactive controls include role/label/hint/state; live regions cover sync, reward, and stale states | `npm run i18n:check`, targeted screen suites |
 | Navigation and documentation drift | Existing singly owned routes retained; domain metadata, generated flows, use cases, mapping, edge cases, and sequence updated | flow, sequence, use-case, route, and screen-prop validators |
+| Assignment/session correlation | Reward DTO requires assignment and session IDs; summary never falls back to an older unseen reward for the same child/robot | API malformed-receipt tests and older-receipt screen regression |
+| Complete leaderboard rows | Public and owned rows expose lesson count, nullable/refreshing streak, badge summary, and equivalent accessibility wording | leaderboard screen tests |
+| All-owned privacy management | Robot management maps every backend-owned row to its own device-scoped preference mutation and contains no static device-health truth | robot preference screen tests and i18n scan |
 
 ## Manual / environment-dependent evidence
 

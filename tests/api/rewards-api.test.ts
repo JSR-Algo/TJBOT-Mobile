@@ -12,6 +12,8 @@ const mockedClient = client as jest.Mocked<typeof client>;
 
 const reward = {
   rewardId: 'reward-1',
+  assignmentId: 'assignment-1',
+  sessionId: 'session-1',
   child: { id: 'child-1', displayName: null },
   robot: { id: 'robot-1', displayName: 'TeeBot Sun' },
   xp: 25,
@@ -45,6 +47,13 @@ describe('authoritative rewards APIs', () => {
     mockedClient.get.mockResolvedValueOnce({ data: { data: [reward], meta: { count: 1 } } });
     await expect(getRewardInbox()).resolves.toMatchObject({ rewards: [{ rewardId: 'reward-1' }], count: 1 });
     expect(mockedClient.get).toHaveBeenCalledWith('/mobile/rewards/inbox');
+  });
+
+  it.each(['assignmentId', 'sessionId'])('rejects a reward receipt missing required %s', async (field) => {
+    const malformed = { ...reward };
+    delete malformed[field as 'assignmentId' | 'sessionId'];
+    mockedClient.get.mockResolvedValueOnce({ data: { data: [malformed], meta: { count: 1 } } });
+    await expect(getRewardInbox()).rejects.toMatchObject({ code: 'INVALID_API_RESPONSE' });
   });
 
   it('rejects malformed and privacy-leaking public payloads with AppError', async () => {

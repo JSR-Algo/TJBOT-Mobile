@@ -7,6 +7,8 @@ export interface RewardParty { id: string; displayName: string | null }
 export interface RewardStreak { currentDays: number | null; bestDays: number | null }
 export interface RewardReceipt {
   rewardId: string;
+  assignmentId: string;
+  sessionId: string;
   child: RewardParty;
   robot: RewardParty;
   xp: number;
@@ -88,6 +90,8 @@ function receiptAt(value: unknown, path: string): RewardReceipt {
   const awardedAt = stringAt(item.awardedAt, `${path}.awardedAt`);
   return {
     rewardId,
+    assignmentId: stringAt(item.assignmentId, `${path}.assignmentId`),
+    sessionId: stringAt(item.sessionId, `${path}.sessionId`),
     child,
     robot,
     xp: integerAt(item.xp, `${path}.xp`),
