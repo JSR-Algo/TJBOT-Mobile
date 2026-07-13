@@ -2,38 +2,38 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import ParentRewardsScreen from '@/features/rewards/screens/ParentRewardsView';
 
-const mockTotals = jest.fn();
 const mockHistory = jest.fn();
-jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeChild: { id: 'child-1', name: 'Mai' } }) }));
+jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeHousehold: { id: 'house-1' }, activeChild: { id: 'child-1', name: 'Mai' }, children: [{ id: 'child-1', name: 'Mai' }, { id: 'child-2', name: 'An' }] }) }));
 jest.mock('@/features/parent/hooks/useParentGateGuard', () => ({ useParentGateGuard: () => undefined }));
-jest.mock('@/features/rewards/hooks/useRewards', () => ({
-  useRewardTotalsQuery: () => mockTotals(),
-  useRewardHistoryQuery: () => mockHistory(),
-}));
+jest.mock('@/features/rewards/hooks/useRewards', () => ({ useRewardHistoryQuery: (...args: string[]) => mockHistory(...args) }));
+
+const receipt = { rewardId: 'rw-1', child: { id: 'child-1', displayName: 'Mai' }, robot: { id: 'r1', displayName: 'Tee' }, xp: 30, coins: 5, badges: ['brave'], reason: { label: 'lesson_completion' }, policyVersion: 'v1', streak: { currentDays: 3, bestDays: 5 }, awardedAt: '2026-07-13T01:00:00.000Z' };
 
 describe('ParentRewardsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockTotals.mockReturnValue({ data: { childId: 'child-1', totalXp: 120, totalCoins: 18, lessonCompletions: 4, currentStreakDays: 3 }, isLoading: false, isError: false, refetch: jest.fn() });
-    mockHistory.mockReturnValue({
-      data: { pages: [{ items: [{ id: 'reward-1', assignmentId: 'a1', lessonId: 'l1', childId: 'child-1', deviceId: 'r1', sessionId: null, xp: 30, coins: 5, badgeKey: 'brave', badgeName: 'Brave Speaker', grantedAt: '2026-07-13T01:00:00.000Z', seenAt: null }], nextCursor: 'next' }] },
-      isLoading: false, isError: false, hasNextPage: true, isFetchingNextPage: false, fetchNextPage: jest.fn(), refetch: jest.fn(),
-    });
+    mockHistory.mockReturnValue({ data: { totals: { xp: 120, coins: 18, rewardCount: 4, refreshing: false }, history: [receipt] }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
   });
 
-  it('shows private child totals and persisted reward history', () => {
-    render(<ParentRewardsScreen navigation={{ navigate: jest.fn(), goBack: jest.fn() } as never} route={{ key: 'p', name: 'ParentRewardsScreen' } as never} />);
-    expect(screen.getByText("Mai's rewards")).toBeTruthy();
+  it('shows private totals and groups persisted reasons by child and robot', () => {
+    render(<ParentRewardsScreen navigation={{ navigate: jest.fn() } as never} route={{ key: 'p', name: 'ParentRewardsScreen' } as never} />);
     expect(screen.getByText('120 XP')).toBeTruthy();
-    expect(screen.getByText('Brave Speaker')).toBeTruthy();
-    expect(screen.getByText('30 XP · 5 coins')).toBeTruthy();
+    expect(screen.getByText('Mai · Tee')).toBeTruthy();
+    expect(screen.getByText('Lesson completed')).toBeTruthy();
   });
 
-  it('paginates private history', () => {
-    const fetchNextPage = jest.fn();
-    mockHistory.mockReturnValue({ data: { pages: [{ items: [], nextCursor: 'next' }] }, isLoading: false, isError: false, hasNextPage: true, isFetchingNextPage: false, fetchNextPage, refetch: jest.fn() });
-    render(<ParentRewardsScreen navigation={{ navigate: jest.fn(), goBack: jest.fn() } as never} route={{ key: 'p', name: 'ParentRewardsScreen' } as never} />);
-    fireEvent.press(screen.getByText('Load more'));
-    expect(fetchNextPage).toHaveBeenCalledTimes(1);
+  it('filters history by child and robot without fabricating values', () => {
+    render(<ParentRewardsScreen navigation={{ navigate: jest.fn() } as never} route={{ key: 'p', name: 'ParentRewardsScreen' } as never} />);
+    fireEvent.press(screen.getByLabelText('Filter rewards for An'));
+    expect(mockHistory).toHaveBeenLastCalledWith('house-1', 'child-2', undefined);
+    fireEvent.press(screen.getByLabelText('Filter rewards for robot Tee'));
+    expect(mockHistory).toHaveBeenLastCalledWith('house-1', 'child-2', 'r1');
+  });
+
+  it('labels cached data stale while offline and retains retry', () => {
+    mockHistory.mockReturnValue({ data: { totals: { xp: 120, coins: 18, rewardCount: 4, refreshing: false }, history: [receipt] }, isLoading: false, isError: true, isFetching: false, fetchStatus: 'paused', refetch: jest.fn() });
+    render(<ParentRewardsScreen navigation={{ navigate: jest.fn() } as never} route={{ key: 'p', name: 'ParentRewardsScreen' } as never} />);
+    expect(screen.getByText('Offline · showing saved rewards')).toBeTruthy();
+    expect(screen.getByLabelText('Retry reward history')).toBeTruthy();
   });
 });

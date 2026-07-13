@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { acknowledgeRewardSeen } from '@/services/api/rewards.api';
-import { enqueueRewardSeen, replayRewardSeenQueue, setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
+import { enqueueRewardSeen, isRewardSeenQueued, replayRewardSeenQueue, setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
 
 jest.mock('@/services/api/rewards.api', () => ({ acknowledgeRewardSeen: jest.fn() }));
 
@@ -18,6 +18,8 @@ describe('reward seen queue', () => {
     await enqueueRewardSeen('reward-1');
     await enqueueRewardSeen('reward-2');
     expect(JSON.parse((await AsyncStorage.getItem('@TJBot/reward_seen_queue/parent-1/house-1')) ?? '[]')).toEqual(['reward-1', 'reward-2']);
+    await expect(isRewardSeenQueued('reward-1')).resolves.toBe(true);
+    await expect(isRewardSeenQueued('reward-3')).resolves.toBe(false);
   });
 
   it('removes successful acknowledgements and retains failures', async () => {

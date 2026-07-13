@@ -538,11 +538,13 @@ describe('course, course-library, and progress stable screen states', () => {
   });
 
   it('renders remaining progress screens with missing route data', () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const wrap = (screen: React.ReactElement) => render(<QueryClientProvider client={queryClient}>{screen}</QueryClientProvider>);
     const screens = [
-      render(<WordsPracticedScreen navigation={navigation as never} route={route as never} />),
-      render(<LessonSummaryScreen navigation={navigation as never} route={route as never} />),
-      render(<ReviewNeededScreen navigation={navigation as never} route={route as never} />),
-      render(<CelebrationScreen navigation={navigation as never} route={route as never} />),
+      wrap(<WordsPracticedScreen navigation={navigation as never} route={route as never} />),
+      wrap(<LessonSummaryScreen navigation={navigation as never} route={route as never} />),
+      wrap(<ReviewNeededScreen navigation={navigation as never} route={route as never} />),
+      wrap(<CelebrationScreen navigation={navigation as never} route={route as never} />),
     ];
 
     expect(screens[0].getByText('Words Practiced')).toBeTruthy();

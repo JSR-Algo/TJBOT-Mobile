@@ -41,6 +41,10 @@ export async function enqueueRewardSeen(rewardId: string): Promise<void> {
   await writeQueue([...queue, rewardId]);
 }
 
+export async function isRewardSeenQueued(rewardId: string): Promise<boolean> {
+  return (await readQueue()).includes(rewardId);
+}
+
 export async function replayRewardSeenQueue(): Promise<void> {
   if (!activeAccountId || !activeHouseholdScope) return;
   const queue = await readQueue();

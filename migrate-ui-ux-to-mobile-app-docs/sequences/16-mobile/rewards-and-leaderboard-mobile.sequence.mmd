@@ -11,6 +11,7 @@ apis:
   - GET /v1/mobile/leaderboard
   - PUT /v1/mobile/devices/{deviceId}/leaderboard-preference
   - PATCH /v1/mobile/children/{childId}
+  - POST /v1/profile/active-child
 externals: []
 queues: [reward-seen-local-queue]
 failure_paths:
@@ -49,6 +50,14 @@ sequenceDiagram
     Gateway-->>ParentApp: 200 persisted preference
     ParentApp->>Gateway: PATCH /v1/mobile/children/{childId} {displayName}
     Gateway-->>ParentApp: 200 owned child display name
+    ParentApp->>Gateway: POST /v1/profile/active-child {child_id}
+    Gateway-->>ParentApp: 200 server-confirmed active child
+
+    alt cached read while offline
+        ParentApp->>ParentApp: render saved private history with explicit stale label
+    else completion buffered and reward absent
+        ParentApp->>ParentApp: render waiting-to-sync without predicted reward
+    end
 
     alt cross_household_forbidden
         Gateway-->>ParentApp: 403 shared error envelope without existence leak

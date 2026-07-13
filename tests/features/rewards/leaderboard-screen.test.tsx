@@ -3,51 +3,58 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import LeaderboardScreen from '@/features/rewards/screens/LeaderboardView';
 
 const mockLeaderboard = jest.fn();
-jest.mock('@/features/rewards/hooks/useRewards', () => ({
-  useActiveChildRobotQuery: () => ({ data: { id: 'r1', name: 'Tee' } }),
-  useLeaderboardQuery: (period: string, deviceId?: string) => mockLeaderboard(period, deviceId),
+jest.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => ({ activeHousehold: { id: 'house-1' } }),
 }));
-jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeChild: { id: 'child-1', name: 'Mai' } }) }));
+jest.mock('@/features/rewards/hooks/useRewards', () => ({
+  useLeaderboardQuery: (scope: string, period: string, page: number, pageSize: number) =>
+    mockLeaderboard(scope, period, page, pageSize),
+}));
+
+const owned = {
+  rank: 41, rankStatus: 'refreshing', robotId: 'r1', childName: 'Mai', robotName: 'Tee',
+  parentEmailMasked: 'ma***@example.com', xp: 90, completedLessonCount: 3,
+  currentStreakDays: 2, badges: ['first-lesson'], optedIn: true, visibility: 'public',
+};
 
 function renderScreen(): void {
-  render(<LeaderboardScreen navigation={{ navigate: jest.fn(), goBack: jest.fn() } as never} route={{ key: 'l', name: 'LeaderboardScreen' } as never} />);
+  render(<LeaderboardScreen navigation={{ goBack: jest.fn() } as never} route={{ key: 'l', name: 'LeaderboardScreen' } as never} />);
 }
 
 describe('LeaderboardScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockLeaderboard.mockReturnValue({
-      data: { pages: [{
-        items: [{ rank: 1, deviceId: 'r1', childName: 'Mai', robotName: 'Tee', maskedParentEmail: 'ma***@example.com', xp: 90, completions: 3, owned: true }],
-        ownedRow: null, nextCursor: 'next',
-      }] },
-      isLoading: false, isError: false, hasNextPage: true, isFetchingNextPage: false,
-      fetchNextPage: jest.fn(), refetch: jest.fn(),
+      data: {
+        period: 'weekly', rows: [{ ...owned, robotId: 'r2', childName: 'An', robotName: 'Nova', rank: 1, rankStatus: 'current' }], ownedRows: [owned],
+        pagination: { page: 1, pageSize: 25, totalRows: 41, totalPages: 2 },
+      },
+      isLoading: false, isError: false, isFetching: false, refetch: jest.fn(),
     });
   });
 
-  it('shows child, robot and only the backend-masked parent email', () => {
+  it('renders backend-masked identity and a non-colour owned-row announcement', () => {
     renderScreen();
-    expect(screen.getByText('Mai · Tee')).toBeTruthy();
-    expect(screen.getByText('ma***@example.com')).toBeTruthy();
-    expect(screen.getByLabelText('Your rank 1. Mai with robot Tee. 90 XP. Parent ma***@example.com')).toBeTruthy();
+    expect(screen.getAllByText('ma***@example.com')).toHaveLength(2);
+    expect(screen.getByLabelText('Your robot. Rank 41 is refreshing. Mai with robot Tee. 90 XP. Parent ma***@example.com')).toBeTruthy();
   });
 
-  it('switches between weekly and all-time query periods', () => {
+  it('switches period, refreshes, and requests only bounded pages', () => {
+    const refetch = jest.fn();
+    mockLeaderboard.mockReturnValue({ data: { period: 'weekly', rows: [], ownedRows: [], pagination: { page: 1, pageSize: 25, totalRows: 75, totalPages: 3 } }, isLoading: false, isError: false, isFetching: false, refetch });
     renderScreen();
-    fireEvent.press(screen.getByText('All time'));
-    expect(mockLeaderboard).toHaveBeenLastCalledWith('allTime', 'r1');
+    fireEvent.press(screen.getByLabelText('All time leaderboard'));
+    expect(mockLeaderboard).toHaveBeenLastCalledWith('house-1', 'allTime', 1, 25);
+    fireEvent.press(screen.getByLabelText('Refresh leaderboard'));
+    expect(refetch).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByLabelText('Next leaderboard page'));
+    expect(mockLeaderboard).toHaveBeenLastCalledWith('house-1', 'allTime', 2, 25);
   });
 
-  it('loads the next cursor page', () => {
-    const fetchNextPage = jest.fn();
-    mockLeaderboard.mockReturnValue({
-      data: { pages: [{ items: [], ownedRow: null, nextCursor: 'next' }] },
-      isLoading: false, isError: false, hasNextPage: true, isFetchingNextPage: false,
-      fetchNextPage, refetch: jest.fn(),
-    });
+  it('keeps an opted-out owned robot private and outside public rows', () => {
+    mockLeaderboard.mockReturnValue({ data: { period: 'weekly', rows: [], ownedRows: [{ ...owned, rank: null, rankStatus: 'private', optedIn: false, visibility: 'private', parentEmailMasked: '[hidden]' }], pagination: { page: 1, pageSize: 25, totalRows: 0, totalPages: 0 } }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
     renderScreen();
-    fireEvent.press(screen.getByText('Load more'));
-    expect(fetchNextPage).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Private robot')).toBeTruthy();
+    expect(screen.getByText('[hidden]')).toBeTruthy();
   });
 });

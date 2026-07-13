@@ -12,20 +12,21 @@ import RmChip from '../components/RmChip';
 import { RM } from '../components/RM';
 import { ROUTES } from '@/navigation/routes';
 import { useHousehold } from '@/contexts/HouseholdContext';
-import { useActiveChildRobotQuery, useLeaderboardPreferenceMutation, useLeaderboardPreferenceQuery } from '@/features/rewards/hooks/useRewards';
+import { useActiveChildRobotQuery, useLeaderboardPreferenceMutation, useLeaderboardQuery } from '@/features/rewards/hooks/useRewards';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyRobotScreen'>;
 
 export default function MyRobotScreen({ navigation }: Props) {
-  const { activeChild } = useHousehold();
+  const { activeChild, activeHousehold } = useHousehold();
   const { language, t } = useAppLanguage();
   const robotQuery = useActiveChildRobotQuery(activeChild?.id);
   const robot = robotQuery.data;
-  const preferenceQuery = useLeaderboardPreferenceQuery(robot?.id);
-  const preferenceMutation = useLeaderboardPreferenceMutation(robot?.id);
-  const preferenceResolved = Boolean(preferenceQuery.data) && !preferenceQuery.isError;
-  const optedIn = preferenceQuery.data?.optedIn === true;
+  const leaderboardQuery = useLeaderboardQuery(activeHousehold?.id ?? '', 'weekly', 1, 25);
+  const preferenceMutation = useLeaderboardPreferenceMutation(activeHousehold?.id ?? '', robot?.id);
+  const ownedRow = leaderboardQuery.data?.ownedRows.find(row => row.robotId === robot?.id);
+  const preferenceResolved = Boolean(ownedRow) && !leaderboardQuery.isError;
+  const optedIn = ownedRow?.optedIn === true;
   const robotName = robot?.name ?? 'Robot';
 
   return (
@@ -45,14 +46,14 @@ export default function MyRobotScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={16}>
         <Text fontWeight="700" style={styles.sectionLabel}>Leaderboard</Text>
         <Box style={styles.leaderboardCard} gap={10}>
-          {preferenceQuery.isLoading ? (
+          {leaderboardQuery.isLoading ? (
             <TouchableOpacity accessibilityRole="switch" accessibilityLabel={t('Leaderboard preference loading')} accessibilityState={{ checked: false, disabled: true, busy: true }} disabled style={styles.preferenceButton}>
               <Text fontWeight="700" style={styles.preferenceText}>Loading leaderboard preference</Text>
             </TouchableOpacity>
-          ) : preferenceQuery.isError ? (
+          ) : leaderboardQuery.isError ? (
             <Box gap={8}>
               <Text fontWeight="700" style={styles.leaderboardTitle}>Leaderboard preference unavailable</Text>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('Retry leaderboard preference')} onPress={() => { void preferenceQuery.refetch(); }} style={styles.preferenceButton}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('Retry leaderboard preference')} accessibilityHint={t('Fetches privacy status from the server')} onPress={() => { void leaderboardQuery.refetch(); }} style={styles.preferenceButton}>
                 <Text fontWeight="700" style={styles.preferenceText}>Try again</Text>
               </TouchableOpacity>
             </Box>
@@ -60,11 +61,12 @@ export default function MyRobotScreen({ navigation }: Props) {
             <>
               <Text fontWeight="700" style={styles.leaderboardTitle}>{optedIn ? 'Visible on leaderboard' : 'Private by default'}</Text>
               <Text style={styles.leaderboardBody}>
-                {optedIn ? 'Child name, robot name and masked parent email are visible.' : 'Rewards and history stay private until you join.'}
+                {optedIn ? 'Child name, robot name and masked parent email are visible.' : 'Rewards and history stay private even when your robot is hidden.'}
               </Text>
               <TouchableOpacity
                 accessibilityRole="switch"
                 accessibilityLabel={translateTemplate(optedIn ? 'Leave leaderboard for {{robot}}' : 'Join leaderboard for {{robot}}', { robot: robotName }, { locale: language })}
+                accessibilityHint={t(optedIn ? 'Hides this robot from public rankings while private rewards remain available' : 'Shows this robot with masked parent email in public rankings')}
                 accessibilityState={{ checked: optedIn, disabled: !robot || preferenceMutation.isPending }}
                 disabled={!robot || preferenceMutation.isPending}
                 onPress={() => preferenceMutation.mutate(!optedIn)}

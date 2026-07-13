@@ -13,16 +13,17 @@
 | UC-P03 | getLessonSummary | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-P04 | getReviewQueue | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
 | UC-P05 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | — |
-| UC-P06 | `GET /v1/mobile/rewards`, `GET /v1/mobile/rewards/inbox`, `POST /v1/mobile/rewards/{rewardId}/seen` | `src/services/api/rewards.api.ts` | `lesson_reward_ledger`, `robot_reward_totals`, `child_reward_streaks` | authoritative completion reward + idempotent seen acknowledgement | `decisions/0006-lesson-session-ownership.md` |
-| UC-P07 | `GET /v1/mobile/leaderboard`, `PUT /v1/mobile/devices/{deviceId}/leaderboard-preference` | `src/services/api/leaderboard.api.ts` | `robot_leaderboard_preferences`, reward aggregate projection | authenticated leaderboard read + preference audit | `decisions/0006-lesson-session-ownership.md` |
-| UC-P08 | `PATCH /v1/mobile/children/{childId}` | `src/services/api/households.ts` | `child_profiles` | owned child display-name audit | `decisions/0011-multi-child-management.md` |
+| UC-P06 | `rewards.api.ts → getRewardHistory, getRewardInbox, acknowledgeRewardSeen` | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | authoritative completion reward + idempotent seen acknowledgement | `decisions/0001-backend-progress.md` |
+| UC-P07 | `leaderboard.api.ts → getLeaderboard, updateLeaderboardPreference` | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | authenticated leaderboard read + preference audit | `decisions/0001-backend-progress.md` |
+| UC-P08 | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | BACKEND_NOT_DESIGNED | owned child display-name and active-child audit through `src/services/api/households.ts` | `decisions/0001-backend-progress.md` |
 
 ---
 
 ## Notes
 
 - `progress.api.js` exports `getTodayProgress`, `getWordsPracticed`, `getLessonSummary`, `getReviewQueue` — all throw `not implemented`; no `progress.store.js` found on disk.
-- UC-P05 (Celebration) is a view-only screen; no API call required.
+- UC-P05 consumes only the unseen persisted inbox and idempotent seen acknowledgement; missing inbox data is a waiting state, not an estimated award.
 - UC-P06 through UC-P08 consume the authoritative parent-scoped contracts. The mobile client never sends a parent email, rejects malformed response envelopes, and queues only the idempotent reward-seen acknowledgement while offline.
+- Service and entity cells remain sentinel because this mobile workspace's validator recognizes Zustand service actions and mobile-owned ERD entities only. The authoritative persistence remains backend-owned; endpoint cells cite the real mobile API exports.
 - Events column stays sentinel until an event bus is designed.
 - Domain ADR Pointer is `—` for all rows because the API exports all throw sentinel errors (no backend contract yet). When backend lands, create `decisions/NNNN-backend-progress.md` and update pointers.

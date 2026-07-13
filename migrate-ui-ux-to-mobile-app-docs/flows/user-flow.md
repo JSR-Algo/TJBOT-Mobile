@@ -23,6 +23,7 @@
 | `parent` | C | 8 | [flow.generated.mmd](./domains/parent/flow.generated.mmd) | [README.md](./domains/parent/README.md) | [calls.generated.json](./domains/parent/calls.generated.json) |
 | `progress` | C | 5 | [flow.generated.mmd](./domains/progress/flow.generated.mmd) | [README.md](./domains/progress/README.md) | [calls.generated.json](./domains/progress/calls.generated.json) |
 | `purchase` | C | 12 | [flow.generated.mmd](./domains/purchase/flow.generated.mmd) | [README.md](./domains/purchase/README.md) | [calls.generated.json](./domains/purchase/calls.generated.json) |
+| `rewards` | C | 0 | [flow.generated.mmd](./domains/rewards/flow.generated.mmd) | [README.md](./domains/rewards/README.md) | [calls.generated.json](./domains/rewards/calls.generated.json) |
 | `robot-mgmt` | D | 12 | [flow.generated.mmd](./domains/robot-mgmt/flow.generated.mmd) | [README.md](./domains/robot-mgmt/README.md) | [calls.generated.json](./domains/robot-mgmt/calls.generated.json) |
 
 ## Cross-domain & shared
@@ -36,4 +37,4 @@
 - States: 136
 - Edges:  0
 - Groups: 16
-- Domains: 12
+- Domains: 13

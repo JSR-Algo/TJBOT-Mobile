@@ -9,10 +9,9 @@ import { render, fireEvent, screen } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
 import LessonSummaryScreen from '@/features/progress/screens/LessonSummaryScreen';
 
-jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeChild: { id: 'child-1', name: 'Mai' } }) }));
+jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeHousehold: { id: 'house-1' } }) }));
 jest.mock('@/features/rewards/hooks/useRewards', () => ({
-  useActiveChildRobotQuery: () => ({ data: { id: 'robot-1', name: 'Tee' }, isError: false }),
-  useRewardForCompletionQuery: () => ({ data: null, isError: false, refetch: jest.fn() }),
+  useRewardInboxQuery: () => ({ data: { rewards: [], count: 0 }, isError: false, refetch: jest.fn() }),
 }));
 
 function renderScreen() {

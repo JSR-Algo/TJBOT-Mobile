@@ -14,8 +14,11 @@ import LessonDoneScreen from '@/features/lesson-session/screens/LessonDoneScreen
 
 jest.mock('@/contexts/HouseholdContext', () => {
   const actual = jest.requireActual('@/contexts/HouseholdContext');
-  return { ...actual, useOptionalHousehold: jest.fn() };
+  return { ...actual, useHousehold: () => ({ activeHousehold: { id: 'house-1' } }), useOptionalHousehold: jest.fn() };
 });
+jest.mock('@/features/rewards/hooks/useRewards', () => ({
+  useRewardInboxQuery: () => ({ data: { rewards: [], count: 0 }, isError: false, refetch: jest.fn() }),
+}));
 
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 
