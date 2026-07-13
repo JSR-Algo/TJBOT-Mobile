@@ -762,6 +762,32 @@ describe('device API client', () => {
     expect(get).toHaveBeenCalledWith('/devices/household/me');
   });
 
+  it('uses the backend display_name as the mobile robot name when present', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: [
+        {
+          id: 'device-for-minh-anh',
+          status: 'active',
+          battery_level: 91,
+          serial_number: 'TBOT-ACTIVE',
+          display_name: 'Minh Anh Robot',
+          assigned_child_profile_id: 'child-minh-anh',
+        },
+      ],
+    });
+    jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
+
+    const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getDeviceStatus('primary', 'child-minh-anh')).resolves.toMatchObject({
+      id: 'device-for-minh-anh',
+      name: 'Minh Anh Robot',
+      serialNumber: 'TBOT-ACTIVE',
+      assignedChildProfileId: 'child-minh-anh',
+    });
+  });
+
   it('trims a padded serial number and omits serialNumber when it is blank', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({

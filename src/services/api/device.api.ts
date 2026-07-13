@@ -96,6 +96,7 @@ interface DeviceDto {
   id?: string;
   device_id?: string;
   name?: string;
+  display_name?: string;
   serial_number?: string;
   status?: string;
   battery_level?: number;
@@ -120,7 +121,7 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
   const assignedChildProfileId = dto.assigned_child_profile_id ?? dto.assignedChildProfileId;
   return {
     id: dto.id ?? dto.device_id ?? '',
-    name: dto.name ?? dto.serial_number ?? dto.id ?? dto.device_id ?? 'TJBot',
+    name: dto.name ?? dto.display_name ?? dto.serial_number ?? dto.id ?? dto.device_id ?? 'TJBot',
     ...(serialNumber ? { serialNumber } : {}),
     online: dto.status === 'active' || dto.status === 'online' || dto.connectivity_metrics?.connectivity_state === 'online',
     batteryPercent: dto.battery_level ?? 0,
