@@ -73,7 +73,7 @@ const commands = {
       '-sdk',
       'iphonesimulator',
       '-destination',
-      'platform=iOS Simulator,name=iPhone 17',
+      'generic/platform=iOS Simulator',
       'build',
       ...args,
     ],

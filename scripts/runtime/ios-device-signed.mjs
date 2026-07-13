@@ -9,48 +9,54 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../..');
 const iosRoot = path.join(repoRoot, 'ios');
 
-const DEFAULTS = {
-  deviceId: process.env.TBOT_IOS_DEVICE_ID || '00008130-0019745E02F0001C',
-  teamId: process.env.TBOT_IOS_DEVELOPMENT_TEAM || 'EG7TK62A7Q',
-  bundleId: process.env.TBOT_IOS_BUNDLE_ID || 'net.jasonle.tjbot',
-  configuration: process.env.TBOT_IOS_CONFIGURATION || 'Debug',
-  summary: 'artifacts/ios-runtime/ios-device-sign-summary.json',
-};
+/**
+ * Physical-device installs must be self-contained by default.
+ * Debug expects Metro and previously shipped the "Connect to Metro" shell
+ * when agents/scripts used the historical Debug default.
+ */
+export const PHYSICAL_DEVICE_DEFAULT_CONFIGURATION = 'Release';
 
-function printHelp() {
-  console.log(`iOS physical-device signing runner
-
-Builds, signs, installs, and optionally launches TJBot on a connected iPad/iPhone
-without writing DEVELOPMENT_TEAM into the shared Xcode project.
-
-Usage:
-  npm run ios:device:signed
-  npm run ios:device:signed -- --device-id 00008130-0019745E02F0001C
-  npm run ios:device:signed -- --team-id EG7TK62A7Q
-  npm run ios:device:signed -- --no-launch
-  npm run ios:device:signed -- --dry-run
-
-Options:
-  --device-id <UDID>       Physical device UDID. Default: ${DEFAULTS.deviceId}
-  --team-id <TEAM_ID>      Apple development team. Default: ${DEFAULTS.teamId}
-  --bundle-id <id>         App bundle identifier. Default: ${DEFAULTS.bundleId}
-  --configuration <name>   Xcode configuration. Default: ${DEFAULTS.configuration}
-  --summary <path>         JSON summary artifact. Default: ${DEFAULTS.summary}
-  --no-launch              Build and install only; skip remote launch.
-  --strict-launch          Treat launch failure as command failure.
-  --dry-run                Print commands without running them.
-  --help                   Show this help.
-
-Notes:
-  Debug physical-device builds need Metro, usually:
-    npm run start -- --port 8081
-  If install succeeds but launch reports the device is locked, unlock the iPad,
-  keep it on the home screen, and tap TJBOT manually or rerun with --strict-launch.
-`);
+export function getDefaults(env = process.env) {
+  return {
+    deviceId: env.TBOT_IOS_DEVICE_ID || '00008130-0019745E02F0001C',
+    teamId: env.TBOT_IOS_DEVELOPMENT_TEAM || 'EG7TK62A7Q',
+    bundleId: env.TBOT_IOS_BUNDLE_ID || 'net.jasonle.tjbot',
+    configuration: env.TBOT_IOS_CONFIGURATION || PHYSICAL_DEVICE_DEFAULT_CONFIGURATION,
+    summary: 'artifacts/ios-runtime/ios-device-sign-summary.json',
+    allowMetroDebug:
+      env.TBOT_IOS_ALLOW_METRO_DEBUG === '1' ||
+      env.TBOT_IOS_ALLOW_METRO_DEBUG === 'true',
+  };
 }
 
-function parseArgs(argv) {
-  const options = { ...DEFAULTS, launch: true, strictLaunch: false, dryRun: false };
+export function assertPhysicalConfiguration(options) {
+  const configuration = options.configuration || PHYSICAL_DEVICE_DEFAULT_CONFIGURATION;
+  if (configuration !== 'Debug') {
+    return configuration;
+  }
+  if (options.allowMetroDebug) {
+    return configuration;
+  }
+  throw new Error(
+    [
+      'Refusing Debug physical-device install without an explicit Metro opt-in.',
+      'Debug loads JS from Metro (AppDelegate bundleURL #if DEBUG) and shows',
+      '"Connect to Metro to develop JavaScript" when the packager is absent.',
+      'Use Release (default) for a self-contained device install, or pass',
+      '--configuration Debug --allow-metro-debug after starting Metro',
+      '(npm run start -- --port 8081). Env: TBOT_IOS_ALLOW_METRO_DEBUG=1.',
+    ].join(' '),
+  );
+}
+
+export function parseArgs(argv, env = process.env) {
+  const defaults = getDefaults(env);
+  const options = {
+    ...defaults,
+    launch: true,
+    strictLaunch: false,
+    dryRun: false,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--help' || arg === '-h') {
@@ -61,6 +67,8 @@ function parseArgs(argv) {
       options.launch = false;
     } else if (arg === '--strict-launch') {
       options.strictLaunch = true;
+    } else if (arg === '--allow-metro-debug') {
+      options.allowMetroDebug = true;
     } else if (arg === '--device-id') {
       options.deviceId = requireValue(argv, index, arg);
       index += 1;
@@ -80,7 +88,53 @@ function parseArgs(argv) {
       throw new Error(`Unknown option: ${arg}`);
     }
   }
+  if (!options.help) {
+    options.configuration = assertPhysicalConfiguration(options);
+  }
   return options;
+}
+
+function printHelp(env = process.env) {
+  const defaults = getDefaults(env);
+  console.log(`iOS physical-device signing runner
+
+Builds, signs, installs, and optionally launches TJBot on a connected iPad/iPhone
+without writing DEVELOPMENT_TEAM into the shared Xcode project.
+
+Default configuration is Release (embedded main.jsbundle, no Metro).
+Debug is allowed only with an explicit Metro opt-in.
+
+Usage:
+  npm run ios:device:signed
+  npm run ios:device:release
+  npm run ios:device:debug
+  npm run ios:device:signed -- --device-id 00008130-0019745E02F0001C
+  npm run ios:device:signed -- --team-id EG7TK62A7Q
+  npm run ios:device:signed -- --no-launch
+  npm run ios:device:signed -- --dry-run
+  npm run ios:device:signed -- --configuration Debug --allow-metro-debug
+
+Options:
+  --device-id <UDID>       Physical device UDID. Default: ${defaults.deviceId}
+  --team-id <TEAM_ID>      Apple development team. Default: ${defaults.teamId}
+  --bundle-id <id>         App bundle identifier. Default: ${defaults.bundleId}
+  --configuration <name>   Xcode configuration. Default: ${defaults.configuration}
+  --allow-metro-debug      Required when --configuration Debug (Metro expected)
+  --summary <path>         JSON summary artifact. Default: ${defaults.summary}
+  --no-launch              Build and install only; skip remote launch.
+  --strict-launch          Treat launch failure as command failure.
+  --dry-run                Print commands without running them.
+  --help                   Show this help.
+
+Notes:
+  Release is the physical proof/demo path (self-contained Hermes bundle).
+  Debug physical-device builds need Metro, usually:
+    npm run start -- --port 8081
+  then:
+    npm run ios:device:debug
+  If install succeeds but launch reports the device is locked, unlock the iPad,
+  keep it on the home screen, and tap TJBOT manually or rerun with --strict-launch.
+`);
 }
 
 function requireValue(argv, index, flag) {
@@ -274,13 +328,18 @@ function main() {
   if (!options.dryRun) writeSummary(summaryPath, summary);
 
   console.log('\nPhysical-device signing path complete.');
+  console.log(`Configuration: ${options.configuration}`);
   console.log(`App: ${appPath}`);
   console.log(`Summary: ${summaryPath}`);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }

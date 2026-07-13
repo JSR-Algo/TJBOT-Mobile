@@ -19,6 +19,9 @@
     "build:android": "node scripts/runtime/mobile-run.mjs build-android",
     "build:ios": "node scripts/runtime/mobile-run.mjs build-ios",
     "ios:device:signed": "node scripts/runtime/ios-device-signed.mjs",
+    "ios:device:release": "node scripts/runtime/ios-device-signed.mjs --configuration Release",
+    "ios:device:debug": "node scripts/runtime/ios-device-signed.mjs --configuration Debug --allow-metro-debug",
+    "test:ios-device-signed": "node --test scripts/runtime/ios-device-signed.test.mjs",
     "release:ios:proof": "node scripts/runtime/ios-release-proof.mjs",
     "release:ios:testflight": "bundle exec fastlane ios beta_ios",
     "pods:ios": "node scripts/runtime/mobile-run.mjs pods",
@@ -58,7 +61,7 @@
     "navigation:forward-edges": "node scripts/navigation/export-forward-edges.mjs",
     "check:screen-prop-types": "node scripts/check-screen-prop-types.mjs",
     "check:token-parity": "node scripts/check-token-parity.mjs",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && node scripts/runtime/ensure-runtime-env.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.49.0",
