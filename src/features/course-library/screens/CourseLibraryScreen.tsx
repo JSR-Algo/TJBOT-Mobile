@@ -1,11 +1,12 @@
 import React from 'react';
-import { Image, type ImageSourcePropType, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Image, type ImageSourcePropType, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { CheckCircle2, ChevronRight, Lock, Search } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import ScreenShell from '@/components/ScreenShell';
 import { listLibrary, type LibraryItem } from '@/services/api/course-library.api';
 import CL from '../components/CL';
 
@@ -15,6 +16,7 @@ const forestSource: ImageSourcePropType = require('../../../assets/export-html-7
 const robotCodingSource: ImageSourcePropType = require('../../../assets/export-html-7/robot-coding.png');
 const spaceSource: ImageSourcePropType = require('../../../assets/export-html-7/space-adventure.png');
 const mapSource: ImageSourcePropType = require('../../../assets/export-html-7/floating-map.png');
+const SLEEK_LIBRARY_ICON = 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/OWCzyfe01f8.png';
 
 type LoadState =
   | { kind: 'loading' }
@@ -55,10 +57,21 @@ export default function CourseLibraryScreen({ navigation }: Props) {
   }, [query, state]);
 
   return (
-    <Box flex={1} style={styles.root}>
-      <Box paddingHorizontal={24} paddingTop={76} paddingBottom={18}>
-        <Text fontWeight="800" style={styles.heading}>Course Library</Text>
-        <Text fontWeight="800" style={styles.intro}>Pick what your Robot teaches.</Text>
+    <ScreenShell bg="#FAF5EB" gradient={false}>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+      <Box paddingHorizontal={24} paddingTop={56} paddingBottom={18} flexDirection="row" alignItems="center" justifyContent="space-between">
+        <Box>
+          <Text fontWeight="800" style={styles.heading}>Course Library</Text>
+          <Text fontWeight="800" style={styles.intro}>Pick what your Robot teaches.</Text>
+        </Box>
+        <Box style={styles.headerIconWell} alignItems="center" justifyContent="center">
+          <Image source={{ uri: SLEEK_LIBRARY_ICON }} style={styles.headerIcon} resizeMode="contain" accessibilityLabel="Course Library" />
+        </Box>
       </Box>
 
       <Box paddingHorizontal={20} paddingBottom={16}>
@@ -77,7 +90,7 @@ export default function CourseLibraryScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingBottom={130} gap={14}>
+      <Box paddingHorizontal={20} paddingBottom={24} gap={14}>
         {state.kind === 'loading' ? <Text style={styles.message}>Loading library</Text> : null}
         {state.kind === 'error' ? (
           <Box gap={6}>
@@ -100,7 +113,8 @@ export default function CourseLibraryScreen({ navigation }: Props) {
           />
         ))}
       </Box>
-    </Box>
+      </ScrollView>
+    </ScreenShell>
   );
 }
 
@@ -175,9 +189,12 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 const styles = StyleSheet.create({
-  root: { backgroundColor: '#FAF5EB' },
+  root: { flex: 1, backgroundColor: '#FAF5EB' },
+  content: { width: '100%', paddingBottom: 130 },
   heading: { fontSize: 29, color: '#2D3436', letterSpacing: 0 },
   intro: { fontSize: 13, color: '#636E72', lineHeight: 20, marginTop: 4 },
+  headerIconWell: { width: 72, height: 72, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EBDCC7' },
+  headerIcon: { width: 56, height: 56 },
   searchBox: {
     height: 52,
     borderRadius: 26,
@@ -209,18 +226,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    minHeight: 86,
+    minHeight: 106,
     shadowColor: '#A98F77',
     shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.1,
     shadowRadius: 18,
     elevation: 2,
   },
-  courseImage: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F0E6D6' },
-  coursePlaceholder: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#D6D1C9' },
+  courseImage: { width: 76, height: 76, borderRadius: 24, backgroundColor: '#F0E6D6' },
+  coursePlaceholder: { width: 76, height: 76, borderRadius: 24, backgroundColor: '#D6D1C9' },
   courseInitial: { color: '#FFFFFF', fontSize: 20 },
-  title: { fontSize: 14, color: '#2D3436', lineHeight: 18 },
-  meta: { fontSize: 9, color: '#636E72', marginTop: 4, letterSpacing: 0.8 },
+  title: { fontSize: 17, color: '#2D3436', lineHeight: 22 },
+  meta: { fontSize: 10, color: '#636E72', marginTop: 5, letterSpacing: 0.8 },
   hiddenStatus: {
     position: 'absolute',
     width: 1,
