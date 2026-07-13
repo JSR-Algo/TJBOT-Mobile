@@ -1,72 +1,52 @@
 import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { getDeviceStatus } from '@/services/api/device.api';
-import { getRewardInbox, getRewardTotals } from '@/services/api/rewards.api';
-import {
-  rewardKeys,
-  useActiveChildRobotQuery,
-  useRewardInboxQuery,
-  useRewardTotalsQuery,
-} from '@/features/rewards/hooks/useRewards';
+import { getRewardHistory, getRewardInbox } from '@/services/api/rewards.api';
+import { getLeaderboard } from '@/services/api/leaderboard.api';
+import { rewardKeys, useLeaderboardQuery, useRewardHistoryQuery, useRewardInboxQuery } from '@/features/rewards/hooks/useRewards';
+import { setRewardQueueAccount } from '@/features/rewards/offline/rewardSeenQueue';
 
+jest.mock('@/services/api/rewards.api', () => ({ getRewardHistory: jest.fn(), getRewardInbox: jest.fn(), acknowledgeRewardSeen: jest.fn() }));
+jest.mock('@/services/api/leaderboard.api', () => ({ getLeaderboard: jest.fn(), updateLeaderboardPreference: jest.fn() }));
 jest.mock('@/services/api/device.api', () => ({ getDeviceStatus: jest.fn() }));
-jest.mock('@/services/api/rewards.api', () => ({
-  getRewardInbox: jest.fn(),
-  getRewardTotals: jest.fn(),
-  getRewardHistory: jest.fn(),
-  getLeaderboard: jest.fn(),
-  getLeaderboardPreference: jest.fn(),
-  updateLeaderboardPreference: jest.fn(),
-  acknowledgeRewardSeen: jest.fn(),
-}));
 
-const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
-const mockGetRewardInbox = getRewardInbox as jest.MockedFunction<typeof getRewardInbox>;
-const mockGetRewardTotals = getRewardTotals as jest.MockedFunction<typeof getRewardTotals>;
+const mockHistory = getRewardHistory as jest.MockedFunction<typeof getRewardHistory>;
+const mockInbox = getRewardInbox as jest.MockedFunction<typeof getRewardInbox>;
+const mockLeaderboard = getLeaderboard as jest.MockedFunction<typeof getLeaderboard>;
 
 function wrapper(): React.ComponentType<React.PropsWithChildren> {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  return function TestProvider({ children }: React.PropsWithChildren): React.JSX.Element {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-  };
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  return ({ children }: React.PropsWithChildren): React.JSX.Element => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
-describe('reward hooks', () => {
-  beforeEach(() => jest.clearAllMocks());
+describe('authoritative reward hooks', () => {
+  beforeEach(() => { jest.clearAllMocks(); setRewardQueueAccount('parent-1'); });
 
-  it('isolates reward query keys by child, robot, assignment and period', () => {
-    expect(rewardKeys.inbox('c1', 'r1', 'a1')).not.toEqual(rewardKeys.inbox('c2', 'r1', 'a1'));
-    expect(rewardKeys.leaderboard('weekly', 'r1')).not.toEqual(rewardKeys.leaderboard('allTime', 'r1'));
+  it('partitions keys by authenticated account, child, device, period and page', () => {
+    expect(rewardKeys.history('parent-1', 'c1', 'r1')).not.toEqual(rewardKeys.history('parent-2', 'c1', 'r1'));
+    expect(rewardKeys.history('parent-1', 'c1', 'r1')).not.toEqual(rewardKeys.history('parent-1', 'c2', 'r1'));
+    expect(rewardKeys.leaderboard('parent-1', 'weekly', 1, 20)).not.toEqual(rewardKeys.leaderboard('parent-1', 'allTime', 1, 20));
+    expect(rewardKeys.leaderboard('parent-1', 'weekly', 1, 20)).not.toEqual(rewardKeys.leaderboard('parent-1', 'weekly', 2, 20));
   });
 
-  it('does not request a robot until an active child exists', () => {
-    const { result } = renderHook(() => useActiveChildRobotQuery(undefined), { wrapper: wrapper() });
-    expect(result.current.fetchStatus).toBe('idle');
-    expect(mockGetDeviceStatus).not.toHaveBeenCalled();
-  });
-
-  it('resolves the primary robot using the active child id', async () => {
-    mockGetDeviceStatus.mockResolvedValueOnce({ id: 'robot-2', name: 'Tee', online: true, batteryPercent: 80, assignedChildProfileId: 'child-2' });
-    const { result } = renderHook(() => useActiveChildRobotQuery('child-2'), { wrapper: wrapper() });
+  it('loads private history with exact optional filters', async () => {
+    mockHistory.mockResolvedValueOnce({ totals: { xp: 0, coins: 0, rewardCount: 0, refreshing: false }, history: [] });
+    const { result } = renderHook(() => useRewardHistoryQuery('child-1', 'robot-1'), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockGetDeviceStatus).toHaveBeenCalledWith('primary', 'child-2');
+    expect(mockHistory).toHaveBeenCalledWith({ childId: 'child-1', deviceId: 'robot-1' });
   });
 
-  it('requests only the exact assignment reward', async () => {
-    mockGetRewardInbox.mockResolvedValueOnce([]);
-    const { result } = renderHook(
-      () => useRewardInboxQuery({ childId: 'child-1', deviceId: 'robot-1', assignmentId: 'assign-1' }),
-      { wrapper: wrapper() },
-    );
+  it('loads the account-scoped inbox without private selectors', async () => {
+    mockInbox.mockResolvedValueOnce({ rewards: [], count: 0 });
+    const { result } = renderHook(() => useRewardInboxQuery(), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockGetRewardInbox).toHaveBeenCalledWith({ childId: 'child-1', deviceId: 'robot-1', assignmentId: 'assign-1' });
+    expect(mockInbox).toHaveBeenCalledWith();
   });
 
-  it('loads private totals only for the active child', async () => {
-    mockGetRewardTotals.mockResolvedValueOnce({ childId: 'child-1', totalXp: 10, totalCoins: 2, lessonCompletions: 1, currentStreakDays: 1, badgeCount: 0, longestStreakDays: 1 });
-    const { result } = renderHook(() => useRewardTotalsQuery('child-1'), { wrapper: wrapper() });
-    await waitFor(() => expect(result.current.data?.totalXp).toBe(10));
-    expect(mockGetRewardTotals).toHaveBeenCalledWith('child-1');
+  it('loads exact leaderboard pages independently', async () => {
+    mockLeaderboard.mockResolvedValueOnce({ period: 'weekly', rows: [], ownedRows: [], pagination: { page: 2, pageSize: 10, totalRows: 0, totalPages: 0 } });
+    const { result } = renderHook(() => useLeaderboardQuery('weekly', 2, 10), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockLeaderboard).toHaveBeenCalledWith({ period: 'weekly', page: 2, pageSize: 10 });
   });
 });

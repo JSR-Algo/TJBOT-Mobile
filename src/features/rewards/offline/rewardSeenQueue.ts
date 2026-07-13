@@ -9,6 +9,10 @@ export function setRewardQueueAccount(accountId: string | null): void {
   activeAccountId = accountId?.trim() || null;
 }
 
+export function getRewardQueueAccount(): string {
+  return activeAccountId ?? 'anonymous';
+}
+
 function queueKey(accountId: string | null = activeAccountId): string {
   if (!accountId) throw new Error('REWARD_QUEUE_ACCOUNT_REQUIRED');
   return `${REWARD_SEEN_QUEUE_PREFIX}/${encodeURIComponent(accountId)}`;

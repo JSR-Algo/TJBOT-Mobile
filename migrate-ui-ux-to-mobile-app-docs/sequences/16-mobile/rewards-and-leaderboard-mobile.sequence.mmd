@@ -1,0 +1,57 @@
+---
+system: sys-16-parent-mobile-application
+flow_id: rewards-and-leaderboard-mobile
+surface: mobile
+spec_anchor: /software/systems/16-parent-mobile-application
+actors: [ParentApp, Gateway]
+apis:
+  - GET /v1/mobile/rewards
+  - GET /v1/mobile/rewards/inbox
+  - POST /v1/mobile/rewards/{rewardId}/seen
+  - GET /v1/mobile/leaderboard
+  - PUT /v1/mobile/devices/{deviceId}/leaderboard-preference
+  - PATCH /v1/mobile/children/{childId}
+externals: []
+queues: [reward-seen-local-queue]
+failure_paths:
+  - malformed_response_rejected
+  - cross_household_forbidden
+  - offline_seen_ack_queued
+idempotency: reward seen acknowledgement uses a stable reward-derived request ID; preference and child-name mutations are never queued
+retry: cached reads may refresh after reconnect; only reward seen acknowledgement replays from the account-partitioned local queue
+timeout: authenticated HTTP client default 30 seconds
+status: final
+---
+sequenceDiagram
+    autonumber
+    participant ParentApp
+    participant Gateway
+
+    ParentApp->>Gateway: GET /v1/mobile/rewards?childId&deviceId + Bearer
+    Gateway-->>ParentApp: 200 private totals and ledger history
+    ParentApp->>ParentApp: validate exact envelope and nullable reason/policy/streak snapshots
+
+    ParentApp->>Gateway: GET /v1/mobile/rewards/inbox + Bearer
+    Gateway-->>ParentApp: 200 unseen persisted rewards
+    alt online acknowledgement
+        ParentApp->>Gateway: POST /v1/mobile/rewards/{rewardId}/seen + stable request ID
+        Gateway-->>ParentApp: 200 seen receipt
+    else offline acknowledgement
+        ParentApp->>ParentApp: queue reward ID once under authenticated account key
+        Note over ParentApp: rename and leaderboard preference are never queued
+    end
+
+    ParentApp->>Gateway: GET /v1/mobile/leaderboard?period&page&pageSize + Bearer
+    Gateway-->>ParentApp: 200 public rows, owned rows, pagination
+    ParentApp->>ParentApp: reject unmasked email or unexpected public fields
+
+    ParentApp->>Gateway: PUT /v1/mobile/devices/{deviceId}/leaderboard-preference {optedIn}
+    Gateway-->>ParentApp: 200 persisted preference
+    ParentApp->>Gateway: PATCH /v1/mobile/children/{childId} {displayName}
+    Gateway-->>ParentApp: 200 owned child display name
+
+    alt cross_household_forbidden
+        Gateway-->>ParentApp: 403 shared error envelope without existence leak
+    else malformed_response_rejected
+        ParentApp->>ParentApp: raise INVALID_API_RESPONSE and do not cache payload
+    end

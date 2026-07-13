@@ -23,7 +23,7 @@ describe('reward seen queue', () => {
   it('removes successful acknowledgements and retains failures', async () => {
     await enqueueRewardSeen('reward-1');
     await enqueueRewardSeen('reward-2');
-    mockAcknowledge.mockResolvedValueOnce().mockRejectedValueOnce(new Error('offline'));
+    mockAcknowledge.mockResolvedValueOnce({ rewardId: 'reward-1', seen: true, seenAt: '2026-07-13T00:00:00.000Z' }).mockRejectedValueOnce(new Error('offline'));
     await replayRewardSeenQueue();
     expect(await AsyncStorage.getItem('@TJBot/reward_seen_queue/parent-1')).toBe('["reward-2"]');
   });
@@ -32,7 +32,7 @@ describe('reward seen queue', () => {
     await enqueueRewardSeen('reward-parent-1');
     setRewardQueueAccount('parent-2');
     await enqueueRewardSeen('reward-parent-2');
-    mockAcknowledge.mockResolvedValue();
+    mockAcknowledge.mockResolvedValue({ rewardId: 'reward-parent-2', seen: true, seenAt: '2026-07-13T00:00:00.000Z' });
     await replayRewardSeenQueue();
     expect(mockAcknowledge).toHaveBeenCalledWith('reward-parent-2');
     expect(mockAcknowledge).not.toHaveBeenCalledWith('reward-parent-1');
@@ -48,7 +48,7 @@ describe('reward seen queue', () => {
     await enqueueRewardSeen('reward-parent-1');
     setRewardQueueAccount('parent-2');
     setRewardQueueAccount('parent-1');
-    mockAcknowledge.mockResolvedValue();
+    mockAcknowledge.mockResolvedValue({ rewardId: 'reward-parent-1', seen: true, seenAt: '2026-07-13T00:00:00.000Z' });
     await replayRewardSeenQueue();
     expect(mockAcknowledge).toHaveBeenCalledWith('reward-parent-1');
   });

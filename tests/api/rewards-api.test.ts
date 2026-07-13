@@ -1,154 +1,86 @@
 import client from '@/services/http/client';
-import {
-  acknowledgeRewardSeen,
-  getLeaderboard,
-  getLeaderboardPreference,
-  getRewardHistory,
-  getRewardInbox,
-  getRewardTotals,
-  getRewardForCompletion,
-  updateLeaderboardPreference,
-} from '@/services/api/rewards.api';
+import { getRewardHistory, getRewardInbox, acknowledgeRewardSeen } from '@/services/api/rewards.api';
+import { getLeaderboard, updateLeaderboardPreference } from '@/services/api/leaderboard.api';
+import { updateChildDisplayName } from '@/services/api/households';
 
 jest.mock('@/services/http/client', () => ({
   __esModule: true,
-  default: {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-  },
+  default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), patch: jest.fn() },
 }));
 
 const mockedClient = client as jest.Mocked<typeof client>;
 
-describe('rewards api', () => {
+const reward = {
+  rewardId: 'reward-1',
+  child: { id: 'child-1', displayName: null },
+  robot: { id: 'robot-1', displayName: 'TeeBot Sun' },
+  xp: 25,
+  coins: 5,
+  badges: ['first-lesson'],
+  reason: {
+    normalizedOutcomes: [{ outcome: 'lesson_completed' }],
+    policy: { baseXp: 25 },
+    streak: { currentDays: null, bestDays: 9 },
+  },
+  policyVersion: 'reward-policy.v1',
+  streak: { currentDays: null, bestDays: 9 },
+  awardedAt: '2026-07-12T09:30:00.000Z',
+};
+
+describe('authoritative rewards APIs', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('normalizes reward totals from the authenticated child endpoint', async () => {
-    mockedClient.get.mockResolvedValueOnce({
-      data: { data: { child_id: 'child-1', total_xp: 120, total_coins: 18, lesson_completions: 4, current_streak_days: 3 } },
+  it('uses the exact private rewards query and preserves nullable policy/reason/streak data', async () => {
+    mockedClient.get.mockResolvedValueOnce({ data: { data: {
+      totals: { xp: 25, coins: 5, rewardCount: 1, refreshing: false }, history: [reward],
+    } } });
+    await expect(getRewardHistory({ childId: 'child-1', deviceId: 'robot-1' })).resolves.toEqual({
+      totals: { xp: 25, coins: 5, rewardCount: 1, refreshing: false },
+      history: [expect.objectContaining({ rewardId: 'reward-1', child: { id: 'child-1', displayName: null }, reason: reward.reason, streak: reward.streak })],
     });
-
-    await expect(getRewardTotals('child-1')).resolves.toEqual({
-      childId: 'child-1', totalXp: 120, totalCoins: 18, lessonCompletions: 4, currentStreakDays: 3,
-      badgeCount: 0, longestStreakDays: 0,
-    });
-    expect(mockedClient.get).toHaveBeenCalledWith('/mobile/children/child-1/rewards/totals');
+    expect(mockedClient.get).toHaveBeenCalledWith('/mobile/rewards', { params: { childId: 'child-1', deviceId: 'robot-1' } });
   });
 
-  it('loads an assignment-bound inbox without fabricating an award', async () => {
-    mockedClient.get.mockResolvedValueOnce({ data: { data: { rewards: [] } } });
-
-    await expect(getRewardInbox({ childId: 'child-1', deviceId: 'robot-1', assignmentId: 'assign-1' }))
-      .resolves.toEqual([]);
-    expect(mockedClient.get).toHaveBeenCalledWith('/mobile/children/child-1/rewards/inbox', {
-      params: { deviceId: 'robot-1', assignmentId: 'assign-1' },
-    });
+  it('reads the account inbox without client-selected child/device filters', async () => {
+    mockedClient.get.mockResolvedValueOnce({ data: { data: [reward], meta: { count: 1 } } });
+    await expect(getRewardInbox()).resolves.toMatchObject({ rewards: [{ rewardId: 'reward-1' }], count: 1 });
+    expect(mockedClient.get).toHaveBeenCalledWith('/mobile/rewards/inbox');
   });
 
-  it('preserves a held completion so the UI stops waiting for an award that cannot be granted', async () => {
-    mockedClient.get.mockResolvedValueOnce({ data: { data: { rewards: [{
-      id: 'held-1', assignment_id: 'assign-1', lesson_id: 'lesson-1', child_id: 'child-1',
-      device_id: 'robot-1', status: 'held', configuration_error_code: 'robot_child_assignment_inactive',
-      granted_at: '2026-07-13T01:00:00.000Z',
-    }] } } });
-
-    await expect(getRewardForCompletion({ childId: 'child-1', deviceId: 'robot-1', assignmentId: 'assign-1' }))
-      .resolves.toMatchObject({ status: 'held', configurationErrorCode: 'robot_child_assignment_inactive' });
+  it('rejects malformed and privacy-leaking public payloads with AppError', async () => {
+    mockedClient.get.mockResolvedValueOnce({ data: { data: {
+      period: 'weekly', rows: [{ rank: 1, rankStatus: 'current', robotId: 'r1', childName: 'May', robotName: 'Tee', parentEmailMasked: 'parent@example.com', parentEmail: 'parent@example.com', xp: 1, completedLessonCount: 1, currentStreakDays: 1, badges: [] }],
+      ownedRows: [], pagination: { page: 1, pageSize: 20, totalRows: 1, totalPages: 1 },
+    } } });
+    await expect(getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 })).rejects.toMatchObject({ code: 'INVALID_API_RESPONSE' });
   });
 
-  it('normalizes cursor reward history and immutable award identity', async () => {
-    mockedClient.get.mockResolvedValueOnce({
-      data: { data: { items: [{
-        id: 'reward-1', assignment_id: 'assign-1', session_id: 'session-1', lesson_id: 'lesson-1',
-        child_id: 'child-1', device_id: 'robot-1', xp: 30, coins: 5,
-        badge_key: 'brave-speaker', badge_name: 'Brave Speaker', granted_at: '2026-07-13T01:00:00.000Z', seen_at: null,
-      }], next_cursor: 'cursor-2' } },
-    });
-
-    await expect(getRewardHistory({ childId: 'child-1', limit: 20 })).resolves.toEqual({
-      items: [{
-        id: 'reward-1', assignmentId: 'assign-1', sessionId: 'session-1', lessonId: 'lesson-1',
-        childId: 'child-1', deviceId: 'robot-1', lessonVersion: 0, milestoneKey: null, xp: 30, coins: 5,
-        badgeKey: 'brave-speaker', badgeName: 'Brave Speaker', grantedAt: '2026-07-13T01:00:00.000Z', seenAt: null,
-        status: 'awarded', configurationErrorCode: null,
-      }], nextCursor: 'cursor-2',
-    });
-  });
-
-  it('acknowledges seen with a stable request id and idempotency key', async () => {
-    mockedClient.post.mockResolvedValueOnce({ data: { data: { reward_id: 'reward-1', seen_at: '2026-07-13T01:02:00.000Z' } } });
-
+  it('acknowledges seen with a stable request id and no reward mutation body', async () => {
+    mockedClient.post.mockResolvedValueOnce({ data: { data: { rewardId: 'reward-1', seen: true, seenAt: '2026-07-12T09:35:00.000Z' } } });
     await acknowledgeRewardSeen('reward-1');
-
-    expect(mockedClient.post).toHaveBeenCalledWith(
-      '/mobile/rewards/reward-1/seen',
-      { request_id: 'reward-seen-reward-1' },
-      { headers: { 'Idempotency-Key': 'reward-seen-reward-1', 'X-Request-Id': 'reward-seen-reward-1' } },
-    );
+    expect(mockedClient.post).toHaveBeenCalledWith('/mobile/rewards/reward-1/seen', undefined, {
+      headers: { 'Idempotency-Key': 'reward-seen-reward-1', 'X-Request-Id': 'reward-seen-reward-1' },
+    });
   });
 
-  it('returns leaderboard rows with only the backend-masked email', async () => {
+  it('uses page pagination and retains distinct public and owned leaderboard rows', async () => {
+    const row = { rank: null, rankStatus: 'refreshing', robotId: 'robot-1', childName: 'May', robotName: 'Tee', parentEmailMasked: 'ma***@example.com', xp: 25, completedLessonCount: 1, currentStreakDays: 2, badges: [] };
     mockedClient.get.mockResolvedValueOnce({ data: { data: {
-      items: [{ rank: 1, device_id: 'robot-1', child_name: 'Mai', robot_name: 'Tee', masked_parent_email: 'ma***@example.com', xp: 90, completions: 3, owned: true }],
-      owned_row: null, next_cursor: null,
+      period: 'allTime', rows: [row], ownedRows: [{ ...row, rankStatus: 'private', optedIn: false, visibility: 'private' }],
+      pagination: { page: 2, pageSize: 10, totalRows: 12, totalPages: 2 },
     } } });
-
-    const page = await getLeaderboard({ period: 'weekly', deviceId: 'robot-1', limit: 25 });
-
-    expect(page.items[0]).toEqual({ rank: 1, deviceId: 'robot-1', childName: 'Mai', robotName: 'Tee', maskedParentEmail: 'ma***@example.com', xp: 90, completions: 3, owned: true });
-    expect(page.items[0]).not.toHaveProperty('parentEmail');
-    expect(mockedClient.get).toHaveBeenCalledWith('/mobile/leaderboard', { params: { period: 'weekly', deviceId: 'robot-1', limit: 25 } });
+    await expect(getLeaderboard({ period: 'allTime', page: 2, pageSize: 10 })).resolves.toMatchObject({
+      period: 'allTime', rows: [{ rank: null }], ownedRows: [{ optedIn: false, visibility: 'private' }], pagination: { page: 2 },
+    });
+    expect(mockedClient.get).toHaveBeenCalledWith('/mobile/leaderboard', { params: { period: 'allTime', page: 2, pageSize: 10 } });
   });
 
-  it('reads and updates a per-robot leaderboard preference', async () => {
-    mockedClient.get.mockResolvedValueOnce({ data: { data: { device_id: 'robot-1', opted_in: false } } });
-    mockedClient.put.mockResolvedValueOnce({ data: { data: { device_id: 'robot-1', opted_in: true } } });
-
-    await expect(getLeaderboardPreference('robot-1')).resolves.toEqual({ deviceId: 'robot-1', optedIn: false });
-    await expect(updateLeaderboardPreference('robot-1', true)).resolves.toEqual({ deviceId: 'robot-1', optedIn: true });
-    expect(mockedClient.put).toHaveBeenCalledWith('/mobile/robots/robot-1/leaderboard-preference', { opted_in: true });
-  });
-
-  it('preserves the complete backend reward and totals DTO', async () => {
-    mockedClient.get.mockResolvedValueOnce({ data: { data: {
-      childId: 'child-1', totalXp: 30, totalCoins: 5, lessonCompletions: 1,
-      badgeCount: 2, currentStreakDays: 3, longestStreakDays: 7,
-    } } });
-    await expect(getRewardTotals('child-1')).resolves.toMatchObject({ badgeCount: 2, longestStreakDays: 7 });
-
-    mockedClient.get.mockResolvedValueOnce({ data: { data: { rewards: [{
-      id: 'reward-1', assignmentId: 'assign-1', lessonId: 'lesson-1', childId: 'child-1',
-      deviceId: 'robot-1', lessonVersion: 4, milestoneKey: 'first-week', xp: 30, coins: 5,
-      grantedAt: '2026-07-13T00:00:00.000Z',
-    }] } } });
-    await expect(getRewardForCompletion({ childId: 'child-1', deviceId: 'robot-1', assignmentId: 'assign-1' }))
-      .resolves.toMatchObject({ lessonVersion: 4, milestoneKey: 'first-week' });
-  });
-
-  it('falls back to paginated history for an already-seen exact completion tuple', async () => {
-    mockedClient.get
-      .mockResolvedValueOnce({ data: { data: { rewards: [] } } })
-      .mockResolvedValueOnce({ data: { data: { items: [{
-        id: 'other', assignmentId: 'other', childId: 'child-1', deviceId: 'robot-1', xp: 1, coins: 1,
-        grantedAt: '2026-07-13T00:00:00.000Z',
-      }], next_cursor: 'next' } } })
-      .mockResolvedValueOnce({ data: { data: { items: [{
-        id: 'reward-1', assignmentId: 'assign-1', childId: 'child-1', deviceId: 'robot-1', xp: 30, coins: 5,
-        grantedAt: '2026-07-12T00:00:00.000Z', seenAt: '2026-07-13T00:00:00.000Z',
-      }], next_cursor: null } } });
-
-    await expect(getRewardForCompletion({ childId: 'child-1', deviceId: 'robot-1', assignmentId: 'assign-1' }))
-      .resolves.toMatchObject({ id: 'reward-1', seenAt: '2026-07-13T00:00:00.000Z' });
-  });
-
-  it('bounds history fallback when a pending completion is not found', async () => {
-    mockedClient.get
-      .mockResolvedValueOnce({ data: { data: { rewards: [] } } })
-      .mockResolvedValue({ data: { data: { items: [], next_cursor: 'more' } } });
-
-    await expect(getRewardForCompletion({ childId: 'child-1', deviceId: 'robot-1', assignmentId: 'missing' }))
-      .resolves.toBeNull();
-    expect(mockedClient.get).toHaveBeenCalledTimes(4);
+  it('updates only exact preference and child display-name contracts', async () => {
+    mockedClient.put.mockResolvedValueOnce({ data: { data: { robotId: 'robot-1', optedIn: true } } });
+    mockedClient.patch.mockResolvedValueOnce({ data: { data: { id: 'child-1', displayName: 'May' } } });
+    await expect(updateLeaderboardPreference('robot-1', true)).resolves.toEqual({ robotId: 'robot-1', optedIn: true });
+    await expect(updateChildDisplayName('child-1', 'May')).resolves.toEqual({ id: 'child-1', displayName: 'May' });
+    expect(mockedClient.put).toHaveBeenCalledWith('/mobile/devices/robot-1/leaderboard-preference', { optedIn: true });
+    expect(mockedClient.patch).toHaveBeenCalledWith('/mobile/children/child-1', { displayName: 'May' });
   });
 });

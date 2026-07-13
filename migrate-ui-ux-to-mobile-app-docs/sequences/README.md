@@ -5,7 +5,7 @@
 Hand-authored + spec-seeded `sequenceDiagram` files covering all 22 backend systems at **contract-level** depth.
 Distinct from `docs/flows/` (mobile UI nav-graph). See `AGENTS.md` for ownership lanes and `_actors.md` for the participant allow-list.
 
-Total files: **102**.
+Total files: **103**.
 
 ## _cross
 
@@ -179,6 +179,7 @@ Total files: **102**.
 |---|---|---|---|---|
 | ble-provisioning | mobile | BLE | final | `16-mobile/ble-provisioning.sequence.mmd` |
 | push-notification-registration | mobile | FCM | final | `16-mobile/push-notification-registration.sequence.mmd` |
+| rewards-and-leaderboard-mobile | mobile | — | final | `16-mobile/rewards-and-leaderboard-mobile.sequence.mmd` |
 | token-refresh-mobile | mobile | ExpoSecureStore | final | `16-mobile/token-refresh-mobile.sequence.mmd` |
 
 ## sys-17-api-gateway-rate-limiting

@@ -1,231 +1,141 @@
 import client from '@/services/http/client';
-import { toNonNegativeNumber } from '@/utils/number';
+import type { AppError } from '@/utils/errors';
 
-export type LeaderboardPeriod = 'weekly' | 'allTime';
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
-export interface LessonReward {
-  id: string;
-  assignmentId: string;
-  sessionId: string | null;
-  lessonId: string;
-  childId: string;
-  deviceId: string;
-  lessonVersion: number;
-  milestoneKey: string | null;
+export interface RewardParty { id: string; displayName: string | null }
+export interface RewardStreak { currentDays: number | null; bestDays: number | null }
+export interface RewardReceipt {
+  rewardId: string;
+  child: RewardParty;
+  robot: RewardParty;
   xp: number;
   coins: number;
-  badgeKey: string | null;
-  badgeName: string | null;
-  grantedAt: string;
-  seenAt: string | null;
-  status: 'awarded' | 'held';
-  configurationErrorCode: string | null;
+  badges: string[];
+  reason: JsonValue;
+  policyVersion: string | null;
+  streak: RewardStreak | null;
+  awardedAt: string;
+}
+export interface RewardTotals { xp: number; coins: number; rewardCount: number; refreshing: boolean }
+export interface RewardHistory { totals: RewardTotals; history: RewardReceipt[] }
+export interface RewardInbox { rewards: RewardReceipt[]; count: number }
+export interface SeenReward { rewardId: string; seen: true; seenAt: string }
+
+type RecordValue = Record<string, unknown>;
+
+function invalid(path: string): AppError {
+  return { code: 'INVALID_API_RESPONSE', message: `Invalid rewards response at ${path}.`, retryable: false };
 }
 
-export interface RewardTotals {
-  childId: string;
-  totalXp: number;
-  totalCoins: number;
-  lessonCompletions: number;
-  currentStreakDays: number;
-  badgeCount: number;
-  longestStreakDays: number;
+function objectAt(value: unknown, path: string): RecordValue {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) throw invalid(path);
+  return value as RecordValue;
 }
 
-export interface RewardHistoryPage {
-  items: LessonReward[];
-  nextCursor: string | null;
+function stringAt(value: unknown, path: string): string {
+  if (typeof value !== 'string' || value.length === 0) throw invalid(path);
+  return value;
 }
 
-export interface LeaderboardRow {
-  rank: number;
-  deviceId: string;
-  childName: string;
-  robotName: string;
-  maskedParentEmail: string;
-  xp: number;
-  completions: number;
-  owned: boolean;
+function nullableStringAt(value: unknown, path: string): string | null {
+  if (value === null) return null;
+  return stringAt(value, path);
 }
 
-export interface LeaderboardPage {
-  items: LeaderboardRow[];
-  ownedRow: LeaderboardRow | null;
-  nextCursor: string | null;
+function integerAt(value: unknown, path: string): number {
+  if (!Number.isInteger(value) || (value as number) < 0) throw invalid(path);
+  return value as number;
 }
 
-export interface RobotLeaderboardPreference {
-  deviceId: string;
-  optedIn: boolean;
+function nullableIntegerAt(value: unknown, path: string): number | null {
+  return value === null ? null : integerAt(value, path);
 }
 
-type JsonRecord = Record<string, unknown>;
-
-function record(value: unknown): JsonRecord {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? Object.fromEntries(Object.entries(value))
-    : {};
+function jsonAt(value: unknown, path: string): JsonValue {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (Array.isArray(value)) return value.map((item, index) => jsonAt(item, `${path}[${index}]`));
+  const source = objectAt(value, path);
+  return Object.fromEntries(Object.entries(source).map(([key, item]) => [key, jsonAt(item, `${path}.${key}`)]));
 }
 
-function envelope(value: unknown): JsonRecord {
-  const outer = record(value);
-  return 'data' in outer ? record(outer.data) : outer;
+function dataAt(value: unknown): unknown {
+  return objectAt(value, 'response').data;
 }
 
-function textValue(value: unknown): string {
-  return typeof value === 'string' ? value : '';
+function partyAt(value: unknown, path: string): RewardParty {
+  const item = objectAt(value, path);
+  return { id: stringAt(item.id, `${path}.id`), displayName: nullableStringAt(item.displayName, `${path}.displayName`) };
 }
 
-function nullableText(value: unknown): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function booleanValue(value: unknown): boolean {
-  return value === true;
-}
-
-function normalizeReward(value: unknown): LessonReward {
-  const item = record(value);
-  const status = item.status === 'held' ? 'held' : 'awarded';
+function streakAt(value: unknown, path: string): RewardStreak | null {
+  if (value === null) return null;
+  const item = objectAt(value, path);
   return {
-    id: textValue(item.id),
-    assignmentId: textValue(item.assignment_id ?? item.assignmentId),
-    sessionId: nullableText(item.session_id ?? item.sessionId),
-    lessonId: textValue(item.lesson_id ?? item.lessonId),
-    childId: textValue(item.child_id ?? item.childId),
-    deviceId: textValue(item.device_id ?? item.deviceId),
-    lessonVersion: toNonNegativeNumber(item.lesson_version ?? item.lessonVersion),
-    milestoneKey: nullableText(item.milestone_key ?? item.milestoneKey),
-    xp: toNonNegativeNumber(item.xp),
-    coins: toNonNegativeNumber(item.coins),
-    badgeKey: nullableText(item.badge_key ?? item.badgeKey),
-    badgeName: nullableText(item.badge_name ?? item.badgeName),
-    grantedAt: textValue(item.granted_at ?? item.grantedAt ?? item.completed_at ?? item.completedAt),
-    seenAt: nullableText(item.seen_at ?? item.seenAt),
-    status,
-    configurationErrorCode: nullableText(item.configuration_error_code ?? item.configurationErrorCode),
+    currentDays: nullableIntegerAt(item.currentDays, `${path}.currentDays`),
+    bestDays: nullableIntegerAt(item.bestDays, `${path}.bestDays`),
   };
 }
 
-function normalizeLeaderboardRow(value: unknown): LeaderboardRow {
-  const item = record(value);
+function receiptAt(value: unknown, path: string): RewardReceipt {
+  const item = objectAt(value, path);
+  if (!Array.isArray(item.badges)) throw invalid(`${path}.badges`);
+  const rewardId = stringAt(item.rewardId, `${path}.rewardId`);
+  const child = partyAt(item.child, `${path}.child`);
+  const robot = partyAt(item.robot, `${path}.robot`);
+  const badges = item.badges.map((badge, index) => stringAt(badge, `${path}.badges[${index}]`));
+  const awardedAt = stringAt(item.awardedAt, `${path}.awardedAt`);
   return {
-    rank: toNonNegativeNumber(item.rank),
-    deviceId: textValue(item.device_id ?? item.deviceId),
-    childName: textValue(item.child_name ?? item.childName),
-    robotName: textValue(item.robot_name ?? item.robotName),
-    maskedParentEmail: textValue(item.masked_parent_email ?? item.maskedParentEmail),
-    xp: toNonNegativeNumber(item.xp),
-    completions: toNonNegativeNumber(item.completions),
-    owned: booleanValue(item.owned),
+    rewardId,
+    child,
+    robot,
+    xp: integerAt(item.xp, `${path}.xp`),
+    coins: integerAt(item.coins, `${path}.coins`),
+    badges,
+    reason: item.reason === null ? null : jsonAt(item.reason, `${path}.reason`),
+    policyVersion: nullableStringAt(item.policyVersion, `${path}.policyVersion`),
+    streak: streakAt(item.streak, `${path}.streak`),
+    awardedAt,
   };
 }
 
-export async function getRewardTotals(childId: string): Promise<RewardTotals> {
-  const response = await client.get(`/mobile/children/${childId}/rewards/totals`);
-  const data = envelope(response.data);
+export async function getRewardHistory(filters: { childId?: string; deviceId?: string; limit?: number } = {}): Promise<RewardHistory> {
+  const params: Record<string, string> = {};
+  if (filters.childId) params.childId = filters.childId;
+  if (filters.deviceId) params.deviceId = filters.deviceId;
+  const response = await client.get('/mobile/rewards', { params });
+  const data = objectAt(dataAt(response.data), 'data');
+  const totals = objectAt(data.totals, 'data.totals');
+  if (!Array.isArray(data.history) || typeof totals.refreshing !== 'boolean') throw invalid('data');
   return {
-    childId: textValue(data.child_id ?? data.childId),
-    totalXp: toNonNegativeNumber(data.total_xp ?? data.totalXp),
-    totalCoins: toNonNegativeNumber(data.total_coins ?? data.totalCoins),
-    lessonCompletions: toNonNegativeNumber(data.lesson_completions ?? data.lessonCompletions),
-    currentStreakDays: toNonNegativeNumber(data.current_streak_days ?? data.currentStreakDays),
-    badgeCount: toNonNegativeNumber(data.badge_count ?? data.badgeCount),
-    longestStreakDays: toNonNegativeNumber(data.longest_streak_days ?? data.longestStreakDays),
+    totals: {
+      xp: integerAt(totals.xp, 'data.totals.xp'),
+      coins: integerAt(totals.coins, 'data.totals.coins'),
+      rewardCount: integerAt(totals.rewardCount, 'data.totals.rewardCount'),
+      refreshing: totals.refreshing,
+    },
+    history: data.history.map((item, index) => receiptAt(item, `data.history[${index}]`)),
   };
 }
 
-export async function getRewardInbox(params: {
-  childId: string;
-  deviceId: string;
-  assignmentId: string;
-}): Promise<LessonReward[]> {
-  const response = await client.get(`/mobile/children/${params.childId}/rewards/inbox`, {
-    params: { deviceId: params.deviceId, assignmentId: params.assignmentId },
-  });
-  const data = envelope(response.data);
-  return Array.isArray(data.rewards) ? data.rewards.map(normalizeReward) : [];
-}
-
-export async function getRewardHistory(params: {
-  childId: string;
-  cursor?: string;
-  limit?: number;
-}): Promise<RewardHistoryPage> {
-  const query: Record<string, string | number> = {};
-  if (params.cursor) query.cursor = params.cursor;
-  if (params.limit !== undefined) query.limit = params.limit;
-  const response = await client.get(`/mobile/children/${params.childId}/rewards/history`, { params: query });
-  const data = envelope(response.data);
+export async function getRewardInbox(): Promise<RewardInbox> {
+  const response = await client.get('/mobile/rewards/inbox');
+  const envelope = objectAt(response.data, 'response');
+  if (!Array.isArray(envelope.data)) throw invalid('data');
+  const meta = objectAt(envelope.meta, 'meta');
   return {
-    items: Array.isArray(data.items) ? data.items.map(normalizeReward) : [],
-    nextCursor: nullableText(data.next_cursor ?? data.nextCursor),
+    rewards: envelope.data.map((item, index) => receiptAt(item, `data[${index}]`)),
+    count: integerAt(meta.count, 'meta.count'),
   };
 }
 
-export async function getRewardForCompletion(params: {
-  childId: string;
-  deviceId: string;
-  assignmentId: string;
-}): Promise<LessonReward | null> {
-  const exactMatch = (reward: LessonReward): boolean =>
-    reward.childId === params.childId
-    && reward.deviceId === params.deviceId
-    && reward.assignmentId === params.assignmentId;
-  const inbox = await getRewardInbox(params);
-  const unseen = inbox.find(exactMatch);
-  if (unseen) return unseen;
-
-  let cursor: string | undefined;
-  for (let pageNumber = 0; pageNumber < 3; pageNumber += 1) {
-    const page = await getRewardHistory({ childId: params.childId, cursor, limit: 100 });
-    const seen = page.items.find(exactMatch);
-    if (seen) return seen;
-    cursor = page.nextCursor ?? undefined;
-    if (!cursor) break;
-  }
-  return null;
-}
-
-export async function acknowledgeRewardSeen(rewardId: string): Promise<void> {
+export async function acknowledgeRewardSeen(rewardId: string): Promise<SeenReward> {
   const requestId = `reward-seen-${rewardId}`;
-  await client.post(
-    `/mobile/rewards/${rewardId}/seen`,
-    { request_id: requestId },
-    { headers: { 'Idempotency-Key': requestId, 'X-Request-Id': requestId } },
-  );
-}
-
-export async function getLeaderboard(params: {
-  period: LeaderboardPeriod;
-  deviceId?: string;
-  cursor?: string;
-  limit?: number;
-}): Promise<LeaderboardPage> {
-  const query: Record<string, string | number> = { period: params.period };
-  if (params.deviceId) query.deviceId = params.deviceId;
-  if (params.cursor) query.cursor = params.cursor;
-  if (params.limit !== undefined) query.limit = params.limit;
-  const response = await client.get('/mobile/leaderboard', { params: query });
-  const data = envelope(response.data);
-  return {
-    items: Array.isArray(data.items) ? data.items.map(normalizeLeaderboardRow) : [],
-    ownedRow: data.owned_row || data.ownedRow ? normalizeLeaderboardRow(data.owned_row ?? data.ownedRow) : null,
-    nextCursor: nullableText(data.next_cursor ?? data.nextCursor),
-  };
-}
-
-export async function getLeaderboardPreference(deviceId: string): Promise<RobotLeaderboardPreference> {
-  const response = await client.get(`/mobile/robots/${deviceId}/leaderboard-preference`);
-  const data = envelope(response.data);
-  return { deviceId: textValue(data.device_id ?? data.deviceId), optedIn: booleanValue(data.opted_in ?? data.optedIn) };
-}
-
-export async function updateLeaderboardPreference(
-  deviceId: string,
-  optedIn: boolean,
-): Promise<RobotLeaderboardPreference> {
-  const response = await client.put(`/mobile/robots/${deviceId}/leaderboard-preference`, { opted_in: optedIn });
-  const data = envelope(response.data);
-  return { deviceId: textValue(data.device_id ?? data.deviceId), optedIn: booleanValue(data.opted_in ?? data.optedIn) };
+  const response = await client.post(`/mobile/rewards/${rewardId}/seen`, undefined, {
+    headers: { 'Idempotency-Key': requestId, 'X-Request-Id': requestId },
+  });
+  const data = objectAt(dataAt(response.data), 'data');
+  if (data.seen !== true) throw invalid('data.seen');
+  return { rewardId: stringAt(data.rewardId, 'data.rewardId'), seen: true, seenAt: stringAt(data.seenAt, 'data.seenAt') };
 }
