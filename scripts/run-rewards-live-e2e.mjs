@@ -1,8 +1,16 @@
-import { spawn } from 'child_process';
-import { once } from 'events';
-import { createServer } from 'net';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import {
+  buildBackendEnvironment,
+  buildProofEnvironment,
+  cleanupPreservingPrimaryError,
+  createProcessLifecycle,
+  extractListeningPort,
+  fetchWithTimeout,
+  hasProcessExited,
+  loadBackendDevelopmentKeyPair,
+  removeContainerIfPresent,
+} from './_lib/rewards-live-process-lifecycle.mjs';
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backendRoot = resolve(
@@ -11,82 +19,65 @@ const backendRoot = resolve(
 );
 const containerName = `tbot-rewards-live-${process.pid}`;
 const postgresImage = process.env.TBOT_REWARDS_POSTGRES_IMAGE ?? 'postgres:16-alpine';
+const proofEnvironment = buildProofEnvironment({ baseEnv: process.env });
 let backendProcess;
-let cleaningUp = false;
+let primaryError;
 const backendLogTail = [];
+const lifecycle = createProcessLifecycle({ cleanupContainer: removeContainer });
+const { output, run } = lifecycle;
 
-function run(command, args, options = {}) {
-  return new Promise((resolveRun, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      env: options.env ?? process.env,
-      stdio: options.stdio ?? 'inherit',
-    });
-    child.once('error', reject);
-    child.once('exit', (code, signal) => {
-      if (code === 0) {
-        resolveRun();
-        return;
-      }
-      reject(new Error(`${command} exited with ${code ?? signal ?? 'unknown status'}`));
-    });
+function removeContainer() {
+  return removeContainerIfPresent({
+    containerName,
+    output,
+    env: proofEnvironment,
   });
-}
-
-function output(command, args) {
-  return new Promise((resolveOutput, reject) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    let stdout = '';
-    let stderr = '';
-    child.stdout.setEncoding('utf8');
-    child.stderr.setEncoding('utf8');
-    child.stdout.on('data', (chunk) => { stdout += chunk; });
-    child.stderr.on('data', (chunk) => { stderr += chunk; });
-    child.once('error', reject);
-    child.once('exit', (code, signal) => {
-      if (code === 0) {
-        resolveOutput(stdout.trim());
-        return;
-      }
-      reject(new Error(`${command} exited with ${code ?? signal ?? 'unknown status'}: ${stderr.trim()}`));
-    });
-  });
-}
-
-async function freePort() {
-  const server = createServer();
-  server.unref();
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const address = server.address();
-  if (address === null || typeof address === 'string') throw new Error('Unable to reserve a local port');
-  const port = address.port;
-  server.close();
-  await once(server, 'close');
-  return port;
 }
 
 async function waitForDatabase() {
-  for (let attempt = 0; attempt < 60; attempt += 1) {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
     try {
       await output('docker', [
-        'exec', containerName, 'psql', '-X', '-U', 'tbot', '-d', 'tbot', '-Atqc', 'SELECT 1',
-      ]);
+        'exec', '-e', 'PGCONNECT_TIMEOUT=1', containerName,
+        'psql', '-X', '-U', 'tbot', '-d', 'tbot', '-Atqc', 'SELECT 1',
+      ], {
+        env: proofEnvironment,
+        timeout: Math.min(1_000, Math.max(1, deadline - Date.now())),
+      });
       return;
     } catch {
-      await new Promise((resolveWait) => setTimeout(resolveWait, 500));
+      const delayMs = Math.min(500, Math.max(0, deadline - Date.now()));
+      if (delayMs > 0) await new Promise((resolveWait) => setTimeout(resolveWait, delayMs));
     }
   }
   throw new Error('Disposable PostgreSQL did not become queryable');
 }
 
+async function waitForBackendPort() {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (hasProcessExited(backendProcess)) {
+      throw new Error(
+        `Backend exited before reporting its listening port (${backendProcess.exitCode ?? backendProcess.signalCode})\n${backendLogTail.join('')}`,
+      );
+    }
+    const port = extractListeningPort(backendLogTail.join(''));
+    if (port !== null) return port;
+    await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+  }
+  throw new Error(`Backend listening-port discovery timed out\n${backendLogTail.join('')}`);
+}
+
 async function waitForBackend(apiUrl) {
   for (let attempt = 0; attempt < 60; attempt += 1) {
-    if (backendProcess.exitCode !== null) {
-      throw new Error(`Backend exited before health check passed\n${backendLogTail.join('')}`);
+    if (hasProcessExited(backendProcess)) {
+      throw new Error(
+        `Backend exited before health check passed (${backendProcess.exitCode ?? backendProcess.signalCode})\n${backendLogTail.join('')}`,
+      );
     }
     try {
-      const response = await fetch(`${apiUrl}/health`);
+      const response = await fetchWithTimeout(`${apiUrl}/health`, 500);
       if (response.status === 200) return;
     } catch {
       // The socket is expected to reject while Nest is booting.
@@ -104,80 +95,79 @@ function captureBackendLogs(stream) {
   });
 }
 
-async function cleanup() {
-  if (cleaningUp) return;
-  cleaningUp = true;
-  if (backendProcess && backendProcess.exitCode === null) {
-    backendProcess.kill('SIGTERM');
-    await Promise.race([
-      once(backendProcess, 'exit'),
-      new Promise((resolveWait) => setTimeout(resolveWait, 5_000)),
-    ]);
-    if (backendProcess.exitCode === null) backendProcess.kill('SIGKILL');
-  }
-  await run('docker', ['rm', '-f', containerName], { stdio: 'ignore' }).catch(() => undefined);
+async function startBackend(databaseUrl, jwtPrivateKey, jwtPublicKey) {
+  backendLogTail.length = 0;
+  backendProcess = lifecycle.spawnBackend('npm', ['start'], {
+    cwd: backendRoot,
+    env: buildBackendEnvironment({
+      baseEnv: process.env,
+      databaseUrl,
+      backendPort: 0,
+      jwtPrivateKey,
+      jwtPublicKey,
+    }),
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  captureBackendLogs(backendProcess.stdout);
+  captureBackendLogs(backendProcess.stderr);
+
+  const backendPort = await waitForBackendPort();
+  const apiUrl = `http://127.0.0.1:${backendPort}/v1`;
+  await waitForBackend(apiUrl);
+  return apiUrl;
 }
 
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.once(signal, () => {
-    cleanup().finally(() => process.exit(128 + (signal === 'SIGINT' ? 2 : 15)));
-  });
-}
+lifecycle.installSignalHandlers();
 
 try {
-  await run('docker', [
+  await output('docker', [
     'run', '--rm', '-d', '--name', containerName,
     '-e', 'POSTGRES_USER=tbot',
     '-e', 'POSTGRES_PASSWORD=tbot',
     '-e', 'POSTGRES_DB=tbot',
     '-p', '127.0.0.1::5432',
     postgresImage,
-  ], { stdio: 'ignore' });
+  ], { env: proofEnvironment });
   await waitForDatabase();
 
-  const postgresPortOutput = await output('docker', ['port', containerName, '5432/tcp']);
+  const postgresPortOutput = await output('docker', ['port', containerName, '5432/tcp'], {
+    env: proofEnvironment,
+  });
   const postgresPort = postgresPortOutput.match(/:(\d+)$/)?.[1];
   if (!postgresPort) throw new Error(`Unable to parse PostgreSQL port from ${postgresPortOutput}`);
   const databaseUrl = `postgresql://tbot:tbot@127.0.0.1:${postgresPort}/tbot`;
 
   await run('npm', ['run', 'migrate'], {
     cwd: backendRoot,
-    env: { ...process.env, DATABASE_URL: databaseUrl },
+    env: buildProofEnvironment({ baseEnv: proofEnvironment, overrides: { DATABASE_URL: databaseUrl } }),
   });
-  await run('npm', ['run', 'build'], { cwd: backendRoot });
+  await run('npm', ['run', 'build'], { cwd: backendRoot, env: proofEnvironment });
 
-  const backendPort = await freePort();
-  const apiUrl = `http://127.0.0.1:${backendPort}/v1`;
-  backendProcess = spawn('npm', ['start'], {
-    cwd: backendRoot,
-    env: {
-      ...process.env,
-      DATABASE_URL: databaseUrl,
-      NODE_ENV: 'development',
-      PORT: String(backendPort),
-      SWAGGER_ENABLED: 'false',
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
+  const { privateKey: jwtPrivateKey, publicKey: jwtPublicKey } = loadBackendDevelopmentKeyPair({
+    backendRoot,
   });
-  captureBackendLogs(backendProcess.stdout);
-  captureBackendLogs(backendProcess.stderr);
-  await waitForBackend(apiUrl);
+  const apiUrl = await startBackend(databaseUrl, jwtPrivateKey, jwtPublicKey);
 
   await run('npm', ['run', 'test:integration:rewards:live'], {
     cwd: mobileRoot,
-    env: {
-      ...process.env,
-      TBOT_API_URL: apiUrl,
-      TBOT_BACKEND_PRIVATE_KEY: resolve(backendRoot, 'keys/dev-private.pem'),
-      TBOT_BACKEND_WORKTREE: backendRoot,
-      TBOT_REWARDS_LIVE: '1',
-      TBOT_REWARDS_POSTGRES_CONTAINER: containerName,
-    },
+    env: buildProofEnvironment({
+      baseEnv: proofEnvironment,
+      overrides: {
+        TBOT_API_URL: apiUrl,
+        TBOT_BACKEND_PRIVATE_KEY_PEM: jwtPrivateKey,
+        TBOT_BACKEND_WORKTREE: backendRoot,
+        TBOT_REWARDS_LIVE: '1',
+        TBOT_REWARDS_POSTGRES_CONTAINER: containerName,
+      },
+    }),
   });
   console.info('Rewards live proof passed: 102 migrations, real Nest HTTP/JWT, two households, one persisted reward.');
 } catch (error) {
+  primaryError = error;
   if (backendLogTail.length > 0) process.stderr.write(`\nBackend log tail:\n${backendLogTail.join('')}`);
-  throw error;
-} finally {
-  await cleanup();
 }
+await cleanupPreservingPrimaryError({
+  cleanup: lifecycle.cleanup,
+  primaryError,
+  reportCleanupError: (error) => process.stderr.write(`\nCleanup also failed: ${error.message}\n`),
+});

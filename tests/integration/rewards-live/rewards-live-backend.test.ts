@@ -10,15 +10,14 @@ import {
   getRewardInbox,
 } from '@/services/api/rewards.api';
 import { getLeaderboard, updateLeaderboardPreference } from '@/services/api/leaderboard.api';
-import { updateChildDisplayName } from '@/services/api/households';
+import { setActiveChild, updateChildDisplayName } from '@/services/api/households';
 
 const apiUrl = process.env.TBOT_API_URL ?? 'http://127.0.0.1:3100/v1';
 const raw = axios.create({ baseURL: apiUrl, validateStatus: () => true });
 const postgresContainer = process.env.TBOT_REWARDS_POSTGRES_CONTAINER ?? 'tbot-rewards-e2e-pg';
 const backendRoot = process.env.TBOT_BACKEND_WORKTREE
   ?? resolve(__dirname, '../../../../../tbot-backend/mobile-robot-rewards');
-const backendPrivateKey = process.env.TBOT_BACKEND_PRIVATE_KEY
-  ?? `${backendRoot}/keys/dev-private.pem`;
+const backendPrivateKey = process.env.TBOT_BACKEND_PRIVATE_KEY_PEM;
 const canonicalCourseId = 'w01-place-words';
 const canonicalLessonId = 'w01-d01-barn-say-it';
 const canonicalLessonVersion = 1;
@@ -33,6 +32,7 @@ interface Identity {
 }
 
 interface Fixture extends Identity {
+  initialActiveChildId: string;
   deviceToken: string;
   foreign: Identity;
   foreignHouseholdToken: string;
@@ -60,12 +60,13 @@ function signToken(claims: {
   deviceId?: string;
   roles: string[];
 }): string {
+  if (!backendPrivateKey) {
+    throw new Error('TBOT_BACKEND_PRIVATE_KEY_PEM is required for the rewards live proof');
+  }
   const script = [
-    "const fs=require('fs')",
     "const jwt=require('jsonwebtoken')",
-    "const key=fs.readFileSync(process.env.E2E_PRIVATE_KEY,'utf8')",
     "const payload=JSON.parse(process.env.E2E_CLAIMS)",
-    "process.stdout.write(jwt.sign(payload,key,{algorithm:'RS256',expiresIn:'15m'}))",
+    "process.stdout.write(jwt.sign(payload,process.env.E2E_PRIVATE_KEY,{algorithm:'RS256',expiresIn:'15m'}))",
   ].join(';');
   return execFileSync('node', ['-e', script], {
     cwd: backendRoot,
@@ -126,6 +127,24 @@ function createIdentity(childName: string, robotName: string): Identity {
 async function seedFixture(): Promise<Fixture> {
   const identity = createIdentity('Mai', 'TeeBot Sao');
   const foreign = createIdentity('Kai', 'TeeBot Trang');
+  const initialActiveChildId = randomUUID();
+  const initialActiveChildConsentId = randomUUID();
+  psql(
+    `BEGIN;
+     INSERT INTO child_profiles (id, household_id, display_name, birth_year, age_gate_passed, status)
+     VALUES (${sqlLiteral(initialActiveChildId)}, ${sqlLiteral(identity.householdId)}, 'Lan', 2017, TRUE, 'active');
+     INSERT INTO coppa_consents
+       (id, parent_user_id, child_name, birth_date, consent_version, status)
+     VALUES (${sqlLiteral(initialActiveChildConsentId)}, ${sqlLiteral(identity.parentId)}, 'Lan',
+             '2017-01-01', 'rewards-live-v1', 'active');
+     INSERT INTO child_profile_coppa_consents (child_id, consent_id, bound_by_parent_id)
+     VALUES (${sqlLiteral(initialActiveChildId)}, ${sqlLiteral(initialActiveChildConsentId)},
+             ${sqlLiteral(identity.parentId)});
+     UPDATE parent_accounts
+        SET active_child_id = ${sqlLiteral(initialActiveChildId)}
+      WHERE id = ${sqlLiteral(identity.parentId)};
+     COMMIT;`,
+  );
   const headers = { Authorization: `Bearer ${identity.token}` };
 
   const courses = await raw.get('/courses', { headers });
@@ -172,6 +191,7 @@ async function seedFixture(): Promise<Fixture> {
   );
   return {
     ...identity,
+    initialActiveChildId,
     foreign,
     foreignHouseholdToken: signToken({
       subject: foreign.parentId,
@@ -204,7 +224,34 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     await setTokens(fixture.token, 'unused-live-refresh-token');
   }, 30_000);
 
-  it('collapses device completion replays into one immutable reward on every mobile surface', async () => {
+  it('proves active-child, persisted rewards, leaderboard privacy, rename and opt-out as one live scenario', async () => {
+    expect(psql(
+      `SELECT COUNT(*)
+         FROM child_profiles child
+         JOIN child_profile_coppa_consents binding ON binding.child_id = child.id
+         JOIN coppa_consents consent ON consent.id = binding.consent_id
+        WHERE child.id IN (${sqlLiteral(fixture.initialActiveChildId)}, ${sqlLiteral(fixture.childId)})
+          AND child.household_id = ${sqlLiteral(fixture.householdId)}
+          AND child.status = 'active'
+          AND consent.status = 'active'
+          AND consent.revoked_at IS NULL;`,
+    )).toBe('2');
+    expect(psql(
+      `SELECT active_child_id FROM parent_accounts WHERE id = ${sqlLiteral(fixture.parentId)};`,
+    )).toBe(fixture.initialActiveChildId);
+    await expect(setActiveChild(fixture.childId)).resolves.toEqual({ active_child_id: fixture.childId });
+    expect(psql(
+      `SELECT active_child_id FROM parent_accounts WHERE id = ${sqlLiteral(fixture.parentId)};`,
+    )).toBe(fixture.childId);
+    const foreignActiveChild = await raw.post('/profile/active-child', {
+      child_id: fixture.childId,
+    }, {
+      headers: { Authorization: `Bearer ${fixture.foreignHouseholdToken}` },
+    });
+    expect(foreignActiveChild.status).toBe(403);
+    expect(psql(
+      `SELECT active_child_id FROM parent_accounts WHERE id = ${sqlLiteral(fixture.foreign.parentId)};`,
+    )).toBe(fixture.foreign.childId);
     const headers = { Authorization: `Bearer ${fixture.deviceToken}` };
     const started = await raw.post(`/devices/${fixture.deviceId}/lesson-events`, {
       assignmentId: fixture.assignmentId,
@@ -234,6 +281,7 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     expect(inbox.count).toBe(1);
     expect(history.history).toHaveLength(1);
     expect(history.history[0]).toEqual(inbox.rewards[0]);
+    expect(inbox.rewards[0]).toMatchObject({ xp: 109, coins: 10 });
     expect(history.totals).toMatchObject({ rewardCount: 1, xp: 109, coins: 10, refreshing: false });
     expect(psql(
       `SELECT COUNT(*) FROM lesson_reward_ledger
@@ -258,29 +306,52 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
       raw.patch(`/mobile/children/${fixture.childId}`, { displayName: 'Khong Duoc Doi' }, { headers: foreignHeaders }),
     ]);
     expect(foreignResults.map((response) => response.status)).toEqual([403, 403, 403, 403, 403]);
-  });
-
-  it('uses private names, masked owner email, rename and opt-out without mutating the lesson', async () => {
     await expect(updateLeaderboardPreference(fixture.deviceId, true)).resolves.toMatchObject({ optedIn: true });
 
     const weekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const allTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
-    const owned = [...weekly.ownedRows, ...allTime.ownedRows].find((row) => row.robotId === fixture.deviceId);
-    expect(owned).toMatchObject({ childName: 'Mai', robotName: 'TeeBot Sao', optedIn: true });
-    expect(owned?.parentEmailMasked).toBe(fixture.email.replace(/^(.{2})[^@]*/, '$1***'));
+    const weeklyOwned = weekly.ownedRows.find((row) => row.robotId === fixture.deviceId);
+    const allTimeOwned = allTime.ownedRows.find((row) => row.robotId === fixture.deviceId);
+    for (const owned of [weeklyOwned, allTimeOwned]) {
+      expect(owned).toMatchObject({
+        childName: 'Mai',
+        robotName: 'TeeBot Sao',
+        optedIn: true,
+        xp: 109,
+        completedLessonCount: 1,
+        rank: 1,
+        rankStatus: 'current',
+      });
+      expect(owned?.parentEmailMasked).toBe(fixture.email.replace(/^(.{2})[^@]*/, '$1***'));
+    }
     expect(JSON.stringify({ weekly, allTime })).not.toContain(fixture.email);
 
     await setTokens(fixture.foreign.token, 'unused-live-refresh-token');
-    const publicView = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
-    expect(publicView.rows).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        robotId: fixture.deviceId,
-        childName: 'Mai',
-        robotName: 'TeeBot Sao',
-        parentEmailMasked: fixture.email.replace(/^(.{2})[^@]*/, '$1***'),
-      }),
-    ]));
-    expect(JSON.stringify(publicView)).not.toContain(fixture.email);
+    const maskedEmail = fixture.email.replace(/^(.{2})[^@]*/, '$1***');
+    const publicWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
+    const publicAllTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    expect(publicWeekly.rows.find((row) => row.robotId === fixture.deviceId)).toMatchObject({
+      robotId: fixture.deviceId,
+      childName: 'Mai',
+      robotName: 'TeeBot Sao',
+      parentEmailMasked: maskedEmail,
+      xp: 109,
+      completedLessonCount: 1,
+      rank: 1,
+      rankStatus: 'current',
+    });
+    expect(JSON.stringify(publicWeekly)).not.toContain(fixture.email);
+    expect(publicAllTime.rows.find((row) => row.robotId === fixture.deviceId)).toMatchObject({
+      robotId: fixture.deviceId,
+      childName: 'Mai',
+      robotName: 'TeeBot Sao',
+      parentEmailMasked: maskedEmail,
+      xp: 109,
+      completedLessonCount: 1,
+      rank: 1,
+      rankStatus: 'current',
+    });
+    expect(JSON.stringify(publicAllTime)).not.toContain(fixture.email);
 
     await setTokens(fixture.token, 'unused-live-refresh-token');
     await expect(updateChildDisplayName(fixture.childId, 'An')).resolves.toMatchObject({ displayName: 'An' });
@@ -301,5 +372,5 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
         WHERE lesson_key = ${sqlLiteral(canonicalLessonId)}
           AND lesson_version = ${canonicalLessonVersion};`,
     )).toBe(fixture.manifestChecksum);
-  });
+  }, 60_000);
 });
