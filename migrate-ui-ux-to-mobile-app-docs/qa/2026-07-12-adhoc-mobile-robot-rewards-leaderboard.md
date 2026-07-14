@@ -1,6 +1,6 @@
 # Mobile robot rewards leaderboard — cross-repo live proof
 
-Date executed: 2026-07-14
+Date executed: 2026-07-14–2026-07-15
 Task: `adhoc-2026-07-13-mobile-robot-rewards-live`
 Scope: real PostgreSQL + Nest HTTP + JWT/AuthGuard + mobile API client. This is not a rendered mobile, browser, simulator, or physical-robot proof.
 
@@ -53,17 +53,20 @@ No production database, account, token, email, child name, or device identifier 
 | Backend typecheck | `npm run typecheck` | PASS. |
 | Backend lint | `npm run lint -- --quiet` | PASS. |
 | Backend build | `npm run build` | PASS inside runner. |
-| Backend required CI | `npm run ci:required` | NOT PASS — lint and typecheck passed, but the full test stage stopped with 32 failed files and 3 failed tests. The worktree lacks `keys/dev-private.pem`, a configured Prisma datasource/database URL, and the docs OpenAPI target; two unrelated JWT fixtures also reported invalid signatures. Later build/OpenAPI/migration/state-machine stages therefore did not run. |
+| Backend required CI | `npm run ci:required` | PASS — 469 test files: 414 passed and 55 skipped; 3,333 tests passed and 470 skipped. Build, OpenAPI 3.1 generation/validation/Spectral lint for 102 paths, Prisma validate/generate, disposable-PostgreSQL migration plus safe reapply and live migration integration, and state-machine tests (34/34) all passed. Transient matching JWT keys and the disposable database container were removed after the run. |
 | Backend secret/privacy scan | `rg` over committed branch files | PASS for embedded private-key material — no PEM header or private-key body was found. Email-shaped matches were confined to OpenAPI examples, fixtures, and masking/authorization tests; no values are copied into this record. |
 | Mobile targeted | `npx jest --selectProjects unit --runInBand tests/api/rewards-api.test.ts tests/api/households.test.ts tests/features/rewards` | PASS — 9 suites, 59 tests; Jest reported a pre-existing open-handle warning after success. |
 | Mobile unit | `npm test -- --runInBand --silent --forceExit` | PASS — 200 suites, 2,133 tests; 1 suite/19 tests skipped. `--forceExit` is required for the repository's known post-suite open handle. |
 | Mobile integration | `npm run test:integration` | PASS — 1 suite passed, 1 skipped; 3 tests passed, 1 skipped. |
 | Mobile typecheck | `npm run typecheck` | PASS. |
 | Mobile lint | `npm run lint -- --quiet` | PASS. |
+| Mobile clean dependency install | `npm ci` with Node 24 in an isolated checkout | PASS — 1,345 packages installed after repairing corrupted SHA-512 integrity entries for `pirates@4.0.7`, `react-native-svg@15.15.4`, and nested `bplist-parser@0.3.1`; all corrected values match npm registry metadata. Postinstall applied the locked `@expo/cli@55.0.21` patch automatically. A separate `npm ci --omit=dev` installed 916 packages and applied the same patch, proving the lifecycle dependency remains available in production installs. |
+| CocoaPods metadata repair | `pod install` with CocoaPods 1.16.2 | PASS — regenerated metadata updates the `hermes-engine` checksum to `dd87e18f846a5279bd276d87d27d2ce60c1aec89` and applies deterministic CocoaPods 1.16.2 normalization to the generated Xcode project. |
+| Android native resource policy | `npx jest tests/ble/android-native-linking.test.ts --runInBand` | PASS — 4/4 tests; the main manifest and release resource deny all cleartext traffic, while a debug-only resource override preserves local, emulator-host, and physical-device LAN development traffic. |
 | Mobile docs/i18n validators | `npm run i18n:check && npm run flows:validate && npm run sequences:fast && npm run erd:validate && npm run usecases:check` | PASS — EN/VI both contain 1,874 keys with zero delta; 16 generated flow files, 103 sequence diagrams, 109 DBML files, 107 entity docs, and 157 use-case sections were checked with zero failures. |
 | Mobile route/token/prop validators | `npm run check:token-parity && npm run check:route-coverage && npm run check:screen-prop-types` | PASS — 7 token files, 135 screen files, and 127 registered routes were checked with zero duplicates or missing prop contracts. |
-| Detox iOS | `npm run detox:build:ios` / `npm run detox:test:ios` | NOT PASS — Xcode and an iPhone simulator are available, but CocoaPods target support files are missing, so no `.app` binary was produced and the test gate is UNVERIFIABLE. |
-| Detox Android | `npm run detox:build:android` / `npm run detox:test:android` | NOT PASS — SDK/JDK/emulator are available, but the pre-existing untracked `node_modules` symlink points at another worktree and causes a duplicate Expo Gradle plugin build; no APKs were produced, so the test gate is UNVERIFIABLE. |
+| Detox iOS | `npm run detox:build:ios` / `npm run detox:test:ios` | PARTIAL — the iOS Detox build passed and produced a launchable simulator `.app` with an embedded Hermes bundle. Simulator execution passed 16 of 21 tests; five tests remain failing because expected labels or routes for `Make Robot smile`, `Animal Friends`, offline course copy, and `Add a Robot` were not found or reached. This is simulator evidence only, not physical-iPhone evidence. |
+| Detox Android | `npm run detox:build:android` / `npm run detox:test:android -- e2e/smoke.test.ts` | PARTIAL — a clean isolated install applied the Expo CLI patch, the app-scoped Gradle build passed after 460 tasks, and the APK contains the embedded `assets/index.android.bundle`. Emulator smoke passed 1/1 suite and 2/2 tests in 130.648 seconds, covering cold-start login and sign-in-to-home. The full Android Detox suite and physical-device execution were not run, so they remain unproven. |
 | Runner syntax | `node --check scripts/run-rewards-live-e2e.mjs` | PASS as part of the runner lifecycle suite. |
 
 ## Defects found by the live proof
@@ -72,6 +75,16 @@ No production database, account, token, email, child name, or device identifier 
 2. Owned child rename returned PostgreSQL `42P08` because the reused audit parameter had ambiguous text/JSON typing. Both uses now explicitly bind as text and the SQL shape is regression-tested.
 3. Active-child selection trusted a matching JWT `household_id` claim without always verifying the authenticated subject's database membership. The service now authorizes every mutation through `household_memberships`, and the live proof uses a forged foreign-subject/victim-household claim to confirm `403` with no pointer change.
 
+## Native release-gate defects found
+
+1. Three `package-lock.json` integrity strings had been corrupted by an earlier branding replacement. Registry-canonical SHA-512 values were restored and a clean isolated install completed.
+2. The CocoaPods lock carried a stale Hermes checksum. CocoaPods 1.16.2 regenerated the checksum and normalized generated Xcode project metadata.
+3. Android referenced `@xml/network_security_config` without a tracked resource. The main manifest and release policy now deny all cleartext traffic, a debug-only override preserves local/emulator/LAN development, and a regression test verifies both source sets and manifest wiring.
+4. The iOS Detox debug build skipped JavaScript bundling for the simulator while the test command did not start Metro, producing a launchable shell with no script URL. The Detox build now embeds the bundle explicitly and a contract test prevents regression.
+5. The Android Detox command requested aggregate `assembleAndroidTest`, which built irrelevant dependency-library test variants and exhausted D8's heap after both required app APKs already existed. App-scoped Gradle tasks now build only the application and its instrumentation APK.
+6. The Android Detox debug APK also skipped JavaScript bundling while the test runner did not start Metro. A Detox-only Gradle property now makes the debug APK self-contained while normal developer debug builds remain Metro-backed.
+7. Expo CLI's native streams polyfill crashed the production Hermes bundle before Metro installed its module runtime. The previous workaround existed only as an untracked `node_modules` edit; a locked `patch-package` postinstall patch now makes clean and production dependency installs reproducible.
+
 ## Close assessment
 
-The strengthened HTTP/client cross-repo acceptance slice passed its Docker-enabled run, and all feasible non-Detox mobile validators passed with non-silent counts. The authenticated admin-browser customization and full post-customization immutability rows have separate live Playwright evidence. Task 12 remains partial: backend full CI is blocked by missing local test dependencies/configuration, and parent sign-in, robot provisioning/association, rendered parent/child reward surfaces and console, Detox binaries/tests, Android execution, and physical robot evidence remain unproven; this record does not upgrade those rows by inference.
+The strengthened HTTP/client cross-repo acceptance slice passed its Docker-enabled run, backend required CI passed end to end, and all feasible non-Detox mobile validators passed with non-silent counts. The authenticated admin-browser customization and full post-customization immutability rows have separate live Playwright evidence. Both Detox binary builds now pass; iOS simulator execution remains partial at 16/21 tests, while Android emulator smoke passes 2/2 but the full Android suite was not run. Task 12 remains partial: parent sign-in, real robot provisioning/association, rendered parent/child reward surfaces and console, the five remaining iOS Detox scenarios, the unrun Android Detox scenarios, physical mobile-device execution, and physical robot evidence remain unproven. Simulator and emulator evidence is not treated as physical-device or robot-hardware proof, and this record does not upgrade those rows by inference.

@@ -25,4 +25,27 @@ describe('Android BLE native linking', () => {
     expect(bootstrap).toContain('override val reactHost: ReactHost');
     expect(bootstrap).toContain('TJBotReactHostProvider.getReactHost()');
   });
+
+  test('denies all cleartext traffic in main and release builds', () => {
+    const relativePath = 'android/app/src/main/res/xml/network_security_config.xml';
+    const absolutePath = path.join(root, relativePath);
+    const manifest = read('android/app/src/main/AndroidManifest.xml');
+
+    expect(fs.existsSync(absolutePath)).toBe(true);
+    expect(manifest).toContain('android:usesCleartextTraffic="false"');
+    expect(manifest).toContain('android:networkSecurityConfig="@xml/network_security_config"');
+
+    const config = read(relativePath);
+    expect(config).toContain('<base-config cleartextTrafficPermitted="false" />');
+    expect(config).not.toContain('cleartextTrafficPermitted="true"');
+    expect(config).not.toContain('<domain');
+  });
+
+  test('keeps physical-device LAN traffic available only in debug builds', () => {
+    const relativePath = 'android/app/src/debug/res/xml/network_security_config.xml';
+
+    expect(fs.existsSync(path.join(root, relativePath))).toBe(true);
+    expect(read(relativePath)).toContain('<base-config cleartextTrafficPermitted="true" />');
+    expect(read('.gitignore')).toContain('!android/app/src/main/res/xml/network_security_config.xml');
+  });
 });

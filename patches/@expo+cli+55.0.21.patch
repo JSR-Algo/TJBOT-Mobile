@@ -1,0 +1,15 @@
+diff --git a/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js b/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js
+index bf3790f..896850c 100644
+--- a/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js
++++ b/node_modules/@expo/cli/build/src/start/server/metro/withMetroMultiPlatform.js
+@@ -132,9 +132,7 @@ function withWebPolyfills(config, { getMetroBundler }) {
+         const polyfills = originalGetPolyfills(ctx);
+         return [
+             ...polyfills,
+-            ...virtualModulesPolyfills,
+-            // Removed on server platforms during the transform.
+-            require.resolve('expo/virtual/streams.js')
++            ...virtualModulesPolyfills
+         ];
+     };
+     return {

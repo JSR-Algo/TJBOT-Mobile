@@ -33,7 +33,8 @@ android/app/src/main/res/drawable-xhdpi/
 android/app/src/main/res/drawable-xxhdpi/
 android/app/src/main/res/drawable-xxxhdpi/
 android/app/src/main/res/raw/
-android/app/src/main/res/xml/
+android/app/src/main/res/xml/*
+!android/app/src/main/res/xml/network_security_config.xml
 ios/TJBotMobile.xcworkspace/xcuserdata/
 ios/*.xcodeproj/xcuserdata/
 .worktrees/
