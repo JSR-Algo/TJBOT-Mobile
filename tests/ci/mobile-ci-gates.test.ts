@@ -5,6 +5,7 @@ const ROOT = path.resolve(__dirname, '../..');
 const WORKFLOW = path.join(ROOT, '.github', 'workflows', 'ci.yml');
 
 const requiredValidateCommands = [
+  'npm run test:rewards-runner',
   'npm run test:integration',
   'npm run api:contract-sync:check',
   'npm run test:state-machines',
@@ -37,6 +38,13 @@ const requiredJobNames = [
 ];
 
 describe('mobile CI quality gates', () => {
+  it('runs rewards lifecycle tests in the required mobile quality job', () => {
+    const workflow = fs.readFileSync(WORKFLOW, 'utf8');
+    const mobileQualityJob = workflow.match(/\n {2}mobile-quality:\n([\s\S]*?)(?=\n {2}[a-z0-9-]+:\n|$)/)?.[1];
+
+    expect(mobileQualityJob).toContain('npm run test:rewards-runner');
+  });
+
   it('runs all repo-required validation commands in pull request CI', () => {
     const workflow = fs.readFileSync(WORKFLOW, 'utf8');
 
