@@ -15,7 +15,12 @@ const mockInbox = getRewardInbox as jest.MockedFunction<typeof getRewardInbox>;
 const mockLeaderboard = getLeaderboard as jest.MockedFunction<typeof getLeaderboard>;
 
 function wrapper(): React.ComponentType<React.PropsWithChildren> {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
+  });
   return ({ children }: React.PropsWithChildren): React.JSX.Element => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 

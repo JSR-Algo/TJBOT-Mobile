@@ -1,7 +1,7 @@
 # Mobile robot rewards leaderboard — cross-repo live proof
 
-Date executed: 2026-07-13  
-Task: `adhoc-2026-07-13-mobile-robot-rewards-live`  
+Date executed: 2026-07-13
+Task: `adhoc-2026-07-13-mobile-robot-rewards-live`
 Scope: real PostgreSQL + Nest HTTP + JWT/AuthGuard + mobile API client. This is not a rendered mobile, browser, simulator, or physical-robot proof.
 
 ## Reproduction
