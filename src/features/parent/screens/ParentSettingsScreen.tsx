@@ -207,7 +207,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     setActiveChildSaveFailed(false);
     try {
       const confirmed = await confirmActiveChild(nextChildId);
-      setActiveChild(confirmed.child_id);
+      setActiveChild(confirmed.active_child_id);
     } catch (error) {
       captureError(error);
       setActiveChildSaveFailed(true);

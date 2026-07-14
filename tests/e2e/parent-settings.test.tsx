@@ -236,7 +236,7 @@ describe('Parent settings and gate', () => {
       parent_career: dto.parent_career ?? 'engineer',
     }));
     mockUpdateChildDisplayName.mockResolvedValue({ id: 'child-1', displayName: 'Bong' });
-    mockSetActiveChild.mockResolvedValue({ child_id: 'child-2' });
+    mockSetActiveChild.mockResolvedValue({ active_child_id: 'child-2' });
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],
       subscriptionStatus: 'none',

@@ -71,7 +71,7 @@ export async function deleteChild(childId: string): Promise<{ id: string; status
   return unwrap<{ id: string; status: string }>(response);
 }
 
-export async function setActiveChild(childId: string): Promise<{ child_id: string }> {
+export async function setActiveChild(childId: string): Promise<{ active_child_id: string }> {
   const response = await client.post('/profile/active-child', { child_id: childId });
-  return unwrap<{ child_id: string }>(response);
+  return unwrap<{ active_child_id: string }>(response);
 }
