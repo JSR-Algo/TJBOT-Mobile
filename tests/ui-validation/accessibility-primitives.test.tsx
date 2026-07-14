@@ -149,6 +149,21 @@ describe('design-system accessibility primitives', () => {
     expect(tree).toContain('"keyboardDismissMode":"on-drag"');
   });
 
+  it('keeps the DeviceShell route anchor outside the viewport scroll container', () => {
+    let renderer: ReturnType<typeof create> | undefined;
+    act(() => {
+      renderer = create(
+        <DeviceShell title="Robot" screenTestID="robotScreen" scrollTestID="robotScroll">
+          <Text testID="robotBody">Body</Text>
+        </DeviceShell>,
+      );
+    });
+
+    const routeAnchor = renderer!.root.findByProps({ testID: 'robotScreen' });
+    expect(routeAnchor.findByProps({ testID: 'robotScroll' })).toBeTruthy();
+    expect(routeAnchor.findByProps({ testID: 'robotBody' })).toBeTruthy();
+  });
+
   it('labels shared rows and cards used as navigation controls', () => {
     const row = renderSnapshot(
       <DeviceRow title="Wi-Fi" body="Robot network settings" onClick={() => undefined} />,

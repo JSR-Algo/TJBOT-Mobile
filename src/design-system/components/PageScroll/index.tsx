@@ -5,11 +5,13 @@ import { tokens } from '@/design-system/tokens';
 interface PageScrollProps {
   children?: React.ReactNode;
   bg?: string;
+  testID?: string;
 }
 
-export default function PageScroll({ children, bg }: PageScrollProps) {
+export default function PageScroll({ children, bg, testID }: PageScrollProps) {
   return (
     <ScrollView
+      testID={testID}
       style={[styles.scroll, { backgroundColor: bg ?? tokens.colors.cream }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}

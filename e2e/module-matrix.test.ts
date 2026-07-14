@@ -12,7 +12,6 @@ import {
   blockLocalBackend,
   completeOnboarding,
   disableDetoxSync,
-  expectFirstVisibleText,
   expectHealthyVisibleText,
   expectHomeHub,
   expectNativeAppAlive,
@@ -90,12 +89,12 @@ describe('module matrix: local native E2E', () => {
   it('opens module entry screens without blank screens', async () => {
     await openRoute('home/home-hub', 'Home');
 
-    await openRoute('course/daily-mission', 'Make Robot smile');
+    await openRouteToId('course/daily-mission', 'dailyMissionScreen');
 
     await openRoute('course-library/course-library', 'Course Library');
     await expectNoStuckLoading(['No library courses yet', 'Library unavailable', 'On your Robot now', 'Available to add']);
 
-    await openRoute('lesson-session/lesson-ready', 'Animal Friends');
+    await openRouteToId('course-library/send-to-robot', 'sendToRobotScreen');
 
     await openRouteToAnyText('progress/today-progress', [
       'You practiced speaking!',
@@ -119,8 +118,9 @@ describe('module matrix: local native E2E', () => {
     await openRoute('home/home-hub', 'Home');
     await waitForId('homePrimaryCta');
 
-    await openRoute('lesson-session/lesson-ready', 'Animal Friends');
-    await expectFirstVisibleText(["I'm ready!", 'Animal Friends']);
+    await openRouteToId('course/daily-mission', 'dailyMissionScreen');
+    await tapIdAfterScroll('dailyMissionContinueCta', 'dailyMissionScreen');
+    await waitForId('sendToRobotScreen', 30000);
 
     await device.launchApp({ newInstance: true });
     await waitForId('homeTab', 30000);
@@ -133,7 +133,7 @@ describe('module matrix: local native E2E', () => {
 
   it('supports back navigation from a stack screen', async () => {
     await openRoute('home/home-hub', 'Home');
-    await openRoute('course/daily-mission', 'Make Robot smile');
+    await openRouteToId('course/daily-mission', 'dailyMissionScreen');
     await tapLabel('Back');
     await expectHealthyVisibleText('Home');
   });

@@ -11,13 +11,17 @@ import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
 import { useReduceMotion } from '@/design-system/animations/useReduceMotion';
 import { useAcknowledgeRewardMutation, useRewardInboxQuery } from '@/features/rewards/hooks/useRewards';
+import { useOptionalAuth } from '@/contexts/AuthContext';
 import { useHousehold } from '@/contexts/HouseholdContext';
-import type { JsonValue } from '@/services/api/rewards.api';
+import type { JsonValue, RewardReceipt } from '@/services/api/rewards.api';
 import { isRewardSeenQueued } from '@/features/rewards/offline/rewardSeenQueue';
 import { captureError } from '@/services/observability/sentry';
 import { translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CelebrationScreen'>;
+type RewardScope = { accountId: string | undefined; householdId: string | undefined; rewardId: string | undefined };
+type RewardLatch = RewardScope & { reward: RewardReceipt | undefined };
+type QueuedSeenState = RewardScope & { value: boolean | null };
 const CONFETTI_COLORS = ['#FF6F61', '#0D8F68', '#1778B5', '#fff', '#6B4A9B'];
 
 function reasonLabel(reason: JsonValue, locale: AppLocale): string {
@@ -29,32 +33,47 @@ function reasonLabel(reason: JsonValue, locale: AppLocale): string {
 export default function CelebrationScreen({ navigation, route }: Props): React.JSX.Element {
   const reduceMotion = useReduceMotion();
   const { language, t } = useAppLanguage();
+  const auth = useOptionalAuth();
   const { activeHousehold } = useHousehold();
-  const inbox = useRewardInboxQuery(activeHousehold?.id ?? '');
-  const candidate = inbox.data?.rewards.find(item => item.rewardId === route.params?.rewardId);
-  const [queuedSeen, setQueuedSeen] = React.useState<boolean | null>(null);
-  const reward = queuedSeen === false ? candidate : undefined;
-  const acknowledge = useAcknowledgeRewardMutation(activeHousehold?.id ?? '');
-  const acknowledgedRef = React.useRef<string | undefined>(undefined);
+  const accountId = auth?.user?.id;
+  const householdId = activeHousehold?.id;
+  const inbox = useRewardInboxQuery(householdId ?? '', accountId ?? null);
+  const requestedRewardId = route.params?.rewardId;
+  const candidate = accountId && householdId ? inbox.data?.rewards.find(item => item.rewardId === requestedRewardId) : undefined;
+  const [latchedReward, setLatchedReward] = React.useState<RewardLatch>(() => ({ accountId, householdId, rewardId: requestedRewardId, reward: candidate }));
+  const [queuedSeen, setQueuedSeen] = React.useState<QueuedSeenState>(() => ({ accountId, householdId, rewardId: requestedRewardId, value: null }));
+  const reward = queuedSeen.accountId === accountId && queuedSeen.householdId === householdId && queuedSeen.rewardId === requestedRewardId && queuedSeen.value === false && latchedReward.accountId === accountId && latchedReward.householdId === householdId && latchedReward.rewardId === requestedRewardId ? latchedReward.reward : undefined;
+  const acknowledge = useAcknowledgeRewardMutation(householdId ?? '', accountId ?? null);
+  const acknowledgedRewardIdsRef = React.useRef(new Set<string>());
+
+  React.useEffect(() => {
+    setLatchedReward(current => {
+      const sameScope = current.accountId === accountId && current.householdId === householdId && current.rewardId === requestedRewardId;
+      if (candidate) return sameScope && current.reward === candidate ? current : { accountId, householdId, rewardId: requestedRewardId, reward: candidate };
+      return sameScope ? current : { accountId, householdId, rewardId: requestedRewardId, reward: undefined };
+    });
+  }, [accountId, candidate, householdId, requestedRewardId]);
 
   React.useEffect(() => {
     let mounted = true;
-    const rewardId = route.params?.rewardId;
-    if (!rewardId) {
-      setQueuedSeen(false);
+    const rewardId = requestedRewardId;
+    if (!accountId || !householdId || !rewardId) {
+      setQueuedSeen({ accountId, householdId, rewardId, value: false });
       return () => { mounted = false; };
     }
-    isRewardSeenQueued(rewardId)
-      .then(queued => { if (mounted) setQueuedSeen(queued); })
-      .catch(error => { captureError(error); if (mounted) setQueuedSeen(false); });
+    isRewardSeenQueued(rewardId, { accountId, householdScope: householdId })
+      .then(queued => { if (mounted) setQueuedSeen({ accountId, householdId, rewardId, value: queued }); })
+      .catch(error => { captureError(error); if (mounted) setQueuedSeen({ accountId, householdId, rewardId, value: false }); });
     return () => { mounted = false; };
-  }, [route.params?.rewardId]);
+  }, [accountId, householdId, requestedRewardId]);
 
   React.useEffect(() => {
-    if (!reward || acknowledgedRef.current === reward.rewardId) return;
-    acknowledgedRef.current = reward.rewardId;
+    if (!accountId || !householdId || !reward) return;
+    const acknowledgementKey = JSON.stringify([accountId, householdId, reward.rewardId]);
+    if (acknowledgedRewardIdsRef.current.has(acknowledgementKey)) return;
+    acknowledgedRewardIdsRef.current.add(acknowledgementKey);
     acknowledge.mutate(reward.rewardId);
-  }, [acknowledge, reward]);
+  }, [acknowledge, accountId, householdId, reward]);
 
   if (!reward) {
     return <PageScroll bg="#FFC857"><Box padding={24} paddingTop={100} gap={12} accessibilityLiveRegion="polite"><Text fontWeight="800" style={styles.hero}>Reward is waiting to sync</Text><Text style={styles.msg}>Your lesson is safe. Check again when the robot is online.</Text><PrimaryCTA onPress={() => navigation.replace(ROUTES.HomeHubScreen)} color="#C34C3F">Back to Robot Home</PrimaryCTA></Box></PageScroll>;

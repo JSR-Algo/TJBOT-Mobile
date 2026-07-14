@@ -348,6 +348,18 @@ describe('Parent settings and gate', () => {
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
   });
 
+  it.each([
+    { locale: 'en' as const, label: 'Robot leaderboard privacy' },
+    { locale: 'vi' as const, label: 'Quyền riêng tư bảng xếp hạng Robot' },
+  ])('opens robot leaderboard privacy from settings in $locale', async ({ locale, label }) => {
+    await setAppLanguage(locale);
+    const screen = await renderParentSettings();
+
+    fireEvent.press(screen.getByRole('button', { name: label }));
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.MyRobotScreen);
+  });
+
   it('lets parents allow AI voice lessons from settings so Robot leaves voice setup block', async () => {
     const screen = await renderParentSettings();
 

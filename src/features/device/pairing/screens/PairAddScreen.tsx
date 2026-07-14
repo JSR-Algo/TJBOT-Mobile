@@ -16,7 +16,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairAddScreen'>;
 export default function PairAddScreen({ navigation }: Props) {
   const { t } = useAppLanguage();
   return (
-    <DeviceShell title="Add a Robot" onBack={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}>
+    <DeviceShell
+      title="Add a Robot"
+      screenTestID="pairAddScreen"
+      onBack={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
+    >
       <Box paddingHorizontal={20} paddingTop={24}>
         <Text style={styles.intro}>
           Lessons happen <Text fontWeight="600" style={{ color: DV.ink }}>on the Robot itself</Text>, not your phone. The phone is just for setup and progress.

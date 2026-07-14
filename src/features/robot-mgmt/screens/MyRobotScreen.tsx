@@ -23,7 +23,13 @@ export default function MyRobotScreen({ navigation }: Props): React.JSX.Element 
   const ownedRows = leaderboard.data?.ownedRows ?? [];
 
   return (
-    <DeviceShell title={t('My Robots')} onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
+    <DeviceShell title={t('My Robots')} onBack={() => {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+        return;
+      }
+      navigation.navigate(ROUTES.ParentSummaryScreen);
+    }}>
       <Box padding={16} gap={14}>
         <Text style={styles.intro}>Only server-reported robot and reward details appear here. Unavailable device status is never estimated.</Text>
         {leaderboard.isLoading ? <Text accessibilityLiveRegion="polite">Loading owned robots</Text> : null}

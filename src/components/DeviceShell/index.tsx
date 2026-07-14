@@ -23,37 +23,37 @@ type Props = {
 export default function DeviceShell({ title, onBack, children, screenTestID, scrollTestID = 'deviceShellScroll' }: Props) {
   const { language } = useAppLanguage();
   return (
-    <ScrollView
-      testID={scrollTestID}
-      style={[styles.root, { backgroundColor: DV.bg }]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-    >
-      <Box
-        testID={screenTestID}
-        collapsable={false}
-        style={[styles.header, { backgroundColor: DV.bg, borderBottomColor: DV.hair }]}
-        flexDirection="row"
-        alignItems="center"
-        gap={12}
+    <Box testID={screenTestID} collapsable={false} style={[styles.root, { backgroundColor: DV.bg }]}>
+      <ScrollView
+        testID={scrollTestID}
+        style={[styles.scroll, { backgroundColor: DV.bg }]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-        {onBack ? (
-          <TouchableOpacity
-            onPress={onBack}
-            style={styles.backBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
+        <Box
+          style={[styles.header, { backgroundColor: DV.bg, borderBottomColor: DV.hair }]}
+          flexDirection="row"
+          alignItems="center"
+          gap={12}
+        >
+          {onBack ? (
+            <TouchableOpacity
+              onPress={onBack}
+              style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
               accessibilityLabel={translateCopy('Go back', { locale: language })}
-          >
-            <BackIcon color={DV.ink2} />
-          </TouchableOpacity>
-        ) : null}
-        <Text fontWeight="600" style={{ flex: 1, fontSize: 17, color: DV.ink, letterSpacing: -0.2 }}>
-          {title}
-        </Text>
-      </Box>
-      {children}
-    </ScrollView>
+            >
+              <BackIcon color={DV.ink2} />
+            </TouchableOpacity>
+          ) : null}
+          <Text fontWeight="600" style={{ flex: 1, fontSize: 17, color: DV.ink, letterSpacing: -0.2 }}>
+            {title}
+          </Text>
+        </Box>
+        {children}
+      </ScrollView>
+    </Box>
   );
 }
 
@@ -68,6 +68,7 @@ function BackIcon({ color }: { color: string }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  scroll: { flex: 1 },
   header: {
     position: 'relative',
     paddingTop: 56,

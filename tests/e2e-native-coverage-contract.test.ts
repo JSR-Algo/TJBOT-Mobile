@@ -232,7 +232,7 @@ describe('native Detox E2E coverage contract', () => {
       'completes onboarding',
       'navigates every protected tab',
       'device/device-home',
-      'lesson-session/lesson-ready',
+      'course-library/send-to-robot',
       'parent/parent-summary',
       'purchase/purchase-intro',
       'fallback/network-error',
@@ -242,5 +242,10 @@ describe('native Detox E2E coverage contract', () => {
     ]) {
       expect(moduleMatrix).toContain(requiredText);
     }
+
+    expect(moduleMatrix).not.toContain('lesson-session/lesson-ready');
+    expect(moduleMatrix).toContain("openRouteToId('course/daily-mission', 'dailyMissionScreen')");
+    expect(moduleMatrix).toContain("openRouteToId('course-library/send-to-robot', 'sendToRobotScreen')");
+    expect(moduleMatrix).toContain("tapIdAfterScroll('dailyMissionContinueCta', 'dailyMissionScreen')");
   });
 });

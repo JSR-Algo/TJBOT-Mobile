@@ -102,6 +102,18 @@ describe('course-library flow guards', () => {
     mockedAuthenticateParent.mockResolvedValue({ authenticated: true });
   });
 
+  it('exposes a stable native route anchor for the send-to-robot screen', async () => {
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByTestId('sendToRobotScreen')).toBeTruthy());
+  });
+
   it('renders the course that was just added from route params', () => {
     // No 'c_animals' in the published catalog → falls back to static metadata,
     // proving the dynamic overlay never crashes on a non-published courseId.

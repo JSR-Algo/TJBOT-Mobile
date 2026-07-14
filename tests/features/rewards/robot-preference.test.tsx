@@ -2,6 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import MyRobotScreen from '@/features/robot-mgmt/screens/MyRobotScreen';
 import { setAppLanguage } from '@/services/i18n/i18n';
+import { ROUTES } from '@/navigation/routes';
 
 const mockLeaderboard = jest.fn();
 const mockMutations = new Map<string, jest.Mock>();
@@ -16,6 +17,26 @@ const row = (robotId: string, robotName: string, optedIn: boolean) => ({ rank: o
 describe('MyRobotScreen leaderboard privacy', () => {
   beforeEach(() => { jest.clearAllMocks(); mockMutations.clear(); mockMutations.set('r1', jest.fn()); mockMutations.set('r2', jest.fn()); mockLeaderboard.mockReturnValue({ data: { ownedRows: [row('r1', 'Tee', false), row('r2', 'Nova', true)] }, isLoading: false, isError: false, refetch: jest.fn() }); });
   afterEach(async () => { await act(async () => { await setAppLanguage('en'); }); });
+
+  it('returns to Parent Settings when opened from the existing stack', () => {
+    const navigation = { canGoBack: jest.fn(() => true), goBack: jest.fn(), navigate: jest.fn() };
+    render(<MyRobotScreen navigation={navigation as never} route={{ key: 'r', name: 'MyRobotScreen' } as never} />);
+
+    fireEvent.press(screen.getByLabelText('Go back'));
+
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  it('falls back to Parent Summary when opened as a root or deep link', () => {
+    const navigation = { canGoBack: jest.fn(() => false), goBack: jest.fn(), navigate: jest.fn() };
+    render(<MyRobotScreen navigation={navigation as never} route={{ key: 'r', name: 'MyRobotScreen' } as never} />);
+
+    fireEvent.press(screen.getByLabelText('Go back'));
+
+    expect(navigation.goBack).not.toHaveBeenCalled();
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ParentSummaryScreen);
+  });
 
   it('renders and manages every owned robot including opted-out rows', () => {
     render(<MyRobotScreen navigation={{ navigate: jest.fn() } as never} route={{ key: 'r', name: 'MyRobotScreen' } as never} />);

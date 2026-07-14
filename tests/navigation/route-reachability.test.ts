@@ -2,6 +2,8 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { ROUTE_MAP } from '@/navigation/routeMap';
 import { isProductionNavigableRoute } from '@/navigation/featureRegistry';
+import { ROBOT_MGMT_SCREENS } from '@/features/robot-mgmt/navigation';
+import { ROUTES } from '@/navigation/routes';
 
 const root = join(__dirname, '..', '..');
 
@@ -67,6 +69,13 @@ function inboundRoutes(): ReadonlySet<string> {
 }
 
 describe('route reachability', () => {
+  it('requires Parent Settings to own the inbound edge for the robot privacy screen', () => {
+    const parentSettings = readFileSync(join(root, 'src', 'features', 'parent', 'screens', 'ParentSettingsScreen.tsx'), 'utf8');
+
+    expect(ROBOT_MGMT_SCREENS.find(screen => screen.name === ROUTES.MyRobotScreen)?.role).toBe('stack-entry');
+    expect(parentSettings).toMatch(/navigation\.navigate\(ROUTES\.MyRobotScreen\)/);
+  });
+
   it('has no hidden routes without static inbound navigation or explicit entry role', () => {
     const inbound = inboundRoutes();
     const hiddenRoutes = routeKeys().filter((route) => {
