@@ -14,7 +14,7 @@ module.exports = [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['**/*.{js,jsx,mjs,ts,tsx}'],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -46,7 +46,7 @@ module.exports = [
     },
   },
   {
-    files: ['tests/**/*.{js,jsx,ts,tsx}'],
+    files: ['tests/**/*.{js,jsx,mjs,ts,tsx}'],
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',

@@ -3,6 +3,7 @@ import { once } from 'events';
 import { createServer } from 'net';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { createProcessLifecycle } from './_lib/rewards-live-process-lifecycle.mjs';
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backendRoot = resolve(
@@ -12,44 +13,15 @@ const backendRoot = resolve(
 const containerName = `tbot-rewards-live-${process.pid}`;
 const postgresImage = process.env.TBOT_REWARDS_POSTGRES_IMAGE ?? 'postgres:16-alpine';
 let backendProcess;
-let cleaningUp = false;
 const backendLogTail = [];
+const lifecycle = createProcessLifecycle({ cleanupContainer: removeContainer });
+const { output, run } = lifecycle;
 
-function run(command, args, options = {}) {
-  return new Promise((resolveRun, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      env: options.env ?? process.env,
-      stdio: options.stdio ?? 'inherit',
-    });
-    child.once('error', reject);
-    child.once('exit', (code, signal) => {
-      if (code === 0) {
-        resolveRun();
-        return;
-      }
-      reject(new Error(`${command} exited with ${code ?? signal ?? 'unknown status'}`));
-    });
-  });
-}
-
-function output(command, args) {
+function removeContainer() {
   return new Promise((resolveOutput, reject) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    let stdout = '';
-    let stderr = '';
-    child.stdout.setEncoding('utf8');
-    child.stderr.setEncoding('utf8');
-    child.stdout.on('data', (chunk) => { stdout += chunk; });
-    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    const child = spawn('docker', ['rm', '-f', containerName], { stdio: 'ignore' });
     child.once('error', reject);
-    child.once('exit', (code, signal) => {
-      if (code === 0) {
-        resolveOutput(stdout.trim());
-        return;
-      }
-      reject(new Error(`${command} exited with ${code ?? signal ?? 'unknown status'}: ${stderr.trim()}`));
-    });
+    child.once('exit', () => resolveOutput());
   });
 }
 
@@ -104,25 +76,7 @@ function captureBackendLogs(stream) {
   });
 }
 
-async function cleanup() {
-  if (cleaningUp) return;
-  cleaningUp = true;
-  if (backendProcess && backendProcess.exitCode === null) {
-    backendProcess.kill('SIGTERM');
-    await Promise.race([
-      once(backendProcess, 'exit'),
-      new Promise((resolveWait) => setTimeout(resolveWait, 5_000)),
-    ]);
-    if (backendProcess.exitCode === null) backendProcess.kill('SIGKILL');
-  }
-  await run('docker', ['rm', '-f', containerName], { stdio: 'ignore' }).catch(() => undefined);
-}
-
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.once(signal, () => {
-    cleanup().finally(() => process.exit(128 + (signal === 'SIGINT' ? 2 : 15)));
-  });
-}
+lifecycle.installSignalHandlers();
 
 try {
   await run('docker', [
@@ -148,7 +102,7 @@ try {
 
   const backendPort = await freePort();
   const apiUrl = `http://127.0.0.1:${backendPort}/v1`;
-  backendProcess = spawn('npm', ['start'], {
+  backendProcess = await lifecycle.spawnBackend('npm', ['start'], {
     cwd: backendRoot,
     env: {
       ...process.env,
@@ -179,5 +133,5 @@ try {
   if (backendLogTail.length > 0) process.stderr.write(`\nBackend log tail:\n${backendLogTail.join('')}`);
   throw error;
 } finally {
-  await cleanup();
+  await lifecycle.cleanup();
 }
