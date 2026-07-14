@@ -53,17 +53,25 @@ No production database, account, token, email, child name, or device identifier 
 | Backend typecheck | `npm run typecheck` | PASS. |
 | Backend lint | `npm run lint -- --quiet` | PASS. |
 | Backend build | `npm run build` | PASS inside runner. |
+| Backend required CI | `npm run ci:required` | NOT PASS — lint and typecheck passed, but the full test stage stopped with 32 failed files and 3 failed tests. The worktree lacks `keys/dev-private.pem`, a configured Prisma datasource/database URL, and the docs OpenAPI target; two unrelated JWT fixtures also reported invalid signatures. Later build/OpenAPI/migration/state-machine stages therefore did not run. |
+| Backend secret/privacy scan | `rg` over committed branch files | PASS for embedded private-key material — no PEM header or private-key body was found. Email-shaped matches were confined to OpenAPI examples, fixtures, and masking/authorization tests; no values are copied into this record. |
 | Mobile targeted | `npx jest --selectProjects unit --runInBand tests/api/rewards-api.test.ts tests/api/households.test.ts tests/features/rewards` | PASS — 9 suites, 59 tests; Jest reported a pre-existing open-handle warning after success. |
 | Mobile unit | `npm test -- --runInBand --silent --forceExit` | PASS — 200 suites, 2,133 tests; 1 suite/19 tests skipped. `--forceExit` is required for the repository's known post-suite open handle. |
+| Mobile integration | `npm run test:integration` | PASS — 1 suite passed, 1 skipped; 3 tests passed, 1 skipped. |
 | Mobile typecheck | `npm run typecheck` | PASS. |
 | Mobile lint | `npm run lint -- --quiet` | PASS. |
+| Mobile docs/i18n validators | `npm run i18n:check && npm run flows:validate && npm run sequences:fast && npm run erd:validate && npm run usecases:check` | PASS — EN/VI both contain 1,874 keys with zero delta; 16 generated flow files, 103 sequence diagrams, 109 DBML files, 107 entity docs, and 157 use-case sections were checked with zero failures. |
+| Mobile route/token/prop validators | `npm run check:token-parity && npm run check:route-coverage && npm run check:screen-prop-types` | PASS — 7 token files, 135 screen files, and 127 registered routes were checked with zero duplicates or missing prop contracts. |
+| Detox iOS | `npm run detox:build:ios` / `npm run detox:test:ios` | NOT PASS — Xcode and an iPhone simulator are available, but CocoaPods target support files are missing, so no `.app` binary was produced and the test gate is UNVERIFIABLE. |
+| Detox Android | `npm run detox:build:android` / `npm run detox:test:android` | NOT PASS — SDK/JDK/emulator are available, but the pre-existing untracked `node_modules` symlink points at another worktree and causes a duplicate Expo Gradle plugin build; no APKs were produced, so the test gate is UNVERIFIABLE. |
 | Runner syntax | `node --check scripts/run-rewards-live-e2e.mjs` | PASS as part of the runner lifecycle suite. |
 
 ## Defects found by the live proof
 
 1. `LessonEventIngestService` completed assignments over HTTP without granting rewards because optional dependencies compiled to `Object` metadata and `LessonRewardService` had no explicit Nest injection token. Explicit injection is now regression-tested.
 2. Owned child rename returned PostgreSQL `42P08` because the reused audit parameter had ambiguous text/JSON typing. Both uses now explicitly bind as text and the SQL shape is regression-tested.
+3. Active-child selection trusted a matching JWT `household_id` claim without always verifying the authenticated subject's database membership. The service now authorizes every mutation through `household_memberships`, and the live proof uses a forged foreign-subject/victim-household claim to confirm `403` with no pointer change.
 
 ## Close assessment
 
-The strengthened HTTP/client cross-repo acceptance slice passed its Docker-enabled run. The authenticated admin-browser customization and full post-customization immutability rows have separate live Playwright evidence. Task 12 remains partial until the other release commands and evidence are captured, including parent sign-in, robot provisioning/association, rendered parent/child reward surfaces and console, Detox, and physical robot evidence; this record does not upgrade those rows by inference.
+The strengthened HTTP/client cross-repo acceptance slice passed its Docker-enabled run, and all feasible non-Detox mobile validators passed with non-silent counts. The authenticated admin-browser customization and full post-customization immutability rows have separate live Playwright evidence. Task 12 remains partial: backend full CI is blocked by missing local test dependencies/configuration, and parent sign-in, robot provisioning/association, rendered parent/child reward surfaces and console, Detox binaries/tests, Android execution, and physical robot evidence remain unproven; this record does not upgrade those rows by inference.
