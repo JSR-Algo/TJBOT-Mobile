@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import { execFileSync } from 'child_process';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { resolve } from 'path';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react-native';
@@ -15,6 +15,7 @@ import {
 } from '@/features/rewards/offline/rewardSeenQueue';
 import client from '@/services/http/client';
 import { setTokens } from '@/services/http/tokens';
+import { login } from '@/services/api/auth';
 import {
   acknowledgeRewardSeen,
   getRewardHistory,
@@ -59,6 +60,7 @@ const canonicalLessonVersion = 1;
 
 interface Identity {
   token: string;
+  refreshToken: string;
   email: string;
   parentId: string;
   householdId: string;
@@ -70,7 +72,7 @@ interface Fixture extends Identity {
   initialActiveChildId: string;
   deviceToken: string;
   foreign: Identity;
-  foreignHouseholdToken: string;
+  forgedForeignHouseholdToken: string;
   assignmentId: string;
   sessionId: string;
   manifestChecksum: string;
@@ -137,9 +139,64 @@ function signToken(claims: {
   }).trim();
 }
 
-function createIdentity(childName: string, robotName: string): Identity {
+function hashFixturePassword(password: string): string {
+  const script = [
+    "const argon2=require('argon2')",
+    'argon2.hash(process.env.E2E_PASSWORD)',
+    '.then(hash=>process.stdout.write(hash))',
+    '.catch(error=>{console.error(error);process.exit(1)})',
+  ].join(';');
+  return execFileSync('node', ['-e', script], {
+    cwd: backendRoot,
+    encoding: 'utf8',
+    env: { ...process.env, E2E_PASSWORD: password },
+    timeout: 15_000,
+  }).trim();
+}
+
+async function loginParent(
+  parentId: string,
+  email: string,
+  password: string,
+  deviceName: string,
+): Promise<{ token: string; refreshToken: string }> {
+  const response = await login(email, password, { deviceName, platform: 'test' });
+  expect(response).toMatchObject({ user_id: parentId, expires_in: 900 });
+  expect(typeof response.access_token).toBe('string');
+  expect(typeof response.refresh_token).toBe('string');
+  expect(Number.isFinite(Date.parse(response.access_token_expires_at ?? ''))).toBe(true);
+  expect(Number.isFinite(Date.parse(response.refresh_token_expires_at ?? ''))).toBe(true);
+
+  expect(psql(
+    `SELECT COUNT(*) FROM auth_sessions
+      WHERE parent_id = ${sqlLiteral(parentId)}
+        AND revoked_at IS NULL
+        AND expires_at > NOW()
+        AND device_name = ${sqlLiteral(deviceName)}
+        AND platform = 'test';`,
+  )).toBe('1');
+
+  const expectedRefreshHash = createHash('sha256').update(response.refresh_token).digest('hex');
+  const storedRefreshHash = psql(
+    `SELECT refresh_token_hash
+       FROM auth_sessions
+      WHERE parent_id = ${sqlLiteral(parentId)}
+        AND device_name = ${sqlLiteral(deviceName)}
+        AND platform = 'test'
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1;`,
+  );
+  expect(storedRefreshHash).toBe(expectedRefreshHash);
+  expect(storedRefreshHash).not.toBe(response.refresh_token);
+
+  return { token: response.access_token, refreshToken: response.refresh_token };
+}
+
+async function createIdentity(childName: string, robotName: string): Promise<Identity> {
   const suffix = `${Date.now()}-${randomUUID()}`;
   const email = `rewards-live-${suffix}@example.test`;
+  const password = `RewardsLive1!${randomUUID()}`;
+  const passwordHash = hashFixturePassword(password);
   const parentId = randomUUID();
   const householdId = randomUUID();
   const childId = randomUUID();
@@ -148,7 +205,7 @@ function createIdentity(childName: string, robotName: string): Identity {
   psql(
     `BEGIN;
      INSERT INTO parent_accounts (id, email, password_hash, coppa_verified, active_child_id)
-     VALUES (${sqlLiteral(parentId)}, ${sqlLiteral(email)}, 'live-e2e-not-login-capable', TRUE, NULL);
+     VALUES (${sqlLiteral(parentId)}, ${sqlLiteral(email)}, ${sqlLiteral(passwordHash)}, TRUE, NULL);
      INSERT INTO households (id, owner_id, name)
      VALUES (${sqlLiteral(householdId)}, ${sqlLiteral(parentId)}, 'Rewards Live Household');
      INSERT INTO household_memberships (parent_id, household_id, role)
@@ -171,13 +228,13 @@ function createIdentity(childName: string, robotName: string): Identity {
      INSERT INTO parent_controls (device_id, timezone) VALUES (${sqlLiteral(deviceId)}, 'UTC');
      COMMIT;`,
   );
-  const token = signToken({ subject: parentId, householdId, email, roles: ['parent'] });
-  return { token, email, parentId, householdId, childId, deviceId };
+  const auth = await loginParent(parentId, email, password, `Rewards Live ${childName}`);
+  return { ...auth, email, parentId, householdId, childId, deviceId };
 }
 
 async function seedFixture(): Promise<Fixture> {
-  const identity = createIdentity('Mai', 'TeeBot Sao');
-  const foreign = createIdentity('Kai', 'TeeBot Trang');
+  const identity = await createIdentity('Mai', 'TeeBot Sao');
+  const foreign = await createIdentity('Kai', 'TeeBot Trang');
   const initialActiveChildId = randomUUID();
   const initialActiveChildConsentId = randomUUID();
   psql(
@@ -244,7 +301,8 @@ async function seedFixture(): Promise<Fixture> {
     ...identity,
     initialActiveChildId,
     foreign,
-    foreignHouseholdToken: signToken({
+    // The only deliberately forged parent claim: a foreign subject paired with the primary household.
+    forgedForeignHouseholdToken: signToken({
       subject: foreign.parentId,
       householdId: identity.householdId,
       email: foreign.email,
@@ -270,10 +328,10 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
   beforeAll(async () => {
     const health = await raw.get('/health');
     expect(health.status).toBe(200);
-    fixture = await seedFixture();
     client.defaults.baseURL = apiUrl;
-    await setTokens(fixture.token, 'unused-live-refresh-token');
-  }, 30_000);
+    fixture = await seedFixture();
+    await setTokens(fixture.token, fixture.refreshToken);
+  }, 60_000);
 
   it('proves active-child, persisted rewards, leaderboard privacy, rename and opt-out as one live scenario', async () => {
     expect(psql(
@@ -297,7 +355,7 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     const foreignActiveChild = await raw.post('/profile/active-child', {
       child_id: fixture.childId,
     }, {
-      headers: { Authorization: `Bearer ${fixture.foreignHouseholdToken}` },
+      headers: { Authorization: `Bearer ${fixture.forgedForeignHouseholdToken}` },
     });
     expect(foreignActiveChild.status).toBe(403);
     expect(psql(
@@ -409,7 +467,7 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     parentRewards.unmount();
 
     const foreignHeaders = { Authorization: `Bearer ${fixture.foreign.token}` };
-    const mismatchedHeaders = { Authorization: `Bearer ${fixture.foreignHouseholdToken}` };
+    const mismatchedHeaders = { Authorization: `Bearer ${fixture.forgedForeignHouseholdToken}` };
     const foreignResults = await Promise.all([
       raw.get('/mobile/rewards', { headers: foreignHeaders, params: { childId: fixture.childId } }),
       raw.get('/mobile/rewards/inbox', { headers: mismatchedHeaders }),
@@ -451,7 +509,7 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     }
     expect(JSON.stringify({ weekly, allTime })).not.toContain(fixture.email);
 
-    await setTokens(fixture.foreign.token, 'unused-live-refresh-token');
+    await setTokens(fixture.foreign.token, fixture.foreign.refreshToken);
     const publicWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const publicAllTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
     expect(publicWeekly.rows.find((row) => row.robotId === fixture.deviceId)).toMatchObject({
@@ -477,7 +535,7 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     });
     expect(JSON.stringify(publicAllTime)).not.toContain(fixture.email);
 
-    await setTokens(fixture.token, 'unused-live-refresh-token');
+    await setTokens(fixture.token, fixture.refreshToken);
     await expect(updateChildDisplayName(fixture.childId, 'An')).resolves.toMatchObject({ displayName: 'An' });
     const renamed = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
     expect(renamed.ownedRows.find((row) => row.robotId === fixture.deviceId)?.childName).toBe('An');
