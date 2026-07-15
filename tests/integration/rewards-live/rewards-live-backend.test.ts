@@ -1,7 +1,18 @@
+import React from 'react';
 import axios from 'axios';
 import { execFileSync } from 'child_process';
 import { randomUUID } from 'crypto';
 import { resolve } from 'path';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, waitFor } from '@testing-library/react-native';
+import CelebrationScreen from '@/features/progress/screens/CelebrationScreen';
+import LeaderboardScreen from '@/features/rewards/screens/LeaderboardView';
+import ParentRewardsScreen from '@/features/rewards/screens/ParentRewardsView';
+import { rewardKeys } from '@/features/rewards/hooks/useRewards';
+import {
+  clearRewardSeenQueue,
+  setRewardQueueScope,
+} from '@/features/rewards/offline/rewardSeenQueue';
 import client from '@/services/http/client';
 import { setTokens } from '@/services/http/tokens';
 import {
@@ -11,6 +22,30 @@ import {
 } from '@/services/api/rewards.api';
 import { getLeaderboard, updateLeaderboardPreference } from '@/services/api/leaderboard.api';
 import { setActiveChild, updateChildDisplayName } from '@/services/api/households';
+
+let mockUiIdentity: {
+  parentId: string;
+  householdId: string;
+  childId: string;
+} | null = null;
+
+jest.mock('@/contexts/AuthContext', () => ({
+  useOptionalAuth: () => ({
+    user: mockUiIdentity ? { id: mockUiIdentity.parentId } : null,
+  }),
+}));
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => ({
+    activeHousehold: mockUiIdentity ? { id: mockUiIdentity.householdId } : null,
+    activeChild: mockUiIdentity ? { id: mockUiIdentity.childId, name: 'Mai' } : null,
+    children: mockUiIdentity ? [{ id: mockUiIdentity.childId, name: 'Mai' }] : [],
+  }),
+}));
+
+jest.mock('@/design-system/animations/useReduceMotion', () => ({
+  useReduceMotion: () => true,
+}));
 
 const apiUrl = process.env.TBOT_API_URL ?? 'http://127.0.0.1:3100/v1';
 const raw = axios.create({ baseURL: apiUrl, validateStatus: () => true });
@@ -39,6 +74,22 @@ interface Fixture extends Identity {
   assignmentId: string;
   sessionId: string;
   manifestChecksum: string;
+}
+
+function renderLiveScreen(
+  component: React.ReactElement,
+): ReturnType<typeof render> & { queryClient: QueryClient } {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
+  });
+
+  const screen = render(
+    React.createElement(QueryClientProvider, { client: queryClient }, component),
+  );
+  return Object.assign(screen, { queryClient });
 }
 
 function sqlLiteral(input: string): string {
@@ -289,12 +340,73 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
           AND session_id = ${sqlLiteral(fixture.sessionId)};`,
     )).toBe('1');
 
-    const rewardId = inbox.rewards[0]?.rewardId ?? '';
+    const persistedReward = inbox.rewards[0];
+    expect(persistedReward).toBeDefined();
+    if (!persistedReward) throw new Error('Expected the persisted reward receipt');
+    const rewardId = persistedReward.rewardId;
+    mockUiIdentity = {
+      parentId: fixture.parentId,
+      householdId: fixture.householdId,
+      childId: fixture.childId,
+    };
+    setRewardQueueScope(fixture.parentId, fixture.householdId);
+    await clearRewardSeenQueue(fixture.parentId, fixture.householdId);
+
+    let celebrationSeenRequestCount = 0;
+    const seenRequestInterceptor = client.interceptors.request.use(config => {
+      if (
+        config.method?.toUpperCase() === 'POST'
+        && config.url === `/mobile/rewards/${rewardId}/seen`
+      ) {
+        celebrationSeenRequestCount += 1;
+      }
+      return config;
+    });
+    let celebration: ReturnType<typeof renderLiveScreen> | undefined;
+    try {
+      const renderedCelebration = renderLiveScreen(React.createElement(CelebrationScreen, {
+        navigation: { replace: jest.fn() } as never,
+        route: {
+          key: 'rewards-live-celebration',
+          name: 'CelebrationScreen',
+          params: { rewardId },
+        } as never,
+      }));
+      celebration = renderedCelebration;
+      expect(await renderedCelebration.findByText('Mai · TeeBot Sao')).toBeTruthy();
+      expect(renderedCelebration.getByText('XP: 109 · Coins: 10')).toBeTruthy();
+      expect(renderedCelebration.getByText('Lesson completed')).toBeTruthy();
+      await waitFor(async () => {
+        expect(await getRewardInbox()).toMatchObject({ count: 0, rewards: [] });
+      }, { timeout: 10_000 });
+      await waitFor(() => {
+        expect(renderedCelebration.queryClient.getQueryData(
+          rewardKeys.inbox(fixture.parentId, fixture.householdId),
+        )).toMatchObject({ count: 0, rewards: [] });
+      }, { timeout: 10_000 });
+      expect(renderedCelebration.getByText('XP: 109 · Coins: 10')).toBeTruthy();
+      expect(celebrationSeenRequestCount).toBe(1);
+    } finally {
+      client.interceptors.request.eject(seenRequestInterceptor);
+      celebration?.unmount();
+    }
+
     await acknowledgeRewardSeen(rewardId);
     await acknowledgeRewardSeen(rewardId);
     await expect(getRewardInbox()).resolves.toMatchObject({ count: 0, rewards: [] });
     const seenHistory = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
     expect(seenHistory.history[0]?.rewardId).toBe(rewardId);
+    expect(seenHistory.history[0]?.rewardId).toBe(persistedReward.rewardId);
+
+    const parentRewards = renderLiveScreen(React.createElement(ParentRewardsScreen, {
+      navigation: { navigate: jest.fn() } as never,
+      route: { key: 'rewards-live-parent-rewards', name: 'ParentRewardsScreen' } as never,
+    }));
+    expect(await parentRewards.findByLabelText('XP: 109. Coins: 10. Rewards: 1.')).toBeTruthy();
+    expect(parentRewards.getByText('Mai · TeeBot Sao')).toBeTruthy();
+    expect(parentRewards.getByText('Lesson completed')).toBeTruthy();
+    expect(parentRewards.getByLabelText(/Lesson completed\. XP: 109\. Coins: 10\./)).toBeTruthy();
+    parentRewards.unmount();
 
     const foreignHeaders = { Authorization: `Bearer ${fixture.foreign.token}` };
     const mismatchedHeaders = { Authorization: `Bearer ${fixture.foreignHouseholdToken}` };
@@ -307,6 +419,19 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     ]);
     expect(foreignResults.map((response) => response.status)).toEqual([403, 403, 403, 403, 403]);
     await expect(updateLeaderboardPreference(fixture.deviceId, true)).resolves.toMatchObject({ optedIn: true });
+
+    const maskedEmail = fixture.email.replace(/^(.{2})[^@]*/, '$1***');
+    const leaderboardScreen = renderLiveScreen(React.createElement(LeaderboardScreen, {
+      navigation: { goBack: jest.fn() } as never,
+      route: { key: 'rewards-live-leaderboard', name: 'LeaderboardScreen' } as never,
+    }));
+    expect(await leaderboardScreen.findByLabelText(/^Your robot\./)).toBeTruthy();
+    expect(leaderboardScreen.getByText('Mai · TeeBot Sao')).toBeTruthy();
+    expect(leaderboardScreen.getByText('109 XP')).toBeTruthy();
+    expect(leaderboardScreen.getByText('Lessons: 1')).toBeTruthy();
+    expect(leaderboardScreen.getByText(maskedEmail)).toBeTruthy();
+    expect(leaderboardScreen.queryByText(/Coins: 10|10 coins/i)).toBeNull();
+    leaderboardScreen.unmount();
 
     const weekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const allTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
@@ -327,7 +452,6 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     expect(JSON.stringify({ weekly, allTime })).not.toContain(fixture.email);
 
     await setTokens(fixture.foreign.token, 'unused-live-refresh-token');
-    const maskedEmail = fixture.email.replace(/^(.{2})[^@]*/, '$1***');
     const publicWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const publicAllTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
     expect(publicWeekly.rows.find((row) => row.robotId === fixture.deviceId)).toMatchObject({
