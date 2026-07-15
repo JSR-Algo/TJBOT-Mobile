@@ -3,7 +3,11 @@ import { once } from 'events';
 import { createServer } from 'net';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { createProcessLifecycle } from './_lib/rewards-live-process-lifecycle.mjs';
+import {
+  countForwardMigrations,
+  createJwtKeyPair,
+  createProcessLifecycle,
+} from './_lib/rewards-live-process-lifecycle.mjs';
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backendRoot = resolve(
@@ -12,7 +16,9 @@ const backendRoot = resolve(
 );
 const containerName = `tbot-rewards-live-${process.pid}`;
 const postgresImage = process.env.TBOT_REWARDS_POSTGRES_IMAGE ?? 'postgres:16-alpine';
+const jwtKeys = createJwtKeyPair();
 let backendProcess;
+let migrationCount;
 const backendLogTail = [];
 const lifecycle = createProcessLifecycle({ cleanupContainer: removeContainer });
 const { output, run } = lifecycle;
@@ -94,6 +100,7 @@ try {
   if (!postgresPort) throw new Error(`Unable to parse PostgreSQL port from ${postgresPortOutput}`);
   const databaseUrl = `postgresql://tbot:tbot@127.0.0.1:${postgresPort}/tbot`;
 
+  migrationCount = await countForwardMigrations(backendRoot);
   await run('npm', ['run', 'migrate'], {
     cwd: backendRoot,
     env: { ...process.env, DATABASE_URL: databaseUrl },
@@ -110,6 +117,8 @@ try {
       NODE_ENV: 'development',
       PORT: String(backendPort),
       SWAGGER_ENABLED: 'false',
+      JWT_PRIVATE_KEY: jwtKeys.privateKey,
+      JWT_PUBLIC_KEY: jwtKeys.publicKey,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -122,13 +131,13 @@ try {
     env: {
       ...process.env,
       TBOT_API_URL: apiUrl,
-      TBOT_BACKEND_PRIVATE_KEY: resolve(backendRoot, 'keys/dev-private.pem'),
+      TBOT_BACKEND_PRIVATE_KEY_PEM: jwtKeys.privateKey,
       TBOT_BACKEND_WORKTREE: backendRoot,
       TBOT_REWARDS_LIVE: '1',
       TBOT_REWARDS_POSTGRES_CONTAINER: containerName,
     },
   });
-  console.info('Rewards live proof passed: 102 migrations, real Nest HTTP/JWT, two households, one persisted reward.');
+  console.info(`Rewards live proof passed: ${migrationCount} migrations, real Nest HTTP/JWT, two households, one persisted reward.`);
 } catch (error) {
   if (backendLogTail.length > 0) process.stderr.write(`\nBackend log tail:\n${backendLogTail.join('')}`);
   throw error;

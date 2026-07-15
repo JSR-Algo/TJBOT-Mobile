@@ -19,9 +19,34 @@ const backendRoot = process.env.TBOT_BACKEND_WORKTREE
   ?? resolve(__dirname, '../../../../../tbot-backend/mobile-robot-rewards');
 const backendPrivateKey = process.env.TBOT_BACKEND_PRIVATE_KEY
   ?? `${backendRoot}/keys/dev-private.pem`;
+const backendPrivateKeyPem = process.env.TBOT_BACKEND_PRIVATE_KEY_PEM;
 const canonicalCourseId = 'w01-place-words';
 const canonicalLessonId = 'w01-d01-barn-say-it';
 const canonicalLessonVersion = 1;
+const expectedBadges = ['first-lesson', 'lessons-1'];
+const expectedPolicyVersion = 'lesson-rewards.v1';
+const publicLeaderboardKeys = [
+  'badges',
+  'childName',
+  'completedLessonCount',
+  'currentStreakDays',
+  'parentEmailMasked',
+  'rank',
+  'rankStatus',
+  'robotId',
+  'robotName',
+  'xp',
+];
+const ownedLeaderboardKeys = [...publicLeaderboardKeys, 'optedIn', 'visibility'].sort();
+const forbiddenLeaderboardKeys = new Set([
+  'assignmentId',
+  'coins',
+  'email',
+  'householdId',
+  'parentId',
+  'rewardId',
+  'sessionId',
+]);
 
 interface Identity {
   token: string;
@@ -53,6 +78,38 @@ function psql(sql: string): string {
   ).trim();
 }
 
+function expectExactKeys(value: object, keys: string[]): void {
+  expect(Object.keys(value).sort()).toEqual([...keys].sort());
+}
+
+function collectKeys(value: unknown, keys = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) {
+    for (const item of value) collectKeys(item, keys);
+    return keys;
+  }
+  if (value && typeof value === 'object') {
+    for (const [key, item] of Object.entries(value)) {
+      keys.add(key);
+      collectKeys(item, keys);
+    }
+  }
+  return keys;
+}
+
+function expectLeaderboardPrivacy(
+  page: Awaited<ReturnType<typeof getLeaderboard>>,
+  rawEmails: string[],
+): void {
+  expectExactKeys(page, ['period', 'rows', 'ownedRows', 'pagination']);
+  expectExactKeys(page.pagination, ['page', 'pageSize', 'totalRows', 'totalPages']);
+  for (const row of page.rows) expectExactKeys(row, publicLeaderboardKeys);
+  for (const row of page.ownedRows) expectExactKeys(row, ownedLeaderboardKeys);
+  const keys = collectKeys(page);
+  for (const forbidden of forbiddenLeaderboardKeys) expect(keys).not.toContain(forbidden);
+  const serialized = JSON.stringify(page);
+  for (const email of rawEmails) expect(serialized).not.toContain(email);
+}
+
 function signToken(claims: {
   subject: string;
   householdId: string;
@@ -63,7 +120,7 @@ function signToken(claims: {
   const script = [
     "const fs=require('fs')",
     "const jwt=require('jsonwebtoken')",
-    "const key=fs.readFileSync(process.env.E2E_PRIVATE_KEY,'utf8')",
+    "const key=process.env.E2E_PRIVATE_KEY_PEM||fs.readFileSync(process.env.E2E_PRIVATE_KEY,'utf8')",
     "const payload=JSON.parse(process.env.E2E_CLAIMS)",
     "process.stdout.write(jwt.sign(payload,key,{algorithm:'RS256',expiresIn:'15m'}))",
   ].join(';');
@@ -81,6 +138,7 @@ function signToken(claims: {
         ...(claims.deviceId ? { device_id: claims.deviceId } : {}),
       }),
       E2E_PRIVATE_KEY: backendPrivateKey,
+      E2E_PRIVATE_KEY_PEM: backendPrivateKeyPem,
     },
   }).trim();
 }
@@ -228,25 +286,93 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
       Array.from({ length: 5 }, () => raw.post(`/devices/${fixture.deviceId}/lesson-events`, completion, { headers })),
     );
     expect(responses.every((response) => response.status === 200)).toBe(true);
+    const completionData = responses.map((response) => response.data.data);
+    const rewardIds = completionData.map((data) => data.rewardId);
+    expect(rewardIds.every((rewardId) => typeof rewardId === 'string' && rewardId.length > 0)).toBe(true);
+    expect(new Set(rewardIds).size).toBe(1);
+    const rewardId = rewardIds[0] as string;
+    for (const data of completionData) {
+      expect(data).toEqual({
+        accepted: expect.any(Number),
+        duplicates: expect.any(Number),
+        lastSequence: null,
+        rewardId,
+        reward: {
+          xpAwarded: 109,
+          coinsAwarded: 10,
+          badges: expectedBadges,
+          policyVersion: expectedPolicyVersion,
+        },
+      });
+    }
+    expect(completionData
+      .map((data) => [data.accepted, data.duplicates])
+      .sort(([acceptedA], [acceptedB]) => acceptedB - acceptedA))
+      .toEqual([[1, 0], [0, 1], [0, 1], [0, 1], [0, 1]]);
 
     const inbox = await getRewardInbox();
     const history = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
-    expect(inbox.count).toBe(1);
-    expect(history.history).toHaveLength(1);
-    expect(history.history[0]).toEqual(inbox.rewards[0]);
-    expect(history.totals).toMatchObject({ rewardCount: 1, xp: 109, coins: 10, refreshing: false });
-    expect(psql(
-      `SELECT COUNT(*) FROM lesson_reward_ledger
-        WHERE assignment_id = ${sqlLiteral(fixture.assignmentId)}
-          AND session_id = ${sqlLiteral(fixture.sessionId)};`,
-    )).toBe('1');
+    const receipt = inbox.rewards[0];
+    expect(receipt).toEqual({
+      rewardId,
+      assignmentId: fixture.assignmentId,
+      sessionId: fixture.sessionId,
+      child: { id: fixture.childId, displayName: 'Mai' },
+      robot: { id: fixture.deviceId, displayName: 'TeeBot Sao' },
+      xp: 109,
+      coins: 10,
+      badges: expectedBadges,
+      reason: {
+        policyVersion: expectedPolicyVersion,
+        completionBaseXp: 100,
+        coins: 10,
+        outcomeXp: { success: 5, miss: 2, timeout: 2 },
+        outcomeClasses: { success: 1, miss: 1, timeout: 1 },
+      },
+      policyVersion: expectedPolicyVersion,
+      streak: { currentDays: 1, bestDays: 1 },
+      awardedAt: expect.any(String),
+    });
+    expect(Number.isFinite(Date.parse(receipt.awardedAt))).toBe(true);
+    expect(inbox).toEqual({ count: 1, rewards: [receipt] });
+    expect(history).toEqual({
+      totals: { rewardCount: 1, xp: 109, coins: 10, refreshing: false },
+      history: [receipt],
+    });
+    expect(JSON.parse(psql(
+      `SELECT json_build_object(
+        'ledger', (SELECT COUNT(*)::int FROM lesson_reward_ledger
+          WHERE id = ${sqlLiteral(rewardId)}
+            AND assignment_id = ${sqlLiteral(fixture.assignmentId)}
+            AND session_id = ${sqlLiteral(fixture.sessionId)}),
+        'lifecycle', (SELECT COUNT(*)::int FROM progress_events
+          WHERE assignment_id = ${sqlLiteral(fixture.assignmentId)}
+            AND session_id = ${sqlLiteral(fixture.sessionId)}
+            AND event_type = 'lesson_completed'),
+        'allTime', (SELECT COUNT(*)::int FROM robot_reward_totals
+          WHERE device_id = ${sqlLiteral(fixture.deviceId)}
+            AND household_id = ${sqlLiteral(fixture.householdId)}
+            AND child_id = ${sqlLiteral(fixture.childId)}),
+        'weekly', (SELECT COUNT(*)::int FROM robot_reward_weekly_totals
+          WHERE device_id = ${sqlLiteral(fixture.deviceId)}
+            AND household_id = ${sqlLiteral(fixture.householdId)}
+            AND child_id = ${sqlLiteral(fixture.childId)}),
+        'streak', (SELECT COUNT(*)::int FROM child_reward_streaks
+          WHERE child_id = ${sqlLiteral(fixture.childId)}
+            AND household_id = ${sqlLiteral(fixture.householdId)}),
+        'recipientReceipt', (SELECT COUNT(*)::int FROM parent_reward_receipts
+          WHERE reward_id = ${sqlLiteral(rewardId)}
+            AND parent_id = ${sqlLiteral(fixture.parentId)})
+      );`,
+    ))).toEqual({ ledger: 1, lifecycle: 1, allTime: 1, weekly: 1, streak: 1, recipientReceipt: 1 });
 
-    const rewardId = inbox.rewards[0]?.rewardId ?? '';
-    await acknowledgeRewardSeen(rewardId);
-    await acknowledgeRewardSeen(rewardId);
+    const firstSeen = await acknowledgeRewardSeen(rewardId);
+    const replayedSeen = await acknowledgeRewardSeen(rewardId);
+    expect(firstSeen).toEqual({ rewardId, seen: true, seenAt: expect.any(String) });
+    expect(replayedSeen).toEqual(firstSeen);
     await expect(getRewardInbox()).resolves.toMatchObject({ count: 0, rewards: [] });
     const seenHistory = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
-    expect(seenHistory.history[0]?.rewardId).toBe(rewardId);
+    expect(seenHistory).toEqual(history);
 
     const foreignHeaders = { Authorization: `Bearer ${fixture.foreign.token}` };
     const mismatchedHeaders = { Authorization: `Bearer ${fixture.foreignHouseholdToken}` };
@@ -257,7 +383,8 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
       raw.put(`/mobile/devices/${fixture.deviceId}/leaderboard-preference`, { optedIn: true }, { headers: foreignHeaders }),
       raw.patch(`/mobile/children/${fixture.childId}`, { displayName: 'Khong Duoc Doi' }, { headers: foreignHeaders }),
     ]);
-    expect(foreignResults.map((response) => response.status)).toEqual([403, 403, 403, 403, 403]);
+    expect(foreignResults.map((response) => response.status)).toEqual([403, 200, 403, 403, 403]);
+    expect(foreignResults[1]?.data).toEqual({ data: [], meta: { count: 0 } });
   });
 
   it('uses private names, masked owner email, rename and opt-out without mutating the lesson', async () => {
@@ -265,36 +392,90 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
 
     const weekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const allTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
-    const owned = [...weekly.ownedRows, ...allTime.ownedRows].find((row) => row.robotId === fixture.deviceId);
-    expect(owned).toMatchObject({ childName: 'Mai', robotName: 'TeeBot Sao', optedIn: true });
-    expect(owned?.parentEmailMasked).toBe(fixture.email.replace(/^(.{2})[^@]*/, '$1***'));
-    expect(JSON.stringify({ weekly, allTime })).not.toContain(fixture.email);
+    const maskedEmail = fixture.email.replace(/^(.{2})[^@]*/, '$1***');
+    const primaryPublicRow = {
+      rank: 1,
+      rankStatus: 'current' as const,
+      robotId: fixture.deviceId,
+      childName: 'Mai',
+      robotName: 'TeeBot Sao',
+      parentEmailMasked: maskedEmail,
+      xp: 109,
+      completedLessonCount: 1,
+      currentStreakDays: 1,
+      badges: expectedBadges,
+    };
+    for (const [period, page] of [['weekly', weekly], ['allTime', allTime]] as const) {
+      expect(page).toEqual({
+        period,
+        rows: [primaryPublicRow],
+        ownedRows: [{ ...primaryPublicRow, optedIn: true, visibility: 'public' }],
+        pagination: { page: 1, pageSize: 20, totalRows: 1, totalPages: 1 },
+      });
+      expectLeaderboardPrivacy(page, [fixture.email, fixture.foreign.email]);
+    }
 
     await setTokens(fixture.foreign.token, 'unused-live-refresh-token');
-    const publicView = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
-    expect(publicView.rows).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        robotId: fixture.deviceId,
-        childName: 'Mai',
-        robotName: 'TeeBot Sao',
-        parentEmailMasked: fixture.email.replace(/^(.{2})[^@]*/, '$1***'),
-      }),
-    ]));
-    expect(JSON.stringify(publicView)).not.toContain(fixture.email);
+    const foreignWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
+    const foreignAllTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    const foreignPrivateRow = {
+      rank: null,
+      rankStatus: 'private' as const,
+      robotId: fixture.foreign.deviceId,
+      childName: 'Kai',
+      robotName: 'TeeBot Trang',
+      parentEmailMasked: '[hidden]',
+      xp: 0,
+      completedLessonCount: 0,
+      currentStreakDays: null,
+      badges: [],
+      optedIn: false,
+      visibility: 'private' as const,
+    };
+    for (const [period, page] of [['weekly', foreignWeekly], ['allTime', foreignAllTime]] as const) {
+      expect(page).toEqual({
+        period,
+        rows: [primaryPublicRow],
+        ownedRows: [foreignPrivateRow],
+        pagination: { page: 1, pageSize: 20, totalRows: 1, totalPages: 1 },
+      });
+      expectLeaderboardPrivacy(page, [fixture.email, fixture.foreign.email]);
+    }
 
     await setTokens(fixture.token, 'unused-live-refresh-token');
     await expect(updateChildDisplayName(fixture.childId, 'An')).resolves.toMatchObject({ displayName: 'An' });
     const renamed = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
-    expect(renamed.ownedRows.find((row) => row.robotId === fixture.deviceId)?.childName).toBe('An');
+    expect(renamed.rows).toEqual([{ ...primaryPublicRow, childName: 'An' }]);
+    expect(renamed.ownedRows).toEqual([{
+      ...primaryPublicRow,
+      childName: 'An',
+      optedIn: true,
+      visibility: 'public',
+    }]);
+    expectLeaderboardPrivacy(renamed, [fixture.email, fixture.foreign.email]);
 
     const historyBefore = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
     await expect(updateLeaderboardPreference(fixture.deviceId, false)).resolves.toMatchObject({ optedIn: false });
-    const hidden = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
-    expect(hidden.rows.some((row) => row.robotId === fixture.deviceId)).toBe(false);
-    expect(hidden.ownedRows.find((row) => row.robotId === fixture.deviceId)).toMatchObject({
+    const hiddenWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
+    const hiddenAllTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    const primaryPrivateRow = {
+      ...primaryPublicRow,
+      rank: null,
+      rankStatus: 'private' as const,
+      childName: 'An',
+      parentEmailMasked: '[hidden]',
       optedIn: false,
-      visibility: 'private',
-    });
+      visibility: 'private' as const,
+    };
+    for (const [period, page] of [['weekly', hiddenWeekly], ['allTime', hiddenAllTime]] as const) {
+      expect(page).toEqual({
+        period,
+        rows: [],
+        ownedRows: [primaryPrivateRow],
+        pagination: { page: 1, pageSize: 20, totalRows: 0, totalPages: 0 },
+      });
+      expectLeaderboardPrivacy(page, [fixture.email, fixture.foreign.email]);
+    }
     await expect(getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId })).resolves.toEqual(historyBefore);
     expect(psql(
       `SELECT manifest_checksum FROM lessons

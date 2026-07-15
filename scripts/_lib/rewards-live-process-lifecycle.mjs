@@ -1,7 +1,39 @@
 import { spawn } from 'child_process';
+import { generateKeyPairSync } from 'crypto';
 import { once } from 'events';
+import { access, readdir } from 'fs/promises';
+import { resolve } from 'path';
 
 const signalExitCodes = { SIGINT: 130, SIGTERM: 143 };
+
+export function createJwtKeyPair() {
+  return generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+  });
+}
+
+export async function countForwardMigrations(backendRoot) {
+  const candidateDirs = [
+    resolve(backendRoot, 'src/database/migrations'),
+    resolve(backendRoot, 'migrations'),
+  ];
+  let migrationsDir;
+  for (const candidate of candidateDirs) {
+    try {
+      await access(candidate);
+      migrationsDir = candidate;
+      break;
+    } catch {
+      // Match the backend migration runner's first-existing-candidate behavior.
+    }
+  }
+  if (!migrationsDir) throw new Error('Migrations directory not found');
+
+  const files = await readdir(migrationsDir);
+  return files.filter((file) => file.endsWith('.sql') && !file.endsWith('.down.sql')).length;
+}
 
 function killWindowsProcessTree(pid, force) {
   return new Promise((resolveKill, reject) => {

@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { sign, verify } from 'node:crypto';
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import test from 'node:test';
-import { createProcessLifecycle } from '../../scripts/_lib/rewards-live-process-lifecycle.mjs';
+import {
+  countForwardMigrations,
+  createJwtKeyPair,
+  createProcessLifecycle,
+} from '../../scripts/_lib/rewards-live-process-lifecycle.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 
@@ -18,6 +23,56 @@ function processExists(pid) {
     throw error;
   }
 }
+
+test('counts only forward SQL migrations from the backend primary candidate directory', async () => {
+  const backendRoot = await mkdtemp(resolve(tmpdir(), 'tbot-rewards-migrations-'));
+  const primary = resolve(backendRoot, 'src/database/migrations');
+  const fallback = resolve(backendRoot, 'migrations');
+
+  try {
+    await mkdir(primary, { recursive: true });
+    await mkdir(fallback, { recursive: true });
+    await Promise.all([
+      writeFile(resolve(primary, '001_first.sql'), '-- up\n'),
+      writeFile(resolve(primary, '002_second.SQL'), '-- not lowercase sql\n'),
+      writeFile(resolve(primary, '003_third.down.sql'), '-- down\n'),
+      writeFile(resolve(primary, 'notes.txt'), 'not sql\n'),
+      writeFile(resolve(fallback, '999_fallback.sql'), '-- ignored while primary exists\n'),
+    ]);
+
+    assert.equal(await countForwardMigrations(backendRoot), 1);
+  } finally {
+    await rm(backendRoot, { recursive: true, force: true });
+  }
+});
+
+test('falls back to the backend migrations directory when the primary candidate is absent', async () => {
+  const backendRoot = await mkdtemp(resolve(tmpdir(), 'tbot-rewards-migrations-'));
+  const fallback = resolve(backendRoot, 'migrations');
+
+  try {
+    await mkdir(fallback, { recursive: true });
+    await Promise.all([
+      writeFile(resolve(fallback, '001_first.sql'), '-- up\n'),
+      writeFile(resolve(fallback, '002_second.sql'), '-- up\n'),
+      writeFile(resolve(fallback, '002_second.down.sql'), '-- down\n'),
+    ]);
+
+    assert.equal(await countForwardMigrations(backendRoot), 2);
+  } finally {
+    await rm(backendRoot, { recursive: true, force: true });
+  }
+});
+
+test('creates an ephemeral RS256 key pair shared by the runner and backend', () => {
+  const { privateKey, publicKey } = createJwtKeyPair();
+  const payload = Buffer.from('tbot-rewards-live-proof');
+  const signature = sign('RSA-SHA256', payload, privateKey);
+
+  assert.match(privateKey, /^-----BEGIN PRIVATE KEY-----/);
+  assert.match(publicKey, /^-----BEGIN PUBLIC KEY-----/);
+  assert.equal(verify('RSA-SHA256', payload, publicKey, signature), true);
+});
 
 async function waitForExit(pid) {
   for (let attempt = 0; attempt < 50; attempt += 1) {
