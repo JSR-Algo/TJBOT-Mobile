@@ -173,10 +173,17 @@ export function createProcessLifecycle({
     if (process.platform !== 'win32' && child.pid !== undefined) {
       processGroups.set(child, { id: child.pid, owned: true });
     }
-    closePromises.set(child, new Promise((resolveClose) => {
-      child.once('close', () => resolveClose({ error: undefined }));
-      child.once('error', (error) => resolveClose({ error }));
-    }));
+    const closePromise = new Promise((resolveClose) => {
+      let closeSettled = false;
+      const settleClose = (error) => {
+        if (closeSettled) return;
+        closeSettled = true;
+        resolveClose({ error });
+      };
+      child.once('close', () => settleClose(undefined));
+      child.once('error', settleClose);
+    });
+    closePromises.set(child, closePromise);
     activeChildren.add(child);
     currentChild = child;
     if (backend) backendChild = child;
@@ -185,8 +192,7 @@ export function createProcessLifecycle({
       if (currentChild === child) currentChild = undefined;
       if (backendChild === child) backendChild = undefined;
     };
-    child.once('error', release);
-    child.once('exit', release);
+    void closePromise.then(release);
     return child;
   }
 
@@ -214,22 +220,42 @@ export function createProcessLifecycle({
         cwd: options.cwd,
         env: options.env ?? process.env,
         stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: options.timeout,
       });
       let stdout = '';
       let stderr = '';
+      let settled = false;
+      let timeoutId;
+      const settle = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        callback(value);
+      };
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');
       child.stdout.on('data', (chunk) => { stdout += chunk; });
       child.stderr.on('data', (chunk) => { stderr += chunk; });
-      child.once('error', reject);
+      child.once('error', (error) => settle(reject, error));
       child.once('exit', (code, signal) => {
         if (code === 0) {
-          resolveOutput(stdout.trim());
+          settle(resolveOutput, stdout.trim());
           return;
         }
-        reject(new Error(`${command} exited with ${code ?? signal ?? 'unknown status'}: ${stderr.trim()}`));
+        settle(reject, new Error(`${command} exited with ${code ?? signal ?? 'unknown status'}: ${stderr.trim()}`));
       });
+      if (options.timeout !== undefined) {
+        timeoutId = setTimeout(async () => {
+          if (settled) return;
+          settled = true;
+          try {
+            await terminate(child);
+            await waitForCloseAndStreamDrain(child);
+          } catch {
+            // The deadline error remains authoritative after best-effort escalation.
+          }
+          reject(new Error(`${command} timed out after ${options.timeout}ms`));
+        }, options.timeout);
+      }
     });
   }
 

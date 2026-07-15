@@ -397,6 +397,39 @@ test('proof finalization drains a clean backend shutdown before succeeding', asy
   assert.equal(shutdownOutput, 'clean shutdown');
 });
 
+test('proof finalization retains a naturally exited backend until trailing output closes', async () => {
+  const scanner = createSecretLeakScanner('123456');
+  const signalProcessGroup = () => {
+    const error = new Error('process group already exited');
+    error.code = 'ESRCH';
+    throw error;
+  };
+  const lifecycle = createProcessLifecycle({
+    cleanupContainer: async () => undefined,
+    signalProcessGroup,
+  });
+  const child = lifecycle.spawnBackend(process.execPath, ['-e', [
+    "const {spawn}=require('child_process')",
+    "process.stdout.write('123')",
+    "spawn(process.execPath,['-e',\"setTimeout(()=>{process.stdout.write('456');process.exit(0)},50)\"],{stdio:['ignore',1,2]})",
+    'process.exit(0)',
+  ].join(';')], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', scanner.scan);
+
+  await new Promise((resolveExit) => child.once('exit', resolveExit));
+  assert.equal(scanner.hasSecretLeak(), false);
+  await assert.rejects(
+    finalizeProofRun({
+      cleanup: lifecycle.cleanup,
+      hasSecretLeak: scanner.hasSecretLeak,
+    }),
+    /Backend logs exposed the runner-supplied pairing code/,
+  );
+});
+
 test('container cleanup tolerates an already-removed disposable container', async () => {
   await removeContainerIfPresent({
     containerName: 'missing-container',
@@ -413,9 +446,42 @@ test('tracked output rejects failed commands and enforces its timeout', async ()
   );
   await assert.rejects(
     lifecycle.output(process.execPath, ['-e', 'setTimeout(() => {}, 1000)'], { timeout: 50 }),
-    /SIGTERM/,
+    /timed out after 50ms/,
   );
   await lifecycle.cleanup();
+});
+
+test('tracked output hard-kills a child that ignores SIGTERM at its deadline', async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), 'tbot-rewards-output-timeout-'));
+  const pidPath = resolve(directory, 'child.pid');
+  const lifecycle = createProcessLifecycle({
+    cleanupContainer: async () => undefined,
+    cleanupTimeoutMs: 50,
+  });
+  const startedAt = Date.now();
+
+  try {
+    const outputPromise = lifecycle.output(process.execPath, ['-e', [
+      "const fs=require('fs')",
+      `fs.writeFileSync(${JSON.stringify(pidPath)},String(process.pid))`,
+      "process.on('SIGTERM',()=>{})",
+      'setInterval(()=>{},1000)',
+    ].join(';')], { timeout: 50 });
+
+    await assert.rejects(
+      Promise.race([
+        outputPromise,
+        sleep(500).then(() => { throw new Error('output did not enforce a hard deadline'); }),
+      ]),
+      /timed out after 50ms/,
+    );
+    assert.ok(Date.now() - startedAt < 500);
+    const childPid = Number(await readFile(pidPath, 'utf8'));
+    await waitForExit(childPid);
+  } finally {
+    await lifecycle.cleanup().catch(() => undefined);
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test('HTTP readiness requests abort when a server does not answer', async () => {

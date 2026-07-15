@@ -304,6 +304,9 @@ async function seedFixture(): Promise<Fixture> {
   const bootstrap = await mintBootstrapToken({
     provisioningAttemptId: provisioning.provisioningAttemptId,
   });
+  expect(bootstrap.ttlSeconds).toBe(300);
+  expect(Number.isFinite(Date.parse(bootstrap.expiresAt))).toBe(true);
+  expect(Date.parse(bootstrap.expiresAt)).toBeGreaterThan(Date.now());
   const firmwareStatus = await raw.post('/device/provisioning/status', {
     device_id: provisioning.deviceId,
     status: 'device_authenticated',
