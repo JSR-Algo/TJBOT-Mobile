@@ -17,6 +17,14 @@ import client from '@/services/http/client';
 import { setTokens } from '@/services/http/tokens';
 import { login } from '@/services/api/auth';
 import {
+  completeDeviceProvisioning,
+  confirmLocalBlePaired,
+  getDeviceStatus,
+  getProvisioningAttemptStatus,
+  mintBootstrapToken,
+  startDeviceProvisioning,
+} from '@/services/api/device.api';
+import {
   acknowledgeRewardSeen,
   getRewardHistory,
   getRewardInbox,
@@ -54,6 +62,7 @@ const postgresContainer = process.env.TBOT_REWARDS_POSTGRES_CONTAINER ?? 'tbot-r
 const backendRoot = process.env.TBOT_BACKEND_WORKTREE
   ?? resolve(__dirname, '../../../../../tbot-backend/mobile-robot-rewards');
 const backendPrivateKey = process.env.TBOT_BACKEND_PRIVATE_KEY_PEM;
+const pairingCode = process.env.TBOT_REWARDS_PAIRING_CODE;
 const canonicalCourseId = 'w01-place-words';
 const canonicalLessonId = 'w01-d01-barn-say-it';
 const canonicalLessonVersion = 1;
@@ -65,11 +74,11 @@ interface Identity {
   parentId: string;
   householdId: string;
   childId: string;
-  deviceId: string;
 }
 
 interface Fixture extends Identity {
   initialActiveChildId: string;
+  deviceId: string;
   deviceToken: string;
   foreign: Identity;
   forgedForeignHouseholdToken: string;
@@ -142,9 +151,9 @@ function signToken(claims: {
 function hashFixturePassword(password: string): string {
   const script = [
     "const argon2=require('argon2')",
-    'argon2.hash(process.env.E2E_PASSWORD)',
-    '.then(hash=>process.stdout.write(hash))',
-    '.catch(error=>{console.error(error);process.exit(1)})',
+    'argon2.hash(process.env.E2E_PASSWORD)'
+      + '.then(hash=>process.stdout.write(hash))'
+      + '.catch(error=>{console.error(error);process.exit(1)})',
   ].join(';');
   return execFileSync('node', ['-e', script], {
     cwd: backendRoot,
@@ -152,6 +161,21 @@ function hashFixturePassword(password: string): string {
     env: { ...process.env, E2E_PASSWORD: password },
     timeout: 15_000,
   }).trim();
+}
+
+function verifyArgon2Hash(hash: string, value: string): boolean {
+  const script = [
+    "const argon2=require('argon2')",
+    'argon2.verify(process.env.E2E_HASH,process.env.E2E_VALUE)'
+      + ".then(valid=>process.stdout.write(valid?'true':'false'))"
+      + '.catch(error=>{console.error(error);process.exit(1)})',
+  ].join(';');
+  return execFileSync('node', ['-e', script], {
+    cwd: backendRoot,
+    encoding: 'utf8',
+    env: { ...process.env, E2E_HASH: hash, E2E_VALUE: value },
+    timeout: 15_000,
+  }).trim() === 'true';
 }
 
 async function loginParent(
@@ -167,22 +191,21 @@ async function loginParent(
   expect(Number.isFinite(Date.parse(response.access_token_expires_at ?? ''))).toBe(true);
   expect(Number.isFinite(Date.parse(response.refresh_token_expires_at ?? ''))).toBe(true);
 
-  expect(psql(
-    `SELECT COUNT(*) FROM auth_sessions
-      WHERE parent_id = ${sqlLiteral(parentId)}
-        AND revoked_at IS NULL
-        AND expires_at > NOW()
-        AND device_name = ${sqlLiteral(deviceName)}
-        AND platform = 'test';`,
-  )).toBe('1');
+  expect(JSON.parse(psql(
+    `SELECT json_build_object(
+       'count', COUNT(*),
+       'deviceName', MIN(device_name),
+       'platform', MIN(platform),
+       'active', BOOL_AND(revoked_at IS NULL AND expires_at > NOW())
+     ) FROM auth_sessions
+     WHERE parent_id = ${sqlLiteral(parentId)};`,
+  ))).toEqual({ count: 1, deviceName, platform: 'test', active: true });
 
   const expectedRefreshHash = createHash('sha256').update(response.refresh_token).digest('hex');
   const storedRefreshHash = psql(
     `SELECT refresh_token_hash
        FROM auth_sessions
       WHERE parent_id = ${sqlLiteral(parentId)}
-        AND device_name = ${sqlLiteral(deviceName)}
-        AND platform = 'test'
       ORDER BY created_at DESC, id DESC
       LIMIT 1;`,
   );
@@ -192,7 +215,7 @@ async function loginParent(
   return { token: response.access_token, refreshToken: response.refresh_token };
 }
 
-async function createIdentity(childName: string, robotName: string): Promise<Identity> {
+async function createIdentity(childName: string): Promise<Identity> {
   const suffix = `${Date.now()}-${randomUUID()}`;
   const email = `rewards-live-${suffix}@example.test`;
   const password = `RewardsLive1!${randomUUID()}`;
@@ -201,7 +224,6 @@ async function createIdentity(childName: string, robotName: string): Promise<Ide
   const householdId = randomUUID();
   const childId = randomUUID();
   const consentId = randomUUID();
-  const deviceId = randomUUID();
   psql(
     `BEGIN;
      INSERT INTO parent_accounts (id, email, password_hash, coppa_verified, active_child_id)
@@ -219,22 +241,18 @@ async function createIdentity(childName: string, robotName: string): Promise<Ide
              '2018-01-01', 'rewards-live-v1', 'active');
      INSERT INTO child_profile_coppa_consents (child_id, consent_id, bound_by_parent_id)
      VALUES (${sqlLiteral(childId)}, ${sqlLiteral(consentId)}, ${sqlLiteral(parentId)});
-     INSERT INTO devices
-       (id, serial_number, hardware_revision, state, current_household_id, claimed_by,
-        lifecycle_state, status, assigned_child_profile_id, display_name)
-     VALUES (${sqlLiteral(deviceId)}, ${sqlLiteral(`REWARDS-LIVE-${deviceId}`)}, 'e2e', 'ACTIVE',
-             ${sqlLiteral(householdId)}, ${sqlLiteral(parentId)}, 'assigned', 'active',
-             ${sqlLiteral(childId)}, ${sqlLiteral(robotName)});
-     INSERT INTO parent_controls (device_id, timezone) VALUES (${sqlLiteral(deviceId)}, 'UTC');
      COMMIT;`,
   );
   const auth = await loginParent(parentId, email, password, `Rewards Live ${childName}`);
-  return { ...auth, email, parentId, householdId, childId, deviceId };
+  return { ...auth, email, parentId, householdId, childId };
 }
 
 async function seedFixture(): Promise<Fixture> {
-  const identity = await createIdentity('Mai', 'TeeBot Sao');
-  const foreign = await createIdentity('Kai', 'TeeBot Trang');
+  if (typeof pairingCode !== 'string' || !/^\d{6}$/.test(pairingCode)) {
+    throw new Error('TBOT_REWARDS_PAIRING_CODE must be a six-digit runner secret');
+  }
+  const identity = await createIdentity('Mai');
+  const foreign = await createIdentity('Kai');
   const initialActiveChildId = randomUUID();
   const initialActiveChildConsentId = randomUUID();
   psql(
@@ -252,6 +270,175 @@ async function seedFixture(): Promise<Fixture> {
         SET active_child_id = ${sqlLiteral(initialActiveChildId)}
       WHERE id = ${sqlLiteral(identity.parentId)};
      COMMIT;`,
+  );
+  await setTokens(identity.token, identity.refreshToken);
+
+  const serialNumber = `TBOT-${randomUUID().replaceAll('-', '')}`;
+  const provisioning = await startDeviceProvisioning({
+    serialNumber,
+    appVersion: 'rewards-live',
+    phonePlatform: 'test',
+  });
+  expect(provisioning).toMatchObject({ deviceStatus: 'provisioning' });
+  await expect(confirmLocalBlePaired({
+    deviceId: provisioning.deviceId,
+    provisioningAttemptId: provisioning.provisioningAttemptId,
+    serialNumber,
+    code: pairingCode,
+  })).resolves.toMatchObject({
+    deviceId: provisioning.deviceId,
+    provisioningAttemptId: provisioning.provisioningAttemptId,
+    status: 'ble_paired',
+  });
+
+  const foreignHeaders = { Authorization: `Bearer ${foreign.token}` };
+  await setTokens(foreign.token, foreign.refreshToken);
+  const foreignMint = await raw.post(
+    `/devices/provision/${provisioning.provisioningAttemptId}/bootstrap-token`,
+    undefined,
+    { headers: foreignHeaders },
+  );
+  expect(foreignMint.status).toBe(403);
+
+  await setTokens(identity.token, identity.refreshToken);
+  const bootstrap = await mintBootstrapToken({
+    provisioningAttemptId: provisioning.provisioningAttemptId,
+  });
+  const firmwareStatus = await raw.post('/device/provisioning/status', {
+    device_id: provisioning.deviceId,
+    status: 'device_authenticated',
+    code: pairingCode,
+  }, {
+    headers: { Authorization: `Bearer ${bootstrap.token}` },
+  });
+  expect(firmwareStatus.status).toBe(204);
+  await expect(
+    getProvisioningAttemptStatus(provisioning.provisioningAttemptId),
+  ).resolves.toMatchObject({
+    deviceId: provisioning.deviceId,
+    status: 'device_authenticated',
+  });
+
+  const completeBody = {
+    provisioningAttemptId: provisioning.provisioningAttemptId,
+    deviceId: provisioning.deviceId,
+    assignChildProfileId: identity.childId,
+    displayName: 'TeeBot Sao',
+  };
+  await setTokens(foreign.token, foreign.refreshToken);
+  const foreignComplete = await raw.post('/devices/provision/complete', completeBody, {
+    headers: foreignHeaders,
+  });
+  expect(foreignComplete.status).toBe(403);
+
+  await setTokens(identity.token, identity.refreshToken);
+  const primaryHeaders = { Authorization: `Bearer ${identity.token}` };
+  const foreignChildComplete = await raw.post('/devices/provision/complete', {
+    ...completeBody,
+    assignChildProfileId: foreign.childId,
+  }, { headers: primaryHeaders });
+  expect(foreignChildComplete.status).toBe(422);
+  const mismatchedDeviceComplete = await raw.post('/devices/provision/complete', {
+    ...completeBody,
+    deviceId: randomUUID(),
+  }, { headers: primaryHeaders });
+  expect(mismatchedDeviceComplete.status).toBe(422);
+
+  expect(JSON.parse(psql(
+    `SELECT json_build_object(
+       'attemptStatus', attempt_status,
+       'assignedChildProfileId', assigned_child_profile_id,
+       'displayName', display_name,
+       'completedAt', completed_at
+     ) FROM device_provisioning_attempts
+     WHERE id = ${sqlLiteral(provisioning.provisioningAttemptId)};`,
+  ))).toEqual({
+    attemptStatus: 'device_authenticated',
+    assignedChildProfileId: null,
+    displayName: null,
+    completedAt: null,
+  });
+  expect(JSON.parse(psql(
+    `SELECT json_build_object(
+       'status', status,
+       'lifecycleState', lifecycle_state,
+       'currentHouseholdId', current_household_id,
+       'assignedChildProfileId', assigned_child_profile_id,
+       'displayName', display_name
+     ) FROM devices WHERE id = ${sqlLiteral(provisioning.deviceId)};`,
+  ))).toEqual({
+    status: 'provisioning',
+    lifecycleState: 'unassigned',
+    currentHouseholdId: null,
+    assignedChildProfileId: null,
+    displayName: null,
+  });
+
+  await expect(completeDeviceProvisioning({
+    ...completeBody,
+    displayName: '  TeeBot\u00a0  Sao  ',
+  })).resolves.toEqual({
+    device: {
+      id: provisioning.deviceId,
+      status: 'active',
+      lifecycleState: 'assigned',
+      displayName: 'TeeBot Sao',
+      assignedChildProfileId: identity.childId,
+    },
+  });
+  await expect(getDeviceStatus('primary', identity.childId)).resolves.toMatchObject({
+    id: provisioning.deviceId,
+    assignedChildProfileId: identity.childId,
+  });
+
+  expect(JSON.parse(psql(
+    `SELECT json_build_object(
+       'status', status,
+       'lifecycleState', lifecycle_state,
+       'currentHouseholdId', current_household_id,
+       'assignedChildProfileId', assigned_child_profile_id,
+       'displayName', display_name
+     ) FROM devices WHERE id = ${sqlLiteral(provisioning.deviceId)};`,
+  ))).toEqual({
+    status: 'active',
+    lifecycleState: 'assigned',
+    currentHouseholdId: identity.householdId,
+    assignedChildProfileId: identity.childId,
+    displayName: 'TeeBot Sao',
+  });
+  expect(JSON.parse(psql(
+    `SELECT json_build_object(
+       'attemptStatus', attempt_status,
+       'assignedChildProfileId', assigned_child_profile_id,
+       'displayName', display_name,
+       'completed', completed_at IS NOT NULL
+     ) FROM device_provisioning_attempts
+     WHERE id = ${sqlLiteral(provisioning.provisioningAttemptId)};`,
+  ))).toEqual({
+    attemptStatus: 'completed',
+    assignedChildProfileId: identity.childId,
+    displayName: 'TeeBot Sao',
+    completed: true,
+  });
+  expect(JSON.parse(psql(
+    `SELECT json_build_object(
+       'count', COUNT(*),
+       'consumed', BOOL_AND(consumed_at IS NOT NULL),
+       'consumedReason', MIN(consumed_reason)
+     ) FROM device_provisioning_bootstrap_tokens
+     WHERE attempt_id = ${sqlLiteral(provisioning.provisioningAttemptId)};`,
+  ))).toEqual({ count: 1, consumed: true, consumedReason: 'device_authenticated' });
+
+  const pairingCodeHash = psql(
+    `SELECT pairing_code_hash FROM device_provisioning_attempts
+     WHERE id = ${sqlLiteral(provisioning.provisioningAttemptId)};`,
+  );
+  expect(pairingCodeHash).not.toBe(pairingCode);
+  expect(verifyArgon2Hash(pairingCodeHash, pairingCode)).toBe(true);
+
+  psql(
+    `INSERT INTO parent_controls (device_id, timezone)
+     VALUES (${sqlLiteral(provisioning.deviceId)}, 'UTC');`,
   );
   const headers = { Authorization: `Bearer ${identity.token}` };
 
@@ -276,17 +463,17 @@ async function seedFixture(): Promise<Fixture> {
 
   const enrollment = await raw.post(`/courses/${canonicalCourseId}/enroll`, {
     childId: identity.childId,
-    deviceId: identity.deviceId,
+    deviceId: provisioning.deviceId,
   }, { headers });
   expect(enrollment.status).toBe(201);
   expect(enrollment.data.data.enrollment).toMatchObject({
     childId: identity.childId,
-    deviceId: identity.deviceId,
+    deviceId: provisioning.deviceId,
     status: 'active',
     currentLessonKey: canonicalLessonId,
   });
   expect(enrollment.data.data.assignment).toMatchObject({
-    deviceId: identity.deviceId,
+    deviceId: provisioning.deviceId,
     childId: identity.childId,
     lessonId: canonicalLessonId,
     lessonVersion: canonicalLessonVersion,
@@ -300,6 +487,7 @@ async function seedFixture(): Promise<Fixture> {
   return {
     ...identity,
     initialActiveChildId,
+    deviceId: provisioning.deviceId,
     foreign,
     // The only deliberately forged parent claim: a foreign subject paired with the primary household.
     forgedForeignHouseholdToken: signToken({
@@ -309,9 +497,9 @@ async function seedFixture(): Promise<Fixture> {
       roles: ['parent'],
     }),
     deviceToken: signToken({
-      subject: `device:${identity.deviceId}`,
+      subject: `device:${provisioning.deviceId}`,
       householdId: identity.householdId,
-      deviceId: identity.deviceId,
+      deviceId: provisioning.deviceId,
       roles: ['device'],
     }),
     assignmentId: enrollment.data.data.assignment.assignmentId,
@@ -331,7 +519,7 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     client.defaults.baseURL = apiUrl;
     fixture = await seedFixture();
     await setTokens(fixture.token, fixture.refreshToken);
-  }, 60_000);
+  }, 120_000);
 
   it('proves active-child, persisted rewards, leaderboard privacy, rename and opt-out as one live scenario', async () => {
     expect(psql(

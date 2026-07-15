@@ -22,6 +22,8 @@ import {
 const {
   buildProofEnvironment,
   cleanupPreservingPrimaryError,
+  createSecretLeakScanner,
+  finalizeProofRun,
   removeContainerIfPresent,
 } = lifecycleHelpers;
 
@@ -254,6 +256,147 @@ test('cleanup failure does not mask a primary run error', async () => {
   assert.deepEqual(reported, ['container cleanup failed']);
 });
 
+test('secret leak scanner detects a secret split across chunks', () => {
+  const scanner = createSecretLeakScanner('123456');
+
+  scanner.scan('backend output 123');
+  assert.equal(scanner.hasSecretLeak(), false);
+  scanner.scan('456 after split');
+
+  assert.equal(scanner.hasSecretLeak(), true);
+});
+
+test('proof finalization detects a secret emitted during cleanup', async () => {
+  const scanner = createSecretLeakScanner('654321');
+
+  await assert.rejects(
+    finalizeProofRun({
+      cleanup: async () => {
+        scanner.scan('shutdown 654');
+        scanner.scan('321');
+      },
+      hasSecretLeak: scanner.hasSecretLeak,
+    }),
+    /Backend logs exposed the runner-supplied pairing code/,
+  );
+});
+
+test('proof finalization succeeds only after clean cleanup completes', async () => {
+  let cleanupComplete = false;
+  let leakCheckedAfterCleanup = false;
+
+  await finalizeProofRun({
+    cleanup: async () => { cleanupComplete = true; },
+    hasSecretLeak: () => {
+      leakCheckedAfterCleanup = cleanupComplete;
+      return false;
+    },
+  });
+
+  assert.equal(cleanupComplete, true);
+  assert.equal(leakCheckedAfterCleanup, true);
+});
+
+test('proof finalization preserves the primary error when cleanup and leak checks also fail', async () => {
+  const primaryError = new Error('live proof failed');
+  const reported = [];
+  let leakChecked = false;
+
+  await assert.rejects(
+    finalizeProofRun({
+      cleanup: async () => { throw new Error('container cleanup failed'); },
+      primaryError,
+      hasSecretLeak: () => {
+        leakChecked = true;
+        return true;
+      },
+      reportCleanupError: (error) => reported.push(error.message),
+    }),
+    (error) => error === primaryError,
+  );
+  assert.equal(leakChecked, true);
+  assert.deepEqual(reported, ['container cleanup failed']);
+});
+
+async function startShutdownLogFixture(shutdownSource, signalProcessGroup = process.kill) {
+  const lifecycle = createProcessLifecycle({
+    cleanupContainer: async () => undefined,
+    signalProcessGroup,
+  });
+  const child = lifecycle.spawnBackend(process.execPath, ['-e', shutdownSource], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child.stdout.setEncoding('utf8');
+  await new Promise((resolveReady, rejectReady) => {
+    const onData = (chunk) => {
+      if (!chunk.includes('ready')) return;
+      child.stdout.off('data', onData);
+      resolveReady();
+    };
+    child.stdout.on('data', onData);
+    child.once('error', rejectReady);
+  });
+  return { child, lifecycle };
+}
+
+test('proof finalization drains split secret output emitted while the backend shuts down', async () => {
+  const scanner = createSecretLeakScanner('123456');
+  const signalProcessGroup = (pid, signal) => {
+    if (signal === 0) {
+      const error = new Error('process group already exited');
+      error.code = 'ESRCH';
+      throw error;
+    }
+    process.kill(pid, signal);
+  };
+  const { child, lifecycle } = await startShutdownLogFixture([
+    "process.on('SIGTERM',()=>{",
+    "process.stdout.write('123')",
+    "setTimeout(()=>process.stdout.write('456'),10)",
+    'setTimeout(()=>process.exit(0),20)',
+    '})',
+    "process.stdout.write('ready')",
+    'setInterval(()=>{},1000)',
+  ].join(';'), signalProcessGroup);
+  child.stdout.on('data', scanner.scan);
+
+  await assert.rejects(
+    finalizeProofRun({
+      cleanup: lifecycle.cleanup,
+      hasSecretLeak: scanner.hasSecretLeak,
+    }),
+    /Backend logs exposed the runner-supplied pairing code/,
+  );
+});
+
+test('proof finalization drains a clean backend shutdown before succeeding', async () => {
+  let shutdownOutput = '';
+  const signalProcessGroup = (pid, signal) => {
+    if (signal === 0) {
+      const error = new Error('process group already exited');
+      error.code = 'ESRCH';
+      throw error;
+    }
+    process.kill(pid, signal);
+  };
+  const { child, lifecycle } = await startShutdownLogFixture([
+    "process.on('SIGTERM',()=>{",
+    "setTimeout(()=>process.stdout.write('clean shutdown'),10)",
+    'setTimeout(()=>process.exit(0),20)',
+    '})',
+    "process.stdout.write('ready')",
+    'setInterval(()=>{},1000)',
+  ].join(';'), signalProcessGroup);
+  child.stdout.on('data', (chunk) => { shutdownOutput += chunk; });
+
+  await finalizeProofRun({
+    cleanup: lifecycle.cleanup,
+    hasSecretLeak: () => false,
+  });
+
+  assert.equal(shutdownOutput, 'clean shutdown');
+});
+
 test('container cleanup tolerates an already-removed disposable container', async () => {
   await removeContainerIfPresent({
     containerName: 'missing-container',
@@ -310,4 +453,16 @@ test('runner and lifecycle helper pass Node syntax validation', () => {
     const result = spawnSync(process.execPath, ['--check', resolve(root, file)], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
   }
+});
+
+test('runner keeps the pairing code child-only and never prints it', async () => {
+  const source = await readFile(resolve(root, 'scripts/run-rewards-live-e2e.mjs'), 'utf8');
+
+  assert.match(source, /import \{ randomInt \} from 'crypto';/);
+  assert.match(source, /String\(randomInt\(0, 1_000_000\)\)\.padStart\(6, '0'\)/);
+  assert.equal(source.match(/TBOT_REWARDS_PAIRING_CODE/g)?.length, 1);
+  assert.match(source, /TBOT_REWARDS_PAIRING_CODE: pairingCode/);
+  assert.match(source, /createSecretLeakScanner\(pairingCode\)/);
+  assert.match(source, /finalizeProofRun\(/);
+  assert.doesNotMatch(source, /console\.(?:info|log|warn|error)\([^\n]*pairingCode/);
 });

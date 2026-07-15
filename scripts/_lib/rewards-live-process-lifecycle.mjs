@@ -94,6 +94,49 @@ export async function cleanupPreservingPrimaryError({
   if (primaryError) throw primaryError;
 }
 
+export function createSecretLeakScanner(secret) {
+  if (typeof secret !== 'string' || secret.length === 0) {
+    throw new TypeError('Secret leak scanner requires a non-empty string');
+  }
+  let overlap = '';
+  let leaked = false;
+
+  return {
+    scan(chunk) {
+      const combined = overlap + String(chunk);
+      if (combined.includes(secret)) leaked = true;
+      overlap = combined.slice(-(secret.length - 1));
+    },
+    hasSecretLeak() {
+      return leaked;
+    },
+  };
+}
+
+export async function finalizeProofRun({
+  cleanup,
+  primaryError,
+  hasSecretLeak = () => false,
+  reportCleanupError = () => undefined,
+}) {
+  let cleanupError;
+  try {
+    await cleanup();
+  } catch (error) {
+    cleanupError = error;
+  }
+
+  const secretLeaked = hasSecretLeak();
+  if (primaryError) {
+    if (cleanupError) reportCleanupError(cleanupError);
+    throw primaryError;
+  }
+  if (cleanupError) throw cleanupError;
+  if (secretLeaked) {
+    throw new Error('Backend logs exposed the runner-supplied pairing code');
+  }
+}
+
 export function fetchWithTimeout(url, timeoutMs, fetchImpl = fetch) {
   return fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
 }
@@ -114,6 +157,7 @@ export function createProcessLifecycle({
 }) {
   const activeChildren = new Set();
   const processGroups = new WeakMap();
+  const closePromises = new WeakMap();
   let currentChild;
   let backendChild;
   let cleanupPromise;
@@ -129,6 +173,10 @@ export function createProcessLifecycle({
     if (process.platform !== 'win32' && child.pid !== undefined) {
       processGroups.set(child, { id: child.pid, owned: true });
     }
+    closePromises.set(child, new Promise((resolveClose) => {
+      child.once('close', () => resolveClose({ error: undefined }));
+      child.once('error', (error) => resolveClose({ error }));
+    }));
     activeChildren.add(child);
     currentChild = child;
     if (backend) backendChild = child;
@@ -251,6 +299,25 @@ export function createProcessLifecycle({
     await waitForProcessGroupExit(group);
   }
 
+  async function waitForCloseAndStreamDrain(child) {
+    const closePromise = closePromises.get(child);
+    if (!closePromise) return;
+    let timeoutId;
+    try {
+      const result = await Promise.race([
+        closePromise,
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error(`Timed out waiting ${cleanupTimeoutMs}ms for child close and stream drain`));
+          }, cleanupTimeoutMs);
+        }),
+      ]);
+      if (result.error) throw result.error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   function cleanup() {
     if (cleanupPromise) return cleanupPromise;
     cleanupPromise = (async () => {
@@ -261,6 +328,11 @@ export function createProcessLifecycle({
       for (const child of children) {
         try {
           await terminate(child);
+        } catch (error) {
+          errors.push(error);
+        }
+        try {
+          await waitForCloseAndStreamDrain(child);
         } catch (error) {
           errors.push(error);
         }

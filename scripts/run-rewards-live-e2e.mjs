@@ -1,12 +1,14 @@
+import { randomInt } from 'crypto';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import {
   buildBackendEnvironment,
   buildProofEnvironment,
-  cleanupPreservingPrimaryError,
   createProcessLifecycle,
+  createSecretLeakScanner,
   extractListeningPort,
   fetchWithTimeout,
+  finalizeProofRun,
   hasProcessExited,
   loadBackendDevelopmentKeyPair,
   removeContainerIfPresent,
@@ -20,9 +22,11 @@ const backendRoot = resolve(
 const containerName = `tbot-rewards-live-${process.pid}`;
 const postgresImage = process.env.TBOT_REWARDS_POSTGRES_IMAGE ?? 'postgres:16-alpine';
 const proofEnvironment = buildProofEnvironment({ baseEnv: process.env });
+const pairingCode = String(randomInt(0, 1_000_000)).padStart(6, '0');
 let backendProcess;
 let primaryError;
 const backendLogTail = [];
+const backendLeakScanners = [];
 const lifecycle = createProcessLifecycle({ cleanupContainer: removeContainer });
 const { output, run } = lifecycle;
 
@@ -32,6 +36,10 @@ function removeContainer() {
     output,
     env: proofEnvironment,
   });
+}
+
+function backendLogText() {
+  return backendLogTail.join('').replaceAll(pairingCode, '[REDACTED_PAIRING_CODE]');
 }
 
 async function waitForDatabase() {
@@ -59,21 +67,21 @@ async function waitForBackendPort() {
   while (Date.now() < deadline) {
     if (hasProcessExited(backendProcess)) {
       throw new Error(
-        `Backend exited before reporting its listening port (${backendProcess.exitCode ?? backendProcess.signalCode})\n${backendLogTail.join('')}`,
+        `Backend exited before reporting its listening port (${backendProcess.exitCode ?? backendProcess.signalCode})\n${backendLogText()}`,
       );
     }
-    const port = extractListeningPort(backendLogTail.join(''));
+    const port = extractListeningPort(backendLogText());
     if (port !== null) return port;
     await new Promise((resolveWait) => setTimeout(resolveWait, 100));
   }
-  throw new Error(`Backend listening-port discovery timed out\n${backendLogTail.join('')}`);
+  throw new Error(`Backend listening-port discovery timed out\n${backendLogText()}`);
 }
 
 async function waitForBackend(apiUrl) {
   for (let attempt = 0; attempt < 60; attempt += 1) {
     if (hasProcessExited(backendProcess)) {
       throw new Error(
-        `Backend exited before health check passed (${backendProcess.exitCode ?? backendProcess.signalCode})\n${backendLogTail.join('')}`,
+        `Backend exited before health check passed (${backendProcess.exitCode ?? backendProcess.signalCode})\n${backendLogText()}`,
       );
     }
     try {
@@ -84,12 +92,15 @@ async function waitForBackend(apiUrl) {
     }
     await new Promise((resolveWait) => setTimeout(resolveWait, 500));
   }
-  throw new Error(`Backend health check timed out\n${backendLogTail.join('')}`);
+  throw new Error(`Backend health check timed out\n${backendLogText()}`);
 }
 
 function captureBackendLogs(stream) {
+  const leakScanner = createSecretLeakScanner(pairingCode);
+  backendLeakScanners.push(leakScanner);
   stream.setEncoding('utf8');
   stream.on('data', (chunk) => {
+    leakScanner.scan(chunk);
     backendLogTail.push(chunk);
     if (backendLogTail.length > 80) backendLogTail.shift();
   });
@@ -157,17 +168,28 @@ try {
         TBOT_BACKEND_PRIVATE_KEY_PEM: jwtPrivateKey,
         TBOT_BACKEND_WORKTREE: backendRoot,
         TBOT_REWARDS_LIVE: '1',
+        TBOT_REWARDS_PAIRING_CODE: pairingCode,
         TBOT_REWARDS_POSTGRES_CONTAINER: containerName,
       },
     }),
   });
-  console.info('Rewards live proof passed: 102 migrations, real Nest HTTP/JWT, two households, one persisted reward.');
 } catch (error) {
   primaryError = error;
-  if (backendLogTail.length > 0) process.stderr.write(`\nBackend log tail:\n${backendLogTail.join('')}`);
 }
-await cleanupPreservingPrimaryError({
-  cleanup: lifecycle.cleanup,
-  primaryError,
-  reportCleanupError: (error) => process.stderr.write(`\nCleanup also failed: ${error.message}\n`),
-});
+
+let finalError;
+try {
+  await finalizeProofRun({
+    cleanup: lifecycle.cleanup,
+    primaryError,
+    hasSecretLeak: () => backendLeakScanners.some((scanner) => scanner.hasSecretLeak()),
+    reportCleanupError: (error) => process.stderr.write(`\nCleanup also failed: ${error.message}\n`),
+  });
+} catch (error) {
+  finalError = error;
+}
+if (finalError) {
+  if (backendLogTail.length > 0) process.stderr.write(`\nBackend log tail:\n${backendLogText()}`);
+  throw finalError;
+}
+console.info('Rewards live proof passed: 102 migrations, real Nest HTTP/JWT, two households, one persisted reward.');
