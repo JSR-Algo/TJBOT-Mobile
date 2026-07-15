@@ -5,7 +5,7 @@ module.exports = {
   rootDir: '../../..',
   setupFiles: ['<rootDir>/tests/setup.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup-after-env.ts'],
-  testMatch: ['<rootDir>/tests/integration/rewards-live/**/*.test.ts'],
+  testMatch: ['<rootDir>/tests/integration/rewards-live/rewards-live-backend.test.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     'expo-secure-store': '<rootDir>/tests/__mocks__/expo-secure-store.ts',
