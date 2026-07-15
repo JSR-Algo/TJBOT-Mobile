@@ -1,6 +1,18 @@
 import client from '../http/client';
 import { setTokens, clearTokens } from '../http/tokens';
-import { AuthTokens, User } from '../../types';
+import type { AuthTokens, User } from '../../types';
+
+export interface LoginMetadata {
+  deviceName?: string;
+  platform?: string;
+}
+
+export type LoginResponse = AuthTokens & {
+  user_id: string;
+  access_token_expires_at?: string;
+  refresh_token_expires_at?: string;
+  user?: User;
+};
 
 export async function signup(name: string, email: string, password: string): Promise<{ access_token?: string }> {
   const response = await client.post('/auth/signup', { name, email, password });
@@ -11,8 +23,17 @@ export async function signup(name: string, email: string, password: string): Pro
   return data;
 }
 
-export async function login(email: string, password: string): Promise<AuthTokens & { user: User }> {
-  const response = await client.post('/auth/login', { email, password });
+export async function login(
+  email: string,
+  password: string,
+  metadata: LoginMetadata = {},
+): Promise<LoginResponse> {
+  const response = await client.post('/auth/login', {
+    email,
+    password,
+    ...(metadata.deviceName !== undefined ? { deviceName: metadata.deviceName } : {}),
+    ...(metadata.platform !== undefined ? { platform: metadata.platform } : {}),
+  });
   const data = response.data.data ?? response.data;
   if (data.access_token) {
     await setTokens(data.access_token, data.refresh_token ?? '');
