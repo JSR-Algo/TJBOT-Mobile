@@ -1,4 +1,3 @@
-import { spawn } from 'child_process';
 import { once } from 'events';
 import { createServer } from 'net';
 import { dirname, resolve } from 'path';
@@ -7,6 +6,7 @@ import {
   countForwardMigrations,
   createJwtKeyPair,
   createProcessLifecycle,
+  removeDockerContainer,
 } from './_lib/rewards-live-process-lifecycle.mjs';
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -20,16 +20,10 @@ const jwtKeys = createJwtKeyPair();
 let backendProcess;
 let migrationCount;
 const backendLogTail = [];
-const lifecycle = createProcessLifecycle({ cleanupContainer: removeContainer });
+const lifecycle = createProcessLifecycle({
+  cleanupContainer: () => removeDockerContainer(containerName),
+});
 const { output, run } = lifecycle;
-
-function removeContainer() {
-  return new Promise((resolveOutput, reject) => {
-    const child = spawn('docker', ['rm', '-f', containerName], { stdio: 'ignore' });
-    child.once('error', reject);
-    child.once('exit', () => resolveOutput());
-  });
-}
 
 async function freePort() {
   const server = createServer();

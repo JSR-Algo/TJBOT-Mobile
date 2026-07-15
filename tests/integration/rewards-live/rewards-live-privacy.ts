@@ -17,6 +17,29 @@ export const OWNED_LEADERBOARD_KEYS = [
   'visibility',
 ] as const;
 
+const ENVELOPE_KEYS = ['data'] as const;
+const DATA_KEYS = [
+  'items',
+  'nextCursor',
+  'ownedRow',
+  'ownedRows',
+  'pagination',
+  'period',
+  'rows',
+] as const;
+const PAGINATION_KEYS = ['page', 'pageSize', 'totalPages', 'totalRows'] as const;
+const LEGACY_ROW_KEYS = [
+  'childName',
+  'completions',
+  'deviceId',
+  'maskedParentEmail',
+  'owned',
+  'rank',
+  'reachedAt',
+  'robotName',
+  'xp',
+] as const;
+
 const forbiddenKeys = new Set([
   'assignmentId',
   'coins',
@@ -68,9 +91,13 @@ function inspect(value: unknown, path: string, rawEmails: readonly string[]): vo
 
 export function assertRawLeaderboardPrivacy(envelope: unknown, rawEmails: readonly string[]): void {
   const response = objectAt(envelope, 'response');
+  assertExactKeys(response, ENVELOPE_KEYS, 'response');
   const data = objectAt(response.data, 'response.data');
+  assertExactKeys(data, DATA_KEYS, 'response.data');
   const rows = arrayAt(data.rows, 'response.data.rows');
   const ownedRows = arrayAt(data.ownedRows, 'response.data.ownedRows');
+  const legacyItems = arrayAt(data.items, 'response.data.items');
+  assertExactKeys(data.pagination, PAGINATION_KEYS, 'response.data.pagination');
   rows.forEach((row, index) => assertExactKeys(
     row,
     PUBLIC_LEADERBOARD_KEYS,
@@ -81,5 +108,13 @@ export function assertRawLeaderboardPrivacy(envelope: unknown, rawEmails: readon
     OWNED_LEADERBOARD_KEYS,
     `response.data.ownedRows[${index}]`,
   ));
+  legacyItems.forEach((row, index) => assertExactKeys(
+    row,
+    LEGACY_ROW_KEYS,
+    `response.data.items[${index}]`,
+  ));
+  if (data.ownedRow !== null) {
+    assertExactKeys(data.ownedRow, LEGACY_ROW_KEYS, 'response.data.ownedRow');
+  }
   inspect(envelope, 'response', rawEmails);
 }

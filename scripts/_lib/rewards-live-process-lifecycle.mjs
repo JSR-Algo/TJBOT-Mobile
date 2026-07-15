@@ -35,6 +35,20 @@ export async function countForwardMigrations(backendRoot) {
   return files.filter((file) => file.endsWith('.sql') && !file.endsWith('.down.sql')).length;
 }
 
+export function removeDockerContainer(containerName, { spawnProcess = spawn } = {}) {
+  return new Promise((resolveCleanup, reject) => {
+    const child = spawnProcess('docker', ['rm', '-f', containerName], { stdio: 'ignore' });
+    child.once('error', reject);
+    child.once('exit', (code, signal) => {
+      if (code === 0) {
+        resolveCleanup();
+        return;
+      }
+      reject(new Error(`docker rm -f ${containerName} exited with ${code ?? signal ?? 'unknown status'}`));
+    });
+  });
+}
+
 function killWindowsProcessTree(pid, force) {
   return new Promise((resolveKill, reject) => {
     const args = ['/PID', String(pid), '/T'];
@@ -228,11 +242,25 @@ export function createProcessLifecycle({
   function cleanup() {
     if (cleanupPromise) return cleanupPromise;
     cleanupPromise = (async () => {
-      const first = currentChild;
-      await terminate(first);
-      if (backendChild !== first) await terminate(backendChild);
-      for (const child of [...activeChildren]) await terminate(child);
-      await cleanupContainer();
+      const errors = [];
+      const children = [...new Set([currentChild, backendChild, ...activeChildren].filter(Boolean))];
+      try {
+        for (const child of children) {
+          try {
+            await terminate(child);
+          } catch (error) {
+            errors.push(error);
+          }
+        }
+      } finally {
+        try {
+          await cleanupContainer();
+        } catch (error) {
+          errors.push(error);
+        }
+      }
+      if (errors.length === 1) throw errors[0];
+      if (errors.length > 1) throw new AggregateError(errors, 'Rewards live cleanup failed');
     })();
     return cleanupPromise;
   }

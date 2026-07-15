@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { sign, verify } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -10,6 +11,7 @@ import {
   countForwardMigrations,
   createJwtKeyPair,
   createProcessLifecycle,
+  removeDockerContainer,
 } from '../../scripts/_lib/rewards-live-process-lifecycle.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -72,6 +74,26 @@ test('creates an ephemeral RS256 key pair shared by the runner and backend', () 
   assert.match(privateKey, /^-----BEGIN PRIVATE KEY-----/);
   assert.match(publicKey, /^-----BEGIN PUBLIC KEY-----/);
   assert.equal(verify('RSA-SHA256', payload, publicKey, signature), true);
+});
+
+test('docker container cleanup rejects a nonzero docker rm exit', async () => {
+  const calls = [];
+  const spawnProcess = (command, args, options) => {
+    calls.push({ command, args, options });
+    const child = new EventEmitter();
+    queueMicrotask(() => child.emit('exit', 1, null));
+    return child;
+  };
+
+  await assert.rejects(
+    removeDockerContainer('tbot-rewards-live-test', { spawnProcess }),
+    /docker rm -f tbot-rewards-live-test exited with 1/,
+  );
+  assert.deepEqual(calls, [{
+    command: 'docker',
+    args: ['rm', '-f', 'tbot-rewards-live-test'],
+    options: { stdio: 'ignore' },
+  }]);
 });
 
 async function waitForExit(pid) {
@@ -207,6 +229,35 @@ test('Windows cleanup falls back to forced tree termination when graceful taskki
       { pid: child.pid, force: false },
       { pid: child.pid, force: true },
     ]);
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+  }
+});
+
+test('cleanup reports process and container failures after attempting both', async () => {
+  let containerCleanupCalls = 0;
+  const lifecycle = createProcessLifecycle({
+    cleanupContainer: async () => {
+      containerCleanupCalls += 1;
+      throw new Error('container cleanup failed');
+    },
+    platform: 'win32',
+    killWindowsTree: async () => {
+      throw new Error('process cleanup failed');
+    },
+  });
+  const child = lifecycle.spawnTracked(process.execPath, ['-e', 'setInterval(()=>{},1000)'], { stdio: 'ignore' });
+
+  try {
+    await assert.rejects(lifecycle.cleanup(), (error) => {
+      assert.ok(error instanceof AggregateError);
+      assert.deepEqual(
+        error.errors.map((item) => item.message),
+        ['process cleanup failed', 'container cleanup failed'],
+      );
+      return true;
+    });
+    assert.equal(containerCleanupCalls, 1);
   } finally {
     if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
   }
