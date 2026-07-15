@@ -11,6 +11,11 @@ import {
 } from '@/services/api/rewards.api';
 import { getLeaderboard, updateLeaderboardPreference } from '@/services/api/leaderboard.api';
 import { updateChildDisplayName } from '@/services/api/households';
+import {
+  assertRawLeaderboardPrivacy,
+  OWNED_LEADERBOARD_KEYS,
+  PUBLIC_LEADERBOARD_KEYS,
+} from './rewards-live-privacy';
 
 const apiUrl = process.env.TBOT_API_URL ?? 'http://127.0.0.1:3100/v1';
 const raw = axios.create({ baseURL: apiUrl, validateStatus: () => true });
@@ -25,24 +30,12 @@ const canonicalLessonId = 'w01-d01-barn-say-it';
 const canonicalLessonVersion = 1;
 const expectedBadges = ['first-lesson', 'lessons-1'];
 const expectedPolicyVersion = 'lesson-rewards.v1';
-const publicLeaderboardKeys = [
-  'badges',
-  'childName',
-  'completedLessonCount',
-  'currentStreakDays',
-  'parentEmailMasked',
-  'rank',
-  'rankStatus',
-  'robotId',
-  'robotName',
-  'xp',
-];
-const ownedLeaderboardKeys = [...publicLeaderboardKeys, 'optedIn', 'visibility'].sort();
 const forbiddenLeaderboardKeys = new Set([
   'assignmentId',
   'coins',
   'email',
   'householdId',
+  'parentEmail',
   'parentId',
   'rewardId',
   'sessionId',
@@ -78,7 +71,7 @@ function psql(sql: string): string {
   ).trim();
 }
 
-function expectExactKeys(value: object, keys: string[]): void {
+function expectExactKeys(value: object, keys: readonly string[]): void {
   expect(Object.keys(value).sort()).toEqual([...keys].sort());
 }
 
@@ -102,12 +95,26 @@ function expectLeaderboardPrivacy(
 ): void {
   expectExactKeys(page, ['period', 'rows', 'ownedRows', 'pagination']);
   expectExactKeys(page.pagination, ['page', 'pageSize', 'totalRows', 'totalPages']);
-  for (const row of page.rows) expectExactKeys(row, publicLeaderboardKeys);
-  for (const row of page.ownedRows) expectExactKeys(row, ownedLeaderboardKeys);
+  for (const row of page.rows) expectExactKeys(row, PUBLIC_LEADERBOARD_KEYS);
+  for (const row of page.ownedRows) expectExactKeys(row, OWNED_LEADERBOARD_KEYS);
   const keys = collectKeys(page);
   for (const forbidden of forbiddenLeaderboardKeys) expect(keys).not.toContain(forbidden);
   const serialized = JSON.stringify(page);
   for (const email of rawEmails) expect(serialized).not.toContain(email);
+}
+
+async function getRawLeaderboard(
+  token: string,
+  period: 'weekly' | 'allTime',
+  rawEmails: readonly string[],
+): Promise<unknown> {
+  const response = await raw.get('/mobile/leaderboard', {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { period, page: 1, pageSize: 20 },
+  });
+  expect(response.status).toBe(200);
+  assertRawLeaderboardPrivacy(response.data, rawEmails);
+  return response.data;
 }
 
 function signToken(claims: {
@@ -392,6 +399,10 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
 
     const weekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const allTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    await Promise.all([
+      getRawLeaderboard(fixture.token, 'weekly', [fixture.email, fixture.foreign.email]),
+      getRawLeaderboard(fixture.token, 'allTime', [fixture.email, fixture.foreign.email]),
+    ]);
     const maskedEmail = fixture.email.replace(/^(.{2})[^@]*/, '$1***');
     const primaryPublicRow = {
       rank: 1,
@@ -418,6 +429,10 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     await setTokens(fixture.foreign.token, 'unused-live-refresh-token');
     const foreignWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const foreignAllTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    await Promise.all([
+      getRawLeaderboard(fixture.foreign.token, 'weekly', [fixture.email, fixture.foreign.email]),
+      getRawLeaderboard(fixture.foreign.token, 'allTime', [fixture.email, fixture.foreign.email]),
+    ]);
     const foreignPrivateRow = {
       rank: null,
       rankStatus: 'private' as const,
@@ -458,6 +473,10 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     await expect(updateLeaderboardPreference(fixture.deviceId, false)).resolves.toMatchObject({ optedIn: false });
     const hiddenWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });
     const hiddenAllTime = await getLeaderboard({ period: 'allTime', page: 1, pageSize: 20 });
+    await Promise.all([
+      getRawLeaderboard(fixture.token, 'weekly', [fixture.email, fixture.foreign.email]),
+      getRawLeaderboard(fixture.token, 'allTime', [fixture.email, fixture.foreign.email]),
+    ]);
     const primaryPrivateRow = {
       ...primaryPublicRow,
       rank: null,
