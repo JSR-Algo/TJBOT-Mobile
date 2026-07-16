@@ -89,6 +89,23 @@ describe('DeviceHomeScreen', () => {
     expect(apiMocks.getDeviceStatus).toHaveBeenCalledWith('primary');
   });
 
+  it('does not present an unknown backend status as confirmed offline', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'seed-device',
+      name: 'Seed Robot',
+      online: null,
+      batteryPercent: 0,
+    });
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Status unavailable')).resolves.toBeTruthy();
+    expect(screen.queryByText('Offline')).toBeNull();
+  });
+
   it('changes Wi-Fi without unpairing through reconnect search', async () => {
     apiMocks.getDeviceStatus.mockResolvedValue({
       id: 'seed-device',

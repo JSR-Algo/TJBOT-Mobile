@@ -98,8 +98,13 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     );
   }
 
-  const connectionLabel = translateCopy(device.online ? 'Online' : 'Offline', { locale: language });
-  const connectionColor = device.online ? DV.good : DV.ink2;
+  const connectionLabelKey = device.online === null
+    ? 'Status unavailable'
+    : device.online
+      ? 'Online'
+      : 'Offline';
+  const connectionLabel = translateCopy(connectionLabelKey, { locale: language });
+  const connectionColor = device.online === true ? DV.good : DV.ink2;
   const batteryLabel = `${device.batteryPercent}%`;
   const wifiSsid = device.wifiSsid?.trim();
   const wifiLabel = wifiSsid && wifiSsid.length > 0

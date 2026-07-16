@@ -380,6 +380,12 @@
       "g": "Fallback",
       "kind": "happy"
     },
+    "leaderboard": {
+      "f": "src/features/progress/screens/LeaderboardScreen.tsx",
+      "title": "Leaderboard",
+      "g": "Progress",
+      "kind": "happy"
+    },
     "lesson_detail": {
       "f": "src/features/course/screens/LessonDetailScreen.tsx",
       "title": "Lesson Detail",
@@ -535,6 +541,12 @@
       "title": "Parent Gate Locked Out",
       "g": "Parent",
       "kind": "edge"
+    },
+    "parent_rewards": {
+      "f": "src/features/parent/screens/ParentRewardsScreen.tsx",
+      "title": "Rewards",
+      "g": "Parent",
+      "kind": "happy"
     },
     "parent_safety": {
       "f": "src/features/parent/screens/ParentSafetyScreen.tsx",
@@ -911,6 +923,7 @@
       "parent_gate",
       "parent_history",
       "parent_locked_out",
+      "parent_rewards",
       "parent_safety",
       "parent_settings",
       "parent_summary",
@@ -918,6 +931,7 @@
     ],
     "Progress": [
       "celebration",
+      "leaderboard",
       "lesson_summary",
       "review_needed",
       "today_progress",
@@ -993,7 +1007,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-07-14T07:34:40Z",
-    "sourceCommit": "6320ec8b89a53bed4499f2a8f547082377873904"
+    "generatedAt": "2026-07-16T03:40:33Z",
+    "sourceCommit": "3dee3e2571c92ca8130e30473e2924fd51577239"
   }
 }
