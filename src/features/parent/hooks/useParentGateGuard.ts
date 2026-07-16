@@ -5,6 +5,7 @@ type ProtectedParentRoute =
   | typeof ROUTES.ParentSummaryScreen
   | typeof ROUTES.ParentTodayScreen
   | typeof ROUTES.ParentHistoryScreen
+  | typeof ROUTES.ParentRewardsScreen
   | typeof ROUTES.ParentSettingsScreen
   | typeof ROUTES.ParentSafetyScreen
   | typeof ROUTES.ParentAccountPrivacyScreen;

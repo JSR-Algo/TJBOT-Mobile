@@ -98,6 +98,9 @@ export default function ParentHistoryScreen({ navigation }: Props) {
   return (
     <ParentScroll title="Lesson history" onBack={back}>
       <Box paddingHorizontal={16} paddingTop={14} paddingBottom={4}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open reward history" onPress={() => navigation.navigate(ROUTES.ParentRewardsScreen)} style={styles.rewardsLink}>
+          <Text fontWeight="700" style={styles.retryText}>Rewards & leaderboard</Text>
+        </TouchableOpacity>
         <Box flexDirection="row" gap={14}>
           <Text style={styles.stat} i18n={false}>
             {translateTemplate('{{count}} {{label}}', { count: completedCount, label: t('completed') }, { locale: language })}
@@ -176,4 +179,5 @@ const styles = StyleSheet.create({
   dayChip: { width: 42, padding: 6, borderRadius: 8, flexShrink: 0 },
   monthLabel: { fontSize: 10, color: PA.ink3, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '600' },
   dayNum: { fontSize: 16, color: PA.ink, lineHeight: 20 },
+  rewardsLink: { minHeight: 44, justifyContent: 'center', marginBottom: 10 },
 });

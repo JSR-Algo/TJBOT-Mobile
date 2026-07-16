@@ -33,4 +33,21 @@
 
 ## UC-P05
 
-- **n/a**: Celebration is view-only with auto-advance — no user input, no async call, no state mutation (view-only, no-async).
+- **error**: Inbox failure keeps the lesson completion safe and offers retry without displaying guessed XP, coins, badge, or streak values.
+- **retry**: Seen acknowledgement retries only through the idempotent account-and-household scoped queue; award mutations never enter that queue.
+- **validation**: Missing assignment/session correlation or an exact reward ID missing from the unseen inbox renders waiting-to-sync instead of another same-child/robot reward.
+
+## UC-P06
+
+- **error**: A failed refresh retains previously cached history only with an explicit offline/stale label and retry action.
+- **validation**: Child and robot filters send stable IDs and never derive private totals by summing partial pages.
+
+## UC-P07
+
+- **retry**: Refresh revalidates the selected period and bounded page without appending duplicate owned rows.
+- **validation**: Private, refreshing, nullable streak, empty badges, and outside-page owned rows remain distinguishable without relying on colour alone.
+
+## UC-P08
+
+- **error**: Rename, active-child selection, and preference failures preserve the last server-confirmed state and remain visible to the parent.
+- **validation**: Empty names, foreign child IDs, and unresolved robot IDs cannot be submitted from enabled controls; every owned row gets a device-scoped preference control and no absent device metric is guessed.

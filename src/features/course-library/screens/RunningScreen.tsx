@@ -189,8 +189,19 @@ export default function RunningScreen({ navigation, route }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+        {completed && assignmentId && deviceId && assignment?.lessonId ? (
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.LessonSummaryScreen, {
+            childId: route.params?.childId,
+            assignmentId,
+            deviceId,
+            lessonId: assignment.lessonId,
+            sessionId: sessionId ?? undefined,
+          })}>
+            See lesson reward
+          </DeviceBigBtn>
+        ) : null}
         {!completed && !statusUnavailable && (
-          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { deviceId, assignmentId, sessionId, lessonTitle })}>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { childId: route.params?.childId, deviceId, assignmentId, sessionId, lessonTitle })}>
             See what's happening
           </DeviceBigBtn>
         )}

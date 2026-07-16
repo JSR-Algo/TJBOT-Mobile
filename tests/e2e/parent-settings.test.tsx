@@ -21,7 +21,7 @@ import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
 import { getChildLessonProgress, getChildProgress } from '../../src/services/api/progress.api';
 import { getChildProfile, updateChildProfile, getKPIs, getPronunciationTrend } from '../../src/services/api/learning';
-import { updateChild } from '../../src/services/api/households';
+import { setActiveChild, updateChildDisplayName } from '../../src/services/api/households';
 import { useHousehold } from '@/contexts/HouseholdContext';
 
 jest.setTimeout(120_000);
@@ -128,7 +128,8 @@ jest.mock('../../src/services/api/learning', () => ({
 
 jest.mock('../../src/services/api/households', () => ({
   __esModule: true,
-  updateChild: jest.fn(),
+  setActiveChild: jest.fn(),
+  updateChildDisplayName: jest.fn(),
 }));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
@@ -145,7 +146,8 @@ const mockGetChildProfile = getChildProfile as jest.MockedFunction<typeof getChi
 const mockGetKPIs = getKPIs as jest.MockedFunction<typeof getKPIs>;
 const mockGetPronunciationTrend = getPronunciationTrend as jest.MockedFunction<typeof getPronunciationTrend>;
 const mockUpdateChildProfile = updateChildProfile as jest.MockedFunction<typeof updateChildProfile>;
-const mockUpdateChild = updateChild as jest.MockedFunction<typeof updateChild>;
+const mockSetActiveChild = setActiveChild as jest.MockedFunction<typeof setActiveChild>;
+const mockUpdateChildDisplayName = updateChildDisplayName as jest.MockedFunction<typeof updateChildDisplayName>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 
 // ParentToday/History read the child-scoped lesson-progress feed via TanStack
@@ -199,9 +201,10 @@ describe('Parent settings and gate', () => {
       withdrawn_at: '2026-07-02T00:05:00.000Z',
     });
     mockedUseHousehold.mockReturnValue({
-      children: [{ id: 'child-1', household_id: 'household-1', name: 'Mai' }],
+      children: [{ id: 'child-1', household_id: 'household-1', name: 'Mai' }, { id: 'child-2', household_id: 'household-1', name: 'An' }],
       activeChild: { id: 'child-1', household_id: 'household-1', name: 'Mai' },
       refresh: mockHouseholdRefresh,
+      setActiveChild: jest.fn(),
     } as never);
     mockGetChildProgress.mockResolvedValue({ childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [] });
     mockGetChildLessonProgress.mockResolvedValue([]);
@@ -232,7 +235,8 @@ describe('Parent settings and gate', () => {
       learning_style: dto.learning_style ?? 'visual',
       parent_career: dto.parent_career ?? 'engineer',
     }));
-    mockUpdateChild.mockResolvedValue({ id: 'child-1', household_id: 'household-1', name: 'Bong', birth_year: 2020, age_gate_passed: true, created_at: '2026-06-19T00:00:00.000Z' });
+    mockUpdateChildDisplayName.mockResolvedValue({ id: 'child-1', displayName: 'Bong' });
+    mockSetActiveChild.mockResolvedValue({ child_id: 'child-2' });
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],
       subscriptionStatus: 'none',
@@ -318,8 +322,22 @@ describe('Parent settings and gate', () => {
       fireEvent.press(screen.getByText('Save child name'));
     });
 
-    expect(mockUpdateChild).toHaveBeenCalledWith('household-1', 'child-1', { display_name: 'Bong' });
+    expect(mockUpdateChildDisplayName).toHaveBeenCalledWith('child-1', 'Bong');
     expect(mockHouseholdRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('changes active child only after the household server confirms it', async () => {
+    const localSelect = jest.fn();
+    mockedUseHousehold.mockReturnValue({
+      children: [{ id: 'child-1', household_id: 'household-1', name: 'Mai' }, { id: 'child-2', household_id: 'household-1', name: 'An' }],
+      activeChild: { id: 'child-1', household_id: 'household-1', name: 'Mai' },
+      refresh: mockHouseholdRefresh,
+      setActiveChild: localSelect,
+    } as never);
+    const screen = await renderParentSettings();
+    await act(async () => { fireEvent.press(screen.getByLabelText('Select An as active child')); });
+    expect(mockSetActiveChild).toHaveBeenCalledWith('child-2');
+    expect(localSelect).toHaveBeenCalledWith('child-2');
   });
 
   it('opens account privacy controls from settings', async () => {

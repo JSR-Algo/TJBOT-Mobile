@@ -4,4 +4,5 @@ export const STATES = [
   { id: 'lesson_summary', title: 'Lesson Summary', group: 'Progress', kind: 'happy' },
   { id: 'review_needed', title: 'Review Needed', group: 'Progress', kind: 'happy' },
   { id: 'celebration', title: 'Celebration', group: 'Progress', kind: 'happy' },
+  { id: 'leaderboard', title: 'Leaderboard', group: 'Progress', kind: 'happy' },
 ] as const;

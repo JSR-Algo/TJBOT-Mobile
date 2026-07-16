@@ -2,5 +2,9 @@
   "id": "progress",
   "owner_lane": "C",
   "flow": "docs/flows/domains/progress/flow.generated.mmd",
-  "edge_cases": {}
+  "edge_cases": {
+    "lesson_summary": ["error", "retry"],
+    "celebration": ["error", "retry", "validation"],
+    "leaderboard": ["error", "retry", "validation"]
+  }
 }

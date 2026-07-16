@@ -5,6 +5,8 @@
   "edge_cases": {
     "parent_gate": ["unauthorized"],
     "parent_locked_out": ["unauthorized", "timeout"],
-    "parent_account_privacy": ["unauthorized"]
+    "parent_account_privacy": ["unauthorized"],
+    "parent_rewards": ["error", "retry", "validation"],
+    "parent_settings": ["error", "retry", "validation"]
   }
 }

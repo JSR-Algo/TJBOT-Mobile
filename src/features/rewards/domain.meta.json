@@ -1,0 +1,6 @@
+{
+  "id": "rewards",
+  "owner_lane": "C",
+  "flow": "docs/flows/domains/rewards/flow.generated.mmd",
+  "edge_cases": {}
+}

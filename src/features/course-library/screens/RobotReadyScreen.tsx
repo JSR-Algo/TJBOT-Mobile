@@ -36,6 +36,7 @@ const POLL_INTERVAL_MS = 2500;
 const MAX_PRELOAD_SETTLING_POLLS = 18;
 
 export default function RobotReadyScreen({ navigation, route }: Props) {
+  const childId = route.params?.childId;
   const deviceId = route.params?.deviceId;
   const missingDeviceId = !deviceId;
   const [preload, setPreload] = React.useState<PreloadStatus | null>(null);
@@ -182,6 +183,7 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
                 return;
               }
               navigation.navigate(ROUTES.RunningScreen, {
+                childId,
                 deviceId,
                 assignmentId,
                 sessionId,

@@ -18,15 +18,17 @@ import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { captureError } from '@/services/observability/sentry';
 import { isAnalyticsEnabled } from '@/services/observability/analytics';
 import { getAnalyticsPreference, setAnalyticsPreference } from '@/services/observability/analyticsPreference';
-import { useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
+import { translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 import { getChildProfile, updateChildProfile, type ChildProfile, type UpdateProfileDto } from '@/services/api/learning';
-import { updateChild, deleteChild } from '@/services/api/households';
+import { deleteChild, setActiveChild as confirmActiveChild, updateChildDisplayName } from '@/services/api/households';
 import {
   AI_VOICE_CONSENT_VERSION,
   GOOGLE_SUBPROCESSORS_VERSION,
   recordAiVoiceConsent,
   withdrawAiVoiceConsent,
 } from '@/services/api/auth';
+import { rewardKeys } from '@/features/rewards/hooks/useRewards';
+import { appQueryClient } from '@/services/query/queryClient';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSettingsScreen'>;
 
@@ -63,7 +65,7 @@ function languageLabel(locale: AppLocale): string {
 export default function ParentSettingsScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentSettingsScreen);
   const { logout } = useAuth();
-  const { activeChild, refresh } = useHousehold();
+  const { activeChild, children, refresh, setActiveChild } = useHousehold();
   const [analytics, setAnalytics] = React.useState(isAnalyticsEnabled());
   const [savingLanguage, setSavingLanguage] = React.useState<AppLocale | null>(null);
   const [languageSaveFailed, setLanguageSaveFailed] = React.useState(false);
@@ -75,12 +77,13 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   const [childNameDraft, setChildNameDraft] = React.useState('');
   const [childNameSaving, setChildNameSaving] = React.useState(false);
   const [childNameSaveFailed, setChildNameSaveFailed] = React.useState(false);
+  const [activeChildSaving, setActiveChildSaving] = React.useState<string | null>(null);
+  const [activeChildSaveFailed, setActiveChildSaveFailed] = React.useState(false);
   const [voiceConsentSaving, setVoiceConsentSaving] = React.useState<'grant' | 'withdraw' | null>(null);
   const [voiceConsentMessage, setVoiceConsentMessage] = React.useState<string | null>(null);
   const [voiceConsentSaveFailed, setVoiceConsentSaveFailed] = React.useState(false);
   const { language, setLanguage, t } = useAppLanguage();
   const childId = activeChild?.id;
-  const householdId = activeChild?.household_id;
   // Guards against a fetch resolving after childId changed / unmount.
   const profileReqRef = React.useRef(0);
 
@@ -180,22 +183,38 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     setChildNameSaving(true);
     setChildNameSaveFailed(false);
     try {
-      if (householdId) {
-        await updateChild(householdId, childId, { display_name: nextName });
-        await refresh();
-      } else {
-        const nextProfile = await updateChildProfile(childId, { name: nextName });
-        setProfile(nextProfile);
-      }
+      await updateChildDisplayName(childId, nextName);
+      await refresh();
       setProfile((current) => current ? { ...current, name: nextName } : current);
       setChildNameDraft(nextName);
+      await Promise.all([
+        appQueryClient.invalidateQueries({ queryKey: rewardKeys.all }),
+        appQueryClient.invalidateQueries({ queryKey: rewardKeys.device(childId) }),
+        appQueryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] }),
+        appQueryClient.invalidateQueries({ queryKey: ['child-progress-dashboard', 'child', childId] }),
+      ]);
     } catch (error) {
       captureError(error);
       setChildNameSaveFailed(true);
     } finally {
       setChildNameSaving(false);
     }
-  }, [childId, childNameDraft, childNameSaving, householdId, refresh]);
+  }, [childId, childNameDraft, childNameSaving, refresh]);
+
+  const selectActiveChild = React.useCallback(async (nextChildId: string): Promise<void> => {
+    if (activeChildSaving || nextChildId === childId) return;
+    setActiveChildSaving(nextChildId);
+    setActiveChildSaveFailed(false);
+    try {
+      const confirmed = await confirmActiveChild(nextChildId);
+      setActiveChild(confirmed.child_id);
+    } catch (error) {
+      captureError(error);
+      setActiveChildSaveFailed(true);
+    } finally {
+      setActiveChildSaving(null);
+    }
+  }, [activeChildSaving, childId, setActiveChild]);
 
   const toggleInterest = React.useCallback((interest: string) => {
     const current = profile?.interests ?? [];
@@ -310,6 +329,17 @@ export default function ParentSettingsScreen({ navigation }: Props) {
 
       <PRowGroup header="Profile and plan">
         <Box style={styles.nameEditor}>
+          <Text fontWeight="600" style={styles.filterTitle}>Active child</Text>
+          <Text style={styles.helperText}>The server confirms this child before lessons and robot rewards switch.</Text>
+          <Box flexDirection="row" gap={8} style={styles.chipWrap}>
+            {children.map(child => {
+              const selected = child.id === childId;
+              return <TouchableOpacity key={child.id} accessibilityRole="radio" accessibilityLabel={translateTemplate('Select {{name}} as active child', { name: child.name }, { locale: language })} accessibilityHint={t('Switches lessons, robot, and rewards after server confirmation')} accessibilityState={{ selected, disabled: activeChildSaving !== null }} disabled={activeChildSaving !== null} onPress={() => { void selectActiveChild(child.id); }} style={[styles.chip, selected && styles.chipSelected]}><Text fontWeight="600" style={[styles.chipText, selected && styles.chipTextSelected]} i18n={false}>{child.name}</Text></TouchableOpacity>;
+            })}
+          </Box>
+          {activeChildSaveFailed ? <Text accessibilityRole="alert" style={styles.profileError}>Active child could not be changed. Try again.</Text> : null}
+        </Box>
+        <Box style={styles.nameEditor}>
           <Text fontWeight="600" style={styles.filterTitle}>Child name</Text>
           <Box flexDirection="row" gap={8} alignItems="center">
             <TextInput
@@ -323,6 +353,8 @@ export default function ParentSettingsScreen({ navigation }: Props) {
             />
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Save child name"
+              accessibilityHint="Saves this name to the household server"
               accessibilityState={{ disabled: childNameSaving || !childId || childNameDraft.trim().length === 0 }}
               disabled={childNameSaving || !childId || childNameDraft.trim().length === 0}
               onPress={() => { void saveChildName(); }}
@@ -517,6 +549,7 @@ const styles = StyleSheet.create({
     color: PA.ink,
     backgroundColor: '#fff',
   },
+  helperText: { color: PA.ink2, fontSize: 12, lineHeight: 18, marginTop: 4, marginBottom: 10 },
   saveNameButton: {
     minHeight: 40,
     justifyContent: 'center',

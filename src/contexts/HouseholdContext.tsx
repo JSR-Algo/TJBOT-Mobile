@@ -6,6 +6,8 @@ import * as householdsApi from '../services/api/households';
 import { useAuth } from './AuthContext';
 import { normalizeError } from '../utils/errors';
 import type { RootStackParamList } from '../navigation/routes';
+import { replayRewardSeenQueue, setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
+import { captureError } from '@/services/observability/sentry';
 
 const ONBOARDING_COMPLETE_KEY = 'onboarding_complete_v1';
 
@@ -74,7 +76,8 @@ interface HouseholdContextValue extends HouseholdState {
 const HouseholdContext = createContext<HouseholdContextValue | undefined>(undefined);
 
 export function HouseholdProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const rewardScopeRef = React.useRef<string | null>(null);
   const [state, setState] = useState<HouseholdState>({
     households: [],
     activeHousehold: null,
@@ -163,6 +166,21 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
       }));
     }
   }, [isAuthenticated, authLoading, refresh]);
+
+  useEffect(() => {
+    const accountId = user?.id ?? null;
+    const householdId = state.activeHousehold?.id ?? null;
+    if (!isAuthenticated || !accountId || !householdId) {
+      rewardScopeRef.current = null;
+      setRewardQueueScope(accountId, null);
+      return;
+    }
+    const scopeKey = `${accountId}:${householdId}`;
+    if (rewardScopeRef.current === scopeKey) return;
+    rewardScopeRef.current = scopeKey;
+    setRewardQueueScope(accountId, householdId);
+    replayRewardSeenQueue().catch(captureError);
+  }, [isAuthenticated, state.activeHousehold?.id, user?.id]);
 
   const createHousehold = async (name: string): Promise<Household> => {
     const household = await householdsApi.create(name);

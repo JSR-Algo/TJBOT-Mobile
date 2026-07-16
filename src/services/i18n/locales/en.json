@@ -1805,5 +1805,129 @@
   "Start with Robot so timing comes from real lesson history.": "Start with Robot so timing comes from real lesson history.",
   "Starter lesson preview with Robot and hello word cards": "Starter lesson preview with Robot and hello word cards",
   "Starter lesson": "Starter lesson",
-  "Say hello to Panda": "Say hello to Panda"
+  "Say hello to Panda": "Say hello to Panda",
+  "Reward is waiting to sync": "Reward is waiting to sync",
+  "Your lesson is saved. We will show the award when the robot reconnects.": "Your lesson is saved. We will show the award when the robot reconnects.",
+  "Reward unavailable": "Reward unavailable",
+  "Reward needs parent attention": "Reward needs parent attention",
+  "Check the child assigned to this robot, then contact support if the reward remains unavailable.": "Check the child assigned to this robot, then contact support if the reward remains unavailable.",
+  "Celebrate reward": "Celebrate reward",
+  "Lesson reward": "Lesson reward",
+  "Your lesson is safe. Check again when the robot is online.": "Your lesson is safe. Check again when the robot is online.",
+  "Reward earned": "Reward earned",
+  "New reward": "New reward",
+  "Leaderboard": "Leaderboard",
+  "This week": "This week",
+  "All time": "All time",
+  "Loading leaderboard": "Loading leaderboard",
+  "Leaderboard unavailable": "Leaderboard unavailable",
+  "No robots have joined yet.": "No robots have joined yet.",
+  "Your robot": "Your robot",
+  "Load more": "Load more",
+  "Private by default": "Private by default",
+  "Visible on leaderboard": "Visible on leaderboard",
+  "Rewards and history stay private until you join.": "Rewards and history stay private until you join.",
+  "Child name, robot name and masked parent email are visible.": "Child name, robot name and masked parent email are visible.",
+  "Join leaderboard": "Join leaderboard",
+  "Leave leaderboard": "Leave leaderboard",
+  "View leaderboard": "View leaderboard",
+  "Rewards": "Rewards",
+  "Loading reward totals": "Loading reward totals",
+  "Reward totals unavailable": "Reward totals unavailable",
+  "Total XP": "Total XP",
+  "Coins": "Coins",
+  "Day streak": "Day streak",
+  "Reward history": "Reward history",
+  "Loading reward history": "Loading reward history",
+  "Reward history unavailable": "Reward history unavailable",
+  "No rewards yet.": "No rewards yet.",
+  "Rewards & leaderboard": "Rewards & leaderboard",
+  "Open leaderboard": "Open leaderboard",
+  "Load more reward history": "Load more reward history",
+  "Retry leaderboard": "Retry leaderboard",
+  "Load more leaderboard rows": "Load more leaderboard rows",
+  "Open reward history": "Open reward history",
+  "Retry reward": "Retry reward",
+  "XP ·": "XP ·",
+  "See lesson reward": "See lesson reward"
+  ,"Leaderboard preference loading": "Leaderboard preference loading"
+  ,"Loading leaderboard preference": "Loading leaderboard preference"
+  ,"Leaderboard preference unavailable": "Leaderboard preference unavailable"
+  ,"Retry leaderboard preference": "Retry leaderboard preference"
+  ,"Leaderboard preference could not be saved.": "Leaderboard preference could not be saved."
+  ,"Join leaderboard for {{robot}}": "Join leaderboard for {{robot}}"
+  ,"Leave leaderboard for {{robot}}": "Leave leaderboard for {{robot}}"
+  ,"Rewards and history stay private even when your robot is hidden.": "Rewards and history stay private even when your robot is hidden."
+  ,"Fetches privacy status from the server": "Fetches privacy status from the server"
+  ,"Hides this robot from public rankings while private rewards remain available": "Hides this robot from public rankings while private rewards remain available"
+  ,"Shows this robot with masked parent email in public rankings": "Shows this robot with masked parent email in public rankings"
+  ,"This week leaderboard": "This week leaderboard"
+  ,"All time leaderboard": "All time leaderboard"
+  ,"Refresh leaderboard": "Refresh leaderboard"
+  ,"Fetches the latest ranks from the server": "Fetches the latest ranks from the server"
+  ,"Refresh ranks": "Refresh ranks"
+  ,"Fetches the leaderboard again": "Fetches the leaderboard again"
+  ,"Previous leaderboard page": "Previous leaderboard page"
+  ,"Next leaderboard page": "Next leaderboard page"
+  ,"Page {{page}} of {{total}}": "Page {{page}} of {{total}}"
+  ,"Rank refreshing": "Rank refreshing"
+  ,"Private robot": "Private robot"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}": "Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}": "{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}"
+  ,"Filter rewards for {{name}}": "Filter rewards for {{name}}"
+  ,"Filter rewards for robot {{name}}": "Filter rewards for robot {{name}}"
+  ,"Offline · showing saved rewards": "Offline · showing saved rewards"
+  ,"Totals refreshing": "Totals refreshing"
+  ,"Retry reward history": "Retry reward history"
+  ,"Fetches reward history again": "Fetches reward history again"
+  ,"Shows weekly and all-time robot ranks": "Shows weekly and all-time robot ranks"
+  ,"Active child": "Active child"
+  ,"The server confirms this child before lessons and robot rewards switch.": "The server confirms this child before lessons and robot rewards switch."
+  ,"Select {{name}} as active child": "Select {{name}} as active child"
+  ,"Switches lessons, robot, and rewards after server confirmation": "Switches lessons, robot, and rewards after server confirmation"
+  ,"Active child could not be changed. Try again.": "Active child could not be changed. Try again."
+  ,"Save child name": "Save child name"
+  ,"Saves this name to the household server": "Saves this name to the household server"
+  ,"Fetches the persisted reward inbox again": "Fetches the persisted reward inbox again"
+  ,"Returns to the robot home": "Returns to the robot home"
+  ,"Lesson completed": "Lesson completed"
+  ,"My Robots": "My Robots"
+  ,"Only server-reported robot and reward details appear here. Unavailable device status is never estimated.": "Only server-reported robot and reward details appear here. Unavailable device status is never estimated."
+  ,"Loading owned robots": "Loading owned robots"
+  ,"Owned robots unavailable": "Owned robots unavailable"
+  ,"No owned robots available": "No owned robots available"
+  ,"Retry owned robots": "Retry owned robots"
+  ,"Fetches owned robots and privacy settings again": "Fetches owned robots and privacy settings again"
+  ,"Streak refreshing": "Streak refreshing"
+  ,"No badges yet": "No badges yet"
+  ,"lessons ·": "lessons ·"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}": "Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}": "{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}"
+  ,"{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}} lessons. {{streak}} day streak.": "{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}} lessons. {{streak}} day streak."
+  ,"Open detailed robot status": "Open detailed robot status"
+  ,"Opens the server-backed device status screen": "Opens the server-backed device status screen"
+  ,"Detailed robot status": "Detailed robot status"
+  ,"Open factory reset": "Open factory reset"
+  ,"Opens the parent-confirmed reset flow without claiming device status": "Opens the parent-confirmed reset flow without claiming device status"
+  ,"Rank: {{rank}}": "Rank: {{rank}}"
+  ,"Rank refreshing: {{rank}}": "Rank refreshing: {{rank}}"
+  ,"Lessons: {{count}}": "Lessons: {{count}}"
+  ,"Streak days: {{count}}": "Streak days: {{count}}"
+  ,"Badges: {{badges}}": "Badges: {{badges}}"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}"
+  ,"{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}.": "{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}."
+  ,"XP: {{count}}": "XP: {{count}}"
+  ,"Coins: {{count}}": "Coins: {{count}}"
+  ,"Streak unavailable": "Streak unavailable"
+  ,"{{child}} and {{robot}}. {{xp}}. {{coins}}. {{streak}}. {{reason}}.": "{{child}} and {{robot}}. {{xp}}. {{coins}}. {{streak}}. {{reason}}."
+  ,"{{reason}}. {{xp}}. {{coins}}.": "{{reason}}. {{xp}}. {{coins}}."
+  ,"{{reason}}. {{xp}}. {{coins}}. {{streak}}.": "{{reason}}. {{xp}}. {{coins}}. {{streak}}."
+  ,"{{xp}}. {{coins}}. Rewards: {{count}}.": "{{xp}}. {{coins}}. Rewards: {{count}}."
+  ,"This screen shows only identity and operational state returned by the device API.": "This screen shows only identity and operational state returned by the device API."
+  ,"Loading robot status": "Loading robot status"
+  ,"Retry robot status": "Retry robot status"
+  ,"Fetches device identity and operational state again": "Fetches device identity and operational state again"
+  ,"Battery, Wi-Fi, courses, microphone, temperature, uptime, and software are unavailable on this contract.": "Battery, Wi-Fi, courses, microphone, temperature, uptime, and software are unavailable on this contract."
+  ,"Status unavailable": "Status unavailable"
 }

@@ -57,7 +57,13 @@ describe('LessonDoneScreen', () => {
     render(<LessonDoneScreen navigation={navigation as never} route={routeFor('LessonDoneScreen')} />);
 
     fireEvent.press(screen.getByText('See what you did'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen, {
+      childId: undefined,
+      lessonId: undefined,
+      assignmentId: undefined,
+      sessionId: undefined,
+      deviceId: undefined,
+    });
   });
 
   it('"Back home" navigates to the home hub', () => {

@@ -47,9 +47,9 @@ export type RootStackParamList = {
   // forward for the ASSIGNMENT_CONFLICT refresh-and-retry; courseId stays for
   // back-compat with the existing browse entry.
   SendToRobotScreen: undefined | { courseId?: string };
-  RobotReadyScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; lessonTitle?: string; manifestChecksum?: string | null };
-  RunningScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
-  CompanionScreen: undefined | { deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
+  RobotReadyScreen: undefined | { childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; lessonTitle?: string; manifestChecksum?: string | null };
+  RunningScreen: undefined | { childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
+  CompanionScreen: undefined | { childId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
 
   // purchase
   PurchaseIntroScreen: undefined;
@@ -76,7 +76,7 @@ export type RootStackParamList = {
   ActivityIntroScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
   ActivityDoneScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
   SuccessScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
-  LessonDoneScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect'; wordsLearned?: number };
+  LessonDoneScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect'; wordsLearned?: number; childId?: string; assignmentId?: string; sessionId?: string; deviceId?: string };
   ExitConfirmScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
   RetryScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
   SilenceScreen: undefined | { courseId?: string; courseTitle?: string; unitId?: string; unitTitle?: string; lessonId?: string; lessonTitle?: string; contentVersion?: string; mode?: 'lesson' | 'review' | 'mission'; activityIndex?: number; activityTotal?: number; beatIndex?: number; lastPrompt?: string; lastAcceptedProgress?: number; voiceStateBeforeInterruption?: string; resumeReason?: 'normal' | 'reconnecting' | 'audio_error' | 'timed_out' | 'exit_confirm' | 'parent_stopped' | 'cost_capped' | 'abandoned_disconnect' };
@@ -94,15 +94,17 @@ export type RootStackParamList = {
   // progress
   TodayProgressScreen: undefined;
   WordsPracticedScreen: undefined;
-  LessonSummaryScreen: undefined | { lessonId?: string };
+  LessonSummaryScreen: undefined | { childId?: string; lessonId?: string; assignmentId?: string; sessionId?: string; deviceId?: string };
   ReviewNeededScreen: undefined;
-  CelebrationScreen: undefined;
+  CelebrationScreen: undefined | { rewardId?: string; childId?: string; lessonId?: string; assignmentId?: string; sessionId?: string; deviceId?: string };
+  LeaderboardScreen: undefined;
 
   // parent
   ParentGateScreen: undefined | { next?: 'ParentSummaryScreen' | 'ParentSettingsScreen' | 'ParentSafetyScreen' | 'ParentHistoryScreen' | 'ParentTodayScreen' | 'ParentAccountPrivacyScreen' };
   ParentSummaryScreen: undefined | { deviceId?: string; summaryDate?: string };
   ParentTodayScreen: undefined;
   ParentHistoryScreen: undefined;
+  ParentRewardsScreen: undefined;
   ParentSafetyScreen: undefined;
   ParentSettingsScreen: undefined;
   ParentAccountPrivacyScreen: undefined;
@@ -237,10 +239,12 @@ export const ROUTES = {
   'LessonSummaryScreen': 'LessonSummaryScreen',
   'ReviewNeededScreen': 'ReviewNeededScreen',
   'CelebrationScreen': 'CelebrationScreen',
+  'LeaderboardScreen': 'LeaderboardScreen',
   'ParentGateScreen': 'ParentGateScreen',
   'ParentSummaryScreen': 'ParentSummaryScreen',
   'ParentTodayScreen': 'ParentTodayScreen',
   'ParentHistoryScreen': 'ParentHistoryScreen',
+  'ParentRewardsScreen': 'ParentRewardsScreen',
   'ParentSafetyScreen': 'ParentSafetyScreen',
   'ParentSettingsScreen': 'ParentSettingsScreen',
   'ParentAccountPrivacyScreen': 'ParentAccountPrivacyScreen',

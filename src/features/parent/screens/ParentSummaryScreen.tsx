@@ -281,6 +281,7 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
 
       <PRowGroup header="History">
         <PRow icon="🗓" label="Past 30 days" value={weeklyLessonsLabel(summary.weekLessons, language)} chevron onPress={() => navigation.navigate(ROUTES.ParentHistoryScreen)} />
+        <PRow icon="🏆" label="Rewards & leaderboard" chevron onPress={() => navigation.navigate(ROUTES.ParentRewardsScreen)} />
         <PRow icon="📚" label="Course progress" value={hasActivity ? 'In progress' : 'No synced progress'} chevron isLast />
       </PRowGroup>
 

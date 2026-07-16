@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -9,82 +9,81 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useReduceMotion } from '@/design-system/animations/useReduceMotion';
+import { useAcknowledgeRewardMutation, useRewardInboxQuery } from '@/features/rewards/hooks/useRewards';
+import { useHousehold } from '@/contexts/HouseholdContext';
+import type { JsonValue } from '@/services/api/rewards.api';
+import { isRewardSeenQueued } from '@/features/rewards/offline/rewardSeenQueue';
+import { captureError } from '@/services/observability/sentry';
+import { translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CelebrationScreen'>;
+const CONFETTI_COLORS = ['#FF6F61', '#0D8F68', '#1778B5', '#fff', '#6B4A9B'];
 
-const CONFETTI_COLORS = ['#FF6F61', '#6CE2B6', '#6FC1FF', '#fff', '#6B4A9B'];
+function reasonLabel(reason: JsonValue, locale: AppLocale): string {
+  if (reason === 'lesson_completion') return translateTemplate('Lesson completed', {}, { locale });
+  if (reason && typeof reason === 'object' && !Array.isArray(reason) && reason.label === 'lesson_completion') return translateTemplate('Lesson completed', {}, { locale });
+  return typeof reason === 'string' ? reason : translateTemplate('Lesson completed', {}, { locale });
+}
 
-export default function CelebrationScreen({ navigation }: Props) {
+export default function CelebrationScreen({ navigation, route }: Props): React.JSX.Element {
+  const reduceMotion = useReduceMotion();
+  const { language, t } = useAppLanguage();
+  const { activeHousehold } = useHousehold();
+  const inbox = useRewardInboxQuery(activeHousehold?.id ?? '');
+  const candidate = inbox.data?.rewards.find(item => item.rewardId === route.params?.rewardId);
+  const [queuedSeen, setQueuedSeen] = React.useState<boolean | null>(null);
+  const reward = queuedSeen === false ? candidate : undefined;
+  const acknowledge = useAcknowledgeRewardMutation(activeHousehold?.id ?? '');
+  const acknowledgedRef = React.useRef<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const rewardId = route.params?.rewardId;
+    if (!rewardId) {
+      setQueuedSeen(false);
+      return () => { mounted = false; };
+    }
+    isRewardSeenQueued(rewardId)
+      .then(queued => { if (mounted) setQueuedSeen(queued); })
+      .catch(error => { captureError(error); if (mounted) setQueuedSeen(false); });
+    return () => { mounted = false; };
+  }, [route.params?.rewardId]);
+
+  React.useEffect(() => {
+    if (!reward || acknowledgedRef.current === reward.rewardId) return;
+    acknowledgedRef.current = reward.rewardId;
+    acknowledge.mutate(reward.rewardId);
+  }, [acknowledge, reward]);
+
+  if (!reward) {
+    return <PageScroll bg="#FFC857"><Box padding={24} paddingTop={100} gap={12} accessibilityLiveRegion="polite"><Text fontWeight="800" style={styles.hero}>Reward is waiting to sync</Text><Text style={styles.msg}>Your lesson is safe. Check again when the robot is online.</Text><PrimaryCTA onPress={() => navigation.replace(ROUTES.HomeHubScreen)} color="#C34C3F">Back to Robot Home</PrimaryCTA></Box></PageScroll>;
+  }
+
+  const childName = reward.child.displayName ?? t('Child');
+  const robotName = reward.robot.displayName ?? t('Robot');
+  const xpText = translateTemplate('XP: {{count}}', { count: reward.xp }, { locale: language });
+  const coinsText = translateTemplate('Coins: {{count}}', { count: reward.coins }, { locale: language });
+  const streakText = reward.streak === null ? t('Streak unavailable') : reward.streak.currentDays === null ? t('Streak refreshing') : translateTemplate('Streak days: {{count}}', { count: reward.streak.currentDays }, { locale: language });
+  const reasonText = reasonLabel(reward.reason, language);
+  const summary = translateTemplate('{{child}} and {{robot}}. {{xp}}. {{coins}}. {{streak}}. {{reason}}.', { child: childName, robot: robotName, xp: xpText, coins: coinsText, streak: streakText, reason: reasonText }, { locale: language });
   return (
     <PageScroll bg="#FFC857">
-      <Box style={[StyleSheet.absoluteFillObject, styles.confettiLayer]} overflow="hidden">
-        {Array.from({ length: 24 }).map((_, i) => (
-          <Box
-            key={i}
-            style={[
-              styles.confetti,
-              {
-                left: `${(i * 37) % 100}%`,
-                top: `${(i * 17) % 80}%`,
-                width: 10 + (i % 3) * 4,
-                height: 14 + (i % 4) * 3,
-                backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-                borderRadius: i % 2 ? 4 : 50,
-                transform: [{ rotate: `${i * 23}deg` }],
-                opacity: 0.85,
-              } satisfies ViewStyle,
-            ]}
-          />
-        ))}
-      </Box>
-
-      <Box position="relative" paddingTop={80} paddingHorizontal={24} paddingBottom={16} alignItems="center" gap={14}>
+      {reduceMotion ? <Box testID="celebration-static-stars" accessible={false} importantForAccessibility="no-hide-descendants" style={styles.staticStars}><Text accessible={false} style={styles.staticStarText}>★  ★  ★</Text></Box> : <Box testID="celebration-confetti" accessible={false} importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFillObject, styles.confettiLayer]} overflow="hidden">{Array.from({ length: 24 }).map((_, i) => <Box key={i} style={[styles.confetti, { left: `${(i * 37) % 100}%`, top: `${(i * 17) % 80}%`, backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length], transform: [{ rotate: `${i * 23}deg` }] } satisfies ViewStyle]} />)}</Box>}
+      <Box position="relative" paddingTop={80} paddingHorizontal={24} paddingBottom={16} alignItems="center" gap={14} accessibilityLiveRegion="polite">
         <Text fontWeight="800" style={styles.hero}>You did it!</Text>
-        <Robot emotion="success" size={240} accent="#FF6F61" />
-        <Box style={styles.msgCard}>
-          <Text fontWeight="700" style={styles.msg}>
-            You finished today's lesson.{'\n'}Great effort speaking out loud!
-          </Text>
-        </Box>
-
-        <Box style={styles.stickerCard} flexDirection="row" alignItems="center" gap={14}>
-          <Box style={styles.stickerIcon} alignItems="center" justifyContent="center">
-            <Text style={{ fontSize: 36 }}>🌟</Text>
-          </Box>
-          <Box>
-            <Text fontWeight="700" style={styles.newStickerLabel}>NEW STICKER</Text>
-            <Text fontWeight="800" style={styles.stickerName}>Brave Speaker</Text>
-          </Box>
+        <Robot emotion="success" size={220} accent="#C34C3F" />
+        <Box style={styles.stickerCard} accessible accessibilityLabel={summary}>
+          <Text fontWeight="800" style={styles.name} i18n={false}>{childName} · {robotName}</Text>
+          <Text fontWeight="800" style={styles.reward}>{xpText} · {coinsText}</Text>
+          <Text style={styles.msg}>{streakText}</Text>
+          <Text style={styles.msg}>{reasonText}</Text>
+          {reward.badges.map(badge => <Text key={badge} fontWeight="700" style={styles.badge} i18n={false}>{badge}</Text>)}
         </Box>
       </Box>
-
-      <Box position="relative" paddingHorizontal={24} paddingTop={24} paddingBottom={30} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#FF6F61">Back to Robot Home</PrimaryCTA>
-        <TouchableOpacity
-          onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
-          style={styles.reviewBtn}
-          activeOpacity={0.8}
-        >
-          <Text fontWeight="700" style={{ fontSize: 18, color: '#2B2140' }}>Practice review words</Text>
-        </TouchableOpacity>
-      </Box>
+      <Box paddingHorizontal={24} paddingBottom={30}><PrimaryCTA onPress={() => navigation.replace(ROUTES.HomeHubScreen)} color="#C34C3F">Back to Robot Home</PrimaryCTA></Box>
     </PageScroll>
   );
 }
 
-const styles = StyleSheet.create({
-  confettiLayer: { pointerEvents: 'none' },
-  confetti: { position: 'absolute' },
-  hero: { fontSize: 48, color: '#2B2140', lineHeight: 52, textShadowColor: 'rgba(255,255,255,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 0 },
-  msgCard: { backgroundColor: 'rgba(255,255,255,0.85)', paddingVertical: 14, paddingHorizontal: 22, borderRadius: 22, maxWidth: 300 },
-  msg: { fontSize: 18, color: '#2B2140', textAlign: 'center', lineHeight: 26 },
-  stickerCard: {
-    backgroundColor: '#fff', borderRadius: 24, paddingVertical: 14, paddingHorizontal: 18,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 26,
-    elevation: 4,
-  },
-  stickerIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFB3A8' },
-  newStickerLabel: { fontSize: 11, color: '#5C4F77', textTransform: 'uppercase', letterSpacing: 1 },
-  stickerName: { fontSize: 18, color: '#2B2140' },
-  reviewBtn: { width: '100%', minHeight: 56, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
-});
+const styles = StyleSheet.create({ confettiLayer: { pointerEvents: 'none' }, confetti: { position: 'absolute', width: 12, height: 18, borderRadius: 4, opacity: 0.85 }, staticStars: { position: 'absolute', top: 36, left: 0, right: 0, alignItems: 'center' }, staticStarText: { fontSize: 24, color: '#fff' }, hero: { fontSize: 42, color: '#2B2140', lineHeight: 48, textAlign: 'center' }, stickerCard: { backgroundColor: '#fff', borderRadius: 24, padding: 20, minWidth: 280, alignItems: 'center', borderWidth: 2, borderColor: '#2B2140' }, name: { fontSize: 22, color: '#2B2140' }, reward: { fontSize: 20, color: '#8A321F', marginTop: 10 }, msg: { fontSize: 16, color: '#5C4F77', textAlign: 'center', marginTop: 7 }, badge: { color: '#65428A', marginTop: 8 } });

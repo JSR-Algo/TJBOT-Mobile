@@ -63,13 +63,39 @@
 
 ---
 
-## UC-P05 — View Celebration
+## UC-P05 — View Persisted Reward Celebration
 
 - **Goal:** Child receives positive reinforcement (animation, congratulatory message) after completing a lesson, motivating continued engagement.
 - **Trigger:** Child taps "Continue" at the end of UC-P03 (`LessonSummaryPage`).
-- **Preconditions:** UC-P03 has been displayed for the current session; no further async calls required.
+- **Preconditions:** The authenticated reward inbox contains the unseen persisted reward ID supplied by the completion flow.
 - **Main Flow:**
-  1. `CelebrationPage` mounts with session-level achievement data (words mastered count, streak).
-  2. Celebration animation plays (lottie or similar).
-  3. "Back to home" CTA or auto-advance after 4 s navigates child to `home_hub_idle`.
-- **Postconditions:** Child returns to `home_hub_idle`; no state mutations from this screen.
+  1. `LessonSummaryScreen` selects the unseen receipt by exact assignment ID and, when supplied by the route, exact session ID; an older unseen receipt for the same child and robot is never substituted.
+  2. `CelebrationScreen` reads `GET /v1/mobile/rewards/inbox` and selects only the exact reward ID forwarded by the summary.
+  3. It renders server XP, coins, badges, streak, child, robot, and reason; reduced-motion users receive a static decoration.
+  4. It acknowledges that exact reward once through the idempotent seen endpoint; retryable offline acknowledgements enter the scoped seen queue.
+  5. If the correlated persisted award is absent, the screen shows waiting-to-sync and never predicts a reward.
+- **Postconditions:** The persisted reward is acknowledged or safely queued for acknowledgement; no award mutation occurs on mobile.
+
+## UC-P06 — Review Private Rewards
+
+- **Goal:** A parent reviews authoritative totals and history grouped and filtered by owned child and robot.
+- **Trigger:** Parent opens Rewards from the gated parent summary or history surface.
+- **Preconditions:** Parent is authenticated, a household is active, and parent-only navigation access has been established.
+- **Main Flow:** Parent gate succeeds; the screen reads `GET /v1/mobile/rewards`, renders ledger reasons, and retains cached read-only data with an explicit offline/stale label.
+- **Postconditions:** No reward balance is changed and no fabricated value is displayed.
+
+## UC-P07 — Review Robot Leaderboard
+
+- **Goal:** A parent compares opted-in robots while retaining visibility of every owned robot's private/current rank state.
+- **Trigger:** Parent opens Leaderboard from private rewards or robot management.
+- **Preconditions:** Parent is authenticated and an active household scope is available.
+- **Main Flow:** Weekly/all-time tabs request bounded pages; refresh revalidates; public and owned rows render completed lessons, nullable/refreshing streak, and badge summary; owned rows outside the public page are merged and labelled with text plus border, not colour alone.
+- **Postconditions:** Only backend-masked email is rendered; opted-out robots remain private while rewards persist.
+
+## UC-P08 — Manage Reward Identity
+
+- **Goal:** A parent renames an owned child, selects the active child after server confirmation, and controls each robot's public leaderboard preference.
+- **Trigger:** Parent opens parent settings or the owned robot management screen.
+- **Preconditions:** Parent is authenticated; target child or robot belongs to the active household.
+- **Main Flow:** Parent settings uses the mobile child rename endpoint and active-child endpoint; robot settings renders every server-returned owned row, including opted-out robots, and writes each per-device preference without offline queuing. Device status not present in the response remains explicitly unavailable and is never fabricated.
+- **Postconditions:** Server-confirmed household identity drives lessons, robot selection, rewards, and public visibility.

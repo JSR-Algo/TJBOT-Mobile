@@ -319,7 +319,7 @@ describe('course-library flow guards', () => {
     const sentParams = mockedCreateAssignment.mock.calls[0]![0];
     expect(typeof sentParams.lessonVersion).toBe('number');
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
-      deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, manifestChecksum: 'sha256:w01-d01',
+      childId: 'ch-1', deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, manifestChecksum: 'sha256:w01-d01',
     });
   });
 
@@ -379,7 +379,7 @@ describe('course-library flow guards', () => {
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_barn', { childId: 'ch-1', deviceId: 'dev-1' });
     expect(mockedCreateAssignment).not.toHaveBeenCalled();
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
-      deviceId: 'dev-1', assignmentId: 'asg-course-1', assignmentVersion: 1, manifestChecksum: 'sha256:w01-d01',
+      childId: 'ch-1', deviceId: 'dev-1', assignmentId: 'asg-course-1', assignmentVersion: 1, manifestChecksum: 'sha256:w01-d01',
     });
   });
 
@@ -455,7 +455,7 @@ describe('course-library flow guards', () => {
 
     expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
-      deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4, manifestChecksum: 'sha256:w01-d01',
+      childId: 'ch-1', deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4, manifestChecksum: 'sha256:w01-d01',
     });
   });
 
@@ -485,7 +485,7 @@ describe('course-library flow guards', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['lesson-progress', 'child', 'ch-1'] });
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
-      deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4, manifestChecksum: 'sha256:w01-d01',
+      childId: 'ch-1', deviceId: 'dev-1', assignmentId: 'asg-existing', assignmentVersion: 4, manifestChecksum: 'sha256:w01-d01',
     });
   });
 

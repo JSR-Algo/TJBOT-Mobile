@@ -10,39 +10,41 @@
 
 ## UC-RM01 — View My Robot
 
-- **Goal:** Parent opens the Robot diagnostics hub (status chips + drill-down rows for sound, mic, software, support).
+- **Goal:** Parent reviews every owned robot's authoritative reward identity and controls each robot's public leaderboard privacy.
 - **Trigger:** Parent taps "My Robot" from `parent_settings`, landing on `rm_my_robot` (`MyRobotPage`).
-- **Preconditions:** Parent passed UC-PR01; a Robot is paired.
+- **Preconditions:** Parent passed UC-PR01; the authenticated household scope is available.
 - **Main Flow:**
-  1. `MyRobotPage` mounts and renders the Robot identity hero (`MyRobotScreen.jsx:11-` per `DvShell title="My Robot"`).
-  2. Page renders the 4 stat tiles (battery / Wi-Fi / courses / mic — `MyRobotScreen.jsx:31-34`) — each row routes to the corresponding deep-dive.
-  3. Page renders the action rows: sound & volume, microphone test, etc. (`MyRobotScreen.jsx:42-`).
-  4. Parent taps a row → routes to UC-RM02..UC-RM12 as applicable.
-- **Postconditions:** Parent has a hub view of Robot health; navigation may transition to a deep-dive screen.
+  1. `MyRobotScreen` reads the weekly leaderboard response and renders every `ownedRows` robot, including opted-out private rows.
+  2. Each card shows only backend-returned child, robot, XP, lesson count, streak state, masked email, and visibility; missing device telemetry is not guessed.
+  3. Each card exposes an independently focusable switch that writes the preference for that exact device ID. The non-interactive summary header carries the screen-reader summary so it cannot swallow the switch.
+  4. Neutral actions open the server-backed detailed-status route and parent-confirmed factory-reset flow without claiming battery, Wi-Fi, courses, microphone, care, firmware, or support state on this hub.
+- **Postconditions:** Every owned robot retains private rewards while its public preference reflects the latest server-confirmed mutation.
 - **Alt Flow:**
-  1. Parent taps back → returns to `parent_settings` (cross-domain — see cross-domain-edges.json).
+  1. Loading, error/retry, and empty-owned-robot states remain explicit and translated.
+  2. Parent taps back → returns to the parent summary.
 
 ## UC-RM02 — View Robot Status
 
-- **Goal:** Parent reviews a single-screen status report (battery, Wi-Fi, storage, mic, speaker, software, last-seen) before drilling deeper.
-- **Trigger:** Parent navigates to `rm_status` from UC-RM01 (a rollup link not shown in the prototype but reachable from the diagnostics surface).
-- **Preconditions:** Parent passed UC-PR01; Robot is paired.
+- **Goal:** Parent reviews only the robot identity and operational state returned by the authenticated household device contract.
+- **Trigger:** Parent navigates to `rm_status` from UC-RM01.
+- **Preconditions:** Parent passed UC-PR01; an active child is selected.
 - **Main Flow:**
-  1. `RobotStatusPage` mounts (`RobotStatusScreen.jsx:11`) with `DvShell title="Robot status"`.
-  2. Page renders rows: battery / Wi-Fi / courses / mic / speaker / software (`RobotStatusScreen.jsx:28-33`).
-  3. Parent taps a row → routes to UC-RM03/RM04/RM05/RM08/RM09/RM06.
-- **Postconditions:** Parent has a one-page snapshot; may transition to a sub-detail screen.
+  1. `RobotStatusScreen` resolves the selected child's robot through `GET /devices/household/me`.
+  2. The page renders the backend-returned robot name, optional serial number, and online/offline state; an absent operational signal remains unavailable.
+  3. Battery, Wi-Fi, courses, microphone, temperature, uptime, and software remain explicitly unavailable because this contract cannot represent them reliably.
+- **Postconditions:** Parent has an authoritative identity/operational-state snapshot without prototype telemetry.
+- **Alt Flow:**
+  1. Loading, error/retry, offline, and no-matching-robot states remain explicit and translated.
 
 ## UC-RM03 — View Battery
 
-- **Goal:** Parent inspects current battery percentage, charging state, and history before deciding to top up Robot.
-- **Trigger:** Parent taps the Battery row on UC-RM01 / UC-RM02, landing on `rm_battery` (`RobotBatteryPage`).
-- **Preconditions:** Parent passed UC-PR01; Robot is paired and reporting battery telemetry.
+- **Goal:** Reserve a battery-detail surface until an authoritative battery/charging contract exists.
+- **Trigger:** No production trigger; `rm_battery` is hidden with `backend-contract-unavailable`.
+- **Preconditions:** An authoritative battery contract is not available.
 - **Main Flow:**
-  1. `RobotBatteryPage` renders `DvShell title="Battery"` (`RobotBatteryScreen.jsx:11`).
-  2. Page renders the percentage hero (78% prototype value), charging chip, and best-practice tips (`RobotBatteryScreen.jsx`).
-  3. Parent reads the readout; no action required.
-- **Postconditions:** Parent has a current battery read.
+  1. Production navigation does not mount or deep-link the prototype screen.
+  2. Parent remains on the authoritative robot status surface without a fabricated percentage.
+- **Postconditions:** No battery value is claimed.
 
 ## UC-RM04 — View Wi-Fi
 
@@ -57,27 +59,23 @@
 
 ## UC-RM05 — View Installed Courses
 
-- **Goal:** Parent reviews which courses are currently downloaded to Robot, with disk usage and a path to add/remove via the course library.
-- **Trigger:** Parent taps the Courses row on UC-RM01 / UC-RM02, landing on `rm_storage` (`RobotStoragePage`).
-- **Preconditions:** Parent passed UC-PR01; Robot is paired.
+- **Goal:** Reserve installed-course/storage details until an authoritative device-storage contract exists.
+- **Trigger:** No production trigger; `rm_storage` is hidden with `backend-contract-unavailable`.
+- **Preconditions:** Installed-course and storage truth are unavailable from the current contract.
 - **Main Flow:**
-  1. `RobotStoragePage` renders `DvShell title="Courses on Robot"` (`RobotStorageScreen.jsx:16`) and lists installed courses with sizes (`RobotStorageScreen.jsx:9-12`).
-  2. Parent reviews the list.
-  3. Parent taps "Browse Course Library" → cross-domain handoff to course-library `UC-CL01` (`RobotStorageScreen.jsx:63`; see cross-domain-edges.json: UC-RM05→UC-CL01).
-- **Postconditions:** Parent reviewed installed-course state; may transition to course-library.
+  1. Production navigation does not mount or deep-link the prototype screen.
+  2. Course-library navigation remains separate and does not imply robot installation state.
+- **Postconditions:** No installed-course count or disk usage is claimed.
 
 ## UC-RM06 — Update Robot Software
 
-- **Goal:** Parent reviews and triggers a Robot OTA update directly from the diagnostics hub (parallel surface to UC-DM04).
-- **Trigger:** Parent taps the Software row on UC-RM01 / UC-RM02, landing on `rm_firmware` (`RobotFirmwarePage`).
-- **Preconditions:** Parent passed UC-PR01; Robot is paired and an update is available.
+- **Goal:** Reserve software-version and OTA controls until the backend contract supports them.
+- **Trigger:** No production trigger; `rm_firmware` is hidden with `backend-contract-unavailable`.
+- **Preconditions:** Firmware version and update dispatch are unavailable from the current contract.
 - **Main Flow:**
-  1. `RobotFirmwarePage` renders `DvShell title="Robot software"` (`RobotFirmwareScreen.jsx:12`) with the version + changelog summary.
-  2. Parent taps "Update Robot now" → returns to `rm_my_robot` (`RobotFirmwareScreen.jsx:61`).
-  3. App invokes OTA via `device.api.js → runFirmwareUpdate` (cross-domain delegate to Robot — see cross-domain-edges.json: UC-RM06→ACTOR:Robot).
-- **Postconditions:** Update is scheduled or running; Parent returned to the hub.
-- **Alt Flow:**
-  1. Parent taps "Remind me tomorrow" → returns without scheduling (`RobotFirmwareScreen.jsx:62`).
+  1. Production navigation does not mount or deep-link the prototype screen.
+  2. The app does not claim an installed version, available update, or scheduled OTA.
+- **Postconditions:** No firmware mutation or version claim occurs.
 
 ## UC-RM07 — Adjust Sound & Volume
 
@@ -92,28 +90,23 @@
 
 ## UC-RM08 — Run Microphone Test
 
-- **Goal:** Parent verifies Robot can hear by running a guided 5-second mic test.
-- **Trigger:** Parent taps "Microphone test" or the Mic stat tile on UC-RM01, landing on `rm_mic_test` (`MicTestPage`).
-- **Preconditions:** Parent passed UC-PR01; Robot is paired and has a working mic permission.
+- **Goal:** Reserve robot microphone diagnostics until a real hardware-test contract exists.
+- **Trigger:** No production trigger; `rm_mic_test` is hidden with `backend-contract-unavailable`.
+- **Preconditions:** The app cannot start or verify a robot microphone test through the current contract.
 - **Main Flow:**
-  1. `MicTestPage` mounts in `phase='idle'` (`MicTestScreen.jsx:13`).
-  2. Parent taps "Start mic test" → phase transitions to `listening` then `done`.
-  3. Robot listens for ~5 s (cross-domain delegate to Robot — see cross-domain-edges.json: UC-RM08→ACTOR:Robot).
-  4. Parent taps "Looks good" → returns to `rm_my_robot` (`MicTestScreen.jsx:73`).
-- **Postconditions:** Mic-OK state recorded; Parent returned to hub.
+  1. Production navigation does not mount or deep-link the state-only prototype.
+  2. The app does not report a microphone pass/fail result.
+- **Postconditions:** No microphone health claim is recorded.
 
 ## UC-RM09 — Run Speaker Test
 
-- **Goal:** Parent verifies Robot's speaker by playing a chime + voice sample.
-- **Trigger:** Parent taps "Speaker test" on UC-RM01, landing on `rm_speaker_test` (`SpeakerTestPage`).
-- **Preconditions:** Parent passed UC-PR01; Robot is paired.
+- **Goal:** Reserve robot speaker diagnostics until a real hardware-test contract exists.
+- **Trigger:** No production trigger; `rm_speaker_test` is hidden with `backend-contract-unavailable`.
+- **Preconditions:** The app cannot play or verify robot speaker samples through the current contract.
 - **Main Flow:**
-  1. `SpeakerTestPage` renders the test panel (`SpeakerTestScreen.jsx:12`).
-  2. Parent taps "Play chime" or "Play voice" → `played` state set (`SpeakerTestScreen.jsx:11`); Robot plays the sample (cross-domain delegate to Robot — see cross-domain-edges.json: UC-RM09→ACTOR:Robot).
-  3. Parent taps "I can hear Robot" → returns to `rm_my_robot` (`SpeakerTestScreen.jsx:63`).
-- **Postconditions:** Speaker-OK state recorded; Parent returned to hub.
-- **Alt Flow:**
-  1. Parent taps "Robot sounds quiet or muffled" → routes to `rm_support` (UC-RM12) — `SpeakerTestScreen.jsx:64`.
+  1. Production navigation does not mount or deep-link the state-only prototype.
+  2. The app does not report a speaker pass/fail result.
+- **Postconditions:** No speaker health claim is recorded.
 
 ## UC-RM10 — Factory Reset
 

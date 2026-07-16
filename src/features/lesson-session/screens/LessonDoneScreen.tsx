@@ -12,6 +12,7 @@ import { ROUTES } from '@/navigation/routes';
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonDoneScreen'>;
 
 export default function LessonDoneScreen({ navigation, route }: Props) {
+  const childId = route.params?.childId;
   const wordsLearned = route.params?.wordsLearned;
   const summaryText =
     typeof wordsLearned === 'number' && wordsLearned > 0
@@ -33,7 +34,16 @@ export default function LessonDoneScreen({ navigation, route }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} gap={12}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonSummaryScreen)} color="#FF6F61">See what you did</PrimaryCTA>
+        <PrimaryCTA
+          onPress={() => navigation.navigate(ROUTES.LessonSummaryScreen, {
+            lessonId: route.params?.lessonId,
+            childId,
+            assignmentId: route.params?.assignmentId,
+            sessionId: route.params?.sessionId,
+            deviceId: route.params?.deviceId,
+          })}
+          color="#FF6F61"
+        >See what you did</PrimaryCTA>
         <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>
           <Text fontWeight="700" style={styles.homeText}>Back home</Text>
         </TouchableOpacity>

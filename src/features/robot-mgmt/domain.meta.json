@@ -4,6 +4,7 @@
   "flow": "docs/flows/domains/robot-mgmt/flow.generated.mmd",
   "edge_cases": {
     "rm_offline_help": ["error"],
-    "rm_factory":      ["cancel"]
+    "rm_factory":      ["cancel"],
+    "rm_my_robot":     ["error", "retry", "validation"]
   }
 }

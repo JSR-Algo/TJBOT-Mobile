@@ -2030,5 +2030,129 @@
   "Start with Robot so timing comes from real lesson history.": "Bắt đầu với Robot để lịch ôn tập lấy từ lịch sử bài học thật.",
   "Starter lesson preview with Robot and hello word cards": "Hình xem trước bài học khởi đầu với Robot và thẻ từ chào hỏi",
   "Starter lesson": "Bài học khởi đầu",
-  "Say hello to Panda": "Chào Panda"
+  "Say hello to Panda": "Chào Panda",
+  "Reward is waiting to sync": "Phần thưởng đang chờ đồng bộ",
+  "Your lesson is saved. We will show the award when the robot reconnects.": "Bài học đã được lưu. Phần thưởng sẽ hiện khi robot kết nối lại.",
+  "Reward unavailable": "Chưa thể tải phần thưởng",
+  "Reward needs parent attention": "Phần thưởng cần phụ huynh kiểm tra",
+  "Check the child assigned to this robot, then contact support if the reward remains unavailable.": "Hãy kiểm tra trẻ được gán cho robot này, sau đó liên hệ hỗ trợ nếu phần thưởng vẫn chưa khả dụng.",
+  "Celebrate reward": "Mừng phần thưởng",
+  "Lesson reward": "Phần thưởng bài học",
+  "Your lesson is safe. Check again when the robot is online.": "Bài học đã được lưu an toàn. Hãy kiểm tra lại khi robot trực tuyến.",
+  "Reward earned": "Phần thưởng đã nhận",
+  "New reward": "Phần thưởng mới",
+  "Leaderboard": "Bảng xếp hạng",
+  "This week": "Tuần này",
+  "All time": "Toàn thời gian",
+  "Loading leaderboard": "Đang tải bảng xếp hạng",
+  "Leaderboard unavailable": "Chưa thể tải bảng xếp hạng",
+  "No robots have joined yet.": "Chưa có robot nào tham gia.",
+  "Your robot": "Robot của bạn",
+  "Load more": "Tải thêm",
+  "Private by default": "Mặc định riêng tư",
+  "Visible on leaderboard": "Đang hiển thị trên bảng xếp hạng",
+  "Rewards and history stay private until you join.": "Phần thưởng và lịch sử vẫn riêng tư cho đến khi bạn tham gia.",
+  "Child name, robot name and masked parent email are visible.": "Tên bé, tên robot và email phụ huynh đã che bớt sẽ được hiển thị.",
+  "Join leaderboard": "Tham gia bảng xếp hạng",
+  "Leave leaderboard": "Rời bảng xếp hạng",
+  "View leaderboard": "Xem bảng xếp hạng",
+  "Rewards": "Phần thưởng",
+  "Loading reward totals": "Đang tải tổng phần thưởng",
+  "Reward totals unavailable": "Chưa thể tải tổng phần thưởng",
+  "Total XP": "Tổng XP",
+  "Coins": "Xu",
+  "Day streak": "Chuỗi ngày",
+  "Reward history": "Lịch sử phần thưởng",
+  "Loading reward history": "Đang tải lịch sử phần thưởng",
+  "Reward history unavailable": "Chưa thể tải lịch sử phần thưởng",
+  "No rewards yet.": "Chưa có phần thưởng.",
+  "Rewards & leaderboard": "Phần thưởng và bảng xếp hạng",
+  "Open leaderboard": "Mở bảng xếp hạng",
+  "Load more reward history": "Tải thêm lịch sử phần thưởng",
+  "Retry leaderboard": "Thử tải lại bảng xếp hạng",
+  "Load more leaderboard rows": "Tải thêm thứ hạng",
+  "Open reward history": "Mở lịch sử phần thưởng",
+  "Retry reward": "Thử tải lại phần thưởng",
+  "XP ·": "XP ·",
+  "See lesson reward": "Xem phần thưởng bài học"
+  ,"Leaderboard preference loading": "Đang tải lựa chọn bảng xếp hạng"
+  ,"Loading leaderboard preference": "Đang tải lựa chọn bảng xếp hạng"
+  ,"Leaderboard preference unavailable": "Chưa thể tải lựa chọn bảng xếp hạng"
+  ,"Retry leaderboard preference": "Thử tải lại lựa chọn bảng xếp hạng"
+  ,"Leaderboard preference could not be saved.": "Chưa thể lưu lựa chọn bảng xếp hạng."
+  ,"Join leaderboard for {{robot}}": "Cho {{robot}} tham gia bảng xếp hạng"
+  ,"Leave leaderboard for {{robot}}": "Cho {{robot}} rời bảng xếp hạng"
+  ,"Rewards and history stay private even when your robot is hidden.": "Phần thưởng và lịch sử vẫn riêng tư ngay cả khi robot bị ẩn."
+  ,"Fetches privacy status from the server": "Tải trạng thái riêng tư từ máy chủ"
+  ,"Hides this robot from public rankings while private rewards remain available": "Ẩn robot khỏi bảng công khai nhưng vẫn giữ phần thưởng riêng tư"
+  ,"Shows this robot with masked parent email in public rankings": "Hiển thị robot cùng email phụ huynh đã che trên bảng công khai"
+  ,"This week leaderboard": "Bảng xếp hạng tuần này"
+  ,"All time leaderboard": "Bảng xếp hạng mọi thời điểm"
+  ,"Refresh leaderboard": "Làm mới bảng xếp hạng"
+  ,"Fetches the latest ranks from the server": "Tải thứ hạng mới nhất từ máy chủ"
+  ,"Refresh ranks": "Làm mới thứ hạng"
+  ,"Fetches the leaderboard again": "Tải lại bảng xếp hạng"
+  ,"Previous leaderboard page": "Trang bảng xếp hạng trước"
+  ,"Next leaderboard page": "Trang bảng xếp hạng tiếp theo"
+  ,"Page {{page}} of {{total}}": "Trang {{page}} / {{total}}"
+  ,"Rank refreshing": "Đang làm mới thứ hạng"
+  ,"Private robot": "Robot riêng tư"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}": "Robot của bạn. {{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. Phụ huynh {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. Parent {{email}}": "{{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. Phụ huynh {{email}}"
+  ,"Filter rewards for {{name}}": "Lọc phần thưởng của {{name}}"
+  ,"Filter rewards for robot {{name}}": "Lọc phần thưởng theo robot {{name}}"
+  ,"Offline · showing saved rewards": "Ngoại tuyến · đang hiển thị phần thưởng đã lưu"
+  ,"Totals refreshing": "Đang làm mới tổng phần thưởng"
+  ,"Retry reward history": "Thử tải lại lịch sử phần thưởng"
+  ,"Fetches reward history again": "Tải lại lịch sử phần thưởng"
+  ,"Shows weekly and all-time robot ranks": "Hiển thị thứ hạng robot theo tuần và mọi thời điểm"
+  ,"Active child": "Bé đang hoạt động"
+  ,"The server confirms this child before lessons and robot rewards switch.": "Máy chủ xác nhận bé trước khi chuyển bài học, robot và phần thưởng."
+  ,"Select {{name}} as active child": "Chọn {{name}} làm bé đang hoạt động"
+  ,"Switches lessons, robot, and rewards after server confirmation": "Chuyển bài học, robot và phần thưởng sau khi máy chủ xác nhận"
+  ,"Active child could not be changed. Try again.": "Chưa thể đổi bé đang hoạt động. Hãy thử lại."
+  ,"Save child name": "Lưu tên bé"
+  ,"Saves this name to the household server": "Lưu tên này vào máy chủ gia đình"
+  ,"Fetches the persisted reward inbox again": "Tải lại hộp thư phần thưởng đã lưu"
+  ,"Returns to the robot home": "Quay về trang chính của robot"
+  ,"Lesson completed": "Hoàn thành bài học"
+  ,"My Robots": "Robot của tôi"
+  ,"Only server-reported robot and reward details appear here. Unavailable device status is never estimated.": "Chỉ hiển thị thông tin robot và phần thưởng do máy chủ báo cáo. Trạng thái chưa có sẽ không được ước đoán."
+  ,"Loading owned robots": "Đang tải robot của bạn"
+  ,"Owned robots unavailable": "Chưa thể tải robot của bạn"
+  ,"No owned robots available": "Chưa có robot thuộc sở hữu"
+  ,"Retry owned robots": "Thử tải lại robot của bạn"
+  ,"Fetches owned robots and privacy settings again": "Tải lại robot và cài đặt riêng tư"
+  ,"Streak refreshing": "Đang làm mới chuỗi ngày"
+  ,"No badges yet": "Chưa có huy hiệu"
+  ,"lessons ·": "bài học ·"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}": "Robot của bạn. {{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. {{lessons}} bài học. {{streak}}. Huy hiệu: {{badges}}. Phụ huynh {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}} lessons. {{streak}}. Badges: {{badges}}. Parent {{email}}": "{{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. {{lessons}} bài học. {{streak}}. Huy hiệu: {{badges}}. Phụ huynh {{email}}"
+  ,"{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}} lessons. {{streak}} day streak.": "{{robot}} của {{child}}. {{visibility}}. {{xp}} XP. {{lessons}} bài học. Chuỗi {{streak}} ngày."
+  ,"Open detailed robot status": "Mở trạng thái robot chi tiết"
+  ,"Opens the server-backed device status screen": "Mở màn hình trạng thái thiết bị từ máy chủ"
+  ,"Detailed robot status": "Trạng thái robot chi tiết"
+  ,"Open factory reset": "Mở khôi phục cài đặt gốc"
+  ,"Opens the parent-confirmed reset flow without claiming device status": "Mở quy trình đặt lại có phụ huynh xác nhận mà không khẳng định trạng thái thiết bị"
+  ,"Rank: {{rank}}": "Hạng: {{rank}}"
+  ,"Rank refreshing: {{rank}}": "Đang làm mới hạng: {{rank}}"
+  ,"Lessons: {{count}}": "Bài học: {{count}}"
+  ,"Streak days: {{count}}": "Số ngày chuỗi: {{count}}"
+  ,"Badges: {{badges}}": "Huy hiệu: {{badges}}"
+  ,"Your robot. {{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "Robot của bạn. {{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Phụ huynh {{email}}"
+  ,"{{rank}}. {{child}} with robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Parent {{email}}": "{{rank}}. {{child}} cùng robot {{robot}}. {{xp}} XP. {{lessons}}. {{streak}}. {{badges}}. Phụ huynh {{email}}"
+  ,"{{robot}} for {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}.": "{{robot}} của {{child}}. {{visibility}}. {{xp}} XP. {{lessons}}. {{streak}}."
+  ,"XP: {{count}}": "XP: {{count}}"
+  ,"Coins: {{count}}": "Xu: {{count}}"
+  ,"Streak unavailable": "Chưa có dữ liệu chuỗi ngày"
+  ,"{{child}} and {{robot}}. {{xp}}. {{coins}}. {{streak}}. {{reason}}.": "{{child}} và {{robot}}. {{xp}}. {{coins}}. {{streak}}. {{reason}}."
+  ,"{{reason}}. {{xp}}. {{coins}}.": "{{reason}}. {{xp}}. {{coins}}."
+  ,"{{reason}}. {{xp}}. {{coins}}. {{streak}}.": "{{reason}}. {{xp}}. {{coins}}. {{streak}}."
+  ,"{{xp}}. {{coins}}. Rewards: {{count}}.": "{{xp}}. {{coins}}. Phần thưởng: {{count}}."
+  ,"This screen shows only identity and operational state returned by the device API.": "Màn hình này chỉ hiển thị danh tính và trạng thái hoạt động do API thiết bị trả về."
+  ,"Loading robot status": "Đang tải trạng thái robot"
+  ,"Retry robot status": "Thử tải lại trạng thái robot"
+  ,"Fetches device identity and operational state again": "Tải lại danh tính và trạng thái hoạt động của thiết bị"
+  ,"Battery, Wi-Fi, courses, microphone, temperature, uptime, and software are unavailable on this contract.": "Hợp đồng hiện tại chưa cung cấp pin, Wi-Fi, khóa học, micrô, nhiệt độ, thời gian hoạt động và phần mềm."
+  ,"Status unavailable": "Chưa có trạng thái"
 }

@@ -16,6 +16,8 @@ import { normalizeError } from '../utils/errors';
 import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../services/observability/analytics';
 import { captureError } from '@/services/observability/sentry';
 import { clearLocalPairedDevice } from '@/features/device/pairing/localPairedDevice';
+import { setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
+import { appQueryClient } from '@/services/query/queryClient';
 
 interface AuthState {
   user: User | null;
@@ -34,6 +36,7 @@ interface AuthContextValue extends AuthState {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const rewardAccountRef = useRef<string | null>(null);
   const [state, setState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -44,6 +47,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   // Force the UI back to the unauthenticated state. Used both when the user
   // explicitly logs out and when the axios interceptor detects that the
   // stored refresh token is no longer accepted by the backend.
+  const activateRewardAccount = useCallback(async (accountId: string): Promise<void> => {
+    const previousAccountId = rewardAccountRef.current;
+    if (previousAccountId && previousAccountId !== accountId) {
+      appQueryClient.removeQueries({ queryKey: ['rewards'] });
+    }
+    rewardAccountRef.current = accountId;
+    setRewardQueueScope(accountId, null);
+  }, []);
+
   const forceLogout = useCallback(async () => {
     try {
       await clearTokens();
@@ -60,6 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     } catch (error) {
       captureError(error);
     }
+    rewardAccountRef.current = null;
+    setRewardQueueScope(null, null);
+    appQueryClient.removeQueries({ queryKey: ['rewards'] });
     resetAnalytics();
     setState({ user: null, isLoading: false, isAuthenticated: false, error: null });
   }, []);
@@ -135,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         }
 
         clearTimeout(timeout);
+        if (user?.id) await activateRewardAccount(user.id);
         setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }));
       } catch {
         clearTimeout(timeout);
@@ -143,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     })();
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [activateRewardAccount]);
 
   const login = async (email: string, password: string) => {
     setState((s) => ({ ...s, error: null }));
@@ -162,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         }
       }
       if (user) {
+        await activateRewardAccount(user.id);
         try {
           await setSecureJson(SECURE_STORE_KEYS.user, user);
         } catch {
@@ -205,6 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           user = { id: '', email, name };
         }
         if (user) {
+          await activateRewardAccount(user.id);
           try {
             await setSecureJson(SECURE_STORE_KEYS.user, user);
           } catch {
