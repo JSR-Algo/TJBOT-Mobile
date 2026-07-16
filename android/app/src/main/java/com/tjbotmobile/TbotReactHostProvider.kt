@@ -2,6 +2,7 @@ package com.TJBotmobile
 
 import android.app.Application
 import com.bleplx.BlePlxPackage
+import com.horcrux.svg.SvgPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
@@ -25,6 +26,7 @@ object TJBotReactHostProvider {
               // BLE provisioning is linked manually because RN 0.83 codegen
               // autolinking is disabled for react-native-ble-plx in react-native.config.js.
               add(BlePlxPackage())
+              add(SvgPackage())
               // App-level voice session owner (mode, focus, routing).
               add(VoiceSessionPackage())
               // Native AudioRecord + AcousticEchoCanceler — Android twin of

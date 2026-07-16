@@ -74,6 +74,7 @@ describe('DeviceHomeScreen', () => {
     apiMocks.getDeviceStatus.mockResolvedValue({
       id: 'seed-device',
       name: 'Seed Robot',
+      serialNumber: 'TBOT-SEED-001',
       online: true,
       batteryPercent: 87,
     });
@@ -86,6 +87,33 @@ describe('DeviceHomeScreen', () => {
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
     expect(screen.queryByText('No Robot connected')).toBeNull();
     expect(apiMocks.getDeviceStatus).toHaveBeenCalledWith('primary');
+  });
+
+  it('changes Wi-Fi without unpairing through reconnect search', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'seed-device',
+      name: 'Seed Robot',
+      serialNumber: 'TBOT-SEED-001',
+      online: true,
+      batteryPercent: 87,
+    });
+    const navigation = { navigate: jest.fn() };
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
+    const changeWifi = screen.getByLabelText(
+      'Change Wi‑Fi. Double-click the BOOT button to change Wi-Fi without unpairing Robot.',
+    );
+    expect(screen.getByText('Double-click the BOOT button to change Wi-Fi without unpairing Robot.')).toBeTruthy();
+    fireEvent.press(changeWifi);
+
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'seed-device',
+      reconnectSerialNumber: 'TBOT-SEED-001',
+    });
   });
 
   it('shows Wi-Fi signal strength when backend reports RSSI without an SSID', async () => {

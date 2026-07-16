@@ -512,6 +512,12 @@
       "g": "Parent",
       "kind": "edge"
     },
+    "parent_add_child": {
+      "f": "src/features/parent/screens/AddChildScreen.tsx",
+      "title": "Add Child",
+      "g": "Parent",
+      "kind": "happy"
+    },
     "parent_gate": {
       "f": "src/features/parent/screens/ParentGateScreen.tsx",
       "title": "Parent Gate",
@@ -901,6 +907,7 @@
     ],
     "Parent": [
       "parent_account_privacy",
+      "parent_add_child",
       "parent_gate",
       "parent_history",
       "parent_locked_out",
@@ -986,7 +993,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-06-23T08:18:36Z",
-    "sourceCommit": "66187eedf8c2dda2d7e94e819ea88e5531fd53a6"
+    "generatedAt": "2026-07-14T07:34:40Z",
+    "sourceCommit": "6320ec8b89a53bed4499f2a8f547082377873904"
   }
 }

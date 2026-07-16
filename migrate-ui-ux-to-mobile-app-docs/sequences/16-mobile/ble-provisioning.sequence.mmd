@@ -6,7 +6,9 @@ spec_anchor: /software/systems/16-parent-mobile-application#5-3-device-and-provi
 actors: [ParentApp, BLEDevice, Gateway, DeviceService, Device]
 apis:
   - POST /v1/devices/provision/start
-  - POST /v1/devices/provision/connect
+  - POST /v1/devices/provision/local-ble-paired
+  - POST /v1/device/bootstrap-token
+  - POST /v1/claim/confirm
   - GET /v1/devices/provision/:provisioningAttemptId/status
   - POST /v1/devices/provision/complete
 externals: [BLE]
@@ -23,14 +25,16 @@ retry: caller-side BLE scan retries on permission/timeout — never auto-retry /
 timeout: BLE handshake 30s — HTTP calls 10s — provisioning status poll up to 5 minutes (3s interval)
 status: final
 ---
-%% HAND-CURATED. Normalized from the current mobile pairing implementation: BLE writes are a local BluFi handoff, but pairing success is cloud-authoritative only after the provisioning attempt reaches device_authenticated and /complete binds the child profile.
+%% HAND-CURATED. Wi-Fi credentials travel only from the phone to firmware over encrypted BluFi. Backend owns claim/auth state; ESP server starts only after Wi-Fi and claim bootstrap succeed.
 sequenceDiagram
     autonumber
     participant ParentApp
     participant BLEDevice
     participant Gateway
     participant DeviceService
-    participant Device
+    participant Firmware
+    participant Router
+    participant ESPServer
 
     ParentApp->>ParentApp: request BLE and location permissions
     alt ble_permission_denied
@@ -51,13 +55,21 @@ sequenceDiagram
             else ready
                 DeviceService-->>Gateway: 200 {provisioningAttemptId, deviceId, deviceStatus=provisioning}
                 Gateway-->>ParentApp: 200
-                ParentApp->>BLEDevice: BluFi negotiate security + optional bootstrap token/code TLV + Wi-Fi credentials
-                BLEDevice-->>ParentApp: optional conn_report success/fail
+                ParentApp->>Gateway: POST /v1/device/bootstrap-token
+                Gateway-->>ParentApp: one-time claim bootstrap token
+                ParentApp->>BLEDevice: encrypted BluFi token + device id + SSID/password
+                BLEDevice->>Firmware: deliver authenticated BluFi frames
+                Firmware->>Router: join 2.4 GHz Wi-Fi
+                Firmware-->>ParentApp: STA_CONN_SUCCESS or STA_CONN_FAIL
                 alt wifi_handshake_failed
-                    BLEDevice-->>ParentApp: conn_report fail
-                    ParentApp-->>ParentApp: surface retry-Wi-Fi-credentials prompt
-                else credentials accepted locally
-                    Note over BLEDevice,Device: device joins Wi-Fi, claims the provisioning attempt, then authenticates with cloud
+                    ParentApp-->>ParentApp: correct password and retry BluFi
+                else STA_CONN_SUCCESS
+                    ParentApp->>Gateway: POST /v1/devices/provision/local-ble-paired
+                    Firmware->>Gateway: claim confirm or authenticated provisioning status
+                    Gateway->>DeviceService: validate bootstrap token and ownership
+                    DeviceService-->>Firmware: device secret and runtime configuration
+                    Firmware->>Gateway: heartbeat
+                    Firmware->>ESPServer: authenticated runtime WebSocket
                 end
                 loop poll every 3s up to 5 minutes
                     ParentApp->>Gateway: GET /v1/devices/provision/:provisioningAttemptId/status
@@ -82,4 +94,4 @@ sequenceDiagram
         end
     end
 
-    Note over ParentApp,Device: timeout — BLE handshake 30s, HTTP 10s, status poll up to 5 minutes — Wi-Fi password remains in RAM only and is cleared after handoff
+    Note over ParentApp,Firmware: Wi-Fi password stays in mobile transient memory and encrypted BluFi/firmware join path. Backend and ESP server never receive it.

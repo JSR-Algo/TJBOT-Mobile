@@ -29,7 +29,6 @@ jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
   getProvisioningAttemptStatus: jest.fn(),
   mintBootstrapToken: jest.fn(),
-  pairDevice: jest.fn(),
 }));
 
 jest.mock('@/services/api/claim.api', () => ({

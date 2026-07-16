@@ -74,6 +74,7 @@
     "expo": "^55.0.11",
     "expo-audio": "~55.0.11",
     "expo-camera": "~55.0.0",
+    "expo-crypto": "~55.0.16",
     "expo-device": "~55.0.12",
     "expo-haptics": "~55.0.11",
     "expo-notifications": "~55.0.16",
@@ -87,6 +88,7 @@
     "react-native": "0.83.4",
     "react-native-ble-plx": "^3.5.1",
     "react-native-gesture-handler": "~2.30.0",
+    "react-native-get-random-values": "^2.0.0",
     "react-native-reanimated": "^4.2.1",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
@@ -137,6 +139,8 @@
           "expo-notifications": "<rootDir>/tests/__mocks__/expo-notifications.ts",
           "expo-device": "<rootDir>/tests/__mocks__/expo-device.ts",
           "expo-camera": "<rootDir>/tests/__mocks__/expo-camera.ts",
+          "expo-crypto": "<rootDir>/tests/__mocks__/expo-crypto.ts",
+          "react-native-get-random-values": "<rootDir>/tests/__mocks__/react-native-get-random-values.ts",
           "react-native-ble-plx": "<rootDir>/tests/__mocks__/react-native-ble-plx.ts"
         },
         "testMatch": [

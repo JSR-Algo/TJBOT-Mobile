@@ -137,6 +137,16 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Robot</Text>
         <Box style={styles.rowCard}>
+          <DeviceRow
+            icon="📶"
+            title="Change Wi‑Fi"
+            body="Double-click the BOOT button to change Wi-Fi without unpairing Robot."
+            onClick={() => navigation.navigate(ROUTES.PairSearchScreen, {
+              reconnectMode: true,
+              reconnectDeviceId: device.id,
+              reconnectSerialNumber: device.serialNumber,
+            })}
+          />
           <DeviceRow icon="🎵" title="Make Robot chime" body="Find Robot if it's misplaced" onClick={() => navigation.navigate(ROUTES.DeviceLostScreen)} />
           <DeviceRow icon="🌙" title="Quiet hours" body="9:00 PM – 7:00 AM" />
           <DeviceRow icon="🔄" title="Sync content" body="Up to date · 2 minutes ago" />

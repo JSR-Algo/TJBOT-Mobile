@@ -9,7 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
-import { confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken, pairDevice } from '@/services/api/device.api';
+import { confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken } from '@/services/api/device.api';
 import { provisionWifiViaLocalBle } from '@/services/ble/service';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
@@ -18,6 +18,7 @@ import { savePendingPairingContext } from '../pendingPairingContext';
 import {
   CLAIM_CONFIRM_TIMEOUT_MS,
   CLAIM_POLL_INTERVAL_MS,
+  isRetryablePairingStatusPollError,
 } from '../claimStatus';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
@@ -49,18 +50,30 @@ const PROVISIONING_STATUSES = [
 ] as const satisfies readonly RuntimeProvisioningStatus[];
 
 export default function PairConnectingScreen({ navigation, route }: Props) {
-  const { language } = useAppLanguage();
+  const { language, t } = useAppLanguage();
   const [i, setI] = React.useState(0);
   const [status, setStatus] = React.useState<'pairing' | 'authenticated' | 'failed'>('pairing');
   const submittedParams = React.useRef<Props['route']['params'] | null>(null);
   const params = route.params;
   const ssid = getParamString(params, 'ssid');
+  const transport = params?.provisioningTransport;
+  // Credential-only reconnect never mints a backend claim, so
+  // the last steps talk about Wi-Fi join — not "backend connection" / cloud auth.
+  const credentialOnlySteps = transport === 'ble_reconnect';
   const steps = React.useMemo(() => [
     translateTemplate('Submitting setup details', {}, { locale: language }),
     translateTemplate('Preparing {{ssid}}', { ssid: ssid ?? 'Wi-Fi' }, { locale: language }),
-    translateTemplate('Starting backend connection', {}, { locale: language }),
-    translateTemplate('Waiting for robot authentication', {}, { locale: language }),
-  ], [language, ssid]);
+    translateTemplate(
+      credentialOnlySteps ? 'Sending Wi-Fi to Robot' : 'Starting backend connection',
+      {},
+      { locale: language },
+    ),
+    translateTemplate(
+      credentialOnlySteps ? 'Waiting for Robot to join Wi-Fi' : 'Waiting for robot authentication',
+      {},
+      { locale: language },
+    ),
+  ], [credentialOnlySteps, language, ssid]);
 
   React.useEffect(() => {
     if (submittedParams.current === params) return;
@@ -76,10 +89,6 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     const bootstrapToken = provisioningAttemptId ? getPairingBootstrapToken(provisioningAttemptId) : undefined;
     const canRunBleClaimProvisioning = transport === 'ble' && !!bleDeviceId;
     const canRunBleReconnectProvisioning = transport === 'ble_reconnect' && !!bleDeviceId;
-    // Offline Wi-Fi: robot found over BLE but unknown to the backend (DEVICE_NOT_FOUND).
-    // Same credential-only BluFi handoff as reconnect, but the handoff is only
-    // provisional; backend online confirmation is required before final success.
-    const canRunBleOfflineProvisioning = transport === 'ble_offline' && !!bleDeviceId;
     logDevPairConnectingEvent('start', {
       deviceId,
       serialNumber,
@@ -90,7 +99,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       hasBootstrapToken: !!bootstrapToken,
       ssidPresent: !!ssid,
     });
-    if (!ssid || !deviceId || !serialNumber || !provisioningAttemptId || (!code && !canRunBleClaimProvisioning && !canRunBleReconnectProvisioning && !canRunBleOfflineProvisioning)) {
+    if (!ssid || !deviceId || !serialNumber || !provisioningAttemptId || (!code && !canRunBleClaimProvisioning && !canRunBleReconnectProvisioning)) {
       setStatus('failed');
       navigation.navigate(ROUTES.PairFailedScreen, {
         ...failureContext(params),
@@ -113,19 +122,26 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     // leaks (keeping the Jest worker / RN event loop alive after the screen is
     // gone — the "worker failed to exit gracefully" symptom).
     const poll: PollController = { cancelled: false, timer: undefined };
-    const run = (transport === 'ble' || transport === 'ble_reconnect' || transport === 'ble_offline') && bleDeviceId
-      ? runLocalBleProvisioning({
-        deviceId,
-        serialNumber,
-        provisioningAttemptId,
-        code,
-        ssid,
-        password,
-        bleDeviceId,
-        bootstrapToken,
-        credentialOnly: transport === 'ble_reconnect' || transport === 'ble_offline',
-      })
-      : runBackendProvisioning({ deviceId, serialNumber, provisioningAttemptId, code: code as string, ssid, password });
+    const supportedBleTransport = transport === 'ble' || transport === 'ble_reconnect';
+    if (!supportedBleTransport || !bleDeviceId) {
+      setStatus('failed');
+      navigation.navigate(ROUTES.PairFailedScreen, {
+        ...failureContext(params),
+        errorCode: 'BLE_PROVISIONING_CONTEXT_MISSING',
+      });
+      return;
+    }
+    const run = runLocalBleProvisioning({
+      deviceId,
+      serialNumber,
+      provisioningAttemptId,
+      code,
+      ssid,
+      password,
+      bleDeviceId,
+      bootstrapToken,
+      credentialOnly: transport === 'ble_reconnect',
+    });
 
     // The zero-code BLE run may MINT A NEW claim id (it re-runs requestClaim when
     // no claim/token is in hand). The success path surfaces it via
@@ -142,23 +158,6 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       if (cancelled) return;
       setI(PAIRING_STEP_COUNT - 1);
       if (result.completionMode === 'device_online') {
-        if (transport === 'ble_offline') {
-          const onlineDevice = await waitForDeviceOnline(
-            result.deviceId,
-            poll,
-            'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT',
-          );
-          if (cancelled) return;
-          clearPairingBootstrapToken(result.provisioningAttemptId);
-          setI(PAIRING_STEP_COUNT);
-          setStatus('authenticated');
-          navigation.navigate(ROUTES.PairSuccessScreen, {
-            deviceId: onlineDevice.id || result.deviceId,
-            serialNumber,
-            provisioningAttemptId: result.provisioningAttemptId,
-          });
-          return;
-        }
         await waitForDeviceOnline(result.deviceId, poll);
         if (cancelled) return;
         clearPairingBootstrapToken(result.provisioningAttemptId);
@@ -189,9 +188,36 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         serialNumber,
         provisioningAttemptId: authenticated.provisioningAttemptId,
       });
-    }).catch((error: unknown) => {
+    }).catch(async (error: unknown) => {
       if (cancelled) return;
-      const errorCode = errorCodeFrom(error, 'PAIRING_CONNECT_FAILED');
+      recoveryAttemptId = readString(asRecord(error), 'provisioningAttemptId') ?? recoveryAttemptId;
+      let resolvedError = error;
+      const deliveryUnknown = isDeliveryUnknown(error);
+      if (deliveryUnknown && transport === 'ble') {
+        try {
+          const authenticated = code
+            ? await waitForDeviceAuthenticated(recoveryAttemptId, poll)
+            : await waitForClaimConfirmed(recoveryAttemptId, poll);
+          if (cancelled) return;
+          clearPairingBootstrapToken(authenticated.provisioningAttemptId);
+          setI(PAIRING_STEP_COUNT);
+          setStatus('authenticated');
+          await savePendingPairingContext({
+            deviceId: authenticated.deviceId,
+            serialNumber,
+            provisioningAttemptId: authenticated.provisioningAttemptId,
+          });
+          navigation.navigate(ROUTES.PairRenameScreen, {
+            deviceId: authenticated.deviceId,
+            serialNumber,
+            provisioningAttemptId: authenticated.provisioningAttemptId,
+          });
+          return;
+        } catch (reconciliationError: unknown) {
+          resolvedError = reconciliationError;
+        }
+      }
+      const errorCode = errorCodeFrom(resolvedError, 'PAIRING_CONNECT_FAILED');
       logDevPairConnectingEvent('failed', {
         errorCode,
         deviceId,
@@ -209,6 +235,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         ssid,
         bleDeviceId,
         provisioningTransport: params?.provisioningTransport,
+        ...(deliveryUnknown ? { deliveryUnknown: true } : {}),
         errorCode,
       });
     }).finally(() => {
@@ -221,15 +248,23 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         clearTimeout(poll.timer);
         poll.timer = undefined;
       }
+      poll.resolveSleep?.();
+      poll.resolveSleep = undefined;
     };
   }, [navigation, params, ssid]);
 
+  const heading = status === 'authenticated'
+    ? t('Robot authenticated')
+    : status === 'failed'
+      ? t('Pairing failed')
+      : t('Hang tight — about 30 seconds');
+
   return (
-    <DeviceShell title="Connecting Robot…">
+    <DeviceShell title={t('Connecting Robot…')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="reconnect" size={180} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>
-          {status === 'authenticated' ? 'Robot authenticated' : status === 'failed' ? 'Pairing failed' : 'Hang tight — about 30 seconds'}
+        <Text fontWeight="600" style={styles.heading} i18n={false}>
+          {heading}
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24} gap={8}>
@@ -263,25 +298,6 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
 }
 
 const PAIRING_STEP_COUNT = 4;
-
-async function runBackendProvisioning(params: {
-  deviceId: string;
-  serialNumber: string;
-  provisioningAttemptId: string;
-  code: string;
-  ssid: string;
-  password: string;
-}): Promise<ProvisioningRunResult> {
-  const result = await pairDevice({
-    deviceId: params.deviceId,
-    provisioningAttemptId: params.provisioningAttemptId,
-    serialNumber: params.serialNumber,
-    code: params.code,
-    wifiSsid: params.ssid,
-    wifiPassword: params.password,
-  });
-  return { deviceId: result.deviceId, provisioningAttemptId: result.provisioningAttemptId, completionMode: 'device_authenticated' };
-}
 
 async function runLocalBleProvisioning(params: {
   deviceId: string;
@@ -319,7 +335,7 @@ async function runLocalBleProvisioning(params: {
     return { deviceId: params.deviceId, provisioningAttemptId: params.provisioningAttemptId, completionMode: 'device_online' };
   }
 
-  let token = params.bootstrapToken;
+  let token: string | undefined;
   let claimId = params.provisioningAttemptId;
   let claimExpiresAt: string | null = null;
   let completionMode: ProvisioningRunResult['completionMode'] = 'claim_confirmed';
@@ -331,10 +347,6 @@ async function runLocalBleProvisioning(params: {
       serialNumber: params.serialNumber,
       code: params.code,
     });
-    if (!token) {
-      const bootstrap = await mintBootstrapToken({ provisioningAttemptId: params.provisioningAttemptId });
-      token = bootstrap.token;
-    }
     completionMode = 'device_authenticated';
   }
 
@@ -350,26 +362,30 @@ async function runLocalBleProvisioning(params: {
     }
   }
 
-  if (!token) {
+  try {
+    // Bootstrap tokens are single-use and expire quickly. A token cached before
+    // Wi-Fi selection may already be expired or consumed by a previous delivery-
+    // unknown attempt, so mint exactly at the BLE handoff boundary every time.
     const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimId });
     token = bootstrap.token;
+    await provisionWifiViaLocalBle({
+      device: {
+        id: params.bleDeviceId,
+        name: params.serialNumber,
+        localName: params.serialNumber,
+        serviceUUIDs: [],
+      },
+      ssid: params.ssid,
+      password: params.password,
+      code: params.code,
+      token,
+      // Push the backend device_id (the id the claim attempt was created under) so
+      // the robot claims/confirms under it instead of its random Board UUID.
+      deviceId: params.deviceId,
+    });
+  } catch (error: unknown) {
+    throw withProvisioningAttemptContext(error, claimId);
   }
-
-  await provisionWifiViaLocalBle({
-    device: {
-      id: params.bleDeviceId,
-      name: params.serialNumber,
-      localName: params.serialNumber,
-      serviceUUIDs: [],
-    },
-    ssid: params.ssid,
-    password: params.password,
-    code: params.code,
-    token,
-    // Push the backend device_id (the id the claim attempt was created under) so
-    // the robot claims/confirms under it instead of its random Board UUID.
-    deviceId: params.deviceId,
-  });
 
   logDevPairConnectingEvent('local_ble_handoff_complete', {
     deviceId: params.deviceId,
@@ -389,22 +405,61 @@ function logDevPairConnectingEvent(stage: string, detail: Record<string, unknown
 // Cancellation handle shared with the poll loops: the effect cleanup flips
 // `cancelled` and clears the in-flight backoff `timer` so no setTimeout outlives
 // the screen.
-type PollController = { cancelled: boolean; timer: ReturnType<typeof setTimeout> | undefined };
+type PollController = {
+  cancelled: boolean;
+  timer: ReturnType<typeof setTimeout> | undefined;
+  resolveSleep?: () => void;
+};
 
 async function waitForDeviceOnline(
   deviceId: string,
   poll: PollController,
   timeoutCode = 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
+  maxAttempts = DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
 ): Promise<Awaited<ReturnType<typeof getDeviceStatus>>> {
-  for (let attempt = 0; attempt < DEVICE_ONLINE_MAX_POLL_ATTEMPTS; attempt += 1) {
-    const status = await getDeviceStatus(deviceId);
-    if (status.online) return status;
-    if (poll.cancelled) return status;
-    if (attempt === DEVICE_ONLINE_MAX_POLL_ATTEMPTS - 1) break;
+  let lastStatus: Awaited<ReturnType<typeof getDeviceStatus>> | undefined;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const status = await getDeviceStatus(deviceId);
+      lastStatus = status;
+      if (status.online) return status;
+    } catch (error: unknown) {
+      // 404 / DEVICE_NOT_FOUND / transient network while the robot is still
+      // joining Wi-Fi must not abort the wait — only the timeout is terminal.
+      if (!isRetryableDeviceOnlinePollError(error)) throw error;
+    }
+    if (poll.cancelled) {
+      return lastStatus ?? { id: deviceId, name: deviceId, online: false, batteryPercent: 0 };
+    }
+    if (attempt === maxAttempts - 1) break;
     await sleep(DEVICE_STATUS_POLL_INTERVAL_MS, poll);
-    if (poll.cancelled) return status;
+    if (poll.cancelled) {
+      return lastStatus ?? { id: deviceId, name: deviceId, online: false, batteryPercent: 0 };
+    }
   }
-  throw Object.assign(new Error('Device did not come online'), { code: timeoutCode });
+  throw Object.assign(new Error('Device did not come online'), {
+    code: timeoutCode,
+  });
+}
+
+function isRetryableDeviceOnlinePollError(error: unknown): boolean {
+  const record = asRecord(error);
+  const status = readNumber(record, 'status') ?? readNumber(asRecord(record?.response), 'status');
+  if (status === 404 || status === 408 || status === 429 || (typeof status === 'number' && status >= 500)) {
+    return true;
+  }
+  if (record?.retryable === true) return true;
+  const code = readString(record, 'code');
+  return (
+    code === 'DEVICE_NOT_FOUND'
+    || code === 'NO_DEVICE_AVAILABLE'
+    || code === 'NETWORK_ERROR'
+    || code === 'RATE_LIMIT_EXCEEDED'
+    || code === 'SERVICE_UNAVAILABLE'
+    || code === 'GATEWAY_TIMEOUT'
+    || code === 'INTERNAL_ERROR'
+    || code === 'SERVER_ERROR'
+  );
 }
 
 async function waitForClaimConfirmed(claimId: string, poll: PollController, expiresAt?: string | null): Promise<{
@@ -443,14 +498,7 @@ async function waitForClaimConfirmed(claimId: string, poll: PollController, expi
 }
 
 function isRetryableClaimStatusPollError(error: unknown): boolean {
-  const record = asRecord(error);
-  const status = readNumber(record, 'status');
-  if (status === 401 || status === 408 || status === 429 || (typeof status === 'number' && status >= 500)) {
-    return true;
-  }
-  if (record?.retryable === true) return true;
-  const code = readString(record, 'code');
-  return code === 'NETWORK_ERROR' || code === 'RATE_LIMIT_EXCEEDED' || code === 'SERVICE_UNAVAILABLE' || code === 'GATEWAY_TIMEOUT' || code === 'INTERNAL_ERROR';
+  return isRetryablePairingStatusPollError(error);
 }
 
 async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: PollController): Promise<{
@@ -458,12 +506,16 @@ async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: P
   provisioningAttemptId: string;
 }> {
   for (let attempt = 0; attempt < PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS; attempt += 1) {
-    const status = parseProvisioningStatus(await getProvisioningAttemptStatus(provisioningAttemptId));
-    if (status.status === 'device_authenticated' || status.status === 'completed') {
-      return { deviceId: status.deviceId, provisioningAttemptId: status.provisioningAttemptId };
-    }
-    if (status.status === 'failed' || status.status === 'expired') {
-      throw Object.assign(new Error('Provisioning failed'), { code: status.failureCode ?? 'PROVISIONING_FAILED' });
+    try {
+      const status = parseProvisioningStatus(await getProvisioningAttemptStatus(provisioningAttemptId));
+      if (status.status === 'device_authenticated' || status.status === 'completed') {
+        return { deviceId: status.deviceId, provisioningAttemptId: status.provisioningAttemptId };
+      }
+      if (status.status === 'failed' || status.status === 'expired') {
+        throw Object.assign(new Error('Provisioning failed'), { code: status.failureCode ?? 'PROVISIONING_FAILED' });
+      }
+    } catch (error: unknown) {
+      if (!isRetryablePairingStatusPollError(error)) throw error;
     }
     if (poll.cancelled) return { deviceId: '', provisioningAttemptId };
     if (attempt === PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS - 1) break;
@@ -514,8 +566,10 @@ function sleep(ms: number, poll: PollController): Promise<void> {
     // unmount instead of letting the timer outlive the screen.
     poll.timer = setTimeout(() => {
       poll.timer = undefined;
+      poll.resolveSleep = undefined;
       resolve();
     }, ms);
+    poll.resolveSleep = resolve;
   });
 }
 
@@ -535,6 +589,27 @@ function errorCodeFrom(error: unknown, fallback: string): string {
   const response = asRecord(record?.response);
   const data = asRecord(response?.data);
   return readString(data, 'code') ?? fallback;
+}
+
+function isDeliveryUnknown(error: unknown): boolean {
+  return asRecord(error)?.deliveryUnknown === true;
+}
+
+function withProvisioningAttemptContext(error: unknown, provisioningAttemptId: string): Error & {
+  code: string;
+  provisioningAttemptId: string;
+  deliveryUnknown?: boolean;
+} {
+  const wrapped = new Error(error instanceof Error ? error.message : 'Pairing operation failed.') as Error & {
+    code: string;
+    provisioningAttemptId: string;
+    deliveryUnknown?: boolean;
+  };
+  wrapped.code = errorCodeFrom(error, 'PAIRING_CONNECT_FAILED');
+  wrapped.provisioningAttemptId = provisioningAttemptId;
+  if (isDeliveryUnknown(error)) wrapped.deliveryUnknown = true;
+  Object.defineProperty(wrapped, 'cause', { value: error, configurable: true });
+  return wrapped;
 }
 
 function failureContext(params: Props['route']['params']): RootStackParamList['PairFailedScreen'] {

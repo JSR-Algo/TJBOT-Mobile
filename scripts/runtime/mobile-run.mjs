@@ -43,7 +43,7 @@ const commands = {
           '--platform',
           'android',
           '--dev',
-          'true',
+          'false',
           '--minify',
           'false',
           '--reset-cache',

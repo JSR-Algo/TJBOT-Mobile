@@ -16,6 +16,13 @@ describe('Android BLE native linking', () => {
     expect(read('android/app/src/main/java/com/tjbotmobile/MainApplication.kt')).toMatch(/import com\.bleplx\.BlePlxPackage[\s\S]*add\(BlePlxPackage\(\)\)/);
   });
 
+  test('links react-native-svg into both Android React hosts', () => {
+    expect(read('android/settings.gradle')).toContain("include ':react-native-svg'");
+    expect(read('android/app/build.gradle')).toContain("implementation project(':react-native-svg')");
+    expect(read('android/app/src/main/java/com/tjbotmobile/TbotReactHostProvider.kt')).toMatch(/import com\.horcrux\.svg\.SvgPackage[\s\S]*add\(SvgPackage\(\)\)/);
+    expect(read('android/app/src/main/java/com/tjbotmobile/MainApplication.kt')).toMatch(/import com\.horcrux\.svg\.SvgPackage[\s\S]*add\(SvgPackage\(\)\)/);
+  });
+
   test('BootstrapApplication exposes the ReactApplication contract used by Detox Android', () => {
     const bootstrap = read('android/app/src/main/java/com/tjbotmobile/BootstrapApplication.kt');
 

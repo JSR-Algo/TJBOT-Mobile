@@ -11,11 +11,17 @@ import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { getClaimStatus } from '@/services/api/claim.api';
+import { getProvisioningAttemptStatus } from '@/services/api/device.api';
 import { captureError } from '@/services/observability/sentry';
 import { openAppSettings, openBluetoothSettings, openWifiSettings } from '../deviceSettings';
 import { useAppLanguage } from '@/services/i18n/i18n';
 import { savePendingPairingContext } from '../pendingPairingContext';
-import { describeKnownClaimFailureCode } from '../claimStatus';
+import {
+  CLAIM_CONFIRM_TIMEOUT_MS,
+  CLAIM_POLL_INTERVAL_MS,
+  describeKnownClaimFailureCode,
+  isRetryablePairingStatusPollError,
+} from '../claimStatus';
 import { buildPairSearchRetryParams } from '../routeParams';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFailedScreen'>;
@@ -38,14 +44,23 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
   const params = route.params;
   const copy = copyForError(params?.errorCode);
-  const settingsAction = settingsActionForError(params?.errorCode);
+  const heading = t(copy.heading);
+  const body = t(copy.body);
+  const settingsAction = settingsActionForError(params?.errorCode, t);
+  const [recoveryNonce, setRecoveryNonce] = React.useState(0);
+  const recoveryTerminal = React.useRef(false);
+  const recoveryPending = React.useRef(false);
   const navigateToSearch = React.useCallback(() => {
+    if (canRecoverLatePairing(params) && recoveryPending.current && !recoveryTerminal.current) {
+      setRecoveryNonce((current) => current + 1);
+      return;
+    }
     const retryParams = buildPairSearchRetryParams(params);
     if (retryParams) {
       navigation.navigate(ROUTES.PairSearchScreen, retryParams);
       return;
     }
-    navigation.navigate(ROUTES.PairSearchScreen);
+    navigation.navigate(ROUTES.PairSearchScreen, { reconnectMode: false });
   }, [navigation, params]);
   const navigateToPrep = React.useCallback(() => {
     const retryParams = buildPairSearchRetryParams(params);
@@ -57,13 +72,33 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   }, [navigation, params]);
 
   React.useEffect(() => {
-    if (!canRecoverLateClaim(params)) return;
+    if (!canRecoverLatePairing(params)) return;
     let cancelled = false;
-    void getClaimStatus(params.provisioningAttemptId)
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let resolveRetry: (() => void) | undefined;
+    recoveryTerminal.current = false;
+    recoveryPending.current = false;
+    const waitForRetry = (): Promise<void> => new Promise((resolve) => {
+      resolveRetry = resolve;
+      retryTimer = setTimeout(() => {
+        retryTimer = undefined;
+        resolveRetry = undefined;
+        resolve();
+      }, CLAIM_POLL_INTERVAL_MS);
+    });
+    void pollLatePairingStatus(params, {
+      isCancelled: () => cancelled,
+      waitForRetry,
+      onPending: () => {
+        recoveryPending.current = true;
+      },
+    })
       .then((status) => {
         if (cancelled) return;
+        recoveryTerminal.current = status.kind === 'failed';
+        recoveryPending.current = false;
         const deviceId = status.deviceId || params.deviceId;
-        if (status.status === 'CLAIM_CONFIRMED') {
+        if (status.kind === 'authenticated') {
           void savePendingPairingContext({
             deviceId,
             serialNumber: params.serialNumber,
@@ -75,7 +110,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
             provisioningAttemptId: params.provisioningAttemptId,
           });
         }
-        if (status.status === 'CLAIMED') {
+        if (status.kind === 'claimed') {
           // Reset (not navigate) to the success terminus so the finished/failed
           // pairing stack underneath is dropped — otherwise swipe-back lands on
           // this PairFailed screen, whose effect re-fetches CLAIMED and bounces
@@ -103,16 +138,19 @@ export default function PairFailedScreen({ navigation, route }: Props) {
       });
     return () => {
       cancelled = true;
+      if (retryTimer !== undefined) clearTimeout(retryTimer);
+      resolveRetry?.();
+      resolveRetry = undefined;
     };
-  }, [navigation, params]);
+  }, [navigation, params, recoveryNonce]);
 
   return (
-    <DeviceShell title="Pairing didn't work" onBack={navigateToPrep}>
+    <DeviceShell title={t("Pairing didn't work")} onBack={navigateToPrep}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="gentle" size={160} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>{copy.heading}</Text>
-        <Text style={styles.sub}>
-          {copy.body}
+        <Text fontWeight="600" style={styles.heading} i18n={false}>{heading}</Text>
+        <Text style={styles.sub} i18n={false}>
+          {body}
         </Text>
       </Box>
       {shouldShowReasonCards(params?.errorCode) ? (
@@ -141,7 +179,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
               accessibilityLabel={t(r.t === 'Wrong Wi-Fi password' ? 'Fix wrong Wi-Fi password' : r.t)}
             >
               <Box style={styles.reasonIcon} alignItems="center" justifyContent="center">
-                <Text style={{ fontSize: 16 }}>{r.ic}</Text>
+                <Text style={{ fontSize: 16 }} i18n={false}>{r.ic}</Text>
               </Box>
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.reasonTitle}>{r.t}</Text>
@@ -160,11 +198,6 @@ export default function PairFailedScreen({ navigation, route }: Props) {
             {settingsAction.label}
           </DeviceBigBtn>
         ) : null}
-        {canUseSetupHotspot(params) ? (
-          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairWifiScreen, setupHotspotParams(params))}>
-            Use setup hotspot
-          </DeviceBigBtn>
-        ) : null}
         <DeviceBigBtn
           secondary
           accessibilityLabel="Scan QR or enter code"
@@ -172,7 +205,13 @@ export default function PairFailedScreen({ navigation, route }: Props) {
         >
           Scan QR or enter code
         </DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={navigateToSearch}>Try again</DeviceBigBtn>
+        <DeviceBigBtn
+          secondary
+          accessibilityLabel="Try Bluetooth setup again"
+          onClick={navigateToSearch}
+        >
+          Try Bluetooth setup again
+        </DeviceBigBtn>
         <DeviceBigBtn
           secondary
           accessibilityLabel="Contact support"
@@ -187,7 +226,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   );
 }
 
-function canRecoverLateClaim(params: Props['route']['params']): params is FailureParams & {
+function canRecoverLatePairing(params: Props['route']['params']): params is FailureParams & {
   deviceId: string;
   serialNumber: string;
   provisioningAttemptId: string;
@@ -196,8 +235,55 @@ function canRecoverLateClaim(params: Props['route']['params']): params is Failur
     params?.deviceId
     && params.serialNumber
     && params.provisioningAttemptId
-    && !params.code
+    && params.deliveryUnknown === true
+    && params.provisioningTransport !== 'ble_reconnect'
+    && params.errorCode !== 'WIFI_CONNECT_FAILED'
+    && params.errorCode !== 'WIFI_AUTH_FAILED'
   );
+}
+
+type LatePairingResult = {
+  kind: 'authenticated' | 'claimed' | 'failed';
+  deviceId: string;
+};
+
+async function pollLatePairingStatus(
+  params: FailureParams & { deviceId: string; serialNumber: string; provisioningAttemptId: string },
+  poll: { isCancelled: () => boolean; waitForRetry: () => Promise<void>; onPending: () => void },
+): Promise<LatePairingResult> {
+  const maxAttempts = Math.ceil(CLAIM_CONFIRM_TIMEOUT_MS / CLAIM_POLL_INTERVAL_MS) + 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      if (params.code) {
+        const status = await getProvisioningAttemptStatus(params.provisioningAttemptId);
+        if (status.status === 'device_authenticated' || status.status === 'completed') {
+          return { kind: 'authenticated', deviceId: status.deviceId || params.deviceId };
+        }
+        if (status.status === 'failed' || status.status === 'expired') {
+          return { kind: 'failed', deviceId: status.deviceId || params.deviceId };
+        }
+      } else {
+        const status = await getClaimStatus(params.provisioningAttemptId);
+        if (status.status === 'CLAIM_CONFIRMED') {
+          return { kind: 'authenticated', deviceId: status.deviceId || params.deviceId };
+        }
+        if (status.status === 'CLAIMED') {
+          return { kind: 'claimed', deviceId: status.deviceId || params.deviceId };
+        }
+        if (status.status === 'FAILED' || status.status === 'CLAIM_CONFIRM_TIMEOUT') {
+          return { kind: 'failed', deviceId: status.deviceId || params.deviceId };
+        }
+      }
+    } catch (error: unknown) {
+      if (!isRetryablePairingStatusPollError(error)) throw error;
+    }
+    poll.onPending();
+    if (poll.isCancelled()) return { kind: 'failed', deviceId: params.deviceId };
+    if (attempt === maxAttempts - 1) break;
+    await poll.waitForRetry();
+    if (poll.isCancelled()) return { kind: 'failed', deviceId: params.deviceId };
+  }
+  return { kind: 'failed', deviceId: params.deviceId };
 }
 
 function shouldShowReasonCards(errorCode: string | undefined): boolean {
@@ -229,15 +315,18 @@ function canRetryWifiPassword(params: Props['route']['params']): params is Failu
   );
 }
 
-function settingsActionForError(errorCode: string | undefined): { label: string; onPress: () => void } | undefined {
+function settingsActionForError(
+  errorCode: string | undefined,
+  t: (copy: string) => string,
+): { label: string; onPress: () => void } | undefined {
   switch (errorCode) {
     case 'WIFI_UNAVAILABLE':
-      return { label: 'Open Wi-Fi settings', onPress: () => { void openWifiSettings(); } };
+      return { label: t('Open Wi-Fi settings'), onPress: () => { void openWifiSettings(); } };
     case 'BLE_UNAVAILABLE':
     case 'BLE_POWERED_OFF':
-      return { label: 'Open Bluetooth settings', onPress: () => { void openBluetoothSettings(); } };
+      return { label: t('Open Bluetooth settings'), onPress: () => { void openBluetoothSettings(); } };
     case 'BLE_PERMISSION_DENIED':
-      return { label: 'Open app settings', onPress: () => { void openAppSettings(); } };
+      return { label: t('Open app settings'), onPress: () => { void openAppSettings(); } };
     default:
       return undefined;
   }
@@ -261,7 +350,7 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
     case 'BLE_UNAVAILABLE':
       return {
         heading: "Bluetooth can't be used here",
-        body: 'This phone or app build cannot use Bluetooth setup. Keep this phone on Wi-Fi, or use setup hotspot if Robot already showed a code.',
+        body: 'Check Bluetooth permissions, double-click BOOT, move Robot within 1–2 m, then try again.',
       };
     case 'BLE_POWERED_OFF':
       return {
@@ -281,7 +370,7 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
     case 'BLE_SCAN_TIMEOUT':
       return {
         heading: "We couldn't see Robot nearby",
-        body: 'Move Robot within 1-2 m, make sure it is in setup mode, then scan again.',
+        body: 'Double-click the BOOT button to change Wi-Fi without unpairing Robot.',
       };
     case 'BLE_SCAN_THROTTLED':
       return {
@@ -313,7 +402,7 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
     case 'PAIRING_CONNECT_FAILED':
       return {
         heading: "Robot didn't accept setup over Bluetooth",
-        body: 'Retry nearby, or use setup hotspot with the same Robot code.',
+        body: 'Double-click BOOT, keep Robot within 1–2 m, then retry Bluetooth setup.',
       };
     case 'ESP_SERVER_UNAVAILABLE':
       return {
@@ -335,6 +424,17 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
         heading: 'Robot has not checked in yet',
         body: 'The Wi-Fi details were sent, but Robot did not appear online. Keep it powered on and try pairing again.',
       };
+    case 'OFFLINE_DEVICE_NOT_REGISTERED':
+      return {
+        heading: 'Wi-Fi worked, but Robot is not on your account',
+        body: 'Robot joined Wi-Fi, but account pairing did not finish. Double-click the BOOT button to change Wi-Fi without unpairing Robot, then try again so the phone can claim it to your account.',
+      };
+    case 'WIFI_CONNECT_TIMEOUT':
+      return {
+        heading: 'Robot did not join Wi-Fi in time',
+        body: 'Keep Robot near the router, check the password, then try pairing again.',
+      };
+    case 'WIFI_CONNECT_FAILED':
     case 'WIFI_AUTH_FAILED':
       return {
         heading: 'Wi-Fi password did not work',
@@ -346,25 +446,6 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
         body: 'Pairing usually works on the second try. Pick what likely happened:',
       };
   }
-}
-
-function canUseSetupHotspot(params: Props['route']['params']): params is FailureParams {
-  return !!(
-    params?.deviceId
-    && params.serialNumber
-    && params.provisioningAttemptId
-    && params.code
-  );
-}
-
-function setupHotspotParams(params: FailureParams): NonNullable<RootStackParamList['PairWifiScreen']> {
-  return {
-    deviceId: params.deviceId,
-    serialNumber: params.serialNumber,
-    provisioningAttemptId: params.provisioningAttemptId,
-    code: params.code,
-    provisioningTransport: 'legacy_backend',
-  };
 }
 
 const styles = StyleSheet.create({

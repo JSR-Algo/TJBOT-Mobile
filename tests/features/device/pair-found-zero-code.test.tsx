@@ -85,7 +85,7 @@ describe('PairFoundScreen zero-code default path', () => {
     fireEvent.press(screen.getByText('This is my Robot'));
 
     await waitFor(() => expect(mockedRequestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' }));
-    await waitFor(() => expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-1' }));
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
     expect(mockedSendClaimBootstrapTokenViaBle).not.toHaveBeenCalled();
     expect(mockedGetClaimStatus).not.toHaveBeenCalled();
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiScreen, {

@@ -37,6 +37,9 @@ export default function PairIntroScreen({ navigation }: Props) {
             <Text style={styles.stepText}>{s.t}</Text>
           </Box>
         ))}
+        <Text style={styles.resetWarning}>
+          Hold BOOT for 5 seconds only if you want to reset pairing and saved Wi-Fi.
+        </Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
         <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>My Robot is on</DeviceBigBtn>
@@ -52,4 +55,5 @@ const styles = StyleSheet.create({
   numBadge: { width: 26, height: 26, borderRadius: 13, backgroundColor: DV.accent, flexShrink: 0 },
   numText: { fontSize: 13, color: '#fff' },
   stepText: { fontSize: 14, color: DV.ink, flex: 1 },
+  resetWarning: { fontSize: 12, color: DV.ink2, textAlign: 'center', lineHeight: 18, marginTop: 4 },
 });

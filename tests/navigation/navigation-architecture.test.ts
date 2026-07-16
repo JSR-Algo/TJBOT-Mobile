@@ -705,7 +705,7 @@ describe('navigation architecture', () => {
     const indexSource = readFileSync(join(root, 'index.js'), 'utf8');
     const rootNavigatorSource = readFileSync(join(root, 'src', 'navigation', 'RootStackNavigator.tsx'), 'utf8');
 
-    expect(indexSource).toContain("const App = require('./src/App').default");
+    expect(indexSource).toContain("import App from './src/App'");
     expect(appSource).toContain("import { AppNavigator } from './navigation/AppNavigator'");
     expect(appSource).toContain('<AppNavigator />');
     expect(appSource).not.toContain('./app/navigation');

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { createDetoxEnv, createMobileEnv } from './mobile-env.mjs';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+const mobileRunSource = fs.readFileSync(new URL('./mobile-run.mjs', import.meta.url), 'utf8');
 
 test('createMobileEnv preserves caller env and prepends discovered runtimes', () => {
   const env = createMobileEnv({
@@ -34,6 +35,13 @@ test('Android Detox scripts use the shared mobile runtime environment', () => {
   assert.equal(packageJson.scripts['detox:test:ios'], 'node scripts/runtime/mobile-run.mjs detox-test-ios');
   assert.equal(packageJson.scripts['detox:build:android'], 'node scripts/runtime/mobile-run.mjs detox-build-android');
   assert.equal(packageJson.scripts['detox:test:android'], 'node scripts/runtime/mobile-run.mjs detox-test-android');
+});
+
+test('embedded Android builds disable Metro devtools', () => {
+  const buildAndroid = mobileRunSource.match(/'build-android':\s*\{[\s\S]*?\n  \},\n  'build-ios'/)?.[0];
+
+  assert.ok(buildAndroid, 'build-android command must exist');
+  assert.match(buildAndroid, /'--dev',\s*'false'/);
 });
 
 test('createDetoxEnv defaults to isolated local mock ports', () => {

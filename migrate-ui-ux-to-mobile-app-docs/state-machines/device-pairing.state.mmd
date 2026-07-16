@@ -1,0 +1,27 @@
+stateDiagram-v2
+    [*] --> BLEScan
+    BLEScan --> WifiSelection: robot discovered
+    BLEScan --> Failed: permission denied / timeout
+    WifiSelection --> EncryptedBluFi: SSID + transient password ready
+    EncryptedBluFi --> Failed: STA_CONN_FAIL / GATT error / timeout
+    EncryptedBluFi --> BackendConfirmation: STA_CONN_SUCCESS
+    BackendConfirmation --> Rename: first-pair claim confirmed
+    BackendConfirmation --> Success: offline robot registered and online
+    BackendConfirmation --> DeviceHome: owned robot reconnects online
+    BackendConfirmation --> Failed: bounded claim/online timeout
+    Failed --> BLEScan: double-click BOOT and retry Bluetooth
+    Failed --> WifiSelection: correct Wi-Fi password
+    Failed --> [*]: give up
+    Rename --> Success: provisioning complete
+    Success --> [*]
+    DeviceHome --> [*]
+
+    note right of EncryptedBluFi
+      SSID/password travel only over encrypted BluFi.
+      A successful GATT write is not provisioning success.
+    end note
+
+    note right of BackendConfirmation
+      Backend owns claim, ownership, token, status, and heartbeat.
+      ESP server is contacted only after firmware is online.
+    end note

@@ -1,4 +1,6 @@
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 import PairSearchScreen from '@/features/device/pairing/screens/PairSearchScreen';
@@ -113,15 +115,88 @@ beforeEach(() => {
   mockedZeroCodeEnabled.mockReturnValue(true);
 });
 
+it('serializes PairSearch diagnostics without raw robot identifiers or secrets', async () => {
+  const info = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+  const rawSerial = 'TBOT-14C19FD1AC20';
+  const rawMac = 'AA:BB:CC:DD:EE:FF';
+  mockedScan.mockResolvedValue({ allowed: [candidate(rawMac, rawSerial)], blocked: [] });
+  mockedStartProvisioning.mockRejectedValue(new Error('home-password bootstrap-token'));
+  const navigate = jest.fn();
+
+  renderSearch(navigate);
+
+  await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+    errorCode: 'PROVISIONING_START_FAILED',
+  }));
+  const serialized = JSON.stringify(info.mock.calls);
+  info.mockRestore();
+  expect(serialized).not.toContain(rawSerial);
+  expect(serialized).not.toContain(rawMac);
+  expect(serialized).not.toContain('home-password');
+  expect(serialized).not.toContain('bootstrap-token');
+});
+
+it('keeps pairingCode out of the PairSearch diagnostics allowlist', () => {
+  const source = readFileSync(join(process.cwd(), 'src/features/device/pairing/screens/PairSearchScreen.tsx'), 'utf8');
+  const helper = source.slice(
+    source.indexOf('const SAFE_PAIR_SEARCH_DIAGNOSTIC_KEYS'),
+    source.indexOf('function devErrorSummary'),
+  );
+
+  expect(helper).not.toContain('/code$/i');
+  expect(helper).not.toContain('pairingCode');
+});
+
 // ---------------------------------------------------------------------------
 // reconnectAndGoToWifi() — reached via reconnectMode route param. The chosen
 // candidate's serial is forwarded but the deviceId comes from getDeviceStatus.
 // ---------------------------------------------------------------------------
 describe('reconnectAndGoToWifi (reconnect route)', () => {
+  it('fails closed when neither route nor backend provides a trustworthy target serial', async () => {
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-selected-2',
+      name: 'Kitchen Robot',
+      online: true,
+      batteryPercent: 42,
+    });
+    mockedScan.mockResolvedValue({ allowed: [candidate('ble-unknown', 'TBOT-UNKNOWN')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate, { reconnectMode: true, reconnectDeviceId: 'device-selected-2' });
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      errorCode: 'RECONNECT_DEVICE_IDENTITY_MISSING',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
+  });
+
+  it('uses the exact displayed device and rejects a different scanned robot', async () => {
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-selected-2',
+      name: 'Kitchen Robot',
+      serialNumber: 'TBOT-SELECTED',
+      online: true,
+      batteryPercent: 42,
+    });
+    mockedScan.mockResolvedValue({ allowed: [candidate('ble-other', 'TBOT-OTHER')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate, {
+      reconnectMode: true,
+      reconnectDeviceId: 'device-selected-2',
+      reconnectSerialNumber: 'TBOT-SELECTED',
+    });
+
+    await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-selected-2'));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      errorCode: 'RECONNECT_DEVICE_MISMATCH',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
+  });
+
   it('navigates to PairWifi with reconnect transport when the primary device has an id', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-primary-1',
       name: 'TBOT-OWNED',
+      serialNumber: 'TBOT-OWNED',
       online: true,
       batteryPercent: 42,
     });
@@ -216,6 +291,7 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-xyz',
       name: 'TBOT-OWNED',
+      serialNumber: 'TBOT-OWNED',
       online: false,
       batteryPercent: 10,
     });
@@ -227,6 +303,22 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
       ROUTES.PairWifiScreen,
       expect.objectContaining({ bleDeviceId: 'ble-from-scan', serialNumber: 'TBOT-OWNED' }),
     ));
+  });
+});
+
+describe('provisionAndGoToFound (new robot route)', () => {
+  it('fails closed when backend cannot create the claim attempt', async () => {
+    mockedStartProvisioning.mockRejectedValue(
+      Object.assign(new Error('not found'), { code: 'DEVICE_NOT_FOUND', status: 404 }),
+    );
+    mockedScan.mockResolvedValue({ allowed: [candidate('ble-new', 'TBOT-NEW')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate);
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      errorCode: 'DEVICE_NOT_FOUND',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
   });
 });
 
@@ -563,14 +655,16 @@ describe('cancelSearchToIntro (back-to-intro)', () => {
     expect(screen.getByText('Make sure Robot is in setup mode and within 3 meters of your phone.')).toBeTruthy();
   });
 
-  it('tells reconnect users to hold the top button before scanning', async () => {
+  it('tells reconnect users to double-click BOOT and stay nearby while scanning', async () => {
     mockedScan.mockReturnValue(new Promise(() => {}));
     const navigate = jest.fn();
     const screen = renderSearch(navigate, { reconnectMode: true });
 
     await waitFor(() => expect(screen.getByText('Looking nearby…')).toBeTruthy());
 
-    expect(screen.getByText('Hold the top button for 5 seconds to open setup mode, then keep Robot within 3 meters.')).toBeTruthy();
+    expect(
+      screen.getByText('Double-click BOOT, then keep Robot within 1–2 m while this phone searches.'),
+    ).toBeTruthy();
   });
 
   it('navigates to PairIntro when the back control is pressed during searching', async () => {

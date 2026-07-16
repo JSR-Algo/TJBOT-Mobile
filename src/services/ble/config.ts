@@ -19,16 +19,11 @@ type AllowlistCandidate = {
   serviceData?: Record<string, string> | null;
 };
 
-export function isAllowlistedDevice(deviceId: string, name?: string | null, serviceUUIDs?: readonly string[] | null): boolean {
+export function isAllowlistedDevice(deviceId: string, name?: string | null, _serviceUUIDs?: readonly string[] | null): boolean {
   const normalizedId = deviceId.trim().toUpperCase();
   const normalizedName = (name ?? '').trim().toUpperCase();
 
-  if (matchesAllowlistPrefix(normalizedId) || matchesAllowlistPrefix(normalizedName)) return true;
-
-  // Additive fallback: admit a real BluFi robot whose advertised name lacks a
-  // TBOT-family prefix but whose advertised service UUIDs include the BluFi
-  // service. Discovery must never depend solely on the advertised name string.
-  return hasBluFiServiceUuid(serviceUUIDs);
+  return matchesAllowlistPrefix(normalizedId) || matchesAllowlistPrefix(normalizedName);
 }
 
 export function isAllowlistedCandidate(candidate: AllowlistCandidate): boolean {
@@ -36,7 +31,6 @@ export function isAllowlistedCandidate(candidate: AllowlistCandidate): boolean {
   if (candidate.localName && matchesAllowlistPrefix(candidate.localName.trim().toUpperCase())) return true;
 
   const serviceDataEntries = Object.entries(candidate.serviceData ?? {});
-  if (hasBluFiServiceUuid(serviceDataEntries.map(([uuid]) => uuid))) return true;
 
   const rawPayloads = [
     candidate.rawScanRecord,
@@ -53,19 +47,38 @@ function matchesAllowlistPrefix(value: string): boolean {
   });
 }
 
-function hasBluFiServiceUuid(serviceUUIDs?: readonly string[] | null): boolean {
-  const normalizedBlufi = BLE_CONFIG.BLUFI_SERVICE_UUID.trim().toUpperCase();
-  return (serviceUUIDs ?? []).some((uuid) => uuid.trim().toUpperCase() === normalizedBlufi);
+/**
+ * Normalize BLE UUIDs so Android short forms match the full BluFi UUID.
+ * Examples admitted as BluFi: "FFFF", "0000FFFF", "0000ffff-0000-1000-8000-00805f9b34fb".
+ * Does NOT strip trailing junk (e.g. "...FBX") so near-miss values stay blocked.
+ */
+export function normalizeBleUuid(uuid: string): string {
+  const trimmed = uuid.trim().toUpperCase();
+
+  if (/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^[0-9A-F]{4}$/.test(trimmed)) {
+    return `0000${trimmed}-0000-1000-8000-00805F9B34FB`;
+  }
+  if (/^[0-9A-F]{8}$/.test(trimmed)) {
+    return `${trimmed}-0000-1000-8000-00805F9B34FB`;
+  }
+  if (/^[0-9A-F]{32}$/.test(trimmed)) {
+    return `${trimmed.slice(0, 8)}-${trimmed.slice(8, 12)}-${trimmed.slice(12, 16)}-${trimmed.slice(16, 20)}-${trimmed.slice(20)}`;
+  }
+
+  return trimmed;
 }
 
 function rawAdvertMatchesAllowlist(value?: string | null): boolean {
   if (!value) return false;
 
   const bytes = decodeBase64(value);
-  if (bytes && advertisementBytesMatch(bytes)) return true;
+  if (bytes && (advertisementBytesMatch(bytes) || rawBytesContainRobotIdentity(bytes))) return true;
 
   const normalizedText = value.trim().toUpperCase();
-  return matchesAllowlistPrefix(normalizedText) || normalizedText.includes('TBOT-') || normalizedText.includes('0000FFFF');
+  return matchesAllowlistPrefix(normalizedText) || normalizedText.includes('TBOT-');
 }
 
 function advertisementBytesMatch(bytes: number[]): boolean {
@@ -76,14 +89,13 @@ function advertisementBytesMatch(bytes: number[]): boolean {
     if ((type === 0x08 || type === 0x09) && matchesAllowlistPrefix(ascii(data).trim().toUpperCase())) {
       return true;
     }
-    if ((type === 0x02 || type === 0x03) && contains16BitUuid(data, 0xffff)) {
-      return true;
-    }
-    if ((type === 0x06 || type === 0x07) && containsBluFi128BitUuid(data)) {
-      return true;
-    }
   }
   return false;
+}
+
+function rawBytesContainRobotIdentity(bytes: number[]): boolean {
+  const text = ascii(bytes).trim().toUpperCase();
+  return BLE_CONFIG.ALLOWLIST_PREFIXES.some((prefix) => text.includes(prefix.toUpperCase()));
 }
 
 function advertisementFields(bytes: number[]): number[][] {
@@ -98,28 +110,6 @@ function advertisementFields(bytes: number[]): number[][] {
     offset = end;
   }
   return fields;
-}
-
-function contains16BitUuid(bytes: number[], uuid: number): boolean {
-  for (let index = 0; index + 1 < bytes.length; index += 2) {
-    if ((bytes[index] | (bytes[index + 1] << 8)) === uuid) return true;
-  }
-  return false;
-}
-
-function containsBluFi128BitUuid(bytes: number[]): boolean {
-  const blufiLittleEndian = [
-    0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
-    0x00, 0x10, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,
-  ];
-  return containsSubarray(bytes, blufiLittleEndian);
-}
-
-function containsSubarray(haystack: number[], needle: number[]): boolean {
-  for (let start = 0; start + needle.length <= haystack.length; start += 1) {
-    if (needle.every((byte, index) => haystack[start + index] === byte)) return true;
-  }
-  return false;
 }
 
 function ascii(bytes: number[]): string {

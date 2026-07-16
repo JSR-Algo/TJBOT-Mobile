@@ -30,6 +30,30 @@ export interface ClaimStatusDescriptor {
 export const CLAIM_POLL_INTERVAL_MS = 3000;
 export const CLAIM_CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
 
+export function isRetryablePairingStatusPollError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const record = error as Record<string, unknown>;
+  const response = typeof record.response === 'object' && record.response !== null
+    ? record.response as Record<string, unknown>
+    : undefined;
+  const status = typeof record.status === 'number'
+    ? record.status
+    : typeof response?.status === 'number'
+      ? response.status
+      : undefined;
+  if (status === 408 || status === 429 || (typeof status === 'number' && status >= 500)) {
+    return true;
+  }
+  if (record.retryable === true) return true;
+  const code = typeof record.code === 'string' ? record.code : undefined;
+  return code === 'NETWORK_ERROR'
+    || code === 'RATE_LIMIT_EXCEEDED'
+    || code === 'SERVICE_UNAVAILABLE'
+    || code === 'GATEWAY_TIMEOUT'
+    || code === 'INTERNAL_ERROR'
+    || code === 'SERVER_ERROR';
+}
+
 const DEVICE_ALREADY_CLAIMED: ClaimStatusDescriptor = {
   code: 'DEVICE_ALREADY_CLAIMED',
   title: 'Already connected elsewhere',

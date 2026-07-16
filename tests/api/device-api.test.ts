@@ -152,43 +152,14 @@ describe('device API client', () => {
     });
   });
 
-  it('connects a provisioning attempt through the backend provision bridge', async () => {
-    jest.resetModules();
-    const post = jest.fn().mockResolvedValueOnce({
-      data: {
-        deviceId: 'device-4',
-        provisioningAttemptId: 'attempt-1',
-        status: 'esp_bind_requested',
-      },
-    });
+  it('does not expose a backend API that forwards home Wi-Fi credentials', () => {
+    const source = require('node:fs').readFileSync(
+      require.resolve('@/services/api/device.api'),
+      'utf8',
+    ) as string;
 
-    jest.doMock('@/services/http/client', () => ({
-      __esModule: true,
-      default: { post },
-    }));
-
-    const { pairDevice } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
-
-    await expect(pairDevice({
-      serialNumber: 'TJBot-0001',
-      deviceId: 'device-4',
-      provisioningAttemptId: 'attempt-1',
-      code: '123456',
-      wifiSsid: 'Casa',
-      wifiPassword: 'secret-pass',
-    })).resolves.toEqual({
-      deviceId: 'device-4',
-      provisioningAttemptId: 'attempt-1',
-      status: 'esp_bind_requested',
-    });
-    expect(post).toHaveBeenCalledWith('/devices/provision/connect', {
-      deviceId: 'device-4',
-      provisioningAttemptId: 'attempt-1',
-      serialNumber: 'TJBot-0001',
-      code: '123456',
-      wifiSsid: 'Casa',
-      wifiPassword: 'secret-pass',
-    });
+    expect(source).not.toContain('/devices/provision/connect');
+    expect(source).not.toContain('export async function pairDevice');
   });
 
   it('confirms local BLE handoff without sending Wi-Fi credentials', async () => {

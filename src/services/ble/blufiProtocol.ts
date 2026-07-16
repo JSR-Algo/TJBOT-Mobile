@@ -1,3 +1,4 @@
+import * as ExpoCrypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 import 'crypto-js/mode-cfb';
 import 'crypto-js/pad-nopadding';
@@ -122,7 +123,15 @@ export function buildBluFiStationProvisioningFrames(params: {
   let sequence = params.startSequence ?? 0;
   const writes: string[] = [];
 
-  sequence = appendBluFiFrames(writes, buildType(BLUFI_TYPE_CTRL, BLUFI_CTRL_SET_WIFI_OPMODE), [BLUFI_WIFI_MODE_STA], sequence);
+  // After SET_SEC_MODE, Espressif Android encrypts+checksums opmode/SSID/password.
+  // CONNECT_TO_AP stays plain (matches official BlufiClientImpl.postStaWifiInfo).
+  sequence = appendBluFiFrames(
+    writes,
+    buildType(BLUFI_TYPE_CTRL, BLUFI_CTRL_SET_WIFI_OPMODE),
+    [BLUFI_WIFI_MODE_STA],
+    sequence,
+    params.session,
+  );
 
   const ssidBytes = utf8Bytes(params.ssid);
   try {
@@ -150,20 +159,88 @@ export function buildBluFiWifiScanFrames(): string[] {
 // On-wire type byte: (0x01 & 0x03) | (0x0f << 2) = 0x3d.
 const BLUFI_CONN_REPORT_TYPE = (BLUFI_TYPE_DATA & 0x03) | (0x0f << 2);
 
+/** Accumulator for fragmented WIFI_REP frames (SSID in extra_info often >1 MTU). */
+export type BluFiConnReportAccumulator = {
+  expectedLength?: number;
+  chunks: number[];
+};
+
 /**
- * Parses a reassembled BluFi conn-report frame. Gated on the conn-report type
- * byte (0x3d); returns null for any other frame type or a malformed/short
- * frame. The payload is [opmode, conn_state, ...]; conn_state is
- * 0 = STA_CONN_SUCCESS, 1 = STA_CONN_FAIL, 2 = STA_CONNECTING. Pure: no I/O,
- * no side effects, and it never throws.
+ * Parses a single-frame (non-streaming) BluFi conn-report. Prefer
+ * `ingestBluFiConnReportFrame` when notifies may be fragmented.
  */
-export function parseBluFiConnReport(frameBytes: number[]): { connState: number } | null {
+export function parseBluFiConnReport(
+  frameBytes: number[],
+  session?: BluFiSession,
+): { connState: number } | null {
+  return ingestBluFiConnReportFrame(frameBytes, { chunks: [] }, session);
+}
+
+/**
+ * Ingest one GATT notify that may be a WIFI_REP fragment or complete frame.
+ * After SET_SEC_MODE each frame's data body is AES-CFB encrypted with seq as IV;
+ * decrypt per-frame, then reassemble, then read conn_state from payload[1].
+ *
+ * Returns a result only when a complete report is available with
+ * conn_state ∈ {0,1,2}. Incomplete fragments / non-reports return null.
+ */
+export function ingestBluFiConnReportFrame(
+  frameBytes: number[],
+  accumulator: BluFiConnReportAccumulator,
+  session?: BluFiSession,
+): { connState: number } | null {
   if (frameBytes.length < 4) return null;
-  const [type, , , dataLength] = frameBytes;
+  const [type, frameControl, sequence, dataLength] = frameBytes;
   if (type !== BLUFI_CONN_REPORT_TYPE) return null;
-  if (frameBytes.length < 4 + dataLength || dataLength < 2) return null;
-  const payload = frameBytes.slice(4, 4 + dataLength);
-  return { connState: payload[1] };
+  if (dataLength === 0) return null;
+
+  const encrypted = (frameControl & BLUFI_FRAME_CONTROL_ENCRYPTED) !== 0;
+  const hasChecksum = (frameControl & BLUFI_FRAME_CONTROL_CHECKSUM) !== 0;
+  const isFragment = (frameControl & BLUFI_FRAME_CONTROL_FRAGMENT) !== 0;
+  const trailer = hasChecksum ? 2 : 0;
+  if (frameBytes.length < 4 + dataLength + trailer) return null;
+
+  let data = frameBytes.slice(4, 4 + dataLength);
+  if (encrypted) {
+    if (!session) return null;
+    data = aesCfb128Decrypt(session.key, sequence, data);
+  }
+
+  if (isFragment) {
+    if (data.length < 2) return null;
+    if (accumulator.expectedLength === undefined) {
+      accumulator.expectedLength = data[0] | (data[1] << 8);
+    }
+    accumulator.chunks.push(...data.slice(2));
+    if (accumulator.chunks.length < (accumulator.expectedLength ?? Number.POSITIVE_INFINITY)) {
+      return null;
+    }
+    const complete = connStateFromWifiRepPayload(accumulator.chunks);
+    accumulator.expectedLength = undefined;
+    accumulator.chunks = [];
+    return complete;
+  }
+
+  // Non-fragment complete frame, or trailing piece after a fragment sequence
+  // that omitted the fragment bit on the last packet (defensive).
+  if (accumulator.expectedLength !== undefined) {
+    accumulator.chunks.push(...data);
+    if (accumulator.chunks.length < accumulator.expectedLength) return null;
+    const complete = connStateFromWifiRepPayload(accumulator.chunks);
+    accumulator.expectedLength = undefined;
+    accumulator.chunks = [];
+    return complete;
+  }
+
+  return connStateFromWifiRepPayload(data);
+}
+
+function connStateFromWifiRepPayload(payload: number[]): { connState: number } | null {
+  // [opmode, conn_state, ...optional sta info]
+  if (payload.length < 2) return null;
+  const connState = payload[1];
+  if (connState !== 0 && connState !== 1 && connState !== 2) return null;
+  return { connState };
 }
 
 function appendBluFiFrames(writes: string[], type: number, data: number[], startSequence: number, session?: BluFiSession): number {
@@ -229,12 +306,20 @@ function resolveDhPrivateKey(provided?: Uint8Array): bigint {
 }
 
 function randomBytes(length: number): Uint8Array {
-  const bytes = new Uint8Array(length);
+  // Prefer Web Crypto when present (Jest / modern Hermes).
   const cryptoSource = readCryptoSource();
   if (cryptoSource) {
+    const bytes = new Uint8Array(length);
     cryptoSource.getRandomValues(bytes);
     return bytes;
   }
+
+  // Expo native CSPRNG (no TurboModule getEnforcing crash on missing polyfill).
+  if (typeof ExpoCrypto.getRandomBytes === 'function') {
+    const expoBytes = ExpoCrypto.getRandomBytes(length);
+    return expoBytes instanceof Uint8Array ? expoBytes : new Uint8Array(expoBytes);
+  }
+
   throw new Error('BluFi secure negotiation requires crypto.getRandomValues');
 }
 
@@ -305,8 +390,28 @@ function aesCfb128Encrypt(key: Uint8Array, sequence: number, data: number[]): nu
   return Array.from(wordArrayToBytes(result.ciphertext));
 }
 
+function aesCfb128Decrypt(key: Uint8Array, sequence: number, data: number[]): number[] {
+  const iv = new Array<number>(16).fill(0);
+  iv[0] = sequence & 0xff;
+  const result = CryptoJS.AES.decrypt(
+    { ciphertext: bytesToWordArray(data) } as CryptoJS.lib.CipherParams,
+    bytesToWordArray(Array.from(key)),
+    {
+      iv: bytesToWordArray(iv),
+      mode: CryptoJS.mode.CFB,
+      padding: CryptoJS.pad.NoPadding,
+    },
+  );
+  return Array.from(wordArrayToBytes(result));
+}
+
+/**
+ * BluFi CRC used by ESP-IDF `esp_crc16_be` trampoline + Espressif Android
+ * `BlufiCRC.calcCRC`. Equivalent to CRC-16 with poly 0x1021, init 0xFFFF,
+ * xorout 0xFFFF (not plain XMODEM/init-0).
+ */
 function crc16Be(bytes: number[]): number {
-  let crc = 0;
+  let crc = 0xffff;
   for (const byte of bytes) {
     crc ^= (byte & 0xff) << 8;
     for (let bit = 0; bit < 8; bit += 1) {
@@ -314,7 +419,7 @@ function crc16Be(bytes: number[]): number {
       crc &= 0xffff;
     }
   }
-  return crc;
+  return (~crc) & 0xffff;
 }
 
 function bigIntToBytes(value: bigint): number[] {

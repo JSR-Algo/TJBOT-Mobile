@@ -121,6 +121,23 @@ describe('PairWifiScreen — robot Wi-Fi scan over BLE', () => {
     expect(screen.getByText('HomeNet')).toBeTruthy();
   });
 
+  it('aborts the in-flight robot Wi-Fi scan when the screen unmounts', async () => {
+    let observedSignal: AbortSignal | undefined;
+    mockedScanRobotWifi.mockImplementation(({ signal }) => {
+      observedSignal = signal;
+      return new Promise(() => undefined);
+    });
+    const navigate = jest.fn();
+    const screen = renderWifi(navigate, BLE_PARAMS);
+
+    await act(async () => undefined);
+    expect(observedSignal?.aborted).toBe(false);
+
+    screen.unmount();
+
+    expect(observedSignal?.aborted).toBe(true);
+  });
+
   it('renders the robot-scanned SSID list and sorts by signal strength (strongest first)', async () => {
     mockedScanRobotWifi.mockResolvedValue([
       net('WeakNet', -85),
@@ -287,7 +304,11 @@ describe('PairWifiScreen — robot Wi-Fi scan over BLE', () => {
 
     fireEvent.press(screen.getByLabelText('Go back'));
 
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'device-1',
+      reconnectSerialNumber: 'TBT-2026-004217',
+    });
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen, expect.anything());
   });
 });
@@ -377,6 +398,40 @@ describe('PairWifiPasswordScreen — password handoff is transient + BLE-bound',
     expect(screen.getByLabelText('Wi-Fi password').props.value).toBe('');
   });
 
+  it('cannot reuse the prior password when the selected SSID changes before effects flush', () => {
+    const navigate = jest.fn();
+    const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'HomeNet' });
+
+    fireEvent.changeText(screen.getByLabelText('Wi-Fi password'), WIFI_PASSWORD);
+    expect(screen.getByLabelText('Wi-Fi password').props.value).toBe(WIFI_PASSWORD);
+
+    const originalUseEffect = React.useEffect;
+    const originalUseLayoutEffect = React.useLayoutEffect;
+    const effectSpy = jest.spyOn(React, 'useEffect').mockImplementation((_, dependencies) => {
+      originalUseEffect(() => undefined, dependencies);
+    });
+    const layoutEffectSpy = jest.spyOn(React, 'useLayoutEffect').mockImplementation((_, dependencies) => {
+      originalUseLayoutEffect(() => undefined, dependencies);
+    });
+
+    try {
+      screen.rerender(
+        <PairWifiPasswordScreen
+          navigation={{ navigate } as never}
+          route={{ params: { ...BLE_PARAMS, ssid: 'GuestNet' } } as never}
+        />,
+      );
+
+      expect(screen.getByLabelText('Wi-Fi password').props.value).toBe('');
+      fireEvent.press(screen.getByText('Connect Robot'));
+      expect(navigate).not.toHaveBeenCalled();
+      expect(mockedPutPassword).not.toHaveBeenCalled();
+    } finally {
+      layoutEffectSpy.mockRestore();
+      effectSpy.mockRestore();
+    }
+  });
+
   it('keeps the password obscured by default and never renders the raw value as visible text', () => {
     const navigate = jest.fn();
     const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'HomeNet' });
@@ -425,6 +480,22 @@ describe('PairWifiPasswordScreen — password handoff is transient + BLE-bound',
       expect.objectContaining({ ssid: 'MyHiddenNet' }),
     );
     expect(mockedPutPassword).toHaveBeenCalledWith('claim-1', WIFI_PASSWORD);
+  });
+
+  it('manual-entry mode: changing the SSID clears its prior password and blocks reuse', () => {
+    const navigate = jest.fn();
+    const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'Other network' });
+
+    fireEvent.changeText(screen.getByLabelText('Wi-Fi network name'), 'Network A');
+    fireEvent.changeText(screen.getByLabelText('Wi-Fi password'), WIFI_PASSWORD);
+    expect(screen.getByLabelText('Wi-Fi password').props.value).toBe(WIFI_PASSWORD);
+
+    fireEvent.changeText(screen.getByLabelText('Wi-Fi network name'), 'Network B');
+
+    expect(screen.getByLabelText('Wi-Fi password').props.value).toBe('');
+    fireEvent.press(screen.getByText('Connect Robot'));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(mockedPutPassword).not.toHaveBeenCalled();
   });
 
   it('back navigation strips the password context from the params handed back to the Wi-Fi list', () => {

@@ -47,12 +47,16 @@ describe('device pairing Wi-Fi route params', () => {
     expect(connectingScreen).not.toContain('/devices/provision/local-ble-paired');
   });
 
-  it('uses local BLE for BLE transport and keeps backend connect as fallback', () => {
+  it('uses local BLE as the only Wi-Fi provisioning transport', () => {
     const connectingScreen = source('src/features/device/pairing/screens/PairConnectingScreen.tsx');
 
     expect(connectingScreen).toContain('runLocalBleProvisioning');
-    expect(connectingScreen).toContain('runBackendProvisioning');
-    expect(connectingScreen).toContain('pairDevice({');
+    expect(connectingScreen).not.toContain('runBackendProvisioning');
+    expect(connectingScreen).not.toContain('pairDevice({');
+    expect(source('src/navigation/routes.ts')).not.toContain("'legacy_backend'");
+    expect(source('src/navigation/routes.ts')).not.toContain("'hotspot'");
+    expect(source('src/navigation/routes.ts')).not.toContain("'ble_offline'");
+    expect(source('src/features/device/pairing/screens/PairSearchScreen.tsx')).not.toContain("provisioningTransport: 'ble_offline'");
   });
 
   it('builds typed password params and trims selected SSIDs', () => {

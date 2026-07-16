@@ -11,12 +11,10 @@ import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { CLAIM_COPY } from '../claimCopy';
 import { describeClaimFailure, type ClaimStatusDescriptor } from '../claimStatus';
-import { putPairingBootstrapToken } from '../pairingSecretHandoff';
 import { savePendingPairingContext } from '../pendingPairingContext';
 import { useZeroCodeClaimFlow } from '../useZeroCodeClaimFlow';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
 import { requestClaim } from '@/services/api/claim.api';
-import { mintBootstrapToken } from '@/services/api/device.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFoundScreen'>;
 
@@ -99,8 +97,6 @@ export default function PairFoundScreen({ navigation, route }: Props) {
             });
             return;
           }
-          const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimed.claimId });
-          putPairingBootstrapToken(claimed.claimId, bootstrap.token);
           navigation.navigate(ROUTES.PairWifiScreen, {
             ...(params ?? {}),
             deviceId: claimed.deviceId || deviceId,

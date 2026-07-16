@@ -14,8 +14,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairOfflineScreen'>;
 
 const TIPS = [
   { ic: '🔌', t: 'Check Robot is plugged in', b: 'Or has at least 20% battery' },
-  { ic: '📶', t: 'Update Wi-Fi', b: 'If your network changed or password rotated' },
-  { ic: '🔄', t: 'Open setup mode', b: 'Hold the top button for 5 seconds until Robot is ready to connect' },
+  { ic: '📶', t: 'Update Wi-Fi', b: 'Double-click the BOOT button to change Wi-Fi without unpairing Robot.' },
 ] as const;
 
 export default function PairOfflineScreen({ navigation }: Props) {
@@ -29,7 +28,7 @@ export default function PairOfflineScreen({ navigation }: Props) {
         <RobotDevice emotion="reconnect" size={170} accent="#FF6F61" />
         <Text fontWeight="600" style={styles.heading}>Robot needs a reconnect</Text>
         <Text style={styles.sub}>
-          Pairing is safe. Put Robot in setup mode, bring it near your phone, then reconnect.
+          Pairing is safe. Double-click the BOOT button to change Wi-Fi without unpairing Robot.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={22}>
@@ -70,6 +69,14 @@ export default function PairOfflineScreen({ navigation }: Props) {
           })}
         </Box>
       </Box>
+      <Box paddingHorizontal={16} paddingTop={22}>
+        <Text fontWeight="700" style={styles.sectionLabel}>Pair again (last resort)</Text>
+        <Box style={styles.lastResortCard}>
+          <Text style={styles.tipBody}>
+            Hold BOOT for 5 seconds only if you want to reset pairing and saved Wi-Fi.
+          </Text>
+        </Box>
+      </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
         <DeviceBigBtn onClick={goToReconnectSearch}>Reconnect now</DeviceBigBtn>
         <DeviceBigBtn
@@ -90,6 +97,7 @@ const styles = StyleSheet.create({
   sub: { fontSize: 13, color: DV.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 6 },
   sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   tipCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, padding: 4 },
+  lastResortCard: { backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#F3D2AA', borderRadius: 14, padding: 16 },
   tipRow: { padding: 12, flexDirection: 'row', gap: 12, alignItems: 'center' },
   tipBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
   tipIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#EEF1F5', flexShrink: 0 },

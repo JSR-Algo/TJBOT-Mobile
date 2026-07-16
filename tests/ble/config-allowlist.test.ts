@@ -4,8 +4,8 @@ import { BLE_CONFIG, isAllowlistedCandidate, isAllowlistedDevice } from '../../s
  * Round-2 gap-fill suite for src/services/ble/config.ts.
  *
  * Asserts the REAL behavior of isAllowlistedDevice() across the three admission
- * paths (id prefix, name prefix, BluFi service-UUID fallback) plus the block
- * path. The discovery scan is intentionally unfiltered in service.ts so
+ * paths (id prefix, name prefix, raw robot identity) plus the block path.
+ * A generic BluFi UUID is never sufficient identity. Discovery remains unfiltered so
  * name-only and raw-advert robots remain visible on Android.
  */
 describe('ble/config — BLE_CONFIG constants', () => {
@@ -88,8 +88,8 @@ describe('isAllowlistedDevice — name=null / undefined / nullish handling', () 
     expect(isAllowlistedDevice('UNKNOWN-001', null)).toBe(false);
   });
 
-  test('name=null + non-matching id but BluFi UUID present → admitted', () => {
-    expect(isAllowlistedDevice('UNKNOWN-001', null, [BLE_CONFIG.BLUFI_SERVICE_UUID])).toBe(true);
+  test('name=null + non-matching id but generic BluFi UUID present → blocked', () => {
+    expect(isAllowlistedDevice('UNKNOWN-001', null, [BLE_CONFIG.BLUFI_SERVICE_UUID])).toBe(false);
   });
 
   test('name=undefined + non-matching id + no serviceUUIDs → blocked', () => {
@@ -97,36 +97,14 @@ describe('isAllowlistedDevice — name=null / undefined / nullish handling', () 
   });
 });
 
-describe('isAllowlistedDevice — BluFi service-UUID fallback (name lacks prefix)', () => {
-  test('admits a real BluFi robot whose name lacks a TBOT prefix', () => {
-    // Exactly the additive fallback documented in config.ts: discovery must not
-    // depend solely on the advertised name string.
-    expect(isAllowlistedDevice('ES3C35P-001', 'ES3C35P-001', [BLE_CONFIG.BLUFI_SERVICE_UUID])).toBe(true);
+describe('isAllowlistedDevice — generic BluFi UUID is not robot identity', () => {
+  test('blocks a generic Espressif BluFi peripheral without a TBOT-family identity', () => {
+    expect(isAllowlistedDevice('AA:BB:CC:DD:EE:FF', null, ['FFFF'])).toBe(false);
+    expect(isAllowlistedDevice('ES3C35P-001', 'ES3C35P-001', [BLE_CONFIG.BLUFI_SERVICE_UUID])).toBe(false);
   });
 
-  test('trims whitespace on a serviceUUID entry before matching', () => {
-    expect(isAllowlistedDevice('ES3C35P-002', 'ES3C35P-002', ['   0000FFFF-0000-1000-8000-00805F9B34FB   '])).toBe(true);
-    expect(isAllowlistedDevice('ES3C35P-003', 'ES3C35P-003', ['\t0000FFFF-0000-1000-8000-00805F9B34FB\n'])).toBe(true);
-  });
-
-  test('upcases a lowercase serviceUUID entry before matching', () => {
-    expect(isAllowlistedDevice('ES3C35P-004', 'ES3C35P-004', [BLE_CONFIG.BLUFI_SERVICE_UUID.toLowerCase()])).toBe(true);
-  });
-
-  test('admits when a mixed-case + whitespace serviceUUID entry is trimmed+upcased then matched', () => {
-    expect(
-      isAllowlistedDevice('ES3C35P-005', 'ES3C35P-005', ['  0000ffff-0000-1000-8000-00805f9b34fb  ']),
-    ).toBe(true);
-  });
-
-  test('admits when the BluFi UUID is one entry among several non-matching ones', () => {
-    expect(
-      isAllowlistedDevice('ES3C35P-006', 'ES3C35P-006', [
-        '180A',
-        'fee0',
-        '  0000FFFF-0000-1000-8000-00805F9B34FB  ',
-      ]),
-    ).toBe(true);
+  test('admits a named TBOT robot when the BluFi UUID is also present', () => {
+    expect(isAllowlistedDevice('AA:BB:CC:DD:EE:FF', 'TBot-Blufi', ['FFFF'])).toBe(true);
   });
 });
 
@@ -141,14 +119,14 @@ describe('isAllowlistedCandidate — Android raw advertisement fallback', () => 
     })).toBe(true);
   });
 
-  test('admits a robot when Android exposes the BluFi UUID only inside rawScanRecord', () => {
+  test('blocks a peripheral when Android exposes only the generic BluFi UUID', () => {
     expect(isAllowlistedCandidate({
       id: 'AA:BB:CC:DD:EE:FF',
       name: null,
       localName: null,
       serviceUUIDs: [],
       rawScanRecord: 'AwP//w==',
-    })).toBe(true);
+    })).toBe(false);
   });
 
   test('blocks unrelated raw advertisements', () => {
@@ -222,8 +200,8 @@ describe('isAllowlistedDevice — boundary & edge cases', () => {
     expect(isAllowlistedDevice('TBOT-001', null, [BLE_CONFIG.BLUFI_SERVICE_UUID])).toBe(true);
   });
 
-  test('admits via BluFi UUID even when both id and name are empty', () => {
-    expect(isAllowlistedDevice('', '', [BLE_CONFIG.BLUFI_SERVICE_UUID])).toBe(true);
+  test('blocks a generic BluFi UUID when both id and name are empty', () => {
+    expect(isAllowlistedDevice('', '', [BLE_CONFIG.BLUFI_SERVICE_UUID])).toBe(false);
   });
 
   test('does not partial-match a longer would-be prefix (e.g. "TB" is not a prefix)', () => {

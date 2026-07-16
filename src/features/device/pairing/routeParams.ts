@@ -2,6 +2,8 @@ import type { RootStackParamList } from '@/navigation/routes';
 
 type PairWifiPasswordParams = NonNullable<RootStackParamList['PairWifiPasswordScreen']>;
 type PairingRetryParams = {
+  deviceId?: string;
+  serialNumber?: string;
   provisioningAttemptId?: string;
   provisioningTransport?: PairWifiPasswordParams['provisioningTransport'];
 } | undefined;
@@ -18,13 +20,21 @@ export function getPairWifiPasswordSsid(params: RootStackParamList['PairWifiPass
 
 export function buildPairSearchRetryParams(params: PairingRetryParams): RootStackParamList['PairSearchScreen'] {
   if (!params) return undefined;
-  if (params.provisioningTransport === 'ble_reconnect' || params.provisioningTransport === 'ble_offline') {
-    return { reconnectMode: true };
+  if (params.provisioningTransport === 'ble_reconnect') {
+    return reconnectSearchParams(params);
   }
-  if (params.provisioningAttemptId?.startsWith('reconnect:') || params.provisioningAttemptId?.startsWith('offline:')) {
-    return { reconnectMode: true };
+  if (params.provisioningAttemptId?.startsWith('reconnect:')) {
+    return reconnectSearchParams(params);
   }
   return undefined;
+}
+
+function reconnectSearchParams(params: NonNullable<PairingRetryParams>): NonNullable<RootStackParamList['PairSearchScreen']> {
+  return {
+    reconnectMode: true,
+    ...(params.deviceId ? { reconnectDeviceId: params.deviceId } : {}),
+    ...(params.serialNumber ? { reconnectSerialNumber: params.serialNumber } : {}),
+  };
 }
 
 export function hasPairFoundContext(params: RootStackParamList['PairQrScanScreen']): boolean {

@@ -484,7 +484,11 @@ describe('back navigation', () => {
 
     fireEvent.press(getByLabelText('Go back'));
 
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'device-1',
+      reconnectSerialNumber: 'TBT-INBOUND-0001',
+    });
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen, expect.anything());
   });
 

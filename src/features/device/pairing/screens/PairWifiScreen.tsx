@@ -34,6 +34,7 @@ export default function PairWifiScreen({ navigation, route }: Props) {
 
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const scanController = new AbortController();
     setScanState('scanning');
     setNetworks([]);
 
@@ -49,6 +50,7 @@ export default function PairWifiScreen({ navigation, route }: Props) {
       try {
         const result = await scanRobotWifiNetworks({
           device: { id: bleDeviceId, name: route.params?.serialNumber ?? null, localName: route.params?.serialNumber ?? null, serviceUUIDs: [] },
+          signal: scanController.signal,
         });
         if (cancelled) return;
         if (result.length === 0 && attemptsLeft > 0) {
@@ -72,6 +74,7 @@ export default function PairWifiScreen({ navigation, route }: Props) {
 
     return () => {
       cancelled = true;
+      scanController.abort();
       if (retryTimer !== undefined) clearTimeout(retryTimer);
     };
   }, [bleDeviceId, route.params?.serialNumber, scanAttempt]);

@@ -15,7 +15,7 @@ After the user submits Wi-Fi credentials, the app enters `dv_pair_connecting` wh
 
 Provisioning status is polled until `device_authenticated`/`completed`, `failed`/`expired`, or the shared claim-confirmation deadline elapses. Failure codes stay in the current pairing taxonomy (`PROVISIONING_FAILED`, `PROVISIONING_TIMEOUT`, `WIFI_AUTH_FAILED`, `DEVICE_AUTH_NOT_VERIFIED`, or the backend failure code), not the old `E-PROV-*` labels.
 
-From `dv_pair_failed` the user can retry from scan, use setup hotspot when the failure context supports it, or give up.
+From `dv_pair_failed` the user can double-click BOOT, move within 1–2 m, verify Bluetooth permission, retry from BLE scan, correct the Wi-Fi password, or give up. There is no backend or setup-hotspot credential fallback.
 
 ## Claim Confirmation
 
@@ -27,7 +27,7 @@ Offline BLE credential handoff remains provisional. It does not route to success
 
 | State | Scenario | Exit |
 |---|---|---|
-| `dv_pair_failed` | BLE scan/provisioning/backend claim failure | Retry full, retry scan, setup hotspot when context supports it, or give up |
+| `dv_pair_failed` | BLE scan/provisioning/backend claim failure | Retry BLE scan, correct password, open Bluetooth settings, or give up |
 | `dv_pair_search` | Phone offline, BLE permission denied, BLE unavailable, scan error/throttle, or no robot nearby | → `dv_pair_failed` with the matching pairing error code |
 | `dv_pair_connecting` | Provisioning/claim confirmation timeout or backend/device rejection | → `dv_pair_failed` with the backend or pairing error code |
 | `dv_pair_wifi_pw` | Transient Wi-Fi password handoff expired before connect | Re-enter password with `WIFI_PASSWORD_EXPIRED` |

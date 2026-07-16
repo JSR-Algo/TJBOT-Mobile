@@ -59,8 +59,13 @@ export function pairingFinalizeErrorMessage(finalizeError: unknown): string {
   return 'Saved your child, but could not finish setting up the robot. Check your connection and try again.';
 }
 
-export function allowsDevelopmentCoppaConsentBypass(isDev: boolean, apiBaseUrl: string): boolean {
-  return isDev && apiBaseUrl.includes('tbot-backend-8wmh.onrender.com');
+export function allowsDevelopmentCoppaConsentBypass(_isDev: boolean, apiBaseUrl: string): boolean {
+  try {
+    const url = new URL(apiBaseUrl);
+    return url.protocol === 'https:' && url.hostname === 'tbot-backend-8wmh.onrender.com';
+  } catch {
+    return false;
+  }
 }
 
 export async function saveOnboardingChildProfile(

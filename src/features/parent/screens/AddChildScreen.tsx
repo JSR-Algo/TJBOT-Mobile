@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import OnbShell, { OB } from '@/components/OnbShell';
 import OnbBigBtn from '@/components/OnbBigBtn';
+import { Input } from '@/components/Input';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { useHousehold } from '@/contexts/HouseholdContext';
@@ -17,6 +18,10 @@ import {
   childProfileSaveErrorMessage,
   saveOnboardingChildProfile,
 } from '@/features/onboarding/childProfileSave';
+import {
+  CHILD_DISPLAY_NAME_MAX_LENGTH,
+  normalizeChildDisplayName,
+} from '@/features/onboarding/childDisplayName';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddChildScreen'>;
 
@@ -71,11 +76,21 @@ export function AddChildContent({ navigation }: Pick<Props, 'navigation'>): Reac
   const { language, t } = useAppLanguage();
   const { activeHousehold, addChild, createHousehold, setActiveChild } = useHousehold();
   const [buddy, setBuddy] = React.useState<(typeof BUDDIES)[number]['id']>('panda');
+  const [childDisplayName, setChildDisplayName] = React.useState('');
+  const [childDisplayNameEdited, setChildDisplayNameEdited] = React.useState(false);
   const [level, setLevel] = React.useState<(typeof LEVELS)[number]['id']>('starter');
   const [ageBand, setAgeBand] = React.useState<AgeBandId | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const sel = BUDDIES.find(b => b.id === buddy);
+  const localizedBuddyLabel = t(sel?.label ?? 'Panda');
+  const suggestedChildDisplayName = translateTemplate(
+    '{{label}} friend',
+    { label: localizedBuddyLabel },
+    { locale: language },
+  );
+  const displayedChildName = childDisplayNameEdited ? childDisplayName : suggestedChildDisplayName;
+  const effectiveChildName = normalizeChildDisplayName(displayedChildName, suggestedChildDisplayName);
 
   const saveChild = async (): Promise<void> => {
     if (saving) return;
@@ -89,7 +104,7 @@ export function AddChildContent({ navigation }: Pick<Props, 'navigation'>): Reac
     let child: Child;
     try {
       child = await saveOnboardingChildProfile({
-        name: `${sel?.label ?? 'Panda'} friend`,
+        name: effectiveChildName,
         date_of_birth: dobFromAgeBand(ageBand),
         vocabulary_level: LEVEL_TO_VOCABULARY[level],
         learning_style: 'visual',
@@ -123,7 +138,7 @@ export function AddChildContent({ navigation }: Pick<Props, 'navigation'>): Reac
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text fontWeight="600" style={styles.heading}>Pick a buddy and a starting level</Text>
         <Text style={styles.sub}>
-          We don't ask for your child's name or photo. The buddy is how Robot greets them.
+          Your child's display name is optional. We don't ask for a legal name or photo.
         </Text>
       </Box>
 
@@ -155,7 +170,19 @@ export function AddChildContent({ navigation }: Pick<Props, 'navigation'>): Reac
             );
           })}
         </Box>
-        <Text style={styles.buddyNote}>Robot will say: <Text fontWeight="700">"Hi, {sel?.label} friend!"</Text></Text>
+        <Input
+          label="Child's display name (optional)"
+          value={displayedChildName}
+          onChangeText={(value) => {
+            setChildDisplayName(value);
+            setChildDisplayNameEdited(true);
+          }}
+          autoCapitalize="words"
+          maxLength={CHILD_DISPLAY_NAME_MAX_LENGTH}
+          testID="addChildDisplayNameInput"
+          style={styles.childNameInput}
+        />
+        <Text style={styles.buddyNote}>Robot will say: <Text fontWeight="700">"Hi, {effectiveChildName}!"</Text></Text>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={20}>
@@ -261,6 +288,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 12, color: OB.ink3, paddingHorizontal: 4, paddingBottom: 8, letterSpacing: 0.6, fontWeight: '600' },
   buddyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   buddyBtn: { width: '23%', aspectRatio: 1, borderWidth: 2, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  childNameInput: { marginTop: 16, marginBottom: 0 },
   buddyNote: { fontSize: 13, color: OB.ink2, paddingTop: 10, paddingHorizontal: 4 },
   ageBandRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   ageBandBtn: { minHeight: 44, paddingHorizontal: 18, paddingVertical: 10, borderWidth: 2, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

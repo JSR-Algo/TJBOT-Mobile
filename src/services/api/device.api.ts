@@ -2,15 +2,6 @@ import client from '@/services/http/client';
 
 import { backendContractUnavailable } from './undocumented-api-routes';
 
-export interface PairDeviceParams {
-  deviceId: string;
-  provisioningAttemptId: string;
-  serialNumber: string;
-  code: string;
-  wifiSsid: string;
-  wifiPassword: string;
-}
-
 export interface ProvisionStartParams {
   serialNumber: string;
   appVersion?: string;
@@ -21,12 +12,6 @@ export interface ProvisionStartResult {
   provisioningAttemptId: string;
   deviceId: string;
   deviceStatus: string;
-}
-
-export interface PairDeviceResult {
-  deviceId: string;
-  provisioningAttemptId: string;
-  status: string;
 }
 
 export interface ConfirmLocalBlePairedParams {
@@ -156,18 +141,6 @@ export async function startDeviceProvisioning(params: ProvisionStartParams): Pro
     serialNumber: params.serialNumber,
     appVersion: params.appVersion,
     phonePlatform: params.phonePlatform,
-  });
-  return response.data;
-}
-
-export async function pairDevice(params: PairDeviceParams): Promise<PairDeviceResult> {
-  const response = await client.post<PairDeviceResult>('/devices/provision/connect', {
-    deviceId: params.deviceId,
-    provisioningAttemptId: params.provisioningAttemptId,
-    serialNumber: params.serialNumber,
-    code: params.code,
-    wifiSsid: params.wifiSsid,
-    wifiPassword: params.wifiPassword,
   });
   return response.data;
 }

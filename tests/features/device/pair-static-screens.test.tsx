@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import PairIntroScreen from '@/features/device/pairing/screens/PairIntroScreen';
 import PairAddScreen from '@/features/device/pairing/screens/PairAddScreen';
 import PairOfflineScreen from '@/features/device/pairing/screens/PairOfflineScreen';
@@ -222,7 +222,7 @@ describe('PairAddScreen', () => {
 });
 
 // ===========================================================================
-// PairOfflineScreen — "Robot is offline": reconnect heading + 3 tip rows;
+// PairOfflineScreen — "Robot is offline": reconnect heading + ordinary tips;
 // primary CTA reconnects (search w/ reconnectMode), secondary -> Support;
 // header back -> PairAdd.
 // ===========================================================================
@@ -243,17 +243,15 @@ describe('PairOfflineScreen', () => {
     expect(utils.getByText('Try this')).toBeTruthy();
   });
 
-  it('renders all three troubleshooting tips with their titles and bodies', () => {
+  it('separates ordinary Wi-Fi recovery from last-resort pairing reset guidance', () => {
     const { utils } = renderOffline();
-    // Tip 1
     expect(utils.getByText('Check Robot is plugged in')).toBeTruthy();
     expect(utils.getByText('Or has at least 20% battery')).toBeTruthy();
-    // Tip 2
-    expect(utils.getByText('Update Wi-Fi')).toBeTruthy();
-    expect(utils.getByText('If your network changed or password rotated')).toBeTruthy();
-    // Tip 3
-    expect(utils.getByText('Open setup mode')).toBeTruthy();
-    expect(utils.getByText('Hold the top button for 5 seconds until Robot is ready to connect')).toBeTruthy();
+    const updateWifi = utils.getByLabelText('Update Wi-Fi for offline Robot');
+    expect(within(updateWifi).getByText('Double-click the BOOT button to change Wi-Fi without unpairing Robot.')).toBeTruthy();
+    expect(within(updateWifi).queryByText('Hold BOOT for 5 seconds only if you want to reset pairing and saved Wi-Fi.')).toBeNull();
+    expect(utils.getByText('Pair again (last resort)')).toBeTruthy();
+    expect(utils.getByText('Hold BOOT for 5 seconds only if you want to reset pairing and saved Wi-Fi.')).toBeTruthy();
   });
 
   it('"Update Wi-Fi" is an accessible recovery action that re-enters reconnect search', () => {

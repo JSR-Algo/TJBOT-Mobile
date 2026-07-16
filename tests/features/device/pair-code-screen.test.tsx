@@ -291,7 +291,11 @@ describe('codes-don\'t-match affordance', () => {
 
     fireEvent.press(utils.getByText("Codes don't match"));
 
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'device-7',
+      reconnectSerialNumber: 'TBT-2026-004217',
+    });
   });
 });
 

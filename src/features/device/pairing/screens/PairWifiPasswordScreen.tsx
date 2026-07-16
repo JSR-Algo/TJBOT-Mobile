@@ -17,22 +17,42 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairWifiPasswordScreen'
 
 export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
-  const [password, setPassword] = React.useState('');
   const [visible, setVisible] = React.useState(false);
   const params = route.params;
   const routeSsid = getPairWifiPasswordSsid(route.params);
   const manualSsid = routeSsid === 'Other network';
   const [customSsid, setCustomSsid] = React.useState(manualSsid ? '' : routeSsid);
   const ssid = manualSsid ? customSsid.trim() : routeSsid;
+  const passwordScope = `${manualSsid ? 'manual' : 'selected'}:${ssid}`;
+  const [passwordEntry, setPasswordEntry] = React.useState({ scope: passwordScope, value: '' });
+  const password = passwordEntry.scope === passwordScope ? passwordEntry.value : '';
   const code = getPairCode(params);
   const introCopy = getIntroCopy(params);
+
+  React.useLayoutEffect(() => {
+    if (passwordEntry.scope !== passwordScope) {
+      setPasswordEntry({ scope: passwordScope, value: '' });
+    }
+  }, [passwordEntry.scope, passwordScope]);
+
+  const updateCustomSsid = (value: string): void => {
+    const nextSsid = value.trim();
+    const nextScope = `manual:${nextSsid}`;
+    setCustomSsid(value);
+    setPasswordEntry((current) => {
+      const currentValue = current.scope === passwordScope ? current.value : '';
+      const keepsPendingPassword = !ssid || nextSsid === ssid;
+      return { scope: nextScope, value: keepsPendingPassword ? currentValue : '' };
+    });
+  };
+
   const submit = () => {
     if (!ssid || !password) return;
     const provisioningAttemptId = getProvisioningAttemptId(params);
     if (provisioningAttemptId) {
       putPairingWifiPassword(provisioningAttemptId, password);
     }
-    setPassword('');
+    setPasswordEntry({ scope: passwordScope, value: '' });
     setVisible(false);
     navigation.navigate(ROUTES.PairConnectingScreen, {
       ...(params ?? {}),
@@ -54,7 +74,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
             <Text fontWeight="600" style={styles.pwLabel}>Network name</Text>
             <TextInput
               value={customSsid}
-              onChangeText={setCustomSsid}
+              onChangeText={updateCustomSsid}
               placeholder={t('Wi-Fi network name')}
               style={styles.passwordInput}
               accessibilityLabel={t('Wi-Fi network name')}
@@ -68,7 +88,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
           <Text fontWeight="600" style={styles.pwLabel}>Password</Text>
           <TextInput
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(value) => setPasswordEntry({ scope: passwordScope, value })}
             placeholder={t('Wi-Fi password')}
             secureTextEntry={!visible}
             style={styles.passwordInput}

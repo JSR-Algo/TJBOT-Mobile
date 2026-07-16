@@ -85,6 +85,7 @@ describe('PairSearchScreen multi-device picker', () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-owned',
       name: 'TBOT-OWNED',
+      serialNumber: 'TBOT-OWNED',
       online: false,
       batteryPercent: 0,
     });

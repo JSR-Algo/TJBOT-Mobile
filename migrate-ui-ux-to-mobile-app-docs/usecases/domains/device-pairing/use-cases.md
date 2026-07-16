@@ -115,8 +115,8 @@
 - **Main Flow:**
   1. `PairConnectingScreen` mounts and sends the Wi-Fi credentials through the active transport without putting the password in navigation params, logs, analytics, or persistent storage.
   2. BLE handoff statuses such as `wifi_credentials_sent` and firmware `STA_CONN_SUCCESS` are provisional local signals only; the app continues polling backend device status/provisioning state.
-  3. For `ble_offline`, the app must receive backend online confirmation for the Robot before navigating to `dv_pair_success`; a credential-only handoff that never checks in routes to UC-DP11 with an offline-backend-confirmation timeout.
-  4. For backend-backed claim/provisioning paths, the app waits for cloud-authoritative completion (`device_authenticated` / claim-confirmed state and device online status) before the final success screen.
+  3. A new robot must have a backend provisioning/claim attempt before the app sends Wi-Fi credentials. If `/devices/provision/start` cannot create that context, the flow fails closed and routes to UC-DP11; it never falls back to a synthetic offline credential-only path.
+  4. The app waits for cloud-authoritative completion (`device_authenticated` / claim-confirmed state and device online status) before the final success screen. Credential-only BluFi is reserved for reconnecting an already-owned device.
 - **Postconditions:** Navigation lands on `dv_pair_success` only after backend confirmation proves Robot is online and bound to the account.
 - **Error Flow:**
   1. Any sub-stage failure or missing backend confirmation → UC-DP11 Pairing Failed Recovery with the specific failed sub-stage preserved for diagnosis.

@@ -1,3 +1,5 @@
+export type PairingProvisioningTransport = 'ble' | 'ble_reconnect';
+
 export type RootStackParamList = {
   // auth
   LoginScreen: undefined;
@@ -109,18 +111,18 @@ export type RootStackParamList = {
 
   // device / pairing
   PairIntroScreen: undefined;
-  PairSearchScreen: undefined | { reconnectMode?: boolean };
-  PairFoundScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'ble_offline' | 'hotspot' | 'legacy_backend' };
-  PairQrScanScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'ble_offline' | 'hotspot' | 'legacy_backend' };
-  PairConnectingScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'ble_offline' | 'hotspot' | 'legacy_backend' };
-  PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'ble_offline' | 'hotspot' | 'legacy_backend' };
+  PairSearchScreen: undefined | { reconnectMode?: boolean; reconnectDeviceId?: string; reconnectSerialNumber?: string };
+  PairFoundScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
+  PairQrScanScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
+  PairConnectingScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
+  PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairAddScreen: undefined;
   PairRenameScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
   PairChildProfileScreen: undefined | { pairing?: { deviceId: string; provisioningAttemptId: string; serialNumber?: string } };
-  PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'ble_offline' | 'hotspot' | 'legacy_backend' };
-  PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'ble_offline' | 'hotspot' | 'legacy_backend' };
+  PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
+  PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairOfflineScreen: undefined;
-  PairFailedScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: 'ble' | 'ble_reconnect' | 'ble_offline' | 'hotspot' | 'legacy_backend' };
+  PairFailedScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport; deliveryUnknown?: boolean };
   PairSuccessScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
   PairFirstLessonScreen: undefined;
 

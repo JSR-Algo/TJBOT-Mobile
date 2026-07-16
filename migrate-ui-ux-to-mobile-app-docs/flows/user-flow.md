@@ -1,7 +1,7 @@
-<!-- GENERATED FROM nav-graph-data.json sha=ae1ed0de7840. Do not edit by hand. -->
+<!-- GENERATED FROM nav-graph-data.json sha=0dcd95d10fbb. Do not edit by hand. -->
 # User Flow — Index
 
-> Generated from `nav-graph-data.json` (sha `ae1ed0de7840`). DO NOT EDIT.
+> Generated from `nav-graph-data.json` (sha `0dcd95d10fbb`). DO NOT EDIT.
 
 ## Global overview
 
@@ -20,7 +20,7 @@
 | `home` | B | 13 | [flow.generated.mmd](./domains/home/flow.generated.mmd) | [README.md](./domains/home/README.md) | [calls.generated.json](./domains/home/calls.generated.json) |
 | `lesson-session` | B | 24 | [flow.generated.mmd](./domains/lesson-session/flow.generated.mmd) | [README.md](./domains/lesson-session/README.md) | [calls.generated.json](./domains/lesson-session/calls.generated.json) |
 | `onboarding` | A | 3 | [flow.generated.mmd](./domains/onboarding/flow.generated.mmd) | [README.md](./domains/onboarding/README.md) | [calls.generated.json](./domains/onboarding/calls.generated.json) |
-| `parent` | C | 8 | [flow.generated.mmd](./domains/parent/flow.generated.mmd) | [README.md](./domains/parent/README.md) | [calls.generated.json](./domains/parent/calls.generated.json) |
+| `parent` | C | 9 | [flow.generated.mmd](./domains/parent/flow.generated.mmd) | [README.md](./domains/parent/README.md) | [calls.generated.json](./domains/parent/calls.generated.json) |
 | `progress` | C | 5 | [flow.generated.mmd](./domains/progress/flow.generated.mmd) | [README.md](./domains/progress/README.md) | [calls.generated.json](./domains/progress/calls.generated.json) |
 | `purchase` | C | 12 | [flow.generated.mmd](./domains/purchase/flow.generated.mmd) | [README.md](./domains/purchase/README.md) | [calls.generated.json](./domains/purchase/calls.generated.json) |
 | `robot-mgmt` | D | 12 | [flow.generated.mmd](./domains/robot-mgmt/flow.generated.mmd) | [README.md](./domains/robot-mgmt/README.md) | [calls.generated.json](./domains/robot-mgmt/calls.generated.json) |
@@ -33,7 +33,7 @@
 
 ## Counts
 
-- States: 136
+- States: 137
 - Edges:  0
 - Groups: 16
 - Domains: 12

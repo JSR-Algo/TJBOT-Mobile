@@ -37,6 +37,8 @@ export default function PairSearchScreen({ navigation, route }: Props) {
   const [searchState, setSearchState] = React.useState<SearchState>('searching');
   const [candidates, setCandidates] = React.useState<RobotCandidate[]>([]);
   const reconnectMode = route.params?.reconnectMode === true;
+  const reconnectDeviceId = route.params?.reconnectDeviceId;
+  const reconnectSerialNumber = route.params?.reconnectSerialNumber;
 
   // Run BLE provisioning for a chosen candidate and forward to PairFound. Shared
   // by the single-device fast path and the multi-device picker so both reach the
@@ -81,25 +83,6 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           });
           return;
         }
-        if (errorCode === 'DEVICE_NOT_FOUND') {
-          // Offline Wi-Fi reconnect: the robot is advertising BluFi (we found it via
-          // scan) but the backend has no device record for its serial, so the claim
-          // flow can't start. The firmware still applies Wi-Fi credentials received
-          // over BluFi WITHOUT a backend token (Blufi::StartStationConnectFromCredentials),
-          // so fall through to a credential-only Wi-Fi handoff. The synthetic ids key
-          // only the local Wi-Fi password store; nothing else hits the backend here.
-          logDevPairSearchEvent('provision start DEVICE_NOT_FOUND -> offline BLE Wi-Fi', {
-            serialNumber: chosen.serialNumber,
-          });
-          navigation.navigate(ROUTES.PairWifiScreen, {
-            serialNumber: chosen.serialNumber,
-            deviceId: chosen.serialNumber,
-            provisioningAttemptId: `offline:${chosen.serialNumber}`,
-            bleDeviceId: chosen.candidate.id,
-            provisioningTransport: 'ble_offline',
-          });
-          return;
-        }
         logDevPairSearchEvent('provision start failed', {
           serialNumber: chosen.serialNumber,
           errorCode,
@@ -117,10 +100,21 @@ export default function PairSearchScreen({ navigation, route }: Props) {
     async (chosen: RobotCandidate, knownPrimaryDevice?: DeviceStatus): Promise<void> => {
       setSearchState('provisioning');
       try {
-        const device = knownPrimaryDevice ?? await getDeviceStatus('primary');
+        const device = knownPrimaryDevice ?? await getDeviceStatus(reconnectDeviceId || 'primary');
         if (cancelledRef.current) return;
         if (!device.id) {
           throw Object.assign(new Error('Primary device is missing'), { code: 'RECONNECT_DEVICE_NOT_FOUND' });
+        }
+        const expectedSerial = reconnectSerialNumber || device.serialNumber;
+        if (!expectedSerial) {
+          throw Object.assign(new Error('Selected device serial is missing'), {
+            code: 'RECONNECT_DEVICE_IDENTITY_MISSING',
+          });
+        }
+        if (chosen.serialNumber.toUpperCase() !== expectedSerial.toUpperCase()) {
+          throw Object.assign(new Error('Scanned Robot does not match the selected device'), {
+            code: 'RECONNECT_DEVICE_MISMATCH',
+          });
         }
         navigation.navigate(ROUTES.PairWifiScreen, {
           deviceId: device.id,
@@ -136,7 +130,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         });
       }
     },
-    [navigation],
+    [navigation, reconnectDeviceId, reconnectSerialNumber],
   );
 
   const routeResolvedCandidate = React.useCallback(
@@ -191,14 +185,12 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         if (scan) lastScanFailureCode = undefined;
 
         resolved = resolveRobotCandidates(scan?.allowed ?? []);
-        if (__DEV__) {
-          console.info('[TBOT PairSearch] candidates', {
-            scanAttempt: attempt,
-            allowedCount: scan?.allowed.length ?? 0,
-            resolvedCount: resolved.length,
-            blockedCount: scan?.blocked.length ?? 0,
-          });
-        }
+        logDevPairSearchEvent('candidates', {
+          scanAttempt: attempt,
+          allowedCount: scan?.allowed.length ?? 0,
+          resolvedCount: resolved.length,
+          blockedCount: scan?.blocked.length ?? 0,
+        });
         if (resolved.length > 0) break;
       }
 
@@ -210,12 +202,10 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       if (resolved.length === 0 && isZeroCodeClaimEnabled()) {
         const available = await listAvailableClaimDevicesForDiscovery();
         if (cancelledRef.current) return;
-        if (__DEV__) {
-          console.info('[TBOT PairSearch] backend claim candidates', {
-            availableCount: available.length,
-            resolvedCount: 0,
-          });
-        }
+        logDevPairSearchEvent('backend claim candidates', {
+          availableCount: available.length,
+          resolvedCount: 0,
+        });
       }
 
       if (resolved.length === 0) {
@@ -318,7 +308,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         <Text fontWeight="600" style={styles.heading}>Looking nearby…</Text>
         <Text style={styles.sub}>
           {reconnectMode
-            ? 'Hold the top button for 5 seconds to open setup mode, then keep Robot within 3 meters.'
+            ? 'Double-click BOOT, then keep Robot within 1–2 m while this phone searches.'
             : 'Make sure Robot is in setup mode and within 3 meters of your phone.'}
         </Text>
         <TouchableOpacity onPress={cancelSearchToFailed} style={{ marginTop: 20 }}>
@@ -429,8 +419,30 @@ function bleBootstrapErrorCode(
 
 function logDevPairSearchEvent(message: string, payload: Record<string, unknown>): void {
   if (__DEV__) {
-    console.info(`[TBOT PairSearch] ${message}`, payload);
+    console.info('[TBOT PairSearch]', { stage: message, ...safePairSearchDiagnostics(payload) });
   }
+}
+
+const SAFE_PAIR_SEARCH_DIAGNOSTIC_KEYS = new Set([
+  'scanAttempt',
+  'allowedCount',
+  'resolvedCount',
+  'blockedCount',
+  'availableCount',
+  'status',
+  'deviceStatus',
+  'kind',
+  'code',
+  'errorCode',
+  'backendCode',
+]);
+
+function safePairSearchDiagnostics(payload: Record<string, unknown>): Record<string, unknown> {
+  const safe: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    if (SAFE_PAIR_SEARCH_DIAGNOSTIC_KEYS.has(key)) safe[key] = value;
+  }
+  return safe;
 }
 
 function devErrorSummary(error: unknown): Record<string, unknown> {

@@ -1,8 +1,9 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import PairFailedScreen from '@/features/device/pairing/screens/PairFailedScreen';
 import { ROUTES } from '@/navigation/routes';
 import { getClaimStatus } from '@/services/api/claim.api';
+import { getProvisioningAttemptStatus } from '@/services/api/device.api';
 import { openAppSettings, openBluetoothSettings, openWifiSettings } from '@/features/device/pairing/deviceSettings';
 import { CLAIM_STATUS } from '@/features/device/pairing/claimStatus';
 import { captureError } from '@/services/observability/sentry';
@@ -23,6 +24,11 @@ jest.mock('@/services/api/claim.api', () => ({
   getClaimStatus: jest.fn(),
 }));
 
+jest.mock('@/services/api/device.api', () => ({
+  __esModule: true,
+  getProvisioningAttemptStatus: jest.fn(),
+}));
+
 jest.mock('@/features/device/pairing/deviceSettings', () => ({
   __esModule: true,
   openWifiSettings: jest.fn(() => Promise.resolve()),
@@ -36,6 +42,7 @@ jest.mock('@/services/observability/sentry', () => ({
 }));
 
 const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
+const mockedGetProvisioningAttemptStatus = getProvisioningAttemptStatus as jest.MockedFunction<typeof getProvisioningAttemptStatus>;
 const mockedOpenWifiSettings = openWifiSettings as jest.MockedFunction<typeof openWifiSettings>;
 const mockedOpenBluetoothSettings = openBluetoothSettings as jest.MockedFunction<typeof openBluetoothSettings>;
 const mockedOpenAppSettings = openAppSettings as jest.MockedFunction<typeof openAppSettings>;
@@ -66,6 +73,7 @@ function lateBleClaimParams(overrides: Record<string, unknown> = {}) {
     serialNumber: 'TBT-2026-004217',
     provisioningAttemptId: 'claim-1',
     provisioningTransport: 'ble',
+    deliveryUnknown: true,
     ...overrides,
   };
 }
@@ -93,6 +101,11 @@ beforeEach(() => {
   jest.clearAllMocks();
   // Default: status check resolves to a still-waiting claim → no navigation.
   mockedGetClaimStatus.mockResolvedValue(claimStatus());
+  mockedGetProvisioningAttemptStatus.mockResolvedValue({
+    provisioningAttemptId: 'claim-1',
+    deviceId: 'device-1',
+    status: 'ble_paired',
+  });
 });
 
 // ===========================================================================
@@ -101,11 +114,15 @@ beforeEach(() => {
 describe('PairFailedScreen copyForError matrix', () => {
   const cases: { errorCode: string; heading: string; bodyIncludes: string }[] = [
     { errorCode: 'WIFI_UNAVAILABLE', heading: 'Turn on Wi-Fi first', bodyIncludes: 'Connect this phone to Wi-Fi before pairing' },
-    { errorCode: 'BLE_UNAVAILABLE', heading: "Bluetooth can't be used here", bodyIncludes: 'cannot use Bluetooth setup' },
+    { errorCode: 'BLE_UNAVAILABLE', heading: "Bluetooth can't be used here", bodyIncludes: 'Check Bluetooth permissions' },
     { errorCode: 'BLE_POWERED_OFF', heading: 'Turn on Bluetooth first', bodyIncludes: 'Bluetooth is required to find Robot nearby' },
     { errorCode: 'BLE_PERMISSION_DENIED', heading: 'Allow Bluetooth access', bodyIncludes: 'Allow Nearby devices and Location' },
     { errorCode: 'BLE_SERVICE_UNAVAILABLE', heading: "We couldn't start Bluetooth setup", bodyIncludes: 'Close and reopen the app' },
-    { errorCode: 'BLE_SCAN_TIMEOUT', heading: "We couldn't see Robot nearby", bodyIncludes: 'make sure it is in setup mode' },
+    {
+      errorCode: 'BLE_SCAN_TIMEOUT',
+      heading: "We couldn't see Robot nearby",
+      bodyIncludes: 'Double-click the BOOT button to change Wi-Fi without unpairing Robot.',
+    },
     { errorCode: 'BLE_SCAN_ERROR', heading: "Bluetooth scan didn't start", bodyIncludes: 'Turn Bluetooth off and on' },
     { errorCode: 'BLE_SCAN_THROTTLED', heading: 'Bluetooth needs a short break', bodyIncludes: 'started too often' },
     { errorCode: 'DEVICE_NOT_FOUND', heading: CLAIM_STATUS.NO_DEVICE_AVAILABLE.title, bodyIncludes: CLAIM_STATUS.NO_DEVICE_AVAILABLE.body },
@@ -113,17 +130,20 @@ describe('PairFailedScreen copyForError matrix', () => {
     { errorCode: 'CLAIM_CONFIRM_TIMEOUT', heading: CLAIM_STATUS.CLAIM_CONFIRM_TIMEOUT.title, bodyIncludes: CLAIM_STATUS.CLAIM_CONFIRM_TIMEOUT.body },
     { errorCode: 'PROVISIONING_ATTEMPT_NOT_READY', heading: 'Robot is not ready yet', bodyIncludes: 'Keep Robot powered on and close by' },
     { errorCode: 'DEVICE_AUTH_NOT_VERIFIED', heading: 'Robot is not ready yet', bodyIncludes: 'Keep Robot powered on and close by' },
-    { errorCode: 'BLE_PROVISIONING_UNSUPPORTED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
-    { errorCode: 'BLE_PROVISIONING_FAILED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
-    { errorCode: 'BLE_PROVISIONING_DISCONNECTED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
-    { errorCode: 'BLE_PROVISIONING_GATT_ERROR', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
-    { errorCode: 'BLE_PROVISIONING_WRITE_TIMEOUT', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
-    { errorCode: 'BLE_PROVISIONING_MTU_ERROR', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'use setup hotspot with the same Robot code' },
-    { errorCode: 'PAIRING_CONNECT_FAILED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Retry nearby' },
+    { errorCode: 'BLE_PROVISIONING_UNSUPPORTED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Double-click BOOT' },
+    { errorCode: 'BLE_PROVISIONING_FAILED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Double-click BOOT' },
+    { errorCode: 'BLE_PROVISIONING_DISCONNECTED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Double-click BOOT' },
+    { errorCode: 'BLE_PROVISIONING_GATT_ERROR', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Double-click BOOT' },
+    { errorCode: 'BLE_PROVISIONING_WRITE_TIMEOUT', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Double-click BOOT' },
+    { errorCode: 'BLE_PROVISIONING_MTU_ERROR', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Double-click BOOT' },
+    { errorCode: 'PAIRING_CONNECT_FAILED', heading: "Robot didn't accept setup over Bluetooth", bodyIncludes: 'Double-click BOOT' },
     { errorCode: 'ESP_SERVER_UNAVAILABLE', heading: "We couldn't reach setup service", bodyIncludes: 'unavailable right now' },
     { errorCode: 'PROVISIONING_START_FAILED', heading: "We couldn't start pairing", bodyIncludes: 'keep Bluetooth on, then try scanning again' },
     { errorCode: 'PROVISIONING_TIMEOUT', heading: 'Setup timed out', bodyIncludes: 'Move Robot closer to Wi-Fi' },
     { errorCode: 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT', heading: 'Robot has not checked in yet', bodyIncludes: 'did not appear online' },
+    { errorCode: 'OFFLINE_DEVICE_NOT_REGISTERED', heading: 'Wi-Fi worked, but Robot is not on your account', bodyIncludes: 'account pairing did not finish' },
+    { errorCode: 'WIFI_CONNECT_TIMEOUT', heading: 'Robot did not join Wi-Fi in time', bodyIncludes: 'near the router' },
+    { errorCode: 'WIFI_CONNECT_FAILED', heading: 'Wi-Fi password did not work', bodyIncludes: 'check capitalization' },
     { errorCode: 'WIFI_AUTH_FAILED', heading: 'Wi-Fi password did not work', bodyIncludes: 'check capitalization' },
     { errorCode: 'DEVICE_ALREADY_ASSIGNED', heading: 'Robot is already paired', bodyIncludes: 'assigned to another account' },
     { errorCode: 'DEVICE_ALREADY_CLAIMED', heading: CLAIM_STATUS.DEVICE_ALREADY_CLAIMED.title, bodyIncludes: CLAIM_STATUS.DEVICE_ALREADY_CLAIMED.body },
@@ -131,8 +151,9 @@ describe('PairFailedScreen copyForError matrix', () => {
 
   it.each(cases)('renders distinct heading "$heading" for $errorCode', ({ errorCode, heading, bodyIncludes }) => {
     const { screen } = renderScreen({ errorCode });
+    const bodyPattern = new RegExp(bodyIncludes.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     expect(screen.getByText(heading)).toBeTruthy();
-    expect(screen.getByText(new RegExp(bodyIncludes.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeTruthy();
+    expect(screen.getByText(bodyPattern)).toBeTruthy();
   });
 
   it('falls back to the generic copy for an unknown error code', () => {
@@ -162,8 +183,10 @@ describe('PairFailedScreen copyForError matrix', () => {
     //   - BLE_PROVISIONING_* / PAIRING_CONNECT_FAILED
     //     -> "Robot didn't accept setup over Bluetooth" (7 -> 1)
     //   - PROVISIONING_ATTEMPT_NOT_READY / DEVICE_AUTH_NOT_VERIFIED -> "Robot is not ready yet" (2 -> 1)
-    // 27 - (7-1) - (2-1) = 20.
-    expect(unique.size).toBe(20);
+    //   - WIFI_CONNECT_FAILED / WIFI_AUTH_FAILED share "Wi-Fi password did not work" (2 -> 1)
+    // Plus OFFLINE_DEVICE_NOT_REGISTERED and WIFI_CONNECT_TIMEOUT unique headings.
+    // 30 mapped cases with the shares above → 22 unique headings.
+    expect(unique.size).toBe(22);
     // The two shared local headings must each still be reachable.
     expect(unique.has("Robot didn't accept setup over Bluetooth")).toBe(true);
     expect(unique.has('Robot is not ready yet')).toBe(true);
@@ -235,36 +258,21 @@ describe('PairFailedScreen reason-card navigation', () => {
     };
     const { screen, nav } = renderScreen(params);
     fireEvent.press(screen.getByText('Wrong Wi-Fi password'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, expect.anything());
   });
 
   it('"Wrong Wi-Fi password" rescans when route params are undefined', () => {
     const { screen, nav } = renderScreen(undefined);
     fireEvent.press(screen.getByText('Wrong Wi-Fi password'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
     expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, expect.anything());
   });
 
   it('"Robot is too far" card routes to PairSearchScreen', () => {
     const { screen, nav } = renderScreen({ errorCode: 'BLE_SCAN_TIMEOUT' });
     fireEvent.press(screen.getByText('Robot is too far'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
-  });
-
-  it('"Robot is too far" keeps reconnect mode for offline Wi-Fi recovery', () => {
-    const params = {
-      errorCode: 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT',
-      deviceId: 'device-1',
-      serialNumber: 'TBOT-14C19FD1A84A',
-      provisioningAttemptId: 'offline:device-1',
-      ssid: 'Casa',
-      bleDeviceId: '14:C1:9F:D1:A8:4A',
-      provisioningTransport: 'ble_offline',
-    };
-    const { screen, nav } = renderScreen(params);
-    fireEvent.press(screen.getByText('Robot is too far'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
   });
 
   it('"Robot looks asleep" card routes to PairIntroScreen', () => {
@@ -283,7 +291,11 @@ describe('PairFailedScreen reason-card navigation', () => {
       provisioningTransport: 'ble_reconnect',
     });
     fireEvent.press(screen.getByText('Robot looks asleep'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'device-1',
+      reconnectSerialNumber: 'TBOT-14C19FD1A84A',
+    });
   });
 
   it('"Battery is low" card routes to PairIntroScreen', () => {
@@ -292,18 +304,6 @@ describe('PairFailedScreen reason-card navigation', () => {
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairIntroScreen);
   });
 
-  it('"Battery is low" keeps reconnect search for offline Wi-Fi failures', () => {
-    const { screen, nav } = renderScreen({
-      errorCode: 'OFFLINE_BACKEND_CONFIRMATION_TIMEOUT',
-      deviceId: 'device-1',
-      serialNumber: 'TBOT-14C19FD1A84A',
-      provisioningAttemptId: 'offline:device-1',
-      bleDeviceId: '14:C1:9F:D1:A8:4A',
-      provisioningTransport: 'ble_offline',
-    });
-    fireEvent.press(screen.getByText('Battery is low'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
-  });
 });
 
 // ===========================================================================
@@ -360,9 +360,9 @@ describe('PairFailedScreen settings action button', () => {
 });
 
 // ===========================================================================
-// 5. Setup-hotspot affordance — canUseSetupHotspot() / setupHotspotParams().
+// 5. BluFi-only recovery — backend/ESP credential forwarding is not supported.
 // ===========================================================================
-describe('PairFailedScreen setup-hotspot button', () => {
+describe('PairFailedScreen BluFi-only recovery', () => {
   function hotspotParams(overrides: Record<string, unknown> = {}) {
     return {
       deviceId: 'device-1',
@@ -373,41 +373,15 @@ describe('PairFailedScreen setup-hotspot button', () => {
     };
   }
 
-  it('shows "Use setup hotspot" when deviceId+serial+attempt+code are all present', () => {
+  it('never offers the removed setup-hotspot transport', () => {
     const { screen } = renderScreen(hotspotParams());
-    expect(screen.getByText('Use setup hotspot')).toBeTruthy();
+    expect(screen.queryByText('Use setup hotspot')).toBeNull();
   });
 
-  it('navigates to PairWifiScreen with legacy_backend transport and the carried code/ids', () => {
+  it('retries through robot discovery instead of forwarding credentials to backend', () => {
     const { screen, nav } = renderScreen(hotspotParams());
-    fireEvent.press(screen.getByText('Use setup hotspot'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairWifiScreen, {
-      deviceId: 'device-1',
-      serialNumber: 'TBT-2026-004217',
-      provisioningAttemptId: 'claim-1',
-      code: '123456',
-      provisioningTransport: 'legacy_backend',
-    });
-  });
-
-  it('hides "Use setup hotspot" when the code is missing (zero-code BLE flow)', () => {
-    const { screen } = renderScreen(hotspotParams({ code: undefined }));
-    expect(screen.queryByText('Use setup hotspot')).toBeNull();
-  });
-
-  it('hides "Use setup hotspot" when deviceId is missing', () => {
-    const { screen } = renderScreen(hotspotParams({ deviceId: undefined }));
-    expect(screen.queryByText('Use setup hotspot')).toBeNull();
-  });
-
-  it('hides "Use setup hotspot" when provisioningAttemptId is missing', () => {
-    const { screen } = renderScreen(hotspotParams({ provisioningAttemptId: undefined }));
-    expect(screen.queryByText('Use setup hotspot')).toBeNull();
-  });
-
-  it('hides "Use setup hotspot" when there are no params at all', () => {
-    const { screen } = renderScreen(undefined);
-    expect(screen.queryByText('Use setup hotspot')).toBeNull();
+    fireEvent.press(screen.getByText('Try Bluetooth setup again'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
   });
 });
 
@@ -415,10 +389,10 @@ describe('PairFailedScreen setup-hotspot button', () => {
 // 6. Always-on recovery buttons + back/header.
 // ===========================================================================
 describe('PairFailedScreen always-on actions', () => {
-  it('renders Scan QR / Try again / Contact support on every failure', () => {
+  it('renders Scan QR / Bluetooth retry / Contact support on every failure', () => {
     const { screen } = renderScreen(undefined);
     expect(screen.getByLabelText('Scan QR or enter code')).toBeTruthy();
-    expect(screen.getByText('Try again')).toBeTruthy();
+    expect(screen.getByText('Try Bluetooth setup again')).toBeTruthy();
     expect(screen.getByLabelText('Contact support')).toBeTruthy();
   });
 
@@ -443,13 +417,13 @@ describe('PairFailedScreen always-on actions', () => {
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairQrScanScreen, params);
   });
 
-  it('"Try again" routes to PairSearchScreen', () => {
+  it('Bluetooth retry routes to a fresh PairSearchScreen flow', () => {
     const { screen, nav } = renderScreen(undefined);
-    fireEvent.press(screen.getByText('Try again'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+    fireEvent.press(screen.getByText('Try Bluetooth setup again'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
   });
 
-  it('"Try again" keeps reconnect mode for a reconnect failure', () => {
+  it('Bluetooth retry keeps reconnect mode for a reconnect failure', () => {
     const { screen, nav } = renderScreen({
       errorCode: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
       deviceId: 'device-1',
@@ -459,8 +433,12 @@ describe('PairFailedScreen always-on actions', () => {
       bleDeviceId: '14:C1:9F:D1:A8:4A',
       provisioningTransport: 'ble_reconnect',
     });
-    fireEvent.press(screen.getByText('Try again'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    fireEvent.press(screen.getByText('Try Bluetooth setup again'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'device-1',
+      reconnectSerialNumber: 'TBOT-14C19FD1A84A',
+    });
   });
 
   it('"Contact support" routes to SupportScreen with the wifi/robot_offline context', () => {
@@ -474,7 +452,7 @@ describe('PairFailedScreen always-on actions', () => {
   it('the always-on actions are present even in the already-owned (no reason cards) state', () => {
     const { screen } = renderScreen({ errorCode: 'DEVICE_ALREADY_ASSIGNED' });
     expect(screen.getByLabelText('Scan QR or enter code')).toBeTruthy();
-    expect(screen.getByText('Try again')).toBeTruthy();
+    expect(screen.getByText('Try Bluetooth setup again')).toBeTruthy();
     expect(screen.getByLabelText('Contact support')).toBeTruthy();
   });
 
@@ -488,7 +466,11 @@ describe('PairFailedScreen always-on actions', () => {
       provisioningTransport: 'ble_reconnect',
     });
     fireEvent.press(screen.getByLabelText('Go back'));
-    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: true });
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'device-1',
+      reconnectSerialNumber: 'TBOT-14C19FD1A84A',
+    });
   });
 });
 
@@ -496,6 +478,135 @@ describe('PairFailedScreen always-on actions', () => {
 // 7. Late zero-code claim recovery effect — canRecoverLateClaim + getClaimStatus.
 // ===========================================================================
 describe('PairFailedScreen late-BLE-claim recovery effect', () => {
+  it('settles its pending retry delay when the recovery screen unmounts', async () => {
+    jest.useFakeTimers();
+    try {
+      const { screen } = renderScreen(lateBleClaimParams());
+      await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalledTimes(1));
+
+      screen.unmount();
+      await act(async () => Promise.resolve());
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(6000);
+      });
+      expect(mockedGetClaimStatus).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not trap a non-ambiguous BLE failure even when the backend attempt is pending', async () => {
+    const { screen, nav } = renderScreen(lateBleClaimParams({
+      deliveryUnknown: false,
+      errorCode: 'BLE_PROVISIONING_GATT_ERROR',
+    }));
+
+    await waitFor(() => expect(true).toBe(true));
+    expect(mockedGetClaimStatus).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText('Try Bluetooth setup again'));
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
+  });
+
+  it.each(['WIFI_CONNECT_FAILED', 'WIFI_AUTH_FAILED'])(
+    'does not late-recover definitive %s into success',
+    async (errorCode) => {
+      mockedGetClaimStatus.mockResolvedValue(claimStatus({ status: 'CLAIM_CONFIRMED' }));
+      const { nav } = renderScreen(lateBleClaimParams({ errorCode }));
+
+      await waitFor(() => expect(true).toBe(true));
+      expect(mockedGetClaimStatus).not.toHaveBeenCalled();
+      expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+      expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    },
+  );
+
+  it('polls a waiting zero-code claim until it becomes confirmed', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetClaimStatus
+        .mockResolvedValueOnce(claimStatus({ status: 'WAITING_PHYSICAL_CONFIRM' }))
+        .mockResolvedValueOnce(claimStatus({ status: 'CLAIM_CONFIRMED' }));
+      const { nav } = renderScreen(lateBleClaimParams());
+
+      await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalledTimes(1));
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(3000);
+      });
+
+      await waitFor(() => expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+        deviceId: 'device-1',
+        serialNumber: 'TBT-2026-004217',
+        provisioningAttemptId: 'claim-1',
+      }));
+      expect(mockedGetClaimStatus).toHaveBeenCalledTimes(2);
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('polls a code attempt until the robot becomes device-authenticated', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetProvisioningAttemptStatus
+        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'ble_paired' })
+        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated' });
+      const { nav } = renderScreen(lateBleClaimParams({ code: '123456' }));
+
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(3000);
+      });
+
+      await waitFor(() => expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+        deviceId: 'device-1',
+        serialNumber: 'TBT-2026-004217',
+        provisioningAttemptId: 'claim-1',
+      }));
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
+      expect(mockedGetClaimStatus).not.toHaveBeenCalled();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('retries a transient 429 while polling a code attempt', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedGetProvisioningAttemptStatus
+        .mockRejectedValueOnce({ status: 429, code: 'RATE_LIMIT_EXCEEDED' })
+        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated' });
+      const { nav } = renderScreen(lateBleClaimParams({ code: '123456' }));
+
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(3000);
+      });
+
+      await waitFor(() => expect(nav.navigate).toHaveBeenCalledWith(
+        ROUTES.PairRenameScreen,
+        expect.objectContaining({ provisioningAttemptId: 'claim-1' }),
+      ));
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not start a new search when Bluetooth retry finds the existing claim still pending', async () => {
+    const { screen, nav } = renderScreen(lateBleClaimParams());
+    await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalledTimes(1));
+
+    fireEvent.press(screen.getByText('Try Bluetooth setup again'));
+
+    await waitFor(() => expect(mockedGetClaimStatus).toHaveBeenCalledTimes(2));
+    expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairSearchScreen);
+  });
+
   it('does NOT call getClaimStatus when params is undefined', async () => {
     renderScreen(undefined);
     // Flush the effect microtask queue.

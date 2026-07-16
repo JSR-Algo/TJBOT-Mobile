@@ -3,17 +3,16 @@
 Date: 2026-06-30
 
 Scope:
-- `PairConnectingScreen` no longer treats `ble_offline` credential handoff as final success.
-- `PairFailedScreen` has distinct copy for offline backend confirmation timeout.
-- Tests lock that firmware `STA_CONN_SUCCESS` / `wifi_credentials_sent` is provisional-only.
+- Historical evidence originally covered a `ble_offline` credential-only path.
+- The 2026-07-13 hardening supersedes that path: a new robot now requires a backend provisioning/claim attempt before encrypted BluFi credential delivery.
+- Firmware `STA_CONN_SUCCESS` / `wifi_credentials_sent` remains provisional for first pairing and authoritative only for an already-owned reconnect handoff.
 
 Acceptance evidence:
 
 | AC | Evidence | Result |
 | --- | --- | --- |
-| `ble_offline` cannot navigate to `PairSuccessScreen` without backend online confirmation | `tests/features/device/pair-connecting-flow.test.tsx` case `[no fake success] credential-only handoff without backend online confirmation routes to PairFailed, not PairSuccess` | PASS |
-| Slow/offline-first network can still eventually succeed | `tests/features/device/pair-connecting-flow.test.tsx` case `[slow offline-first success] backend online confirmation is required before PairSuccess` | PASS |
-| Failure has distinct parent-facing copy | `tests/features/device/pair-failed-screen.test.tsx` includes `OFFLINE_BACKEND_CONFIRMATION_TIMEOUT` and uniqueness count | PASS |
+| New-robot provisioning cannot bypass backend claim context | `tests/features/device/pair-search-helpers.test.tsx` case `fails closed when backend cannot create the claim attempt` | PASS |
+| Route types cannot revive synthetic offline provisioning | `tests/navigation/device-pairing-route-params.test.ts` rejects `ble_offline` | PASS |
 | `STA_CONN_SUCCESS` remains provisional-only | `tests/ble/service.test.ts` cases for `wifi_credentials_sent` on `STA_CONN_SUCCESS` | PASS |
 
 Verification:

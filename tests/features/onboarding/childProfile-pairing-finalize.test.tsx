@@ -145,6 +145,57 @@ describe('ChildProfileScreen — from-pairing finalize', () => {
   });
 });
 
+describe('ChildProfileScreen — optional child display name', () => {
+  it('prefills a buddy-based suggestion and saves a normalized custom name', async () => {
+    const screen = renderScreen(jest.fn(), jest.fn(), { pairing: PAIRING });
+    const input = screen.getByTestId('childDisplayNameInput');
+
+    expect(input.props.value).toBe('Panda friend');
+    fireEvent.changeText(input, '  Bé   Bông  ');
+    pickAgeAndSave(screen);
+
+    await waitFor(() =>
+      expect(mockedSave).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Bé Bông' }),
+        expect.anything(),
+      ),
+    );
+  });
+
+  it('uses the current buddy suggestion when the field is whitespace-only', async () => {
+    const screen = renderScreen(jest.fn(), jest.fn(), { pairing: PAIRING });
+
+    fireEvent.press(screen.getByLabelText('Buddy Cat'));
+    fireEvent.changeText(screen.getByTestId('childDisplayNameInput'), '   ');
+    pickAgeAndSave(screen);
+
+    await waitFor(() =>
+      expect(mockedSave).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Cat friend' }),
+        expect.anything(),
+      ),
+    );
+  });
+
+  it('updates an untouched suggestion when the buddy changes', () => {
+    const screen = renderScreen(jest.fn(), jest.fn());
+
+    fireEvent.press(screen.getByLabelText('Buddy Cat'));
+
+    expect(screen.getByTestId('childDisplayNameInput').props.value).toBe('Cat friend');
+  });
+
+  it('does not overwrite a custom name when the buddy changes', () => {
+    const screen = renderScreen(jest.fn(), jest.fn());
+    const input = screen.getByTestId('childDisplayNameInput');
+
+    fireEvent.changeText(input, 'Bé Bông');
+    fireEvent.press(screen.getByLabelText('Buddy Cat'));
+
+    expect(screen.getByTestId('childDisplayNameInput').props.value).toBe('Bé Bông');
+  });
+});
+
 describe('ChildProfileScreen — plain onboarding (no pairing context) is unchanged', () => {
   it('after creating the child, advances to MicAskScreen and never finalizes pairing', async () => {
     const navigate = jest.fn();

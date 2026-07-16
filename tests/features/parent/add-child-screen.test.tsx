@@ -71,6 +71,37 @@ beforeEach(() => {
 });
 
 describe('AddChildScreen', () => {
+  it('shows a buddy suggestion and saves a normalized custom child name', async () => {
+    const screen = renderScreen(jest.fn());
+    const input = screen.getByTestId('addChildDisplayNameInput');
+
+    expect(input.props.value).toBe('Panda friend');
+    fireEvent.changeText(input, '  Bé   Nima  ');
+    pickAgeAndSave(screen);
+
+    await waitFor(() =>
+      expect(mockedSave).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Bé Nima' }),
+        expect.anything(),
+      ),
+    );
+  });
+
+  it('uses the selected buddy suggestion when the name is blank', async () => {
+    const screen = renderScreen(jest.fn());
+
+    fireEvent.press(screen.getByLabelText('Buddy Cat'));
+    fireEvent.changeText(screen.getByTestId('addChildDisplayNameInput'), '   ');
+    pickAgeAndSave(screen);
+
+    await waitFor(() =>
+      expect(mockedSave).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Cat friend' }),
+        expect.anything(),
+      ),
+    );
+  });
+
   it('creates the child, sets it as the active child, and returns to Parent Settings', async () => {
     const navigate = jest.fn();
     const screen = renderScreen(navigate);
