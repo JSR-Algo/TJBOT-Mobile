@@ -1,0 +1,53 @@
+appId: net.jasonle.tjbot
+name: Nest spine — signup through home (local Nest required)
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "welcomeScreen"
+    timeout: 45000
+- tapOn:
+    id: "getStartedButton"
+- extendedWaitUntil:
+    visible:
+      id: "loginScreenScroll"
+    timeout: 30000
+# Prefer signup mode if tab exists
+- runFlow:
+    when:
+      visible:
+        id: "authModeTab_signup"
+    commands:
+      - tapOn:
+          id: "authModeTab_signup"
+- tapOn:
+    id: "emailInput"
+- inputText: "maestro.phase.${timestamp}@example.com"
+- tapOn:
+    id: "passwordInput"
+- inputText: "TestPass123!"
+- runFlow:
+    when:
+      visible:
+        id: "confirmPasswordInput"
+    commands:
+      - tapOn:
+          id: "confirmPasswordInput"
+      - inputText: "TestPass123!"
+- tapOn:
+    id: "submitButton"
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 60000
+- takeScreenshot: output/maestro/nest-spine/02-after-submit
+# Consent / onboarding / home — accept any of these reachable states
+- runFlow:
+    when:
+      visible:
+        id: "homePrimaryCta"
+    commands:
+      - assertVisible:
+          id: "homePrimaryCta"
+      - takeScreenshot: output/maestro/nest-spine/03-home

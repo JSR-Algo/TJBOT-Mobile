@@ -1,0 +1,23 @@
+appId: net.jasonle.tjbot
+name: Nest spine — welcome to login form
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "welcomeScreen"
+    timeout: 45000
+- takeScreenshot: output/maestro/nest-spine/00-welcome
+- tapOn:
+    id: "getStartedButton"
+- extendedWaitUntil:
+    visible:
+      id: "loginScreenScroll"
+    timeout: 30000
+- assertVisible:
+    id: "emailInput"
+- assertVisible:
+    id: "passwordInput"
+- assertVisible:
+    id: "submitButton"
+- takeScreenshot: output/maestro/nest-spine/01-login

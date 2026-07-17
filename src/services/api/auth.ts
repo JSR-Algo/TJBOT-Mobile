@@ -1,6 +1,6 @@
 import client from '../http/client';
 import { attachRequestIdHeader } from '../http/idempotency';
-import { setTokens, clearTokens } from '../http/tokens';
+import { getRefreshToken, setTokens, clearTokens } from '../http/tokens';
 import { AuthTokens, User } from '../../types';
 
 function postWithRequestId(
@@ -60,8 +60,16 @@ export async function login(
 }
 
 export async function refresh(requestId?: string): Promise<AuthTokens> {
-  const response = await postWithRequestId('/auth/refresh', {}, requestId);
-  return unwrapResponseData<AuthTokens>(response.data);
+  const refreshToken = await getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('No refresh token');
+  }
+  const response = await postWithRequestId('/auth/refresh', { refresh_token: refreshToken }, requestId);
+  const data = unwrapResponseData<AuthTokens>(response.data);
+  if (data.access_token) {
+    await setTokens(data.access_token, data.refresh_token ?? refreshToken);
+  }
+  return data;
 }
 
 export async function logout(requestId?: string): Promise<void> {

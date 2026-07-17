@@ -154,7 +154,8 @@ export async function sendCourseToRobot(
   requestId?: string,
 ): Promise<void> {
   const url = `/course-library/${courseId}/send-to-robot`;
-  const payload = { device_id: deviceId, child_id: childId };
+  // Nest ValidationPipe expects camelCase SendToRobotDto fields.
+  const payload = { deviceId, childId };
   const headers = requestId ? attachRequestIdHeader({}, requestId) : undefined;
   if (headers) {
     await client.post(url, payload, { headers });
