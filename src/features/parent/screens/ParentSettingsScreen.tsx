@@ -123,9 +123,10 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   // profile. Block editing while loading or after a load failure.
   const profileEditingDisabled = !childId || profileLoading || profileLoadFailed || profileSaving;
 
+  const hydratedChildName = activeChild?.name ?? profile?.name ?? '';
   React.useEffect(() => {
-    setChildNameDraft(activeChild?.name ?? profile?.name ?? '');
-  }, [activeChild?.name, profile?.name]);
+    setChildNameDraft(hydratedChildName);
+  }, [hydratedChildName]);
 
   // Hydrate the analytics switch from the parent's persisted choice (falls back
   // to the current role-based enable state when nothing is stored).
@@ -183,10 +184,10 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     setChildNameSaving(true);
     setChildNameSaveFailed(false);
     try {
-      await updateChildDisplayName(childId, nextName, activeChild?.household_id);
+      const updated = await updateChildDisplayName(childId, nextName, activeChild?.household_id);
       await refresh();
-      setProfile((current) => current ? { ...current, name: nextName } : current);
-      setChildNameDraft(nextName);
+      setProfile((current) => current ? { ...current, name: updated.displayName } : current);
+      setChildNameDraft(updated.displayName);
       await Promise.all([
         appQueryClient.invalidateQueries({ queryKey: rewardKeys.all }),
         appQueryClient.invalidateQueries({ queryKey: rewardKeys.device(childId) }),

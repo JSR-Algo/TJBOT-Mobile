@@ -326,6 +326,24 @@ describe('Parent settings and gate', () => {
     expect(mockHouseholdRefresh).toHaveBeenCalledTimes(1);
   });
 
+  it('uses the canonical child display name returned by the household server', async () => {
+    mockUpdateChildDisplayName.mockResolvedValueOnce({ id: 'child-1', displayName: 'Bong Mai' });
+    const screen = await renderParentSettings();
+    const input = await screen.findByLabelText('Child name');
+    await waitFor(() => expect(input.props.value).toBe('Mai'));
+    await screen.findByText('beginner');
+
+    fireEvent.changeText(input, '  Bong   Mai  ');
+    await act(async () => {
+      fireEvent.press(screen.getByText('Save child name'));
+    });
+
+    await waitFor(() => {
+      expect(mockUpdateChildDisplayName).toHaveBeenCalledWith('child-1', 'Bong   Mai', 'household-1');
+      expect(screen.getByLabelText('Child name').props.value).toBe('Bong Mai');
+    });
+  });
+
   it('changes active child only after the household server confirms it', async () => {
     const localSelect = jest.fn();
     mockedUseHousehold.mockReturnValue({
