@@ -6,6 +6,7 @@ import {
   listChildren,
   setActiveChild,
   updateChild,
+  updateChildDisplayName,
 } from '@/services/api/households';
 
 jest.mock('@/services/http/client', () => ({
@@ -98,6 +99,22 @@ describe('households child profile API', () => {
     expect(mockedClient.post).toHaveBeenCalledWith('/children/child-1/archive');
     expect(mockedClient.patch).toHaveBeenCalledWith('/identity/children/child-1', { status: 'scheduled_for_deletion' });
     expect(mockedClient.post).toHaveBeenCalledWith('/profile/active-child', { child_id: 'child-1' });
+  });
+
+  it('renames a child through the household route so robot profile sync runs', async () => {
+    mockedClient.put.mockResolvedValueOnce({
+      data: { data: { id: 'child-1', name: 'Bong' } },
+    });
+
+    await expect(updateChildDisplayName('child-1', 'Bong', 'household-1')).resolves.toEqual({
+      id: 'child-1',
+      displayName: 'Bong',
+    });
+    expect(mockedClient.put).toHaveBeenCalledWith(
+      '/households/household-1/children/child-1',
+      { display_name: 'Bong' },
+    );
+    expect(mockedClient.patch).not.toHaveBeenCalled();
   });
 
   it('surfaces backend child limit, COPPA, and foreign-access errors without rewriting them', async () => {

@@ -183,7 +183,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     setChildNameSaving(true);
     setChildNameSaveFailed(false);
     try {
-      await updateChildDisplayName(childId, nextName);
+      await updateChildDisplayName(childId, nextName, activeChild?.household_id);
       await refresh();
       setProfile((current) => current ? { ...current, name: nextName } : current);
       setChildNameDraft(nextName);
@@ -199,7 +199,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     } finally {
       setChildNameSaving(false);
     }
-  }, [childId, childNameDraft, childNameSaving, refresh]);
+  }, [activeChild?.household_id, childId, childNameDraft, childNameSaving, refresh]);
 
   const selectActiveChild = React.useCallback(async (nextChildId: string): Promise<void> => {
     if (activeChildSaving || nextChildId === childId) return;

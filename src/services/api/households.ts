@@ -48,17 +48,21 @@ export async function updateChild(
 export async function updateChildDisplayName(
   childId: string,
   displayName: string,
+  householdId?: string,
 ): Promise<{ id: string; displayName: string }> {
-  const response = await client.patch(`/mobile/children/${childId}`, { displayName });
+  const response = householdId
+    ? await client.put(`/households/${householdId}/children/${childId}`, { display_name: displayName })
+    : await client.patch(`/mobile/children/${childId}`, { displayName });
   const data = unwrap<unknown>(response);
   if (data === null || typeof data !== 'object' || Array.isArray(data)) {
     throw { code: 'INVALID_API_RESPONSE', message: 'Invalid child response.', retryable: false };
   }
   const item = data as Record<string, unknown>;
-  if (typeof item.id !== 'string' || typeof item.displayName !== 'string') {
+  const returnedName = householdId ? item.name : item.displayName;
+  if (typeof item.id !== 'string' || typeof returnedName !== 'string') {
     throw { code: 'INVALID_API_RESPONSE', message: 'Invalid child response.', retryable: false };
   }
-  return { id: item.id, displayName: item.displayName };
+  return { id: item.id, displayName: returnedName };
 }
 
 export async function archiveChild(childId: string): Promise<{ id: string; status: string }> {

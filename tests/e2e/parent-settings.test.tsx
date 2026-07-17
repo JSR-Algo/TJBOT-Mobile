@@ -322,7 +322,7 @@ describe('Parent settings and gate', () => {
       fireEvent.press(screen.getByText('Save child name'));
     });
 
-    expect(mockUpdateChildDisplayName).toHaveBeenCalledWith('child-1', 'Bong');
+    expect(mockUpdateChildDisplayName).toHaveBeenCalledWith('child-1', 'Bong', 'household-1');
     expect(mockHouseholdRefresh).toHaveBeenCalledTimes(1);
   });
 
