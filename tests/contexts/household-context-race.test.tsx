@@ -17,8 +17,8 @@
  */
 
 import React from 'react';
-import { render, waitFor, act } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { render, waitFor, act, fireEvent } from '@testing-library/react-native';
+import { Button, Text } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // The expo-secure-store mock at tests/__mocks__/expo-secure-store.ts exposes
@@ -53,10 +53,11 @@ jest.mock('../../src/contexts/AuthContext', () => ({
 // refresh's catch branch never flips onboardingComplete=false).
 const mockList = jest.fn();
 const mockListChildren = jest.fn();
+const mockCreate = jest.fn();
 jest.mock('../../src/services/api/households', () => ({
   list: () => mockList(),
   listChildren: () => mockListChildren(),
-  create: jest.fn(),
+  create: (...args: unknown[]) => mockCreate(...args),
   addChild: jest.fn(),
   get: jest.fn(),
 }));
@@ -68,18 +69,30 @@ const ONBOARDING_KEY = 'onboarding_complete_v1';
 function HouseholdProbe(): React.JSX.Element {
   const ctx = useHousehold();
   return (
-    <Text testID="probe">
-      {ctx.onboardingComplete ? 'COMPLETE' : 'NOT_COMPLETE'}
-    </Text>
+    <>
+      <Text testID="probe">
+        {ctx.onboardingComplete ? 'COMPLETE' : 'NOT_COMPLETE'}
+      </Text>
+      <Text testID="loading-probe">
+        {ctx.isLoading ? 'LOADING' : 'READY'}
+      </Text>
+      <Button
+        testID="create-household"
+        title="Create household"
+        onPress={() => { void ctx.createHousehold('New household'); }}
+      />
+    </>
   );
 }
 
 describe('HouseholdContext cold-start race fix (B2)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await SecureStore.deleteItemAsync(ONBOARDING_KEY);
     authState.isAuthenticated = false;
     authState.isLoading = true;
     mockList.mockReset();
     mockListChildren.mockReset();
+    mockCreate.mockReset();
   });
 
   it('does NOT clear onboarding_complete_v1 while AuthContext is still hydrating', async () => {
@@ -159,5 +172,62 @@ describe('HouseholdContext cold-start race fix (B2)', () => {
       expect(getByTestId('probe').props.children).toBe('COMPLETE');
     });
     expect(mockList).toHaveBeenCalled();
+  });
+
+  it('infers completed onboarding for a returning account on its first authenticated refresh', async () => {
+    mockList.mockResolvedValue([{ id: 'hh-returning', name: 'Returning Household' }]);
+    mockListChildren.mockResolvedValue([]);
+
+    authState.isLoading = false;
+    authState.isAuthenticated = true;
+
+    const { getByTestId } = render(
+      <HouseholdProvider>
+        <HouseholdProbe />
+      </HouseholdProvider>,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('probe').props.children).toBe('COMPLETE');
+    });
+  });
+
+  it('does not complete onboarding when a new account creates its first household mid-flow', async () => {
+    const household = { id: 'hh-new', name: 'New household' };
+    let resolveRefreshAfterCreate!: (value: typeof household[]) => void;
+    const refreshAfterCreate = new Promise<typeof household[]>((resolve) => {
+      resolveRefreshAfterCreate = resolve;
+    });
+    mockList
+      .mockResolvedValueOnce([])
+      .mockReturnValue(refreshAfterCreate);
+    mockListChildren.mockResolvedValue([]);
+    mockCreate.mockResolvedValue(household);
+
+    authState.isLoading = false;
+    authState.isAuthenticated = true;
+
+    const { getByTestId } = render(
+      <HouseholdProvider>
+        <HouseholdProbe />
+      </HouseholdProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledTimes(1);
+      expect(getByTestId('probe').props.children).toBe('NOT_COMPLETE');
+    });
+
+    fireEvent.press(getByTestId('create-household'));
+
+    await waitFor(() => {
+      expect(mockList.mock.calls.length).toBeGreaterThan(1);
+      expect(getByTestId('probe').props.children).toBe('NOT_COMPLETE');
+      expect(getByTestId('loading-probe').props.children).toBe('READY');
+    });
+
+    await act(async () => {
+      resolveRefreshAfterCreate([household]);
+    });
   });
 });

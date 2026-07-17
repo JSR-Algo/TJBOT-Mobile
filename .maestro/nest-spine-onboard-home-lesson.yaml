@@ -1,5 +1,5 @@
 appId: net.jasonle.tjbot
-name: Nest spine — login → onboarding → Home → lesson done
+name: Nest spine — signup → onboarding → Home → lesson done
 ---
 - launchApp:
     clearState: true
@@ -66,29 +66,50 @@ name: Nest spine — login → onboarding → Home → lesson done
       id: "loginScreenScroll"
     timeout: 45000
 
-# Login (pre-seeded Nest account) — use plain visible password field
+# Signup with a unique Nest account so every run exercises onboarding.
 - runFlow:
     when:
       visible:
-        id: "authModeTab_login"
+        id: "authModeTab_signup"
     commands:
       - tapOn:
-          id: "authModeTab_login"
+          id: "authModeTab_signup"
 - tapOn:
     id: "emailInput"
 - eraseText
-- inputText: "maestro.login.1784299834@example.com"
+- inputText: "${MAESTRO_TEST_EMAIL}"
 - tapOn:
     id: "passwordInputToggle"
 - tapOn:
     id: "passwordInput"
+# The iOS 26 Strong Password sheet exposes no accessibility selector. This
+# point is the sheet's close control on the single iPhone 17 test device.
+- tapOn:
+    point: "91%,58%"
 - eraseText
-# Enter password in two chunks so iOS secure TextInput accepts it
-- inputText: "TestPass"
-- inputText: "123!"
+- inputText: "TestPass123!"
+- extendedWaitUntil:
+    visible:
+      id: "passwordRule_length_met"
+    timeout: 15000
+- runFlow:
+    when:
+      visible:
+        id: "confirmPasswordInput"
+    commands:
+      - tapOn:
+          id: "confirmPasswordInput"
+      - eraseText
+      - inputText: "TestPass123!"
 - hideKeyboard
 - tapOn:
     id: "submitButton"
+
+# iOS may show the Password AutoFill save sheet immediately after auth or
+# defer it until the next text field receives input. Dismiss either timing.
+- tapOn:
+    text: "Not Now"
+    optional: true
 
 # Parent consent (new account always needs it)
 - extendedWaitUntil:
@@ -101,8 +122,11 @@ name: Nest spine — login → onboarding → Home → lesson done
 - eraseText
 - inputText: "Maestro Parent"
 - tapOn:
-    id: "parentConsentCheckbox"
+    text: "Not Now"
+    optional: true
 - hideKeyboard
+- tapOn:
+    id: "parentConsentCheckbox"
 - tapOn:
     id: "parentConsentSubmitButton"
 
@@ -112,10 +136,21 @@ name: Nest spine — login → onboarding → Home → lesson done
       id: "childAgeBand_PRE_K"
     timeout: 45000
 - takeScreenshot: output/maestro/nest-spine/11-child
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     id: "childAgeBand_PRE_K"
+    retryTapIfNoChange: true
+- assertVisible:
+    id: "childAgeBand_PRE_K"
+    selected: true
+- scrollUntilVisible:
+    element:
+      id: "childProfileSaveButton"
+    direction: DOWN
 - tapOn:
     id: "childProfileSaveButton"
+    retryTapIfNoChange: true
 
 # Mic ask
 - extendedWaitUntil:

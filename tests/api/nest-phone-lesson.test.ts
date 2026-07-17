@@ -65,6 +65,7 @@ describe('nestPhoneLesson', () => {
       expect.objectContaining({
         session_id: 'sess-1',
         user_message: 'cat',
+        confidence_signal: 85,
       }),
     );
     expect(mocked.completeSession).toHaveBeenCalledWith('child-1', {

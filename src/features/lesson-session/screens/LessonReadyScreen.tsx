@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
+import { Headphones } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
@@ -97,7 +98,7 @@ export default function LessonReadyScreen({ navigation }: Props) {
               </Box>
             ) : null}
             <Box style={styles.headphonesPill} flexDirection="row" alignItems="center" gap={8}>
-              <Text style={{ fontSize: 18 }}>🎧</Text>
+              <Headphones size={18} color="#67676F" strokeWidth={2.4} />
               <Text fontWeight="700" style={styles.headphonesText}>Phone lesson · no robot required</Text>
             </Box>
           </>

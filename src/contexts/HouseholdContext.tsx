@@ -107,6 +107,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     },
   );
   const abortControllerRef = useRef<AbortController | null>(null);
+  const inferOnboardingFromNextAuthenticatedRefreshRef = useRef(true);
 
   // Hydrate persisted household list and onboarding flag before any API call,
   // so returning users see cached data immediately while fresh data refreshes.
@@ -152,7 +153,18 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
       setState((s) => ({ ...s, isLoading: false }));
       return;
     }
-    setState((s) => ({ ...s, isLoading: true, error: null }));
+    const shouldInferOnboardingCompletion = inferOnboardingFromNextAuthenticatedRefreshRef.current;
+    if (shouldInferOnboardingCompletion) {
+      inferOnboardingFromNextAuthenticatedRefreshRef.current = false;
+    }
+    setState((s) => ({
+      ...s,
+      // RootStackNavigator treats this as a blocking initial load and
+      // temporarily unmounts the active navigator. Once a household exists,
+      // refresh in the background so onboarding form state is not reset.
+      isLoading: s.households.length === 0 && s.activeHousehold === null,
+      error: null,
+    }));
 
     abortControllerRef.current?.abort();
     const controller = new AbortController();
@@ -168,7 +180,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
       ]);
 
       const active = households[0] ?? null;
-      const completed = households.length > 0;
+      const completed = shouldInferOnboardingCompletion && households.length > 0;
       if (completed) {
         writeOnboardingCompleteToStore(true);
         AsyncStorage.setItem(HOUSEHOLDS_CACHE_KEY, JSON.stringify(households)).catch(
@@ -184,6 +196,12 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
         onboardingComplete: s.onboardingComplete || completed,
       }));
     } catch (err) {
+      if (
+        shouldInferOnboardingCompletion &&
+        abortControllerRef.current === controller
+      ) {
+        inferOnboardingFromNextAuthenticatedRefreshRef.current = true;
+      }
       const normalized = normalizeError(err);
       // On error, DO NOT flip onboardingComplete — a transient 401/timeout
       // used to force returning users back into Onboarding. Keep whatever
@@ -215,6 +233,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     if (isAuthenticated) {
       refresh();
     } else {
+      inferOnboardingFromNextAuthenticatedRefreshRef.current = true;
       setState((s) => {
         if (
           s.households.length === 0 &&

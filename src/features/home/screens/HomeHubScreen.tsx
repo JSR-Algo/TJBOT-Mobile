@@ -1,5 +1,6 @@
 import React from 'react';
 import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Bot, BookOpen, Flame, Play, Repeat2, Settings, Sprout, Star } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
@@ -45,9 +46,10 @@ export default function HomeHubScreen({ navigation }: Props) {
         {/* Header with greeting and avatar */}
         <Box style={styles.headerRow} flexDirection="row" alignItems="center" justifyContent="space-between">
           <Box flexDirection="row" alignItems="center" gap={12}>
-            <Text fontWeight="700" style={styles.greeting}>Hi, friend! 👋</Text>
+            <Text fontWeight="700" style={styles.greeting}>Hi, friend!</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
+              style={styles.headerAction}
               accessibilityRole="button"
               accessibilityLabel="Open parent dashboard"
             >
@@ -56,10 +58,11 @@ export default function HomeHubScreen({ navigation }: Props) {
           </Box>
           <TouchableOpacity
             onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
+            style={styles.headerAction}
             accessibilityRole="button"
             accessibilityLabel="Open parent settings"
           >
-            <Text fontWeight="700" style={styles.settingsIcon}>⚙️</Text>
+            <Settings size={24} color={gardenColors.ink} strokeWidth={2.25} />
           </TouchableOpacity>
         </Box>
 
@@ -111,14 +114,15 @@ export default function HomeHubScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Start lesson"
           >
-            <Text fontWeight="800" style={styles.heroCtaText}>▶ Start lesson</Text>
+            <Play size={18} color="#FFFFFF" fill="#FFFFFF" strokeWidth={2.5} />
+            <Text fontWeight="800" style={styles.heroCtaText}>Start lesson</Text>
           </TouchableOpacity>
         </Box>
 
         {/* Streak card */}
         <Box style={styles.streakCard} flexDirection="row" gap={12} alignItems="center">
           <Box style={styles.streakIcon}>
-            <Text style={styles.streakEmoji}>🔥</Text>
+            <Flame size={24} color={gardenColors.ink} strokeWidth={2.25} />
           </Box>
           <Box flex={1}>
             <Text fontWeight="800" style={styles.streakBig}>1-day streak</Text>
@@ -136,7 +140,7 @@ export default function HomeHubScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Browse lessons"
           >
-            <Text style={styles.qaIcon}>📚</Text>
+            <BookOpen size={24} color={gardenColors.coral} strokeWidth={2.25} />
             <Text fontWeight="700" style={styles.qaLabel}>Lessons</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -146,7 +150,7 @@ export default function HomeHubScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Review words"
           >
-            <Text style={styles.qaIcon}>🔁</Text>
+            <Repeat2 size={24} color={gardenColors.coral} strokeWidth={2.25} />
             <Text fontWeight="700" style={styles.qaLabel}>Review</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -156,24 +160,27 @@ export default function HomeHubScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="View progress"
           >
-            <Text style={styles.qaIcon}>⭐</Text>
+            <Star size={24} color={gardenColors.coral} strokeWidth={2.25} />
             <Text fontWeight="700" style={styles.qaLabel}>Progress</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.qaCard}
-            onPress={showRobotHang}
+            onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
             testID="homeQuickAction_robot"
             accessibilityRole="button"
-            accessibilityLabel="Robot unavailable"
+            accessibilityLabel="Robot"
           >
-            <Text style={styles.qaIcon}>🤖</Text>
+            <Bot size={24} color={gardenColors.coral} strokeWidth={2.25} />
             <Text fontWeight="700" style={styles.qaLabel}>Robot</Text>
           </TouchableOpacity>
         </Box>
 
         {/* My Garden card */}
         <Box style={styles.gardenCard}>
-          <Text fontWeight="800" style={styles.gardenTitle}>My Garden 🌱</Text>
+          <Box style={styles.gardenTitleRow} flexDirection="row" alignItems="center" gap={6}>
+            <Text fontWeight="800" style={styles.gardenTitle}>My Garden</Text>
+            <Sprout size={16} color={gardenColors.inkSoft} strokeWidth={2.25} />
+          </Box>
           <Box style={styles.gardenContent} flexDirection="row" gap={12} alignItems="center">
             <Box style={styles.gardenAvatar}>
               <Image source={referenceImages.robotBody} style={styles.gardenAvatarImg} resizeMode="contain" />
@@ -185,51 +192,6 @@ export default function HomeHubScreen({ navigation }: Props) {
           </Box>
         </Box>
 
-        {/* Bottom nav */}
-        <Box style={styles.navContainer}>
-          <Box style={styles.navPill}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Home tab"
-              accessibilityState={{ disabled: true }}
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>🏠</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Home</Text>
-              </Box>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
-              accessibilityRole="button"
-              accessibilityLabel="Learn tab"
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>📚</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Learn</Text>
-              </Box>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
-              accessibilityRole="button"
-              accessibilityLabel="Garden tab"
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>🌱</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Garden</Text>
-              </Box>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={showRobotHang}
-              accessibilityRole="button"
-              accessibilityLabel="Robot tab unavailable"
-            >
-              <Box style={styles.navItem}>
-                <Text style={styles.navItemIcon}>🤖</Text>
-                <Text fontWeight="700" style={styles.navItemLabel}>Robot</Text>
-              </Box>
-            </TouchableOpacity>
-          </Box>
-        </Box>
       </ScrollView>
     </ScreenShell>
   );
@@ -282,9 +244,11 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
   },
-  settingsIcon: {
-    fontSize: 24,
-    color: gardenColors.ink,
+  headerAction: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipRow: {
     minHeight: 32,
@@ -302,6 +266,7 @@ const styles = StyleSheet.create({
   },
   heroTextWrap: {
     flex: 1,
+    paddingRight: 92,
     marginBottom: 12,
   },
   eyebrow: {
@@ -337,10 +302,10 @@ const styles = StyleSheet.create({
   },
   heroRobotTouchable: {
     position: 'absolute',
-    right: 0,
-    bottom: -6,
-    height: 150,
-    width: 100,
+    right: 8,
+    bottom: 10,
+    height: 120,
+    width: 86,
   },
   heroRobot: {
     height: '100%',
@@ -352,6 +317,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 8,
   },
   heroCtaText: {
@@ -372,9 +340,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  streakEmoji: {
-    fontSize: 20,
-  },
   streakBig: {
     fontSize: 16,
     color: gardenColors.ink,
@@ -391,26 +356,25 @@ const styles = StyleSheet.create({
   },
   quickActionsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
     marginBottom: 16,
   },
   qaCard: {
-    width: '23%',
+    flex: 1,
+    minWidth: 0,
+    minHeight: 76,
     backgroundColor: gardenColors.paper,
     borderRadius: gardenRadii.card,
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  qaIcon: {
-    fontSize: 24,
-    marginBottom: 4,
   },
   qaLabel: {
     fontSize: 12,
     color: gardenColors.ink,
     textAlign: 'center',
+    marginTop: 6,
   },
   gardenCard: {
     backgroundColor: gardenColors.cream2,
@@ -421,6 +385,8 @@ const styles = StyleSheet.create({
   gardenTitle: {
     fontSize: 12,
     color: gardenColors.inkSoft,
+  },
+  gardenTitleRow: {
     marginBottom: 10,
   },
   gardenContent: {
@@ -448,31 +414,5 @@ const styles = StyleSheet.create({
   gardenSub: {
     fontSize: 11,
     color: gardenColors.inkSoft,
-  },
-  navContainer: {
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  navPill: {
-    flexDirection: 'row',
-    backgroundColor: gardenColors.paper,
-    borderRadius: gardenRadii.navpill,
-    height: 78,
-    gap: 0,
-    paddingHorizontal: 8,
-    justifyContent: 'space-around',
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  navItemIcon: {
-    fontSize: 18,
-    marginBottom: 2,
-  },
-  navItemLabel: {
-    fontSize: 11,
-    color: gardenColors.ink,
   },
 });

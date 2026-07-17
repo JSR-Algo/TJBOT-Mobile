@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { Sparkles, Star } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
@@ -20,6 +21,10 @@ export default function LessonDoneScreen({ navigation }: Props) {
   const wordCount = nestLesson?.session.session_payload?.core_learning?.length ?? 3;
   const reward = nestLesson?.session.session_payload?.reward?.message
     ?? `You learned ${wordCount} words today.\nSee you tomorrow! 👋`;
+  const rewardText = reward
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/\uFE0F/g, '')
+    .trim();
 
   React.useEffect(() => {
     // Context is kept only for this screen's summary copy; clear on leave so
@@ -35,11 +40,12 @@ export default function LessonDoneScreen({ navigation }: Props) {
         <Robot emotion="success" size={240} accent="#FF6F61" />
         <Box flexDirection="row" gap={8}>
           {[0, 1, 2].map(i => (
-            <Text key={i} style={{ fontSize: 48 }}>⭐</Text>
+            <Star key={i} size={48} color="#F5A623" fill="#FFC857" strokeWidth={2.2} />
           ))}
         </Box>
-        <Box style={styles.summaryCard}>
-          <Text fontWeight="700" style={styles.summaryText}>{reward}</Text>
+        <Box style={styles.summaryCard} alignItems="center" gap={8}>
+          <Sparkles size={24} color="#FF6F61" strokeWidth={2.4} />
+          <Text fontWeight="700" style={styles.summaryText}>{rewardText}</Text>
         </Box>
       </Box>
       <Box style={styles.footer} gap={12}>

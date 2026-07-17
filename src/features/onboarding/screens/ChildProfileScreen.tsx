@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { Cat, Dog, PawPrint, Rabbit, Sparkles, Squirrel, Turtle } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
@@ -23,14 +24,14 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen' | 'PairChildProfileScreen'>;
 
 const BUDDIES = [
-  { id: 'panda', emoji: '🐼', label: 'Panda' },
-  { id: 'cat', emoji: '🐱', label: 'Cat' },
-  { id: 'fox', emoji: '🦊', label: 'Fox' },
-  { id: 'rabbit', emoji: '🐰', label: 'Rabbit' },
-  { id: 'frog', emoji: '🐸', label: 'Frog' },
-  { id: 'lion', emoji: '🦁', label: 'Lion' },
-  { id: 'unicorn', emoji: '🦄', label: 'Unicorn' },
-  { id: 'dog', emoji: '🐶', label: 'Dog' },
+  { id: 'panda', icon: PawPrint, label: 'Panda' },
+  { id: 'cat', icon: Cat, label: 'Cat' },
+  { id: 'fox', icon: Squirrel, label: 'Fox' },
+  { id: 'rabbit', icon: Rabbit, label: 'Rabbit' },
+  { id: 'frog', icon: Turtle, label: 'Frog' },
+  { id: 'lion', icon: PawPrint, label: 'Lion' },
+  { id: 'unicorn', icon: Sparkles, label: 'Unicorn' },
+  { id: 'dog', icon: Dog, label: 'Dog' },
 ] as const;
 
 const LEVELS = [
@@ -158,6 +159,7 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
         <Box style={styles.buddyGrid}>
           {BUDDIES.map(b => {
             const active = buddy === b.id;
+            const BuddyIcon = b.icon;
             const accessibilityLabel = translateTemplate(
               active ? 'Buddy {{label}} selected' : 'Buddy {{label}}',
               { label: b.label },
@@ -176,7 +178,11 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
                 accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ selected: active }}
               >
-                <Text style={{ fontSize: 30 }}>{b.emoji}</Text>
+                <BuddyIcon
+                  size={30}
+                  color={active ? OB.accent : '#56565E'}
+                  strokeWidth={2.2}
+                />
               </TouchableOpacity>
             );
           })}

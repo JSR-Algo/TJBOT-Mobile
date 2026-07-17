@@ -57,7 +57,7 @@ export async function finishNestPhoneLesson(
     user_message: firstWord,
     ai_response: context.session.session_payload?.reward?.message
       ?? `Great job saying ${firstWord}!`,
-    confidence_signal: 0.85,
+    confidence_signal: 85,
   });
 
   await completeSession(context.childId, {
