@@ -1,5 +1,5 @@
 appId: net.jasonle.tjbot
-name: Nest spine — signup through HomeHub (local Nest)
+name: Nest spine — login → onboarding → Home → lesson done
 ---
 - launchApp:
     clearState: true
@@ -11,6 +11,8 @@ name: Nest spine — signup through HomeHub (local Nest)
     visible:
       id: "appRoot"
     timeout: 60000
+
+# COPPA age band
 - runFlow:
     when:
       visible:
@@ -20,6 +22,8 @@ name: Nest spine — signup through HomeHub (local Nest)
           id: "ageBandOption_18_PLUS"
       - tapOn:
           id: "ageScreenContinueButton"
+
+# Welcome
 - extendedWaitUntil:
     visible:
       id: "getStartedButton"
@@ -33,6 +37,8 @@ name: Nest spine — signup through HomeHub (local Nest)
     commands:
       - tapOn:
           id: "getStartedButton"
+
+# Intro + Trust
 - extendedWaitUntil:
     visible:
       id: "introNextButton"
@@ -54,80 +60,111 @@ name: Nest spine — signup through HomeHub (local Nest)
           commands:
             - tapOn:
                 id: "trustContinueButton"
+
 - extendedWaitUntil:
     visible:
       id: "loginScreenScroll"
     timeout: 45000
+
+# Login (pre-seeded Nest account) — use plain visible password field
 - runFlow:
     when:
       visible:
-        id: "authModeTab_signup"
+        id: "authModeTab_login"
     commands:
       - tapOn:
-          id: "authModeTab_signup"
+          id: "authModeTab_login"
 - tapOn:
     id: "emailInput"
 - eraseText
-- inputText: "maestro.home.1784299400@example.com"
+- inputText: "maestro.login.1784299834@example.com"
 - tapOn:
     id: "passwordInputToggle"
 - tapOn:
     id: "passwordInput"
 - eraseText
-- inputText: "TestPass123!"
-- extendedWaitUntil:
-    visible:
-      id: "passwordRule_length_met"
-    timeout: 15000
-- runFlow:
-    when:
-      visible:
-        id: "confirmPasswordInput"
-    commands:
-      - tapOn:
-          id: "confirmPasswordInput"
-      - eraseText
-      - inputText: "TestPass123!"
+# Enter password in two chunks so iOS secure TextInput accepts it
+- inputText: "TestPass"
+- inputText: "123!"
 - hideKeyboard
 - tapOn:
     id: "submitButton"
+
+# Parent consent (new account always needs it)
 - extendedWaitUntil:
     visible:
       id: "parentConsentNameInput"
-    timeout: 60000
+    timeout: 90000
+- takeScreenshot: output/maestro/nest-spine/10-consent
 - tapOn:
     id: "parentConsentNameInput"
 - eraseText
-- inputText: "Home Parent"
+- inputText: "Maestro Parent"
 - tapOn:
     id: "parentConsentCheckbox"
 - hideKeyboard
 - tapOn:
     id: "parentConsentSubmitButton"
+
+# Child profile
 - extendedWaitUntil:
     visible:
       id: "childAgeBand_PRE_K"
     timeout: 45000
+- takeScreenshot: output/maestro/nest-spine/11-child
 - tapOn:
     id: "childAgeBand_PRE_K"
 - tapOn:
     id: "childProfileSaveButton"
+
+# Mic ask
 - extendedWaitUntil:
     visible:
       id: "micAskContinueButton"
     timeout: 45000
+- takeScreenshot: output/maestro/nest-spine/12-mic
 - tapOn:
     id: "micAskContinueButton"
+
+# First lesson → HomeHub
 - extendedWaitUntil:
     visible:
       id: "firstLessonStartCta"
     timeout: 45000
+- takeScreenshot: output/maestro/nest-spine/13-first-lesson
 - tapOn:
     id: "firstLessonStartCta"
+
+# HomeHub
 - extendedWaitUntil:
     visible:
       id: "homePrimaryCta"
     timeout: 60000
-- takeScreenshot: output/maestro/nest-spine/03-home
-- assertVisible:
+- takeScreenshot: output/maestro/nest-spine/14-home
+- tapOn:
     id: "homePrimaryCta"
+
+# Lesson ready → Nest complete
+- extendedWaitUntil:
+    visible:
+      id: "lessonReadyCta"
+    timeout: 60000
+- takeScreenshot: output/maestro/nest-spine/15-lesson-ready
+- tapOn:
+    id: "lessonReadyCta"
+
+# Lesson done
+- extendedWaitUntil:
+    visible:
+      id: "lessonDoneHomeButton"
+    timeout: 60000
+- takeScreenshot: output/maestro/nest-spine/16-lesson-done
+- tapOn:
+    id: "lessonDoneHomeButton"
+
+# Back on Home
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 45000
+- takeScreenshot: output/maestro/nest-spine/17-home-after-lesson

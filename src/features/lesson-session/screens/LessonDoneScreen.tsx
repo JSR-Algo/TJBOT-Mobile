@@ -8,10 +8,26 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import {
+  clearActiveNestLesson,
+  getActiveNestLesson,
+} from '../nestPhoneLesson';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonDoneScreen'>;
 
 export default function LessonDoneScreen({ navigation }: Props) {
+  const nestLesson = getActiveNestLesson();
+  const wordCount = nestLesson?.session.session_payload?.core_learning?.length ?? 3;
+  const reward = nestLesson?.session.session_payload?.reward?.message
+    ?? `You learned ${wordCount} words today.\nSee you tomorrow! 👋`;
+
+  React.useEffect(() => {
+    // Context is kept only for this screen's summary copy; clear on leave so
+    // the next Nest lesson bootstraps a fresh session/today payload.
+    return () => {
+      clearActiveNestLesson();
+    };
+  }, []);
   return (
     <ScreenShell bg="#FFF8E1">
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={14}>
@@ -23,12 +39,15 @@ export default function LessonDoneScreen({ navigation }: Props) {
           ))}
         </Box>
         <Box style={styles.summaryCard}>
-          <Text fontWeight="700" style={styles.summaryText}>You learned 3 words today.{'\n'}See you tomorrow! 👋</Text>
+          <Text fontWeight="700" style={styles.summaryText}>{reward}</Text>
         </Box>
       </Box>
       <Box style={styles.footer} gap={12}>
         <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonSummaryScreen)} color="#FF6F61">See what you did</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>
+        <TouchableOpacity
+          testID="lessonDoneHomeButton"
+          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+        >
           <Text fontWeight="700" style={styles.homeText}>Back home</Text>
         </TouchableOpacity>
       </Box>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
@@ -16,6 +16,14 @@ type Props = NativeStackScreenProps<RootStackParamList, 'HomeHubScreen'>;
 export const HOME_HUB_ROBOT_STAGE_TOP_PADDING = 116;
 export const HOME_HUB_SECONDARY_ROW_BOTTOM = 116;
 export const HOME_HUB_PRIMARY_CTA_BOTTOM = 220;
+
+const ROBOT_HANG_TITLE = 'Robot pairing later';
+const ROBOT_HANG_BODY =
+  'Phone lessons work with Nest now. Physical robot pairing and send-to-robot stay hung until the ESP bridge is ready.';
+
+function showRobotHang(): void {
+  Alert.alert(ROBOT_HANG_TITLE, ROBOT_HANG_BODY, [{ text: 'OK' }]);
+}
 
 export default function HomeHubScreen({ navigation }: Props) {
   const { variant, cfg, isLoading } = useHomeState();
@@ -124,6 +132,7 @@ export default function HomeHubScreen({ navigation }: Props) {
           <TouchableOpacity
             style={styles.qaCard}
             onPress={() => navigation.navigate(ROUTES.LessonPickScreen, { ageBand: '4-6' })}
+            testID="homeQuickAction_lessons"
             accessibilityRole="button"
             accessibilityLabel="Browse lessons"
           >
@@ -133,6 +142,7 @@ export default function HomeHubScreen({ navigation }: Props) {
           <TouchableOpacity
             style={styles.qaCard}
             onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
+            testID="homeQuickAction_review"
             accessibilityRole="button"
             accessibilityLabel="Review words"
           >
@@ -142,6 +152,7 @@ export default function HomeHubScreen({ navigation }: Props) {
           <TouchableOpacity
             style={styles.qaCard}
             onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
+            testID="homeQuickAction_progress"
             accessibilityRole="button"
             accessibilityLabel="View progress"
           >
@@ -150,9 +161,10 @@ export default function HomeHubScreen({ navigation }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.qaCard}
-            onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
+            onPress={showRobotHang}
+            testID="homeQuickAction_robot"
             accessibilityRole="button"
-            accessibilityLabel="Robot"
+            accessibilityLabel="Robot unavailable"
           >
             <Text style={styles.qaIcon}>🤖</Text>
             <Text fontWeight="700" style={styles.qaLabel}>Robot</Text>
@@ -207,9 +219,9 @@ export default function HomeHubScreen({ navigation }: Props) {
               </Box>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
+              onPress={showRobotHang}
               accessibilityRole="button"
-              accessibilityLabel="Robot tab"
+              accessibilityLabel="Robot tab unavailable"
             >
               <Box style={styles.navItem}>
                 <Text style={styles.navItemIcon}>🤖</Text>
@@ -240,7 +252,7 @@ function navigateHomeCtaTarget(
     return;
   }
   if (target === ROUTES.DeviceOverviewScreen) {
-    navigation.navigate(ROUTES.DeviceOverviewScreen);
+    showRobotHang();
     return;
   }
   navigation.navigate(ROUTES.HomeHubScreen);

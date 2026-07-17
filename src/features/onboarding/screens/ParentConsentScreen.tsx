@@ -168,6 +168,7 @@ export default function ParentConsentScreen({ navigation }: Props) {
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="done"
+          testID="parentConsentNameInput"
           accessibilityLabel="Parent or guardian name"
         />
       </Box>
@@ -180,6 +181,7 @@ export default function ParentConsentScreen({ navigation }: Props) {
           }}
           style={styles.checkRow}
           activeOpacity={0.72}
+          testID="parentConsentCheckbox"
           accessibilityRole="checkbox"
           accessibilityLabel="I give parent consent"
           accessibilityState={{ checked: accepted }}

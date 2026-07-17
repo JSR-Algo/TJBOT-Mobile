@@ -3,6 +3,7 @@ name: Nest spine — age gate through intro to login
 ---
 - launchApp:
     clearState: true
+    clearKeychain: true
 - extendedWaitUntil:
     visible:
       id: "appRoot"

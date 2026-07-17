@@ -8,7 +8,9 @@ import WaveBars from '@/design-system/components/WaveBars';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { isInvestorDemoEnabled } from '@/config/investorDemo';
+import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { ROUTES } from '@/navigation/routes';
+import { bootstrapNestPhoneLesson } from '../nestPhoneLesson';
 import { useLessonSessionActor } from '../sessionContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ConnectingScreen'>;
@@ -23,41 +25,66 @@ function createIdempotencyKey(): string {
 
 export default function ConnectingScreen({ navigation }: Props) {
   const actor = useLessonSessionActor();
+  const household = useOptionalHousehold();
+  const childId = household?.activeChild?.id ?? null;
   const lastNavigatedRouteRef = React.useRef<SessionRoute | null>(null);
   const sessionBootstrapRef = React.useRef(false);
 
   React.useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
 
-    const maybeEmitSessionStarted = () => {
-      if (!isInvestorDemoEnabled()) return;
-      if (sessionBootstrapRef.current || !actor.getSnapshot().matches('CONNECTING')) return;
+    const emitStarted = (sessionId: string, deviceSessionId: string) => {
+      if (cancelled || sessionBootstrapRef.current) return;
+      if (!actor.getSnapshot().matches('CONNECTING')) return;
       sessionBootstrapRef.current = true;
       timer = setTimeout(() => {
+        if (cancelled) return;
         actor.send({
           type: 'SESSION_STARTED',
-          sessionId: 'demo-session',
-          deviceSessionId: 'demo-device-session',
+          sessionId,
+          deviceSessionId,
         });
       }, 600);
+    };
+
+    const maybeBootstrap = async () => {
+      if (sessionBootstrapRef.current) return;
+      if (!actor.getSnapshot().matches('CONNECTING')) return;
+
+      // Investor demo: synthetic ids, no Nest.
+      if (isInvestorDemoEnabled()) {
+        emitStarted('demo-session', 'demo-device-session');
+        return;
+      }
+
+      // Nest-only phone path: load session/today, then enter ACTIVE without robot.
+      if (!childId) return;
+      try {
+        const nest = await bootstrapNestPhoneLesson(childId);
+        if (cancelled) return;
+        emitStarted(nest.sessionId, `phone-nest-${nest.sessionId}`);
+      } catch {
+        // Leave CONNECTING; navigation effect may surface AUDIO_FAILED later.
+      }
     };
 
     const snapshot = actor.getSnapshot();
     if (snapshot.matches('IDLE')) {
       actor.send({ type: 'START_SESSION', idempotencyKey: createIdempotencyKey() });
-    } else {
-      maybeEmitSessionStarted();
     }
 
+    void maybeBootstrap();
     const subscription = actor.subscribe(() => {
-      maybeEmitSessionStarted();
+      void maybeBootstrap();
     });
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
       if (timer) clearTimeout(timer);
     };
-  }, [actor]);
+  }, [actor, childId]);
 
   React.useEffect(() => {
     const routeForState = (value: unknown): SessionRoute | null => {

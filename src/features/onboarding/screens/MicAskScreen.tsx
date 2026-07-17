@@ -79,7 +79,7 @@ export default function MicAskScreen({ navigation }: Props) {
         </Box>
       ) : null}
       <Box paddingHorizontal={20} paddingTop={22} paddingBottom={30} gap={10}>
-        <OnbBigBtn onClick={continueWithConsent}>{saving ? 'Saving...' : 'Continue'}</OnbBigBtn>
+        <OnbBigBtn testID="micAskContinueButton" onClick={continueWithConsent}>{saving ? 'Saving...' : 'Continue'}</OnbBigBtn>
       </Box>
     </OnbShell>
   );

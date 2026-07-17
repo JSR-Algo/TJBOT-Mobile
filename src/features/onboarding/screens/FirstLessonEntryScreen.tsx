@@ -18,11 +18,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'FirstLessonEntryScreen'
 export default function FirstLessonEntryScreen(_props: Props) {
   const household = useOptionalHousehold();
   const handleStart = () => {
+    // Nest-only spine: finish onboarding on HomeHub with no robot force.
+    // withDeviceSetup defaults false — never open DeviceOverview here.
     if (household) {
-      household.completeOnboarding(ROUTES.LessonReadyScreen);
+      household.completeOnboarding(ROUTES.HomeHubScreen, false);
       return;
     }
-    legacyNavigate(_props.navigation, ROUTES.LessonReadyScreen);
+    legacyNavigate(_props.navigation, ROUTES.HomeHubScreen);
   };
 
   return (
@@ -41,7 +43,7 @@ export default function FirstLessonEntryScreen(_props: Props) {
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={handleStart} color="#FF6F61">Yes!</PrimaryCTA>
+        <PrimaryCTA testID="firstLessonStartCta" onPress={handleStart} color="#FF6F61">Yes!</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

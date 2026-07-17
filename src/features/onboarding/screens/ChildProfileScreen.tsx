@@ -204,6 +204,7 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
                   { borderColor: active ? OB.accent : OB.hair, backgroundColor: active ? '#E8F0FE' : OB.card },
                 ]}
                 activeOpacity={0.7}
+                testID={`childAgeBand_${b.id}`}
                 accessibilityRole="button"
                 accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ selected: active }}
