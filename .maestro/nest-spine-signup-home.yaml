@@ -1,19 +1,49 @@
 appId: net.jasonle.tjbot
-name: Nest spine — signup through home (local Nest required)
+name: Nest spine — signup after age+intro (local Nest)
 ---
 - launchApp:
     clearState: true
 - extendedWaitUntil:
     visible:
-      id: "welcomeScreen"
-    timeout: 45000
-- tapOn:
-    id: "getStartedButton"
+      id: "appRoot"
+    timeout: 60000
+- runFlow:
+    when:
+      visible:
+        id: "ageBandOption_18_PLUS"
+    commands:
+      - tapOn:
+          id: "ageBandOption_18_PLUS"
+      - tapOn:
+          id: "ageScreenContinueButton"
+- runFlow:
+    when:
+      visible:
+        id: "getStartedButton"
+    commands:
+      - tapOn:
+          id: "getStartedButton"
+- repeat:
+    times: 6
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: "introNextButton"
+          commands:
+            - tapOn:
+                id: "introNextButton"
+      - runFlow:
+          when:
+            visible:
+              id: "trustContinueButton"
+          commands:
+            - tapOn:
+                id: "trustContinueButton"
 - extendedWaitUntil:
     visible:
       id: "loginScreenScroll"
-    timeout: 30000
-# Prefer signup mode if tab exists
+    timeout: 45000
 - runFlow:
     when:
       visible:
@@ -23,9 +53,11 @@ name: Nest spine — signup through home (local Nest required)
           id: "authModeTab_signup"
 - tapOn:
     id: "emailInput"
-- inputText: "maestro.phase.${timestamp}@example.com"
+- eraseText
+- inputText: "maestro.nest@example.com"
 - tapOn:
     id: "passwordInput"
+- eraseText
 - inputText: "TestPass123!"
 - runFlow:
     when:
@@ -34,20 +66,14 @@ name: Nest spine — signup through home (local Nest required)
     commands:
       - tapOn:
           id: "confirmPasswordInput"
+      - eraseText
       - inputText: "TestPass123!"
 - tapOn:
     id: "submitButton"
+- takeScreenshot: output/maestro/nest-spine/02-after-submit
+# Consent screen or next onboarding if Nest accepts signup
 - extendedWaitUntil:
     visible:
-      text: ".*"
+      id: "appRoot"
     timeout: 60000
-- takeScreenshot: output/maestro/nest-spine/02-after-submit
-# Consent / onboarding / home — accept any of these reachable states
-- runFlow:
-    when:
-      visible:
-        id: "homePrimaryCta"
-    commands:
-      - assertVisible:
-          id: "homePrimaryCta"
-      - takeScreenshot: output/maestro/nest-spine/03-home
+- takeScreenshot: output/maestro/nest-spine/03-post-auth

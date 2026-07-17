@@ -1,19 +1,57 @@
 appId: net.jasonle.tjbot
-name: Nest spine — welcome to login form
+name: Nest spine — age gate through intro to login
 ---
 - launchApp:
     clearState: true
 - extendedWaitUntil:
     visible:
-      id: "welcomeScreen"
-    timeout: 45000
-- takeScreenshot: output/maestro/nest-spine/00-welcome
-- tapOn:
-    id: "getStartedButton"
+      id: "appRoot"
+    timeout: 60000
+
+# COPPA age band
+- runFlow:
+    when:
+      visible:
+        id: "ageBandOption_18_PLUS"
+    commands:
+      - tapOn:
+          id: "ageBandOption_18_PLUS"
+      - tapOn:
+          id: "ageScreenContinueButton"
+
+# Welcome
+- runFlow:
+    when:
+      visible:
+        id: "getStartedButton"
+    commands:
+      - takeScreenshot: output/maestro/nest-spine/00-welcome
+      - tapOn:
+          id: "getStartedButton"
+
+# Intro carousel (listen → speak → retry → celebrate) + Trust
+- repeat:
+    times: 6
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: "introNextButton"
+          commands:
+            - tapOn:
+                id: "introNextButton"
+      - runFlow:
+          when:
+            visible:
+              id: "trustContinueButton"
+          commands:
+            - tapOn:
+                id: "trustContinueButton"
+
 - extendedWaitUntil:
     visible:
       id: "loginScreenScroll"
-    timeout: 30000
+    timeout: 45000
 - assertVisible:
     id: "emailInput"
 - assertVisible:

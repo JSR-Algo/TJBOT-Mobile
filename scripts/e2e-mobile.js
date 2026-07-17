@@ -36,7 +36,7 @@ const PLAN_MODULES = [
   ['Auth + Onboarding', ['SplashScreen', 'WelcomeScreen', 'LoginScreen', 'ParentConsentScreen', 'ChildProfileScreen'], ['/v1/auth/signup', '/v1/auth/consent', '/v1/auth/login', '/v1/households']],
   ['Home Dashboard', ['HomeHubScreen'], ['/v1/households']],
   ['Device Pairing', ['PairIntroScreen', 'PairSearchScreen', 'PairWifiScreen', 'PairSuccessScreen'], ['/v1/devices/household/:id']],
-  ['Learning + AI Interaction', ['LessonReadyScreen', 'RobotListeningScreen', 'RobotSpeakingScreen'], ['/v1/learning/children/:id/session/today', '/api/ai/v1/llm/chat']],
+  ['Learning + AI Interaction', ['LessonReadyScreen', 'RobotListeningScreen', 'RobotSpeakingScreen'], ['/v1/learning/children/:id/session/today']],
   ['Progress', ['TodayProgressScreen', 'WordsPracticedScreen'], ['/v1/learning/children/:id/kpis']],
   ['Parent Control', ['ParentGateScreen', 'ParentSummaryScreen', 'ParentSettingsScreen'], ['/v1/parent/auth', '/v1/parent/settings']],
   ['Course Library + Purchase', ['CourseLibraryScreen', 'CourseDetailScreen', 'CheckoutScreen'], ['/v1/course-library', '/v1/purchase/checkout']],
@@ -160,7 +160,7 @@ if (args.includes('--scan-log-only')) {
 if (args.includes('--plan-json')) {
   if (process.env.SIMULATION_MODE !== 'true') throw new Error('SIMULATION_MODE=true is required');
   assertRealBackend(BASE_URL);
-  assertLocalAi(AI_URL);
+  // Nest-only spine: no local ai-services/STT required (no robot voice path).
   console.log(JSON.stringify(buildPlan()));
   process.exit(0);
 }
@@ -257,7 +257,7 @@ function assert(condition, message) {
 async function run() {
   console.log('\n🧪 TJBot Mobile E2E Test\n');
   console.log(`  API: ${BASE_URL}`);
-  console.log(`  AI:  ${AI_URL}\n`);
+  console.log('  Mode: Nest-only (no STT / no local ai-services required)\n');
 
   const email = `e2e-mobile-${Date.now()}@test.TJBot.io`;
   const password = 'TestPass123!';
@@ -378,26 +378,8 @@ async function run() {
     });
   }
 
-  // ─── AI SERVICE ───────────────────────────────────────────────────────────
-  console.log('\n🤖 AI Service (Interaction)');
-
-  await softStep('POST /v1/stt/transcribe (voice input simulation)', async () => {
-    // STT expects multipart/form-data in prod, but in simulation mode accepts any
-    const res = await request('POST', `${AI_URL}/v1/stt/transcribe`,
-      { audio: 'mock_audio_data', language: 'en' });
-    // Accept 200 or 422 (form validation in prod mode) — both mean the service is reachable
-    assert(res.status < 500, `AI service returned ${res.status} — service may be down`);
-  });
-
-  await softStep('POST /v1/llm/chat (TJBot response)', async () => {
-    const res = await request('POST', `${AI_URL}/v1/llm/chat`, {
-      message: 'Hello TJBot! Can you say something?',
-      session_id: `e2e-${Date.now()}`,
-    });
-    assert(res.status === 200, `Expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
-    const data = res.body;
-    assert(data.response || data.status === 'ok', 'No response from LLM');
-  });
+  // ─── LEARNING INTERACTION (Nest only — no STT / no local AI host) ─────────
+  console.log('\n🎓 Learning interactions (Nest)');
 
   await softStep('POST /learning/children/:id/interactions (persist)', async () => {
     if (!childId) { throw new Error('No child ID — skipping'); }
@@ -407,6 +389,16 @@ async function run() {
       confidence_signal: 75,
     }, { Authorization: `Bearer ${accessToken}` });
     assert(res.status < 300, `Expected 2xx, got ${res.status}`);
+  });
+
+  // Phone voice path is Nest gemini token (optional smoke; sim mode OK).
+  await softStep('POST /gemini/token (phone voice — Nest sim/token)', async () => {
+    const res = await request('POST', `${API}/gemini/token`, {}, {
+      Authorization: `Bearer ${accessToken}`,
+    });
+    assert(res.status === 200, `Expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
+    const data = res.body.data ?? res.body;
+    assert(data.token, 'No gemini token');
   });
 
   // ─── SUMMARY ──────────────────────────────────────────────────────────────
@@ -422,7 +414,7 @@ function printSummary() {
     process.exit(1);
   } else {
     if (skipped > 0) {
-      console.log('\n✅ Core flows passed — run against local docker-compose for full coverage');
+      console.log('\n✅ Nest core flows passed (STT/ai-services not required for no-robot spine)');
     } else {
       console.log('\n✅ All tests passed — app is ready for phone testing!');
     }
