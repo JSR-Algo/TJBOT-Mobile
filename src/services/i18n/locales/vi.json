@@ -2015,5 +2015,16 @@
   "Phone lesson · no robot required": "Bài học trên điện thoại · không cần Robot",
   "Add a child profile before starting a Nest lesson.": "Hãy thêm hồ sơ bé trước khi bắt đầu bài học Nest.",
   "Could not load today's Nest lesson. Check the backend and try again.": "Không thể tải bài học Nest hôm nay. Hãy kiểm tra backend và thử lại.",
-  "Nest could not complete this lesson. Try again in a moment.": "Nest chưa thể hoàn tất bài học này. Vui lòng thử lại sau giây lát."
+  "Nest could not complete this lesson. Try again in a moment.": "Nest chưa thể hoàn tất bài học này. Vui lòng thử lại sau giây lát.",
+  "No robot connected yet": "Chưa có robot nào được kết nối",
+  "Pair your robot to see its status and send lessons.": "Hãy ghép nối robot để xem trạng thái và gửi bài học.",
+  "Demo mode": "Chế độ demo",
+  "This is simulated robot data shown for demonstration. No real robot is involved.": "Đây là dữ liệu robot mô phỏng để minh họa. Không có robot thật nào tham gia.",
+  "Queued for your robot": "Đã xếp hàng cho robot của bạn",
+  "Robot will pick this up when it's back online.": "Robot sẽ nhận khi nó trực tuyến trở lại.",
+  "Check that Robot is on and connected, then try again.": "Hãy kiểm tra Robot đã bật và đã kết nối, rồi thử lại.",
+  "Can't reach the server": "Không thể kết nối máy chủ",
+  "Check your connection and try again in a moment.": "Hãy kiểm tra kết nối của bạn và thử lại sau ít phút.",
+  "Not available yet": "Chưa khả dụng",
+  "This feature needs the robot connection, which isn't available in this build.": "Tính năng này cần kết nối robot, hiện chưa có trong phiên bản này."
 }

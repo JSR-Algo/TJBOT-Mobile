@@ -1793,5 +1793,16 @@
   "Phone lesson · no robot required": "Phone lesson · no robot required",
   "Add a child profile before starting a Nest lesson.": "Add a child profile before starting a Nest lesson.",
   "Could not load today's Nest lesson. Check the backend and try again.": "Could not load today's Nest lesson. Check the backend and try again.",
-  "Nest could not complete this lesson. Try again in a moment.": "Nest could not complete this lesson. Try again in a moment."
+  "Nest could not complete this lesson. Try again in a moment.": "Nest could not complete this lesson. Try again in a moment.",
+  "No robot connected yet": "No robot connected yet",
+  "Pair your robot to see its status and send lessons.": "Pair your robot to see its status and send lessons.",
+  "Demo mode": "Demo mode",
+  "This is simulated robot data shown for demonstration. No real robot is involved.": "This is simulated robot data shown for demonstration. No real robot is involved.",
+  "Queued for your robot": "Queued for your robot",
+  "Robot will pick this up when it's back online.": "Robot will pick this up when it's back online.",
+  "Check that Robot is on and connected, then try again.": "Check that Robot is on and connected, then try again.",
+  "Can't reach the server": "Can't reach the server",
+  "Check your connection and try again in a moment.": "Check your connection and try again in a moment.",
+  "Not available yet": "Not available yet",
+  "This feature needs the robot connection, which isn't available in this build.": "This feature needs the robot connection, which isn't available in this build."
 }
