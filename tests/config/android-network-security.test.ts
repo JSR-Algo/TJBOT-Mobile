@@ -30,14 +30,17 @@ describe('Android network security resources', () => {
     expect(ignored.stdout.trim()).toBe('');
   });
 
-  it('declares includeSubdomains on every cleartext domain', () => {
-    const config = readFileSync(
+  it('denies release cleartext while keeping the debug transport override', () => {
+    const releaseConfig = readFileSync(
       join(root, 'android/app/src/main/res/xml/network_security_config.xml'),
       'utf8',
     );
-    const domains = config.match(/<domain(?=\s|>)[^>]*>/g) ?? [];
+    const debugConfig = readFileSync(
+      join(root, 'android/app/src/debug/res/xml/network_security_config.xml'),
+      'utf8',
+    );
 
-    expect(domains.length).toBeGreaterThan(0);
-    expect(domains.every((domain) => /\bincludeSubdomains="(?:true|false)"/.test(domain))).toBe(true);
+    expect(releaseConfig).toContain('<base-config cleartextTrafficPermitted="false" />');
+    expect(debugConfig).toContain('<base-config cleartextTrafficPermitted="true" />');
   });
 });
