@@ -31,6 +31,11 @@ let mockHouseholdContext = {
   activeChild: undefined as { id: string; name: string } | undefined,
   children: [] as { id: string; name: string }[],
 };
+let mockParentId: string | undefined;
+
+jest.mock('@/contexts/AuthContext', () => ({
+  useOptionalAuth: () => ({ user: mockParentId ? { id: mockParentId } : null }),
+}));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
   useHousehold: () => mockHouseholdContext,
@@ -329,6 +334,7 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     client.defaults.baseURL = apiUrl;
     await setTokens(fixture.token, 'unused-live-refresh-token');
     setRewardQueueScope(fixture.parentId, fixture.householdId);
+    mockParentId = fixture.parentId;
     mockHouseholdContext = {
       activeHousehold: { id: fixture.householdId },
       activeChild: { id: fixture.childId, name: 'Mai' },
