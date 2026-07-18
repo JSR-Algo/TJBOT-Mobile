@@ -31,24 +31,34 @@ export default function CelebrationScreen({ navigation, route }: Props): React.J
   const { language, t } = useAppLanguage();
   const { activeHousehold } = useHousehold();
   const inbox = useRewardInboxQuery(activeHousehold?.id ?? '');
-  const candidate = inbox.data?.rewards.find(item => item.rewardId === route.params?.rewardId);
-  const [queuedSeen, setQueuedSeen] = React.useState<boolean | null>(null);
-  const reward = queuedSeen === false ? candidate : undefined;
+  const rewardId = route.params?.rewardId;
+  const rewardScopeKey = activeHousehold?.id && rewardId
+    ? `${activeHousehold.id}:${rewardId}`
+    : undefined;
+  const candidate = inbox.data?.rewards.find(item => item.rewardId === rewardId);
+  const displayedRewardRef = React.useRef<{ scopeKey: string; receipt: NonNullable<typeof candidate> } | undefined>(undefined);
+  if (candidate && rewardScopeKey) displayedRewardRef.current = { scopeKey: rewardScopeKey, receipt: candidate };
+  const retainedReward = displayedRewardRef.current;
+  const displayedReward = retainedReward !== undefined && retainedReward.scopeKey === rewardScopeKey
+    ? retainedReward.receipt
+    : undefined;
+  const [queueCheck, setQueueCheck] = React.useState<{ scopeKey: string | undefined; queued: boolean } | null>(null);
+  const queuedSeen = queueCheck !== null && queueCheck.scopeKey === rewardScopeKey ? queueCheck.queued : null;
+  const reward = queuedSeen === false ? displayedReward : undefined;
   const acknowledge = useAcknowledgeRewardMutation(activeHousehold?.id ?? '');
   const acknowledgedRef = React.useRef<string | undefined>(undefined);
 
   React.useEffect(() => {
     let mounted = true;
-    const rewardId = route.params?.rewardId;
     if (!rewardId) {
-      setQueuedSeen(false);
+      setQueueCheck({ scopeKey: rewardScopeKey, queued: false });
       return () => { mounted = false; };
     }
     isRewardSeenQueued(rewardId)
-      .then(queued => { if (mounted) setQueuedSeen(queued); })
-      .catch(error => { captureError(error); if (mounted) setQueuedSeen(false); });
+      .then(queued => { if (mounted) setQueueCheck({ scopeKey: rewardScopeKey, queued }); })
+      .catch(error => { captureError(error); if (mounted) setQueueCheck({ scopeKey: rewardScopeKey, queued: false }); });
     return () => { mounted = false; };
-  }, [route.params?.rewardId]);
+  }, [rewardId, rewardScopeKey]);
 
   React.useEffect(() => {
     if (!reward || acknowledgedRef.current === reward.rewardId) return;

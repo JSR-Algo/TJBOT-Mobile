@@ -5,7 +5,7 @@ module.exports = {
   rootDir: '../../..',
   setupFiles: ['<rootDir>/tests/setup.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup-after-env.ts'],
-  testMatch: ['<rootDir>/tests/integration/rewards-live/rewards-live-backend.test.ts'],
+  testMatch: ['<rootDir>/tests/integration/rewards-live/rewards-live-rendered.test.tsx'],
   modulePathIgnorePatterns: ['<rootDir>/.worktrees/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

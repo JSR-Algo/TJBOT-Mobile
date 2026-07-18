@@ -8,7 +8,8 @@ const mockInbox = jest.fn();
 const mockMutate = jest.fn();
 let mockReduceMotion = true;
 let mockQueuedSeen = false;
-jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeHousehold: { id: 'house-1' } }) }));
+let mockActiveHouseholdId = 'house-1';
+jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeHousehold: { id: mockActiveHouseholdId } }) }));
 jest.mock('@/features/rewards/hooks/useRewards', () => ({
   useRewardInboxQuery: () => mockInbox(),
   useAcknowledgeRewardMutation: () => ({ mutate: mockMutate, isPending: false, isError: false }),
@@ -20,7 +21,7 @@ const reward = { rewardId: 'reward-1', assignmentId: 'assignment-1', sessionId: 
 const navigation = () => ({ navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() });
 
 describe('persisted reward surfaces', () => {
-  beforeEach(() => { jest.clearAllMocks(); mockReduceMotion = true; mockQueuedSeen = false; mockInbox.mockReturnValue({ data: { rewards: [reward], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() }); });
+  beforeEach(() => { jest.clearAllMocks(); mockActiveHouseholdId = 'house-1'; mockReduceMotion = true; mockQueuedSeen = false; mockInbox.mockReturnValue({ data: { rewards: [reward], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() }); });
   afterEach(async () => { await act(async () => { await setAppLanguage('en'); }); });
 
   it('renders XP, coins, badge, streak, child, robot, and reason from the persisted inbox', async () => {
@@ -45,6 +46,42 @@ describe('persisted reward surfaces', () => {
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     expect(view.UNSAFE_getByProps({ testID: 'celebration-static-stars' }).props.importantForAccessibility).toBe('no-hide-descendants');
     expect(screen.queryByTestId('celebration-confetti')).toBeNull();
+  });
+
+  it('keeps the authoritative receipt visible after acknowledgement refreshes the inbox', async () => {
+    const route = { key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never;
+    const view = render(<CelebrationScreen navigation={navigation() as never} route={route} />);
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
+
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen navigation={navigation() as never} route={route} />);
+
+    expect(screen.getByText('XP: 30 · Coins: 5')).toBeTruthy();
+    expect(screen.queryByText('Reward is waiting to sync')).toBeNull();
+  });
+
+  it('does not retain a previous receipt when the route changes to an unsynced reward', async () => {
+    const view = render(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never} />);
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
+
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-2' } } as never} />);
+
+    expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('XP: 30 · Coins: 5')).toBeNull();
+  });
+
+  it('does not retain a previous receipt when the active household changes', async () => {
+    const route = { key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never;
+    const view = render(<CelebrationScreen navigation={navigation() as never} route={route} />);
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
+
+    mockActiveHouseholdId = 'house-2';
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen navigation={navigation() as never} route={route} />);
+
+    expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('XP: 30 · Coins: 5')).toBeNull();
   });
 
   it('shows waiting-to-sync and never predicts an award absent from the inbox', () => {
