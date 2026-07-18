@@ -161,6 +161,12 @@
         "displayName": "integration",
         "preset": "react-native",
         "testEnvironment": "node",
+        "setupFiles": [
+          "<rootDir>/tests/setup.ts"
+        ],
+        "setupFilesAfterEnv": [
+          "<rootDir>/tests/setup-after-env.ts"
+        ],
         "testMatch": [
           "<rootDir>/tests/integration/**/*.test.{ts,tsx}"
         ],
