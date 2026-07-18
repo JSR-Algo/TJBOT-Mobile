@@ -1,9 +1,18 @@
+import React from 'react';
 import axios from 'axios';
 import { execFileSync } from 'child_process';
 import { randomUUID } from 'crypto';
-import { resolve } from 'path';
+import { existsSync } from 'fs';
+import { dirname, join, parse, resolve } from 'path';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, waitFor } from '@testing-library/react-native';
 import client from '@/services/http/client';
 import { setTokens } from '@/services/http/tokens';
+import CelebrationScreen from '@/features/progress/screens/CelebrationScreen';
+import LessonSummaryScreen from '@/features/progress/screens/LessonSummaryScreen';
+import ParentRewardsScreen from '@/features/rewards/screens/ParentRewardsView';
+import LeaderboardScreen from '@/features/rewards/screens/LeaderboardView';
+import { setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
 import {
   acknowledgeRewardSeen,
   getRewardHistory,
@@ -17,11 +26,38 @@ import {
   PUBLIC_LEADERBOARD_KEYS,
 } from './rewards-live-privacy';
 
+let mockHouseholdContext = {
+  activeHousehold: undefined as { id: string } | undefined,
+  activeChild: undefined as { id: string; name: string } | undefined,
+  children: [] as { id: string; name: string }[],
+};
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => mockHouseholdContext,
+}));
+
+jest.mock('@/design-system/animations/useReduceMotion', () => ({
+  useReduceMotion: () => true,
+}));
+
 const apiUrl = process.env.TBOT_API_URL ?? 'http://127.0.0.1:3100/v1';
 const raw = axios.create({ baseURL: apiUrl, validateStatus: () => true });
 const postgresContainer = process.env.TBOT_REWARDS_POSTGRES_CONTAINER ?? 'tbot-rewards-e2e-pg';
+
+function findBackendRoot(start: string): string {
+  let current = start;
+  while (true) {
+    const candidate = join(current, 'tbot-backend');
+    if (existsSync(join(candidate, 'package.json'))) return candidate;
+    const parent = dirname(current);
+    if (parent === current || current === parse(current).root) break;
+    current = parent;
+  }
+  throw new Error(`Unable to locate sibling tbot-backend from ${start}`);
+}
+
 const backendRoot = process.env.TBOT_BACKEND_WORKTREE
-  ?? resolve(__dirname, '../../../../../tbot-backend/mobile-robot-rewards');
+  ?? findBackendRoot(resolve(__dirname, '../../..'));
 const backendPrivateKey = process.env.TBOT_BACKEND_PRIVATE_KEY
   ?? `${backendRoot}/keys/dev-private.pem`;
 const backendPrivateKeyPem = process.env.TBOT_BACKEND_PRIVATE_KEY_PEM;
@@ -58,6 +94,31 @@ interface Fixture extends Identity {
   sessionId: string;
   manifestChecksum: string;
 }
+
+function renderLive(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
+  });
+  const rendered = render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  const unmount = rendered.unmount;
+  return {
+    ...rendered,
+    queryClient,
+    unmount: () => {
+      unmount();
+      queryClient.clear();
+    },
+  };
+}
+
+const navigation = {
+  navigate: jest.fn(),
+  replace: jest.fn(),
+  goBack: jest.fn(),
+};
 
 function sqlLiteral(input: string): string {
   return `'${input.replaceAll("'", "''")}'`;
@@ -267,6 +328,12 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
     fixture = await seedFixture();
     client.defaults.baseURL = apiUrl;
     await setTokens(fixture.token, 'unused-live-refresh-token');
+    setRewardQueueScope(fixture.parentId, fixture.householdId);
+    mockHouseholdContext = {
+      activeHousehold: { id: fixture.householdId },
+      activeChild: { id: fixture.childId, name: 'Mai' },
+      children: [{ id: fixture.childId, name: 'Mai' }],
+    };
   }, 30_000);
 
   it('collapses device completion replays into one immutable reward on every mobile surface', async () => {
@@ -346,6 +413,87 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
       totals: { rewardCount: 1, xp: 109, coins: 10, refreshing: false },
       history: [receipt],
     });
+
+    const summary = renderLive(
+      <LessonSummaryScreen
+        navigation={navigation as never}
+        route={{
+          key: 'live-summary',
+          name: 'LessonSummaryScreen',
+          params: {
+            childId: fixture.childId,
+            deviceId: fixture.deviceId,
+            assignmentId: fixture.assignmentId,
+            sessionId: fixture.sessionId,
+          },
+        } as never}
+      />,
+    );
+    expect(await summary.findByText('Mai · TeeBot Sao')).toBeTruthy();
+    expect(summary.getByTestId(`reward-${rewardId}`)).toBeTruthy();
+    expect(summary.getByText('109 XP · 10 coins')).toBeTruthy();
+    summary.unmount();
+
+    const celebration = renderLive(
+      <CelebrationScreen
+        navigation={navigation as never}
+        route={{
+          key: 'live-celebration',
+          name: 'CelebrationScreen',
+          params: {
+            rewardId,
+            childId: fixture.childId,
+            deviceId: fixture.deviceId,
+            assignmentId: fixture.assignmentId,
+            sessionId: fixture.sessionId,
+          },
+        } as never}
+      />,
+    );
+    expect(await celebration.findByText('You did it!')).toBeTruthy();
+    expect(celebration.getByText('Mai · TeeBot Sao')).toBeTruthy();
+    expect(celebration.getByText('XP: 109 · Coins: 10')).toBeTruthy();
+    for (const badge of expectedBadges) expect(celebration.getByText(badge)).toBeTruthy();
+    await waitFor(async () => expect(await getRewardInbox()).toEqual({ count: 0, rewards: [] }));
+    await waitFor(() => {
+      expect(celebration.queryClient.isMutating()).toBe(0);
+      expect(celebration.queryClient.isFetching()).toBe(0);
+    });
+    celebration.unmount();
+
+    const seenAt = psql(
+      `SELECT seen_at FROM parent_reward_receipts
+        WHERE reward_id = ${sqlLiteral(rewardId)}
+          AND parent_id = ${sqlLiteral(fixture.parentId)};`,
+    );
+    expect(Number.isFinite(Date.parse(seenAt))).toBe(true);
+
+    const celebrationReplay = renderLive(
+      <CelebrationScreen
+        navigation={navigation as never}
+        route={{ key: 'live-celebration-replay', name: 'CelebrationScreen', params: { rewardId } } as never}
+      />,
+    );
+    expect(await celebrationReplay.findByText('Reward is waiting to sync')).toBeTruthy();
+    await waitFor(() => expect(celebrationReplay.queryClient.isFetching()).toBe(0));
+    celebrationReplay.unmount();
+    expect(psql(
+      `SELECT seen_at FROM parent_reward_receipts
+        WHERE reward_id = ${sqlLiteral(rewardId)}
+          AND parent_id = ${sqlLiteral(fixture.parentId)};`,
+    )).toBe(seenAt);
+
+    const parent = renderLive(
+      <ParentRewardsScreen
+        navigation={navigation as never}
+        route={{ key: 'live-parent-rewards', name: 'ParentRewardsScreen' } as never}
+      />,
+    );
+    expect(await parent.findByText('Mai · TeeBot Sao')).toBeTruthy();
+    expect(parent.getByTestId(`reward-${rewardId}`)).toBeTruthy();
+    expect(parent.getByText('109 XP')).toBeTruthy();
+    expect(parent.getByText('XP: 109 · Coins: 10')).toBeTruthy();
+    parent.unmount();
     expect(JSON.parse(psql(
       `SELECT json_build_object(
         'ledger', (SELECT COUNT(*)::int FROM lesson_reward_ledger
@@ -373,10 +521,8 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
       );`,
     ))).toEqual({ ledger: 1, lifecycle: 1, allTime: 1, weekly: 1, streak: 1, recipientReceipt: 1 });
 
-    const firstSeen = await acknowledgeRewardSeen(rewardId);
     const replayedSeen = await acknowledgeRewardSeen(rewardId);
-    expect(firstSeen).toEqual({ rewardId, seen: true, seenAt: expect.any(String) });
-    expect(replayedSeen).toEqual(firstSeen);
+    expect(replayedSeen).toEqual({ rewardId, seen: true, seenAt: new Date(seenAt).toISOString() });
     await expect(getRewardInbox()).resolves.toMatchObject({ count: 0, rewards: [] });
     const seenHistory = await getRewardHistory({ childId: fixture.childId, deviceId: fixture.deviceId });
     expect(seenHistory).toEqual(history);
@@ -425,6 +571,17 @@ describeLive('mobile rewards against the real backend and PostgreSQL', () => {
       });
       expectLeaderboardPrivacy(page, [fixture.email, fixture.foreign.email]);
     }
+
+    const leaderboard = renderLive(
+      <LeaderboardScreen
+        navigation={navigation as never}
+        route={{ key: 'live-leaderboard', name: 'LeaderboardScreen' } as never}
+      />,
+    );
+    expect(await leaderboard.findByText('Mai · TeeBot Sao')).toBeTruthy();
+    expect(leaderboard.getByText(maskedEmail)).toBeTruthy();
+    await waitFor(() => expect(JSON.stringify(leaderboard.toJSON())).not.toContain(fixture.email));
+    leaderboard.unmount();
 
     await setTokens(fixture.foreign.token, 'unused-live-refresh-token');
     const foreignWeekly = await getLeaderboard({ period: 'weekly', page: 1, pageSize: 20 });

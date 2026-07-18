@@ -1,7 +1,8 @@
 import { randomInt } from 'crypto';
 import { once } from 'events';
 import { createServer } from 'net';
-import { dirname, resolve } from 'path';
+import { existsSync } from 'fs';
+import { dirname, join, parse, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import {
   buildBackendEnvironment,
@@ -17,9 +18,21 @@ import {
 } from './_lib/rewards-live-process-lifecycle.mjs';
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+function findBackendRoot(start) {
+  let current = start;
+  while (true) {
+    const candidate = join(current, 'tbot-backend');
+    if (existsSync(join(candidate, 'package.json'))) return candidate;
+    const parent = dirname(current);
+    if (parent === current || current === parse(current).root) break;
+    current = parent;
+  }
+  throw new Error(`Unable to locate sibling tbot-backend from ${start}`);
+}
+
 const backendRoot = resolve(
   process.env.TBOT_BACKEND_WORKTREE
-    ?? resolve(mobileRoot, '../../tbot-backend/mobile-robot-rewards'),
+    ?? findBackendRoot(mobileRoot),
 );
 const containerName = `tbot-rewards-live-${process.pid}`;
 const postgresImage = process.env.TBOT_REWARDS_POSTGRES_IMAGE ?? 'postgres:16-alpine';
