@@ -291,7 +291,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   };
 
   return (
-    <DeviceShell title="Today's lesson" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+    <DeviceShell
+      title="Today's lesson"
+      screenTestID="sendToRobotScreen"
+      onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}
+    >
       <Text style={styles.intro}>
         Pick one lesson or assign the whole course to Robot.
       </Text>

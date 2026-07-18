@@ -208,7 +208,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     setActiveChildSaveFailed(false);
     try {
       const confirmed = await confirmActiveChild(nextChildId);
-      setActiveChild(confirmed.child_id);
+      setActiveChild(confirmed.active_child_id);
     } catch (error) {
       captureError(error);
       setActiveChildSaveFailed(true);
@@ -453,6 +453,14 @@ export default function ParentSettingsScreen({ navigation }: Props) {
 
       <PRowGroup header="Privacy" footer="Anonymous analytics help us improve lessons. No child names, audio, or personal data are ever collected.">
         <PRow icon="📊" label="Anonymous usage analytics" toggle={analytics} onToggle={onToggleAnalytics} />
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={t('Robot leaderboard privacy')}
+          onPress={() => navigation.navigate(ROUTES.MyRobotScreen)}
+          activeOpacity={0.7}
+        >
+          <PRow icon="🏆" label="Robot leaderboard privacy" chevron />
+        </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={t('Open Safety & Privacy details')}

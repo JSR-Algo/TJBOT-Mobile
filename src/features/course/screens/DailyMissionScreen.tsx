@@ -15,7 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DailyMissionScreen'>;
 
 export default function DailyMissionScreen({ navigation }: Props) {
   return (
-    <PageScroll>
+    <PageScroll testID="dailyMissionScreen">
       <PageHeader
         onBack={() => navigation.navigate(ROUTES.HomeHubScreen)}
         subtitle="Mission"
@@ -37,7 +37,13 @@ export default function DailyMissionScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingBottom={30}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.SendToRobotScreen)} color="#FF6F61">Continue Mission</PrimaryCTA>
+        <PrimaryCTA
+          testID="dailyMissionContinueCta"
+          onPress={() => navigation.navigate(ROUTES.SendToRobotScreen)}
+          color="#FF6F61"
+        >
+          Continue Mission
+        </PrimaryCTA>
       </Box>
     </PageScroll>
   );

@@ -143,6 +143,12 @@ describe('PairIntroScreen', () => {
 // PairIntro, offline Robot -> PairOffline) + back to DeviceOverview.
 // ===========================================================================
 describe('PairAddScreen', () => {
+  it('exposes a stable native route anchor for the pairing picker', () => {
+    const { utils } = renderAdd();
+
+    expect(utils.getByTestId('pairAddScreen')).toBeTruthy();
+  });
+
   it('renders without crashing and shows the shell title + the "on the Robot itself" intro', () => {
     const { utils } = renderAdd();
     expect(utils.queryByText('Add a Robot')).toBeTruthy();

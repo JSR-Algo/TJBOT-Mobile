@@ -50,6 +50,16 @@ beforeEach(() => {
 });
 
 describe('lesson production readiness entry points', () => {
+  it('exposes a stable native route anchor for the daily mission screen', () => {
+    const navigation = navigationFor();
+    const view = render(
+      <DailyMissionScreen navigation={navigation as never} route={routeFor('DailyMissionScreen')} />,
+    );
+
+    expect(view.getByTestId('dailyMissionScreen')).toBeTruthy();
+    expect(view.getByTestId('dailyMissionContinueCta')).toBeTruthy();
+  });
+
   it('routes home lesson-ready states to the real robot assignment flow', () => {
     const child = [{ id: 'child-1', name: 'Mina' }];
 

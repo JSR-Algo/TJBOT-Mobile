@@ -10,6 +10,7 @@ import {
   launchCleanApp,
   loginFromColdStart,
   openRoute,
+  openRouteToId,
   tapLabel,
   tapText,
   waitForText,
@@ -32,7 +33,7 @@ describe('device pairing: connect/reconnect entry flow', () => {
   });
 
   it('opens the mobile Robot connect and reconnect path without a blank or dead-end screen', async () => {
-    await openRoute('device/pair-add', 'Add a Robot');
+    await openRouteToId('device/pair-add', 'pairAddScreen');
     await tapLabel('Pair a new Robot');
     await waitForText('Power on your Robot');
     await tapText('My Robot is on');

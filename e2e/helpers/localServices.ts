@@ -28,6 +28,26 @@ export function apiV1Root(): string {
   return root.endsWith('/v1') ? root : `${root}/v1`;
 }
 
+export function backendBlacklistPatterns(root: string): string[] {
+  const url = new URL(root);
+  const defaultPort = url.protocol === 'http:' ? '80' : url.protocol === 'https:' ? '443' : '';
+  const port = url.port
+    ? `:${escapeRegex(url.port)}`
+    : defaultPort
+      ? `(?::${defaultPort})?`
+      : '';
+  const scheme = escapeRegex(url.protocol);
+  const hosts = ['127.0.0.1', 'localhost', '10.0.2.2'].includes(url.hostname)
+    ? ['127.0.0.1', 'localhost', '10.0.2.2']
+    : [url.hostname];
+
+  return hosts.map(host => `^${scheme}//${escapeRegex(host)}${port}(?:[/?#]|$)`);
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function aiRoot(): string {
   return (process.env.E2E_LOCAL_AI_URL ?? DEFAULT_AI_ROOT).replace(/\/+$/, '');
 }

@@ -6,21 +6,25 @@ import { setAppLanguage } from '@/services/i18n/i18n';
 
 const mockInbox = jest.fn();
 const mockMutate = jest.fn();
+const mockIsRewardSeenQueued = jest.fn();
 let mockReduceMotion = true;
 let mockQueuedSeen = false;
-jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeHousehold: { id: 'house-1' } }) }));
+let mockAccountId: string | undefined = 'account-1';
+let mockHouseholdId: string | undefined = 'house-1';
+jest.mock('@/contexts/AuthContext', () => ({ useOptionalAuth: () => ({ user: mockAccountId ? { id: mockAccountId } : null }) }));
+jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: () => ({ activeHousehold: mockHouseholdId ? { id: mockHouseholdId } : undefined }) }));
 jest.mock('@/features/rewards/hooks/useRewards', () => ({
   useRewardInboxQuery: () => mockInbox(),
   useAcknowledgeRewardMutation: () => ({ mutate: mockMutate, isPending: false, isError: false }),
 }));
 jest.mock('@/design-system/animations/useReduceMotion', () => ({ useReduceMotion: () => mockReduceMotion }));
-jest.mock('@/features/rewards/offline/rewardSeenQueue', () => ({ isRewardSeenQueued: () => Promise.resolve(mockQueuedSeen) }));
+jest.mock('@/features/rewards/offline/rewardSeenQueue', () => ({ isRewardSeenQueued: (rewardId: string, scope?: unknown) => mockIsRewardSeenQueued(rewardId, scope) }));
 
 const reward = { rewardId: 'reward-1', assignmentId: 'assignment-1', sessionId: 'session-1', child: { id: 'child-1', displayName: 'Mai' }, robot: { id: 'robot-1', displayName: 'Tee' }, xp: 30, coins: 5, badges: ['brave-speaker'], reason: 'lesson_completion', policyVersion: 'v1', streak: { currentDays: 3, bestDays: 5 }, awardedAt: '2026-07-13T01:00:00.000Z' };
 const navigation = () => ({ navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() });
 
 describe('persisted reward surfaces', () => {
-  beforeEach(() => { jest.clearAllMocks(); mockReduceMotion = true; mockQueuedSeen = false; mockInbox.mockReturnValue({ data: { rewards: [reward], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() }); });
+  beforeEach(() => { jest.clearAllMocks(); mockAccountId = 'account-1'; mockHouseholdId = 'house-1'; mockReduceMotion = true; mockQueuedSeen = false; mockIsRewardSeenQueued.mockImplementation(() => Promise.resolve(mockQueuedSeen)); mockInbox.mockReturnValue({ data: { rewards: [reward], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() }); });
   afterEach(async () => { await act(async () => { await setAppLanguage('en'); }); });
 
   it('renders XP, coins, badge, streak, child, robot, and reason from the persisted inbox', async () => {
@@ -45,6 +49,114 @@ describe('persisted reward surfaces', () => {
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     expect(view.UNSAFE_getByProps({ testID: 'celebration-static-stars' }).props.importantForAccessibility).toBe('no-hide-descendants');
     expect(screen.queryByTestId('celebration-confetti')).toBeNull();
+  });
+
+  it('keeps the persisted reward visible after acknowledgement removes it from the inbox', async () => {
+    const props = { navigation: navigation() as never, route: { key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never };
+    const view = render(<CelebrationScreen {...props} />);
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen {...props} />);
+
+    expect(screen.getByText('XP: 30 · Coins: 5')).toBeTruthy();
+    expect(screen.queryByText('Reward is waiting to sync')).toBeNull();
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reuse the latched reward when the mounted route requests a different reward', async () => {
+    const view = render(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never} />);
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+
+    mockQueuedSeen = true;
+    mockInbox.mockReturnValue({ data: { rewards: [{ ...reward, rewardId: 'reward-2', xp: 40 }], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-2' } } as never} />);
+
+    expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('XP: 30 · Coins: 5')).toBeNull();
+    expect(screen.queryByText('XP: 40 · Coins: 5')).toBeNull();
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('acknowledges each reward only once when one mounted route moves from A to B and back to A', async () => {
+    const route = (rewardId: string) => ({ key: 'c', name: 'CelebrationScreen', params: { rewardId } } as never);
+    const view = render(<CelebrationScreen navigation={navigation() as never} route={route('reward-1')} />);
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+
+    mockInbox.mockReturnValue({ data: { rewards: [{ ...reward, rewardId: 'reward-2', xp: 40 }], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen navigation={navigation() as never} route={route('reward-2')} />);
+    expect(await screen.findByText('XP: 40 · Coins: 5')).toBeTruthy();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(2));
+
+    mockInbox.mockReturnValue({ data: { rewards: [reward], count: 1 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen navigation={navigation() as never} route={route('reward-1')} />);
+    expect(await screen.findByText('XP: 30 · Coins: 5')).toBeTruthy();
+    expect(mockMutate).toHaveBeenCalledTimes(2);
+    expect(mockMutate).toHaveBeenNthCalledWith(1, 'reward-1');
+    expect(mockMutate).toHaveBeenNthCalledWith(2, 'reward-2');
+  });
+
+  it('clears a latched reward with the same ID when the household changes or logs out', async () => {
+    const props = { navigation: navigation() as never, route: { key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never };
+    const view = render(<CelebrationScreen {...props} />);
+    expect(await screen.findByText('Mai · Tee')).toBeTruthy();
+
+    mockHouseholdId = 'house-2';
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen {...props} />);
+    expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('Mai · Tee')).toBeNull();
+
+    mockHouseholdId = undefined;
+    view.rerender(<CelebrationScreen {...props} />);
+    expect(screen.getByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('Mai · Tee')).toBeNull();
+  });
+
+  it('treats the same household and reward IDs as a new scope after an account switch', async () => {
+    const props = { navigation: navigation() as never, route: { key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never };
+    const view = render(<CelebrationScreen {...props} />);
+    expect(await screen.findByText('Mai · Tee')).toBeTruthy();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+
+    mockAccountId = 'account-2';
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen {...props} />);
+
+    expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('Mai · Tee')).toBeNull();
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a queued-seen lookup that resolves after switching households', async () => {
+    let resolveOldLookup: (queued: boolean) => void = () => undefined;
+    const oldLookup = new Promise<boolean>(resolve => { resolveOldLookup = resolve; });
+    mockIsRewardSeenQueued.mockImplementationOnce(() => oldLookup).mockResolvedValueOnce(false);
+    const props = { navigation: navigation() as never, route: { key: 'c', name: 'CelebrationScreen', params: { rewardId: 'reward-1' } } as never };
+    const view = render(<CelebrationScreen {...props} />);
+    expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
+
+    mockHouseholdId = 'house-2';
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    view.rerender(<CelebrationScreen {...props} />);
+    await act(async () => { resolveOldLookup(false); await oldLookup; });
+
+    expect(screen.getByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText('Mai · Tee')).toBeNull();
+    expect(mockMutate).not.toHaveBeenCalled();
+    expect(mockIsRewardSeenQueued).toHaveBeenCalledTimes(2);
+    expect(mockIsRewardSeenQueued).toHaveBeenNthCalledWith(2, 'reward-1', { accountId: 'account-1', householdScope: 'house-2' });
+  });
+
+  it('shows waiting-to-sync when the requested celebration reward is absent from the inbox', async () => {
+    mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    render(<CelebrationScreen navigation={navigation() as never} route={{ key: 'c', name: 'CelebrationScreen', params: { rewardId: 'missing-reward' } } as never} />);
+    expect(await screen.findByText('Reward is waiting to sync')).toBeTruthy();
+    expect(screen.queryByText(/XP:/)).toBeNull();
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 
   it('shows waiting-to-sync and never predicts an award absent from the inbox', () => {

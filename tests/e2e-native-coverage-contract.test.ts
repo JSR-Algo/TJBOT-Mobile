@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 const root = join(__dirname, '..');
@@ -139,6 +139,9 @@ describe('native Detox E2E coverage contract', () => {
     expect(detoxConfig).toContain('process.env.TBOT_AI_URL = METRO_AI_URL');
     expect(detoxConfig.indexOf('process.env.TBOT_API_URL = METRO_API_URL')).toBeLessThan(detoxConfig.indexOf("const metroConfig = require('./metro.config.js')"));
     expect(detoxConfig).toContain('-Pe2eBundleDebug=true');
+    expect(detoxConfig).toContain('./gradlew :app:assembleDebug :app:assembleAndroidTest');
+    expect(detoxConfig).not.toContain('./gradlew assembleDebug assembleAndroidTest');
+    expect(detoxConfig).toContain('FORCE_BUNDLING=1');
     expect(detoxConfig).toContain('generic/platform=iOS Simulator');
     expect(packageJson).toContain('"detox:build:android": "node scripts/runtime/mobile-run.mjs detox-build-android"');
     expect(packageJson).toContain('"detox:test:android": "node scripts/runtime/mobile-run.mjs detox-test-android"');
@@ -158,6 +161,30 @@ describe('native Detox E2E coverage contract', () => {
     expect(androidBuild).toContain('androidTestImplementation("androidx.test:runner:');
     expect(androidBuild).toContain('androidTestImplementation("junit:junit:');
     expect(androidBuild).toContain('testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"');
+  });
+
+  it('embeds JavaScript in Android Detox debug APKs without requiring Metro', () => {
+    const detoxConfig = read('.detoxrc.js');
+    const androidBuild = read('android/app/build.gradle');
+
+    expect(detoxConfig).toContain('-Pe2eBundleDebug=true');
+    expect(androidBuild).toContain("def e2eBundleDebug = (findProperty('e2eBundleDebug') ?: false).toBoolean()");
+    expect(androidBuild).toContain('debuggableVariants = e2eBundleDebug ? [] : ["debug"]');
+  });
+
+  it('patches Expo CLI to keep the streams polyfill out of native bundles', () => {
+    const packageJson = read('package.json');
+    const packageManifest = JSON.parse(packageJson);
+    const patchPath = join(root, 'patches/@expo+cli+55.0.21.patch');
+
+    expect(packageJson).toContain('"postinstall": "patch-package"');
+    expect(packageManifest.dependencies?.['patch-package']).toBe('8.0.1');
+    expect(packageManifest.devDependencies?.['patch-package']).toBeUndefined();
+    expect(existsSync(patchPath)).toBe(true);
+
+    const patch = read('patches/@expo+cli+55.0.21.patch');
+    expect(patch).toContain("-            require.resolve('expo/virtual/streams.js')");
+    expect(patch).toContain('+            ...virtualModulesPolyfills');
   });
 
   it('keeps iOS Detox builds signed with a Keychain access group for SecureStore', () => {
@@ -205,7 +232,7 @@ describe('native Detox E2E coverage contract', () => {
       'completes onboarding',
       'navigates every protected tab',
       'device/device-home',
-      'lesson-session/lesson-ready',
+      'course-library/send-to-robot',
       'parent/parent-summary',
       'purchase/purchase-intro',
       'fallback/network-error',
@@ -215,5 +242,10 @@ describe('native Detox E2E coverage contract', () => {
     ]) {
       expect(moduleMatrix).toContain(requiredText);
     }
+
+    expect(moduleMatrix).not.toContain('lesson-session/lesson-ready');
+    expect(moduleMatrix).toContain("openRouteToId('course/daily-mission', 'dailyMissionScreen')");
+    expect(moduleMatrix).toContain("openRouteToId('course-library/send-to-robot', 'sendToRobotScreen')");
+    expect(moduleMatrix).toContain("tapIdAfterScroll('dailyMissionContinueCta', 'dailyMissionScreen')");
   });
 });

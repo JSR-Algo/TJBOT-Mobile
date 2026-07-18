@@ -236,7 +236,7 @@ describe('Parent settings and gate', () => {
       parent_career: dto.parent_career ?? 'engineer',
     }));
     mockUpdateChildDisplayName.mockResolvedValue({ id: 'child-1', displayName: 'Bong' });
-    mockSetActiveChild.mockResolvedValue({ child_id: 'child-2' });
+    mockSetActiveChild.mockResolvedValue({ active_child_id: 'child-2' });
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],
       subscriptionStatus: 'none',
@@ -364,6 +364,18 @@ describe('Parent settings and gate', () => {
     fireEvent.press(getByText('Account privacy'));
 
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
+  });
+
+  it.each([
+    { locale: 'en' as const, label: 'Robot leaderboard privacy' },
+    { locale: 'vi' as const, label: 'Quyền riêng tư bảng xếp hạng Robot' },
+  ])('opens robot leaderboard privacy from settings in $locale', async ({ locale, label }) => {
+    await setAppLanguage(locale);
+    const screen = await renderParentSettings();
+
+    fireEvent.press(screen.getByRole('button', { name: label }));
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.MyRobotScreen);
   });
 
   it('lets parents allow AI voice lessons from settings so Robot leaves voice setup block', async () => {

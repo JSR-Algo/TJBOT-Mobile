@@ -88,12 +88,13 @@ describe('households child profile API', () => {
     mockedClient.put.mockResolvedValueOnce({ data: { data: { id: 'child-1', name: 'Fox friend' } } });
     mockedClient.post.mockResolvedValueOnce({ data: { data: { id: 'child-1', status: 'archived' } } });
     mockedClient.patch.mockResolvedValueOnce({ data: { data: { id: 'child-1', status: 'scheduled_for_deletion' } } });
-    mockedClient.post.mockResolvedValueOnce({ data: { data: { child_id: 'child-1' } } });
+    mockedClient.post.mockResolvedValueOnce({ data: { data: { active_child_id: 'child-1' } } });
 
     await updateChild('household-1', 'child-1', { display_name: 'Fox friend' });
     await archiveChild('child-1');
     await deleteChild('child-1');
-    await setActiveChild('child-1');
+    const activeChild: { active_child_id: string } = await setActiveChild('child-1');
+    expect(activeChild).toEqual({ active_child_id: 'child-1' });
 
     expect(mockedClient.put).toHaveBeenCalledWith('/households/household-1/children/child-1', { display_name: 'Fox friend' });
     expect(mockedClient.post).toHaveBeenCalledWith('/children/child-1/archive');

@@ -18,9 +18,9 @@ export const rewardKeys = {
   preference: (accountId: string, householdScope: string, deviceId?: string) => [...rewardKeys.scope(accountId, householdScope), 'leaderboard-preference', deviceId] as const,
 };
 
-function scope(householdScope: string): { accountId: string; householdScope: string } {
+function scope(householdScope: string, accountId?: string | null): { accountId: string; householdScope: string } {
   const active = getRewardQueueScope();
-  return { accountId: active.accountId, householdScope };
+  return { accountId: accountId === undefined ? active.accountId : accountId?.trim() || 'anonymous', householdScope };
 }
 
 export function shouldQueueSeenAcknowledgement(error: unknown): boolean {
@@ -42,9 +42,9 @@ export function useRewardTotalsQuery(householdScope: string, childId?: string, d
   const current = scope(householdScope);
   return useQuery({ queryKey: rewardKeys.totals(current.accountId, current.householdScope, childId, deviceId), queryFn: async () => (await getRewardHistory({ childId, deviceId })).totals, enabled: Boolean(householdScope) });
 }
-export function useRewardInboxQuery(householdScope: string): UseQueryResult<RewardInbox, Error> {
-  const current = scope(householdScope);
-  return useQuery({ queryKey: rewardKeys.inbox(current.accountId, current.householdScope), queryFn: () => getRewardInbox(), enabled: Boolean(householdScope) });
+export function useRewardInboxQuery(householdScope: string, accountId?: string | null): UseQueryResult<RewardInbox, Error> {
+  const current = scope(householdScope, accountId);
+  return useQuery({ queryKey: rewardKeys.inbox(current.accountId, current.householdScope), queryFn: () => getRewardInbox(), enabled: Boolean(householdScope) && accountId !== null });
 }
 export function useLeaderboardQuery(householdScope: string, period: LeaderboardPeriod, page = 1, pageSize = 25): UseQueryResult<LeaderboardPage, Error> {
   const current = scope(householdScope);
@@ -54,9 +54,16 @@ export function useLeaderboardPreferenceMutation(householdScope: string, deviceI
   const queryClient = useQueryClient(); const current = scope(householdScope);
   return useMutation({ mutationFn: (optedIn: boolean) => updateLeaderboardPreference(deviceId ?? '', optedIn), onSuccess: async () => queryClient.invalidateQueries({ queryKey: rewardKeys.scope(current.accountId, current.householdScope) }) });
 }
-export function useAcknowledgeRewardMutation(householdScope: string) {
-  const queryClient = useQueryClient(); const current = scope(householdScope);
-  return useMutation({ mutationFn: acknowledgeRewardSeen, onError: async (error, rewardId) => { if (shouldQueueSeenAcknowledgement(error)) await enqueueRewardSeen(rewardId); }, onSuccess: async () => queryClient.invalidateQueries({ queryKey: rewardKeys.scope(current.accountId, current.householdScope) }) });
+export function useAcknowledgeRewardMutation(householdScope: string, accountId?: string | null) {
+  const queryClient = useQueryClient(); const current = scope(householdScope, accountId);
+  return useMutation({
+    mutationFn: acknowledgeRewardSeen,
+    onMutate: () => current,
+    onError: async (error, rewardId, invocationScope) => {
+      if (shouldQueueSeenAcknowledgement(error)) await enqueueRewardSeen(rewardId, invocationScope);
+    },
+    onSuccess: async (_result, _rewardId, invocationScope) => queryClient.invalidateQueries({ queryKey: rewardKeys.scope(invocationScope.accountId, invocationScope.householdScope) }),
+  });
 }
 export function useUpdateChildDisplayNameMutation(householdScope: string, childId?: string) {
   const queryClient = useQueryClient(); const current = scope(householdScope);
