@@ -32,7 +32,7 @@
 
 ## UC-DP06
 
-- **validation**: All 4 digits must be entered and must match Robot's display before the CTA enables.
+- **validation**: All 6 digits must be entered and must match Robot's display before the CTA enables.
 - **error**: Wrong code must keep the form populated and offer a retry with reasoning copy.
 - **timeout**: Robot's displayed code must rotate after a bounded interval; UI must invalidate stale entries.
 

@@ -12,7 +12,7 @@ After the user submits wifi credentials, the app enters `dv_pair_connecting` whi
 - `dv_pair_wifi_pw` → `dv_pair_failed`: wifi auth fail detected before robot even starts connecting (E-PROV-002).
 - `dv_pair_connecting` → `dv_pair_failed`: BLE timeout (30s, E-PROV-001) or wifi join failed (E-PROV-003).
 
-From `dv_pair_failed` the user can retry from scan or give up.
+From `dv_pair_failed` the user can retry from scan, re-enter the Wi-Fi password with the selected SSID preserved, restart the full pairing checklist, or give up.
 
 ## CLAIM_PENDING
 
@@ -26,7 +26,7 @@ If the phone loses network before the claim completes, the flow pauses at `dv_pa
 
 | State | Scenario | Exit |
 |---|---|---|
-| `dv_pair_failed` | BLE timeout / wifi auth fail / server claim reject | → `dv_pair_intro` (retry full) or `dv_pair_search` (retry scan) |
+| `dv_pair_failed` | BLE timeout / wifi auth fail / server claim reject / invalid display code | → `dv_pair_intro` (retry full), `dv_pair_search` (retry scan), or `dv_pair_wifi_pw` (retry password) |
 | `dv_pair_offline` | Phone offline pre-claim | → `dv_pair_search` on restore; cancel → exit |
 | `dv_pair_connecting` | 30s BLE provisioning timeout | → `dv_pair_failed` (E-PROV-001) |
 | `dv_pair_wifi_pw` | Wifi auth fail (wrong password) | → `dv_pair_failed` (E-PROV-002) |

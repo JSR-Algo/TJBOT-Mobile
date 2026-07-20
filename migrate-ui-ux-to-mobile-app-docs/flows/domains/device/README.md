@@ -24,7 +24,7 @@ Once paired, the user reaches `dv_home` as the robot's dashboard. From there:
 | State | Templates | Trigger |
 |---|---|---|
 | `dv_pair_connecting` | timeout | Pairing handshake takes too long; user shown spinner with cancel option. |
-| `dv_pair_failed` | error, retry | BLE pairing rejected or code mismatch; user can retry or abort. |
+| `dv_pair_failed` | error, retry | BLE pairing rejected, display code invalid, or Wi-Fi auth failed; user can retry scan, retry password, restart, or abort. |
 | `dv_pair_offline` | error, retry | Robot powered on but not reachable over network; user prompted to check Wi-Fi. |
 | `dv_lost` | timeout | "Find my Robot" ping times out; user advised to check power/proximity. |
 | `dv_firmware` | timeout | OTA update stalls; user warned not to power off robot. |

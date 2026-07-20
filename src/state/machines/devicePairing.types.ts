@@ -63,6 +63,7 @@ export type DevicePairingEvent =
   | { type: 'SERVER_REJECT'; errorCode: ProvisioningErrorCode }
   | { type: 'RENAME_SUBMITTED'; name: string }
   | { type: 'RETRY_SCAN' }
+  | { type: 'RETRY_WIFI_PASSWORD' }
   | { type: 'RETRY_FULL' }
   | { type: 'GIVE_UP' }
   | { type: 'CANCEL' };

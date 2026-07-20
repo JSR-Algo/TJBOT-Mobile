@@ -19,10 +19,10 @@ describe('DevicePairing machine', () => {
       actor.send({ type: 'TAP_START_SCAN' });
       expect(actor.getSnapshot().value).toBe('SCANNING');
 
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-001', displayCode: '1234' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-001', displayCode: '123456' });
       expect(actor.getSnapshot().value).toBe('DEVICE_FOUND');
       expect(actor.getSnapshot().context.deviceSerial).toBe('TJBot-001');
-      expect(actor.getSnapshot().context.displayCode).toBe('1234');
+      expect(actor.getSnapshot().context.displayCode).toBe('123456');
 
       actor.send({ type: 'USER_MATCHES_CODE' });
       // CODE_CONFIRMED auto-transitions to AWAITING_WIFI
@@ -76,7 +76,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-002', displayCode: '5678' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-002', displayCode: '567890' });
       expect(actor.getSnapshot().value).toBe('DEVICE_FOUND');
 
       actor.send({ type: 'CODE_DECLINE' });
@@ -93,7 +93,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-003', displayCode: '0000' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-003', displayCode: '000000' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -114,7 +114,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-004', displayCode: '9999' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-004', displayCode: '999999' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -131,7 +131,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-005', displayCode: '1111' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-005', displayCode: '111111' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -151,7 +151,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-006', displayCode: '2222' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-006', displayCode: '222222' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });
@@ -174,6 +174,31 @@ describe('DevicePairing machine', () => {
       expect(actor.getSnapshot().value).toBe('AWAITING_ROBOT');
       expect(actor.getSnapshot().context.errorCode).toBeNull();
     });
+
+    it('RETRY_WIFI_PASSWORD → AWAITING_WIFI_PW, SSID preserved, password wiped', () => {
+      const actor = failedActor();
+      expect(actor.getSnapshot().context.ssid).toBe('Net');
+      expect(actor.getSnapshot().context.password).toBeNull();
+
+      actor.send({ type: 'RETRY_WIFI_PASSWORD' });
+
+      expect(actor.getSnapshot().value).toBe('AWAITING_WIFI_PW');
+      expect(actor.getSnapshot().context.errorCode).toBeNull();
+      expect(actor.getSnapshot().context.ssid).toBe('Net');
+      expect(actor.getSnapshot().context.password).toBeNull();
+    });
+  });
+
+  describe('6-digit verification code', () => {
+    it('rejects a short display code as a provisioning error', () => {
+      const actor = makeActor();
+      actor.send({ type: 'TAP_ADD' });
+      actor.send({ type: 'TAP_START_SCAN' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-009', displayCode: '1234' });
+
+      expect(actor.getSnapshot().value).toBe('PAIRING_FAILED');
+      expect(actor.getSnapshot().context.errorCode).toBe('E-PROV-003');
+    });
   });
 
   describe('invalid transitions (plan §5 forbidden)', () => {
@@ -189,7 +214,7 @@ describe('DevicePairing machine', () => {
       const actor = makeActor();
       actor.send({ type: 'TAP_ADD' });
       actor.send({ type: 'TAP_START_SCAN' });
-      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-007', displayCode: '3333' });
+      actor.send({ type: 'BLE_ADVERT_MATCH', serial: 'TJBot-007', displayCode: '333333' });
       actor.send({ type: 'USER_MATCHES_CODE' });
       actor.send({ type: 'SSID_PICKED', ssid: 'Net' });
       actor.send({ type: 'PW_SUBMITTED', password: 'password1' });

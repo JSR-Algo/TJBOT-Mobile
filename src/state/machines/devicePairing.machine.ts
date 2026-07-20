@@ -86,6 +86,7 @@ export const devicePairingMachine = setup({
   },
   guards: {
     blePermGranted: () => true, // replaced by real perm check at integration time
+    hasSixDigitCode: (_, params: { displayCode: string }) => /^\d{6}$/.test(params.displayCode),
   },
 }).createMachine({
   id: 'devicePairing',
@@ -123,13 +124,26 @@ export const devicePairingMachine = setup({
         [SCANNING_TIMEOUT_MS]: 'SCAN_TIMEOUT',
       },
       on: {
-        BLE_ADVERT_MATCH: {
-          target: 'DEVICE_FOUND',
-          actions: {
-            type: 'assignDeviceFound',
-            params: ({ event }) => ({ serial: event.serial, displayCode: event.displayCode }),
+        BLE_ADVERT_MATCH: [
+          {
+            target: 'DEVICE_FOUND',
+            guard: {
+              type: 'hasSixDigitCode',
+              params: ({ event }) => ({ displayCode: event.displayCode }),
+            },
+            actions: {
+              type: 'assignDeviceFound',
+              params: ({ event }) => ({ serial: event.serial, displayCode: event.displayCode }),
+            },
           },
-        },
+          {
+            target: 'PAIRING_FAILED',
+            actions: {
+              type: 'assignErrorCode',
+              params: { errorCode: 'E-PROV-003' as ProvisioningErrorCode },
+            },
+          },
+        ],
         CANCEL: 'AWAITING_ROBOT',
       },
     },
@@ -295,6 +309,10 @@ export const devicePairingMachine = setup({
 
     PAIRING_FAILED: {
       on: {
+        RETRY_WIFI_PASSWORD: {
+          target: 'AWAITING_WIFI_PW',
+          actions: 'clearErrorCode',
+        },
         RETRY_FULL: {
           target: 'AWAITING_ROBOT',
           actions: 'clearErrorCode',

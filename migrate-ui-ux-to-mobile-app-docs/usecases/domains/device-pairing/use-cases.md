@@ -70,12 +70,12 @@
 
 ## UC-DP06 — Confirm Pairing Code
 
-- **Goal:** Parent enters the 4-digit code shown on Robot's LCD to prove physical possession (anti-theft / wrong-device safeguard).
+- **Goal:** Parent enters the 6-digit code shown on Robot's LCD to prove physical possession (anti-theft / wrong-device safeguard).
 - **Trigger:** Navigation arrived at `dv_pair_code` from UC-DP05.
-- **Preconditions:** Robot is showing a 4-digit code on its face; UC-DP05 selected this Robot.
+- **Preconditions:** Robot is showing a 6-digit code on its face; UC-DP05 selected this Robot.
 - **Main Flow:**
-  1. `PairCodePage` shows the on-Robot code preview and four digit input slots (`PairCodeScreen.jsx:7-30`).
-  2. Parent reads the 4 digits off Robot and types them (prototype prefills `4721`).
+  1. `PairCodePage` shows the on-Robot code preview and a 6-digit code input (`PairCodeScreen.jsx:7-30`).
+  2. Parent reads the 6 digits off Robot and types them.
   3. Parent taps the primary CTA → navigation transitions to `dv_pair_wifi` (UC-DP07) per `UC_DP_CODE ..> UC_DP_WIFI`.
 - **Postconditions:** Navigation lands on `dv_pair_wifi`; pairing-code-confirmed state is set in flight.
 - **Error Flow:**
