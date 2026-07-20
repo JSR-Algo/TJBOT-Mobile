@@ -13,7 +13,7 @@
 | **Lane A** | `auth`, `onboarding` | 13 + 5 = **18** | 2 use-cases.md + 2 backend-mapping.md + 2 edge-cases.md + 0–3 hot |
 | **Lane B** | `kid-hub`, `lesson-session`, `course-browse` | 8 + 22 + 8 = **38** | 3 + 3 + 3 + 0–5 hot |
 | **Lane C** | `progress`, `parent-gate`, `parent-summary`, `purchase` | 5 + 1 + 6 + 23 = **35** | 4 + 4 + 4 + 0–4 hot |
-| **Lane D** | `device-pairing`, `device-mgmt` (KD5), `robot-mgmt`, `course-library`, `fallback-shell`, `mobile-shell` (P5) | 14 + 6 + 12 + 12 + 8 + 1 = **53** | 5 + 5 + 5 + 0–5 hot + 1 net-new `device-mgmt.usecase.puml` |
+| **Lane D** | `device-pairing`, `device-mgmt` (KD5), `rotjtjbot-mgmt`, `course-library`, `fallback-shell`, `mobile-shell` (P5) | 14 + 6 + 12 + 12 + 8 + 1 = **53** | 5 + 5 + 5 + 0–5 hot + 1 net-new `device-mgmt.usecase.puml` |
 | **Lane Z** | `actors/`, `reference/`, `templates/`, `diagrams/`, `ADR`, `scripts/`, integration | — | 11 actors + 7 reference docs (+backlog +alias-overrides) + 3 templates + 1 ADR + 7 check scripts ≈ **~30 files** |
 
 **Coverage check:** 18 + 38 + 35 + 53 = **144 ✓** (matches AC1; expanded P3 + P5 from 129 baseline).

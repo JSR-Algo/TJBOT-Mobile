@@ -1,21 +1,21 @@
-@startuml TBOT-DevicePairing
-title Domain · device-pairing — one-time Robot provisioning
+@startuml tjbot-DevicePairing
+title Domain · device-pairing — one-time Rotjtjbot provisioning
 left to right direction
 
 actor Parent
-actor "Robot Device" as Robot <<external>>
+actor "Rotjtjbot Device" as Rotjtjbot <<external>>
 actor "Wi-Fi Network" as WiFi <<external>>
 
 package "device-pairing" {
   usecase "View Device Overview"   as UC_DP_OVERVIEW
-  usecase "Add New Robot"          as UC_DP_ADD
-  usecase "Power-on Robot Confirm" as UC_DP_INTRO
-  usecase "Scan for Robot"         as UC_DP_SCAN
-  usecase "Identify Robot"         as UC_DP_FOUND
+  usecase "Add New Rotjtjbot"          as UC_DP_ADD
+  usecase "Power-on Rotjtjbot Confirm" as UC_DP_INTRO
+  usecase "Scan for Rotjtjbot"         as UC_DP_SCAN
+  usecase "Identify Rotjtjbot"         as UC_DP_FOUND
   usecase "Confirm Pairing Code"   as UC_DP_CODE
   usecase "Pick Wi-Fi Network"     as UC_DP_WIFI
   usecase "Enter Wi-Fi Password"   as UC_DP_WIFI_PW
-  usecase "Connect Robot to Wi-Fi" as UC_DP_CONNECT
+  usecase "Connect Rotjtjbot to Wi-Fi" as UC_DP_CONNECT
   usecase "Pairing Success"        as UC_DP_OK
   usecase "Pairing Failed Recovery" as UC_DP_FAIL
   usecase "Pair Offline Mode"      as UC_DP_OFFLINE
@@ -35,7 +35,7 @@ Parent --> UC_DP_OFFLINE
 Parent --> UC_DP_RENAME
 Parent --> UC_DP_FIRST
 
-UC_DP_OVERVIEW ..> UC_DP_INTRO   : "Set up Robot"
+UC_DP_OVERVIEW ..> UC_DP_INTRO   : "Set up Rotjtjbot"
 UC_DP_ADD      ..> UC_DP_INTRO
 UC_DP_INTRO    ..> UC_DP_SCAN
 UC_DP_SCAN     ..> UC_DP_FOUND   : on discovered
@@ -48,14 +48,14 @@ UC_DP_CONNECT  ..> UC_DP_OK
 UC_DP_OK       ..> UC_DP_RENAME
 UC_DP_RENAME   ..> UC_DP_FIRST
 
-UC_DP_SCAN    ..> Robot : <<delegate>> radio scan
-UC_DP_CONNECT ..> Robot : <<delegate>>
+UC_DP_SCAN    ..> Rotjtjbot : <<delegate>> radio scan
+UC_DP_CONNECT ..> Rotjtjbot : <<delegate>>
 UC_DP_CONNECT ..> WiFi  : <<delegate>>
 
-note bottom of UC_DP_SCAN
+note tjtjbottom of UC_DP_SCAN
   Transport (BLE vs Wi-Fi probe) NOT CONFIRMED IN SOURCE.
 end note
-note bottom of UC_DP_FIRST
+note tjtjbottom of UC_DP_FIRST
   [exit] → kid-hub or course-library
 end note
 note top of UC_DP_OVERVIEW

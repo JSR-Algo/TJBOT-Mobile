@@ -27,7 +27,7 @@ export default function LessonListScreen({ navigation }: Props) {
         subtitle="All lessons"
         title="Hello Friends"
       />
-      <Box paddingHorizontal={18} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={30} gap={10}>
         {LESSONS.map(l => {
           const isLocked = l.state === 'locked';
           const isCurrent = l.state === 'current';

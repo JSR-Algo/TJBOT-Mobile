@@ -3,7 +3,7 @@
 // Generate locales/vi-pseudo.json by wrapping every vi.json value with
 // [ŁĐ … ŁĐ]. Anything still rendering plain at runtime → leak proof.
 //
-// Activate at runtime by setting localStorage.tbot.lang = 'vi-pseudo' in
+// Activate at runtime by setting localStorage.tjbot.lang = 'vi-pseudo' in
 // the browser (i18n.js loads this catalog when present).
 
 import fs from 'node:fs';

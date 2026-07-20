@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://tbot.local/schemas/domain-meta.schema.json",
+  "$id": "https://tjbot.local/schemas/domain-meta.schema.json",
   "title": "Domain Meta",
   "description": "Per-feature metadata: src/features/<domain>/domain.meta.json. Owned by the lane that owns <domain>.",
   "type": "object",

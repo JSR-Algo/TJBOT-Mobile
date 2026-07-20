@@ -263,7 +263,7 @@ const HYPERTABLE_CANDIDATES = {
   outbox_events:     { column: 'created_at', interval: '1d' },
 };
 
-// Parse table-level Note that carries the hypertable annotation. Accepts both
+// Parse table-level Note that carries the hypertable annotation. Accepts tjtjboth
 // space-separated (`@timescaledb-hypertable column=x interval=1d`) and
 // parenthesised (`@timescaledb-hypertable(column=x, interval='1h')`) forms.
 function parseHypertableNote(notes) {

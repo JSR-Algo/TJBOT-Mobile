@@ -1,15 +1,15 @@
-package com.tbotmobile
+package com.tjbotmobile
 
 import android.app.Application
 import com.facebook.react.PackageList
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
-import com.tbotmobile.pcmstream.PcmStreamPackage
-import com.tbotmobile.voicemic.VoiceMicPackage
-import com.tbotmobile.voicesession.VoiceSessionPackage
+import com.tjbotmobile.pcmstream.PcmStreamPackage
+import com.tjbotmobile.voicemic.VoiceMicPackage
+import com.tjbotmobile.voicesession.VoiceSessionPackage
 
-object TbotReactHostProvider {
+object tjbotReactHostProvider {
   @Volatile private var application: Application? = null
 
   private val reactHostHolder: ReactHost by lazy {

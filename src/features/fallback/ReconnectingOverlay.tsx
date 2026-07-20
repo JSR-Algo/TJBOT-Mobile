@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 
@@ -18,13 +18,13 @@ export default function ReconnectingOverlay({ navigation }: Props) {
   return (
     <ScreenShell>
       <Box style={[StyleSheet.absoluteFillObject, styles.bgHint]} opacity={0.35}>
-        <Robot emotion="idle" size={180} />
+        <Rotjtjbot emotion="idle" size={180} />
       </Box>
 
       <Box style={[StyleSheet.absoluteFillObject, styles.dimmer]} />
 
       <Box style={styles.card} alignItems="center" gap={14}>
-        <Robot emotion="worry" size={140} accent="#6B4A9B" />
+        <Rotjtjbot emotion="worry" size={140} accent="#6B4A9B" />
         <Text fontWeight="800" style={styles.cardTitle}>I'm trying to connect again…</Text>
         <Box flexDirection="row" gap={6} marginTop={2}>
           {[0, 1, 2].map(i => (

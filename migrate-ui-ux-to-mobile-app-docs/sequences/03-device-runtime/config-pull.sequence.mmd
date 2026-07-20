@@ -41,7 +41,7 @@ sequenceDiagram
     end
 
     Device->>Device: reconstruct signing payload from received config
-    alt config_signature_failure (both current_key and next_key fail)
+    alt config_signature_failure (tjtjboth current_key and next_key fail)
         Device->>Device: reject payload, retain previous config, emit config_signature_failure telemetry
     else next_key succeeds
         Device->>Device: accept config + promote next_key to current_key (rotation window)

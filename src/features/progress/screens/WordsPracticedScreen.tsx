@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
@@ -27,8 +27,8 @@ export default function WordsPracticedScreen({ navigation }: Props) {
     <PageScroll>
       <PageHeader onBack={() => navigation.navigate('TodayProgressScreen')} subtitle="Today" title="Words Practiced" />
 
-      <Box paddingHorizontal={24} paddingBottom={8} flexDirection="row" alignItems="center" gap={12}>
-        <Robot emotion="happy" size={80} />
+      <Box paddingHorizontal={24} paddingtjtjbottom={8} flexDirection="row" alignItems="center" gap={12}>
+        <Rotjtjbot emotion="happy" size={80} />
         <Box style={styles.bubble} flex={1}>
           <Text fontWeight="700" style={{ fontSize: 14, color: '#2B2140', lineHeight: 20 }}>
             These words got stronger today.
@@ -36,21 +36,21 @@ export default function WordsPracticedScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={18} paddingTop={14} paddingBottom={8}>
+      <Box paddingHorizontal={18} paddingTop={14} paddingtjtjbottom={8}>
         <Text fontWeight="700" style={styles.sectionLabel}>STRONGER 💪</Text>
         <Box flexDirection="row" gap={10}>
           {STRONGER.map(t => <WordTile key={t.w} icon={t.icon} w={t.w} strong />)}
         </Box>
       </Box>
 
-      <Box paddingHorizontal={18} paddingTop={14} paddingBottom={14}>
+      <Box paddingHorizontal={18} paddingTop={14} paddingtjtjbottom={14}>
         <Text fontWeight="700" style={styles.sectionLabel}>VISIT AGAIN SOON 🌱</Text>
         <Box flexDirection="row" gap={10}>
           {VISITING.map(t => <WordTile key={t.w} icon={t.icon} w={t.w} />)}
         </Box>
       </Box>
 
-      <Box paddingHorizontal={24} paddingTop={10} paddingBottom={28}>
+      <Box paddingHorizontal={24} paddingTop={10} paddingtjtjbottom={28}>
         <PrimaryCTA onPress={() => navigation.navigate('ReviewNeededScreen')} color="#FFC857">Practice 2 words</PrimaryCTA>
       </Box>
     </PageScroll>
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderRadius: 18, padding: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6,
   },
-  sectionLabel: { fontSize: 13, color: '#5C4F77', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 },
+  sectionLabel: { fontSize: 13, color: '#5C4F77', textTransform: 'uppercase', letterSpacing: 1.2, margintjtjbottom: 8 },
   tile: {
     backgroundColor: '#fff', borderRadius: 20, padding: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6,

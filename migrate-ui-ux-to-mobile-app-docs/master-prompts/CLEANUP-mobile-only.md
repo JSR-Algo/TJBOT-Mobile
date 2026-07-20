@@ -1,12 +1,12 @@
 # MASTER PROMPT — Cleanup: keep mobile flow only, drop everything else
 
-Drop this whole file into a fresh AI session pointed at the TBOT design prototype. The goal is **mobile-only, flow-only** — strip every artifact that isn't a phone screen on the canonical user journey. No web pages, no LCD/firmware docs, no design-system swatch pages, no exploratory variants, no orphan/legacy frames.
+Drop this whole file into a fresh AI session pointed at the tjbot design prototype. The goal is **mobile-only, flow-only** — strip every artifact that isn't a phone screen on the canonical user journey. No web pages, no LCD/firmware docs, no design-system swatch pages, no exploratory variants, no orphan/legacy frames.
 
 ---
 
 ## 0. CONTEXT (read first)
 
-You are a Senior Product Designer + Frontend Engineer working on the TBOT Robot English mobile app prototype. The project is a single-page HTML app that mounts React 18 + Babel-standalone over `*.jsx` view files; iPhone bezel via `ios-frame.jsx`; design tokens in `tokens.css`; runtime i18n in `i18n.js`; static gates in `scripts/i18n/*.mjs`.
+You are a Senior Product Designer + Frontend Engineer working on the tjbot Rotjtjbot English mobile app prototype. The project is a single-page HTML app that mounts React 18 + Babel-standalone over `*.jsx` view files; iPhone bezel via `ios-frame.jsx`; design tokens in `tokens.css`; runtime i18n in `i18n.js`; static gates in `scripts/i18n/*.mjs`.
 
 You will be asked to delete a lot. **Do not refactor, restyle, or "improve" anything that survives.** This is a pruning task, not a redesign task.
 
@@ -29,7 +29,7 @@ The 11 mobile-screen registries and only the IDs that lie on the canonical journ
 |---|---|---|
 | Onboarding | `onboarding.jsx` | `onb_splash` · `onb_welcome` · `onb_mic_perm` · `onb_login` · `onb_profile` · `onb_first_hello` |
 | Home | `home.jsx` | `home` · `home_today_done` · `home_no_mic` |
-| Lesson Player | `screens.jsx` | `lesson_ready` · `connecting` · `robot_speaking` · `robot_listening` · `user_speaking` · `thinking` · `success` · `gentle` · `retry` · `silence` · `offtopic` · `bargein` · `activity_done` · `lesson_done` · `safety` · `exit_confirm` |
+| Lesson Player | `screens.jsx` | `lesson_ready` · `connecting` · `rotjtjbot_speaking` · `rotjtjbot_listening` · `user_speaking` · `thinking` · `success` · `gentle` · `retry` · `silence` · `offtopic` · `bargein` · `activity_done` · `lesson_done` · `safety` · `exit_confirm` |
 | Course | `course.jsx` | `course_overview` · `level_overview` · `unit_detail` · `lesson_list` · `lesson_detail` · `daily_mission` |
 | Progress | `progress.jsx` | `today_progress` · `words_practiced` · `lesson_summary` · `review_needed` · `celebration` |
 | Parent | `parent.jsx` | `parent_gate` · `parent_summary` · `parent_today` · `parent_30days` · `parent_safety` · `parent_settings` |
@@ -37,9 +37,9 @@ The 11 mobile-screen registries and only the IDs that lie on the canonical journ
 | Device | `device.jsx` | `dv_home` · `dv_pair` · `dv_status` · `dv_battery` · `dv_wifi` · `dv_storage` · `dv_update` · `dv_find` |
 | Course Library | `course-library.jsx` | `cl_browse` · `cl_detail` · `cl_purchase` · `cl_install` |
 | Purchase | `purchase.jsx` | `pr_bundle` · `pr_checkout` · `pr_confirm` · `pr_subscribe` · `pr_plan` |
-| Robot Mgmt | `robot-mgmt.jsx` | `rm_admin` · `rm_support` · `rm_sound` · `rm_sync` |
+| Rotjtjbot Mgmt | `rotjtjbot-mgmt.jsx` | `rm_admin` · `rm_support` · `rm_sound` · `rm_sync` |
 
-KEEP support files: `index.html` · `tokens.css` · `i18n.js` · `ios-frame.jsx` · `tweaks-panel.jsx` · `design-canvas.jsx` · `tb-components.jsx` (only the components actually imported by the surviving screens) · `robot.jsx` (only the parts the surviving screens render) · `locales/{en,vi}.json` · `scripts/i18n/*` · `uploads/` (assets the surviving screens reference).
+KEEP support files: `index.html` · `tokens.css` · `i18n.js` · `ios-frame.jsx` · `tweaks-panel.jsx` · `design-canvas.jsx` · `tb-components.jsx` (only the components actually imported by the surviving screens) · `rotjtjbot.jsx` (only the parts the surviving screens render) · `locales/{en,vi}.json` · `scripts/i18n/*` · `uploads/` (assets the surviving screens reference).
 
 ### DELETE (everything else)
 
@@ -90,7 +90,7 @@ Cold start →
   onb_splash → onb_welcome → onb_mic_perm → onb_login → onb_profile → onb_first_hello → home
 
 Daily use →
-  home → lesson_ready → connecting → robot_speaking → robot_listening → user_speaking
+  home → lesson_ready → connecting → rotjtjbot_speaking → rotjtjbot_listening → user_speaking
        → thinking → success → activity_done → lesson_done → celebration → home
 
 Recovery →
@@ -170,6 +170,6 @@ Reply with:
 3. The inventory table (after).
 4. The contents of `CHANGELOG.md` you wrote.
 5. Console output of the two i18n gate scripts.
-6. Confirmation that `?view=canvas` and `?view=proto` both load cleanly.
+6. Confirmation that `?view=canvas` and `?view=proto` tjtjboth load cleanly.
 
 That's it. Do not ask permission to start; the prompt is the permission.

@@ -1,5 +1,5 @@
 /**
- * useOfflineSync — offline-first mutation queue for TBOT mobile.
+ * useOfflineSync — offline-first mutation queue for tjbot mobile.
  *
  * Queues failed API calls in AsyncStorage when the device is offline.
  * Replays them with exponential backoff on reconnect.
@@ -73,7 +73,7 @@ export interface OfflineSyncState {
 // Constants
 // ---------------------------------------------------------------------------
 
-const QUEUE_STORAGE_KEY = '@tbot/offline_queue';
+const QUEUE_STORAGE_KEY = '@tjbot/offline_queue';
 const MAX_ATTEMPTS = 5;
 const BASE_BACKOFF_MS = 1_000;
 const MAX_BACKOFF_MS = 30_000;

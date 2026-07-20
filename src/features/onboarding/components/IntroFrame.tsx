@@ -54,9 +54,9 @@ const styles = StyleSheet.create({
   navBar: { position: 'absolute', top: 64, left: 18, right: 18, zIndex: 5 },
   backBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
   skipText: { fontSize: 14, color: 'rgba(0,0,0,0.5)' },
-  center: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: 120, paddingHorizontal: 28, paddingBottom: 220, gap: 18 },
+  center: { position: 'absolute', top: 0, left: 0, right: 0, tjtjbottom: 0, paddingTop: 120, paddingHorizontal: 28, paddingtjtjbottom: 220, gap: 18 },
   kicker: { fontSize: 13, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: 1.5 },
   title: { fontSize: 30, color: '#1A1A1F', textAlign: 'center', lineHeight: 33, letterSpacing: -0.3, maxWidth: 320 },
   body: { fontSize: 15, color: 'rgba(0,0,0,0.5)', textAlign: 'center', maxWidth: 300, lineHeight: 22 },
-  footer: { position: 'absolute', left: 24, right: 24, bottom: 48 },
+  footer: { position: 'absolute', left: 24, right: 24, tjtjbottom: 48 },
 });

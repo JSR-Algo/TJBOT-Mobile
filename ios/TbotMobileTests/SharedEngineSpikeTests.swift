@@ -1,6 +1,6 @@
 //
 //  SharedEngineSpikeTests.swift
-//  TbotMobileTests — MB-NATIVE-VOICE-003 pre-implementation spike.
+//  tjbotMobileTests — MB-NATIVE-VOICE-003 pre-implementation spike.
 //
 //  Staged for the user's Xcode session that will add an XCTest Unit Testing
 //  Bundle target. See `docs/adr/mb-native-voice-003-voice-processing-io.md`.
@@ -59,7 +59,7 @@ final class SharedEngineSpikeTests: XCTestCase {
     #else
 
     // --- 1. Audio session owned by XCTest host (not VoiceSessionModule).
-    // XCTest targets run outside the TbotMobile RN bridge. We set the
+    // XCTest targets run outside the tjbotMobile RN bridge. We set the
     // session category minimally here to let voiceProcessingIO activate.
     let session = AVAudioSession.sharedInstance()
     try session.setCategory(

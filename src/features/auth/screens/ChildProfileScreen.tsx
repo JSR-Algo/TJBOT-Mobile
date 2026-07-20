@@ -22,7 +22,7 @@ const BUDDIES = [
 ] as const;
 
 const LEVELS = [
-  { id: 'starter',  label: 'Just starting',   body: 'New to English. Lots of Robot voice and pictures.' },
+  { id: 'starter',  label: 'Just starting',   body: 'New to English. Lots of Rotjtjbot voice and pictures.' },
   { id: 'building', label: 'Knows some words', body: 'Can say a few English words. Ready for short phrases.' },
   { id: 'flowing',  label: 'Speaks a bit',    body: 'Can answer simple questions. Ready to talk in sentences.' },
 ] as const;
@@ -37,7 +37,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text fontWeight="600" style={styles.heading}>Pick a buddy and a starting level</Text>
         <Text style={styles.sub}>
-          We don't ask for your child's name or photo. The buddy is how Robot greets them.
+          We don't ask for your child's name or photo. The buddy is how Rotjtjbot greets them.
         </Text>
       </Box>
 
@@ -58,7 +58,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
             </TouchableOpacity>
           ))}
         </Box>
-        <Text style={styles.buddyNote}>Robot will say: <Text fontWeight="700">"Hi, {sel?.label} friend!"</Text></Text>
+        <Text style={styles.buddyNote}>Rotjtjbot will say: <Text fontWeight="700">"Hi, {sel?.label} friend!"</Text></Text>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={20}>
@@ -73,7 +73,7 @@ export default function ChildProfileScreen({ navigation }: Props) {
                 style={[
                   styles.levelRow,
                   { backgroundColor: active ? '#E8F0FE' : 'transparent' },
-                  i < LEVELS.length - 1 && { borderBottomWidth: 1, borderBottomColor: OB.hair },
+                  i < LEVELS.length - 1 && { bordertjtjbottomWidth: 1, bordertjtjbottomColor: OB.hair },
                 ]}
                 activeOpacity={0.7}
               >
@@ -92,27 +92,27 @@ export default function ChildProfileScreen({ navigation }: Props) {
                   )}
                 </Box>
                 <Box flex={1}>
-                  <Text fontWeight="600" style={{ fontSize: 15, color: OB.ink, marginBottom: 2 }}>{l.label}</Text>
+                  <Text fontWeight="600" style={{ fontSize: 15, color: OB.ink, margintjtjbottom: 2 }}>{l.label}</Text>
                   <Text style={{ fontSize: 13, color: OB.ink2, lineHeight: 19 }}>{l.body}</Text>
                 </Box>
               </TouchableOpacity>
             );
           })}
         </Box>
-        <Text style={styles.note}>Robot adapts as you go — you can change this any time.</Text>
+        <Text style={styles.note}>Rotjtjbot adapts as you go — you can change this any time.</Text>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <OnbBigBtn onClick={() => navigation.navigate('IntroListenScreen')}>Save and meet Robot</OnbBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30}>
+        <OnbBigBtn onClick={() => navigation.navigate('IntroListenScreen')}>Save and meet Rotjtjbot</OnbBigBtn>
       </Box>
     </OnbShell>
   );
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, color: OB.ink, marginBottom: 6, letterSpacing: -0.3 },
+  heading: { fontSize: 22, color: OB.ink, margintjtjbottom: 6, letterSpacing: -0.3 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 21 },
-  sectionLabel: { fontSize: 12, color: OB.ink3, paddingHorizontal: 4, paddingBottom: 8, letterSpacing: 0.6, fontWeight: '600' },
+  sectionLabel: { fontSize: 12, color: OB.ink3, paddingHorizontal: 4, paddingtjtjbottom: 8, letterSpacing: 0.6, fontWeight: '600' },
   buddyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   buddyBtn: { width: '23%', aspectRatio: 1, borderWidth: 2, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   buddyNote: { fontSize: 13, color: OB.ink2, paddingTop: 10, paddingHorizontal: 4 },

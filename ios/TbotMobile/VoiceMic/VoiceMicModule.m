@@ -1,6 +1,6 @@
 //
 //  VoiceMicModule.m
-//  TbotMobile — RN bridge for Swift VoiceMicModule (sys-16 Gemini Live).
+//  tjbotMobile — RN bridge for Swift VoiceMicModule (sys-16 Gemini Live).
 //
 //  Method signatures MUST match the @objc(selector:) annotations on
 //  VoiceMicModule.swift. See JS shim at src/native/VoiceMic.ts.

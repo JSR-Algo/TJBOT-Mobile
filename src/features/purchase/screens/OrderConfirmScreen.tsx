@@ -9,7 +9,7 @@ import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
-import RobotHero from '../components/RobotHero';
+import RotjtjbotHero from '../components/RotjtjbotHero';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderConfirmScreen'>;
 
@@ -24,16 +24,16 @@ export default function OrderConfirmScreen({ navigation }: Props) {
         </Box>
         <Text fontWeight="600" style={styles.heading}>Thank you, Sarah</Text>
         <Text style={styles.sub}>
-          Robot is on its way. We'll send a setup nudge when it arrives — no rush.
+          Rotjtjbot is on its way. We'll send a setup nudge when it arrives — no rush.
         </Text>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.orderTile}>
-          <RobotHero size={84} accent="#FF6F61" halo={false} />
+          <RotjtjbotHero size={84} accent="#FF6F61" halo={false} />
           <Box flex={1}>
             <Text fontWeight="700" style={styles.orderLabel}>Order #TB-48217</Text>
-            <Text fontWeight="600" style={styles.orderTitle}>Robot · Cream</Text>
+            <Text fontWeight="600" style={styles.orderTitle}>Rotjtjbot · Cream</Text>
             <Text style={styles.orderSub}>Hello Friends starter course</Text>
             <Text style={styles.orderSub}>$149.00 · paid with Apple Pay</Text>
           </Box>
@@ -57,7 +57,7 @@ export default function OrderConfirmScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={20} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn onClick={() => navigation.navigate('ShippingScreen')}>Track delivery</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Back to home</DeviceBigBtn>
       </Box>
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   orderLabel: { fontSize: 11, color: PR.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
   orderTitle: { fontSize: 14, color: PR.ink, marginTop: 3 },
   orderSub: { fontSize: 12, color: PR.ink2, marginTop: 2 },
-  sectionLabel: { fontSize: 11, color: PR.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: PR.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   rowCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   emailCard: { backgroundColor: PR.warm, borderRadius: 12, padding: 14 },
   emailText: { fontSize: 12, color: PR.ink2, lineHeight: 20 },

@@ -14,7 +14,7 @@
 
 ## UC-H02
 
-- **n/a**: Robot-tap greet is single-step view-only animation with a local timer — no async work, no state mutation outside a transient flag.
+- **n/a**: Rotjtjbot-tap greet is single-step view-only animation with a local timer — no async work, no state mutation outside a transient flag.
 
 ## UC-H03
 

@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -15,18 +15,18 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairFailedScreen'>;
 type GoScreen = 'PairIntroScreen' | 'PairWifiPasswordScreen' | 'PairSearchScreen';
 
 const REASONS: { ic: string; t: string; b: string; go: GoScreen }[] = [
-  { ic: '🔋', t: 'Robot looks asleep', b: 'Hold the top button until you hear a chime.', go: 'PairIntroScreen' },
+  { ic: '🔋', t: 'Rotjtjbot looks asleep', b: 'Hold the top button until you hear a chime.', go: 'PairIntroScreen' },
   { ic: '📶', t: 'Wrong Wi-Fi password', b: 'Try entering it again — common typos: O vs 0.', go: 'PairWifiPasswordScreen' },
-  { ic: '📡', t: 'Robot is too far', b: 'Bring Robot within 1–2 m of your phone.', go: 'PairSearchScreen' },
-  { ic: '🔌', t: 'Battery is low', b: 'Plug Robot in for 5 minutes, then try again.', go: 'PairIntroScreen' },
+  { ic: '📡', t: 'Rotjtjbot is too far', b: 'Bring Rotjtjbot within 1–2 m of your phone.', go: 'PairSearchScreen' },
+  { ic: '🔌', t: 'Battery is low', b: 'Plug Rotjtjbot in for 5 minutes, then try again.', go: 'PairIntroScreen' },
 ];
 
 export default function PairFailedScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate('PairIntroScreen')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="gentle" size={160} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>We couldn't reach your Robot</Text>
+        <RotjtjbotDevice emotion="gentle" size={160} accent="#FF6F61" />
+        <Text fontWeight="600" style={styles.heading}>We couldn't reach your Rotjtjbot</Text>
         <Text style={styles.sub}>
           No worries — pairing usually works on the second try. Pick what likely happened:
         </Text>
@@ -52,7 +52,7 @@ export default function PairFailedScreen({ navigation }: Props) {
           </TouchableOpacity>
         ))}
       </Box>
-      <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30}>
+      <Box paddingHorizontal={20} paddingTop={20} paddingtjtjbottom={30}>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('PairSearchScreen')}>Try again</DeviceBigBtn>
       </Box>
     </DeviceShell>

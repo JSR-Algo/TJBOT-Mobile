@@ -50,7 +50,7 @@ sequenceDiagram
             PostgreSQL-->>IdentityService: inserted
             IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'parent.pin.recovery.request_sent', actor_user_id: user_id}
             PostgreSQL-->>IdentityService: ok
-            IdentityService-)SES: (async) email magic link tbot://parent/pin-reset?token=… to users.email
+            IdentityService-)SES: (async) email magic link tjbot://parent/pin-reset?token=… to users.email
             IdentityService-->>Gateway: 202 {message: "If that email is on file, we sent a link."}
             Gateway-->>ParentApp: 202
         end

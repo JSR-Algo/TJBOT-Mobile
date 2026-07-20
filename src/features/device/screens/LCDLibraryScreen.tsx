@@ -25,16 +25,16 @@ const DESIGN_RULES = [
 
 const ANTI_PATTERNS = [
   { t: 'No red Xs', b: 'Use a soft "almost!" face with a kind smile. Wrong is part of learning.' },
-  { t: 'No furrowed-brow anger', b: 'Robot is patient. Even off-topic redirects use a friendly tilt.' },
+  { t: 'No furrowed-brow anger', b: 'Rotjtjbot is patient. Even off-topic redirects use a friendly tilt.' },
   { t: 'No alarming warnings', b: 'Safety pause uses lavender glow + shield-check, not red flashes.' },
   { t: 'No tiny text on the LCD', b: 'Anything text-shaped must be 24px+ at 1× and a known glyph (z, !, %).' },
 ] as const;
 
 export default function LCDLibraryScreen({ navigation }: Props) {
   return (
-    <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView style={styles.root} contentContainerStyle={{ paddingtjtjbottom: 40 }}>
       <Box style={styles.header}>
-        <Text fontWeight="700" style={styles.kicker}>Robot · LCD face system</Text>
+        <Text fontWeight="700" style={styles.kicker}>Rotjtjbot · LCD face system</Text>
         <Text fontWeight="600" style={styles.title}>20 faces, one warm character.</Text>
         <Text style={styles.subtitle}>
           Designed for a 3.2" / 320×240 LCD. Bold features, no small text, readable at 1–2 m. No anger, no red Xs, no scary warnings.
@@ -56,7 +56,7 @@ export default function LCDLibraryScreen({ navigation }: Props) {
         const color = GROUP_COLORS[g];
         return (
           <Box key={g} paddingHorizontal={16} paddingTop={22}>
-            <Box flexDirection="row" alignItems="center" gap={8} style={{ marginBottom: 10 }}>
+            <Box flexDirection="row" alignItems="center" gap={8} style={{ margintjtjbottom: 10 }}>
               <Box style={[styles.groupDot, { backgroundColor: color }]} />
               <Text fontWeight="700" style={[styles.groupLabel, { color: DV.ink2 }]}>{g}</Text>
               <Box flex={1} style={styles.groupLine} />
@@ -69,7 +69,7 @@ export default function LCDLibraryScreen({ navigation }: Props) {
                     <LCDFace emotion={s.id} size={300} accent="#FF6F61" />
                   </Box>
                   <Box padding={14}>
-                    <Box flexDirection="row" alignItems="flex-end" justifyContent="space-between" gap={8} style={{ marginBottom: 4 }}>
+                    <Box flexDirection="row" alignItems="flex-end" justifyContent="space-between" gap={8} style={{ margintjtjbottom: 4 }}>
                       <Text fontWeight="600" style={styles.faceLabel}>{s.label}</Text>
                       <Text style={styles.faceId}>{s.id}</Text>
                     </Box>
@@ -108,8 +108,8 @@ export default function LCDLibraryScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DV.bg },
-  header: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 18, borderBottomWidth: 1, borderBottomColor: DV.hair },
-  kicker: { fontSize: 11, color: '#FF6F61', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+  header: { paddingTop: 56, paddingHorizontal: 20, paddingtjtjbottom: 18, bordertjtjbottomWidth: 1, bordertjtjbottomColor: DV.hair },
+  kicker: { fontSize: 11, color: '#FF6F61', textTransform: 'uppercase', letterSpacing: 0.6, margintjtjbottom: 6 },
   title: { fontSize: 22, color: DV.ink, letterSpacing: -0.4, lineHeight: 26 },
   subtitle: { fontSize: 13, color: DV.ink2, lineHeight: 20, marginTop: 6 },
   ruleCard: { width: '47%', backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 10, padding: 12 },
@@ -123,14 +123,14 @@ const styles = StyleSheet.create({
   lcdBg: { backgroundColor: '#0E1116' },
   faceLabel: { fontSize: 15, color: DV.ink },
   faceId: { fontSize: 10, color: DV.ink3 },
-  groupChip: { alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 7, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.05)', marginBottom: 8 },
+  groupChip: { alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 7, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.05)', margintjtjbottom: 8 },
   groupChipText: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4 },
-  faceAnim: { fontSize: 12, color: DV.ink2, lineHeight: 20, marginBottom: 4 },
+  faceAnim: { fontSize: 12, color: DV.ink2, lineHeight: 20, margintjtjbottom: 4 },
   faceUse: { fontSize: 12, color: DV.ink2, lineHeight: 20 },
-  neverTitle: { fontSize: 11, color: DV.ink2, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 },
+  neverTitle: { fontSize: 11, color: DV.ink2, textTransform: 'uppercase', letterSpacing: 0.6, margintjtjbottom: 8 },
   antiCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   antiRow: { padding: 12 },
-  antiBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
+  antiBorder: { bordertjtjbottomWidth: 1, bordertjtjbottomColor: DV.hair },
   antiX: { width: 22, height: 22, borderRadius: 6, backgroundColor: '#F4E5DF', flexShrink: 0 },
   antiTitle: { fontSize: 13, color: DV.ink },
   antiBody: { fontSize: 12, color: DV.ink2, lineHeight: 20, marginTop: 2 },

@@ -1,20 +1,20 @@
 /**
- * RM-03 — RobotBody renders all 12 canonical Motion primitives.
+ * RM-03 — RotjtjbotBody renders all 12 canonical Motion primitives.
  *
- * Acceptance (Wave 2 brief, expressive-robot-companion-rewrite §6 RM-03):
+ * Acceptance (Wave 2 brief, expressive-rotjtjbot-companion-rewrite §6 RM-03):
  *   "renders all 12 motions on a single test screen"
  *
  * The 60 fps target is a manual-test acceptance (Performance overlay) and is
  * delivered by the `useNativeDriver: true` setting on every transform; this
  * unit suite covers the structural acceptance only.
  *
- * Channel taxonomy is mirrored from `tbot-infra/contracts/motion.{d.ts,js}`.
+ * Channel taxonomy is mirrored from `tjbot-infra/contracts/motion.{d.ts,js}`.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { RobotBody, ALL_MOTIONS, channelOf, type Motion } from '../../src/components/robot/RobotBody';
+import { RotjtjbotBody, ALL_MOTIONS, channelOf, type Motion } from '../../src/components/rotjtjbot/RotjtjbotBody';
 
-describe('RobotBody — RM-03 12-motion renderer', () => {
+describe('RotjtjbotBody — RM-03 12-motion renderer', () => {
   it('exports exactly the 12 canonical motion primitives in the canonical order', () => {
     expect(ALL_MOTIONS).toEqual([
       'LOOK_FORWARD',
@@ -54,12 +54,12 @@ describe('RobotBody — RM-03 12-motion renderer', () => {
 
   it.each(ALL_MOTIONS.map((m) => [m]))('renders %s without crashing', (motion) => {
     const { getByTestId, unmount } = render(
-      <RobotBody motion={motion} __disableAnimations />,
+      <RotjtjbotBody motion={motion} __disableAnimations />,
     );
-    expect(getByTestId('robot-body-root')).toBeTruthy();
-    expect(getByTestId('robot-body-head')).toBeTruthy();
-    expect(getByTestId('robot-body-torso')).toBeTruthy();
-    expect(getByTestId('robot-body-arm')).toBeTruthy();
+    expect(getByTestId('rotjtjbot-body-root')).toBeTruthy();
+    expect(getByTestId('rotjtjbot-body-head')).toBeTruthy();
+    expect(getByTestId('rotjtjbot-body-torso')).toBeTruthy();
+    expect(getByTestId('rotjtjbot-body-arm')).toBeTruthy();
     unmount();
   });
 
@@ -67,26 +67,26 @@ describe('RobotBody — RM-03 12-motion renderer', () => {
     const { getAllByTestId, unmount } = render(
       <>
         {ALL_MOTIONS.map((m) => (
-          <RobotBody key={m} motion={m} __disableAnimations />
+          <RotjtjbotBody key={m} motion={m} __disableAnimations />
         ))}
       </>,
     );
     // 12 root nodes — one per motion.
-    expect(getAllByTestId('robot-body-root')).toHaveLength(12);
-    expect(getAllByTestId('robot-body-head')).toHaveLength(12);
-    expect(getAllByTestId('robot-body-arm')).toHaveLength(12);
+    expect(getAllByTestId('rotjtjbot-body-root')).toHaveLength(12);
+    expect(getAllByTestId('rotjtjbot-body-head')).toHaveLength(12);
+    expect(getAllByTestId('rotjtjbot-body-arm')).toHaveLength(12);
     unmount();
   });
 
   it('updates motion without crashing (lock for transform retargeting)', () => {
     const { rerender, getByTestId, unmount } = render(
-      <RobotBody motion="LOOK_FORWARD" __disableAnimations />,
+      <RotjtjbotBody motion="LOOK_FORWARD" __disableAnimations />,
     );
-    expect(getByTestId('robot-body-root')).toBeTruthy();
+    expect(getByTestId('rotjtjbot-body-root')).toBeTruthy();
 
     for (const next of ALL_MOTIONS) {
-      rerender(<RobotBody motion={next} __disableAnimations />);
-      expect(getByTestId('robot-body-root')).toBeTruthy();
+      rerender(<RotjtjbotBody motion={next} __disableAnimations />);
+      expect(getByTestId('rotjtjbot-body-root')).toBeTruthy();
     }
 
     unmount();

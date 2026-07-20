@@ -10,4 +10,4 @@
 
 ## Delegation edges
 
-UC-BU08 — Pay with Apple Pay, UC-BU09 — Pay with Card (both `kind: "delegate"`).
+UC-BU08 — Pay with Apple Pay, UC-BU09 — Pay with Card (tjtjboth `kind: "delegate"`).

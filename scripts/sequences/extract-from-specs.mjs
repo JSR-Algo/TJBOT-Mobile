@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // extract-from-specs.mjs — Option A' Phase 1 seed extraction (plan §8 step 8).
 //
-// Walks the 15 specced systems at /Users/manhhodinh/Documents/TBOT/docs/site/software/systems/<n>-*.md,
+// Walks the 15 specced systems at /Users/manhhodinh/Documents/tjbot/docs/site/software/systems/<n>-*.md,
 // finds every fenced ```mermaid block whose body begins with `sequenceDiagram`,
 // emits docs/sequences/<sys>/_seed.<idx>.sequence.mmd carrying minimal frontmatter with `status: seed`
 // and a best-effort `spec_anchor:` pointing to the most recently seen markdown heading.

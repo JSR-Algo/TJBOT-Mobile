@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -13,20 +13,20 @@ import { RM } from '../components/RM';
 type Props = NativeStackScreenProps<RootStackParamList, 'OfflineHelpScreen'>;
 
 const STEPS = [
-  { n: 1, t: 'Is Robot powered on?', b: "Look at the LCD face. If it's dark, place Robot on the dock or hold the top button for 2 seconds.", cta: null },
+  { n: 1, t: 'Is Rotjtjbot powered on?', b: "Look at the LCD face. If it's dark, place Rotjtjbot on the dock or hold the top button for 2 seconds.", cta: null },
   { n: 2, t: 'Is your Wi-Fi working?', b: 'Open another app on your phone. If that fails too, restart your router.', cta: null },
-  { n: 3, t: 'Move Robot closer', b: 'Thick walls or a far room can drop the signal. Try the same room as the router.', cta: null },
-  { n: 4, t: 'Restart Robot', b: 'Hold the top button for 5 seconds. Robot will gently chime when it wakes up.', cta: null },
-  { n: 5, t: 'Update Wi-Fi', b: 'If your password changed, give Robot the new one.', cta: 'Update Wi-Fi' },
+  { n: 3, t: 'Move Rotjtjbot closer', b: 'Thick walls or a far room can drop the signal. Try the same room as the router.', cta: null },
+  { n: 4, t: 'Restart Rotjtjbot', b: 'Hold the top button for 5 seconds. Rotjtjbot will gently chime when it wakes up.', cta: null },
+  { n: 5, t: 'Update Wi-Fi', b: 'If your password changed, give Rotjtjbot the new one.', cta: 'Update Wi-Fi' },
 ] as const;
 
 export default function OfflineHelpScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot offline help" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Rotjtjbot offline help" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingTop={24} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="reconnect" size={150} accent="#FF6F61" />
-        <Box marginTop={14}><RmChip color={RM.warn} bg="#FFF4D9">⚠️ Robot is offline</RmChip></Box>
-        <Text fontWeight="600" style={styles.heading}>Let's bring Robot back online</Text>
+        <RotjtjbotDevice emotion="reconnect" size={150} accent="#FF6F61" />
+        <Box marginTop={14}><RmChip color={RM.warn} bg="#FFF4D9">⚠️ Rotjtjbot is offline</RmChip></Box>
+        <Text fontWeight="600" style={styles.heading}>Let's bring Rotjtjbot back online</Text>
         <Text style={styles.sub}>Try these in order. Most parents fix it in under a minute.</Text>
       </Box>
 
@@ -40,7 +40,7 @@ export default function OfflineHelpScreen({ navigation }: Props) {
               <Text fontWeight="600" style={styles.stepTitle}>{s.t}</Text>
               <Text style={styles.stepBody}>{s.b}</Text>
               {s.cta && (
-                <TouchableOpacity onPress={() => navigation.navigate('RobotWifiScreen')} activeOpacity={0.7} style={{ marginTop: 8 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('RotjtjbotWifiScreen')} activeOpacity={0.7} style={{ marginTop: 8 }}>
                   <Text fontWeight="600" style={styles.stepCta}>{s.cta} →</Text>
                 </TouchableOpacity>
               )}
@@ -49,8 +49,8 @@ export default function OfflineHelpScreen({ navigation }: Props) {
         ))}
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('MyRobotScreen')}>Try connecting again</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
+        <DeviceBigBtn onClick={() => navigation.navigate('MyRotjtjbotScreen')}>Try connecting again</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('SupportScreen')}>Still stuck · contact support</DeviceBigBtn>
       </Box>
     </DeviceShell>

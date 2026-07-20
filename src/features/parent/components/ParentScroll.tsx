@@ -28,13 +28,13 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
     <ScrollView style={[styles.root, { backgroundColor: PA.bg }]}>
       {title !== undefined ? (
         <Box
-          style={[styles.header, { backgroundColor: PA.bg, borderBottomColor: PA.hair }]}
+          style={[styles.header, { backgroundColor: PA.bg, bordertjtjbottomColor: PA.hair }]}
           flexDirection="row"
           alignItems="center"
           gap={12}
         >
           {onBack ? (
-            <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 8, tjtjbottom: 8, left: 8, right: 8 }}>
               <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={PA.ink2} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M15 18l-6-6 6-6" />
               </Svg>
@@ -52,8 +52,8 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: {
-    paddingTop: 56, paddingBottom: 12, paddingHorizontal: 20,
-    borderBottomWidth: 1, zIndex: 5,
+    paddingTop: 56, paddingtjtjbottom: 12, paddingHorizontal: 20,
+    bordertjtjbottomWidth: 1, zIndex: 5,
   },
   backBtn: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 });

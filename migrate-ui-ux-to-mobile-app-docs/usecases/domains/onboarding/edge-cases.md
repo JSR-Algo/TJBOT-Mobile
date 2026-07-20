@@ -22,7 +22,7 @@
 ## UC-O03
 
 - **cancel**: Guest tapping "Not now" must route to `onb_login` with mic permission ungranted and without displaying any pressure messaging or re-prompt.
-- **error**: OS permission API returning an unexpected error must surface a recoverable message and keep both CTA options ("Continue" / "Not now") visible.
+- **error**: OS permission API returning an unexpected error must surface a recoverable message and keep tjtjboth CTA options ("Continue" / "Not now") visible.
 - **unauthorized**: OS returning a permanently-denied permission status must inform the guest that mic can be re-enabled in device Settings, without blocking progress to `onb_login`.
 
 > Ref: `docs/flows/edge-cases/cancel.flow.mmd`, `docs/flows/edge-cases/error.flow.mmd`, `docs/flows/edge-cases/unauthorized.flow.mmd`

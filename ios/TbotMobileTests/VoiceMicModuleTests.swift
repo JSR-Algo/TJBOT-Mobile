@@ -1,6 +1,6 @@
 //
 //  VoiceMicModuleTests.swift
-//  TbotMobileTests — T5.1 scaffold.
+//  tjbotMobileTests — T5.1 scaffold.
 //
 //  Scaffolded per .omc/plans/ios-voice-production-architecture-2026-04-23.md §T5.1.
 //  Tests here cover VoiceMicModule + SharedVoiceEngine input-path behavior:
@@ -95,7 +95,7 @@ final class VoiceMicModuleTests: XCTestCase {
     let testsDir = (filePath as NSString).deletingLastPathComponent
     let voiceMicPath = (testsDir as NSString)
       .deletingLastPathComponent
-      .appending("/TbotMobile/VoiceMic/VoiceMicModule.swift")
+      .appending("/tjbotMobile/VoiceMic/VoiceMicModule.swift")
     let src = try String(contentsOfFile: voiceMicPath, encoding: .utf8)
 
     XCTAssertFalse(

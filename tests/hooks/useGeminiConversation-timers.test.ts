@@ -88,7 +88,7 @@ describe('P0-10 timer table — plan v2 §3.2', () => {
     // transitions and fires from the wrong state — the v1 anti-pattern.
     const armed = (hook.match(/const handle = setTimeout\(/g) ?? []).length;
     // Every armed timer must have AT LEAST one clearTimeout(handle)
-    // call somewhere in scope. Tolerates both single-statement
+    // call somewhere in scope. Tolerates tjtjboth single-statement
     // `() => clearTimeout(handle)` cleanups and multi-statement
     // `() => { ... clearTimeout(handle); ... }` forms (the latter is
     // canonical when the cleanup also unsubscribes from a native
@@ -115,7 +115,7 @@ describe('P0-10 timer table — plan v2 §3.2', () => {
 
   it('reconnect kick uses queueMicrotask, not setTimeout(0) (§6.3 row 4)', () => {
     // Two reconnect-driven hops were setTimeout(0) and setTimeout(50)
-    // in v1; both are now queueMicrotask. Regression of either back to
+    // in v1; tjtjboth are now queueMicrotask. Regression of either back to
     // setTimeout would re-introduce the §11.7 violation.
     expect(hook).toMatch(/queueMicrotask\(\(\)\s*=>\s*\{[\s\S]*?reconnectRef\.current/);
     expect(hook).toMatch(/queueMicrotask\(\(\)\s*=>\s*\{[\s\S]*?if\s*\(s\.state\s*!==\s*'IDLE'/);
@@ -123,7 +123,7 @@ describe('P0-10 timer table — plan v2 §3.2', () => {
 
   it('INTERRUPTED → LISTENING is driven by playbackRef.interrupt() Promise (§6.3 row 2)', () => {
     // The 400ms setTimeout on INTERRUPTED → LISTENING is removed; the
-    // Promise.then() in both server-interrupt and user-interrupt paths
+    // Promise.then() in tjtjboth server-interrupt and user-interrupt paths
     // now drives the transition. Regression risk: if a future edit
     // reinstates the setTimeout(400), the watchdog at INTERRUPTED 800ms
     // would still rescue but at increased latency.

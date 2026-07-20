@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PulseRing from '@/design-system/components/PulseRing';
 import IntroFrame from '../components/IntroFrame';
 import { Box } from '@/design-system/primitives/Box';
@@ -18,13 +18,13 @@ export default function IntroListenScreen({ navigation }: Props) {
       next="IntroSpeakScreen"
       bg="#E8F4FF"
       kicker="How it works · 1"
-      title="Robot listens"
-      body="Kids tap the mic and speak. Robot listens patiently — no reading, no typing."
+      title="Rotjtjbot listens"
+      body="Kids tap the mic and speak. Rotjtjbot listens patiently — no reading, no typing."
       illo={(
         <Box style={styles.illoWrap} alignItems="center" justifyContent="center">
           <PulseRing size={200} color="#6FC1FF" />
           <Box style={StyleSheet.absoluteFillObject} alignItems="center" justifyContent="center">
-            <Robot emotion="listen" size={170} accent="#6FC1FF" />
+            <Rotjtjbot emotion="listen" size={170} accent="#6FC1FF" />
           </Box>
         </Box>
       )}

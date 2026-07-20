@@ -8,24 +8,24 @@
 
 ## UC-H01 — View Home Hub
 
-- **Goal:** Child sees today's robot status and the primary daily CTA on app home.
+- **Goal:** Child sees today's rotjtjbot status and the primary daily CTA on app home.
 - **Trigger:** Authenticated child lands on `home_hub_*` after login (UC-A03 success path) OR returns home from any lesson/course/progress sub-flow.
 - **Preconditions:** Auth status `authenticated`; child profile present in `useAuthStore.child`.
 - **Main Flow:**
   1. App reads home variant tweak (`HomeHubScreen.jsx:13`) — one of `idle | greeting | daily_available | completed_today | mic_needed | offline`.
-  2. Hub renders Robot stage + state chip + state-driven primary CTA (`HomeHubScreen.jsx:18-66`).
+  2. Hub renders Rotjtjbot stage + state chip + state-driven primary CTA (`HomeHubScreen.jsx:18-66`).
   3. Hub renders secondary trio Course / Review / Progress (`HomeHubScreen.jsx:163-165`).
   4. Hub renders TopBar with parent-area entry (`HomeHubScreen.jsx:90`) and settings entry (`HomeHubScreen.jsx:97`).
 - **Postconditions:** Child is on `home_hub_<variant>` with all six entry points wired to their `go(...)` targets.
 
-## UC-H02 — Tap Robot for Greeting
+## UC-H02 — Tap Rotjtjbot for Greeting
 
-- **Goal:** Child gets immediate feedback the robot is "alive" without committing to a lesson.
-- **Trigger:** Child taps the centered Robot avatar (`HomeHubScreen.jsx:123` `onRobotTap`).
+- **Goal:** Child gets immediate feedback the rotjtjbot is "alive" without committing to a lesson.
+- **Trigger:** Child taps the centered Rotjtjbot avatar (`HomeHubScreen.jsx:123` `onRotjtjbotTap`).
 - **Preconditions:** UC-H01 active; any home variant except `greeting` (which already shows the greet face).
 - **Main Flow:**
-  1. Tap calls `onRobotTap` → `setGreet(true)` and arms an 1800 ms timer (`HomeHubScreen.jsx:69-74`).
-  2. Robot avatar swaps to `emotion='greet'`, plays a `home-bounce` keyframe, and shows a "Hi!" speech bubble (`HomeHubScreen.jsx:140-144`).
+  1. Tap calls `onRotjtjbotTap` → `setGreet(true)` and arms an 1800 ms timer (`HomeHubScreen.jsx:69-74`).
+  2. Rotjtjbot avatar swaps to `emotion='greet'`, plays a `home-bounce` keyframe, and shows a "Hi!" speech bubble (`HomeHubScreen.jsx:140-144`).
   3. Timer fires → `setGreet(false)` → avatar reverts to the variant-driven emotion.
 - **Postconditions:** No navigation; `useLessonStore` untouched; tap is purely affordance.
 
@@ -72,7 +72,7 @@
 
 ## UC-H07 — Open Kid Settings → `kid_settings`
 
-- **Goal:** Child opens kid-facing settings (volume, robot personality, accessibility toggles).
+- **Goal:** Child opens kid-facing settings (volume, rotjtjbot personality, accessibility toggles).
 - **Trigger:** Child taps the gear icon in the top-right CircleBtn (`HomeHubScreen.jsx:97`).
 - **Preconditions:** UC-H01 active.
 - **Main Flow:**

@@ -28,7 +28,7 @@ import * as path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const SRC = path.join(REPO_ROOT, 'src');
-const IOS = path.join(REPO_ROOT, 'ios/TbotMobile');
+const IOS = path.join(REPO_ROOT, 'ios/tjbotMobile');
 
 const read = (rel: string, root: string = SRC): string =>
   fs.readFileSync(path.join(root, rel), 'utf8');
@@ -278,7 +278,7 @@ describe('DIAG-3 — VoiceMic.onStall subscriber surfaces fatal stalls', () => {
     expect(body).toMatch(/setError\(/);
   });
 
-  it('cleans up the onStall subscription on both start-success and start-failure paths', () => {
+  it('cleans up the onStall subscription on tjtjboth start-success and start-failure paths', () => {
     // The stop() callback on audioStreamRef must invoke unsubStall; the
     // catch path must also invoke it before bailing.
     const startIdx = hook.indexOf('const unsubStall = VoiceMic.onStall');
@@ -294,7 +294,7 @@ describe('DIAG-4 — DEV-only voiceDebugProbe integration', () => {
   const hook = read('hooks/useGeminiConversation.ts');
   const probe = read('debug/voiceDebugProbe.ts');
 
-  it('hook imports both probe lifecycle functions', () => {
+  it('hook imports tjtjboth probe lifecycle functions', () => {
     expect(hook).toMatch(
       /from\s+['"]\.\.\/debug\/voiceDebugProbe['"]/,
     );
@@ -302,12 +302,12 @@ describe('DIAG-4 — DEV-only voiceDebugProbe integration', () => {
     expect(hook).toMatch(/stopVoiceDebugProbe/);
   });
 
-  it('probe start/stop are both gated on __DEV__ (zero prod impact)', () => {
+  it('probe start/stop are tjtjboth gated on __DEV__ (zero prod impact)', () => {
     expect(hook).toMatch(/if\s*\(\s*__DEV__\s*\)\s*startVoiceDebugProbe\(\)/);
     expect(hook).toMatch(/if\s*\(\s*__DEV__\s*\)\s*stopVoiceDebugProbe\(\)/);
   });
 
-  it('voiceDebugProbe exports both lifecycle functions + is idempotent', () => {
+  it('voiceDebugProbe exports tjtjboth lifecycle functions + is idempotent', () => {
     expect(probe).toMatch(/export\s+function\s+startVoiceDebugProbe/);
     expect(probe).toMatch(/export\s+function\s+stopVoiceDebugProbe/);
     // Idempotence guard — a second start while running must be a no-op.

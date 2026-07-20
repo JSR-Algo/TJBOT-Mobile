@@ -1,6 +1,6 @@
 // Unit tests for useLatencyBudget — four-budget turn telemetry.
 //
-// Plan: expressive-robot-companion-rewrite §6 RM-07.
+// Plan: expressive-rotjtjbot-companion-rewrite §6 RM-07.
 //
 // We mock `performance.now()` deterministically so budget arithmetic is
 // asserted exactly rather than relying on real-clock drift.

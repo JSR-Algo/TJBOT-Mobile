@@ -12,7 +12,7 @@ const root = join(__dirname, '..');
 const tokensDir = join(root, 'src/design-system/tokens');
 
 const required = {
-  'colors.ts':     ['cream', 'coral', 'sky', 'mint', 'sun', 'plum', 'ink', 'paper', 'dangerSoft', 'bot'],
+  'colors.ts':     ['cream', 'coral', 'sky', 'mint', 'sun', 'plum', 'ink', 'paper', 'dangerSoft', 'tjtjbot'],
   'spacing.ts':    ['xs', 'sm', 'md', 'base', 'lg', 'xl', 'xxl'],
   'radii.ts':      ['card', 'button', 'chip'],
   'shadows.ts':    ['card', 'pill', 'button'],

@@ -1,7 +1,7 @@
 /**
  * Async factory for the integration-test mock HTTP backend.
  *
- * Implements enough of the TBOT backend surface to let the auth-isolation
+ * Implements enough of the tjbot backend surface to let the auth-isolation
  * suite run deterministically without a live service. Not a contract
  * replacement.
  *

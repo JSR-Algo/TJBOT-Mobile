@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "TbotMobile.app"
-               BlueprintName = "TbotMobile"
-               ReferencedContainer = "container:TbotMobile.xcodeproj">
+               BuildableName = "tjbotMobile.app"
+               BlueprintName = "tjbotMobile"
+               ReferencedContainer = "container:tjbotMobile.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B979707E9AB4F2C4FA94A2E5"
-               BuildableName = "TbotMobileTests.xctest"
-               BlueprintName = "TbotMobileTests"
-               ReferencedContainer = "container:TbotMobile.xcodeproj">
+               BuildableName = "tjbotMobileTests.xctest"
+               BlueprintName = "tjbotMobileTests"
+               ReferencedContainer = "container:tjbotMobile.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "TbotMobile.app"
-            BlueprintName = "TbotMobile"
-            ReferencedContainer = "container:TbotMobile.xcodeproj">
+            BuildableName = "tjbotMobile.app"
+            BlueprintName = "tjbotMobile"
+            ReferencedContainer = "container:tjbotMobile.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "TbotMobile.app"
-            BlueprintName = "TbotMobile"
-            ReferencedContainer = "container:TbotMobile.xcodeproj">
+            BuildableName = "tjbotMobile.app"
+            BlueprintName = "tjbotMobile"
+            ReferencedContainer = "container:tjbotMobile.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

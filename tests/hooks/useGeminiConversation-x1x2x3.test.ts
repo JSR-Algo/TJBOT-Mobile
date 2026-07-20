@@ -2,7 +2,7 @@
  * P0-16 X1/X2/X3 cross-platform regression smoke gate — plan v2 §13.6
  *
  * CI smoke gate: same sequence of FSM transitions and same event TYPES
- * on both platforms. Structural source assertions — no timing comparisons
+ * on tjtjboth platforms. Structural source assertions — no timing comparisons
  * (timing-based checks would be flaky on simulators per §13.6).
  *
  * X1: voiceMicVadStart fires → FSM transitions LISTENING → USER_SPEAKING

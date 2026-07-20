@@ -24,8 +24,8 @@ This file is the **canonical participant allow-list** for `docs/sequences/**/*.s
 - `ParentApp` — parent-facing mobile application (sys-16 consumer surface)
 - `SourceParentApp` — source-account parent during device transfer (sys-02)
 - `TargetParentApp` — target-account parent during device transfer (sys-02)
-- `Device` — TBot device on Wi-Fi after provisioning (cloud-bound across sys-02..18)
-- `BLEDevice` — TBot device exposed over BLE during provisioning (sys-02/16 boundary)
+- `Device` — tjbot device on Wi-Fi after provisioning (cloud-bound across sys-02..18)
+- `BLEDevice` — tjbot device exposed over BLE during provisioning (sys-02/16 boundary)
 - `AdminConsole` — admin-operator UI (sys-12)
 - `ReviewerConsole` — content-reviewer UI (sys-20)
 - `AuthoringConsole` — content-authoring UI (sys-20)
@@ -38,7 +38,7 @@ This file is the **canonical participant allow-list** for `docs/sequences/**/*.s
 - `CI` — GitHub Actions / CI runner (sys-21)
 - `OS` — iOS / Android mobile operating system facility (sys-16)
 
-### TBot backend services
+### tjbot backend services
 
 - `IdentityService` — identity, household, sessions (sys-01)
 - `DeviceService` — device-provisioning-registry (sys-02)

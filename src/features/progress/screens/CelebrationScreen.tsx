@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
@@ -36,9 +36,9 @@ export default function CelebrationScreen({ navigation }: Props) {
         ))}
       </Box>
 
-      <Box position="relative" paddingTop={80} paddingHorizontal={24} paddingBottom={16} alignItems="center" gap={14}>
+      <Box position="relative" paddingTop={80} paddingHorizontal={24} paddingtjtjbottom={16} alignItems="center" gap={14}>
         <Text fontWeight="800" style={styles.hero}>You did it!</Text>
-        <Robot emotion="success" size={240} accent="#FF6F61" />
+        <Rotjtjbot emotion="success" size={240} accent="#FF6F61" />
         <Box style={styles.msgCard}>
           <Text fontWeight="700" style={styles.msg}>
             You finished today's lesson.{'\n'}Great effort speaking out loud!
@@ -56,8 +56,8 @@ export default function CelebrationScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box position="relative" paddingHorizontal={24} paddingTop={24} paddingBottom={30} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate('HomeHubScreen')} color="#FF6F61">Back to Robot Home</PrimaryCTA>
+      <Box position="relative" paddingHorizontal={24} paddingTop={24} paddingtjtjbottom={30} gap={10}>
+        <PrimaryCTA onPress={() => navigation.navigate('HomeHubScreen')} color="#FF6F61">Back to Rotjtjbot Home</PrimaryCTA>
         <TouchableOpacity
           onPress={() => navigation.navigate('ReviewNeededScreen')}
           style={styles.reviewBtn}

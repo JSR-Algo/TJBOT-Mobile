@@ -4,8 +4,8 @@
 # content-strings owned by curriculum, etc.)
 
 # Brand
-TBOT
-Robot
+tjbot
+Rotjtjbot
 Mira
 Mai
 
@@ -64,7 +64,7 @@ $149.00 · paid with Apple Pay
 "Hello! I'm so glad you're here."
 
 # Phase 11.1.b — composite UI strings ("<label> · <data>" / "<state> · <state>")
-# Runtime translates each side via i18n.js dot-split fallback when both sides
+# Runtime translates each side via i18n.js dot-split fallback when tjtjboth sides
 # are individually in the catalog (or one side is data and the other is in
 # catalog). Allowlisted as combined strings because the static scanner is
 # grep-grade and cannot simulate runtime dot-split. Translatable sub-strings
@@ -89,9 +89,9 @@ Mon–Fri · 9 AM – 6 PM ET
 Normal · 28°C
 Place order · $149.00
 ROB-2A8F · Cream
-Robot · Cream
-Robot · ROB-2A8F
-Robot · activated
+Rotjtjbot · Cream
+Rotjtjbot · ROB-2A8F
+Rotjtjbot · activated
 Signal: strong · Battery: 78%
 Strong signal · 5 GHz
 Today's lesson · Animals at home
@@ -106,10 +106,10 @@ Working · last test today
 Working · volume 6
 Yesterday: 1 lesson · 4 min
 Yummy Words · full course
-hello@robotbuddy.app · reply in ~1 day
+hello@rotjtjbotbuddy.app · reply in ~1 day
 v1.4.2 · update available
 v1.5.0 · 24 MB
 ● Everything is working
 ● Online · all good
-⚠️ Robot is offline
+⚠️ Rotjtjbot is offline
 ⚡ On dock · 32 min to full

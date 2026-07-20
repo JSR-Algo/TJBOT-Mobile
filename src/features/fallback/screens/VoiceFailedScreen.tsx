@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
 import TopBar from '@/components/TopBar';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
@@ -17,7 +17,7 @@ export default function VoiceFailedScreen({ navigation }: Props) {
     <ScreenShell bg="#FFF1DA">
       <TopBar onBack={() => navigation.navigate('HomeHubScreen')} />
       <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
-        <Robot emotion="gentle" size={220} accent="#FFC857" />
+        <Rotjtjbot emotion="gentle" size={220} accent="#FFC857" />
         <SpeechBubble>My voice got tangled up.{'\n'}Let's start the lesson fresh.</SpeechBubble>
       </Box>
       <Box style={styles.cta} gap={10}>
@@ -31,6 +31,6 @@ export default function VoiceFailedScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 100, paddingBottom: 220, paddingHorizontal: 24, gap: 18 },
-  cta: { position: 'absolute', left: 24, right: 24, bottom: 48 },
+  content: { paddingTop: 100, paddingtjtjbottom: 220, paddingHorizontal: 24, gap: 18 },
+  cta: { position: 'absolute', left: 24, right: 24, tjtjbottom: 48 },
 });

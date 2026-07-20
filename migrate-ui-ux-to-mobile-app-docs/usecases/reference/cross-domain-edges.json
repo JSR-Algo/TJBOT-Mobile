@@ -53,7 +53,7 @@
     },
     {
       "source": "UC-BU13",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
       "note": "Activate via code"
     },
@@ -61,7 +61,7 @@
       "source": "UC-BU13",
       "target": "UC-DP02",
       "kind": "continues",
-      "note": "Activate Robot → pair flow (narrative)"
+      "note": "Activate Rotjtjbot → pair flow (narrative)"
     },
     {
       "source": "UC-BU14",
@@ -115,7 +115,7 @@
       "source": "UC-CL01",
       "target": "UC-DP01",
       "kind": "requires",
-      "note": "Library requires robot paired"
+      "note": "Library requires rotjtjbot paired"
     },
     {
       "source": "UC-CL01",
@@ -131,21 +131,21 @@
     },
     {
       "source": "UC-CL06",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
-      "note": "Send lesson to robot"
+      "note": "Send lesson to rotjtjbot"
     },
     {
       "source": "UC-CL07",
       "target": "UC-CL08",
       "kind": "continues",
-      "note": "Lane D: robot ready → monitor"
+      "note": "Lane D: rotjtjbot ready → monitor"
     },
     {
       "source": "UC-CL08",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
-      "note": "Monitor lesson on robot"
+      "note": "Monitor lesson on rotjtjbot"
     },
     {
       "source": "UC-CL08",
@@ -155,9 +155,9 @@
     },
     {
       "source": "UC-CL11",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
-      "note": "Resync robot"
+      "note": "Resync rotjtjbot"
     },
     {
       "source": "UC-CL11",
@@ -167,13 +167,13 @@
     },
     {
       "source": "UC-DM03",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
-      "note": "Find My Robot — chime"
+      "note": "Find My Rotjtjbot — chime"
     },
     {
       "source": "UC-DM04",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
       "note": "Update firmware (KD5 — pending puml)"
     },
@@ -185,9 +185,9 @@
     },
     {
       "source": "UC-DP04",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
-      "note": "Scan for robot (radio)"
+      "note": "Scan for rotjtjbot (radio)"
     },
     {
       "source": "UC-DP07",
@@ -197,15 +197,15 @@
     },
     {
       "source": "UC-DP09",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
-      "note": "Connect robot to Wi-Fi"
+      "note": "Connect rotjtjbot to Wi-Fi"
     },
     {
       "source": "UC-DP09",
       "target": "ACTOR:WiFi",
       "kind": "delegate",
-      "note": "Connect robot to Wi-Fi"
+      "note": "Connect rotjtjbot to Wi-Fi"
     },
     {
       "source": "UC-DP10",
@@ -265,7 +265,7 @@
       "source": "UC-F05",
       "target": "UC-L05",
       "kind": "resumes",
-      "note": "Resume Lesson → Listen to Robot"
+      "note": "Resume Lesson → Listen to Rotjtjbot"
     },
     {
       "source": "UC-F06",
@@ -337,7 +337,7 @@
       "source": "UC-L05",
       "target": "ACTOR:RealtimeVoice",
       "kind": "delegate",
-      "note": "Lane B: robot speech via voice"
+      "note": "Lane B: rotjtjbot speech via voice"
     },
     {
       "source": "UC-L07",
@@ -497,7 +497,7 @@
     },
     {
       "source": "UC-PR06",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
       "note": "Lane C: firmware test delegate"
     },
@@ -505,13 +505,13 @@
       "source": "UC-PR06",
       "target": "UC-RM01",
       "kind": "exits",
-      "note": "Parent Settings → Robot software"
+      "note": "Parent Settings → Rotjtjbot software"
     },
     {
       "source": "UC-RM01",
       "target": "UC-PR01",
       "kind": "requires",
-      "note": "My Robot requires gate"
+      "note": "My Rotjtjbot requires gate"
     },
     {
       "source": "UC-RM05",
@@ -521,25 +521,25 @@
     },
     {
       "source": "UC-RM06",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
       "note": "OTA update"
     },
     {
       "source": "UC-RM08",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
       "note": "Mic test"
     },
     {
       "source": "UC-RM09",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
       "note": "Speaker test"
     },
     {
       "source": "UC-RM10",
-      "target": "ACTOR:Robot",
+      "target": "ACTOR:Rotjtjbot",
       "kind": "delegate",
       "note": "Factory reset"
     }

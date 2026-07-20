@@ -1,4 +1,4 @@
-package com.tbotmobile
+package com.tjbotmobile
 
 import android.app.Application
 
@@ -6,6 +6,6 @@ class BootstrapApplication : Application() {
 
   override fun onCreate() {
     super.onCreate()
-    TbotReactHostProvider.initialize(this)
+    tjbotReactHostProvider.initialize(this)
   }
 }

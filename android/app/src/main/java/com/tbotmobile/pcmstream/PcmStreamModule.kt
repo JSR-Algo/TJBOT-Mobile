@@ -1,4 +1,4 @@
-package com.tbotmobile.pcmstream
+package com.tjbotmobile.pcmstream
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
@@ -216,7 +216,7 @@ class PcmStreamModule(
       return
     }
     try {
-      // Barge-in path: drop pending bytes from BOTH layers before resuming.
+      // Barge-in path: drop pending bytes from tjtjbotH layers before resuming.
       // Skipping the writer-queue clear would let stale chunks continue to
       // trickle into the HAL after the user interrupts.
       writeQueue.clear()
@@ -350,7 +350,7 @@ class PcmStreamModule(
   private fun notifyPlaybackActive(active: Boolean) {
     try {
       val mic = reactApplicationContext
-        .getNativeModule(com.tbotmobile.voicemic.VoiceMicModule::class.java)
+        .getNativeModule(com.tjbotmobile.voicemic.VoiceMicModule::class.java)
       mic?.playbackActive = active
     } catch (_: Throwable) {
       // Non-fatal: VoiceMicModule may not be registered yet (first launch).

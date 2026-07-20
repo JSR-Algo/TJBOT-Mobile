@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
@@ -17,10 +17,10 @@ export default function KidSettingsScreen({ navigation }: Props) {
   return (
     <PageScroll>
       <PageHeader onBack={() => navigation.navigate('HomeHubScreen')} title="Settings" />
-      <Box paddingHorizontal={24} paddingTop={4} paddingBottom={16} alignItems="center">
-        <Robot emotion="happy" size={140} />
+      <Box paddingHorizontal={24} paddingTop={4} paddingtjtjbottom={16} alignItems="center">
+        <Rotjtjbot emotion="happy" size={140} />
       </Box>
-      <Box paddingHorizontal={18} paddingBottom={16} gap={10}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={16} gap={10}>
         <SettingRow
           icon="🔊"
           label="Sounds"
@@ -34,7 +34,7 @@ export default function KidSettingsScreen({ navigation }: Props) {
           onChange={setMic}
         />
       </Box>
-      <Box paddingHorizontal={18} paddingBottom={18}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={18}>
         <TouchableOpacity
           onPress={() => navigation.navigate('ParentGateScreen')}
           style={styles.parentBtn}
@@ -50,7 +50,7 @@ export default function KidSettingsScreen({ navigation }: Props) {
           <Text style={{ fontSize: 18, color: '#5C4F77' }}>›</Text>
         </TouchableOpacity>
       </Box>
-      <Box paddingHorizontal={18} paddingBottom={24}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={24}>
         <TouchableOpacity
           onPress={() => navigation.navigate('HelpFaqScreen')}
           style={styles.helpBtn}

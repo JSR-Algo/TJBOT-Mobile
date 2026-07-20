@@ -1,5 +1,5 @@
 /**
- * Detox configuration for TBOT mobile E2E tests.
+ * Detox configuration for tjbot mobile E2E tests.
  *
  * Runs Jest with the Detox runner against iOS simulator and Android emulator.
  * Local run:
@@ -25,9 +25,9 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath:
-        'ios/build/Build/Products/Debug-iphonesimulator/TbotMobile.app',
+        'ios/build/Build/Products/Debug-iphonesimulator/tjbotMobile.app',
       build:
-        "xcodebuild -workspace ios/TbotMobile.xcworkspace -scheme TbotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO",
+        "xcodebuild -workspace ios/tjbotMobile.xcworkspace -scheme tjbotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO",
     },
     'android.debug': {
       type: 'android.apk',

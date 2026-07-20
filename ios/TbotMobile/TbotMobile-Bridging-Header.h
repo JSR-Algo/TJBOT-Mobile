@@ -1,12 +1,12 @@
 //
-//  TbotMobile-Bridging-Header.h
+//  tjbotMobile-Bridging-Header.h
 //
-//  Required when the iOS target contains both Objective-C/C++ and Swift
+//  Required when the iOS target contains tjtjboth Objective-C/C++ and Swift
 //  files. Xcode normally auto-creates this header the first time a .swift
 //  file is added to the target; if that has not happened yet, copy this
-//  template to `ios/TbotMobile/TbotMobile-Bridging-Header.h` and set the
+//  template to `ios/tjbotMobile/tjbotMobile-Bridging-Header.h` and set the
 //  `SWIFT_OBJC_BRIDGING_HEADER` build setting to
-//  `TbotMobile/TbotMobile-Bridging-Header.h` in the Xcode project.
+//  `tjbotMobile/tjbotMobile-Bridging-Header.h` in the Xcode project.
 //
 //  React Native headers are exposed to Swift via this header. Add new
 //  #import lines here only if a Swift source file needs to call into

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// check-acceptance.mjs — explicit AC-1..AC-14 verifier for the TBOT ERD.
+// check-acceptance.mjs — explicit AC-1..AC-14 verifier for the tjbot ERD.
 //
 // Per .omc/plans/erd-22-systems-design.md §2. Each AC runs as a function that
 // returns { ac, pass, evidence, rationale }. Prints a per-AC summary table
@@ -57,7 +57,7 @@ function extractServiceActors() {
   const out = [];
   for (const m of text.matchAll(/^\s*-\s+`?([A-Za-z][A-Za-z0-9_]*)`?/gm)) {
     const a = m[1];
-    if (/(Service|Worker|Handler|Scheduler|Cache|Buffer|Detector|Verifier|Classifier|Monitor|Resolver|Transformer|Signer|Assembler|Executor|Generator|Sweep|Bot)$/.test(a)) {
+    if (/(Service|Worker|Handler|Scheduler|Cache|Buffer|Detector|Verifier|Classifier|Monitor|Resolver|Transformer|Signer|Assembler|Executor|Generator|Sweep|tjtjbot)$/.test(a)) {
       out.push(a);
     }
   }

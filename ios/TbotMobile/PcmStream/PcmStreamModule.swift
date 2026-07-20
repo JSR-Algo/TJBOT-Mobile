@@ -1,6 +1,6 @@
 //
 //  PcmStreamModule.swift
-//  TbotMobile — sys-16 Gemini Live realtime voice PCM playback.
+//  tjbotMobile — sys-16 Gemini Live realtime voice PCM playback.
 //
 //  iOS counterpart to android/.../pcmstream/PcmStreamModule.kt. Mirrors its
 //  public surface so `src/audio/PcmStreamPlayer.ts` works on iOS without
@@ -19,7 +19,7 @@
 //
 //  Architecture:
 //    - Uses SharedVoiceEngine.attachPlayerNode() — the engine is shared
-//      with VoiceMicModule when both are active (sys-16 single-engine rule,
+//      with VoiceMicModule when tjtjboth are active (sys-16 single-engine rule,
 //      plan §5 MB-NATIVE-VOICE-004 line 211).
 //    - Playback rate is LOCKED at 24kHz mono Int16 LE — Gemini Live always
 //      emits this format. Attempting a different rate at init() is a soft
@@ -75,7 +75,7 @@ final class PcmStreamModule: RCTEventEmitter {
 
   // MARK: - State (serial queue guarded)
 
-  private let stateQueue = DispatchQueue(label: "com.tbot.pcmstream.state")
+  private let stateQueue = DispatchQueue(label: "com.tjbot.pcmstream.state")
   private var playerNode: AVAudioPlayerNode?
   private var format: AVAudioFormat?
 
@@ -98,7 +98,7 @@ final class PcmStreamModule: RCTEventEmitter {
 
   /// Frames currently scheduled but not yet played.
   /// Reported as bufferedMs in the voicePlaybackStalled event. Guarded
-  /// against UInt64 underflow: after `clear()` zeros both counters, a late
+  /// against UInt64 underflow: after `clear()` zeros tjtjboth counters, a late
   /// `.dataPlayedBack` callback that Apple hasn't cancelled can still
   /// increment `playedFrames` past `fedFrames`. The saturated subtraction
   /// keeps diagnostics sane in that window.
@@ -124,7 +124,7 @@ final class PcmStreamModule: RCTEventEmitter {
   private var turnGeneration: UInt64 = 0
 
   private var hasListeners = false
-  private let log = OSLog(subsystem: "com.tbot.voice", category: "PcmStream")
+  private let log = OSLog(subsystem: "com.tjbot.voice", category: "PcmStream")
 
 
   // MARK: - QA Test Harness state (nil when harness is off)

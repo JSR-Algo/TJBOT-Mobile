@@ -22,7 +22,7 @@ export function readFrontmatter(filePath) {
 export function parseFrontmatter(src) {
   const lines = src.split(/\r?\n/);
   // Mermaid block prefix lookup — frontmatter sits inside the ```mermaid ... ``` fence per §5,
-  // but `---` delimiters work at any starting offset as long as both delimiters present.
+  // but `---` delimiters work at any starting offset as long as tjtjboth delimiters present.
   // Strategy: find first `---` line, then next `---` after it. Frontmatter is between.
   let firstIdx = -1;
   for (let i = 0; i < lines.length && i < 4; i++) {

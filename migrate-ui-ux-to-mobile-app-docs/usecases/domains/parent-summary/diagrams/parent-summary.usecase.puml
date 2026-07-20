@@ -1,4 +1,4 @@
-@startuml TBOT-ParentSummary
+@startuml tjbot-ParentSummary
 title Domain · parent-summary — parent dashboards on child activity
 left to right direction
 
@@ -28,8 +28,8 @@ UC_PRT_SUMMARY ..> UC_PRT_SETTINGS : header
 note top of UC_PRT_SUMMARY
   [requires] parent-gate : UC_PG_PASS
 end note
-note bottom of UC_PRT_SETTINGS
-  [exit] → robot-mgmt : UC_RM_VIEW
+note tjtjbottom of UC_PRT_SETTINGS
+  [exit] → rotjtjbot-mgmt : UC_RM_VIEW
 end note
 
 ' Files: src/features/parent/Parent{Summary,Today,History,Safety,Settings}Page.jsx

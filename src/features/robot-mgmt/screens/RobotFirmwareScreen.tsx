@@ -12,31 +12,31 @@ import { Text } from '@/design-system/primitives/Text';
 import RmChip from '../components/RmChip';
 import { RM } from '../components/RM';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RobotFirmwareScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'RotjtjbotFirmwareScreen'>;
 
 const WHATS_NEW = [
-  'Robot waits a little longer before nudging',
+  'Rotjtjbot waits a little longer before nudging',
   'Better hearing in noisier rooms',
   '3 new gentle celebration sounds',
 ];
 
-export default function RobotFirmwareScreen({ navigation }: Props) {
+export default function RotjtjbotFirmwareScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot software" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Rotjtjbot software" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingTop={24} paddingHorizontal={24} alignItems="center">
         <Box style={styles.lcdWrap}>
           <LCDFace emotion="thinking" size={130} accent="#FF6F61" />
         </Box>
         <Box marginTop={14}><RmChip color={RM.warn} bg="#FFF4D9">New version available</RmChip></Box>
-        <Text fontWeight="600" style={styles.heading}>Robot has a small update</Text>
+        <Text fontWeight="600" style={styles.heading}>Rotjtjbot has a small update</Text>
         <Text style={styles.sub}>
-          Updates Robot's listening, fixes small things, and adds gentle improvements. Your child's progress is kept.
+          Updates Rotjtjbot's listening, fixes small things, and adds gentle improvements. Your child's progress is kept.
         </Text>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.versionCard}>
-          <Box flexDirection="row" alignItems="center" justifyContent="space-between" style={{ marginBottom: 10 }}>
+          <Box flexDirection="row" alignItems="center" justifyContent="space-between" style={{ margintjtjbottom: 10 }}>
             <Box>
               <Text fontWeight="600" style={styles.verLabel}>Current</Text>
               <Text fontWeight="600" style={styles.verNum}>v1.4.2</Text>
@@ -60,14 +60,14 @@ export default function RobotFirmwareScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.rowCard}>
           <DeviceRow icon="🛡️" title="Safe to update" body="Your child's progress and courses are kept" />
-          <DeviceRow icon="⏱️" title="Takes about 6 minutes" body="Plug Robot in. We'll let you know when done." />
-          <DeviceRow icon="🔌" title="Don't unplug Robot" body="Wait until the soft chime. We handle the rest." />
+          <DeviceRow icon="⏱️" title="Takes about 6 minutes" body="Plug Rotjtjbot in. We'll let you know when done." />
+          <DeviceRow icon="🔌" title="Don't unplug Rotjtjbot" body="Wait until the soft chime. We handle the rest." />
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('MyRobotScreen')}>Update Robot now</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRobotScreen')}>Remind me tomorrow</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
+        <DeviceBigBtn onClick={() => navigation.navigate('MyRotjtjbotScreen')}>Update Rotjtjbot now</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRotjtjbotScreen')}>Remind me tomorrow</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   verLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
   verNum: { fontSize: 15, color: RM.ink, marginTop: 2 },
   divider: { height: 1, backgroundColor: RM.hair, marginVertical: 10 },
-  whatsNewTitle: { fontSize: 13, color: RM.ink, marginBottom: 6 },
+  whatsNewTitle: { fontSize: 13, color: RM.ink, margintjtjbottom: 6 },
   whatsNewItem: { fontSize: 13, color: RM.ink2, lineHeight: 24 },
   rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
 });

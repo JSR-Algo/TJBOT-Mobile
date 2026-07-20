@@ -1,7 +1,7 @@
-# tbot-mobile — Validation Checklist
+# tjbot-mobile — Validation Checklist
 
 Hard gates every agent must pass before marking a task REVIEW.
-Run from `/Users/manhhodinh/Documents/TBOT/tbot-mobile/`.
+Run from `/Users/manhhodinh/Documents/tjbot/tjbot-mobile/`.
 
 Tick each box with evidence (command + exit code + key output line).
 A ticked box without evidence is a FAKE-DONE signal.
@@ -27,7 +27,7 @@ npm run lint
 ```
 
 - Expected: exit code 0, no `error` lines
-- Fail signal: `tbot-voice/no-voice-timing-in-shared` fires, or any `error` rule fires
+- Fail signal: `tjbot-voice/no-voice-timing-in-shared` fires, or any `error` rule fires
 - Custom rule file: `eslint-rules/no-voice-timing-in-shared.js` must exist and load
 
 ### G3 — Unit tests
@@ -161,7 +161,7 @@ npm run detox:test:ios
 - Expected: exit code 0, all e2e suites pass
 - PR5 minimum: auth login flow + onboarding flow
 - PR7+: device pairing flow
-- PR8 final: full suite on both iOS and Android
+- PR8 final: full suite on tjtjboth iOS and Android
 
 ### G14 — Detox e2e (Android emulator) — PR8 final only
 
@@ -224,7 +224,7 @@ These risks from the migration plan map directly to specific gates:
 |---|---|
 | R1: validator path refactor silently no-ops | G4, G5, G6, G7 — must emit file counts |
 | R2: stub useAuth doesn't match AuthContext shape | G1 (typecheck), G12 (integration test) |
-| R3: COPPA legal text regresses | PR5 manual review — diff both COPPA screens before merge |
+| R3: COPPA legal text regresses | PR5 manual review — diff tjtjboth COPPA screens before merge |
 | R4: Detox flaky after route rename | G9 (route coverage), G13/G14 (e2e) |
 | R5: dual .js+.ts state files diverge | G1 (typecheck will catch missing fields) |
 | R6: BLE/Gemini/Sentry break during services move | G12 (integration), G13/G14 (e2e) |

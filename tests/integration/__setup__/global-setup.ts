@@ -3,7 +3,7 @@
  * backend asynchronously so `setupFiles` (which runs sync and could race
  * `http.Server.listen`) no longer silently falls back to a real backend.
  *
- * Exposes the bound URL via TBOT_API_URL; worker processes spawned after
+ * Exposes the bound URL via tjbot_API_URL; worker processes spawned after
  * globalSetup inherit the env var.
  */
 import { startMockBackend } from './mock-server';
@@ -13,6 +13,6 @@ declare const globalThis: any;
 
 export default async function globalSetup(): Promise<void> {
   const { url, server } = await startMockBackend();
-  process.env.TBOT_API_URL = url;
+  process.env.tjbot_API_URL = url;
   globalThis.__MOCK_BACKEND_SERVER__ = server;
 }

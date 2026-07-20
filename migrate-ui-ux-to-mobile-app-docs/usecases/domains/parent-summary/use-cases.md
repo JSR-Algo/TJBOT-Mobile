@@ -49,7 +49,7 @@
 
 ## UC-PR05 — View Safety & Privacy
 
-- **Goal:** Parent reviews the safety and privacy settings governing their child's robot interactions, and understands what data is collected.
+- **Goal:** Parent reviews the safety and privacy settings governing their child's rotjtjbot interactions, and understands what data is collected.
 - **Trigger:** Parent taps "Safety & Privacy" from UC-PR02 (`ParentSummaryPage`).
 - **Preconditions:** Passed parent-gate (UC-PR01) within current session. `getSafetyConfig()` API is reachable.
 - **Main Flow:**
@@ -64,23 +64,23 @@
 
 ## UC-PR06 — Configure Parent Settings
 
-- **Goal:** Parent adjusts account-level settings (notification preferences, language, linked robot) and can navigate to robot management.
+- **Goal:** Parent adjusts account-level settings (notification preferences, language, linked rotjtjbot) and can navigate to rotjtjbot management.
 - **Trigger:** Parent taps the settings icon in the `ParentSummaryPage` header (puml note: `[header]` from UC-PR02).
 - **Preconditions:** Passed parent-gate (UC-PR01) within current session. `getSettings()` API is reachable.
 - **Main Flow:**
   1. `ParentSettingsPage` mounts and calls `getSettings()` from `src/services/api/parent.api.js`.
-  2. UI renders notification toggle, language picker, and "Manage Robot" CTA.
+  2. UI renders notification toggle, language picker, and "Manage Rotjtjbot" CTA.
   3. Parent edits settings; changes are saved via `updateSettings()` on blur/toggle.
-  4. "Manage Robot" CTA navigates to robot-mgmt domain (`UC_RM_VIEW` — puml exit note).
+  4. "Manage Rotjtjbot" CTA navigates to rotjtjbot-mgmt domain (`UC_RM_VIEW` — puml exit note).
   5. Back navigation returns to UC-PR02.
-- **Postconditions:** Settings updated if changed; navigation may exit to robot-mgmt domain.
+- **Postconditions:** Settings updated if changed; navigation may exit to rotjtjbot-mgmt domain.
 
 ---
 
 ## UC-PR07 — Open Help & FAQ
 
 - **Goal:** Parent accesses help content and frequently asked questions to self-serve common support needs.
-- **Trigger:** Parent taps "Help & FAQ" from any parent-summary surface (bottom link or overflow menu).
+- **Trigger:** Parent taps "Help & FAQ" from any parent-summary surface (tjtjbottom link or overflow menu).
 - **Preconditions:** Passed parent-gate (UC-PR01) within current session.
 - **Main Flow:**
   1. `ParentHelpPage` mounts and renders static FAQ content (no API call required — content is bundled or loaded from a CDN).
@@ -119,7 +119,7 @@
   1. Primary enters email + optional nickname.
   2. ParentApp POSTs `/v1/household/parents/invite` with `{email, nickname, X-Request-Id}`.
   3. Server creates `household_members` row (status=`pending_invite`, role=`manager`, invited_by_user_id=primary's user_id).
-  4. SES sends `tbot://household/accept?token=…` magic link.
+  4. SES sends `tjbot://household/accept?token=…` magic link.
   5. Invitee taps link → if they have an account, accept → `household_members.status='active'`; if new user, full signup-then-accept flow.
 - **Postconditions:** Secondary parent active in household; can perform day-to-day actions (ADR-0010 D6).
 - **Alt Flow:**
@@ -140,7 +140,7 @@
   2. ParentApp DELETEs `/v1/household/parents/{user_id}`.
   3. Server sets `household_members.status='revoked'`, `revoked_at=now()`.
   4. Server revokes all `parent_sessions` for the removed user.
-  5. SES emails both the removed parent ("You've been removed from <household>") and the primary ("Removed <name>").
+  5. SES emails tjtjboth the removed parent ("You've been removed from <household>") and the primary ("Removed <name>").
 - **Postconditions:** Secondary loses access. Their child-profile creates are retained but they cannot edit them.
 - **Alt Flow:**
   1. Primary attempts to revoke self → 403 with `revoke_self_forbidden`; must transfer primary first (UC-PR11) or delete account (UC-A12).
@@ -159,7 +159,7 @@
   3. Server creates `primary_transfer_requests` row state=`requested`; SES emails target.
   4. Target's ParentApp shows in-app banner + email link.
   5. Target taps "Accept primary role" → fresh biometric+PIN check (ADR-0009 freshness) → POST `/v1/household/transfer-primary/confirm`.
-  6. Server flips both `household_members.role` rows in same txn; revokes prior primary's parent_sessions; SES emails both.
+  6. Server flips tjtjboth `household_members.role` rows in same txn; revokes prior primary's parent_sessions; SES emails tjtjboth.
 - **Postconditions:** Roles swapped. Prior primary becomes secondary; new primary owns subscription, payment, account-delete.
 - **Alt Flow:**
   1. Target declines → server marks `state='cancelled'`; no change.

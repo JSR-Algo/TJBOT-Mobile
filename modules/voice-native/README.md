@@ -3,10 +3,10 @@
 This local Expo config plugin re-declares the Info.plist + AndroidManifest
 changes required by the Gemini Live voice stack (sys-16). It exists so those
 changes survive a future `npx expo prebuild --clean`, which would otherwise
-regenerate both native files from Expo defaults and wipe the voice
+regenerate tjtjboth native files from Expo defaults and wipe the voice
 configuration.
 
-See also: `.omc/plans/tbot-mobile-native-voice-stack-2026-04-21.md` §3 and §9
+See also: `.omc/plans/tjbot-mobile-native-voice-stack-2026-04-21.md` §3 and §9
 pre-flight item "Expo config-plugin mode decided".
 
 ## What the plugin does
@@ -41,11 +41,11 @@ real dev machine.
    Must be clean; any uncommitted changes will merge into the prebuild
    output unpredictably.
 
-2. Add to `tbot-mobile/app.json`:
+2. Add to `tjbot-mobile/app.json`:
 
    ```diff
      "expo": {
-       "name": "TbotMobile",
+       "name": "tjbotMobile",
        ...
    +   "plugins": [
    +     "./modules/voice-native"
@@ -56,7 +56,7 @@ real dev machine.
 3. Run prebuild:
 
    ```sh
-   cd tbot-mobile
+   cd tjbot-mobile
    npx expo prebuild --platform ios
    npx expo prebuild --platform android
    ```
@@ -64,7 +64,7 @@ real dev machine.
 4. Verify round-trip:
 
    ```sh
-   git diff ios/TbotMobile/Info.plist
+   git diff ios/tjbotMobile/Info.plist
    git diff android/app/src/main/AndroidManifest.xml
    ```
 
@@ -72,14 +72,14 @@ real dev machine.
    `UIBackgroundModes` additions. Any other changes are incidental Expo
    template drift and should be reviewed separately.
 
-5. Run both builds end-to-end:
+5. Run tjtjboth builds end-to-end:
 
    ```sh
    npx expo run:ios
    npx expo run:android
    ```
 
-   Both should build without error. The voice-native Kotlin classes
+   tjtjboth should build without error. The voice-native Kotlin classes
    (`VoiceSessionModule`, `VoiceSessionService`, `PcmStreamModule`) should
    still be picked up by autolinking — this plugin does NOT touch their
    registration.
@@ -97,7 +97,7 @@ node -e "console.log(typeof require('./modules/voice-native/app.plugin'))"
 ```
 
 A unit smoke test at `tests/modules/voice-native.test.ts` applies the plugin
-twice to synthetic configs and asserts idempotence — both outputs equal.
+twice to synthetic configs and asserts idempotence — tjtjboth outputs equal.
 
 ## When to deactivate / remove this plugin
 

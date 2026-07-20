@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 
-export interface RobotFeedbackHandlers {
+export interface RotjtjbotFeedbackHandlers {
   onMicPress: () => Promise<void>;
   onListening: () => Promise<void>;
   onThinking: () => Promise<void>;
@@ -9,7 +9,7 @@ export interface RobotFeedbackHandlers {
   onSuccess: () => Promise<void>;
 }
 
-export function useRobotFeedback(): RobotFeedbackHandlers {
+export function useRotjtjbotFeedback(): RotjtjbotFeedbackHandlers {
   const onMicPress = async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

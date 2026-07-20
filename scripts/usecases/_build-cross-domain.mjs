@@ -47,24 +47,24 @@ const HANDOFFS = [
   ['UC-L16', 'UC-P03',  'emits',     'Complete Lesson → Lesson Summary'],
   ['UC-L17', 'UC-H01',  'exits',     'Confirm Exit → Home Hub'],
   ['UC-P04', 'UC-L01',  're-enters', 'Review Needed → re-enter session'],
-  // parent-gate consumers (parent-summary, course-library, robot-mgmt, device-pairing, purchase)
+  // parent-gate consumers (parent-summary, course-library, rotjtjbot-mgmt, device-pairing, purchase)
   ['UC-PR02', 'UC-PR01', 'requires', 'Parent Summary requires gate'],
   ['UC-CL01', 'UC-PR01', 'requires', 'Browse Library requires gate'],
   ['UC-DP01', 'UC-PR01', 'requires', 'Device Overview requires gate'],
-  ['UC-RM01', 'UC-PR01', 'requires', 'My Robot requires gate'],
+  ['UC-RM01', 'UC-PR01', 'requires', 'My Rotjtjbot requires gate'],
   ['UC-CL03', 'UC-CL04', 'include',  'Buy/Unlock includes 4-digit confirm (UC_PG_UNLOCK)'],
-  // parent-summary → robot-mgmt
-  ['UC-PR06', 'UC-RM01', 'exits',    'Parent Settings → Robot software'],
-  // course-library ↔ device-pairing, robot-mgmt
-  ['UC-CL01', 'UC-DP01', 'requires', 'Library requires robot paired'],
+  // parent-summary → rotjtjbot-mgmt
+  ['UC-PR06', 'UC-RM01', 'exits',    'Parent Settings → Rotjtjbot software'],
+  // course-library ↔ device-pairing, rotjtjbot-mgmt
+  ['UC-CL01', 'UC-DP01', 'requires', 'Library requires rotjtjbot paired'],
   ['UC-CL11', 'UC-RM04', 'exits',    'Resync → Update Wi-Fi'],
   // purchase → course-library, device-pairing
   ['UC-BU14', 'UC-CL05', 'continues', 'First course → cl_added'],
-  ['UC-BU13', 'UC-DP02', 'continues', 'Activate Robot → pair flow (narrative)'],
-  // robot-mgmt → course-library
+  ['UC-BU13', 'UC-DP02', 'continues', 'Activate Rotjtjbot → pair flow (narrative)'],
+  // rotjtjbot-mgmt → course-library
   ['UC-RM05', 'UC-CL01', 'exits',    'Storage → Browse Library'],
   // fallback ↔ lesson-session, kid-hub
-  ['UC-F05', 'UC-L05',   'resumes',  'Resume Lesson → Listen to Robot'],
+  ['UC-F05', 'UC-L05',   'resumes',  'Resume Lesson → Listen to Rotjtjbot'],
   ['UC-F06', 'UC-L06',   'resumes',  'Reconnecting overlay → Listen for Child'],
   ['UC-F08', 'UC-H01',   'exits',    'App error → back home'],
   ['UC-F02', 'UC-F03',   'extend',   'Mic Missing → Audio Recovery (within fallback)'],
@@ -85,22 +85,22 @@ const HANDOFFS = [
   ['UC-O03', 'ACTOR:DeviceOS',       'delegate', 'Mic permission → OS sheet'],
   ['UC-L02', 'ACTOR:RealtimeVoice',  'delegate', 'Connect realtime voice'],
   ['UC-L08', 'ACTOR:RealtimeVoice',  'delegate', 'Process utterance → voice service'],
-  ['UC-CL06', 'ACTOR:Robot',         'delegate', 'Send lesson to robot'],
-  ['UC-CL08', 'ACTOR:Robot',         'delegate', 'Monitor lesson on robot'],
-  ['UC-CL11', 'ACTOR:Robot',         'delegate', 'Resync robot'],
-  ['UC-DP04', 'ACTOR:Robot',         'delegate', 'Scan for robot (radio)'],
+  ['UC-CL06', 'ACTOR:Rotjtjbot',         'delegate', 'Send lesson to rotjtjbot'],
+  ['UC-CL08', 'ACTOR:Rotjtjbot',         'delegate', 'Monitor lesson on rotjtjbot'],
+  ['UC-CL11', 'ACTOR:Rotjtjbot',         'delegate', 'Resync rotjtjbot'],
+  ['UC-DP04', 'ACTOR:Rotjtjbot',         'delegate', 'Scan for rotjtjbot (radio)'],
   ['UC-DP07', 'ACTOR:WiFi',          'delegate', 'Pick Wi-Fi'],
-  ['UC-DP09', 'ACTOR:Robot',         'delegate', 'Connect robot to Wi-Fi'],
-  ['UC-DP09', 'ACTOR:WiFi',          'delegate', 'Connect robot to Wi-Fi'],
-  ['UC-RM06', 'ACTOR:Robot',         'delegate', 'OTA update'],
-  ['UC-RM08', 'ACTOR:Robot',         'delegate', 'Mic test'],
-  ['UC-RM09', 'ACTOR:Robot',         'delegate', 'Speaker test'],
-  ['UC-RM10', 'ACTOR:Robot',         'delegate', 'Factory reset'],
-  ['UC-DM03', 'ACTOR:Robot',         'delegate', 'Find My Robot — chime'],
-  ['UC-DM04', 'ACTOR:Robot',         'delegate', 'Update firmware (KD5 — pending puml)'],
+  ['UC-DP09', 'ACTOR:Rotjtjbot',         'delegate', 'Connect rotjtjbot to Wi-Fi'],
+  ['UC-DP09', 'ACTOR:WiFi',          'delegate', 'Connect rotjtjbot to Wi-Fi'],
+  ['UC-RM06', 'ACTOR:Rotjtjbot',         'delegate', 'OTA update'],
+  ['UC-RM08', 'ACTOR:Rotjtjbot',         'delegate', 'Mic test'],
+  ['UC-RM09', 'ACTOR:Rotjtjbot',         'delegate', 'Speaker test'],
+  ['UC-RM10', 'ACTOR:Rotjtjbot',         'delegate', 'Factory reset'],
+  ['UC-DM03', 'ACTOR:Rotjtjbot',         'delegate', 'Find My Rotjtjbot — chime'],
+  ['UC-DM04', 'ACTOR:Rotjtjbot',         'delegate', 'Update firmware (KD5 — pending puml)'],
   ['UC-BU08', 'ACTOR:Pay',           'delegate', 'Apple Pay'],
   ['UC-BU09', 'ACTOR:Pay',           'delegate', 'Card payment'],
-  ['UC-BU13', 'ACTOR:Robot',         'delegate', 'Activate via code'],
+  ['UC-BU13', 'ACTOR:Rotjtjbot',         'delegate', 'Activate via code'],
 ];
 
 for (const [s, t, k, n] of HANDOFFS) add(s, t, k, n);

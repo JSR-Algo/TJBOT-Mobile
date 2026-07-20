@@ -49,7 +49,7 @@ export default function LoginErrorScreen({ navigation }: Props) {
         <Text style={styles.errorMsg}>Email or password is incorrect.</Text>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
         <OnbBigBtn onClick={() => navigation.navigate('ChildProfileScreen')}>Try again</OnbBigBtn>
         <OnbBigBtn secondary onClick={() => navigation.navigate('LoginScreen')}>Reset password</OnbBigBtn>
       </Box>
@@ -70,9 +70,9 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 64, height: 64, borderRadius: 16,
     backgroundColor: OB.dangerSoft,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 18,
+    alignItems: 'center', justifyContent: 'center', margintjtjbottom: 18,
   },
-  title: { fontSize: 20, color: OB.ink, textAlign: 'center', marginBottom: 6, letterSpacing: -0.3 },
+  title: { fontSize: 20, color: OB.ink, textAlign: 'center', margintjtjbottom: 6, letterSpacing: -0.3 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 21, textAlign: 'center' },
   inputWrap: {
     backgroundColor: OB.card, borderWidth: 1, borderRadius: 10, padding: 14,

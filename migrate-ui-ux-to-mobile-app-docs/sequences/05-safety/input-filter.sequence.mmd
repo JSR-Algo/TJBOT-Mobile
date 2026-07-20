@@ -8,7 +8,7 @@ apis:
   - POST /internal/v1/conversation/generate
 externals: []
 queues:
-  - tbot-safety-event
+  - tjbot-safety-event
 failure_paths:
   - blocklist_hard_block
   - topic_classifier_block
@@ -33,13 +33,13 @@ sequenceDiagram
     SafetyService->>BlocklistCache: regex blocklist (12 categories)
     alt blocklist_hard_block
         BlocklistCache-->>SafetyService: hit violence|adult_content|self_harm|substance|horror|bullying|dating
-        SafetyService-)SafetyService: emit tbot-safety-event safety.input_blocked
+        SafetyService-)SafetyService: emit tjbot-safety-event safety.input_blocked
         SafetyService-->>Orchestrator: block_with_fallback {category, fallback_text}
     else topic_classifier_block
         BlocklistCache-->>SafetyService: pass
         SafetyService->>TopicClassifier: classify (violence_evasion, self_harm_evasion, ...)
         TopicClassifier-->>SafetyService: confidence > 0.80
-        SafetyService-)SafetyService: emit tbot-safety-event safety.input_blocked
+        SafetyService-)SafetyService: emit tjbot-safety-event safety.input_blocked
         SafetyService-->>Orchestrator: block_with_fallback
     else pii_detected_block
         BlocklistCache-->>SafetyService: pass

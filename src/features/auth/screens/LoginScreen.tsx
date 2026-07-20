@@ -114,7 +114,7 @@ export default function LoginScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={20} paddingtjtjbottom={30} gap={10}>
         <OnbBigBtn onClick={onSubmit}>
           {isLoading ? '…' : mode === 'signup' ? 'Create account' : 'Log in'}
         </OnbBigBtn>
@@ -149,7 +149,7 @@ function AppleIcon() {
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, color: OB.ink, marginBottom: 6, letterSpacing: -0.3 },
+  heading: { fontSize: 22, color: OB.ink, margintjtjbottom: 6, letterSpacing: -0.3 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 21 },
   tabBar: { backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 10, padding: 3 },
   tab: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },

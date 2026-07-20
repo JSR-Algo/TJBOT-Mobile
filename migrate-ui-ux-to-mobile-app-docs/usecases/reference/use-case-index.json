@@ -175,7 +175,7 @@
     },
     {
       "id": "UC-BU01",
-      "name": "View Robot Overview",
+      "name": "View Rotjtjbot Overview",
       "domain": "purchase",
       "source_md_line": 139,
       "aliases": [
@@ -285,7 +285,7 @@
     },
     {
       "id": "UC-BU12",
-      "name": "Confirm Robot Arrived",
+      "name": "Confirm Rotjtjbot Arrived",
       "domain": "purchase",
       "source_md_line": 150,
       "aliases": [
@@ -295,7 +295,7 @@
     },
     {
       "id": "UC-BU13",
-      "name": "Activate Robot with Code",
+      "name": "Activate Rotjtjbot with Code",
       "domain": "purchase",
       "source_md_line": 151,
       "aliases": [
@@ -457,7 +457,7 @@
     },
     {
       "id": "UC-CL05",
-      "name": "Course Added to Robot",
+      "name": "Course Added to Rotjtjbot",
       "domain": "course-library",
       "source_md_line": 129,
       "aliases": [
@@ -467,7 +467,7 @@
     },
     {
       "id": "UC-CL06",
-      "name": "Send Lesson to Robot",
+      "name": "Send Lesson to Rotjtjbot",
       "domain": "course-library",
       "source_md_line": 130,
       "aliases": [
@@ -477,7 +477,7 @@
     },
     {
       "id": "UC-CL07",
-      "name": "Confirm Robot Ready",
+      "name": "Confirm Rotjtjbot Ready",
       "domain": "course-library",
       "source_md_line": 131,
       "aliases": [
@@ -487,7 +487,7 @@
     },
     {
       "id": "UC-CL08",
-      "name": "Monitor Lesson Running on Robot",
+      "name": "Monitor Lesson Running on Rotjtjbot",
       "domain": "course-library",
       "source_md_line": 132,
       "aliases": [
@@ -517,7 +517,7 @@
     },
     {
       "id": "UC-CL11",
-      "name": "Resync Robot",
+      "name": "Resync Rotjtjbot",
       "domain": "course-library",
       "source_md_line": 135,
       "aliases": [
@@ -553,7 +553,7 @@
     },
     {
       "id": "UC-DM03",
-      "name": "Find My Robot",
+      "name": "Find My Rotjtjbot",
       "domain": "device-mgmt",
       "source_md_line": 182,
       "aliases": [],
@@ -595,7 +595,7 @@
     },
     {
       "id": "UC-DP02",
-      "name": "Add New Robot",
+      "name": "Add New Rotjtjbot",
       "domain": "device-pairing",
       "source_md_line": 165,
       "aliases": [
@@ -605,7 +605,7 @@
     },
     {
       "id": "UC-DP03",
-      "name": "Power-on Robot Confirm",
+      "name": "Power-on Rotjtjbot Confirm",
       "domain": "device-pairing",
       "source_md_line": 166,
       "aliases": [
@@ -615,7 +615,7 @@
     },
     {
       "id": "UC-DP04",
-      "name": "Scan for Robot",
+      "name": "Scan for Rotjtjbot",
       "domain": "device-pairing",
       "source_md_line": 167,
       "aliases": [
@@ -625,7 +625,7 @@
     },
     {
       "id": "UC-DP05",
-      "name": "Identify Robot",
+      "name": "Identify Rotjtjbot",
       "domain": "device-pairing",
       "source_md_line": 168,
       "aliases": [
@@ -665,7 +665,7 @@
     },
     {
       "id": "UC-DP09",
-      "name": "Connect Robot to Wi-Fi",
+      "name": "Connect Rotjtjbot to Wi-Fi",
       "domain": "device-pairing",
       "source_md_line": 172,
       "aliases": [
@@ -705,7 +705,7 @@
     },
     {
       "id": "UC-DP13",
-      "name": "Rename Robot & Pick Buddy",
+      "name": "Rename Rotjtjbot & Pick Buddy",
       "domain": "device-pairing",
       "source_md_line": 176,
       "aliases": [
@@ -815,7 +815,7 @@
     },
     {
       "id": "UC-H02",
-      "name": "Tap Robot for Greeting",
+      "name": "Tap Rotjtjbot for Greeting",
       "domain": "kid-hub",
       "source_md_line": 61,
       "aliases": [
@@ -913,7 +913,7 @@
     },
     {
       "id": "UC-L03",
-      "name": "Receive Robot Greeting",
+      "name": "Receive Rotjtjbot Greeting",
       "domain": "lesson-session",
       "source_md_line": 82,
       "aliases": [
@@ -933,11 +933,11 @@
     },
     {
       "id": "UC-L05",
-      "name": "Listen to Robot Speech",
+      "name": "Listen to Rotjtjbot Speech",
       "domain": "lesson-session",
       "source_md_line": 84,
       "aliases": [
-        "UC_LSN_LISTEN_BOT"
+        "UC_LSN_LISTEN_tjtjbot"
       ],
       "status": "defined"
     },
@@ -1325,8 +1325,8 @@
     },
     {
       "id": "UC-RM01",
-      "name": "View My Robot",
-      "domain": "robot-mgmt",
+      "name": "View My Rotjtjbot",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 188,
       "aliases": [
         "UC_RM_VIEW"
@@ -1335,8 +1335,8 @@
     },
     {
       "id": "UC-RM02",
-      "name": "View Robot Status",
-      "domain": "robot-mgmt",
+      "name": "View Rotjtjbot Status",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 189,
       "aliases": [
         "UC_RM_STATUS"
@@ -1346,7 +1346,7 @@
     {
       "id": "UC-RM03",
       "name": "View Battery",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 190,
       "aliases": [
         "UC_RM_BATTERY"
@@ -1356,7 +1356,7 @@
     {
       "id": "UC-RM04",
       "name": "View Wi-Fi",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 191,
       "aliases": [
         "UC_RM_WIFI"
@@ -1366,7 +1366,7 @@
     {
       "id": "UC-RM05",
       "name": "View Installed Courses",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 192,
       "aliases": [
         "UC_RM_STORAGE"
@@ -1375,8 +1375,8 @@
     },
     {
       "id": "UC-RM06",
-      "name": "Update Robot Software",
-      "domain": "robot-mgmt",
+      "name": "Update Rotjtjbot Software",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 193,
       "aliases": [
         "UC_RM_FW"
@@ -1386,7 +1386,7 @@
     {
       "id": "UC-RM07",
       "name": "Adjust Sound & Volume",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 194,
       "aliases": [
         "UC_RM_SOUND"
@@ -1396,7 +1396,7 @@
     {
       "id": "UC-RM08",
       "name": "Run Microphone Test",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 195,
       "aliases": [
         "UC_RM_MIC"
@@ -1406,7 +1406,7 @@
     {
       "id": "UC-RM09",
       "name": "Run Speaker Test",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 196,
       "aliases": [
         "UC_RM_SPK"
@@ -1416,7 +1416,7 @@
     {
       "id": "UC-RM10",
       "name": "Factory Reset",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 197,
       "aliases": [
         "UC_RM_RESET"
@@ -1426,7 +1426,7 @@
     {
       "id": "UC-RM11",
       "name": "View Offline Help",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 198,
       "aliases": [
         "UC_RM_OFFLINE"
@@ -1436,7 +1436,7 @@
     {
       "id": "UC-RM12",
       "name": "Contact Support",
-      "domain": "robot-mgmt",
+      "domain": "rotjtjbot-mgmt",
       "source_md_line": 199,
       "aliases": [
         "UC_RM_SUPPORT"

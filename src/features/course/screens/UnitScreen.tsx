@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
@@ -29,7 +29,7 @@ export default function UnitScreen({ navigation }: Props) {
         title="How are you?"
       />
 
-      <Box paddingHorizontal={24} paddingBottom={16}>
+      <Box paddingHorizontal={24} paddingtjtjbottom={16}>
         <Box style={styles.summaryCard}>
           <Box flex={1}>
             <Text fontWeight="700" style={styles.doneText}>2 of 5 done</Text>
@@ -41,11 +41,11 @@ export default function UnitScreen({ navigation }: Props) {
               <Box style={styles.chipSky}><Text fontWeight="700" style={styles.chipSkyText}>2 phrases</Text></Box>
             </Box>
           </Box>
-          <Robot emotion="happy" size={86} />
+          <Rotjtjbot emotion="happy" size={86} />
         </Box>
       </Box>
 
-      <Box paddingHorizontal={18} paddingBottom={40} gap={12}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={40} gap={12}>
         {LESSONS.map(l => {
           const isLocked = l.state === 'locked';
           const isDone = l.state === 'done';

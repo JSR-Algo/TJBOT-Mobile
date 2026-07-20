@@ -27,8 +27,8 @@
 
 - Cells stay sentinel because (a) `device.api.js` exports all throw `not implemented` (`pairDevice`, `getDeviceStatus`, `setDeviceWifi`, `unpairDevice`, etc.), and (b) no domain ADR exists.
 - Once the pairing radio transport decision lands (KD8) and a `decisions/NNNN-backend-device-pairing.md` ADR is created, candidate cell promotions:
-  - UC-DP04 (Scan): `device.api.js → pairDevice` (Endpoint), pairing-discovery store action TBD (Service), `Robot` (Entity, per `docs/erd/README.md`).
-  - UC-DP09 (Connect): `device.api.js → setDeviceWifi` (Endpoint), `device.store.js → bindRobot` action TBD (Service), `Robot` (Entity).
-  - UC-DP10 (Success): emits `robot.paired` event TBD (Events).
-  - UC-DP13 (Rename): `device.api.js → ` rename action TBD; would update `Robot.buddy` (Entity).
+  - UC-DP04 (Scan): `device.api.js → pairDevice` (Endpoint), pairing-discovery store action TBD (Service), `Rotjtjbot` (Entity, per `docs/erd/README.md`).
+  - UC-DP09 (Connect): `device.api.js → setDeviceWifi` (Endpoint), `device.store.js → bindRotjtjbot` action TBD (Service), `Rotjtjbot` (Entity).
+  - UC-DP10 (Success): emits `rotjtjbot.paired` event TBD (Events).
+  - UC-DP13 (Rename): `device.api.js → ` rename action TBD; would update `Rotjtjbot.buddy` (Entity).
 - KD8 holds UC-DP04 sentinel until the radio transport is confirmed.

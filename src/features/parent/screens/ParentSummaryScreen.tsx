@@ -27,13 +27,13 @@ export default function ParentSummaryScreen({ navigation }: Props) {
         </TouchableOpacity>
       }
     >
-      <Box paddingHorizontal={16} paddingTop={18} paddingBottom={8}>
+      <Box paddingHorizontal={16} paddingTop={18} paddingtjtjbottom={8}>
         <Text style={styles.dateLabel}>Today · Tuesday, Mar 12</Text>
         <Text fontWeight="600" style={styles.headline}>
           Mira practiced greetings and feelings for about 8 minutes.
         </Text>
 
-        <Box flexDirection="row" gap={10} marginBottom={14} style={{ flexWrap: 'wrap' }}>
+        <Box flexDirection="row" gap={10} margintjtjbottom={14} style={{ flexWrap: 'wrap' }}>
           {STATS.map(s => (
             <Box key={s.l} style={styles.statCard} flex={1}>
               <Text fontWeight="600" style={styles.statVal}>{s.v}</Text>
@@ -65,7 +65,7 @@ export default function ParentSummaryScreen({ navigation }: Props) {
         <PRow icon="⚙" label="Settings" chevron onPress={() => navigation.navigate('ParentSettingsScreen')} isLast />
       </PRowGroup>
 
-      <Box paddingHorizontal={24} paddingTop={18} paddingBottom={36} alignItems="center">
+      <Box paddingHorizontal={24} paddingTop={18} paddingtjtjbottom={36} alignItems="center">
         <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen')} activeOpacity={0.7}>
           <Text style={{ color: PA.accent, fontSize: 15, fontWeight: '500' }}>Return to child play area</Text>
         </TouchableOpacity>
@@ -83,8 +83,8 @@ function ChevronIcon() {
 }
 
 const styles = StyleSheet.create({
-  dateLabel: { fontSize: 13, color: PA.ink3, marginBottom: 6 },
-  headline: { fontSize: 22, color: PA.ink, letterSpacing: -0.3, lineHeight: 29, marginBottom: 18 },
+  dateLabel: { fontSize: 13, color: PA.ink3, margintjtjbottom: 6 },
+  headline: { fontSize: 22, color: PA.ink, letterSpacing: -0.3, lineHeight: 29, margintjtjbottom: 18 },
   statCard: { backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair, borderRadius: 12, padding: 12 },
   statVal: { fontSize: 22, color: PA.ink, letterSpacing: -0.3 },
   statLabel: { fontSize: 12, color: PA.ink2, marginTop: 2 },

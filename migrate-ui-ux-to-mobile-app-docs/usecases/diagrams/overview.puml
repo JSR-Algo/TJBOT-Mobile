@@ -1,5 +1,5 @@
-@startuml TBOT-Overview
-title TBOT Mobile — Domain Overview (actors + bounded contexts)
+@startuml tjbot-Overview
+title tjbot Mobile — Domain Overview (actors + bounded contexts)
 left to right direction
 skinparam packageStyle rectangle
 
@@ -8,7 +8,7 @@ actor Guest
 actor "Authenticated User" as AuthUser
 actor Child
 actor Parent
-actor "Robot Device" as Robot <<external>>
+actor "Rotjtjbot Device" as Rotjtjbot <<external>>
 actor "Realtime Voice Service" as Voice <<external>>
 actor "Google OAuth" as Google <<external>>
 actor "Apple Sign-In" as Apple <<external>>
@@ -28,7 +28,7 @@ package "parent-summary" as D_PRT
 package "course-library" as D_CL
 package "purchase"       as D_BUY
 package "device-pairing" as D_DP
-package "robot-mgmt"     as D_RM
+package "rotjtjbot-mgmt"     as D_RM
 package "fallback-shell" as D_FB
 
 ' ===== ACTOR-TO-DOMAIN ENTRY EDGES =====
@@ -52,11 +52,11 @@ D_AUTH ..> Apple  : OAuth
 D_ONB  ..> OS     : permission
 D_LSN  ..> Voice  : realtime
 D_BUY  ..> Pay    : payment
-D_BUY  ..> Robot  : activate
-D_CL   ..> Robot  : send course
-D_DP   ..> Robot  : pair / OTA
+D_BUY  ..> Rotjtjbot  : activate
+D_CL   ..> Rotjtjbot  : send course
+D_DP   ..> Rotjtjbot  : pair / OTA
 D_DP   ..> WiFi   : provision
-D_RM   ..> Robot  : diagnostics
+D_RM   ..> Rotjtjbot  : diagnostics
 
 ' ===== CROSS-DOMAIN HANDOFF EDGES (gate / lifecycle) =====
 D_HUB  ..> D_PG    : <<requires>>
@@ -69,7 +69,7 @@ D_LSN  ..> D_PRG   : <<emits>> lesson_summary
 D_CRS  ..> D_LSN   : <<launches>>
 D_HUB  ..> D_LSN   : <<launches>>
 D_BUY  ..> D_CL    : <<continues>> first course
-D_CL   ..> D_DP    : <<requires>> robot paired
+D_CL   ..> D_DP    : <<requires>> rotjtjbot paired
 D_PRG  ..> D_LSN   : <<re-enters>> review
 D_FB   ..> D_LSN   : <<resumes>>
 D_FB   ..> D_HUB   : <<exits>>

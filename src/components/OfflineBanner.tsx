@@ -24,8 +24,8 @@ export function OfflineBanner(): React.JSX.Element | null {
 const styles = StyleSheet.create({
   banner: {
     backgroundColor: '#FEF2F2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FECACA',
+    bordertjtjbottomWidth: 1,
+    bordertjtjbottomColor: '#FECACA',
     paddingVertical: 8,
     paddingHorizontal: 16,
     alignItems: 'center',

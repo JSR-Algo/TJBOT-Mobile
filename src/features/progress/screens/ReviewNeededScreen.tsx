@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
@@ -22,11 +22,11 @@ export default function ReviewNeededScreen({ navigation }: Props) {
   return (
     <PageScroll bg="#FFE6BD">
       <PageHeader onBack={() => navigation.navigate('HomeHubScreen')} subtitle="A friendly nudge" title="Let's visit again" />
-      <Box paddingHorizontal={24} paddingBottom={16} flexDirection="row" alignItems="center" gap={12}>
-        <Robot emotion="curious" size={120} accent="#FFC857" />
+      <Box paddingHorizontal={24} paddingtjtjbottom={16} flexDirection="row" alignItems="center" gap={12}>
+        <Rotjtjbot emotion="curious" size={120} accent="#FFC857" />
         <SpeechBubble>3 words miss you!</SpeechBubble>
       </Box>
-      <Box paddingHorizontal={18} paddingBottom={16} gap={10}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={16} gap={10}>
         {WORDS.map(w => (
           <Box key={w.w} style={styles.wordCard} flexDirection="row" alignItems="center" gap={14}>
             <Box style={styles.wordIcon} alignItems="center" justifyContent="center">
@@ -45,7 +45,7 @@ export default function ReviewNeededScreen({ navigation }: Props) {
           </Box>
         ))}
       </Box>
-      <Box paddingHorizontal={24} paddingTop={10} paddingBottom={28} gap={10}>
+      <Box paddingHorizontal={24} paddingTop={10} paddingtjtjbottom={28} gap={10}>
         <PrimaryCTA onPress={() => navigation.navigate('LessonReadyScreen')} color="#FFC857">
           Practice together
         </PrimaryCTA>

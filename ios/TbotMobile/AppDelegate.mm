@@ -7,7 +7,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  self.moduleName = @"TbotMobile";
+  self.moduleName = @"tjbotMobile";
   self.initialProps = @{};
   self.dependencyProvider = [RCTAppDependencyProvider new];
   return [super application:application didFinishLaunchingWithOptions:launchOptions];

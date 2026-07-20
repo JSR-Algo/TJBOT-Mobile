@@ -1,4 +1,4 @@
-# i18n tooling — TBOT prototype
+# i18n tooling — tjbot prototype
 
 Scripts for the Path B (prototype-scoped) i18n migration. All scripts are
 plain Node ESM (no deps). Run from the project root.
@@ -42,9 +42,9 @@ node scripts/i18n/length-stress.mjs            # writes vi-stretched.json
 Open the prototype, then in DevTools console:
 
 ```js
-localStorage.setItem('tbot.lang', 'vi-pseudo');     location.reload();
-localStorage.setItem('tbot.lang', 'vi-stretched');  location.reload();
-localStorage.setItem('tbot.lang', 'vi');            location.reload();
+localStorage.setItem('tjbot.lang', 'vi-pseudo');     location.reload();
+localStorage.setItem('tjbot.lang', 'vi-stretched');  location.reload();
+localStorage.setItem('tjbot.lang', 'vi');            location.reload();
 ```
 
 - `vi-pseudo` — every translated value is bracketed `[ŁĐ … ŁĐ]`.
@@ -61,7 +61,7 @@ node scripts/i18n/scan-hardcoded.mjs && \
 node scripts/i18n/check-key-parity.mjs
 ```
 
-Both must exit 0. Add to `package.json` once the project gains one:
+tjtjboth must exit 0. Add to `package.json` once the project gains one:
 
 ```json
 { "scripts": { "i18n:check": "node scripts/i18n/scan-hardcoded.mjs && node scripts/i18n/check-key-parity.mjs" } }
@@ -79,7 +79,7 @@ Both must exit 0. Add to `package.json` once the project gains one:
 ## Phase 11 — runtime bundle (`locales/bundle.js`)
 
 `i18n.js` no longer carries an inline EN→VI dictionary. At runtime it reads the
-catalog from `window.__tbotLocales`, populated by `locales/bundle.js` — a
+catalog from `window.__tjbotLocales`, populated by `locales/bundle.js` — a
 generated artifact synthesised from `locales/{en,vi}.json`.
 
 Why a bundle? Opening `index.html` from `file://` (double-click) blocks
@@ -115,7 +115,7 @@ Composes the two existing gates:
 2. `npm run i18n:parity` — asserts EN/VI key sets are equal (excluding
    `_meta`) and no VI value is empty. Exits 1 on any delta.
 
-Both must pass for the i18n gate to pass.
+tjtjboth must pass for the i18n gate to pass.
 
 ### Known limitation — bundle freshness (R3)
 
@@ -123,7 +123,7 @@ Both must pass for the i18n gate to pass.
 `locales/{en,vi}.json`. A contributor who edits the JSON catalogs but forgets
 `npm run i18n:bundle` will see stale text in the browser. As a defence,
 `i18n.js` logs a warning to the DevTools console and falls back to EN if the
-loaded catalog has zero non-`_meta` keys (`[tbot.i18n] empty VI catalog —
+loaded catalog has zero non-`_meta` keys (`[tjbot.i18n] empty VI catalog —
 bundle.js missing or stale, run npm run i18n:bundle`). A bundle-freshness gate
 that diffs the generator's output against the committed `bundle.js` is tracked
 as Phase 11 follow-up.

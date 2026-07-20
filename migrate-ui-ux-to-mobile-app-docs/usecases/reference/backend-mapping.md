@@ -104,15 +104,15 @@ _Source: `docs/usecases/domains/course-library/backend-mapping.md`_
 
 ## Notes
 
-- Cells stay sentinel because (a) `course-library.api.js` exports throw `not implemented` (`listLibrary`, `getCourseDetail`, `purchaseCourse`, `unlockCourse`, `sendCourseToRobot`, `getRobotSyncStatus`), and (b) no domain ADR exists.
+- Cells stay sentinel because (a) `course-library.api.js` exports throw `not implemented` (`listLibrary`, `getCourseDetail`, `purchaseCourse`, `unlockCourse`, `sendCourseToRotjtjbot`, `getRotjtjbotSyncStatus`), and (b) no domain ADR exists.
 - KD11 holds UC-CL04 sentinel until server-side course-lock enforcement is decided; the client-side gate is the prototype's only enforcement.
 - Once a `decisions/NNNN-backend-course-library.md` ADR is created, candidate cell promotions:
   - UC-CL01 (Browse): `course-library.api.js → listLibrary` (Endpoint), references `Course` (Entity).
   - UC-CL02 (Detail): `course-library.api.js → getCourseDetail` (Endpoint).
   - UC-CL03 (Buy): `course-library.api.js → purchaseCourse` (Endpoint); cross-references purchase domain UC-BU07/08/09 for the actual payment provider call.
   - UC-CL04 (Unlock confirm): `course-library.api.js → unlockCourse` (Endpoint) once server-enforcement lands.
-  - UC-CL06 (Send Lesson): `course-library.api.js → sendCourseToRobot` (Endpoint); emits `robot.lesson.queued` event.
-  - UC-CL11 (Resync): `course-library.api.js → getRobotSyncStatus` (Endpoint).
+  - UC-CL06 (Send Lesson): `course-library.api.js → sendCourseToRotjtjbot` (Endpoint); emits `rotjtjbot.lesson.queued` event.
+  - UC-CL11 (Resync): `course-library.api.js → getRotjtjbotSyncStatus` (Endpoint).
 
 ---
 
@@ -138,9 +138,9 @@ _Source: `docs/usecases/domains/device-mgmt/backend-mapping.md`_
 - Cells stay sentinel because (a) `device.api.js` exports all throw `not implemented` (`getDeviceStatus`, `getFirmwareVersion`, `runFirmwareUpdate`, etc.), and (b) no domain ADR exists.
 - Once a `decisions/NNNN-backend-device-mgmt.md` ADR is created, candidate cell promotions:
   - UC-DM01 (Device Home): `device.api.js → getDeviceStatus` (Endpoint); would surface battery / Wi-Fi / sync state for the hero card.
-  - UC-DM02 (Live Session Monitor): would consume realtime telemetry from the Robot session bus (Events) — provider TBD (overlaps KD10).
-  - UC-DM03 (Find My Robot): would call a `device.api.js → chime` action TBD; emits `robot.chime.requested` event.
-  - UC-DM04 (Update Firmware): `device.api.js → runFirmwareUpdate` (Endpoint); emits `robot.firmware.updated` event.
+  - UC-DM02 (Live Session Monitor): would consume realtime telemetry from the Rotjtjbot session bus (Events) — provider TBD (overlaps KD10).
+  - UC-DM03 (Find My Rotjtjbot): would call a `device.api.js → chime` action TBD; emits `rotjtjbot.chime.requested` event.
+  - UC-DM04 (Update Firmware): `device.api.js → runFirmwareUpdate` (Endpoint); emits `rotjtjbot.firmware.updated` event.
   - UC-DM05 / UC-DM06 (LCD library / lesson turn): pure design-review surfaces; expected to remain sentinel even post-backend (KD6 — they are LCD catalog / sequence demos, not data screens).
 
 ---
@@ -176,10 +176,10 @@ _Source: `docs/usecases/domains/device-pairing/backend-mapping.md`_
 
 - Cells stay sentinel because (a) `device.api.js` exports all throw `not implemented` (`pairDevice`, `getDeviceStatus`, `setDeviceWifi`, `unpairDevice`, etc.), and (b) no domain ADR exists.
 - Once the pairing radio transport decision lands (KD8) and a `decisions/NNNN-backend-device-pairing.md` ADR is created, candidate cell promotions:
-  - UC-DP04 (Scan): `device.api.js → pairDevice` (Endpoint), pairing-discovery store action TBD (Service), `Robot` (Entity, per `docs/erd/README.md`).
-  - UC-DP09 (Connect): `device.api.js → setDeviceWifi` (Endpoint), `device.store.js → bindRobot` action TBD (Service), `Robot` (Entity).
-  - UC-DP10 (Success): emits `robot.paired` event TBD (Events).
-  - UC-DP13 (Rename): `device.api.js → ` rename action TBD; would update `Robot.buddy` (Entity).
+  - UC-DP04 (Scan): `device.api.js → pairDevice` (Endpoint), pairing-discovery store action TBD (Service), `Rotjtjbot` (Entity, per `docs/erd/README.md`).
+  - UC-DP09 (Connect): `device.api.js → setDeviceWifi` (Endpoint), `device.store.js → bindRotjtjbot` action TBD (Service), `Rotjtjbot` (Entity).
+  - UC-DP10 (Success): emits `rotjtjbot.paired` event TBD (Events).
+  - UC-DP13 (Rename): `device.api.js → ` rename action TBD; would update `Rotjtjbot.buddy` (Entity).
 - KD8 holds UC-DP04 sentinel until the radio transport is confirmed.
 
 ---
@@ -435,18 +435,18 @@ _Source: `docs/usecases/domains/purchase/backend-mapping.md`_
 ## Notes
 
 - **KD9:** UC-BU08 (Apple Pay) and UC-BU09 (Card pay) — payment provider identity NOT CONFIRMED IN SOURCE (legacy doc §4 row 6). All cells sentinel for these rows.
-- `purchase.api.js` exports `createOrder`, `getOrder`, `processPayment`, `getShippingStatus`, `activateRobot` — all throw `not implemented`. These are the intended endpoint exports for UC-BU07, UC-BU10, UC-BU11, UC-BU13 but no backend contract exists yet.
+- `purchase.api.js` exports `createOrder`, `getOrder`, `processPayment`, `getShippingStatus`, `activateRotjtjbot` — all throw `not implemented`. These are the intended endpoint exports for UC-BU07, UC-BU10, UC-BU11, UC-BU13 but no backend contract exists yet.
 - `purchase.store.js` exports only `usePurchaseStore` (Zustand store); individual actions (`startCheckout`, `confirmPayment`, `setShipping`, `reset`) are internal store methods, not top-level exports.
 - DB Entity and Events columns are sentinel — no ERD entities or event bus designed for purchase domain yet.
 - Domain ADR Pointer is `—` for all rows. When backend lands and payment provider is confirmed, create `decisions/NNNN-backend-purchase.md` and promote cells off sentinel.
 
 ---
 
-## Domain — `robot-mgmt`
+## Domain — `rotjtjbot-mgmt`
 
-_Source: `docs/usecases/domains/robot-mgmt/backend-mapping.md`_
+_Source: `docs/usecases/domains/rotjtjbot-mgmt/backend-mapping.md`_
 
-> Every cell is `BACKEND_NOT_DESIGNED` (D3 sentinel). The prototype's `robot-mgmt.api.js` exports all throw `not implemented`; no `decisions/NNNN-backend-robot-mgmt.md` ADR exists yet. Domain ADR Pointer is `—` per HR-6 state-based rule.
+> Every cell is `BACKEND_NOT_DESIGNED` (D3 sentinel). The prototype's `rotjtjbot-mgmt.api.js` exports all throw `not implemented`; no `decisions/NNNN-backend-rotjtjbot-mgmt.md` ADR exists yet. Domain ADR Pointer is `—` per HR-6 state-based rule.
 
 | UC ID | Endpoint | Service | DB Entity | Events | Domain ADR Pointer |
 |---|---|---|---|---|---|
@@ -467,16 +467,16 @@ _Source: `docs/usecases/domains/robot-mgmt/backend-mapping.md`_
 
 ## Notes
 
-- Cells stay sentinel because (a) `robot-mgmt.api.js` exports throw `not implemented` (`getRobotStatus`, `getBattery`, `getStorage`, `runMicTest`, `runSpeakerTest`, `factoryReset`, `getSupportInfo`), and (b) no domain ADR exists.
-- Once a `decisions/NNNN-backend-robot-mgmt.md` ADR is created, candidate cell promotions:
-  - UC-RM02 (Status): `robot-mgmt.api.js → getRobotStatus` (Endpoint); would surface a status rollup.
-  - UC-RM03 (Battery): `robot-mgmt.api.js → getBattery` (Endpoint).
-  - UC-RM05 (Installed Courses): `robot-mgmt.api.js → getStorage` (Endpoint); references `Course` (Entity, per `docs/erd/README.md`).
+- Cells stay sentinel because (a) `rotjtjbot-mgmt.api.js` exports throw `not implemented` (`getRotjtjbotStatus`, `getBattery`, `getStorage`, `runMicTest`, `runSpeakerTest`, `factoryReset`, `getSupportInfo`), and (b) no domain ADR exists.
+- Once a `decisions/NNNN-backend-rotjtjbot-mgmt.md` ADR is created, candidate cell promotions:
+  - UC-RM02 (Status): `rotjtjbot-mgmt.api.js → getRotjtjbotStatus` (Endpoint); would surface a status rollup.
+  - UC-RM03 (Battery): `rotjtjbot-mgmt.api.js → getBattery` (Endpoint).
+  - UC-RM05 (Installed Courses): `rotjtjbot-mgmt.api.js → getStorage` (Endpoint); references `Course` (Entity, per `docs/erd/README.md`).
   - UC-RM06 (Update Software): `device.api.js → runFirmwareUpdate` (Endpoint, shared with UC-DM04).
-  - UC-RM08 (Mic Test): `robot-mgmt.api.js → runMicTest` (Endpoint).
-  - UC-RM09 (Speaker Test): `robot-mgmt.api.js → runSpeakerTest` (Endpoint).
-  - UC-RM10 (Factory Reset): `robot-mgmt.api.js → factoryReset` (Endpoint, destructive); emits `robot.reset.requested` event.
-  - UC-RM12 (Support): `robot-mgmt.api.js → getSupportInfo` (Endpoint).
+  - UC-RM08 (Mic Test): `rotjtjbot-mgmt.api.js → runMicTest` (Endpoint).
+  - UC-RM09 (Speaker Test): `rotjtjbot-mgmt.api.js → runSpeakerTest` (Endpoint).
+  - UC-RM10 (Factory Reset): `rotjtjbot-mgmt.api.js → factoryReset` (Endpoint, destructive); emits `rotjtjbot.reset.requested` event.
+  - UC-RM12 (Support): `rotjtjbot-mgmt.api.js → getSupportInfo` (Endpoint).
 
 ---
 

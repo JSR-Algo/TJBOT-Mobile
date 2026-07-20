@@ -25,10 +25,10 @@ export default function FirstCourseScreen({ navigation }: Props) {
         <Box style={styles.lcdWrap}>
           <LCDFace emotion="happy" size={150} accent="#FF6F61" />
         </Box>
-        <Box style={styles.chipWrap}><PRChip color={PR.good} bg="#E6F4EE">Robot · activated</PRChip></Box>
+        <Box style={styles.chipWrap}><PRChip color={PR.good} bg="#E6F4EE">Rotjtjbot · activated</PRChip></Box>
         <Text fontWeight="600" style={styles.heading}>Add your first course</Text>
         <Text style={styles.sub}>
-          Hello Friends comes free with your Robot. We'll send it to the device now.
+          Hello Friends comes free with your Rotjtjbot. We'll send it to the device now.
         </Text>
       </Box>
 
@@ -39,7 +39,7 @@ export default function FirstCourseScreen({ navigation }: Props) {
           </Box>
           <Box flex={1}>
             <Box style={[styles.chipRow, { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }]}>
-              <PRChip color={PR.good} bg="#E6F4EE">Free with Robot</PRChip>
+              <PRChip color={PR.good} bg="#E6F4EE">Free with Rotjtjbot</PRChip>
               <Text style={styles.ages}>Ages 4–6</Text>
             </Box>
             <Text fontWeight="600" style={styles.courseName}>Hello Friends</Text>
@@ -61,8 +61,8 @@ export default function FirstCourseScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('CourseAddedScreen')}>Send Hello Friends to Robot</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
+        <DeviceBigBtn onClick={() => navigation.navigate('CourseAddedScreen')}>Send Hello Friends to Rotjtjbot</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('CourseLibraryScreen')}>Explore the library first</DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start',
   },
   lcdSmall: { backgroundColor: '#0E1116', borderRadius: 10, padding: 6, flexShrink: 0 },
-  chipRow: { marginBottom: 4 },
+  chipRow: { margintjtjbottom: 4 },
   ages: { fontSize: 11, color: PR.ink3 },
   courseName: { fontSize: 15, color: PR.ink },
   courseBlurb: { fontSize: 12, color: PR.ink2, marginTop: 3, lineHeight: 18 },

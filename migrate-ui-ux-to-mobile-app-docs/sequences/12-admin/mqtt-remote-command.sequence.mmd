@@ -39,7 +39,7 @@ sequenceDiagram
         AdminCommandService-->>AdminConsole: 404 device_not_found
     else accepted
         AdminCommandService->>AuditLog: append {action: remote_command, target: device:id, reason}
-        AdminCommandService->>MQTT: publish tbot/{id}/commands/{verb} {command, command_id, issued_by, issued_at} (QoS 1, retained for factory-reset/transfer)
+        AdminCommandService->>MQTT: publish tjbot/{id}/commands/{verb} {command, command_id, issued_by, issued_at} (QoS 1, retained for factory-reset/transfer)
         alt mqtt_publish_failure
             MQTT-->>AdminCommandService: error
             AdminCommandService-->>AdminConsole: 502 mqtt_publish_failure
@@ -54,7 +54,7 @@ sequenceDiagram
         else online
             MQTT->>Device: deliver command
             Device->>Device: dedupe on command_id (1h cache) + execute
-            Device->>MQTT: publish tbot/{id}/results/{verb} {command_id, result}
+            Device->>MQTT: publish tjbot/{id}/results/{verb} {command_id, result}
             MQTT->>AdminCommandService: forward result
             AdminCommandService->>AuditLog: append {action: command_result, command_id, result}
         end

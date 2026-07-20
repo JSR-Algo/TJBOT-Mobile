@@ -12,7 +12,7 @@ import PRStepTab from '../components/PRStepTab';
 type Props = NativeStackScreenProps<RootStackParamList, 'IncludedScreen'>;
 
 const ITEMS = [
-  { ic: '🤖', t: 'Robot device',             b: '3.2" LCD face, soft-touch shell, 8-hour battery' },
+  { ic: '🤖', t: 'Rotjtjbot device',             b: '3.2" LCD face, soft-touch shell, 8-hour battery' },
   { ic: '🔌', t: 'Charging dock',            b: 'USB-C cable, magnet-aligned base' },
   { ic: '📱', t: 'Parent app',               b: 'Free, no ads, course library and summaries' },
   { ic: '🎁', t: 'Hello Friends starter course', b: '24 lessons of greetings, names, and feelings' },
@@ -44,7 +44,7 @@ export default function IncludedScreen({ navigation }: Props) {
 
       <Text style={styles.note}>Hardware is yours. The starter course is included forever.</Text>
 
-      <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30}>
+      <Box paddingHorizontal={20} paddingTop={18} paddingtjtjbottom={30}>
         <DeviceBigBtn onClick={() => navigation.navigate('BundleScreen')}>Choose a bundle</DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   heading: { fontSize: 24, color: PR.ink, letterSpacing: -0.4, textAlign: 'center', lineHeight: 29, marginTop: 18 },
   listCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 16, overflow: 'hidden' },
   listRow: { flexDirection: 'row', gap: 14, paddingVertical: 14, paddingHorizontal: 16 },
-  listBorder: { borderBottomWidth: 1, borderBottomColor: PR.hair },
+  listBorder: { bordertjtjbottomWidth: 1, bordertjtjbottomColor: PR.hair },
   listIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: PR.warm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   listTitle: { fontSize: 14, color: PR.ink },
   listBody: { fontSize: 12, color: PR.ink2, marginTop: 2, lineHeight: 18 },

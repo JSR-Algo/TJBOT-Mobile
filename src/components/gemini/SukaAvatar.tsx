@@ -135,10 +135,10 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
       // Blink scheduling is presentation-only animation — does not
       // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
       // timers; this is the documented carve-out.
-      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
+      // eslint-disable-next-line tjbot-voice/no-voice-timing-in-shared
       timeout = setTimeout(doBlink, 3000 + Math.random() * 3000);
     };
-    // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
+    // eslint-disable-next-line tjbot-voice/no-voice-timing-in-shared
     timeout = setTimeout(doBlink, 2000 + Math.random() * 2000);
     return () => clearTimeout(timeout);
   }, [voiceState, expr.eyeScaleY, eyeScaleY]);
@@ -241,10 +241,10 @@ export function SukaAvatar({ voiceState, audioLevel }: SukaAvatarProps) {
       backgroundColor: expr.mouthCurve === 'open' ? C.mouthOpen : C.mouth,
     };
     if (expr.mouthCurve === 'smile') {
-      return { ...base, borderTopLeftRadius: 0, borderTopRightRadius: 0, borderBottomLeftRadius: 16, borderBottomRightRadius: 16 };
+      return { ...base, borderTopLeftRadius: 0, borderTopRightRadius: 0, bordertjtjbottomLeftRadius: 16, bordertjtjbottomRightRadius: 16 };
     }
     if (expr.mouthCurve === 'sad') {
-      return { ...base, borderTopLeftRadius: 16, borderTopRightRadius: 16, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 };
+      return { ...base, borderTopLeftRadius: 16, borderTopRightRadius: 16, bordertjtjbottomLeftRadius: 0, bordertjtjbottomRightRadius: 0 };
     }
     if (expr.mouthCurve === 'open') {
       return { ...base, borderRadius: expr.mouthBorderRadius };

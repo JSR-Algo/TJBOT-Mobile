@@ -9,7 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RobotStorageScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'RotjtjbotStorageScreen'>;
 
 const COURSES = [
   { t: 'Hello Friends', s: '24 lessons · all downloaded', size: '420 MB', emo: 'happy', syncing: false },
@@ -23,12 +23,12 @@ const LEGEND = [
   { color: '#E5C56F', label: 'Yummy Words' },
 ] as const;
 
-export default function RobotStorageScreen({ navigation }: Props) {
+export default function RotjtjbotStorageScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Courses on Robot" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Courses on Rotjtjbot" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.gaugeCard}>
-          <Box flexDirection="row" alignItems="flex-end" justifyContent="space-between" style={{ marginBottom: 10 }}>
+          <Box flexDirection="row" alignItems="flex-end" justifyContent="space-between" style={{ margintjtjbottom: 10 }}>
             <Text fontWeight="700" style={styles.storageLabel}>Storage</Text>
             <Text style={styles.storageMeta}><Text fontWeight="600" style={{ color: RM.ink }}>1.21 GB</Text> of 4.0 GB used</Text>
           </Box>
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   gaugeSegment: { height: '100%' as any },
   legendDot: { width: 8, height: 8, borderRadius: 2 },
   legendText: { fontSize: 11, color: RM.ink2 },
-  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   courseCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, padding: 12 },
   lcdWrap: { backgroundColor: '#0E1116', borderRadius: 8, padding: 4, flexShrink: 0 },
   courseName: { fontSize: 14, color: RM.ink },

@@ -74,18 +74,18 @@ describe('voice-native Expo config plugin', () => {
   });
 
   it('adds UIBackgroundModes = [audio] when absent', () => {
-    withVoiceNative({ name: 'TbotMobile' });
+    withVoiceNative({ name: 'tjbotMobile' });
     expect(syntheticInfoPlist.UIBackgroundModes).toEqual(['audio']);
   });
 
   it('preserves other UIBackgroundModes entries', () => {
     syntheticInfoPlist.UIBackgroundModes = ['fetch', 'processing'];
-    withVoiceNative({ name: 'TbotMobile' });
+    withVoiceNative({ name: 'tjbotMobile' });
     expect(syntheticInfoPlist.UIBackgroundModes).toEqual(['fetch', 'processing', 'audio']);
   });
 
   it('adds audio permissions + VoiceSessionService when absent', () => {
-    withVoiceNative({ name: 'TbotMobile' });
+    withVoiceNative({ name: 'tjbotMobile' });
     const perms = syntheticManifest.manifest['uses-permission'].map((p) => p.$['android:name']);
     expect(perms).toEqual(
       expect.arrayContaining([
@@ -107,18 +107,18 @@ describe('voice-native Expo config plugin', () => {
   });
 
   it('is idempotent — second application produces same output', () => {
-    withVoiceNative({ name: 'TbotMobile' });
+    withVoiceNative({ name: 'tjbotMobile' });
     const plistSnapshot = JSON.stringify(syntheticInfoPlist);
     const manifestSnapshot = JSON.stringify(syntheticManifest);
 
-    withVoiceNative({ name: 'TbotMobile' });
+    withVoiceNative({ name: 'tjbotMobile' });
     expect(JSON.stringify(syntheticInfoPlist)).toBe(plistSnapshot);
     expect(JSON.stringify(syntheticManifest)).toBe(manifestSnapshot);
   });
 
   it('does not duplicate an already-present audio entry', () => {
     syntheticInfoPlist.UIBackgroundModes = ['audio'];
-    withVoiceNative({ name: 'TbotMobile' });
+    withVoiceNative({ name: 'tjbotMobile' });
     expect(syntheticInfoPlist.UIBackgroundModes).toEqual(['audio']);
   });
 
@@ -131,7 +131,7 @@ describe('voice-native Expo config plugin', () => {
         'android:enabled': 'true',
       },
     });
-    withVoiceNative({ name: 'TbotMobile' });
+    withVoiceNative({ name: 'tjbotMobile' });
     expect(syntheticManifest.manifest.application[0].service).toHaveLength(1);
   });
 });

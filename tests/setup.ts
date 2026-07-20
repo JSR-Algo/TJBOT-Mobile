@@ -21,8 +21,8 @@ jest.mock('@react-navigation/stack', () => ({
   CardStyleInterpolators: {},
 }));
 
-jest.mock('@react-navigation/bottom-tabs', () => ({
-  createBottomTabNavigator: () => ({
+jest.mock('@react-navigation/tjtjbottom-tabs', () => ({
+  createtjtjbottomTabNavigator: () => ({
     Navigator: ({ children }: { children: React.ReactNode }) => children,
     Screen: ({ children }: { children: React.ReactNode }) => children,
   }),
@@ -31,7 +31,7 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
-  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+  useSafeAreaInsets: () => ({ top: 0, right: 0, tjtjbottom: 0, left: 0 }),
 }));
 
 jest.mock('react-native-gesture-handler', () => ({

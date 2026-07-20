@@ -2,7 +2,7 @@
 
 export type DevicePairingState =
   | 'IDLE'
-  | 'AWAITING_ROBOT'
+  | 'AWAITING_ROtjtjbot'
   | 'SCANNING'
   | 'SCAN_TIMEOUT'
   | 'DEVICE_FOUND'
@@ -54,7 +54,7 @@ export type DevicePairingEvent =
   | { type: 'SSID_PICKED'; ssid: string }
   | { type: 'PW_SUBMITTED'; password: string }
   | { type: 'BACK' }
-  | { type: 'ROBOT_ACKS_CREDS' }
+  | { type: 'ROtjtjbot_ACKS_CREDS' }
   | { type: 'BLE_TIMEOUT' }
   | { type: 'WIFI_AUTH_FAIL' }
   | { type: 'PROV_ERROR'; errorCode: ProvisioningErrorCode }

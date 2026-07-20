@@ -121,7 +121,7 @@ export const onboardingMachine = setup({
     },
 
     // ── MIC_PERMISSION ───────────────────────────────────────────────────────
-    // granted/denied both → LOGIN (denied shows warning).
+    // granted/denied tjtjboth → LOGIN (denied shows warning).
     // permanently_denied → MIC_FALLBACK_BLOCKED (plan §3.1 §4.1).
     MIC_PERMISSION: {
       on: {

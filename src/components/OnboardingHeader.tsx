@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    margintjtjbottom: theme.spacing.xl,
   },
   heroCircle: {
     width: 96,
@@ -47,13 +47,13 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary + '22',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.md,
+    margintjtjbottom: theme.spacing.md,
   },
   stepLabel: {
     ...theme.typography.caption,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: theme.spacing.sm,
+    margintjtjbottom: theme.spacing.sm,
   },
   progressTrack: {
     width: '100%',
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.full,
     backgroundColor: theme.colors.divider,
     overflow: 'hidden',
-    marginBottom: theme.spacing.lg,
+    margintjtjbottom: theme.spacing.lg,
   },
   progressFill: {
     height: '100%',
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     ...theme.typography.h1,
     color: theme.colors.textPrimary,
     textAlign: 'center',
-    marginBottom: theme.spacing.sm,
+    margintjtjbottom: theme.spacing.sm,
   },
   subtitle: {
     ...theme.typography.body1,

@@ -19,7 +19,7 @@ const LANES = {
   auth: 'A', onboarding: 'A',
   'kid-hub': 'B', 'lesson-session': 'B', 'course-browse': 'B',
   progress: 'C', 'parent-gate': 'C', 'parent-summary': 'C', purchase: 'C',
-  'device-pairing': 'D', 'device-mgmt': 'D', 'robot-mgmt': 'D',
+  'device-pairing': 'D', 'device-mgmt': 'D', 'rotjtjbot-mgmt': 'D',
   'course-library': 'D', 'fallback-shell': 'D',
 };
 

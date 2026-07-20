@@ -32,8 +32,8 @@ import CourseAddedScreen from '@/features/course-library/screens/CourseAddedScre
 import CourseCompleteScreen from '@/features/course-library/screens/CourseCompleteScreen';
 import CourseLockedScreen from '@/features/course-library/screens/CourseLockedScreen';
 import NeedsSyncScreen from '@/features/course-library/screens/NeedsSyncScreen';
-import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
-import RobotReadyScreen from '@/features/course-library/screens/RobotReadyScreen';
+import SendToRotjtjbotScreen from '@/features/course-library/screens/SendToRotjtjbotScreen';
+import RotjtjbotReadyScreen from '@/features/course-library/screens/RotjtjbotReadyScreen';
 import RunningScreen from '@/features/course-library/screens/RunningScreen';
 import CompanionScreen from '@/features/course-library/screens/CompanionScreen';
 import UnlockConfirmModal from '@/features/course-library/UnlockConfirmModal';
@@ -41,9 +41,9 @@ import UnlockConfirmModal from '@/features/course-library/UnlockConfirmModal';
 import ConnectingScreen from '@/features/lesson-session/screens/ConnectingScreen';
 import GreetingScreen from '@/features/lesson-session/screens/GreetingScreen';
 import LessonReadyScreen from '@/features/lesson-session/screens/LessonReadyScreen';
-import RobotListeningScreen from '@/features/lesson-session/screens/RobotListeningScreen';
+import RotjtjbotListeningScreen from '@/features/lesson-session/screens/RotjtjbotListeningScreen';
 import UserSpeakingScreen from '@/features/lesson-session/screens/UserSpeakingScreen';
-import RobotSpeakingScreen from '@/features/lesson-session/screens/RobotSpeakingScreen';
+import RotjtjbotSpeakingScreen from '@/features/lesson-session/screens/RotjtjbotSpeakingScreen';
 import ThinkingScreen from '@/features/lesson-session/screens/ThinkingScreen';
 import ActivityIntroScreen from '@/features/lesson-session/screens/ActivityIntroScreen';
 import ActivityDoneScreen from '@/features/lesson-session/screens/ActivityDoneScreen';
@@ -111,18 +111,18 @@ import DeviceLostScreen from '@/features/device/screens/DeviceLostScreen';
 import LCDLessonTurnScreen from '@/features/device/screens/LCDLessonTurnScreen';
 import LCDLibraryScreen from '@/features/device/screens/LCDLibraryScreen';
 
-import MyRobotScreen from '@/features/robot-mgmt/screens/MyRobotScreen';
-import RobotStatusScreen from '@/features/robot-mgmt/screens/RobotStatusScreen';
-import RobotBatteryScreen from '@/features/robot-mgmt/screens/RobotBatteryScreen';
-import RobotStorageScreen from '@/features/robot-mgmt/screens/RobotStorageScreen';
-import RobotFirmwareScreen from '@/features/robot-mgmt/screens/RobotFirmwareScreen';
-import RobotWifiScreen from '@/features/robot-mgmt/screens/RobotWifiScreen';
-import RobotSoundScreen from '@/features/robot-mgmt/screens/RobotSoundScreen';
-import MicTestScreen from '@/features/robot-mgmt/screens/MicTestScreen';
-import SpeakerTestScreen from '@/features/robot-mgmt/screens/SpeakerTestScreen';
-import FactoryResetScreen from '@/features/robot-mgmt/screens/FactoryResetScreen';
-import OfflineHelpScreen from '@/features/robot-mgmt/screens/OfflineHelpScreen';
-import SupportScreen from '@/features/robot-mgmt/screens/SupportScreen';
+import MyRotjtjbotScreen from '@/features/rotjtjbot-mgmt/screens/MyRotjtjbotScreen';
+import RotjtjbotStatusScreen from '@/features/rotjtjbot-mgmt/screens/RotjtjbotStatusScreen';
+import RotjtjbotBatteryScreen from '@/features/rotjtjbot-mgmt/screens/RotjtjbotBatteryScreen';
+import RotjtjbotStorageScreen from '@/features/rotjtjbot-mgmt/screens/RotjtjbotStorageScreen';
+import RotjtjbotFirmwareScreen from '@/features/rotjtjbot-mgmt/screens/RotjtjbotFirmwareScreen';
+import RotjtjbotWifiScreen from '@/features/rotjtjbot-mgmt/screens/RotjtjbotWifiScreen';
+import RotjtjbotSoundScreen from '@/features/rotjtjbot-mgmt/screens/RotjtjbotSoundScreen';
+import MicTestScreen from '@/features/rotjtjbot-mgmt/screens/MicTestScreen';
+import SpeakerTestScreen from '@/features/rotjtjbot-mgmt/screens/SpeakerTestScreen';
+import FactoryResetScreen from '@/features/rotjtjbot-mgmt/screens/FactoryResetScreen';
+import OfflineHelpScreen from '@/features/rotjtjbot-mgmt/screens/OfflineHelpScreen';
+import SupportScreen from '@/features/rotjtjbot-mgmt/screens/SupportScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -146,8 +146,8 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="CourseCompleteScreen" component={CourseCompleteScreen} />
       <Stack.Screen name="CourseLockedScreen" component={CourseLockedScreen} />
       <Stack.Screen name="NeedsSyncScreen" component={NeedsSyncScreen} />
-      <Stack.Screen name="SendToRobotScreen" component={SendToRobotScreen} />
-      <Stack.Screen name="RobotReadyScreen" component={RobotReadyScreen} />
+      <Stack.Screen name="SendToRotjtjbotScreen" component={SendToRotjtjbotScreen} />
+      <Stack.Screen name="RotjtjbotReadyScreen" component={RotjtjbotReadyScreen} />
       <Stack.Screen name="RunningScreen" component={RunningScreen} />
       <Stack.Screen name="CompanionScreen" component={CompanionScreen} />
 
@@ -167,9 +167,9 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="ConnectingScreen" component={ConnectingScreen} />
       <Stack.Screen name="GreetingScreen" component={GreetingScreen} />
       <Stack.Screen name="LessonReadyScreen" component={LessonReadyScreen} />
-      <Stack.Screen name="RobotListeningScreen" component={RobotListeningScreen} />
+      <Stack.Screen name="RotjtjbotListeningScreen" component={RotjtjbotListeningScreen} />
       <Stack.Screen name="UserSpeakingScreen" component={UserSpeakingScreen} />
-      <Stack.Screen name="RobotSpeakingScreen" component={RobotSpeakingScreen} />
+      <Stack.Screen name="RotjtjbotSpeakingScreen" component={RotjtjbotSpeakingScreen} />
       <Stack.Screen name="ThinkingScreen" component={ThinkingScreen} />
       <Stack.Screen name="ActivityIntroScreen" component={ActivityIntroScreen} />
       <Stack.Screen name="ActivityDoneScreen" component={ActivityDoneScreen} />
@@ -224,13 +224,13 @@ export function ModalStack(): React.JSX.Element {
       <Stack.Screen name="LCDLessonTurnScreen" component={LCDLessonTurnScreen} />
       <Stack.Screen name="LCDLibraryScreen" component={LCDLibraryScreen} />
 
-      <Stack.Screen name="MyRobotScreen" component={MyRobotScreen} />
-      <Stack.Screen name="RobotStatusScreen" component={RobotStatusScreen} />
-      <Stack.Screen name="RobotBatteryScreen" component={RobotBatteryScreen} />
-      <Stack.Screen name="RobotStorageScreen" component={RobotStorageScreen} />
-      <Stack.Screen name="RobotFirmwareScreen" component={RobotFirmwareScreen} />
-      <Stack.Screen name="RobotWifiScreen" component={RobotWifiScreen} />
-      <Stack.Screen name="RobotSoundScreen" component={RobotSoundScreen} />
+      <Stack.Screen name="MyRotjtjbotScreen" component={MyRotjtjbotScreen} />
+      <Stack.Screen name="RotjtjbotStatusScreen" component={RotjtjbotStatusScreen} />
+      <Stack.Screen name="RotjtjbotBatteryScreen" component={RotjtjbotBatteryScreen} />
+      <Stack.Screen name="RotjtjbotStorageScreen" component={RotjtjbotStorageScreen} />
+      <Stack.Screen name="RotjtjbotFirmwareScreen" component={RotjtjbotFirmwareScreen} />
+      <Stack.Screen name="RotjtjbotWifiScreen" component={RotjtjbotWifiScreen} />
+      <Stack.Screen name="RotjtjbotSoundScreen" component={RotjtjbotSoundScreen} />
       <Stack.Screen name="MicTestScreen" component={MicTestScreen} />
       <Stack.Screen name="SpeakerTestScreen" component={SpeakerTestScreen} />
       <Stack.Screen name="FactoryResetScreen" component={FactoryResetScreen} />

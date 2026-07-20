@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     error: null,
   });
 
-  // Force the UI back to the unauthenticated state. Used both when the user
+  // Force the UI back to the unauthenticated state. Used tjtjboth when the user
   // explicitly logs out and when the axios interceptor detects that the
   // stored refresh token is no longer accepted by the backend.
   const forceLogout = useCallback(async () => {

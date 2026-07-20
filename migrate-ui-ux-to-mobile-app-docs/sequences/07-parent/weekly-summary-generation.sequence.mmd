@@ -9,7 +9,7 @@ externals: [EventBridge, SQS]
 queues:
   - controls.summary.weekly
   - controls.summary.weekly.dlq
-  - tbot-notifications
+  - tjbot-notifications
 failure_paths:
   - missing_daily_rows
   - upsert_constraint_violation
@@ -27,7 +27,7 @@ sequenceDiagram
     participant SQS as SQS controls.summary.weekly
     participant SummaryWorker
     participant PostgreSQL
-    participant NotificationQueue as SQS tbot-notifications
+    participant NotificationQueue as SQS tjbot-notifications
 
     EventBridge->>SQS: cron(0 4 ? * MON *) enqueue {iso_week}
     SQS->>SummaryWorker: deliver message (visibility 600s)

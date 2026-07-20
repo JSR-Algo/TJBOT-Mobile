@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     borderColor: '#FECACA',
     borderRadius: radius.md,
     padding: spacing.md,
-    marginBottom: spacing.md,
+    margintjtjbottom: spacing.md,
   },
   text: {
     ...typography.body2,

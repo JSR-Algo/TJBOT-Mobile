@@ -17,8 +17,8 @@ export default function PairSearchScreen({ navigation }: Props) {
   }, []);
 
   return (
-    <DeviceShell title="Looking for Robot…" onBack={() => navigation.navigate('PairIntroScreen')}>
-      <Box paddingTop={40} paddingHorizontal={24} paddingBottom={30} alignItems="center" gap={24}>
+    <DeviceShell title="Looking for Rotjtjbot…" onBack={() => navigation.navigate('PairIntroScreen')}>
+      <Box paddingTop={40} paddingHorizontal={24} paddingtjtjbottom={30} alignItems="center" gap={24}>
         <Box style={styles.pulseWrap} alignItems="center" justifyContent="center">
           {[0, 1, 2].map(i => (
             <Box key={i} style={styles.pulseRing} />
@@ -31,9 +31,9 @@ export default function PairSearchScreen({ navigation }: Props) {
           </Svg>
         </Box>
         <Text fontWeight="600" style={styles.heading}>Looking nearby…</Text>
-        <Text style={styles.sub}>Make sure Robot is within 3 meters and showing a face.</Text>
+        <Text style={styles.sub}>Make sure Rotjtjbot is within 3 meters and showing a face.</Text>
         <TouchableOpacity onPress={() => navigation.navigate('PairFailedScreen')} style={{ marginTop: 20 }}>
-          <Text fontWeight="500" style={styles.link}>I don't see my Robot</Text>
+          <Text fontWeight="500" style={styles.link}>I don't see my Rotjtjbot</Text>
         </TouchableOpacity>
       </Box>
     </DeviceShell>

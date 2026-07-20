@@ -1,6 +1,6 @@
 //
 //  VoiceSessionModule.swift
-//  TbotMobile — sys-16 realtime voice (Gemini Live).
+//  tjbotMobile — sys-16 realtime voice (Gemini Live).
 //
 //  Single owner of AVAudioSession state for the duration of a voice
 //  conversation. Mirrors the Android VoiceSessionModule contract so the
@@ -540,7 +540,7 @@ final class VoiceSessionModule: RCTEventEmitter {
 
   // MARK: - Structured logging
 
-  /// Emits a single-line JSON log under tag [TbotVoice] — same wire format
+  /// Emits a single-line JSON log under tag [tjbotVoice] — same wire format
   /// as Android's VoiceSessionModule.structLog so dashboards can merge.
   private func structLog(event: String, details: [String: Any]) {
     var sb = "{\"event\":\"\(escape(event))\""
@@ -562,7 +562,7 @@ final class VoiceSessionModule: RCTEventEmitter {
       }
     }
     sb += "}"
-    NSLog("[TbotVoice] %@", sb)
+    NSLog("[tjbotVoice] %@", sb)
   }
 
   private func escape(_ s: String) -> String {

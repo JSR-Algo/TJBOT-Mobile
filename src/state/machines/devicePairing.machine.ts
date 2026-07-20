@@ -103,11 +103,11 @@ export const devicePairingMachine = setup({
   states: {
     IDLE: {
       on: {
-        TAP_ADD: 'AWAITING_ROBOT',
+        TAP_ADD: 'AWAITING_ROtjtjbot',
       },
     },
 
-    AWAITING_ROBOT: {
+    AWAITING_ROtjtjbot: {
       on: {
         TAP_START_SCAN: {
           target: 'SCANNING',
@@ -130,14 +130,14 @@ export const devicePairingMachine = setup({
             params: ({ event }) => ({ serial: event.serial, displayCode: event.displayCode }),
           },
         },
-        CANCEL: 'AWAITING_ROBOT',
+        CANCEL: 'AWAITING_ROtjtjbot',
       },
     },
 
     SCAN_TIMEOUT: {
       on: {
         RETRY_SCAN: 'SCANNING',
-        CANCEL: 'AWAITING_ROBOT',
+        CANCEL: 'AWAITING_ROtjtjbot',
       },
     },
 
@@ -171,7 +171,7 @@ export const devicePairingMachine = setup({
             params: ({ event }) => ({ ssid: event.ssid }),
           },
         },
-        CANCEL: 'AWAITING_ROBOT',
+        CANCEL: 'AWAITING_ROtjtjbot',
       },
     },
 
@@ -200,7 +200,7 @@ export const devicePairingMachine = setup({
         },
       },
       on: {
-        ROBOT_ACKS_CREDS: {
+        ROtjtjbot_ACKS_CREDS: {
           target: 'CLAIM_PENDING',
           actions: 'wipePassword',
         },
@@ -296,7 +296,7 @@ export const devicePairingMachine = setup({
     PAIRING_FAILED: {
       on: {
         RETRY_FULL: {
-          target: 'AWAITING_ROBOT',
+          target: 'AWAITING_ROtjtjbot',
           actions: 'clearErrorCode',
         },
         RETRY_SCAN: {
@@ -312,7 +312,7 @@ export const devicePairingMachine = setup({
 
     OFFLINE: {
       on: {
-        NETWORK_RESTORED: 'AWAITING_ROBOT',
+        NETWORK_RESTORED: 'AWAITING_ROtjtjbot',
         CANCEL: 'IDLE',
       },
     },

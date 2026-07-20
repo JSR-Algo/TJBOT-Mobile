@@ -14,7 +14,7 @@ export const colors = {
   paper: '#FFFCF6',
   paper2: '#FFF1DA',
   dangerSoft: '#FFD2B8',
-  bot: {
+  tjtjbot: {
     body: '#E8F4FF',
     body2: '#C5E0FA',
     shadow: '#8FB6E0',

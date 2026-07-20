@@ -1,7 +1,7 @@
 /**
  * LessonSession state-machine types.
  *
- * Plan: tbot-design/.omc/plans/state-machines-mobile-ux.md §2.2, §3.2, §4.2, §5, §7.
+ * Plan: tjbot-design/.omc/plans/state-machines-mobile-ux.md §2.2, §3.2, §4.2, §5, §7.
  *
  * Invariants enforced here (mirrored in lessonSession.machine.ts):
  *   - Terminal transitions are SERVER-AUTHORITATIVE (plan §0 Principle 1).

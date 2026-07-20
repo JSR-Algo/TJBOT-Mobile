@@ -50,7 +50,7 @@
     },
     "cl_added": {
       "f": "src/features/course-library/screens/CourseAddedScreen.tsx",
-      "title": "Course · Added to Robot",
+      "title": "Course · Added to Rotjtjbot",
       "g": "Course Library",
       "kind": "happy"
     },
@@ -92,25 +92,25 @@
     },
     "cl_needs_sync": {
       "f": "src/features/course-library/screens/NeedsSyncScreen.tsx",
-      "title": "Course · Robot needs sync",
+      "title": "Course · Rotjtjbot needs sync",
       "g": "Course Library",
       "kind": "happy"
     },
-    "cl_robot_ready": {
-      "f": "src/features/course-library/screens/RobotReadyScreen.tsx",
-      "title": "Course · Robot ready for today",
+    "cl_rotjtjbot_ready": {
+      "f": "src/features/course-library/screens/RotjtjbotReadyScreen.tsx",
+      "title": "Course · Rotjtjbot ready for today",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_running": {
       "f": "src/features/course-library/screens/RunningScreen.tsx",
-      "title": "Course · Lesson running on Robot",
+      "title": "Course · Lesson running on Rotjtjbot",
       "g": "Course Library",
       "kind": "happy"
     },
     "cl_send": {
-      "f": "src/features/course-library/screens/SendToRobotScreen.tsx",
-      "title": "Course · Send lesson to Robot",
+      "f": "src/features/course-library/screens/SendToRotjtjbotScreen.tsx",
+      "title": "Course · Send lesson to Rotjtjbot",
       "g": "Course Library",
       "kind": "happy"
     },
@@ -146,122 +146,122 @@
     },
     "dv_firmware": {
       "f": "src/features/device/screens/DeviceFirmwareScreen.tsx",
-      "title": "Robot · Firmware update",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Firmware update",
+      "g": "Rotjtjbot Device",
       "kind": "edge"
     },
     "dv_home": {
       "f": "src/features/device/screens/DeviceHomeScreen.tsx",
-      "title": "Robot · Device home",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Device home",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_lcd": {
       "f": "src/features/device/screens/LCDLibraryScreen.tsx",
-      "title": "Robot · LCD face library",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · LCD face library",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_lcd_turn": {
       "f": "src/features/device/screens/LCDLessonTurnScreen.tsx",
-      "title": "Robot · One lesson turn",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · One lesson turn",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_lost": {
       "f": "src/features/device/screens/DeviceLostScreen.tsx",
-      "title": "Robot · Find my Robot",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Find my Rotjtjbot",
+      "g": "Rotjtjbot Device",
       "kind": "edge"
     },
     "dv_overview": {
       "f": "src/features/device/screens/DeviceOverviewScreen.tsx",
-      "title": "Robot · How it works together",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · How it works together",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_add": {
       "f": "src/features/device/pairing/screens/PairAddScreen.tsx",
-      "title": "Robot · Pair · add",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · add",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_code": {
       "f": "src/features/device/pairing/screens/PairCodeScreen.tsx",
-      "title": "Robot · Pair · confirm code",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · confirm code",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_connecting": {
       "f": "src/features/device/pairing/screens/PairConnectingScreen.tsx",
-      "title": "Robot · Pair · connecting",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · connecting",
+      "g": "Rotjtjbot Device",
       "kind": "edge"
     },
     "dv_pair_failed": {
       "f": "src/features/device/pairing/screens/PairFailedScreen.tsx",
-      "title": "Robot · Pair · failed",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · failed",
+      "g": "Rotjtjbot Device",
       "kind": "edge"
     },
     "dv_pair_first_lesson": {
       "f": "src/features/device/pairing/screens/PairFirstLessonScreen.tsx",
-      "title": "Robot · Pair · first lesson",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · first lesson",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_found": {
       "f": "src/features/device/pairing/screens/PairFoundScreen.tsx",
-      "title": "Robot · Pair · found",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · found",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_intro": {
       "f": "src/features/device/pairing/screens/PairIntroScreen.tsx",
-      "title": "Robot · Pair · turn on",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · turn on",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_offline": {
       "f": "src/features/device/pairing/screens/PairOfflineScreen.tsx",
-      "title": "Robot · Pair · offline",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · offline",
+      "g": "Rotjtjbot Device",
       "kind": "edge"
     },
     "dv_pair_rename": {
       "f": "src/features/device/pairing/screens/PairRenameScreen.tsx",
-      "title": "Robot · Pair · rename & buddy",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · rename & buddy",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_search": {
       "f": "src/features/device/pairing/screens/PairSearchScreen.tsx",
-      "title": "Robot · Pair · searching",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · searching",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_success": {
       "f": "src/features/device/pairing/screens/PairSuccessScreen.tsx",
-      "title": "Robot · Pair · success",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · success",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_wifi": {
       "f": "src/features/device/pairing/screens/PairWifiScreen.tsx",
-      "title": "Robot · Pair · Wi-Fi pick",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · Wi-Fi pick",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_pair_wifi_pw": {
       "f": "src/features/device/pairing/screens/PairWifiPasswordScreen.tsx",
-      "title": "Robot · Pair · Wi-Fi password",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Pair · Wi-Fi password",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "dv_session": {
       "f": "src/features/device/screens/DeviceSessionScreen.tsx",
-      "title": "Robot · Live session monitor",
-      "g": "Robot Device",
+      "title": "Rotjtjbot · Live session monitor",
+      "g": "Rotjtjbot Device",
       "kind": "happy"
     },
     "exit_confirm": {
@@ -278,7 +278,7 @@
     },
     "greeting": {
       "f": "src/features/lesson-session/screens/GreetingScreen.tsx",
-      "title": "Robot Greeting",
+      "title": "Rotjtjbot Greeting",
       "g": "Start",
       "kind": "happy"
     },
@@ -302,7 +302,7 @@
     },
     "home_hub_greet": {
       "f": "src/features/home/screens/HomeHubScreen.tsx",
-      "title": "Home · Robot greeting",
+      "title": "Home · Rotjtjbot greeting",
       "g": "Home",
       "kind": "happy"
     },
@@ -458,13 +458,13 @@
     },
     "pr_activate": {
       "f": "src/features/purchase/screens/ActivateScreen.tsx",
-      "title": "Buy · Activate Robot",
+      "title": "Buy · Activate Rotjtjbot",
       "g": "Purchase",
       "kind": "happy"
     },
     "pr_arrived": {
       "f": "src/features/purchase/screens/ArrivedScreen.tsx",
-      "title": "Buy · Robot arrived · setup",
+      "title": "Buy · Rotjtjbot arrived · setup",
       "g": "Purchase",
       "kind": "happy"
     },
@@ -506,7 +506,7 @@
     },
     "pr_intro": {
       "f": "src/features/purchase/screens/PurchaseIntroScreen.tsx",
-      "title": "Buy · Robot overview",
+      "title": "Buy · Rotjtjbot overview",
       "g": "Purchase",
       "kind": "happy"
     },
@@ -559,86 +559,86 @@
       "kind": "happy"
     },
     "rm_battery": {
-      "f": "src/features/robot-mgmt/screens/RobotBatteryScreen.tsx",
-      "title": "Robot · Battery",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/RotjtjbotBatteryScreen.tsx",
+      "title": "Rotjtjbot · Battery",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_factory": {
-      "f": "src/features/robot-mgmt/screens/FactoryResetScreen.tsx",
-      "title": "Robot · Factory reset",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/FactoryResetScreen.tsx",
+      "title": "Rotjtjbot · Factory reset",
+      "g": "Rotjtjbot Mgmt",
       "kind": "edge"
     },
     "rm_firmware": {
-      "f": "src/features/robot-mgmt/screens/RobotFirmwareScreen.tsx",
-      "title": "Robot · Software update",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/RotjtjbotFirmwareScreen.tsx",
+      "title": "Rotjtjbot · Software update",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_mic_test": {
-      "f": "src/features/robot-mgmt/screens/MicTestScreen.tsx",
-      "title": "Robot · Microphone test",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/MicTestScreen.tsx",
+      "title": "Rotjtjbot · Microphone test",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
-    "rm_my_robot": {
-      "f": "src/features/robot-mgmt/screens/MyRobotScreen.tsx",
-      "title": "Robot · My Robot",
-      "g": "Robot Mgmt",
+    "rm_my_rotjtjbot": {
+      "f": "src/features/rotjtjbot-mgmt/screens/MyRotjtjbotScreen.tsx",
+      "title": "Rotjtjbot · My Rotjtjbot",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_offline_help": {
-      "f": "src/features/robot-mgmt/screens/OfflineHelpScreen.tsx",
-      "title": "Robot · Offline help",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/OfflineHelpScreen.tsx",
+      "title": "Rotjtjbot · Offline help",
+      "g": "Rotjtjbot Mgmt",
       "kind": "edge"
     },
     "rm_sound": {
-      "f": "src/features/robot-mgmt/screens/RobotSoundScreen.tsx",
-      "title": "Robot · Sound & volume",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/RotjtjbotSoundScreen.tsx",
+      "title": "Rotjtjbot · Sound & volume",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_speaker_test": {
-      "f": "src/features/robot-mgmt/screens/SpeakerTestScreen.tsx",
-      "title": "Robot · Speaker test",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/SpeakerTestScreen.tsx",
+      "title": "Rotjtjbot · Speaker test",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_status": {
-      "f": "src/features/robot-mgmt/screens/RobotStatusScreen.tsx",
-      "title": "Robot · Status",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/RotjtjbotStatusScreen.tsx",
+      "title": "Rotjtjbot · Status",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_storage": {
-      "f": "src/features/robot-mgmt/screens/RobotStorageScreen.tsx",
-      "title": "Robot · Courses installed",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/RotjtjbotStorageScreen.tsx",
+      "title": "Rotjtjbot · Courses installed",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_support": {
-      "f": "src/features/robot-mgmt/screens/SupportScreen.tsx",
-      "title": "Robot · Contact support",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/SupportScreen.tsx",
+      "title": "Rotjtjbot · Contact support",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
     "rm_wifi": {
-      "f": "src/features/robot-mgmt/screens/RobotWifiScreen.tsx",
-      "title": "Robot · Wi-Fi",
-      "g": "Robot Mgmt",
+      "f": "src/features/rotjtjbot-mgmt/screens/RotjtjbotWifiScreen.tsx",
+      "title": "Rotjtjbot · Wi-Fi",
+      "g": "Rotjtjbot Mgmt",
       "kind": "happy"
     },
-    "robot_listening": {
-      "f": "src/features/lesson-session/screens/RobotListeningScreen.tsx",
-      "title": "Robot Listening",
+    "rotjtjbot_listening": {
+      "f": "src/features/lesson-session/screens/RotjtjbotListeningScreen.tsx",
+      "title": "Rotjtjbot Listening",
       "g": "Activity",
       "kind": "happy"
     },
-    "robot_speaking": {
-      "f": "src/features/lesson-session/screens/RobotSpeakingScreen.tsx",
-      "title": "Robot Speaking",
+    "rotjtjbot_speaking": {
+      "f": "src/features/lesson-session/screens/RotjtjbotSpeakingScreen.tsx",
+      "title": "Rotjtjbot Speaking",
       "g": "Activity",
       "kind": "happy"
     },
@@ -668,7 +668,7 @@
     },
     "thinking": {
       "f": "src/features/lesson-session/screens/ThinkingScreen.tsx",
-      "title": "Robot Thinking",
+      "title": "Rotjtjbot Thinking",
       "g": "Activity",
       "kind": "happy"
     },
@@ -713,8 +713,8 @@
   "groups": {
     "Activity": [
       "activity_intro",
-      "robot_listening",
-      "robot_speaking",
+      "rotjtjbot_listening",
+      "rotjtjbot_speaking",
       "thinking",
       "user_speaking"
     ],
@@ -736,7 +736,7 @@
       "cl_library",
       "cl_locked",
       "cl_needs_sync",
-      "cl_robot_ready",
+      "cl_rotjtjbot_ready",
       "cl_running",
       "cl_send",
       "cl_unlock_confirm"
@@ -818,7 +818,7 @@
       "reconnecting",
       "safety"
     ],
-    "Robot Device": [
+    "Rotjtjbot Device": [
       "dv_firmware",
       "dv_home",
       "dv_lcd",
@@ -840,12 +840,12 @@
       "dv_pair_wifi_pw",
       "dv_session"
     ],
-    "Robot Mgmt": [
+    "Rotjtjbot Mgmt": [
       "rm_battery",
       "rm_factory",
       "rm_firmware",
       "rm_mic_test",
-      "rm_my_robot",
+      "rm_my_rotjtjbot",
       "rm_offline_help",
       "rm_sound",
       "rm_speaker_test",

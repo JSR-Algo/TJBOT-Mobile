@@ -1,15 +1,15 @@
-@startuml TBOT-DeviceMgmt
+@startuml tjbot-DeviceMgmt
 title Domain · device-mgmt — post-pair runtime monitor + LCD
 left to right direction
 
 actor Parent
 actor Child
-actor "Robot Device" as Robot <<external>>
+actor "Rotjtjbot Device" as Rotjtjbot <<external>>
 
 package "device-mgmt" {
   usecase "View Device Home"            as UC_DM_HOME
   usecase "View Live Session Monitor"   as UC_DM_SESSION
-  usecase "Find My Robot — Make Chime"  as UC_DM_FIND
+  usecase "Find My Rotjtjbot — Make Chime"  as UC_DM_FIND
   usecase "Update Firmware"             as UC_DM_FIRMWARE
   usecase "View LCD Face Library"       as UC_DM_LCD_LIB
   usecase "View One Lesson Turn"        as UC_DM_LCD_TURN
@@ -25,26 +25,26 @@ Child  --> UC_DM_LCD_TURN
 
 ' Internal navigation edges (DeviceHomePage quick actions)
 UC_DM_HOME ..> UC_DM_SESSION  : "Lesson · Start"
-UC_DM_HOME ..> UC_DM_FIND     : "Make Robot chime"
+UC_DM_HOME ..> UC_DM_FIND     : "Make Rotjtjbot chime"
 UC_DM_HOME ..> UC_DM_FIRMWARE : "Firmware · update"
 
-' Robot delegations
-UC_DM_FIND     ..> Robot : <<delegate>> chime
-UC_DM_FIRMWARE ..> Robot : <<delegate>> OTA
-UC_DM_SESSION  ..> Robot : <<delegate>> live telemetry
+' Rotjtjbot delegations
+UC_DM_FIND     ..> Rotjtjbot : <<delegate>> chime
+UC_DM_FIRMWARE ..> Rotjtjbot : <<delegate>> OTA
+UC_DM_SESSION  ..> Rotjtjbot : <<delegate>> live telemetry
 
-' KD6: LCD ambiguity — device-mgmt owns these UCs; cross-ref note in robot-mgmt
-note bottom of UC_DM_LCD_LIB
-  KD6: LCD UCs share renderer with robot-mgmt rm_lcd*.
-  Cross-reference noted in robot-mgmt/use-cases.md.
+' KD6: LCD ambiguity — device-mgmt owns these UCs; cross-ref note in rotjtjbot-mgmt
+note tjtjbottom of UC_DM_LCD_LIB
+  KD6: LCD UCs share renderer with rotjtjbot-mgmt rm_lcd*.
+  Cross-reference noted in rotjtjbot-mgmt/use-cases.md.
 end note
 
 note top of UC_DM_HOME
   [requires] parent-gate : UC_PG_PASS
-  [requires] device-pairing : robot must be paired
+  [requires] device-pairing : rotjtjbot must be paired
 end note
 
-note bottom of UC_DM_SESSION
+note tjtjbottom of UC_DM_SESSION
   [exit] → progress : day rollup tile from yesterday card
 end note
 

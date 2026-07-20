@@ -1,4 +1,4 @@
-package com.tbotmobile.voicesession
+package com.tjbotmobile.voicesession
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -520,7 +520,7 @@ class VoiceSessionModule(
 
   companion object {
     const val NAME = "VoiceSessionModule"
-    private const val TAG = "TbotVoice"
+    private const val TAG = "tjbotVoice"
 
     const val ROUTE_SPEAKER = "speaker"
     const val ROUTE_EARPIECE = "earpiece"

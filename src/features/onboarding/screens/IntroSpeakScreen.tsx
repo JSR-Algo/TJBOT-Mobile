@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import WaveBars from '@/design-system/components/WaveBars';
 import IntroFrame from '../components/IntroFrame';
 import { Box } from '@/design-system/primitives/Box';
@@ -19,11 +19,11 @@ export default function IntroSpeakScreen({ navigation }: Props) {
       next="IntroRetryScreen"
       bg="#E8F8F0"
       kicker="How it works · 2"
-      title="Robot speaks back"
-      body="Robot replies out loud, so kids hear how words really sound."
+      title="Rotjtjbot speaks back"
+      body="Rotjtjbot replies out loud, so kids hear how words really sound."
       illo={(
         <Box style={styles.illoWrap} flexDirection="row" alignItems="center" justifyContent="center" gap={14}>
-          <Robot emotion="speak" size={160} accent="#7BD389" />
+          <Rotjtjbot emotion="speak" size={160} accent="#7BD389" />
           <Box gap={8}>
             <Box style={styles.bubble}>
               <Text fontWeight="700" style={styles.bubbleText}>"Hello!"</Text>

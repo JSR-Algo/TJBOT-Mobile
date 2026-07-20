@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
-import { RobotState, ModeTheme } from './RobotModeTheme';
+import { RotjtjbotState, ModeTheme } from './RotjtjbotModeTheme';
 import {
   useBreathingAnimation,
   useMicPulseAnimation,
@@ -8,17 +8,17 @@ import {
   useShakeAnimation,
   useGlowAnimation,
   useBlinkAnimation,
-} from './RobotAnimations';
+} from './RotjtjbotAnimations';
 
-interface RobotFaceProps {
-  robotState: RobotState;
+interface RotjtjbotFaceProps {
+  rotjtjbotState: RotjtjbotState;
   theme: ModeTheme;
   size?: number;
   audioLevel?: number; // 0–1, live audio amplitude for waveform
 }
 
 // ─── State color palette ───────────────────────────────────────────────────
-function getStateColor(state: RobotState, theme: ModeTheme): string {
+function getStateColor(state: RotjtjbotState, theme: ModeTheme): string {
   switch (state) {
     case 'listening': return '#00E5FF';
     case 'recording':  return '#00E5FF';
@@ -36,7 +36,7 @@ function getStateColor(state: RobotState, theme: ModeTheme): string {
 }
 
 // ─── LED Ring segments around the head ────────────────────────────────────
-function LEDRing({ size, color, state }: { size: number; color: string; state: RobotState }) {
+function LEDRing({ size, color, state }: { size: number; color: string; state: RotjtjbotState }) {
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -223,7 +223,7 @@ function Eye({
 }: {
   size: number;
   color: string;
-  state: RobotState;
+  state: RotjtjbotState;
   eyeOpacity: Animated.Value;
 }) {
   const eyeSize = size * 0.155;
@@ -313,23 +313,23 @@ function Eye({
   );
 }
 
-// ─── Main RobotFace component ─────────────────────────────────────────────
-export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: RobotFaceProps): React.JSX.Element {
+// ─── Main RotjtjbotFace component ─────────────────────────────────────────────
+export function RotjtjbotFace({ rotjtjbotState, theme, size = 220, audioLevel = 0 }: RotjtjbotFaceProps): React.JSX.Element {
   const breathingScale = useBreathingAnimation();
-  const { ringScale, ringOpacity } = useMicPulseAnimation(robotState === 'listening');
+  const { ringScale, ringOpacity } = useMicPulseAnimation(rotjtjbotState === 'listening');
   const thinkingRotate = useThinkingAnimation();
   const { translateX, shake } = useShakeAnimation();
-  const glowOpacity = useGlowAnimation(robotState === 'speaking' || robotState === 'listening');
+  const glowOpacity = useGlowAnimation(rotjtjbotState === 'speaking' || rotjtjbotState === 'listening');
   const eyeOpacity = useBlinkAnimation();
 
   // Shake on error entry
-  const prevStateRef = useRef<RobotState>(robotState);
+  const prevStateRef = useRef<RotjtjbotState>(rotjtjbotState);
   useEffect(() => {
-    if (robotState === 'error' && prevStateRef.current !== 'error') shake();
-    prevStateRef.current = robotState;
-  }, [robotState, shake]);
+    if (rotjtjbotState === 'error' && prevStateRef.current !== 'error') shake();
+    prevStateRef.current = rotjtjbotState;
+  }, [rotjtjbotState, shake]);
 
-  const stateColor = getStateColor(robotState, theme);
+  const stateColor = getStateColor(rotjtjbotState, theme);
 
   // Frame layers for hardware feel
   const frameOuter = size * 1.08;
@@ -357,7 +357,7 @@ export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: Rob
       />
 
       {/* ── Pulse ring (listening) ── */}
-      {robotState === 'listening' && (
+      {rotjtjbotState === 'listening' && (
         <Animated.View
           style={[
             styles.absoluteCenter,
@@ -406,10 +406,10 @@ export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: Rob
 
       {/* ── LED dot ring ── */}
       <View style={[styles.absoluteCenter, { width: size, height: size }]}>
-        <LEDRing size={size} color={stateColor} state={robotState} />
+        <LEDRing size={size} color={stateColor} state={rotjtjbotState} />
       </View>
 
-      {/* ── Robot head / face plate ── */}
+      {/* ── Rotjtjbot head / face plate ── */}
       <View
         style={[
           styles.absoluteCenter,
@@ -443,12 +443,12 @@ export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: Rob
         >
           {/* ── Eyes ── */}
           <View style={{ flexDirection: 'row', gap: size * 0.18 }}>
-            <Eye size={size} color={stateColor} state={robotState} eyeOpacity={eyeOpacity} />
-            <Eye size={size} color={stateColor} state={robotState} eyeOpacity={eyeOpacity} />
+            <Eye size={size} color={stateColor} state={rotjtjbotState} eyeOpacity={eyeOpacity} />
+            <Eye size={size} color={stateColor} state={rotjtjbotState} eyeOpacity={eyeOpacity} />
           </View>
 
           {/* ── Thinking spinner overlay ── */}
-          {robotState === 'processing_llm' && (
+          {rotjtjbotState === 'processing_llm' && (
             <Animated.View
               style={[
                 styles.thinkingRing,
@@ -467,21 +467,21 @@ export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: Rob
 
           {/* ── Mouth / status area ── */}
           <View style={{ marginTop: size * 0.08, alignItems: 'center' }}>
-            {robotState === 'speaking' ? (
+            {rotjtjbotState === 'speaking' ? (
               <SpeakingWaveform size={size} color={stateColor} audioLevel={audioLevel} />
-            ) : robotState === 'processing_llm' ? (
+            ) : rotjtjbotState === 'processing_llm' ? (
               <ThinkingDots size={size} color={stateColor} />
-            ) : robotState === 'listening' ? (
+            ) : rotjtjbotState === 'listening' ? (
               <AudioLevelBars size={size} color={stateColor} audioLevel={audioLevel} />
             ) : (
               // Default mouth bar
               <View
                 style={{
-                  width: size * (robotState === 'error' ? 0.25 : 0.38),
+                  width: size * (rotjtjbotState === 'error' ? 0.25 : 0.38),
                   height: size * 0.055,
                   borderRadius: size * 0.028,
                   backgroundColor: stateColor,
-                  opacity: robotState === 'offline' ? 0.3 : 0.8,
+                  opacity: rotjtjbotState === 'offline' ? 0.3 : 0.8,
                   marginTop: size * 0.08,
                 }}
               />
@@ -501,7 +501,7 @@ export function RobotFace({ robotState, theme, size = 220, audioLevel = 0 }: Rob
                 borderWidth: 1,
                 borderColor: stateColor + '60',
                 top: pos.startsWith('t') ? size * 0.04 : undefined,
-                bottom: pos.startsWith('b') ? size * 0.04 : undefined,
+                tjtjbottom: pos.startsWith('b') ? size * 0.04 : undefined,
                 left: pos.endsWith('l') ? size * 0.04 : undefined,
                 right: pos.endsWith('r') ? size * 0.04 : undefined,
               }}

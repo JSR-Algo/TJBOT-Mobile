@@ -11,7 +11,7 @@
 		10B6FD8D772368862E15C177 /* SharedVoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		50E1E75E41D9734678B670F3 /* PcmStreamModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E133BB36BFE1597E6CFEB9F /* PcmStreamModule.swift */; };
-		71ECCB3B23D5183E13C7072C /* libPods-TbotMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D783AF6183CE806AE0D29295 /* libPods-TbotMobile.a */; };
+		71ECCB3B23D5183E13C7072C /* libPods-tjbotMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D783AF6183CE806AE0D29295 /* libPods-tjbotMobile.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.mm */; };
 		761780F02CA45674006654EE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 761780EF2CA45674006654EE /* main.m */; };
 		8105F3091EF12F5F18AC2074 /* VoiceSessionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */; };
@@ -24,28 +24,28 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceMicModule.m; path = TbotMobile/VoiceMic/VoiceMicModule.m; sourceTree = "<group>"; };
-		12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedVoiceEngine.swift; path = TbotMobile/SharedVoiceEngine.swift; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* TbotMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TbotMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = TbotMobile/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = TbotMobile/Info.plist; sourceTree = "<group>"; };
-		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = TbotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		37730A1DCA2ACE18350A27C3 /* Pods-TbotMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TbotMobile.release.xcconfig"; path = "Target Support Files/Pods-TbotMobile/Pods-TbotMobile.release.xcconfig"; sourceTree = "<group>"; };
-		4E133BB36BFE1597E6CFEB9F /* PcmStreamModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PcmStreamModule.swift; path = TbotMobile/PcmStream/PcmStreamModule.swift; sourceTree = "<group>"; };
-		536EF3757A90E484408046CC /* PcmStreamModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = PcmStreamModule.m; path = TbotMobile/PcmStream/PcmStreamModule.m; sourceTree = "<group>"; };
-		641093E933E3175931169B50 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-TbotMobile/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		66995590EE4FB9CD11B21587 /* VoiceMicModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceMicModule.swift; path = TbotMobile/VoiceMic/VoiceMicModule.swift; sourceTree = "<group>"; };
-		761780EB2CA45674006654EE /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = TbotMobile/AppDelegate.h; sourceTree = "<group>"; };
-		761780EC2CA45674006654EE /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = TbotMobile/AppDelegate.mm; sourceTree = "<group>"; };
-		761780EF2CA45674006654EE /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = TbotMobile/main.m; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = TbotMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		9931D7340BCEDF165A264606 /* VoiceSessionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceSessionModule.m; path = TbotMobile/VoiceSession/VoiceSessionModule.m; sourceTree = "<group>"; };
-		B3B47F9F1C2E046CC0542C3E /* TbotMobile-Bridging-Header.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = "TbotMobile-Bridging-Header.h"; path = "TbotMobile/TbotMobile-Bridging-Header.h"; sourceTree = "<group>"; };
-		C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSessionModule.swift; path = TbotMobile/VoiceSession/VoiceSessionModule.swift; sourceTree = "<group>"; };
-		D783AF6183CE806AE0D29295 /* libPods-TbotMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TbotMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = TbotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceMicModule.m; path = tjbotMobile/VoiceMic/VoiceMicModule.m; sourceTree = "<group>"; };
+		12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedVoiceEngine.swift; path = tjbotMobile/SharedVoiceEngine.swift; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* tjbotMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tjbotMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = tjbotMobile/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = tjbotMobile/Info.plist; sourceTree = "<group>"; };
+		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = tjbotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		37730A1DCA2ACE18350A27C3 /* Pods-tjbotMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-tjbotMobile.release.xcconfig"; path = "Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile.release.xcconfig"; sourceTree = "<group>"; };
+		4E133BB36BFE1597E6CFEB9F /* PcmStreamModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PcmStreamModule.swift; path = tjbotMobile/PcmStream/PcmStreamModule.swift; sourceTree = "<group>"; };
+		536EF3757A90E484408046CC /* PcmStreamModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = PcmStreamModule.m; path = tjbotMobile/PcmStream/PcmStreamModule.m; sourceTree = "<group>"; };
+		641093E933E3175931169B50 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-tjbotMobile/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		66995590EE4FB9CD11B21587 /* VoiceMicModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceMicModule.swift; path = tjbotMobile/VoiceMic/VoiceMicModule.swift; sourceTree = "<group>"; };
+		761780EB2CA45674006654EE /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = tjbotMobile/AppDelegate.h; sourceTree = "<group>"; };
+		761780EC2CA45674006654EE /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = tjbotMobile/AppDelegate.mm; sourceTree = "<group>"; };
+		761780EF2CA45674006654EE /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = tjbotMobile/main.m; sourceTree = "<group>"; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = tjbotMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		9931D7340BCEDF165A264606 /* VoiceSessionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceSessionModule.m; path = tjbotMobile/VoiceSession/VoiceSessionModule.m; sourceTree = "<group>"; };
+		B3B47F9F1C2E046CC0542C3E /* tjbotMobile-Bridging-Header.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = "tjbotMobile-Bridging-Header.h"; path = "tjbotMobile/tjbotMobile-Bridging-Header.h"; sourceTree = "<group>"; };
+		C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSessionModule.swift; path = tjbotMobile/VoiceSession/VoiceSessionModule.swift; sourceTree = "<group>"; };
+		D783AF6183CE806AE0D29295 /* libPods-tjbotMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-tjbotMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = tjbotMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		FA914E762E8D05863FED5624 /* Pods-TbotMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TbotMobile.debug.xcconfig"; path = "Target Support Files/Pods-TbotMobile/Pods-TbotMobile.debug.xcconfig"; sourceTree = "<group>"; };
+		FA914E762E8D05863FED5624 /* Pods-tjbotMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-tjbotMobile.debug.xcconfig"; path = "Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,14 +53,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				71ECCB3B23D5183E13C7072C /* libPods-TbotMobile.a in Frameworks */,
+				71ECCB3B23D5183E13C7072C /* libPods-tjbotMobile.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* TbotMobile */ = {
+		13B07FAE1A68108700A75B9A /* tjbotMobile */ = {
 			isa = PBXGroup;
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -72,19 +72,19 @@
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				D8CB76F904B494F3A3BF48F4 /* PrivacyInfo.xcprivacy */,
 				8B657F34CA0440D18046280F /* VoiceSession */,
-				B3B47F9F1C2E046CC0542C3E /* TbotMobile-Bridging-Header.h */,
+				B3B47F9F1C2E046CC0542C3E /* tjbotMobile-Bridging-Header.h */,
 				12FF02984CD96E0AC1850CF2 /* SharedVoiceEngine.swift */,
 				96EA55884C1DA82D0CEA71AD /* VoiceMic */,
 				373454D9219514033F7FA62A /* PcmStream */,
 			);
-			name = TbotMobile;
+			name = tjbotMobile;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				D783AF6183CE806AE0D29295 /* libPods-TbotMobile.a */,
+				D783AF6183CE806AE0D29295 /* libPods-tjbotMobile.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -98,18 +98,18 @@
 			name = PcmStream;
 			sourceTree = "<group>";
 		};
-		7B819AFD9DB2B2A47BC6E0DC /* TbotMobile */ = {
+		7B819AFD9DB2B2A47BC6E0DC /* tjbotMobile */ = {
 			isa = PBXGroup;
 			children = (
 				641093E933E3175931169B50 /* ExpoModulesProvider.swift */,
 			);
-			name = TbotMobile;
+			name = tjbotMobile;
 			sourceTree = "<group>";
 		};
 		7FEFB5C977DF13C6634B9750 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				7B819AFD9DB2B2A47BC6E0DC /* TbotMobile */,
+				7B819AFD9DB2B2A47BC6E0DC /* tjbotMobile */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -124,7 +124,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* TbotMobile */,
+				13B07FAE1A68108700A75B9A /* tjbotMobile */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -139,7 +139,7 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* TbotMobile.app */,
+				13B07F961A680F5B00A75B9A /* tjbotMobile.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -165,8 +165,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				FA914E762E8D05863FED5624 /* Pods-TbotMobile.debug.xcconfig */,
-				37730A1DCA2ACE18350A27C3 /* Pods-TbotMobile.release.xcconfig */,
+				FA914E762E8D05863FED5624 /* Pods-tjbotMobile.debug.xcconfig */,
+				37730A1DCA2ACE18350A27C3 /* Pods-tjbotMobile.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -174,9 +174,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* TbotMobile */ = {
+		13B07F861A680F5B00A75B9A /* tjbotMobile */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TbotMobile" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "tjbotMobile" */;
 			buildPhases = (
 				E64864746706F8832A9053E8 /* [CP] Check Pods Manifest.lock */,
 				2227B53718137A1A5B716140 /* [Expo] Configure project */,
@@ -191,9 +191,9 @@
 			);
 			dependencies = (
 			);
-			name = TbotMobile;
-			productName = TbotMobile;
-			productReference = 13B07F961A680F5B00A75B9A /* TbotMobile.app */;
+			name = tjbotMobile;
+			productName = tjbotMobile;
+			productReference = 13B07F961A680F5B00A75B9A /* tjbotMobile.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -209,7 +209,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TbotMobile" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "tjbotMobile" */;
 			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -222,7 +222,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* TbotMobile */,
+				13B07F861A680F5B00A75B9A /* tjbotMobile */,
 			);
 		};
 /* End PBXProject section */
@@ -268,17 +268,17 @@
 			inputPaths = (
 				"$(SRCROOT)/.xcode.env",
 				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-TbotMobile/expo-configure-project.sh",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-tjbotMobile/expo-configure-project.sh",
 			);
 			name = "[Expo] Configure project";
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-TbotMobile/ExpoModulesProvider.swift",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-tjbotMobile/ExpoModulesProvider.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-TbotMobile/expo-configure-project.sh\"\n";
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-tjbotMobile/expo-configure-project.sh\"\n";
 		};
 		A29A3242943ACE25DC1ECDB9 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -286,15 +286,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-TbotMobile/Pods-TbotMobile-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-TbotMobile/Pods-TbotMobile-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TbotMobile/Pods-TbotMobile-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A9DD843A0ABEB6E4F08E3817 /* [CP] Copy Pods Resources */ = {
@@ -303,15 +303,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-TbotMobile/Pods-TbotMobile-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-TbotMobile/Pods-TbotMobile-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TbotMobile/Pods-TbotMobile-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-tjbotMobile/Pods-tjbotMobile-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E64864746706F8832A9053E8 /* [CP] Check Pods Manifest.lock */ = {
@@ -329,7 +329,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-TbotMobile-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-tjbotMobile-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -361,14 +361,14 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = FA914E762E8D05863FED5624 /* Pods-TbotMobile.debug.xcconfig */;
+			baseConfigurationReference = FA914E762E8D05863FED5624 /* Pods-tjbotMobile.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 7Q65CFWBG8;
 				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = TbotMobile/Info.plist;
+				INFOPLIST_FILE = tjbotMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -382,10 +382,10 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.manhhodinh.tbot;
-				PRODUCT_NAME = TbotMobile;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.manhhodinh.tjbot;
+				PRODUCT_NAME = tjbotMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_OBJC_BRIDGING_HEADER = "TbotMobile/TbotMobile-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "tjbotMobile/tjbotMobile-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -395,13 +395,13 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 37730A1DCA2ACE18350A27C3 /* Pods-TbotMobile.release.xcconfig */;
+			baseConfigurationReference = 37730A1DCA2ACE18350A27C3 /* Pods-tjbotMobile.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 7Q65CFWBG8;
-				INFOPLIST_FILE = TbotMobile/Info.plist;
+				INFOPLIST_FILE = tjbotMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -415,10 +415,10 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.manhhodinh.tbot;
-				PRODUCT_NAME = TbotMobile;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.manhhodinh.tjbot;
+				PRODUCT_NAME = tjbotMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_OBJC_BRIDGING_HEADER = "TbotMobile/TbotMobile-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "tjbotMobile/tjbotMobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -590,7 +590,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "TbotMobile" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "tjbotMobile" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -599,7 +599,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "TbotMobile" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "tjbotMobile" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

@@ -12,7 +12,7 @@
 
 ## UC-DP02
 
-- **cancel**: Parent must be able to back out of the choice ("new robot" vs "offline") without entering either flow.
+- **cancel**: Parent must be able to back out of the choice ("new rotjtjbot" vs "offline") without entering either flow.
 - **n/a**: Selection itself is single-step navigation — no async call to fail.
 
 ## UC-DP03
@@ -27,14 +27,14 @@
 
 ## UC-DP05
 
-- **validation**: Parent must visually confirm the candidate Robot id is theirs before tapping "This is my Robot" — wrong-device pairing is the worst failure mode.
+- **validation**: Parent must visually confirm the candidate Rotjtjbot id is theirs before tapping "This is my Rotjtjbot" — wrong-device pairing is the worst failure mode.
 - **retry**: "Search again" must re-run UC-DP04 cleanly without holding the previous candidate state.
 
 ## UC-DP06
 
-- **validation**: All 4 digits must be entered and must match Robot's display before the CTA enables.
+- **validation**: All 4 digits must be entered and must match Rotjtjbot's display before the CTA enables.
 - **error**: Wrong code must keep the form populated and offer a retry with reasoning copy.
-- **timeout**: Robot's displayed code must rotate after a bounded interval; UI must invalidate stale entries.
+- **timeout**: Rotjtjbot's displayed code must rotate after a bounded interval; UI must invalidate stale entries.
 
 ## UC-DP07
 
@@ -43,7 +43,7 @@
 
 ## UC-DP08
 
-- **validation**: Empty password must block the "Connect Robot" CTA; show-password toggle must not log the value.
+- **validation**: Empty password must block the "Connect Rotjtjbot" CTA; show-password toggle must not log the value.
 - **error**: Network-side rejection must surface a recoverable error and keep the password field populated.
 
 ## UC-DP09
@@ -58,19 +58,19 @@
 
 ## UC-DP11
 
-- **retry**: Each remediation card must route the user back into the appropriate sub-step cleanly, preserving in-flight state where safe (Wi-Fi password, candidate Robot id).
+- **retry**: Each remediation card must route the user back into the appropriate sub-step cleanly, preserving in-flight state where safe (Wi-Fi password, candidate Rotjtjbot id).
 - **error**: If all remediation paths fail, the recovery surface must offer escalation to UC-RM12 (Contact Support).
 
 ## UC-DP12
 
-- **error**: Each remediation row (replug / Wi-Fi / restart) must surface failure if Robot is still offline after the attempt.
-- **retry**: "Reconnect now" must re-run UC-DP04 without losing the previously-bound Robot id.
+- **error**: Each remediation row (replug / Wi-Fi / restart) must surface failure if Rotjtjbot is still offline after the attempt.
+- **retry**: "Reconnect now" must re-run UC-DP04 without losing the previously-bound Rotjtjbot id.
 - **timeout**: "Last seen 2 hours ago" snapshot must refresh on screen mount; stale data hides connectivity drift.
 
 ## UC-DP13
 
-- **validation**: A buddy must be selected before the "Save and meet Robot" CTA enables (state-only in the prototype; the page allows progression).
-- **error**: Persisting buddy choice to Robot can fail; failure must keep the selection populated and offer a retry.
+- **validation**: A buddy must be selected before the "Save and meet Rotjtjbot" CTA enables (state-only in the prototype; the page allows progression).
+- **error**: Persisting buddy choice to Rotjtjbot can fail; failure must keep the selection populated and offer a retry.
 
 ## UC-DP14
 

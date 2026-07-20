@@ -32,7 +32,7 @@ sequenceDiagram
 
     Note over ParentApp: parent in pr_checkout taps "Confirm purchase"
     ParentApp->>Gateway: POST /v1/billing/checkout-session {sku_id, quantity, billing_address, X-Request-Id} + parent JWT Bearer
-    Gateway->>Gateway: auth-resolver — JWT audience: tbot:parent (sys-17)
+    Gateway->>Gateway: auth-resolver — JWT audience: tjbot:parent (sys-17)
     alt parent_jwt_stale_re_pin_required
         Note over Gateway: parent JWT issued > 60s ago (ADR-0005 D6)
         Gateway-->>ParentApp: 401 parent_jwt_stale — re-PIN required

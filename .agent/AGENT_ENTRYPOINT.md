@@ -1,14 +1,14 @@
-# tbot-mobile — Agent Entrypoint
+# tjbot-mobile — Agent Entrypoint
 
 This file is the authoritative boot sequence for any agent working in
-`/Users/manhhodinh/Documents/TBOT/tbot-mobile/`. It supersedes the root
-`/Users/manhhodinh/Documents/TBOT/CLAUDE.md` wherever the two disagree.
+`/Users/manhhodinh/Documents/tjbot/tjbot-mobile/`. It supersedes the root
+`/Users/manhhodinh/Documents/tjbot/CLAUDE.md` wherever the two disagree.
 
 ---
 
 ## Step 1 — Confirm repo scope
 
-You are in **tbot-mobile** (sys-16: mobile UX shell). This repo owns the
+You are in **tjbot-mobile** (sys-16: mobile UX shell). This repo owns the
 React Native application delivered to end-users. It does NOT own backend
 APIs, firmware wire protocols, AI safety filters, or infrastructure.
 
@@ -34,24 +34,24 @@ Read this file fully before any Edit/Write call.
 
 Read in this order. Do not skip any. Mark each complete before proceeding.
 
-1. `/Users/manhhodinh/Documents/TBOT/tbot-mobile/.agent/AGENT_CONTEXT.md`
+1. `/Users/manhhodinh/Documents/tjbot/tjbot-mobile/.agent/AGENT_CONTEXT.md`
    — ownership map, forbidden actions, dependency graph. NEVER SKIP.
-2. `/Users/manhhodinh/Documents/TBOT/tbot-mobile/.agent/SYSTEM_CONTRACTS.md`
+2. `/Users/manhhodinh/Documents/tjbot/tjbot-mobile/.agent/SYSTEM_CONTRACTS.md`
    — API, WebSocket, BLE, auth contracts.
-3. `/Users/manhhodinh/Documents/TBOT/tbot-mobile/.agent/TASK_EXECUTION.md`
+3. `/Users/manhhodinh/Documents/tjbot/tjbot-mobile/.agent/TASK_EXECUTION.md`
    — coding standards, commit format, stop conditions. NEVER SKIP.
 4. Task record — look up in this order:
-   a. `/Users/manhhodinh/Documents/TBOT/packages/shared-data/src/content/tasks.json`
+   a. `/Users/manhhodinh/Documents/tjbot/packages/shared-data/src/content/tasks.json`
       (canonical, 182 tasks as of 2026-05-06)
-   b. `/Users/manhhodinh/Documents/TBOT/docs/site/execution/pipeline-tasks.md`
+   b. `/Users/manhhodinh/Documents/tjbot/docs/site/execution/pipeline-tasks.md`
    c. Per-pipeline: `docs/site/systems/*-pipeline.md`
    d. Root-level ad-hoc: `TASK-EXTRACTION.md` / `TASK-VERIFICATION-MATRIX.md`
 5. System spec: `docs/site/software/systems/16-*.md` (sys-16 overview).
    If task also touches sys-18 (BLE wire), read `docs/site/software/systems/18-*.md`.
 6. Architecture:
-   `/Users/manhhodinh/Documents/TBOT/docs/ARCHITECTURE.md`
+   `/Users/manhhodinh/Documents/tjbot/docs/ARCHITECTURE.md`
    + `PRODUCTION-ARCHITECTURE.md` (cache per session).
-7. `/Users/manhhodinh/Documents/TBOT/tbot-mobile/.agent/VALIDATION_CHECKLIST.md`
+7. `/Users/manhhodinh/Documents/tjbot/tjbot-mobile/.agent/VALIDATION_CHECKLIST.md`
    — hard gates you must pass at close. NEVER SKIP.
 
 If the task touches API contracts also read:
@@ -69,7 +69,7 @@ Before the first code change output this block verbatim:
 ```
 ## CHALLENGE MODE — task-start
 Task ID:             <task-id or AD-HOC: adhoc-YYYY-MM-DD-slug>
-Owning repo:         tbot-mobile
+Owning repo:         tjbot-mobile
 System ID(s):        sys-16 (+ sys-18 if BLE touched)
 Files touched:       - <path> (reason)
 Acceptance criteria: 1. <testable> 2. <testable>
@@ -135,7 +135,7 @@ Any "I don't know" or "I skipped it" → downgrade to PARTIAL.
 
 Follow `DOC_SYNC_RULES.md`. If code behavior or contracts changed, propose
 doc updates in the same change. Write verification-matrix row in:
-`/Users/manhhodinh/Documents/TBOT/migrate-ui-ux-to-mobile-app-docs/qa/`
+`/Users/manhhodinh/Documents/tjbot/migrate-ui-ux-to-mobile-app-docs/qa/`
 
 Ad-hoc work: `migrate-ui-ux-to-mobile-app-docs/qa/<YYYY-MM-DD>-<task-id>.md`
 
@@ -159,8 +159,8 @@ BLOCKED     → IN_PROGRESS  (blocker resolved)
 
 ## Docs workspace location
 
-All docs for tbot-mobile live at:
-`/Users/manhhodinh/Documents/TBOT/migrate-ui-ux-to-mobile-app-docs/`
+All docs for tjbot-mobile live at:
+`/Users/manhhodinh/Documents/tjbot/migrate-ui-ux-to-mobile-app-docs/`
 
 Subdirs:
 - `architecture/` — use-case diagrams, PlantUML
@@ -176,7 +176,7 @@ Subdirs:
 - `qa/` — verification matrices
 
 Scripts that read docs live at:
-`/Users/manhhodinh/Documents/TBOT/tbot-mobile/scripts/`
+`/Users/manhhodinh/Documents/tjbot/tjbot-mobile/scripts/`
 All validators import paths from `scripts/_lib/paths.mjs`.
 
 ---
@@ -185,11 +185,11 @@ All validators import paths from `scripts/_lib/paths.mjs`.
 
 | Change touches | Escalate to | Read first |
 |---|---|---|
-| Wire protocol (sys-18) | tbot-firmware + tbot-backend + docs/packages/shared-data | `docs/site/software/systems/18-*.md` |
-| Safety filters (sys-05) | tbot-ai-services | `docs/site/safety/*.md` |
-| Auth / COPPA (sys-01) | tbot-backend (legal review may be required) | `docs/site/legal/coppa-*.md` |
-| Infra / IAM / KMS (sys-13) | tbot-infra | `docs/runbooks/staging-*.md` |
-| Realtime session (sys-04) | tbot-backend + tbot-ai-services | `docs/site/architecture/realtime-overview.md` |
+| Wire protocol (sys-18) | tjbot-firmware + tjbot-backend + docs/packages/shared-data | `docs/site/software/systems/18-*.md` |
+| Safety filters (sys-05) | tjbot-ai-services | `docs/site/safety/*.md` |
+| Auth / COPPA (sys-01) | tjbot-backend (legal review may be required) | `docs/site/legal/coppa-*.md` |
+| Infra / IAM / KMS (sys-13) | tjbot-infra | `docs/runbooks/staging-*.md` |
+| Realtime session (sys-04) | tjbot-backend + tjbot-ai-services | `docs/site/architecture/realtime-overview.md` |
 
 Cross-repo edits without cross-repo approval violate `SYSTEM_CONTRACTS.md` — STOP.
 

@@ -1,4 +1,4 @@
-package com.tbotmobile.pcmstream
+package com.tjbotmobile.pcmstream
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

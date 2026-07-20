@@ -7,7 +7,7 @@ actors: [SafetyService, BlocklistCache, FallbackTemplateStore]
 apis: []
 externals: []
 queues:
-  - tbot-safety-event
+  - tjbot-safety-event
 failure_paths:
   - hard_block_blocklist_or_pii_or_fear
   - rewrite_attempt_still_unsafe
@@ -29,7 +29,7 @@ sequenceDiagram
     SafetyService->>BlocklistCache: run 6 checks (blocklist, PII, fear, vocab, prompt-leak, length)
     alt hard_block_blocklist_or_pii_or_fear
         BlocklistCache-->>SafetyService: hit hard category
-        SafetyService-)SafetyService: emit tbot-safety-event safety.output_blocked
+        SafetyService-)SafetyService: emit tjbot-safety-event safety.output_blocked
         SafetyService->>FallbackTemplateStore: cascade lookup (exact -> broader-age -> generic_safe -> hardcoded)
         FallbackTemplateStore-->>SafetyService: fallback template
         SafetyService-->>SafetyService: return block_with_fallback

@@ -1,10 +1,10 @@
-# tbot-mobile — Doc Sync Rules
+# tjbot-mobile — Doc Sync Rules
 
 When code behavior or contracts change, these docs must be updated in the
 same PR (or in the same commit batch). Leaving drift is a FAIL condition.
 
 Docs workspace root:
-`/Users/manhhodinh/Documents/TBOT/migrate-ui-ux-to-mobile-app-docs/`
+`/Users/manhhodinh/Documents/tjbot/migrate-ui-ux-to-mobile-app-docs/`
 
 ---
 
@@ -31,7 +31,7 @@ Trigger: new `client.get/post/put/patch/delete` call in any API module
 
 Required doc updates:
 1. Verify the endpoint is documented in `migrate-ui-ux-to-mobile-app-docs/api/openapi.json`
-   — if not, escalate to tbot-backend before writing the call
+   — if not, escalate to tjbot-backend before writing the call
 2. If the endpoint maps to an existing use-case, update the backend-mapping:
    `migrate-ui-ux-to-mobile-app-docs/usecases/domains/<domain>/backend-mapping.md`
 3. If the endpoint represents a new flow, add a sequence diagram:
@@ -63,10 +63,10 @@ payload shapes in `src/services/ble/`
 
 Action:
 1. STOP. Do not commit.
-2. Open cross-repo issue tagging tbot-firmware and tbot-backend.
+2. Open cross-repo issue tagging tjbot-firmware and tjbot-backend.
 3. Read `migrate-ui-ux-to-mobile-app-docs/sequences/18-wire-protocol/` and
    `docs/site/software/systems/18-*.md`.
-4. Only proceed after explicit approval from tbot-firmware agent/team.
+4. Only proceed after explicit approval from tjbot-firmware agent/team.
 5. When approved: update `migrate-ui-ux-to-mobile-app-docs/sequences/18-wire-protocol/<flow>.sequence.mmd`
    to reflect the new protocol.
 

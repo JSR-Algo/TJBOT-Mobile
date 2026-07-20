@@ -6,12 +6,12 @@
  */
 import axios from 'axios';
 
-const API_URL = process.env.TBOT_API_URL ?? 'http://localhost:3000/v1';
+const API_URL = process.env.tjbot_API_URL ?? 'http://localhost:3000/v1';
 
 describe('Auth isolation: learning endpoints', () => {
   const http = axios.create({ baseURL: API_URL, validateStatus: () => true });
 
-  const uniqueEmail = () => `mobile-test-${Date.now()}-${Math.random().toString(36).slice(2)}@tbot-e2e.test`;
+  const uniqueEmail = () => `mobile-test-${Date.now()}-${Math.random().toString(36).slice(2)}@tjbot-e2e.test`;
 
   async function createParentAndChild() {
     const email = uniqueEmail();

@@ -1,6 +1,6 @@
-com/tbotmobile/MainApplication.class
-com/tbotmobile/MainApplication$$ExternalSyntheticLambda0.class
-com/tbotmobile/MainActivity.class
+com/tjbotmobile/MainApplication.class
+com/tjbotmobile/MainApplication$$ExternalSyntheticLambda0.class
+com/tjbotmobile/MainActivity.class
 androidx/core/app/CoreComponentFactory.class
 com/facebook/react/ReactApplication.class
 com/facebook/react/ReactActivity.class

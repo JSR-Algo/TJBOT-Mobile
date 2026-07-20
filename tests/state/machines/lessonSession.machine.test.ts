@@ -1,7 +1,7 @@
 /**
  * LessonSession machine unit tests.
  *
- * Plan: tbot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
+ * Plan: tjbot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
  * §4.2, §5.
  *
  * The most load-bearing assertion in this file is the
@@ -96,9 +96,9 @@ describe('LessonSession machine — happy path', () => {
     actor.send({ type: 'GREETING_DONE' });
     expect(path(actor)).toBe('ACTIVE.ACTIVITY_INTRO');
     actor.send({ type: 'INTRO_DONE' });
-    expect(path(actor)).toBe('ACTIVE.ROBOT_SPEAKING');
+    expect(path(actor)).toBe('ACTIVE.ROtjtjbot_SPEAKING');
     actor.send({ type: 'REPLY_READY' });
-    expect(path(actor)).toBe('ACTIVE.ROBOT_LISTENING');
+    expect(path(actor)).toBe('ACTIVE.ROtjtjbot_LISTENING');
     actor.send({ type: 'VAD_SPEECH' });
     expect(path(actor)).toBe('ACTIVE.USER_SPEAKING');
     actor.send({ type: 'VAD_END' });

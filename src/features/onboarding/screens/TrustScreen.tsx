@@ -24,7 +24,7 @@ const PROMISES = [
   {
     icon: <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><Circle cx="12" cy="8" r="4"/><Path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></Svg>,
     title: 'No social, no chat, no ads',
-    body: 'No other kids, no messages, no advertising. Just your child and Robot.',
+    body: 'No other kids, no messages, no advertising. Just your child and Rotjtjbot.',
   },
   {
     icon: <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><Rect x="4" y="10" width="16" height="11" rx="2"/><Path d="M8 10V7a4 4 0 018 0v3"/></Svg>,
@@ -36,7 +36,7 @@ const PROMISES = [
 export default function TrustScreen({ navigation }: Props) {
   return (
     <OnbShell title="Our promise" onBack={() => navigation.navigate('IntroCelebrateScreen')}>
-      <Box paddingHorizontal={20} paddingTop={18} style={{ marginBottom: 8 }}>
+      <Box paddingHorizontal={20} paddingTop={18} style={{ margintjtjbottom: 8 }}>
         <Text fontWeight="600" style={styles.heading}>Made for kids 6–10. Designed with parents.</Text>
         <Text style={styles.sub}>Before we set things up, here's how we treat your child's privacy and time.</Text>
       </Box>
@@ -58,7 +58,7 @@ export default function TrustScreen({ navigation }: Props) {
           Full details any time in <Text fontWeight="500" style={{ color: OB.accent }}>Parent Space → Safety & Privacy</Text>.
         </Text>
       </Box>
-      <Box paddingHorizontal={20} paddingTop={14} paddingBottom={30}>
+      <Box paddingHorizontal={20} paddingTop={14} paddingtjtjbottom={30}>
         <OnbBigBtn onClick={() => navigation.navigate('MicAskScreen')}>Continue</OnbBigBtn>
       </Box>
     </OnbShell>
@@ -66,11 +66,11 @@ export default function TrustScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, color: OB.ink, letterSpacing: -0.3, lineHeight: 26, marginBottom: 6 },
+  heading: { fontSize: 22, color: OB.ink, letterSpacing: -0.3, lineHeight: 26, margintjtjbottom: 6 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 22 },
   promiseCard: { backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, borderRadius: 14, padding: 14 },
   iconWrap: { width: 34, height: 34, borderRadius: 9, backgroundColor: '#EEF1F5', color: OB.ink, flexShrink: 0 },
-  promiseTitle: { fontSize: 14, color: OB.ink, marginBottom: 3 },
+  promiseTitle: { fontSize: 14, color: OB.ink, margintjtjbottom: 3 },
   promiseBody: { fontSize: 13, color: OB.ink2, lineHeight: 20 },
   privacyNote: { fontSize: 12, color: OB.ink3, lineHeight: 22 },
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -14,16 +14,16 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DeviceLostScreen'>;
 export default function DeviceLostScreen({ navigation }: Props) {
   const [chiming, setChiming] = React.useState(false);
   return (
-    <DeviceShell title="Find Robot" onBack={() => navigation.navigate('DeviceHomeScreen')}>
+    <DeviceShell title="Find Rotjtjbot" onBack={() => navigation.navigate('DeviceHomeScreen')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion={chiming ? 'happy' : 'sleep'} size={180} accent="#FF6F61" />
+        <RotjtjbotDevice emotion={chiming ? 'happy' : 'sleep'} size={180} accent="#FF6F61" />
         <Text fontWeight="600" style={styles.heading}>
-          {chiming ? 'Robot is chiming!' : "Can't find Robot?"}
+          {chiming ? 'Rotjtjbot is chiming!' : "Can't find Rotjtjbot?"}
         </Text>
         <Text style={styles.sub}>
           {chiming
-            ? 'Listen for a soft melody. Robot will keep playing for 30 seconds.'
-            : 'Robot will play a gentle melody so you can find it.'}
+            ? 'Listen for a soft melody. Rotjtjbot will keep playing for 30 seconds.'
+            : 'Rotjtjbot will play a gentle melody so you can find it.'}
         </Text>
       </Box>
 
@@ -37,9 +37,9 @@ export default function DeviceLostScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={30} paddingBottom={30}>
+      <Box paddingHorizontal={20} paddingTop={30} paddingtjtjbottom={30}>
         <DeviceBigBtn onClick={() => setChiming(c => !c)}>
-          {chiming ? 'Stop chime' : 'Make Robot chime'}
+          {chiming ? 'Stop chime' : 'Make Rotjtjbot chime'}
         </DeviceBigBtn>
       </Box>
     </DeviceShell>

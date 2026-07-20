@@ -1,6 +1,6 @@
 # Safety Shim v1 (Mobile) — Reference
 
-**Scope:** TBOT Mobile v1 internal alpha. **Lifecycle:** Bridge to sys-05 full pipeline (Sprint 12).
+**Scope:** tjbot Mobile v1 internal alpha. **Lifecycle:** Bridge to sys-05 full pipeline (Sprint 12).
 
 **Authoritative system design:** [../../../../docs/site/releases/v1-alpha-internal.md §6](../../../../docs/site/releases/v1-alpha-internal.md)
 
@@ -22,7 +22,7 @@ An alpha child-facing voice product cannot ship without defense-in-depth safety.
 ## 2. Files (target structure)
 
 ```
-tbot-mobile/src/ai/safety/
+tjbot-mobile/src/ai/safety/
 ├── README.md                 ← this file
 ├── index.ts                  ← public API: SafetyShim.check(...), assemblePersona(...)
 ├── inputBlocklist.ts         ← Layer 1 implementation
@@ -87,8 +87,8 @@ This is a pragmatic contract: "no hidden async state, deterministic verdicts, on
 {
   "version": "v1.0.0",
   "generatedAt": "2026-04-21T00:00:00Z",
-  "authoredBy": "safety-lead@tbot",
-  "approvedBy": "legal-lead@tbot",
+  "authoredBy": "safety-lead@tjbot",
+  "approvedBy": "legal-lead@tjbot",
   "integritySha256": "<sha256 of the categories object below>",
   "categories": {
     "violence":        ["regex1", "regex2", "..."],
@@ -101,7 +101,7 @@ This is a pragmatic contract: "no hidden async state, deterministic verdicts, on
 }
 ```
 
-**Integrity check:** at app start, compute SHA-256 of `categories` (sorted-keys JSON), compare to `integritySha256`. Mismatch → log + refuse to start safety shim → RobotScreen entry blocked (fail-closed).
+**Integrity check:** at app start, compute SHA-256 of `categories` (sorted-keys JSON), compare to `integritySha256`. Mismatch → log + refuse to start safety shim → RotjtjbotScreen entry blocked (fail-closed).
 
 **Size budget:** 80–120 total regexes. Benchmark target: ≤ 5 ms per `checkInput` on iPhone 12 baseline.
 

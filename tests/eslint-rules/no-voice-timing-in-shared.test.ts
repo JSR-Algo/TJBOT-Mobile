@@ -1,5 +1,5 @@
 /**
- * RuleTester suite for the TBOT custom rule (plan v2 §11.7).
+ * RuleTester suite for the tjbot custom rule (plan v2 §11.7).
  *
  * Each invalid case asserts that a code construct in a specific
  * filename is reported with the right messageId. Each valid case
@@ -146,7 +146,7 @@ tester.run('no-voice-timing-in-shared', rule, {
     // setTimeout calling transition() is the PRESCRIBED pattern per
     // plan §6.3). Outside hooks the v1 anti-pattern is still caught.
     //
-    // Combo: transition() inside setTimeout in src/components/ — both
+    // Combo: transition() inside setTimeout in src/components/ — tjtjboth
     // #1 (timing-in-shared) AND #5 (transition-in-timer) fire.
     {
       code: 'setTimeout(() => { store.transition("IDLE"); }, 1000);',

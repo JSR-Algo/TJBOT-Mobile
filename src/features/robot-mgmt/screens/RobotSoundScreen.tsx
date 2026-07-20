@@ -8,7 +8,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RobotSoundScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'RotjtjbotSoundScreen'>;
 
 const VOICES = [
   { id: 'warm', t: 'Warm', s: 'Friendly · default' },
@@ -30,18 +30,18 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   );
 }
 
-export default function RobotSoundScreen({ navigation }: Props) {
+export default function RotjtjbotSoundScreen({ navigation }: Props) {
   const [vol, setVol] = React.useState(6);
   const [chime, setChime] = React.useState(true);
   const [quiet, setQuiet] = React.useState(true);
   const [voice, setVoice] = React.useState<VoiceId>('warm');
 
   return (
-    <DeviceShell title="Sound & volume" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Sound & volume" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.volCard}>
-          <Box flexDirection="row" justifyContent="space-between" alignItems="flex-end" style={{ marginBottom: 14 }}>
-            <Text fontWeight="600" style={styles.volTitle}>Robot's voice volume</Text>
+          <Box flexDirection="row" justifyContent="space-between" alignItems="flex-end" style={{ margintjtjbottom: 14 }}>
+            <Text fontWeight="600" style={styles.volTitle}>Rotjtjbot's voice volume</Text>
             <Text fontWeight="700" style={styles.volNum}>{vol}<Text style={styles.volDenom}>/10</Text></Text>
           </Box>
           <Box style={{ flexDirection: 'row', gap: 5 }}>
@@ -61,7 +61,7 @@ export default function RobotSoundScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={18}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Robot's voice</Text>
+        <Text fontWeight="700" style={styles.sectionLabel}>Rotjtjbot's voice</Text>
         <Box style={{ flexDirection: 'row', gap: 8 }}>
           {VOICES.map(v => {
             const sel = voice === v.id;
@@ -87,9 +87,9 @@ export default function RobotSoundScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={16} paddingTop={18} paddingBottom={30}>
+      <Box paddingHorizontal={16} paddingTop={18} paddingtjtjbottom={30}>
         <Text style={styles.note}>
-          Robot's voice changes apply on the next lesson. Test sound plays now.
+          Rotjtjbot's voice changes apply on the next lesson. Test sound plays now.
         </Text>
       </Box>
     </DeviceShell>
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   volDenom: { fontSize: 14, color: RM.ink3, fontWeight: '500' },
   volSeg: { flex: 1, height: 36, borderRadius: 6 },
   volHint: { fontSize: 11, color: RM.ink3 },
-  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   voiceCard: {
     flex: 1, backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair,
     borderRadius: 12, padding: 10, alignItems: 'center',

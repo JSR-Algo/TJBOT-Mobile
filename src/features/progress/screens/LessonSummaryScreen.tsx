@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
@@ -19,13 +19,13 @@ const ROWS = [
 export default function LessonSummaryScreen({ navigation }: Props) {
   return (
     <PageScroll bg="#C5F1DD">
-      <Box paddingHorizontal={24} paddingTop={80} paddingBottom={14} alignItems="center" gap={8}>
+      <Box paddingHorizontal={24} paddingTop={80} paddingtjtjbottom={14} alignItems="center" gap={8}>
         <Text fontWeight="600" style={styles.tag}>LESSON DONE</Text>
         <Text fontWeight="800" style={styles.headline}>Great effort!</Text>
-        <Robot emotion="success" size={200} accent="#FFC857" />
+        <Rotjtjbot emotion="success" size={200} accent="#FFC857" />
       </Box>
 
-      <Box paddingHorizontal={24} paddingBottom={14}>
+      <Box paddingHorizontal={24} paddingtjtjbottom={14}>
         <Box style={styles.summaryCard}>
           {ROWS.map((r, i) => (
             <Box key={i} flexDirection="row" alignItems="center" gap={14} style={i > 0 ? { marginTop: 14 } : undefined}>
@@ -41,7 +41,7 @@ export default function LessonSummaryScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28} gap={10}>
+      <Box paddingHorizontal={24} paddingTop={8} paddingtjtjbottom={28} gap={10}>
         <PrimaryCTA onPress={() => navigation.navigate('LessonReadyScreen')} color="#FF6F61">Keep going →</PrimaryCTA>
         <TouchableOpacity onPress={() => navigation.navigate('HomeHubScreen')} activeOpacity={0.7} style={styles.stopBtn}>
           <Text fontWeight="700" style={{ fontSize: 18, color: '#5C4F77' }}>Stop for today</Text>

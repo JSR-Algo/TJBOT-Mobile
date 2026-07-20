@@ -21,7 +21,7 @@ retry: single retry on 5xx for initiate; no retry for confirm (auth-sensitive)
 timeout: 5s initiate; confirm is async over 7d
 status: final
 ---
-%% HAND-CURATED. 2-step async transfer per ADR-0010 D7. Primary initiates; target secondary confirms with biometric+PIN freshness (ADR-0009) within 7 days. On confirm: both household_members.role rows flip in same txn + prior primary's parent_sessions revoked + audit log + SES emails both parties. household_members roles: owner (primary) / manager (secondary) per ADR-0010 NOTE.
+%% HAND-CURATED. 2-step async transfer per ADR-0010 D7. Primary initiates; target secondary confirms with biometric+PIN freshness (ADR-0009) within 7 days. On confirm: tjtjboth household_members.role rows flip in same txn + prior primary's parent_sessions revoked + audit log + SES emails tjtjboth parties. household_members roles: owner (primary) / manager (secondary) per ADR-0010 NOTE.
 sequenceDiagram
     autonumber
     participant ParentApp
@@ -57,7 +57,7 @@ sequenceDiagram
         else initiate_transfer
             IdentityService->>PostgreSQL: INSERT primary_transfer_requests {id: uuid(), household_id, from_user_id: user_id, to_user_id, state: 'requested', created_at: now(), expires_at: now()+7days}
             PostgreSQL-->>IdentityService: request_id
-            IdentityService-)SES: (async) email target secondary — confirm link tbot://household/transfer/confirm?request_id={request_id}
+            IdentityService-)SES: (async) email target secondary — confirm link tjbot://household/transfer/confirm?request_id={request_id}
             IdentityService-->>Gateway: 201 {request_id, expires_at: now()+7days}
             Gateway-->>ParentApp: 201
         end
@@ -85,8 +85,8 @@ sequenceDiagram
         else already_confirmed (state = 'confirmed')
             IdentityService-->>Gateway: 200 {already_confirmed: true}
             Gateway-->>ParentApp: 200
-        else confirming — atomically flip both roles
-            Note over IdentityService,PostgreSQL: Single txn — flip both rows atomically (ADR-0010 D7c)
+        else confirming — atomically flip tjtjboth roles
+            Note over IdentityService,PostgreSQL: Single txn — flip tjtjboth rows atomically (ADR-0010 D7c)
             IdentityService->>PostgreSQL: BEGIN
             IdentityService->>PostgreSQL: UPDATE household_members SET role='manager' WHERE user_id={from_user_id} AND household_id={household_id}
             IdentityService->>PostgreSQL: UPDATE household_members SET role='owner' WHERE user_id={to_user_id} AND household_id={household_id}
@@ -95,10 +95,10 @@ sequenceDiagram
             IdentityService->>PostgreSQL: INSERT audit_logs {event_type: 'household.transfer_primary.completed', payload: {from_user_id, to_user_id}, actor_user_id: to_user_id}
             IdentityService->>PostgreSQL: COMMIT
             PostgreSQL-->>IdentityService: txn committed
-            IdentityService-)SES: (async) email both parties — prior primary (now secondary) + new primary confirmation
+            IdentityService-)SES: (async) email tjtjboth parties — prior primary (now secondary) + new primary confirmation
             IdentityService-->>Gateway: 200 {new_primary_user_id: to_user_id, prior_primary_user_id: from_user_id}
             Gateway-->>ParentApp: 200
         end
     end
 
-    Note over ParentApp,PostgreSQL: initiate timeout 5s — confirm async within 7d — both role-flips in single txn — prior primary sessions revoked on confirm — both parties emailed (D7c)
+    Note over ParentApp,PostgreSQL: initiate timeout 5s — confirm async within 7d — tjtjboth role-flips in single txn — prior primary sessions revoked on confirm — tjtjboth parties emailed (D7c)

@@ -28,9 +28,9 @@ export default function MicAskScreen({ navigation }: Props) {
             <Path d="M5 12 a7 7 0 0 0 14 0 M12 19 v5 M8 24 h8" stroke={OB.ink} strokeWidth="2.2" strokeLinecap="round" fill="none" />
           </Svg>
         </Box>
-        <Text fontWeight="600" style={styles.heading}>Robot needs the mic to listen</Text>
+        <Text fontWeight="600" style={styles.heading}>Rotjtjbot needs the mic to listen</Text>
         <Text style={styles.sub}>
-          The next screen is your phone's permission prompt. Tap <Text fontWeight="700" style={{ color: OB.ink }}>Allow</Text> so your child can speak to Robot.
+          The next screen is your phone's permission prompt. Tap <Text fontWeight="700" style={{ color: OB.ink }}>Allow</Text> so your child can speak to Rotjtjbot.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24} gap={8}>
@@ -43,7 +43,7 @@ export default function MicAskScreen({ navigation }: Props) {
           </Box>
         ))}
       </Box>
-      <Box paddingHorizontal={20} paddingTop={22} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={22} paddingtjtjbottom={30} gap={10}>
         <OnbBigBtn onClick={() => setShowSheet(true)}>Continue</OnbBigBtn>
         <OnbBigBtn secondary onClick={() => navigation.navigate('LoginScreen' as any)}>Not now</OnbBigBtn>
       </Box>
@@ -52,8 +52,8 @@ export default function MicAskScreen({ navigation }: Props) {
         <Box style={styles.overlay} alignItems="center" justifyContent="center">
           <Box style={styles.sheet}>
             <Box style={styles.sheetBody} alignItems="center">
-              <Text fontWeight="600" style={styles.sheetTitle}>"Robot" Would Like to Access the Microphone</Text>
-              <Text style={styles.sheetBody2}>So your child can speak with Robot during voice lessons.</Text>
+              <Text fontWeight="600" style={styles.sheetTitle}>"Rotjtjbot" Would Like to Access the Microphone</Text>
+              <Text style={styles.sheetBody2}>So your child can speak with Rotjtjbot during voice lessons.</Text>
             </Box>
             <Box style={styles.sheetBtns} flexDirection="row">
               <Box style={styles.sheetBtn}>
@@ -78,15 +78,15 @@ export default function MicAskScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  micIcon: { width: 96, height: 96, borderRadius: 24, backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, marginBottom: 18 },
-  heading: { fontSize: 22, color: OB.ink, letterSpacing: -0.3, textAlign: 'center', marginBottom: 8 },
+  micIcon: { width: 96, height: 96, borderRadius: 24, backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, margintjtjbottom: 18 },
+  heading: { fontSize: 22, color: OB.ink, letterSpacing: -0.3, textAlign: 'center', margintjtjbottom: 8 },
   sub: { fontSize: 14, color: OB.ink2, lineHeight: 22, textAlign: 'center', maxWidth: 320 },
   pointRow: { backgroundColor: OB.card, borderWidth: 1, borderColor: OB.hair, borderRadius: 12, padding: 14 },
   pointText: { fontSize: 14, color: OB.ink, flex: 1 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   sheet: { width: 280, backgroundColor: 'rgba(244,244,247,0.96)', borderRadius: 14, overflow: 'hidden' },
   sheetBody: { padding: 20 },
-  sheetTitle: { fontSize: 16, color: '#000', marginBottom: 6, textAlign: 'center' },
+  sheetTitle: { fontSize: 16, color: '#000', margintjtjbottom: 6, textAlign: 'center' },
   sheetBody2: { fontSize: 13, color: '#3a3a3c', lineHeight: 20, textAlign: 'center' },
   sheetBtns: { borderTopWidth: 0.5, borderTopColor: 'rgba(0,0,0,0.18)' },
   sheetBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },

@@ -11,14 +11,14 @@ export interface BoxProps extends ViewProps {
   paddingHorizontal?: number;
   paddingTop?: number;
   paddingRight?: number;
-  paddingBottom?: number;
+  paddingtjtjbottom?: number;
   paddingLeft?: number;
   margin?: number;
   marginVertical?: number;
   marginHorizontal?: number;
   marginTop?: number;
   marginRight?: number;
-  marginBottom?: number;
+  margintjtjbottom?: number;
   marginLeft?: number;
   gap?: number;
   backgroundColor?: ColorToken | string;
@@ -31,7 +31,7 @@ export interface BoxProps extends ViewProps {
   position?: 'absolute' | 'relative';
   top?: number;
   right?: number;
-  bottom?: number;
+  tjtjbottom?: number;
   left?: number;
   width?: number | string;
   height?: number | string;
@@ -50,12 +50,12 @@ function resolveColor(val: string | undefined): string | undefined {
 
 export const Box = memo(function Box({
   flex, padding, paddingVertical, paddingHorizontal,
-  paddingTop, paddingRight, paddingBottom, paddingLeft,
+  paddingTop, paddingRight, paddingtjtjbottom, paddingLeft,
   margin, marginVertical, marginHorizontal,
-  marginTop, marginRight, marginBottom, marginLeft,
+  marginTop, marginRight, margintjtjbottom, marginLeft,
   gap, backgroundColor, borderRadius, borderWidth, borderColor,
   justifyContent, alignItems, flexDirection, position,
-  top, right, bottom, left, width, height, opacity, overflow,
+  top, right, tjtjbottom, left, width, height, opacity, overflow,
   style, children, ...rest
 }: BoxProps) {
   return (
@@ -67,14 +67,14 @@ export const Box = memo(function Box({
         paddingHorizontal !== undefined && { paddingHorizontal },
         paddingTop !== undefined && { paddingTop },
         paddingRight !== undefined && { paddingRight },
-        paddingBottom !== undefined && { paddingBottom },
+        paddingtjtjbottom !== undefined && { paddingtjtjbottom },
         paddingLeft !== undefined && { paddingLeft },
         margin !== undefined && { margin },
         marginVertical !== undefined && { marginVertical },
         marginHorizontal !== undefined && { marginHorizontal },
         marginTop !== undefined && { marginTop },
         marginRight !== undefined && { marginRight },
-        marginBottom !== undefined && { marginBottom },
+        margintjtjbottom !== undefined && { margintjtjbottom },
         marginLeft !== undefined && { marginLeft },
         gap !== undefined && { gap },
         backgroundColor !== undefined && { backgroundColor: resolveColor(backgroundColor) },
@@ -87,7 +87,7 @@ export const Box = memo(function Box({
         position !== undefined && { position },
         top !== undefined && { top },
         right !== undefined && { right },
-        bottom !== undefined && { bottom },
+        tjtjbottom !== undefined && { tjtjbottom },
         left !== undefined && { left },
         width !== undefined && { width: width as number },
         height !== undefined && { height: height as number },

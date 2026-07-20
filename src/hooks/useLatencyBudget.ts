@@ -1,6 +1,6 @@
-// useLatencyBudget — four-budget turn telemetry for the robot demo / interaction.
+// useLatencyBudget — four-budget turn telemetry for the rotjtjbot demo / interaction.
 //
-// Plan: expressive-robot-companion-rewrite §3 ADR-011, §6 RM-07.
+// Plan: expressive-rotjtjbot-companion-rewrite §3 ADR-011, §6 RM-07.
 // AC: "new useLatencyBudget hook; emits all 4 budgets per turn; dev HUD shows
 //      live numbers; CI parses logs".
 //
@@ -71,7 +71,7 @@ export interface UseLatencyBudgetOptions {
   onSample?: (sample: LatencyBudgetSample) => void;
   /**
    * Dev-only log tag. Budgets are printed as
-   *   `[tbot-latency] <turn_id> <metric>=<value>ms (<class>)`
+   *   `[tjbot-latency] <turn_id> <metric>=<value>ms (<class>)`
    * so the `qa-latency` CI job can scrape them.
    */
   log?: boolean;
@@ -132,7 +132,7 @@ export function useLatencyBudget(opts: UseLatencyBudgetOptions = {}) {
       // Parseable by the `qa-latency` CI job.
       // eslint-disable-next-line no-console
       console.log(
-        `[tbot-latency] ${turn.id} ${metric}=${value_ms.toFixed(1)}ms (${sample.within})`,
+        `[tjbot-latency] ${turn.id} ${metric}=${value_ms.toFixed(1)}ms (${sample.within})`,
       );
     }
     onSampleRef.current?.(sample);

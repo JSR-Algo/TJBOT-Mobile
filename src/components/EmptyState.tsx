@@ -32,19 +32,19 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 64,
-    marginBottom: spacing.lg,
+    margintjtjbottom: spacing.lg,
   },
   title: {
     ...typography.h3,
     color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    margintjtjbottom: spacing.sm,
   },
   subtitle: {
     ...typography.body1,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    margintjtjbottom: spacing.lg,
   },
   cta: {
     marginTop: spacing.md,

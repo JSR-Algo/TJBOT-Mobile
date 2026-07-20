@@ -61,19 +61,19 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     alignItems: 'center',
   },
-  emoji: { fontSize: 48, marginBottom: 12 },
+  emoji: { fontSize: 48, margintjtjbottom: 12 },
   heading: {
     fontFamily: 'Nunito',
     fontSize: 24,
     fontWeight: '800',
     color: '#2B2140',
-    marginBottom: 8,
+    margintjtjbottom: 8,
     textAlign: 'center',
   },
   body: {
     fontSize: 15,
     color: '#5C4F77',
-    marginBottom: 16,
+    margintjtjbottom: 16,
     textAlign: 'center',
   },
   btn: {

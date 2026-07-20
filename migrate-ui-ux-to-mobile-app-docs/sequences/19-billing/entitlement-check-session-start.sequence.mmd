@@ -19,7 +19,7 @@ retry: caller-side single retry on 5xx with 100ms backoff — must NOT block ses
 timeout: p99 <10ms (critical path — sys-04 calls before every session.start)
 status: final
 ---
-%% HAND-CURATED. Entitlement read on the session-start critical path. Service-token JWT (audience tbot:service). When turnsRemaining/sessionsRemaining == 0, sys-04 refuses session.start.
+%% HAND-CURATED. Entitlement read on the session-start critical path. Service-token JWT (audience tjbot:service). When turnsRemaining/sessionsRemaining == 0, sys-04 refuses session.start.
 sequenceDiagram
     autonumber
     participant RealtimeService
@@ -28,7 +28,7 @@ sequenceDiagram
     participant Redis
 
     RealtimeService->>Gateway: GET /internal/v1/entitlements/:householdId + service-token Bearer
-    Gateway->>Gateway: auth-resolver — JWT audience: tbot:service (sys-17)
+    Gateway->>Gateway: auth-resolver — JWT audience: tjbot:service (sys-17)
     alt service_token_invalid
         Gateway-->>RealtimeService: 401 invalid_token
     else authenticated

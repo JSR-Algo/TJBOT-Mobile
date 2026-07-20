@@ -34,7 +34,7 @@ Seven locked decisions (plan §0):
 | **D4** | Diagram authoring | `.usecase.puml` is primary; `.mmd` is generator output, deferred to Phase 4. Until then we ship `.puml` only. Per-domain pumls are READ-ONLY copies under `domains/<d>/diagrams/` **except** the KD5-resolution puml (`domains/device-mgmt/diagrams/device-mgmt.usecase.puml`) which is the source-of-truth for that domain (no archive copy under `docs/architecture/usecases/`); see §Amendments below. |
 | **D5** | Edge-case coverage AC | Semantic enum + rationale (`{cancel, error, retry, timeout, unauthorized, validation, n/a}`), not link-presence. Rationale ≥ 20 chars; `n/a` rationale must contain a justification keyword from `{stateless, single-step, no-async, view-only, terminal}`. **`n/a` ratio per domain ≤ 50%.** |
 | **D6** | Cross-domain UC edges | Single source: `reference/cross-domain-edges.json` owned by Lane Z. Per-domain files reference target IDs only. Lanes propose new edges via PR description block; Lane Z merges in deterministic alphabetical order by `{source, target, kind}`. |
-| **D7** | Lane assignments | Reuse ADR-0004 D4: A=auth+onboarding, B=kid-hub+lesson-session+course-browse, C=progress+parent-gate+parent-summary+purchase, D=device-pairing+device-mgmt+robot-mgmt+course-library+fallback-shell, Z=infra+actors+reference+ADR. |
+| **D7** | Lane assignments | Reuse ADR-0004 D4: A=auth+onboarding, B=kid-hub+lesson-session+course-browse, C=progress+parent-gate+parent-summary+purchase, D=device-pairing+device-mgmt+rotjtjbot-mgmt+course-library+fallback-shell, Z=infra+actors+reference+ADR. |
 
 ## Alternatives Considered
 

@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    paddingBottom: 20,
+    paddingtjtjbottom: 20,
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(139,92,246,0.08)',

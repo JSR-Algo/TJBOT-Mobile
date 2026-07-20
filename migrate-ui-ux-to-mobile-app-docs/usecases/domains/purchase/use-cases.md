@@ -6,13 +6,13 @@
 
 ---
 
-## UC-BU01 — View Robot Overview
+## UC-BU01 — View Rotjtjbot Overview
 
-- **Goal:** Parent gets a high-level introduction to the TBOT robot product, building purchase intent before exploring details.
-- **Trigger:** Parent taps "Buy TBOT" / "Get started" CTA from `home_hub_idle` or the marketing entry point.
+- **Goal:** Parent gets a high-level introduction to the tjbot rotjtjbot product, building purchase intent before exploring details.
+- **Trigger:** Parent taps "Buy tjbot" / "Get started" CTA from `home_hub_idle` or the marketing entry point.
 - **Preconditions:** Parent is authenticated; app is connected.
 - **Main Flow:**
-  1. `RobotOverviewPage` mounts and renders static hero content (product image, headline, key selling points).
+  1. `RotjtjbotOverviewPage` mounts and renders static hero content (product image, headline, key selling points).
   2. "How it works" CTA navigates to UC-BU02.
   3. "Buy now" skip CTA can jump directly to UC-BU04 (bundle selection).
 - **Postconditions:** Parent is on the discovery funnel entry screen; no state mutations.
@@ -22,11 +22,11 @@
 ## UC-BU02 — View How It Works
 
 - **Goal:** Parent understands the product's learning methodology and interaction model before committing to purchase.
-- **Trigger:** Parent taps "How it works" from UC-BU01 (`RobotOverviewPage`). Puml edge: `UC_BUY_INTRO ..> UC_BUY_HOW`.
+- **Trigger:** Parent taps "How it works" from UC-BU01 (`RotjtjbotOverviewPage`). Puml edge: `UC_BUY_INTRO ..> UC_BUY_HOW`.
 - **Preconditions:** UC-BU01 has been displayed; no API call required.
 - **Main Flow:**
   1. `HowItWorksPage` mounts with static step-by-step illustration content.
-  2. Parent scrolls through 3–4 illustrated steps (robot interaction, voice lessons, progress tracking).
+  2. Parent scrolls through 3–4 illustrated steps (rotjtjbot interaction, voice lessons, progress tracking).
   3. "What's included" CTA navigates to UC-BU03.
 - **Postconditions:** Parent has seen the methodology overview; no state mutations.
 
@@ -34,11 +34,11 @@
 
 ## UC-BU03 — View What's Included
 
-- **Goal:** Parent reviews the physical and digital contents of the TBOT bundle before making a selection.
+- **Goal:** Parent reviews the physical and digital contents of the tjbot bundle before making a selection.
 - **Trigger:** Parent taps "What's included" from UC-BU02. Puml edge: `UC_BUY_HOW ..> UC_BUY_INC`.
 - **Preconditions:** UC-BU02 has been displayed; no API call required.
 - **Main Flow:**
-  1. `WhatsIncludedPage` mounts with static list of bundle items (robot unit, accessories, initial course credits).
+  1. `WhatsIncludedPage` mounts with static list of bundle items (rotjtjbot unit, accessories, initial course credits).
   2. Parent scrolls through the item list with icons and descriptions.
   3. "Choose your bundle" CTA navigates to UC-BU04.
 - **Postconditions:** Parent has reviewed the bundle contents; no state mutations.
@@ -149,59 +149,59 @@
 
 ## UC-BU11 — Track Shipping
 
-- **Goal:** Parent monitors the delivery status of their TBOT robot after order is placed.
+- **Goal:** Parent monitors the delivery status of their tjbot rotjtjbot after order is placed.
 - **Trigger:** Parent taps "Track my order" from UC-BU10, or re-enters the purchase domain after order is placed. Puml edge: `UC_BUY_CONFIRM ..> UC_BUY_SHIP`.
 - **Preconditions:** `usePurchaseStore.orderId` is set; `getShippingStatus()` API is reachable.
 - **Main Flow:**
   1. `TrackShippingPage` mounts and calls `getShippingStatus()` from `src/services/api/purchase.api.js`.
   2. UI renders shipping status timeline (ordered → shipped → out for delivery → delivered).
   3. `usePurchaseStore.setShipping(status)` is updated with the latest status.
-  4. When status is `'delivered'`, a "My robot arrived!" CTA appears → UC-BU12.
+  4. When status is `'delivered'`, a "My rotjtjbot arrived!" CTA appears → UC-BU12.
 - **Postconditions:** Shipping status displayed and stored in `usePurchaseStore.shippingStatus`.
 
 ---
 
-## UC-BU12 — Confirm Robot Arrived
+## UC-BU12 — Confirm Rotjtjbot Arrived
 
-- **Goal:** Parent confirms that the physical robot has been received, unlocking the activation flow.
-- **Trigger:** Parent taps "My robot arrived!" from UC-BU11, or shipping status transitions to `'delivered'`. Puml edge: `UC_BUY_SHIP ..> UC_BUY_ARRIVED`.
+- **Goal:** Parent confirms that the physical rotjtjbot has been received, unlocking the activation flow.
+- **Trigger:** Parent taps "My rotjtjbot arrived!" from UC-BU11, or shipping status transitions to `'delivered'`. Puml edge: `UC_BUY_SHIP ..> UC_BUY_ARRIVED`.
 - **Preconditions:** `usePurchaseStore.shippingStatus === 'delivered'` (or parent self-reports arrival).
 - **Main Flow:**
-  1. `RobotArrivedPage` mounts with a prompt: "Got it? Let's set it up!"
+  1. `RotjtjbotArrivedPage` mounts with a prompt: "Got it? Let's set it up!"
   2. Parent taps "Start setup" → navigates to UC-BU13.
 - **Postconditions:** Parent has confirmed receipt; navigation advances to activation.
 
 ---
 
-## UC-BU13 — Activate Robot with Code
+## UC-BU13 — Activate Rotjtjbot with Code
 
-- **Goal:** Parent pairs the physical robot with their account by entering the activation code printed on the device, delegating confirmation to the robot device actor.
+- **Goal:** Parent pairs the physical rotjtjbot with their account by entering the activation code printed on the device, delegating confirmation to the rotjtjbot device actor.
 - **Trigger:** Parent taps "Start setup" from UC-BU12. Puml edge: `UC_BUY_ARRIVED ..> UC_BUY_ACTIVATE`.
-- **Preconditions:** Robot is powered on; parent has the printed activation code. `activateRobot()` API is reachable.
+- **Preconditions:** Rotjtjbot is powered on; parent has the printed activation code. `activateRotjtjbot()` API is reachable.
 - **Main Flow:**
-  1. `ActivateRobotPage` mounts with an input field for the activation code.
+  1. `ActivateRotjtjbotPage` mounts with an input field for the activation code.
   2. Parent enters the code (format: alphanumeric, 6–8 characters).
-  3. On "Activate" tap, app calls `activateRobot()` from `src/services/api/purchase.api.js` with the code.
-  4. `activateRobot()` delegates to Robot actor (puml: `UC_BUY_ACTIVATE ..> Robot : <<delegate>> (activation code)`).
+  3. On "Activate" tap, app calls `activateRotjtjbot()` from `src/services/api/purchase.api.js` with the code.
+  4. `activateRotjtjbot()` delegates to Rotjtjbot actor (puml: `UC_BUY_ACTIVATE ..> Rotjtjbot : <<delegate>> (activation code)`).
   5. On success, navigation advances to UC-BU14.
-- **Postconditions:** Robot is linked to the parent's account; activation state is persisted server-side.
+- **Postconditions:** Rotjtjbot is linked to the parent's account; activation state is persisted server-side.
 - **Alt Flow:**
   1. Invalid or already-used code → inline error message; retry allowed.
-  2. Robot not reachable / timeout → error with troubleshooting steps.
+  2. Rotjtjbot not reachable / timeout → error with troubleshooting steps.
 
 ---
 
 ## UC-BU14 — Add First Course
 
-- **Goal:** Parent adds the first course to the newly activated robot, completing the onboarding funnel and enabling the child's first lesson.
-- **Trigger:** Robot activation succeeds (UC-BU13); app navigates to `purchase_first_course`. Puml edge: `UC_BUY_ACTIVATE ..> UC_BUY_FIRST`.
-- **Preconditions:** Robot is activated; at least one course is available in the catalog.
+- **Goal:** Parent adds the first course to the newly activated rotjtjbot, completing the onboarding funnel and enabling the child's first lesson.
+- **Trigger:** Rotjtjbot activation succeeds (UC-BU13); app navigates to `purchase_first_course`. Puml edge: `UC_BUY_ACTIVATE ..> UC_BUY_FIRST`.
+- **Preconditions:** Rotjtjbot is activated; at least one course is available in the catalog.
 - **Main Flow:**
   1. `AddFirstCoursePage` mounts with a curated list of starter courses.
   2. Parent taps a course card to select it.
-  3. "Add to robot" CTA calls the course-library add flow (cross-domain edge → `UC_CL_ADDED`).
+  3. "Add to rotjtjbot" CTA calls the course-library add flow (cross-domain edge → `UC_CL_ADDED`).
   4. On success, navigation exits to course-library or home (puml exit note: `[exit] → course-library : UC_CL_ADDED | UC_CL_BROWSE`).
-- **Postconditions:** First course is added to the robot; purchase funnel is complete. `usePurchaseStore.reset()` may be called to clear transient order state.
+- **Postconditions:** First course is added to the rotjtjbot; purchase funnel is complete. `usePurchaseStore.reset()` may be called to clear transient order state.
 
 ## UC-BU15 — Cancel Order (pre-shipment)
 

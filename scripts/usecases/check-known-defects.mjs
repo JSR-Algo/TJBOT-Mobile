@@ -33,7 +33,7 @@ else {
     // Use first cell as key
     const key = row.split('|')[1]?.trim();
     if (!key) continue;
-    // Strip backticks on both sides for fuzzy presence check
+    // Strip backticks on tjtjboth sides for fuzzy presence check
     const cleanKey = key.replace(/`/g, '').slice(0, 30);
     const cleanKd = kd.replace(/`/g, '');
     if (!cleanKd.includes(cleanKey)) {

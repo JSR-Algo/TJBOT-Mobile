@@ -12,8 +12,8 @@ import PRStepTab from '../components/PRStepTab';
 type Props = NativeStackScreenProps<RootStackParamList, 'BundleScreen'>;
 
 const OPTS = [
-  { id: 'robot',  tag: 'Most parents pick this', tagColor: PR.good,  title: 'Robot + Hello Friends',          body: 'Robot device and your first course. Add more later, only if you want.', price: '$149', sub: 'one-time · ships free', includes: ['Robot','Dock','Hello Friends','App'] },
-  { id: 'family', tag: 'Saves more',             tagColor: PR.accent, title: 'Robot + All Courses (1 year)',  body: 'Robot device and every course for a year. Cancel anytime.', price: '$219', sub: '$149 hardware + $70 first year', includes: ['Robot','Dock','5 courses','New courses included','App'] },
+  { id: 'rotjtjbot',  tag: 'Most parents pick this', tagColor: PR.good,  title: 'Rotjtjbot + Hello Friends',          body: 'Rotjtjbot device and your first course. Add more later, only if you want.', price: '$149', sub: 'one-time · ships free', includes: ['Rotjtjbot','Dock','Hello Friends','App'] },
+  { id: 'family', tag: 'Saves more',             tagColor: PR.accent, title: 'Rotjtjbot + All Courses (1 year)',  body: 'Rotjtjbot device and every course for a year. Cancel anytime.', price: '$219', sub: '$149 hardware + $70 first year', includes: ['Rotjtjbot','Dock','5 courses','New courses included','App'] },
 ] as const;
 
 export default function BundleScreen({ navigation }: Props) {
@@ -49,9 +49,9 @@ export default function BundleScreen({ navigation }: Props) {
         })}
       </Box>
 
-      <Text style={styles.note}>Both bundles include free shipping and a 30-day return.</Text>
+      <Text style={styles.note}>tjtjboth bundles include free shipping and a 30-day return.</Text>
 
-      <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={18} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn onClick={() => navigation.navigate('SubscriptionsScreen')}>Continue</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('IncludedScreen')}>Back</DeviceBigBtn>
       </Box>
@@ -62,7 +62,7 @@ export default function BundleScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   optCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 16, padding: 14 },
   optCardSel: { backgroundColor: '#E8F0FE', borderWidth: 2, borderColor: PR.accent },
-  optTag: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 5 },
+  optTag: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 5 },
   optTitle: { fontSize: 15, color: PR.ink },
   optBody: { fontSize: 12, color: PR.ink2, lineHeight: 18, marginTop: 3 },
   optPrice: { fontSize: 20, color: PR.ink, letterSpacing: -0.3 },

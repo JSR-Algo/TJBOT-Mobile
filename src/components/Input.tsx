@@ -86,13 +86,13 @@ export function Input({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.md,
+    margintjtjbottom: spacing.md,
   },
   label: {
     ...typography.body2,
     color: colors.textPrimary,
     fontWeight: '500',
-    marginBottom: spacing.xs,
+    margintjtjbottom: spacing.xs,
   },
   inputWrapper: {
     flexDirection: 'row',

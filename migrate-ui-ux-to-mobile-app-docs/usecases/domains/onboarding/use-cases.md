@@ -12,8 +12,8 @@
 - **Trigger:** Auto-advance from `onb_welcome` after Guest taps "Get started" (handled upstream by UC-A01).
 - **Preconditions:** Guest is on `onb_welcome`; no active session token.
 - **Main Flow:**
-  1. App renders `IntroListenScreen` (slide 0: "Robot listens") with a pulse-ring illustration (`IntroListenScreen.jsx:6-20`).
-  2. Guest taps the next arrow → `IntroSpeakScreen` (slide 1: "Robot speaks back") (`IntroSpeakScreen.jsx:8`).
+  1. App renders `IntroListenScreen` (slide 0: "Rotjtjbot listens") with a pulse-ring illustration (`IntroListenScreen.jsx:6-20`).
+  2. Guest taps the next arrow → `IntroSpeakScreen` (slide 1: "Rotjtjbot speaks back") (`IntroSpeakScreen.jsx:8`).
   3. Guest taps the next arrow → `IntroRetryScreen` (slide 2: "It's okay to try again") (`IntroRetryScreen.jsx:6`).
   4. Guest taps the next arrow → `IntroCelebrateScreen` (slide 3: "Small wins, every day") (`IntroCelebrateScreen.jsx:6`).
   5. Guest taps the next arrow on slide 3 → auto-advance to `onb_trust` (UC-O02) (`IntroCelebrateScreen.jsx:7`: `next="onb_trust"`).
@@ -35,11 +35,11 @@
 
 ## UC-O03 — Grant Microphone Permission
 
-- **Goal:** Guest sees mic-permission rationale then triggers the OS-native permission sheet; Robot cannot listen without this grant.
+- **Goal:** Guest sees mic-permission rationale then triggers the OS-native permission sheet; Rotjtjbot cannot listen without this grant.
 - **Trigger:** "Continue" CTA on `TrustScreen` navigates to `onb_mic`.
 - **Preconditions:** Guest is on `onb_mic`; OS microphone permission status is undetermined.
 - **Main Flow:**
-  1. `MicAskScreen` renders mic icon, heading "Robot needs the mic to listen", and three reassurance rows: used only during a lesson / no recording saved / revocable in Settings (`MicAskScreen.jsx:8-35`).
+  1. `MicAskScreen` renders mic icon, heading "Rotjtjbot needs the mic to listen", and three reassurance rows: used only during a lesson / no recording saved / revocable in Settings (`MicAskScreen.jsx:8-35`).
   2. Guest taps "Continue" (`MicAskScreen.jsx:37`): `showSheet` is set to `true`, rendering the simulated OS permission sheet.
   3. Guest taps "Allow" on the OS permission sheet (`MicAskScreen.jsx:53`) → sheet closes; client navigates to `onb_login` (auth handoff, UC-A02/A03).
 - **Postconditions:** OS microphone permission has been requested; navigation proceeds to `onb_login`.
@@ -49,12 +49,12 @@
 
 ## UC-O04 — Enter First Lesson
 
-- **Goal:** Child sees the Robot greeting and taps to start their very first lesson; this is the handoff from onboarding into the lesson-session domain.
-- **Trigger:** Navigation arrives at `onb_first_lesson` after UC-A08 (Set Up Child Profile taps "Save and meet Robot").
+- **Goal:** Child sees the Rotjtjbot greeting and taps to start their very first lesson; this is the handoff from onboarding into the lesson-session domain.
+- **Trigger:** Navigation arrives at `onb_first_lesson` after UC-A08 (Set Up Child Profile taps "Save and meet Rotjtjbot").
 - **Preconditions:** Child profile configured (buddy + level); navigation is on `onb_first_lesson`.
 - **Main Flow:**
   1. `FirstLessonEntryScreen` renders a warm-up prompt "Hand the phone to your child" at the top (`FirstLessonEntryScreen.jsx:13-16`).
-  2. Robot appears in `greet` emotion with speech bubble "Hi there! Want to play?" (`FirstLessonEntryScreen.jsx:26-27`).
+  2. Rotjtjbot appears in `greet` emotion with speech bubble "Hi there! Want to play?" (`FirstLessonEntryScreen.jsx:26-27`).
   3. Subtitle "About 3 minutes · headphones if you have them" is shown (`FirstLessonEntryScreen.jsx:31`).
   4. Child taps "Yes!" → `go('lesson_ready')` fires, handing off to lesson-session domain (`FirstLessonEntryScreen.jsx:35`).
 - **Postconditions:** Navigation enters lesson-session domain at `lesson_ready`; onboarding flow is complete.

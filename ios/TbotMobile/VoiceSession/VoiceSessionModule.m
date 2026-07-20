@@ -1,6 +1,6 @@
 //
 //  VoiceSessionModule.m
-//  TbotMobile — React Native bridge registration for the Swift
+//  tjbotMobile — React Native bridge registration for the Swift
 //  VoiceSessionModule (sys-16 realtime voice).
 //
 //  Uses RCT_EXTERN_MODULE so the Swift class is discovered by React

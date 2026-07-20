@@ -1,13 +1,13 @@
 // Parity test — mobile TypeScript projections must match the authoritative JS
-// contracts in tbot-infra/contracts/. Any drift fails this test.
+// contracts in tjbot-infra/contracts/. Any drift fails this test.
 //
-// Plan: expressive-robot-companion-rewrite §6 RM-02 (AC: "unit tests for all
+// Plan: expressive-rotjtjbot-companion-rewrite §6 RM-02 (AC: "unit tests for all
 // 10 states + invalid transitions").
 //
 // Why this test matters:
 //   - The mobile app bundles its own TypeScript projections of the 10-state
 //     FSM, the 14-expression enum, the 12-motion enum, and the realtime-event
-//     shape. Metro cannot ingest the `.js` files at ../../tbot-infra/contracts/
+//     shape. Metro cannot ingest the `.js` files at ../../tjbot-infra/contracts/
 //     without a monorepo build step, so drift would be silent.
 //   - This test requires() the authoritative JS modules at runtime via Node's
 //     resolver and compares every load-bearing constant byte-for-byte.
@@ -18,10 +18,10 @@ import {
   ALL_STATES,
   FORWARD_EDGES,
   UNIVERSAL_TARGETS,
-  RobotInteractionState,
+  RotjtjbotInteractionState,
   isValidTransition,
   legalTargets,
-} from "../../src/contracts/robot-state";
+} from "../../src/contracts/rotjtjbot-state";
 import {
   Expression,
   ALL_EXPRESSIONS,
@@ -49,7 +49,7 @@ const CONTRACTS_DIR = path.resolve(
   "..",
   "..",
   "..",
-  "tbot-infra",
+  "tjbot-infra",
   "contracts",
 );
 
@@ -74,46 +74,46 @@ function tryRequire(modulePath: string): any | null {
   }
 }
 
-const canonicalRobotState = tryRequire(path.join(CONTRACTS_DIR, "robot-state.js"));
+const canonicalRotjtjbotState = tryRequire(path.join(CONTRACTS_DIR, "rotjtjbot-state.js"));
 const canonicalExpression = tryRequire(path.join(CONTRACTS_DIR, "expression.js"));
 const canonicalMotion = tryRequire(path.join(CONTRACTS_DIR, "motion.js"));
 const canonicalRealtime = tryRequire(path.join(CONTRACTS_DIR, "realtime-events.js"));
 
-const canonicalsLoaded = !!(canonicalRobotState && canonicalExpression && canonicalMotion);
+const canonicalsLoaded = !!(canonicalRotjtjbotState && canonicalExpression && canonicalMotion);
 const describeWhenCanonicals = canonicalsLoaded ? describe : describe.skip;
 
-describeWhenCanonicals("contracts/robot-state parity", () => {
-  test("RobotInteractionState enum matches canonical", () => {
-    expect({ ...RobotInteractionState }).toEqual({
-      ...canonicalRobotState.RobotInteractionState,
+describeWhenCanonicals("contracts/rotjtjbot-state parity", () => {
+  test("RotjtjbotInteractionState enum matches canonical", () => {
+    expect({ ...RotjtjbotInteractionState }).toEqual({
+      ...canonicalRotjtjbotState.RotjtjbotInteractionState,
     });
   });
 
   test("ALL_STATES has exactly 10 states and matches canonical order", () => {
     expect(ALL_STATES.length).toBe(10);
-    expect([...ALL_STATES]).toEqual([...canonicalRobotState.ALL_STATES]);
+    expect([...ALL_STATES]).toEqual([...canonicalRotjtjbotState.ALL_STATES]);
   });
 
   test("FORWARD_EDGES matches canonical", () => {
     // Compare key-by-key so the error message identifies the drift state.
     for (const state of ALL_STATES) {
       expect([...FORWARD_EDGES[state]]).toEqual([
-        ...canonicalRobotState.FORWARD_EDGES[state],
+        ...canonicalRotjtjbotState.FORWARD_EDGES[state],
       ]);
     }
   });
 
   test("UNIVERSAL_TARGETS matches canonical", () => {
     expect([...UNIVERSAL_TARGETS]).toEqual([
-      ...canonicalRobotState.UNIVERSAL_TARGETS,
+      ...canonicalRotjtjbotState.UNIVERSAL_TARGETS,
     ]);
   });
 
-  test("isValidTransition: every permitted edge is accepted by both impls", () => {
+  test("isValidTransition: every permitted edge is accepted by tjtjboth impls", () => {
     for (const from of ALL_STATES) {
       for (const to of ALL_STATES) {
         expect(isValidTransition(from, to)).toBe(
-          canonicalRobotState.isValidTransition(from, to),
+          canonicalRotjtjbotState.isValidTransition(from, to),
         );
       }
     }
@@ -122,7 +122,7 @@ describeWhenCanonicals("contracts/robot-state parity", () => {
   test("legalTargets agrees with canonical", () => {
     for (const from of ALL_STATES) {
       expect([...legalTargets(from)].sort()).toEqual(
-        [...canonicalRobotState.legalTargets(from)].sort(),
+        [...canonicalRotjtjbotState.legalTargets(from)].sort(),
       );
     }
   });

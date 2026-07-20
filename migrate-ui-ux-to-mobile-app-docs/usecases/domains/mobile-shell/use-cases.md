@@ -9,7 +9,7 @@
 ## UC-MOBILE01 — Handle Push Notification Deep Link
 
 - **Goal:** App receives an FCM push notification with a `deep_link` payload, validates the target against the nav-graph, applies routing-policy rules (parent gate, lesson resume, purchase re-entry), and navigates the user to the right surface — or falls back gracefully.
-- **Trigger:** OS delivers a push notification with payload `{deep_link: "tbot://<route>?<params>"}` to ParentApp (foreground or cold start).
+- **Trigger:** OS delivers a push notification with payload `{deep_link: "tjbot://<route>?<params>"}` to ParentApp (foreground or cold start).
 - **Preconditions:** ParentApp installed; OS push permission granted (or notification delivered via in-app channel). User is either signed-in or anonymous.
 - **Main Flow:**
   1. OS hands off the payload to ParentApp via standard `Linking` / `onNotificationOpenedApp` callback.

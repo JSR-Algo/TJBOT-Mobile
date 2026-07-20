@@ -1,10 +1,10 @@
 //
 //  PcmStreamModule.m
-//  TbotMobile — RN bridge for Swift PcmStreamModule (sys-16 Gemini Live).
+//  tjbotMobile — RN bridge for Swift PcmStreamModule (sys-16 Gemini Live).
 //
 //  Method signatures here MUST match the @objc(selector:) annotations on
 //  PcmStreamModule.swift. Drift = silently unreachable from JS. See Android
-//  counterpart: android/app/src/main/java/com/tbotmobile/pcmstream/
+//  counterpart: android/app/src/main/java/com/tjbotmobile/pcmstream/
 //  PcmStreamModule.kt
 //
 

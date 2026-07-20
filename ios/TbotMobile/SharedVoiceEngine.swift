@@ -1,8 +1,8 @@
 //
 //  SharedVoiceEngine.swift
-//  TbotMobile — sys-16 Gemini Live realtime voice.
+//  tjbotMobile — sys-16 Gemini Live realtime voice.
 //
-//  Single-owner thread-safe wrapper around AVAudioEngine. Both VoiceMicModule
+//  Single-owner thread-safe wrapper around AVAudioEngine. tjtjboth VoiceMicModule
 //  (input tap with voiceProcessingIO) and PcmStreamModule (AVAudioPlayerNode
 //  output) use this to coordinate engine lifecycle.
 //
@@ -88,7 +88,7 @@ final class SharedVoiceEngine {
     // engine.start() on a freshly-rebuilt engine state.
     if started && !engine.isRunning {
       NSLog(
-        "[TbotVoice-debug] %@",
+        "[tjbotVoice-debug] %@",
         "ensureStarted: started=true but engine.isRunning=false — resetting and re-starting"
       )
       // Stop any leftover state. Idempotent — safe even if engine is
@@ -119,7 +119,7 @@ final class SharedVoiceEngine {
       let session = AVAudioSession.sharedInstance()
       let perm = session.recordPermission
       NSLog(
-        "[TbotVoice-debug] %@",
+        "[tjbotVoice-debug] %@",
         "ensureStarted recordPermission=\(perm.rawValue) voiceProcessing=\(voiceProcessing)"
       )
       switch perm {
@@ -138,7 +138,7 @@ final class SharedVoiceEngine {
         }
         _ = semaphore.wait(timeout: .now() + 30)
         NSLog(
-          "[TbotVoice-debug] %@",
+          "[tjbotVoice-debug] %@",
           "recordPermission prompt result granted=\(granted)"
         )
         if !granted {
@@ -170,7 +170,7 @@ final class SharedVoiceEngine {
       // synchronous case here; the millisecond-later flip is now logged
       // by `installInputTap` and surfaces as a stall via the watchdog.
       NSLog(
-        "[TbotVoice-debug] %@",
+        "[tjbotVoice-debug] %@",
         "engine.start ok isRunning=\(engine.isRunning) voiceProcessing=\(voiceProcessing)"
       )
       if !engine.isRunning {
@@ -205,7 +205,7 @@ final class SharedVoiceEngine {
     // set started=true while the audio unit died milliseconds later.
     if started && !engine.isRunning {
       NSLog(
-        "[TbotVoice-debug] %@",
+        "[tjbotVoice-debug] %@",
         "preflight: started=true but engine.isRunning=false — resetting and re-starting"
       )
       engine.stop()
@@ -269,7 +269,7 @@ final class SharedVoiceEngine {
     // with pre-formatted Swift string avoids the format-specifier / Swift-Int
     // arm64 crash trap that NSLog %d would hit.
     NSLog(
-      "[TbotVoice-debug] %@",
+      "[tjbotVoice-debug] %@",
       "installInputTap rate=\(nativeFormat.sampleRate) channels=\(nativeFormat.channelCount) engineRunning=\(engine.isRunning) voiceProcessing=\(voiceProcessingEnabled)"
     )
     // Guard against the millisecond-later flip: `engine.start()` returned

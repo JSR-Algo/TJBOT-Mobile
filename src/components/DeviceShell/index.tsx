@@ -20,12 +20,12 @@ type Props = {
 export default function DeviceShell({ title, onBack, children }: Props) {
   return (
     <ScrollView style={[styles.root, { backgroundColor: DV.bg }]}>
-      <Box style={[styles.header, { backgroundColor: DV.bg, borderBottomColor: DV.hair }]} flexDirection="row" alignItems="center" gap={12}>
+      <Box style={[styles.header, { backgroundColor: DV.bg, bordertjtjbottomColor: DV.hair }]} flexDirection="row" alignItems="center" gap={12}>
         {onBack ? (
           <TouchableOpacity
             onPress={onBack}
             style={styles.backBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 8, tjtjbottom: 8, left: 8, right: 8 }}
           >
             <BackIcon color={DV.ink2} />
           </TouchableOpacity>
@@ -53,9 +53,9 @@ const styles = StyleSheet.create({
   header: {
     position: 'relative',
     paddingTop: 56,
-    paddingBottom: 12,
+    paddingtjtjbottom: 12,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
+    bordertjtjbottomWidth: 1,
     zIndex: 5,
   },
   backBtn: {

@@ -1,4 +1,4 @@
-package com.tbotmobile.voicemic
+package com.tjbotmobile.voicemic
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -528,6 +528,6 @@ class VoiceMicModule(
 
   companion object {
     const val NAME = "VoiceMicModule"
-    private const val TAG = "TbotVoiceMic"
+    private const val TAG = "tjbotVoiceMic"
   }
 }

@@ -10,11 +10,11 @@ import { DV } from '@/components/Device-tokens';
 type Props = NativeStackScreenProps<RootStackParamList, 'LCDLessonTurnScreen'>;
 
 const TURNS = [
-  { id: 'speak', label: '1 · Robot speaks', caption: 'Mouth opens, gentle bob.', words: '"Say… apple."', ms: '~1.4 s' },
-  { id: 'listen', label: '2 · Robot listens', caption: 'Coral ring breathes, mic open.', words: '(silence — ear up)', ms: '~3.0 s' },
+  { id: 'speak', label: '1 · Rotjtjbot speaks', caption: 'Mouth opens, gentle bob.', words: '"Say… apple."', ms: '~1.4 s' },
+  { id: 'listen', label: '2 · Rotjtjbot listens', caption: 'Coral ring breathes, mic open.', words: '(silence — ear up)', ms: '~3.0 s' },
   { id: 'child_speak', label: '3 · Child speaks', caption: 'Green ring + ear bars bounce.', words: '"Apple!"', ms: '~1.2 s' },
-  { id: 'think', label: '4 · Robot thinks', caption: 'Eyes look up, three dots pop.', words: '(processing)', ms: '~0.4 s' },
-  { id: 'success', label: '5 · Robot celebrates', caption: 'Sparkles + green glow + big smile.', words: '"Yes! Apple!"', ms: '~1.6 s' },
+  { id: 'think', label: '4 · Rotjtjbot thinks', caption: 'Eyes look up, three dots pop.', words: '(processing)', ms: '~0.4 s' },
+  { id: 'success', label: '5 · Rotjtjbot celebrates', caption: 'Sparkles + green glow + big smile.', words: '"Yes! Apple!"', ms: '~1.6 s' },
 ] as const;
 
 const TRANSITIONS = [
@@ -27,11 +27,11 @@ const TRANSITIONS = [
 
 export default function LCDLessonTurnScreen({ navigation }: Props) {
   return (
-    <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView style={styles.root} contentContainerStyle={{ paddingtjtjbottom: 40 }}>
       <Box style={styles.header}>
         <Text fontWeight="700" style={styles.kicker}>One lesson turn</Text>
         <Text fontWeight="600" style={styles.title}>
-          Robot speaks → listens → child speaks → thinks → celebrates.
+          Rotjtjbot speaks → listens → child speaks → thinks → celebrates.
         </Text>
         <Text style={styles.subtitle}>
           The whole loop is about 8 seconds. Each face is unmistakable from across a room.
@@ -78,8 +78,8 @@ export default function LCDLessonTurnScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DV.bg },
-  header: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 18, borderBottomWidth: 1, borderBottomColor: DV.hair },
-  kicker: { fontSize: 11, color: '#FF6F61', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+  header: { paddingTop: 56, paddingHorizontal: 20, paddingtjtjbottom: 18, bordertjtjbottomWidth: 1, bordertjtjbottomColor: DV.hair },
+  kicker: { fontSize: 11, color: '#FF6F61', textTransform: 'uppercase', letterSpacing: 0.6, margintjtjbottom: 6 },
   title: { fontSize: 22, color: DV.ink, letterSpacing: -0.4, lineHeight: 26 },
   subtitle: { fontSize: 13, color: DV.ink2, lineHeight: 20, marginTop: 6 },
   card: { backgroundColor: DV.card, borderRadius: 14, borderWidth: 1, borderColor: DV.hair, overflow: 'hidden' },
@@ -92,10 +92,10 @@ const styles = StyleSheet.create({
   turnCaption: { fontSize: 13, color: DV.ink2, lineHeight: 20, marginTop: 3 },
   wordBox: { marginTop: 8, padding: 10, backgroundColor: '#F5F5F2', borderRadius: 8 },
   wordText: { fontSize: 13, color: DV.ink, fontStyle: 'italic', lineHeight: 18 },
-  sectionLabel: { fontSize: 11, color: DV.ink2, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: DV.ink2, textTransform: 'uppercase', letterSpacing: 0.6, margintjtjbottom: 8 },
   transCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   transRow: { padding: 12 },
-  transBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
+  transBorder: { bordertjtjbottomWidth: 1, bordertjtjbottomColor: DV.hair },
   transTitle: { fontSize: 13, color: DV.ink },
   transBody: { fontSize: 12, color: DV.ink2, lineHeight: 20, marginTop: 2 },
 });

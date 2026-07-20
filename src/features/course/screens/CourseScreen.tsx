@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
@@ -24,10 +24,10 @@ export default function CourseScreen({ navigation }: Props) {
     <PageScroll>
       <PageHeader
         subtitle="My adventure"
-        title="English with Robot"
+        title="English with Rotjtjbot"
       />
 
-      <Box paddingHorizontal={18} paddingBottom={14} gap={18}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={14} gap={18}>
         <Box style={styles.heroCard}>
           <Box flex={1}>
             <Text fontWeight="600" style={styles.heroEyebrow}>Keep going!</Text>
@@ -37,7 +37,7 @@ export default function CourseScreen({ navigation }: Props) {
             </Box>
             <Text fontWeight="700" style={styles.heroSub}>4 of 10 lessons</Text>
           </Box>
-          <Robot emotion="happy" size={110} />
+          <Rotjtjbot emotion="happy" size={110} />
         </Box>
 
         <Box gap={14}>
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 14,
     shadowColor: '#FF6F61', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.35, shadowRadius: 30,
   },
-  heroEyebrow: { fontSize: 13, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
+  heroEyebrow: { fontSize: 13, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: 1, margintjtjbottom: 2 },
   heroTitle: { fontSize: 22, color: '#fff', lineHeight: 24 },
   heroTrack: { marginTop: 10, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 10, height: 10, overflow: 'hidden' },
   heroFill: { width: '40%', height: '100%' as any, backgroundColor: '#fff', borderRadius: 10 },

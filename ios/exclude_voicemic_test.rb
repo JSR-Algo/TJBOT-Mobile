@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-# Temporarily exclude VoiceMicModuleTests.swift from the TbotMobileTests
+# Temporarily exclude VoiceMicModuleTests.swift from the tjbotMobileTests
 # target sources build phase. It references SharedVoiceEngine which requires
-# @testable import TbotMobile, which in turn pulls the app target's bridging
+# @testable import tjbotMobile, which in turn pulls the app target's bridging
 # header + Pods include paths into the test target. Wiring that is B5 scope.
 # For B1 (spike only), excluding is enough.
 #
@@ -9,13 +9,13 @@
 
 require 'xcodeproj'
 
-PROJECT_PATH = File.join(__dir__, 'TbotMobile.xcodeproj')
+PROJECT_PATH = File.join(__dir__, 'tjbotMobile.xcodeproj')
 EXCLUDE_NAME = 'VoiceMicModuleTests.swift'
 
 proj = Xcodeproj::Project.open(PROJECT_PATH)
 
-tests_target = proj.targets.find { |t| t.name == 'TbotMobileTests' }
-abort 'TbotMobileTests target not found — run create_test_target.rb first' unless tests_target
+tests_target = proj.targets.find { |t| t.name == 'tjbotMobileTests' }
+abort 'tjbotMobileTests target not found — run create_test_target.rb first' unless tests_target
 
 sources_phase = tests_target.source_build_phase
 before = sources_phase.files.count

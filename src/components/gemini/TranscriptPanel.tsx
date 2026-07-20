@@ -28,7 +28,7 @@ function useTypewriter(text: string, speed = 30): string {
       // Per-character typing animation. Presentation-only; does not
       // affect the voice FSM. Plan v2 §11.7 ban targets FSM-affecting
       // timers in shared layers.
-      // eslint-disable-next-line tbot-voice/no-voice-timing-in-shared
+      // eslint-disable-next-line tjbot-voice/no-voice-timing-in-shared
       const timer = setInterval(() => {
         if (i < newChars.length) {
           setDisplayed(text.slice(0, alreadyShown + i + 1));
@@ -166,19 +166,19 @@ const styles = StyleSheet.create({
     color: '#A78BFA',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 12,
+    margintjtjbottom: 12,
   },
   container: {
     flex: 1,
   },
   content: {
-    paddingBottom: 8,
+    paddingtjtjbottom: 8,
     gap: 10,
   },
 
   // Bubble rows
   bubbleRow: {
-    marginBottom: 4,
+    margintjtjbottom: 4,
   },
   bubbleRowRight: {
     alignItems: 'flex-end',
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1,
-    marginBottom: 3,
+    margintjtjbottom: 3,
     paddingHorizontal: 2,
     textTransform: 'uppercase',
   },

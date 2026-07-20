@@ -1,4 +1,4 @@
-# Use Case Model — tbot-mobile (tbot-design)
+# Use Case Model — tjbot-mobile (tjbot-design)
 
 Per-domain use-case authoring split out of `docs/architecture/use-case-diagram.md` (504-line monolith) per ADR-0005. Reads `docs/architecture/usecases/*.usecase.puml` as the authoritative diagram source.
 
@@ -133,7 +133,7 @@ docs/usecases/
 ├── actors/
 │   ├── child.md / parent.md / guest.md / authenticated-user.md
 │   └── external/
-│       ├── robot-device.md / realtime-voice-service.md / google-oauth.md
+│       ├── rotjtjbot-device.md / realtime-voice-service.md / google-oauth.md
 │       ├── apple-sign-in.md / payment-provider.md / device-os.md / wifi-network.md
 ├── domains/<d>/                     ← 14 domains (13 puml + device-mgmt KD5)
 │   ├── use-cases.md

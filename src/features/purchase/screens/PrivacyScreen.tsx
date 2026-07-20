@@ -13,9 +13,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PrivacyScreen'>;
 
 const ROWS = [
   { ic: '🎙️', t: "We don't save audio",       b: "What your child says is processed in real time and discarded. There is no transcript stored." },
-  { ic: '🚫', t: 'No ads, ever',               b: 'Robot will never show, mention, or hint at advertising — at any age, in any course.' },
-  { ic: '🔒', t: 'Parent-only purchases',      b: "Buying Robot, adding courses, or upgrading always passes through a parent gate." },
-  { ic: '🌐', t: 'Stops if Robot is offline',  b: 'Robot only listens during a lesson, and a lesson can only start with your Wi-Fi.' },
+  { ic: '🚫', t: 'No ads, ever',               b: 'Rotjtjbot will never show, mention, or hint at advertising — at any age, in any course.' },
+  { ic: '🔒', t: 'Parent-only purchases',      b: "Buying Rotjtjbot, adding courses, or upgrading always passes through a parent gate." },
+  { ic: '🌐', t: 'Stops if Rotjtjbot is offline',  b: 'Rotjtjbot only listens during a lesson, and a lesson can only start with your Wi-Fi.' },
   { ic: '📁', t: 'Easy data export & delete',  b: "Download or wipe your child's summary history with one tap, anytime." },
   { ic: '🇺🇸', t: 'COPPA & GDPR-K compliant', b: "Independently audited. Reports available in Settings → Safety & Privacy." },
 ];
@@ -42,7 +42,7 @@ export default function PrivacyScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={18} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn onClick={() => navigation.navigate('CheckoutScreen')}>I'm ready · go to checkout</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('SubscriptionsScreen')}>Back</DeviceBigBtn>
       </Box>
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   heading: { fontSize: 24, color: PR.ink, letterSpacing: -0.4, lineHeight: 29, marginTop: 14 },
   listCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 16, overflow: 'hidden' },
   listRow: { flexDirection: 'row', gap: 14, paddingVertical: 13, paddingHorizontal: 16 },
-  listBorder: { borderBottomWidth: 1, borderBottomColor: PR.hair },
+  listBorder: { bordertjtjbottomWidth: 1, bordertjtjbottomColor: PR.hair },
   listIcon: { width: 30, height: 30, borderRadius: 9, backgroundColor: '#E6F4EE', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   listTitle: { fontSize: 13, color: PR.ink },
   listBody: { fontSize: 12, color: PR.ink2, marginTop: 2, lineHeight: 18 },

@@ -1,6 +1,6 @@
 // Idempotency utility — addresses BACKEND RISK B2 from user-flow-review.md.
 // Generate a stable client request ID on entry to commit-funnel screens
-// (purchase checkout, course unlock, course-send-to-robot, etc.) so the
+// (purchase checkout, course unlock, course-send-to-rotjtjbot, etc.) so the
 // server can dedup if the user double-taps or re-enters the screen.
 
 let _seq = 0;

@@ -10,15 +10,15 @@ import { Text } from '@/design-system/primitives/Text';
 import RmChip from '../components/RmChip';
 import { RM } from '../components/RM';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RobotBatteryScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'RotjtjbotBatteryScreen'>;
 
 const PCT = 78;
 const RADIUS = 78;
 const CIRC = 2 * Math.PI * RADIUS;
 
-export default function RobotBatteryScreen({ navigation }: Props) {
+export default function RotjtjbotBatteryScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Battery" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Battery" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <Box style={styles.ringWrap}>
           <Svg width={180} height={180} viewBox="0 0 180 180">
@@ -51,8 +51,8 @@ export default function RobotBatteryScreen({ navigation }: Props) {
         <Box style={styles.tipsCard}>
           <Text fontWeight="600" style={styles.tipsTitle}>To keep the battery healthy</Text>
           <Text style={styles.tipItem}>• Use the included dock — third-party chargers can run hot</Text>
-          <Text style={styles.tipItem}>• Robot is happiest between 10°C and 30°C</Text>
-          <Text style={styles.tipItem}>• If you'll be away a week, leave Robot at about 50%</Text>
+          <Text style={styles.tipItem}>• Rotjtjbot is happiest between 10°C and 30°C</Text>
+          <Text style={styles.tipItem}>• If you'll be away a week, leave Rotjtjbot at about 50%</Text>
         </Box>
       </Box>
 
@@ -67,6 +67,6 @@ const styles = StyleSheet.create({
   pctLabel: { fontSize: 13, color: RM.ink2, marginTop: 2 },
   rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   tipsCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, padding: 14 },
-  tipsTitle: { fontSize: 13, color: RM.ink, marginBottom: 8 },
+  tipsTitle: { fontSize: 13, color: RM.ink, margintjtjbottom: 8 },
   tipItem: { fontSize: 13, color: RM.ink2, lineHeight: 24 },
 });

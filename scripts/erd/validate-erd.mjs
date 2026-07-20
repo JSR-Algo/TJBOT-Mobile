@@ -286,11 +286,11 @@ const entityMdData = []; // {abs, fm, body}
   let anyW = false;
   if (fs.existsSync(ACTORS_PATH)) {
     const text = fs.readFileSync(ACTORS_PATH, 'utf8');
-    // Extract just the "TBot backend services" block. Heuristic: actors with `Service`/`Worker`/`Handler`/`Scheduler`/`Cache`/`Buffer` suffix.
+    // Extract just the "tjbot backend services" block. Heuristic: actors with `Service`/`Worker`/`Handler`/`Scheduler`/`Cache`/`Buffer` suffix.
     const serviceActors = [];
     for (const m of text.matchAll(/^\s*-\s+`?([A-Za-z][A-Za-z0-9_]*)`?/gm)) {
       const a = m[1];
-      if (/(Service|Worker|Handler|Scheduler|Cache|Buffer|Detector|Verifier|Classifier|Monitor|Resolver|Transformer|Signer|Assembler|Executor|Generator|Sweep|Bot)$/.test(a)) {
+      if (/(Service|Worker|Handler|Scheduler|Cache|Buffer|Detector|Verifier|Classifier|Monitor|Resolver|Transformer|Signer|Assembler|Executor|Generator|Sweep|tjtjbot)$/.test(a)) {
         serviceActors.push(a);
       }
     }

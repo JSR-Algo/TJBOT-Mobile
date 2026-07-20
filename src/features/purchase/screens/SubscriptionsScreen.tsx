@@ -14,7 +14,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionsScreen'>;
 
 const OPTS = [
   { id: 'none', tag: 'No subscription', body: "Stick with Hello Friends. You can add courses one at a time later.", price: 'Free', sub: 'Always an option' },
-  { id: 'all',  tag: 'All Courses',     body: 'Every course on your Robot, including new ones we add.',             price: '$8.99', sub: '/ month · 7-day free trial' },
+  { id: 'all',  tag: 'All Courses',     body: 'Every course on your Rotjtjbot, including new ones we add.',             price: '$8.99', sub: '/ month · 7-day free trial' },
   { id: 'pack', tag: 'Starter pack',    body: 'Hello Friends, Animals, Yummy Words — once, yours forever.',         price: '$48',   sub: 'one-time · save $24' },
 ] as const;
 
@@ -26,7 +26,7 @@ export default function SubscriptionsScreen({ navigation }: Props) {
         <PRStepTab step={2} total={3} />
         <Text fontWeight="600" style={styles.heading}>Optional · skip if you'd rather wait</Text>
         <Text style={styles.sub}>
-          Robot already comes with the Hello Friends course. Add more only if you want — you can change this anytime.
+          Rotjtjbot already comes with the Hello Friends course. Add more only if you want — you can change this anytime.
         </Text>
       </Box>
 
@@ -58,7 +58,7 @@ export default function SubscriptionsScreen({ navigation }: Props) {
 
       <Text style={styles.note}>Your child never sees prices. Subscriptions are managed only here.</Text>
 
-      <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={18} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn onClick={() => navigation.navigate('PrivacyScreen')}>Continue</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('BundleScreen')}>Back</DeviceBigBtn>
       </Box>

@@ -1,7 +1,7 @@
 /**
- * Unit tests for tbot-design onboarding flow (rewritten from .pr5-skip).
+ * Unit tests for tjbot-design onboarding flow (rewritten from .pr5-skip).
  *
- * tbot-design's kid-intro flow:
+ * tjbot-design's kid-intro flow:
  *   Splash → Welcome → IntroListen → IntroSpeak → IntroRetry → IntroCelebrate
  *           → Trust → MicAsk → FirstLessonEntry → LessonReady (lesson-session)
  *
@@ -49,12 +49,12 @@ beforeEach(() => jest.clearAllMocks());
 
 // ─── SplashScreen ─────────────────────────────────────────────────────────────
 
-describe('SplashScreen (tbot-design feature)', () => {
-  it('renders Robot wordmark + tagline', () => {
+describe('SplashScreen (tjbot-design feature)', () => {
+  it('renders Rotjtjbot wordmark + tagline', () => {
     const { getByText } = render(
       <SplashScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText('Robot')).toBeTruthy();
+    expect(getByText('Rotjtjbot')).toBeTruthy();
     expect(getByText('Voice English for kids')).toBeTruthy();
   });
 
@@ -81,12 +81,12 @@ describe('SplashScreen (tbot-design feature)', () => {
 
 // ─── WelcomeScreen ────────────────────────────────────────────────────────────
 
-describe('WelcomeScreen (tbot-design feature)', () => {
+describe('WelcomeScreen (tjbot-design feature)', () => {
   it('renders hero + grown-up note + CTAs', () => {
     const { getByText } = render(
       <WelcomeScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText(/Hi! I'm Robot/)).toBeTruthy();
+    expect(getByText(/Hi! I'm Rotjtjbot/)).toBeTruthy();
     expect(getByText(/A grown-up sets things up/)).toBeTruthy();
     expect(getByText('Get started')).toBeTruthy();
     expect(getByText('I already have an account')).toBeTruthy();
@@ -111,13 +111,13 @@ describe('WelcomeScreen (tbot-design feature)', () => {
 
 // ─── IntroListenScreen ───────────────────────────────────────────────────────
 
-describe('IntroListenScreen (tbot-design feature)', () => {
+describe('IntroListenScreen (tjbot-design feature)', () => {
   it('renders kicker + title + body', () => {
     const { getByText } = render(
       <IntroListenScreen navigation={mockNav} route={mockRoute as never} />
     );
     expect(getByText('How it works · 1')).toBeTruthy();
-    expect(getByText('Robot listens')).toBeTruthy();
+    expect(getByText('Rotjtjbot listens')).toBeTruthy();
     expect(getByText(/Kids tap the mic/)).toBeTruthy();
   });
 
@@ -148,12 +148,12 @@ describe('IntroListenScreen (tbot-design feature)', () => {
 
 // ─── IntroSpeakScreen ────────────────────────────────────────────────────────
 
-describe('IntroSpeakScreen (tbot-design feature)', () => {
+describe('IntroSpeakScreen (tjbot-design feature)', () => {
   it('renders title', () => {
     const { getByText } = render(
       <IntroSpeakScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText('Robot speaks back')).toBeTruthy();
+    expect(getByText('Rotjtjbot speaks back')).toBeTruthy();
   });
 
   it('navigates to IntroRetryScreen when Next pressed', () => {
@@ -167,7 +167,7 @@ describe('IntroSpeakScreen (tbot-design feature)', () => {
 
 // ─── IntroRetryScreen ────────────────────────────────────────────────────────
 
-describe('IntroRetryScreen (tbot-design feature)', () => {
+describe('IntroRetryScreen (tjbot-design feature)', () => {
   it('renders title', () => {
     const { getByText } = render(
       <IntroRetryScreen navigation={mockNav} route={mockRoute as never} />
@@ -186,7 +186,7 @@ describe('IntroRetryScreen (tbot-design feature)', () => {
 
 // ─── IntroCelebrateScreen ────────────────────────────────────────────────────
 
-describe('IntroCelebrateScreen (tbot-design feature)', () => {
+describe('IntroCelebrateScreen (tjbot-design feature)', () => {
   it('renders title', () => {
     const { getByText } = render(
       <IntroCelebrateScreen navigation={mockNav} route={mockRoute as never} />
@@ -205,7 +205,7 @@ describe('IntroCelebrateScreen (tbot-design feature)', () => {
 
 // ─── TrustScreen ─────────────────────────────────────────────────────────────
 
-describe('TrustScreen (tbot-design feature)', () => {
+describe('TrustScreen (tjbot-design feature)', () => {
   it('renders all 4 trust promises', () => {
     const { getByText } = render(
       <TrustScreen navigation={mockNav} route={mockRoute as never} />
@@ -227,7 +227,7 @@ describe('TrustScreen (tbot-design feature)', () => {
 
 // ─── MicAskScreen ────────────────────────────────────────────────────────────
 
-describe('MicAskScreen (tbot-design feature)', () => {
+describe('MicAskScreen (tjbot-design feature)', () => {
   it('renders Continue + Not now CTAs', () => {
     const { getByText } = render(
       <MicAskScreen navigation={mockNav} route={mockRoute as never} />
@@ -247,7 +247,7 @@ describe('MicAskScreen (tbot-design feature)', () => {
 
 // ─── FirstLessonEntryScreen ──────────────────────────────────────────────────
 
-describe('FirstLessonEntryScreen (tbot-design feature)', () => {
+describe('FirstLessonEntryScreen (tjbot-design feature)', () => {
   it('renders parent hand-off prompt', () => {
     const { getByText } = render(
       <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />

@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -13,17 +13,17 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairAddScreen'>;
 
 export default function PairAddScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Add a Robot" onBack={() => navigation.navigate('DeviceOverviewScreen')}>
+    <DeviceShell title="Add a Rotjtjbot" onBack={() => navigation.navigate('DeviceOverviewScreen')}>
       <Box paddingHorizontal={20} paddingTop={24}>
         <Text style={styles.intro}>
-          Lessons happen <Text fontWeight="600" style={{ color: DV.ink }}>on the Robot itself</Text>, not your phone. The phone is just for setup and progress.
+          Lessons happen <Text fontWeight="600" style={{ color: DV.ink }}>on the Rotjtjbot itself</Text>, not your phone. The phone is just for setup and progress.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={18} gap={10}>
         <TouchableOpacity style={styles.optCard} activeOpacity={0.7} onPress={() => navigation.navigate('PairIntroScreen')}>
-          <RobotDevice emotion="charging" size={64} accent="#FF6F61" />
+          <RotjtjbotDevice emotion="charging" size={64} accent="#FF6F61" />
           <Box flex={1}>
-            <Text fontWeight="600" style={styles.optTitle}>I have a new Robot</Text>
+            <Text fontWeight="600" style={styles.optTitle}>I have a new Rotjtjbot</Text>
             <Text style={styles.optSub}>About 3 minutes — needs Wi-Fi</Text>
           </Box>
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={DV.ink3} strokeWidth="2.5" strokeLinecap="round">
@@ -38,7 +38,7 @@ export default function PairAddScreen({ navigation }: Props) {
             </Svg>
           </Box>
           <Box flex={1}>
-            <Text fontWeight="600" style={styles.optTitle}>My Robot is offline</Text>
+            <Text fontWeight="600" style={styles.optTitle}>My Rotjtjbot is offline</Text>
             <Text style={styles.optSub}>Reconnect or move to new Wi-Fi</Text>
           </Box>
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={DV.ink3} strokeWidth="2.5" strokeLinecap="round">
@@ -47,7 +47,7 @@ export default function PairAddScreen({ navigation }: Props) {
         </TouchableOpacity>
       </Box>
       <Box paddingHorizontal={20} paddingTop={20}>
-        <Text style={styles.note}>You'll need: Robot, your home Wi-Fi password, and about 3 minutes.</Text>
+        <Text style={styles.note}>You'll need: Rotjtjbot, your home Wi-Fi password, and about 3 minutes.</Text>
       </Box>
     </DeviceShell>
   );

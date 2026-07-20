@@ -28,7 +28,7 @@ export default function OnbShell({ children, step, total, onBack, title }: Props
   return (
     <ScrollView style={[styles.root, { backgroundColor: OB.bg }]}>
       <Box
-        style={[styles.header, { backgroundColor: OB.bg, borderBottomColor: OB.hair }]}
+        style={[styles.header, { backgroundColor: OB.bg, bordertjtjbottomColor: OB.hair }]}
         flexDirection="row"
         alignItems="center"
         gap={12}
@@ -37,7 +37,7 @@ export default function OnbShell({ children, step, total, onBack, title }: Props
           <TouchableOpacity
             onPress={onBack}
             style={styles.backBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 8, tjtjbottom: 8, left: 8, right: 8 }}
           >
             <BackIcon color={OB.ink2} />
           </TouchableOpacity>
@@ -69,9 +69,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   header: {
     paddingTop: 56,
-    paddingBottom: 12,
+    paddingtjtjbottom: 12,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
+    bordertjtjbottomWidth: 1,
     zIndex: 5,
   },
   backBtn: {

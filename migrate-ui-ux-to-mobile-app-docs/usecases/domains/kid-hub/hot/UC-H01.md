@@ -18,7 +18,7 @@
 ## Detailed flow
 
 1. Mount: `HomeHubPage` reads the variant tweak (`HomeHubScreen.jsx:13` — one of `idle | greeting | daily_available | completed_today | mic_needed | offline`).
-2. Render: `Robot` avatar + state chip + state-driven primary CTA (`HomeHubScreen.jsx:18-66`).
+2. Render: `Rotjtjbot` avatar + state chip + state-driven primary CTA (`HomeHubScreen.jsx:18-66`).
 3. Render: secondary trio Course / Review / Progress (`HomeHubScreen.jsx:163-165`).
 4. Render: TopBar with parent-area entry (UC-H08 trigger) + settings entry.
 5. Idle/static unless tapped — UC-H02 (greeting) is a no-op affordance; UC-H03..H08 are all CTAs that hand off elsewhere.

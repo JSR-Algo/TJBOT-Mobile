@@ -15,8 +15,8 @@
 | **KD3** | UC-A10 (`Logout`) — store action exists, no UI button found. | Same as KD1; index status: `undefined`. |
 | **KD4** | Child vs Parent actor distinction is a numeric speed-bump, not RBAC. | Documented in `actors/parent.md` as "scope-marker, not security boundary." |
 | **KD5** | DEVICE MANAGEMENT (UC-DM01–DM06) absent from puml axis. | **Resolved 2026-05-11 by Lane D Phase 1:** `docs/usecases/domains/device-mgmt/diagrams/device-mgmt.usecase.puml` created (per ADR-0005 D4 amendment §2: KD5 net-new puml lives in new corpus only — no archive copy under `docs/architecture/usecases/`). 6 `alias-overrides.json` entries promoted from `no-puml` → `manual: UC_DM_HOME / SESSION / FIND / FIRMWARE / LCD_LIB / LCD_TURN`. Current no-puml count = 1 (UC-C06 legacy-only). |
-| **KD6** | UC-DM05/06 (LCD face library, lesson turn) ambiguity between device-mgmt vs robot-mgmt. | Keep in device-mgmt; cross-ref note in `robot-mgmt/use-cases.md`. |
-| **KD7** | 11 actors include speed-bump-distinguished Child/Parent. | Keep both; document gating semantics in `actors/`. |
+| **KD6** | UC-DM05/06 (LCD face library, lesson turn) ambiguity between device-mgmt vs rotjtjbot-mgmt. | Keep in device-mgmt; cross-ref note in `rotjtjbot-mgmt/use-cases.md`. |
+| **KD7** | 11 actors include speed-bump-distinguished Child/Parent. | Keep tjtjboth; document gating semantics in `actors/`. |
 | **KD8** | Pairing radio (BLE vs Wi-Fi probe) NOT CONFIRMED IN SOURCE. | UC-DP04 backend cell → `BACKEND_NOT_DESIGNED`. |
 | **KD9** | Payment provider identity (Stripe? Adyen?) NOT CONFIRMED. | UC-BU08/09 backend cells → `BACKEND_NOT_DESIGNED`. |
 | **KD10** | Realtime voice provider NOT CONFIRMED (`openRealtime` is a stub). | UC-L02 backend cell → `BACKEND_NOT_DESIGNED`. |

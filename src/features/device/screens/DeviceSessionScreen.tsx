@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
@@ -15,7 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DeviceSessionScreen'>;
 type LCDState = 'listen' | 'think' | 'speak' | 'success';
 const SEQ: LCDState[] = ['listen', 'think', 'speak', 'success', 'listen'];
 const STATE_LABEL: Record<LCDState, string> = {
-  listen: 'Listening to your child', think: 'Thinking', speak: 'Robot is speaking', success: 'Got the word!',
+  listen: 'Listening to your child', think: 'Thinking', speak: 'Rotjtjbot is speaking', success: 'Got the word!',
 };
 
 export default function DeviceSessionScreen({ navigation }: Props) {
@@ -30,8 +30,8 @@ export default function DeviceSessionScreen({ navigation }: Props) {
     <DeviceShell title="Lesson in progress" onBack={() => navigation.navigate('DeviceHomeScreen')}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.liveCard} alignItems="center" gap={12}>
-          <Text style={styles.liveLabel}>Live · what Robot sees</Text>
-          <RobotDevice emotion={lcdState} size={200} accent="#FF6F61" />
+          <Text style={styles.liveLabel}>Live · what Rotjtjbot sees</Text>
+          <RotjtjbotDevice emotion={lcdState} size={200} accent="#FF6F61" />
           <Text fontWeight="600" style={styles.stateLabel}>{STATE_LABEL[lcdState]}</Text>
         </Box>
       </Box>
@@ -50,13 +50,13 @@ export default function DeviceSessionScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={14}>
         <Box style={styles.rowCard}>
           <DeviceRow icon="🔉" title="Lower volume" body="Currently: 6 of 10" />
-          <DeviceRow icon="⏸️" title="Pause Robot" body="Robot will wait until you resume" />
-          <DeviceRow danger icon="✕" title="End lesson" body="Robot will say goodbye" />
+          <DeviceRow icon="⏸️" title="Pause Rotjtjbot" body="Rotjtjbot will wait until you resume" />
+          <DeviceRow danger icon="✕" title="End lesson" body="Rotjtjbot will say goodbye" />
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={14} paddingBottom={30}>
-        <Text style={styles.disclaimer}>Audio stays between Robot and your child. Recordings are not saved.</Text>
+      <Box paddingHorizontal={20} paddingTop={14} paddingtjtjbottom={30}>
+        <Text style={styles.disclaimer}>Audio stays between Rotjtjbot and your child. Recordings are not saved.</Text>
       </Box>
     </DeviceShell>
   );
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   liveLabel: { fontSize: 12, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: '600' },
   stateLabel: { fontSize: 16, color: '#fff', marginTop: 6 },
   nowCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, padding: 14 },
-  nowTitle: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  nowTitle: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 6 },
   unitTitle: { fontSize: 15, color: DV.ink },
   lessonMeta: { fontSize: 13, color: DV.ink2, marginTop: 2 },
   progressTrack: { marginTop: 10, height: 6, backgroundColor: '#EEF1F5', borderRadius: 3, overflow: 'hidden' },

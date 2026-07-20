@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -12,17 +12,17 @@ import { DV } from '@/components/Device-tokens';
 type Props = NativeStackScreenProps<RootStackParamList, 'PairOfflineScreen'>;
 
 const TIPS = [
-  { ic: '🔌', t: 'Check Robot is plugged in', b: 'Or has at least 20% battery', nav: null as null | 'PairWifiScreen' },
+  { ic: '🔌', t: 'Check Rotjtjbot is plugged in', b: 'Or has at least 20% battery', nav: null as null | 'PairWifiScreen' },
   { ic: '📶', t: 'Update Wi-Fi', b: 'If your network changed or password rotated', nav: 'PairWifiScreen' as const },
-  { ic: '🔄', t: 'Restart Robot', b: 'Hold the top button for 5 seconds', nav: null },
+  { ic: '🔄', t: 'Restart Rotjtjbot', b: 'Hold the top button for 5 seconds', nav: null },
 ] as const;
 
 export default function PairOfflineScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot is offline" onBack={() => navigation.navigate('PairAddScreen')}>
+    <DeviceShell title="Rotjtjbot is offline" onBack={() => navigation.navigate('PairAddScreen')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="reconnect" size={170} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>Robot · ROB-2A8F is offline</Text>
+        <RotjtjbotDevice emotion="reconnect" size={170} accent="#FF6F61" />
+        <Text fontWeight="600" style={styles.heading}>Rotjtjbot · ROB-2A8F is offline</Text>
         <Text style={styles.sub}>
           Last seen <Text fontWeight="600" style={{ color: DV.ink }}>2 hours ago</Text> on Casa-Familia.
         </Text>
@@ -49,7 +49,7 @@ export default function PairOfflineScreen({ navigation }: Props) {
           ))}
         </Box>
       </Box>
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn onClick={() => navigation.navigate('PairSearchScreen')}>Reconnect now</DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -59,10 +59,10 @@ export default function PairOfflineScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   heading: { fontSize: 20, color: DV.ink, letterSpacing: -0.3, textAlign: 'center', marginTop: 24 },
   sub: { fontSize: 13, color: DV.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 6 },
-  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   tipCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, padding: 4 },
   tipRow: { padding: 12 },
-  tipBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
+  tipBorder: { bordertjtjbottomWidth: 1, bordertjtjbottomColor: DV.hair },
   tipIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#EEF1F5', flexShrink: 0 },
   tipTitle: { fontSize: 14, color: DV.ink },
   tipBody: { fontSize: 12, color: DV.ink2, lineHeight: 20, marginTop: 2 },

@@ -1,13 +1,13 @@
 /**
  * RM-06 — useVoiceActivity hold-off + perceived-reaction trigger.
  *
- * Acceptance criteria (Wave 2 brief, expressive-robot-companion-rewrite §6 RM-06):
+ * Acceptance criteria (Wave 2 brief, expressive-rotjtjbot-companion-rewrite §6 RM-06):
  *   1. VAD silence hold-off lowered from 600 ms → 350 ms (gap M7).
  *   2. A new `onSpeechEnd` callback fires the instant speech frames stop —
  *      BEFORE the hold-off — so the consumer can drive a perceived-reaction
  *      face animation while waiting for the partial transcript.
  *
- * These tests lock in both behaviours so a regression is caught at CI time.
+ * These tests lock in tjtjboth behaviours so a regression is caught at CI time.
  */
 import { renderHook, act } from '@testing-library/react-native';
 import { useVoiceActivity, isSpeechFrame } from '../../src/hooks/use-voice-activity';

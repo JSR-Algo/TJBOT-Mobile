@@ -17,7 +17,7 @@ export default function PairCodeScreen({ navigation }: Props) {
     <DeviceShell title="Confirm it's yours" onBack={() => navigation.navigate('PairFoundScreen')}>
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text style={styles.intro}>
-          Robot is showing a 4-digit code on its face. Type it here so we know we're pairing the right one.
+          Rotjtjbot is showing a 4-digit code on its face. Type it here so we know we're pairing the right one.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={18} alignItems="center">
@@ -27,7 +27,7 @@ export default function PairCodeScreen({ navigation }: Props) {
               <Text key={i} fontWeight="800" style={styles.lcdDigit}>{d}</Text>
             ))}
           </Box>
-          <Text style={styles.lcdLabel}>On Robot's face</Text>
+          <Text style={styles.lcdLabel}>On Rotjtjbot's face</Text>
         </Box>
       </Box>
       <Box paddingHorizontal={20} paddingTop={20}>
@@ -40,7 +40,7 @@ export default function PairCodeScreen({ navigation }: Props) {
           ))}
         </Box>
       </Box>
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn onClick={() => navigation.navigate('PairWifiScreen')}>Confirm & continue</DeviceBigBtn>
         <TouchableOpacity onPress={() => navigation.navigate('PairSearchScreen')} style={styles.mismatchBtn}>
           <Text fontWeight="500" style={styles.mismatchText}>Codes don't match</Text>
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   lcdBg: { backgroundColor: '#0E1116', borderRadius: 14, padding: 16 },
   lcdDigit: { fontSize: 48, color: '#E8F4FF', fontVariant: ['tabular-nums'], letterSpacing: -1 },
   lcdLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 6 },
-  inputLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  inputLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   codeBox: { width: 56, height: 64, borderRadius: 10, backgroundColor: DV.card, borderWidth: 2, borderColor: DV.accent },
   codeDigit: { fontSize: 28, color: DV.ink, fontVariant: ['tabular-nums'] },
   mismatchBtn: { padding: 8, alignItems: 'center' },

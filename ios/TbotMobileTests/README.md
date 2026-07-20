@@ -1,4 +1,4 @@
-# TbotMobileTests — XCTest bundle
+# tjbotMobileTests — XCTest bundle
 
 Staged for MB-NATIVE-VOICE-003 spike verification. Contains one test today:
 
@@ -11,23 +11,23 @@ Staged for MB-NATIVE-VOICE-003 spike verification. Contains one test today:
 
 1. Open workspace in Xcode:
    ```sh
-   cd tbot-mobile/ios && open TbotMobile.xcworkspace
+   cd tjbot-mobile/ios && open tjbotMobile.xcworkspace
    ```
 
 2. Add a test bundle target:
    File → New → Target → iOS → **Unit Testing Bundle**
-   - Product Name: `TbotMobileTests`
-   - Target to be Tested: `TbotMobile`
+   - Product Name: `tjbotMobileTests`
+   - Target to be Tested: `tjbotMobile`
    - Language: Swift
    - Organization Identifier: default
    - Click Finish.
 
-3. Move the auto-generated `TbotMobileTests.swift` (if created) into the
-   `TbotMobileTests` group, then add `SharedEngineSpikeTests.swift` from
+3. Move the auto-generated `tjbotMobileTests.swift` (if created) into the
+   `tjbotMobileTests` group, then add `SharedEngineSpikeTests.swift` from
    this directory:
-   - Right-click `TbotMobileTests` → *Add Files to "TbotMobile"…*
-   - Select `ios/TbotMobileTests/SharedEngineSpikeTests.swift`
-   - Targets: ✓ `TbotMobileTests`, ✗ `TbotMobile` (test-only).
+   - Right-click `tjbotMobileTests` → *Add Files to "tjbotMobile"…*
+   - Select `ios/tjbotMobileTests/SharedEngineSpikeTests.swift`
+   - Targets: ✓ `tjbotMobileTests`, ✗ `tjbotMobile` (test-only).
 
 4. Run on a **physical device** (⌘U while a device is the active scheme
    run destination). The simulator cannot exercise voiceProcessingIO —
@@ -47,10 +47,10 @@ Staged for MB-NATIVE-VOICE-003 spike verification. Contains one test today:
 
 ```sh
 xcodebuild test \
-  -workspace ios/TbotMobile.xcworkspace \
-  -scheme TbotMobile \
+  -workspace ios/tjbotMobile.xcworkspace \
+  -scheme tjbotMobile \
   -destination "platform=iOS,id=<device-UDID>" \
-  -only-testing:TbotMobileTests/SharedEngineSpikeTests
+  -only-testing:tjbotMobileTests/SharedEngineSpikeTests
 ```
 
 Cannot run in GitHub Actions — requires a physical device. Staged for

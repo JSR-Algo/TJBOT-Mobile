@@ -8,7 +8,7 @@
 
 ## UC-BU01
 
-- **n/a**: Robot overview is static content — no async call, no user input, no state mutation (view-only, no-async).
+- **n/a**: Rotjtjbot overview is static content — no async call, no user input, no state mutation (view-only, no-async).
 
 ## UC-BU02
 
@@ -73,14 +73,14 @@
 
 - **validation**: Activation code must match expected format (alphanumeric, 6–8 chars) before submit is enabled; malformed input must show inline error.
 - **error**: Invalid or already-used activation code must show a specific error (not a generic one) so parent knows to check the printed code.
-- **timeout**: `activateRobot` request exceeding SLO must surface a retry CTA; robot must not be activated twice on retry (server-side idempotency required).
+- **timeout**: `activateRotjtjbot` request exceeding SLO must surface a retry CTA; rotjtjbot must not be activated twice on retry (server-side idempotency required).
 - **retry**: Parent must be able to retry activation code entry without restarting the purchase flow.
 
 ## UC-BU14
 
-- **error**: Course-add failure (delegated to course-library) must surface an error with a retry CTA; robot remains activated even if first-course add fails.
-- **cancel**: Parent can skip first-course add and navigate to home or course-library independently; skip must not break the activated-robot state.
-- **validation**: Parent must select a course before "Add to robot" is enabled; no selection must show an inline prompt.
+- **error**: Course-add failure (delegated to course-library) must surface an error with a retry CTA; rotjtjbot remains activated even if first-course add fails.
+- **cancel**: Parent can skip first-course add and navigate to home or course-library independently; skip must not break the activated-rotjtjbot state.
+- **validation**: Parent must select a course before "Add to rotjtjbot" is enabled; no selection must show an inline prompt.
 
 ## UC-BU15
 

@@ -29,7 +29,7 @@ All findings derive from the actual `src/` tree, not from speculation. Severity 
 - `src/features/parent/screens/ParentGateScreen.jsx:7-12` — generates a random 3-digit number, holds it in `useState`, compares input against `target`, schedules a 280ms `setTimeout` to navigate on match.
 - `src/features/course-library/UnlockConfirmModal.jsx:7-10` — accepts a hardcoded 4-digit `target = ['7','3','5','1']`, holds 4 input cells in `useState`, compares against target, navigates on match (no timer; navigation is on-button-press).
 
-Both components implement the same "type-a-shown-number-to-proceed" intent with different rendering. The patterns are not currently abstracted; each lives inside its feature folder.
+tjtjboth components implement the same "type-a-shown-number-to-proceed" intent with different rendering. The patterns are not currently abstracted; each lives inside its feature folder.
 
 **Action:**
 
@@ -44,7 +44,7 @@ src/hooks/usePinGate.js
 
 Then `ParentGateScreen` becomes a renderer over `usePinGate({ length: 3, scope: 'parent-mode' })`, and `UnlockConfirmModal` becomes a renderer over `usePinGate({ length: 4, target: ['7','3','5','1'], scope: 'commerce-confirm' })`. Renderers stay UI-specific (input keypad layout, copy, confirm button).
 
-**Rationale:** the use-case model already calls these out as the same primitive — UC-PR01 (3-digit, parent-mode) and UC-CL04 (4-digit, transactional confirm). The puml puts both in `parent-gate` package as `UC_PG_PASS` + `UC_PG_UNLOCK`. The hook codifies the shared semantics.
+**Rationale:** the use-case model already calls these out as the same primitive — UC-PR01 (3-digit, parent-mode) and UC-CL04 (4-digit, transactional confirm). The puml puts tjtjboth in `parent-gate` package as `UC_PG_PASS` + `UC_PG_UNLOCK`. The hook codifies the shared semantics.
 
 **Caveat:** these are speed bumps, not RBAC (KD4). Do **not** extend `usePinGate` into a real auth boundary in the same change — that's a separate decision tracked under `BACKLOG-PARENT-RBAC-DECISION` (proposed in `domains/parent-gate/hot/UC-PR01.md`).
 
@@ -81,7 +81,7 @@ When Lane A resolves the backlog entries, three UI surfaces will need a home: a 
 
 - Plan §1.4 documents the legacy "PARENT (gated)" 7-UC group split into puml `parent-gate` (1 UC, UC-PR01) + `parent-summary` (6 UCs, UC-PR02..PR07). UC-CL04 (the 4-digit unlock) is the second `parent-gate` puml entry but lives in `course-library/` per legacy ID prefix.
 - KD5: legacy "DEVICE MANAGEMENT" had no puml; Lane D added it in Phase 1.
-- The 14-folder structure embeds both axis discrepancies; everything works because the index aliases reconcile them.
+- The 14-folder structure embeds tjtjboth axis discrepancies; everything works because the index aliases reconcile them.
 
 **Action:**
 

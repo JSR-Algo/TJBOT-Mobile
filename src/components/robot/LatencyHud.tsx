@@ -1,6 +1,6 @@
-// LatencyHud — dev-only 4-budget HUD overlay for the robot demo screen.
+// LatencyHud — dev-only 4-budget HUD overlay for the rotjtjbot demo screen.
 //
-// Plan: expressive-robot-companion-rewrite §3 ADR-011, §6 RM-11.
+// Plan: expressive-rotjtjbot-companion-rewrite §3 ADR-011, §6 RM-11.
 // AC: "HUD shows perceived/transcript/first-audio/full per turn, color-coded
 //      vs ADR-011 budgets; HUD visible in dev only; numbers update every turn".
 //
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 1.2,
-    marginBottom: 4,
+    margintjtjbottom: 4,
   },
   row: {
     flexDirection: "row",

@@ -26,7 +26,7 @@ const HEADER_TO_DOMAIN = {
   'PURCHASE FUNNEL (hardware + subscription)': 'purchase',
   'DEVICE PAIRING (parent / setup)': 'device-pairing',
   'DEVICE MANAGEMENT (post-pair)': 'device-mgmt',
-  'ROBOT MANAGEMENT (parent diagnostics)': 'robot-mgmt',
+  'ROtjtjbot MANAGEMENT (parent diagnostics)': 'rotjtjbot-mgmt',
   'FALLBACK / SAFETY / RECOVERY': 'fallback-shell',
   // P5 (2026-05-12): mobile-shell promoted from fallback-shell interim placement
   'MOBILE SHELL (cross-cutting OS-bridge surfaces, added P3.F / promoted P5)': 'mobile-shell',
@@ -38,7 +38,7 @@ const PREFIX_TO_DOMAIN = {
   L: 'lesson-session', P: 'progress',
   PR: 'parent-summary', // PR01 overridden below to parent-gate
   CL: 'course-library', BU: 'purchase',
-  DP: 'device-pairing', DM: 'device-mgmt', RM: 'robot-mgmt', F: 'fallback-shell',
+  DP: 'device-pairing', DM: 'device-mgmt', RM: 'rotjtjbot-mgmt', F: 'fallback-shell',
   // 2026-05-12 P3.C / P3.F additions — bodies live in existing domain folders, no new puml yet
   SUB: 'purchase',      // UC-SUB01..05 — subscription lifecycle, body in purchase/use-cases.md
   INV: 'purchase',      // UC-INV01 — invoice history, body in purchase/use-cases.md
@@ -61,7 +61,7 @@ const DOMAIN_TO_PUML = {
   'course-library': 'course-library.usecase.puml',
   purchase: 'purchase.usecase.puml',
   'device-pairing': 'device-pairing.usecase.puml',
-  'robot-mgmt': 'robot-mgmt.usecase.puml',
+  'rotjtjbot-mgmt': 'rotjtjbot-mgmt.usecase.puml',
   'fallback-shell': 'fallback-shell.usecase.puml',
   // device-mgmt has no puml (KD5)
 };
@@ -109,7 +109,7 @@ function ratio(a, b) {
   const max = Math.max(a.length, b.length) || 1;
   const levR = 1 - lev(a, b) / max;
   // Substring containment bonus: if one fully contains the other, ratio = min(0.85, len-ratio + base).
-  // Justification: legacy "Listen to Robot Speech" vs puml "Listen to Robot" is the same UC.
+  // Justification: legacy "Listen to Rotjtjbot Speech" vs puml "Listen to Rotjtjbot" is the same UC.
   if (a.includes(b) || b.includes(a)) {
     const lenR = Math.min(a.length, b.length) / max;
     return Math.max(levR, 0.7 + 0.25 * lenR);

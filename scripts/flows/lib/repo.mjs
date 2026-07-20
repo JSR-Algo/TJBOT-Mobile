@@ -221,7 +221,7 @@ export function gitHeadSha() {
 }
 
 // Returns staged paths *relative to the git toplevel* (which may be an ancestor
-// of PROJECT_ROOT, e.g. tbot-mobile/). Caller filters by prefix as needed.
+// of PROJECT_ROOT, e.g. tjbot-mobile/). Caller filters by prefix as needed.
 export function gitStagedFiles() {
   try {
     return execSync('git diff --cached --name-only', { cwd: PROJECT_ROOT })
@@ -230,7 +230,7 @@ export function gitStagedFiles() {
 }
 
 // Returns the project-relative prefix of PROJECT_ROOT inside the git toplevel.
-// "" if PROJECT_ROOT === git toplevel; "tbot-design/" if nested.
+// "" if PROJECT_ROOT === git toplevel; "tjbot-design/" if nested.
 export function projectPrefixWithinGit() {
   try {
     const top = execSync('git rev-parse --show-toplevel', { cwd: PROJECT_ROOT }).toString().trim();

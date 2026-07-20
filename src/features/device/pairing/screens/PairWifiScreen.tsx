@@ -24,7 +24,7 @@ export default function PairWifiScreen({ navigation }: Props) {
         <Box style={styles.whyBox}>
           <Text style={styles.whyText}>
             <Text fontWeight="600" style={{ color: DV.ink }}>Why Wi-Fi? </Text>
-            Robot uses your home Wi-Fi to fetch lessons and run voice. Without it, lessons can't play.
+            Rotjtjbot uses your home Wi-Fi to fetch lessons and run voice. Without it, lessons can't play.
           </Text>
         </Box>
       </Box>
@@ -68,11 +68,11 @@ export default function PairWifiScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   whyBox: { backgroundColor: '#EEF1F5', borderRadius: 12, padding: 14 },
   whyText: { fontSize: 13, color: DV.ink2, lineHeight: 22 },
-  netLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  netLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   netCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, overflow: 'hidden' },
   netRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
   netRowSel: { backgroundColor: '#E8F0FE' },
-  netBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
+  netBorder: { bordertjtjbottomWidth: 1, bordertjtjbottomColor: DV.hair },
   netName: { fontSize: 15, color: DV.ink, flex: 1 },
   otherLink: { fontSize: 14, color: DV.accent, padding: 6 },
 });

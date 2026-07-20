@@ -9,11 +9,11 @@
 ## UC-CL01 — Browse Library
 
 - **Goal:** Parent browses all available courses (installed, in catalog, locked) and picks one to inspect.
-- **Trigger:** Navigation arrives at `cl_library` (`CourseLibraryPage`); typically reached from device-home, robot-mgmt storage, or parent settings.
-- **Preconditions:** Parent passed UC-PR01 (`[requires] parent-gate : UC_PG_PASS` per `course-library.usecase.puml:46-49`); a Robot is paired (`[requires] device-pairing`).
+- **Trigger:** Navigation arrives at `cl_library` (`CourseLibraryPage`); typically reached from device-home, rotjtjbot-mgmt storage, or parent settings.
+- **Preconditions:** Parent passed UC-PR01 (`[requires] parent-gate : UC_PG_PASS` per `course-library.usecase.puml:46-49`); a Rotjtjbot is paired (`[requires] device-pairing`).
 - **Main Flow:**
   1. `CourseLibraryPage` mounts and renders `DvShell title="Course Library"` (`CourseLibraryScreen.jsx:15`).
-  2. Page renders sectioned course tiles ("On your Robot now" / catalog / etc.) — `CourseLibraryScreen.jsx:9-12`.
+  2. Page renders sectioned course tiles ("On your Rotjtjbot now" / catalog / etc.) — `CourseLibraryScreen.jsx:9-12`.
   3. Parent taps a course card → navigation transitions to `cl_detail` (UC-CL02) — `CourseLibraryScreen.jsx:24`.
 - **Postconditions:** Navigation lands on `cl_detail` for the chosen course.
 
@@ -25,22 +25,22 @@
 - **Main Flow:**
   1. `CourseDetailPage` mounts and renders `DvShell title="Course details"` (`CourseDetailScreen.jsx:13`).
   2. Page renders the LCD preview, course summary, and lesson breakdown.
-  3. Parent taps "Add to Robot" → navigation transitions to `cl_buy` (UC-CL03) — `CourseDetailScreen.jsx:70`.
+  3. Parent taps "Add to Rotjtjbot" → navigation transitions to `cl_buy` (UC-CL03) — `CourseDetailScreen.jsx:70`.
 - **Postconditions:** Parent has decided to add (transitions to UC-CL03) or to go back.
 - **Alt Flow:**
   1. Parent taps "Back to library" → returns to `cl_library` (`CourseDetailScreen.jsx:71`).
 
 ## UC-CL03 — Buy / Unlock Course
 
-- **Goal:** Parent purchases or subscription-unlocks a course so it can be sent to Robot.
-- **Trigger:** Parent taps "Add to Robot" on `CourseDetailPage` and lands on `BuyCoursePage` (`BuyCourseScreen.jsx`).
-- **Preconditions:** Parent has passed UC-PR01 (gate is `[requires]` for course-library entry per `course-library.usecase.puml`); a paired Robot exists (UC-DP10 or earlier prereq); the selected course is not already unlocked.
+- **Goal:** Parent purchases or subscription-unlocks a course so it can be sent to Rotjtjbot.
+- **Trigger:** Parent taps "Add to Rotjtjbot" on `CourseDetailPage` and lands on `BuyCoursePage` (`BuyCourseScreen.jsx`).
+- **Preconditions:** Parent has passed UC-PR01 (gate is `[requires]` for course-library entry per `course-library.usecase.puml`); a paired Rotjtjbot exists (UC-DP10 or earlier prereq); the selected course is not already unlocked.
 - **Main Flow:**
   1. Parent sees course summary tile (LCD preview, lesson + week count) — `BuyCourseScreen.jsx:23-32`.
   2. Parent picks a plan: "All Courses" (subscription, $8.99/mo) or "Just this course" ($24 one-time) — `BuyCourseScreen.jsx:38-62`.
   3. Parent taps "Confirm & continue" — navigation transitions to `cl_unlock_confirm`.
   4. UC-CL04 (Confirm Unlock with Numeric Code) runs as an `<<include>>` step (4-digit speed-bump via `UnlockConfirmModal`).
-  5. On confirm, UC-CL05 (Course Added to Robot) runs.
+  5. On confirm, UC-CL05 (Course Added to Rotjtjbot) runs.
 - **Postconditions:** Course is unlocked (client-side state — see KD11); navigation lands on `cl_added`.
 - **Alt Flow:**
   1. Parent taps "Not now" → returns to `cl_detail` without unlock.
@@ -63,50 +63,50 @@
 - **Error Flow:**
   1. Wrong code → slots stay red; CTA stays disabled. Parent retries (no lock-out in prototype — KD11).
 
-## UC-CL05 — Course Added to Robot
+## UC-CL05 — Course Added to Rotjtjbot
 
-- **Goal:** Confirm to Parent that the course is now bound to Robot and offer the immediate "send today's lesson" handoff.
+- **Goal:** Confirm to Parent that the course is now bound to Rotjtjbot and offer the immediate "send today's lesson" handoff.
 - **Trigger:** UC-CL04 confirm succeeded; navigation arrived at `cl_added` (`CourseAddedPage`).
 - **Preconditions:** UC-CL04 confirmed.
 - **Main Flow:**
-  1. `CourseAddedPage` renders `DvShell title="Added to Robot"` (`CourseAddedScreen.jsx:14`).
-  2. Page shows celebrating Robot + LCD preview tile + "what's loaded" summary.
+  1. `CourseAddedPage` renders `DvShell title="Added to Rotjtjbot"` (`CourseAddedScreen.jsx:14`).
+  2. Page shows celebrating Rotjtjbot + LCD preview tile + "what's loaded" summary.
   3. Parent taps "Send today's lesson now" → navigation transitions to `cl_send` (UC-CL06) — `CourseAddedScreen.jsx:47`.
 - **Postconditions:** Course is bound and ready; navigation lands on the send-lesson surface.
 - **Alt Flow:**
-  1. Parent taps "Back to Robot home" → returns to `dv_home` (`CourseAddedScreen.jsx:48`).
+  1. Parent taps "Back to Rotjtjbot home" → returns to `dv_home` (`CourseAddedScreen.jsx:48`).
 
-## UC-CL06 — Send Lesson to Robot
+## UC-CL06 — Send Lesson to Rotjtjbot
 
-- **Goal:** Parent picks today's lesson from the bound course and pushes it to Robot.
+- **Goal:** Parent picks today's lesson from the bound course and pushes it to Rotjtjbot.
 - **Trigger:** Parent taps "Send today's lesson now" on UC-CL05, or navigates to `cl_send` from device home.
-- **Preconditions:** A course is bound to Robot (UC-CL05 completed at some point); Robot is online.
+- **Preconditions:** A course is bound to Rotjtjbot (UC-CL05 completed at some point); Rotjtjbot is online.
 - **Main Flow:**
-  1. `SendToRobotPage` renders `DvShell title="Today's lesson"` (`SendToRobotScreen.jsx:17`) and shows lesson picker rows (`SendToRobotScreen.jsx:11`).
-  2. Parent picks a lesson (state-only `pick` index — `SendToRobotScreen.jsx:11`).
-  3. Parent taps "Send to Robot" → app pushes lesson via `course-library.api.js → sendCourseToRobot` (cross-domain delegate to Robot — see cross-domain-edges.json: UC-CL06→ACTOR:Robot); navigation transitions to `cl_robot_ready` (UC-CL07) — `SendToRobotScreen.jsx:54`.
-- **Postconditions:** Lesson is queued on Robot; navigation lands on `cl_robot_ready`.
+  1. `SendToRotjtjbotPage` renders `DvShell title="Today's lesson"` (`SendToRotjtjbotScreen.jsx:17`) and shows lesson picker rows (`SendToRotjtjbotScreen.jsx:11`).
+  2. Parent picks a lesson (state-only `pick` index — `SendToRotjtjbotScreen.jsx:11`).
+  3. Parent taps "Send to Rotjtjbot" → app pushes lesson via `course-library.api.js → sendCourseToRotjtjbot` (cross-domain delegate to Rotjtjbot — see cross-domain-edges.json: UC-CL06→ACTOR:Rotjtjbot); navigation transitions to `cl_rotjtjbot_ready` (UC-CL07) — `SendToRotjbotScreen.jsx:54`.
+- **Postconditions:** Lesson is queued on Rotjbot; navigation lands on `cl_rotjbot_ready`.
 
-## UC-CL07 — Confirm Robot Ready
+## UC-CL07 — Confirm Rotjbot Ready
 
-- **Goal:** Confirm to Parent the lesson is on Robot and prompt the hand-off to the child.
-- **Trigger:** UC-CL06 send completed; navigation arrived at `cl_robot_ready` (`RobotReadyPage`).
+- **Goal:** Confirm to Parent the lesson is on Rotjbot and prompt the hand-off to the child.
+- **Trigger:** UC-CL06 send completed; navigation arrived at `cl_rotjbot_ready` (`RotjbotReadyPage`).
 - **Preconditions:** UC-CL06 succeeded.
 - **Main Flow:**
-  1. `RobotReadyPage` renders `DvShell title="Robot is ready"` (`RobotReadyScreen.jsx:11`) with the celebrating Robot.
-  2. Parent taps "Hand it to your child" → navigation transitions to `cl_running` (UC-CL08) — `RobotReadyScreen.jsx:50`.
-- **Postconditions:** Parent handed Robot to the child; navigation lands on the running-lesson surface.
+  1. `RotjbotReadyPage` renders `DvShell title="Rotjbot is ready"` (`RotjbotReadyScreen.jsx:11`) with the celebrating Rotjbot.
+  2. Parent taps "Hand it to your child" → navigation transitions to `cl_running` (UC-CL08) — `RotjbotReadyScreen.jsx:50`.
+- **Postconditions:** Parent handed Rotjbot to the child; navigation lands on the running-lesson surface.
 - **Alt Flow:**
-  1. Parent taps "Pick a different lesson" → returns to `cl_send` (UC-CL06) — `RobotReadyScreen.jsx:51`.
+  1. Parent taps "Pick a different lesson" → returns to `cl_send` (UC-CL06) — `RotjbotReadyScreen.jsx:51`.
 
-## UC-CL08 — Monitor Lesson Running on Robot
+## UC-CL08 — Monitor Lesson Running on Rotjbot
 
-- **Goal:** Parent has a passive surface acknowledging the lesson is now running on Robot, with a path to a live monitor.
+- **Goal:** Parent has a passive surface acknowledging the lesson is now running on Rotjbot, with a path to a live monitor.
 - **Trigger:** Parent tapped "Hand it to your child" on UC-CL07; navigation arrived at `cl_running` (`RunningPage`).
-- **Preconditions:** UC-CL07 completed; child is interacting with Robot.
+- **Preconditions:** UC-CL07 completed; child is interacting with Rotjbot.
 - **Main Flow:**
-  1. `RunningPage` renders `DvShell title="Lesson is on Robot"` (`RunningScreen.jsx:10`).
-  2. Page shows status messaging + Robot illustration.
+  1. `RunningPage` renders `DvShell title="Lesson is on Rotjbot"` (`RunningScreen.jsx:10`).
+  2. Page shows status messaging + Rotjbot illustration.
   3. Parent taps "See what's happening" → navigation transitions to `cl_companion` (UC-CL09) — `RunningScreen.jsx:40`.
 - **Postconditions:** Parent has acknowledged the lesson is running; may have transitioned to companion view.
 - **Alt Flow:**
@@ -114,11 +114,11 @@
 
 ## UC-CL09 — View Companion
 
-- **Goal:** Parent sees a real-time mirror of what Robot is doing in the lesson (LCD state, current word/phrase) without disturbing the child.
+- **Goal:** Parent sees a real-time mirror of what Rotjbot is doing in the lesson (LCD state, current word/phrase) without disturbing the child.
 - **Trigger:** Parent tapped "See what's happening" on UC-CL08; navigation arrived at `cl_companion` (`CompanionPage`).
 - **Preconditions:** UC-CL08 in progress.
 - **Main Flow:**
-  1. `CompanionPage` renders `DvShell title="What Robot sees"` (`CompanionScreen.jsx:24`).
+  1. `CompanionPage` renders `DvShell title="What Rotjbot sees"` (`CompanionScreen.jsx:24`).
   2. Page cycles through `phases` (state-only loop — `CompanionScreen.jsx:11-`) showing the lesson turn states.
   3. Parent watches; may tap back to return to `cl_running` (UC-CL08).
 - **Postconditions:** Parent has a live view; on lesson end (real wiring) navigates to UC-CL10.
@@ -126,7 +126,7 @@
 ## UC-CL10 — View Lesson Complete
 
 - **Goal:** Parent sees the lesson-complete summary with what the child practiced and the path to plan tomorrow.
-- **Trigger:** Lesson on Robot ended; navigation arrives at `cl_complete` (`CourseCompletePage`).
+- **Trigger:** Lesson on Rotjbot ended; navigation arrives at `cl_complete` (`CourseCompletePage`).
 - **Preconditions:** UC-CL08/CL09 lesson completed.
 - **Main Flow:**
   1. `CourseCompletePage` renders `DvShell title="Today's lesson"` (`CourseCompleteScreen.jsx:11`).
@@ -136,15 +136,15 @@
 - **Alt Flow:**
   1. Parent taps "Done" → returns to `dv_home` (`CourseCompleteScreen.jsx:65`).
 
-## UC-CL11 — Resync Robot
+## UC-CL11 — Resync Rotjbot
 
-- **Goal:** Parent resyncs Robot when content state has drifted (Wi-Fi changed, course not delivered, etc.).
+- **Goal:** Parent resyncs Rotjbot when content state has drifted (Wi-Fi changed, course not delivered, etc.).
 - **Trigger:** App detects a sync gap; navigation arrives at `cl_needs_sync` (`NeedsSyncPage`) — typically from UC-CL05/CL06 happy-path branching.
-- **Preconditions:** A course is bound to Robot but Robot has not received the latest update.
+- **Preconditions:** A course is bound to Rotjbot but Rotjbot has not received the latest update.
 - **Main Flow:**
-  1. `NeedsSyncPage` renders `DvShell title="Robot needs to catch up"` (`NeedsSyncScreen.jsx:13`).
+  1. `NeedsSyncPage` renders `DvShell title="Rotjbot needs to catch up"` (`NeedsSyncScreen.jsx:13`).
   2. Page lists remediation options (Wi-Fi update — `NeedsSyncScreen.jsx:53`, etc.).
-  3. Parent taps "Reconnect Robot now" → app re-attempts sync via `course-library.api.js → getRobotSyncStatus`/`sendCourseToRobot` (cross-domain delegate to Robot — see cross-domain-edges.json: UC-CL11→ACTOR:Robot); navigation transitions to `cl_added` (UC-CL05) — `NeedsSyncScreen.jsx:63`.
+  3. Parent taps "Reconnect Rotjbot now" → app re-attempts sync via `course-library.api.js → getRotjbotSyncStatus`/`sendCourseToRotjbot` (cross-domain delegate to Rotjbot — see cross-domain-edges.json: UC-CL11→ACTOR:Rotjbot); navigation transitions to `cl_added` (UC-CL05) — `NeedsSyncScreen.jsx:63`.
 - **Postconditions:** Sync re-attempt is in flight; navigation returns to the bound-course confirmation surface.
 - **Alt Flow:**
   1. Parent taps "I'll do it later" → returns to `dv_home` (`NeedsSyncScreen.jsx:64`).

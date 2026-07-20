@@ -12,7 +12,7 @@ import { RM } from '../components/RM';
 type Props = NativeStackScreenProps<RootStackParamList, 'SupportScreen'>;
 
 const TOPICS = [
-  { id: 'hardware', t: 'Robot device' },
+  { id: 'hardware', t: 'Rotjtjbot device' },
   { id: 'sound', t: 'Sound or microphone' },
   { id: 'wifi', t: 'Wi-Fi or pairing' },
   { id: 'lessons', t: 'Lessons & courses' },
@@ -22,12 +22,12 @@ const TOPICS = [
 
 type TopicId = typeof TOPICS[number]['id'];
 
-const ATTACHED = ['Robot ROB-2A8F', 'Software v1.4.2', 'Wi-Fi: strong', 'Battery: 78%', 'iOS app v3.1'];
+const ATTACHED = ['Rotjtjbot ROB-2A8F', 'Software v1.4.2', 'Wi-Fi: strong', 'Battery: 78%', 'iOS app v3.1'];
 
 export default function SupportScreen({ navigation }: Props) {
   const [topic, setTopic] = React.useState<TopicId>('hardware');
   return (
-    <DeviceShell title="Contact support" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Contact support" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingHorizontal={24} paddingTop={18}>
         <Text style={styles.intro}>We're a small team and we read every message. Most replies arrive within a day.</Text>
       </Box>
@@ -35,7 +35,7 @@ export default function SupportScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.rowCard}>
           <DeviceRow icon="💬" title="Chat with us" body="Mon–Fri · 9 AM – 6 PM ET" />
-          <DeviceRow icon="✉️" title="Email support" body="hello@robotbuddy.app · reply in ~1 day" />
+          <DeviceRow icon="✉️" title="Email support" body="hello@rotjtjbotbuddy.app · reply in ~1 day" />
           <DeviceRow icon="📚" title="Help articles" body="Setup, sounds, accounts, more" />
         </Box>
       </Box>
@@ -57,7 +57,7 @@ export default function SupportScreen({ navigation }: Props) {
           </Box>
           <Text fontWeight="600" style={[styles.formLabel, { marginTop: 14 }]}>Tell us what's happening</Text>
           <Box style={styles.textArea}>
-            <Text style={styles.textAreaPlaceholder}>Robot's voice cuts out halfway through lessons. We've tried…</Text>
+            <Text style={styles.textAreaPlaceholder}>Rotjtjbot's voice cuts out halfway through lessons. We've tried…</Text>
           </Box>
           <Text style={styles.attachNote}>
             We'll attach a small device report (battery, Wi-Fi strength, software version). No audio, no transcripts.
@@ -74,9 +74,9 @@ export default function SupportScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('MyRobotScreen')}>Send to support</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRobotScreen')}>Cancel</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
+        <DeviceBigBtn onClick={() => navigation.navigate('MyRotjtjbotScreen')}>Send to support</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRotjtjbotScreen')}>Cancel</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
@@ -85,9 +85,9 @@ export default function SupportScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   intro: { fontSize: 13, color: RM.ink2, lineHeight: 20 },
   rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
-  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   formCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, padding: 14 },
-  formLabel: { fontSize: 12, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 },
+  formLabel: { fontSize: 12, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.4, margintjtjbottom: 8 },
   topicBtn: { borderWidth: 1, borderColor: RM.hair, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 12, backgroundColor: RM.card },
   topicBtnSel: { borderWidth: 1.5, borderColor: RM.accent, backgroundColor: '#E8F0FE' },
   topicText: { fontSize: 13 },

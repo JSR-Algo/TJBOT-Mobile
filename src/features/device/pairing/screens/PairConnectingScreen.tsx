@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -12,7 +12,7 @@ import { DV } from '@/components/Device-tokens';
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 
 const STEPS = [
-  'Sending Wi-Fi to Robot',
+  'Sending Wi-Fi to Rotjtjbot',
   'Connecting to Casa-Familia',
   'Logging in to your account',
   'Loading starter lesson',
@@ -31,9 +31,9 @@ export default function PairConnectingScreen({ navigation }: Props) {
   }, [i]);
 
   return (
-    <DeviceShell title="Connecting Robot…">
+    <DeviceShell title="Connecting Rotjtjbot…">
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="reconnect" size={180} accent="#FF6F61" />
+        <RotjtjbotDevice emotion="reconnect" size={180} accent="#FF6F61" />
         <Text fontWeight="600" style={styles.heading}>Hang tight — about 30 seconds</Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24} gap={8}>

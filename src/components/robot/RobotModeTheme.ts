@@ -9,9 +9,9 @@ import {
   GestureResponderEvent,
   PanResponderGestureState,
 } from 'react-native';
-export type RobotMode = 'learning' | 'playful' | 'focus' | 'parent_mode' | 'sleep_mode';
+export type RotjtjbotMode = 'learning' | 'playful' | 'focus' | 'parent_mode' | 'sleep_mode';
 
-export type RobotState =
+export type RotjtjbotState =
   | 'idle'
   | 'listening'
   | 'recording'
@@ -31,7 +31,7 @@ export interface ModeTheme {
   accent: string;
 }
 
-const MODE_THEMES: Record<RobotMode, ModeTheme> = {
+const MODE_THEMES: Record<RotjtjbotMode, ModeTheme> = {
   learning: { primary: '#4A9EFF', bg: '#0A1628', accent: '#7EC8E3' },
   playful: { primary: '#FF6B6B', bg: '#1A0A1A', accent: '#FFE66D' },
   focus: { primary: '#A0A0A0', bg: '#0D0D0D', accent: '#E0E0E0' },
@@ -39,11 +39,11 @@ const MODE_THEMES: Record<RobotMode, ModeTheme> = {
   sleep_mode: { primary: '#6A5ACD', bg: '#050510', accent: '#9370DB' },
 };
 
-export function getModeTheme(mode: RobotMode): ModeTheme {
+export function getModeTheme(mode: RotjtjbotMode): ModeTheme {
   return MODE_THEMES[mode];
 }
 
-const MODE_ORDER: RobotMode[] = [
+const MODE_ORDER: RotjtjbotMode[] = [
   'learning',
   'playful',
   'focus',
@@ -51,22 +51,22 @@ const MODE_ORDER: RobotMode[] = [
   'sleep_mode',
 ];
 
-export interface RobotModeSelectorReturn {
-  currentMode: RobotMode;
+export interface RotjtjbotModeSelectorReturn {
+  currentMode: RotjtjbotMode;
   currentTheme: ModeTheme;
   modeIndex: number;
   panResponder: PanResponderInstance;
-  selectMode: (mode: RobotMode) => void;
+  selectMode: (mode: RotjtjbotMode) => void;
   nextMode: () => void;
   prevMode: () => void;
 }
 
 const SWIPE_THRESHOLD = 50;
 
-export function useRobotModeSelector(
-  initialMode: RobotMode = 'learning',
-  onModeChange?: (mode: RobotMode) => void,
-): RobotModeSelectorReturn {
+export function useRotjtjbotModeSelector(
+  initialMode: RotjtjbotMode = 'learning',
+  onModeChange?: (mode: RotjtjbotMode) => void,
+): RotjtjbotModeSelectorReturn {
   const [modeIndex, setModeIndex] = useState<number>(
     MODE_ORDER.indexOf(initialMode),
   );
@@ -100,7 +100,7 @@ export function useRobotModeSelector(
   }, [onModeChange]);
 
   const selectMode = useCallback(
-    (mode: RobotMode) => {
+    (mode: RotjtjbotMode) => {
       const index = MODE_ORDER.indexOf(mode);
       if (index !== -1) {
         changeToIndex(index);

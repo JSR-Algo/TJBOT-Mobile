@@ -23,7 +23,7 @@ export default function PairRenameScreen({ navigation }: Props) {
     <DeviceShell title="Choose a Buddy">
       <Box paddingHorizontal={20} paddingTop={18}>
         <Text style={styles.intro}>
-          Pick the avatar your child will see on Robot's face. <Text fontWeight="600" style={{ color: DV.ink }}>We don't ask for your child's name or photo.</Text>
+          Pick the avatar your child will see on Rotjtjbot's face. <Text fontWeight="600" style={{ color: DV.ink }}>We don't ask for your child's name or photo.</Text>
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={20}>
@@ -43,14 +43,14 @@ export default function PairRenameScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Robot's name (optional)</Text>
+        <Text fontWeight="700" style={styles.sectionLabel}>Rotjtjbot's name (optional)</Text>
         <Box style={styles.nameCard} flexDirection="row" alignItems="center" gap={10}>
           <Text style={{ fontSize: 18 }}>🤖</Text>
-          <Text style={styles.nameText}>Living-room Robot</Text>
+          <Text style={styles.nameText}>Living-room Rotjtjbot</Text>
         </Box>
-        <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
+        <Text style={styles.nameHint}>Helpful if you have more than one Rotjtjbot in the house.</Text>
       </Box>
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30}>
         <DeviceBigBtn onClick={() => navigation.navigate('PairFirstLessonScreen')}>Save & continue</DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -59,7 +59,7 @@ export default function PairRenameScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   intro: { fontSize: 14, color: DV.ink2, lineHeight: 22 },
-  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   buddyBtn: { width: '22%', aspectRatio: 1, borderRadius: 14, backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, alignItems: 'center', justifyContent: 'center', gap: 2 },
   buddyBtnSel: { backgroundColor: '#FFF1C2', borderWidth: 2, borderColor: '#FF6F61' },
   buddyName: { fontSize: 10, color: DV.ink },

@@ -27,7 +27,7 @@ export default function PRowGroup({ header, footer, children }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: { fontSize: 12, color: '#8B8B96', paddingHorizontal: 4, paddingBottom: 6, letterSpacing: 0.6 },
+  header: { fontSize: 12, color: '#8B8B96', paddingHorizontal: 4, paddingtjtjbottom: 6, letterSpacing: 0.6 },
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' },
   footer: { fontSize: 12, color: '#8B8B96', paddingHorizontal: 4, paddingTop: 8, lineHeight: 17 },
 });

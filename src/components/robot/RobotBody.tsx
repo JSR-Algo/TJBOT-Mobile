@@ -1,8 +1,8 @@
 /**
- * RobotBody — software-twin renderer for the 12 canonical Motion primitives.
+ * RotjtjbotBody — software-twin renderer for the 12 canonical Motion primitives.
  *
- * Source of truth: `tbot-infra/contracts/motion.{d.ts,js}` (Wave 1, ADR-010).
- * Owning task: RM-03 (`.omc/plans/expressive-robot-companion-rewrite.md` §6 Sprint 7b).
+ * Source of truth: `tjbot-infra/contracts/motion.{d.ts,js}` (Wave 1, ADR-010).
+ * Owning task: RM-03 (`.omc/plans/expressive-rotjtjbot-companion-rewrite.md` §6 Sprint 7b).
  *
  * Why this exists:
  *   The hardware actuators (Feetech FS0403 servos for head pan/tilt + arm) are
@@ -27,7 +27,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View, type ViewStyle } from 'react-native';
 
-// ─── Motion vocabulary (mirrors tbot-infra/contracts/motion.js) ─────────────
+// ─── Motion vocabulary (mirrors tjbot-infra/contracts/motion.js) ─────────────
 
 export type Motion =
   | 'LOOK_FORWARD'
@@ -198,7 +198,7 @@ const MOTION_DESCRIPTORS: Record<Motion, MotionDescriptor> = {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export interface RobotBodyProps {
+export interface RotjtjbotBodyProps {
   motion: Motion;
   /** Body color — defaults to a soft slate so it sits on any background. */
   bodyColor?: string;
@@ -208,12 +208,12 @@ export interface RobotBodyProps {
   __disableAnimations?: boolean;
 }
 
-export function RobotBody({
+export function RotjtjbotBody({
   motion,
   bodyColor = '#6B7AB8',
   size = 220,
   __disableAnimations = false,
-}: RobotBodyProps): React.JSX.Element {
+}: RotjtjbotBodyProps): React.JSX.Element {
   // One driver per channel. We always create all three so hooks are stable —
   // changing the motion just retargets which one animates.
   const headPan = useRef(new Animated.Value(0)).current;
@@ -292,8 +292,8 @@ export function RobotBody({
 
   return (
     <Animated.View
-      testID="robot-body-root"
-      accessibilityLabel={`robot body ${motion}`}
+      testID="rotjtjbot-body-root"
+      accessibilityLabel={`rotjtjbot body ${motion}`}
       style={[
         containerStyle,
         { transform: [{ translateY: poseTranslate }] },
@@ -301,7 +301,7 @@ export function RobotBody({
     >
       {/* Head: pan + tilt are independent rotations on the same node. */}
       <Animated.View
-        testID="robot-body-head"
+        testID="rotjtjbot-body-head"
         style={[
           styles.head,
           {
@@ -318,7 +318,7 @@ export function RobotBody({
 
       {/* Torso */}
       <View
-        testID="robot-body-torso"
+        testID="rotjtjbot-body-torso"
         style={[
           styles.torso,
           {
@@ -330,7 +330,7 @@ export function RobotBody({
       >
         {/* Arm — mounted on the torso, rotates from the shoulder. */}
         <Animated.View
-          testID="robot-body-arm"
+          testID="rotjtjbot-body-arm"
           style={[
             styles.arm,
             {
@@ -349,7 +349,7 @@ export function RobotBody({
 const styles = StyleSheet.create({
   head: {
     borderRadius: 999,
-    marginBottom: 6,
+    margintjtjbottom: 6,
   },
   torso: {
     borderRadius: 24,

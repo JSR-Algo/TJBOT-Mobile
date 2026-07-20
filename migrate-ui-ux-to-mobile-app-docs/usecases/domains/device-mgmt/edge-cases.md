@@ -8,7 +8,7 @@
 
 ## UC-DM01
 
-- **error**: Status fetch failure (Robot offline / API error) must surface a non-blocking banner — user can still see cached state.
+- **error**: Status fetch failure (Rotjtjbot offline / API error) must surface a non-blocking banner — user can still see cached state.
 - **timeout**: Hero card must fall back to "checking…" and then to "offline" within bounded time if telemetry stalls.
 - **retry**: "Sync content" row must offer a manual retry that re-runs the sync.
 
@@ -16,12 +16,12 @@
 
 - **error**: Live telemetry stream failure must surface a non-blocking degraded indicator without ending the lesson.
 - **timeout**: If the LCD-state stream is silent past a bounded interval, UI must show "live stream paused" rather than freeze.
-- **cancel**: "End lesson" control must invoke a confirm step before terminating Robot's session.
+- **cancel**: "End lesson" control must invoke a confirm step before terminating Rotjtjbot's session.
 
 ## UC-DM03
 
-- **timeout**: Chime must auto-stop after the documented 30 s window if Parent does not return; the page reflects this in its "Robot will keep playing for 30 seconds" copy.
-- **error**: Robot offline at chime invocation must surface a recoverable error and explain why no sound is playing.
+- **timeout**: Chime must auto-stop after the documented 30 s window if Parent does not return; the page reflects this in its "Rotjtjbot will keep playing for 30 seconds" copy.
+- **error**: Rotjtjbot offline at chime invocation must surface a recoverable error and explain why no sound is playing.
 
 ## UC-DM04
 

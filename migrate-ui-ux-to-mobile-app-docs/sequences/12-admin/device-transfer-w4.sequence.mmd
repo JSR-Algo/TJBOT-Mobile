@@ -56,7 +56,7 @@ sequenceDiagram
                 DeviceTransferService->>PostgreSQL: UPDATE devices ... COMMIT
                 DeviceTransferService->>AuditLog: append {action: initiate_transfer, target: device, reason}
                 alt mqtt_publish_failure
-                    DeviceTransferService->>MQTT: publish tbot/{deviceId}/commands/prepare-transfer {transfer_code, command_id, issued_by} (QoS 1, retained)
+                    DeviceTransferService->>MQTT: publish tjbot/{deviceId}/commands/prepare-transfer {transfer_code, command_id, issued_by} (QoS 1, retained)
                     MQTT-->>DeviceTransferService: error
                     Note over DeviceTransferService,AdminConsole: transfer row already committed — MQTT retry on next admin poll
                     DeviceTransferService-->>AdminConsole: 502 mqtt_publish_failure {transferCode, expiresAt, requires_retry: true}

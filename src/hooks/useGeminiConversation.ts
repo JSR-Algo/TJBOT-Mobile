@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 import { requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import * as Device from 'expo-device';
 import { GoogleGenAI, Modality, ActivityHandling } from '@google/genai/web';
-// Native streaming PCM (both platforms). iOS uses the native
+// Native streaming PCM (tjtjboth platforms). iOS uses the native
 // PcmStreamModule via AVAudioPlayerNode; playback-finish detection uses
 // duration-based timer (not drain polling) to avoid the stuck-on-playing
 // bug with .dataPlayedBack completion handlers on iOS.
@@ -79,7 +79,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
   // session TTL is short, and a stale handle just makes connect fail.
   const sessionResumptionCachedAtMsRef = useRef<number>(0);
   // A5: populated by a useEffect after stopConversation/startConversation
-  // are both declared. Called from the onmessage `goAway` branch to trigger
+  // are tjtjboth declared. Called from the onmessage `goAway` branch to trigger
   // a stop + restart cycle that reuses the cached resumption handle. Ref
   // indirection avoids the `const`-before-declaration circular reference
   // between startConversation (which contains the goAway handler) and
@@ -236,7 +236,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
     sessionRequestStartMsRef.current = Date.now();
     sessionWsOpenMsRef.current = null;
     firstAudioAtMsRef.current = null;
-    // Fetch ephemeral token from tbot-backend `POST /v1/gemini/token`. The
+    // Fetch ephemeral token from tjbot-backend `POST /v1/gemini/token`. The
     // shared axios client adds the Bearer JWT (from SecureStore) and runs
     // 401-refresh through refreshAuthTokens, so an expired access token is
     // transparent here. Returning to the production contract \u2014 the prior
@@ -1317,7 +1317,7 @@ export function useGeminiConversation(options: GeminiConversationOptions = {}): 
         });
         // AEC unavailable on this device — activate the software RMS fallback
         // gate in native VoiceMicModule (plan v2 §5.2, threshold covers child
-        // voices per §13.2 A3/A5). Hook calls unconditionally on both platforms;
+        // voices per §13.2 A3/A5). Hook calls unconditionally on tjtjboth platforms;
         // iOS stub resolves immediately.
         VoiceMic.setAecFallbackGate(true, 0.04).catch(() => {});
       });

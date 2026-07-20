@@ -12,7 +12,7 @@ export const girlTheme = {
   plum: '#C25E8A',
   paper2: '#FFEEF4',
   dangerSoft: '#FFD2E2',
-  bot: { ...defaultTheme.bot, cheek: '#FFB3CB', body: '#FFEEF4', body2: '#FFD2E2', shadow: '#E08AAB' },
+  tjtjbot: { ...defaultTheme.tjtjbot, cheek: '#FFB3CB', body: '#FFEEF4', body2: '#FFD2E2', shadow: '#E08AAB' },
 } as const;
 
 export const boyTheme = {
@@ -25,7 +25,7 @@ export const boyTheme = {
   plum: '#4878B0',
   paper2: '#E8F4FF',
   dangerSoft: '#DCEEFF',
-  bot: { ...defaultTheme.bot, cheek: '#B3D9F5', body: '#E8F4FF', body2: '#C5E0FA', shadow: '#6FA8DC' },
+  tjtjbot: { ...defaultTheme.tjtjbot, cheek: '#B3D9F5', body: '#E8F4FF', body2: '#C5E0FA', shadow: '#6FA8DC' },
 } as const;
 
 export const themes = { default: defaultTheme, girl: girlTheme, boy: boyTheme } as const;

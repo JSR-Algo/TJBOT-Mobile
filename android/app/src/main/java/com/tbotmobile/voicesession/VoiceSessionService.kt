@@ -1,4 +1,4 @@
-package com.tbotmobile.voicesession
+package com.tjbotmobile.voicesession
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -103,8 +103,8 @@ class VoiceSessionService : Service() {
   }
 
   companion object {
-    private const val TAG = "TbotVoiceService"
-    private const val CHANNEL_ID = "tbot.voice.session"
+    private const val TAG = "tjbotVoiceService"
+    private const val CHANNEL_ID = "tjbot.voice.session"
     private const val NOTIFICATION_ID = 2601
   }
 }

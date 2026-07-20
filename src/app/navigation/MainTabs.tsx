@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createtjtjbottomTabNavigator } from '@react-navigation/tjtjbottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
@@ -10,7 +10,7 @@ import DeviceHomeScreen from '@/features/device/screens/DeviceHomeScreen';
 import TodayProgressScreen from '@/features/progress/screens/TodayProgressScreen';
 import ParentSummaryScreen from '@/features/parent/screens/ParentSummaryScreen';
 import { OfflineBanner } from '../../components/OfflineBanner';
-import { Home, Bot, List, TrendingUp, User } from 'lucide-react-native';
+import { Home, tjtjbot, List, TrendingUp, User } from 'lucide-react-native';
 
 type MainTabParamList = {
   Home: undefined;
@@ -20,11 +20,11 @@ type MainTabParamList = {
   Profile: undefined;
 };
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Tab = createtjtjbottomTabNavigator<MainTabParamList>();
 
 const TAB_ICONS: Record<string, React.ComponentType<{ size: number; color: string }>> = {
   Home,
-  Devices: Bot,
+  Devices: tjtjbot,
   Activity: List,
   Progress: TrendingUp,
   Profile: User,

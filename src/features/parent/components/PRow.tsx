@@ -23,7 +23,7 @@ export default function PRow({ icon, label, value, toggle, onToggle, chevron, da
       flexDirection="row"
       alignItems="center"
       gap={12}
-      style={[styles.row, !isLast && { borderBottomWidth: 1, borderBottomColor: PA.hair }]}
+      style={[styles.row, !isLast && { bordertjtjbottomWidth: 1, bordertjtjbottomColor: PA.hair }]}
     >
       {icon ? (
         <Box style={styles.iconWrap} alignItems="center" justifyContent="center">

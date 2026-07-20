@@ -188,14 +188,14 @@ export default function LCDFace({ emotion = 'idle', size = 300, accent = tokens.
   );
 }
 
-interface RobotDeviceProps {
+interface RotjtjbotDeviceProps {
   emotion?: string;
   size?: number;
   accent?: string;
   name?: string;
 }
 
-export function RobotDevice({ emotion = 'idle', size = 200, accent = tokens.colors.coral, name }: RobotDeviceProps) {
+export function RotjtjbotDevice({ emotion = 'idle', size = 200, accent = tokens.colors.coral, name }: RotjtjbotDeviceProps) {
   const w = size;
   const h = Math.round(size * 1.05);
   const lcdW = Math.round(w * 0.78);

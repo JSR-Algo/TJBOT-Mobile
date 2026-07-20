@@ -53,13 +53,13 @@ const styles = StyleSheet.create({
   title: {
     ...theme.typography.h1,
     color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
+    margintjtjbottom: theme.spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
     ...theme.typography.body1,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.lg,
+    margintjtjbottom: theme.spacing.lg,
     textAlign: 'center',
   },
 });

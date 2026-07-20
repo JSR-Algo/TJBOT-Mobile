@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 62,
     paddingHorizontal: 18,
-    paddingBottom: 12,
+    paddingtjtjbottom: 12,
     gap: 14,
   },
   row: {

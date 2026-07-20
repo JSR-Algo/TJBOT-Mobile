@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -24,7 +24,7 @@ export default function FactoryResetScreen({ navigation }: Props) {
 
   if (step === 'warning') {
     return (
-      <DeviceShell title="Factory reset" onBack={() => navigation.navigate('MyRobotScreen')}>
+      <DeviceShell title="Factory reset" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
         <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
           <Box style={styles.dangerCircle} alignItems="center" justifyContent="center">
             <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={RM.danger} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -32,28 +32,28 @@ export default function FactoryResetScreen({ navigation }: Props) {
               <Circle cx={12} cy={12} r={9} />
             </Svg>
           </Box>
-          <Text fontWeight="600" style={styles.heading}>This will erase your Robot</Text>
+          <Text fontWeight="600" style={styles.heading}>This will erase your Rotjtjbot</Text>
           <Text style={styles.sub}>
-            Use this only if you're giving Robot to someone else, or troubleshooting with our support team.
+            Use this only if you're giving Rotjtjbot to someone else, or troubleshooting with our support team.
           </Text>
         </Box>
         <Box paddingHorizontal={16} paddingTop={24}>
           <Box style={styles.rowCard}>
-            <DeviceRow icon="🤖" title="Robot will forget your Wi-Fi" body="And the pairing with this app" />
+            <DeviceRow icon="🤖" title="Rotjtjbot will forget your Wi-Fi" body="And the pairing with this app" />
             <DeviceRow icon="📚" title="Courses will be removed" body="They stay in your library and re-download anytime" />
             <DeviceRow icon="🌱" title="Your child's progress is safe" body="Stored in your account, not on the device" />
-            <DeviceRow icon="🔄" title="Robot will restart" body="Setup takes about 5 minutes" />
+            <DeviceRow icon="🔄" title="Rotjtjbot will restart" body="Setup takes about 5 minutes" />
           </Box>
         </Box>
         <Box paddingHorizontal={16} paddingTop={18}>
           <Box style={styles.warningNote}>
             <Text fontWeight="600" style={{ color: '#7B2A1F', fontSize: 13 }}>Have you tried smaller fixes? </Text>
             <Text style={{ color: '#7B2A1F', fontSize: 13, lineHeight: 20 }}>
-              Restarting Robot or rejoining Wi-Fi often solves the problem without erasing anything.
+              Restarting Rotjtjbot or rejoining Wi-Fi often solves the problem without erasing anything.
             </Text>
           </Box>
         </Box>
-        <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+        <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
           <DeviceBigBtn secondary onClick={() => navigation.navigate('OfflineHelpScreen')}>Try smaller fixes first</DeviceBigBtn>
           <DeviceBigBtn danger onClick={() => setStep('gate')}>I understand · continue</DeviceBigBtn>
         </Box>
@@ -87,7 +87,7 @@ export default function FactoryResetScreen({ navigation }: Props) {
             {shake ? "Doesn't match. Try again." : 'This is just to keep little hands out.'}
           </Text>
         </Box>
-        <Box paddingHorizontal={24} paddingTop={30} paddingBottom={30}>
+        <Box paddingHorizontal={24} paddingTop={30} paddingtjtjbottom={30}>
           <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {KEYS.map((k, i) => {
               if (k === '') return <Box key={i} style={{ width: '30%' }} />;
@@ -110,9 +110,9 @@ export default function FactoryResetScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Last check" onBack={() => setStep('warning')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="gentle" size={150} accent="#FF6F61" />
-        <Text fontWeight="600" style={styles.heading}>Erase Robot ROB-2A8F?</Text>
-        <Text style={styles.sub}>Robot will sleep, forget Wi-Fi, and need to be paired again.</Text>
+        <RotjtjbotDevice emotion="gentle" size={150} accent="#FF6F61" />
+        <Text fontWeight="600" style={styles.heading}>Erase Rotjtjbot ROB-2A8F?</Text>
+        <Text style={styles.sub}>Rotjtjbot will sleep, forget Wi-Fi, and need to be paired again.</Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.rowCard}>
@@ -120,9 +120,9 @@ export default function FactoryResetScreen({ navigation }: Props) {
           <DeviceRow icon="⏱️" title="Takes about 90 seconds" />
         </Box>
       </Box>
-      <Box paddingHorizontal={20} paddingTop={30} paddingBottom={30} gap={10}>
-        <DeviceBigBtn danger onClick={() => navigation.navigate('MyRobotScreen')}>Yes, erase Robot</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRobotScreen')}>Cancel</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={30} paddingtjtjbottom={30} gap={10}>
+        <DeviceBigBtn danger onClick={() => navigation.navigate('MyRotjtjbotScreen')}>Yes, erase Rotjtjbot</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate('MyRotjtjbotScreen')}>Cancel</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

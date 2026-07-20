@@ -39,6 +39,6 @@ export async function getShippingStatus(_orderId: string): Promise<ShippingStatu
   throw new Error('not implemented');
 }
 
-export async function activateRobot(_deviceId: string): Promise<void> {
+export async function activateRotjtjbot(_deviceId: string): Promise<void> {
   throw new Error('not implemented');
 }

@@ -1,4 +1,4 @@
-export interface RobotStatus {
+export interface RotjtjbotStatus {
   id: string;
   name: string;
   online: boolean;
@@ -24,7 +24,7 @@ export interface SupportInfo {
   supportEmail: string;
 }
 
-export async function getRobotStatus(): Promise<RobotStatus> {
+export async function getRotjtjbotStatus(): Promise<RotjtjbotStatus> {
   throw new Error('not implemented');
 }
 

@@ -1,5 +1,5 @@
 /**
- * Canonical Vietnamese utterance corpus for TBOT realtime-voice benchmarks.
+ * Canonical Vietnamese utterance corpus for tjbot realtime-voice benchmarks.
  *
  * Purpose: lock in a reviewable, extensible list of Vietnamese phrases that
  * future on-device runs can replay against Gemini Live to measure WER.

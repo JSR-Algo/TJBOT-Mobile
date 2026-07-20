@@ -1,13 +1,13 @@
 export type RootStackParamList = {
-  // auth (tbot-design flow only)
+  // auth (tjbot-design flow only)
   LoginScreen: undefined;
   LoginErrorScreen: undefined;
   ChildProfileScreen: undefined;
 
-  // onboarding (tbot-design flow only — kid intro)
+  // onboarding (tjbot-design flow only — kid intro)
   // TODO(POST-PR5-PARENT-ONBOARDING-RE-IMPLEMENTATION):
   // re-implement CoppaConsent/HouseholdCreate/AddChild/InterestSetup/
-  // DeviceSetupIntro/VoiceTest under tbot-design design language before
+  // DeviceSetupIntro/VoiceTest under tjbot-design design language before
   // legal sign-off for under-13 users.
   SplashScreen: undefined;
   WelcomeScreen: undefined;
@@ -39,8 +39,8 @@ export type RootStackParamList = {
   CourseCompleteScreen: undefined | { courseId?: string };
   CourseLockedScreen: undefined | { courseId?: string };
   NeedsSyncScreen: undefined | { courseId?: string };
-  SendToRobotScreen: undefined | { courseId?: string };
-  RobotReadyScreen: undefined | { courseId?: string };
+  SendToRotjtjbotScreen: undefined | { courseId?: string };
+  RotjtjbotReadyScreen: undefined | { courseId?: string };
   RunningScreen: undefined | { courseId?: string };
   CompanionScreen: undefined;
 
@@ -62,9 +62,9 @@ export type RootStackParamList = {
   ConnectingScreen: undefined;
   GreetingScreen: undefined;
   LessonReadyScreen: undefined;
-  RobotListeningScreen: undefined;
+  RotjtjbotListeningScreen: undefined;
   UserSpeakingScreen: undefined;
-  RobotSpeakingScreen: undefined;
+  RotjtjbotSpeakingScreen: undefined;
   ThinkingScreen: undefined;
   ActivityIntroScreen: undefined | { activityId?: string };
   ActivityDoneScreen: undefined | { activityId?: string };
@@ -123,14 +123,14 @@ export type RootStackParamList = {
   LCDLessonTurnScreen: undefined;
   LCDLibraryScreen: undefined;
 
-  // robot-mgmt
-  MyRobotScreen: undefined;
-  RobotStatusScreen: undefined;
-  RobotBatteryScreen: undefined;
-  RobotStorageScreen: undefined;
-  RobotFirmwareScreen: undefined;
-  RobotWifiScreen: undefined;
-  RobotSoundScreen: undefined;
+  // rotjtjbot-mgmt
+  MyRotjtjbotScreen: undefined;
+  RotjtjbotStatusScreen: undefined;
+  RotjtjbotBatteryScreen: undefined;
+  RotjtjbotStorageScreen: undefined;
+  RotjtjbotFirmwareScreen: undefined;
+  RotjtjbotWifiScreen: undefined;
+  RotjtjbotSoundScreen: undefined;
   MicTestScreen: undefined;
   SpeakerTestScreen: undefined;
   FactoryResetScreen: undefined;

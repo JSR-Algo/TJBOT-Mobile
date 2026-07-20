@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * TBOT Mobile E2E Test Script
+ * tjbot Mobile E2E Test Script
  * Simulates: signup → consent → onboarding → interaction
  *
  * Usage:
@@ -12,14 +12,14 @@ const http = require('http');
 const https = require('https');
 
 const RAW_URL = process.argv.find((a) => a.startsWith('--url='))?.split('=')[1]
-  || process.env.TBOT_API_URL
-  || 'http://tbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com';
+  || process.env.tjbot_API_URL
+  || 'http://tjbot-staging-alb-81759857.ap-southeast-1.elb.amazonaws.com';
 
 // Backend uses global prefix /v1
 const BASE_URL = RAW_URL.endsWith('/v1') ? RAW_URL.slice(0, -3) : RAW_URL;
 const API = `${BASE_URL}/v1`;
 
-const AI_URL = process.env.TBOT_AI_URL
+const AI_URL = process.env.tjbot_AI_URL
   || BASE_URL.replace(':3000', ':3001') + '/api/ai';
 
 let passed = 0;
@@ -102,11 +102,11 @@ function assert(condition, message) {
 }
 
 async function run() {
-  console.log('\n🧪 TBOT Mobile E2E Test\n');
+  console.log('\n🧪 tjbot Mobile E2E Test\n');
   console.log(`  API: ${BASE_URL}`);
   console.log(`  AI:  ${AI_URL}\n`);
 
-  const email = `e2e-mobile-${Date.now()}@test.tbot.io`;
+  const email = `e2e-mobile-${Date.now()}@test.tjbot.io`;
   const password = 'TestPass123!';
   let accessToken = '';
   let householdId = '';
@@ -232,13 +232,13 @@ async function run() {
     // STT expects multipart/form-data in prod, but in simulation mode accepts any
     const res = await request('POST', `${AI_URL}/v1/stt/transcribe`,
       { audio: 'mock_audio_data', language: 'en' });
-    // Accept 200 or 422 (form validation in prod mode) — both mean the service is reachable
+    // Accept 200 or 422 (form validation in prod mode) — tjtjboth mean the service is reachable
     assert(res.status < 500, `AI service returned ${res.status} — service may be down`);
   });
 
-  await softStep('POST /v1/llm/chat (TBOT response)', async () => {
+  await softStep('POST /v1/llm/chat (tjbot response)', async () => {
     const res = await request('POST', `${AI_URL}/v1/llm/chat`, {
-      message: 'Hello TBOT! Can you say something?',
+      message: 'Hello tjbot! Can you say something?',
       session_id: `e2e-${Date.now()}`,
     });
     assert(res.status === 200, `Expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
@@ -249,7 +249,7 @@ async function run() {
   await softStep('POST /learning/children/:id/interactions (persist)', async () => {
     if (!childId) { throw new Error('No child ID — skipping'); }
     const res = await request('POST', `${API}/learning/children/${childId}/interactions`, {
-      user_message: 'Hello TBOT!',
+      user_message: 'Hello tjbot!',
       ai_response: 'Hello! Great to meet you!',
       confidence_signal: 75,
     }, { Authorization: `Bearer ${accessToken}` });

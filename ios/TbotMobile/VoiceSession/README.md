@@ -7,7 +7,7 @@ Live realtime voice):
 |------|---------|
 | `VoiceSessionModule.swift` | Single-owner `AVAudioSession` manager. Mirrors the Android contract. No `AVAudioEngine` / `voiceProcessingIO` — those wait for MB-NATIVE-VOICE-003. |
 | `VoiceSessionModule.m` | `RCT_EXTERN_MODULE` bridge so React Native discovers the Swift class and exposes its methods to JS. |
-| `TbotMobile-Bridging-Header.h` | Template bridging header — required once the iOS target gains its first Swift file. |
+| `tjbotMobile-Bridging-Header.h` | Template bridging header — required once the iOS target gains its first Swift file. |
 | `README.md` | This file. |
 
 The files compile conceptually and match the JS contract in
@@ -18,7 +18,7 @@ build tooling — it requires a local Xcode install.
 ## Why this is separate from the committed files
 
 `ios/` is a prebuild output. Any modification to the Xcode project
-(`TbotMobile.xcodeproj/project.pbxproj`) is high-risk to hand-edit because
+(`tjbotMobile.xcodeproj/project.pbxproj`) is high-risk to hand-edit because
 it uses object IDs, refs, and phase ordering. The safer path is to add the
 files through Xcode's UI and commit the resulting `project.pbxproj` diff.
 
@@ -26,16 +26,16 @@ files through Xcode's UI and commit the resulting `project.pbxproj` diff.
 
 1. **Open the workspace.**
    ```sh
-   cd tbot-mobile/ios
-   open TbotMobile.xcworkspace
+   cd tjbot-mobile/ios
+   open tjbotMobile.xcworkspace
    ```
    (Not the `.xcodeproj` — the workspace includes CocoaPods targets.)
 
-2. **Add the three source files to the TbotMobile target.**
-   - In the project navigator, right-click `TbotMobile/` → *Add Files to "TbotMobile"…*
+2. **Add the three source files to the tjbotMobile target.**
+   - In the project navigator, right-click `tjbotMobile/` → *Add Files to "tjbotMobile"…*
    - Select `VoiceSession/VoiceSessionModule.swift` and
      `VoiceSession/VoiceSessionModule.m`.
-   - In the dialog: **Targets: ✓ TbotMobile** (uncheck any other targets),
+   - In the dialog: **Targets: ✓ tjbotMobile** (uncheck any other targets),
      *Copy items if needed* off (files are already on disk).
    - Click **Add**.
 
@@ -44,28 +44,28 @@ files through Xcode's UI and commit the resulting `project.pbxproj` diff.
    - Xcode prompts:
      > Would you like to configure an Objective-C bridging header?
      Click **Create Bridging Header**. Xcode creates
-     `TbotMobile/TbotMobile-Bridging-Header.h` and sets
+     `tjbotMobile/tjbotMobile-Bridging-Header.h` and sets
      `SWIFT_OBJC_BRIDGING_HEADER` automatically.
    - **Replace the auto-generated contents** with the contents of
-     `VoiceSession/TbotMobile-Bridging-Header.h` in this directory
+     `VoiceSession/tjbotMobile-Bridging-Header.h` in this directory
      (the four `#import <React/...>` lines). Do NOT move the bridging
      header file into the `VoiceSession/` subfolder — Xcode's
      `SWIFT_OBJC_BRIDGING_HEADER` path is resolved relative to the target
      root and the convention is to keep it adjacent to `AppDelegate.mm`.
 
 4. **Verify build settings.**
-   - `TbotMobile` target → *Build Settings* → search *bridging*.
-   - `Objective-C Bridging Header` = `TbotMobile/TbotMobile-Bridging-Header.h`.
+   - `tjbotMobile` target → *Build Settings* → search *bridging*.
+   - `Objective-C Bridging Header` = `tjbotMobile/tjbotMobile-Bridging-Header.h`.
    - `Build Libraries for Distribution` = **No** (Swift stdlib ABI stability
      is not needed; leaving this No avoids resilience overhead).
    - `Swift Language Version` = 5.0 or later (RN 0.83 tested with 5.9).
 
 5. **Build.**
    ```sh
-   cd tbot-mobile/ios
+   cd tjbot-mobile/ios
    pod install                     # no new pods; just refresh autolinking
    cd ..
-   npx expo run:ios                # or: xcodebuild -workspace ios/TbotMobile.xcworkspace -scheme TbotMobile
+   npx expo run:ios                # or: xcodebuild -workspace ios/tjbotMobile.xcworkspace -scheme tjbotMobile
    ```
 
 6. **Runtime smoke — confirm the module is reachable from JS.**
@@ -83,7 +83,7 @@ files through Xcode's UI and commit the resulting `project.pbxproj` diff.
 
 7. **Verify on a physical device.**
    - Start a voice session via `VoiceTestScreen` (onboarding).
-   - Watch `log stream --predicate 'eventMessage CONTAINS "[TbotVoice]"'`
+   - Watch `log stream --predicate 'eventMessage CONTAINS "[tjbotVoice]"'`
      in Console.app on the host mac — expect a JSON line per
      state/route/interruption event.
    - Test interruption: call the device from another phone, answer, hang
@@ -95,16 +95,16 @@ files through Xcode's UI and commit the resulting `project.pbxproj` diff.
 
 8. **Commit.**
    ```sh
-   git add ios/TbotMobile.xcodeproj/project.pbxproj \
-           ios/TbotMobile/TbotMobile-Bridging-Header.h \
-           ios/TbotMobile/VoiceSession/
+   git add ios/tjbotMobile.xcodeproj/project.pbxproj \
+           ios/tjbotMobile/tjbotMobile-Bridging-Header.h \
+           ios/tjbotMobile/VoiceSession/
    git commit -m "feat(mobile/ios): VoiceSessionModule — AVAudioSession owner for Gemini Live"
    ```
 
 ## Scope guard — what this module does NOT do
 
 - Does not create or manage `AVAudioEngine`. That belongs to
-  MB-NATIVE-VOICE-003 (mic) and 004 (playback), and both wait on the
+  MB-NATIVE-VOICE-003 (mic) and 004 (playback), and tjtjboth wait on the
   voiceProcessingIO spike documented in the plan.
 - Does not request microphone permission — that still flows through
   `expo-audio`'s `requestRecordingPermissionsAsync()` in

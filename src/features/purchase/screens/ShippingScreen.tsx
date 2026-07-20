@@ -9,7 +9,7 @@ import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
-import RobotHero from '../components/RobotHero';
+import RotjtjbotHero from '../components/RotjtjbotHero';
 import PRChip from '../components/PRChip';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShippingScreen'>;
@@ -24,10 +24,10 @@ const STEPS = [
 
 export default function ShippingScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate('OrderConfirmScreen')}>
+    <DeviceShell title="Rotjtjbot is on its way" onBack={() => navigation.navigate('OrderConfirmScreen')}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.trackTile}>
-          <RobotHero size={84} accent="#FF6F61" halo={false} />
+          <RotjtjbotHero size={84} accent="#FF6F61" halo={false} />
           <Box flex={1}>
             <PRChip color="#8A6A12" bg="#FFF4D9">Arriving Wed, Apr 24</PRChip>
             <Text fontWeight="600" style={styles.orderNum}>Order #TB-48217</Text>
@@ -54,7 +54,7 @@ export default function ShippingScreen({ navigation }: Props) {
               </Box>
               {i < STEPS.length - 1 && <Box style={[styles.line, s.done && styles.lineDone]} />}
             </Box>
-            <Box flex={1} paddingBottom={14}>
+            <Box flex={1} paddingtjtjbottom={14}>
               <Text fontWeight="600" style={[styles.stepTitle, !s.done && !s.active && styles.stepTitleFaint]}>{s.t}</Text>
               {s.s ? <Text style={styles.stepSub}>{s.s}</Text> : null}
             </Box>
@@ -69,7 +69,7 @@ export default function ShippingScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('ArrivedScreen')}>Mark as arrived (demo)</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('DeviceHomeScreen')}>Back to home</DeviceBigBtn>
       </Box>

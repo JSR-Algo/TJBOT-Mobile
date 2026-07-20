@@ -13,8 +13,8 @@ import PRStepTab from '../components/PRStepTab';
 type Props = NativeStackScreenProps<RootStackParamList, 'HowItWorksScreen'>;
 
 const STEPS = [
-  { n: 1, t: 'Robot talks and listens',       b: 'A short greeting, a question, a game. Robot speaks with warmth and waits patiently.', emo: 'speak' },
-  { n: 2, t: 'Your child practices speaking', b: 'They answer out loud. Robot celebrates effort, gently revisits tricky words.', emo: 'listen' },
+  { n: 1, t: 'Rotjtjbot talks and listens',       b: 'A short greeting, a question, a game. Rotjtjbot speaks with warmth and waits patiently.', emo: 'speak' },
+  { n: 2, t: 'Your child practices speaking', b: 'They answer out loud. Rotjtjbot celebrates effort, gently revisits tricky words.', emo: 'listen' },
   { n: 3, t: 'You see a calm summary',        b: 'Words your child played with today. No transcripts, no recordings.', emo: 'happy' },
 ];
 
@@ -43,7 +43,7 @@ export default function HowItWorksScreen({ navigation }: Props) {
         ))}
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
         <DeviceBigBtn onClick={() => navigation.navigate('IncludedScreen')}>What's included</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate('PurchaseIntroScreen')}>Back</DeviceBigBtn>
       </Box>

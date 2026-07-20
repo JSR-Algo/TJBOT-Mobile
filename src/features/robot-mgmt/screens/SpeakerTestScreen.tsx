@@ -18,12 +18,12 @@ type Played = 'chime' | 'voice' | null;
 export default function SpeakerTestScreen({ navigation }: Props) {
   const [played, setPlayed] = React.useState<Played>(null);
   return (
-    <DeviceShell title="Speaker test" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Speaker test" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <Box style={styles.lcdWrap}>
           <LCDFace emotion={played ? 'happy' : 'idle'} size={140} accent="#FF6F61" />
         </Box>
-        <Text fontWeight="600" style={styles.heading}>Can you hear Robot?</Text>
+        <Text fontWeight="600" style={styles.heading}>Can you hear Rotjtjbot?</Text>
         <Text style={styles.sub}>Tap a sound to play it at the current volume (6 of 10).</Text>
       </Box>
 
@@ -37,7 +37,7 @@ export default function SpeakerTestScreen({ navigation }: Props) {
           </Box>
           <Box flex={1}>
             <Text fontWeight="600" style={styles.soundTitle}>Soft chime</Text>
-            <Text style={styles.soundSub}>Robot's "lesson starting" sound</Text>
+            <Text style={styles.soundSub}>Rotjtjbot's "lesson starting" sound</Text>
           </Box>
           <Svg width={22} height={22} viewBox="0 0 24 24" fill={RM.accent}><Path d="M8 5v14l11-7z" /></Svg>
         </TouchableOpacity>
@@ -50,7 +50,7 @@ export default function SpeakerTestScreen({ navigation }: Props) {
             <Text style={{ fontSize: 20 }}>🎤</Text>
           </Box>
           <Box flex={1}>
-            <Text fontWeight="600" style={styles.soundTitle}>Robot's voice</Text>
+            <Text fontWeight="600" style={styles.soundTitle}>Rotjtjbot's voice</Text>
             <Text style={styles.soundSub}>"Hello! I'm so glad you're here."</Text>
           </Box>
           <Svg width={22} height={22} viewBox="0 0 24 24" fill={RM.good}><Path d="M8 5v14l11-7z" /></Svg>
@@ -59,14 +59,14 @@ export default function SpeakerTestScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="🔊" title="Adjust volume" body="Currently 6 of 10" onClick={() => navigation.navigate('RobotSoundScreen')} />
-          <DeviceRow icon="📐" title="Place Robot in the open" body="Not in a drawer or under a blanket" />
+          <DeviceRow icon="🔊" title="Adjust volume" body="Currently 6 of 10" onClick={() => navigation.navigate('RotjtjbotSoundScreen')} />
+          <DeviceRow icon="📐" title="Place Rotjtjbot in the open" body="Not in a drawer or under a blanket" />
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate('MyRobotScreen')}>I can hear Robot</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate('SupportScreen')}>Robot sounds quiet or muffled</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30} gap={10}>
+        <DeviceBigBtn onClick={() => navigation.navigate('MyRotjtjbotScreen')}>I can hear Rotjtjbot</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate('SupportScreen')}>Rotjtjbot sounds quiet or muffled</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

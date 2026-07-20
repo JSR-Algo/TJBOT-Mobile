@@ -3,11 +3,11 @@
  *
  * Re-declares the Info.plist and AndroidManifest changes that currently
  * live as in-place edits in:
- *   - ios/TbotMobile/Info.plist
+ *   - ios/tjbotMobile/Info.plist
  *   - android/app/src/main/AndroidManifest.xml
  *
  * Purpose: make those changes survive a future `npx expo prebuild --clean`.
- * Without this plugin, a clean prebuild regenerates both files from Expo
+ * Without this plugin, a clean prebuild regenerates tjtjboth files from Expo
  * defaults and wipes the voice-stack configuration.
  *
  * Design contract:

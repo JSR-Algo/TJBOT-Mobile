@@ -19,7 +19,7 @@ type DrainListener = (evt: {
 }) => void;
 
 // Listener store is shared between the jest.mock factory (which runs via
-// babel-hoist) and the test scope. Stash on globalThis so both sides see the
+// babel-hoist) and the test scope. Stash on globalThis so tjtjboth sides see the
 // same reference regardless of module-isolation mode.
 interface FakeRnState {
   listeners: Record<string, DrainListener[]>;

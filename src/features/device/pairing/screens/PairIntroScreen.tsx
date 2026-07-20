@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -12,17 +12,17 @@ import { DV } from '@/components/Device-tokens';
 type Props = NativeStackScreenProps<RootStackParamList, 'PairIntroScreen'>;
 
 const STEPS = [
-  { n: '1', t: 'Plug in or use a charged Robot' },
+  { n: '1', t: 'Plug in or use a charged Rotjtjbot' },
   { n: '2', t: 'Hold the top button until it chimes' },
-  { n: '3', t: 'Place Robot within 1–2 m of your phone' },
+  { n: '3', t: 'Place Rotjtjbot within 1–2 m of your phone' },
 ] as const;
 
 export default function PairIntroScreen({ navigation }: Props) {
   return (
-    <DeviceShell title="Turn on Robot" onBack={() => navigation.navigate('PairAddScreen')}>
+    <DeviceShell title="Turn on Rotjtjbot" onBack={() => navigation.navigate('PairAddScreen')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="charging" size={180} accent={DV.accent} />
-        <Text fontWeight="600" style={styles.heading}>Power on your Robot</Text>
+        <RotjtjbotDevice emotion="charging" size={180} accent={DV.accent} />
+        <Text fontWeight="600" style={styles.heading}>Power on your Rotjtjbot</Text>
         <Text style={styles.sub}>
           Hold the button on top for 2 seconds. You'll hear a chime and see a friendly face when it's ready.
         </Text>
@@ -37,8 +37,8 @@ export default function PairIntroScreen({ navigation }: Props) {
           </Box>
         ))}
       </Box>
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn onClick={() => navigation.navigate('PairSearchScreen')}>My Robot is on</DeviceBigBtn>
+      <Box paddingHorizontal={20} paddingTop={24} paddingtjtjbottom={30}>
+        <DeviceBigBtn onClick={() => navigation.navigate('PairSearchScreen')}>My Rotjtjbot is on</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

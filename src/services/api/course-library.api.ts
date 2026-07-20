@@ -20,7 +20,7 @@ export interface CourseDetail {
   previewUrl: string | null;
 }
 
-export interface RobotSyncStatus {
+export interface RotjtjbotSyncStatus {
   courseId: string;
   synced: boolean;
   lastSyncAt: string | null;
@@ -42,10 +42,10 @@ export async function unlockCourse(_courseId: string): Promise<void> {
   throw new Error('not implemented');
 }
 
-export async function sendCourseToRobot(_courseId: string): Promise<void> {
+export async function sendCourseToRotjtjbot(_courseId: string): Promise<void> {
   throw new Error('not implemented');
 }
 
-export async function getRobotSyncStatus(_courseId: string): Promise<RobotSyncStatus> {
+export async function getRotjtjbotSyncStatus(_courseId: string): Promise<RotjtjbotSyncStatus> {
   throw new Error('not implemented');
 }

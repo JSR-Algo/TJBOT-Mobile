@@ -1,12 +1,12 @@
 //
 //  VoiceSessionModuleTests.swift
-//  TbotMobileTests — behavioral tests for the AVAudioSession configuration
-//  that `ios/TbotMobile/VoiceSession/VoiceSessionModule.swift` applies on
+//  tjbotMobileTests — behavioral tests for the AVAudioSession configuration
+//  that `ios/tjbotMobile/VoiceSession/VoiceSessionModule.swift` applies on
 //  `startSession()`.
 //
-//  These tests do NOT import TbotMobile directly (the module references
+//  These tests do NOT import tjbotMobile directly (the module references
 //  React headers through the app's bridging header, which the test target
-//  does not currently inherit — see TbotMobileTests/README.md). Instead
+//  does not currently inherit — see tjbotMobileTests/README.md). Instead
 //  they exercise AVAudioSession / AVAudioEngine at the same call sites
 //  and with the same arguments the module uses, proving the platform
 //  contract the module relies on still holds on the device under test.

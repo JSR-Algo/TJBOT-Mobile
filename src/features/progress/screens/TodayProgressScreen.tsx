@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation/routes';
-import Robot from '@/design-system/components/Robot';
+import Rotjtjbot from '@/design-system/components/Rotjtjbot';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
@@ -23,17 +23,17 @@ export default function TodayProgressScreen({ navigation }: Props) {
         subtitle="Today"
         title="You practiced speaking!"
       />
-      <Box paddingHorizontal={24} paddingTop={4} paddingBottom={14} alignItems="center">
-        <Robot emotion="happy" size={170} />
+      <Box paddingHorizontal={24} paddingTop={4} paddingtjtjbottom={14} alignItems="center">
+        <Rotjtjbot emotion="happy" size={170} />
       </Box>
 
-      <Box paddingHorizontal={18} paddingBottom={14} flexDirection="row" gap={10}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={14} flexDirection="row" gap={10}>
         <StatChip icon="🎤" value="8" label="speaking turns" color="#FF6F61" />
         <StatChip icon="📚" value="1" label="lesson done" color="#6CE2B6" />
         <StatChip icon="⭐" value="12" label="stars today" color="#FFC857" />
       </Box>
 
-      <Box paddingHorizontal={18} paddingBottom={14}>
+      <Box paddingHorizontal={18} paddingtjtjbottom={14}>
         <Box style={styles.weekCard}>
           <Text fontWeight="800" style={styles.weekTitle}>This week</Text>
           <Box flexDirection="row" justifyContent="space-between" alignItems="flex-end" gap={8} style={{ height: 90 }}>
@@ -57,7 +57,7 @@ export default function TodayProgressScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28} gap={10}>
+      <Box paddingHorizontal={24} paddingTop={8} paddingtjtjbottom={28} gap={10}>
         <PrimaryCTA onPress={() => navigation.navigate('HomeHubScreen')} color="#FF6F61">Back home</PrimaryCTA>
       </Box>
     </PageScroll>
@@ -81,14 +81,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderRadius: 24, padding: 18,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6,
   },
-  statIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  statIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', margintjtjbottom: 4 },
   statValue: { fontSize: 30, color: '#2B2140', lineHeight: 32 },
   statLabel: { fontSize: 12, color: '#5C4F77', textAlign: 'center' },
   weekCard: {
     backgroundColor: '#fff', borderRadius: 22, padding: 18,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6,
   },
-  weekTitle: { fontSize: 16, color: '#2B2140', marginBottom: 10 },
+  weekTitle: { fontSize: 16, color: '#2B2140', margintjtjbottom: 10 },
   bar: { width: '70%', borderRadius: 8 },
   streak: { marginTop: 10, fontSize: 13, color: '#5C4F77' },
 });

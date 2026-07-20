@@ -71,7 +71,7 @@ import * as Sentry from '@sentry/react-native';
 import { startVoiceTelemetry, stopVoiceTelemetry } from '../../src/services/observability/voice-telemetry';
 
 // Pull the mock fn created inside the factory out via the exposed
-// __mockBreadcrumb property — both test and source see the same module
+// __mockBreadcrumb property — tjtjboth test and source see the same module
 // namespace, so this is the same function reference.
 const mockAddBreadcrumb = (Sentry as unknown as { __mockBreadcrumb: jest.Mock }).__mockBreadcrumb;
 

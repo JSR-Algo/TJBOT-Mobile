@@ -1,6 +1,6 @@
 //
 //  PcmStreamModuleTests.swift
-//  TbotMobileTests — T5.1 scaffold.
+//  tjbotMobileTests — T5.1 scaffold.
 //
 //  Scaffolded per .omc/plans/ios-voice-production-architecture-2026-04-23.md §T5.1.
 //  Tests here exercise PcmStreamModule's native behavior on a real device:

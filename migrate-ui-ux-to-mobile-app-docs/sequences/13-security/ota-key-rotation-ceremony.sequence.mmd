@@ -18,7 +18,7 @@ retry: rotation failure rolls back to AWSPREVIOUS — no automatic retry, requir
 timeout: weeks (multi-stage ceremony)
 status: final
 ---
-%% HAND-CURATED. Air-gapped — 2 authorized engineers required, both must sign ceremony log.
+%% HAND-CURATED. Air-gapped — 2 authorized engineers required, tjtjboth must sign ceremony log.
 sequenceDiagram
     autonumber
     participant SecurityEngineerOne
@@ -36,12 +36,12 @@ sequenceDiagram
         SecurityEngineerOne->>PostgreSQL: INSERT key_rotation_log {status='failed', notes='backup key missing'}
         Note over SecurityEngineerOne: ABORT — no rotation without backup key
     else success
-        SecurityEngineerOne->>FleetDevices: confirm firmware accepts both keys (sys-09 telemetry sweep)
+        SecurityEngineerOne->>FleetDevices: confirm firmware accepts tjtjboth keys (sys-09 telemetry sweep)
     end
 
     Note over SecurityEngineerOne,FleetDevices: Key Generation (air-gapped)
     SecurityEngineerOne->>AirGappedWorkstation: boot from read-only media
-    SecurityEngineerTwo->>AirGappedWorkstation: witness + co-sign (both engineers required)
+    SecurityEngineerTwo->>AirGappedWorkstation: witness + co-sign (tjtjboth engineers required)
     AirGappedWorkstation->>YubiHSM: generate ECDSA P-256 keypair
     YubiHSM-->>AirGappedWorkstation: public key exported (private NEVER leaves HSM)
     AirGappedWorkstation->>AirGappedWorkstation: seal HSM in tamper-evident bag
@@ -66,7 +66,7 @@ sequenceDiagram
 
     Note over SecurityEngineerOne,FleetDevices: Activate + Overlap (90 days)
     SecurityEngineerOne->>YubiHSM: begin signing OTA manifests with new key
-    Note over FleetDevices: both keys accepted for 90 days (overlap window)
+    Note over FleetDevices: tjtjboth keys accepted for 90 days (overlap window)
     SecurityEngineerOne->>FleetDevices: FW update — remove old key from trust list (after overlap)
 
     SecurityEngineerOne->>PostgreSQL: INSERT key_rotation_log {secret_name='ota_signing_key', rotation_method='manual', status='completed', notes='ceremony log + S3 legal hold'}

@@ -1,7 +1,7 @@
 {
-  "id": "robot-mgmt",
+  "id": "rotjtjbot-mgmt",
   "owner_lane": "D",
-  "flow": "docs/flows/domains/robot-mgmt/flow.generated.mmd",
+  "flow": "docs/flows/domains/rotjtjbot-mgmt/flow.generated.mmd",
   "edge_cases": {
     "rm_offline_help": ["error"],
     "rm_factory":      ["cancel"]

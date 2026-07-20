@@ -12,14 +12,14 @@ import Svg, { Circle, G, Path } from 'react-native-svg';
 import { tokens } from '@/design-system/tokens';
 import { Text } from '@/design-system/primitives/Text';
 
-export const ROBOT_EMOTES = [
+export const ROtjtjbot_EMOTES = [
   'idle', 'happy', 'greet', 'listen', 'think', 'speak',
   'success', 'gentle', 'curious', 'sleep', 'sad', 'worry',
 ] as const;
 
-type RobotEmotion = typeof ROBOT_EMOTES[number];
+type RotjtjbotEmotion = typeof ROtjtjbot_EMOTES[number];
 
-interface RobotConfig {
+interface RotjtjbotConfig {
   bodyAnim: 'bob' | 'bobStrong' | 'tilt' | 'think' | 'none';
   bobDuration?: number;
   mouth: 'smile-soft' | 'smile' | 'open-smile' | 'tiny' | 'talk' | 'big-smile' | 'tiny-o' | 'frown-soft' | 'flat';
@@ -35,7 +35,7 @@ interface RobotConfig {
   ear?: boolean;
 }
 
-const CONFIGS: Record<RobotEmotion, RobotConfig> = {
+const CONFIGS: Record<RotjtjbotEmotion, RotjtjbotConfig> = {
   idle:    { bodyAnim: 'bob',       bobDuration: 3600, mouth: 'smile-soft', eyes: 'open',    cheek: true,  antennaAnim: false,                           glow: 'soft' },
   happy:   { bodyAnim: 'bob',       bobDuration: 2400, mouth: 'smile',      eyes: 'open',    cheek: true,  antennaAnim: true,  antennaDuration: 2000,    glow: 'soft' },
   greet:   { bodyAnim: 'bobStrong',                    mouth: 'open-smile', eyes: 'open',    cheek: true,  antennaAnim: true,  antennaDuration: 1400,    glow: 'on',   wave: true },
@@ -50,18 +50,18 @@ const CONFIGS: Record<RobotEmotion, RobotConfig> = {
   worry:   { bodyAnim: 'tilt',                         mouth: 'flat',       eyes: 'gentle',  cheek: false, antennaAnim: false,                           glow: 'soft' },
 };
 
-interface RobotProps {
-  emotion?: RobotEmotion;
+interface RotjtjbotProps {
+  emotion?: RotjtjbotEmotion;
   size?: number;
   color?: string;
   accent?: string;
 }
 
-export default function Robot({ emotion = 'idle', size = 220, color, accent }: RobotProps) {
+export default function Rotjtjbot({ emotion = 'idle', size = 220, color, accent }: RotjtjbotProps) {
   const cfg = CONFIGS[emotion] ?? CONFIGS.idle;
   const W = size;
-  const bodyColor = color ?? tokens.colors.bot.body;
-  const bodyDark = tokens.colors.bot.body2;
+  const bodyColor = color ?? tokens.colors.tjtjbot.body;
+  const bodyDark = tokens.colors.tjtjbot.body2;
   const accentColor = accent ?? tokens.colors.coral;
 
   // Body animation
@@ -237,7 +237,7 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent }: R
                   top: '25%',
                   left: '25%',
                   right: '25%',
-                  bottom: '25%',
+                  tjtjbottom: '25%',
                   borderRadius: 999,
                   backgroundColor: accentColor,
                 }}
@@ -288,21 +288,21 @@ export default function Robot({ emotion = 'idle', size = 220, color, accent }: R
   );
 }
 
-function Eyes({ look, W }: { look: RobotConfig['eyes']; W: number }) {
+function Eyes({ look, W }: { look: RotjtjbotConfig['eyes']; W: number }) {
   const eyeBase: import('react-native').ViewStyle = {
     position: 'absolute',
     top: '34%',
     width: W * 0.13,
     height: W * 0.16,
     borderRadius: W * 0.08,
-    backgroundColor: tokens.colors.bot.eye,
+    backgroundColor: tokens.colors.tjtjbot.eye,
   };
 
   if (look === 'closed' || look === 'happy') {
     return (
       <Svg style={{ position: 'absolute', top: '38%', left: 0, right: 0 }} width={W * 0.78} height={W * 0.13}>
-        <Path d={look === 'closed' ? 'M 5 8 Q 15 2 25 8' : 'M 5 12 Q 15 2 25 12'} stroke={tokens.colors.bot.eye} strokeWidth={3} fill="none" strokeLinecap="round" />
-        <Path d={look === 'closed' ? 'M 35 8 Q 45 2 55 8' : 'M 35 12 Q 45 2 55 12'} stroke={tokens.colors.bot.eye} strokeWidth={3} fill="none" strokeLinecap="round" />
+        <Path d={look === 'closed' ? 'M 5 8 Q 15 2 25 8' : 'M 5 12 Q 15 2 25 12'} stroke={tokens.colors.tjtjbot.eye} strokeWidth={3} fill="none" strokeLinecap="round" />
+        <Path d={look === 'closed' ? 'M 35 8 Q 45 2 55 8' : 'M 35 12 Q 45 2 55 12'} stroke={tokens.colors.tjtjbot.eye} strokeWidth={3} fill="none" strokeLinecap="round" />
       </Svg>
     );
   }
@@ -338,11 +338,11 @@ function Eyes({ look, W }: { look: RobotConfig['eyes']; W: number }) {
   );
 }
 
-function Mouth({ kind, W }: { kind: RobotConfig['mouth']; W: number }) {
+function Mouth({ kind, W }: { kind: RotjtjbotConfig['mouth']; W: number }) {
   const mouthW = W * 0.38;
   const mouthBase: import('react-native').ViewStyle = {
     position: 'absolute',
-    bottom: '20%',
+    tjtjbottom: '20%',
     left: '31%',
     width: mouthW,
     height: W * 0.06,
@@ -351,26 +351,26 @@ function Mouth({ kind, W }: { kind: RobotConfig['mouth']; W: number }) {
 
   if (kind === 'smile' || kind === 'smile-soft' || kind === 'open-smile' || kind === 'big-smile') {
     return (
-      <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, height: W * 0.07, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]} />
+      <View style={[mouthBase, { backgroundColor: tokens.colors.tjtjbot.eye, height: W * 0.07, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]} />
     );
   }
   if (kind === 'talk') {
     return (
-      <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, height: W * 0.09 }]} />
+      <View style={[mouthBase, { backgroundColor: tokens.colors.tjtjbot.eye, height: W * 0.09 }]} />
     );
   }
   if (kind === 'tiny' || kind === 'tiny-o') {
     return (
-      <View style={[mouthBase, { width: W * 0.12, left: '44%', height: W * 0.06, backgroundColor: tokens.colors.bot.eye }]} />
+      <View style={[mouthBase, { width: W * 0.12, left: '44%', height: W * 0.06, backgroundColor: tokens.colors.tjtjbot.eye }]} />
     );
   }
   if (kind === 'frown-soft') {
     return (
-      <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, borderTopLeftRadius: 999, borderTopRightRadius: 999, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} />
+      <View style={[mouthBase, { backgroundColor: tokens.colors.tjtjbot.eye, borderTopLeftRadius: 999, borderTopRightRadius: 999, bordertjtjbottomLeftRadius: 0, bordertjtjbottomRightRadius: 0 }]} />
     );
   }
   return (
-    <View style={[mouthBase, { backgroundColor: tokens.colors.bot.eye, height: W * 0.04 }]} />
+    <View style={[mouthBase, { backgroundColor: tokens.colors.tjtjbot.eye, height: W * 0.04 }]} />
   );
 }
 
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 14,
     borderRadius: 999,
-    backgroundColor: tokens.colors.bot.cheek,
+    backgroundColor: tokens.colors.tjtjbot.cheek,
     opacity: 0.7,
   },
 });

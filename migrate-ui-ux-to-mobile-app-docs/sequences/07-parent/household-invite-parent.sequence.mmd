@@ -55,7 +55,7 @@ sequenceDiagram
         else new_invite
             IdentityService->>PostgreSQL: INSERT household_members {id: uuid(), household_id, email_hash: sha256(email), nickname, role: 'manager', status: 'pending_invite', invited_by_user_id: user_id, invited_at: now(), expires_at: now()+7days}
             PostgreSQL-->>IdentityService: invite_id
-            IdentityService-)SES: (async) email magic link tbot://household/accept?token={invite_token} to {email}
+            IdentityService-)SES: (async) email magic link tjbot://household/accept?token={invite_token} to {email}
             IdentityService-->>Gateway: 201 {invite_id, status: 'pending_invite', expires_at: now()+7days}
             Gateway-->>ParentApp: 201
         end

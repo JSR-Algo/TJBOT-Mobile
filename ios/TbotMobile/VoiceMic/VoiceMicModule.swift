@@ -1,6 +1,6 @@
 //
 //  VoiceMicModule.swift
-//  TbotMobile — sys-16 Gemini Live realtime voice mic capture.
+//  tjbotMobile — sys-16 Gemini Live realtime voice mic capture.
 //
 //  iOS counterpart to src/native/VoiceMic.ts (JS shim). Uses AVAudioEngine
 //  inputNode with `setVoiceProcessingEnabled(true)` — Apple's HW AEC path.
@@ -72,8 +72,8 @@ final class VoiceMicModule: RCTEventEmitter {
 
   // MARK: - State (serial queue guarded)
 
-  private let stateQueue = DispatchQueue(label: "com.tbot.voicemic.state")
-  private let log = OSLog(subsystem: "com.tbot.voice", category: "VoiceMic")
+  private let stateQueue = DispatchQueue(label: "com.tjbot.voicemic.state")
+  private let log = OSLog(subsystem: "com.tjbot.voice", category: "VoiceMic")
 
   private var running = false
   private var muted = false
@@ -97,7 +97,7 @@ final class VoiceMicModule: RCTEventEmitter {
   /// voiceMicEngineReady emit, reset to false in stopInternal() so each
   /// new start() cycle re-emits. Mirrors Android's `firstFrameEmitted`
   /// in VoiceMicModule.kt so the FSM `READY → LISTENING` transition
-  /// fires reliably on both platforms regardless of `seq` accounting.
+  /// fires reliably on tjtjboth platforms regardless of `seq` accounting.
   private var firstFrameEmitted = false
   /// Buffered engineReady payload for the case where the first frame
   /// arrives before any JS listener has registered. RCTEventEmitter
@@ -221,7 +221,7 @@ final class VoiceMicModule: RCTEventEmitter {
       let allowsHwAec = !Self.aecFallbackModels.contains(modelCode)
       let useHwAec = (aecRequested == "hw") && allowsHwAec
       self.effectiveAecMode = useHwAec ? "hw" : "off"
-      NSLog("[TbotVoice-debug] VoiceMic.start aecRequested=%@ useHwAec=%@ model=%@",
+      NSLog("[tjbotVoice-debug] VoiceMic.start aecRequested=%@ useHwAec=%@ model=%@",
             aecRequested, useHwAec ? "true" : "false", modelCode)
 
       // Cross-platform parity with Android's emitter (VoiceMicModule.kt
@@ -286,7 +286,7 @@ final class VoiceMicModule: RCTEventEmitter {
         // hook can render a meaningful message and a triage breadcrumb
         // is left in os_log.
         NSLog(
-          "[TbotVoice-debug] engine.start() silent no-op — likely mic permission denied or AVAudioSession interrupted"
+          "[tjbotVoice-debug] engine.start() silent no-op — likely mic permission denied or AVAudioSession interrupted"
         )
         os_log(
           "[A1] engineDidNotStart — engine.start() returned but isRunning=false (mic permission?)",
@@ -294,7 +294,7 @@ final class VoiceMicModule: RCTEventEmitter {
         )
         reject(
           "E_MIC_PERMISSION_OR_AUDIO_SESSION",
-          "Microphone unavailable — check Settings → TbotMobile → Microphone, then reopen the app",
+          "Microphone unavailable — check Settings → tjbotMobile → Microphone, then reopen the app",
           nil
         )
         return
@@ -335,7 +335,7 @@ final class VoiceMicModule: RCTEventEmitter {
         // permission). Same actionable error as the ensureStarted-time
         // catch — same code path the FSM expects.
         NSLog(
-          "[TbotVoice-debug] installInputTap rejected — engine died between start() and tap install"
+          "[tjbotVoice-debug] installInputTap rejected — engine died between start() and tap install"
         )
         os_log(
           "[A1] installInputTap engineDidNotStart — engine flipped to isRunning=false post-start",
@@ -343,7 +343,7 @@ final class VoiceMicModule: RCTEventEmitter {
         )
         reject(
           "E_MIC_PERMISSION_OR_AUDIO_SESSION",
-          "Microphone unavailable — check Settings → TbotMobile → Microphone, then reopen the app",
+          "Microphone unavailable — check Settings → tjbotMobile → Microphone, then reopen the app",
           nil
         )
         return
@@ -521,7 +521,7 @@ final class VoiceMicModule: RCTEventEmitter {
 
     Self.tapFireCount += 1
     if Self.tapFireCount == 1 || Self.tapFireCount % 50 == 0 {
-      NSLog("[TbotVoice-debug] tap_fire #%llu frames=%u rate=%f running=%@",
+      NSLog("[tjbotVoice-debug] tap_fire #%llu frames=%u rate=%f running=%@",
             Self.tapFireCount, frameLength, inputRate, self.running ? "true" : "false")
       os_log("[A1] tap_fire #%{public}llu frames=%{public}u rate=%{public}f running=%{public}@",
              log: self.log, type: .default,
@@ -631,7 +631,7 @@ final class VoiceMicModule: RCTEventEmitter {
       self.seq += 1
 
       if seqNow == 0 || seqNow % 50 == 0 {
-        NSLog("[TbotVoice-debug] emit #%llu hasListeners=%@ outBytes=%d",
+        NSLog("[tjbotVoice-debug] emit #%llu hasListeners=%@ outBytes=%d",
               seqNow, self.hasListeners ? "true" : "false", b64.count)
       }
 
@@ -730,14 +730,14 @@ final class VoiceMicModule: RCTEventEmitter {
 
     // Diagnostic heartbeat — every 4 ticks (= 2 s) emit a single NSLog line
     // with the state that distinguishes the 2026-04-23 A-E hypotheses.
-    // Console.app filter: `eventMessage CONTAINS "[TbotVoice-debug] diag"`.
+    // Console.app filter: `eventMessage CONTAINS "[tjbotVoice-debug] diag"`.
     diagTickCount += 1
     if diagTickCount % 4 == 0 {
       let lastAgeMs: Double = lastFrameAt.map {
         Date().timeIntervalSince($0) * 1000.0
       } ?? -1
       NSLog(
-        "[TbotVoice-debug] diag tick=%d running=%@ framesDelivered=%llu lastFrameAgeMs=%.0f seq=%llu muted=%@ aec=%@ engineRunning=%@ voiceProcessing=%@",
+        "[tjbotVoice-debug] diag tick=%d running=%@ framesDelivered=%llu lastFrameAgeMs=%.0f seq=%llu muted=%@ aec=%@ engineRunning=%@ voiceProcessing=%@",
         diagTickCount,
         running ? "true" : "false",
         framesDelivered,

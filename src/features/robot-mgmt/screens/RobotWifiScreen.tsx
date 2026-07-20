@@ -9,14 +9,14 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RobotWifiScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'RotjtjbotWifiScreen'>;
 
 const OTHERS = [['Casa-Guest', '—'], ['Linden 3B', '—'], ['Verizon-7K2', '—']] as const;
 
-export default function RobotWifiScreen({ navigation }: Props) {
+export default function RotjtjbotWifiScreen({ navigation }: Props) {
   const [showOthers, setShowOthers] = React.useState(false);
   return (
-    <DeviceShell title="Wi-Fi" onBack={() => navigation.navigate('MyRobotScreen')}>
+    <DeviceShell title="Wi-Fi" onBack={() => navigation.navigate('MyRotjtjbotScreen')}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard} flexDirection="row" gap={14} alignItems="center">
           <Box style={styles.wifiIcon} alignItems="center" justifyContent="center">
@@ -36,7 +36,7 @@ export default function RobotWifiScreen({ navigation }: Props) {
         <Box style={styles.rowCard}>
           <DeviceRow icon="📡" title="Signal strength" body="Excellent · −48 dBm" />
           <DeviceRow icon="⚡" title="Speed" body="Plenty for lessons" />
-          <DeviceRow icon="🌐" title="Robot's IP" body="192.168.1.42" />
+          <DeviceRow icon="🌐" title="Rotjtjbot's IP" body="192.168.1.42" />
         </Box>
       </Box>
 
@@ -59,9 +59,9 @@ export default function RobotWifiScreen({ navigation }: Props) {
         </Box>
       )}
 
-      <Box paddingHorizontal={16} paddingTop={18} paddingBottom={30}>
+      <Box paddingHorizontal={16} paddingTop={18} paddingtjtjbottom={30}>
         <Text style={styles.note}>
-          Robot needs Wi-Fi only during lessons. It doesn't browse, stream, or talk to anyone outside our service.
+          Rotjtjbot needs Wi-Fi only during lessons. It doesn't browse, stream, or talk to anyone outside our service.
         </Text>
       </Box>
     </DeviceShell>
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   connectedLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
   ssid: { fontSize: 18, color: RM.ink, marginTop: 2 },
   signalMeta: { fontSize: 12, color: RM.ink2, marginTop: 2 },
-  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   note: { fontSize: 12, color: RM.ink2, lineHeight: 20 },
 });

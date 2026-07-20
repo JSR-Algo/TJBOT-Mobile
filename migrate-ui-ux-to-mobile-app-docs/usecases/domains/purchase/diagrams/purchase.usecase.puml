@@ -1,14 +1,14 @@
-@startuml TBOT-Purchase
+@startuml tjbot-Purchase
 title Domain · purchase — hardware + subscription checkout funnel
 left to right direction
 
 actor Parent
 actor "Payment Provider" as Pay <<external>>
-actor "Robot Device" as Robot <<external>>
+actor "Rotjtjbot Device" as Rotjtjbot <<external>>
 
 package "purchase" {
   package "Discovery" {
-    usecase "View Robot Overview"   as UC_BUY_INTRO
+    usecase "View Rotjtjbot Overview"   as UC_BUY_INTRO
     usecase "View How It Works"     as UC_BUY_HOW
     usecase "View What's Included"  as UC_BUY_INC
     usecase "Review Privacy"        as UC_BUY_PRIV
@@ -25,8 +25,8 @@ package "purchase" {
     usecase "Track Shipping"         as UC_BUY_SHIP
   }
   package "Activation" {
-    usecase "Confirm Robot Arrived"  as UC_BUY_ARRIVED
-    usecase "Activate Robot"         as UC_BUY_ACTIVATE
+    usecase "Confirm Rotjtjbot Arrived"  as UC_BUY_ARRIVED
+    usecase "Activate Rotjtjbot"         as UC_BUY_ACTIVATE
     usecase "Add First Course"       as UC_BUY_FIRST
   }
 }
@@ -59,7 +59,7 @@ UC_BUY_ACTIVATE ..> UC_BUY_FIRST
 
 UC_BUY_APPLE    ..> Pay   : <<delegate>>
 UC_BUY_CARD     ..> Pay   : <<delegate>>
-UC_BUY_ACTIVATE ..> Robot : <<delegate>> (activation code)
+UC_BUY_ACTIVATE ..> Rotjtjbot : <<delegate>> (activation code)
 
 note top of UC_BUY_FIRST
   [exit] → course-library : UC_CL_ADDED | UC_CL_BROWSE

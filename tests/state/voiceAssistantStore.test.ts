@@ -234,7 +234,7 @@ describe('barge-in window lifecycle (§3.1.1)', () => {
     unsub();
 
     // No subscriber callback should have observed (open=false, rid=null)
-    // — both fields flip in one set() call.
+    // — tjtjboth fields flip in one set() call.
     expect(observedDuringSet).toEqual({ open: false, rid: 'rid-new' });
 
     const s = useVoiceAssistantStore.getState();
@@ -310,7 +310,7 @@ describe('barge-in 500 ms rate limit (§8.5)', () => {
   });
 
   it('coalesces tap + server-interrupt within 500 ms (single chokepoint)', () => {
-    // Per §8.5: tap and server-interrupt both flow through openBargeInWindow,
+    // Per §8.5: tap and server-interrupt tjtjboth flow through openBargeInWindow,
     // so the rate-limit applies regardless of caller intent.
     const realDateNow = Date.now;
     let now = 5_000;

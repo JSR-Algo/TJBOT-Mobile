@@ -32,8 +32,8 @@ describe('getApiBaseUrl resolution order', () => {
 
     jest.doMock('../../src/__env__', () => ({
       ENV: {
-        TBOT_API_URL: envApiUrl,
-        TBOT_AI_URL: '',
+        tjbot_API_URL: envApiUrl,
+        tjbot_AI_URL: '',
         EXPO_PUBLIC_GEMINI_LIVE_MODEL: '',
         EXPO_PUBLIC_SENTRY_DSN: '',
         EXPO_PUBLIC_POSTHOG_API_KEY: '',
@@ -62,14 +62,14 @@ describe('getApiBaseUrl resolution order', () => {
     return mod.getApiBaseUrl as () => string;
   }
 
-  it('explicit non-localhost ENV.TBOT_API_URL wins (with /v1 appended)', () => {
-    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.tbot.app' });
-    expect(get()).toBe('https://staging.tbot.app/v1');
+  it('explicit non-localhost ENV.tjbot_API_URL wins (with /v1 appended)', () => {
+    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.tjbot.app' });
+    expect(get()).toBe('https://staging.tjbot.app/v1');
   });
 
   it('preserves /v1 when explicit URL already has it', () => {
-    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.tbot.app/v1' });
-    expect(get()).toBe('https://staging.tbot.app/v1');
+    const get = loadGetApiBaseUrl({ envApiUrl: 'https://staging.tjbot.app/v1' });
+    expect(get()).toBe('https://staging.tjbot.app/v1');
   });
 
   it('treats literal http://localhost:3000 as "user forgot" and runs the auto-derive path', () => {
@@ -99,7 +99,7 @@ describe('getApiBaseUrl resolution order', () => {
       isDevice: true,
       dev: false,
     });
-    expect(get()).toBe('https://tbot-backend-8wmh.onrender.com/v1');
+    expect(get()).toBe('https://tjbot-backend-8wmh.onrender.com/v1');
   });
 
   it('iOS Simulator (Device.isDevice=false, OS=ios) returns 127.0.0.1:3000/v1', () => {
@@ -127,7 +127,7 @@ describe('getApiBaseUrl resolution order', () => {
       isDevice: true,
       dev: true,
     });
-    expect(get()).toBe('https://tbot-backend-8wmh.onrender.com/v1');
+    expect(get()).toBe('https://tjbot-backend-8wmh.onrender.com/v1');
   });
 
   it('scriptURL with localhost host is rejected (would not help on a real device)', () => {
@@ -137,7 +137,7 @@ describe('getApiBaseUrl resolution order', () => {
       isDevice: true,
       dev: true,
     });
-    expect(get()).toBe('https://tbot-backend-8wmh.onrender.com/v1');
+    expect(get()).toBe('https://tjbot-backend-8wmh.onrender.com/v1');
   });
 
   it('malformed scriptURL falls through gracefully', () => {
@@ -147,6 +147,6 @@ describe('getApiBaseUrl resolution order', () => {
       isDevice: true,
       dev: true,
     });
-    expect(get()).toBe('https://tbot-backend-8wmh.onrender.com/v1');
+    expect(get()).toBe('https://tjbot-backend-8wmh.onrender.com/v1');
   });
 });

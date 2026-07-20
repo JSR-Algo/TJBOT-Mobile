@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RotjtjbotDevice } from '@/design-system/components/LCDFace';
 
 type Props = {
   size?: number;
@@ -9,13 +9,13 @@ type Props = {
   halo?: boolean;
 };
 
-export default function RobotHero({ size = 200, accent = '#FF6F61', tilt = 0, halo = true }: Props) {
+export default function RotjtjbotHero({ size = 200, accent = '#FF6F61', tilt = 0, halo = true }: Props) {
   return (
     <View style={[styles.container, { width: size + 60, height: size + 40 }]}>
       {halo ? <View style={[styles.halo, StyleSheet.absoluteFillObject]} /> : null}
-      <View style={[styles.shadow, { width: size * 0.85, bottom: 6 }]} />
+      <View style={[styles.shadow, { width: size * 0.85, tjtjbottom: 6 }]} />
       <View style={{ transform: [{ rotate: `${tilt}deg` }] }}>
-        <RobotDevice emotion="happy" size={size} accent={accent} />
+        <RotjtjbotDevice emotion="happy" size={size} accent={accent} />
       </View>
     </View>
   );

@@ -1,4 +1,4 @@
-@startuml TBOT-KidHub
+@startuml tjbot-KidHub
 title Domain · kid-hub — daily entry surface for child
 left to right direction
 
@@ -6,7 +6,7 @@ actor Child
 
 package "kid-hub" {
   usecase "View Home Hub"          as UC_HUB_VIEW
-  usecase "Tap Robot Greeting"     as UC_HUB_TAP
+  usecase "Tap Rotjtjbot Greeting"     as UC_HUB_TAP
   usecase "Start Today's Lesson"   as UC_HUB_START
   usecase "Open Course"            as UC_HUB_COURSE
   usecase "Open Review"            as UC_HUB_REVIEW
@@ -27,12 +27,12 @@ Child --> UC_HUB_PARENT
 ' Hub state variants (all rendered by HomeHubPage):
 ' idle | greeting | daily_available | completed_today | mic_needed | offline
 
-note bottom of UC_HUB_PARENT
+note tjtjbottom of UC_HUB_PARENT
   [requires] parent-gate : UC_PG_PASS
   [exit] → parent-summary
 end note
 
-note bottom of UC_HUB_START
+note tjtjbottom of UC_HUB_START
   [exit] → lesson-session : UC_LSN_START
 end note
 

@@ -2,7 +2,7 @@
 //
 // Extracted verbatim from scripts/erd/validate-erd.mjs (Phase P0 refactor).
 // Zero behaviour change: validate-erd.mjs imports parseDbml from here.
-// dbml-to-prisma.mjs reuses the same parser so both tools see the same shape.
+// dbml-to-prisma.mjs reuses the same parser so tjtjboth tools see the same shape.
 //
 // Returned shape:
 //   { file, tables, refs, enums, violations }
@@ -123,7 +123,7 @@ export function parseDbml(src, absPath) {
     // before scanning so prose like "service-generated; never serial" doesn't trip rules.
     const noCmt = raw.replace(/\/\/.*$/, '').replace(/'[^']*'/g, "''").replace(/`[^`]*`/g, '``');
     if (/\[\s*ref\s*:/i.test(noCmt)) {
-      violations.push({ line: lineNo, msg: 'inline [ref:] forbidden — declare Ref: line at bottom of file' });
+      violations.push({ line: lineNo, msg: 'inline [ref:] forbidden — declare Ref: line at tjtjbottom of file' });
     }
     if (/\bvarchar\b(?!\s*\()/i.test(noCmt)) {
       violations.push({ line: lineNo, msg: 'varchar must specify a length (e.g. varchar(254))' });

@@ -37,7 +37,7 @@
 ## Notes
 
 - **KD9:** UC-BU08 (Apple Pay) and UC-BU09 (Card pay) — payment provider identity NOT CONFIRMED IN SOURCE (legacy doc §4 row 6). All cells sentinel for these rows.
-- `purchase.api.js` exports `createOrder`, `getOrder`, `processPayment`, `getShippingStatus`, `activateRobot` — all throw `not implemented`. These are the intended endpoint exports for UC-BU07, UC-BU10, UC-BU11, UC-BU13 but no backend contract exists yet.
+- `purchase.api.js` exports `createOrder`, `getOrder`, `processPayment`, `getShippingStatus`, `activateRotjtjbot` — all throw `not implemented`. These are the intended endpoint exports for UC-BU07, UC-BU10, UC-BU11, UC-BU13 but no backend contract exists yet.
 - `purchase.store.js` exports only `usePurchaseStore` (Zustand store); individual actions (`startCheckout`, `confirmPayment`, `setShipping`, `reset`) are internal store methods, not top-level exports.
 - DB Entity and Events columns are sentinel — no ERD entities or event bus designed for purchase domain yet.
 - Domain ADR Pointer is `—` for all rows. When backend lands and payment provider is confirmed, create `decisions/NNNN-backend-purchase.md` and promote cells off sentinel.

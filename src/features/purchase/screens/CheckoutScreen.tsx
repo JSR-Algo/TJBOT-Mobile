@@ -13,7 +13,7 @@ import PRStepTab from '../components/PRStepTab';
 type Props = NativeStackScreenProps<RootStackParamList, 'CheckoutScreen'>;
 
 const ORDER_ITEMS = [
-  { t: 'Robot device + Hello Friends course', s: 'Includes dock & cable',              p: '$149.00' },
+  { t: 'Rotjtjbot device + Hello Friends course', s: 'Includes dock & cable',              p: '$149.00' },
   { t: 'All Courses · monthly',               s: '7-day free trial · cancel anytime',  p: '$0.00' },
   { t: 'Shipping',                            s: 'Free · arrives in 3–5 business days', p: 'Free' },
 ];
@@ -68,7 +68,7 @@ export default function CheckoutScreen({ navigation }: Props) {
 
       <Text style={styles.legalNote}>30-day return · 2-year warranty · no auto-renew without notice</Text>
 
-      <Box paddingHorizontal={20} paddingTop={10} paddingBottom={30}>
+      <Box paddingHorizontal={20} paddingTop={10} paddingtjtjbottom={30}>
         <DeviceBigBtn onClick={() => navigation.navigate('OrderConfirmScreen')}>Place order · $149.00</DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -76,10 +76,10 @@ export default function CheckoutScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  sectionLabel: { fontSize: 11, color: PR.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  sectionLabel: { fontSize: 11, color: PR.ink3, textTransform: 'uppercase', letterSpacing: 0.5, margintjtjbottom: 8 },
   orderCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 14, padding: 14 },
   orderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, paddingVertical: 8 },
-  orderBorder: { borderBottomWidth: 1, borderBottomColor: PR.hair },
+  orderBorder: { bordertjtjbottomWidth: 1, bordertjtjbottomColor: PR.hair },
   orderTitle: { fontSize: 13, color: PR.ink },
   orderSub: { fontSize: 11, color: PR.ink2, marginTop: 2 },
   orderPrice: { fontSize: 14, color: PR.ink },

@@ -31,7 +31,7 @@ const SPEECH_ONSET_FRAMES = 2;
  * Default post-speech silence duration in ms before `silenceDetected` fires
  * and `AUDIO_END` is sent to the backend.
  *
- * Lowered from 600 → 350 ms by RM-06 (`.omc/plans/expressive-robot-companion-rewrite.md`
+ * Lowered from 600 → 350 ms by RM-06 (`.omc/plans/expressive-rotjtjbot-companion-rewrite.md`
  * §6, gap M7). 350 ms keeps the perceived-reaction budget under the ADR-011
  * `transcript_ms` p50 ≤ 350 ms target while still rejecting natural breath-pauses
  * inside a child sentence. Do not raise without re-running the latency-budget audit.

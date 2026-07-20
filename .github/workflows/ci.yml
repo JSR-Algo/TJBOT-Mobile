@@ -101,7 +101,7 @@ jobs:
         working-directory: ios
 
       - name: Build iOS simulator app
-        run: xcodebuild -workspace TbotMobile.xcworkspace -scheme TbotMobile -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' build
+        run: xcodebuild -workspace tjbotMobile.xcworkspace -scheme tjbotMobile -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' build
         working-directory: ios
 
   eas-config:

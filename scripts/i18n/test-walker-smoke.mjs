@@ -122,9 +122,9 @@ globalThis.document = {
   },
   querySelectorAll() { return []; },
 };
-globalThis.window = { __tbotLocales: undefined };
+globalThis.window = { __tjbotLocales: undefined };
 globalThis.MutationObserver = class { constructor(){} observe(){} disconnect(){} };
-// Load the bundle into the fake window.__tbotLocales
+// Load the bundle into the fake window.__tjbotLocales
 const bundleSrc = readFileSync(join(root, 'locales', 'bundle.js'), 'utf8');
 (new Function(bundleSrc)).call(globalThis);
 
@@ -133,9 +133,9 @@ const i18nSrc = readFileSync(join(root, 'i18n.js'), 'utf8');
 (new Function(i18nSrc)).call(globalThis);
 
 // Drive applyLang directly (boot is async via setTimeout — bypass).
-const tbot = globalThis.window.__tbot;
-if (!tbot || typeof tbot.setLang !== 'function') {
-  console.error('FAIL: window.__tbot.setLang not exposed by i18n.js');
+const tjbot = globalThis.window.__tjbot;
+if (!tjbot || typeof tjbot.setLang !== 'function') {
+  console.error('FAIL: window.__tjbot.setLang not exposed by i18n.js');
   process.exit(1);
 }
 
@@ -150,7 +150,7 @@ function assert(name, cond, detail = '') {
 {
   const div = elem('div', { 'data-persona': 'child' }, textNode('Continue'));
   body.appendChild(div);
-  tbot.setLang('vi');
+  tjbot.setLang('vi');
   const out = collectText(div);
   assert('AC3a — child persona resolves to "Tiếp tục nào"',
     out.includes('Tiếp tục nào'), `got=${JSON.stringify(out)}`);
@@ -161,7 +161,7 @@ function assert(name, cond, detail = '') {
 {
   const div = elem('div', { 'data-persona': 'parent' }, textNode('Continue'));
   body.appendChild(div);
-  tbot.setLang('vi');
+  tjbot.setLang('vi');
   const out = collectText(div);
   assert('AC3b — parent persona resolves to "Tiếp tục"',
     out.includes('Tiếp tục'), `got=${JSON.stringify(out)}`);
@@ -172,7 +172,7 @@ function assert(name, cond, detail = '') {
 {
   const div = elem('div', {}, textNode('Continue'));
   body.appendChild(div);
-  tbot.setLang('vi');
+  tjbot.setLang('vi');
   const out = collectText(div);
   assert('AC3c — missing persona falls back to parent',
     out.includes('Tiếp tục'), `got=${JSON.stringify(out)}`);
@@ -183,7 +183,7 @@ function assert(name, cond, detail = '') {
 {
   const div = elem('div', { 'data-persona': 'child' }, textNode('Start'));
   body.appendChild(div);
-  tbot.setLang('vi');
+  tjbot.setLang('vi');
   const out = collectText(div);
   assert('AC3d — string entry "Start" → "Bắt đầu" with persona=child',
     out.includes('Bắt đầu'), `got=${JSON.stringify(out)}`);
@@ -197,7 +197,7 @@ function assert(name, cond, detail = '') {
 {
   const div = elem('div', {}, textNode('7 · Continue'));
   body.appendChild(div);
-  tbot.setLang('vi');
+  tjbot.setLang('vi');
   const out = collectText(div).join('|');
   assert('AC7a — numbered prefix preserved, tail translated',
     /7\s*·\s*Tiếp tục/.test(out), `got=${out}`);
@@ -208,7 +208,7 @@ function assert(name, cond, detail = '') {
 {
   const div = elem('div', {}, textNode('Home · Today'));
   body.appendChild(div);
-  tbot.setLang('vi');
+  tjbot.setLang('vi');
   const out = collectText(div).join('|');
   assert('AC7b — "Home · Today" → "Trang chủ · Hôm nay" (each side translated)',
     out.includes('Trang chủ') && out.includes('Hôm nay'), `got=${out}`);
@@ -219,7 +219,7 @@ function assert(name, cond, detail = '') {
 {
   const div = elem('div', { 'data-persona': 'child' }, textNode('back'));
   body.appendChild(div);
-  tbot.setLang('vi');
+  tjbot.setLang('vi');
   const out = collectText(div);
   // vi.Back is {child: "Quay lại nhé", parent: "Quay lại"}
   assert('AC7c — case-insensitive match "back" → child translation',
@@ -227,17 +227,17 @@ function assert(name, cond, detail = '') {
   body.removeChild(div);
 }
 
-// AC8 — bilingual mode wraps text in span.tbot-bi with VI on top + EN below
+// AC8 — bilingual mode wraps text in span.tjbot-bi with VI on top + EN below
 {
   const div = elem('div', {}, textNode('Continue'));
   body.appendChild(div);
-  tbot.setLang('both');
+  tjbot.setLang('tjtjboth');
   // Find the wrapper
   const child = div.childNodes[0];
   const ok = child && child.nodeType === ELEMENT_NODE && child.tagName === 'SPAN'
-    && child.getAttribute('class') === 'tbot-bi'
+    && child.getAttribute('class') === 'tjbot-bi'
     && child.childNodes.length === 2;
-  assert('AC8 — bilingual mode produces span.tbot-bi with VI + EN children',
+  assert('AC8 — bilingual mode produces span.tjbot-bi with VI + EN children',
     ok, `child=${child && child.tagName}/${child && child.getAttribute && child.getAttribute('class')}/${child && child.childNodes.length}`);
   body.removeChild(div);
 }
@@ -247,7 +247,7 @@ function assert(name, cond, detail = '') {
 // sub-strings are in catalog so the runtime walker translates each side.
 {
   const cases = [
-    ['Robot · activated', /Robot · đã kích hoạt/],
+    ['Rotjtjbot · activated', /Rotjtjbot · đã kích hoạt/],
     ['● Online · all good', /● Trực tuyến · tất cả đều tốt/],
     ['v1.4.2 · update available', /v1\.4\.2 · có bản cập nhật/],
     ['Working · last test today', /Đang hoạt động · lần kiểm tra gần nhất hôm nay/],
@@ -256,7 +256,7 @@ function assert(name, cond, detail = '') {
   for (const [input, expected] of cases) {
     const div = elem('div', {}, textNode(input));
     body.appendChild(div);
-    tbot.setLang('vi');
+    tjbot.setLang('vi');
     const out = collectText(div).join('|');
     assert(`11.1.b dot-split: "${input}"`, expected.test(out), `got=${out}`);
     body.removeChild(div);

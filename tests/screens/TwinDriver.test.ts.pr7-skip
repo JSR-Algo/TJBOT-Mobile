@@ -1,6 +1,6 @@
 // Unit tests for TwinDriver — HAL stub implementations on mobile.
 //
-// Plan: expressive-robot-companion-rewrite §6 RM-12.
+// Plan: expressive-rotjtjbot-companion-rewrite §6 RM-12.
 // AC: "stub renders to twin; unit test".
 
 import {
@@ -8,11 +8,11 @@ import {
   TwinHal,
   TwinLedDriver,
   TwinMotionDriver,
-  TwinRobotEventEmitter,
-} from "../../src/screens/robot-demo/TwinDriver";
+  TwinRotjtjbotEventEmitter,
+} from "../../src/screens/rotjtjbot-demo/TwinDriver";
 import { Expression } from "../../src/contracts/expression";
 import { Motion } from "../../src/contracts/motion";
-import { RobotInteractionState } from "../../src/contracts/robot-state";
+import { RotjtjbotInteractionState } from "../../src/contracts/rotjtjbot-state";
 
 describe("TwinDisplayDriver", () => {
   test("records every setExpression into history and emits to listeners", async () => {
@@ -94,9 +94,9 @@ describe("TwinLedDriver", () => {
   });
 });
 
-describe("TwinRobotEventEmitter", () => {
+describe("TwinRotjtjbotEventEmitter", () => {
   test("emitExpression and emitMotion are captured in the log", () => {
-    const emitter = new TwinRobotEventEmitter();
+    const emitter = new TwinRotjtjbotEventEmitter();
     const log: string[] = [];
     emitter.listen((evt) => log.push(evt.kind));
 
@@ -127,40 +127,40 @@ describe("TwinRobotEventEmitter", () => {
 describe("TwinHal", () => {
   test("setState enforces canonical FSM forward edges", () => {
     const hal = new TwinHal();
-    expect(hal.state).toBe(RobotInteractionState.IDLE);
-    hal.setState(RobotInteractionState.LISTENING);
-    expect(hal.state).toBe(RobotInteractionState.LISTENING);
-    expect(() => hal.setState(RobotInteractionState.SPEAKING)).toThrow(
+    expect(hal.state).toBe(RotjtjbotInteractionState.IDLE);
+    hal.setState(RotjtjbotInteractionState.LISTENING);
+    expect(hal.state).toBe(RotjtjbotInteractionState.LISTENING);
+    expect(() => hal.setState(RotjtjbotInteractionState.SPEAKING)).toThrow(
       /illegal transition LISTENING → SPEAKING/,
     );
-    expect(hal.state).toBe(RobotInteractionState.LISTENING);
+    expect(hal.state).toBe(RotjtjbotInteractionState.LISTENING);
   });
 
   test("trySetState returns false on illegal edges without throwing", () => {
     const hal = new TwinHal();
-    expect(hal.trySetState(RobotInteractionState.SPEAKING)).toBe(false);
-    expect(hal.trySetState(RobotInteractionState.LISTENING)).toBe(true);
-    expect(hal.state).toBe(RobotInteractionState.LISTENING);
+    expect(hal.trySetState(RotjtjbotInteractionState.SPEAKING)).toBe(false);
+    expect(hal.trySetState(RotjtjbotInteractionState.LISTENING)).toBe(true);
+    expect(hal.state).toBe(RotjtjbotInteractionState.LISTENING);
   });
 
   test("universal escape edges always succeed", () => {
     const hal = new TwinHal();
-    hal.setState(RobotInteractionState.LISTENING);
-    expect(hal.trySetState(RobotInteractionState.INTERRUPTED)).toBe(true);
-    expect(hal.state).toBe(RobotInteractionState.INTERRUPTED);
+    hal.setState(RotjtjbotInteractionState.LISTENING);
+    expect(hal.trySetState(RotjtjbotInteractionState.INTERRUPTED)).toBe(true);
+    expect(hal.state).toBe(RotjtjbotInteractionState.INTERRUPTED);
   });
 
   test("listenState notifies subscribers on every transition", () => {
     const hal = new TwinHal();
-    const seen: RobotInteractionState[] = [];
+    const seen: RotjtjbotInteractionState[] = [];
     const unsub = hal.listenState((s) => seen.push(s));
-    hal.setState(RobotInteractionState.LISTENING);
-    hal.setState(RobotInteractionState.PARTIAL_TRANSCRIPT_ACTIVE);
+    hal.setState(RotjtjbotInteractionState.LISTENING);
+    hal.setState(RotjtjbotInteractionState.PARTIAL_TRANSCRIPT_ACTIVE);
     unsub();
-    hal.setState(RobotInteractionState.THINKING);
+    hal.setState(RotjtjbotInteractionState.THINKING);
     expect(seen).toEqual([
-      RobotInteractionState.LISTENING,
-      RobotInteractionState.PARTIAL_TRANSCRIPT_ACTIVE,
+      RotjtjbotInteractionState.LISTENING,
+      RotjtjbotInteractionState.PARTIAL_TRANSCRIPT_ACTIVE,
     ]);
   });
 
@@ -169,13 +169,13 @@ describe("TwinHal", () => {
     await hal.display.setExpression(Expression.HAPPY, 1000);
     await hal.motion.enqueue(Motion.NOD_YES, 500, 1);
     hal.led.setAll({ r: 1, g: 2, b: 3 });
-    hal.setState(RobotInteractionState.LISTENING);
+    hal.setState(RotjtjbotInteractionState.LISTENING);
 
     hal.resetForTest();
 
     expect(hal.display.history.length).toBe(0);
     expect(hal.motion.history.length).toBe(0);
     expect(hal.led.history.length).toBe(0);
-    expect(hal.state).toBe(RobotInteractionState.IDLE);
+    expect(hal.state).toBe(RotjtjbotInteractionState.IDLE);
   });
 });

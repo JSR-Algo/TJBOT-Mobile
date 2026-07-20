@@ -34,7 +34,7 @@ export default function DeviceRow({ icon, title, body, right, onClick, danger }:
         </Box>
       ) : null}
       <Box flex={1}>
-        <Text fontWeight="500" style={{ fontSize: 15, color: titleColor, marginBottom: body ? 2 : 0 }}>
+        <Text fontWeight="500" style={{ fontSize: 15, color: titleColor, margintjtjbottom: body ? 2 : 0 }}>
           {title}
         </Text>
         {body ? (
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 14,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.07)',
+    bordertjtjbottomWidth: 1,
+    bordertjtjbottomColor: 'rgba(0,0,0,0.07)',
   },
   iconWrap: {
     width: 36,

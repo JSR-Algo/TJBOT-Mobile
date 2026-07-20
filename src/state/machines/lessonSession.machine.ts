@@ -8,7 +8,7 @@ import type {
 /**
  * LessonSession state machine.
  *
- * Plan: tbot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
+ * Plan: tjbot-design/.omc/plans/state-machines-mobile-ux.md §0, §2.2, §3.2,
  * §4.2, §5, §7. Architect + Critic consensus pass 2026-05-11.
  *
  * Server-authoritative terminals (plan §0 Principle 1, ADR-002):
@@ -277,12 +277,12 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
             on: { GREETING_DONE: { target: 'ACTIVITY_INTRO' } },
           },
           ACTIVITY_INTRO: {
-            on: { INTRO_DONE: { target: 'ROBOT_SPEAKING' } },
+            on: { INTRO_DONE: { target: 'ROtjtjbot_SPEAKING' } },
           },
-          ROBOT_SPEAKING: {
-            on: { REPLY_READY: { target: 'ROBOT_LISTENING' } },
+          ROtjtjbot_SPEAKING: {
+            on: { REPLY_READY: { target: 'ROtjtjbot_LISTENING' } },
           },
-          ROBOT_LISTENING: {
+          ROtjtjbot_LISTENING: {
             on: {
               VAD_SPEECH: { target: 'USER_SPEAKING' },
               VAD_SILENCE_2S: { target: 'SILENCE' },
@@ -294,16 +294,16 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
             },
           },
           SILENCE: {
-            on: { PROMPT_AGAIN: { target: 'ROBOT_SPEAKING' } },
+            on: { PROMPT_AGAIN: { target: 'ROtjtjbot_SPEAKING' } },
           },
           THINKING: {
             on: {
-              REPLY_READY: { target: 'ROBOT_SPEAKING' },
+              REPLY_READY: { target: 'ROtjtjbot_SPEAKING' },
               ACTIVITY_COMPLETE: { target: 'ACTIVITY_DONE' },
             },
           },
           ACTIVITY_DONE: {
-            on: { NEXT_ACTIVITY: { target: 'ROBOT_SPEAKING' } },
+            on: { NEXT_ACTIVITY: { target: 'ROtjtjbot_SPEAKING' } },
           },
         },
       },

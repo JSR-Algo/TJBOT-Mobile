@@ -19,4 +19,4 @@
 
 ## Notes
 
-- Most app activity is initiated by the Child or Parent specialization, not the bare AuthUser. This actor exists to host UCs that apply equally to both specializations and require an authenticated session.
+- Most app activity is initiated by the Child or Parent specialization, not the bare AuthUser. This actor exists to host UCs that apply equally to tjtjboth specializations and require an authenticated session.

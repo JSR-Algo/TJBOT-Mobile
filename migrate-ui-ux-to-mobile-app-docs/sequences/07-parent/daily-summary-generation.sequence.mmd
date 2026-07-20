@@ -9,7 +9,7 @@ externals: [EventBridge, SQS]
 queues:
   - controls.summary.daily
   - controls.summary.daily.dlq
-  - tbot-notifications
+  - tjbot-notifications
 failure_paths:
   - worker_crash_mid_batch
   - upsert_constraint_violation
@@ -26,7 +26,7 @@ sequenceDiagram
     participant SQS as SQS controls.summary.daily
     participant SummaryWorker
     participant PostgreSQL
-    participant NotificationQueue as SQS tbot-notifications
+    participant NotificationQueue as SQS tjbot-notifications
 
     EventBridge->>SQS: cron(0 3 * * ? *) enqueue {target_date}
     SQS->>SummaryWorker: deliver message (visibility 300s)

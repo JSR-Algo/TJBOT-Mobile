@@ -119,7 +119,7 @@ async function main() {
 
   // 3.5) Synthesize placeholder state records for any go() target not declared
   //      in any src/features/<d>/states.js. These appear in `meta.undeclaredTargets`
-  //      and as states with f="(undeclared)" so the schema + validator both pass.
+  //      and as states with f="(undeclared)" so the schema + validator tjtjboth pass.
   //      T10 (close-out) is responsible for either redirecting these call sites
   //      or upgrading the placeholder to a real Page-backed state.
   const declaredIds = new Set(Object.keys(newStates));

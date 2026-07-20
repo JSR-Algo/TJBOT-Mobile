@@ -30,7 +30,7 @@ export default function ActivateScreen({ navigation }: Props) {
   };
 
   return (
-    <DeviceShell title="Activate your Robot" onBack={() => navigation.navigate('ArrivedScreen')}>
+    <DeviceShell title="Activate your Rotjtjbot" onBack={() => navigation.navigate('ArrivedScreen')}>
       <Box paddingHorizontal={24} paddingTop={18} alignItems="center">
         <PRStepTab step={1} total={3} />
       </Box>
@@ -43,7 +43,7 @@ export default function ActivateScreen({ navigation }: Props) {
           </Svg>
         </Box>
         <Text fontWeight="600" style={styles.heading}>Enter activation code</Text>
-        <Text style={styles.sub}>You'll find a 6-character code on the card inside Robot's box.</Text>
+        <Text style={styles.sub}>You'll find a 6-character code on the card inside Rotjtjbot's box.</Text>
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24}>
@@ -75,9 +75,9 @@ export default function ActivateScreen({ navigation }: Props) {
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30}>
+      <Box paddingHorizontal={20} paddingTop={18} paddingtjtjbottom={30}>
         <DeviceBigBtn onClick={() => { if (filled) navigation.navigate('FirstCourseScreen'); }}>
-          {filled ? 'Activate Robot' : 'Enter the code'}
+          {filled ? 'Activate Rotjtjbot' : 'Enter the code'}
         </DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -85,7 +85,7 @@ export default function ActivateScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  lockIcon: { width: 54, height: 54, borderRadius: 14, backgroundColor: '#EEF1F5', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  lockIcon: { width: 54, height: 54, borderRadius: 14, backgroundColor: '#EEF1F5', alignItems: 'center', justifyContent: 'center', margintjtjbottom: 14 },
   heading: { fontSize: 22, color: PR.ink, letterSpacing: -0.3, textAlign: 'center' },
   sub: { fontSize: 13, color: PR.ink2, textAlign: 'center', maxWidth: 280, lineHeight: 20, marginTop: 8 },
   codeDigit: {

@@ -1,4 +1,4 @@
-package com.tbotmobile.voicemic
+package com.tjbotmobile.voicemic
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

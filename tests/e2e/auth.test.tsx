@@ -1,5 +1,5 @@
 /**
- * Unit tests for tbot-design auth flow (rewritten from .pr5-skip for PR5 retired UI).
+ * Unit tests for tjbot-design auth flow (rewritten from .pr5-skip for PR5 retired UI).
  *
  * Covers:
  *   - LoginScreen: signup/login mode toggle, social buttons, useAuth wiring, success/failure navigation
@@ -58,7 +58,7 @@ jest.mock('@/contexts/AuthContext', () => ({
 
 // ─── LoginScreen ──────────────────────────────────────────────────────────────
 
-describe('LoginScreen (tbot-design feature)', () => {
+describe('LoginScreen (tjbot-design feature)', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('renders signup mode by default with email + password inputs', () => {
@@ -110,7 +110,7 @@ describe('LoginScreen (tbot-design feature)', () => {
     const { getAllByText, getByPlaceholderText } = render(
       <LoginScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    // [0] = tab label, [1] = submit button (both say "Log in")
+    // [0] = tab label, [1] = submit button (tjtjboth say "Log in")
     fireEvent.press(getAllByText('Log in')[0]);
     fireEvent.changeText(getByPlaceholderText('Email'), 'parent@test.com');
     fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
@@ -157,7 +157,7 @@ describe('LoginScreen (tbot-design feature)', () => {
     fireEvent.changeText(getByPlaceholderText('Password'), 'newpass123');
     fireEvent.press(getByText('Create account'));
     await waitFor(() => {
-      // tbot-design has no name input — signup called with email twice
+      // tjbot-design has no name input — signup called with email twice
       expect(mockSignup).toHaveBeenCalledWith('new@test.com', 'new@test.com', 'newpass123');
     });
   });
@@ -165,7 +165,7 @@ describe('LoginScreen (tbot-design feature)', () => {
 
 // ─── LoginErrorScreen ─────────────────────────────────────────────────────────
 
-describe('LoginErrorScreen (tbot-design feature)', () => {
+describe('LoginErrorScreen (tjbot-design feature)', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('renders error heading + sub-text', () => {
@@ -196,7 +196,7 @@ describe('LoginErrorScreen (tbot-design feature)', () => {
 
 // ─── ChildProfileScreen ───────────────────────────────────────────────────────
 
-describe('ChildProfileScreen (tbot-design feature)', () => {
+describe('ChildProfileScreen (tjbot-design feature)', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('renders heading + buddy section + level section', () => {
@@ -245,7 +245,7 @@ describe('ChildProfileScreen (tbot-design feature)', () => {
     const { getByText } = render(
       <ChildProfileScreen navigation={mockNavProp} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Save and meet Robot'));
+    fireEvent.press(getByText('Save and meet Rotjtjbot'));
     expect(mockNavigate).toHaveBeenCalledWith('IntroListenScreen');
   });
 });

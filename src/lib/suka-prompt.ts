@@ -2,7 +2,7 @@ export type AgeGroup = '3-5' | '6-8' | '9-12';
 export type PersonalityStyle = 'vui-ve' | 'diu-dang' | 'nang-dong' | 'dang-yeu';
 /**
  * Only 'vi' and 'en' are user-facing; 'bilingual' is the default and makes
- * TBOT auto-mirror whatever language the child speaks. Per user 2026-04-24
+ * tjbot auto-mirror whatever language the child speaks. Per user 2026-04-24
  * ("Chỉ tiếng việt và tiếng anh, không cần pick, có thể giao tiếp được cả
  * tiếng anh và tiếng việt"), the app does NOT expose a picker — bilingual is
  * the only shipping mode. The explicit-mode API is kept for tests + future
@@ -24,10 +24,10 @@ export type LanguageMode = 'vi' | 'en' | 'bilingual';
  *   - action tags cho animation avatar thay vì envelope wire format.
  *
  * The action tag system is intentionally a different output format from
- * the robot-demo `<expression>/<motion>/<say>` envelope. The Gemini
+ * the rotjtjbot-demo `<expression>/<motion>/<say>` envelope. The Gemini
  * conversation path does not parse the envelope — it just forwards the
  * text to TTS — so shipping an action-tag prompt here is safe and keeps
- * the robot-demo path untouched.
+ * the rotjtjbot-demo path untouched.
  */
 
 const STYLE_LABELS: Record<PersonalityStyle, string> = {
@@ -47,7 +47,7 @@ const AGE_ADJUSTMENTS: Record<AgeGroup, string> = {
 };
 
 // Phase 3d (2026-04-24 bilingual pivot): language-strategy block selected by
-// the child-profile language mode. Mirrors tbot-ai-services llm.py 3-mode
+// the child-profile language mode. Mirrors tjbot-ai-services llm.py 3-mode
 // pattern so mobile + REST-fallback agree on vocab.
 const LANGUAGE_DIRECTIVES: Record<LanguageMode, string> = {
   vi:
