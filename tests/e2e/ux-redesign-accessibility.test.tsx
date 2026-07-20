@@ -416,6 +416,9 @@ describe('mobile UX redesign accessibility coverage', () => {
       />,
     );
 
+    expect(screen.getByText(/6-digit code/i)).toBeTruthy();
+    expect(screen.queryByText(/4-digit code/i)).toBeNull();
+
     fireEvent.changeText(screen.getByPlaceholderText('Pairing code'), '1234');
     fireEvent.press(screen.getByText('Confirm & continue'));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());

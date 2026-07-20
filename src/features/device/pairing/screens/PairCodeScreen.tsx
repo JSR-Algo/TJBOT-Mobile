@@ -73,9 +73,9 @@ export default function PairCodeScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   intro: { fontSize: 14, color: DV.ink2, lineHeight: 22 },
   lcdBg: { backgroundColor: '#0E1116', borderRadius: 14, padding: 16 },
-  lcdDigit: { fontSize: 48, color: '#E8F4FF', fontVariant: ['tabular-nums'], letterSpacing: -1 },
-  lcdLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 6 },
-  inputLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  lcdDigit: { fontSize: 48, color: '#E8F4FF', fontVariant: ['tabular-nums'], letterSpacing: 0 },
+  lcdLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0, marginTop: 6 },
+  inputLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0, marginBottom: 8 },
   codeBox: { width: 56, height: 64, borderRadius: 10, backgroundColor: DV.card, borderWidth: 2, borderColor: DV.accent },
   codeDigit: { fontSize: 28, color: DV.ink, fontVariant: ['tabular-nums'] },
   codeInput: {
