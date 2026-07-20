@@ -215,7 +215,7 @@ describe('P0-15 — VoiceMicDiagnostics.tapInstalled surface', () => {
     const kt = fs.readFileSync(
       require('path').join(
         __dirname,
-        '../../android/app/src/main/java/com/TJBotmobile/voicemic/VoiceMicModule.kt',
+        '../../android/app/src/main/java/com/tjbotmobile/voicemic/VoiceMicModule.kt',
       ),
       'utf8',
     );

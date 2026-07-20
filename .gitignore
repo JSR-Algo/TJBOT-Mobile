@@ -40,3 +40,4 @@ ios/*.xcodeproj/xcuserdata/
 .worktrees/
 tbot-design/
 src/components/gemini/.omc/
+ios/.xcode.env.local

@@ -1,5 +1,14 @@
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
+
+// The audit script reads the sibling tbot-backend checkout's openapi.json.
+// CI checks out tbot-mobile alone, so skip cleanly when the fixture is absent
+// (same sibling-repo pattern as TBOT_ROBOT_REPO in esp32-server tests).
+const BACKEND_OPENAPI = process.env.TBOT_BACKEND_OPENAPI_PATH
+  ? path.resolve(process.cwd(), process.env.TBOT_BACKEND_OPENAPI_PATH)
+  : path.resolve(process.cwd(), '../tbot-backend/openapi.json');
+const describeWithBackend = fs.existsSync(BACKEND_OPENAPI) ? describe : describe.skip;
 
 type AuditJson = {
   status: 'SYNCED' | 'OUT_OF_SYNC';
@@ -17,7 +26,7 @@ type AuditJson = {
   apiMismatchTable: Array<{ area: string; mismatch?: string; backendFix?: string; mobileFix?: string }>;
 };
 
-describe('api contract sync audit script', () => {
+describeWithBackend('api contract sync audit script', () => {
   it('reports endpoint inventory sync separately from full contract drift without writing artifacts', () => {
     const stdout = execFileSync(
       process.execPath,
