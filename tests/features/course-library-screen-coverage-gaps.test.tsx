@@ -82,6 +82,9 @@ function currentWithSession(state: CurrentAssignment['state']): CurrentAssignmen
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // CourseAddedScreen reads the device's real seat on mount; default to "no
+  // seat known" so tests that do not care about it still get a Promise back.
+  mockedGetCurrentAssignment.mockResolvedValue(null);
 });
 
 // ───────────────────────────────────────────────────────────────────────────

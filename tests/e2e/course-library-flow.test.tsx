@@ -100,6 +100,9 @@ describe('course-library flow guards', () => {
     jest.clearAllMocks();
     stubPublishedCatalog();
     mockedAuthenticateParent.mockResolvedValue({ authenticated: true });
+    // CourseAddedScreen reads the device's real seat on mount; default to "no
+    // seat known" unless a test overrides it.
+    mockedGetCurrentAssignment.mockResolvedValue(null);
   });
 
   it('exposes a stable native route anchor for the send-to-robot screen', async () => {

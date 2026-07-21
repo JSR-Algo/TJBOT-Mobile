@@ -90,13 +90,18 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           setCatalog({ kind: 'empty' });
           return;
         }
-        const lessonLists = await Promise.all(
+        // allSettled, not all: one course whose lessons 404 (unpublished between
+        // the catalog read and this fan-out) or 5xx must not blank the whole
+        // picker. A course that fails degrades to "no lessons ready yet", which
+        // this screen already renders, while its siblings stay sendable.
+        const lessonLists = await Promise.allSettled(
           courses.map((course) => getCourseLessons(course.courseId, childId ? { childId } : undefined)),
         );
         if (!active) return;
         const lessonsByCourse: Record<string, PublishedLesson[]> = {};
         courses.forEach((course, i) => {
-          lessonsByCourse[course.courseId] = lessonLists[i] ?? [];
+          const settled = lessonLists[i];
+          lessonsByCourse[course.courseId] = settled?.status === 'fulfilled' ? settled.value : [];
         });
         setCatalog({ kind: 'ready', courses, lessonsByCourse });
       } catch (err) {

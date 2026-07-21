@@ -162,9 +162,11 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
     await waitFor(() => expect(screen.getByText('Hello Friends is on Robot')).toBeTruthy());
   });
 
-  it('a courseId in NEITHER published nor static catalog falls back to COURSES[2] (line 55 ?? arm)', async () => {
-    // courseId not in static COURSES → COURSES.find() === undefined → ?? COURSES[2]
-    // (Yummy Words). published is also empty → static title survives, no crash.
+  it('a courseId in NEITHER published nor static catalog borrows NO other course (line 55 ?? null arm)', async () => {
+    // courseId not in static COURSES → COURSES.find() === undefined → ?? null.
+    // The old `?? COURSES[2]` rendered "Yummy Words is on Robot" for a course
+    // that has nothing to do with Yummy Words; an unresolvable course must not
+    // impersonate one, and must still render without crashing.
     mockedGetCourses.mockResolvedValue([] as PublishedCourse[]);
     const navigation = navigationFor();
     render(
@@ -177,7 +179,9 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByText('Yummy Words is on Robot')).toBeTruthy();
+    expect(screen.queryByText('Yummy Words is on Robot')).toBeNull();
+    // Still a live screen: the CTA renders.
+    expect(screen.getByText("Send today's lesson now")).toBeTruthy();
   });
 
   it('a published course unknown to the static catalog overlays its title onto the COURSES[2] fallback (line 55 + 58)', async () => {

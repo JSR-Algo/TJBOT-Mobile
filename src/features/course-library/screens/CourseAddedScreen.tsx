@@ -12,7 +12,12 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import COURSES from '../components/courses';
 import LCDPreview from '../components/LCDPreview';
-import { getCourses, type PublishedCourse } from '@/services/api/course-library.api';
+import {
+  getCourses,
+  getCurrentAssignment,
+  type CurrentAssignment,
+  type PublishedCourse,
+} from '@/services/api/course-library.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseAddedScreen'>;
 
@@ -52,10 +57,33 @@ export default function CourseAddedScreen({ navigation, route }: Props) {
     };
   }, [courseId]);
 
-  const staticCourse = COURSES.find(x => x.id === courseId) ?? COURSES[2]!;
+  // The lesson actually seated on the device. Without this the card printed a
+  // literal "Lesson 1 · Hello, food!" under an "On Robot now" label — fiction
+  // presented to a parent as the state of their robot.
+  const [seated, setSeated] = React.useState<CurrentAssignment | null>(null);
+  React.useEffect(() => {
+    if (!deviceId) return;
+    let active = true;
+    void getCurrentAssignment(deviceId)
+      .then((assignment) => {
+        if (active) setSeated(assignment);
+      })
+      .catch(() => {
+        // Unknown seat → the card falls back to a neutral line, never a fake one.
+        if (active) setSeated(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [deviceId]);
+
+  // Backend course ids are course_keys ('w01-place-words'), which never match a
+  // static catalog id ('c_food'), so `?? COURSES[2]` meant every authored course
+  // borrowed Yummy Words' LCD face. A miss renders a neutral face instead.
+  const staticCourse = COURSES.find(x => x.id === courseId) ?? null;
   const c = {
-    ...staticCourse,
-    title: published?.title?.trim() ? published.title : staticCourse.title,
+    lcd: staticCourse?.lcd ?? 'happy',
+    title: published?.title?.trim() ? published.title : staticCourse?.title ?? '',
   };
   return (
     <DeviceShell title="Added to Robot">
@@ -72,8 +100,14 @@ export default function CourseAddedScreen({ navigation, route }: Props) {
           <LCDPreview emotion={c.lcd} accent="#FF6F61" size={72} />
           <Box flex={1}>
             <Text fontWeight="700" style={styles.onRobotLabel}>On Robot now</Text>
-            <Text fontWeight="600" style={styles.lessonTitle}>Lesson 1 · Hello, food!</Text>
-            <Text style={styles.lessonMeta}>4 minutes · ready to play</Text>
+            {seated?.lessonTitle?.trim() ? (
+              <Text fontWeight="600" style={styles.lessonTitle} numberOfLines={2} i18n={false}>
+                {seated.lessonTitle}
+              </Text>
+            ) : (
+              <Text fontWeight="600" style={styles.lessonTitle}>Preparing the first lesson</Text>
+            )}
+            <Text style={styles.lessonMeta}>Ready to play</Text>
           </Box>
         </Box>
       </Box>
@@ -81,7 +115,6 @@ export default function CourseAddedScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={20}>
         <Box style={styles.rowCard}>
           <DeviceRow icon="📅" title="First lesson tomorrow" body="Robot will gently invite your child after breakfast" />
-          <DeviceRow icon="🔁" title="Mix into current course" body="Robot will alternate between Hello Friends and Yummy Words" />
         </Box>
       </Box>
 

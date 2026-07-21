@@ -6,20 +6,23 @@ import LessonResumeScreen from '@/features/fallback/screens/LessonResumeScreen';
 import BuyCourseScreen from '@/features/course-library/screens/BuyCourseScreen';
 import CourseLockedScreen from '@/features/course-library/screens/CourseLockedScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
-import { getCourses, type PublishedCourse } from '@/services/api/course-library.api';
+import { getCourseLessons, getCourses, type PublishedCourse } from '@/services/api/course-library.api';
 
-// CourseDetailScreen reads the published catalog on mount. Keep every other
-// export REAL (the screen relies on none of them) and mock ONLY the one network
-// read, mirroring course-library-screen-coverage-gaps.test.tsx.
+// CourseDetailScreen reads the published catalog AND the course's lesson list on
+// mount. Keep every other export REAL (the screen relies on none of them) and
+// mock ONLY those network reads, mirroring
+// course-library-screen-coverage-gaps.test.tsx.
 jest.mock('@/services/api/course-library.api', () => {
   const actual = jest.requireActual('@/services/api/course-library.api');
   return {
     ...actual,
     getCourses: jest.fn(),
+    getCourseLessons: jest.fn(),
   };
 });
 
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
+const mockedGetCourseLessons = getCourseLessons as jest.MockedFunction<typeof getCourseLessons>;
 
 function navigationFor() {
   return {
@@ -43,6 +46,7 @@ beforeEach(() => {
   // Default: never-resolving so screens that mount it stay on static fallback
   // unless a test overrides. Resolved value supplied per-test.
   mockedGetCourses.mockResolvedValue([]);
+  mockedGetCourseLessons.mockResolvedValue([]);
 });
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -394,6 +398,9 @@ describe('CourseDetailScreen — published overlay + CTAs', () => {
   it('falls back to static metadata when getCourses rejects (catch, lines 34-36)', async () => {
     const navigation = navigationFor();
     mockedGetCourses.mockRejectedValue(new Error('catalog down'));
+    // Lessons endpoint also down → nothing authoritative about the count, so the
+    // static catalog number (24) is the last resort.
+    mockedGetCourseLessons.mockRejectedValue(new Error('lessons down'));
 
     render(
       <CourseDetailScreen
@@ -471,7 +478,7 @@ describe('CourseDetailScreen — published overlay + CTAs', () => {
     expect(mockedGetCourses).toHaveBeenCalledTimes(1);
   });
 
-  it('uses default COURSE for unknown courseId (line 43 ?? COURSE) and routes CTAs', async () => {
+  it('shows no borrowed static course for an unknown courseId, and still routes CTAs', async () => {
     const navigation = navigationFor();
     mockedGetCourses.mockResolvedValue([]);
 
@@ -482,8 +489,12 @@ describe('CourseDetailScreen — published overlay + CTAs', () => {
       />,
     );
 
-    // COURSES[2] default = "Yummy Words".
-    await waitFor(() => expect(screen.getByText('Yummy Words')).toBeTruthy());
+    // Previously this fell back to COURSES[2] ("Yummy Words"), printing an
+    // unrelated course's blurb/teaches/ages under whatever title loaded. An
+    // unresolvable course must show none of that.
+    await waitFor(() => expect(screen.getByText('Back to library')).toBeTruthy());
+    expect(screen.queryByText('Yummy Words')).toBeNull();
+    expect(screen.queryByText('Asking politely')).toBeNull();
 
     // "Add to Robot" → UnlockConfirmScreen with the (unknown) courseId (line 100).
     fireEvent.press(screen.getByText('Add to Robot'));
