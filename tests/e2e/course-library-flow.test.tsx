@@ -330,7 +330,7 @@ describe('course-library flow guards', () => {
 
     fireEvent.press(screen.getByText('Kết nối Robot'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.DeviceOverviewScreen);
     expect(screen.queryByText('Robot chưa sẵn sàng')).toBeNull();
   });
 
@@ -378,7 +378,7 @@ describe('course-library flow guards', () => {
 
     expect(screen.queryByText('Robot chưa sẵn sàng')).toBeNull();
     expect(screen.getByText('Thêm vào Robot')).toBeTruthy();
-    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.PairAddScreen);
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.DeviceOverviewScreen);
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
   });
 

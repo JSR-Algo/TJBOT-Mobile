@@ -225,7 +225,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
         onDismiss={() => setRobotConnectionModalVisible(false)}
         onConnect={() => {
           setRobotConnectionModalVisible(false);
-          navigation.navigate(ROUTES.PairAddScreen);
+          navigation.navigate(ROUTES.DeviceOverviewScreen);
         }}
       />
     </>

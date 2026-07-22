@@ -28,7 +28,7 @@ The modal must fit on a small Android screen without scrolling and respect safe 
 1. Parent presses **Thêm vào Robot**.
 2. The app reads `getDeviceStatus('primary', activeChildId)`.
 3. Missing child, missing device id, offline/unknown status, or request failure opens the custom modal and does not navigate to unlock.
-4. **Kết nối Robot** closes the modal and navigates to `ROUTES.PairAddScreen`, where the parent can choose new-pairing or offline-reconnect setup.
+4. **Kết nối Robot** closes the modal and navigates to `ROUTES.DeviceOverviewScreen`, the public entry to Robot setup. From there, the parent can continue to new-pairing or offline-reconnect setup.
 5. **Để sau**, Android back, or tapping the scrim closes the modal and leaves the parent on Course Detail.
 6. An online Robot continues directly to `UnlockConfirmScreen` without showing the modal.
 
@@ -42,7 +42,7 @@ The modal must fit on a small Android screen without scrolling and respect safe 
 ## Testing
 
 - Offline and failed status checks render the custom modal and do not navigate to unlock.
-- **Kết nối Robot** navigates exactly to `PairAddScreen`.
+- **Kết nối Robot** navigates exactly to `DeviceOverviewScreen`, which exposes the setup action leading into pairing.
 - **Để sau** dismisses the modal and keeps Course Detail visible.
 - Online status continues to `UnlockConfirmScreen` with the original course id.
 - Typecheck, lint, focused course-library tests, Android build, install, and physical-device verification remain required.

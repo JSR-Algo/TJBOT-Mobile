@@ -35,7 +35,7 @@ In the offline test, press the modal primary action and assert the recovery rout
 
 ```tsx
 fireEvent.press(screen.getByText('Kết nối Robot'));
-expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
+expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.DeviceOverviewScreen);
 expect(screen.queryByText('Robot chưa sẵn sàng')).toBeNull();
 ```
 
@@ -44,7 +44,7 @@ Add a separate offline-status test that presses `Để sau`, asserts the modal c
 ```tsx
 fireEvent.press(screen.getByText('Để sau'));
 expect(screen.queryByText('Robot chưa sẵn sàng')).toBeNull();
-expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.PairAddScreen);
+expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.DeviceOverviewScreen);
 expect(navigation.navigate).not.toHaveBeenCalledWith(
   ROUTES.UnlockConfirmScreen,
   expect.anything(),
@@ -181,7 +181,7 @@ Before the closing `DeviceShell`, render:
   onDismiss={() => setRobotConnectionModalVisible(false)}
   onConnect={() => {
     setRobotConnectionModalVisible(false);
-    navigation.navigate(ROUTES.PairAddScreen);
+    navigation.navigate(ROUTES.DeviceOverviewScreen);
   }}
 />
 ```
@@ -236,7 +236,7 @@ git commit -m "feat(course-library): add robot connection recovery modal" \
 
 - [ ] **Step 1: Document modal recovery actions**
 
-Update UC-CL02 alternate flow to state that unavailable Robot status opens the custom connection modal; **Connect Robot** routes to `PairAddScreen`, while **Not now**, scrim press, and Android back dismiss it and remain on Course Detail.
+Update UC-CL02 alternate flow to state that unavailable Robot status opens the custom connection modal; **Connect Robot** routes to `DeviceOverviewScreen`, the device feature's public setup entry, while **Not now**, scrim press, and Android back dismiss it and remain on Course Detail.
 
 - [ ] **Step 2: Run documentation validator**
 
@@ -298,7 +298,7 @@ Expected: `BUILD SUCCESSFUL`, install reports `Success`, and `pidof com.TJBotmob
 
 - [ ] **Step 4: Verify the physical modal**
 
-With Robot offline, open Course Detail and press **Thêm vào Robot**. Confirm the TBOT-styled overlay appears instead of the native Android alert. Press **Để sau** and confirm Course Detail remains visible. Reopen the modal, press **Kết nối Robot**, and confirm `PairAddScreen` appears with new-pairing and offline-reconnect choices.
+With Robot offline, open Course Detail and press **Thêm vào Robot**. Confirm the TBOT-styled overlay appears instead of the native Android alert. Press **Để sau** and confirm Course Detail remains visible. Reopen the modal, press **Kết nối Robot**, and confirm `DeviceOverviewScreen` appears; then press its setup action and confirm the new-pairing and offline-reconnect choices appear.
 
 - [ ] **Step 5: Review final scope**
 
