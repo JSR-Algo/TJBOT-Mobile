@@ -16,14 +16,13 @@ import { getCourses, type PublishedCourse } from '@/services/api/course-library.
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetailScreen'>;
 
 const ICONS = ['🗣️', '🎯', '💛', '🔢'];
-const COURSE = COURSES[2]!;
+const DEFAULT_COURSE = COURSES[2]!;
 
 export default function CourseDetailScreen({ navigation, route }: Props) {
-  const courseId = route.params?.courseId ?? COURSE.id;
-  // Static catalog supplies the rich UI metadata (blurb / lcd / teaches) the
-  // published endpoints don't return. The dynamic published catalog overlays the
-  // REAL title + lessonCount for authored courses; the `?? COURSE` fallback keeps
-  // the screen from crashing when a courseId is neither published nor static.
+  const courseId = route.params?.courseId ?? DEFAULT_COURSE.id;
+  // Static entries carry richer presentation metadata. Published courses do
+  // not share those IDs, so never borrow details from an unrelated static
+  // course when the backend returns a published-only course.
   const [published, setPublished] = React.useState<PublishedCourse | null>(null);
   React.useEffect(() => {
     let active = true;
@@ -40,49 +39,53 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
     };
   }, [courseId]);
 
-  const staticCourse = COURSES.find((course) => course.id === courseId) ?? COURSE;
-  const c = {
-    ...staticCourse,
-    title: published?.title?.trim() ? published.title : staticCourse.title,
-    lessons: published ? published.lessonCount : staticCourse.lessons,
-  };
+  const staticCourse = COURSES.find((course) => course.id === courseId);
+  const title = published?.title?.trim() || staticCourse?.title || courseId;
+  const lessonCount = published?.lessonCount ?? staticCourse?.lessons ?? 0;
+  const stats = staticCourse
+    ? [{ v: lessonCount, l: 'Lessons' }, { v: `${staticCourse.weeks}w`, l: 'Pace' }, { v: '4 min', l: 'Per day' }]
+    : [{ v: lessonCount, l: 'Lessons' }];
   return (
     <DeviceShell title="Course details" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard}>
           <Box style={styles.heroLCD} alignItems="center" justifyContent="center">
-            <LCDFace emotion={c.lcd} size={140} accent="#FF6F61" />
+            <LCDFace emotion={staticCourse?.lcd ?? 'idle'} size={140} accent="#FF6F61" />
           </Box>
           <Box padding={14} paddingBottom={16}>
-            <Box flexDirection="row" gap={8} alignItems="center" style={styles.chipRow}>
-              <CLChip state={c.state} />
-              <Text style={styles.metaText}>Ages {c.ages} · {c.level}</Text>
-            </Box>
-            <Text fontWeight="600" style={styles.title}>{c.title}</Text>
-            <Text style={styles.blurb}>{c.blurb}</Text>
+            {staticCourse ? (
+              <Box flexDirection="row" gap={8} alignItems="center" style={styles.chipRow}>
+                <CLChip state={staticCourse.state} />
+                <Text style={styles.metaText}>Ages {staticCourse.ages} · {staticCourse.level}</Text>
+              </Box>
+            ) : null}
+            <Text fontWeight="600" style={styles.title}>{title}</Text>
+            {staticCourse ? <Text style={styles.blurb}>{staticCourse.blurb}</Text> : null}
           </Box>
         </Box>
       </Box>
 
-      <Box paddingHorizontal={16} paddingTop={20}>
-        <Text fontWeight="700" style={styles.sectionLabel}>What Robot will teach</Text>
-        <Box style={styles.listCard}>
-          {c.teaches.map((t, i) => (
-            <Box key={t} style={[styles.listRow, i < c.teaches.length - 1 && styles.listBorder]}>
-              <Box style={styles.listIcon}>
-                <Text style={{ fontSize: 14 }}>{ICONS[i % 4]}</Text>
+      {staticCourse ? (
+        <Box paddingHorizontal={16} paddingTop={20}>
+          <Text fontWeight="700" style={styles.sectionLabel}>What Robot will teach</Text>
+          <Box style={styles.listCard}>
+            {staticCourse.teaches.map((topic, index) => (
+              <Box key={topic} style={[styles.listRow, index < staticCourse.teaches.length - 1 && styles.listBorder]}>
+                <Box style={styles.listIcon}>
+                  <Text style={{ fontSize: 14 }}>{ICONS[index % 4]}</Text>
+                </Box>
+                <Text style={styles.listText}>{topic}</Text>
               </Box>
-              <Text style={styles.listText}>{t}</Text>
-            </Box>
-          ))}
+            ))}
+          </Box>
         </Box>
-      </Box>
+      ) : null}
 
       <Box paddingHorizontal={16} paddingTop={20} flexDirection="row" gap={8}>
-        {[{ v: c.lessons, l: 'Lessons' }, { v: `${c.weeks}w`, l: 'Pace' }, { v: '4 min', l: 'Per day' }].map(s => (
-          <Box key={s.l} flex={1} style={styles.statCard} alignItems="center">
-            <Text fontWeight="700" style={styles.statVal}>{s.v}</Text>
-            <Text style={styles.statLabel}>{s.l}</Text>
+        {stats.map((stat) => (
+          <Box key={stat.l} flex={1} style={styles.statCard} alignItems="center">
+            <Text fontWeight="700" style={styles.statVal}>{stat.v}</Text>
+            <Text style={styles.statLabel}>{stat.l}</Text>
           </Box>
         ))}
       </Box>

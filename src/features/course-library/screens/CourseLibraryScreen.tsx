@@ -1,14 +1,17 @@
 import React from 'react';
-import { Image, type ImageSourcePropType, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Image, type ImageSourcePropType, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CheckCircle2, ChevronRight, Lock, Search } from 'lucide-react-native';
+import { CalendarRange, CheckCircle2, ChevronRight, Globe2, Lock, Map, Search, Settings2 } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import ScreenShell from '@/components/ScreenShell';
+import RobotImage from '@/components/RobotImage';
+import { parentColors, parentRadii, parentShadows } from '@/design-system/tokens';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { listLibrary, type LibraryItem } from '@/services/api/course-library.api';
-import CL from '../components/CL';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseLibraryScreen'>;
 
@@ -24,6 +27,7 @@ type LoadState =
 
 export default function CourseLibraryScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { language, setLanguage, t } = useAppLanguage();
   const [state, setState] = React.useState<LoadState>({ kind: 'loading' });
   const [query, setQuery] = React.useState('');
 
@@ -43,66 +47,114 @@ export default function CourseLibraryScreen({ navigation }: Props) {
   }, []);
 
   const visibleCourses = React.useMemo(() => {
-    if (state.kind !== 'ready') {
-      return [];
-    }
+    if (state.kind !== 'ready') return [];
     const normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.length === 0) {
-      return state.courses;
-    }
+    if (normalizedQuery.length === 0) return state.courses;
     return state.courses.filter((course) => {
       const haystack = `${course.title} ${course.language}`.toLowerCase();
       return haystack.includes(normalizedQuery);
     });
   }, [query, state]);
 
-  return (
-    <Box flex={1} style={styles.root}>
-      <Box paddingHorizontal={24} paddingTop={insets.top + 20} paddingBottom={18}>
-        <Text fontWeight="800" style={styles.heading}>Course Library</Text>
-        <Text fontWeight="800" style={styles.intro}>Pick what your Robot teaches.</Text>
-      </Box>
+  const toggleLanguage = (): void => {
+    void setLanguage(language === 'en' ? 'vi' : 'en');
+  };
 
-      <Box paddingHorizontal={20} paddingBottom={16}>
-        <Box style={styles.searchBox} flexDirection="row" alignItems="center" gap={10}>
-          <Search size={18} color={CL.ink3} strokeWidth={2.8} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search courses..."
-            placeholderTextColor={CL.ink3}
-            style={styles.searchInput}
-            accessibilityLabel="Search courses"
-            autoCapitalize="none"
-            autoCorrect={false}
+  return (
+    <ScreenShell bg={parentColors.bg} gradient={false}>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Box style={[styles.topBar, { paddingTop: insets.top + 12 }]} flexDirection="row" alignItems="center" justifyContent="space-between">
+          <RobotImage variant="head" size={58} accessibilityLabel={t('TeeBot')} />
+          <Box flexDirection="row" alignItems="center" gap={10}>
+            <TouchableOpacity
+              onPress={toggleLanguage}
+              style={styles.languageButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('Change language')}
+              activeOpacity={0.78}
+            >
+              <Globe2 size={17} color={parentColors.accent} strokeWidth={2.4} />
+              <Text fontWeight="800" style={styles.languageCode}>{language.toUpperCase()}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
+              style={styles.iconButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('Open parent settings')}
+              activeOpacity={0.78}
+            >
+              <Settings2 size={21} color={parentColors.ink1} strokeWidth={2.5} />
+            </TouchableOpacity>
+          </Box>
+        </Box>
+
+        <Box paddingHorizontal={18} paddingBottom={18}>
+          <Text fontWeight="800" style={styles.heading}>{t('Course Library')}</Text>
+          <Text style={styles.intro}>{t('Pick what your Robot teaches.')}</Text>
+        </Box>
+
+        <Box paddingHorizontal={18} paddingBottom={16}>
+          <Box style={styles.searchBox} flexDirection="row" alignItems="center" gap={10}>
+            <Search size={18} color={parentColors.ink2} strokeWidth={2.4} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('Search courses...')}
+              placeholderTextColor={parentColors.ink2}
+              style={styles.searchInput}
+              accessibilityLabel={t('Search courses')}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </Box>
+        </Box>
+
+        <Box paddingHorizontal={18} gap={10}>
+          {state.kind === 'loading' ? <Text style={styles.message}>{t('Loading library')}</Text> : null}
+          {state.kind === 'error' ? (
+            <Box gap={6}>
+              <Text fontWeight="800" style={styles.message}>{t(state.title)}</Text>
+              {state.detail ? <Text style={styles.detail}>{t(state.detail)}</Text> : null}
+            </Box>
+          ) : null}
+          {state.kind === 'ready' && state.courses.length === 0 ? (
+            <Text style={styles.message}>{t('No library courses yet')}</Text>
+          ) : null}
+          {state.kind === 'ready' && state.courses.length > 0 && visibleCourses.length === 0 ? (
+            <Text style={styles.message}>{t('No matching courses')}</Text>
+          ) : null}
+          {state.kind === 'ready' && visibleCourses.map((course, index) => (
+            <CourseCard
+              key={course.courseId}
+              course={course}
+              index={index}
+              onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.courseId })}
+            />
+          ))}
+        </Box>
+
+        <Box paddingHorizontal={18} paddingTop={24} gap={10}>
+          <Text fontWeight="800" style={styles.sectionTitle}>{t('More in Plan')}</Text>
+          <PlanRow
+            icon={<Map size={19} color={parentColors.ink1} strokeWidth={2.3} />}
+            label={t('Six-month roadmap')}
+            accessibilityLabel={t('Open six-month roadmap')}
+            onPress={() => navigation.navigate(ROUTES.LessonRoadmapScreen)}
+          />
+          <PlanRow
+            icon={<CalendarRange size={19} color={parentColors.ink1} strokeWidth={2.3} />}
+            label={t('Week planner')}
+            accessibilityLabel={t('Open week planner')}
+            onPress={() => navigation.navigate(ROUTES.ParentTodayScreen)}
           />
         </Box>
-      </Box>
-
-      <Box paddingHorizontal={20} paddingBottom={130} gap={14}>
-        {state.kind === 'loading' ? <Text style={styles.message}>Loading library</Text> : null}
-        {state.kind === 'error' ? (
-          <Box gap={6}>
-            <Text fontWeight="800" style={styles.message}>{state.title}</Text>
-            {state.detail ? <Text style={styles.detail}>{state.detail}</Text> : null}
-          </Box>
-        ) : null}
-        {state.kind === 'ready' && state.courses.length === 0 ? (
-          <Text style={styles.message}>No library courses yet</Text>
-        ) : null}
-        {state.kind === 'ready' && state.courses.length > 0 && visibleCourses.length === 0 ? (
-          <Text style={styles.message}>No matching courses</Text>
-        ) : null}
-        {state.kind === 'ready' && visibleCourses.map((course, index) => (
-          <CourseCard
-            key={course.courseId}
-            course={course}
-            index={index}
-            onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.courseId })}
-          />
-        ))}
-      </Box>
-    </Box>
+      </ScrollView>
+    </ScreenShell>
   );
 }
 
@@ -113,18 +165,32 @@ type CourseCardProps = {
 };
 
 function CourseCard({ course, index, onPress }: CourseCardProps): React.JSX.Element {
+  const { language, t } = useAppLanguage();
   const locked = course.locked === true || !course.owned;
   const imageSource = imageForCourse(course, index);
+  const status = locked ? ` ${t('Locked').toLowerCase()}` : '';
+  const accessibilityLabel = translateTemplate(
+    'Open {{title}}{{status}} course',
+    { title: course.title, status },
+    { locale: language },
+  );
+  const artworkLabel = translateTemplate(
+    '{{title}} artwork',
+    { title: course.title },
+    { locale: language },
+  );
+  const metadata = `${course.language.toUpperCase()}${course.price > 0 ? ` · ${t('Premium').toUpperCase()}` : ''}`;
+
   return (
     <TouchableOpacity
       onPress={onPress}
       style={styles.courseCard}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${course.title}${locked ? ' locked' : ''} course`}
+      accessibilityLabel={accessibilityLabel}
       activeOpacity={0.82}
     >
       {imageSource ? (
-        <Image source={imageSource} style={styles.courseImage} resizeMode="cover" accessibilityLabel={`${course.title} artwork`} />
+        <Image source={imageSource} style={styles.courseImage} resizeMode="cover" accessibilityLabel={artworkLabel} />
       ) : (
         <Box style={styles.coursePlaceholder} alignItems="center" justifyContent="center">
           <Text fontWeight="800" style={styles.courseInitial}>{course.title.charAt(0).toUpperCase()}</Text>
@@ -132,13 +198,36 @@ function CourseCard({ course, index, onPress }: CourseCardProps): React.JSX.Elem
       )}
       <Box flex={1}>
         <Text fontWeight="800" style={styles.title}>{course.title}</Text>
-        <Text fontWeight="800" style={styles.meta}>{course.language.toUpperCase()} {course.price > 0 ? '· PREMIUM' : ''}</Text>
+        <Text style={styles.meta}>{metadata}</Text>
       </Box>
-      {course.syncedToDevice ? <CheckCircle2 size={17} color="#4ECDC4" strokeWidth={2.9} accessibilityLabel="On Robot" /> : null}
-      {locked ? <Lock size={17} color="#A06900" strokeWidth={2.9} accessibilityLabel="Locked" /> : null}
-      <ChevronRight size={16} color={CL.ink3} strokeWidth={2.8} />
-      {course.syncedToDevice ? <Text style={styles.hiddenStatus}>On Robot</Text> : null}
-      {locked ? <Text style={styles.hiddenStatus}>Locked</Text> : null}
+      {course.syncedToDevice ? <CheckCircle2 size={17} color={parentColors.success} strokeWidth={2.7} accessibilityLabel={t('On Robot')} /> : null}
+      {locked ? <Lock size={17} color={parentColors.warning} strokeWidth={2.7} accessibilityLabel={t('Locked')} /> : null}
+      <ChevronRight size={17} color={parentColors.ink2} strokeWidth={2.4} />
+      {course.syncedToDevice ? <Text style={styles.hiddenStatus}>{t('On Robot')}</Text> : null}
+      {locked ? <Text style={styles.hiddenStatus}>{t('Locked')}</Text> : null}
+    </TouchableOpacity>
+  );
+}
+
+type PlanRowProps = {
+  icon: React.ReactNode;
+  label: string;
+  accessibilityLabel: string;
+  onPress: () => void;
+};
+
+function PlanRow({ icon, label, accessibilityLabel, onPress }: PlanRowProps): React.JSX.Element {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.planRow}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      activeOpacity={0.8}
+    >
+      <Box style={styles.planIcon} alignItems="center" justifyContent="center">{icon}</Box>
+      <Text fontWeight="800" style={styles.planLabel}>{label}</Text>
+      <ChevronRight size={17} color={parentColors.ink2} strokeWidth={2.4} />
     </TouchableOpacity>
   );
 }
@@ -177,52 +266,133 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 const styles = StyleSheet.create({
-  root: { backgroundColor: '#FAF5EB' },
-  heading: { fontSize: 29, color: '#2D3436', letterSpacing: 0 },
-  intro: { fontSize: 13, color: '#636E72', lineHeight: 20, marginTop: 4 },
+  root: { flex: 1, backgroundColor: parentColors.bg },
+  content: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    paddingBottom: 132,
+  },
+  topBar: {
+    paddingHorizontal: 18,
+    paddingBottom: 14,
+  },
+  languageButton: {
+    minWidth: 72,
+    height: 46,
+    borderRadius: 23,
+    paddingHorizontal: 14,
+    backgroundColor: parentColors.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    ...parentShadows.card,
+  },
+  languageCode: {
+    fontSize: 12,
+    color: parentColors.ink1,
+  },
+  iconButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: parentColors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...parentShadows.card,
+  },
+  heading: {
+    fontSize: 30,
+    lineHeight: 36,
+    color: parentColors.ink1,
+    letterSpacing: -0.8,
+  },
+  intro: {
+    fontSize: 14,
+    color: parentColors.ink2,
+    lineHeight: 21,
+    marginTop: 2,
+  },
   searchBox: {
     height: 52,
-    borderRadius: 26,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#EBDCC7',
+    borderRadius: 18,
+    backgroundColor: parentColors.card,
     paddingHorizontal: 16,
-    shadowColor: '#A98F77',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 2,
+    ...parentShadows.card,
   },
   searchInput: {
     flex: 1,
-    color: CL.ink,
-    fontSize: 13,
-    fontWeight: '800',
+    color: parentColors.ink1,
+    fontSize: 14,
     paddingVertical: 0,
   },
-  message: { fontSize: 18, color: CL.ink },
-  detail: { fontSize: 14, color: CL.ink2 },
+  message: {
+    fontSize: 17,
+    color: parentColors.ink1,
+    paddingVertical: 12,
+  },
+  detail: { fontSize: 14, color: parentColors.ink2 },
   courseCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#EBDCC7',
-    borderRadius: 28,
-    padding: 16,
+    minHeight: 82,
+    backgroundColor: parentColors.card,
+    borderRadius: parentRadii.card,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    minHeight: 86,
-    shadowColor: '#A98F77',
-    shadowOffset: { width: 0, height: 9 },
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    elevation: 2,
+    gap: 12,
+    ...parentShadows.card,
   },
-  courseImage: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F0E6D6' },
-  coursePlaceholder: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#D6D1C9' },
-  courseInitial: { color: '#FFFFFF', fontSize: 20 },
-  title: { fontSize: 14, color: '#2D3436', lineHeight: 18 },
-  meta: { fontSize: 9, color: '#636E72', marginTop: 4, letterSpacing: 0.8 },
+  courseImage: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: parentColors.cream,
+  },
+  coursePlaceholder: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: parentColors.accentSoft,
+  },
+  courseInitial: { color: parentColors.accent, fontSize: 20 },
+  title: {
+    fontSize: 15,
+    color: parentColors.ink1,
+    lineHeight: 20,
+  },
+  meta: {
+    fontSize: 11,
+    color: parentColors.ink2,
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    color: parentColors.ink1,
+    marginBottom: 2,
+  },
+  planRow: {
+    minHeight: 62,
+    borderRadius: parentRadii.card,
+    backgroundColor: parentColors.card,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    ...parentShadows.card,
+  },
+  planIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: parentColors.card2,
+  },
+  planLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: parentColors.ink1,
+  },
   hiddenStatus: {
     position: 'absolute',
     width: 1,

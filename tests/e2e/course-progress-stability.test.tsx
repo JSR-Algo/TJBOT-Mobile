@@ -354,6 +354,12 @@ describe('course, course-library, and progress stable screen states', () => {
     ]);
     const library = render(<CourseLibraryScreen navigation={navigation as never} route={route as never} />);
     await waitFor(() => expect(library.getByText('Hello Friends')).toBeTruthy());
+    expect(library.getByText('Pick what your Robot teaches.')).toBeTruthy();
+    expect(library.getByText('More in Plan')).toBeTruthy();
+    expect(library.getByLabelText('Open six-month roadmap')).toBeTruthy();
+    expect(library.getByLabelText('Open week planner')).toBeTruthy();
+    expect(library.getByLabelText('Change language')).toBeTruthy();
+    expect(library.getByLabelText('Open parent settings')).toBeTruthy();
     expect(library.getByLabelText('Open Hello Friends course')).toBeTruthy();
     expect(library.getByLabelText('Open Story Time locked course')).toBeTruthy();
     expect(library.getByText('On Robot')).toBeTruthy();

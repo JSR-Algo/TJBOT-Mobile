@@ -23,7 +23,9 @@ describe('deriveHomeState', () => {
     const { result, unmount } = renderHook(() => useHomeState(), { wrapper });
 
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.variant).toBe('daily_available');
+    expect(result.current.variant).toBe('idle');
+    expect(result.current.contentMode).toBe('unavailable');
+    expect(result.current.data).toBeUndefined();
 
     unmount();
     queryClient.clear();

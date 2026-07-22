@@ -43,4 +43,16 @@ describe('HomeHub robot tap', () => {
       autoStartVoice: true,
     });
   });
+
+  it('renders the three Sleek home actions without the legacy garden dashboard', () => {
+    const screen = render(
+      <HomeHubScreen navigation={navigation as never} route={{ key: 'home', name: ROUTES.HomeHubScreen }} />,
+    );
+
+    expect(screen.getByText('Hi, friend!')).toBeTruthy();
+    expect(screen.getByText('Course')).toBeTruthy();
+    expect(screen.getByText('Review')).toBeTruthy();
+    expect(screen.getByText('Progress')).toBeTruthy();
+    expect(screen.queryByText('My Garden')).toBeNull();
+  });
 });

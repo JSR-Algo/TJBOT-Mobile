@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getHomeHub, HOME_BACKEND_CONTRACT_AVAILABLE } from '@/services/api/home.api';
+import { getDemoBadgeState } from '@/config/investorDemo';
 import { ROUTES } from '@/navigation/routes';
 import type { RootStackParamList } from '@/navigation/routes';
 
@@ -228,14 +229,46 @@ export function deriveHomeState(input: DeriveHomeStateInput): DerivedHomeState {
   return { variant: 'idle', cfg: CFG.idle, showChildSelector: false, children };
 }
 
+export type HomeContentMode = 'loading' | 'unavailable' | 'error' | 'live';
+
 export function useHomeState() {
-  const { data, isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['home', 'hub'],
     queryFn: getHomeHub,
     enabled: HOME_BACKEND_CONTRACT_AVAILABLE,
     staleTime: 30_000,
   });
+  const homeContractAvailable = Boolean(HOME_BACKEND_CONTRACT_AVAILABLE);
+  const contentMode: HomeContentMode = !homeContractAvailable
+    ? 'unavailable'
+    : isError
+      ? 'error'
+      : data
+        ? 'live'
+        : isLoading
+          ? 'loading'
+          : 'unavailable';
   const raw = data?.variant;
-  const variant: HomeVariant = raw && raw in CFG ? (raw as HomeVariant) : 'daily_available';
-  return { variant, cfg: CFG[variant], data, isLoading };
+  const variant: HomeVariant = contentMode === 'error'
+    ? 'error'
+    : raw && raw in CFG
+      ? raw as HomeVariant
+      : 'idle';
+
+  return {
+    variant,
+    cfg: CFG[variant],
+    data,
+    isLoading,
+    isError,
+    homeContractAvailable,
+    contentMode,
+    demoBadge: getDemoBadgeState(),
+    refetch,
+  };
 }

@@ -1,5 +1,5 @@
 appId: net.jasonle.tjbot
-name: Nest spine — signup → onboarding → Home → lesson done
+name: Nest spine — signup → onboarding → Home → library
 ---
 - launchApp:
     clearState: true
@@ -179,27 +179,11 @@ name: Nest spine — signup → onboarding → Home → lesson done
 - tapOn:
     id: "homePrimaryCta"
 
-# Lesson ready → Nest complete
+# A new account has no assigned next lesson yet. Home must route the primary
+# action to the real backend-backed library instead of fabricating a lesson.
 - extendedWaitUntil:
     visible:
-      id: "lessonReadyCta"
+      id: "libraryTab"
     timeout: 60000
-- takeScreenshot: output/maestro/nest-spine/15-lesson-ready
-- tapOn:
-    id: "lessonReadyCta"
-
-# Lesson done
-- extendedWaitUntil:
-    visible:
-      id: "lessonDoneHomeButton"
-    timeout: 60000
-- takeScreenshot: output/maestro/nest-spine/16-lesson-done
-- tapOn:
-    id: "lessonDoneHomeButton"
-
-# Back on Home
-- extendedWaitUntil:
-    visible:
-      id: "homePrimaryCta"
-    timeout: 45000
-- takeScreenshot: output/maestro/nest-spine/17-home-after-lesson
+- assertVisible: ".*(Barnyard Basics|Color Safari|Number Train).*"
+- takeScreenshot: output/maestro/nest-spine/15-library

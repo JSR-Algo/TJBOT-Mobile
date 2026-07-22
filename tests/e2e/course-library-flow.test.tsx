@@ -133,6 +133,21 @@ describe('course-library flow guards', () => {
     expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_food', assignmentId: 'assign-1' });
   });
 
+  it('does not attach unrelated static metadata to a published course', async () => {
+    const navigation = navigationFor();
+    renderWithProviders(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_barn' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Barn Friends')).toBeTruthy());
+    expect(screen.queryByText(/Mealtime English/)).toBeNull();
+    expect(screen.queryByText('Food')).toBeNull();
+    expect(screen.getByText('2')).toBeTruthy();
+  });
+
   it('starts the free add path from detail without billing plan selection', () => {
     const navigation = navigationFor();
     renderWithProviders(
