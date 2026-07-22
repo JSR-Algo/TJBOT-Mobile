@@ -20,6 +20,10 @@ const HANDLE_MAX_AGE_MS = 5 * 60 * 1000;
 interface GeminiLiveSession {
   close?: () => void;
   sendRealtimeInput?: (input: { audio: { data: string; mimeType: string } }) => void;
+  sendClientContent?: (params: {
+    turns: Array<{ role: string; parts: Array<{ text: string }> }>;
+    turnComplete?: boolean;
+  }) => void;
 }
 
 interface LiveCloseEvent {
@@ -96,6 +100,8 @@ export interface UseGeminiAudioSessionReturn {
   reconnect: () => void;
   isCurrentSession: () => boolean;
   suppressCloseForCurrentSession: () => void;
+  /** Send a text turn to the live session (e.g. the speak-first greeting kickoff). */
+  sendTextTurn: (text: string) => boolean;
 }
 
 export function useGeminiAudioSession(
@@ -140,6 +146,24 @@ export function useGeminiAudioSession(
   const reconnect = useCallback(() => {
     reconnectRef.current?.();
   }, []);
+
+  const sendTextTurn = useCallback(
+    (text: string): boolean => {
+      const live = sessionRef.current;
+      if (!live?.sendClientContent) return false;
+      try {
+        live.sendClientContent({
+          turns: [{ role: 'user', parts: [{ text }] }],
+          turnComplete: true,
+        });
+        return true;
+      } catch (err) {
+        telemetry.jsErrorBreadcrumb('gemini.sendTextTurn', err);
+        return false;
+      }
+    },
+    [telemetry],
+  );
 
   const connect = useCallback(
     async (callbacks: GeminiSessionCallbacks, isReconnect: boolean): Promise<void> => {
@@ -374,6 +398,7 @@ export function useGeminiAudioSession(
       reconnect,
       isCurrentSession,
       suppressCloseForCurrentSession,
+      sendTextTurn,
     }),
     [
       connect,
@@ -381,6 +406,7 @@ export function useGeminiAudioSession(
       reconnect,
       isCurrentSession,
       suppressCloseForCurrentSession,
+      sendTextTurn,
     ],
   );
 }

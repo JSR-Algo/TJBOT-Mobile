@@ -57,7 +57,8 @@
     "navigation:tree": "node scripts/navigation/export-navigation-tree.mjs",
     "navigation:forward-edges": "node scripts/navigation/export-forward-edges.mjs",
     "check:screen-prop-types": "node scripts/check-screen-prop-types.mjs",
-    "check:token-parity": "node scripts/check-token-parity.mjs"
+    "check:token-parity": "node scripts/check-token-parity.mjs",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@google/genai": "^1.49.0",
@@ -120,6 +121,7 @@
     "jest": "^29.7.0",
     "jest-expo": "^55.0.0",
     "mermaid": "^11.15.0",
+    "patch-package": "^8.0.1",
     "react-test-renderer": "19.2.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.58.2"

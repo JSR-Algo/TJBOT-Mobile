@@ -22,6 +22,53 @@ import UIKit
 
 @objc(VoiceSessionModule)
 final class VoiceSessionModule: RCTEventEmitter {
+  // MARK: - Session ownership (static, cross-module)
+
+  /// True while a voice conversation owns the AVAudioSession
+  /// (startSession → endSession). Other audio consumers (expo-video's
+  /// muted lesson backgrounds, etc.) can clobber the category between
+  /// startSession and the first mic start; SharedVoiceEngine calls
+  /// `reassertAudioSessionIfNeeded()` right before engine start so the
+  /// mic never tries to record under a Playback-category session
+  /// (E_MIC_START, "Micro không khả dụng").
+  private static let ownershipLock = NSLock()
+  private static var voiceSessionOwnsAudio = false
+
+  static func setVoiceSessionOwnsAudio(_ owns: Bool) {
+    ownershipLock.lock()
+    voiceSessionOwnsAudio = owns
+    ownershipLock.unlock()
+  }
+
+  /// Re-apply the voice conversation category if some other module changed
+  /// it while a voice session is active. No-op when the session is not
+  /// active or the category is already .playAndRecord.
+  static func reassertAudioSessionIfNeeded() {
+    ownershipLock.lock()
+    let owns = voiceSessionOwnsAudio
+    ownershipLock.unlock()
+    guard owns else { return }
+
+    let session = AVAudioSession.sharedInstance()
+    guard session.category != .playAndRecord else { return }
+
+    NSLog(
+      "[TJBotVoice] %@",
+      "reassert_audio_session: category=\(session.category.rawValue) mode=\(session.mode.rawValue) — re-applying playAndRecord"
+    )
+    do {
+      try session.setCategory(
+        .playAndRecord,
+        mode: .default,
+        options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker]
+      )
+      try session.setActive(true, options: .notifyOthersOnDeactivation)
+      try? session.overrideOutputAudioPort(.speaker)
+    } catch {
+      NSLog("[TJBotVoice] %@", "reassert_audio_session failed: \(error.localizedDescription)")
+    }
+  }
+
   // MARK: - State
 
   private var sessionActive: Bool = false
@@ -120,6 +167,7 @@ final class VoiceSessionModule: RCTEventEmitter {
 
       registerObservers()
       sessionActive = true
+      Self.setVoiceSessionOwnsAudio(true)
       currentRoute = routeForCurrentOutput()
 
       // P0-8: log actual HAL values immediately after activation so every
@@ -156,6 +204,7 @@ final class VoiceSessionModule: RCTEventEmitter {
     }
 
     unregisterObservers()
+    Self.setVoiceSessionOwnsAudio(false)
 
     let session = AVAudioSession.sharedInstance()
     do {

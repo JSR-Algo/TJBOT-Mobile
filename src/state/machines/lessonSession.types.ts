@@ -101,6 +101,10 @@ export type LessonSessionEvent =
       sessionId: string;
       deviceSessionId: string;
     }
+  | {
+      type: 'xstate.done.actor.startSession';
+      output: { sessionId: string; deviceSessionId: string };
+    }
   | { type: 'WS_DISCONNECT' }
   | { type: 'HEARTBEAT_MISS_3X' }
   | { type: 'WS_RESUMED' }

@@ -11,21 +11,60 @@ function sliceFrom(anchor: string, length: number): string {
 }
 
 describe('useGeminiConversation voice stability source locks', () => {
-  it('permission denial and permission request failure route to ERROR_RECOVERABLE', () => {
-    const permissionBlock = sliceFrom('mic_permission_requested', 900);
+  it('speak-first: mic permission is requested in parallel and never dead-ends the session', () => {
+    const permissionBlock = sliceFrom('mic_permission_requested', 2600);
 
     expect(permissionBlock).toMatch(/requestRecordingPermissionsAsync\(\)/);
+    // Non-blocking: resolved via .then, never awaited before the connect.
+    expect(permissionBlock).toMatch(/\.then\(\(\{\s*granted\s*\}\)\s*=>/);
+    expect(permissionBlock).toMatch(/micGrantedRef\.current = granted/);
+    // Deny keeps the robot speaking: a parent-facing notice, no FSM error.
     expect(permissionBlock).toMatch(/if\s*\(!granted\)\s*\{/);
-    expect(permissionBlock).toMatch(/setError\('Cần quyền micro để trò chuyện\.'\)/);
-    expect(permissionBlock).toMatch(/transition\('ERROR_RECOVERABLE'\)/);
-    expect(permissionBlock).toMatch(/catch\s*\{/);
-    expect(permissionBlock).toMatch(/setError\('Không thể yêu cầu quyền micro\.'\)/);
-    expect(permissionBlock).toMatch(/transition\('ERROR_RECOVERABLE'\)/);
+    expect(permissionBlock).toMatch(/TeeBot vẫn nói được/);
+    expect(permissionBlock).not.toMatch(/transition\('ERROR_RECOVERABLE'\)/);
+    // Stale-run guard: a permission promise from a superseded run returns
+    // BEFORE writing micGrantedRef, so it can never flip the live run's mic
+    // state and strand a later capture restart.
+    expect(permissionBlock).toMatch(/voiceRunIdRef\.current !== permissionRunId\)\s*return/);
+    // Banner effects still fire only for the run that asked.
+    expect(permissionBlock).toMatch(/voiceRunIdRef\.current === permissionRunId/);
+    // Request failure is a run-guarded notice, never a dead-end.
+    expect(permissionBlock).toMatch(/\.catch\(\(err\)\s*=>/);
+    expect(permissionBlock).toMatch(/jsErrorBreadcrumb\('voice\.micPermission\.request'/);
+  });
+
+  it('speak-first: reconnect refreshes mic permission without prompting (revoked → speak-only, no dead-end)', () => {
+    // The parallel request runs only on a fresh start; the reconnect path
+    // refreshes via the non-prompting getter so a mic revoked in Settings
+    // between disconnect and reconnect degrades to speak-only rather than
+    // dead-ending with E_MIC_PERMISSION_DENIED.
+    expect(hook).toMatch(/getRecordingPermissionsAsync/);
+    const reconnectRefresh = sliceFrom('} else if (VoiceMic.isAvailable) {', 800);
+    expect(reconnectRefresh).toMatch(/getRecordingPermissionsAsync\(\)/);
+    expect(reconnectRefresh).toMatch(/micGrantedRef\.current = granted/);
+    expect(reconnectRefresh).not.toMatch(/transition\('ERROR_RECOVERABLE'\)/);
+    expect(reconnectRefresh).toMatch(/jsErrorBreadcrumb\('voice\.micPermission\.reconnectRefresh'/);
+  });
+
+  it('speak-first: greeting kickoff fires after a fresh connect and capture is gated on grant', () => {
+    // Kickoff: fresh sessions nudge Gemini to take the first turn.
+    const kickoffBlock = sliceFrom('await session.connect(sessionCallbacks, isReconnect);', 600);
+    expect(kickoffBlock).toMatch(/if\s*\(!isReconnect\)\s*\{/);
+    expect(kickoffBlock).toMatch(/sendTextTurn\(GREETING_KICKOFF_TURN\)/);
+    // Capture never starts without permission (would reject and dead-end).
+    const captureBlock = sliceFrom('function _startAudioCapture(): void {', 400);
+    expect(captureBlock).toMatch(/if\s*\(!micGrantedRef\.current\)\s*\{/);
+    // Speak-only mode promotes READY → LISTENING so the 2s deadline can't fire.
+    const connectedBlock = sliceFrom('const promoteReadyToListening', 500);
+    expect(connectedBlock).toMatch(/if\s*\(!micGrantedRef\.current\)\s*\{/);
+    expect(connectedBlock).toMatch(/transition\('LISTENING'\)/);
   });
 
   it('stopConversation cleans capture, playback, SDK session, and voice session subscriptions', () => {
     const stopBlock = sliceFrom('const stopConversation = useCallback', 1900);
 
+    expect(stopBlock).toMatch(/voiceRunIdRef\.current \+= 1/);
+    expect(stopBlock).toMatch(/micGrantedRef\.current = false/);
     expect(stopBlock).toMatch(/clearTimeout\(simulatorReplyTimerRef\.current\)/);
     expect(stopBlock).toMatch(/stopAudioCaptureRef\.current\?\.\(\)/);
     expect(stopBlock).toMatch(/playback\.interrupt\(\)/);
@@ -38,12 +77,12 @@ describe('useGeminiConversation voice stability source locks', () => {
   });
 
   it('audio capture start failure unsubscribes every native listener before recoverable fallback', () => {
-    const startFailureBlock = sliceFrom('.catch((err: unknown) => {', 700);
+    const startFailureBlock = sliceFrom('.catch((err: unknown) => {', 1000);
 
     expect(startFailureBlock).toMatch(/cleanupNativeCapture\(\)/);
     expect(startFailureBlock).toMatch(/jsErrorBreadcrumb\('voiceMic\.start'/);
     expect(startFailureBlock).toMatch(/audio_capture_start_failed/);
-    expect(startFailureBlock).toMatch(/setError\('Micro không khả dụng\.'\)/);
+    expect(startFailureBlock).toMatch(/setError\(`Micro không khả dụng\./);
     expect(startFailureBlock).toMatch(/transition\('ERROR_RECOVERABLE'\)/);
   });
 

@@ -105,6 +105,16 @@ final class SharedVoiceEngine {
     }
 
     do {
+      // Session-category guard. expo-video (muted lesson backgrounds) and
+      // other players can clobber AVAudioSession to .playback/.moviePlayback
+      // between VoiceSessionModule.startSession and this mic start — the
+      // engine then cannot record and fails with E_MIC_START. Re-apply the
+      // voice category if a voice session owns the audio right now. This
+      // does not violate the "VoiceSessionModule owns the category"
+      // invariant: the re-assert logic lives in VoiceSessionModule; this is
+      // just the call site closest to engine start.
+      VoiceSessionModule.reassertAudioSessionIfNeeded()
+
       // Permission gate. Apple's `engine.start()` does NOT throw when mic
       // permission is denied — it silently no-ops with `engine.isRunning`
       // briefly true then flipping to false within milliseconds. By the
