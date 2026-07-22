@@ -4,6 +4,9 @@ dist/
 .env
 ios/Pods/
 ios/build/
+ios/build-sim/
+ios/build-device/
+output/maestro/
 android/build/
 android/.gradle/
 android/app/build/
