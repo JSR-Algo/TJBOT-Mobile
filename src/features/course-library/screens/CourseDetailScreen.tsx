@@ -12,7 +12,7 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import COURSES from '../components/courses';
 import CLChip from '../components/CLChip';
-import RobotConnectionModal from '../components/RobotConnectionModal';
+import RobotConnectionPrompt from '../components/RobotConnectionPrompt';
 import {
   getCourseLessons,
   getCourses,
@@ -220,7 +220,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>Back to library</DeviceBigBtn>
       </Box>
       </DeviceShell>
-      <RobotConnectionModal
+      <RobotConnectionPrompt
         visible={robotConnectionModalVisible}
         onDismiss={() => setRobotConnectionModalVisible(false)}
         onConnect={() => {

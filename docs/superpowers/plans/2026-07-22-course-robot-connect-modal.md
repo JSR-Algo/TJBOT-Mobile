@@ -4,7 +4,7 @@
 
 **Goal:** Replace the native unavailable-Robot alert on Course Detail with a polished TBOT modal that can open Robot setup or dismiss in place.
 
-**Architecture:** Keep status ownership in `CourseDetailScreen`, but move the visual overlay into a focused `RobotConnectionModal` component. The screen controls visibility and navigation; the modal only renders localized presentation and invokes `onConnect` / `onDismiss` callbacks.
+**Architecture:** Keep status ownership in `CourseDetailScreen`, but move the visual overlay into a focused `RobotConnectionPrompt` component. The screen controls visibility and navigation; the prompt only renders localized presentation and invokes `onConnect` / `onDismiss` callbacks. The `Prompt` suffix intentionally avoids the repository convention that treats every `*Modal.tsx` file as a navigation route.
 
 **Tech Stack:** React Native `Modal`, TypeScript strict mode, React Navigation, existing TBOT design primitives, `RobotDevice`, Jest, `@testing-library/react-native`.
 
@@ -73,7 +73,7 @@ git commit -m "test(course-library): require robot connection recovery modal" \
 ### Task 2: Build The TBOT Robot Connection Modal
 
 **Files:**
-- Create: `src/features/course-library/components/RobotConnectionModal.tsx`
+- Create: `src/features/course-library/components/RobotConnectionPrompt.tsx`
 - Modify: `src/services/i18n/locales/en.json`
 - Modify: `src/services/i18n/locales/vi.json`
 
@@ -97,7 +97,7 @@ Reuse the existing `Connect Robot` and `Not now` keys for the two actions.
 
 - [ ] **Step 2: Create the focused modal component**
 
-Create `RobotConnectionModal.tsx` with this public interface:
+Create `RobotConnectionPrompt.tsx` with this public interface:
 
 ```tsx
 type Props = {
@@ -161,7 +161,7 @@ Prevent card presses from bubbling to the scrim; scrim press invokes `onDismiss`
 Remove `Alert` and `useAppLanguage` from `CourseDetailScreen`. Add:
 
 ```tsx
-import RobotConnectionModal from '../components/RobotConnectionModal';
+import RobotConnectionPrompt from '../components/RobotConnectionPrompt';
 
 const [robotConnectionModalVisible, setRobotConnectionModalVisible] = React.useState(false);
 const showRobotConnectionModal = React.useCallback(() => {
@@ -176,7 +176,7 @@ Replace every `showRobotConnectionAlert()` call with `showRobotConnectionModal()
 Before the closing `DeviceShell`, render:
 
 ```tsx
-<RobotConnectionModal
+<RobotConnectionPrompt
   visible={robotConnectionModalVisible}
   onDismiss={() => setRobotConnectionModalVisible(false)}
   onConnect={() => {
@@ -220,7 +220,7 @@ Expected: 3 suites pass.
 
 ```bash
 git add \
-  src/features/course-library/components/RobotConnectionModal.tsx \
+  src/features/course-library/components/RobotConnectionPrompt.tsx \
   src/features/course-library/screens/CourseDetailScreen.tsx \
   src/services/i18n/locales/en.json \
   src/services/i18n/locales/vi.json \

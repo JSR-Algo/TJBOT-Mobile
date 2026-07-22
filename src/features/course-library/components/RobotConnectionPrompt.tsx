@@ -13,7 +13,7 @@ type Props = {
   onDismiss: () => void;
 };
 
-export default function RobotConnectionModal({ visible, onConnect, onDismiss }: Props) {
+export default function RobotConnectionPrompt({ visible, onConnect, onDismiss }: Props) {
   const { t } = useAppLanguage();
 
   return (
