@@ -23,6 +23,7 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
       testID={scrollTestID}
       style={styles.root}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
     >
@@ -56,17 +57,22 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: referenceColors.bg },
-  content: { paddingBottom: 20 },
+  content: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    paddingBottom: 130,
+  },
   header: {
     position: 'relative',
     paddingTop: 56,
-    paddingBottom: 8,
-    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
     zIndex: 5,
   },
   title: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 29,
     color: referenceColors.ink,
     letterSpacing: 0,
   },

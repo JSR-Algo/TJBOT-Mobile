@@ -1,43 +1,39 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from './routes';
-import type { FeatureTabName, FeatureTabScreen } from './types';
-import { DEFAULT_MAIN_TAB_NAME, MAIN_TAB_SCREENS } from './featureRegistry';
-import { OfflineBanner } from '@/components/OfflineBanner';
-import { referenceColors, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
-import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
+import React from "react";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "./routes";
+import type { FeatureTabName, FeatureTabScreen } from "./types";
+import { DEFAULT_MAIN_TAB_NAME, MAIN_TAB_SCREENS } from "./featureRegistry";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { getSleekTabBarLayout } from "@/design-system/sleekHomeLayout";
+import { MainTabIcon, SLEEK_TAB_ICONS } from "./SleekTabBarVisuals";
+
+const SLEEK = {
+  foreground: "#2D3436",
+  muted: "#636E72",
+  primary: "#FF6B6B",
+  border: "#EBDCC7",
+  card: "#FFFFFF",
+} as const;
+
 
 type MainTabParamList = Record<FeatureTabName, undefined>;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-type MainTabIconProps = {
-  Icon: FeatureTabScreen['tabIcon'];
-  color: string;
-  focused: boolean;
-};
 
-export function MainTabIcon({ Icon, color, focused }: MainTabIconProps): React.JSX.Element {
-  return (
-    <View
-      testID="mainTabIconContainer"
-      style={[styles.tabIconContainer, focused ? styles.tabIconContainerFocused : styles.tabIconContainerIdle]}
-    >
-      <Icon size={22} color={color} strokeWidth={focused ? 2.8 : 2.2} />
-    </View>
-  );
-}
-
-function createTabRouteScreen<RouteName extends keyof RootStackParamList & string>(
+function createTabRouteScreen<
+  RouteName extends keyof RootStackParamList & string,
+>(
   screen: FeatureTabScreen<RouteName>,
   initialRouteName: keyof RootStackParamList | undefined,
   initialRouteParams: RootStackParamList[keyof RootStackParamList] | undefined,
 ): () => React.JSX.Element {
   return function TabRouteScreen(): React.JSX.Element {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, RouteName>>();
+    const navigation =
+      useNavigation<NativeStackNavigationProp<RootStackParamList, RouteName>>();
     const route = {
       key: screen.name,
       name: screen.name,
@@ -59,10 +55,15 @@ export function MainTabNavigator({
   initialRouteName,
   initialRouteParams,
 }: Props): React.JSX.Element {
-  const { language } = useAppLanguage();
-  const tabRoutes = MAIN_TAB_SCREENS.map(screen => ({
+  const { width, height } = useWindowDimensions();
+  const tabLayout = getSleekTabBarLayout(width, height);
+  const tabRoutes = MAIN_TAB_SCREENS.map((screen) => ({
     screen,
-    component: createTabRouteScreen(screen, initialRouteName, initialRouteParams),
+    component: createTabRouteScreen(
+      screen,
+      initialRouteName,
+      initialRouteParams,
+    ),
   }));
 
   return (
@@ -72,11 +73,31 @@ export function MainTabNavigator({
         initialRouteName={initialTabName}
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: referenceColors.primary,
-          tabBarInactiveTintColor: referenceColors.inkMuted,
-          tabBarStyle: styles.tabBar,
-          tabBarItemStyle: styles.tabBarItem,
-          tabBarLabelStyle: styles.tabBarLabel,
+          sceneStyle: { backgroundColor: "#FAF5EB" },
+          tabBarActiveTintColor: SLEEK.primary,
+          tabBarInactiveTintColor: SLEEK.muted,
+          tabBarStyle: [
+            styles.tabBar,
+            {
+              bottom: tabLayout.bottom,
+              borderRadius: 40 * tabLayout.scale,
+              height: tabLayout.height,
+              paddingBottom: 8 * tabLayout.scale,
+              paddingHorizontal: 8 * tabLayout.scale,
+              paddingTop: 8 * tabLayout.scale,
+              transform: [{ translateX: tabLayout.left }],
+              width: tabLayout.width,
+            },
+          ],
+          tabBarItemStyle: { borderRadius: 32 * tabLayout.scale },
+          tabBarLabelStyle: [
+            styles.tabBarLabel,
+            {
+              fontSize: 9 * tabLayout.scale,
+              lineHeight: 12 * tabLayout.scale,
+              marginTop: tabLayout.scale,
+            },
+          ],
         }}
       >
         {tabRoutes.map(({ screen, component: Component }) => {
@@ -87,10 +108,23 @@ export function MainTabNavigator({
               name={screen.tabName}
               component={Component}
               options={{
-                title: translateCopy(screen.title, { locale: language }),
+                title: screen.title,
+                tabBarLabel: screen.title,
                 tabBarButtonTestID: screen.tabBarButtonTestID,
-                tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-                  <MainTabIcon Icon={Icon} color={color} focused={focused} />
+                tabBarIcon: ({
+                  color,
+                  focused,
+                }: {
+                  color: string;
+                  focused: boolean;
+                }) => (
+                  <MainTabIcon
+                    Icon={Icon}
+                    color={color}
+                    focused={focused}
+                    imageUri={SLEEK_TAB_ICONS[screen.tabName]}
+                    layoutScale={tabLayout.scale}
+                  />
                 ),
               }}
             />
@@ -102,46 +136,20 @@ export function MainTabNavigator({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: "#FAF5EB" },
   tabBar: {
-    position: 'absolute',
-    left: 22,
-    right: 22,
-    bottom: 18,
-    height: 78,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingHorizontal: 8,
+    position: "absolute",
     borderTopWidth: 0,
-    borderRadius: referenceRadii.nav,
-    backgroundColor: referenceColors.card,
+    backgroundColor: SLEEK.card,
     borderWidth: 1,
-    borderColor: referenceColors.line,
-    ...referenceShadow.nav,
-  },
-  tabBarItem: {
-    borderRadius: 24,
+    borderColor: "rgba(235,220,199,0.6)",
+    shadowColor: "#2D3436",
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 8,
   },
   tabBarLabel: {
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  tabIconContainer: {
-    width: 42,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 19,
-    borderWidth: 1,
-  },
-  tabIconContainerFocused: {
-    backgroundColor: referenceColors.primarySoft,
-    borderColor: 'rgba(255,107,111,0.18)',
-  },
-  tabIconContainerIdle: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
+    fontWeight: "800",
   },
 });

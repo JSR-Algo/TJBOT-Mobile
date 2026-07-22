@@ -1,11 +1,10 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
 import PageScroll from '@/design-system/components/PageScroll';
-import PageHeader from '@/design-system/components/PageHeader';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -14,6 +13,7 @@ import { useHousehold } from '@/contexts/HouseholdContext';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TodayProgressScreen'>;
+const SLEEK_PROGRESS_ICON = 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/NpznCUpnBV4.png';
 
 // A CANCELLED/FAILED lesson is not an accomplishment and must never render under
 // the "You practiced speaking!" celebration. COMPLETED is a real win and stays
@@ -62,9 +62,17 @@ export default function TodayProgressScreen({ navigation }: Props) {
 
   return (
     <PageScroll>
-      <PageHeader subtitle="Today" title={headerTitle} />
+      <Box paddingHorizontal={24} paddingTop={56} paddingBottom={18} flexDirection="row" alignItems="center" justifyContent="space-between">
+        <Box flex={1}>
+          <Text fontWeight="800" style={styles.eyebrow}>Today</Text>
+          <Text fontWeight="800" style={styles.heading}>{headerTitle}</Text>
+        </Box>
+        <Box style={styles.headerIconWell} alignItems="center" justifyContent="center">
+          <Image source={{ uri: SLEEK_PROGRESS_ICON }} style={styles.headerIcon} resizeMode="contain" accessibilityLabel="Progress" />
+        </Box>
+      </Box>
 
-      <Box paddingHorizontal={18} paddingBottom={14} gap={12}>
+      <Box paddingHorizontal={20} paddingBottom={14} gap={12}>
         {query.isLoading ? <Text style={styles.message}>Loading progress</Text> : null}
         {query.isError ? <ProgressError onRetry={() => { void query.refetch(); }} /> : null}
         {!query.isLoading && !query.isError && !latest ? (
@@ -74,7 +82,7 @@ export default function TodayProgressScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#FF6F61">Back home</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#FF6B6B">Back home</PrimaryCTA>
       </Box>
     </PageScroll>
   );
@@ -124,21 +132,29 @@ function StatChip({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  message: { fontSize: 18, color: '#2B2140' },
-  lessonTitle: { fontSize: 20, color: '#2B2140', lineHeight: 26 },
+  eyebrow: { fontSize: 13, color: '#FF6B6B', marginBottom: 4 },
+  heading: { fontSize: 29, color: '#2D3436', lineHeight: 35, paddingRight: 14 },
+  headerIconWell: { width: 78, height: 78, borderRadius: 26, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EBDCC7' },
+  headerIcon: { width: 62, height: 62 },
+  message: { fontSize: 18, color: '#2D3436', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EBDCC7', borderRadius: 28, padding: 24 },
+  lessonTitle: { fontSize: 21, color: '#2D3436', lineHeight: 27, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EBDCC7', borderRadius: 28, padding: 20 },
   statChip: {
     backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#EBDCC7',
+    padding: 20,
   },
-  statValue: { fontSize: 30, color: '#2B2140', lineHeight: 32 },
-  statLabel: { fontSize: 12, color: '#5C4F77', textAlign: 'center' },
+  statValue: { fontSize: 32, color: '#FF6B6B', lineHeight: 36 },
+  statLabel: { fontSize: 12, color: '#636E72', textAlign: 'center' },
   stateCard: {
     backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#EBDCC7',
+    padding: 22,
   },
-  stateLabel: { fontSize: 16, color: '#2B2140', marginBottom: 6 },
-  stateDetail: { fontSize: 13, color: '#5C4F77' },
-  errorDetail: { fontSize: 14, color: '#5C4F77' },
+  stateLabel: { fontSize: 17, color: '#2D3436', marginBottom: 6 },
+  stateDetail: { fontSize: 13, color: '#636E72' },
+  errorDetail: { fontSize: 14, color: '#FF6B6B' },
 });
