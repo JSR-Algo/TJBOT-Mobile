@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
@@ -12,6 +12,7 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import COURSES from '../components/courses';
 import CLChip from '../components/CLChip';
+import RobotConnectionModal from '../components/RobotConnectionModal';
 import {
   getCourseLessons,
   getCourses,
@@ -19,7 +20,6 @@ import {
   type PublishedLesson,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
-import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetailScreen'>;
 
@@ -35,21 +35,17 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? COURSE.id;
   const household = useOptionalHousehold();
   const childId = household?.activeChild?.id;
-  const { t } = useAppLanguage();
   const [checkingRobot, setCheckingRobot] = React.useState(false);
+  const [robotConnectionModalVisible, setRobotConnectionModalVisible] = React.useState(false);
 
-  const showRobotConnectionAlert = React.useCallback(() => {
-    Alert.alert(
-      t("Robot isn't ready yet"),
-      t('Connect Robot first. Then you can add this lesson right away.'),
-      [{ text: t('Got it') }],
-    );
-  }, [t]);
+  const showRobotConnectionModal = React.useCallback(() => {
+    setRobotConnectionModalVisible(true);
+  }, []);
 
   const handleAddToRobot = React.useCallback(async () => {
     if (checkingRobot) return;
     if (!childId) {
-      showRobotConnectionAlert();
+      showRobotConnectionModal();
       return;
     }
 
@@ -57,16 +53,16 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
     try {
       const robot = await getDeviceStatus('primary', childId);
       if (!robot.id || robot.online !== true) {
-        showRobotConnectionAlert();
+        showRobotConnectionModal();
         return;
       }
       navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId });
     } catch {
-      showRobotConnectionAlert();
+      showRobotConnectionModal();
     } finally {
       setCheckingRobot(false);
     }
-  }, [checkingRobot, childId, courseId, navigation, showRobotConnectionAlert]);
+  }, [checkingRobot, childId, courseId, navigation, showRobotConnectionModal]);
 
   // Static catalog supplies the rich UI metadata (blurb / lcd / teaches) the
   // published endpoints don't return. The dynamic published catalog overlays the
@@ -127,7 +123,8 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
     lessons: lessonCount,
   };
   return (
-    <DeviceShell title="Course details" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
+    <>
+      <DeviceShell title="Course details" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard}>
           <Box style={styles.heroLCD} alignItems="center" justifyContent="center">
@@ -222,7 +219,16 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
         <DeviceBigBtn onClick={handleAddToRobot} disabled={checkingRobot}>Add to Robot</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>Back to library</DeviceBigBtn>
       </Box>
-    </DeviceShell>
+      </DeviceShell>
+      <RobotConnectionModal
+        visible={robotConnectionModalVisible}
+        onDismiss={() => setRobotConnectionModalVisible(false)}
+        onConnect={() => {
+          setRobotConnectionModalVisible(false);
+          navigation.navigate(ROUTES.PairAddScreen);
+        }}
+      />
+    </>
   );
 }
 
