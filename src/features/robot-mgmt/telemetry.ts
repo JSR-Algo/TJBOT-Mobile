@@ -5,6 +5,11 @@ import {
   isBackendContractUnavailableError,
   type DeviceStatus,
 } from '@/services/api/device.api';
+import { getDemoBadgeState } from '@/config/investorDemo';
+import {
+  mapErrorToLinkState,
+  type RobotLinkState,
+} from '@/services/connectors/types';
 
 export const ROBOT_DETAILS_ERROR_COPY = 'Robot details are temporarily unavailable.';
 export const ROBOT_DETAILS_COMING_SOON_COPY = 'Robot details are coming soon.';
@@ -21,8 +26,10 @@ export type RobotTelemetryInput = Partial<DeviceStatus> & {
 };
 
 export type NormalizedRobotTelemetry = {
+  wifiRssi: number | null;
   deviceId: string | null;
   robotName: string;
+  serialNumber: string;
   onlineLabel: string;
   batteryLabel: string;
   wifiLabel: string;
@@ -37,22 +44,33 @@ export type RobotTelemetryState = {
   errorMessage: string | null;
   failureReason: string | null;
   featureUnavailable: boolean;
+  linkState: RobotLinkState | null;
+  simulated: boolean;
+  retry: () => void;
 };
+
+type RobotTelemetrySnapshot = Omit<RobotTelemetryState, 'retry'>;
 
 export function normalizeRobotTelemetry(input?: RobotTelemetryInput): NormalizedRobotTelemetry {
   const batteryPercent = input?.batteryPercent;
   const wifiSsid = input?.wifiSsid?.trim();
+  const wifiRssi = typeof input?.wifiRssi === 'number' && Number.isFinite(input.wifiRssi)
+    ? input.wifiRssi
+    : null;
   const firmwareVersion = input?.firmwareVersion?.trim();
   const robotName = input?.name?.trim();
+  const serialNumber = input?.serialNumber?.trim();
 
   return {
     deviceId: input?.id ?? null,
     robotName: robotName ? robotName : UNAVAILABLE_ROBOT,
     onlineLabel: input?.online === true ? 'Online' : input?.online === false ? 'Offline' : 'Status unavailable',
+    serialNumber: serialNumber || 'Serial number unavailable',
     batteryLabel: typeof batteryPercent === 'number' && Number.isFinite(batteryPercent)
       ? `${Math.max(0, Math.min(100, Math.round(batteryPercent)))}%`
       : UNAVAILABLE_BATTERY,
     wifiLabel: wifiSsid ? wifiSsid : UNAVAILABLE_WIFI,
+    wifiRssi,
     firmwareLabel: firmwareVersion ? firmwareVersion : UNAVAILABLE_FIRMWARE,
     chargingLabel: input?.charging === true ? 'charging' : 'not charging',
     stale: isTelemetryStale(input?.lastSeenAt),
@@ -60,18 +78,33 @@ export function normalizeRobotTelemetry(input?: RobotTelemetryInput): Normalized
 }
 
 export function useRobotTelemetry(): RobotTelemetryState {
-  const [state, setState] = React.useState<RobotTelemetryState>({
+  const simulated = getDemoBadgeState().simulated;
+  const [attempt, setAttempt] = React.useState(0);
+  const [state, setState] = React.useState<RobotTelemetrySnapshot>({
     telemetry: normalizeRobotTelemetry(undefined),
     loading: true,
     errorMessage: null,
     failureReason: null,
     featureUnavailable: false,
+    linkState: null,
+    simulated,
   });
+  const retry = React.useCallback(() => {
+    setAttempt((value) => value + 1);
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
 
     async function loadTelemetry(): Promise<void> {
+      setState((current) => ({
+        ...current,
+        loading: true,
+        errorMessage: null,
+        failureReason: null,
+        linkState: null,
+        simulated,
+      }));
       try {
         const [status, firmware] = await Promise.all([
           getDeviceStatus(PRIMARY_ROBOT_ID),
@@ -82,6 +115,7 @@ export function useRobotTelemetry(): RobotTelemetryState {
           return;
         }
 
+        const linkState = status.id ? null : 'not_connected';
         setState({
           telemetry: normalizeRobotTelemetry({
             ...status,
@@ -91,6 +125,8 @@ export function useRobotTelemetry(): RobotTelemetryState {
           errorMessage: null,
           failureReason: null,
           featureUnavailable: false,
+          linkState,
+          simulated,
         });
       } catch (error) {
         if (cancelled) {
@@ -104,6 +140,8 @@ export function useRobotTelemetry(): RobotTelemetryState {
           errorMessage: featureUnavailable ? ROBOT_DETAILS_COMING_SOON_COPY : ROBOT_DETAILS_ERROR_COPY,
           failureReason: describeError(error),
           featureUnavailable,
+          linkState: mapErrorToLinkState(error) ?? 'server_unavailable',
+          simulated,
         });
       }
     }
@@ -113,9 +151,9 @@ export function useRobotTelemetry(): RobotTelemetryState {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt, simulated]);
 
-  return state;
+  return { ...state, retry };
 }
 
 function isTelemetryStale(lastSeenAt: string | undefined): boolean {

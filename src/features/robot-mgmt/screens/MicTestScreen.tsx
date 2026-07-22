@@ -53,12 +53,12 @@ export default function MicTestScreen({ navigation }: Props) {
     phase === 'disabled'
       ? 'Device management is disabled in this build. Enable it in feature flags to test the microphone.'
       : phase === 'idle'
-      ? "Stand about an arm's length from Robot, then tap Start."
+      ? 'Keep Robot nearby, then tap Start.'
       : phase === 'listening'
       ? 'Try saying "Hello, Robot!"'
       : phase === 'pass'
       ? 'You can run this test anytime if Robot seems quiet.'
-      : 'Move closer to Robot and try again.';
+      : 'Try again in a quieter spot.';
 
   return (
     <DeviceShell title="Microphone test" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
@@ -81,8 +81,8 @@ export default function MicTestScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={24} paddingTop={24}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📍" title="Where Robot listens best" body="Within 6 feet, away from TVs and fans" />
-          <DeviceRow icon="🌬️" title="Background noise" body={phase === 'pass' ? 'Low · good for lessons' : 'Checking…'} />
+          <DeviceRow icon="📍" title="Listening tips" body="Keep TVs and fans quiet during the test" />
+          <DeviceRow icon="🌬️" title="Background noise" body={phase === 'pass' ? 'Quiet enough for this test' : 'Checking…'} />
         </Box>
       </Box>
 

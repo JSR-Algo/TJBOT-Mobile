@@ -86,6 +86,10 @@ describe('RobotStatusScreen', () => {
   it('renders real connector values and never the old fabricated rows', () => {
     const screen = render(<RobotStatusScreen navigation={navigation} route={emptyRoute} />);
 
+    expect(screen.getByText('ROBOT OVERVIEW')).toBeTruthy();
+    expect(screen.getByText('Robot detail')).toBeTruthy();
+    expect(screen.getByText('One source of truth for status, readiness and the next safe command.')).toBeTruthy();
+    expect(screen.getByLabelText('TJBot-0001 robot')).toBeTruthy();
     expect(screen.getByText('● Online')).toBeTruthy();
     expect(screen.getByText('87% · charging')).toBeTruthy();
     expect(screen.getByText('Casa · Strong signal')).toBeTruthy();
@@ -110,6 +114,46 @@ describe('RobotStatusScreen', () => {
     expect(screen.getByText(ROBOT_LINK_STATE_COPY.server_unavailable.title)).toBeTruthy();
     fireEvent.press(screen.getByText('Try again'));
     expect(retry).toHaveBeenCalledTimes(1);
+    screen.unmount();
+  });
+
+  it('keeps the complete Robot detail skeleton visible when telemetry is unavailable', () => {
+    mockedUseRobotTelemetry.mockReturnValue(
+      hookState({
+        telemetry: normalizeRobotTelemetry(undefined),
+        linkState: 'not_connected',
+      }),
+    );
+
+    const screen = render(<RobotStatusScreen navigation={navigation} route={emptyRoute} />);
+
+    expect(screen.getByText(/Not ready/)).toBeTruthy();
+    expect(screen.getByText('Battery')).toBeTruthy();
+    expect(screen.getByText('Wi-Fi')).toBeTruthy();
+    expect(screen.getByText('Storage')).toBeTruthy();
+    expect(screen.getByText('Assigned child')).toBeTruthy();
+    expect(screen.getByText('Software')).toBeTruthy();
+    expect(screen.getAllByText('Not available')).toHaveLength(5);
+    screen.unmount();
+  });
+
+  it('keeps the five-tab menu visible and routes back through its main destinations', () => {
+    mockedUseRobotTelemetry.mockReturnValue(
+      hookState({
+        telemetry: normalizeRobotTelemetry(undefined),
+        linkState: 'not_connected',
+      }),
+    );
+
+    const screen = render(<RobotStatusScreen navigation={navigation} route={emptyRoute} />);
+
+    expect(screen.getByLabelText('Home, tab')).toBeTruthy();
+    expect(screen.getByLabelText('Devices, tab')).toBeTruthy();
+    expect(screen.getByLabelText('Library, tab')).toBeTruthy();
+    expect(screen.getByLabelText('Progress, tab')).toBeTruthy();
+    expect(screen.getByLabelText('Profile, tab')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Library, tab'));
+    expect(navigate).toHaveBeenCalledWith(ROUTES.CourseLibraryScreen);
     screen.unmount();
   });
 

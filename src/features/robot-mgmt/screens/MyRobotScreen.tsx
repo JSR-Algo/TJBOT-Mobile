@@ -9,78 +9,120 @@ import { Text } from '@/design-system/primitives/Text';
 import RmChip from '../components/RmChip';
 import { parentColors, parentRadii, parentShadows } from '@/design-system/tokens';
 import { ROUTES } from '@/navigation/routes';
+import ConnectorStateNotice from '@/components/ConnectorStateNotice';
+import DeviceBigBtn from '@/components/DeviceBigBtn';
+import { useAppLanguage } from '@/services/i18n/i18n';
+import { useRobotTelemetry } from '../telemetry';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyRobotScreen'>;
 
 export default function MyRobotScreen({ navigation }: Props) {
+  const {
+    telemetry,
+    loading,
+    linkState,
+    simulated,
+    retry,
+  } = useRobotTelemetry();
+  const { t } = useAppLanguage();
+  const noticeState = simulated ? 'simulated' : linkState;
+  const wifiSignal = telemetry.wifiRssi === null
+    ? null
+    : telemetry.wifiRssi >= -60
+      ? t('Strong signal')
+      : t('Weak signal');
+  const wifiSummary = wifiSignal
+    ? `${telemetry.wifiLabel} · ${wifiSignal}`
+    : telemetry.wifiLabel;
+  const initials = telemetry.robotName
+    .split(/\s+/)
+    .map((part) => part.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <DeviceShell title="My Robot" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
-      {/* Header: greeting + name + avatar */}
-      <Box paddingHorizontal={16} paddingTop={12}>
-        <Box style={styles.topHeader}>
-          <Box flex={1}>
-            <Text fontWeight="400" style={styles.greet}>Your robot</Text>
-            <Text fontWeight="700" style={styles.greeting}>Buddy Panda</Text>
-          </Box>
-          <Box style={styles.avatar}>
-            <Text style={styles.avatarText}>BP</Text>
-          </Box>
+      {loading ? (
+        <Box paddingHorizontal={24} paddingTop={24}>
+          <Text>Loading robot details</Text>
         </Box>
-      </Box>
+      ) : null}
 
-      {/* Hero card with emoji and status */}
-      <Box paddingHorizontal={16} paddingTop={14}>
-        <Box style={styles.heroCard} flexDirection="row" gap={12} alignItems="center">
-          <Text style={styles.heroEmoji}>🤖</Text>
-          <Box flex={1} style={{ minWidth: 0 }}>
-            <Text fontWeight="600" style={styles.robotName}>Buddy Panda</Text>
-            <Text style={styles.robotMeta}>ROB-2A8F · Cream</Text>
-            <Box marginTop={8}><RmChip>● Online · all good</RmChip></Box>
-          </Box>
+      {!loading && noticeState ? (
+        <ConnectorStateNotice
+          state={noticeState}
+          onRetry={noticeState === 'server_unavailable' || noticeState === 'robot_offline' ? retry : undefined}
+        />
+      ) : null}
+
+      {!loading && noticeState === 'not_connected' ? (
+        <Box paddingHorizontal={20} paddingTop={18}>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>
+            Connect Robot
+          </DeviceBigBtn>
         </Box>
-      </Box>
+      ) : null}
 
-      {/* Status section */}
-      <Box paddingHorizontal={16} paddingTop={16}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Status</Text>
-        <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          <Box style={styles.statCard}>
-            <Text fontWeight="700" style={styles.statLabel}>🔋 Battery</Text>
-            <Text fontWeight="600" style={styles.statValue}>78% · charging</Text>
+      {!loading && telemetry.deviceId ? (
+        <>
+          <Box paddingHorizontal={16} paddingTop={12}>
+            <Box style={styles.topHeader}>
+              <Box flex={1}>
+                <Text fontWeight="400" style={styles.greet}>Your robot</Text>
+                <Text fontWeight="700" style={styles.greeting}>{telemetry.robotName}</Text>
+              </Box>
+              <Box style={styles.avatar}>
+                <Text i18n={false} style={styles.avatarText}>{initials}</Text>
+              </Box>
+            </Box>
           </Box>
-          <Box style={styles.statCard}>
-            <Text fontWeight="700" style={styles.statLabel}>📶 Wi-Fi</Text>
-            <Text fontWeight="600" style={styles.statValue}>Casa-Familia</Text>
-          </Box>
-          <Box style={styles.statCard}>
-            <Text fontWeight="700" style={styles.statLabel}>📚 Courses</Text>
-            <Text fontWeight="600" style={styles.statValue}>3 installed</Text>
-          </Box>
-          <Box style={styles.statCard}>
-            <Text fontWeight="700" style={styles.statLabel}>🎙️ Microphone</Text>
-            <Text fontWeight="600" style={styles.statValue}>Working</Text>
-          </Box>
-        </Box>
-      </Box>
 
-      {/* Care section */}
-      <Box paddingHorizontal={16} paddingTop={18}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Care</Text>
-        <Box style={styles.rowCard}>
-          <DeviceRow icon="🔊" title="Sound & volume" body="Volume 6 · Quiet hours on" onClick={() => navigation.navigate(ROUTES.RobotSoundScreen)} />
-          <DeviceRow icon="🎙️" title="Microphone test" body="Check Robot can hear" onClick={() => navigation.navigate(ROUTES.MicTestScreen)} />
-          <DeviceRow icon="🔈" title="Speaker test" body="Play a chime to check audio" onClick={() => navigation.navigate(ROUTES.SpeakerTestScreen)} />
-          <DeviceRow icon="⬆️" title="Robot software" body="v1.4.2 · update available" onClick={() => navigation.navigate(ROUTES.RobotFirmwareScreen)} />
-        </Box>
-      </Box>
+          <Box paddingHorizontal={16} paddingTop={14}>
+            <Box style={styles.heroCard} flexDirection="row" gap={12} alignItems="center">
+              <Text style={styles.heroEmoji}>🤖</Text>
+              <Box flex={1} style={{ minWidth: 0 }}>
+                <Text fontWeight="600" style={styles.robotName}>{telemetry.robotName}</Text>
+                <Text i18n={false} style={styles.robotMeta}>{telemetry.serialNumber}</Text>
+                <Box marginTop={8}><RmChip>● {telemetry.onlineLabel}</RmChip></Box>
+              </Box>
+            </Box>
+          </Box>
 
-      {/* Help section */}
+          <Box paddingHorizontal={16} paddingTop={16}>
+            <Text fontWeight="700" style={styles.sectionLabel}>Status</Text>
+            <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              <Box style={styles.statCard}>
+                <Text fontWeight="700" style={styles.statLabel}>Battery</Text>
+                <Text i18n={false} fontWeight="600" style={styles.statValue}>
+                  {telemetry.batteryLabel} · {t(telemetry.chargingLabel)}
+                </Text>
+              </Box>
+              <Box style={styles.statCard}>
+                <Text fontWeight="700" style={styles.statLabel}>Wi-Fi</Text>
+                <Text i18n={false} fontWeight="600" style={styles.statValue}>{wifiSummary}</Text>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box paddingHorizontal={16} paddingTop={18}>
+            <Text fontWeight="700" style={styles.sectionLabel}>Care</Text>
+            <Box style={styles.rowCard}>
+              <DeviceRow icon="🔊" title="Sound & volume" body="Open robot sound controls" onClick={() => navigation.navigate(ROUTES.RobotSoundScreen)} />
+              <DeviceRow icon="🎙️" title="Microphone test" body="Check Robot can hear" onClick={() => navigation.navigate(ROUTES.MicTestScreen)} />
+              <DeviceRow icon="🔈" title="Speaker test" body="Check Robot can play sound" onClick={() => navigation.navigate(ROUTES.SpeakerTestScreen)} />
+              <DeviceRow icon="⬆️" title="Robot software" body={telemetry.firmwareLabel} onClick={() => navigation.navigate(ROUTES.RobotFirmwareScreen)} />
+            </Box>
+          </Box>
+        </>
+      ) : null}
+
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Help</Text>
         <Box style={styles.rowCard}>
           <DeviceRow icon="📡" title="Robot offline help" body="Tips when Robot won't connect" onClick={() => navigation.navigate(ROUTES.OfflineHelpScreen)} />
           <DeviceRow icon="🛟" title="Contact support" body="We usually reply in under a day" onClick={() => navigation.navigate(ROUTES.SupportScreen)} />
-          <DeviceRow icon="ℹ️" title="Detailed status" body="Battery, Wi-Fi, sync, sensors" onClick={() => navigation.navigate(ROUTES.RobotStatusScreen)} />
+          <DeviceRow icon="ℹ️" title="Detailed status" body="Battery, Wi-Fi, and software" onClick={() => navigation.navigate(ROUTES.RobotStatusScreen)} />
         </Box>
       </Box>
 

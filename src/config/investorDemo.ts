@@ -13,3 +13,16 @@ function readInvestorDemoFlag(): boolean {
 export function isInvestorDemoEnabled(): boolean {
   return __DEV__ && readInvestorDemoFlag();
 }
+
+export type DemoBadgeState = {
+  simulated: boolean;
+  label: 'Demo mode' | null;
+};
+
+export function getDemoBadgeState(): DemoBadgeState {
+  const simulated = isInvestorDemoEnabled();
+  return {
+    simulated,
+    label: simulated ? 'Demo mode' : null,
+  };
+}
