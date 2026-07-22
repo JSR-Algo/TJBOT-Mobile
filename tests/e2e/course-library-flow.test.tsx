@@ -1,7 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { ROUTES } from '@/navigation/routes';
 import CourseAddedScreen from '@/features/course-library/screens/CourseAddedScreen';
 import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
@@ -303,9 +302,8 @@ describe('course-library flow guards', () => {
     expect(screen.queryByText('Confirm & continue')).toBeNull();
   });
 
-  it('stays on course detail and alerts when the robot is offline', async () => {
+  it('opens robot setup from the connection modal when the robot is offline', async () => {
     await setAppLanguage('vi');
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockedGetDeviceStatus.mockResolvedValueOnce({
       id: 'dev-1',
       name: 'Casa Robot',
@@ -325,17 +323,19 @@ describe('course-library flow guards', () => {
       fireEvent.press(screen.getByText('Thêm vào Robot'));
     });
 
-    expect(alertSpy).toHaveBeenCalledWith(
-      'Robot chưa sẵn sàng',
-      'Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay.',
-      [{ text: 'Đã hiểu' }],
-    );
+    expect(screen.getByText('Robot chưa sẵn sàng')).toBeTruthy();
+    expect(screen.getByText('Kết nối Robot để gửi bài học và bắt đầu chơi cùng bé.')).toBeTruthy();
+    expect(screen.getByText('Chỉ mất khoảng 3 phút.')).toBeTruthy();
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
+
+    fireEvent.press(screen.getByText('Kết nối Robot'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
+    expect(screen.queryByText('Robot chưa sẵn sàng')).toBeNull();
   });
 
-  it('stays on course detail and alerts when the robot status check fails', async () => {
+  it('stays on course detail and shows the connection modal when the robot status check fails', async () => {
     await setAppLanguage('vi');
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockedGetDeviceStatus.mockRejectedValueOnce(new Error('status unavailable'));
     const navigation = navigationFor();
     render(
@@ -349,11 +349,36 @@ describe('course-library flow guards', () => {
       fireEvent.press(screen.getByText('Thêm vào Robot'));
     });
 
-    expect(alertSpy).toHaveBeenCalledWith(
-      'Robot chưa sẵn sàng',
-      'Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay.',
-      [{ text: 'Đã hiểu' }],
+    expect(screen.getByText('Robot chưa sẵn sàng')).toBeTruthy();
+    expect(screen.getByText('Kết nối Robot để gửi bài học và bắt đầu chơi cùng bé.')).toBeTruthy();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
+  });
+
+  it('dismisses the robot connection modal and stays on course detail', async () => {
+    await setAppLanguage('vi');
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: false,
+      batteryPercent: 80,
+      charging: false,
+    });
+    const navigation = navigationFor();
+    render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
     );
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Thêm vào Robot'));
+    });
+    fireEvent.press(screen.getByText('Để sau'));
+
+    expect(screen.queryByText('Robot chưa sẵn sàng')).toBeNull();
+    expect(screen.getByText('Thêm vào Robot')).toBeTruthy();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.PairAddScreen);
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
   });
 
