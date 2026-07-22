@@ -58,6 +58,8 @@
     "navigation:forward-edges": "node scripts/navigation/export-forward-edges.mjs",
     "check:screen-prop-types": "node scripts/check-screen-prop-types.mjs",
     "check:token-parity": "node scripts/check-token-parity.mjs",
+    "check:generated-artifacts": "node scripts/check-generated-artifacts.mjs --tracked",
+    "check:generated-artifacts:self-test": "node scripts/check-generated-artifacts.mjs --self-test",
     "postinstall": "patch-package"
   },
   "dependencies": {

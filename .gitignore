@@ -6,6 +6,31 @@ ios/Pods/
 ios/build/
 ios/build-sim/
 ios/build-device/
+# Xcode derived output and per-developer state. Keep shared project/workspace
+# definitions, schemes, entitlements, and source files tracked.
+DerivedData/
+**/DerivedData/
+**/ModuleCache.noindex/
+**/CompilationCache.noindex/
+**/SDKStatCaches.noindex/
+*.xcresult/
+*.dSYM/
+*.dSYM.zip
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+.build/
+ios/.xcode.env.local
 output/maestro/
 android/build/
 android/.gradle/

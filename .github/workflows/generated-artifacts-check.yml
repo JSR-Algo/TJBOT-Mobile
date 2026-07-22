@@ -18,5 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Reject generated and local-only files
-        run: node scripts/check-generated-artifacts.mjs --tracked
+      - name: Verify generated-artifact policy fixtures
+        run: npm run check:generated-artifacts:self-test
+      - name: Reject generated and local-only tracked files
+        run: npm run check:generated-artifacts
