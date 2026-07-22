@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
+import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
@@ -17,6 +18,8 @@ import {
   type PublishedCourse,
   type PublishedLesson,
 } from '@/services/api/course-library.api';
+import { getDeviceStatus } from '@/services/api/device.api';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetailScreen'>;
 
@@ -30,6 +33,41 @@ const COURSE = COURSES[2]!;
 
 export default function CourseDetailScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? COURSE.id;
+  const household = useOptionalHousehold();
+  const childId = household?.activeChild?.id;
+  const { t } = useAppLanguage();
+  const [checkingRobot, setCheckingRobot] = React.useState(false);
+
+  const showRobotConnectionAlert = React.useCallback(() => {
+    Alert.alert(
+      t('Robot is not connected'),
+      t('Connect Robot before adding lessons.'),
+      [{ text: t('Got it') }],
+    );
+  }, [t]);
+
+  const handleAddToRobot = React.useCallback(async () => {
+    if (checkingRobot) return;
+    if (!childId) {
+      showRobotConnectionAlert();
+      return;
+    }
+
+    setCheckingRobot(true);
+    try {
+      const robot = await getDeviceStatus('primary', childId);
+      if (!robot.id || robot.online !== true) {
+        showRobotConnectionAlert();
+        return;
+      }
+      navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId });
+    } catch {
+      showRobotConnectionAlert();
+    } finally {
+      setCheckingRobot(false);
+    }
+  }, [checkingRobot, childId, courseId, navigation, showRobotConnectionAlert]);
+
   // Static catalog supplies the rich UI metadata (blurb / lcd / teaches) the
   // published endpoints don't return. The dynamic published catalog overlays the
   // REAL title + lessonCount for authored courses.
@@ -181,7 +219,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId })}>Add to Robot</DeviceBigBtn>
+        <DeviceBigBtn onClick={handleAddToRobot} disabled={checkingRobot}>Add to Robot</DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>Back to library</DeviceBigBtn>
       </Box>
     </DeviceShell>

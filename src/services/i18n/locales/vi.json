@@ -68,12 +68,14 @@
   "OK": "OK",
   "Got it": {
     "child": "Hiểu rồi nè",
-    "parent": "Đã rõ"
+    "parent": "Đã hiểu"
   },
   "Got it!": {
     "child": "Hiểu rồi nè!",
     "parent": "Đã rõ!"
   },
+  "Robot is not connected": "Robot chưa kết nối",
+  "Connect Robot before adding lessons.": "Vui lòng kết nối Robot trước khi thêm bài học.",
   "Yes": {
     "child": "Có nè",
     "parent": "Có"

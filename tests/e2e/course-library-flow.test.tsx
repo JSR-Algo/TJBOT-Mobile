@@ -18,6 +18,7 @@ import {
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 import { authenticateParent } from '@/services/api/parent.api';
+import { setAppLanguage } from '@/services/i18n/i18n';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 
 // Keep the pure helpers (e.g. isLessonProfile / presentAssignmentState) real —
@@ -104,6 +105,10 @@ describe('course-library flow guards', () => {
     // CourseAddedScreen reads the device's real seat on mount; default to "no
     // seat known" unless a test overrides it.
     mockedGetCurrentAssignment.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('exposes a stable native route anchor for the send-to-robot screen', async () => {
@@ -299,6 +304,7 @@ describe('course-library flow guards', () => {
   });
 
   it('stays on course detail and alerts when the robot is offline', async () => {
+    await setAppLanguage('vi');
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockedGetDeviceStatus.mockResolvedValueOnce({
       id: 'dev-1',
@@ -316,7 +322,7 @@ describe('course-library flow guards', () => {
     );
 
     await act(async () => {
-      fireEvent.press(screen.getByText('Add to Robot'));
+      fireEvent.press(screen.getByText('Thêm vào Robot'));
     });
 
     expect(alertSpy).toHaveBeenCalledWith(
@@ -325,10 +331,10 @@ describe('course-library flow guards', () => {
       [{ text: 'Đã hiểu' }],
     );
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
-    alertSpy.mockRestore();
   });
 
   it('stays on course detail and alerts when the robot status check fails', async () => {
+    await setAppLanguage('vi');
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockedGetDeviceStatus.mockRejectedValueOnce(new Error('status unavailable'));
     const navigation = navigationFor();
@@ -340,7 +346,7 @@ describe('course-library flow guards', () => {
     );
 
     await act(async () => {
-      fireEvent.press(screen.getByText('Add to Robot'));
+      fireEvent.press(screen.getByText('Thêm vào Robot'));
     });
 
     expect(alertSpy).toHaveBeenCalledWith(
@@ -349,7 +355,6 @@ describe('course-library flow guards', () => {
       [{ text: 'Đã hiểu' }],
     );
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
-    alertSpy.mockRestore();
   });
 
   it('labels parent unlock keypad controls', () => {

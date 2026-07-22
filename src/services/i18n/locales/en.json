@@ -23,6 +23,8 @@
   "OK": "OK",
   "Got it": "Got it",
   "Got it!": "Got it!",
+  "Robot is not connected": "Robot is not connected",
+  "Connect Robot before adding lessons.": "Connect Robot before adding lessons.",
   "Yes": "Yes",
   "No": "No",
   "Allow": "Allow",
