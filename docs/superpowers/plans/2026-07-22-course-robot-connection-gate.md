@@ -35,8 +35,8 @@ await act(async () => {
 });
 
 expect(alertSpy).toHaveBeenCalledWith(
-  'Robot chưa kết nối',
-  'Vui lòng kết nối Robot trước khi thêm bài học.',
+  'Robot chưa sẵn sàng',
+  'Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay.',
   [{ text: 'Đã hiểu' }],
 );
 expect(navigation.navigate).not.toHaveBeenCalledWith(
@@ -79,14 +79,14 @@ Add these entries to both translation catalogs:
 
 ```json
 // en.json
-"Robot is not connected": "Robot is not connected",
-"Connect Robot before adding lessons.": "Connect Robot before adding lessons."
+"Robot isn't ready yet": "Robot isn't ready yet",
+"Connect Robot first. Then you can add this lesson right away.": "Connect Robot first. Then you can add this lesson right away."
 ```
 
 ```json
 // vi.json
-"Robot is not connected": "Robot chưa kết nối",
-"Connect Robot before adding lessons.": "Vui lòng kết nối Robot trước khi thêm bài học."
+"Robot isn't ready yet": "Robot chưa sẵn sàng",
+"Connect Robot first. Then you can add this lesson right away.": "Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay."
 ```
 
 Reuse the existing `Got it` key for the alert action.
@@ -103,8 +103,8 @@ const [checkingRobot, setCheckingRobot] = React.useState(false);
 
 const showRobotConnectionAlert = React.useCallback(() => {
   Alert.alert(
-    t('Robot is not connected'),
-    t('Connect Robot before adding lessons.'),
+    t("Robot isn't ready yet"),
+    t('Connect Robot first. Then you can add this lesson right away.'),
     [{ text: t('Got it') }],
   );
 }, [t]);

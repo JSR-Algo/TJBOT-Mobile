@@ -74,8 +74,8 @@
     "child": "Hiểu rồi nè!",
     "parent": "Đã rõ!"
   },
-  "Robot is not connected": "Robot chưa kết nối",
-  "Connect Robot before adding lessons.": "Vui lòng kết nối Robot trước khi thêm bài học.",
+  "Robot isn't ready yet": "Robot chưa sẵn sàng",
+  "Connect Robot first. Then you can add this lesson right away.": "Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay.",
   "Yes": {
     "child": "Có nè",
     "parent": "Có"

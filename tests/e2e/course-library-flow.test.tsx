@@ -326,8 +326,8 @@ describe('course-library flow guards', () => {
     });
 
     expect(alertSpy).toHaveBeenCalledWith(
-      'Robot chưa kết nối',
-      'Vui lòng kết nối Robot trước khi thêm bài học.',
+      'Robot chưa sẵn sàng',
+      'Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay.',
       [{ text: 'Đã hiểu' }],
     );
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
@@ -350,8 +350,8 @@ describe('course-library flow guards', () => {
     });
 
     expect(alertSpy).toHaveBeenCalledWith(
-      'Robot chưa kết nối',
-      'Vui lòng kết nối Robot trước khi thêm bài học.',
+      'Robot chưa sẵn sàng',
+      'Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay.',
       [{ text: 'Đã hiểu' }],
     );
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());

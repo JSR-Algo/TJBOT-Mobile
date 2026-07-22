@@ -40,8 +40,8 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
 
   const showRobotConnectionAlert = React.useCallback(() => {
     Alert.alert(
-      t('Robot is not connected'),
-      t('Connect Robot before adding lessons.'),
+      t("Robot isn't ready yet"),
+      t('Connect Robot first. Then you can add this lesson right away.'),
       [{ text: t('Got it') }],
     );
   }, [t]);

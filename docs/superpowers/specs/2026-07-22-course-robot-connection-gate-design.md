@@ -31,8 +31,8 @@ connectivity can change while the parent reads the course page.
 
 The blocking alert uses concise Vietnamese copy:
 
-- Title: `Robot chưa kết nối`
-- Message: `Vui lòng kết nối Robot trước khi thêm bài học.`
+- Title: `Robot chưa sẵn sàng`
+- Message: `Hãy kết nối Robot trước nhé. Sau đó bạn có thể thêm bài học ngay.`
 - Action: `Đã hiểu`
 
 Dismissal leaves the parent on Course Detail. There is no automatic navigation
