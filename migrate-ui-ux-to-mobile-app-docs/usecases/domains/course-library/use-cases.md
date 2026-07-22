@@ -30,7 +30,9 @@
 - **Postconditions:** Parent has decided to add (transitions to UC-CL03) or to go back.
 - **Alt Flow:**
   1. Parent taps "Back to library" → returns to `cl_library` (`CourseDetailScreen.jsx:71`).
-  2. If there is no active child, no Robot id, Robot is offline, connection status is unknown, or the status request fails, the app displays the connection-required alert and remains on `CourseDetailScreen`; UC-CL03 is not opened.
+  2. If there is no active child, no Robot id, Robot is offline, connection status is unknown, or the status request fails, the app opens the custom Robot connection modal and does not open UC-CL03.
+  3. From the modal, Parent taps "Connect Robot" → navigation transitions to `PairAddScreen`, which offers new-Robot pairing and offline-Robot reconnection.
+  4. Parent taps "Not now", the dimmed scrim, or Android back → the modal closes and `CourseDetailScreen` remains visible.
 
 ## UC-CL03 — Buy / Unlock Course
 
