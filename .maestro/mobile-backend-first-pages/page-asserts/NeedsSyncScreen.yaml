@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: Assert NeedsSyncScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot needs to catch up|Robot is offline|Robot đang ngoại tuyến|Yummy Words|Catch up|đồng bộ).*"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Check Robot connection|Kiểm tra kết nối Robot).*"
+    commands:
+      - tapOn: ".*(Check Robot connection|Kiểm tra kết nối Robot).*"
+- back
+- waitForAnimationToEnd

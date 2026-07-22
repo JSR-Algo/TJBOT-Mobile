@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: Assert HelpFaqScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Help|Trợ giúp|FAQ|Câu hỏi).*"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Help|Trợ giúp).*"
+    commands:
+      - tapOn: ".*(Help|Trợ giúp).*"
+- back
+- waitForAnimationToEnd

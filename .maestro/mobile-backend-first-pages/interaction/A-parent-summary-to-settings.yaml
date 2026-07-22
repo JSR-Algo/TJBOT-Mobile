@@ -1,0 +1,12 @@
+appId: net.jasonle.tjbot
+name: A Parent Summary to Settings
+---
+- extendedWaitUntil:
+    visible:
+      text: ".*(Settings|Cài đặt).*"
+    timeout: 15000
+- tapOn: ".*(Settings|Cài đặt).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Settings|Cài đặt|Language|Ngôn ngữ|Account|Tài khoản).*"
+    timeout: 15000

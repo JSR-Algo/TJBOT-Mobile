@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert DeviceFirmwareScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Software|Firmware|Phần mềm).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

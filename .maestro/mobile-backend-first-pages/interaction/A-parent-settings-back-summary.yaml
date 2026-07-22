@@ -1,0 +1,9 @@
+appId: net.jasonle.tjbot
+name: A Settings product back to Summary
+---
+# ParentScroll a11y: Go back → ParentSummary
+- tapOn: ".*(Go back|Quay lại).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Parent Space|Khu vực phụ huynh|Settings|Cài đặt|Course quality|Chất lượng).*"
+    timeout: 15000

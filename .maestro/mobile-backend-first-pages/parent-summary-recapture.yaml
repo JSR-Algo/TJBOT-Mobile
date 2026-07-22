@@ -1,0 +1,17 @@
+appId: net.jasonle.tjbot
+name: ParentSummary clean recapture
+---
+- launchApp:
+    clearState: false
+- openLink: "tjbot://parent/parent-summary"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Parent Space|Khu vực phụ huynh|Chất lượng khóa học|Course quality|Hoàn thành|Completion|Lịch sử|History).*"
+    timeout: 20000
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/05-ParentSummaryScreen-i18n-icons"

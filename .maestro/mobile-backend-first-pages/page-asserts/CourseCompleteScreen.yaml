@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: Assert CourseCompleteScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Today's lesson|Bài học hôm nay|Đã hoàn tất|Xong|Words played with|Từ cần ôn lại).*"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Xong|Done|Continue|Tiếp tục).*"
+    commands:
+      - tapOn: ".*(Xong|Done|Continue|Tiếp tục).*"
+- back
+- waitForAnimationToEnd

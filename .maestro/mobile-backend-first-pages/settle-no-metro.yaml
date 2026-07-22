@@ -1,0 +1,16 @@
+appId: net.jasonle.tjbot
+name: Settle until Metro loading gone
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    notVisible: "Loading from Metro"
+    timeout: 45000
+- extendedWaitUntil:
+    notVisible: "Something went wrong"
+    timeout: 5000
+- waitForAnimationToEnd
+- waitForAnimationToEnd

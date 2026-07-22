@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: Assert CourseLibraryScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "libraryTab"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Library|Thư viện).*"
+    commands:
+      - tapOn: ".*(Library|Thư viện).*"
+- back
+- waitForAnimationToEnd

@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert DeviceSessionScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Lesson on Robot|Bài học|Session|Phiên).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

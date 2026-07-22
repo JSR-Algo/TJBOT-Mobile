@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, type ImageSourcePropType, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CheckCircle2, ChevronRight, Lock, Search } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -22,6 +23,7 @@ type LoadState =
   | { kind: 'error'; title: string; detail?: string };
 
 export default function CourseLibraryScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [state, setState] = React.useState<LoadState>({ kind: 'loading' });
   const [query, setQuery] = React.useState('');
 
@@ -56,7 +58,7 @@ export default function CourseLibraryScreen({ navigation }: Props) {
 
   return (
     <Box flex={1} style={styles.root}>
-      <Box paddingHorizontal={24} paddingTop={76} paddingBottom={18}>
+      <Box paddingHorizontal={24} paddingTop={insets.top + 20} paddingBottom={18}>
         <Text fontWeight="800" style={styles.heading}>Course Library</Text>
         <Text fontWeight="800" style={styles.intro}>Pick what your Robot teaches.</Text>
       </Box>

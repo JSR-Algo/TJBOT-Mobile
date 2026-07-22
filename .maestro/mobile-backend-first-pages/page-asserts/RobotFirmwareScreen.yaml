@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert RobotFirmwareScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot software|Phần mềm robot|Firmware|software).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

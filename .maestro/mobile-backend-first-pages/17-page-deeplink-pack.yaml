@@ -1,0 +1,444 @@
+appId: net.jasonle.tjbot
+name: Mobile-backend-first ≥17-page deep-link pack
+---
+# Soft launch — retain auth; no clearState / no product instrumentation
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 60000
+# Prefer authenticated home if session retained
+- openLink: "tjbot://home/home-hub"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 45000
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/00-auth-home-probe"
+# --- 01 HomeHubScreen ---
+- openLink: "tjbot://home/home-hub"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 15000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/01-HomeHubScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 02 CourseLibraryScreen ---
+- openLink: "tjbot://course-library/course-library"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "libraryTab"
+    timeout: 15000
+    optional: true
+- extendedWaitUntil:
+    visible:
+      text: ".*Library.*"
+    timeout: 8000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/02-CourseLibraryScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 03 TodayProgressScreen ---
+- openLink: "tjbot://progress/today-progress"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Today.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/03-TodayProgressScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 04 ParentSettingsScreen ---
+- openLink: "tjbot://parent/parent-settings"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Settings.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/04-ParentSettingsScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 05 ParentSummaryScreen ---
+- openLink: "tjbot://parent/parent-summary"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Parent.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/05-ParentSummaryScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 06 DeviceOverviewScreen ---
+- openLink: "tjbot://device/device-overview"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Robot.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/06-DeviceOverviewScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 07 DeviceHomeScreen ---
+- openLink: "tjbot://device/device-home"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Robot.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/07-DeviceHomeScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 08 DeviceLostScreen ---
+- openLink: "tjbot://device/device-lost"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Find.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/08-DeviceLostScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 09 DeviceFirmwareScreen ---
+- openLink: "tjbot://device/device-firmware"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Software.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/09-DeviceFirmwareScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 10 DeviceSessionScreen ---
+- openLink: "tjbot://device/device-session"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Lesson on Robot.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/10-DeviceSessionScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 11 MyRobotScreen ---
+- openLink: "tjbot://robot-mgmt/my-robot"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*My Robot.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/11-MyRobotScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 12 RobotStatusScreen ---
+- openLink: "tjbot://robot-mgmt/robot-status"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Robot status.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/12-RobotStatusScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 13 SupportScreen ---
+- openLink: "tjbot://robot-mgmt/support"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Contact support.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/13-SupportScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 14 OfflineHelpScreen ---
+- openLink: "tjbot://robot-mgmt/offline-help"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*offline.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/14-OfflineHelpScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 15 FactoryResetScreen ---
+- openLink: "tjbot://robot-mgmt/factory-reset"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Factory.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/15-FactoryResetScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 16 RobotFirmwareScreen ---
+- openLink: "tjbot://robot-mgmt/robot-firmware"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Robot software.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/16-RobotFirmwareScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 17 HelpFaqScreen ---
+- openLink: "tjbot://fallback/help-faq"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Help.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/17-HelpFaqScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 18 LessonReadyScreen ---
+- openLink: "tjbot://lesson-session/lesson-ready"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Lesson.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/18-LessonReadyScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 19 CourseCompleteScreen ---
+- openLink: "tjbot://course-library/course-complete"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Complete.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/19-CourseCompleteScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 20 NeedsSyncScreen ---
+- openLink: "tjbot://course-library/needs-sync"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Sync.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/20-NeedsSyncScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 21 CourseLockedScreen ---
+- openLink: "tjbot://course-library/course-locked"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Locked.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/21-CourseLockedScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+# --- 22 RobotReadyScreen ---
+- openLink: "tjbot://course-library/robot-ready"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*Robot.*"
+    timeout: 12000
+    optional: true
+- scroll:
+    direction: DOWN
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/22-RobotReadyScreen"
+- back
+- waitForAnimationToEnd
+    optional: true
+- openLink: "tjbot://home/home-hub"
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/99-return-home"

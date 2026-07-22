@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert FactoryResetScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Factory|Khôi phục|Unpair|Hủy ghép).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

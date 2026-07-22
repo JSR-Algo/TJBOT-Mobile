@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: ParentSummary required assert + interaction
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Parent Space|Khu vực phụ huynh|Chất lượng khóa học|Course quality|Hoàn thành|Completion).*"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Past 30 days|30 ngày qua).*"
+    commands:
+      - tapOn: ".*(Past 30 days|30 ngày qua).*"
+- back
+- waitForAnimationToEnd

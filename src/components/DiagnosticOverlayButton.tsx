@@ -19,7 +19,7 @@ import { useAutoResetState } from '@/hooks/useAutoResetState';
  */
 type SendState = 'idle' | 'sending' | 'sent' | 'failed';
 
-const OVERLAY_ENABLED = __DEV__ || process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY === '1';
+const OVERLAY_ENABLED = process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY === '1';
 const RESET_MS = 2500;
 
 export function DiagnosticOverlayButton(): React.JSX.Element | null {

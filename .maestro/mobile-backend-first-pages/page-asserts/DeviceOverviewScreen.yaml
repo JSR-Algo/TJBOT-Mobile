@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert DeviceOverviewScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot does|Robot làm|Why a device|Vì sao dùng thiết bị|The speaking buddy|Người bạn biết nói).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

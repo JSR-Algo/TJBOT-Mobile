@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert DeviceHomeScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot|Thiết bị|Pair|Ghép).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

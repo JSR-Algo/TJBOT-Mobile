@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert OfflineHelpScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(offline|ngoại tuyến|Offline help|Trợ giúp).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

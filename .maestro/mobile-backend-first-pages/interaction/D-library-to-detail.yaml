@@ -1,0 +1,15 @@
+appId: net.jasonle.tjbot
+name: D Library open course detail
+---
+- extendedWaitUntil:
+    visible:
+      text: ".*(Barnyard Basics|Color Safari|Number Train).*"
+    timeout: 25000
+- tapOn: ".*(Barnyard Basics|Color Safari|Number Train).*"
+- waitForAnimationToEnd
+# Detail-only postcondition — not library list titles alone.
+- extendedWaitUntil:
+    visible:
+      text: ".*(Course details|Chi tiết khóa học).*"
+    timeout: 20000
+- assertVisible: ".*(Course details|Chi tiết khóa học).*"

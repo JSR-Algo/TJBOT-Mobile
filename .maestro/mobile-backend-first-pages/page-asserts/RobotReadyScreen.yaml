@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert RobotReadyScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot ready|Robot is ready|Robot sẵn sàng|Getting robot ready|No robot connected|Chưa có robot|Pair a robot|Ghép nối).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

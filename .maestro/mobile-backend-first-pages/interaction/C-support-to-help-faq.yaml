@@ -1,0 +1,12 @@
+appId: net.jasonle.tjbot
+name: C Support to Help FAQ
+---
+- extendedWaitUntil:
+    visible:
+      text: ".*(Open help articles|Mở bài viết trợ giúp|Help articles|Bài hỗ trợ).*"
+    timeout: 15000
+- tapOn: ".*(Open help articles|Mở bài viết trợ giúp).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Help & FAQ|Trợ giúp|Search help|Tìm|Is my child's voice|FAQ).*"
+    timeout: 20000

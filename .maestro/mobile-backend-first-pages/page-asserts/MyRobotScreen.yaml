@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: Assert MyRobotScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(My Robot|Robot của tôi|Chưa có robot|not connected).*"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Status|Trạng thái|Support|Hỗ trợ).*"
+    commands:
+      - tapOn: ".*(Status|Trạng thái|Support|Hỗ trợ).*"
+- back
+- waitForAnimationToEnd

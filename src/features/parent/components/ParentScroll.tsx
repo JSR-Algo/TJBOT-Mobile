@@ -20,6 +20,10 @@ export const PA = {
   warn: '#A06900',
 } as const;
 
+// Bottom inset so the last CTA on every parent/ screen clears the floating
+// tab bar (~96px) with margin. Test contract: parent-scroll-tab-clearance.
+export const PARENT_SCROLL_TAB_CLEARANCE = 120;
+
 type Props = {
   children?: React.ReactNode;
   title?: string;

@@ -1,0 +1,12 @@
+appId: net.jasonle.tjbot
+name: B Session Back to Robot home
+---
+- extendedWaitUntil:
+    visible:
+      text: ".*(Back to Robot home|Về trang chính của Robot|Về trang Robot|Live lesson view|Chế độ xem).*"
+    timeout: 15000
+- tapOn: ".*(Back to Robot home|Về trang chính của Robot|Về trang Robot).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot|Thiết bị|Pair|Ghép|Device|My Robot|Robot của).*"
+    timeout: 20000

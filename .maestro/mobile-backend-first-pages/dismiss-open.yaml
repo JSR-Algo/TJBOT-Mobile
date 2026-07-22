@@ -1,0 +1,7 @@
+appId: net.jasonle.tjbot
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"

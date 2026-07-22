@@ -1,0 +1,12 @@
+appId: net.jasonle.tjbot
+name: Soft scroll to top
+---
+- swipe:
+    start: "50%, 28%"
+    end: "50%, 78%"
+    duration: 350
+- swipe:
+    start: "50%, 28%"
+    end: "50%, 78%"
+    duration: 350
+- waitForAnimationToEnd

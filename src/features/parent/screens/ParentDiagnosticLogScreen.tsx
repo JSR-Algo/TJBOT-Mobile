@@ -9,7 +9,6 @@ import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import {
   clearDiagnosticLog,
-  formatDiagnosticExport,
   getDiagnosticEntries,
   getDiagnosticSessionHeader,
   subscribeDiagnosticLog,

@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: Assert LessonReadyScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Lesson|Bài học|Ready|Sẵn sàng).*"
+    timeout: 15000
+- back
+- waitForAnimationToEnd

@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: Assert TodayProgressScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Today|Hôm nay).*"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Today|Hôm nay).*"
+    commands:
+      - tapOn: ".*(Today|Hôm nay).*"
+- back
+- waitForAnimationToEnd

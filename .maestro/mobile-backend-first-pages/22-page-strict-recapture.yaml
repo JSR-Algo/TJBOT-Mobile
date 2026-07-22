@@ -1,0 +1,489 @@
+appId: net.jasonle.tjbot
+name: Strict 22-page deep-link recapture (required asserts)
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- openLink: "tjbot://home/home-hub"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 45000
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/00-auth-home-probe"
+# --- 01 HomeHubScreen ---
+- openLink: "tjbot://home/home-hub"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/01-HomeHubScreen"
+- back
+- waitForAnimationToEnd
+# --- 02 CourseLibraryScreen ---
+- openLink: "tjbot://course-library/course-library"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "libraryTab"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/02-CourseLibraryScreen"
+- back
+- waitForAnimationToEnd
+# --- 03 TodayProgressScreen ---
+- openLink: "tjbot://progress/today-progress"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Today|Hôm nay).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/03-TodayProgressScreen"
+- back
+- waitForAnimationToEnd
+# --- 04 ParentSettingsScreen ---
+- openLink: "tjbot://parent/parent-settings"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Settings|Cài đặt).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/04-ParentSettingsScreen"
+- back
+- waitForAnimationToEnd
+# --- 05 ParentSummaryScreen ---
+- openLink: "tjbot://parent/parent-summary"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Parent Space|Khu vực phụ huynh|course dashboard|bảng điều khiển khóa học|Chất lượng|Course quality).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/05-ParentSummaryScreen"
+- back
+- waitForAnimationToEnd
+# --- 06 DeviceOverviewScreen ---
+- openLink: "tjbot://device/device-overview"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot|Thiết bị|Overview|Tổng quan).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/06-DeviceOverviewScreen"
+- back
+- waitForAnimationToEnd
+# --- 07 DeviceHomeScreen ---
+- openLink: "tjbot://device/device-home"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot|Thiết bị|Pair|Ghép).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/07-DeviceHomeScreen"
+- back
+- waitForAnimationToEnd
+# --- 08 DeviceLostScreen ---
+- openLink: "tjbot://device/device-lost"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Find|Tìm|Lost|thất lạc).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/08-DeviceLostScreen"
+- back
+- waitForAnimationToEnd
+# --- 09 DeviceFirmwareScreen ---
+- openLink: "tjbot://device/device-firmware"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Software|Firmware|Phần mềm).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/09-DeviceFirmwareScreen"
+- back
+- waitForAnimationToEnd
+# --- 10 DeviceSessionScreen ---
+- openLink: "tjbot://device/device-session"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Lesson on Robot|Bài học|Session|Phiên).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/10-DeviceSessionScreen"
+- back
+- waitForAnimationToEnd
+# --- 11 MyRobotScreen ---
+- openLink: "tjbot://robot-mgmt/my-robot"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(My Robot|Robot của tôi|Chưa có robot|not connected).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/11-MyRobotScreen"
+- back
+- waitForAnimationToEnd
+# --- 12 RobotStatusScreen ---
+- openLink: "tjbot://robot-mgmt/robot-status"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot status|Trạng thái robot|status|Online|Offline).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/12-RobotStatusScreen"
+- back
+- waitForAnimationToEnd
+# --- 13 SupportScreen ---
+- openLink: "tjbot://robot-mgmt/support"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Contact support|Hỗ trợ|Support).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/13-SupportScreen"
+- back
+- waitForAnimationToEnd
+# --- 14 OfflineHelpScreen ---
+- openLink: "tjbot://robot-mgmt/offline-help"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(offline|ngoại tuyến|Offline help|Trợ giúp).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/14-OfflineHelpScreen"
+- back
+- waitForAnimationToEnd
+# --- 15 FactoryResetScreen ---
+- openLink: "tjbot://robot-mgmt/factory-reset"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Factory|Khôi phục|Unpair|Hủy ghép).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/15-FactoryResetScreen"
+- back
+- waitForAnimationToEnd
+# --- 16 RobotFirmwareScreen ---
+- openLink: "tjbot://robot-mgmt/robot-firmware"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot software|Phần mềm robot|Firmware|software).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/16-RobotFirmwareScreen"
+- back
+- waitForAnimationToEnd
+# --- 17 HelpFaqScreen ---
+- openLink: "tjbot://fallback/help-faq"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Help|Trợ giúp|FAQ|Câu hỏi).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/17-HelpFaqScreen"
+- back
+- waitForAnimationToEnd
+# --- 18 LessonReadyScreen ---
+- openLink: "tjbot://lesson-session/lesson-ready"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Lesson|Bài học|Ready|Sẵn sàng).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/18-LessonReadyScreen"
+- back
+- waitForAnimationToEnd
+# --- 19 CourseCompleteScreen ---
+- openLink: "tjbot://course-library/course-complete"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Complete|Hoàn thành|hoàn tất|Course).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/19-CourseCompleteScreen"
+- back
+- waitForAnimationToEnd
+# --- 20 NeedsSyncScreen ---
+- openLink: "tjbot://course-library/needs-sync"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Sync|Đồng bộ|Needs).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/20-NeedsSyncScreen"
+- back
+- waitForAnimationToEnd
+# --- 21 CourseLockedScreen ---
+- openLink: "tjbot://course-library/course-locked"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Locked|Khóa|Course).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/21-CourseLockedScreen"
+- back
+- waitForAnimationToEnd
+# --- 22 RobotReadyScreen ---
+- openLink: "tjbot://course-library/robot-ready"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot ready|Robot|Sẵn sàng|Lesson).*"
+    timeout: 15000
+- scroll:
+    optional: true
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/22-RobotReadyScreen"
+- back
+- waitForAnimationToEnd

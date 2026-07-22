@@ -1,0 +1,19 @@
+appId: net.jasonle.tjbot
+name: Assert HomeHubScreen
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ".*(Start|Bắt đầu|Continue|Tiếp tục).*"
+    commands:
+      - tapOn: ".*(Start|Bắt đầu|Continue|Tiếp tục).*"
+- back
+- waitForAnimationToEnd

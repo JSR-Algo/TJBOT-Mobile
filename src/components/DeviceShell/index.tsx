@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { referenceColors } from '@/design-system/referenceTheme';
@@ -16,6 +17,7 @@ type Props = {
 
 export default function DeviceShell({ title, onBack, children, screenTestID, scrollTestID = 'deviceShellScroll' }: Props) {
   const { language } = useAppLanguage();
+  const insets = useSafeAreaInsets();
   return (
     <ScrollView
       testID={scrollTestID}
@@ -27,7 +29,7 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
       <Box
         testID={screenTestID}
         collapsable={false}
-        style={styles.header}
+        style={[styles.header, { paddingTop: insets.top + 12 }]}
         flexDirection="row"
         alignItems="center"
         gap={12}

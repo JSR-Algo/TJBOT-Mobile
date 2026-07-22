@@ -1,0 +1,16 @@
+# Keep the code-intelligence index focused on owned mobile source and tests.
+# Local native builds and generated proof artifacts can otherwise create a
+# multi-gigabyte index without improving symbol or execution-flow analysis.
+**
+!src/
+!src/**
+!tests/
+!tests/**
+!scripts/
+!scripts/**/*.js
+!scripts/**/*.mjs
+!scripts/**/*.ts
+!package.json
+!tsconfig.json
+!babel.config.js
+!jest.config.js
