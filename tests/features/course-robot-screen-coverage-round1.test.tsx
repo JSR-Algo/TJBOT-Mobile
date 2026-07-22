@@ -7,6 +7,7 @@ import BuyCourseScreen from '@/features/course-library/screens/BuyCourseScreen';
 import CourseLockedScreen from '@/features/course-library/screens/CourseLockedScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 import { getCourseLessons, getCourses, type PublishedCourse } from '@/services/api/course-library.api';
+import { getDeviceStatus } from '@/services/api/device.api';
 
 // CourseDetailScreen reads the published catalog AND the course's lesson list on
 // mount. Keep every other export REAL (the screen relies on none of them) and
@@ -21,8 +22,17 @@ jest.mock('@/services/api/course-library.api', () => {
   };
 });
 
+jest.mock('@/services/api/device.api', () => ({
+  getDeviceStatus: jest.fn(),
+}));
+
+jest.mock('@/contexts/HouseholdContext', () => ({
+  useOptionalHousehold: jest.fn(() => ({ activeChild: { id: 'child-1' } })),
+}));
+
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
 const mockedGetCourseLessons = getCourseLessons as jest.MockedFunction<typeof getCourseLessons>;
+const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 
 function navigationFor() {
   return {
@@ -47,6 +57,13 @@ beforeEach(() => {
   // unless a test overrides. Resolved value supplied per-test.
   mockedGetCourses.mockResolvedValue([]);
   mockedGetCourseLessons.mockResolvedValue([]);
+  mockedGetDeviceStatus.mockResolvedValue({
+    id: 'device-1',
+    name: 'Casa Robot',
+    online: true,
+    batteryPercent: 80,
+    charging: false,
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -497,7 +514,9 @@ describe('CourseDetailScreen — published overlay + CTAs', () => {
     expect(screen.queryByText('Asking politely')).toBeNull();
 
     // "Add to Robot" → UnlockConfirmScreen with the (unknown) courseId (line 100).
-    fireEvent.press(screen.getByText('Add to Robot'));
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add to Robot'));
+    });
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'unknown-course' });
 
     // "Back to library" → CourseLibraryScreen (line 101).
