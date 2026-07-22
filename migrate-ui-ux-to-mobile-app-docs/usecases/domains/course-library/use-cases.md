@@ -25,10 +25,12 @@
 - **Main Flow:**
   1. `CourseDetailPage` mounts and renders `DvShell title="Course details"` (`CourseDetailScreen.jsx:13`).
   2. Page renders the LCD preview, course summary, and lesson breakdown.
-  3. Parent taps "Add to Robot" → navigation transitions to `cl_add_free` (UC-CL03) — `CourseDetailScreen.jsx:70`.
+  3. Parent taps "Add to Robot" → app checks the active child's Robot with `getDeviceStatus('primary', childId)`.
+  4. When the status response identifies a Robot with `online === true`, navigation transitions to `cl_add_free` (UC-CL03).
 - **Postconditions:** Parent has decided to add (transitions to UC-CL03) or to go back.
 - **Alt Flow:**
   1. Parent taps "Back to library" → returns to `cl_library` (`CourseDetailScreen.jsx:71`).
+  2. If there is no active child, no Robot id, Robot is offline, connection status is unknown, or the status request fails, the app displays the connection-required alert and remains on `CourseDetailScreen`; UC-CL03 is not opened.
 
 ## UC-CL03 — Buy / Unlock Course
 
