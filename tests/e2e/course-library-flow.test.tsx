@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Alert } from 'react-native';
 import { ROUTES } from '@/navigation/routes';
 import CourseAddedScreen from '@/features/course-library/screens/CourseAddedScreen';
 import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
@@ -271,7 +272,14 @@ describe('course-library flow guards', () => {
     expect(screen.getByText('This course is still preparing on the server. Try again in a moment.')).toBeTruthy();
   });
 
-  it('starts the free add path from detail without billing plan selection', () => {
+  it('starts the free add path from detail without billing plan selection', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+    });
     const navigation = navigationFor();
     render(
       <CourseDetailScreen
@@ -280,11 +288,68 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText('Add to Robot'));
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add to Robot'));
+    });
 
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'c_food' });
     expect(screen.queryByText('Choose a plan')).toBeNull();
     expect(screen.queryByText('Confirm & continue')).toBeNull();
+  });
+
+  it('stays on course detail and alerts when the robot is offline', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: false,
+      batteryPercent: 80,
+      charging: false,
+    });
+    const navigation = navigationFor();
+    render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add to Robot'));
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Robot chưa kết nối',
+      'Vui lòng kết nối Robot trước khi thêm bài học.',
+      [{ text: 'Đã hiểu' }],
+    );
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
+    alertSpy.mockRestore();
+  });
+
+  it('stays on course detail and alerts when the robot status check fails', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    mockedGetDeviceStatus.mockRejectedValueOnce(new Error('status unavailable'));
+    const navigation = navigationFor();
+    render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add to Robot'));
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Robot chưa kết nối',
+      'Vui lòng kết nối Robot trước khi thêm bài học.',
+      [{ text: 'Đã hiểu' }],
+    );
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
+    alertSpy.mockRestore();
   });
 
   it('labels parent unlock keypad controls', () => {
