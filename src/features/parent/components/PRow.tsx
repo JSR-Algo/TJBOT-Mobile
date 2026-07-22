@@ -3,6 +3,7 @@ import { StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { Icon, type IconName } from '@/design-system/icons';
 import { PA } from './ParentScroll';
 
 type Props = {
@@ -17,7 +18,31 @@ type Props = {
   isLast?: boolean;
 };
 
+const ROW_ICON_NAMES: Readonly<Record<string, IconName>> = {
+  '📄': 'FileText',
+  '✉': 'Mail',
+  '🌐': 'Languages',
+  '🎤': 'Mic',
+  '🔊': 'Volume2',
+  '📳': 'Vibrate',
+  '📊': 'ChartNoAxesColumnIncreasing',
+  '🛡': 'ShieldCheck',
+  '⚙': 'Settings',
+  '❓': 'CircleQuestionMark',
+  '?': 'CircleQuestionMark',
+  'ⓘ': 'Info',
+  '📅': 'CalendarDays',
+  '🗓': 'CalendarDays',
+  '📖': 'BookOpen',
+  '📚': 'BookOpen',
+  '🗑': 'Trash2',
+  '🩺': 'Stethoscope',
+  '✅': 'CircleCheck',
+  '👤': 'User',
+};
+
 export default function PRow({ icon, label, value, toggle, onToggle, chevron, danger, onPress, isLast }: Props) {
+  const iconName = icon ? ROW_ICON_NAMES[icon.replace(/\uFE0F/g, '')] : undefined;
   const content = (
     <Box
       flexDirection="row"
@@ -27,7 +52,11 @@ export default function PRow({ icon, label, value, toggle, onToggle, chevron, da
     >
       {icon ? (
         <Box style={styles.iconWrap} alignItems="center" justifyContent="center">
-          <Text style={{ fontSize: 14 }}>{icon}</Text>
+          {iconName ? (
+            <Icon name={iconName} size={17} color={danger ? '#C0392B' : PA.ink3} testID="prow-icon" />
+          ) : (
+            <Text style={{ fontSize: 14 }}>{icon}</Text>
+          )}
         </Box>
       ) : null}
       <Text style={[styles.label, danger && { color: '#C0392B', fontWeight: '500' }]}>{label}</Text>

@@ -99,7 +99,7 @@ export default function ParentDiagnosticLogScreen({ navigation }: Props): React.
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {entries.length === 0 ? (
-          <Text style={styles.empty} i18n={false}>
+          <Text style={styles.empty}>
             No problems captured yet. Open a lesson or talk to Robot — errors will appear here and auto-send to Telegram.
           </Text>
         ) : (
