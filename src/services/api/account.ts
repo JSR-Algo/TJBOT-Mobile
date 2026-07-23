@@ -101,6 +101,22 @@ export async function cancelAccountDeletion(deletionJobId: string): Promise<Acco
   return mapDeletion(unwrap<DeletionRawPayload>(response.data));
 }
 
+export async function getAccountDeletionSubscriptionStatus(): Promise<string> {
+  try {
+    const response = await client.get('/billing/subscription');
+    const raw = unwrap<{ status?: string }>(response.data);
+    if (typeof raw.status !== 'string' || raw.status.length === 0) {
+      throw new Error('subscription_status_missing');
+    }
+    return raw.status;
+  } catch (error: unknown) {
+    if (error !== null && typeof error === 'object' && 'code' in error && error.code === 'subscription_not_found') {
+      return 'inactive';
+    }
+    throw error;
+  }
+}
+
 export type EntitlementsSnapshot = {
   courses: string[];
   subscriptionStatus: string;

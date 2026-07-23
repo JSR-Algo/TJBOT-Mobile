@@ -1,6 +1,7 @@
 import client from '@/services/http/client';
 import {
   cancelAccountDeletion,
+  getAccountDeletionSubscriptionStatus,
   getAccountDeletionStatus,
   getAccountExportStatus,
   requestAccountDeletion,
@@ -97,6 +98,38 @@ describe('account privacy API', () => {
       },
       { headers: { 'X-Request-Id': 'delete-req-1' } },
     );
+  });
+
+  it('treats a missing billing subscription as inactive for account deletion', async () => {
+    mockedClient.get.mockRejectedValueOnce({
+      code: 'subscription_not_found',
+      message: 'Subscription not found',
+      retryable: false,
+      status: 404,
+    });
+
+    await expect(getAccountDeletionSubscriptionStatus()).resolves.toBe('inactive');
+    expect(mockedClient.get).toHaveBeenCalledWith('/billing/subscription');
+  });
+
+  it('returns the current billing subscription status for account deletion', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        data: {
+          subscriptionId: 'subscription-1',
+          status: 'active',
+        },
+      },
+    });
+
+    await expect(getAccountDeletionSubscriptionStatus()).resolves.toBe('active');
+    expect(mockedClient.get).toHaveBeenCalledWith('/billing/subscription');
+  });
+
+  it('rejects a malformed billing subscription response instead of allowing deletion', async () => {
+    mockedClient.get.mockResolvedValueOnce({ data: { data: {} } });
+
+    await expect(getAccountDeletionSubscriptionStatus()).rejects.toThrow('subscription_status_missing');
   });
 
   it('checks and cancels deletion by job id without issuing duplicate create calls', async () => {

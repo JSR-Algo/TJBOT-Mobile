@@ -8,11 +8,11 @@ import ParentScroll, { PA } from '../components/ParentScroll';
 import PRowGroup from '../components/PRowGroup';
 import {
   cancelAccountDeletion,
+  getAccountDeletionSubscriptionStatus,
   getAccountDeletionStatus,
   getAccountExportStatus,
   requestAccountDeletion,
   requestAccountExport,
-  refreshEntitlementsAfterPurchase,
   type AccountDeletionJob,
   type AccountExportJob,
 } from '@/services/api/account';
@@ -113,12 +113,12 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
 
   React.useEffect(() => {
     let mounted = true;
-    refreshEntitlementsAfterPurchase()
-      .then((entitlements) => {
+    getAccountDeletionSubscriptionStatus()
+      .then((subscriptionStatus) => {
         if (mounted) {
           setSubscriptionChecking(false);
           setSubscriptionCheckFailed(false);
-          setSubscriptionBlocked(subscriptionBlocksDeletion(entitlements.subscriptionStatus));
+          setSubscriptionBlocked(subscriptionBlocksDeletion(subscriptionStatus));
         }
       })
       .catch(() => {

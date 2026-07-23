@@ -103,6 +103,7 @@ jest.mock('../../src/services/api/auth', () => ({
 jest.mock('../../src/services/api/account', () => ({
   cancelAccountDeletion: jest.fn(),
   getAccountDeletionStatus: jest.fn(),
+  getAccountDeletionSubscriptionStatus: jest.fn(),
   getAccountExportStatus: jest.fn(),
   requestAccountDeletion: jest.fn(),
   requestAccountExport: jest.fn(),
@@ -237,11 +238,7 @@ describe('Parent settings and gate', () => {
     }));
     mockUpdateChildDisplayName.mockResolvedValue({ id: 'child-1', displayName: 'Bong' });
     mockSetActiveChild.mockResolvedValue({ active_child_id: 'child-2' });
-    accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
-      courses: [],
-      subscriptionStatus: 'none',
-      robotActivated: true,
-    });
+    accountApiMock.getAccountDeletionSubscriptionStatus.mockResolvedValue('inactive');
   });
 
   afterEach(async () => {
@@ -472,7 +469,7 @@ describe('Parent settings and gate', () => {
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(accountApiMock.getAccountDeletionSubscriptionStatus).toHaveBeenCalledTimes(1));
     fireEvent.press(screen.getByText('Request export'));
     expect(screen.getByText('Type EXPORT to request your account archive.')).toBeTruthy();
     expect(accountApiMock.requestAccountExport).not.toHaveBeenCalled();
@@ -508,7 +505,7 @@ describe('Parent settings and gate', () => {
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(accountApiMock.getAccountDeletionSubscriptionStatus).toHaveBeenCalledTimes(1));
     fireEvent.changeText(screen.getByPlaceholderText('EXPORT'), 'EXPORT');
     await act(async () => {
       fireEvent.press(screen.getByText('Request export'));
@@ -536,7 +533,7 @@ describe('Parent settings and gate', () => {
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(accountApiMock.getAccountDeletionSubscriptionStatus).toHaveBeenCalledTimes(1));
     fireEvent.changeText(screen.getByPlaceholderText('EXPORT'), 'EXPORT');
     await act(async () => {
       fireEvent.press(screen.getByText('Request export'));
@@ -551,11 +548,7 @@ describe('Parent settings and gate', () => {
   });
 
   it('blocks deletion while subscription is active', async () => {
-    accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValueOnce({
-      courses: [],
-      subscriptionStatus: 'active',
-      robotActivated: true,
-    });
+    accountApiMock.getAccountDeletionSubscriptionStatus.mockResolvedValueOnce('active');
 
     const screen = render(
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
@@ -567,8 +560,8 @@ describe('Parent settings and gate', () => {
   });
 
   it('blocks deletion while subscription status is loading', () => {
-    const pending = deferred<Awaited<ReturnType<typeof accountApi.refreshEntitlementsAfterPurchase>>>();
-    accountApiMock.refreshEntitlementsAfterPurchase.mockReturnValueOnce(pending.promise);
+    const pending = deferred<Awaited<ReturnType<typeof accountApi.getAccountDeletionSubscriptionStatus>>>();
+    accountApiMock.getAccountDeletionSubscriptionStatus.mockReturnValueOnce(pending.promise);
 
     const screen = render(
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
@@ -580,13 +573,13 @@ describe('Parent settings and gate', () => {
   });
 
   it('blocks deletion when subscription status cannot be verified', async () => {
-    accountApiMock.refreshEntitlementsAfterPurchase.mockRejectedValueOnce(new Error('entitlement check failed'));
+    accountApiMock.getAccountDeletionSubscriptionStatus.mockRejectedValueOnce(new Error('subscription check failed'));
 
     const screen = render(
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(accountApiMock.getAccountDeletionSubscriptionStatus).toHaveBeenCalledTimes(1));
     expect(screen.getByText('Subscription status unavailable. Try again before deleting this account.')).toBeTruthy();
     expect(screen.getByLabelText('Request account deletion').props.accessibilityState).toEqual({ disabled: true });
     expect(accountApiMock.requestAccountDeletion).not.toHaveBeenCalled();
@@ -597,7 +590,7 @@ describe('Parent settings and gate', () => {
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(accountApiMock.getAccountDeletionSubscriptionStatus).toHaveBeenCalledTimes(1));
 
     expect(screen.getByLabelText('Request account export')).toBeTruthy();
     expect(screen.getByLabelText('Request account deletion')).toBeTruthy();
@@ -620,7 +613,7 @@ describe('Parent settings and gate', () => {
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(accountApiMock.getAccountDeletionSubscriptionStatus).toHaveBeenCalledTimes(1));
     fireEvent.changeText(screen.getByPlaceholderText('DELETE my account'), 'DELETE my account');
 
     await act(async () => {
@@ -724,7 +717,7 @@ describe('Parent settings and gate', () => {
       <ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(accountApiMock.getAccountDeletionSubscriptionStatus).toHaveBeenCalledTimes(1));
     fireEvent.changeText(screen.getByPlaceholderText('DELETE my account'), 'DELETE my account');
     fireEvent.changeText(screen.getByPlaceholderText('Password'), 'CorrectHorseBattery!9');
     await act(async () => {
