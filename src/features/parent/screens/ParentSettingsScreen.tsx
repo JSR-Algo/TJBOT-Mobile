@@ -469,6 +469,14 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         >
           <PRow icon="🛡" label="Safety & Privacy details" chevron />
         </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={t('Delete account')}
+          onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen)}
+          activeOpacity={0.7}
+        >
+          <PRow icon="🗑" label="Delete account" danger chevron />
+        </TouchableOpacity>
         <PRow
           icon="🗑"
           label="Delete child's data"
