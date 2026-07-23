@@ -366,6 +366,12 @@ describe('Parent settings and gate', () => {
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
   });
 
+  it('opens account deletion from the visible privacy section', async () => {
+    const screen = await renderParentSettings();
+    fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
+  });
+
   it.each([
     { locale: 'en' as const, label: 'Robot leaderboard privacy' },
     { locale: 'vi' as const, label: 'Quyền riêng tư bảng xếp hạng Robot' },
