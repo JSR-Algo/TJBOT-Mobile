@@ -1,0 +1,86 @@
+appId: net.jasonle.tjbot
+name: First five mobile MVP screens and screenshot pack
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 60000
+
+# 01 — Overview / Today command
+- openLink: "tjbot://home/home-hub"
+- extendedWaitUntil:
+    visible:
+      id: "overviewPage"
+    timeout: 45000
+- runFlow:
+    when:
+      visible: ".*(Switch to English|Chuyển sang tiếng Anh).*"
+    commands:
+      - tapOn:
+          id: "appShellLanguage"
+- runFlow:
+    when:
+      visible: ".*Open debugger to view warnings.*"
+    commands:
+      - tapOn:
+          point: "92%,92%"
+- assertVisible:
+    id: "appShellProfile"
+- assertVisible:
+    id: "appShellLanguage"
+- assertVisible:
+    id: "appShellSettings"
+- assertVisible:
+    id: "authenticatedAppShellTabs"
+- takeScreenshot: "output/maestro/first-five/01-overview"
+
+# 02 — Live lesson status
+- tapOn:
+    id: "homeHeroRobot"
+- extendedWaitUntil:
+    visible:
+      id: "liveLessonStatusPage"
+    timeout: 30000
+- assertVisible: ".*(Live lesson status|Trạng thái bài học trực tiếp).*"
+- takeScreenshot: "output/maestro/first-five/02-live-status"
+
+# 03 — Report detail
+- openLink: "tjbot://home/home-hub"
+- extendedWaitUntil:
+    visible:
+      id: "homeLessonReport"
+    timeout: 30000
+- tapOn:
+    id: "homeLessonReport"
+- extendedWaitUntil:
+    visible:
+      id: "reportDetailPage"
+    timeout: 30000
+- assertVisible: ".*(Report detail|Chi tiết báo cáo).*"
+- takeScreenshot: "output/maestro/first-five/03-report-detail"
+
+# 04 — Course library
+- tapOn:
+    id: "libraryTab"
+- extendedWaitUntil:
+    visible:
+      id: "courseLibraryPage"
+    timeout: 30000
+- assertVisible: ".*(Course Library|Thư viện khóa học).*"
+- takeScreenshot: "output/maestro/first-five/04-course-library"
+
+# 05 — Course detail
+- tapOn: ".*(Open|Mở).*(course|khóa học).*"
+- extendedWaitUntil:
+    visible:
+      id: "courseDetailPage"
+    timeout: 30000
+- takeScreenshot: "output/maestro/first-five/05-course-detail"
+- scrollUntilVisible:
+    element:
+      id: "coursePrimaryAction"
+    direction: DOWN
+- assertVisible:
+    id: "coursePrimaryAction"

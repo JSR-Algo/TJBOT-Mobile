@@ -62,6 +62,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     await waitFor(() => expect(mockedGetPreloadStatus).toHaveBeenCalledWith('dev-1'));
     // The ready chip copy is absent and the primary CTA is gated to "Preparing…".
     expect(screen.queryByText('Ready for today')).toBeNull();
+    expect(screen.queryByText('Robot is ready')).toBeNull();
     expect(screen.getByText('Preparing…')).toBeTruthy();
     // Heading is bound to the real lessonTitle, not the old hardcoded literal.
     expect(screen.getByText('This Is a Barn')).toBeTruthy();
@@ -80,6 +81,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     );
 
     await waitFor(() => expect(screen.getByText('Ready for today')).toBeTruthy());
+    expect(screen.getByText('Robot is ready')).toBeTruthy();
     expect(screen.getByText('Hand it to your child')).toBeTruthy();
     expect(screen.getByText('This Is a Barn')).toBeTruthy();
   });
@@ -120,7 +122,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       });
 
       expect(screen.getByText('Finished! 🎉')).toBeTruthy();
-      expect(screen.getByText('This Is a Barn')).toBeTruthy();
+      expect(screen.getByLabelText('This Is a Barn')).toBeTruthy();
       // three-streams: the progress surface renders the privacy guarantee, never a transcript.
       expect(screen.getByText(/Audio is never saved/)).toBeTruthy();
     } finally {

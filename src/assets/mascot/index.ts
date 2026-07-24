@@ -1,26 +1,18 @@
 /**
- * TeeBot mascot — the single swappable source of the robot picture.
+ * TeeBot mascot — single swappable robot picture source.
  *
- * The app shows the robot in two sizes:
- *   • head  → small spots (nav/profile avatars, chat bubbles, speaker chips)
- *   • body  → hero / character spots (home hero, onboarding, lesson companion,
- *             garden, celebration, pairing success, My Robot)
+ * SOT character: R4 REAL ROBOT / cat-eared TeeBot
+ * (docs/design-references/cat-teebot/poses-r4-2026-07-07/).
  *
- * To restyle the robot EVERYWHERE, replace these two files in place
- * (keep the same names) — nothing else needs to change:
- *   src/assets/mascot/tee-head.png
- *   src/assets/mascot/tee-body.png
- *
- * Wiring targets (done during the "populate everywhere" step, after preview approval):
- *   - RobotIcon.tsx           → mascot.head   (currently referenceImages.robotHead)
- *   - OnboardingClayRobot.tsx → mascot.body   (hero character in onboarding/auth)
- *   - ClayRobotScreen / RobotBody (lessonDemo) → mascot.body
- *   - 🤖 emoji placeholders (~17 screens)      → <RobotImage variant="head|body" />
+ *   • head  → small spots (nav avatars, chips)
+ *   • body  → hero / command-center robot card
  */
-export const teeBody = require('./tee-body.png'); // ① full body — hero / character
-export const teeHead = require('./tee-head.png'); // ② head — chat, speaker, large avatars
-export const teeIcon = require('./tee-icon.png'); // ③ icon — small circular avatars / badge
+export const teeBody = require('./r4-wave.png');
+export const teeHead = require('./r4-head.png');
+export const teeIcon = require('./tee-icon.png');
+export const r4Wave = require('./r4-wave.png');
+export const r4Head = require('./r4-head.png');
 
-export const mascot = { body: teeBody, head: teeHead, icon: teeIcon } as const;
+export const mascot = { body: teeBody, head: teeHead, icon: teeIcon, r4Wave, r4Head } as const;
 
 export default mascot;

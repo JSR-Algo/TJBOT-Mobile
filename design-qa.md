@@ -1,35 +1,47 @@
-# Design QA: Export HTML 7 Mobile Adaptation
+# Design QA — First Five Mobile Pages
 
-Date: 2026-06-16
-Repo: TJBOT-Mobile
-System: sys-16
-Source visual: `/var/folders/5b/24325_5d3dq2jcp4dntycnyc0000gn/T/codex-clipboard-0676549e-efd7-47a5-b633-bc16f80cab25.png`
-Target surfaces: Home tab, Devices tab, Course Library tab, bottom tab shell
+## Scope
 
-## Full-View Comparison Evidence
-
-- Source reference: provided attachment showing Home Hub, Device Overview, and Course Library mobile screens.
-- Implementation screenshot: blocked.
-- Blocker: this project is a native React Native CLI app with no web, Storybook, or view-shot runtime installed. The booted iPhone 17 simulator did not have TJBot installed, and the redesigned tabs are behind the real onboarding/auth flow. Adding a bypass just for screenshots would violate the auth/navigation contract.
-- Fallback evidence: TypeScript, ESLint, focused navigation/course tests, full unit test suite, and Semgrep all passed after the corrected implementation.
-
-## Focused Regions Checked
-
-- Home Hub: cream background, small top controls, centered robot artwork, status chip, primary lesson CTA, and bottom quick cards were adapted without changing Home state or CTA route logic.
-- Device Home: existing Devices tab screen was adapted to the visual structure of the middle reference while preserving the existing device action navigations.
-- Course Library: search field and rounded course rows were adapted to the reference while preserving the existing API load, error states, empty states, and course detail navigation.
-- Bottom Tabs: route names and tab order stayed intact; styling was adjusted to the floating pill visual language from the reference.
+- Owner-approved sources:
+  - Overview: `/Users/thuanle/.agentsroom/pasted-images/pasted-1784799703800.png`
+  - Five-screen board: `/Users/thuanle/.agentsroom/pasted-images/pasted-1784788366246.png`
+- Native verification viewport: iPhone 17, iOS 26.3, 402 × 874 logical points (1206 × 2622 screenshots at 3×).
+- Screens: Overview, Live lesson status, Report detail, Course library, Course detail.
+- Locked decisions honored: existing robot art; floating glass pill; only the selected tab is colorful; Home owns Overview/Live/Report; Library owns Library/Detail; Mia, EN, and Settings stay in the global header.
 
 ## Evidence
 
-| Gate | Command | Result | Key output |
-|---|---|---|---|
-| TypeScript | `npm run typecheck` | PASS | Exit 0 |
-| ESLint | `npm run lint -- src/features/home/screens/HomeHubScreen.tsx src/features/device/screens/DeviceHomeScreen.tsx src/features/course-library/screens/CourseLibraryScreen.tsx src/navigation/MainTabNavigator.tsx` | PASS | Exit 0, 0 errors, existing warnings only |
-| Focused tests | `npm test -- --runInBand tests/e2e/course-progress-stability.test.tsx tests/navigation/main-tab-active-state.test.tsx` | PASS | 2 suites passed, 14 tests passed |
-| Full unit tests | `npm test -- --runInBand --forceExit` | PASS | 134 suites passed, 1 skipped; 1039 tests passed, 19 skipped |
-| Semgrep | `/opt/homebrew/bin/semgrep scan --config p/default --metrics=off src/features/course-library/screens/CourseLibraryScreen.tsx src/features/home/screens/HomeHubScreen.tsx src/features/device/screens/DeviceHomeScreen.tsx src/navigation/MainTabNavigator.tsx` | PASS | 0 findings |
+- Final full-screen captures: `output/maestro/first-five/01-overview.png` through `05-course-detail.png`.
+- Owner-facing five-screen sheet: `output/maestro/first-five/first-five-contact-sheet.png`.
+- Same-input reference/build comparison: `/tmp/tbot-first-five-reference-vs-maestro.png`.
+- Focus checks: global header alignment, hero copy/robot separation, card density, CTA visibility, safe-area clearance, and active/inactive navigation treatment on all five captures.
 
-## Final Result
+## Iteration history
 
-Blocked for rendered screenshot verification only. Code-level, unit-level, and security verification passed.
+1. Baseline: oversized shell/title treatment, overlong bottom pill, inconsistent course headers, and lower content clipped on Live, Report, and Course Detail.
+2. First correction: shared symmetric header and compact floating navigation; all five screens fit, but Overview exposed a demo Home request error and wrapped the online state.
+3. Final correction: investor-demo Home seed, one-line online state, reference `06:42` live state, and `5 of 6` report state. Maestro recaptured the complete journey.
+
+## Final comparison
+
+| Surface | Result |
+|---|---|
+| Typography | Hierarchy, weights, wrapping, and density match the approved direction; no clipped or cramped labels. |
+| Spacing/layout | Symmetric header controls and floating pill; full cards and primary actions remain visible. |
+| Color/state | Warm neutral canvas and pastel evidence cards retained; exactly one tab is colorful per screen. |
+| Imagery | Locked TeeBot robot is unchanged; existing registered farm/course assets are reused with intentional crops. |
+| Icons | Lucide controls and the approved colorful menu assets stay aligned and use consistent inactive gray. |
+| Behavior | Maestro completes Overview → Live → Report → Library → Course Detail and confirms the primary course action is reachable. |
+| Accessibility | Semantic buttons/tabs, selected state, labels, disabled states, and practical mobile tap targets retained. |
+| Localization | No new hardcoded copy; English/Vietnamese key parity remains exact. |
+
+Dynamic course counts and the `Add to Robot` action remain backend-state driven rather than being hardcoded to the static board. This is an intentional product-data difference, not a layout or component fidelity defect.
+
+## Severity gate
+
+- P0: none.
+- P1: none.
+- P2: none after the final capture.
+- P3: static-board course catalog data differs from the current investor-demo catalog where backend state differs.
+
+final result: passed

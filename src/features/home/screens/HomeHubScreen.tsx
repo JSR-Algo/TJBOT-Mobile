@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,24 +14,19 @@ import { Box } from "@/design-system/primitives/Box";
 import { Text } from "@/design-system/primitives/Text";
 import { Icon } from "@/design-system/icons";
 import { ROUTES } from "@/navigation/routes";
-import { referenceImages } from "@/design-system/referenceTheme";
+import { mascot } from "@/assets/mascot";
 import { useAppLanguage } from "@/services/i18n/i18n";
-import {
-  getSleekHomeLayoutScale,
-  SLEEK_HOME_REFERENCE_HEIGHT,
-  SLEEK_HOME_REFERENCE_WIDTH,
-} from "@/design-system/sleekHomeLayout";
 import { useHomeState } from "../hooks/useHomeState";
+import { HomeMultiChildState, HomeStreakLostState } from "../components/HomeHubStates";
+import { TodayCommandView } from "../components/TodayCommandView";
 
 type Props = NativeStackScreenProps<RootStackParamList, "HomeHubScreen">;
 
 const SLEEK = {
   background: "#FAF5EB",
   foreground: "#2D3436",
-  muted: "#636E72",
   primary: "#FF6B6B",
-  border: "#EBDCC7",
-  card: "#FFFFFF",
+  secondary: "#4ECDC4",
 } as const;
 
 const ROBOT_HANG_TITLE = "Robot pairing later";
@@ -43,61 +37,19 @@ function showRobotHang(): void {
   Alert.alert(ROBOT_HANG_TITLE, ROBOT_HANG_BODY, [{ text: "OK" }]);
 }
 
-// Exported directly from Sleek Home Hub v8. These are the original design
-// assets, intentionally loaded as HTTPS images rather than regenerated icons.
+// Blueprint page 01 robot = R4 cat-eared TeeBot (local SOT asset).
 const SLEEK_ASSETS = {
-  robotHead:
-    "https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/ai/head-transparent-vLXmmtgCXxT.png",
-  course:
-    "https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/dRwsfXpz3xq.png",
-  review:
-    "https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/oZRoaunYiL8.png",
-  progress:
-    "https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/NpznCUpnBV4.png",
+  robotHead: mascot.r4Head,
+  emptyRobot: mascot.r4Wave,
 } as const;
 
 export const HOME_HUB_ROBOT_STAGE_TOP_PADDING = 32;
-export const HOME_HUB_SECONDARY_ROW_BOTTOM = 130;
-export const HOME_HUB_PRIMARY_CTA_BOTTOM = 28;
-
-type QuickActionProps = {
-  imageUri: string;
-  label: string;
-  accessibilityLabel: string;
-  onPress: () => void;
-};
-
-function SleekQuickAction({
-  imageUri,
-  label,
-  accessibilityLabel,
-  onPress,
-}: QuickActionProps): React.JSX.Element {
-  return (
-    <TouchableOpacity
-      style={styles.quickAction}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-    >
-      <Box style={styles.quickActionImageWrap}>
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.quickActionImage}
-          resizeMode="contain"
-        />
-      </Box>
-      <Text i18n={false} fontWeight="800" style={styles.quickActionLabel}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
 
 export default function HomeHubScreen({
   navigation,
 }: Props): React.JSX.Element {
   const {
+    variant,
     cfg,
     isLoading,
     isError = false,
@@ -105,251 +57,220 @@ export default function HomeHubScreen({
     data,
     refetch,
     demoBadge = { simulated: false, label: null },
+    selectChild,
   } = useHomeState();
   const { t } = useAppLanguage();
-  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const layoutScale = getSleekHomeLayoutScale(width, height, insets.top);
-  const frameWidth = SLEEK_HOME_REFERENCE_WIDTH * layoutScale;
-  const frameHeight = SLEEK_HOME_REFERENCE_HEIGHT * layoutScale;
-  const canvasLeft = (frameWidth - SLEEK_HOME_REFERENCE_WIDTH) / 2;
-  const canvasTop = (frameHeight - SLEEK_HOME_REFERENCE_HEIGHT) / 2;
   const unavailable = contentMode === 'unavailable';
   const failed = contentMode === 'error' || isError;
-  const hasLiveLesson = contentMode === 'live' && Boolean(data?.nextLessonId);
-  const statusTitle = demoBadge.simulated
-    ? demoBadge.label ?? 'Demo mode'
-    : failed
-      ? 'Home unavailable'
-      : unavailable
-        ? 'No updates yet'
-        : cfg.chip?.text ?? "Today's lesson is ready!";
-  const lessonTitle = failed
-    ? 'Could not load Home'
-    : unavailable
-      ? 'No lesson plan yet'
-      : data?.nextLessonId
-        ? lessonTitleFromId(data.nextLessonId)
-        : 'No lesson plan yet';
-  const lessonHint = failed
-    ? cfg.chip?.text ?? 'Something went sideways'
-    : unavailable
-      ? "We'll show today's plan here when it's ready"
-      : cfg.chip?.text ?? "Today's lesson is ready!";
-  const streakLabel = contentMode === 'live' && data
-    ? `${data.streakDays}-day streak`
-    : 'Streak not available yet';
-  const secondaryMetricLabel = contentMode === 'live' && data
-    ? `${data.todayMinutes} minutes today`
-    : 'Level not available yet';
-  const primaryLabel = failed
-    ? 'Retry Home'
-    : unavailable
-      ? 'Browse lessons'
-      : cfg.ctaLabel;
   const primaryEnabled = failed || unavailable || cfg.ctaEnabled;
 
   if (isLoading) {
     return (
-      <ScreenShell bg={SLEEK.background} gradient={false}>
-        <Box flex={1} alignItems="center" justifyContent="center">
-          <Image
-            source={{ uri: SLEEK_ASSETS.robotHead }}
-            style={styles.loadingRobot}
-            accessibilityIgnoresInvertColors
-          />
-        </Box>
+      <ScreenShell bg="#E0F7FA" gradient={false}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.loadingScene,
+            { paddingTop: Math.max(insets.top + 20, 48) },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Box testID="homeLoadingSkeleton">
+            <Box
+              testID="homeLoadingHeader"
+              style={styles.loadingHeader}
+              flexDirection="row"
+              alignItems="flex-start"
+              justifyContent="space-between"
+            >
+              <Box gap={8}>
+                <Box style={[styles.loadingBlock, styles.loadingEyebrow]} />
+                <Box style={[styles.loadingBlock, styles.loadingHeading]} />
+                <Box style={[styles.loadingBlock, styles.loadingSubheading]} />
+              </Box>
+              <Box style={styles.loadingAvatar} />
+            </Box>
+
+            <Box testID="homeLoadingRobot" style={styles.loadingRobotStage}>
+              <Box style={styles.loadingHaloOuter} />
+              <Box style={styles.loadingHaloInner} />
+              <Image
+                source={SLEEK_ASSETS.robotHead}
+                style={styles.loadingRobot}
+                resizeMode="contain"
+                accessibilityIgnoresInvertColors
+              />
+            </Box>
+
+            <Box testID="homeLoadingLesson" style={styles.loadingLessonCard}>
+              <Box style={[styles.loadingBlock, styles.loadingLessonTitle]} />
+              <Box style={[styles.loadingBlock, styles.loadingLessonLine]} />
+              <Box style={[styles.loadingBlock, styles.loadingLessonShortLine]} />
+            </Box>
+
+            <Box testID="homeLoadingMetrics" style={styles.loadingMetricRow}>
+              <Box style={styles.loadingMetricCard}>
+                <Box style={[styles.loadingBlock, styles.loadingMetricIcon]} />
+                <Box flex={1} gap={8}>
+                  <Box style={[styles.loadingBlock, styles.loadingMetricLabel]} />
+                  <Box style={[styles.loadingBlock, styles.loadingMetricValue]} />
+                </Box>
+              </Box>
+              <Box style={styles.loadingMetricCard}>
+                <Box style={[styles.loadingBlock, styles.loadingMetricIcon]} />
+                <Box flex={1} gap={8}>
+                  <Box style={[styles.loadingBlock, styles.loadingMetricLabel]} />
+                  <Box style={[styles.loadingBlock, styles.loadingMetricValue]} />
+                </Box>
+              </Box>
+            </Box>
+
+            <Box testID="homeLoadingAction" style={styles.loadingAction}>
+              <Box style={[styles.loadingBlock, styles.loadingActionCopy]} />
+            </Box>
+          </Box>
+        </ScrollView>
       </ScreenShell>
     );
   }
 
+  if (variant === 'zero_child') {
+    const openChildProfile = (): void => {
+      navigation.navigate(ROUTES.HomeChildProfileScreen);
+    };
+
+    return (
+      <ScreenShell bg="#E0F7FA" gradient={false}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.emptyScene,
+            { paddingTop: Math.max(insets.top + 20, 48) },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Box alignItems="center">
+            <Text i18n={false} fontWeight="800" style={styles.emptyTitle}>
+              {t('No lessons yet')}
+            </Text>
+            <Text i18n={false} fontWeight="700" style={styles.emptySubtitle}>
+              {t("Let's start a joyful English journey with TeeBot")}
+            </Text>
+          </Box>
+
+          <Box style={styles.emptyRobotStage}>
+            <Box style={styles.emptyRobotGlow} />
+            <Image
+              source={SLEEK_ASSETS.emptyRobot}
+              style={styles.emptyRobot}
+              resizeMode="contain"
+              accessibilityLabel={t('TeeBot')}
+            />
+          </Box>
+
+          <TouchableOpacity
+            testID="homeEmptyCard"
+            style={styles.emptyCard}
+            onPress={openChildProfile}
+            accessibilityRole="button"
+            accessibilityLabel={t('Name your child')}
+          >
+            <Text i18n={false} fontWeight="800" style={styles.emptyStep}>
+              {t('First step')}
+            </Text>
+            <Box flexDirection="row" alignItems="center" gap={12}>
+              <Icon name="Edit3" size={24} color={SLEEK.secondary} />
+              <Text i18n={false} fontWeight="800" style={styles.emptyCardTitle}>
+                {t('Name your child')}
+              </Text>
+            </Box>
+            <Text i18n={false} fontWeight="700" style={styles.emptyCardCopy}>
+              {t('Your child will feel special with a name of their own')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="homeEmptyCta"
+            style={styles.emptyCta}
+            onPress={openChildProfile}
+            accessibilityRole="button"
+            accessibilityLabel={t("Start today's lesson")}
+          >
+            <Icon name="Play" size={24} color="#FFFFFF" />
+            <Text i18n={false} fontWeight="800" style={styles.emptyCtaCopy}>
+              {t("Start today's lesson")}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </ScreenShell>
+    );
+  }
+
+  if (data?.variant === 'multiple_children') {
+    return (
+      <HomeMultiChildState
+        children={data.children}
+        onContinue={selectChild}
+        onAddChild={() => navigation.navigate(ROUTES.HomeChildProfileScreen)}
+      />
+    );
+  }
+
+  if (data?.variant === 'streak_lost') {
+    return (
+      <HomeStreakLostState
+        childName={data.childName}
+        lesson={data.nextLesson}
+        wordsLearnedThisWeek={data.wordsLearnedThisWeek}
+        onStartLesson={() => navigation.navigate(ROUTES.LessonReadyScreen)}
+        onBrowseLessons={() => navigation.navigate(ROUTES.CourseLibraryScreen)}
+      />
+    );
+  }
+
+  const childName =
+    data && "childName" in data && typeof data.childName === "string" && data.childName.trim()
+      ? data.childName.trim()
+      : null;
+  const greetingName = childName ?? t("Mia");
+  const lesson = data?.nextLesson;
+  const lessonReady = demoBadge.simulated || (!failed && !unavailable);
+  const overviewLessonTitle = failed
+    ? t('Could not load Home')
+    : unavailable
+      ? t('No lesson plan yet')
+      : lesson?.title || t('Barn & Farm Words');
+  const runPrimary = (): void => {
+    if (demoBadge.simulated) {
+      navigation.navigate(ROUTES.LessonReadyScreen);
+    } else if (failed) {
+      void refetch?.();
+    } else if (unavailable) {
+      navigation.navigate(ROUTES.CourseLibraryScreen);
+    } else {
+      navigateHomeCtaTarget(navigation, cfg.ctaTarget);
+    }
+  };
+
   return (
     <ScreenShell bg={SLEEK.background} gradient={false}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <Box style={{ width: frameWidth, height: frameHeight }}>
-          <Box
-            style={[
-              styles.canvas,
-              {
-                left: canvasLeft,
-                top: canvasTop,
-                transform: [{ scale: layoutScale }],
-              },
-            ]}
-          >
-            <Box
-              style={styles.header}
-              flexDirection="row"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
-                accessibilityRole="button"
-                accessibilityLabel={t("Open parent dashboard")}
-              >
-                <Image
-                  source={referenceImages.robotHead}
-                  style={styles.headerAvatar}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
-                accessibilityRole="button"
-                accessibilityLabel={t("Open parent settings")}
-              >
-                <Icon
-                  name="Settings"
-                  size={24}
-                  color={SLEEK.foreground}
-                />
-              </TouchableOpacity>
-            </Box>
-
-            <Text i18n={false} fontWeight="800" style={styles.greeting}>
-              {t("Hi, friend!")}
-            </Text>
-
-            <Box
-              testID="homeHonestyBadge"
-              style={styles.readyPill}
-              flexDirection="row"
-              alignItems="center"
-              gap={8}
-            >
-              <Box style={styles.readyDot} />
-              <Text i18n={false} fontWeight="800" style={styles.readyCopy}>
-                {t(statusTitle)}
-              </Text>
-            </Box>
-
-            <TouchableOpacity
-              testID="homeHeroRobot"
-              style={styles.robotStage}
-              onPress={() => {
-                if (hasLiveLesson && data?.nextLessonId) {
-                  navigation.navigate(ROUTES.RobotCompanionScreen, {
-                    lessonId: data.nextLessonId,
-                    ageBand: "4-6",
-                    autoStartVoice: true,
-                  });
-                  return;
-                }
-                if (unavailable) {
-                  showRobotHang();
-                }
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={t("Lesson Robot")}
-            >
-              <Box style={styles.haloLarge} />
-              <Box style={styles.haloMid} />
-              <Box style={styles.haloSmall} />
-              <Image
-                source={{ uri: SLEEK_ASSETS.robotHead }}
-                style={styles.robotHead}
-                resizeMode="contain"
-                accessibilityIgnoresInvertColors
-              />
-            </TouchableOpacity>
-
-            <Box style={styles.robotCopy}>
-              <Text i18n={false} fontWeight="800" style={styles.robotName}>
-                {t(lessonTitle)}
-              </Text>
-              <Text i18n={false} fontWeight="800" style={styles.robotHint}>
-                {t(lessonHint)}
-              </Text>
-            </Box>
-
-            <Box style={styles.metricsRow} flexDirection="row">
-              <Text i18n={false} fontWeight="800" style={styles.metricCopy}>
-                {t(streakLabel)}
-              </Text>
-              <Text i18n={false} fontWeight="800" style={styles.metricCopy}>
-                {t(secondaryMetricLabel)}
-              </Text>
-            </Box>
-
-            <TouchableOpacity
-              onPress={() => {
-                if (failed) {
-                  void refetch?.();
-                  return;
-                }
-                if (unavailable) {
-                  navigation.navigate(ROUTES.CourseLibraryScreen);
-                  return;
-                }
-                navigateHomeCtaTarget(navigation, cfg.ctaTarget);
-              }}
-              style={[
-                styles.primaryCta,
-                !primaryEnabled && styles.primaryCtaDisabled,
-              ]}
-              disabled={!primaryEnabled}
-              testID="homePrimaryCta"
-              accessibilityRole="button"
-              accessibilityLabel={primaryLabel}
-            >
-              <Text i18n={false} fontWeight="800" style={styles.primaryCtaText}>
-                {t(primaryLabel)}
-              </Text>
-            </TouchableOpacity>
-
-            <Box style={styles.quickActions}>
-              <SleekQuickAction
-                imageUri={SLEEK_ASSETS.course}
-                label={t("Course")}
-                accessibilityLabel={t("Browse lessons")}
-                onPress={() =>
-                  navigation.navigate(ROUTES.LessonPickScreen, {
-                    ageBand: "4-6",
-                  })
-                }
-              />
-              <SleekQuickAction
-                imageUri={SLEEK_ASSETS.review}
-                label={t("Review")}
-                accessibilityLabel={t("Review words")}
-                onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
-              />
-              <SleekQuickAction
-                imageUri={SLEEK_ASSETS.progress}
-                label={t("Progress")}
-                accessibilityLabel={t("View progress")}
-                onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
-              />
-              <SleekQuickAction
-                imageUri={SLEEK_ASSETS.robotHead}
-                label={t("Robot")}
-                accessibilityLabel={t("Robot")}
-                onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
-              />
-            </Box>
-          </Box>
-        </Box>
-      </ScrollView>
+      <TodayCommandView
+        childName={greetingName}
+        durationMinutes={lesson?.durationMinutes ?? 7}
+        lessonReady={lessonReady}
+        lessonStatusLabel={failed ? 'Try again' : unavailable ? 'Browse lessons' : 'Ready'}
+        lessonTitle={overviewLessonTitle}
+        onLiveStatus={() => navigation.navigate(ROUTES.RunningScreen, { lessonTitle: lesson?.title })}
+        onPrimary={runPrimary}
+        onReport={() => navigation.navigate(ROUTES.LessonSummaryScreen, { lessonId: lesson?.id })}
+        online={lessonReady}
+        primaryEnabled={demoBadge.simulated || primaryEnabled}
+        primaryLabel={demoBadge.simulated ? 'Start' : failed ? 'Retry' : unavailable ? 'Browse' : 'Start'}
+        reportsReady={data?.lessonsCompletedToday ?? 1}
+        wordCount={Math.max(lesson?.focusItems.length ?? 6, 1)}
+        wordsReady={data?.wordsLearnedThisWeek ?? 3}
+      />
     </ScreenShell>
   );
-}
-
-function lessonTitleFromId(lessonId: string): string {
-  const titleParts = lessonId
-    .split('-')
-    .filter((part, index) => index > 1 || !/^[wd]\d+$/i.test(part));
-  return titleParts
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
 }
 
 function navigateHomeCtaTarget(
@@ -372,217 +293,241 @@ function navigateHomeCtaTarget(
     showRobotHang();
     return;
   }
+  if (target === ROUTES.CourseLibraryScreen) {
+    navigation.navigate(ROUTES.CourseLibraryScreen);
+    return;
+  }
   navigation.navigate(ROUTES.HomeHubScreen);
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
+  emptyScene: {
     alignItems: "center",
-  },
-  canvas: {
-    position: "absolute",
-    width: SLEEK_HOME_REFERENCE_WIDTH,
-    height: SLEEK_HOME_REFERENCE_HEIGHT,
+    flexGrow: 1,
+    paddingBottom: 130,
     paddingHorizontal: 24,
-    paddingTop: 48,
   },
-  loadingRobot: {
-    width: 224,
-    height: 224,
-  },
-  header: {
-    position: "absolute",
-    left: 24,
-    right: 24,
-    top: 20,
-    height: 52,
-    zIndex: 2,
-  },
-  headerButton: {
-    width: 48,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 24,
-    backgroundColor: SLEEK.card,
-    borderWidth: 1,
-    borderColor: "rgba(235,220,199,0.45)",
-    shadowColor: "#2D3436",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-  },
-  greeting: {
+  emptyTitle: {
     color: SLEEK.foreground,
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 30,
+    lineHeight: 36,
     textAlign: "center",
-    marginBottom: 16,
   },
-  readyPill: {
-    alignSelf: "center",
-    backgroundColor: "rgba(255,255,255,0.8)",
-    borderColor: "rgba(255,107,107,0.2)",
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginBottom: 26,
-    shadowColor: "#2D3436",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  readyDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: SLEEK.primary,
-  },
-  readyCopy: {
-    color: "rgba(45,52,54,0.8)",
+  emptySubtitle: {
+    color: "rgba(99,110,114,0.82)",
     fontSize: 14,
-    lineHeight: 18,
-  },
-  robotStage: {
-    width: 288,
-    height: 288,
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: HOME_HUB_ROBOT_STAGE_TOP_PADDING,
-    marginBottom: 20,
-  },
-  haloLarge: {
-    position: "absolute",
-    width: 344,
-    height: 344,
-    borderRadius: 172,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,107,0.05)",
-  },
-  haloMid: {
-    position: "absolute",
-    width: 288,
-    height: 288,
-    borderRadius: 144,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,107,0.1)",
-  },
-  haloSmall: {
-    position: "absolute",
-    width: 316,
-    height: 316,
-    borderRadius: 158,
-    backgroundColor: "rgba(255,107,107,0.05)",
-  },
-  robotHead: {
-    zIndex: 1,
-    width: 224,
-    height: 224,
-    shadowColor: "#2D3436",
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-  },
-  robotCopy: {
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  robotName: {
-    color: SLEEK.foreground,
-    fontSize: 24,
-    lineHeight: 30,
-    marginBottom: 4,
-  },
-  robotHint: {
-    color: SLEEK.muted,
-    fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 20,
+    marginTop: 8,
+    maxWidth: 310,
     textAlign: "center",
   },
-  metricsRow: {
-    gap: 8,
+  emptyRobotStage: {
+    alignItems: "center",
+    height: 264,
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 28,
+    marginTop: 16,
+    position: "relative",
+    width: 264,
   },
-  metricCopy: {
-    backgroundColor: "rgba(255,255,255,0.82)",
-    borderRadius: 14,
-    color: SLEEK.muted,
-    fontSize: 11,
-    lineHeight: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+  emptyRobotGlow: {
+    backgroundColor: "rgba(255,107,107,0.10)",
+    borderRadius: 132,
+    height: 264,
+    position: "absolute",
+    transform: [{ scale: 1.1 }],
+    width: 264,
   },
-  primaryCta: {
+  emptyRobot: {
+    height: 256,
+    width: 256,
+    zIndex: 1,
+  },
+  emptyCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(235,220,199,0.36)",
+    borderRadius: 40,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 28,
+    paddingHorizontal: 28,
+    paddingVertical: 28,
+    shadowColor: "#164E63",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    width: "100%",
+    elevation: 4,
+  },
+  emptyStep: {
+    color: SLEEK.secondary,
+    fontSize: 10,
+    letterSpacing: 2,
+    lineHeight: 14,
+    textTransform: "uppercase",
+  },
+  emptyCardTitle: {
+    color: SLEEK.foreground,
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  emptyCardCopy: {
+    color: "rgba(99,110,114,0.82)",
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
+  },
+  emptyCta: {
     alignItems: "center",
     backgroundColor: SLEEK.primary,
-    borderRadius: 40,
+    borderRadius: 48,
+    flexDirection: "row",
+    gap: 12,
     justifyContent: "center",
     minHeight: 76,
-    marginBottom: HOME_HUB_PRIMARY_CTA_BOTTOM,
+    paddingHorizontal: 24,
     shadowColor: SLEEK.primary,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.3,
-    shadowRadius: 18,
-    elevation: 6,
+    shadowRadius: 20,
+    width: "100%",
+    elevation: 7,
   },
-  primaryCtaDisabled: {
-    opacity: 0.48,
-  },
-  primaryCtaText: {
+  emptyCtaCopy: {
     color: "#FFFFFF",
-    fontSize: 24,
-    lineHeight: 29,
+    fontSize: 22,
+    lineHeight: 28,
+    textAlign: "center",
   },
-  quickActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 24,
+  loadingScene: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 120,
   },
-  quickAction: {
+  loadingBlock: {
+    backgroundColor: "rgba(99,110,114,0.24)",
+    borderRadius: 999,
+  },
+  loadingHeader: {
+    minHeight: 72,
+  },
+  loadingEyebrow: {
+    height: 12,
+    width: 96,
+  },
+  loadingHeading: {
+    height: 30,
+    width: 160,
+    borderRadius: 12,
+  },
+  loadingSubheading: {
+    height: 12,
+    width: 192,
+  },
+  loadingAvatar: {
+    backgroundColor: "rgba(99,110,114,0.24)",
+    borderRadius: 24,
+    height: 48,
+    width: 48,
+  },
+  loadingRobotStage: {
     alignItems: "center",
-    backgroundColor: SLEEK.card,
-    borderColor: "rgba(235,220,199,0.45)",
+    alignSelf: "center",
+    height: 272,
+    justifyContent: "center",
+    marginTop: 16,
+    width: 272,
+  },
+  loadingHaloOuter: {
+    backgroundColor: "rgba(255,255,255,0.30)",
+    borderColor: "rgba(78,205,196,0.18)",
+    borderRadius: 132,
+    borderWidth: 1,
+    height: 264,
+    position: "absolute",
+    width: 264,
+  },
+  loadingHaloInner: {
+    backgroundColor: "rgba(255,255,255,0.42)",
+    borderColor: "rgba(78,205,196,0.22)",
+    borderRadius: 105,
+    borderWidth: 1,
+    height: 210,
+    position: "absolute",
+    width: 210,
+  },
+  loadingRobot: {
+    height: 180,
+    width: 180,
+    zIndex: 1,
+  },
+  loadingLessonCard: {
+    backgroundColor: "rgba(255,255,255,0.62)",
+    borderColor: "rgba(255,255,255,0.74)",
     borderRadius: 32,
     borderWidth: 1,
-    flex: 1,
-    minHeight: 104,
-    justifyContent: "center",
-    padding: 8,
-    shadowColor: "#2D3436",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    gap: 12,
+    minHeight: 112,
+    padding: 24,
+    shadowColor: "#6BA8AA",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 2,
   },
-  quickActionImageWrap: {
+  loadingLessonTitle: {
+    height: 18,
+    width: "65%",
+  },
+  loadingLessonLine: {
+    height: 12,
+    width: "100%",
+  },
+  loadingLessonShortLine: {
+    height: 12,
+    width: "75%",
+  },
+  loadingMetricRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 16,
+  },
+  loadingMetricCard: {
     alignItems: "center",
-    backgroundColor: SLEEK.card,
-    borderColor: "rgba(235,220,199,0.25)",
-    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.62)",
+    borderColor: "rgba(255,255,255,0.74)",
+    borderRadius: 24,
     borderWidth: 1,
-    height: 56,
+    flex: 1,
+    flexDirection: "row",
+    gap: 12,
+    minHeight: 78,
+    padding: 16,
+  },
+  loadingMetricIcon: {
+    borderRadius: 14,
+    height: 40,
+    width: 40,
+  },
+  loadingMetricLabel: {
+    height: 10,
+    width: "100%",
+  },
+  loadingMetricValue: {
+    height: 14,
+    width: "70%",
+  },
+  loadingAction: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.48)",
+    borderRadius: 36,
     justifyContent: "center",
-    marginBottom: 8,
-    width: 56,
+    marginTop: 24,
+    minHeight: 72,
   },
-  quickActionImage: {
-    height: 44,
-    width: 44,
-  },
-  quickActionLabel: {
-    color: SLEEK.foreground,
-    fontSize: 12,
-    lineHeight: 16,
-    textAlign: "center",
+  loadingActionCopy: {
+    height: 16,
+    width: 128,
   },
 });

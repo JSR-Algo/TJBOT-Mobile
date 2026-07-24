@@ -1,9 +1,6 @@
-import React from 'react';
-import { renderHook } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTE_MAP } from '@/navigation/routeMap';
 import { ROUTES } from '@/navigation/routes';
-import { deriveHomeState, useHomeState } from '@/features/home/hooks/useHomeState';
+import { deriveHomeState } from '@/features/home/hooks/useHomeState';
 import { HOME_BACKEND_CONTRACT_AVAILABLE } from '@/services/api/home.api';
 
 const ENTRY_ROLES = new Set(['tab', 'stack-entry', 'modal-entry', 'state-machine', 'fallback-entry']);
@@ -11,24 +8,8 @@ const ENTRY_ROLES = new Set(['tab', 'stack-entry', 'modal-entry', 'state-machine
 const baseChildren = [{ id: 'child-1', name: 'Mina' }];
 
 describe('deriveHomeState', () => {
-  it('documents that Home backend contract is unavailable instead of querying a throwing route', () => {
-    expect(HOME_BACKEND_CONTRACT_AVAILABLE).toBe(false);
-  });
-
-  it('does not leave Home in loading state when the backend contract is unavailable', () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = ({ children }: { children: React.ReactNode }) =>
-      React.createElement(QueryClientProvider, { client: queryClient }, children);
-
-    const { result, unmount } = renderHook(() => useHomeState(), { wrapper });
-
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.variant).toBe('idle');
-    expect(result.current.contentMode).toBe('unavailable');
-    expect(result.current.data).toBeUndefined();
-
-    unmount();
-    queryClient.clear();
+  it('documents that the Home backend contract is implemented', () => {
+    expect(HOME_BACKEND_CONTRACT_AVAILABLE).toBe(true);
   });
 
   it('shows a dedicated zero-child state before lesson or robot actions', () => {
@@ -144,6 +125,23 @@ describe('deriveHomeState', () => {
     expect(state.variant).toBe('error');
     expect(state.cfg.ctaLabel).toBe('Retry Home');
     expect(state.cfg.ctaTarget).toBe(ROUTES.HomeHubScreen);
+  });
+
+  it('preserves the backend streak-lost variant and routes to the assigned lesson', () => {
+    const state = deriveHomeState({
+      children: baseChildren,
+      selectedChildId: 'child-1',
+      hub: {
+        childName: 'Mina',
+        streakDays: 0,
+        todayMinutes: 0,
+        nextLessonId: 'lesson-1',
+        variant: 'streak_lost',
+      },
+    });
+
+    expect(state.variant).toBe('streak_lost');
+    expect(state.cfg.ctaTarget).toBe(ROUTES.LessonReadyScreen);
   });
 
   it('keeps primary CTAs and quick actions on route-entry-safe targets', () => {

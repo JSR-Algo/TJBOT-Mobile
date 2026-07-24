@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getHomeHub, HOME_BACKEND_CONTRACT_AVAILABLE } from '@/services/api/home.api';
 import { getDemoBadgeState } from '@/config/investorDemo';
@@ -7,8 +8,10 @@ import type { RootStackParamList } from '@/navigation/routes';
 export type HomeVariant =
   | 'idle'
   | 'greeting'
+  | 'empty'
   | 'daily_available'
   | 'completed_today'
+  | 'streak_lost'
   | 'mic_needed'
   | 'offline'
   | 'offline_24h'
@@ -57,6 +60,14 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     reviewBadge: null, courseBadge: null, forceGreet: true,
     quickActions: SAFE_QUICK_ACTIONS,
   },
+  empty: {
+    emotion: 'gentle', accent: '#FFC857',
+    chip: { text: 'No lesson is assigned yet', color: '#FFC857' },
+    ctaLabel: 'Browse lessons', ctaIcon: '→', ctaColor: '#FF6F61',
+    ctaTarget: ROUTES.CourseLibraryScreen, ctaEnabled: true,
+    reviewBadge: null, courseBadge: null,
+    quickActions: SAFE_QUICK_ACTIONS,
+  },
   daily_available: {
     emotion: 'curious', accent: '#FF6F61',
     chip: { text: "Today's lesson is ready!", color: '#FF6F61' },
@@ -70,6 +81,14 @@ const CFG: Record<HomeVariant, HomeStateCfg> = {
     chip: { text: "Done for today — great job!", color: '#6CE2B6' },
     ctaLabel: "See what you did today", ctaIcon: '★', ctaColor: '#6CE2B6',
     ctaTarget: ROUTES.TodayProgressScreen, ctaEnabled: true,
+    reviewBadge: null, courseBadge: null,
+    quickActions: SAFE_QUICK_ACTIONS,
+  },
+  streak_lost: {
+    emotion: 'gentle', accent: '#FFC857',
+    chip: { text: "Let's start a fresh streak today", color: '#FFC857' },
+    ctaLabel: "Start Today's Lesson", ctaIcon: '▶', ctaColor: '#FF6F61',
+    ctaTarget: ROUTES.LessonReadyScreen, ctaEnabled: true,
     reviewBadge: null, courseBadge: null,
     quickActions: SAFE_QUICK_ACTIONS,
   },
@@ -153,7 +172,7 @@ export interface DeriveHomeStateInput {
   selectedChildId?: string;
   isError?: boolean;
   hub?: {
-    childName: string;
+    childName: string | null;
     streakDays: number;
     todayMinutes: number;
     nextLessonId: string | null;
@@ -218,6 +237,10 @@ export function deriveHomeState(input: DeriveHomeStateInput): DerivedHomeState {
     return { variant: 'offline', cfg: CFG.offline, showChildSelector: false, children };
   }
 
+  if (hub?.variant === 'streak_lost') {
+    return { variant: 'streak_lost', cfg: CFG.streak_lost, showChildSelector: false, children };
+  }
+
   if (hub?.variant === 'completed_today') {
     return { variant: 'completed_today', cfg: CFG.completed_today, showChildSelector: false, children };
   }
@@ -232,14 +255,15 @@ export function deriveHomeState(input: DeriveHomeStateInput): DerivedHomeState {
 export type HomeContentMode = 'loading' | 'unavailable' | 'error' | 'live';
 
 export function useHomeState() {
+  const [selectedChildId, setSelectedChildId] = useState<string>();
   const {
     data,
     isLoading,
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['home', 'hub'],
-    queryFn: getHomeHub,
+    queryKey: ['home', 'hub', selectedChildId ?? 'unselected'],
+    queryFn: () => getHomeHub(selectedChildId),
     enabled: HOME_BACKEND_CONTRACT_AVAILABLE,
     staleTime: 30_000,
   });
@@ -270,5 +294,6 @@ export function useHomeState() {
     contentMode,
     demoBadge: getDemoBadgeState(),
     refetch,
+    selectChild: setSelectedChildId,
   };
 }

@@ -1,0 +1,158 @@
+schema_version: "1.0.0"
+contract: teebot-parent-mobile
+status: canonical
+scope:
+  surface: parent_mobile_app
+  release: 21_page_mvp
+  reference_viewport:
+    width: 390
+    height: 844
+
+sources:
+  human_readable: docs/MOBILE-APP-DESIGN.md
+  root_authority: TbotREAL/DESIGN.md
+  mvp_scope: TbotREAL/docs/lesson-library/decisions/parent-app-mvp-scope.md
+
+invariants:
+  authenticated_header:
+    required: true
+    controls:
+      - id: child_profile
+        presentation: avatar_name_pill
+        reference_name: Mia
+        min_target: 44
+      - id: language
+        presentation: locale_pill
+        values: [EN, VI]
+        min_target: 44
+      - id: settings
+        presentation: circular_icon_button
+        min_target: 44
+    alignment: shared_optical_center
+    placement: right_aligned_within_symmetric_gutters
+    detail_page_back_button: additive_not_replacement
+    overflow: truncate_child_name_before_hiding_other_controls
+
+  bottom_navigation:
+    presentation: floating_frosted_glass_pill
+    order: [Home, Devices, Library, Progress, Profile]
+    assets:
+      Home: src/assets/tab-icons/home.png
+      Devices: src/assets/tab-icons/devices.png
+      Library: src/assets/tab-icons/library.png
+      Progress: src/assets/tab-icons/progress.png
+      Profile: src/assets/tab-icons/profile.png
+    container:
+      shape: capsule
+      gradient: warm_white_to_soft_peach
+      blur: subtle
+      upper_highlight: translucent_white
+      border: quiet_warm_neutral
+      shadow: soft_diffused
+      side_margins: symmetric
+      bottom_safe_space: required
+    selected:
+      icon_color: full
+      background: nested_translucent_warm_glass_pill
+      label_emphasis: strongest
+      square_tile: forbidden
+    inactive:
+      icon_color: neutral_gray
+      source_artwork: same_as_selected
+      competing_color: forbidden
+      alternate_line_icon: forbidden
+    constant_across_pages:
+      - geometry
+      - icon_size
+      - labels
+      - spacing
+      - material
+      - elevation
+    variable_across_pages:
+      - active_tab
+
+geometry:
+  horizontal_gutter_min: 18
+  horizontal_gutters: symmetric
+  spacing_scale: [4, 8, 12, 16, 24, 32, 48]
+  touch_target_min: 44
+  radii:
+    card: [22, 24]
+    hero: 28
+    pill: 999
+  robot:
+    containment: full
+    optical_alignment: centered
+    clipping: forbidden
+
+visual_language:
+  tone: [warm, calm, premium, operational]
+  background: warm_off_white
+  ambient_light: restrained_peach
+  primary_action: charcoal_outcome_pill
+  artwork: approved_colorful_clay_3d
+  forbidden:
+    - monochrome_bottom_tab_icons
+    - alternate_robot_family
+    - emoji_as_ui_icon
+    - arbitrary_illustration_style
+    - heavy_shadow
+    - decorative_generic_gradient
+
+navigation_mapping:
+  today-command: Home
+  live-status: Home
+  report-detail: Home
+  course-library: Library
+  course-detail: Library
+  lesson-detail: Library
+  send-robot: Library
+  robot-fleet: Devices
+  robot-detail: Devices
+  pairing: Devices
+  recovery: Devices
+  progress-overview: Progress
+  history: Progress
+  family-overview: Profile
+  edit-child: Profile
+  consent: Profile
+  safety: Profile
+  permissions: Profile
+  data-rights: Profile
+  language: Profile
+  account: Profile
+
+required_states:
+  - healthy
+  - loading
+  - empty
+  - blocked
+  - error
+  - offline
+  - success
+  - locked
+
+localization:
+  required_locales: [en, vi]
+  fallback_locale: en
+  hardcoded_user_copy: forbidden
+
+accessibility:
+  status_color_only: forbidden
+  icon_accessible_labels: required
+  dynamic_type: required
+  reduced_motion: required
+  screen_reader_order: required
+  implementation_contrast_validation: required
+
+drift_gate:
+  severity: release_blocking
+  checks:
+    - header_has_child_profile_language_settings
+    - header_controls_are_symmetrical
+    - page_gutters_are_symmetrical
+    - correct_colorful_glass_navigation_is_present
+    - only_active_tab_varies
+    - approved_robot_and_artwork_family_used
+    - required_states_are_defined
+    - english_and_vietnamese_copy_exist

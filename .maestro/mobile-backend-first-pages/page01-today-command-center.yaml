@@ -1,0 +1,22 @@
+appId: net.jasonle.tjbot
+name: Page 01 Today command center
+---
+- launchApp:
+    clearState: false
+- openLink: tjbot://home/home-hub
+- extendedWaitUntil:
+    visible:
+      id: "overviewPage"
+    timeout: 45000
+- assertVisible:
+    id: "homeHeroRobot"
+- assertVisible:
+    id: "homePrimaryCta"
+- assertVisible:
+    id: "authenticatedAppShellTabs"
+- assertVisible: "Home"
+- assertVisible: "Devices"
+- assertVisible: "Library"
+- assertVisible: "Progress"
+- assertVisible: "Profile"
+- takeScreenshot: /tmp/maestro-page01-today-command-center

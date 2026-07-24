@@ -9,14 +9,27 @@ jest.mock('@/features/home/hooks/useHomeState', () => {
     useHomeState: () => ({
       isLoading: false,
       variant: 'daily_available',
+      contentMode: 'live',
+      data: {
+        variant: 'daily_available',
+        childName: 'Mai',
+        nextLesson: {
+          id: 'farm-words',
+          title: 'Barn & Farm Words',
+          durationMinutes: 7,
+          focusItems: ['cow', 'barn', 'horse', 'sheep'],
+          totalSteps: 6,
+          state: 'READY',
+        },
+      },
       cfg: {
         emotion: 'happy',
         accent: '#FF6F61',
-        chip: null,
-        ctaLabel: 'Set up a child',
-        ctaIcon: '👶',
+        chip: { text: "Today's lesson is ready!", color: '#FF6F61' },
+        ctaLabel: "Start Today's Lesson",
+        ctaIcon: '▶',
         ctaColor: '#FF6F61',
-        ctaTarget: ROUTE_VALUES.ParentSummaryScreen,
+        ctaTarget: ROUTE_VALUES.LessonReadyScreen,
         ctaEnabled: true,
         reviewBadge: null,
         courseBadge: null,
@@ -28,30 +41,33 @@ jest.mock('@/features/home/hooks/useHomeState', () => {
   };
 });
 
-describe('HomeHubScreen parent entry', () => {
-  it('opens parent surfaces directly without routing through ParentGateScreen', () => {
+describe('HomeHubScreen command center', () => {
+  it('shows the approved Today command actions', () => {
     const navigation = { navigate: jest.fn() };
 
     const screen = render(
       <HomeHubScreen navigation={navigation as never} route={{} as never} />,
     );
 
-    fireEvent.press(screen.getByLabelText('Open parent dashboard'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ParentSummaryScreen);
+    expect(screen.getByText('Ready when Mai is')).toBeTruthy();
+    expect(screen.getByText('Barn & Farm Words')).toBeTruthy();
+    expect(screen.getByText('Start')).toBeTruthy();
+    expect(screen.getByText('Living room TeeBot · Online')).toBeTruthy();
 
-    fireEvent.press(screen.getByLabelText('Open parent settings'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ParentSettingsScreen);
-    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.ParentGateScreen);
+    fireEvent.press(screen.getByTestId('homePrimaryCta'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
   });
 
-  it('shows a direct Robot entry from Home so device setup is discoverable', () => {
+  it('opens the live robot lesson status from the hero', () => {
     const navigation = { navigate: jest.fn() };
 
     const screen = render(
       <HomeHubScreen navigation={navigation as never} route={{} as never} />,
     );
 
-    fireEvent.press(screen.getByLabelText('Robot'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.DeviceOverviewScreen);
+    fireEvent.press(screen.getByTestId('homeHeroRobot'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
+      lessonTitle: 'Barn & Farm Words',
+    });
   });
 });

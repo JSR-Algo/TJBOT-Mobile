@@ -7,6 +7,18 @@ jest.mock('../../../src/features/home/hooks/useHomeState', () => ({
   useHomeState: () => ({
     variant: 'daily_available',
     isLoading: false,
+    contentMode: 'live',
+    data: {
+      nextLessonId: 'w01-d01-barn-say-it',
+      nextLesson: {
+        id: 'w01-d01-barn-say-it',
+        title: 'Barn & Farm Words',
+        durationMinutes: 7,
+        focusItems: ['cow', 'barn', 'horse', 'sheep'],
+      },
+      streakDays: 4,
+      todayMinutes: 8,
+    },
     cfg: {
       chip: null,
       forceGreet: false,
@@ -30,29 +42,27 @@ describe('HomeHub robot tap', () => {
     jest.clearAllMocks();
   });
 
-  it('opens companion chat before the barn lesson', () => {
+  it('opens live lesson status from the overview robot', () => {
     const screen = render(
       <HomeHubScreen navigation={navigation as never} route={{ key: 'home', name: ROUTES.HomeHubScreen }} />,
     );
 
-    fireEvent.press(screen.getByLabelText('Talk to Robot before barn lesson'));
+    fireEvent.press(screen.getByTestId('homeHeroRobot'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotCompanionScreen, {
-      lessonId: 'w01-d01-barn-say-it',
-      ageBand: '4-6',
-      autoStartVoice: true,
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
+      lessonTitle: 'Barn & Farm Words',
     });
   });
 
-  it('renders the three Sleek home actions without the legacy garden dashboard', () => {
+  it('renders the Today command center without the legacy garden dashboard', () => {
     const screen = render(
       <HomeHubScreen navigation={navigation as never} route={{ key: 'home', name: ROUTES.HomeHubScreen }} />,
     );
 
-    expect(screen.getByText('Hi, friend!')).toBeTruthy();
-    expect(screen.getByText('Course')).toBeTruthy();
-    expect(screen.getByText('Review')).toBeTruthy();
-    expect(screen.getByText('Progress')).toBeTruthy();
+    expect(screen.getByTestId('overviewPage')).toBeTruthy();
+    expect(screen.getByText('Ready when Mia is')).toBeTruthy();
+    expect(screen.getByText('Barn & Farm Words')).toBeTruthy();
+    expect(screen.getByText('Since yesterday')).toBeTruthy();
     expect(screen.queryByText('My Garden')).toBeNull();
   });
 });

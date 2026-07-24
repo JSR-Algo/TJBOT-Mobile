@@ -1,28 +1,28 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, type ImageSourcePropType, StyleSheet, View } from 'react-native';
 import type { FeatureTabName, FeatureTabScreen } from './types';
 
 const SLEEK = {
-  primarySoft: 'rgba(255,107,107,0.1)',
+  primarySoft: 'rgba(255,107,107,0.12)',
 } as const;
 
-export const SLEEK_TAB_ICONS: Record<FeatureTabName, string> = {
-  Home: 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/PXjVCPzUvhp.png',
-  Devices:
-    'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/fQZCerpIKya.png',
-  Library:
-    'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/OWCzyfe01f8.png',
-  Progress:
-    'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/NpznCUpnBV4.png',
-  Profile:
-    'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/VeUK4fwA0aM.png',
+/**
+ * Colorful tab icons — SOT for the authenticated bottom menu.
+ * Selected = full color. Idle = the same artwork rendered neutral gray.
+ */
+export const SLEEK_TAB_ICON_SOURCES: Record<FeatureTabName, ImageSourcePropType> = {
+  Home: require('@/assets/tab-icons/home.png'),
+  Devices: require('@/assets/tab-icons/devices.png'),
+  Library: require('@/assets/tab-icons/library.png'),
+  Progress: require('@/assets/tab-icons/progress.png'),
+  Profile: require('@/assets/tab-icons/profile.png'),
 };
 
 type MainTabIconProps = {
   Icon: FeatureTabScreen['tabIcon'];
   color: string;
   focused: boolean;
-  imageUri?: string;
+  imageSource?: ImageSourcePropType;
   layoutScale?: number;
 };
 
@@ -30,27 +30,30 @@ export function MainTabIcon({
   Icon,
   color,
   focused,
-  imageUri,
+  imageSource,
   layoutScale = 1,
 }: MainTabIconProps): React.JSX.Element {
+  const iconSize = (focused ? 30 : 26) * layoutScale;
+
   return (
     <View
       testID="mainTabIconContainer"
       style={[
         styles.tabIconContainer,
         {
-          width: 32 * layoutScale,
-          height: 32 * layoutScale,
-          borderRadius: 16 * layoutScale,
+          width: 36 * layoutScale,
+          height: 36 * layoutScale,
+          borderRadius: 18 * layoutScale,
         },
         focused ? styles.tabIconContainerFocused : styles.tabIconContainerIdle,
       ]}
     >
-      {imageUri ? (
+      {imageSource ? (
         <Image
-          source={{ uri: imageUri }}
+          testID="mainTabColorIcon"
+          source={imageSource}
           style={[
-            { width: 28 * layoutScale, height: 28 * layoutScale },
+            { width: iconSize, height: iconSize },
             !focused && styles.sleekTabImageIdle,
           ]}
           resizeMode="contain"
@@ -78,6 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   sleekTabImageIdle: {
-    opacity: 0.6,
+    opacity: 0.72,
+    tintColor: '#A6A3A0',
   },
 });

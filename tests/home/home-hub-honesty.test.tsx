@@ -1,5 +1,4 @@
 import React from 'react';
-import { Alert } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import HomeHubScreen from '@/features/home/screens/HomeHubScreen';
@@ -50,8 +49,157 @@ describe('HomeHubScreen honesty paths', () => {
     jest.clearAllMocks();
   });
 
+  it('loading: mirrors the blueprint skeleton instead of showing a blank robot-only screen', () => {
+    mockUseHomeState.mockReturnValue({
+      variant: 'idle',
+      isLoading: true,
+      isError: false,
+      homeContractAvailable: true,
+      contentMode: 'live',
+      demoBadge: { simulated: false, label: null },
+      data: undefined,
+      refetch: jest.fn(),
+      cfg: baseCfg,
+    });
+
+    const { screen, navigation } = renderHome();
+
+    expect(screen.getByTestId('homeLoadingSkeleton')).toBeTruthy();
+    expect(screen.getByTestId('homeLoadingHeader')).toBeTruthy();
+    expect(screen.getByTestId('homeLoadingRobot')).toBeTruthy();
+    expect(screen.getByTestId('homeLoadingLesson')).toBeTruthy();
+    expect(screen.getByTestId('homeLoadingMetrics')).toBeTruthy();
+    expect(screen.getByTestId('homeLoadingAction')).toBeTruthy();
+    expect(screen.queryByTestId('homePrimaryCta')).toBeNull();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  it('zero child: mirrors the empty blueprint and routes recovery into child profile creation', () => {
+    mockUseHomeState.mockReturnValue({
+      variant: 'zero_child',
+      isLoading: false,
+      isError: false,
+      homeContractAvailable: true,
+      contentMode: 'live',
+      demoBadge: { simulated: false, label: null },
+      data: {
+        variant: 'zero_child',
+        childName: null,
+        streakDays: 0,
+        todayMinutes: 0,
+        lessonsCompletedToday: 0,
+        wordsLearnedThisWeek: 0,
+        nextLessonId: null,
+        nextLesson: null,
+        children: [],
+        selectedChildId: null,
+      },
+      refetch: jest.fn(),
+      cfg: {
+        ...baseCfg,
+        ctaLabel: 'Start today’s lesson',
+        ctaTarget: ROUTES.HomeChildProfileScreen,
+      },
+    });
+
+    const { screen, navigation } = renderHome();
+
+    expect(screen.getByText('No lessons yet')).toBeTruthy();
+    expect(screen.getByText('First step')).toBeTruthy();
+    expect(screen.getByText('Name your child')).toBeTruthy();
+    expect(screen.getByTestId('homeEmptyCard')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('homeEmptyCta'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeChildProfileScreen);
+  });
+
+  it('multiple children: selects a child before continuing and keeps Add child direct', () => {
+    const selectChild = jest.fn();
+    mockUseHomeState.mockReturnValue({
+      variant: 'multiple_children',
+      isLoading: false,
+      isError: false,
+      homeContractAvailable: true,
+      contentMode: 'live',
+      demoBadge: { simulated: false, label: null },
+      data: {
+        variant: 'multiple_children',
+        childName: null,
+        streakDays: 0,
+        todayMinutes: 0,
+        lessonsCompletedToday: 0,
+        wordsLearnedThisWeek: 0,
+        nextLessonId: null,
+        nextLesson: null,
+        children: [
+          { id: 'child-1', name: 'Mina', streakDays: 7, lastSessionDate: null },
+          { id: 'child-2', name: 'Bao', streakDays: 3, lastSessionDate: null },
+        ],
+        selectedChildId: null,
+      },
+      refetch: jest.fn(),
+      selectChild,
+      cfg: baseCfg,
+    });
+
+    const { screen, navigation } = renderHome();
+
+    expect(screen.getByText('Pick a child')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('homeChildOption-child-2'));
+    expect(selectChild).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByTestId('homeContinueChild'));
+    expect(selectChild).toHaveBeenCalledWith('child-2');
+
+    fireEvent.press(screen.getByTestId('homeAddChild'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeChildProfileScreen);
+  });
+
+  it('streak lost: shows only backend lesson and progress data, then opens that lesson', () => {
+    mockUseHomeState.mockReturnValue({
+      variant: 'streak_lost',
+      isLoading: false,
+      isError: false,
+      homeContractAvailable: true,
+      contentMode: 'live',
+      demoBadge: { simulated: false, label: null },
+      data: {
+        variant: 'streak_lost',
+        childName: 'Mina',
+        streakDays: 0,
+        todayMinutes: 0,
+        lessonsCompletedToday: 0,
+        wordsLearnedThisWeek: 12,
+        nextLessonId: 'lesson-1',
+        nextLesson: {
+          id: 'lesson-1',
+          title: 'Hello Farm',
+          durationMinutes: 5,
+          focusItems: ['barn', 'cow', 'horse', 'pig'],
+          totalSteps: 4,
+          state: 'READY',
+        },
+        children: [{ id: 'child-1', name: 'Mina', streakDays: 0, lastSessionDate: '2026-07-20' }],
+        selectedChildId: 'child-1',
+      },
+      refetch: jest.fn(),
+      selectChild: jest.fn(),
+      cfg: {
+        ...baseCfg,
+        chip: { text: "Let's start a fresh streak today", color: '#FFC857' },
+        ctaTarget: ROUTES.LessonReadyScreen,
+      },
+    });
+
+    const { screen, navigation } = renderHome();
+
+    expect(screen.getByTestId('homeStreakLostCard')).toBeTruthy();
+    expect(screen.getByText('Hello Farm')).toBeTruthy();
+    expect(screen.getByText('12 words')).toBeTruthy();
+    expect(screen.queryByText('1/4')).toBeNull();
+    fireEvent.press(screen.getByTestId('homeStreakLessonCta'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+  });
+
   it('unavailable: no fake live streak/level and no barn companion launch', () => {
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockUseHomeState.mockReturnValue({
       variant: 'idle',
       isLoading: false,
@@ -66,34 +214,24 @@ describe('HomeHubScreen honesty paths', () => {
 
     const { screen, navigation } = renderHome();
 
-    expect(screen.getByTestId('homeHonestyBadge')).toBeTruthy();
-    expect(screen.getByText('No updates yet')).toBeTruthy();
+    expect(screen.getByText('Home unavailable')).toBeTruthy();
     expect(screen.getByText('No lesson plan yet')).toBeTruthy();
-    expect(
-      screen.getByText("We'll show today's plan here when it's ready"),
-    ).toBeTruthy();
+    expect(screen.getByText('TeeBot needs attention')).toBeTruthy();
     expect(screen.queryByText(/Home contract/i)).toBeNull();
     expect(screen.queryByText(/ESP bridge/i)).toBeNull();
     expect(screen.queryByText('Home status not live yet')).toBeNull();
     expect(screen.queryByText('Live home feed not connected yet')).toBeNull();
-    expect(screen.getByText('Streak not available yet')).toBeTruthy();
-    expect(screen.getByText('Level not available yet')).toBeTruthy();
+    expect(screen.queryByText('Streak not available yet')).toBeNull();
+    expect(screen.queryByText('Level not available yet')).toBeNull();
     expect(screen.queryByText('1-day streak')).toBeNull();
     expect(screen.queryByText('Level 1')).toBeNull();
-    expect(screen.queryByText('Barn & Farm words')).toBeNull();
-    expect(screen.getByTestId('homePrimaryCta')).toHaveTextContent('Browse lessons');
+    expect(screen.queryByText('Barn & Farm Words')).toBeNull();
+    expect(screen.getByTestId('homePrimaryCta')).toHaveTextContent('Browse');
 
     fireEvent.press(screen.getByTestId('homeHeroRobot'));
-    expect(navigation.navigate).not.toHaveBeenCalledWith(
-      ROUTES.RobotCompanionScreen,
-      expect.anything(),
-    );
-    expect(alertSpy).toHaveBeenCalledWith(
-      'Robot pairing later',
-      expect.not.stringMatching(/ESP/i),
-      expect.any(Array),
-    );
-    alertSpy.mockRestore();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByTestId('homePrimaryCta'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseLibraryScreen);
   });
 
   it('live error: shows retry and never fabricates ready lesson metrics', () => {
@@ -118,10 +256,11 @@ describe('HomeHubScreen honesty paths', () => {
     const { screen, navigation } = renderHome();
 
     expect(screen.getByText('Could not load Home')).toBeTruthy();
-    expect(screen.getByText('Something went sideways')).toBeTruthy();
+    expect(screen.getByText('Home unavailable')).toBeTruthy();
+    expect(screen.getByText('TeeBot needs attention')).toBeTruthy();
     expect(screen.queryByText('1-day streak')).toBeNull();
-    expect(screen.queryByText('Barn & Farm words')).toBeNull();
-    expect(screen.getByTestId('homePrimaryCta')).toHaveTextContent('Retry Home');
+    expect(screen.queryByText('Barn & Farm Words')).toBeNull();
+    expect(screen.getByTestId('homePrimaryCta')).toHaveTextContent('Retry');
 
     fireEvent.press(screen.getByTestId('homePrimaryCta'));
     expect(refetch).toHaveBeenCalled();
@@ -134,7 +273,7 @@ describe('HomeHubScreen honesty paths', () => {
     );
   });
 
-  it('live success: uses hub streakDays and nextLessonId instead of hardcoded barn metrics', () => {
+  it('live success: mirrors the three-action Home Hub blueprint and keeps lesson launch on its CTA', () => {
     mockUseHomeState.mockReturnValue({
       variant: 'daily_available',
       isLoading: false,
@@ -147,6 +286,14 @@ describe('HomeHubScreen honesty paths', () => {
         streakDays: 4,
         todayMinutes: 6,
         nextLessonId: 'w02-d03-hello-friends',
+        nextLesson: {
+          id: 'w02-d03-hello-friends',
+          title: 'Hello Friends',
+          durationMinutes: 5,
+          focusItems: ['hello'],
+          totalSteps: 3,
+          state: 'READY',
+        },
       },
       refetch: jest.fn(),
       cfg: {
@@ -157,17 +304,17 @@ describe('HomeHubScreen honesty paths', () => {
 
     const { screen, navigation } = renderHome();
 
-    expect(screen.getByText('4-day streak')).toBeTruthy();
-    expect(screen.queryByText('1-day streak')).toBeNull();
-    expect(screen.queryByText('Level 1')).toBeNull();
+    expect(screen.getByText('Ready when Mina is')).toBeTruthy();
+    expect(screen.queryByText('4-day streak')).toBeNull();
     expect(screen.getByText('Hello Friends')).toBeTruthy();
-    expect(screen.queryByText('Barn & Farm words')).toBeNull();
+    expect(screen.queryAllByTestId(/^homeQuickAction-/)).toHaveLength(0);
 
     fireEvent.press(screen.getByTestId('homeHeroRobot'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotCompanionScreen, {
-      lessonId: 'w02-d03-hello-friends',
-      ageBand: '4-6',
-      autoStartVoice: true,
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
+      lessonTitle: 'Hello Friends',
     });
+
+    fireEvent.press(screen.getByTestId('homePrimaryCta'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
   });
 });
