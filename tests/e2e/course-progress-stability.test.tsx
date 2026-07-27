@@ -23,13 +23,13 @@ import {
   enrollCourse,
   unlockCourse,
 } from '@/services/api/course-library.api';
-import { getChildLessonProgress, getChildProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
-import { getKPIs, getPronunciationTrend } from '@/services/api/learning';
 import { useHousehold, useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { getDeviceStatus } from '@/services/api/device.api';
 import { authenticateParent } from '@/services/api/parent.api';
 import { getBillingProviderStatus } from '../../src/services/api/purchase.api';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
+
+const mockUseChildProgressDashboardQuery = jest.fn();
 
 jest.mock('@/config/feature-flags', () => ({
   __esModule: true,
@@ -85,6 +85,7 @@ jest.mock('../../src/services/api/progress.api', () => ({
   getChildLessonProgress: jest.fn(),
   getChildProgress: jest.fn(),
 }));
+jest.mock('@/features/progress/hooks/useChildProgressDashboardQuery', () => ({ useChildProgressDashboardQuery: (...args: unknown[]) => mockUseChildProgressDashboardQuery(...args) }));
 
 // TodayProgressScreen's dashboard hook also fans out the learning KPIs and
 // pronunciation trend as fault-tolerant enrichment. Mock them so these render
@@ -130,10 +131,6 @@ const mockGetLessonList = getLessonList as jest.MockedFunction<typeof getLessonL
 const mockListLibrary = listLibrary as jest.MockedFunction<typeof listLibrary>;
 const mockEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
-const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
-const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getChildProgress>;
-const mockGetKPIs = getKPIs as jest.MockedFunction<typeof getKPIs>;
-const mockGetPronunciationTrend = getPronunciationTrend as jest.MockedFunction<typeof getPronunciationTrend>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockedUseOptionalHousehold = useOptionalHousehold as jest.MockedFunction<typeof useOptionalHousehold>;
 const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
@@ -181,27 +178,6 @@ function renderProgress() {
   );
 }
 
-function makeAssignment(overrides: Partial<AssignmentProgress> = {}): AssignmentProgress {
-  return {
-    assignmentId: 'assign-1',
-    deviceId: 'device-1',
-    childId: 'child-1',
-    lessonId: 'lesson-1',
-    lessonVersion: 1,
-    lessonTitle: 'Greetings',
-    profile: 'espTft',
-    state: 'RUNNING',
-    startedAt: '2026-05-18T10:00:00.000Z',
-    completedAt: null,
-    stepsCompleted: 3,
-    stepsSucceeded: 2,
-    lastEventAt: '2026-05-18T10:05:00.000Z',
-    createdAt: '2026-05-18T09:59:00.000Z',
-    updatedAt: '2026-05-18T10:05:00.000Z',
-    ...overrides,
-  };
-}
-
 describe('course, course-library, and progress stable screen states', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -211,11 +187,7 @@ describe('course, course-library, and progress stable screen states', () => {
     // Dashboard enrichment sources: default to a zeroed aggregate + rejected KPI/
     // trend so the assignment feed (the backbone these tests assert on) stays the
     // only signal. buildCourseInsightDashboard tolerates the nulls.
-    mockGetChildProgress.mockResolvedValue({
-      childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [],
-    });
-    mockGetKPIs.mockRejectedValue(new Error('kpis not under test'));
-    mockGetPronunciationTrend.mockRejectedValue(new Error('trend not under test'));
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: null, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, failedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
   });
 
   it('renders course catalog loading, empty, error, offline, locked, and unlocked states', async () => {
@@ -444,33 +416,24 @@ describe('course, course-library, and progress stable screen states', () => {
   });
 
   it('renders the latest lesson with real step counts', async () => {
-    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment({ stepsSucceeded: 2, stepsCompleted: 3 })]);
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: { assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Greetings', state: 'LISTEN', startedAt: null, currentStep: null, positionPercent: 40, activeDurationSec: 90 }, sessions: [], courses: [{ courseId: 'c-1', courseTitle: 'English', currentLessonNumber: 3, completedLessons: 2, totalLessons: 10, percent: 20, suggestedNextLesson: null }], completedLessons: 2, totalLessons: 10, completedSessions: 0, failedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
 
     const screen = renderProgress();
-    expect(screen.getByText('Loading progress')).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('Greetings')).toBeTruthy());
-    // Real step counts surface as "2 of 3 steps" — in both the quality-note and
-    // the today's-lesson card for a single-assignment feed — plus the live state
-    // label as a pill.
-    expect(screen.getAllByText('2 of 3 steps').length).toBeGreaterThan(0);
-    expect(screen.getByText('In progress')).toBeTruthy();
+    expect(screen.getByText('Greetings')).toBeTruthy();
+    expect(screen.getByText('2 of 10 lessons')).toBeTruthy();
+    expect(screen.getByText('Listening')).toBeTruthy();
   });
 
   it('renders progress empty and failed refresh states without showing stale metrics', async () => {
-    mockGetChildLessonProgress.mockResolvedValueOnce([]);
     const empty = renderProgress();
-    // Empty account still gets the dashboard scaffold (zeroed cards + first-run
-    // hint), not a bare "no data" line.
-    await waitFor(() =>
-      expect(empty.getByText('Finish a lesson on Robot to fill in your progress.')).toBeTruthy(),
-    );
-    expect(empty.getByText('Day streak')).toBeTruthy();
+    expect(empty.getByText('Finish a lesson on Robot to fill in your progress.')).toBeTruthy();
+    expect(empty.getByText('Lessons completed')).toBeTruthy();
     empty.unmount();
 
-    mockGetChildLessonProgress.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'timeout of 30000ms exceeded' });
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true, isFetching: false, refetch: jest.fn() });
     const failed = renderProgress();
     await waitFor(() => expect(failed.getByText('Progress unavailable')).toBeTruthy());
-    expect(failed.queryByText('Day streak')).toBeNull();
+    expect(failed.queryByText('Lessons completed')).toBeNull();
   });
 
   it('labels purchase plan controls for assistive technology', async () => {
@@ -523,13 +486,12 @@ describe('course, course-library, and progress stable screen states', () => {
   });
 
   it('renders the error state without showing stale metrics, regardless of error code', async () => {
-    mockGetChildLessonProgress.mockRejectedValueOnce({ code: 'INTERNAL_ERROR', message: 'server down' });
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true, isFetching: false, refetch: jest.fn() });
     const error = renderProgress();
     await waitFor(() => expect(error.getByText('Progress unavailable')).toBeTruthy());
     expect(error.queryByText('No lessons yet')).toBeNull();
     error.unmount();
 
-    mockGetChildLessonProgress.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'offline' });
     const offline = renderProgress();
     await waitFor(() => expect(offline.getByText('Progress unavailable')).toBeTruthy());
     expect(offline.queryByText('No lessons yet')).toBeNull();
@@ -537,13 +499,11 @@ describe('course, course-library, and progress stable screen states', () => {
 
   it('translates the lesson state label in Vietnamese', async () => {
     await setAppLanguage('vi');
-    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment({ state: 'RUNNING' })]);
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: { assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Greetings', state: 'LISTEN', startedAt: null, currentStep: null, positionPercent: 40, activeDurationSec: 90 }, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, failedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
 
     const screen = renderProgress();
 
-    // 'In progress' → vi key 'Đang tiến hành'; proves the real data flows
-    // through the i18n layer (not the deleted hardcoded weekly-bar copy).
-    await waitFor(() => expect(screen.getByText('Đang tiến hành')).toBeTruthy());
+    expect(screen.getByText('Đang nghe')).toBeTruthy();
   });
 
   it('renders remaining progress screens with missing route data', () => {

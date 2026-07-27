@@ -200,6 +200,16 @@ describe('useParentLearningStatusQuery', () => {
     const view = setup();
     await waitFor(() => expect(sockets).toHaveLength(1));
     view.unmount();
-    expect(sockets[0].closed).toBe(true);
+    await waitFor(() => expect(sockets[0].closed).toBe(true));
+  });
+
+  it('shares one realtime connection across two mounted consumers of the same child', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const wrapper = ({ children }: React.PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const view = renderHook(() => ({ first: useParentLearningStatusQuery('child-1'), second: useParentLearningStatusQuery('child-1') }), { wrapper });
+    await waitFor(() => expect(view.result.current.first.data).toBeDefined());
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    view.unmount();
+    await waitFor(() => expect(sockets[0].closed).toBe(true));
   });
 });

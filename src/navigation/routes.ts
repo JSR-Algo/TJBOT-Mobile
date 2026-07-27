@@ -104,7 +104,7 @@ export type RootStackParamList = {
   ParentSummaryScreen: undefined | { deviceId?: string; summaryDate?: string };
   ParentTodayScreen: undefined;
   ParentHistoryScreen: undefined;
-  ParentSessionReportScreen: { childId: string; sessionId: string };
+  ParentSessionReportScreen: undefined | { childId?: string; sessionId?: string };
   ParentRewardsScreen: undefined;
   ParentSafetyScreen: undefined;
   ParentSettingsScreen: undefined;

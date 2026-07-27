@@ -40,22 +40,17 @@ export default function ParentHistoryScreen({ navigation }: Props) {
         {items.map(item => {
           const date = new Date(item.completedAt);
           const dateLabel = Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString(localeDateTag(language), { month: 'short', day: 'numeric', year: 'numeric' });
-          return (
-            <TouchableOpacity
-              key={item.sessionId}
-              accessibilityRole="button"
-              accessibilityLabel={translateTemplate('Open report for {{lesson}}', { lesson: item.lessonTitle }, { locale: language })}
-              onPress={() => navigation.navigate(ROUTES.ParentSessionReportScreen, { childId: item.childId, sessionId: item.sessionId })}
-              style={styles.row}
-            >
+          const content = <>
               <Box flex={1} gap={3}>
                 <Text style={styles.course} i18n={false}>{item.courseTitle}</Text>
                 <Text fontWeight="800" style={styles.lesson} i18n={false}>{item.lessonTitle}</Text>
                 <Text style={styles.meta} i18n={false}>{translateTemplate('{{date}} · {{duration}} · {{state}}', { date: dateLabel, duration: durationLabel(item.durationSec, language), state: parentSessionStateLabel(item.state, language) }, { locale: language })}</Text>
               </Box>
               {item.reportAvailable ? <Text fontWeight="800" style={styles.chevron} i18n={false}>›</Text> : null}
-            </TouchableOpacity>
-          );
+            </>;
+          return item.reportAvailable ? (
+            <TouchableOpacity key={item.sessionId} accessibilityRole="button" accessibilityLabel={translateTemplate('Open report for {{lesson}}', { lesson: item.lessonTitle }, { locale: language })} onPress={() => navigation.navigate(ROUTES.ParentSessionReportScreen, { childId: item.childId, sessionId: item.sessionId })} style={styles.row}>{content}</TouchableOpacity>
+          ) : <Box key={item.sessionId} style={styles.row}>{content}</Box>;
         })}
         {query.hasNextPage ? (
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Load more lessons" disabled={query.isFetchingNextPage} onPress={() => { void query.fetchNextPage(); }} style={styles.loadMore}>

@@ -19,8 +19,7 @@ import ParentAccountPrivacyScreen from '../../src/features/parent/screens/Parent
 import * as authApi from '../../src/services/api/auth';
 import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
-import { getChildLessonProgress, getChildProgress } from '../../src/services/api/progress.api';
-import { getChildProfile, updateChildProfile, getKPIs, getPronunciationTrend } from '../../src/services/api/learning';
+import { getChildProfile, updateChildProfile } from '../../src/services/api/learning';
 import { setActiveChild, updateChildDisplayName } from '../../src/services/api/households';
 import { useHousehold } from '@/contexts/HouseholdContext';
 
@@ -32,6 +31,9 @@ const mockParentMarkGated = jest.fn();
 const mockParentTouchActivity = jest.fn();
 const mockParentClearGate = jest.fn();
 const mockHouseholdRefresh = jest.fn();
+const mockUseChildProgressDashboardQuery = jest.fn();
+const mockUseParentLearningStatusQuery = jest.fn();
+const mockUseParentLearningHistoryQuery = jest.fn();
 let mockParentSessionFresh = false;
 let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
 
@@ -137,15 +139,14 @@ jest.mock('@/contexts/HouseholdContext', () => ({
   __esModule: true,
   useHousehold: jest.fn(),
 }));
+jest.mock('@/features/progress/hooks/useChildProgressDashboardQuery', () => ({ useChildProgressDashboardQuery: (...args: unknown[]) => mockUseChildProgressDashboardQuery(...args) }));
+jest.mock('@/features/parent/hooks/useParentLearningStatusQuery', () => ({ useParentLearningStatusQuery: (...args: unknown[]) => mockUseParentLearningStatusQuery(...args) }));
+jest.mock('@/features/parent/hooks/useParentLearningHistoryQuery', () => ({ useParentLearningHistoryQuery: (...args: unknown[]) => mockUseParentLearningHistoryQuery(...args) }));
 
 const parentApiMock = parentApi as jest.Mocked<typeof parentApi>;
 const authApiMock = authApi as jest.Mocked<typeof authApi>;
 const accountApiMock = accountApi as jest.Mocked<typeof accountApi>;
-const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getChildProgress>;
-const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
 const mockGetChildProfile = getChildProfile as jest.MockedFunction<typeof getChildProfile>;
-const mockGetKPIs = getKPIs as jest.MockedFunction<typeof getKPIs>;
-const mockGetPronunciationTrend = getPronunciationTrend as jest.MockedFunction<typeof getPronunciationTrend>;
 const mockUpdateChildProfile = updateChildProfile as jest.MockedFunction<typeof updateChildProfile>;
 const mockSetActiveChild = setActiveChild as jest.MockedFunction<typeof setActiveChild>;
 const mockUpdateChildDisplayName = updateChildDisplayName as jest.MockedFunction<typeof updateChildDisplayName>;
@@ -207,13 +208,9 @@ describe('Parent settings and gate', () => {
       refresh: mockHouseholdRefresh,
       setActiveChild: jest.fn(),
     } as never);
-    mockGetChildProgress.mockResolvedValue({ childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [] });
-    mockGetChildLessonProgress.mockResolvedValue([]);
-    mockGetKPIs.mockResolvedValue({
-      vocab_words_this_week: 0, speaking_confidence: 0, engagement_score: 0,
-      retention_rate: 0, sessions_this_week: 0, daily_streak: 0, weak_words: [],
-    });
-    mockGetPronunciationTrend.mockResolvedValue({ points: [], avg_score: 0, trend: 'none' as never });
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: null, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, failedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
+    mockUseParentLearningStatusQuery.mockReturnValue({ data: { activeLearning: null, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '1' }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
+    mockUseParentLearningHistoryQuery.mockReturnValue({ data: { items: [], nextCursor: null }, isLoading: false, isError: false, hasNextPage: false, refetch: jest.fn() });
     mockGetChildProfile.mockResolvedValue({
       id: 'child-1',
       name: 'Mai',
@@ -917,49 +914,16 @@ describe('Parent settings and gate', () => {
     });
   });
 
-  it('keeps parent summary failures explicit when the backend contract is unavailable', async () => {
-    parentApiMock.getParentSummary.mockRejectedValueOnce(Object.assign(new Error('Parent summary API route not documented'), { code: 'BACKEND_CONTRACT_UNAVAILABLE' }));
-    const { getByText, queryByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    expect(getByText('Loading parent summary')).toBeTruthy();
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
+  it('keeps canonical parent summary failures explicit', () => {
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch: jest.fn() });
+    const { getByText, queryByText } = renderWithQuery(<ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />);
     expect(getByText('Parent summary unavailable')).toBeTruthy();
     expect(getByText('Try again.')).toBeTruthy();
-    expect(getByText('Retry')).toBeTruthy();
     expect(queryByText('No lesson activity has synced yet.')).toBeNull();
-    expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
-    expect(queryByText('Your child practiced 3 lessons for 18 minutes this week.')).toBeNull();
-  });
-
-  it('does not stay loading when parent summary unexpectedly resolves without a typed contract', async () => {
-    parentApiMock.getParentSummary.mockResolvedValueOnce(undefined as never);
-
-    const { getByText, queryByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
-    expect(getByText('Parent summary unavailable')).toBeTruthy();
-    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
-    expect(queryByText('Loading parent summary')).toBeNull();
-  });
-
-  it('shows parent summary failure copy when the backend contract is unavailable', async () => {
-    parentApiMock.getParentSummary.mockRejectedValueOnce(new Error('Parent summary API route not documented'));
-
-    const { getByText, queryByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(getByText('Parent summary unavailable')).toBeTruthy());
-    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
-    expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
   });
 
   it('shows requested summary context from notification route params without guessing backend fields', async () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText } = renderWithQuery(
       <ParentSummaryScreen
         navigation={mockNavigation as never}
         route={{
@@ -969,52 +933,20 @@ describe('Parent settings and gate', () => {
       />,
     );
 
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
     expect(getByText('Requested summary: 2026-05-16')).toBeTruthy();
     expect(getByText('Robot: device-1')).toBeTruthy();
     expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
   });
 
-  it('shows parent summary rate limit and outage states with retry copy', async () => {
-    parentApiMock.getParentSummary.mockRejectedValueOnce(
-      Object.assign(new Error('Rate limited'), { status: 429, retryAfterSeconds: 30, code: 'RATE_LIMIT_EXCEEDED' }),
-    );
-
-    const rateLimited = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(rateLimited.getByText('Parent summary refresh limited')).toBeTruthy());
-    expect(rateLimited.getByText('Try again in 30 seconds.')).toBeTruthy();
-    fireEvent.press(rateLimited.getByLabelText('Retry Parent summary refresh limited'));
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(2));
-    rateLimited.unmount();
-
-    parentApiMock.getParentSummary.mockRejectedValueOnce(
-      Object.assign(new Error('Bad gateway'), { status: 502, code: 'INTERNAL_ERROR' }),
-    );
-    const outage = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(outage.getByText('Parent summary service unavailable')).toBeTruthy());
-    expect(outage.getByText('Retry in a moment.')).toBeTruthy();
-  });
-
-  it('renders dynamic parent summary copy in Vietnamese', async () => {
+  it('renders canonical parent summary copy in Vietnamese', async () => {
     await setAppLanguage('vi');
-    parentApiMock.getParentSummary.mockResolvedValueOnce({ weekMinutes: 5, weekLessons: 2, streak: 3, topWords: [] });
-
-    const { getByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(getByText('Tuần này: 2 bài và 5 phút.')).toBeTruthy());
-    expect(getByText('2 bài trong tuần này')).toBeTruthy();
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: null, sessions: [{ sessionId: 's-1' }], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 1, failedSessions: 0, recentDurationSec: 300 }, isLoading: false, isError: false });
+    const { getAllByText } = renderWithQuery(<ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />);
+    expect(getAllByText('1 bài gần đây')).toHaveLength(2);
   });
 
   it('exposes parent summary navigation controls with clear accessibility labels', async () => {
-    const screen = render(
+    const screen = renderWithQuery(
       <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
@@ -1025,74 +957,71 @@ describe('Parent settings and gate', () => {
   });
 
   it('keeps today summary blocked instead of rendering hardcoded or guessed rows', async () => {
-    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
+    mockUseParentLearningStatusQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch: jest.fn() });
     const { getByText, queryByText } = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(getByText('Today summary unavailable')).toBeTruthy());
+    await waitFor(() => expect(getByText('Live progress is offline')).toBeTruthy());
     expect(queryByText('Mira practiced greetings, feelings, and three new words.')).toBeNull();
     expect(queryByText('Hello')).toBeNull();
     expect(queryByText('Today: 2 lessons, 11 minutes.')).toBeNull();
   });
 
   it('shows the empty state instead of stale rows when there is no active lesson', async () => {
-    mockGetChildLessonProgress.mockReset();
-    mockGetChildLessonProgress.mockResolvedValueOnce([]);
-
     const { getByText, queryByText } = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(getByText('No lessons yet')).toBeTruthy());
-    expect(queryByText("Loading today's progress")).toBeNull();
+    await waitFor(() => expect(getByText('No lesson is active right now')).toBeTruthy());
+    expect(queryByText('Loading live progress')).toBeNull();
     expect(queryByText('Mira practiced greetings, feelings, and three new words.')).toBeNull();
   });
 
   it('shows the today error state without stale data', async () => {
-    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
+    mockUseParentLearningStatusQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch: jest.fn() });
     const timeout = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(timeout.getByText('Today summary unavailable')).toBeTruthy());
+    await waitFor(() => expect(timeout.getByText('Live progress is offline')).toBeTruthy());
     expect(timeout.queryByText('Today: 2 lessons, 11 minutes.')).toBeNull();
   });
 
   it('labels parent back navigation with the destination screen', async () => {
-    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
     const screen = renderWithQuery(
       <ParentTodayScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    fireEvent.press(screen.getByLabelText('Back to Parent Space'));
+    fireEvent.press(screen.getByLabelText('Go back'));
 
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentSummaryScreen);
     screen.unmount();
   });
 
   it('keeps parent history blocked instead of rendering generated 30-day rows', async () => {
-    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
+    mockUseParentLearningHistoryQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true, hasNextPage: false, refetch: jest.fn() });
     const { getByText, queryByText } = renderWithQuery(
       <ParentHistoryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(getByText('History unavailable')).toBeTruthy());
+    await waitFor(() => expect(getByText('Lesson history is offline')).toBeTruthy());
     expect(queryByText('Greetings & feelings')).toBeNull();
     expect(queryByText('1 lesson · 9 min')).toBeNull();
   });
 
   it('shows the history error state with a retry affordance and no generated stale rows', async () => {
-    mockGetChildLessonProgress.mockRejectedValue(new Error('lesson-progress unavailable'));
+    const refetch = jest.fn();
+    mockUseParentLearningHistoryQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true, hasNextPage: false, refetch });
     const { getByLabelText, getByText, queryByText } = renderWithQuery(
       <ParentHistoryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    await waitFor(() => expect(getByText('History unavailable')).toBeTruthy());
+    await waitFor(() => expect(getByText('Lesson history is offline')).toBeTruthy());
     expect(queryByText('Greetings & feelings')).toBeNull();
 
-    fireEvent.press(getByLabelText('Retry History unavailable'));
-    await waitFor(() => expect(mockGetChildLessonProgress.mock.calls.length).toBeGreaterThanOrEqual(2));
+    fireEvent.press(getByLabelText('Retry lesson history'));
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 
 });

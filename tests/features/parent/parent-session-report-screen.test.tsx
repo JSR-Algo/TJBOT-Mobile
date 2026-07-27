@@ -16,10 +16,15 @@ const report = {
   reward: { xp: 20, stars: 2 }, suggestedNextLesson: { lessonId: 'l-2', lessonTitle: 'Animal Sounds' },
 };
 
-function renderScreen() {
+function renderScreen(params: { childId?: string; sessionId?: string } | undefined = { childId: 'child-1', sessionId: 'session-1' }) {
   const navigation = { navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() };
-  const route = { key: 'report', name: 'ParentSessionReportScreen', params: { childId: 'child-1', sessionId: 'session-1' } };
+  const route = { key: 'report', name: 'ParentSessionReportScreen', params };
   return render(<ParentSessionReportScreen navigation={navigation as never} route={route as never} />);
+}
+
+function renderScreenWithoutParams(params?: { childId?: string; sessionId?: string }) {
+  const navigation = { navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() };
+  return render(<ParentSessionReportScreen navigation={navigation as never} route={{ key: 'report', name: 'ParentSessionReportScreen', params } as never} />);
 }
 
 describe('ParentSessionReportScreen', () => {
@@ -58,6 +63,13 @@ describe('ParentSessionReportScreen', () => {
     expect(renderScreen().getByText('Session report not found')).toBeTruthy();
     mockReport.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch: jest.fn() } as never);
     expect(renderScreen().getByText('Session report is offline')).toBeTruthy();
+  });
+
+  it('keeps the query disabled and renders safely when route identifiers are missing', () => {
+    expect(renderScreenWithoutParams().getByText('Session report unavailable')).toBeTruthy();
+    expect(mockReport).toHaveBeenLastCalledWith(undefined, undefined);
+    expect(renderScreenWithoutParams({ childId: 'child-1' }).getByText('Session report unavailable')).toBeTruthy();
+    expect(mockReport).toHaveBeenLastCalledWith('child-1', undefined);
   });
 
   it('localizes report categories, state, and response class without English interpolation', async () => {

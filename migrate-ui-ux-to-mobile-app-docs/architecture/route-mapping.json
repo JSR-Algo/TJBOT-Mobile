@@ -1,6 +1,6 @@
 {
   "generated": "2026-05-12",
-  "routeCount": 127,
+  "routeCount": 128,
   "navigators": {
     "AuthNavigator": "unauthenticated auth routes",
     "OnboardingNavigator": "authenticated setup routes before protected app",
@@ -829,6 +829,17 @@
       "deepLinkPath": "parent/parent-history",
       "backTarget": "ParentSummaryScreen",
       "stateMachineId": "parent_history"
+    },
+    "ParentSessionReportScreen": {
+      "feature": "parent",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "parent/parent-session-report",
+      "backTarget": "ParentHistoryScreen",
+      "stateMachineId": "parent_session_report"
     },
     "ParentRewardsScreen": {
       "feature": "parent",

@@ -14,8 +14,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ParentSessionReportScre
 
 export default function ParentSessionReportScreen({ navigation, route }: Props) {
   const { language } = useAppLanguage();
-  const query = useParentSessionReportQuery(route.params.childId, route.params.sessionId);
+  const childId = route.params?.childId;
+  const sessionId = route.params?.sessionId;
+  const query = useParentSessionReportQuery(childId, sessionId);
   const back = () => navigation.navigate(ROUTES.ParentHistoryScreen);
+  if (!childId || !sessionId) return <ParentScroll title="Session report" onBack={back}><Message text="Session report unavailable" /></ParentScroll>;
   if (query.isLoading) return <ParentScroll title="Session report" onBack={back}><Message text="Loading session report" /></ParentScroll>;
   if (query.isError) return <ParentScroll title="Session report" onBack={back}><ErrorState retry={() => { void query.refetch(); }} /></ParentScroll>;
   const report = query.data;

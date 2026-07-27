@@ -41,6 +41,15 @@ describe('ParentHistoryScreen', () => {
     expect(fetchNextPage).toHaveBeenCalledTimes(1);
   });
 
+  it('renders sessions without reports as non-pressable factual rows', () => {
+    mockHistory.mockReturnValue({ data: { items: [{ ...row, reportAvailable: false }], nextCursor: null }, isLoading: false, isError: false, hasNextPage: false, refetch: jest.fn() } as never);
+    const screen = renderScreen();
+    expect(screen.queryByLabelText('Open report for Farm Friends')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Farm Friends/ })).toBeNull();
+    expect(screen.getByText('Farm Friends')).toBeTruthy();
+    expect(screen.navigation.navigate).not.toHaveBeenCalledWith(ROUTES.ParentSessionReportScreen, expect.anything());
+  });
+
   it('shows the backend duration without rounding a short session up to one minute', () => {
     mockHistory.mockReturnValue({ data: { items: [{ ...row, durationSec: 30 }], nextCursor: null }, isLoading: false, isError: false, hasNextPage: false, refetch: jest.fn() } as never);
     expect(renderScreen().getByText(/30 sec/)).toBeTruthy();
