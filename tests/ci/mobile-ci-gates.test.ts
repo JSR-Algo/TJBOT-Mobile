@@ -73,4 +73,22 @@ describe('mobile CI quality gates', () => {
       }
     }
   });
+
+  it('keeps backend-dependent rewards live rendering out of generic integration CI', () => {
+    const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')) as {
+      jest: {
+        projects: Array<{
+          displayName: string;
+          testPathIgnorePatterns?: string[];
+        }>;
+      };
+      scripts: Record<string, string>;
+    };
+    const integrationProject = packageJson.jest.projects.find(project => project.displayName === 'integration');
+
+    expect(packageJson.scripts['test:integration:rewards:live']).toContain('tests/integration/rewards-live/jest.config.js');
+    expect(integrationProject?.testPathIgnorePatterns).toContain(
+      '<rootDir>/tests/integration/rewards-live/rewards-live-rendered.test.tsx',
+    );
+  });
 });
