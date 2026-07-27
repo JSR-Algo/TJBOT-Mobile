@@ -70,6 +70,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   const [analytics, setAnalytics] = React.useState(isAnalyticsEnabled());
   const [lessonReportNotifications, setLessonReportNotifications] = React.useState<boolean | null>(null);
   const [notificationSaveFailed, setNotificationSaveFailed] = React.useState(false);
+  const notificationSaveRequestRef = React.useRef(0);
   const [savingLanguage, setSavingLanguage] = React.useState<AppLocale | null>(null);
   const [languageSaveFailed, setLanguageSaveFailed] = React.useState(false);
   const [profile, setProfile] = React.useState<ChildProfile | null>(null);
@@ -155,14 +156,17 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   }, []);
 
   const onToggleLessonReportNotifications = React.useCallback(async (next: boolean) => {
+    const requestId = ++notificationSaveRequestRef.current;
     const previous = lessonReportNotifications;
     setLessonReportNotifications(next);
     setNotificationSaveFailed(false);
     try {
       const saved = await updatePreferences({ push_enabled: next });
+      if (notificationSaveRequestRef.current !== requestId) return;
       setLessonReportNotifications(saved.push_enabled);
     } catch (error) {
       captureError(error);
+      if (notificationSaveRequestRef.current !== requestId) return;
       setLessonReportNotifications(previous);
       setNotificationSaveFailed(true);
     }

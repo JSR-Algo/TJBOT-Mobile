@@ -82,7 +82,20 @@ export type ParentReportDeepLinkTarget = {
 };
 
 export function parentReportTargetForDeepLinkUrl(url: string): ParentReportDeepLinkTarget | null {
-  const match = /^TJBot:\/\/parent\/children\/([^/?#]+)\/sessions\/([^/?#]+)\/report$/.exec(url);
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol.toLowerCase() !== 'tjbot:'
+    || parsed.hostname !== 'parent'
+    || parsed.port
+    || parsed.username
+    || parsed.password
+    || parsed.search
+    || parsed.hash) return null;
+  const match = /^\/children\/([^/]+)\/sessions\/([^/]+)\/report$/.exec(parsed.pathname);
   if (!match) return null;
   try {
     return { childId: decodeURIComponent(match[1]), sessionId: decodeURIComponent(match[2]) };

@@ -84,10 +84,27 @@ describe('parent notification coordinator', () => {
     await dedupe.claim('presentation', 'n-2');
     await dedupe.claim('presentation', 'n-3');
 
-    expect(JSON.parse(persisted!)).toEqual([
-      'presentation:n-2',
-      'presentation:n-3',
-    ]);
+    const storedEntries = JSON.parse(persisted!) as string[];
+    expect(storedEntries).toHaveLength(2);
+    expect(storedEntries.every(value => /^[a-f0-9]{64}$/.test(value))).toBe(true);
+    expect(persisted).not.toContain('n-1');
+    expect(persisted).not.toContain('n-2');
+    expect(persisted).not.toContain('n-3');
+  });
+
+  it('removes legacy raw notification ids whenever dedupe storage is rewritten', async () => {
+    let persisted: string | null = JSON.stringify(['navigation:legacy-notification-id']);
+    const storage = {
+      getItem: jest.fn(async () => persisted),
+      setItem: jest.fn(async (_key: string, value: string) => { persisted = value; }),
+    };
+    const dedupe = createNotificationDedupe(storage);
+
+    await expect(dedupe.claim('navigation', 'new-notification-id')).resolves.toBe(true);
+
+    expect(persisted).not.toContain('legacy-notification-id');
+    expect(persisted).not.toContain('new-notification-id');
+    expect(JSON.parse(persisted!)).toEqual([expect.stringMatching(/^[a-f0-9]{64}$/)]);
   });
 
   it('fails open and recovers the serial chain after persistent dedupe read failure', async () => {
@@ -125,7 +142,8 @@ describe('parent notification coordinator', () => {
     await expect(dedupe.claim('foreground', 'n-2')).resolves.toBe(true);
 
     expect(onError).toHaveBeenCalledWith(writeError);
-    expect(JSON.parse(persisted!)).toEqual(['foreground:n-2']);
+    expect(JSON.parse(persisted!)).toEqual([expect.stringMatching(/^[a-f0-9]{64}$/)]);
+    expect(persisted).not.toContain('n-2');
   });
 
   it('invalidates canonical status/report/history and dependent course progress keys', async () => {

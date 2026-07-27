@@ -315,6 +315,46 @@ describe('Parent settings and gate', () => {
     expect(screen.getByText('Receive completed lesson reports and other enabled alerts on this device.')).toBeTruthy();
   });
 
+  it('keeps the latest notification preference when rapid saves resolve out of order', async () => {
+    const first = deferred<notificationsApi.NotificationPreferences>();
+    const second = deferred<notificationsApi.NotificationPreferences>();
+    notificationsApiMock.updatePreferences
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    const screen = await renderParentSettings();
+    const toggle = await screen.findByLabelText('Push notifications');
+
+    await act(async () => {
+      fireEvent(toggle, 'valueChange', false);
+      fireEvent(toggle, 'valueChange', true);
+    });
+    await act(async () => {
+      second.resolve({
+        id: 'prefs-1', parent_id: 'parent-1', email_digest_enabled: false,
+        email_digest_frequency: 'never', safety_alerts_enabled: true, push_enabled: true,
+        created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:02.000Z',
+      });
+      await second.promise;
+    });
+    await act(async () => {
+      first.resolve({
+        id: 'prefs-1', parent_id: 'parent-1', email_digest_enabled: false,
+        email_digest_frequency: 'never', safety_alerts_enabled: true, push_enabled: false,
+        created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:01.000Z',
+      });
+      await first.promise;
+    });
+
+    expect(screen.getByLabelText('Push notifications').props.value).toBe(true);
+  });
+
+  it('localizes the push notification switch accessibility label', async () => {
+    await setAppLanguage('vi');
+    const screen = await renderParentSettings();
+
+    expect(await screen.findByLabelText('Thông báo đẩy')).toBeTruthy();
+  });
+
   it('lets parents update career and child interest filters used for lesson personalization', async () => {
     const screen = await renderParentSettings();
 

@@ -106,9 +106,15 @@ describe('notification linking', () => {
       params: { childId: 'child 1', sessionId: 'session/1' },
     });
     expect(shouldHandleDeepLinkManually('TJBot://parent/children/child-1/sessions/session-1/report')).toBe(true);
+    expect(navigationTargetForDeepLinkUrl('tjbot://parent/children/child-1/sessions/session-1/report')).toEqual({
+      name: ROUTES.ParentSessionReportScreen,
+      params: { childId: 'child-1', sessionId: 'session-1' },
+    });
 
     expect(navigationTargetForDeepLinkUrl('TJBot://parent/children/child-1/sessions/session-1')).toBeNull();
     expect(navigationTargetForDeepLinkUrl('TJBot://parent/children/child-1/sessions/session-1/report/extra')).toBeNull();
+    expect(navigationTargetForDeepLinkUrl('tjbot://parent/Children/child-1/sessions/session-1/report')).toBeNull();
+    expect(navigationTargetForDeepLinkUrl('tjbot://parent/children/child-1/sessions/session-1/report?source=push')).toBeNull();
     expect(navigationTargetForDeepLinkUrl('https://parent/children/child-1/sessions/session-1/report')).toBeNull();
   });
 });

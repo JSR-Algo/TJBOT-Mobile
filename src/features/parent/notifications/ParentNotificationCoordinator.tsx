@@ -1,5 +1,6 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CryptoJS from 'crypto-js';
 import type { QueryClient } from '@tanstack/react-query';
 import { Linking } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,12 +63,14 @@ export function createNotificationDedupe(
         try {
           const raw = await storage.getItem(DEDUPE_STORAGE_KEY);
           const parsed = raw ? JSON.parse(raw) : [];
-          if (Array.isArray(parsed)) entries = parsed.filter(value => typeof value === 'string');
+          if (Array.isArray(parsed)) {
+            entries = parsed.filter(value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value));
+          }
         } catch (error) {
           reportError(error);
           entries = [];
         }
-        const key = `${scope}:${notificationId}`;
+        const key = CryptoJS.SHA256(`${scope}:${notificationId}`).toString();
         if (entries.includes(key)) return;
         claimed = true;
         entries.push(key);

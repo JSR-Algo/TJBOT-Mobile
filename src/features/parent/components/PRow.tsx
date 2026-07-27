@@ -3,6 +3,7 @@ import { StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { useAppLanguage } from '@/services/i18n/i18n';
 import { PA } from './ParentScroll';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function PRow({ icon, label, value, toggle, onToggle, chevron, danger, onPress, isLast }: Props) {
+  const { t } = useAppLanguage();
   const content = (
     <Box
       flexDirection="row"
@@ -36,7 +38,7 @@ export default function PRow({ icon, label, value, toggle, onToggle, chevron, da
       ) : null}
       {toggle !== undefined ? (
         <Switch
-          accessibilityLabel={label}
+          accessibilityLabel={t(label)}
           value={toggle}
           onValueChange={onToggle}
           trackColor={{ true: PA.good }}
