@@ -104,19 +104,55 @@ describe('useParentLearningStatusQuery', () => {
     const view = setup();
     view.client.setQueryData(['lesson-progress', 'child', 'child-1'], [{ stale: true }]);
     await waitFor(() => expect(sockets).toHaveLength(1));
+
+    let resolveRefresh!: (status: ParentLearningStatus) => void;
+    mockStatus.mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve; }));
+    const callsBeforeUpdate = mockStatus.mock.calls.length;
     sockets[0].message({
       type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
       occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z',
       activeLearning: { lessonTitle: 'Updated lesson', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210, currentStep: { stepNumber: 5, total: 9, activityTitle: 'Updated activity', phase: 'listening', subject: 'barn' } },
     });
 
-    await waitFor(() => expect(view.result.current.data?.projectionRevision).toBe('2'));
-    expect(view.result.current.data?.activeLearning).toMatchObject({
+    const immediate = view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'));
+    expect(immediate?.projectionRevision).toBe('2');
+    expect(immediate?.activeLearning).toMatchObject({
       assignmentId: 'a', courseId: 'c', lessonId: 'l', startedAt: null,
       lessonTitle: 'Updated lesson', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210,
     });
-    expect(view.result.current.data?.activeLearning?.currentStep).toMatchObject({ stepId: 'step-4', stepNumber: 5, activityTitle: 'Updated activity' });
+    expect(immediate?.activeLearning?.currentStep).toMatchObject({ stepId: 'step-4', stepNumber: 5, activityTitle: 'Updated activity' });
     expect(view.client.getQueryState(['lesson-progress', 'child', 'child-1'])?.isInvalidated).toBe(true);
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeUpdate + 1));
+
+    act(() => resolveRefresh({ ...active, activeLearning: immediate!.activeLearning, projectionRevision: '2' }));
+    await waitFor(() => expect(view.result.current.data?.projectionRevision).toBe('2'));
+    view.unmount();
+  });
+
+  it('clears terminal activity immediately while refreshing durable progress projections', async () => {
+    const view = setup();
+    view.client.setQueryData(['parent-learning-history', 'child-1'], { pages: [{ items: [], nextCursor: null }], pageParams: [null] });
+    view.client.setQueryData(['lesson-progress', 'child', 'child-1'], [{ stale: true }]);
+    view.client.setQueryData(['child-progress-dashboard', 'child', 'child-1'], { stale: true });
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    let resolveRefresh!: (status: ParentLearningStatus) => void;
+    mockStatus.mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve; }));
+    const callsBeforeUpdate = mockStatus.mock.calls.length;
+
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
+      occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z', activeLearning: { state: 'COMPLETED' },
+    }));
+
+    expect(view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'))?.activeLearning).toBeNull();
+    expect(view.client.getQueryData(['child-progress-dashboard', 'child', 'child-1'])).toBeUndefined();
+    expect(view.client.getQueryState(['lesson-progress', 'child', 'child-1'])?.isInvalidated).toBe(true);
+    expect(view.client.getQueryState(['parent-learning-history', 'child-1'])?.isInvalidated).toBe(true);
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeUpdate + 1));
+
+    act(() => resolveRefresh({ ...inactive, projectionRevision: '2' }));
+    await waitFor(() => expect(view.result.current.isFetching).toBe(false));
     view.unmount();
   });
 
