@@ -90,6 +90,44 @@ describe('parent notification coordinator', () => {
     ]);
   });
 
+  it('fails open and recovers the serial chain after persistent dedupe read failure', async () => {
+    let persisted: string | null = null;
+    const readError = new Error('storage read failed');
+    const storage = {
+      getItem: jest.fn()
+        .mockRejectedValueOnce(readError)
+        .mockImplementation(async () => persisted),
+      setItem: jest.fn(async (_key: string, value: string) => { persisted = value; }),
+    };
+    const onError = jest.fn();
+    const dedupe = createNotificationDedupe(storage, 100, onError);
+
+    await expect(dedupe.claim('navigation', 'n-1')).resolves.toBe(true);
+    await expect(dedupe.claim('navigation', 'n-2')).resolves.toBe(true);
+
+    expect(onError).toHaveBeenCalledWith(readError);
+    expect(storage.setItem).toHaveBeenCalledTimes(2);
+  });
+
+  it('fails open and recovers the serial chain after persistent dedupe write failure', async () => {
+    let persisted: string | null = null;
+    const writeError = new Error('storage write failed');
+    const storage = {
+      getItem: jest.fn(async () => persisted),
+      setItem: jest.fn()
+        .mockRejectedValueOnce(writeError)
+        .mockImplementation(async (_key: string, value: string) => { persisted = value; }),
+    };
+    const onError = jest.fn();
+    const dedupe = createNotificationDedupe(storage, 100, onError);
+
+    await expect(dedupe.claim('foreground', 'n-1')).resolves.toBe(true);
+    await expect(dedupe.claim('foreground', 'n-2')).resolves.toBe(true);
+
+    expect(onError).toHaveBeenCalledWith(writeError);
+    expect(JSON.parse(persisted!)).toEqual(['foreground:n-2']);
+  });
+
   it('invalidates canonical status/report/history and dependent course progress keys', async () => {
     const invalidateQueries = jest.fn().mockResolvedValue(undefined);
     const removeQueries = jest.fn();
@@ -143,6 +181,22 @@ describe('parent notification coordinator', () => {
 
     await lifecycle.foreground({ deepLink: 'TJBot://parent/children/child-1/sessions/session-1/report' });
     await lifecycle.tap({ childId: 'child-1', sessionId: 'session-1' });
+
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('ignores id-only payloads without an exact parent-report URL', async () => {
+    const invalidate = jest.fn();
+    const enqueue = jest.fn();
+    const lifecycle = createParentNotificationLifecycle({
+      dedupe: { claim: jest.fn().mockResolvedValue(true) },
+      invalidate,
+      enqueue,
+    });
+
+    await lifecycle.foreground({ notificationId: 'n-1', childId: 'child-1', sessionId: 'session-1' });
+    await lifecycle.tap({ notificationId: 'n-1', childId: 'child-1', sessionId: 'session-1' });
 
     expect(invalidate).not.toHaveBeenCalled();
     expect(enqueue).not.toHaveBeenCalled();

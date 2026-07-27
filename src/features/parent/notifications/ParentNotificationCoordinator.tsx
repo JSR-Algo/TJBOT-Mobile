@@ -9,6 +9,7 @@ import { parentReportTargetForDeepLinkUrl, type ParentReportDeepLinkTarget } fro
 import { dispatchDeepLinkTarget } from '@/navigation/AppNavigator';
 import { ROUTES } from '@/navigation/routes';
 import { appQueryClient } from '@/services/query/queryClient';
+import { captureError } from '@/services/observability/sentry';
 import { parentLearningHistoryKey } from '../hooks/useParentLearningHistoryQuery';
 import { parentLearningStatusKey } from '../hooks/useParentLearningStatusQuery';
 import { parentSessionReportKey } from '../hooks/useParentSessionReportQuery';
@@ -44,8 +45,15 @@ type DedupeStorage = {
   setItem: (key: string, value: string) => Promise<unknown>;
 };
 
-export function createNotificationDedupe(storage: DedupeStorage, maxEntries = 100) {
+export function createNotificationDedupe(
+  storage: DedupeStorage,
+  maxEntries = 100,
+  onError: (error: unknown) => void = captureError,
+) {
   let serial = Promise.resolve();
+  const reportError = (error: unknown): void => {
+    try { onError(error); } catch { /* notification delivery must remain fail-open */ }
+  };
   return {
     claim(scope: 'presentation' | 'foreground' | 'navigation', notificationId: string): Promise<boolean> {
       let claimed = false;
@@ -55,14 +63,22 @@ export function createNotificationDedupe(storage: DedupeStorage, maxEntries = 10
           const raw = await storage.getItem(DEDUPE_STORAGE_KEY);
           const parsed = raw ? JSON.parse(raw) : [];
           if (Array.isArray(parsed)) entries = parsed.filter(value => typeof value === 'string');
-        } catch {
+        } catch (error) {
+          reportError(error);
           entries = [];
         }
         const key = `${scope}:${notificationId}`;
         if (entries.includes(key)) return;
         claimed = true;
         entries.push(key);
-        await storage.setItem(DEDUPE_STORAGE_KEY, JSON.stringify(entries.slice(-Math.max(1, maxEntries))));
+        try {
+          await storage.setItem(DEDUPE_STORAGE_KEY, JSON.stringify(entries.slice(-Math.max(1, maxEntries))));
+        } catch (error) {
+          reportError(error);
+        }
+      }, async (error) => {
+        reportError(error);
+        claimed = true;
       });
       return serial.then(() => claimed);
     },
@@ -97,12 +113,10 @@ function targetFromPayload(payload: Record<string, unknown>): ParentReportNotifi
     : typeof payload.url === 'string'
       ? payload.url
       : null;
-  const parsed = deepLink ? parentReportTargetForDeepLinkUrl(deepLink) : null;
-  if (deepLink && !parsed) return null;
-  const childId = parsed?.childId ?? (typeof payload.childId === 'string' ? payload.childId : null);
-  const sessionId = parsed?.sessionId ?? (typeof payload.sessionId === 'string' ? payload.sessionId : null);
-  if (!childId || !sessionId) return null;
-  return { childId, sessionId, notificationId };
+  if (!deepLink) return null;
+  const parsed = parentReportTargetForDeepLinkUrl(deepLink);
+  if (!parsed) return null;
+  return { ...parsed, notificationId };
 }
 
 export function createParentNotificationLifecycle(deps: NotificationLifecycleDeps) {
