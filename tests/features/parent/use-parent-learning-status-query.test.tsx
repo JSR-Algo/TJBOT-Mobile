@@ -102,6 +102,7 @@ describe('useParentLearningStatusQuery', () => {
 
   it('merges a partial realtime update without losing active-learning identity', async () => {
     const view = setup();
+    view.client.setQueryData(['lesson-progress', 'child', 'child-1'], [{ stale: true }]);
     await waitFor(() => expect(sockets).toHaveLength(1));
     sockets[0].message({
       type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
@@ -115,6 +116,7 @@ describe('useParentLearningStatusQuery', () => {
       lessonTitle: 'Updated lesson', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210,
     });
     expect(view.result.current.data?.activeLearning?.currentStep).toMatchObject({ stepId: 'step-4', stepNumber: 5, activityTitle: 'Updated activity' });
+    expect(view.client.getQueryState(['lesson-progress', 'child', 'child-1'])?.isInvalidated).toBe(true);
     view.unmount();
   });
 

@@ -1,89 +1,65 @@
 import React from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
-import {
-  getChildLessonProgress,
-  getChildProgress,
-  type AssignmentProgress,
-} from '@/services/api/progress.api';
-import { getKPIs, getPronunciationTrend } from '@/services/api/learning';
-import {
-  buildCourseInsightDashboard,
-  type CourseInsightDashboard,
-} from '@/features/parent/courseInsights';
-import { parentLearningStatusKey } from '@/features/parent/hooks/useParentLearningStatusQuery';
+import { useQueryClient } from '@tanstack/react-query';
+import type { ParentActiveLearning, ParentCourseProgress, ParentLearningStatus, ParentSessionSummary } from '@/services/api/parentLearning.api';
+import { useParentLearningHistoryQuery } from '@/features/parent/hooks/useParentLearningHistoryQuery';
+import { useParentLearningStatusQuery } from '@/features/parent/hooks/useParentLearningStatusQuery';
+import { childLessonProgressQueryKey } from './useChildLessonProgressQuery';
 
 export interface ChildProgressDashboard {
-  insights: CourseInsightDashboard;
-  assignments: AssignmentProgress[];
+  activeLearning: ParentActiveLearning | null;
+  sessions: ParentSessionSummary[];
+  courses: ParentCourseProgress[];
+  completedLessons: number;
+  totalLessons: number;
+  completedSessions: number;
+  failedSessions: number;
+  recentDurationSec: number;
 }
 
 export function childProgressDashboardQueryKey(childId: string | undefined) {
   return ['child-progress-dashboard', 'child', childId] as const;
 }
 
-// The lesson-progress feed is the backbone (celebration header, today's-lesson
-// card, weekly activity strip), so it is awaited directly: if it fails the
-// screen has nothing meaningful to show and falls to the error arm. The three
-// enrichment sources (aggregate, KPIs, pronunciation) are fanned out with
-// `Promise.allSettled` so one slow/5xx endpoint never blanks the dashboard —
-// buildCourseInsightDashboard already tolerates null inputs.
-async function fetchChildProgressDashboard(childId: string): Promise<ChildProgressDashboard> {
-  const assignments = await getChildLessonProgress(childId);
-
-  const [progress, kpis, pronunciationTrend] = await Promise.allSettled([
-    getChildProgress(childId),
-    getKPIs(childId),
-    getPronunciationTrend(childId, 14),
-  ]);
-
-  const insights = buildCourseInsightDashboard({
-    progress: progress.status === 'fulfilled' ? progress.value : null,
-    assignments,
-    kpis: kpis.status === 'fulfilled' ? kpis.value : null,
-    pronunciationTrend: pronunciationTrend.status === 'fulfilled' ? pronunciationTrend.value : null,
-  });
-
-  return { insights, assignments };
+export function buildCanonicalProgressDashboard(status: ParentLearningStatus, history?: ParentSessionSummary[]): ChildProgressDashboard {
+  const sessions = history ?? status.recentSessions.items;
+  return {
+    activeLearning: status.activeLearning,
+    sessions,
+    courses: status.courseProgress,
+    completedLessons: status.courseProgress.reduce((sum, course) => sum + course.completedLessons, 0),
+    totalLessons: status.courseProgress.reduce((sum, course) => sum + course.totalLessons, 0),
+    completedSessions: sessions.filter(session => session.state === 'COMPLETED').length,
+    failedSessions: sessions.filter(session => session.state !== 'COMPLETED').length,
+    recentDurationSec: sessions.reduce((sum, session) => sum + session.durationSec, 0),
+  };
 }
 
-export function useChildProgressDashboardQuery(
-  childId: string | undefined,
-): UseQueryResult<ChildProgressDashboard, Error> {
-  const enabled = typeof childId === 'string' && childId.length > 0;
+export function useChildProgressDashboardQuery(childId: string | undefined) {
   const queryClient = useQueryClient();
-  const queryChildId = enabled ? childId : null;
-  const query = useQuery<ChildProgressDashboard, Error>({
-    queryKey: childProgressDashboardQueryKey(childId),
-    queryFn: () => {
-      if (!queryChildId) {
-        throw new Error('CHILD_ID_REQUIRED_FOR_PROGRESS_DASHBOARD');
-      }
-      return fetchChildProgressDashboard(queryChildId);
-    },
-    enabled,
-    // Treat data as fresh for 30s so a quick tab bounce (or a sibling screen
-    // sharing this key) doesn't re-fan-out all four endpoints on every focus.
-    // The focus-refetch below still forces a refresh after the window.
-    staleTime: 30_000,
-  });
-  const refetch = query.refetch;
-  const initialFocusSeenRef = React.useRef(false);
-
-  // Refetch on tab re-focus so a lesson finished on the robot shows up without a
-  // manual pull — but skip the first focus (the initial fetch already ran).
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!enabled) return undefined;
-      if (!initialFocusSeenRef.current) {
-        initialFocusSeenRef.current = true;
-        return undefined;
-      }
-      void refetch();
-      void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
-      return undefined;
-    }, [childId, enabled, queryClient, refetch]),
+  const statusQuery = useParentLearningStatusQuery(childId);
+  const historyQuery = useParentLearningHistoryQuery(childId);
+  const historyItems = historyQuery.data?.items;
+  const data = React.useMemo(
+    () => statusQuery.data ? buildCanonicalProgressDashboard(statusQuery.data, historyItems) : undefined,
+    [historyItems, statusQuery.data],
   );
+  const dependencyRevision = `${statusQuery.data?.projectionRevision ?? '0'}:${historyItems?.map(item => item.sessionId).join(',') ?? ''}`;
 
-  return query;
+  React.useEffect(() => {
+    if (!childId || !statusQuery.data) return;
+    queryClient.removeQueries({ queryKey: childProgressDashboardQueryKey(childId), exact: true });
+    void queryClient.invalidateQueries({ queryKey: childLessonProgressQueryKey(childId) });
+  }, [childId, dependencyRevision, queryClient, statusQuery.data]);
+
+  return {
+    ...statusQuery,
+    data,
+    isLoading: statusQuery.isLoading || (!historyQuery.data && historyQuery.isLoading),
+    isError: statusQuery.isError && !statusQuery.data,
+    isFetching: statusQuery.isFetching || historyQuery.isFetching,
+    refetch: async () => {
+      const [statusResult] = await Promise.all([statusQuery.refetch(), historyQuery.refetch()]);
+      return statusResult;
+    },
+  };
 }

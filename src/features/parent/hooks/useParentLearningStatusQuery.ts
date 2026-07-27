@@ -7,6 +7,11 @@ import { openParentProgressRealtime } from '@/services/ws/parentProgressRealtime
 export const parentLearningStatusKey = (childId: string) => ['parent-learning-status', childId] as const;
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'ABANDONED', 'CANCELLED']);
 
+function invalidateDependentProgress(queryClient: ReturnType<typeof useQueryClient>, childId: string): void {
+  void queryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+  queryClient.removeQueries({ queryKey: ['child-progress-dashboard', 'child', childId], exact: true });
+}
+
 export function useParentLearningStatusQuery(childId: string | undefined): UseQueryResult<ParentLearningStatus, Error> {
   const queryClient = useQueryClient();
   const enabled = Boolean(childId);
@@ -30,7 +35,7 @@ export function useParentLearningStatusQuery(childId: string | undefined): UseQu
     let close: (() => void) | undefined;
     const cached = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId));
     void openParentProgressRealtime(childId, cached?.projectionRevision ?? '0', {
-      onStatus: (status) => { if (!disposed) queryClient.setQueryData(parentLearningStatusKey(childId), status); },
+      onStatus: (status) => { if (!disposed) { queryClient.setQueryData(parentLearningStatusKey(childId), status); invalidateDependentProgress(queryClient, childId); } },
       onUpdate: (frame) => {
         if (disposed) return;
         queryClient.setQueryData<ParentLearningStatus>(parentLearningStatusKey(childId), (current) => {
@@ -53,8 +58,9 @@ export function useParentLearningStatusQuery(childId: string | undefined): UseQu
           }
           return { ...current, activeLearning: { ...current.activeLearning, ...activeDelta, currentStep }, projectionRevision: frame.projectionRevision };
         });
+        invalidateDependentProgress(queryClient, childId);
       },
-      onInvalidate: () => { if (!disposed) void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); },
+      onInvalidate: () => { if (!disposed) { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); invalidateDependentProgress(queryClient, childId); } },
       onAuthExpired: () => setSocketExhausted(false),
       onAccessRevoked: () => setSocketExhausted(false),
       onReconnectExhausted: () => setSocketExhausted(true),

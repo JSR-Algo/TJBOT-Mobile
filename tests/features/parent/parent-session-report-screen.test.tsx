@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { useParentSessionReportQuery } from '@/features/parent/hooks/useParentSessionReportQuery';
 import ParentSessionReportScreen from '@/features/parent/screens/ParentSessionReportScreen';
+import { setAppLanguage } from '@/services/i18n/i18n';
 
 jest.mock('@/features/parent/hooks/useParentGateGuard', () => ({ useParentGateGuard: () => undefined }));
 jest.mock('@/features/parent/hooks/useParentSessionReportQuery', () => ({ useParentSessionReportQuery: jest.fn() }));
@@ -22,6 +23,7 @@ function renderScreen() {
 }
 
 describe('ParentSessionReportScreen', () => {
+  afterAll(async () => { await setAppLanguage('en'); });
   beforeEach(() => {
     jest.clearAllMocks();
     mockReport.mockReturnValue({ data: report, isLoading: false, isError: false, refetch: jest.fn() } as never);
@@ -56,5 +58,17 @@ describe('ParentSessionReportScreen', () => {
     expect(renderScreen().getByText('Session report not found')).toBeTruthy();
     mockReport.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch: jest.fn() } as never);
     expect(renderScreen().getByText('Session report is offline')).toBeTruthy();
+  });
+
+  it('localizes report categories, state, and response class without English interpolation', async () => {
+    await setAppLanguage('vi');
+    const screen = renderScreen();
+    expect(screen.getByText('Đã giới thiệu')).toBeTruthy();
+    expect(screen.getByText('Đã thử')).toBeTruthy();
+    expect(screen.getByText('Đã trả lời phù hợp')).toBeTruthy();
+    expect(screen.getByText('Cần ôn lại')).toBeTruthy();
+    expect(screen.getByText(/hoàn tất/i)).toBeTruthy();
+    expect(screen.getByText('2 lần thử · Khớp')).toBeTruthy();
+    expect(screen.queryByText(/Completed|Match|Presented|Attempted|Accepted|Needs review/)).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { useHousehold } from '@/contexts/HouseholdContext';
 import { useParentLearningHistoryQuery } from '@/features/parent/hooks/useParentLearningHistoryQuery';
 import { ROUTES } from '@/navigation/routes';
 import ParentHistoryScreen from '@/features/parent/screens/ParentHistoryScreen';
+import { setAppLanguage } from '@/services/i18n/i18n';
 
 jest.mock('@/features/parent/hooks/useParentGateGuard', () => ({ useParentGateGuard: () => undefined }));
 jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: jest.fn() }));
@@ -20,6 +21,7 @@ function renderScreen() {
 }
 
 describe('ParentHistoryScreen', () => {
+  afterAll(async () => { await setAppLanguage('en'); });
   beforeEach(() => {
     jest.clearAllMocks();
     mockHousehold.mockReturnValue({ activeChild: { id: 'child-1', name: 'Mai' } } as never);
@@ -49,5 +51,12 @@ describe('ParentHistoryScreen', () => {
     expect(renderScreen().getByText('No completed lessons yet')).toBeTruthy();
     mockHistory.mockReturnValue({ data: undefined, isLoading: false, isError: true, hasNextPage: false, refetch: jest.fn() } as never);
     expect(renderScreen().getByText('Lesson history is offline')).toBeTruthy();
+  });
+
+  it('localizes interpolated completion state in Vietnamese', async () => {
+    await setAppLanguage('vi');
+    const screen = renderScreen();
+    expect(screen.getByText(/hoàn tất/i)).toBeTruthy();
+    expect(screen.queryByText(/Completed/)).toBeNull();
   });
 });

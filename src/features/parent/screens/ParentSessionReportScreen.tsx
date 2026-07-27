@@ -8,6 +8,7 @@ import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import type { ParentReportActivity } from '@/services/api/parentLearning.api';
 import ParentScroll, { PA } from '../components/ParentScroll';
 import { useParentSessionReportQuery } from '../hooks/useParentSessionReportQuery';
+import { parentReportCategoryLabel, parentResponseClassLabel, parentSessionStateLabel, type ParentReportCategory } from '../parentLearningCopy';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSessionReportScreen'>;
 
@@ -28,7 +29,7 @@ export default function ParentSessionReportScreen({ navigation, route }: Props) 
         <Box style={styles.hero} gap={5}>
           <Text style={styles.course} i18n={false}>{report.courseTitle}</Text>
           <Text fontWeight="800" style={styles.lesson} i18n={false}>{report.lessonTitle}</Text>
-          <Text style={styles.meta} i18n={false}>{translateTemplate('{{state}} · {{minutes}} min {{seconds}} sec', { state: report.state === 'COMPLETED' ? 'Completed' : "Didn't finish", minutes, seconds }, { locale: language })}</Text>
+          <Text style={styles.meta} i18n={false}>{translateTemplate('{{state}} · {{minutes}} min {{seconds}} sec', { state: parentSessionStateLabel(report.state, language), minutes, seconds }, { locale: language })}</Text>
         </Box>
         {report.objective ? <Section title="Lesson objective"><Text style={styles.body} i18n={false}>{report.objective}</Text></Section> : null}
         <Evidence title="Presented" values={report.presented} />
@@ -44,8 +45,8 @@ export default function ParentSessionReportScreen({ navigation, route }: Props) 
 }
 
 function Section({ title, children }: React.PropsWithChildren<{ title: string }>) { return <Box style={styles.card} gap={8}><Text fontWeight="800" style={styles.heading}>{title}</Text>{children}</Box>; }
-function Evidence({ title, values }: { title: string; values: string[] }) { return <Section title={title}><Text style={styles.body} i18n={false}>{values.length > 0 ? values.join(', ') : '—'}</Text></Section>; }
-function Activity({ activity }: { activity: ParentReportActivity }) { const { language } = useAppLanguage(); const response = activity.finalResponseClass ? activity.finalResponseClass.charAt(0) + activity.finalResponseClass.slice(1).toLowerCase() : activity.outcome; return <Box gap={3}><Text fontWeight="700" style={styles.body} i18n={false}>{activity.activityTitle}</Text>{activity.subject ? <Text style={styles.meta} i18n={false}>{activity.subject}</Text> : null}<Text style={styles.meta} i18n={false}>{translateTemplate('{{attempts}} attempts · {{outcome}}', { attempts: activity.attempts, outcome: response }, { locale: language })}</Text></Box>; }
+function Evidence({ title, values }: { title: ParentReportCategory; values: string[] }) { const { language } = useAppLanguage(); return <Section title={parentReportCategoryLabel(title, language)}><Text style={styles.body} i18n={false}>{values.length > 0 ? values.join(', ') : '—'}</Text></Section>; }
+function Activity({ activity }: { activity: ParentReportActivity }) { const { language } = useAppLanguage(); const response = parentResponseClassLabel(activity.finalResponseClass ?? activity.outcome, language); return <Box gap={3}><Text fontWeight="700" style={styles.body} i18n={false}>{activity.activityTitle}</Text>{activity.subject ? <Text style={styles.meta} i18n={false}>{activity.subject}</Text> : null}<Text style={styles.meta} i18n={false}>{translateTemplate('{{attempts}} attempts · {{outcome}}', { attempts: activity.attempts, outcome: response }, { locale: language })}</Text></Box>; }
 function Message({ text }: { text: string }) { return <Box padding={24}><Text style={styles.meta}>{text}</Text></Box>; }
 function ErrorState({ retry }: { retry: () => void }) { return <Box padding={24} gap={12}><Text fontWeight="800" style={styles.error}>Session report is offline</Text><Text style={styles.meta}>Check your connection and try again.</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry session report" onPress={retry}><Text fontWeight="700" style={styles.link}>Retry</Text></TouchableOpacity></Box>; }
 
