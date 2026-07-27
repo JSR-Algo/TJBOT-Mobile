@@ -4,6 +4,7 @@ export const STATES = [
   { id: 'parent_summary', title: 'Parent Summary', group: 'Parent', kind: 'happy' },
   { id: 'parent_today', title: 'Practiced Today', group: 'Parent', kind: 'happy' },
   { id: 'parent_history', title: 'Past 30 Days', group: 'Parent', kind: 'happy' },
+  { id: 'parent_session_report', title: 'Session Report', group: 'Parent', kind: 'happy' },
   { id: 'parent_rewards', title: 'Rewards', group: 'Parent', kind: 'happy' },
   { id: 'parent_safety', title: 'Safety & Privacy', group: 'Parent', kind: 'happy' },
   { id: 'parent_settings', title: 'Parent Settings', group: 'Parent', kind: 'happy' },

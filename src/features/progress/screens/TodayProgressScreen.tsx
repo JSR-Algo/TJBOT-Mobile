@@ -119,7 +119,13 @@ export default function TodayProgressScreen({ navigation }: Props) {
     <PageScroll>
       <PageHeader subtitle="Today" title={headerTitle} />
 
-      <Box paddingHorizontal={18} paddingBottom={14} gap={12}>
+      <Box
+        paddingHorizontal={18}
+        paddingBottom={14}
+        gap={12}
+        accessible={Boolean(insights)}
+        accessibilityLabel={insights ? 'Child progress dashboard' : undefined}
+      >
         {!childId ? (
           <Text style={styles.message}>Add a child to see progress</Text>
         ) : query.isLoading ? (

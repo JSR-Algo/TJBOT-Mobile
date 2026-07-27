@@ -184,8 +184,9 @@ describe('TodayProgressScreen', () => {
 
   it('renders the dashboard and celebration header for a completed lesson', async () => {
     mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment()]);
-    const { getByText } = renderScreen();
+    const { getByText, getByLabelText } = renderScreen();
     await waitFor(() => expect(getByText('You practiced speaking!')).toBeTruthy());
+    expect(getByLabelText('Child progress dashboard')).toBeTruthy();
     // Hero band
     expect(getByText('Day streak')).toBeTruthy();
     expect(getByText('Lessons done')).toBeTruthy();

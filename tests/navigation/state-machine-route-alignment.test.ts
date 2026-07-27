@@ -169,6 +169,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.ParentSummaryScreen, 'parent_summary'],
       [ROUTES.ParentTodayScreen, 'parent_today'],
       [ROUTES.ParentHistoryScreen, 'parent_history'],
+      [ROUTES.ParentSessionReportScreen, 'parent_session_report'],
       [ROUTES.ParentRewardsScreen, 'parent_rewards'],
       [ROUTES.ParentSafetyScreen, 'parent_safety'],
       [ROUTES.ParentSettingsScreen, 'parent_settings'],

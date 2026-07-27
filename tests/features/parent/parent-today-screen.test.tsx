@@ -1,160 +1,72 @@
-// ParentTodayScreen now renders REAL lesson-progress (US-006 child-scoped
-// feed) instead of the old hardcoded facade. These tests lock in the
-// loading → success/empty/error branching off getChildLessonProgress.
-
 import React from 'react';
-import { act, render, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ParentSessionProvider } from '../../../src/features/parent/context/ParentSessionContext';
+import { fireEvent, render } from '@testing-library/react-native';
 import { useHousehold } from '@/contexts/HouseholdContext';
-import { getChildLessonProgress, type AssignmentProgress } from '@/services/api/progress.api';
+import { useParentLearningStatusQuery } from '@/features/parent/hooks/useParentLearningStatusQuery';
+import ParentTodayScreen from '@/features/parent/screens/ParentTodayScreen';
 
-let latestFocusEffect: (() => void | (() => void)) | null = null;
+jest.mock('@/features/parent/hooks/useParentGateGuard', () => ({ useParentGateGuard: () => undefined }));
+jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: jest.fn() }));
+jest.mock('@/features/parent/hooks/useParentLearningStatusQuery', () => ({ useParentLearningStatusQuery: jest.fn() }));
 
-jest.mock('@react-navigation/native', () => {
-  const ReactInner = require('react') as typeof import('react');
-  return {
-    useFocusEffect: (cb: () => undefined | (() => void)) => {
-      ReactInner.useEffect(() => {
-        latestFocusEffect = cb;
-        return () => {
-          latestFocusEffect = null;
-        };
-      }, [cb]);
-    },
-  };
-});
+const mockHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
+const mockStatus = useParentLearningStatusQuery as jest.MockedFunction<typeof useParentLearningStatusQuery>;
 
-jest.mock('../../../src/features/parent/hooks/useParentGateGuard', () => ({
-  useParentGateGuard: () => undefined,
-}));
-
-jest.mock('@/contexts/HouseholdContext', () => ({
-  __esModule: true,
-  useHousehold: jest.fn(),
-}));
-
-jest.mock('@/services/api/progress.api', () => ({
-  __esModule: true,
-  getChildLessonProgress: jest.fn(),
-}));
-
-const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
-const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
-
-const ParentTodayScreen = require('../../../src/features/parent/screens/ParentTodayScreen').default;
-
-// The screen reads activeChild?.id. activeChild resolves to children[0] by
-// default (HouseholdContext fallback), so mirror that here.
-function householdWith(children: Array<{ id: string }> | undefined): void {
-  mockedUseHousehold.mockReturnValue({ children, activeChild: children?.[0] ?? null } as never);
-}
-
-function makeAssignment(overrides: Partial<AssignmentProgress> = {}): AssignmentProgress {
-  return {
-    assignmentId: 'assign-1',
-    deviceId: 'device-1',
-    childId: 'child-1',
-    lessonId: 'lesson-1',
-    lessonVersion: 1,
-    lessonTitle: 'Greetings',
-    profile: 'espTft',
-    state: 'RUNNING',
-    startedAt: '2026-05-18T10:00:00.000Z',
-    completedAt: null,
-    stepsCompleted: 3,
-    stepsSucceeded: 2,
-    lastEventAt: '2026-05-18T10:05:00.000Z',
-    createdAt: '2026-05-18T09:59:00.000Z',
-    updatedAt: '2026-05-18T10:05:00.000Z',
-    ...overrides,
-  };
-}
+const activeLearning = {
+  assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'First English',
+  lessonId: 'l-1', lessonTitle: 'Farm Friends', state: 'LISTEN', startedAt: '2026-07-27T01:00:00Z',
+  currentStep: { stepId: 'step-2', stepNumber: 2, total: 5, activityTitle: 'Meet the animals', phase: 'LISTEN', subject: 'farm animals' },
+  positionPercent: 40, activeDurationSec: 125,
+};
 
 function renderScreen() {
   const navigation = { navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() };
-  const route = { key: 't', name: 'ParentTodayScreen', params: undefined };
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <ParentSessionProvider>
-        <ParentTodayScreen navigation={navigation as any} route={route as any} />
-      </ParentSessionProvider>
-    </QueryClientProvider>,
-  );
+  const route = { key: 'today', name: 'ParentTodayScreen', params: undefined };
+  return { ...render(<ParentTodayScreen navigation={navigation as never} route={route as never} />), navigation };
 }
 
 describe('ParentTodayScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    latestFocusEffect = null;
-    householdWith([{ id: 'child-1' }]);
+    mockHousehold.mockReturnValue({ activeChild: { id: 'child-1', name: 'Mai' } } as never);
+    mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
   });
 
-  it('renders the active lesson and not the failure copy when the fetch succeeds', async () => {
-    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment()]);
-
-    const { queryByText, findByText } = renderScreen();
-
-    await findByText('Greetings');
-    expect(queryByText("Loading today's progress")).toBeNull();
-    expect(queryByText('Today summary unavailable')).toBeNull();
-    expect(queryByText('No lessons yet')).toBeNull();
+  it('shows the active child, live lesson state, authored activity, progress, duration, and update time', () => {
+    const { getByText, getByLabelText } = renderScreen();
+    expect(getByText('Mai')).toBeTruthy();
+    expect(getByLabelText('Mai avatar')).toBeTruthy();
+    expect(getByText('Listening')).toBeTruthy();
+    expect(getByText('First English')).toBeTruthy();
+    expect(getByText('Farm Friends')).toBeTruthy();
+    expect(getByText('Meet the animals')).toBeTruthy();
+    expect(getByText('farm animals')).toBeTruthy();
+    expect(getByText('Step 2 of 5')).toBeTruthy();
+    expect(getByText('40%')).toBeTruthy();
+    expect(getByText('2 min 5 sec active')).toBeTruthy();
+    expect(getByText(/Updated/)).toBeTruthy();
   });
 
-  it('renders the empty state when there is no active assignment', async () => {
-    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment({ state: 'COMPLETED', completedAt: '2026-05-18T10:10:00.000Z' })]);
-
-    const { findByText, queryByText } = renderScreen();
-
-    await findByText('No lessons yet');
-    expect(queryByText("Loading today's progress")).toBeNull();
+  it.each([
+    ['PREPARING', 'Preparing'], ['ENTRANCE', 'Robot entrance'], ['TEACH', 'Teaching'], ['LISTEN', 'Listening'],
+    ['THINK', 'Thinking'], ['FEEDBACK', 'Feedback'], ['PAUSED', 'Paused'], ['COMPLETED', 'Completed'], ['FAILED', "Didn't finish"],
+  ])('maps %s to parent-safe live copy', (state, copy) => {
+    mockStatus.mockReturnValue({ data: { activeLearning: { ...activeLearning, state }, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
+    expect(renderScreen().getByText(copy)).toBeTruthy();
   });
 
-  it('renders the retry affordance when the fetch rejects', async () => {
-    mockGetChildLessonProgress.mockRejectedValueOnce(Object.assign(new Error('network'), { isAxiosError: true }));
-    const { findByText, queryByText } = renderScreen();
-    await findByText('Retry');
-    expect(queryByText("Loading today's progress")).toBeNull();
+  it('shows reconnecting and offline states without inventing lesson data', () => {
+    mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: true, fetchStatus: 'fetching', refetch: jest.fn() } as never);
+    expect(renderScreen().getByText('Reconnecting…')).toBeTruthy();
+    mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: true, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
+    expect(renderScreen().getByText('Live progress is offline')).toBeTruthy();
+    mockStatus.mockReturnValue({ data: undefined, dataUpdatedAt: 0, isLoading: false, isError: true, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
+    const offline = renderScreen();
+    expect(offline.getByText('Live progress is offline')).toBeTruthy();
+    fireEvent.press(offline.getByText('Retry'));
   });
 
-  it('clears the loading message after a successful fetch', async () => {
-    let resolveIt: ((v: AssignmentProgress[]) => void) | null = null;
-    mockGetChildLessonProgress.mockImplementationOnce(
-      () => new Promise((res) => { resolveIt = res; }),
-    );
-
-    const { queryByText } = renderScreen();
-    expect(queryByText("Loading today's progress")).not.toBeNull();
-
-    await act(async () => { resolveIt!([makeAssignment()]); });
-    await waitFor(() => {
-      expect(queryByText("Loading today's progress")).toBeNull();
-    });
-  });
-
-  it('refetches child lesson progress on later screen focus', async () => {
-    mockGetChildLessonProgress
-      .mockResolvedValueOnce([makeAssignment({ lessonTitle: 'First active lesson' })])
-      .mockResolvedValueOnce([makeAssignment({ lessonTitle: 'Fresh active lesson' })]);
-
-    const { findByText, queryByText } = renderScreen();
-    await findByText('First active lesson');
-    expect(mockGetChildLessonProgress).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      latestFocusEffect?.();
-      await Promise.resolve();
-    });
-    expect(mockGetChildLessonProgress).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      latestFocusEffect?.();
-      await Promise.resolve();
-    });
-
-    await findByText('Fresh active lesson');
-    expect(queryByText('First active lesson')).toBeNull();
-    expect(mockGetChildLessonProgress).toHaveBeenCalledTimes(2);
+  it('shows an empty state for a child with no active lesson', () => {
+    mockStatus.mockReturnValue({ data: { activeLearning: null, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
+    expect(renderScreen().getByText('No lesson is active right now')).toBeTruthy();
   });
 });

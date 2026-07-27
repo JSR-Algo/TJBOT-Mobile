@@ -17,6 +17,8 @@ import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { buildCourseInsightDashboard, qualityLabel, type CourseInsightDashboard } from '../courseInsights';
+import { appQueryClient } from '@/services/query/queryClient';
+import { parentLearningStatusKey } from '../hooks/useParentLearningStatusQuery';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSummaryScreen'>;
 type SummaryParams = { deviceId?: string; summaryDate?: string };
@@ -69,6 +71,7 @@ export default function ParentSummaryScreen({ navigation, route }: Props) {
         }
         setSummary(normalized);
         if (childId) {
+          void appQueryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
           const [progress, assignments, kpis, pronunciationTrend] = await Promise.allSettled([
             getChildProgress(childId),
             getChildLessonProgress(childId),

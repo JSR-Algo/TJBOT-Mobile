@@ -2,6 +2,7 @@ import ParentGateScreen from './screens/ParentGateScreen';
 import ParentSummaryScreen from './screens/ParentSummaryScreen';
 import ParentTodayScreen from './screens/ParentTodayScreen';
 import ParentHistoryScreen from './screens/ParentHistoryScreen';
+import ParentSessionReportScreen from './screens/ParentSessionReportScreen';
 import ParentSafetyScreen from './screens/ParentSafetyScreen';
 import ParentSettingsScreen from './screens/ParentSettingsScreen';
 import ParentAccountPrivacyScreen from './screens/ParentAccountPrivacyScreen';
@@ -29,6 +30,7 @@ export const PARENT_SCREENS = defineFeatureScreens([
   { name: ROUTES.ParentGateScreen, component: ParentGateScreen, role: 'fallback-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_gate' },
   { name: ROUTES.ParentTodayScreen, component: ParentTodayScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_today' },
   { name: ROUTES.ParentHistoryScreen, component: ParentHistoryScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_history' },
+  { name: ROUTES.ParentSessionReportScreen, component: ParentSessionReportScreen, role: 'stack', backTarget: ROUTES.ParentHistoryScreen, stateMachineId: 'parent_session_report' },
   { name: ROUTES.ParentRewardsScreen, component: ParentRewardsScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_rewards' },
   { name: ROUTES.ParentSafetyScreen, component: ParentSafetyScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_safety' },
   { name: ROUTES.ParentSettingsScreen, component: ParentSettingsScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_settings' },

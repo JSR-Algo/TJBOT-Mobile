@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import {
   getChildLessonProgress,
   getChildProgress,
@@ -11,6 +11,7 @@ import {
   buildCourseInsightDashboard,
   type CourseInsightDashboard,
 } from '@/features/parent/courseInsights';
+import { parentLearningStatusKey } from '@/features/parent/hooks/useParentLearningStatusQuery';
 
 export interface ChildProgressDashboard {
   insights: CourseInsightDashboard;
@@ -50,6 +51,7 @@ export function useChildProgressDashboardQuery(
   childId: string | undefined,
 ): UseQueryResult<ChildProgressDashboard, Error> {
   const enabled = typeof childId === 'string' && childId.length > 0;
+  const queryClient = useQueryClient();
   const queryChildId = enabled ? childId : null;
   const query = useQuery<ChildProgressDashboard, Error>({
     queryKey: childProgressDashboardQueryKey(childId),
@@ -78,8 +80,9 @@ export function useChildProgressDashboardQuery(
         return undefined;
       }
       void refetch();
+      void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
       return undefined;
-    }, [enabled, refetch]),
+    }, [childId, enabled, queryClient, refetch]),
   );
 
   return query;

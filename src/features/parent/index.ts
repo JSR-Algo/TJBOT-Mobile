@@ -7,6 +7,7 @@ import ParentSafetyScreen from './screens/ParentSafetyScreen';
 import ParentSettingsScreen from './screens/ParentSettingsScreen';
 import ParentSummaryScreen from './screens/ParentSummaryScreen';
 import ParentTodayScreen from './screens/ParentTodayScreen';
+import ParentSessionReportScreen from './screens/ParentSessionReportScreen';
 import ParentRewardsScreen from './screens/ParentRewardsScreen';
 
 export { STATES } from './states';
@@ -17,6 +18,7 @@ export const SCREEN_MAP = {
   parent_summary: ParentSummaryScreen,
   parent_today: ParentTodayScreen,
   parent_history: ParentHistoryScreen,
+  parent_session_report: ParentSessionReportScreen,
   parent_rewards: ParentRewardsScreen,
   parent_safety: ParentSafetyScreen,
   parent_settings: ParentSettingsScreen,
