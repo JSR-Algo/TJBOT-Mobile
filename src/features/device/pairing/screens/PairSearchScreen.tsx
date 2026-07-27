@@ -79,7 +79,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
             deviceId: zeroCodeRecovery.deviceId,
             provisioningAttemptId: undefined,
             bleDeviceId: chosen.candidate.id,
-            provisioningTransport: 'ble',
+            provisioningTransport: 'ble_claim',
           });
           return;
         }

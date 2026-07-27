@@ -65,7 +65,7 @@ describe('PairFoundScreen zero-code default path', () => {
     });
   });
 
-  it('prepares a claim bootstrap token then routes BLE-discovered robots through Wi-Fi provisioning', async () => {
+  it('keeps the provisioning attempt when routing BLE-discovered robots to Wi-Fi', async () => {
     const navigate = jest.fn();
     const screen = render(
       <PairFoundScreen
@@ -84,14 +84,14 @@ describe('PairFoundScreen zero-code default path', () => {
 
     fireEvent.press(screen.getByText('This is my Robot'));
 
-    await waitFor(() => expect(mockedRequestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' }));
+    expect(mockedRequestClaim).not.toHaveBeenCalled();
     expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
     expect(mockedSendClaimBootstrapTokenViaBle).not.toHaveBeenCalled();
     expect(mockedGetClaimStatus).not.toHaveBeenCalled();
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiScreen, {
       deviceId: 'device-1',
       serialNumber: 'TBT-2026-004217',
-      provisioningAttemptId: 'claim-1',
+      provisioningAttemptId: 'attempt-1',
       bleDeviceId: 'ble-device-1',
       provisioningTransport: 'ble',
     }));
@@ -120,9 +120,9 @@ describe('PairFoundScreen zero-code default path', () => {
           params: {
             deviceId: 'device-1',
             serialNumber: 'TBT-2026-004217',
-            provisioningAttemptId: 'attempt-1',
+            provisioningAttemptId: undefined,
             bleDeviceId: 'ble-device-1',
-            provisioningTransport: 'ble',
+            provisioningTransport: 'ble_claim',
           },
         } as never}
       />,
@@ -151,8 +151,9 @@ describe('PairFoundScreen zero-code default path', () => {
           params: {
             deviceId: 'device-1',
             serialNumber: 'TBT-2026-004217',
-            provisioningAttemptId: 'attempt-1',
+            provisioningAttemptId: undefined,
             bleDeviceId: 'ble-device-1',
+            provisioningTransport: 'ble_claim',
           },
         } as never}
       />,
@@ -161,7 +162,7 @@ describe('PairFoundScreen zero-code default path', () => {
     fireEvent.press(screen.getByText('This is my Robot'));
 
     await waitFor(() => expect(screen.getByText('Service is having trouble')).toBeTruthy());
-    expect(screen.getByText('Try again')).toBeTruthy();
+    expect(screen.getByText('This is my Robot')).toBeTruthy();
     expect(screen.getByText('Scan QR or enter code')).toBeTruthy();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairQrScanScreen, expect.anything());
 
@@ -170,8 +171,9 @@ describe('PairFoundScreen zero-code default path', () => {
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairQrScanScreen, {
       deviceId: 'device-1',
       serialNumber: 'TBT-2026-004217',
-      provisioningAttemptId: 'attempt-1',
+      provisioningAttemptId: undefined,
       bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble_claim',
     });
   });
 

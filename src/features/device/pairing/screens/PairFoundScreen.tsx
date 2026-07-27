@@ -74,8 +74,19 @@ export default function PairFoundScreen({ navigation, route }: Props) {
       navigation.navigate(ROUTES.PairQrScanScreen, params);
       return;
     }
-    if (params?.provisioningTransport === 'ble') {
+    if (params?.provisioningTransport === 'ble' || params?.provisioningTransport === 'ble_claim') {
       if (wifiClaimBusy) return;
+      if (params.provisioningTransport === 'ble' && provisioningAttemptId) {
+        navigation.navigate(ROUTES.PairWifiScreen, {
+          ...(params ?? {}),
+          deviceId,
+          serialNumber,
+          provisioningAttemptId,
+          bleDeviceId: bleDevice.id,
+          provisioningTransport: 'ble',
+        });
+        return;
+      }
       setWifiClaimBusy(true);
       setWifiClaimError(null);
       void (async () => {
@@ -103,7 +114,7 @@ export default function PairFoundScreen({ navigation, route }: Props) {
             serialNumber,
             provisioningAttemptId: claimed.claimId,
             bleDeviceId: bleDevice.id,
-            provisioningTransport: 'ble',
+            provisioningTransport: 'ble_claim',
           });
         } catch (error) {
           setWifiClaimError(describeClaimFailure(error));
@@ -114,7 +125,7 @@ export default function PairFoundScreen({ navigation, route }: Props) {
       return;
     }
     claimActions.connect();
-  }, [bleDevice, claimActions, deviceId, navigation, params, serialNumber, wifiClaimBusy, zeroCodeEnabled]);
+  }, [bleDevice, claimActions, deviceId, navigation, params, provisioningAttemptId, serialNumber, wifiClaimBusy, zeroCodeEnabled]);
 
   const openFallback = React.useCallback(() => {
     navigation.navigate(ROUTES.PairQrScanScreen, params);

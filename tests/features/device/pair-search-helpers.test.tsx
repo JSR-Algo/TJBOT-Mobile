@@ -353,7 +353,7 @@ describe('normal add-robot route', () => {
       deviceId: '91deb5af-c1c0-416b-956d-266d510eac5e',
       provisioningAttemptId: undefined,
       bleDeviceId: 'ble-new',
-      provisioningTransport: 'ble',
+      provisioningTransport: 'ble_claim',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });

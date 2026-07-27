@@ -1,4 +1,5 @@
-import client from '@/services/http/client';
+import axios from 'axios';
+import client, { BASE_URL } from '@/services/http/client';
 
 import { backendContractUnavailable } from './undocumented-api-routes';
 
@@ -172,11 +173,37 @@ export interface MintBootstrapTokenResult {
   ttlSeconds: number;
 }
 
+export interface ReportProvisioningDeviceAuthenticatedParams {
+  deviceId: string;
+  code: string;
+  bootstrapToken: string;
+}
+
 export async function mintBootstrapToken(params: { provisioningAttemptId: string }): Promise<MintBootstrapTokenResult> {
   const response = await client.post<MintBootstrapTokenResult>(
     `/devices/provision/${params.provisioningAttemptId}/bootstrap-token`,
   );
   return response.data;
+}
+
+export async function reportProvisioningDeviceAuthenticated(
+  params: ReportProvisioningDeviceAuthenticatedParams,
+): Promise<void> {
+  await axios.post(
+    `${BASE_URL}/device/provisioning/status`,
+    {
+      device_id: params.deviceId,
+      status: 'device_authenticated',
+      code: params.code,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${params.bootstrapToken}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000,
+    },
+  );
 }
 
 export async function completeDeviceProvisioning(params: CompleteDeviceProvisioningParams): Promise<CompleteDeviceProvisioningResult> {

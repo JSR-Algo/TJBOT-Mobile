@@ -9,7 +9,13 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
-import { confirmLocalBlePaired, getDeviceStatus, getProvisioningAttemptStatus, mintBootstrapToken } from '@/services/api/device.api';
+import {
+  confirmLocalBlePaired,
+  getDeviceStatus,
+  getProvisioningAttemptStatus,
+  mintBootstrapToken,
+  reportProvisioningDeviceAuthenticated,
+} from '@/services/api/device.api';
 import { provisionWifiViaLocalBle } from '@/services/ble/service';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { ROUTES } from '@/navigation/routes';
@@ -87,7 +93,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     const bleDeviceId = getParamString(params, 'bleDeviceId');
     const transport = params?.provisioningTransport;
     const bootstrapToken = provisioningAttemptId ? getPairingBootstrapToken(provisioningAttemptId) : undefined;
-    const canRunBleClaimProvisioning = transport === 'ble' && !!bleDeviceId;
+    const canRunBleClaimProvisioning = (transport === 'ble' || transport === 'ble_claim') && !!bleDeviceId;
     const canRunBleReconnectProvisioning = transport === 'ble_reconnect' && !!bleDeviceId;
     logDevPairConnectingEvent('start', {
       deviceId,
@@ -122,7 +128,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     // leaks (keeping the Jest worker / RN event loop alive after the screen is
     // gone — the "worker failed to exit gracefully" symptom).
     const poll: PollController = { cancelled: false, timer: undefined };
-    const supportedBleTransport = transport === 'ble' || transport === 'ble_reconnect';
+    const supportedBleTransport = transport === 'ble' || transport === 'ble_claim' || transport === 'ble_reconnect';
     if (!supportedBleTransport || !bleDeviceId) {
       setStatus('failed');
       navigation.navigate(ROUTES.PairFailedScreen, {
@@ -141,6 +147,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       bleDeviceId,
       bootstrapToken,
       credentialOnly: transport === 'ble_reconnect',
+      claimBased: transport === 'ble_claim',
     });
 
     // The zero-code BLE run may MINT A NEW claim id (it re-runs requestClaim when
@@ -221,7 +228,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       recoveryAttemptId = readString(asRecord(error), 'provisioningAttemptId') ?? recoveryAttemptId;
       let resolvedError = error;
       const deliveryUnknown = isDeliveryUnknown(error);
-      if (deliveryUnknown && transport === 'ble') {
+      if (deliveryUnknown && (transport === 'ble' || transport === 'ble_claim')) {
         try {
           const authenticated = code
             ? await waitForDeviceAuthenticated(recoveryAttemptId, poll)
@@ -337,6 +344,7 @@ async function runLocalBleProvisioning(params: {
   bleDeviceId: string;
   bootstrapToken?: string;
   credentialOnly?: boolean;
+  claimBased?: boolean;
 }): Promise<ProvisioningRunResult> {
   logDevPairConnectingEvent('local_ble_start', {
     deviceId: params.deviceId,
@@ -366,19 +374,22 @@ async function runLocalBleProvisioning(params: {
   let token: string | undefined;
   let claimId = params.provisioningAttemptId;
   let claimExpiresAt: string | null = null;
-  let completionMode: ProvisioningRunResult['completionMode'] = 'claim_confirmed';
+  let completionMode: ProvisioningRunResult['completionMode'] = params.claimBased
+    ? 'claim_confirmed'
+    : 'device_authenticated';
+  const handoffCode = params.code ?? (params.claimBased ? undefined : createLocalBleCode());
 
-  if (params.code) {
+  if (handoffCode) {
     await confirmLocalBlePaired({
       deviceId: params.deviceId,
       provisioningAttemptId: params.provisioningAttemptId,
       serialNumber: params.serialNumber,
-      code: params.code,
+      code: handoffCode,
     });
     completionMode = 'device_authenticated';
   }
 
-  if (!params.code && !token && !isLikelyClaimId(claimId)) {
+  if (params.claimBased && !params.code && !token && !isLikelyClaimId(claimId)) {
     const claimed = await requestClaim({ deviceId: params.deviceId });
     if (!claimed.claimId) {
       throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
@@ -405,12 +416,28 @@ async function runLocalBleProvisioning(params: {
       },
       ssid: params.ssid,
       password: params.password,
-      code: params.code,
+      code: handoffCode,
       token,
       // Push the backend device_id (the id the claim attempt was created under) so
       // the robot claims/confirms under it instead of its random Board UUID.
       deviceId: params.deviceId,
     });
+    if (handoffCode && token) {
+      try {
+        await reportProvisioningDeviceAuthenticated({
+          deviceId: params.deviceId,
+          code: handoffCode,
+          bootstrapToken: token,
+        });
+      } catch (error: unknown) {
+        // The robot and phone can race to consume the one-shot token. If either
+        // side already advanced the attempt, the handoff is complete.
+        const current = await getProvisioningAttemptStatus(claimId).catch(() => null);
+        if (current?.status !== 'device_authenticated' && current?.status !== 'completed') {
+          throw error;
+        }
+      }
+    }
   } catch (error: unknown) {
     throw withProvisioningAttemptContext(error, claimId);
   }
@@ -422,6 +449,10 @@ async function runLocalBleProvisioning(params: {
   });
 
   return { deviceId: params.deviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+}
+
+function createLocalBleCode(): string {
+  return Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0');
 }
 
 function logDevPairConnectingEvent(stage: string, detail: Record<string, unknown>): void {

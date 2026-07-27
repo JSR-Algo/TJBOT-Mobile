@@ -568,6 +568,34 @@ describe('device API client', () => {
     }
   });
 
+  it('reports device authentication with the one-shot bootstrap token instead of the parent JWT client', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({ status: 204 });
+    jest.doMock('axios', () => ({ __esModule: true, default: { post } }));
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: {},
+      BASE_URL: 'https://api.example.test/v1',
+    }));
+
+    const { reportProvisioningDeviceAuthenticated } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await reportProvisioningDeviceAuthenticated({
+      deviceId: 'device-1',
+      code: '123456',
+      bootstrapToken: 'bootstrap-token',
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      'https://api.example.test/v1/device/provisioning/status',
+      { device_id: 'device-1', status: 'device_authenticated', code: '123456' },
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer bootstrap-token' }),
+        timeout: 30000,
+      }),
+    );
+  });
+
   // -- getDeviceStatus: online:true carries no claim/completion semantics ------
 
   it('reports online:true for an active device without inventing any claim/completion fields', async () => {

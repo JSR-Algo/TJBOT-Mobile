@@ -1,4 +1,4 @@
-export type PairingProvisioningTransport = 'ble' | 'ble_reconnect';
+export type PairingProvisioningTransport = 'ble' | 'ble_claim' | 'ble_reconnect';
 
 export type RootStackParamList = {
   // auth

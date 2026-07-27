@@ -1,6 +1,11 @@
 import type { NavigationProp } from '@react-navigation/native';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
-import { completeDeviceProvisioning } from '@/services/api/device.api';
+import {
+  completeDeviceProvisioning,
+  confirmLocalBlePaired,
+  mintBootstrapToken,
+  reportProvisioningDeviceAuthenticated,
+} from '@/services/api/device.api';
 import { markLocalDevicePaired } from './localPairedDevice';
 import { clearPendingPairingContext } from './pendingPairingContext';
 
@@ -82,6 +87,7 @@ async function completeWhenDeviceAuthenticated(
   childId: string,
   displayName?: string,
 ): Promise<void> {
+  let localRecoveryAttempted = false;
   for (let attempt = 0; attempt < DEVICE_AUTH_MAX_ATTEMPTS; attempt += 1) {
     try {
       await completeDeviceProvisioning({
@@ -94,6 +100,16 @@ async function completeWhenDeviceAuthenticated(
     } catch (error) {
       if (isAlreadyFinalizedError(error)) return;
       if (!isDeviceAuthPendingError(error)) throw error;
+      if (!localRecoveryAttempted && context.serialNumber) {
+        localRecoveryAttempted = true;
+        try {
+          await confirmAuthenticationFromLocalHandoff(context);
+          continue;
+        } catch {
+          // Firmware may still authenticate independently; retain the bounded
+          // polling fallback when the phone-side recovery cannot complete.
+        }
+      }
       if (attempt === DEVICE_AUTH_MAX_ATTEMPTS - 1) {
         throw Object.assign(new Error('Robot authentication did not complete in time.'), {
           code: 'DEVICE_AUTH_TIMEOUT',
@@ -103,6 +119,23 @@ async function completeWhenDeviceAuthenticated(
       await waitForDeviceAuthRetry();
     }
   }
+}
+
+async function confirmAuthenticationFromLocalHandoff(context: DevicePairingContext): Promise<void> {
+  if (!context.serialNumber) return;
+  const code = Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0');
+  await confirmLocalBlePaired({
+    deviceId: context.deviceId,
+    provisioningAttemptId: context.provisioningAttemptId,
+    serialNumber: context.serialNumber,
+    code,
+  });
+  const bootstrap = await mintBootstrapToken({ provisioningAttemptId: context.provisioningAttemptId });
+  await reportProvisioningDeviceAuthenticated({
+    deviceId: context.deviceId,
+    code,
+    bootstrapToken: bootstrap.token,
+  });
 }
 
 export async function finishDevicePairingSuccess(

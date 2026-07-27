@@ -9,6 +9,7 @@ import {
   getDeviceStatus,
   getProvisioningAttemptStatus,
   mintBootstrapToken,
+  reportProvisioningDeviceAuthenticated,
 } from '@/services/api/device.api';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
 import { describeClaimFailure } from '@/features/device/pairing/claimStatus';
@@ -49,6 +50,7 @@ jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
   getProvisioningAttemptStatus: jest.fn(),
   mintBootstrapToken: jest.fn(),
+  reportProvisioningDeviceAuthenticated: jest.fn(),
 }));
 
 jest.mock('@/services/api/claim.api', () => ({
@@ -67,6 +69,7 @@ const mockedConfirmLocalBlePaired = confirmLocalBlePaired as jest.MockedFunction
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockedGetProvisioningAttemptStatus = getProvisioningAttemptStatus as jest.MockedFunction<typeof getProvisioningAttemptStatus>;
 const mockedMintBootstrapToken = mintBootstrapToken as jest.MockedFunction<typeof mintBootstrapToken>;
+const mockedReportProvisioningDeviceAuthenticated = reportProvisioningDeviceAuthenticated as jest.MockedFunction<typeof reportProvisioningDeviceAuthenticated>;
 const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
 const mockedRequestClaim = requestClaim as jest.MockedFunction<typeof requestClaim>;
 const mockedSavePendingPairingContext = savePendingPairingContext as jest.MockedFunction<typeof savePendingPairingContext>;
@@ -97,7 +100,7 @@ function bleClaimParams(overrides: Record<string, unknown> = {}) {
     provisioningAttemptId: 'claim-1',
     ssid: SSID,
     bleDeviceId: 'ble-device-1',
-    provisioningTransport: 'ble',
+    provisioningTransport: 'ble_claim',
     ...overrides,
   } as never;
 }
@@ -157,6 +160,7 @@ beforeEach(() => {
     expiresAt: '2026-06-10T12:05:00.000Z',
     ttlSeconds: 300,
   });
+  mockedReportProvisioningDeviceAuthenticated.mockResolvedValue(undefined);
   mockedRequestClaim.mockResolvedValue({
     claimId: 'claim-1',
     deviceId: 'device-1',
@@ -296,7 +300,7 @@ describe('PairConnectingScreen — pre-flight guards', () => {
         code: PROVISIONING_CODE,
         ssid: SSID,
         bleDeviceId: 'ble-device-1',
-        provisioningTransport: 'ble',
+        provisioningTransport: 'ble_claim',
         errorCode: 'WIFI_PASSWORD_EXPIRED',
       }),
     ));
@@ -442,6 +446,17 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       code: PROVISIONING_CODE,
     });
     expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledTimes(1);
+    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
+      deviceId: 'device-1',
+      code: PROVISIONING_CODE,
+      bootstrapToken: BOOTSTRAP_TOKEN,
+    });
+    expect(mockedProvisionWifiViaLocalBle.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedReportProvisioningDeviceAuthenticated.mock.invocationCallOrder[0],
+    );
+    expect(mockedReportProvisioningDeviceAuthenticated.mock.invocationCallOrder[0]).toBeLessThan(
+      navigate.mock.invocationCallOrder[0],
+    );
   });
 
   it('[token-before-credentials] the bootstrap token is in hand before the Wi-Fi credential handoff', async () => {
@@ -605,7 +620,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       expect.objectContaining({
         errorCode: 'WIFI_CONNECT_FAILED',
         bleDeviceId: 'ble-device-1',
-        provisioningTransport: 'ble',
+        provisioningTransport: 'ble_claim',
         serialNumber: SERIAL,
       }),
     ));
@@ -1146,7 +1161,7 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
         errorCode: 'WIFI_CONNECT_FAILED',
         // The freshly-minted claim id, NOT the stale 'attempt-zc-1' route param.
         provisioningAttemptId: 'claim-NEW',
-        provisioningTransport: 'ble',
+        provisioningTransport: 'ble_claim',
       }),
     ));
   });

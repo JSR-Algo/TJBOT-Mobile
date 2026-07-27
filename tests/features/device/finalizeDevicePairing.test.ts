@@ -1,6 +1,11 @@
 import { finalizeDevicePairing } from '@/features/device/pairing/finalizeDevicePairing';
 import { ROUTES } from '@/navigation/routes';
-import { completeDeviceProvisioning } from '@/services/api/device.api';
+import {
+  completeDeviceProvisioning,
+  confirmLocalBlePaired,
+  mintBootstrapToken,
+  reportProvisioningDeviceAuthenticated,
+} from '@/services/api/device.api';
 import type { CompleteDeviceProvisioningResult } from '@/services/api/device.api';
 import { markLocalDevicePaired } from '@/features/device/pairing/localPairedDevice';
 
@@ -22,6 +27,9 @@ import { markLocalDevicePaired } from '@/features/device/pairing/localPairedDevi
 jest.mock('@/services/api/device.api', () => ({
   __esModule: true,
   completeDeviceProvisioning: jest.fn(),
+  confirmLocalBlePaired: jest.fn(),
+  mintBootstrapToken: jest.fn(),
+  reportProvisioningDeviceAuthenticated: jest.fn(),
 }));
 
 jest.mock('@/features/device/pairing/localPairedDevice', () => ({
@@ -30,6 +38,9 @@ jest.mock('@/features/device/pairing/localPairedDevice', () => ({
 }));
 
 const mockedComplete = completeDeviceProvisioning as jest.MockedFunction<typeof completeDeviceProvisioning>;
+const mockedConfirmLocalBlePaired = confirmLocalBlePaired as jest.MockedFunction<typeof confirmLocalBlePaired>;
+const mockedMintBootstrapToken = mintBootstrapToken as jest.MockedFunction<typeof mintBootstrapToken>;
+const mockedReportProvisioningDeviceAuthenticated = reportProvisioningDeviceAuthenticated as jest.MockedFunction<typeof reportProvisioningDeviceAuthenticated>;
 const mockedMarkLocal = markLocalDevicePaired as jest.MockedFunction<typeof markLocalDevicePaired>;
 
 const COMPLETE_OK: CompleteDeviceProvisioningResult = {
@@ -47,29 +58,41 @@ const CONTEXT = { deviceId: 'device-1', provisioningAttemptId: 'claim-1', serial
 beforeEach(() => {
   jest.clearAllMocks();
   mockedComplete.mockResolvedValue(COMPLETE_OK);
+  mockedConfirmLocalBlePaired.mockResolvedValue({
+    deviceId: CONTEXT.deviceId,
+    provisioningAttemptId: CONTEXT.provisioningAttemptId,
+    status: 'ble_paired',
+  });
+  mockedMintBootstrapToken.mockResolvedValue({ token: 'bootstrap-token', expiresAt: '2026-07-27T13:00:00.000Z', ttlSeconds: 300 });
+  mockedReportProvisioningDeviceAuthenticated.mockResolvedValue(undefined);
   mockedMarkLocal.mockResolvedValue(undefined);
 });
 
 describe('finalizeDevicePairing', () => {
-  it.each(['DEVICE_AUTH_NOT_VERIFIED', 'PROVISIONING_ATTEMPT_NOT_READY'])('retries %s until robot authentication completes', async (code) => {
-    jest.useFakeTimers();
-    try {
-      mockedComplete
-        .mockRejectedValueOnce(Object.assign(new Error('robot is initializing'), { code }))
-        .mockResolvedValueOnce(COMPLETE_OK);
-      const reset = jest.fn();
+  it.each(['DEVICE_AUTH_NOT_VERIFIED', 'PROVISIONING_ATTEMPT_NOT_READY'])('recovers %s through the simple local-BLE confirmation path', async (code) => {
+    mockedComplete
+      .mockRejectedValueOnce(Object.assign(new Error('robot is initializing'), { code }))
+      .mockResolvedValueOnce(COMPLETE_OK);
+    const reset = jest.fn();
 
-      const finalizing = finalizeDevicePairing({ reset }, CONTEXT, 'child-9');
-      await Promise.resolve();
-      expect(mockedComplete).toHaveBeenCalledTimes(1);
+    await expect(finalizeDevicePairing({ reset }, CONTEXT, 'child-9')).resolves.toBeUndefined();
 
-      await jest.advanceTimersByTimeAsync(3000);
-      await expect(finalizing).resolves.toBeUndefined();
-      expect(mockedComplete).toHaveBeenCalledTimes(2);
-      expect(reset).toHaveBeenCalledTimes(1);
-    } finally {
-      jest.useRealTimers();
-    }
+    const recoveryCode = mockedConfirmLocalBlePaired.mock.calls[0]?.[0].code;
+    expect(recoveryCode).toMatch(/^\d{6}$/);
+    expect(mockedConfirmLocalBlePaired).toHaveBeenCalledWith({
+      deviceId: CONTEXT.deviceId,
+      provisioningAttemptId: CONTEXT.provisioningAttemptId,
+      serialNumber: CONTEXT.serialNumber,
+      code: recoveryCode,
+    });
+    expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: CONTEXT.provisioningAttemptId });
+    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
+      deviceId: CONTEXT.deviceId,
+      code: recoveryCode,
+      bootstrapToken: 'bootstrap-token',
+    });
+    expect(mockedComplete).toHaveBeenCalledTimes(2);
+    expect(reset).toHaveBeenCalledTimes(1);
   });
 
   it('bounds the authentication wait and returns a retryable DEVICE_AUTH_TIMEOUT', async () => {
