@@ -93,7 +93,7 @@ function isUpdateFrame(value: Record<string, unknown>): value is Record<string, 
 
 function parseActiveLearningDelta(value: Record<string, unknown>): ParentActiveLearningDelta | undefined {
   const delta: ParentActiveLearningDelta = {};
-  const stringFields = ['assignmentId', 'deviceId', 'courseId', 'courseTitle', 'lessonId', 'lessonTitle', 'state'] as const;
+  const stringFields = ['assignmentId', 'courseId', 'courseTitle', 'lessonId', 'lessonTitle', 'state'] as const;
   for (const key of stringFields) {
     if (!(key in value)) continue;
     if (typeof value[key] !== 'string') return undefined;

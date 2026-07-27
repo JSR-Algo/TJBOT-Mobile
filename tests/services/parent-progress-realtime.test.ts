@@ -51,7 +51,7 @@ describe('parent progress realtime', () => {
     sockets[0].message({
       type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '13',
       occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z',
-      activeLearning: { lessonTitle: 'Updated title', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210 },
+      activeLearning: { lessonTitle: 'Updated title', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210, deviceId: 'must-be-dropped' },
     });
 
     expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({

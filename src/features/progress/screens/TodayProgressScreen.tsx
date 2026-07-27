@@ -48,8 +48,8 @@ function Dashboard({ data }: { data: ChildProgressDashboard }) {
     <Box style={styles.card} gap={10}>
       <Text fontWeight="800" style={styles.title}>Learning path</Text>
       {data.courses.length ? data.courses.map(course => <Box key={course.courseId} gap={5}>
-        <Box flexDirection="row" justifyContent="space-between"><Text fontWeight="700" style={styles.body} i18n={false}>{course.courseTitle}</Text><Text style={styles.meta} i18n={false}>{translateTemplate('{{completed}} of {{total}} lessons', { completed: course.completedLessons, total: course.totalLessons }, { locale: language })}</Text></Box>
-        <Box style={styles.track}><Box style={[styles.fill, { width: `${Math.min(100, course.percent)}%` }]} /></Box>
+        <Box flexDirection="row" justifyContent="space-between"><Text fontWeight="700" style={styles.body} i18n={false}>{course.title}</Text><Text style={styles.meta} i18n={false}>{translateTemplate('{{completed}} of {{total}} lessons', { completed: course.completedLessonCount, total: course.totalLessonCount }, { locale: language })}</Text></Box>
+        <Box style={styles.track}><Box style={[styles.fill, { width: `${Math.min(100, course.positionPercent)}%` }]} /></Box>
       </Box>) : <Text style={styles.meta}>No course path yet</Text>}
     </Box>
     {data.activeLearning ? <Box style={styles.card} gap={5}><Text fontWeight="800" style={styles.title}>Active lesson</Text><Text style={styles.meta} i18n={false}>{data.activeLearning.courseTitle}</Text><Text fontWeight="800" style={styles.lesson} i18n={false}>{data.activeLearning.lessonTitle}</Text><Text fontWeight="700" style={styles.state} i18n={false}>{parentSessionStateLabel(data.activeLearning.state, language)}</Text></Box> : null}

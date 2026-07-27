@@ -17,7 +17,7 @@ const mockToken = getAccessToken as jest.MockedFunction<typeof getAccessToken>;
 let appStateChange: ((state: string) => void) | undefined;
 let sockets: NativeSocket[];
 
-const active: ParentLearningStatus = { activeLearning: { assignmentId: 'a', sessionId: null, deviceId: 'd', courseId: 'c', courseTitle: 'C', lessonId: 'l', lessonTitle: 'L', state: 'READY', startedAt: null, currentStep: { stepId: 'step-4', stepNumber: 4, total: 9, activityTitle: 'Original activity', phase: 'teaching', subject: 'barn' }, positionPercent: 0, activeDurationSec: 0 }, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '1' };
+const active: ParentLearningStatus = { activeLearning: { assignmentId: 'a', sessionId: null, courseId: 'c', courseTitle: 'C', lessonId: 'l', lessonTitle: 'L', state: 'READY', startedAt: null, currentStep: { stepId: 'step-4', stepNumber: 4, total: 9, activityTitle: 'Original activity', phase: 'teaching', subject: 'barn' }, positionPercent: 0, activeDurationSec: 0 }, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '1' };
 const terminal: ParentLearningStatus = { ...active, activeLearning: { ...active.activeLearning!, state: 'COMPLETED' }, projectionRevision: '2' };
 const inactive: ParentLearningStatus = { ...active, activeLearning: null, projectionRevision: '2' };
 
@@ -112,7 +112,7 @@ describe('useParentLearningStatusQuery', () => {
 
     await waitFor(() => expect(view.result.current.data?.projectionRevision).toBe('2'));
     expect(view.result.current.data?.activeLearning).toMatchObject({
-      assignmentId: 'a', deviceId: 'd', courseId: 'c', lessonId: 'l', startedAt: null,
+      assignmentId: 'a', courseId: 'c', lessonId: 'l', startedAt: null,
       lessonTitle: 'Updated lesson', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210,
     });
     expect(view.result.current.data?.activeLearning?.currentStep).toMatchObject({ stepId: 'step-4', stepNumber: 5, activityTitle: 'Updated activity' });

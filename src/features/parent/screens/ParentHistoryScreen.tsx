@@ -44,7 +44,7 @@ export default function ParentHistoryScreen({ navigation }: Props) {
               <Box flex={1} gap={3}>
                 <Text style={styles.course} i18n={false}>{item.courseTitle}</Text>
                 <Text fontWeight="800" style={styles.lesson} i18n={false}>{item.lessonTitle}</Text>
-                <Text style={styles.meta} i18n={false}>{translateTemplate('{{date}} · {{duration}} · {{state}}', { date: dateLabel, duration: durationLabel(item.durationSec, language), state: parentSessionStateLabel(item.state, language) }, { locale: language })}</Text>
+                <Text style={styles.meta} i18n={false}>{translateTemplate('{{date}} · {{duration}} · {{state}}', { date: dateLabel, duration: durationLabel(item.durationSec, language), state: parentSessionStateLabel(item.terminalState, language) }, { locale: language })}</Text>
               </Box>
               {item.reportAvailable ? <Text fontWeight="800" style={styles.chevron} i18n={false}>›</Text> : null}
             </>;

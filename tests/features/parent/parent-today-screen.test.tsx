@@ -12,7 +12,7 @@ const mockHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockStatus = useParentLearningStatusQuery as jest.MockedFunction<typeof useParentLearningStatusQuery>;
 
 const activeLearning = {
-  assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'First English',
+  assignmentId: 'a-1', sessionId: 's-1', courseId: 'c-1', courseTitle: 'First English',
   lessonId: 'l-1', lessonTitle: 'Farm Friends', state: 'LISTEN', startedAt: '2026-07-27T01:00:00Z',
   currentStep: { stepId: 'step-2', stepNumber: 2, total: 5, activityTitle: 'Meet the animals', phase: 'LISTEN', subject: 'farm animals' },
   positionPercent: 40, activeDurationSec: 125,

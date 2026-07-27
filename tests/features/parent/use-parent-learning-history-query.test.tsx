@@ -10,7 +10,7 @@ jest.mock('@/services/api/parentLearning.api', () => ({
 }));
 
 const mockHistory = getParentLearningHistory as jest.MockedFunction<typeof getParentLearningHistory>;
-const item = (sessionId: string): ParentSessionSummary => ({ childId: 'child-1', assignmentId: `a-${sessionId}`, sessionId, courseId: 'course-1', courseTitle: 'English', lessonId: 'lesson-1', lessonTitle: 'Farm', state: 'COMPLETED', completedAt: '2026-07-27T00:00:00Z', durationSec: 10, reportAvailable: true });
+const item = (sessionId: string): ParentSessionSummary => ({ childId: 'child-1', assignmentId: `a-${sessionId}`, sessionId, courseId: 'course-1', courseTitle: 'English', lessonId: 'lesson-1', lessonTitle: 'Farm', terminalState: 'COMPLETED', startedAt: '2026-07-26T23:59:50Z', completedAt: '2026-07-27T00:00:00Z', durationSec: 10, reportAvailable: true });
 
 it('merges cursor pages and deduplicates sessions by session id', async () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });

@@ -32,6 +32,47 @@ describe('parentLearning.api', () => {
     });
   });
 
+  it('normalizes the backend learning-status contract without legacy mobile aliases', () => {
+    const status = normalizeParentLearningStatus({
+      activeLearning: {
+        assignmentId: 'assign-1', sessionId: 'session-1', courseId: 'course-1', courseTitle: 'English',
+        lessonId: 'lesson-1', lessonTitle: 'Farm Friends', state: 'RUNNING', startedAt: '2026-07-28T01:00:00Z',
+        currentStep: null, positionPercent: 25, activeDurationSec: 60, deviceId: 'must-be-dropped',
+      },
+      recentSessions: {
+        items: [{
+          childId: 'child-1', assignmentId: 'assign-1', sessionId: 'session-1', courseId: 'course-1',
+          courseTitle: 'English', lessonId: 'lesson-1', lessonTitle: 'Farm Friends', terminalState: 'COMPLETED',
+          startedAt: '2026-07-28T01:00:00Z', completedAt: '2026-07-28T01:01:00Z', durationSec: 60,
+          reportAvailable: true,
+        }],
+        nextCursor: null,
+      },
+      courseProgress: [{
+        courseId: 'course-1', title: 'English', currentLessonPosition: 2, completedLessonCount: 1,
+        totalLessonCount: 10, positionPercent: 10, suggestedNextLesson: null,
+      }],
+      projectionRevision: '42',
+    });
+
+    expect(status.activeLearning).toEqual({
+      assignmentId: 'assign-1', sessionId: 'session-1', courseId: 'course-1', courseTitle: 'English',
+      lessonId: 'lesson-1', lessonTitle: 'Farm Friends', state: 'RUNNING', startedAt: '2026-07-28T01:00:00Z',
+      currentStep: null, positionPercent: 25, activeDurationSec: 60,
+    });
+    expect(status.activeLearning).not.toHaveProperty('deviceId');
+    expect(status.recentSessions.items[0]).toMatchObject({
+      terminalState: 'COMPLETED',
+      startedAt: '2026-07-28T01:00:00Z',
+    });
+    expect(status.recentSessions.items[0]).not.toHaveProperty('state');
+    expect(status.courseProgress[0]).toEqual({
+      courseId: 'course-1', title: 'English', currentLessonPosition: 2, completedLessonCount: 1,
+      totalLessonCount: 10, positionPercent: 10, suggestedNextLesson: null,
+    });
+    expect(status.courseProgress[0]).not.toHaveProperty('courseTitle');
+  });
+
   it('accepts large decimal-string revisions and rejects numeric revisions', () => {
     const base = { activeLearning: null, recentSessions: { items: [], nextCursor: null }, courseProgress: [] };
     expect(normalizeParentLearningStatus({ ...base, projectionRevision: '900719925474099312345' }).projectionRevision).toBe('900719925474099312345');

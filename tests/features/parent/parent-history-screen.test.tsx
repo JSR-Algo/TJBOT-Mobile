@@ -12,7 +12,7 @@ jest.mock('@/features/parent/hooks/useParentLearningHistoryQuery', () => ({ useP
 
 const mockHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockHistory = useParentLearningHistoryQuery as jest.MockedFunction<typeof useParentLearningHistoryQuery>;
-const row = { childId: 'child-1', assignmentId: 'a-1', sessionId: 'session-exact', courseId: 'c-1', courseTitle: 'First English', lessonId: 'l-1', lessonTitle: 'Farm Friends', state: 'COMPLETED', completedAt: '2026-07-27T02:00:00Z', durationSec: 180, reportAvailable: true };
+const row = { childId: 'child-1', assignmentId: 'a-1', sessionId: 'session-exact', courseId: 'c-1', courseTitle: 'First English', lessonId: 'l-1', lessonTitle: 'Farm Friends', terminalState: 'COMPLETED', startedAt: '2026-07-27T01:57:00Z', completedAt: '2026-07-27T02:00:00Z', durationSec: 180, reportAvailable: true };
 
 function renderScreen() {
   const navigation = { navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() };

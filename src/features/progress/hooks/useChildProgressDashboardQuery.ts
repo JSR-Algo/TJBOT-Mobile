@@ -26,10 +26,10 @@ export function buildCanonicalProgressDashboard(status: ParentLearningStatus, hi
     activeLearning: status.activeLearning,
     sessions,
     courses: status.courseProgress,
-    completedLessons: status.courseProgress.reduce((sum, course) => sum + course.completedLessons, 0),
-    totalLessons: status.courseProgress.reduce((sum, course) => sum + course.totalLessons, 0),
-    completedSessions: sessions.filter(session => session.state === 'COMPLETED').length,
-    failedSessions: sessions.filter(session => session.state !== 'COMPLETED').length,
+    completedLessons: status.courseProgress.reduce((sum, course) => sum + course.completedLessonCount, 0),
+    totalLessons: status.courseProgress.reduce((sum, course) => sum + course.totalLessonCount, 0),
+    completedSessions: sessions.filter(session => session.terminalState === 'COMPLETED').length,
+    failedSessions: sessions.filter(session => session.terminalState !== 'COMPLETED').length,
     recentDurationSec: sessions.reduce((sum, session) => sum + session.durationSec, 0),
   };
 }

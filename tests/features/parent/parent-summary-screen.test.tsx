@@ -13,8 +13,8 @@ const mockDashboard = useChildProgressDashboardQuery as jest.MockedFunction<type
 
 const canonical = {
   activeLearning: null,
-  sessions: [{ childId: 'child-1', assignmentId: 'a-1', sessionId: 's-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Farm', state: 'COMPLETED', completedAt: new Date().toISOString(), durationSec: 300, reportAvailable: true }],
-  courses: [{ courseId: 'c-1', courseTitle: 'English', currentLessonNumber: 5, completedLessons: 4, totalLessons: 10, percent: 40, suggestedNextLesson: { lessonId: 'l-2', lessonTitle: 'Animals' } }],
+  sessions: [{ childId: 'child-1', assignmentId: 'a-1', sessionId: 's-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Farm', terminalState: 'COMPLETED', startedAt: new Date().toISOString(), completedAt: new Date().toISOString(), durationSec: 300, reportAvailable: true }],
+  courses: [{ courseId: 'c-1', title: 'English', currentLessonPosition: 5, completedLessonCount: 4, totalLessonCount: 10, positionPercent: 40, suggestedNextLesson: { lessonId: 'l-2', lessonTitle: 'Animals' } }],
   completedLessons: 4, totalLessons: 10, completedSessions: 1, failedSessions: 0, recentDurationSec: 300,
 };
 
@@ -41,7 +41,7 @@ describe('ParentSummaryScreen canonical aggregate', () => {
   it('updates immediately when the canonical adapter data changes', () => {
     const screen = renderScreen();
     expect(screen.getByText('4/10 lessons')).toBeTruthy();
-    mockDashboard.mockReturnValue({ data: { ...canonical, completedLessons: 5, sessions: [...canonical.sessions, { ...canonical.sessions[0], sessionId: 's-2' }], completedSessions: 2, recentDurationSec: 600, courses: [{ ...canonical.courses[0], completedLessons: 5, percent: 50 }] }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
+    mockDashboard.mockReturnValue({ data: { ...canonical, completedLessons: 5, sessions: [...canonical.sessions, { ...canonical.sessions[0], sessionId: 's-2' }], completedSessions: 2, recentDurationSec: 600, courses: [{ ...canonical.courses[0], completedLessonCount: 5, positionPercent: 50 }] }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
     act(() => screen.rerender(<ParentSummaryScreen navigation={{ navigate: jest.fn(), replace: jest.fn(), goBack: jest.fn() } as never} route={{ key: 'p', name: 'ParentSummaryScreen', params: undefined } as never} />));
     expect(screen.queryByText('4/10 lessons')).toBeNull();
     expect(screen.getByText('5/10 lessons')).toBeTruthy();
