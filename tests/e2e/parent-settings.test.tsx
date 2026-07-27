@@ -315,12 +315,15 @@ describe('Parent settings and gate', () => {
     expect(screen.getByText('Receive completed lesson reports and other enabled alerts on this device.')).toBeTruthy();
   });
 
-  it('keeps the latest notification preference when rapid saves resolve out of order', async () => {
+  it('serializes rapid notification toggles and persists the latest desired value after a stale failure', async () => {
     const first = deferred<notificationsApi.NotificationPreferences>();
-    const second = deferred<notificationsApi.NotificationPreferences>();
     notificationsApiMock.updatePreferences
       .mockImplementationOnce(() => first.promise)
-      .mockImplementationOnce(() => second.promise);
+      .mockImplementationOnce(async patch => ({
+        id: 'prefs-1', parent_id: 'parent-1', email_digest_enabled: false,
+        email_digest_frequency: 'never', safety_alerts_enabled: true, push_enabled: patch.push_enabled ?? false,
+        created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:02.000Z',
+      }));
     const screen = await renderParentSettings();
     const toggle = await screen.findByLabelText('Push notifications');
 
@@ -328,24 +331,20 @@ describe('Parent settings and gate', () => {
       fireEvent(toggle, 'valueChange', false);
       fireEvent(toggle, 'valueChange', true);
     });
+    expect(notificationsApiMock.updatePreferences).toHaveBeenCalledTimes(1);
+    expect(notificationsApiMock.updatePreferences).toHaveBeenNthCalledWith(1, { push_enabled: false });
+
     await act(async () => {
-      second.resolve({
-        id: 'prefs-1', parent_id: 'parent-1', email_digest_enabled: false,
-        email_digest_frequency: 'never', safety_alerts_enabled: true, push_enabled: true,
-        created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:02.000Z',
-      });
-      await second.promise;
-    });
-    await act(async () => {
-      first.resolve({
-        id: 'prefs-1', parent_id: 'parent-1', email_digest_enabled: false,
-        email_digest_frequency: 'never', safety_alerts_enabled: true, push_enabled: false,
-        created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:01.000Z',
-      });
-      await first.promise;
+      first.reject(new Error('stale first write failed'));
+      await expect(first.promise).rejects.toThrow('stale first write failed');
     });
 
-    expect(screen.getByLabelText('Push notifications').props.value).toBe(true);
+    await waitFor(() => {
+      expect(notificationsApiMock.updatePreferences).toHaveBeenCalledTimes(2);
+      expect(notificationsApiMock.updatePreferences).toHaveBeenNthCalledWith(2, { push_enabled: true });
+      expect(screen.getByLabelText('Push notifications').props.value).toBe(true);
+      expect(screen.queryByText('Notification preference could not be saved. Try again.')).toBeNull();
+    });
   });
 
   it('localizes the push notification switch accessibility label', async () => {

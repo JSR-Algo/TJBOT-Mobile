@@ -70,7 +70,9 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   const [analytics, setAnalytics] = React.useState(isAnalyticsEnabled());
   const [lessonReportNotifications, setLessonReportNotifications] = React.useState<boolean | null>(null);
   const [notificationSaveFailed, setNotificationSaveFailed] = React.useState(false);
-  const notificationSaveRequestRef = React.useRef(0);
+  const persistedNotificationPreferenceRef = React.useRef<boolean | null>(null);
+  const queuedNotificationPreferenceRef = React.useRef<boolean | null>(null);
+  const notificationWriteActiveRef = React.useRef(false);
   const [savingLanguage, setSavingLanguage] = React.useState<AppLocale | null>(null);
   const [languageSaveFailed, setLanguageSaveFailed] = React.useState(false);
   const [profile, setProfile] = React.useState<ChildProfile | null>(null);
@@ -149,28 +151,62 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   React.useEffect(() => {
     let mounted = true;
     getPreferences().then(
-      preferences => { if (mounted) setLessonReportNotifications(preferences.push_enabled); },
+      preferences => {
+        if (!mounted) return;
+        persistedNotificationPreferenceRef.current = preferences.push_enabled;
+        setLessonReportNotifications(preferences.push_enabled);
+      },
       error => { captureError(error); },
     );
     return () => { mounted = false; };
   }, []);
 
-  const onToggleLessonReportNotifications = React.useCallback(async (next: boolean) => {
-    const requestId = ++notificationSaveRequestRef.current;
-    const previous = lessonReportNotifications;
+  const persistNotificationPreference = React.useCallback(async (initial: boolean): Promise<void> => {
+    if (notificationWriteActiveRef.current) {
+      queuedNotificationPreferenceRef.current = initial;
+      return;
+    }
+    notificationWriteActiveRef.current = true;
+    let requested: boolean | null = initial;
+    try {
+      while (requested !== null) {
+        queuedNotificationPreferenceRef.current = null;
+        let failed = false;
+        try {
+          const saved = await updatePreferences({ push_enabled: requested });
+          persistedNotificationPreferenceRef.current = saved.push_enabled;
+        } catch (error) {
+          failed = true;
+          captureError(error);
+        }
+
+        const queued = queuedNotificationPreferenceRef.current;
+        if (queued !== null) {
+          // A failed write has unknown server state, so always persist the newest
+          // choice. A successful write can skip a queued duplicate.
+          requested = !failed && queued === persistedNotificationPreferenceRef.current ? null : queued;
+          if (requested === null) setLessonReportNotifications(queued);
+          continue;
+        }
+
+        if (failed) {
+          setLessonReportNotifications(persistedNotificationPreferenceRef.current);
+          setNotificationSaveFailed(true);
+        } else {
+          setLessonReportNotifications(persistedNotificationPreferenceRef.current);
+        }
+        requested = null;
+      }
+    } finally {
+      notificationWriteActiveRef.current = false;
+    }
+  }, []);
+
+  const onToggleLessonReportNotifications = React.useCallback((next: boolean) => {
     setLessonReportNotifications(next);
     setNotificationSaveFailed(false);
-    try {
-      const saved = await updatePreferences({ push_enabled: next });
-      if (notificationSaveRequestRef.current !== requestId) return;
-      setLessonReportNotifications(saved.push_enabled);
-    } catch (error) {
-      captureError(error);
-      if (notificationSaveRequestRef.current !== requestId) return;
-      setLessonReportNotifications(previous);
-      setNotificationSaveFailed(true);
-    }
-  }, [lessonReportNotifications]);
+    void persistNotificationPreference(next);
+  }, [persistNotificationPreference]);
 
   const onToggleAnalytics = React.useCallback((next: boolean) => {
     // Optimistic: reflect immediately, then persist + flip the live client. A
