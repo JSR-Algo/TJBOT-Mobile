@@ -1,9 +1,10 @@
 import { Config } from '@/config';
-import { normalizeParentLearningStatus, type ParentActiveLearning, type ParentLearningStatus } from '@/services/api/parentLearning.api';
+import { normalizeParentLearningStatus, type ParentActiveLearning, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
 import { createReconnectingSocket, type CreateReconnectingSocketOptions, type RealtimeConnection } from '@/services/ws/realtime';
 
 export interface ParentProgressSnapshotFrame { type: 'lesson.progress.snapshot'; childId: string; projectionRevision: string; status: ParentLearningStatus }
-export interface ParentProgressUpdatedFrame { type: 'lesson.progress.updated'; childId: string; sessionId: string | null; projectionRevision: string; occurredAt: string; publishedAt: string; activeLearning: ParentActiveLearning | null }
+export type ParentActiveLearningDelta = Omit<Partial<ParentActiveLearning>, 'currentStep'> & { currentStep?: Partial<ParentLearningStep> | null };
+export interface ParentProgressUpdatedFrame { type: 'lesson.progress.updated'; childId: string; sessionId: string | null; projectionRevision: string; occurredAt: string; publishedAt: string; activeLearning: ParentActiveLearningDelta | null }
 export interface ParentProgressRealtimeCallbacks {
   onStatus(status: ParentLearningStatus): void;
   onUpdate?(frame: ParentProgressUpdatedFrame): void;
@@ -61,8 +62,10 @@ export async function openParentProgressRealtime(
         const comparison = compareProjectionRevisions(revision, currentRevision);
         if (comparison <= 0) return;
         if (revision !== incrementRevision(currentRevision) || !isUpdateFrame(frame)) { callbacks.onInvalidate(); return; }
+        const activeLearning = frame.activeLearning === null ? null : parseActiveLearningDelta(frame.activeLearning);
+        if (activeLearning === undefined) { callbacks.onInvalidate(); return; }
         currentRevision = revision;
-        callbacks.onUpdate?.({ type: 'lesson.progress.updated', childId: normalizedChildId, sessionId: frame.sessionId, projectionRevision: revision, occurredAt: frame.occurredAt, publishedAt: frame.publishedAt, activeLearning: frame.activeLearning === null ? null : normalizeParentLearningStatus({ activeLearning: frame.activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: revision }).activeLearning });
+        callbacks.onUpdate?.({ type: 'lesson.progress.updated', childId: normalizedChildId, sessionId: frame.sessionId, projectionRevision: revision, occurredAt: frame.occurredAt, publishedAt: frame.publishedAt, activeLearning });
         return;
       }
       callbacks.onInvalidate();
@@ -86,4 +89,47 @@ function validRevision(value: unknown): string | null { return typeof value === 
 function parentProgressUrl(baseUrl: string): string { const url = new URL(baseUrl); if (url.protocol === 'http:') url.protocol = 'ws:'; else if (url.protocol === 'https:') url.protocol = 'wss:'; if (url.protocol !== 'ws:' && url.protocol !== 'wss:') throw new Error('PARENT_PROGRESS_BASE_URL_UNSUPPORTED'); url.pathname = '/parent-progress'; url.search = ''; url.hash = ''; return url.toString(); }
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 function record(value: unknown): Record<string, unknown> { return isRecord(value) ? value : {}; }
-function isUpdateFrame(value: Record<string, unknown>): value is Record<string, unknown> & { sessionId: string | null; occurredAt: string; publishedAt: string; activeLearning: unknown } { return (typeof value.sessionId === 'string' || value.sessionId === null) && typeof value.occurredAt === 'string' && typeof value.publishedAt === 'string' && (value.activeLearning === null || isRecord(value.activeLearning)); }
+function isUpdateFrame(value: Record<string, unknown>): value is Record<string, unknown> & { sessionId: string | null; occurredAt: string; publishedAt: string; activeLearning: Record<string, unknown> | null } { return (typeof value.sessionId === 'string' || value.sessionId === null) && typeof value.occurredAt === 'string' && typeof value.publishedAt === 'string' && (value.activeLearning === null || isRecord(value.activeLearning)); }
+
+function parseActiveLearningDelta(value: Record<string, unknown>): ParentActiveLearningDelta | undefined {
+  const delta: ParentActiveLearningDelta = {};
+  const stringFields = ['assignmentId', 'deviceId', 'courseId', 'courseTitle', 'lessonId', 'lessonTitle', 'state'] as const;
+  for (const key of stringFields) {
+    if (!(key in value)) continue;
+    if (typeof value[key] !== 'string') return undefined;
+    delta[key] = value[key];
+  }
+  for (const key of ['sessionId', 'startedAt'] as const) {
+    if (!(key in value)) continue;
+    if (value[key] !== null && typeof value[key] !== 'string') return undefined;
+    delta[key] = value[key];
+  }
+  for (const key of ['positionPercent', 'activeDurationSec'] as const) {
+    if (!(key in value)) continue;
+    if (typeof value[key] !== 'number' || !Number.isFinite(value[key]) || value[key] < 0) return undefined;
+    delta[key] = value[key];
+  }
+  if ('currentStep' in value) {
+    if (value.currentStep !== null && !isRecord(value.currentStep)) return undefined;
+    if (value.currentStep === null) delta.currentStep = null;
+    else {
+      const step: Partial<ParentLearningStep> = {};
+      for (const key of ['stepId', 'activityTitle', 'phase'] as const) {
+        if (!(key in value.currentStep)) continue;
+        if (typeof value.currentStep[key] !== 'string') return undefined;
+        step[key] = value.currentStep[key];
+      }
+      if ('subject' in value.currentStep) {
+        if (value.currentStep.subject !== null && typeof value.currentStep.subject !== 'string') return undefined;
+        step.subject = value.currentStep.subject;
+      }
+      for (const key of ['stepNumber', 'total'] as const) {
+        if (!(key in value.currentStep)) continue;
+        if (typeof value.currentStep[key] !== 'number' || !Number.isFinite(value.currentStep[key]) || value.currentStep[key] < 0) return undefined;
+        step[key] = value.currentStep[key];
+      }
+      delta.currentStep = step;
+    }
+  }
+  return delta;
+}

@@ -30,6 +30,37 @@ describe('parent progress realtime', () => {
     expect(compareProjectionRevisions('12', '13')).toBe(-1);
   });
 
+  it('rejects numeric projection revisions as invalid frames', async () => {
+    const onInvalidate = jest.fn();
+    const connection = await openParentProgressRealtime('child-1', '9007199254740993', {
+      onStatus: jest.fn(), onInvalidate, onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket, tokenProvider: async () => 'jwt', reconnect: false });
+
+    sockets[0].message({ type: 'lesson.progress.updated', childId: 'child-1', projectionRevision: 9007199254740994 });
+
+    expect(onInvalidate).toHaveBeenCalledTimes(1);
+    connection.close();
+  });
+
+  it('preserves a spec-shaped active-learning update as a partial delta', async () => {
+    const onUpdate = jest.fn();
+    const connection = await openParentProgressRealtime('child-1', '12', {
+      onStatus: jest.fn(), onUpdate, onInvalidate: jest.fn(), onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket, tokenProvider: async () => 'jwt', reconnect: false });
+
+    sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '13',
+      occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z',
+      activeLearning: { lessonTitle: 'Updated title', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210 },
+    });
+
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      projectionRevision: '13',
+      activeLearning: { lessonTitle: 'Updated title', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210 },
+    }));
+    connection.close();
+  });
+
   it('subscribes with the last revision, applies sequential frames, and refetches gaps or invalid frames', async () => {
     const callbacks: ParentProgressRealtimeCallbacks = { onStatus: jest.fn(), onInvalidate: jest.fn(), onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn() };
     const connection = await openParentProgressRealtime('child-1', '9007199254740993', callbacks, { baseUrl: 'https://api.test/v1', createSocket, tokenProvider: async () => 'parent-jwt', reconnect: false });

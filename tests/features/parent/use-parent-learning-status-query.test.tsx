@@ -17,7 +17,7 @@ const mockToken = getAccessToken as jest.MockedFunction<typeof getAccessToken>;
 let appStateChange: ((state: string) => void) | undefined;
 let sockets: NativeSocket[];
 
-const active: ParentLearningStatus = { activeLearning: { assignmentId: 'a', sessionId: null, deviceId: 'd', courseId: 'c', courseTitle: 'C', lessonId: 'l', lessonTitle: 'L', state: 'READY', startedAt: null, currentStep: null, positionPercent: 0, activeDurationSec: 0 }, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '1' };
+const active: ParentLearningStatus = { activeLearning: { assignmentId: 'a', sessionId: null, deviceId: 'd', courseId: 'c', courseTitle: 'C', lessonId: 'l', lessonTitle: 'L', state: 'READY', startedAt: null, currentStep: { stepId: 'step-4', stepNumber: 4, total: 9, activityTitle: 'Original activity', phase: 'teaching', subject: 'barn' }, positionPercent: 0, activeDurationSec: 0 }, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '1' };
 const terminal: ParentLearningStatus = { ...active, activeLearning: { ...active.activeLearning!, state: 'COMPLETED' }, projectionRevision: '2' };
 const inactive: ParentLearningStatus = { ...active, activeLearning: null, projectionRevision: '2' };
 
@@ -33,6 +33,7 @@ class NativeSocket {
   close(): void { this.closed = true; }
   fail(): void { this.onclose?.({ code: 1006, reason: 'lost', wasClean: false }); }
   open(): void { this.onopen?.(); }
+  message(frame: unknown): void { this.onmessage?.({ data: JSON.stringify(frame) }); }
 }
 
 function setup(childId = 'child-1') {
@@ -96,6 +97,34 @@ describe('useParentLearningStatusQuery', () => {
     await act(async () => { await jest.advanceTimersByTimeAsync(500); });
     expect(sockets).toHaveLength(2);
     await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(before + 1));
+    view.unmount();
+  });
+
+  it('merges a partial realtime update without losing active-learning identity', async () => {
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
+      occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z',
+      activeLearning: { lessonTitle: 'Updated lesson', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210, currentStep: { stepNumber: 5, total: 9, activityTitle: 'Updated activity', phase: 'listening', subject: 'barn' } },
+    });
+
+    await waitFor(() => expect(view.result.current.data?.projectionRevision).toBe('2'));
+    expect(view.result.current.data?.activeLearning).toMatchObject({
+      assignmentId: 'a', deviceId: 'd', courseId: 'c', lessonId: 'l', startedAt: null,
+      lessonTitle: 'Updated lesson', state: 'RUNNING', positionPercent: 44, activeDurationSec: 210,
+    });
+    expect(view.result.current.data?.activeLearning?.currentStep).toMatchObject({ stepId: 'step-4', stepNumber: 5, activityTitle: 'Updated activity' });
+    view.unmount();
+  });
+
+  it('falls back to polling when the initial realtime connection rejects', async () => {
+    mockToken.mockResolvedValue(null);
+    const view = setup();
+    await waitFor(() => expect(mockStatus.mock.calls.length).toBeGreaterThanOrEqual(2));
+    const afterFailureRefetch = mockStatus.mock.calls.length;
+    await act(async () => { await jest.advanceTimersByTimeAsync(10_000); });
+    await waitFor(() => expect(mockStatus.mock.calls.length).toBe(afterFailureRefetch + 1));
     view.unmount();
   });
 

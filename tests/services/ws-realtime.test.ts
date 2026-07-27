@@ -329,6 +329,30 @@ describe('createReconnectingSocket', () => {
     expect(sockets).toHaveLength(2);
     connection.close();
   });
+
+  it('disposes a socket that resolves after close during a reconnect attempt', async () => {
+    jest.useFakeTimers();
+    sockets.length = 0;
+    let resolveReconnectToken: ((token: string) => void) | undefined;
+    tokenProvider.mockResolvedValueOnce('token-1').mockImplementationOnce(() => new Promise((resolve) => { resolveReconnectToken = resolve; }));
+    const onReconnect = jest.fn();
+    const connection = await createReconnectingSocket('wss://api.test/parent-progress', {
+      createSocket, onReconnect, reconnect: { initialDelayMs: 5, maxAttempts: 2, maxDelayMs: 5 }, tokenProvider,
+    });
+
+    sockets[0].emitClose();
+    await jest.advanceTimersByTimeAsync(5);
+    connection.close(1000, 'unmounted');
+    resolveReconnectToken?.('token-2');
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(sockets).toHaveLength(2);
+    expect(sockets[1].closed).toEqual({ code: 1000, reason: 'connection disposed' });
+    expect(sockets[1].onopen).toBeNull();
+    expect(sockets[1].onmessage).toBeNull();
+    expect(onReconnect).not.toHaveBeenCalled();
+  });
 });
 
 async function actReconnectTimer(ms: number): Promise<void> {

@@ -32,6 +32,12 @@ describe('parentLearning.api', () => {
     });
   });
 
+  it('accepts large decimal-string revisions and rejects numeric revisions', () => {
+    const base = { activeLearning: null, recentSessions: { items: [], nextCursor: null }, courseProgress: [] };
+    expect(normalizeParentLearningStatus({ ...base, projectionRevision: '900719925474099312345' }).projectionRevision).toBe('900719925474099312345');
+    expect(normalizeParentLearningStatus({ ...base, projectionRevision: 9007199254740992 }).projectionRevision).toBe('0');
+  });
+
   it('normalizes a report through a strict privacy-safe allowlist', () => {
     expect(normalizeParentSessionReport({
       childId: 'child-1', sessionId: 'session-1', assignmentId: 'assign-1',

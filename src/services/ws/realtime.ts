@@ -127,6 +127,7 @@ export async function createReconnectingSocket(
   let manualClose = false;
   let reconnectAttempts = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let reconnectGeneration = 0;
 
   const notifyError = (error: Error): void => {
     try { options.onError?.(error); } catch (callbackError) { captureError(callbackError); }
@@ -156,11 +157,17 @@ export async function createReconnectingSocket(
   };
   const runReconnectAttempt = (): void => {
     reconnectTimer = null;
+    const generation = ++reconnectGeneration;
     void openSocket(url, tokenProvider, createSocket).then((nextSocket) => {
+      if (manualClose || generation !== reconnectGeneration) {
+        nextSocket.close(1000, 'connection disposed');
+        return;
+      }
       socket = nextSocket;
       attachHandlers(socket);
       invoke(options.onReconnect);
     }).catch((error) => {
+      if (manualClose || generation !== reconnectGeneration) return;
       notifyError(new RealtimeConnectionError('REALTIME_SOCKET_CREATE_FAILED', toError(error).message));
       scheduleReconnect();
     });
@@ -180,7 +187,7 @@ export async function createReconnectingSocket(
   attachHandlers(socket);
   return {
     url,
-    close(code?: number, reason?: string): void { manualClose = true; clearReconnectTimer(); socket.close(code, reason); },
+    close(code?: number, reason?: string): void { manualClose = true; reconnectGeneration += 1; clearReconnectTimer(); socket.close(code, reason); },
     send(payload: unknown): void { socket.send(JSON.stringify(payload)); },
   };
 }

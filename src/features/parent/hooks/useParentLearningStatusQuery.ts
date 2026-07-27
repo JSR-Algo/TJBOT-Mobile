@@ -33,14 +33,40 @@ export function useParentLearningStatusQuery(childId: string | undefined): UseQu
       onStatus: (status) => { if (!disposed) queryClient.setQueryData(parentLearningStatusKey(childId), status); },
       onUpdate: (frame) => {
         if (disposed) return;
-        queryClient.setQueryData<ParentLearningStatus>(parentLearningStatusKey(childId), (current) => current ? { ...current, activeLearning: frame.activeLearning, projectionRevision: frame.projectionRevision } : current);
+        queryClient.setQueryData<ParentLearningStatus>(parentLearningStatusKey(childId), (current) => {
+          if (!current) return current;
+          if (frame.activeLearning === null) return { ...current, activeLearning: null, projectionRevision: frame.projectionRevision };
+          if (!current.activeLearning) {
+            void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
+            return current;
+          }
+          const { currentStep: stepDelta, ...activeDelta } = frame.activeLearning;
+          const currentStep = !Object.prototype.hasOwnProperty.call(frame.activeLearning, 'currentStep')
+            ? current.activeLearning.currentStep
+            : stepDelta === null
+              ? null
+              : current.activeLearning.currentStep
+                ? { ...current.activeLearning.currentStep, ...stepDelta }
+                : null;
+          if (stepDelta !== undefined && stepDelta !== null && !current.activeLearning.currentStep) {
+            void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
+          }
+          return { ...current, activeLearning: { ...current.activeLearning, ...activeDelta, currentStep }, projectionRevision: frame.projectionRevision };
+        });
       },
       onInvalidate: () => { if (!disposed) void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); },
       onAuthExpired: () => setSocketExhausted(false),
       onAccessRevoked: () => setSocketExhausted(false),
       onReconnectExhausted: () => setSocketExhausted(true),
       onHealthy: () => setSocketExhausted(false),
-    }).then((connection) => { if (disposed) connection.close(1000, 'unmounted'); else close = () => connection.close(1000, 'unmounted'); });
+    }).then((connection) => {
+      if (disposed) connection.close(1000, 'unmounted');
+      else close = () => connection.close(1000, 'unmounted');
+    }).catch(() => {
+      if (disposed) return;
+      setSocketExhausted(true);
+      void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
+    });
     return () => { disposed = true; close?.(); setSocketExhausted(false); };
   }, [childId, hasInitialStatus, queryClient]);
 
