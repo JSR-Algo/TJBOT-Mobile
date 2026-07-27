@@ -38,6 +38,17 @@ describe('TodayProgressScreen canonical aggregate', () => {
     expect(screen.getByText('Animals')).toBeTruthy();
   });
 
+  it.each([
+    ['READY', 'Preparing'],
+    ['RUNNING', 'In progress'],
+    ['LISTENING', 'Listening'],
+  ])('renders %s as parent-facing copy instead of a raw enum', (state, label) => {
+    mockDashboard.mockReturnValue({ data: { ...canonical, activeLearning: { ...canonical.activeLearning, state } }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
+    const screen = renderScreen();
+    expect(screen.getByText(label)).toBeTruthy();
+    expect(screen.queryByText(state)).toBeNull();
+  });
+
   it('drops stale totals as soon as canonical adapter data updates', () => {
     const screen = renderScreen();
     expect(screen.getByText('4 of 10 lessons')).toBeTruthy();

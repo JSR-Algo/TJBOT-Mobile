@@ -1,8 +1,12 @@
 import { translateCopy, type AppLocale } from '@/services/i18n/i18n';
 
 const STATE_KEYS: Record<string, string> = {
+  ASSIGNED: 'Preparing', PRELOADING: 'Preparing', PREPARING: 'Preparing', READY: 'Preparing',
+  RUNNING: 'In progress',
+  ENTRANCE: 'Robot entrance', TEACH: 'Teaching', TEACHING: 'Teaching', LISTEN: 'Listening', LISTENING: 'Listening',
+  THINK: 'Thinking', THINKING: 'Thinking', FEEDBACK: 'Feedback',
   COMPLETED: 'Completed', FAILED: "Didn't finish", ABANDONED: "Didn't finish", CANCELLED: 'Cancelled',
-  PAUSED: 'Paused', PREPARING: 'Preparing', ENTRANCE: 'Robot entrance', TEACH: 'Teaching', LISTEN: 'Listening', THINK: 'Thinking', FEEDBACK: 'Feedback',
+  PAUSED: 'Paused',
 };
 
 const RESPONSE_KEYS: Record<string, string> = {

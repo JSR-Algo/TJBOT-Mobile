@@ -15,3 +15,22 @@ it('keeps the English parent report labels explicit', () => {
   expect(parentSessionStateLabel('FAILED', 'en')).toBe("Didn't finish");
   expect(parentResponseClassLabel('MATCH', 'en')).toBe('Match');
 });
+
+it.each([
+  ['ASSIGNED', 'Preparing', 'Đang chuẩn bị'],
+  ['PRELOADING', 'Preparing', 'Đang chuẩn bị'],
+  ['PREPARING', 'Preparing', 'Đang chuẩn bị'],
+  ['READY', 'Preparing', 'Đang chuẩn bị'],
+  ['RUNNING', 'In progress', 'Đang tiến hành'],
+  ['ENTRANCE', 'Robot entrance', 'Robot đang xuất hiện'],
+  ['TEACHING', 'Teaching', 'Đang hướng dẫn'],
+  ['LISTENING', 'Listening', 'Đang nghe'],
+  ['THINKING', 'Thinking', 'Đang suy nghĩ'],
+  ['TEACH', 'Teaching', 'Đang hướng dẫn'],
+  ['LISTEN', 'Listening', 'Đang nghe'],
+  ['THINK', 'Thinking', 'Đang suy nghĩ'],
+  ['FEEDBACK', 'Feedback', 'Đang phản hồi'],
+])('localizes live state %s with the same copy as Parent Today', (state, english, vietnamese) => {
+  expect(parentSessionStateLabel(state, 'en')).toBe(english);
+  expect(parentSessionStateLabel(state, 'vi')).toBe(vietnamese);
+});
