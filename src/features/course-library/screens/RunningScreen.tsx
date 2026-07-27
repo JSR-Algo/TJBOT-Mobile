@@ -19,13 +19,18 @@ import { formatLessonCopy } from '@/utils/errors';
 type Props = NativeStackScreenProps<RootStackParamList, 'RunningScreen'>;
 
 const POLL_INTERVAL_MS = 2500;
+/** Investor-demo seed locked to the approved first-five Live lesson status capture (`06:42`). */
+const INVESTOR_DEMO_ELAPSED_SECONDS = 402;
 
 export default function RunningScreen({ navigation, route }: Props): React.JSX.Element {
   const { t } = useAppLanguage();
   const deviceId = route.params?.deviceId;
   const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
   const [finished, setFinished] = React.useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = React.useState(() => isInvestorDemoEnabled() ? 401 : 0);
+  const investorDemo = isInvestorDemoEnabled();
+  const [elapsedSeconds, setElapsedSeconds] = React.useState(() =>
+    investorDemo ? INVESTOR_DEMO_ELAPSED_SECONDS : 0,
+  );
   const sawLiveRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -65,10 +70,12 @@ export default function RunningScreen({ navigation, route }: Props): React.JSX.E
   }, [deviceId]);
 
   React.useEffect(() => {
-    if (finished) return undefined;
+    // Keep the approved first-five demo frame frozen at 06:42 so Maestro
+    // recaptures stay pixel-stable against output/maestro/first-five/02-live-status.png.
+    if (finished || investorDemo) return undefined;
     const timer = setInterval(() => setElapsedSeconds(value => value + 1), 1000);
     return () => clearInterval(timer);
-  }, [finished]);
+  }, [finished, investorDemo]);
 
   const lessonTitle = assignment?.lessonTitle?.trim()
     || route.params?.lessonTitle?.trim()

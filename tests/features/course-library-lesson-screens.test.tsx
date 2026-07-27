@@ -4,6 +4,7 @@ import { ROUTES } from '@/navigation/routes';
 import RobotReadyScreen from '@/features/course-library/screens/RobotReadyScreen';
 import RunningScreen from '@/features/course-library/screens/RunningScreen';
 import CompanionScreen from '@/features/course-library/screens/CompanionScreen';
+import { isInvestorDemoEnabled } from '@/config/investorDemo';
 import {
   getCurrentAssignment,
   getPreloadStatus,
@@ -18,8 +19,14 @@ jest.mock('@/services/api/course-library.api', () => {
   return { ...actual, getPreloadStatus: jest.fn(), getCurrentAssignment: jest.fn() };
 });
 
+jest.mock('@/config/investorDemo', () => {
+  const actual = jest.requireActual('@/config/investorDemo');
+  return { ...actual, isInvestorDemoEnabled: jest.fn(() => false) };
+});
+
 const mockedGetPreloadStatus = getPreloadStatus as jest.MockedFunction<typeof getPreloadStatus>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
+const mockedIsInvestorDemoEnabled = isInvestorDemoEnabled as jest.MockedFunction<typeof isInvestorDemoEnabled>;
 
 function navigationFor() {
   return {
@@ -45,6 +52,7 @@ function current(state: CurrentAssignment['state']): CurrentAssignment {
 describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedIsInvestorDemoEnabled.mockReturnValue(false);
   });
 
   // §10.4 — Preload-status render (kills fake-ready, DIV-MOBILE-FAKEREADY).
@@ -128,6 +136,37 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('RunningScreen locks investor-demo elapsed time at 06:42 (approved first-five)', async () => {
+    mockedIsInvestorDemoEnabled.mockReturnValue(true);
+    mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
+    render(
+      <RunningScreen
+        navigation={navigationFor() as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('06:42')).toBeTruthy());
+    expect(screen.getByText('Teaching word 4 of 6')).toBeTruthy();
+    expect(screen.getByText('Live lesson status')).toBeTruthy();
+    expect(screen.getByTestId('liveLessonStatusPage')).toBeTruthy();
+  });
+
+  it('RunningScreen starts non-demo elapsed time at 00:00 and does not hardcode 06:42', async () => {
+    mockedIsInvestorDemoEnabled.mockReturnValue(false);
+    mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
+    render(
+      <RunningScreen
+        navigation={navigationFor() as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('00:00')).toBeTruthy());
+    expect(screen.queryByText('06:42')).toBeNull();
+    expect(screen.getByText('Pause lesson')).toBeTruthy();
   });
 
   it('CompanionScreen switches the face to happy on the live RUNNING→null transition (MOB-1)', async () => {
