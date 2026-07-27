@@ -44,6 +44,18 @@ describe('parent progress realtime', () => {
     connection.close();
   });
 
+  it('invalidates a newer snapshot whose status is missing', async () => {
+    const onInvalidate = jest.fn();
+    const connection = await openParentProgressRealtime('child-1', '7', {
+      onStatus: jest.fn(), onInvalidate, onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket, tokenProvider: async () => 'jwt', reconnect: false });
+
+    sockets[0].message({ type: 'lesson.progress.snapshot', childId: 'child-1', projectionRevision: '8' });
+
+    expect(onInvalidate).toHaveBeenCalledTimes(1);
+    connection.close();
+  });
+
   it('maps parent auth close codes and closes the prior child socket on switch', async () => {
     const first = await openParentProgressRealtime('child-1', '0', { onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onInvalidate: jest.fn(), onStatus: jest.fn(), onReconnectExhausted: jest.fn() }, { createSocket, tokenProvider: async () => 'jwt', reconnect: false });
     const expired = jest.fn();
@@ -52,5 +64,20 @@ describe('parent progress realtime', () => {
     sockets[1].closeFromServer(4401);
     expect(expired).toHaveBeenCalledTimes(1);
     first.close();
+  });
+
+  it('maps 4403 to access revoked without reconnecting', async () => {
+    jest.useFakeTimers();
+    const revoked = jest.fn();
+    const connection = await openParentProgressRealtime('child-1', '0', {
+      onAuthExpired: jest.fn(), onAccessRevoked: revoked, onInvalidate: jest.fn(), onStatus: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket, tokenProvider: async () => 'jwt', reconnect: { initialDelayMs: 5, maxAttempts: 3, maxDelayMs: 5 } });
+
+    sockets[0].closeFromServer(4403);
+    await jest.advanceTimersByTimeAsync(100);
+
+    expect(revoked).toHaveBeenCalledTimes(1);
+    expect(sockets).toHaveLength(1);
+    connection.close();
   });
 });

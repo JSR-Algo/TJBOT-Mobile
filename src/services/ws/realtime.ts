@@ -52,6 +52,7 @@ export interface RealtimeConnection {
 }
 
 export interface CreateReconnectingSocketOptions {
+  readonly continueAfterReconnectExhausted?: boolean;
   readonly createSocket?: RealtimeSocketFactory;
   readonly onClose?: (event: RealtimeSocketCloseEvent) => void;
   readonly onError?: (error: Error) => void;
@@ -140,6 +141,10 @@ export async function createReconnectingSocket(
   const exhausted = (): void => {
     notifyError(new RealtimeConnectionError('REALTIME_RECONNECT_EXHAUSTED', 'Realtime reconnect attempts exhausted'));
     invoke(options.onReconnectExhausted);
+    if (options.continueAfterReconnectExhausted && reconnect !== false && !manualClose) {
+      clearReconnectTimer();
+      reconnectTimer = setTimeout(runReconnectAttempt, reconnect.maxDelayMs);
+    }
   };
   const scheduleReconnect = (): void => {
     if (manualClose || reconnect === false) return;

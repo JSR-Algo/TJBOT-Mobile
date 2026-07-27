@@ -30,6 +30,7 @@ export async function openParentProgressRealtime(
   if (activeChildConnection && activeChildConnection.childId !== normalizedChildId) activeChildConnection.connection.close(1000, 'child switched');
   const connection: RealtimeConnection = await createReconnectingSocket(parentProgressUrl(options.baseUrl ?? Config.API_BASE_URL), {
     ...options,
+    continueAfterReconnectExhausted: true,
     onOpen: () => {
       connection.send({ type: 'subscribe', childId: normalizedChildId, lastProjectionRevision: currentRevision });
       callbacks.onHealthy?.();
@@ -48,7 +49,8 @@ export async function openParentProgressRealtime(
       const revision = validRevision(frame.projectionRevision);
       if (frame.childId !== normalizedChildId || revision === null) { callbacks.onInvalidate(); return; }
       if (frame.type === 'lesson.progress.snapshot') {
-        if (compareProjectionRevisions(revision, currentRevision) <= 0 || !isRecord(frame.status)) return;
+        if (compareProjectionRevisions(revision, currentRevision) <= 0) return;
+        if (!isRecord(frame.status)) { callbacks.onInvalidate(); return; }
         const status = normalizeParentLearningStatus(frame.status);
         if (status.projectionRevision !== revision) { callbacks.onInvalidate(); return; }
         currentRevision = revision;

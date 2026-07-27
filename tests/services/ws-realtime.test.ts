@@ -325,6 +325,8 @@ describe('createReconnectingSocket', () => {
     await actReconnectTimer(5);
     sockets[1].emitClose();
     expect(exhausted).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(50);
+    expect(sockets).toHaveLength(2);
     connection.close();
   });
 });

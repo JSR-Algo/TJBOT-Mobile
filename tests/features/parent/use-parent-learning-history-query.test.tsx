@@ -21,6 +21,8 @@ it('merges cursor pages and deduplicates sessions by session id', async () => {
     .mockResolvedValueOnce({ items: [item('s2'), item('s3')], nextCursor: null });
   const { result } = renderHook(() => useParentLearningHistoryQuery('child-1'), { wrapper });
   await waitFor(() => expect(result.current.data?.items.map(x => x.sessionId)).toEqual(['s1', 's2']));
+  expect(mockHistory).toHaveBeenNthCalledWith(1, 'child-1', null);
   await act(async () => { await result.current.fetchNextPage(); });
   await waitFor(() => expect(result.current.data?.items.map(x => x.sessionId)).toEqual(['s1', 's2', 's3']));
+  expect(mockHistory).toHaveBeenNthCalledWith(2, 'child-1', 'p2');
 });

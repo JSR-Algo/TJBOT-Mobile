@@ -42,7 +42,14 @@ export async function createReconnectingSocket(url, options = {}) {
   const notifyError = (error) => { try { options.onError?.(error); } catch (callbackError) { captureError(callbackError); } };
   const invoke = (callback) => { try { callback?.(); } catch (error) { notifyError(toError(error)); } };
   const clearReconnectTimer = () => { if (reconnectTimer !== null) clearTimeout(reconnectTimer); reconnectTimer = null; };
-  const exhausted = () => { notifyError(new RealtimeConnectionError('REALTIME_RECONNECT_EXHAUSTED', 'Realtime reconnect attempts exhausted')); invoke(options.onReconnectExhausted); };
+  const exhausted = () => {
+    notifyError(new RealtimeConnectionError('REALTIME_RECONNECT_EXHAUSTED', 'Realtime reconnect attempts exhausted'));
+    invoke(options.onReconnectExhausted);
+    if (options.continueAfterReconnectExhausted && reconnect !== false && !manualClose) {
+      clearReconnectTimer();
+      reconnectTimer = setTimeout(runReconnectAttempt, reconnect.maxDelayMs);
+    }
+  };
   const scheduleReconnect = () => {
     if (manualClose || reconnect === false) return;
     if (reconnectAttempts >= reconnect.maxAttempts) { exhausted(); return; }
