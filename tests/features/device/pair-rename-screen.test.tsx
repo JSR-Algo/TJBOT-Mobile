@@ -456,6 +456,20 @@ describe('PairRenameScreen — zero-child path (route into child creation with p
 // Error surfacing — rejected complete -> PairFailed with the lifted code.
 // ---------------------------------------------------------------------------
 describe('PairRenameScreen — completeDeviceProvisioning rejection -> PairFailed', () => {
+  it('keeps a DEVICE_AUTH_TIMEOUT on the rename screen so the parent can retry', async () => {
+    mockedComplete.mockRejectedValue(Object.assign(new Error('robot is still initializing'), {
+      code: 'DEVICE_AUTH_TIMEOUT',
+    }));
+    const navigate = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS);
+
+    fireEvent.press(screen.getByText('Save & continue'));
+
+    await waitFor(() => expect(screen.getByTestId('pairing-auth-timeout-message')).toBeTruthy());
+    expect(screen.getByText('Save & continue')).toBeTruthy();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+  });
+
   it('treats DEVICE_ALREADY_CLAIMED as idempotent success and does not show PairFailed', async () => {
     mockedComplete.mockRejectedValue(Object.assign(new Error('boom'), { code: 'DEVICE_ALREADY_CLAIMED' }));
     const navigate = jest.fn();

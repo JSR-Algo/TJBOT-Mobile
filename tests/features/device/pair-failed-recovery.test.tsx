@@ -122,12 +122,8 @@ describe('PairConnectingScreen US-005 invariants', () => {
     });
   });
 
-  it('[MB6] after wifi_credentials_sent, UI stays waiting-for-robot-confirmation and does not navigate to success', async () => {
+  it('[MB6] after wifi_credentials_sent, code-based pairing advances to rename without an auth poll', async () => {
     seedSecrets('claim-1');
-    // Code path: completionMode is device_authenticated → the screen polls
-    // getProvisioningAttemptStatus. BLE provisioning resolves wifi_credentials_sent,
-    // but the attempt status stays pre-terminal (ble_paired), so the screen must
-    // keep waiting and never advance to a success/next screen on the handoff alone.
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
@@ -135,20 +131,20 @@ describe('PairConnectingScreen US-005 invariants', () => {
     });
     const navigate = jest.fn();
 
-    const screen = render(
+    render(
       <PairConnectingScreen
         navigation={{ navigate } as never}
         route={{ params: bleClaimParams({ code: '123456' }) } as never}
       />,
     );
 
-    // Wait until credentials have been handed off over BLE, then a status poll runs.
     await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalled());
-    await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalled());
-
-    // The screen stays in the connecting/waiting state — no success navigation.
-    expect(screen.queryByText('Robot authenticated')).toBeNull();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TBT-2026-004217',
+      provisioningAttemptId: 'claim-1',
+    }));
+    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen, expect.anything());
@@ -201,7 +197,7 @@ describe('PairConnectingScreen US-005 invariants', () => {
     }));
   });
 
-  it('[MB9] getProvisioningAttemptStatus -> failed routes to PairFailed with the failureCode', async () => {
+  it('[MB9] a stale failed status does not override a successful code-based BLE handoff', async () => {
     seedSecrets('claim-1');
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
@@ -218,11 +214,9 @@ describe('PairConnectingScreen US-005 invariants', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
-      ROUTES.PairFailedScreen,
-      expect.objectContaining({ errorCode: 'DEVICE_AUTH_NOT_VERIFIED' }),
-    ));
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
   it('[MB10] getDeviceStatus({online:true}) ALONE does not complete the BLE provisioning claim', async () => {

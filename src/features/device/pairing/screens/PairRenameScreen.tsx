@@ -24,10 +24,11 @@ const BUDDIES = [
 ] as const;
 
 export default function PairRenameScreen({ navigation, route }: Props) {
-  useAppLanguage();
+  const { t } = useAppLanguage();
   const defaultDisplayName = React.useMemo(() => translateCopy('Living-room Robot'), []);
   const [buddy, setBuddy] = React.useState(2);
   const [saving, setSaving] = React.useState(false);
+  const [saveError, setSaveError] = React.useState<string | null>(null);
   const [displayName, setDisplayName] = React.useState(defaultDisplayName);
   const nameInputRef = React.useRef<TextInput>(null);
   const { activeChild, activeChildId, children, setActiveChild } = useHousehold();
@@ -50,6 +51,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
   const save = async (): Promise<void> => {
     if (saving) return;
     if (needsExplicitChildSelection && !selectedChildId) return;
+    setSaveError(null);
     setSaving(true);
     const pendingContext = await getPendingPairingContext().catch(() => null);
     const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
@@ -127,6 +129,10 @@ export default function PairRenameScreen({ navigation, route }: Props) {
         navigation.navigate(ROUTES.PairChildProfileScreen, {
           pairing: { deviceId, provisioningAttemptId, serialNumber },
         });
+        return;
+      }
+      if (code === 'DEVICE_AUTH_TIMEOUT') {
+        setSaveError(t('Robot is still finishing its Wi-Fi connection. Wait a moment, then try again.'));
         return;
       }
       navigation.navigate(ROUTES.PairFailedScreen, {
@@ -217,6 +223,11 @@ export default function PairRenameScreen({ navigation, route }: Props) {
         <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
+        {saveError ? (
+          <Text testID="pairing-auth-timeout-message" style={styles.retryMessage} i18n={false}>
+            {saveError}
+          </Text>
+        ) : null}
         <DeviceBigBtn onClick={save} disabled={saving || (needsExplicitChildSelection && !selectedChild)}>
           {saving ? 'Saving...' : 'Save & continue'}
         </DeviceBigBtn>
@@ -253,4 +264,5 @@ const styles = StyleSheet.create({
   nameCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14, minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 10 },
   nameInput: { fontSize: 18, color: DV.ink, flex: 1, paddingVertical: 8, minHeight: 48 },
   nameHint: { fontSize: 12, color: DV.ink3, lineHeight: 22, marginTop: 8 },
+  retryMessage: { fontSize: 13, color: '#9A4D00', lineHeight: 20, marginBottom: 12, textAlign: 'center' },
 });

@@ -171,22 +171,50 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         navigation.reset({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] });
         return;
       }
-      const authenticated = result.completionMode === 'claim_confirmed'
-        ? await waitForClaimConfirmed(result.provisioningAttemptId, poll, result.claimExpiresAt)
-        : await waitForDeviceAuthenticated(result.provisioningAttemptId, poll);
-      if (cancelled) return;
+
+      // Zero-code claims still require the parent's physical confirmation on
+      // the robot, so keep that explicit wait on this screen. The simplified
+      // handoff applies to the code-based flow where firmware authentication is
+      // automatic after Wi-Fi comes up.
+      if (result.completionMode === 'claim_confirmed') {
+        const authenticated = await waitForClaimConfirmed(
+          result.provisioningAttemptId,
+          poll,
+          result.claimExpiresAt,
+        );
+        if (cancelled) return;
+        clearPairingBootstrapToken(authenticated.provisioningAttemptId);
+        setI(PAIRING_STEP_COUNT);
+        setStatus('authenticated');
+        await savePendingPairingContext({
+          deviceId: authenticated.deviceId,
+          serialNumber,
+          provisioningAttemptId: authenticated.provisioningAttemptId,
+        });
+        navigation.navigate(ROUTES.PairRenameScreen, {
+          deviceId: authenticated.deviceId,
+          serialNumber,
+          provisioningAttemptId: authenticated.provisioningAttemptId,
+        });
+        return;
+      }
+
+      // A successful BLE handoff is enough to leave this blocking screen. The
+      // robot intentionally drops BLE while joining Wi-Fi, so waiting here for
+      // backend authentication makes a normal restart look like a frozen app.
+      // Finalization remains backend-authoritative and retries the short auth
+      // race when the parent saves from PairRenameScreen.
       clearPairingBootstrapToken(result.provisioningAttemptId);
       setI(PAIRING_STEP_COUNT);
-      setStatus('authenticated');
       await savePendingPairingContext({
-        deviceId: authenticated.deviceId,
+        deviceId: result.deviceId,
         serialNumber,
-        provisioningAttemptId: authenticated.provisioningAttemptId,
+        provisioningAttemptId: result.provisioningAttemptId,
       });
       navigation.navigate(ROUTES.PairRenameScreen, {
-        deviceId: authenticated.deviceId,
+        deviceId: result.deviceId,
         serialNumber,
-        provisioningAttemptId: authenticated.provisioningAttemptId,
+        provisioningAttemptId: result.provisioningAttemptId,
       });
     }).catch(async (error: unknown) => {
       if (cancelled) return;

@@ -579,8 +579,8 @@ describe('mobile UX redesign accessibility coverage', () => {
       code: '123456',
     });
     expect(apiMocks.mintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'attempt-1' });
-    await expect(screen.findByText('Robot authenticated')).resolves.toBeTruthy();
-    await waitFor(() => expect(apiMocks.getProvisioningAttemptStatus).toHaveBeenCalledWith('attempt-1'));
+    expect(screen.queryByText('Robot authenticated')).toBeNull();
+    expect(apiMocks.getProvisioningAttemptStatus).not.toHaveBeenCalled();
     expect(localDeviceMocks.markLocalDevicePaired).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
@@ -766,7 +766,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     });
   });
 
-  it('fails fast when provisioning status payload is malformed', async () => {
+  it('does not block the code-based BLE handoff on a stale provisioning status payload', async () => {
     apiMocks.getProvisioningAttemptStatus.mockResolvedValueOnce({
       provisioningAttemptId: 'attempt-bad-status',
       deviceId: '',
@@ -774,18 +774,20 @@ describe('mobile UX redesign accessibility coverage', () => {
     });
     putPairingWifiPassword('attempt-bad-status', 'secret123');
 
-    const screen = render(
+    render(
       <PairConnectingScreen
         navigation={navigation as never}
         route={{ params: { deviceId: 'device-1', serialNumber: 'TJBot-001', provisioningAttemptId: 'attempt-bad-status', code: '123456', ssid: 'Casa Wi-Fi', bleDeviceId: 'ble-device-1', provisioningTransport: 'ble' } } as never}
       />,
     );
 
-    await expect(screen.findByText('Pairing failed')).resolves.toBeTruthy();
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.objectContaining({
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TJBot-001',
       provisioningAttemptId: 'attempt-bad-status',
-      errorCode: 'PROVISIONING_STATUS_MALFORMED',
     }));
+    expect(apiMocks.getProvisioningAttemptStatus).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
   it('translates pairing connection dynamic copy in Vietnamese', async () => {

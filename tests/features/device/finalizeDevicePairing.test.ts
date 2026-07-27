@@ -51,6 +51,48 @@ beforeEach(() => {
 });
 
 describe('finalizeDevicePairing', () => {
+  it.each(['DEVICE_AUTH_NOT_VERIFIED', 'PROVISIONING_ATTEMPT_NOT_READY'])('retries %s until robot authentication completes', async (code) => {
+    jest.useFakeTimers();
+    try {
+      mockedComplete
+        .mockRejectedValueOnce(Object.assign(new Error('robot is initializing'), { code }))
+        .mockResolvedValueOnce(COMPLETE_OK);
+      const reset = jest.fn();
+
+      const finalizing = finalizeDevicePairing({ reset }, CONTEXT, 'child-9');
+      await Promise.resolve();
+      expect(mockedComplete).toHaveBeenCalledTimes(1);
+
+      await jest.advanceTimersByTimeAsync(3000);
+      await expect(finalizing).resolves.toBeUndefined();
+      expect(mockedComplete).toHaveBeenCalledTimes(2);
+      expect(reset).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('bounds the authentication wait and returns a retryable DEVICE_AUTH_TIMEOUT', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedComplete.mockRejectedValue(Object.assign(new Error('robot is initializing'), {
+        code: 'DEVICE_AUTH_NOT_VERIFIED',
+      }));
+      const reset = jest.fn();
+
+      const finalizing = finalizeDevicePairing({ reset }, CONTEXT, 'child-9');
+      const rejection = expect(finalizing).rejects.toMatchObject({ code: 'DEVICE_AUTH_TIMEOUT' });
+      await jest.advanceTimersByTimeAsync(60_000);
+      await rejection;
+
+      expect(mockedComplete).toHaveBeenCalledTimes(20);
+      expect(mockedMarkLocal).not.toHaveBeenCalled();
+      expect(reset).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('completes provisioning with the assigned child + fixed display name, marks paired, then resets to PairSuccess', async () => {
     const reset = jest.fn();
 

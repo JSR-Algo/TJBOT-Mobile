@@ -29,6 +29,8 @@ export interface DevicePairingSuccessContext {
 // The single fixed device display name used across the pairing flow. The buddy
 // avatar is UI-only and never rides the claim payload (see PairRenameScreen).
 const PAIRING_DISPLAY_NAME = 'Living-room Robot';
+const DEVICE_AUTH_RETRY_INTERVAL_MS = 3000;
+const DEVICE_AUTH_MAX_ATTEMPTS = 20;
 
 function normalizedDisplayName(displayName: string | undefined): string {
   const trimmed = displayName?.trim();
@@ -66,6 +68,43 @@ function isAlreadyFinalizedError(error: unknown): boolean {
     || code === 'CLAIM_ALREADY_CONFIRMED';
 }
 
+function isDeviceAuthPendingError(error: unknown): boolean {
+  const code = errorCodeFrom(error);
+  return code === 'DEVICE_AUTH_NOT_VERIFIED' || code === 'PROVISIONING_ATTEMPT_NOT_READY';
+}
+
+function waitForDeviceAuthRetry(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, DEVICE_AUTH_RETRY_INTERVAL_MS));
+}
+
+async function completeWhenDeviceAuthenticated(
+  context: DevicePairingContext,
+  childId: string,
+  displayName?: string,
+): Promise<void> {
+  for (let attempt = 0; attempt < DEVICE_AUTH_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      await completeDeviceProvisioning({
+        provisioningAttemptId: context.provisioningAttemptId,
+        deviceId: context.deviceId,
+        assignChildProfileId: childId,
+        displayName: normalizedDisplayName(displayName),
+      });
+      return;
+    } catch (error) {
+      if (isAlreadyFinalizedError(error)) return;
+      if (!isDeviceAuthPendingError(error)) throw error;
+      if (attempt === DEVICE_AUTH_MAX_ATTEMPTS - 1) {
+        throw Object.assign(new Error('Robot authentication did not complete in time.'), {
+          code: 'DEVICE_AUTH_TIMEOUT',
+          cause: error,
+        });
+      }
+      await waitForDeviceAuthRetry();
+    }
+  }
+}
+
 export async function finishDevicePairingSuccess(
   navigation: Pick<NavigationProp<RootStackParamList>, 'reset'>,
   context: DevicePairingSuccessContext,
@@ -101,15 +140,6 @@ export async function finalizeDevicePairing(
   childId: string,
   displayName?: string,
 ): Promise<void> {
-  try {
-    await completeDeviceProvisioning({
-      provisioningAttemptId: context.provisioningAttemptId,
-      deviceId: context.deviceId,
-      assignChildProfileId: childId,
-      displayName: normalizedDisplayName(displayName),
-    });
-  } catch (error) {
-    if (!isAlreadyFinalizedError(error)) throw error;
-  }
+  await completeWhenDeviceAuthenticated(context, childId, displayName);
   await finishDevicePairingSuccess(navigation, context);
 }
