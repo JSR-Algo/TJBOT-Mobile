@@ -12,16 +12,16 @@ import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GreetingScreen'>;
 
-export default function GreetingScreen({ navigation }: Props) {
+export default function GreetingScreen({ navigation, route }: Props) {
   return (
     <ScreenShell>
-      <LessonHeader progress={0.05} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
+      <LessonHeader progress={0.05} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen, route.params)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" justifyContent="center">
         <Robot emotion="greet" size={240} />
         <SpeechBubble>Hi friend! 👋{'\n'}Ready to play with words?</SpeechBubble>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.ActivityIntroScreen)} color="#7BD389">Yes, let's go!</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.ActivityIntroScreen, route.params)} color="#7BD389">Yes, let's go!</PrimaryCTA>
       </Box>
     </ScreenShell>
   );

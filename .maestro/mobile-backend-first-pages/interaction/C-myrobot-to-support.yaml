@@ -5,7 +5,7 @@ name: C My Robot to Support
     visible:
       text: ".*(My Robot|Robot của tôi|Contact support|Liên hệ hỗ trợ|Help).*"
     timeout: 20000
-- tapOn: ".*(Contact support|Liên hệ hỗ trợ).*"
+- tapOn: "^(Contact support|Liên hệ hỗ trợ)\\..*"
 - extendedWaitUntil:
     visible:
       text: ".*(Help & support|Trợ giúp & hỗ trợ|Open help articles|Mở bài viết|Help articles|Bài hỗ trợ).*"

@@ -41,8 +41,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       id: "homePrimaryCta"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/01-HomeHubScreen"
 - back
 - waitForAnimationToEnd
@@ -62,8 +60,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       id: "libraryTab"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/02-CourseLibraryScreen"
 - back
 - waitForAnimationToEnd
@@ -83,8 +79,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Today|Hôm nay).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/03-TodayProgressScreen"
 - back
 - waitForAnimationToEnd
@@ -104,8 +98,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Settings|Cài đặt).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/04-ParentSettingsScreen"
 - back
 - waitForAnimationToEnd
@@ -125,8 +117,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Parent Space|Khu vực phụ huynh|course dashboard|bảng điều khiển khóa học|Chất lượng|Course quality).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/05-ParentSummaryScreen"
 - back
 - waitForAnimationToEnd
@@ -146,8 +136,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Robot|Thiết bị|Overview|Tổng quan).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/06-DeviceOverviewScreen"
 - back
 - waitForAnimationToEnd
@@ -167,8 +155,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Robot|Thiết bị|Pair|Ghép).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/07-DeviceHomeScreen"
 - back
 - waitForAnimationToEnd
@@ -188,8 +174,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Find|Tìm|Lost|thất lạc).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/08-DeviceLostScreen"
 - back
 - waitForAnimationToEnd
@@ -209,8 +193,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Software|Firmware|Phần mềm).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/09-DeviceFirmwareScreen"
 - back
 - waitForAnimationToEnd
@@ -230,8 +212,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Lesson on Robot|Bài học|Session|Phiên).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/10-DeviceSessionScreen"
 - back
 - waitForAnimationToEnd
@@ -251,8 +231,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(My Robot|Robot của tôi|Chưa có robot|not connected).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/11-MyRobotScreen"
 - back
 - waitForAnimationToEnd
@@ -272,8 +250,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Robot status|Trạng thái robot|status|Online|Offline).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/12-RobotStatusScreen"
 - back
 - waitForAnimationToEnd
@@ -293,8 +269,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Contact support|Hỗ trợ|Support).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/13-SupportScreen"
 - back
 - waitForAnimationToEnd
@@ -314,8 +288,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(offline|ngoại tuyến|Offline help|Trợ giúp).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/14-OfflineHelpScreen"
 - back
 - waitForAnimationToEnd
@@ -335,8 +307,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Factory|Khôi phục|Unpair|Hủy ghép).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/15-FactoryResetScreen"
 - back
 - waitForAnimationToEnd
@@ -356,8 +326,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Robot software|Phần mềm robot|Firmware|software).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/16-RobotFirmwareScreen"
 - back
 - waitForAnimationToEnd
@@ -377,8 +345,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Help|Trợ giúp|FAQ|Câu hỏi).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/17-HelpFaqScreen"
 - back
 - waitForAnimationToEnd
@@ -398,8 +364,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Lesson|Bài học|Ready|Sẵn sàng).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/18-LessonReadyScreen"
 - back
 - waitForAnimationToEnd
@@ -419,8 +383,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Complete|Hoàn thành|hoàn tất|Course).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/19-CourseCompleteScreen"
 - back
 - waitForAnimationToEnd
@@ -440,8 +402,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Sync|Đồng bộ|Needs).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/20-NeedsSyncScreen"
 - back
 - waitForAnimationToEnd
@@ -461,8 +421,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Locked|Khóa|Course).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/21-CourseLockedScreen"
 - back
 - waitForAnimationToEnd
@@ -482,8 +440,6 @@ name: Strict 22-page deep-link recapture (required asserts)
     visible:
       text: ".*(Robot ready|Robot|Sẵn sàng|Lesson).*"
     timeout: 15000
-- scroll:
-    optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/22-RobotReadyScreen"
 - back
 - waitForAnimationToEnd

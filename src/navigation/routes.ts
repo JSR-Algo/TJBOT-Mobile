@@ -18,7 +18,7 @@ export type LessonSessionParams = {
 
 export type RobotLessonDemoParams = {
   lessonId?: string;
-  ageBand?: import('@/features/lessonDemo/types').LessonAgeBand;
+  ageBand?: import('@/features/lesson-demo/types').LessonAgeBand;
   autoStartVoice?: boolean;
 };
 
@@ -42,11 +42,14 @@ export type RootStackParamList = {
   // then FINISH the pairing they started (PairRenameScreen → here when the
   // household has no child yet), instead of being dropped into onboarding. When
   // absent, this is plain onboarding and the screen advances to MicAskScreen.
-  ChildProfileScreen: undefined | { pairing?: { deviceId: string; provisioningAttemptId: string; serialNumber?: string } };
+  ChildProfileScreen: undefined | {
+    pairing?: { deviceId: string; provisioningAttemptId: string; serialNumber?: string };
+  };
   FirstLessonEntryScreen: undefined;
 
   // home
   HomeHubScreen: undefined;
+  HomeChildProfileScreen: undefined;
 
   // course
   CourseScreen: undefined | { courseId?: string };
@@ -62,7 +65,15 @@ export type RootStackParamList = {
   CourseDetailScreen: undefined | { courseId?: string };
   BuyCourseScreen: undefined | { courseId?: string };
   CourseAddedScreen: undefined | { courseId?: string; assignmentId?: string };
-  CourseCompleteScreen: undefined | { courseId?: string };
+  CourseCompleteScreen: undefined | {
+    courseId?: string;
+    summary?: {
+      heading: string;
+      minutesTogether?: number;
+      wordsPlayed?: number;
+      words?: Array<{ word: string; confident: boolean }>;
+    };
+  };
   CourseLockedScreen: undefined | { courseId?: string };
   NeedsSyncScreen: undefined | { courseId?: string };
   // US-006 Slice-01 (LANE-MOBILE): the lesson-assignment happy path is re-keyed
@@ -90,12 +101,12 @@ export type RootStackParamList = {
 
   // lesson-demo
   LessonDemoHomeScreen: undefined;
-  LessonRoadmapScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
-  LessonSessionScreen: undefined | { week?: number; day?: number; ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
-  LessonShowcaseScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
-  ParentLessonSummaryScreen: undefined | { lessonId?: string; ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
+  LessonRoadmapScreen: undefined | { ageBand?: import('@/features/lesson-demo/types').LessonAgeBand };
+  LessonSessionScreen: undefined | { week?: number; day?: number; ageBand?: import('@/features/lesson-demo/types').LessonAgeBand };
+  LessonShowcaseScreen: undefined | { ageBand?: import('@/features/lesson-demo/types').LessonAgeBand };
+  ParentLessonSummaryScreen: undefined | { lessonId?: string; ageBand?: import('@/features/lesson-demo/types').LessonAgeBand };
   RobotLessonControlScreen: undefined | { deviceId?: string; lessonId?: string; sessionIndex?: number };
-  LessonPickScreen: undefined | { ageBand?: import('@/features/lessonDemo/types').LessonAgeBand };
+  LessonPickScreen: undefined | { ageBand?: import('@/features/lesson-demo/types').LessonAgeBand };
   RobotCompanionScreen: undefined | RobotLessonDemoParams;
   RobotFullscreenLessonScreen: undefined | RobotLessonDemoParams;
 
@@ -213,6 +224,7 @@ export const ROUTES = {
   'ChildProfileScreen': 'ChildProfileScreen',
   'FirstLessonEntryScreen': 'FirstLessonEntryScreen',
   'HomeHubScreen': 'HomeHubScreen',
+  'HomeChildProfileScreen': 'HomeChildProfileScreen',
   'CourseScreen': 'CourseScreen',
   'LevelScreen': 'LevelScreen',
   'UnitScreen': 'UnitScreen',

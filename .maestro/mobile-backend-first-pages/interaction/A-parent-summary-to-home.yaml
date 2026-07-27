@@ -1,13 +1,8 @@
 appId: net.jasonle.tjbot
 name: A Summary product path back to Home
 ---
-# CTA must sit above the floating tab bar after ParentScroll clearance fix.
-- scrollUntilVisible:
-    element:
-      text: ".*(Return to child play area|Quay về khu vực chơi).*"
-    direction: DOWN
-    timeout: 25000
-- tapOn: ".*(Return to child play area|Quay về khu vực chơi).*"
+# Parent Zone is a protected tab; Home is reached through the persistent tab bar.
+- tapOn: "^(Home|Trang chủ)$"
 - waitForAnimationToEnd
 # Unique Home postcondition — must not remain on Parent Space or Library.
 - extendedWaitUntil:

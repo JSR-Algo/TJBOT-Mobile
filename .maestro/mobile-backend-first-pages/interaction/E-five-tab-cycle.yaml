@@ -6,24 +6,19 @@ name: E Five-tab cycle
       id: "homePrimaryCta"
     timeout: 20000
 # Devices
-- tapOn:
-    id: "devicesTab"
+- tapOn: "^(Devices|Thiết bị)$"
 - waitForAnimationToEnd
 # Library
-- tapOn:
-    id: "libraryTab"
+- tapOn: "^(Library|Thư viện)$"
 - waitForAnimationToEnd
 # Progress
-- tapOn:
-    id: "progressTab"
+- tapOn: "^(Progress|Tiến độ)$"
 - waitForAnimationToEnd
 # Profile
-- tapOn:
-    id: "profileTab"
+- tapOn: "^(Profile|Hồ sơ)$"
 - waitForAnimationToEnd
 # Home
-- tapOn:
-    id: "homeTab"
+- tapOn: "^(Home|Trang chủ)$"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:

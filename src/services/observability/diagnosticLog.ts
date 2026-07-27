@@ -106,13 +106,9 @@ export function diagnosticLog(input: DiagnosticLogInput): DiagnosticEntry {
 
   if (__DEV__) {
     const prefix = `[diag:${entry.category}] ${entry.event}`;
-    if (entry.severity === 'error') {
-      console.error(prefix, entry.message, entry.detail ?? '');
-    } else if (entry.severity === 'warn') {
-      console.warn(prefix, entry.message, entry.detail ?? '');
-    } else {
-      console.info(prefix, entry.message, entry.detail ?? '');
-    }
+    // Captured diagnostics are handled application state. Routing them through
+    // console.error/console.warn makes React Native LogBox cover the recovery UI.
+    console.info('%s %s %o', prefix, entry.message, entry.detail ?? '');
   }
 
   notify();
@@ -159,8 +155,15 @@ export function getDiagnosticSessionHeader(): Record<string, string> {
     Constants.nativeBuildVersion ??
     'unknown';
 
+  let platform = 'unknown';
+  try {
+    platform = Platform.OS ?? 'unknown';
+  } catch {
+    // React Native may tear down lazy native exports before an async diagnostic finishes.
+  }
+
   return {
-    platform: Platform.OS,
+    platform,
     appVersion: String(version),
     build: String(build),
     apiBase: Config.API_BASE_URL,
@@ -203,7 +206,7 @@ export function logApiFailure(
   traceId?: string,
 ): void {
   diagnosticLog({
-    severity: status && status >= 500 ? 'error' : 'warn',
+    severity: status === undefined ? 'info' : status >= 500 ? 'error' : 'warn',
     category: url?.includes('/gemini/') ? 'gemini' : 'api',
     event: 'http_error',
     message: message ?? `HTTP ${status ?? 'unknown'} on ${method ?? '?'} ${url ?? '?'}`,

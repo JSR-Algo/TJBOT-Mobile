@@ -20,7 +20,7 @@ export const INVESTOR_DEMO_HOUSEHOLD: Household = {
 export const INVESTOR_DEMO_CHILD: Child = {
   id: 'investor-demo-child',
   household_id: INVESTOR_DEMO_HOUSEHOLD.id,
-  name: 'Minh',
+  name: 'Mia',
   birth_year: 2020,
   age_gate_passed: true,
   created_at: '2026-06-20T00:00:00.000Z',
@@ -44,12 +44,13 @@ export const INVESTOR_DEMO_DEVICE: DeviceStatus = {
 export const INVESTOR_DEMO_LIBRARY: readonly LibraryItem[] = [
   {
     courseId: 'c_barn',
-    title: 'Barn Friends',
+    title: 'Barn & Farm Words',
     language: 'en',
     price: 0,
     owned: true,
     syncedToDevice: true,
     locked: false,
+    lessonCount: 6,
   },
   {
     courseId: 'c_space',
@@ -59,6 +60,7 @@ export const INVESTOR_DEMO_LIBRARY: readonly LibraryItem[] = [
     owned: true,
     syncedToDevice: false,
     locked: false,
+    lessonCount: 5,
   },
   {
     courseId: 'c_robot',
@@ -68,13 +70,14 @@ export const INVESTOR_DEMO_LIBRARY: readonly LibraryItem[] = [
     owned: true,
     syncedToDevice: false,
     locked: false,
+    lessonCount: 4,
   },
 ];
 
 export const INVESTOR_DEMO_COURSE_DETAILS: readonly CourseDetail[] = [
   {
     courseId: 'c_barn',
-    title: 'Barn Friends',
+    title: 'Barn & Farm Words',
     description: 'Gentle animal words, listening turns, and short repeat-after-me practice.',
     levelCount: 2,
     lessonCount: 6,
@@ -99,7 +102,7 @@ export const INVESTOR_DEMO_COURSE_DETAILS: readonly CourseDetail[] = [
 ];
 
 export const INVESTOR_DEMO_PUBLISHED_COURSES: readonly PublishedCourse[] = [
-  { courseId: 'c_barn', title: 'Barn Friends', lessonCount: 2 },
+  { courseId: 'c_barn', title: 'Barn & Farm Words', lessonCount: 2 },
   { courseId: 'c_space', title: 'Space Adventure', lessonCount: 2 },
   { courseId: 'c_robot', title: 'Robot Helpers', lessonCount: 1 },
 ];

@@ -22,7 +22,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { parentColors, parentRadii, parentShadows } from '@/design-system/tokens';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { useRobotTelemetry } from '../telemetry';
-import { MainTabIcon, SLEEK_TAB_ICONS } from '@/navigation/SleekTabBarVisuals';
+import { MainTabIcon, SLEEK_TAB_ICON_SOURCES } from '@/navigation/SleekTabBarVisuals';
 import { MAIN_TAB_SCREENS } from '@/navigation/featureRegistry';
 import { getSleekTabBarLayout } from '@/design-system/sleekHomeLayout';
 import type { FeatureTabName } from '@/navigation/types';
@@ -249,7 +249,7 @@ function RobotDetailTabBar({ navigation }: Pick<Props, 'navigation'>): React.JSX
               Icon={screen.tabIcon}
               color={focused ? parentColors.accent : parentColors.ink2}
               focused={focused}
-              imageUri={SLEEK_TAB_ICONS[screen.tabName]}
+              imageSource={SLEEK_TAB_ICON_SOURCES[screen.tabName]}
               layoutScale={tabLayout.scale}
             />
             <Text

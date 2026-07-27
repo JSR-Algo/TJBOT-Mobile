@@ -35,6 +35,7 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
   const { language } = useAppLanguage();
   return (
     <ScrollView
+      testID="parentScroll"
       style={[styles.root, { backgroundColor: PA.bg }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    paddingBottom: 130,
+    paddingBottom: PARENT_SCROLL_TAB_CLEARANCE,
   },
   header: {
     paddingTop: 56, paddingBottom: 18, paddingHorizontal: 24,

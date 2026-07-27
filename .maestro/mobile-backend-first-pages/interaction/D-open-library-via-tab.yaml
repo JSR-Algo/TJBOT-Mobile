@@ -6,7 +6,7 @@ name: D Open library via tab
     visible:
       text: ".*(Trang chủ|Home|Thiết bị|Library|Thư viện).*"
     timeout: 20000
-- tapOn: ".*(Thư viện|Library).*"
+- tapOn: "^(Thư viện|Library)$"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:

@@ -1,11 +1,12 @@
 appId: net.jasonle.tjbot
 name: D CourseLocked Back to library
 ---
-- extendedWaitUntil:
-    visible:
-      text: ".*(Locked|Khóa|Back to library|Về thư viện|Story Time|Add free).*"
-    timeout: 20000
-- tapOn: ".*(Back to library|Về thư viện).*"
+- assertVisible: ".*(Locked for now|Tạm khóa|Tạm thời bị khóa).*"
+- scrollUntilVisible:
+    element:
+      text: "^(Back to library|Về thư viện)$"
+    direction: DOWN
+- tapOn: "^(Back to library|Về thư viện)$"
 - extendedWaitUntil:
     visible:
       text: ".*(Hello Friends|My Animal|Course|Khóa học|Library|Thư viện|Yummy).*"

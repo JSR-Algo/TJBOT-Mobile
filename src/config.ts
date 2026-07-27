@@ -2,96 +2,32 @@
  * Runtime configuration — reads EXPO_PUBLIC_* env vars directly.
  *
  * Backend URL resolution order (see getApiBaseUrl):
- *   1. process.env.EXPO_PUBLIC_TBOT_API_URL if set to anything except literal
- *      http://localhost:3000
- *   2. (real device + __DEV__) auto-derive http://<metro-host>:3000 from the
- *      JS bundle URL — works on iPhone/Android over LAN with zero per-network
- *      .env edits. Set EXPO_PUBLIC_TBOT_API_URL explicitly to override.
- *   3. iOS Simulator / Android Emulator hardcoded loopbacks
- *   4. Hosted Render URL as final fallback (production builds)
+ *   1. process.env.EXPO_PUBLIC_TBOT_API_URL when explicitly set
+ *   2. The canonical Linux backend at report.tjbot.vn
+ *
+ * Simulator, emulator, physical-device, staging, and production builds all use
+ * the same hosted backend by default. Local development remains available by
+ * explicitly setting the EXPO_PUBLIC_* URLs.
  */
-import { NativeModules, Platform } from 'react-native';
-import * as Device from 'expo-device';
-import {
-  LOCAL_OWNED_AI_V1,
-  LOCAL_OWNED_API_V1,
-  OWNED_AI_V1,
-  OWNED_API_V1,
-} from './constants/ownedBackend';
+import { OWNED_AI_V1, OWNED_API_V1 } from './constants/ownedBackend';
 
-// Owned TeeBot backend fallback when no explicit env or LAN derivation applies.
+// Owned TeeBot backend fallback when no explicit env applies.
 const HOSTED_API = OWNED_API_V1;
 const HOSTED_AI = OWNED_AI_V1;
-const IOS_SIMULATOR_API = LOCAL_OWNED_API_V1;
-const ANDROID_EMULATOR_API = 'http://10.0.2.2:3000/v1';
-const IOS_SIMULATOR_AI = LOCAL_OWNED_AI_V1;
-const ANDROID_EMULATOR_AI = 'http://10.0.2.2:3001/api/ai';
-
-const LOOPBACK_TBOT_API = 'http://localhost:3000';
-const LOOPBACK_TBOT_AI_URLS = new Set([
-  'http://localhost:3001/api/ai',
-  'http://127.0.0.1:3001/api/ai',
-]);
 
 function ensureV1(url: string): string {
   const trimmed = url.replace(/\/+$/, '');
   return /\/v\d+$/.test(trimmed) ? trimmed : `${trimmed}/v1`;
 }
 
-// Parse the Metro bundle URL to extract the dev host's IP. On a physical
-// device, scriptURL looks like "http://192.168.1.50:8081/index.bundle?...".
-// Returns null in production (no scriptURL), Jest (no NativeModules), or
-// when the URL doesn't have a parseable host.
-export function deriveDevHostFromBundleUrl(): string | null {
-  try {
-    const scriptURL: unknown = NativeModules?.SourceCode?.scriptURL;
-    if (typeof scriptURL !== 'string' || scriptURL.length === 0) return null;
-    const match = scriptURL.match(/^https?:\/\/([^/:]+)(?::\d+)?\//);
-    if (!match) return null;
-    const host = match[1];
-    if (host === 'localhost' || host === '127.0.0.1') return null;
-    return host;
-  } catch {
-    return null;
-  }
-}
-
 export function getApiBaseUrl(): string {
   const explicit = (process.env.EXPO_PUBLIC_TBOT_API_URL as string | undefined)?.trim();
-  // A literal `http://localhost:3000` in .env is treated as "user forgot to
-  // set their LAN IP" because that value is unreachable on a real device.
-  // The Simulator/Emulator branches below already cover those paths
-  // explicitly with 127.0.0.1 / 10.0.2.2.
-  if (explicit && explicit !== LOOPBACK_TBOT_API) {
-    return ensureV1(explicit);
-  }
-  // Only auto-derive LAN backend when no explicit VPS/staging URL is configured.
-  if (Device.isDevice && __DEV__ && (!explicit || explicit === LOOPBACK_TBOT_API)) {
-    const derived = deriveDevHostFromBundleUrl();
-    if (derived) return ensureV1(`http://${derived}:3000`);
-  }
-  if (!Device.isDevice && Platform.OS === 'ios') return IOS_SIMULATOR_API;
-  if (!Device.isDevice && Platform.OS === 'android') return ANDROID_EMULATOR_API;
-  return HOSTED_API;
+  return explicit ? ensureV1(explicit) : HOSTED_API;
 }
 
 export function getAiBaseUrl(): string {
   const explicit = (process.env.EXPO_PUBLIC_TBOT_AI_URL as string | undefined)?.trim();
-  const normalizedExplicit = explicit?.replace(/\/+$/, '');
-  if (
-    normalizedExplicit &&
-    !LOOPBACK_TBOT_AI_URLS.has(normalizedExplicit) &&
-    normalizedExplicit !== `${LOOPBACK_TBOT_API}/api/ai`
-  ) {
-    return normalizedExplicit;
-  }
-  if (Device.isDevice && __DEV__ && (!explicit || explicit === `${LOOPBACK_TBOT_API}/api/ai` || LOOPBACK_TBOT_AI_URLS.has(normalizedExplicit ?? ''))) {
-    const derived = deriveDevHostFromBundleUrl();
-    if (derived) return `http://${derived}:3001/api/ai`;
-  }
-  if (!Device.isDevice && Platform.OS === 'ios') return IOS_SIMULATOR_AI;
-  if (!Device.isDevice && Platform.OS === 'android') return ANDROID_EMULATOR_AI;
-  return HOSTED_AI;
+  return explicit ? explicit.replace(/\/+$/, '') : HOSTED_AI;
 }
 
 export function getRealtimeWsRoot(): string {

@@ -25,7 +25,8 @@ name: First five mobile MVP screens and screenshot pack
       visible: ".*Open debugger to view warnings.*"
     commands:
       - tapOn:
-          point: "92%,92%"
+          point: "92%,91%"
+      - assertNotVisible: ".*Open debugger to view warnings.*"
 - assertVisible:
     id: "appShellProfile"
 - assertVisible:

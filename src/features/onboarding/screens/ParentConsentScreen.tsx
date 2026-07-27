@@ -198,7 +198,12 @@ export default function ParentConsentScreen({ navigation }: Props) {
           accessibilityLabel="I give parent consent"
           accessibilityState={{ checked: accepted }}
         >
-          <Box style={[styles.checkbox, accepted && styles.checkboxActive]} alignItems="center" justifyContent="center">
+          <Box
+            testID={accepted ? 'parentConsentCheckbox_checked' : 'parentConsentCheckbox_unchecked'}
+            style={[styles.checkbox, accepted && styles.checkboxActive]}
+            alignItems="center"
+            justifyContent="center"
+          >
             {accepted ? (
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M5 12l5 5 9-10" />

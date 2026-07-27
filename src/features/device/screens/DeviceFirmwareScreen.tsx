@@ -1,71 +1,176 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { Alert, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
+import ConnectorStateNotice from '@/components/ConnectorStateNotice';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
+import { getLocalPairedDeviceId } from '@/features/device/pairing/localPairedDevice';
+import { firmwareUpdateConnector } from '@/services/connectors/firmware-update.connector';
+import type { RobotLinkState } from '@/services/connectors/types';
+import type { FirmwareVersion } from '@/services/api/device.api';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceFirmwareScreen'>;
 
-const CHANGES = [
-  'Smoother face animations',
-  'Better understanding of small voices',
-  'Two new lesson celebrations',
-  'Bug fixes',
-];
+
 
 export default function DeviceFirmwareScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
+  const [deviceId, setDeviceId] = React.useState<string | null | undefined>(undefined);
+  const [version, setVersion] = React.useState<FirmwareVersion | null>(null);
+  const [linkState, setLinkState] = React.useState<RobotLinkState | null>(null);
+  const [retryable, setRetryable] = React.useState(false);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+
+  const loadVersion = React.useCallback(async () => {
+    setActionMessage(null);
+    const pairedDeviceId = await getLocalPairedDeviceId();
+    setDeviceId(pairedDeviceId);
+    if (!pairedDeviceId) {
+      setVersion(null);
+      setLinkState('not_connected');
+      setRetryable(false);
+      return;
+    }
+
+    const result = await firmwareUpdateConnector.getVersion(pairedDeviceId);
+    if (result.state === 'ok') {
+      setVersion(result.value);
+      setLinkState(null);
+      setRetryable(false);
+      return;
+    }
+    setVersion(null);
+    setLinkState(result.state);
+    setRetryable(result.retryable === true);
+  }, []);
+
+  React.useEffect(() => {
+    void loadVersion();
+  }, [loadVersion]);
+
+  const runAction = async (kind: 'schedule' | 'now') => {
+    if (!deviceId) return;
+    const result = kind === 'schedule'
+      ? await firmwareUpdateConnector.scheduleUpdate(deviceId)
+      : await firmwareUpdateConnector.updateNow(deviceId);
+    if (result.state === 'ok') {
+      setLinkState(null);
+      setActionMessage(
+        kind === 'schedule'
+          ? t('Update scheduled for tonight.')
+          : t('Update started. Robot will restart when it finishes.'),
+      );
+      return;
+    }
+    setVersion(null);
+    setLinkState(result.state);
+    setRetryable(result.retryable === true);
+  };
+
+  const confirmAction = (kind: 'schedule' | 'now') => {
+    const scheduled = kind === 'schedule';
+    Alert.alert(
+      t(scheduled ? 'Update Robot tonight?' : 'Update Robot now?'),
+      t(
+        scheduled
+          ? 'Robot will update while it is idle tonight. Lessons and settings stay as they are.'
+          : 'Robot restarts during the update. Lessons and settings stay as they are. This cannot be undone once started.',
+      ),
+      [
+        { text: t('Cancel'), style: 'cancel' },
+        {
+          text: t(scheduled ? 'Schedule update' : 'Update now'),
+          onPress: () => { void runAction(kind); },
+        },
+      ],
+    );
+  };
+
   return (
-    <DeviceShell title="Software update" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
-      <Box paddingHorizontal={16} paddingTop={24}>
-        <Box style={styles.heroCard} flexDirection="row" gap={14} alignItems="center">
-          <RobotDevice emotion="charging" size={84} accent="#FF6F61" />
-          <Box flex={1}>
-            <Text fontWeight="700" style={styles.updateBadge}>Update available</Text>
-            <Text fontWeight="600" style={styles.versionText}>v1.5.0 · 24 MB</Text>
-            <Text style={styles.versionMeta}>About 4 minutes · Robot will be unavailable</Text>
+    <DeviceShell title={t('Software update')} onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+      {deviceId === undefined ? (
+        <Box paddingHorizontal={24} paddingTop={28} alignItems="center">
+          <Text style={styles.loading}>{t('Checking Robot software')}</Text>
+        </Box>
+      ) : null}
+
+      {deviceId === null ? (
+        <>
+          <ConnectorStateNotice state="not_connected" />
+          <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30}>
+            <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>
+              {t('Connect Robot')}
+            </DeviceBigBtn>
           </Box>
-        </Box>
-      </Box>
+        </>
+      ) : null}
 
-      <Box paddingHorizontal={16} paddingTop={18}>
-        <Text fontWeight="700" style={styles.sectionLabel}>What's new</Text>
-        <Box style={styles.listCard}>
-          {CHANGES.map((t, i) => (
-            <Box key={t} style={[styles.listRow, i < CHANGES.length - 1 && styles.listBorder]} flexDirection="row" alignItems="flex-start" gap={10}>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={DV.accent} strokeWidth={2.4} strokeLinecap="round" style={{ marginTop: 4 }}>
-                <Path d="M5 12l5 5 9-10" />
-              </Svg>
-              <Text style={styles.listText}>{t}</Text>
+      {deviceId && linkState ? (
+        <>
+          <ConnectorStateNotice
+            state={linkState}
+            onRetry={retryable ? () => { void loadVersion(); } : undefined}
+          />
+          <FirmwareActions onConfirm={confirmAction} t={t} />
+        </>
+      ) : null}
+
+      {deviceId && version ? (
+        <>
+          <Box paddingHorizontal={16} paddingTop={24}>
+            <Box style={styles.heroCard} flexDirection="row" gap={14} alignItems="center">
+              <RobotDevice emotion="charging" size={84} accent="#FF6F61" />
+              <Box flex={1}>
+                <Text fontWeight="700" style={styles.updateBadge}>
+                  {t(version.updateAvailable ? 'Update available' : 'Robot software is current')}
+                </Text>
+                <Text fontWeight="600" style={styles.versionText}>
+                  {version.updateAvailable
+                    ? `${version.current} → ${version.latest}`
+                    : version.current}
+                </Text>
+              </Box>
             </Box>
-          ))}
-        </Box>
-      </Box>
+          </Box>
+          {version.updateAvailable ? <FirmwareActions onConfirm={confirmAction} t={t} /> : null}
+        </>
+      ) : null}
 
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Update tonight (recommended)</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Update now</DeviceBigBtn>
-        <Text style={styles.note}>Tonight's update happens during quiet hours so Robot is ready in the morning.</Text>
-      </Box>
+      {actionMessage ? (
+        <Box paddingHorizontal={24} paddingTop={20}>
+          <Text style={styles.success}>{actionMessage}</Text>
+        </Box>
+      ) : null}
     </DeviceShell>
   );
 }
 
+function FirmwareActions({
+  onConfirm,
+  t,
+}: {
+  onConfirm: (kind: 'schedule' | 'now') => void;
+  t: (copy: string) => string;
+}) {
+  return (
+    <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
+      <DeviceBigBtn onClick={() => onConfirm('schedule')}>{t('Update tonight (recommended)')}</DeviceBigBtn>
+      <DeviceBigBtn secondary onClick={() => onConfirm('now')}>{t('Update now')}</DeviceBigBtn>
+    </Box>
+  );
+}
+
 const styles = StyleSheet.create({
+  loading: { fontSize: 14, color: DV.ink2, textAlign: 'center' },
   heroCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, padding: 16 },
   updateBadge: { fontSize: 11, color: DV.warn, textTransform: 'uppercase', letterSpacing: 0.6 },
   versionText: { fontSize: 16, color: DV.ink, marginTop: 2 },
-  versionMeta: { fontSize: 12, color: DV.ink2, marginTop: 2 },
-  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  listCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
-  listRow: { paddingVertical: 12, paddingHorizontal: 14 },
-  listBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
-  listText: { fontSize: 14, color: DV.ink, flex: 1, lineHeight: 22 },
-  note: { fontSize: 12, color: DV.ink3, textAlign: 'center', lineHeight: 20 },
+  success: { fontSize: 13, color: DV.good, textAlign: 'center', lineHeight: 19 },
 });

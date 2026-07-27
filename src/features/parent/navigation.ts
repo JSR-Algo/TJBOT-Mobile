@@ -26,7 +26,7 @@ export const PROFILE_TAB_SCREEN = {
 
 export const PARENT_SCREENS = defineFeatureScreens([
   { name: ROUTES.ParentGateScreen, component: ParentGateScreen, role: 'fallback-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_gate' },
-  { name: ROUTES.ParentTodayScreen, component: ParentTodayScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_today' },
+  { name: ROUTES.ParentTodayScreen, component: ParentTodayScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_today' },
   { name: ROUTES.ParentHistoryScreen, component: ParentHistoryScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_history' },
   { name: ROUTES.ParentSafetyScreen, component: ParentSafetyScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_safety' },
   { name: ROUTES.ParentSettingsScreen, component: ParentSettingsScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_settings' },

@@ -6,7 +6,7 @@ interface Props {
   idx: number;
 }
 
-const COUNT = 4;
+const COUNT = 3;
 
 export default function IntroDots({ idx }: Props) {
   return (

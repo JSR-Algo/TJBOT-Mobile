@@ -1,8 +1,8 @@
 import {
   BARN_SAY_IT_LESSON_ID,
   getBarnSayItLesson,
-} from '../../../src/features/lessonDemo/content/barnSayItLesson';
-import { staticLessonContentProvider } from '../../../src/features/lessonDemo';
+} from '../../../src/features/lesson-demo/content/barnSayItLesson';
+import { staticLessonContentProvider } from '../../../src/features/lesson-demo';
 
 describe('barn say-it legacy lesson', () => {
   it('exports the canonical lesson id from legacy handoff', () => {

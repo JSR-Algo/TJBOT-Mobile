@@ -1,429 +1,276 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ChevronRight, HelpCircle, LockKeyhole, ShieldCheck, SlidersHorizontal, UserRound } from 'lucide-react-native';
 import type { RootStackParamList } from '@/navigation/routes';
-import ParentScroll, { PA } from '../components/ParentScroll';
-import PRowGroup from '../components/PRowGroup';
-import PRow from '../components/PRow';
+import { ROUTES } from '@/navigation/routes';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { getParentSummary, type ParentSummary } from '@/services/api/parent.api';
-import { getChildLessonProgress, getChildProgress } from '@/services/api/progress.api';
-import { getKPIs, getPronunciationTrend } from '@/services/api/learning';
-import { captureError } from '@/services/observability/sentry';
-import { localeDateTag, translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
-import { ROUTES } from '@/navigation/routes';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppLanguage } from '@/services/i18n/i18n';
+import ParentScroll, { PA } from '../components/ParentScroll';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
-import { useHousehold } from '@/contexts/HouseholdContext';
-import { buildCourseInsightDashboard, qualityLabel, type CourseInsightDashboard } from '../courseInsights';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSummaryScreen'>;
-type SummaryParams = { deviceId?: string; summaryDate?: string };
-type SummaryErrorState = {
-  title: string;
-  detail: string;
-  detailValues?: Readonly<Record<string, string | number>>;
+type IconComponent = React.ComponentType<{ color?: string; size?: number; strokeWidth?: number }>;
+
+type ParentMenuRowProps = {
+  icon: IconComponent;
+  label: string;
+  value?: string;
+  destructive?: boolean;
+  onPress: () => void;
 };
 
-const EMPTY_SUMMARY: ParentSummary = {
-  weekMinutes: 0,
-  weekLessons: 0,
-  streak: 0,
-  topWords: [],
-};
-
-export default function ParentSummaryScreen({ navigation, route }: Props) {
+export default function ParentSummaryScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
+  const { user, logout } = useAuth();
   useParentGateGuard(navigation, ROUTES.ParentSummaryScreen);
-  const { language, t } = useAppLanguage();
-  const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
-  const [summary, setSummary] = React.useState<ParentSummary>(() => emptySummary());
-  const [dashboard, setDashboard] = React.useState<CourseInsightDashboard>(() => buildCourseInsightDashboard({}));
-  const [errorState, setErrorState] = React.useState<SummaryErrorState>(() => defaultSummaryError());
-  const params = (route.params ?? {}) as SummaryParams;
-  const { activeChild } = useHousehold();
-  const childId = activeChild?.id;
 
-  const loadSummary = React.useCallback(() => {
-    let active = true;
-    setStatus('loading');
-    getParentSummary()
-      .then(async (nextSummary) => {
-        if (active) {
-          const normalized = normalizeParentSummary(nextSummary);
-          if (normalized) {
-            setSummary(normalized);
-            if (childId) {
-              try {
-                const [progress, assignments, kpis, pronunciationTrend] = await Promise.allSettled([
-                  getChildProgress(childId),
-                  getChildLessonProgress(childId),
-                  getKPIs(childId),
-                  getPronunciationTrend(childId, 14),
-                ]);
-                if (active) {
-                  setDashboard(buildCourseInsightDashboard({
-                    progress: progress.status === 'fulfilled' ? progress.value : null,
-                    assignments: assignments.status === 'fulfilled' ? assignments.value : null,
-                    kpis: kpis.status === 'fulfilled' ? kpis.value : null,
-                    pronunciationTrend: pronunciationTrend.status === 'fulfilled' ? pronunciationTrend.value : null,
-                  }));
-                }
-              } catch (error) {
-                captureError(error);
-                if (active) setDashboard(buildCourseInsightDashboard({}));
-              }
-            } else {
-              setDashboard(buildCourseInsightDashboard({}));
-            }
-            setStatus('success');
-          } else {
-            setErrorState(defaultSummaryError());
-            setStatus('error');
-          }
-        }
-      })
-      .catch((error: unknown) => {
-        captureError(error);
-        if (active) {
-          setErrorState(classifySummaryError(error));
-          setStatus('error');
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [childId]);
+  const parentName = user?.name?.trim() || t('Parent');
+  const parentEmail = user?.email?.trim() || '';
+  const initials = profileInitials(parentName, parentEmail);
 
-  React.useEffect(loadSummary, [loadSummary]);
-
-  if (status === 'loading') {
-    return (
-      <ParentScroll title="Parent Space">
-        <Box paddingHorizontal={24} paddingTop={40}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={t('Open Parent Space settings')}
-            onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.retryText}>Settings</Text>
-          </TouchableOpacity>
-          <Text style={styles.dateLabel}>Loading parent summary</Text>
-        </Box>
-      </ParentScroll>
+  const confirmSignOut = () => {
+    Alert.alert(
+      t('Sign out'),
+      t('Sign out of TeeBot on this device?'),
+      [
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Sign out'), style: 'destructive', onPress: () => void logout() },
+      ],
     );
-  }
-
-  if (status === 'error') {
-    const title = t(errorState.title);
-    const detail = translateTemplate(errorState.detail, errorState.detailValues ?? {}, { locale: language });
-    return (
-      <ParentScroll title="Parent Space">
-        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={t('Open Parent Space settings')}
-            onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.retryText}>Settings</Text>
-          </TouchableOpacity>
-          {params.summaryDate ? <Text style={styles.dateLabel} i18n={false}>{summaryDateLabel(params.summaryDate, language)}</Text> : null}
-          {params.deviceId ? <Text style={styles.dateLabel} i18n={false}>{summaryDeviceLabel(params.deviceId, language)}</Text> : null}
-          <Text fontWeight="700" style={styles.headline} i18n={false}>{title}</Text>
-          <Text style={styles.dateLabel} i18n={false}>{detail}</Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={translateTemplate('Retry {{title}}', { title }, { locale: language })}
-            onPress={() => { loadSummary(); }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </Box>
-      </ParentScroll>
-    );
-  }
-
-  const stats = summaryStats(summary);
-  const hasActivity = !isEmptyParentSummary(summary);
-  const topWords = summary.topWords.slice(0, 3);
+  };
 
   return (
-    <ParentScroll
-      title="Parent Space"
-      right={
+    <ParentScroll title={t('Parent Zone')}>
+      <Box paddingHorizontal={24} paddingTop={10}>
         <TouchableOpacity
+          testID="parentProfileCard"
           accessibilityRole="button"
-          accessibilityLabel={t('Open Parent Space settings')}
-          onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)}
-          activeOpacity={0.7}
+          accessibilityLabel={t('Edit Profile')}
+          activeOpacity={0.78}
+          onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen)}
+          style={styles.profileCard}
         >
-          <Text style={{ color: PA.accent, fontSize: 15, fontWeight: '500' }}>Settings</Text>
+          <View style={styles.avatar}>
+            <Text i18n={false} fontWeight="800" style={styles.avatarText}>{initials}</Text>
+          </View>
+          <View style={styles.profileCopy}>
+            <Text i18n={false} fontWeight="800" numberOfLines={1} ellipsizeMode="tail" style={styles.profileName}>
+              {parentName}
+            </Text>
+            {parentEmail ? (
+              <Text i18n={false} numberOfLines={1} ellipsizeMode="tail" style={styles.profileEmail}>
+                {parentEmail}
+              </Text>
+            ) : null}
+          </View>
+          <Text fontWeight="700" numberOfLines={1} style={styles.editProfile}>{t('Edit Profile')}</Text>
         </TouchableOpacity>
-      }
-    >
-      <Box paddingHorizontal={16} paddingTop={18} paddingBottom={8}>
-        <Text style={styles.dateLabel} i18n={false}>{formatTodayLabel(language)}</Text>
-        {params.summaryDate ? <Text style={styles.dateLabel} i18n={false}>{summaryDateLabel(params.summaryDate, language)}</Text> : null}
-        {params.deviceId ? <Text style={styles.dateLabel} i18n={false}>{summaryDeviceLabel(params.deviceId, language)}</Text> : null}
-        {activeChild?.name ? <Text style={styles.childLabel} i18n={false}>{activeChild.name}'s course dashboard</Text> : null}
-        <Text fontWeight="600" style={styles.headline} i18n={!hasActivity}>
-          {hasActivity ? weeklySummaryLabel(summary, language) : 'No lesson activity has synced yet.'}
-        </Text>
 
-        <Box flexDirection="row" gap={10} marginBottom={14} style={{ flexWrap: 'wrap' }}>
-          {stats.map(s => (
-            <Box key={s.l} style={styles.statCard} flex={1}>
-              <Text fontWeight="600" style={styles.statVal}>{s.v}</Text>
-              <Text style={styles.statLabel}>{s.l}</Text>
-            </Box>
-          ))}
-        </Box>
+        <SectionTitle>{t('Safety & Limits')}</SectionTitle>
+        <View style={styles.menuCard}>
+          <ParentMenuRow
+            icon={SlidersHorizontal}
+            label={t('Daily Limit')}
+            value={t('Manage limits')}
+            onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
+          />
+          <Divider />
+          <ParentMenuRow
+            icon={ShieldCheck}
+            label={t('Safety Filter')}
+            value={t('Review settings')}
+            onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
+          />
+        </View>
+
+        <SectionTitle>{t('Account')}</SectionTitle>
+        <View style={styles.menuCard}>
+          <ParentMenuRow
+            icon={UserRound}
+            label={t('Account')}
+            onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen)}
+          />
+          <Divider />
+          <ParentMenuRow
+            icon={LockKeyhole}
+            label={t('Subscription')}
+            value={t('Manage')}
+            onPress={() => navigation.navigate(ROUTES.SubscriptionsScreen)}
+          />
+          <Divider />
+          <ParentMenuRow
+            icon={HelpCircle}
+            label={t('Help & FAQ')}
+            onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
+          />
+        </View>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate(ROUTES.ParentTodayScreen)}
-          style={styles.todayCard}
-          activeOpacity={0.8}
+          testID="parentSignOut"
+          accessibilityRole="button"
+          activeOpacity={0.78}
+          onPress={confirmSignOut}
+          style={styles.signOutButton}
         >
-          <Box flex={1}>
-            <Text fontWeight="500" style={{ fontSize: 15, color: PA.ink }}>Today's practice</Text>
-            <Text style={{ fontSize: 13, color: PA.ink2, marginTop: 2 }}>
-              {topWords.length ? topWords.join(' · ') : 'No words synced yet'}
-            </Text>
-          </Box>
-          <ChevronIcon />
-        </TouchableOpacity>
-
-        <Box style={styles.dashboardBand}>
-          <Text fontWeight="700" style={styles.dashboardTitle}>Course quality</Text>
-          <Box flexDirection="row" gap={10} style={{ flexWrap: 'wrap' }}>
-            <Box style={styles.insightCard} flex={1}>
-              <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.stepSuccessPct}%</Text>
-              <Text style={styles.insightLabel} i18n={false}>{qualityLabel(dashboard.stepSuccessPct)} quality</Text>
-              <Text style={styles.insightNote} i18n={false}>{dashboard.stepSuccessPct}% step success</Text>
-            </Box>
-            <Box style={styles.insightCard} flex={1}>
-              <Text fontWeight="700" style={styles.insightValue} i18n={false}>{dashboard.completionRatePct}%</Text>
-              <Text style={styles.insightLabel}>Completion</Text>
-              <Text style={styles.insightNote} i18n={false}>{dashboard.failedLessons} failed · {dashboard.activeLessons} active</Text>
-            </Box>
-          </Box>
-          <Text fontWeight="700" style={[styles.dashboardTitle, { marginTop: 14 }]}>Learning path</Text>
-          {dashboard.coursePath.length > 0 ? (
-            dashboard.coursePath.slice(0, 3).map((course) => (
-              <Box key={course.courseId} style={styles.pathRow}>
-                <Text style={styles.pathLabel} i18n={false}>{course.courseId} · {course.percent}%</Text>
-                <Text style={styles.pathMeta} i18n={false}>{course.lessonsCompleted}/{course.lessonsTotal} lessons</Text>
-              </Box>
-            ))
-          ) : (
-            <Text style={styles.insightNote}>No course path synced yet</Text>
-          )}
-          <Text style={[styles.insightNote, { marginTop: 10 }]} i18n={false}>
-            Pronunciation {dashboard.pronunciationTrend} · {dashboard.pronunciationScore}%
-          </Text>
-        </Box>
-      </Box>
-
-      <PRowGroup header="History">
-        <PRow icon="🗓" label="Past 30 days" value={weeklyLessonsLabel(summary.weekLessons, language)} chevron onPress={() => navigation.navigate(ROUTES.ParentHistoryScreen)} />
-        <PRow icon="📚" label="Course progress" value={hasActivity ? 'In progress' : 'No synced progress'} chevron isLast />
-      </PRowGroup>
-
-      <PRowGroup header="Account">
-        <PRow icon="🛡" label="Safety & Privacy" chevron onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)} />
-        <PRow icon="🩺" label="Diagnostic log" chevron onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen)} />
-        <PRow icon="⚙" label="Settings" chevron onPress={() => navigation.navigate(ROUTES.ParentSettingsScreen)} isLast />
-      </PRowGroup>
-
-      <Box paddingHorizontal={24} paddingTop={18} paddingBottom={36} alignItems="center">
-        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7}>
-          <Text style={{ color: PA.accent, fontSize: 15, fontWeight: '500' }}>Return to child play area</Text>
+          <Text fontWeight="800" style={styles.signOutText}>{t('Sign out')}</Text>
         </TouchableOpacity>
       </Box>
     </ParentScroll>
   );
 }
 
-function emptySummary(): ParentSummary {
-  return { ...EMPTY_SUMMARY, topWords: [] };
-}
-
-function defaultSummaryError(): SummaryErrorState {
-  return { title: 'Parent summary unavailable', detail: 'Try again.' };
-}
-
-function classifySummaryError(error: unknown): SummaryErrorState {
-  const record = asRecord(error);
-  const code = readString(record, 'code');
-  const status = readNumber(record, 'status');
-  if (status === 429 || code === 'RATE_LIMIT_EXCEEDED') {
-    return {
-      title: 'Parent summary refresh limited',
-      detail: 'Try again in {{seconds}} seconds.',
-      detailValues: { seconds: readNumber(record, 'retryAfterSeconds') ?? 30 },
-    };
-  }
-  if (status === 502 || code === 'INTERNAL_ERROR') {
-    return { title: 'Parent summary service unavailable', detail: 'Retry in a moment.' };
-  }
-  return defaultSummaryError();
-}
-
-function normalizeParentSummary(value: unknown): ParentSummary | null {
-  const raw = asRecord(value);
-  if (!raw) return null;
-  const weekMinutes = readNumberAlias(raw, 'weekMinutes', 'week_minutes');
-  const weekLessons = readNumberAlias(raw, 'weekLessons', 'week_lessons');
-  const streak = readNumberAlias(raw, 'streak');
-  const topWords = readStringArrayAlias(raw, 'topWords', 'top_words');
-  if (weekMinutes === undefined || weekLessons === undefined || streak === undefined || topWords === undefined) {
-    return null;
-  }
-  return {
-    weekMinutes,
-    weekLessons,
-    streak,
-    topWords,
-  };
-}
-
-function isEmptyParentSummary(summary: ParentSummary): boolean {
-  return summary.weekMinutes === 0
-    && summary.weekLessons === 0
-    && summary.streak === 0
-    && summary.topWords.length === 0;
-}
-
-function summaryStats(summary: ParentSummary): Array<{ v: string; l: string }> {
-  return [
-    { v: String(summary.weekMinutes), l: 'minutes' },
-    { v: String(summary.weekLessons), l: 'lessons' },
-    { v: String(summary.streak), l: 'day streak' },
-  ];
-}
-
-function formatTodayLabel(locale: AppLocale, date = new Date()): string {
-  const formattedDate = date.toLocaleDateString(localeDateTag(locale), { weekday: 'short', month: 'short', day: 'numeric' });
-  return translateTemplate('Today · {{date}}', { date: formattedDate }, { locale });
-}
-
-function pluralize(word: string, count: number): string {
-  return count === 1 ? word : `${word}s`;
-}
-
-function weeklySummaryLabel(summary: ParentSummary, locale: AppLocale): string {
-  return translateTemplate(
-    'This week: {{lessons}} {{lessonLabel}} and {{minutes}} {{minuteLabel}}.',
-    {
-      lessons: summary.weekLessons,
-      lessonLabel: translateTemplate(pluralize('lesson', summary.weekLessons), {}, { locale }),
-      minutes: summary.weekMinutes,
-      minuteLabel: translateTemplate(pluralize('minute', summary.weekMinutes), {}, { locale }),
-    },
-    { locale },
-  );
-}
-
-function weeklyLessonsLabel(weekLessons: number, locale: AppLocale): string {
-  return translateTemplate(
-    '{{lessons}} {{lessonLabel}} this week',
-    {
-      lessons: weekLessons,
-      lessonLabel: translateTemplate(pluralize('lesson', weekLessons), {}, { locale }),
-    },
-    { locale },
-  );
-}
-
-function summaryDateLabel(date: string, locale: AppLocale): string {
-  return translateTemplate('Requested summary: {{date}}', { date }, { locale });
-}
-
-function summaryDeviceLabel(deviceId: string, locale: AppLocale): string {
-  return translateTemplate('Robot: {{deviceId}}', { deviceId }, { locale });
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : null;
-}
-
-function readNumberAlias(record: Record<string, unknown>, ...keys: string[]): number | undefined {
-  for (const key of keys) {
-    if (!(key in record)) continue;
-    const value = record[key];
-    return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
-  }
-  return undefined;
-}
-
-function readStringArrayAlias(record: Record<string, unknown>, ...keys: string[]): string[] | undefined {
-  for (const key of keys) {
-    if (!(key in record)) continue;
-    const value = record[key];
-    return Array.isArray(value) && value.every((item): item is string => typeof item === 'string') ? [...value] : undefined;
-  }
-  return undefined;
-}
-
-function readString(record: Record<string, unknown> | null, key: string): string | undefined {
-  const value = record?.[key];
-  return typeof value === 'string' ? value : undefined;
-}
-
-function readNumber(record: Record<string, unknown> | null, key: string): number | undefined {
-  const value = record?.[key];
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-function ChevronIcon() {
+function ParentMenuRow({ icon: Icon, label, value, destructive = false, onPress }: ParentMenuRowProps) {
   return (
-    <Svg width={8} height={14} viewBox="0 0 8 14">
-      <Path d="M1 1l6 6-6 6" stroke={PA.ink3} strokeWidth={1.6} fill="none" strokeLinecap="round" />
-    </Svg>
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      activeOpacity={0.74}
+      onPress={onPress}
+      style={styles.menuRow}
+    >
+      <View style={[styles.menuIcon, destructive && styles.menuIconDestructive]}>
+        <Icon color={destructive ? PA.accent : PA.ink2} size={20} strokeWidth={2.2} />
+      </View>
+      <Text fontWeight="700" style={[styles.menuLabel, destructive && styles.destructiveText]}>{label}</Text>
+      {value ? <Text style={styles.menuValue}>{value}</Text> : null}
+      <ChevronRight color={PA.ink3} size={19} strokeWidth={2.2} />
+    </TouchableOpacity>
   );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <Text fontWeight="800" style={styles.sectionTitle}>{children}</Text>;
+}
+
+function Divider() {
+  return <View style={styles.divider} />;
+}
+
+function profileInitials(name: string, email: string): string {
+  const source = name.trim() || email.split('@')[0] || 'P';
+  return source
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || 'P';
 }
 
 const styles = StyleSheet.create({
-  dateLabel: { fontSize: 13, color: PA.ink3, marginBottom: 6 },
-  childLabel: { fontSize: 13, color: PA.accent, marginBottom: 8, fontWeight: '700' },
-  headline: { fontSize: 26, color: PA.ink, letterSpacing: -0.3, lineHeight: 33, marginBottom: 20 },
-  statCard: { backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair, borderRadius: 24, padding: 16 },
-  statVal: { fontSize: 26, color: PA.accent, letterSpacing: -0.3 },
-  statLabel: { fontSize: 12, color: PA.ink2, marginTop: 2 },
-  todayCard: {
-    width: '100%', backgroundColor: PA.card, borderWidth: 1, borderColor: PA.hair,
-    borderRadius: 28, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 10,
-  },
-  dashboardBand: {
-    marginTop: 14,
-    width: '100%',
+  profileCard: {
+    minHeight: 96,
+    borderRadius: 26,
     backgroundColor: PA.card,
     borderWidth: 1,
     borderColor: PA.hair,
-    borderRadius: 28,
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    shadowColor: PA.ink,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 2,
   },
-  dashboardTitle: { fontSize: 15, color: PA.ink, marginBottom: 10 },
-  insightCard: {
-    minWidth: 128,
-    backgroundColor: '#FFF9F0',
+  avatar: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFE8E3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: PA.accent,
+    fontSize: 20,
+  },
+  profileCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  profileName: {
+    color: PA.ink,
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  profileEmail: {
+    color: PA.ink2,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  editProfile: {
+    color: PA.accent,
+    fontSize: 13,
+  },
+  sectionTitle: {
+    color: PA.ink2,
+    fontSize: 13,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginTop: 28,
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  menuCard: {
+    borderRadius: 24,
+    backgroundColor: PA.card,
     borderWidth: 1,
     borderColor: PA.hair,
+    overflow: 'hidden',
+  },
+  menuRow: {
+    minHeight: 68,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    backgroundColor: '#F5EEE3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuIconDestructive: {
+    backgroundColor: '#FFF0EC',
+  },
+  menuLabel: {
+    flex: 1,
+    color: PA.ink,
+    fontSize: 16,
+  },
+  menuValue: {
+    color: PA.ink3,
+    fontSize: 13,
+  },
+  destructiveText: {
+    color: PA.accent,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: PA.hair,
+    marginLeft: 66,
+  },
+  signOutButton: {
+    minHeight: 58,
+    marginTop: 28,
     borderRadius: 20,
-    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FFD2C8',
+    backgroundColor: '#FFF8F5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  insightValue: { fontSize: 27, color: PA.accent, lineHeight: 32 },
-  insightLabel: { fontSize: 12, color: PA.ink2, marginTop: 2 },
-  insightNote: { fontSize: 12, color: PA.ink3, marginTop: 4, lineHeight: 17 },
-  pathRow: {
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: PA.hair,
+  signOutText: {
+    color: PA.accent,
+    fontSize: 16,
   },
-  pathLabel: { fontSize: 13, color: PA.ink, fontWeight: '600' },
-  pathMeta: { fontSize: 12, color: PA.ink2, marginTop: 2 },
-  retryText: { color: PA.accent, fontSize: 15, fontWeight: '500' },
 });

@@ -6,8 +6,8 @@ import {
   RED_BLUE_LESSON_ID,
   getCuratedLessonCatalog,
   getCuratedLessonById,
-} from '../../../src/features/lessonDemo/content/curatedLegacyLessons';
-import { staticLessonContentProvider } from '../../../src/features/lessonDemo';
+} from '../../../src/features/lesson-demo/content/curatedLegacyLessons';
+import { staticLessonContentProvider } from '../../../src/features/lesson-demo';
 
 describe('curated legacy lessons', () => {
   it('ships four age 4-6 lessons with nine steps and media each', () => {

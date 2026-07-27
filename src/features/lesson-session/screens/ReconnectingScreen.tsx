@@ -17,9 +17,15 @@ export default function ReconnectingScreen({ navigation }: Props) {
   const { t } = useAppLanguage();
   return (
     <ScreenShell bg="#E8E5F0">
-      <Box accessible accessibilityLabel="Reconnecting to Robot voice" flex={1}>
+      <Box flex={1}>
         <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
-        <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={20}>
+        <Box
+          style={[StyleSheet.absoluteFillObject, styles.center]}
+          alignItems="center"
+          gap={20}
+          accessible
+          accessibilityLabel={t('Reconnecting to Robot voice')}
+        >
           <Robot emotion="worry" size={220} accent="#9B8FB8" />
           <SpeechBubble>One sec — finding my voice again.</SpeechBubble>
           <Box flexDirection="row" gap={6}>

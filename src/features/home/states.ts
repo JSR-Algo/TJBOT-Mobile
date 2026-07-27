@@ -1,4 +1,5 @@
 export const STATES = [
+  { id: 'home_child_profile', title: 'Home · Child profile', group: 'Home', state: 'child_profile', kind: 'happy' },
   { id: 'home_hub_idle', title: 'Home · Idle happy', group: 'Home', state: 'idle', kind: 'happy' },
   { id: 'home_hub_greet', title: 'Home · Robot greeting', group: 'Home', state: 'greeting', kind: 'happy' },
   { id: 'home_hub_daily', title: "Home · Today's lesson", group: 'Home', state: 'daily_available', kind: 'happy' },

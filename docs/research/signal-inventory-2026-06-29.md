@@ -36,7 +36,7 @@ The mobile codebase records behavior observations through **three disjoint paths
 - Routes to TelemetryPort interface; in production the default port is Sentry.
 
 ### 1d. Local-only lesson progress (SecureStore)
-- `src/features/lessonDemo/store/useLessonDemoProgressStore.ts:79, 89, 94` — `streakCount`, `completedLessonIds`, `attempts[]` (last 40) under SecureStore key `tbot_lesson_demo_progress`.
+- `src/features/lesson-demo/store/useLessonDemoProgressStore.ts:79, 89, 94` — `streakCount`, `completedLessonIds`, `attempts[]` (last 40) under SecureStore key `tbot_lesson_demo_progress`.
 - **No network emission.** This is the data that *would* go to `/v1/learning/session/complete` if the lesson-shape contract existed; today it lives and dies on the device.
 
 ### 1e. XState lessonSession emits — local test spy only
@@ -51,15 +51,15 @@ The mobile emits per-frame voice telemetry (sampled) and per-event safety teleme
 ## 2. Curriculum content — 120 lesson fixtures + 4 curated
 
 ### 2a. The six-month lesson pack
-- `src/features/lessonDemo/content/sixMonthLessonPack.ts` (327 lines) — top-level orchestrator.
-- Imports 6 JSON fixtures under `src/features/lessonDemo/content/fixtures/lesson_objectives_weeks_{01_04,05_08,09_12,13_16,17_20,21_24}.json` — each a 20-lesson array → **120 lessons total**.
+- `src/features/lesson-demo/content/sixMonthLessonPack.ts` (327 lines) — top-level orchestrator.
+- Imports 6 JSON fixtures under `src/features/lesson-demo/content/fixtures/lesson_objectives_weeks_{01_04,05_08,09_12,13_16,17_20,21_24}.json` — each a 20-lesson array → **120 lessons total**.
 - Three age bands `4-6 | 7-9 | 10-11` (line 14).
-- Lesson shape (per `src/features/lessonDemo/types.ts:49–69`):
+- Lesson shape (per `src/features/lesson-demo/types.ts:49–69`):
   `{lessonId, week, day, ageBand, cefrLevel, objective, focusItems[], vietnameseL1Target, practiceMethod, reviewItems[], rewardEvent, parentSummary, steps[7], sourceCardIds[], fallbackLessonId?, media?}`
 - Steps follow fixed 7-template: `warmup / teach / listen / repeat / choice / review / reward` (`types.ts:3–10`).
 
 ### 2b. Curated lessons
-- `src/features/lessonDemo/content/curatedLegacyLessons.ts` (197 lines) — 4 hand-curated lessons:
+- `src/features/lesson-demo/content/curatedLegacyLessons.ts` (197 lines) — 4 hand-curated lessons:
   - `BARN_SAY_IT` (recent wave-0 build, see commit `d9b695d feat(lesson): voice-activated barn lesson with fullscreen video player`).
   - `HAPPY_SAD`, `RED_BLUE`, `CAT_DOG` (recent wave `bcd6763 feat(lesson): add happy-sad, red-blue, cat-dog curated lessons + picker`).
 - Asset refs at lines 13–20: `require('../../../assets/lessons/barn-round-field.mp4')` etc. Local Metro bundle; **no CDN.**
@@ -132,7 +132,7 @@ Fallback message in `blocklist.ts:99`: "I'm not allowed to talk about that. Let'
 
 | Surface | Test files | Posture |
 |---|---|---|
-| `tests/features/lessonDemo/` | 9: `barnSayItLesson`, `companionVoicePrompt`, `curatedLegacyLessons`, `fullscreenLessonScene`, `lessonDemoProgressStore`, `LessonDemoScreens`, `lessonPickScreen`, `lessonScene`, `robotCompanionScreen`, `sixMonthLessonPack` | Fixture-driven; no network-test gap (correct, given the seam is inert). |
+| `tests/features/lesson-demo/` | 9: `barnSayItLesson`, `companionVoicePrompt`, `curatedLegacyLessons`, `fullscreenLessonScene`, `lessonDemoProgressStore`, `LessonDemoScreens`, `lessonPickScreen`, `lessonScene`, `robotCompanionScreen`, `sixMonthLessonPack` | Fixture-driven; no network-test gap (correct, given the seam is inert). |
 | `tests/features/lesson-session/` | 2: `lesson-hardware-back-wiring`, `use-lesson-hardware-back` | Hook-level coverage only. **No `lessonSession.machine.test.ts`** in the tree — meaning the XState transitions, terminal states, and event payloads are untested as discrete unit cases. |
 | `tests/features/parent/` | 6: `course-insights`, `parent-history-screen`, `parent-session-context`, `parent-summary-screen`, `parent-today-screen`, `use-parent-gate-guard` | UI + hook coverage. **No telemetry assertion anywhere.** |
 | `tests/api/learning-api.test.ts` | exists | Tests old `/v1/learning/children/...` surface. |
@@ -190,8 +190,8 @@ For any downstream "more lessons" feature agent:
 
 | Inventory item | Cross-reference |
 |---|---|
-| `src/features/lessonDemo/content/sixMonthLessonPack.ts` (120 lessons) | `en/curriculum/sixMonthLessonPack.json` (the JSON fixtures it imports) |
-| `src/features/lessonDemo/content/curatedLegacyLessons.ts` (4 curated) | redesign-2026 wave 1; commits `bcd6763`, `d9b695d` |
+| `src/features/lesson-demo/content/sixMonthLessonPack.ts` (120 lessons) | `en/curriculum/sixMonthLessonPack.json` (the JSON fixtures it imports) |
+| `src/features/lesson-demo/content/curatedLegacyLessons.ts` (4 curated) | redesign-2026 wave 1; commits `bcd6763`, `d9b695d` |
 | `src/services/api/lesson-session.api.ts` (5 stubs) | `COORDINATION_REQUESTS.md` 2026-05-26 (gating row) |
 | `src/services/api/learning.ts` (6 live calls) | backend OpenAPI `/v1/learning/...` |
 | `src/state/machines/lessonSession.machine.ts` (full runtime) | `tests/features/lesson-session/` (under-covered) |

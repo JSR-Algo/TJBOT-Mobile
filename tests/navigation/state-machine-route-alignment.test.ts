@@ -269,7 +269,11 @@ describe('state-machine route alignment', () => {
     expect(Array.from(actualOnboardingStateIds.values()).sort()).toEqual([...stateIds('onboarding')].sort());
   });
 
-  it('maps the home hub route to every home UI state it owns', () => {
-    expect(routeStateMachineIds(ROUTES.HomeHubScreen)).toEqual(stateIds('home'));
+  it('maps each home route to the home UI states it owns', () => {
+    const homeStateIds = stateIds('home');
+    expect(routeStateMachineIds(ROUTES.HomeHubScreen)).toEqual(
+      homeStateIds.filter(stateId => stateId !== 'home_child_profile'),
+    );
+    expect(routeStateMachineId(ROUTES.HomeChildProfileScreen)).toBe('home_child_profile');
   });
 });

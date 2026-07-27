@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { FullscreenLessonScene } from '../../../src/features/lessonDemo/scene/FullscreenLessonScene';
-import { getBarnSayItLesson } from '../../../src/features/lessonDemo/content/barnSayItLesson';
+import { FullscreenLessonScene } from '../../../src/features/lesson-demo/scene/FullscreenLessonScene';
+import { getBarnSayItLesson } from '../../../src/features/lesson-demo/content/barnSayItLesson';
 
 describe('FullscreenLessonScene', () => {
   it('renders fullscreen video background and robot overlay for barn lesson', () => {

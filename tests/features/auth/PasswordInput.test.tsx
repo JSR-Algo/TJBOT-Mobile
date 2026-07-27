@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import PasswordInput from '../../../src/features/auth/components/PasswordInput';
+import { OB } from '../../../src/components/OnbShell';
 
 describe('PasswordInput', () => {
   it('renders with placeholder', () => {
@@ -41,6 +42,6 @@ describe('PasswordInput', () => {
     const wrapper = UNSAFE_getByType(View);
     const flatStyle = wrapper.props.style?.flat?.() ?? wrapper.props.style;
     const styleStr = JSON.stringify(flatStyle);
-    expect(styleStr).toContain('#F95F50');
+    expect(styleStr).toContain(OB.danger);
   });
 });

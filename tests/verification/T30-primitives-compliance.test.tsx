@@ -6,6 +6,7 @@ import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { Pressable } from '@/design-system/primitives/Pressable';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { tokens } from '@/design-system/tokens';
 
 const mockUseReduceMotion = jest.fn().mockReturnValue(false);
 
@@ -119,7 +120,7 @@ describe('T30: Haptics, Box typing, and Text primitive compliance', () => {
 
       const box = getByTestId('box');
       expect(box.props.style).toEqual(
-        expect.arrayContaining([{ borderColor: '#FF6F61' }]),
+        expect.arrayContaining([{ borderColor: tokens.colors.coral }]),
       );
     });
 

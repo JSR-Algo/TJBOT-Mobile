@@ -67,7 +67,7 @@ interface HouseholdContextValue extends HouseholdState {
   setActiveChild: (id: string) => void;
   createHousehold: (name: string) => Promise<Household>;
   selectHousehold: (id: string) => void;
-  addChild: (dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string }, householdId?: string) => Promise<Child>;
+  addChild: (dto: { name: string; date_of_birth: string; buddy?: 'dog' | 'cat' | 'robot' }, householdId?: string) => Promise<Child>;
   refresh: () => Promise<void>;
   completeOnboarding: (protectedInitialRoute?: keyof RootStackParamList, withDeviceSetup?: boolean) => void;
   clearPendingDeviceSetup: () => void;
@@ -296,7 +296,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
   }, [state.children]);
 
   const addChild = useCallback(async (
-    dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string },
+    dto: { name: string; date_of_birth: string; buddy?: 'dog' | 'cat' | 'robot' },
     householdId?: string,
   ): Promise<Child> => {
     const targetHouseholdId = householdId ?? state.activeHousehold?.id;

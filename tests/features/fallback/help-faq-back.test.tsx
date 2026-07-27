@@ -38,4 +38,18 @@ describe('HelpFaqScreen back behavior', () => {
     expect(navigation.goBack).not.toHaveBeenCalled();
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ParentSummaryScreen);
   });
+  it('filters help topics and exposes an honest empty state', () => {
+    const { screen } = renderHelpFaq(false);
+
+    fireEvent.changeText(screen.getByTestId('helpFaqSearchInput'), 'subscription');
+    expect(screen.getByText('How do I cancel my subscription?')).toBeTruthy();
+    expect(screen.queryByText("Is my child's voice recorded?")).toBeNull();
+
+    fireEvent.changeText(screen.getByTestId('helpFaqSearchInput'), 'no matching topic');
+    expect(screen.getByTestId('helpFaqEmptyResult')).toHaveTextContent('No help topics found.');
+
+    fireEvent.changeText(screen.getByTestId('helpFaqSearchInput'), '');
+    expect(screen.getByText("Is my child's voice recorded?")).toBeTruthy();
+  });
+
 });

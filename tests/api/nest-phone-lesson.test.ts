@@ -52,27 +52,19 @@ describe('nestPhoneLesson', () => {
     expect(nestLessonTitle(context.session)).toBe('cat & dog');
   });
 
-  it('finishes Nest phone lesson via interaction + complete', async () => {
+  it('completes the phone lesson without fabricating speech recognition results', async () => {
     mocked.getTodaySession.mockResolvedValueOnce(sampleSession);
-    mocked.saveInteraction.mockResolvedValueOnce(undefined);
     mocked.completeSession.mockResolvedValueOnce(undefined);
 
     const context = await bootstrapNestPhoneLesson('child-1');
     await finishNestPhoneLesson(context);
 
-    expect(mocked.saveInteraction).toHaveBeenCalledWith(
-      'child-1',
-      expect.objectContaining({
-        session_id: 'sess-1',
-        user_message: 'cat',
-        confidence_signal: 85,
-      }),
-    );
+    expect(mocked.saveInteraction).not.toHaveBeenCalled();
     expect(mocked.completeSession).toHaveBeenCalledWith('child-1', {
       session_id: 'sess-1',
       prompts_shown: 2,
-      responses_given: 2,
-      correct_responses: 2,
+      responses_given: 0,
+      correct_responses: 0,
     });
   });
 

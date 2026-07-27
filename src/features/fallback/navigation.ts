@@ -19,7 +19,7 @@ export const FALLBACK_SCREENS = defineFeatureScreens([
   { name: ROUTES.VoiceFailedScreen, component: VoiceFailedScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'voice_failed' },
   { name: ROUTES.AudioRecoveryScreen, component: AudioRecoveryScreen, role: 'stack', backTarget: ROUTES.MicMissingScreen, stateMachineId: 'audio_recovery' },
   { name: ROUTES.SafetyRedirectScreen, component: SafetyRedirectScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'safety_redirect' },
-  { name: ROUTES.HelpFaqScreen, component: HelpFaqScreen, role: 'fallback-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'help_faq' },
+  { name: ROUTES.HelpFaqScreen, component: HelpFaqScreen, role: 'fallback-entry', backTarget: ROUTES.ParentSummaryScreen, forwardCycleGroup: 'support-help', stateMachineId: 'help_faq' },
   { name: ROUTES.KidSettingsScreen, component: KidSettingsScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'kid_settings' },
   { name: ROUTES.LessonResumeScreen, component: LessonResumeScreen, role: 'stack', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'lesson_resume' },
 ]);

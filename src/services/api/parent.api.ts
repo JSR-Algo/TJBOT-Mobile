@@ -69,12 +69,29 @@ interface RawParentToday {
   minutesDone?: number;
   lessons_completed?: number;
   lessonsCompleted?: number;
+  current_streak?: number;
+  currentStreak?: number;
+  highlights?: Array<{
+    type?: string;
+    value?: string;
+  }>;
 }
 
 interface RawParentHistoryEntry {
   date: string;
   minutes?: number;
   lessons?: number;
+  lessons_completed?: number;
+  lessonsCompleted?: number;
+}
+
+interface RawParentHistory {
+  daily?: RawParentHistoryEntry[];
+  totals?: {
+    minutes?: number;
+    lessons_completed?: number;
+    lessonsCompleted?: number;
+  };
 }
 
 export interface SafetyConfig {
@@ -101,14 +118,31 @@ function mapParentHistoryEntry(raw: RawParentHistoryEntry): ParentHistoryEntry {
   return {
     date: raw.date,
     minutes: raw.minutes ?? 0,
-    lessons: raw.lessons ?? 0,
+    lessons: raw.lessons ?? raw.lessons_completed ?? raw.lessonsCompleted ?? 0,
   };
 }
 
 export async function getParentSummary(): Promise<ParentSummary> {
-  // The backend parent-summary contract is not designed yet. Keep the parent
-  // profile usable without inventing child activity data.
-  return { ...EMPTY_PARENT_SUMMARY, topWords: [...EMPTY_PARENT_SUMMARY.topWords] };
+  const [todayResponse, historyResponse] = await Promise.all([
+    client.get('/parent/today'),
+    client.get('/parent/history'),
+  ]);
+  const today = unwrap<RawParentToday>(todayResponse);
+  const history = unwrap<RawParentHistory>(historyResponse);
+  const highlights = Array.isArray(today.highlights) ? today.highlights : [];
+
+  return {
+    weekMinutes: Number(history.totals?.minutes ?? 0),
+    weekLessons: Number(
+      history.totals?.lessons_completed
+      ?? history.totals?.lessonsCompleted
+      ?? 0,
+    ),
+    streak: Number(today.current_streak ?? today.currentStreak ?? 0),
+    topWords: highlights
+      .filter((highlight) => highlight.type === 'word' && typeof highlight.value === 'string')
+      .map((highlight) => highlight.value as string),
+  };
 }
 
 export async function getParentToday(): Promise<ParentToday> {
@@ -118,7 +152,9 @@ export async function getParentToday(): Promise<ParentToday> {
 
 export async function getParentHistory(): Promise<ParentHistoryEntry[]> {
   const response = await client.get('/parent/history');
-  return unwrap<RawParentHistoryEntry[]>(response).map(mapParentHistoryEntry);
+  const history = unwrap<RawParentHistory>(response);
+  const daily = Array.isArray(history.daily) ? history.daily : [];
+  return daily.map(mapParentHistoryEntry);
 }
 
 export async function getSafetyConfig(): Promise<SafetyConfig> {

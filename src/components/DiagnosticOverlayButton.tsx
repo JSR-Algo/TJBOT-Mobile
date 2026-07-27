@@ -4,6 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/design-system/primitives/Text';
 import { sendDiagnosticReport } from '@/services/observability/diagnosticRelay';
 import { useAutoResetState } from '@/hooks/useAutoResetState';
+import {
+  getPendingDiagnosticError,
+  subscribePendingDiagnosticError,
+} from '@/services/observability/diagnosticErrorState';
 
 /**
  * DiagnosticOverlayButton — always-visible floating button on every screen that
@@ -19,14 +23,22 @@ import { useAutoResetState } from '@/hooks/useAutoResetState';
  */
 type SendState = 'idle' | 'sending' | 'sent' | 'failed';
 
-const OVERLAY_ENABLED = process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY === '1';
 const RESET_MS = 2500;
 
 export function DiagnosticOverlayButton(): React.JSX.Element | null {
   const insets = useSafeAreaInsets();
   const [state, setState] = useAutoResetState<SendState>('idle');
+  const [, bump] = React.useReducer((n: number) => n + 1, 0);
+  const pending = getPendingDiagnosticError();
+  const overlayEnabled = process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY === '1';
+  const shouldObservePending = overlayEnabled || pending !== null;
 
-  if (!OVERLAY_ENABLED) {
+  React.useEffect(
+    () => (shouldObservePending ? subscribePendingDiagnosticError(bump) : undefined),
+    [shouldObservePending],
+  );
+
+  if (!overlayEnabled && !pending) {
     return null;
   }
 

@@ -60,6 +60,9 @@ describe('DeviceSessionScreen', () => {
     expect(screen.queryByText('Pause Robot')).toBeNull();
     expect(screen.getByText('Audio stays between Robot and your child. Recordings are not saved.')).toBeTruthy();
 
+    fireEvent.press(screen.getByText('Browse courses'));
+    expect(navigation.navigate).toHaveBeenCalledWith(expect.stringMatching(/CourseLibrary/));
+
     fireEvent.press(screen.getByText('Back to Robot home'));
     expect(navigation.navigate).toHaveBeenCalledWith(expect.stringMatching(/DeviceHome/));
   });
@@ -129,7 +132,7 @@ describe('DeviceLostScreen', () => {
     await screen.findByText('Online · Casa · 87%');
     fireEvent.press(screen.getByText('Make Robot chime'));
 
-    expect(screen.getByTestId('connector-state-unsupported_until_connector')).toBeTruthy();
+    await expect(screen.findByTestId('connector-state-unsupported_until_connector')).resolves.toBeTruthy();
     expect(screen.queryByText('Robot is chiming!')).toBeNull();
     expect(screen.queryByText('Stop chime')).toBeNull();
   });

@@ -1,12 +1,13 @@
 appId: net.jasonle.tjbot
-name: D NeedsSync later to library
+name: D NeedsSync later to Device Home
 ---
-- extendedWaitUntil:
-    visible:
-      text: ".*(Sync course|Đồng bộ|I'll do it later|Để sau|Connect Robot|Kết nối|No robot).*"
-    timeout: 20000
+- assertVisible: ".*(Robot needs to catch up|Robot cần đồng bộ thêm|Robot cần cập nhật).*"
+- scrollUntilVisible:
+    element:
+      text: ".*(I'll do it later|Để sau).*"
+    direction: DOWN
 - tapOn: ".*(I'll do it later|Để sau).*"
 - extendedWaitUntil:
     visible:
-      text: ".*(Barnyard Basics|Color Safari|Number Train|Course Library|Thư viện|Hello Friends|Yummy|Pick what|Chọn).*"
+      text: ".*(Robot|Thiết bị|Pair|Ghép|Device|My Robot|Robot của).*"
     timeout: 20000

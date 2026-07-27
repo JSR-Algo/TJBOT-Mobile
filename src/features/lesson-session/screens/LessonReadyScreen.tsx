@@ -12,7 +12,6 @@ import { ROUTES } from '@/navigation/routes';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import {
   bootstrapNestPhoneLesson,
-  finishNestPhoneLesson,
   nestLessonTitle,
   type NestPhoneLessonContext,
 } from '../nestPhoneLesson';
@@ -64,12 +63,16 @@ export default function LessonReadyScreen({ navigation }: Props) {
         return;
       }
       setLesson(context);
-      // Nest-only phone path: complete against Nest, then show LessonDone.
-      // Robot Connecting SM stays available later when ESP is online.
-      await finishNestPhoneLesson(context);
-      navigation.navigate(ROUTES.LessonDoneScreen);
+      const lessonWords = context.session.session_payload?.core_learning
+        ?.map((item) => item.word)
+        .filter(Boolean) ?? [];
+      navigation.navigate(ROUTES.GreetingScreen, {
+        activityIndex: 1,
+        activityTotal: Math.max(lessonWords.length, 1),
+        lessonTitle: nestLessonTitle(context.session),
+      });
     } catch {
-      setError('Nest could not complete this lesson. Try again in a moment.');
+      setError('Could not load today\'s Nest lesson. Check the backend and try again.');
     } finally {
       setStarting(false);
     }
@@ -114,7 +117,7 @@ export default function LessonReadyScreen({ navigation }: Props) {
           disabled={loading || starting || !childId}
           color="#FF6F61"
         >
-          {starting ? 'Finishing…' : "I'm ready!"}
+          {starting ? 'Starting…' : "I'm ready!"}
         </PrimaryCTA>
       </Box>
     </ScreenShell>

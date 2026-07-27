@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
-import type { FeatureStackScreen, FeatureTabScreen } from './types';
+import type { FeatureStackScreen } from './types';
 import { MainTabNavigator } from './MainTabNavigator';
 import { MAIN_TAB_SCREENS, PROTECTED_DEFAULT_ROUTE, PROTECTED_MODAL_SCREENS, PROTECTED_STACK_SCREENS } from './featureRegistry';
 import { MODAL_STACK_SCREEN_OPTIONS, PROTECTED_STACK_SCREEN_OPTIONS } from './options';
@@ -19,18 +19,26 @@ type Props = {
 };
 
 export function ModalNavigator({ initialRouteName = PROTECTED_DEFAULT_ROUTE, initialRouteParams }: Props): React.JSX.Element {
-  const renderTabHostScreen = (screen: FeatureTabScreen): React.JSX.Element =>
-    renderTabHostScreenWithInitial(screen, initialRouteName, initialRouteParams);
-  const renderProtectedStackScreen = (screen: FeatureStackScreen): React.JSX.Element =>
+  const renderTabHostScreen = (screen: FeatureStackScreen): React.JSX.Element =>
+    renderStackScreen(screen, initialRouteName, initialRouteParams);
+  const renderProtectedScreen = (screen: FeatureStackScreen): React.JSX.Element =>
     renderStackScreen(screen, initialRouteName, initialRouteParams);
 
   return (
-    <Stack.Navigator initialRouteName={initialRouteName} screenOptions={PROTECTED_STACK_SCREEN_OPTIONS}>
+    <Stack.Navigator
+      initialRouteName={initialRouteName}
+      layout={({ children, navigation, state }) => (
+        <MainTabNavigator navigation={navigation} routeName={state.routes[state.index].name}>
+          {children}
+        </MainTabNavigator>
+      )}
+      screenOptions={PROTECTED_STACK_SCREEN_OPTIONS}
+    >
       {MAIN_TAB_SCREENS.map(renderTabHostScreen)}
-      {PROTECTED_STACK_SCREENS.map(renderProtectedStackScreen)}
+      {PROTECTED_STACK_SCREENS.map(renderProtectedScreen)}
 
       <Stack.Group screenOptions={MODAL_STACK_SCREEN_OPTIONS}>
-        {PROTECTED_MODAL_SCREENS.map(renderProtectedStackScreen)}
+        {PROTECTED_MODAL_SCREENS.map(renderProtectedScreen)}
       </Stack.Group>
     </Stack.Navigator>
   );
@@ -50,26 +58,4 @@ function renderStackScreen(
   initialRouteParams: RootStackParamList[keyof RootStackParamList] | undefined,
 ): React.JSX.Element {
   return <FeatureScreen key={screen.name} name={screen.name} component={screen.component} initialParams={initialParamsFor(screen.name, initialRouteName, initialRouteParams)} />;
-}
-
-function renderTabHostScreenWithInitial(
-  screen: FeatureTabScreen,
-  initialRouteName: keyof RootStackParamList,
-  initialRouteParams: RootStackParamList[keyof RootStackParamList] | undefined,
-): React.JSX.Element {
-  return (
-    <Stack.Screen
-      key={screen.name}
-      name={screen.name}
-      initialParams={initialParamsFor(screen.name, initialRouteName, initialRouteParams)}
-    >
-      {() => (
-        <MainTabNavigator
-          initialTabName={screen.tabName}
-          initialRouteName={initialRouteName}
-          initialRouteParams={initialRouteParams}
-        />
-      )}
-    </Stack.Screen>
-  );
 }

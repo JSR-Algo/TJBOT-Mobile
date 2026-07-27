@@ -138,6 +138,9 @@ export default function PairRenameScreen({ navigation, route }: Props) {
               style={[styles.buddyBtn, i === buddy && styles.buddyBtnSel]}
               activeOpacity={0.7}
               onPress={() => setBuddy(i)}
+              accessibilityRole="radio"
+              accessibilityLabel={b.n}
+              accessibilityState={{ selected: i === buddy }}
               testID={`buddy-${i}`}
             >
               <Text style={{ fontSize: 24 }}>{b.ic}</Text>

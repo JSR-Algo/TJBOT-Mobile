@@ -1,19 +1,41 @@
 appId: net.jasonle.tjbot
-name: Assert ParentSettingsScreen
+name: Assert ParentSettingsScreen language access blueprint
 ---
-- runFlow:
-    when:
-      visible: "Open"
-    commands:
-      - tapOn: "Open"
+- stopApp
+- openLink: "tjbot://parent/parent-settings"
+- waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
-      text: ".*(Settings|Cài đặt).*"
+      text: ".*(Language & access|Ngôn ngữ & hỗ trợ).*"
     timeout: 15000
-- runFlow:
-    when:
-      visible: ".*(App language|Ngôn ngữ).*"
-    commands:
-      - tapOn: ".*(App language|Ngôn ngữ).*"
-- back
+- assertVisible: ".*(LANGUAGE|NGÔN NGỮ).*"
+- assertVisible: ".*(ACCESSIBILITY|HỖ TRỢ TIẾP CẬN).*"
+- assertVisible: ".*(Reduce motion|Bật giảm chuyển động).*"
+- assertVisible: ".*(Enable larger text|Bật chữ lớn hơn).*"
+- tapOn: ".*(Reduce motion|Bật giảm chuyển động).*"
+- tapOn: ".*(Enable larger text|Bật chữ lớn hơn).*"
+- scrollUntilVisible:
+    element:
+      id: "saveLanguageAccessButton"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: "saveLanguageAccessButton"
+- scrollUntilVisible:
+    element:
+      id: "languageAccessSaveStatus"
+    direction: DOWN
+    centerElement: true
+- extendedWaitUntil:
+    visible:
+      text: ".*(Settings saved|Đã lưu cài đặt).*"
+    timeout: 10000
 - waitForAnimationToEnd
+- tapOn:
+    point: "92%,92%"
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/04-ParentSettingsScreen-language-access-saved"
+- scrollUntilVisible:
+    element:
+      id: "languageAccessBackButton"
+    direction: UP
+- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/04-ParentSettingsScreen-language-access"

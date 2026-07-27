@@ -8,6 +8,7 @@ import NeedsSyncScreen from '@/features/course-library/screens/NeedsSyncScreen';
 import UnlockConfirmModal from '@/features/course-library/UnlockConfirmModal';
 import {
   createAssignment,
+  getCourseDetail,
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
@@ -32,6 +33,7 @@ jest.mock('@/services/api/course-library.api', () => {
     getCurrentAssignment: jest.fn(),
     // P4: SendToRobotScreen + CourseDetail/CourseAdded read the published catalog.
     getCourses: jest.fn(),
+    getCourseDetail: jest.fn(),
     getCourseLessons: jest.fn(),
   };
 });
@@ -50,6 +52,7 @@ const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof cr
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
+const mockedGetCourseDetail = getCourseDetail as jest.MockedFunction<typeof getCourseDetail>;
 const mockedGetCourseLessons = getCourseLessons as jest.MockedFunction<typeof getCourseLessons>;
 
 // P4: the published catalog SendToRobotScreen renders. The first lesson is the
@@ -64,6 +67,16 @@ const SEED_LESSONS = [
 function stubPublishedCatalog() {
   mockedGetCourses.mockResolvedValue([SEED_COURSE]);
   mockedGetCourseLessons.mockResolvedValue(SEED_LESSONS);
+  mockedGetCourseDetail.mockImplementation(async (courseId) => ({
+    courseId,
+    title: courseId === 'c_barn' ? 'Barn Friends' : 'Mealtime English',
+    description: courseId === 'c_barn' ? 'Learn animal names and sounds.' : 'Everyday food words.',
+    levelCount: 3,
+    lessonCount: courseId === 'c_barn' ? 2 : 5,
+    previewUrl: null,
+    ageBand: '3-5',
+    difficulty: 'beginner',
+  }));
 }
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -98,7 +111,7 @@ describe('course-library flow guards', () => {
     mockedEnrollCourse.mockResolvedValue({ enrollment: { id: 'enroll-1' }, assignment: { id: 'assign-1' } } as never);
   });
 
-  it('renders the course that was just added from route params', () => {
+  it('reports a new assignment as queued without claiming the robot is ready', () => {
     // No 'c_animals' in the published catalog → falls back to static metadata,
     // proving the dynamic overlay never crashes on a non-published courseId.
     mockedGetCourses.mockResolvedValue([]);
@@ -106,11 +119,15 @@ describe('course-library flow guards', () => {
     renderWithProviders(
       <CourseAddedScreen
         navigation={navigation as never}
-        route={{ key: 'added', name: ROUTES.CourseAddedScreen, params: { courseId: 'c_animals' } } as never}
+        route={{ key: 'added', name: ROUTES.CourseAddedScreen, params: { courseId: 'c_animals', assignmentId: 'assign-1' } } as never}
       />,
     );
 
-    expect(screen.getByText(/My Animal Friends/)).toBeTruthy();
+    expect(screen.getAllByText(/My Animal Friends/)).toHaveLength(2);
+    expect(screen.getAllByText('Queued for your robot')).toHaveLength(2);
+    expect(screen.getByText("Robot will pick this up when it's back online.")).toBeTruthy();
+    expect(screen.queryByText('On Robot now')).toBeNull();
+    expect(screen.queryByText(/ready to play/)).toBeNull();
   });
 
   it('passes course id into the added screen after parent unlock succeeds', async () => {
@@ -148,7 +165,7 @@ describe('course-library flow guards', () => {
     expect(screen.getByText('2')).toBeTruthy();
   });
 
-  it('starts the free add path from detail without billing plan selection', () => {
+  it('starts the free add path from detail without billing plan selection', async () => {
     const navigation = navigationFor();
     renderWithProviders(
       <CourseDetailScreen
@@ -157,6 +174,7 @@ describe('course-library flow guards', () => {
       />,
     );
 
+    await waitFor(() => expect(screen.getByText('Add to Robot')).toBeTruthy());
     fireEvent.press(screen.getByText('Add to Robot'));
 
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'c_food' });

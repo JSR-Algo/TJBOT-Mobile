@@ -9,7 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
 import { recordAiVoiceConsent } from '@/services/api/auth';
-import { ensureMicPermission } from '@/features/lessonDemo/voiceReadiness';
+import { ensureMicPermission } from '@/features/lesson-demo/voiceReadiness';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MicAskScreen'>;
 

@@ -46,6 +46,9 @@ function onDiagnosticError(entry: DiagnosticEntry): void {
 }
 
 export function installDiagnosticErrorRelay(): () => void {
+  if (process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY !== '1') {
+    return () => undefined;
+  }
   if (installed) return uninstallDiagnosticErrorRelay;
   installed = true;
   unsub = subscribeDiagnosticErrors(onDiagnosticError);

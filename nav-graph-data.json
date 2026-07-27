@@ -186,6 +186,12 @@
       "g": "Robot Device",
       "kind": "happy"
     },
+    "dv_pair_child": {
+      "f": "src/features/device/pairing/screens/PairChildProfileScreen.tsx",
+      "title": "Robot · Pair · child profile",
+      "g": "Robot Device",
+      "kind": "happy"
+    },
     "dv_pair_code": {
       "f": "src/features/device/pairing/screens/PairCodeScreen.tsx",
       "title": "Robot · Pair · confirm code",
@@ -216,12 +222,6 @@
       "g": "Robot Device",
       "kind": "happy"
     },
-    "dv_pair_qr_scan": {
-      "f": "src/features/device/pairing/screens/PairQrScanScreen.tsx",
-      "title": "Robot · Pair · QR scan",
-      "g": "Robot Device",
-      "kind": "happy"
-    },
     "dv_pair_intro": {
       "f": "src/features/device/pairing/screens/PairIntroScreen.tsx",
       "title": "Robot · Pair · turn on",
@@ -234,15 +234,15 @@
       "g": "Robot Device",
       "kind": "edge"
     },
-    "dv_pair_rename": {
-      "f": "src/features/device/pairing/screens/PairRenameScreen.tsx",
-      "title": "Robot · Pair · rename & buddy",
+    "dv_pair_qr_scan": {
+      "f": "src/features/device/pairing/screens/PairQrScanScreen.tsx",
+      "title": "Robot · Pair · QR scan",
       "g": "Robot Device",
       "kind": "happy"
     },
-    "dv_pair_child": {
-      "f": "src/features/device/pairing/screens/PairChildProfileScreen.tsx",
-      "title": "Robot · Pair · child profile",
+    "dv_pair_rename": {
+      "f": "src/features/device/pairing/screens/PairRenameScreen.tsx",
+      "title": "Robot · Pair · rename & buddy",
       "g": "Robot Device",
       "kind": "happy"
     },
@@ -298,6 +298,12 @@
       "f": "src/features/fallback/screens/HelpFaqScreen.tsx",
       "title": "Help & FAQ",
       "g": "Fallback",
+      "kind": "happy"
+    },
+    "home_child_profile": {
+      "f": "src/features/home/screens/HomeChildProfileScreen.tsx",
+      "title": "Home · Child profile",
+      "g": "Home",
       "kind": "happy"
     },
     "home_hub_daily": {
@@ -380,6 +386,30 @@
       "g": "Fallback",
       "kind": "happy"
     },
+    "lesson_demo_home": {
+      "f": "src/features/lesson-demo/screens/LessonDemoHomeScreen.tsx",
+      "title": "Lesson Demo · Home",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "lesson_demo_roadmap": {
+      "f": "src/features/lesson-demo/screens/LessonRoadmapScreen.tsx",
+      "title": "Lesson Demo · Roadmap",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "lesson_demo_session": {
+      "f": "src/features/lesson-demo/screens/LessonSessionScreen.tsx",
+      "title": "Lesson Demo · Session",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "lesson_demo_showcase": {
+      "f": "src/features/lesson-demo/screens/LessonShowcaseScreen.tsx",
+      "title": "Lesson Demo · Showcase",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
     "lesson_detail": {
       "f": "src/features/course/screens/LessonDetailScreen.tsx",
       "title": "Lesson Detail",
@@ -396,6 +426,12 @@
       "f": "src/features/course/screens/LessonListScreen.tsx",
       "title": "Lesson List",
       "g": "Course",
+      "kind": "happy"
+    },
+    "lesson_pick": {
+      "f": "src/features/lesson-demo/screens/LessonPickScreen.tsx",
+      "title": "Lesson Demo · Pick a lesson",
+      "g": "Lesson Demo",
       "kind": "happy"
     },
     "lesson_ready": {
@@ -443,6 +479,12 @@
     "onb_child": {
       "f": "src/features/onboarding/screens/ChildProfileScreen.tsx",
       "title": "11 · Child Profile",
+      "g": "Onboarding",
+      "kind": "happy"
+    },
+    "onb_coppa": {
+      "f": "src/features/onboarding/screens/ParentConsentScreen.tsx",
+      "title": "10 · Parent Consent",
       "g": "Onboarding",
       "kind": "happy"
     },
@@ -512,6 +554,12 @@
       "g": "Parent",
       "kind": "edge"
     },
+    "parent_diagnostic_log": {
+      "f": "src/features/parent/screens/ParentDiagnosticLogScreen.tsx",
+      "title": "Diagnostic Log",
+      "g": "Parent",
+      "kind": "edge"
+    },
     "parent_gate": {
       "f": "src/features/parent/screens/ParentGateScreen.tsx",
       "title": "Parent Gate",
@@ -522,6 +570,12 @@
       "f": "src/features/parent/screens/ParentHistoryScreen.tsx",
       "title": "Past 30 Days",
       "g": "Parent",
+      "kind": "happy"
+    },
+    "parent_lesson_summary": {
+      "f": "src/features/lesson-demo/screens/ParentLessonSummaryScreen.tsx",
+      "title": "Lesson Demo · Parent Summary",
+      "g": "Lesson Demo",
       "kind": "happy"
     },
     "parent_locked_out": {
@@ -541,12 +595,6 @@
       "title": "Parent Settings",
       "g": "Parent",
       "kind": "happy"
-    },
-    "parent_diagnostic_log": {
-      "f": "src/features/parent/screens/ParentDiagnosticLogScreen.tsx",
-      "title": "Diagnostic Log",
-      "g": "Parent",
-      "kind": "edge"
     },
     "parent_stopped": {
       "f": "src/features/lesson-session/screens/ParentStoppedScreen.tsx",
@@ -740,6 +788,24 @@
       "g": "Robot Mgmt",
       "kind": "happy"
     },
+    "robot_companion": {
+      "f": "src/features/lesson-demo/screens/RobotCompanionScreen.tsx",
+      "title": "Lesson Demo · Robot companion",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "robot_fullscreen_lesson": {
+      "f": "src/features/lesson-demo/screens/RobotFullscreenLessonScreen.tsx",
+      "title": "Lesson Demo · Fullscreen lesson",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
+    "robot_lesson_control": {
+      "f": "src/features/lesson-demo/screens/RobotLessonControlScreen.tsx",
+      "title": "Lesson Demo · Robot Control",
+      "g": "Lesson Demo",
+      "kind": "happy"
+    },
     "robot_listening": {
       "f": "src/features/lesson-session/screens/RobotListeningScreen.tsx",
       "title": "Robot Listening",
@@ -817,66 +883,6 @@
       "title": "Words Practiced",
       "g": "Progress",
       "kind": "happy"
-    },
-    "onb_coppa": {
-      "f": "src/features/onboarding/screens/ParentConsentScreen.tsx",
-      "title": "10 · Parent Consent",
-      "g": "Onboarding",
-      "kind": "happy"
-    },
-    "lesson_demo_home": {
-      "f": "src/features/lessonDemo/screens/LessonDemoHomeScreen.tsx",
-      "title": "Lesson Demo · Home",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "lesson_demo_roadmap": {
-      "f": "src/features/lessonDemo/screens/LessonRoadmapScreen.tsx",
-      "title": "Lesson Demo · Roadmap",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "lesson_demo_session": {
-      "f": "src/features/lessonDemo/screens/LessonSessionScreen.tsx",
-      "title": "Lesson Demo · Session",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "lesson_demo_showcase": {
-      "f": "src/features/lessonDemo/screens/LessonShowcaseScreen.tsx",
-      "title": "Lesson Demo · Showcase",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "lesson_pick": {
-      "f": "src/features/lessonDemo/screens/LessonPickScreen.tsx",
-      "title": "Lesson Demo · Pick a lesson",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "robot_companion": {
-      "f": "src/features/lessonDemo/screens/RobotCompanionScreen.tsx",
-      "title": "Lesson Demo · Robot companion",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "robot_fullscreen_lesson": {
-      "f": "src/features/lessonDemo/screens/RobotFullscreenLessonScreen.tsx",
-      "title": "Lesson Demo · Fullscreen lesson",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "parent_lesson_summary": {
-      "f": "src/features/lessonDemo/screens/ParentLessonSummaryScreen.tsx",
-      "title": "Lesson Demo · Parent Summary",
-      "g": "Lesson Demo",
-      "kind": "happy"
-    },
-    "robot_lesson_control": {
-      "f": "src/screens/robot-lesson/RobotLessonControlScreen.tsx",
-      "title": "Lesson Demo · Robot Control",
-      "g": "Lesson Demo",
-      "kind": "happy"
     }
   },
   "edges": [],
@@ -945,6 +951,7 @@
       "success"
     ],
     "Home": [
+      "home_child_profile",
       "home_hub_daily",
       "home_hub_done",
       "home_hub_error",
@@ -959,20 +966,32 @@
       "home_hub_unpaired_robot",
       "home_hub_zero_child"
     ],
+    "Lesson Demo": [
+      "lesson_demo_home",
+      "lesson_demo_roadmap",
+      "lesson_demo_session",
+      "lesson_demo_showcase",
+      "lesson_pick",
+      "parent_lesson_summary",
+      "robot_companion",
+      "robot_fullscreen_lesson",
+      "robot_lesson_control"
+    ],
     "Onboarding": [
       "onb_child",
+      "onb_coppa",
       "onb_first_lesson",
       "onb_login",
       "onb_mic"
     ],
     "Parent": [
       "parent_account_privacy",
+      "parent_diagnostic_log",
       "parent_gate",
       "parent_history",
       "parent_locked_out",
       "parent_safety",
       "parent_settings",
-      "parent_diagnostic_log",
       "parent_summary",
       "parent_today"
     ],
@@ -1015,16 +1034,16 @@
       "dv_lost",
       "dv_overview",
       "dv_pair_add",
+      "dv_pair_child",
       "dv_pair_code",
       "dv_pair_connecting",
       "dv_pair_failed",
       "dv_pair_first_lesson",
       "dv_pair_found",
-      "dv_pair_qr_scan",
       "dv_pair_intro",
       "dv_pair_offline",
+      "dv_pair_qr_scan",
       "dv_pair_rename",
-      "dv_pair_child",
       "dv_pair_search",
       "dv_pair_success",
       "dv_pair_wifi",
@@ -1049,23 +1068,12 @@
       "connecting",
       "greeting",
       "lesson_ready"
-    ],
-    "Lesson Demo": [
-      "lesson_demo_home",
-      "lesson_demo_roadmap",
-      "lesson_demo_session",
-      "lesson_demo_showcase",
-      "lesson_pick",
-      "parent_lesson_summary",
-      "robot_companion",
-      "robot_fullscreen_lesson",
-      "robot_lesson_control"
     ]
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-05-26T05:15:09Z",
-    "sourceCommit": "97590a2dc8627d9966edd969cc056d87c1c21ccb",
+    "generatedAt": "2026-07-27T05:24:05Z",
+    "sourceCommit": "86292550108616a88c2122613861ccbd6449d08e",
     "retired": true
   }
 }

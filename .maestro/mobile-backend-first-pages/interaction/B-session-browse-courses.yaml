@@ -1,10 +1,11 @@
 appId: net.jasonle.tjbot
 name: B Session Browse courses to Library
 ---
-- extendedWaitUntil:
-    visible:
-      text: ".*(Live lesson view|Chế độ xem|Browse courses|Duyệt khóa học).*"
-    timeout: 15000
+- assertVisible: ".*(Lesson on Robot|Bài học trên Robot).*"
+- scrollUntilVisible:
+    element:
+      text: ".*(Browse courses|Duyệt khóa học).*"
+    direction: DOWN
 - tapOn: ".*(Browse courses|Duyệt khóa học).*"
 - extendedWaitUntil:
     visible:

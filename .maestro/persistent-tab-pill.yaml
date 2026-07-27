@@ -1,0 +1,73 @@
+appId: net.jasonle.tjbot
+name: Persistent animated bottom pill
+---
+- launchApp:
+    clearState: false
+- openLink: "tjbot://home/home-hub"
+- extendedWaitUntil:
+    visible:
+      id: "authenticatedAppShellTabs"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: ".*Open debugger to view warnings.*"
+    commands:
+      - tapOn:
+          point: "92%,92%"
+- assertVisible:
+    id: "activeTabIndicator"
+
+- tapOn:
+    id: "devicesTab"
+- assertVisible:
+    id: "devicesTab"
+    selected: true
+- assertVisible:
+    id: "authenticatedAppShellTabs"
+
+- tapOn:
+    id: "libraryTab"
+- extendedWaitUntil:
+    visible:
+      id: "courseLibraryPage"
+    timeout: 60000
+- assertVisible:
+    id: "libraryTab"
+    selected: true
+- assertVisible:
+    id: "authenticatedAppShellTabs"
+
+- tapOn:
+    id: "progressTab"
+- assertVisible:
+    id: "progressTab"
+    selected: true
+- assertVisible:
+    id: "authenticatedAppShellTabs"
+
+- tapOn:
+    id: "profileTab"
+- extendedWaitUntil:
+    visible:
+      id: "parentProfileCard"
+    timeout: 60000
+- assertVisible:
+    id: "profileTab"
+    selected: true
+- assertVisible:
+    id: "authenticatedAppShellTabs"
+
+- tapOn:
+    id: "homeTab"
+- extendedWaitUntil:
+    visible:
+      id: "home(PrimaryCta|EmptyCard)"
+    timeout: 60000
+- assertVisible:
+    id: "homeTab"
+    selected: true
+- assertVisible:
+    id: "authenticatedAppShellTabs"
+- assertVisible:
+    id: "activeTabIndicator"
+- takeScreenshot: output/maestro/persistent-tab-pill/01-home-return

@@ -49,6 +49,20 @@ name: Nest spine — age gate through intro to login
             - tapOn:
                 id: "trustContinueButton"
 
+- runFlow:
+    when:
+      visible:
+        id: "trustScreen"
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "trustContinueButton"
+          direction: DOWN
+          centerElement: true
+          timeout: 20000
+      - tapOn:
+          id: "trustContinueButton"
+
 - extendedWaitUntil:
     visible:
       id: "loginScreenScroll"
@@ -60,3 +74,42 @@ name: Nest spine — age gate through intro to login
 - assertVisible:
     id: "submitButton"
 - takeScreenshot: output/maestro/nest-spine/01-login
+
+- tapOn:
+    id: "authModeTab_login"
+- tapOn:
+    id: "emailInput"
+- eraseText: 100
+- inputText: "wrong.parent@example.com"
+- hideKeyboard
+- tapOn:
+    id: "passwordInputToggle"
+- tapOn:
+    id: "passwordInput"
+- eraseText: 100
+- inputText: "WrongPass1"
+- pressKey: ENTER
+- tapOn:
+    id: "submitButton"
+- extendedWaitUntil:
+    visible: "Save Password?"
+    timeout: 30000
+- tapOn: "Not Now"
+- extendedWaitUntil:
+    visible:
+      id: "authErrorScreen"
+    timeout: 30000
+- assertVisible:
+    id: "authErrorTitle"
+- assertVisible:
+    id: "retryAuthButton"
+- takeScreenshot: output/maestro/nest-spine/02-auth-error
+- tapOn:
+    id: "recoverPasswordButton"
+- extendedWaitUntil:
+    visible:
+      id: "forgotPasswordScreen"
+    timeout: 30000
+- assertVisible:
+    id: "forgotPasswordTitle"
+- takeScreenshot: output/maestro/nest-spine/03-forgot-password

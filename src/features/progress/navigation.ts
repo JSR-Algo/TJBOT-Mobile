@@ -22,7 +22,7 @@ export const PROGRESS_TAB_SCREEN = {
 
 export const PROGRESS_SCREENS = defineFeatureScreens([
   { name: ROUTES.WordsPracticedScreen, component: WordsPracticedScreen, role: 'state-machine', backTarget: ROUTES.TodayProgressScreen, stateMachineId: 'words_practiced' },
-  { name: ROUTES.LessonSummaryScreen, component: LessonSummaryScreen, role: 'stack-entry', stateMachineId: 'lesson_summary', forwardCycleGroup: 'lesson-summary-loop' },
+  { name: ROUTES.LessonSummaryScreen, component: LessonSummaryScreen, role: 'stack-entry', stateMachineId: 'lesson_summary', forwardCycleGroup: 'lesson-session-loop' },
   { name: ROUTES.ReviewNeededScreen, component: ReviewNeededScreen, role: 'stack-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'review_needed' },
   { name: ROUTES.CelebrationScreen, component: CelebrationScreen, role: 'state-machine', stateMachineId: 'celebration' },
 ]);

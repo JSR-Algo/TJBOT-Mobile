@@ -61,6 +61,19 @@ name: Nest spine — signup → onboarding → Home → library
             - tapOn:
                 id: "trustContinueButton"
 
+# The privacy/trust page is taller than the iPhone 17 viewport. Its CTA is
+# intentionally below the cards, so reveal it before waiting for auth.
+- runFlow:
+    when:
+      visible: ".*(PRIVACY & SAFETY|QUYỀN RIÊNG TƯ & AN TOÀN).*"
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "trustContinueButton"
+          direction: DOWN
+      - tapOn:
+          id: "trustContinueButton"
+
 - extendedWaitUntil:
     visible:
       id: "loginScreenScroll"
@@ -74,34 +87,45 @@ name: Nest spine — signup → onboarding → Home → library
     commands:
       - tapOn:
           id: "authModeTab_signup"
+- extendedWaitUntil:
+    visible:
+      id: "parentNameInput"
+    timeout: 15000
+- tapOn:
+    id: "parentNameInput"
+- eraseText
+- inputText: "Maestro Parent"
+- pressKey: ENTER
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     id: "emailInput"
 - eraseText
 - inputText: "${MAESTRO_TEST_EMAIL}"
+- pressKey: ENTER
+- waitForAnimationToEnd:
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: "passwordInput"
+    direction: DOWN
 - tapOn:
     id: "passwordInputToggle"
 - tapOn:
     id: "passwordInput"
-# The iOS 26 Strong Password sheet exposes no accessibility selector. This
-# point is the sheet's close control on the single iPhone 17 test device.
-- tapOn:
-    point: "91%,58%"
 - eraseText
 - inputText: "TestPass123!"
 - extendedWaitUntil:
     visible:
       id: "passwordRule_length_met"
     timeout: 15000
-- runFlow:
-    when:
-      visible:
-        id: "confirmPasswordInput"
-    commands:
-      - tapOn:
-          id: "confirmPasswordInput"
-      - eraseText
-      - inputText: "TestPass123!"
-- hideKeyboard
+- pressKey: ENTER
+- waitForAnimationToEnd:
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: "submitButton"
+    direction: DOWN
 - tapOn:
     id: "submitButton"
 
@@ -124,18 +148,35 @@ name: Nest spine — signup → onboarding → Home → library
 - tapOn:
     text: "Not Now"
     optional: true
-- hideKeyboard
+- pressKey: ENTER
+- waitForAnimationToEnd:
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: "parentConsentCheckbox"
+    direction: DOWN
 - tapOn:
     id: "parentConsentCheckbox"
+- scrollUntilVisible:
+    element:
+      id: "parentConsentSubmitButton"
+    direction: DOWN
 - tapOn:
     id: "parentConsentSubmitButton"
 
 # Child profile
 - extendedWaitUntil:
     visible:
-      id: "childAgeBand_PRE_K"
+      id: "childNameInput"
     timeout: 45000
 - takeScreenshot: output/maestro/nest-spine/11-child
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    id: "childNameInput"
+- eraseText
+- inputText: "Maestro Kid"
+- pressKey: ENTER
 - waitForAnimationToEnd:
     timeout: 5000
 - tapOn:
@@ -163,27 +204,39 @@ name: Nest spine — signup → onboarding → Home → library
 
 # First lesson → HomeHub
 - extendedWaitUntil:
-    visible:
-      id: "firstLessonStartCta"
+    visible: ".*(Your first lesson is ready|Bài học đầu tiên).*"
     timeout: 45000
+- scrollUntilVisible:
+    element:
+      id: "firstLessonStartCta"
+    direction: DOWN
 - takeScreenshot: output/maestro/nest-spine/13-first-lesson
 - tapOn:
     id: "firstLessonStartCta"
 
+# The onboarding entry opens the backend-backed Lesson Ready screen. Verify
+# that bootstrap completed, then use the authenticated shell to return Home.
+- extendedWaitUntil:
+    visible:
+      id: "lessonReadyCta"
+    timeout: 60000
+- takeScreenshot: output/maestro/nest-spine/14-lesson-ready
+- tapOn:
+    id: "appShellBack"
+
 # HomeHub
 - extendedWaitUntil:
     visible:
-      id: "homePrimaryCta"
+      id: "home(PrimaryCta|EmptyCard)"
     timeout: 60000
-- takeScreenshot: output/maestro/nest-spine/14-home
-- tapOn:
-    id: "homePrimaryCta"
+- takeScreenshot: output/maestro/nest-spine/15-home
 
-# A new account has no assigned next lesson yet. Home must route the primary
-# action to the real backend-backed library instead of fabricating a lesson.
+# Open the real backend-backed library from the authenticated tab bar.
+- tapOn:
+    id: "libraryTab"
 - extendedWaitUntil:
     visible:
-      id: "libraryTab"
+      id: "courseLibraryPage"
     timeout: 60000
-- assertVisible: ".*(Barnyard Basics|Color Safari|Number Train).*"
-- takeScreenshot: output/maestro/nest-spine/15-library
+- assertVisible: ".*(This Is a Barn|Barnyard Basics|Color Safari|Number Train).*"
+- takeScreenshot: output/maestro/nest-spine/16-library

@@ -19,7 +19,7 @@ export const PURCHASE_MODAL_SCREENS = defineFeatureScreens([
   { name: ROUTES.HowItWorksScreen, component: HowItWorksScreen, role: 'modal', backTarget: ROUTES.PurchaseIntroScreen, stateMachineId: 'pr_how' },
   { name: ROUTES.IncludedScreen, component: IncludedScreen, role: 'modal', backTarget: ROUTES.HowItWorksScreen, stateMachineId: 'pr_included' },
   { name: ROUTES.BundleScreen, component: BundleScreen, role: 'modal', backTarget: ROUTES.IncludedScreen, stateMachineId: 'pr_bundle' },
-  { name: ROUTES.SubscriptionsScreen, component: SubscriptionsScreen, role: 'modal', backTarget: ROUTES.BundleScreen, stateMachineId: 'pr_subs' },
+  { name: ROUTES.SubscriptionsScreen, component: SubscriptionsScreen, role: 'modal-entry', backTarget: ROUTES.BundleScreen, stateMachineId: 'pr_subs' },
   { name: ROUTES.PrivacyScreen, component: PrivacyScreen, role: 'modal', backTarget: ROUTES.SubscriptionsScreen, stateMachineId: 'pr_privacy' },
   { name: ROUTES.CheckoutScreen, component: CheckoutScreen, role: 'modal', backTarget: ROUTES.PrivacyScreen, stateMachineId: 'pr_checkout' },
   { name: ROUTES.OrderConfirmScreen, component: OrderConfirmScreen, role: 'modal', backTarget: ROUTES.CheckoutScreen, stateMachineId: 'pr_confirm' },

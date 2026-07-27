@@ -36,8 +36,8 @@ export const COURSE_LIBRARY_SCREENS = defineFeatureScreens([
   { name: ROUTES.NeedsSyncScreen, component: NeedsSyncScreen, role: 'state-machine', backTarget: ROUTES.CourseLibraryScreen, stateMachineId: 'cl_needs_sync' },
   { name: ROUTES.SendToRobotScreen, component: SendToRobotScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, forwardCycleGroup: 'course-dispatch-picker', stateMachineId: 'cl_send' },
   { name: ROUTES.RobotReadyScreen, component: RobotReadyScreen, role: 'stack', backTarget: ROUTES.SendToRobotScreen, forwardCycleGroup: 'course-dispatch-picker', stateMachineId: 'cl_robot_ready' },
-  { name: ROUTES.RunningScreen, component: RunningScreen, role: 'stack', backTarget: ROUTES.RobotReadyScreen, stateMachineId: 'cl_running' },
-  { name: ROUTES.CompanionScreen, component: CompanionScreen, role: 'stack', backTarget: ROUTES.RunningScreen, stateMachineId: 'cl_companion' },
+  { name: ROUTES.RunningScreen, component: RunningScreen, role: 'stack-entry', backTarget: ROUTES.RobotReadyScreen, stateMachineId: 'cl_running' },
+  { name: ROUTES.CompanionScreen, component: CompanionScreen, role: 'stack-entry', backTarget: ROUTES.RunningScreen, stateMachineId: 'cl_companion' },
 ]);
 
 export const COURSE_LIBRARY_MODAL_SCREENS = defineFeatureScreens([

@@ -1,9 +1,9 @@
 # Maestro — Nest + mobile spine
 
 Requires:
-- Nest on `http://localhost:3000/v1` (see `docs/runbooks/LOCAL_MOBILE_NEST.md`)
+- Hosted backend healthy at `https://report.tjbot.vn/v1/health`
 - App installed on simulator (`npm run ios`) with `appId: net.jasonle.tjbot`
-- Maestro CLI `~/.maestro/bin/maestro` 2.4.0+
+- Maestro CLI `~/.maestro/bin/maestro` 2.7.0+
 
 ```bash
 # from TJBOT-Mobile
@@ -18,6 +18,11 @@ UDID="replace-with-single-booted-simulator-udid"
 ~/.maestro/bin/maestro --device "$UDID" test \
   -e MAESTRO_TEST_EMAIL="maestro.full.$(date +%s)@example.com" \
   .maestro/nest-spine-onboard-home-lesson.yaml
+
+# Authenticated persistent-pill regression: Home → Devices → Library →
+# Progress → Profile → Home, with the shell asserted after every page change.
+~/.maestro/bin/maestro --device "$UDID" test \
+  .maestro/persistent-tab-pill.yaml
 ```
 
 Robot/ESP screens are intentionally not covered in this spine.

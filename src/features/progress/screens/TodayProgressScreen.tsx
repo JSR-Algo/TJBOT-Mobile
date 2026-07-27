@@ -1,29 +1,28 @@
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
+import { BookOpen, CalendarDays, Flame } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
 import PageScroll from '@/design-system/components/PageScroll';
-import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { getChildLessonProgress, type AssignmentProgress } from '@/services/api/progress.api';
+import {
+  getChildLessonProgress,
+  getChildProgress,
+  type AssignmentProgress,
+  type ChildProgress,
+} from '@/services/api/progress.api';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TodayProgressScreen'>;
-const SLEEK_PROGRESS_ICON = 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/nvzeJhC2UvA/components/NpznCUpnBV4.png';
 
-// A CANCELLED/FAILED lesson is not an accomplishment and must never render under
-// the "You practiced speaking!" celebration. COMPLETED is a real win and stays
-// celebratable; active states are work-in-progress the child is still doing.
-// Mirrors ParentTodayScreen's TERMINAL_STATES/isActive predicate, but keeps
-// COMPLETED (ParentTodayScreen drops it because that screen is in-flight only).
 const FAILURE_STATES = new Set(['CANCELLED', 'FAILED']);
 
-function isCelebratable(a: AssignmentProgress): boolean {
-  return !FAILURE_STATES.has(a.state);
+function isCelebratable(assignment: AssignmentProgress): boolean {
+  return !FAILURE_STATES.has(assignment.state);
 }
 
 const STATE_COPY: Record<string, string> = {
@@ -41,82 +40,183 @@ function stateLabel(state: string): string {
   return STATE_COPY[state] ?? state;
 }
 
+
 export default function TodayProgressScreen({ navigation }: Props) {
   const { activeChild } = useHousehold();
   const childId = activeChild?.id;
-
-  const query = useQuery({
+  const assignmentQuery = useQuery({
     queryKey: ['lesson-progress', 'child', childId],
     queryFn: () => getChildLessonProgress(childId as string),
     enabled: typeof childId === 'string' && childId.length > 0,
   });
+  const summaryQuery = useQuery({
+    queryKey: ['learning-progress', 'child', childId],
+    queryFn: () => getChildProgress(childId as string),
+    enabled: typeof childId === 'string' && childId.length > 0,
+  });
 
-  // Newest first from the server (updated_at DESC). Skip CANCELLED/FAILED so a
-  // wrong-state lesson never lands under the celebration header; the newest
-  // celebratable assignment (COMPLETED or still active) is the one to show.
-  const latest = (query.data ?? []).find(isCelebratable);
-
-  // Only celebrate a finished/active lesson; never frame a completed-but-empty
-  // run as a win the same way, and never reach here for a failed/cancelled one.
-  const headerTitle = latest ? 'You practiced speaking!' : 'No practice yet';
+  const assignments = assignmentQuery.data ?? [];
+  const latest = assignments.find(isCelebratable);
+  const summary = summaryQuery.data;
+  const isLoading = assignmentQuery.isLoading || summaryQuery.isLoading;
+  const isError = assignmentQuery.isError || summaryQuery.isError;
+  const hasProgress = Boolean(latest)
+    || Boolean(summary && (summary.lessonsCompleted || summary.currentStreakDays || summary.masteredWords));
 
   return (
-    <PageScroll>
-      <Box paddingHorizontal={24} paddingTop={56} paddingBottom={18} flexDirection="row" alignItems="center" justifyContent="space-between">
+    <PageScroll bg="#E0F7FA">
+      <Box style={styles.header} flexDirection="row" alignItems="flex-end" justifyContent="space-between">
         <Box flex={1}>
-          <Text fontWeight="800" style={styles.eyebrow}>Today</Text>
-          <Text fontWeight="800" style={styles.heading}>{headerTitle}</Text>
+          <Text fontWeight="800" style={styles.heading}>Your child's progress</Text>
+          <Text fontWeight="700" style={styles.subheading}>See what your child has learned</Text>
         </Box>
-        <Box style={styles.headerIconWell} alignItems="center" justifyContent="center">
-          <Image source={{ uri: SLEEK_PROGRESS_ICON }} style={styles.headerIcon} resizeMode="contain" accessibilityLabel="Progress" />
+        <Box style={styles.rangeChip} flexDirection="row" alignItems="center" gap={7}>
+          <CalendarDays size={17} color="#FF6F61" />
+          <Text fontWeight="800" style={styles.rangeText}>This week</Text>
         </Box>
       </Box>
 
-      <Box paddingHorizontal={20} paddingBottom={14} gap={12}>
-        {query.isLoading ? <Text style={styles.message}>Loading progress</Text> : null}
-        {query.isError ? <ProgressError onRetry={() => { void query.refetch(); }} /> : null}
-        {!query.isLoading && !query.isError && !latest ? (
-          <Text style={styles.message}>No lessons yet</Text>
+      <Box style={styles.body} gap={18}>
+        {isLoading ? <StatusCard title="Loading progress" /> : null}
+        {isError ? (
+          <ProgressError
+            onRetry={() => {
+              void assignmentQuery.refetch();
+              void summaryQuery.refetch();
+            }}
+          />
         ) : null}
-        {!query.isLoading && !query.isError && latest ? <ProgressBody latest={latest} /> : null}
+        {!isLoading && !isError && !hasProgress ? <StatusCard title="No lessons yet" /> : null}
+        {!isLoading && !isError && hasProgress ? (
+          <ProgressBody latest={latest} summary={summary} />
+        ) : null}
       </Box>
 
-      <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#FF6B6B">Back home</PrimaryCTA>
+      <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28}>
+        <TouchableOpacity
+          style={styles.homeButton}
+          accessibilityRole="button"
+          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+        >
+          <Text fontWeight="800" style={styles.homeButtonText}>Back home</Text>
+        </TouchableOpacity>
       </Box>
     </PageScroll>
   );
 }
 
-function ProgressBody({ latest }: { latest: AssignmentProgress }) {
-  const { language } = useAppLanguage();
+function ProgressBody({
+  latest,
+  summary,
+}: {
+  latest?: AssignmentProgress;
+  summary?: ChildProgress;
+}) {
+  const { language, t } = useAppLanguage();
+  const courseTotals = summary?.byCourse.reduce(
+    (totals, course) => ({
+      completed: totals.completed + course.lessonsCompleted,
+      total: totals.total + course.lessonsTotal,
+    }),
+    { completed: 0, total: 0 },
+  ) ?? { completed: 0, total: 0 };
+  const coursePercent = courseTotals.total > 0
+    ? Math.min(100, Math.round((courseTotals.completed / courseTotals.total) * 100))
+    : 0;
+
   return (
     <>
-      {latest.lessonTitle ? (
-        <Text fontWeight="800" style={styles.lessonTitle} i18n={false}>{latest.lessonTitle}</Text>
+      <Box flexDirection="row" gap={12}>
+        <MetricCard
+          icon={<Flame size={24} color="#B68A1F" />}
+          iconBackground="rgba(255,204,77,0.24)"
+          value={summary?.currentStreakDays ?? 0}
+          label={t('day streak')}
+          background="#FFF9E5"
+        />
+        <MetricCard
+          icon={<BookOpen size={24} color="#318C7D" />}
+          iconBackground="rgba(76,183,165,0.14)"
+          value={summary?.masteredWords ?? 0}
+          label={t('Words learned')}
+          background="#F3FFF9"
+        />
+      </Box>
+
+      {courseTotals.total > 0 ? (
+        <Box style={styles.activityCard} gap={14}>
+          <Text fontWeight="800" style={styles.sectionTitle}>Course progress</Text>
+          <Text
+            i18n={false}
+            fontWeight="800"
+            style={styles.courseCount}
+          >
+            {translateTemplate('{{completed}}/{{total}} lessons', courseTotals, { locale: language })}
+          </Text>
+          <Box style={styles.progressTrack}>
+            <Box style={[styles.progressFill, { width: `${coursePercent}%` as `${number}%` }]} />
+          </Box>
+        </Box>
       ) : null}
-      <Box flexDirection="row" gap={10}>
-        <StatChip value={String(latest.stepsSucceeded)} label="steps right" />
-        <StatChip value={String(latest.stepsCompleted)} label="steps done" />
-      </Box>
-      <Box style={styles.stateCard}>
-        <Text fontWeight="700" style={styles.stateLabel}>{stateLabel(latest.state)}</Text>
-        <Text style={styles.stateDetail} i18n={false}>
-          {translateTemplate('{{succeeded}} of {{completed}} {{stepLabel}}', {
-            succeeded: latest.stepsSucceeded,
-            completed: latest.stepsCompleted,
-            stepLabel: translateTemplate('steps', {}, { locale: language }),
-          }, { locale: language })}
-        </Text>
-      </Box>
+
+      {latest ? (
+        <Box style={styles.latestCard}>
+          <Text fontWeight="800" style={styles.sectionTitle}>Latest lesson</Text>
+          {latest.lessonTitle ? (
+            <Text fontWeight="800" style={styles.lessonTitle} i18n={false}>{latest.lessonTitle}</Text>
+          ) : null}
+          <Box flexDirection="row" gap={10}>
+            <StatChip value={String(latest.stepsSucceeded)} label="steps right" />
+            <StatChip value={String(latest.stepsCompleted)} label="steps done" />
+          </Box>
+          <Box style={styles.stateCard}>
+            <Text fontWeight="700" style={styles.stateLabel}>{stateLabel(latest.state)}</Text>
+            <Text style={styles.stateDetail} i18n={false}>
+              {translateTemplate('{{succeeded}} of {{completed}} {{stepLabel}}', {
+                succeeded: latest.stepsSucceeded,
+                completed: latest.stepsCompleted,
+                stepLabel: translateTemplate('steps', {}, { locale: language }),
+              }, { locale: language })}
+            </Text>
+          </Box>
+        </Box>
+      ) : null}
     </>
   );
 }
 
+function MetricCard({
+  icon,
+  iconBackground,
+  value,
+  label,
+  background,
+}: {
+  icon: React.ReactNode;
+  iconBackground: string;
+  value: number;
+  label: string;
+  background: string;
+}) {
+  return (
+    <Box style={[styles.metricCard, { backgroundColor: background }]} flex={1}>
+      <Box style={[styles.metricIcon, { backgroundColor: iconBackground }]} alignItems="center" justifyContent="center">
+        {icon}
+      </Box>
+      <Text i18n={false} fontWeight="800" style={styles.metricValue}>{value}</Text>
+      <Text i18n={false} fontWeight="800" style={styles.metricLabel}>{label}</Text>
+    </Box>
+  );
+}
+
+function StatusCard({ title }: { title: string }) {
+  return <Text fontWeight="700" style={styles.message}>{title}</Text>;
+}
+
 function ProgressError({ onRetry }: { onRetry: () => void }): React.JSX.Element {
   return (
-    <Box gap={6}>
-      <Text fontWeight="700" style={styles.message}>Progress unavailable</Text>
+    <Box style={styles.message} gap={6}>
+      <Text fontWeight="700" style={styles.errorTitle}>Progress unavailable</Text>
       <Text style={styles.errorDetail} onPress={onRetry}>Tap to try again.</Text>
     </Box>
   );
@@ -132,29 +232,162 @@ function StatChip({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { fontSize: 13, color: '#FF6B6B', marginBottom: 4 },
-  heading: { fontSize: 29, color: '#2D3436', lineHeight: 35, paddingRight: 14 },
-  headerIconWell: { width: 78, height: 78, borderRadius: 26, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EBDCC7' },
-  headerIcon: { width: 62, height: 62 },
-  message: { fontSize: 18, color: '#2D3436', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EBDCC7', borderRadius: 28, padding: 24 },
-  lessonTitle: { fontSize: 21, color: '#2D3436', lineHeight: 27, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EBDCC7', borderRadius: 28, padding: 20 },
-  statChip: {
-    backgroundColor: '#fff',
+  header: {
+    paddingBottom: 24,
+    paddingHorizontal: 26,
+    paddingTop: 58,
+  },
+  heading: {
+    color: '#2D3436',
+    fontSize: 30,
+    lineHeight: 36,
+    marginBottom: 4,
+  },
+  subheading: {
+    color: '#6B7A82',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  rangeChip: {
+    backgroundColor: '#FFFDF9',
+    borderColor: 'rgba(45,52,54,0.08)',
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  rangeText: {
+    color: '#2D3436',
+    fontSize: 12,
+  },
+  body: {
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+  },
+  message: {
+    backgroundColor: '#FFFDF9',
+    borderColor: 'rgba(45,52,54,0.08)',
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: '#EBDCC7',
+    color: '#2D3436',
+    fontSize: 18,
+    padding: 24,
+  },
+  errorTitle: {
+    color: '#2D3436',
+    fontSize: 18,
+  },
+  errorDetail: {
+    color: '#FF6F61',
+    fontSize: 14,
+  },
+  metricCard: {
+    borderColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 28,
+    borderWidth: 1,
     padding: 20,
   },
-  statValue: { fontSize: 32, color: '#FF6B6B', lineHeight: 36 },
-  statLabel: { fontSize: 12, color: '#636E72', textAlign: 'center' },
-  stateCard: {
-    backgroundColor: '#fff',
-    borderRadius: 28,
+  metricIcon: {
+    borderRadius: 13,
+    height: 42,
+    marginBottom: 14,
+    width: 42,
+  },
+  metricValue: {
+    color: '#2D3436',
+    fontSize: 36,
+    lineHeight: 40,
+  },
+  metricLabel: {
+    color: '#6B7A82',
+    fontSize: 10,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+  },
+  activityCard: {
+    backgroundColor: '#FFFDF9',
+    borderColor: 'rgba(45,52,54,0.08)',
+    borderRadius: 34,
     borderWidth: 1,
-    borderColor: '#EBDCC7',
+    padding: 24,
+    shadowColor: '#2D3436',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  courseCount: {
+    color: '#FF6F61',
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  progressTrack: {
+    backgroundColor: '#E8EFF0',
+    borderRadius: 999,
+    height: 12,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    backgroundColor: '#4CB7A5',
+    borderRadius: 999,
+    height: '100%',
+  },
+  sectionTitle: {
+    color: '#2D3436',
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  latestCard: {
+    backgroundColor: '#FFFDF9',
+    borderColor: 'rgba(45,52,54,0.08)',
+    borderRadius: 34,
+    borderWidth: 1,
+    gap: 12,
     padding: 22,
   },
-  stateLabel: { fontSize: 17, color: '#2D3436', marginBottom: 6 },
-  stateDetail: { fontSize: 13, color: '#636E72' },
-  errorDetail: { fontSize: 14, color: '#FF6B6B' },
+  lessonTitle: {
+    color: '#2D3436',
+    fontSize: 19,
+    lineHeight: 25,
+  },
+  statChip: {
+    backgroundColor: '#F7FAFA',
+    borderRadius: 22,
+    padding: 16,
+  },
+  statValue: {
+    color: '#FF6F61',
+    fontSize: 29,
+    lineHeight: 34,
+  },
+  statLabel: {
+    color: '#636E72',
+    fontSize: 11,
+    textAlign: 'center',
+  },
+  stateCard: {
+    backgroundColor: '#F3FFF9',
+    borderRadius: 20,
+    padding: 16,
+  },
+  stateLabel: {
+    color: '#2D3436',
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  stateDetail: {
+    color: '#636E72',
+    fontSize: 13,
+  },
+  homeButton: {
+    alignItems: 'center',
+    backgroundColor: '#FF6F61',
+    borderRadius: 28,
+    justifyContent: 'center',
+    minHeight: 64,
+  },
+  homeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+  },
 });

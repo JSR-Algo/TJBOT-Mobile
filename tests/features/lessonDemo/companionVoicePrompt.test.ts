@@ -1,5 +1,5 @@
-import { buildCompanionVoicePrompt } from '../../../src/features/lessonDemo/companionVoicePrompt';
-import { getCuratedLessonCatalog } from '../../../src/features/lessonDemo/content/curatedLegacyLessons';
+import { buildCompanionVoicePrompt } from '../../../src/features/lesson-demo/companionVoicePrompt';
+import { getCuratedLessonCatalog } from '../../../src/features/lesson-demo/content/curatedLegacyLessons';
 
 describe('buildCompanionVoicePrompt', () => {
   it('uses companion mode and avoids lesson teaching instructions', () => {

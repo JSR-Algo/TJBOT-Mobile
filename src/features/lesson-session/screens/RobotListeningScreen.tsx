@@ -10,21 +10,31 @@ import MicButton from '@/components/MicButton';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { getActiveNestLesson } from '../nestPhoneLesson';
 import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotListeningScreen'>;
 
-export default function RobotListeningScreen({ navigation }: Props) {
+export default function RobotListeningScreen({ navigation, route }: Props) {
   // Android hardware-back during this active voice turn must funnel through
   // ExitConfirm, not silently pop the stack (MOB-2).
   useLessonHardwareBack(navigation, 'LISTENING');
+  const { t } = useAppLanguage();
+  const activityIndex = route.params?.activityIndex ?? 1;
+  const word = getActiveNestLesson()?.session.session_payload?.core_learning?.[activityIndex - 1]?.word ?? 'word';
   return (
     <ScreenShell>
-      <Box accessible accessibilityLabel="Robot is listening" flex={1}>
-      <LessonHeader progress={0.3} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
-      <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center">
+      <Box flex={1}>
+      <LessonHeader progress={0.3} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen, route.params)} />
+      <Box
+        style={[StyleSheet.absoluteFillObject, styles.center]}
+        alignItems="center"
+        accessible
+        accessibilityLabel={t('Robot is listening')}
+      >
         <Text fontWeight="800" style={styles.yourTurn}>Your turn!</Text>
-        <Text fontWeight="600" style={styles.prompt}>Say: <Text fontWeight="700" style={{ color: '#1A1A1F' }}>"cat"</Text> 🐱</Text>
+        <Text fontWeight="600" style={styles.prompt}>Say: <Text i18n={false} fontWeight="700" style={{ color: '#1A1A1F' }}>"{word}"</Text></Text>
         <Box style={styles.pulseWrap} alignItems="center" justifyContent="center">
           <PulseRing size={240} color="#FF6F61" />
           <Box style={StyleSheet.absoluteFillObject} alignItems="center" justifyContent="center">
@@ -33,7 +43,7 @@ export default function RobotListeningScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} alignItems="center" gap={14}>
-        <MicButton on onClick={() => navigation.navigate(ROUTES.UserSpeakingScreen)} label="speak now" />
+        <MicButton on onClick={() => navigation.navigate(ROUTES.UserSpeakingScreen, route.params)} label="speak now" />
         <Text fontWeight="700" style={styles.listeningText}>I'm listening…</Text>
       </Box>
       </Box>

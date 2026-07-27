@@ -1,6 +1,6 @@
 // Minimal purpose-built JSON Schema validator. Supports the subset of
 // JSON Schema used by scripts/flows/schema/*.json:
-//   type (string|object|array|integer), enum, required, properties,
+//   type (string|object|array|integer|number|boolean), enum, required, properties,
 //   additionalProperties (bool or schema), propertyNames.pattern,
 //   items (schema), pattern, minItems, uniqueItems, default (advisory).
 //
@@ -20,7 +20,8 @@ export function validate(schema, value, pointer = '') {
       (t === 'string'  && actual === 'string') ||
       (t === 'object'  && actual === 'object' && value !== null && !Array.isArray(value)) ||
       (t === 'array'   && Array.isArray(value)) ||
-      (t === 'number'  && actual === 'number');
+      (t === 'number'  && actual === 'number') ||
+      (t === 'boolean' && actual === 'boolean');
     if (!ok) { fail(`expected type ${t}, got ${actual}`); return errors; }
   }
 
