@@ -13,7 +13,7 @@ function targetRouteIsMounted(target: NavigationDeepLinkTarget): boolean {
   return navigationRef.getRootState()?.routeNames.includes(target.name) === true;
 }
 
-function dispatchDeepLinkTarget(target: NavigationDeepLinkTarget): boolean {
+export function dispatchDeepLinkTarget(target: NavigationDeepLinkTarget): boolean {
   if (!targetRouteIsMounted(target)) return false;
   navigationRef.dispatch(CommonActions.navigate(target));
   return true;
@@ -24,7 +24,7 @@ export function AppNavigator(): React.JSX.Element {
 
   const handleDeepLinkUrl = React.useCallback((url: string): void => {
     const target = navigationTargetForDeepLinkUrl(url);
-    if (!target) {
+    if (!target || target.name === 'ParentSessionReportScreen') {
       return;
     }
     if (dispatchDeepLinkTarget(target)) {

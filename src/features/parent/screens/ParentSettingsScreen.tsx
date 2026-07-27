@@ -29,6 +29,7 @@ import {
 } from '@/services/api/auth';
 import { rewardKeys } from '@/features/rewards/hooks/useRewards';
 import { appQueryClient } from '@/services/query/queryClient';
+import { getPreferences, updatePreferences } from '@/services/api/notifications';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSettingsScreen'>;
 
@@ -67,6 +68,8 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   const { logout } = useAuth();
   const { activeChild, children, refresh, setActiveChild } = useHousehold();
   const [analytics, setAnalytics] = React.useState(isAnalyticsEnabled());
+  const [lessonReportNotifications, setLessonReportNotifications] = React.useState<boolean | null>(null);
+  const [notificationSaveFailed, setNotificationSaveFailed] = React.useState(false);
   const [savingLanguage, setSavingLanguage] = React.useState<AppLocale | null>(null);
   const [languageSaveFailed, setLanguageSaveFailed] = React.useState(false);
   const [profile, setProfile] = React.useState<ChildProfile | null>(null);
@@ -141,6 +144,29 @@ export default function ParentSettingsScreen({ navigation }: Props) {
       });
     return () => { mounted = false; };
   }, []);
+
+  React.useEffect(() => {
+    let mounted = true;
+    getPreferences().then(
+      preferences => { if (mounted) setLessonReportNotifications(preferences.push_enabled); },
+      error => { captureError(error); },
+    );
+    return () => { mounted = false; };
+  }, []);
+
+  const onToggleLessonReportNotifications = React.useCallback(async (next: boolean) => {
+    const previous = lessonReportNotifications;
+    setLessonReportNotifications(next);
+    setNotificationSaveFailed(false);
+    try {
+      const saved = await updatePreferences({ push_enabled: next });
+      setLessonReportNotifications(saved.push_enabled);
+    } catch (error) {
+      captureError(error);
+      setLessonReportNotifications(previous);
+      setNotificationSaveFailed(true);
+    }
+  }, [lessonReportNotifications]);
 
   const onToggleAnalytics = React.useCallback((next: boolean) => {
     // Optimistic: reflect immediately, then persist + flip the live client. A
@@ -327,6 +353,17 @@ export default function ParentSettingsScreen({ navigation }: Props) {
           </Box>
         ) : null}
       </PRowGroup>
+
+      {lessonReportNotifications !== null ? (
+        <PRowGroup header="Notifications" footer="Receive completed lesson reports and other enabled alerts on this device.">
+          <PRow icon="🔔" label="Push notifications" toggle={lessonReportNotifications} onToggle={(next) => { void onToggleLessonReportNotifications(next); }} isLast />
+          {notificationSaveFailed ? (
+            <Box paddingHorizontal={16} paddingBottom={14} style={{ backgroundColor: '#fff' }}>
+              <Text accessibilityRole="alert" style={styles.profileError}>Notification preference could not be saved. Try again.</Text>
+            </Box>
+          ) : null}
+        </PRowGroup>
+      ) : null}
 
       <PRowGroup header="Profile and plan">
         <Box style={styles.nameEditor}>

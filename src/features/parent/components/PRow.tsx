@@ -36,6 +36,7 @@ export default function PRow({ icon, label, value, toggle, onToggle, chevron, da
       ) : null}
       {toggle !== undefined ? (
         <Switch
+          accessibilityLabel={label}
           value={toggle}
           onValueChange={onToggle}
           trackColor={{ true: PA.good }}

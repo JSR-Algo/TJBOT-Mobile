@@ -6,7 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { HouseholdProvider } from './contexts/HouseholdContext';
 import { InteractionProvider } from './contexts/InteractionContext';
 import { AppNavigator } from './navigation/AppNavigator';
-import { usePushNotifications } from './hooks/usePushNotifications';
+import ParentNotificationCoordinator from './features/parent/notifications/ParentNotificationCoordinator';
 import { ToastProvider } from './components/Toast';
 import { RootErrorBoundary } from './services/observability/RootErrorBoundary';
 import { QueryProvider } from './app/providers/QueryProvider';
@@ -50,7 +50,6 @@ export const __ageGateBootPromise: Promise<ResolvedRole> = (async () => {
 
 function AppInner(): React.JSX.Element {
   useLoadAppLanguagePreference();
-  usePushNotifications();
 
   useEffect(() => {
     // Subscribe native voice-stack events to Sentry breadcrumbs (sys-16).
@@ -68,6 +67,7 @@ function AppInner(): React.JSX.Element {
 
   return (
     <HouseholdProvider>
+      <ParentNotificationCoordinator />
       <ParentSessionProvider>
         <InteractionProvider>
           <AppNavigator />

@@ -19,6 +19,7 @@ import ParentAccountPrivacyScreen from '../../src/features/parent/screens/Parent
 import * as authApi from '../../src/services/api/auth';
 import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
+import * as notificationsApi from '../../src/services/api/notifications';
 import { getChildProfile, updateChildProfile } from '../../src/services/api/learning';
 import { setActiveChild, updateChildDisplayName } from '../../src/services/api/households';
 import { useHousehold } from '@/contexts/HouseholdContext';
@@ -112,6 +113,11 @@ jest.mock('../../src/services/api/account', () => ({
   refreshEntitlementsAfterPurchase: jest.fn(),
 }));
 
+jest.mock('../../src/services/api/notifications', () => ({
+  getPreferences: jest.fn(),
+  updatePreferences: jest.fn(),
+}));
+
 jest.mock('../../src/services/api/progress.api', () => ({
   __esModule: true,
   getChildProgress: jest.fn(),
@@ -146,6 +152,7 @@ jest.mock('@/features/parent/hooks/useParentLearningHistoryQuery', () => ({ useP
 const parentApiMock = parentApi as jest.Mocked<typeof parentApi>;
 const authApiMock = authApi as jest.Mocked<typeof authApi>;
 const accountApiMock = accountApi as jest.Mocked<typeof accountApi>;
+const notificationsApiMock = notificationsApi as jest.Mocked<typeof notificationsApi>;
 const mockGetChildProfile = getChildProfile as jest.MockedFunction<typeof getChildProfile>;
 const mockUpdateChildProfile = updateChildProfile as jest.MockedFunction<typeof updateChildProfile>;
 const mockSetActiveChild = setActiveChild as jest.MockedFunction<typeof setActiveChild>;
@@ -236,6 +243,16 @@ describe('Parent settings and gate', () => {
     mockUpdateChildDisplayName.mockResolvedValue({ id: 'child-1', displayName: 'Bong' });
     mockSetActiveChild.mockResolvedValue({ active_child_id: 'child-2' });
     accountApiMock.getAccountDeletionSubscriptionStatus.mockResolvedValue('inactive');
+    notificationsApiMock.getPreferences.mockResolvedValue({
+      id: 'prefs-1', parent_id: 'parent-1', email_digest_enabled: false,
+      email_digest_frequency: 'never', safety_alerts_enabled: true, push_enabled: true,
+      created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:00.000Z',
+    });
+    notificationsApiMock.updatePreferences.mockImplementation(async patch => ({
+      id: 'prefs-1', parent_id: 'parent-1', email_digest_enabled: false,
+      email_digest_frequency: 'never', safety_alerts_enabled: true, push_enabled: patch.push_enabled ?? true,
+      created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:00.000Z',
+    }));
   });
 
   afterEach(async () => {
@@ -284,6 +301,18 @@ describe('Parent settings and gate', () => {
     expect(queryByText('Robot English Plus')).toBeNull();
     expect(queryByText('Active')).toBeNull();
     expect(queryByText('Mira')).toBeNull();
+  });
+
+  it('shows and saves the backend-backed completed lesson report notification control', async () => {
+    const screen = await renderParentSettings();
+
+    await waitFor(() => expect(screen.getByText('Push notifications')).toBeTruthy());
+    const toggle = screen.getByLabelText('Push notifications');
+    expect(toggle.props.value).toBe(true);
+    await act(async () => { fireEvent(toggle, 'valueChange', false); });
+
+    expect(notificationsApiMock.updatePreferences).toHaveBeenCalledWith({ push_enabled: false });
+    expect(screen.getByText('Receive completed lesson reports and other enabled alerts on this device.')).toBeTruthy();
   });
 
   it('lets parents update career and child interest filters used for lesson personalization', async () => {

@@ -14,37 +14,72 @@ try {
 
   Device = Config.QA_MODE ? null : require('expo-device');
 
-  Notifications?.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
 } catch {
   // Native module not available in this build — push notifications disabled
 }
 
-export function usePushNotifications() {
+type NotificationDedupe = {
+  claim: (scope: 'presentation' | 'foreground' | 'navigation', notificationId: string) => Promise<boolean>;
+};
+
+type PushNotificationOptions = {
+  readonly dedupe?: NotificationDedupe;
+  readonly onForeground?: (payload: Record<string, unknown>) => Promise<void> | void;
+  readonly onTap?: (payload: Record<string, unknown>) => Promise<void> | void;
+};
+
+function notificationPayload(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+}
+
+function stableNotificationId(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null;
+  const value = payload.notificationId ?? payload.notification_id;
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+export function createNotificationPresentationHandler(dedupe: NotificationDedupe) {
+  return async (notification: { request?: { content?: { data?: unknown } } }) => {
+    const payload = notificationPayload(notification.request?.content?.data);
+    const notificationId = stableNotificationId(payload);
+    const present = !notificationId || await dedupe.claim('presentation', notificationId);
+    return {
+      shouldShowAlert: present,
+      shouldPlaySound: present,
+      shouldSetBadge: present,
+      shouldShowBanner: present,
+      shouldShowList: present,
+    };
+  };
+}
+
+export function usePushNotifications(options: PushNotificationOptions = {}) {
   const notificationListener = useRef<{ remove: () => void } | undefined>(undefined);
   const responseListener = useRef<{ remove: () => void } | undefined>(undefined);
+  const { dedupe, onForeground, onTap } = options;
 
   useEffect(() => {
     if (!Notifications) return;
 
+    if (dedupe) {
+      Notifications.setNotificationHandler({
+        handleNotification: createNotificationPresentationHandler(dedupe),
+      });
+    }
+
     void registerForPushNotificationsAsync();
 
     notificationListener.current = Notifications.addNotificationReceivedListener(
-      (_notification) => {
-        // Notification received while app is foregrounded — handled by setNotificationHandler
+      (notification) => {
+        const payload = notificationPayload(notification.request.content.data);
+        if (payload) void onForeground?.(payload);
       },
     );
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (_response) => {
-        // User tapped notification — navigate if needed
+      (response) => {
+        const payload = notificationPayload(response.notification.request.content.data);
+        if (payload) void onTap?.(payload);
       },
     );
 
@@ -52,7 +87,13 @@ export function usePushNotifications() {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, []);
+  }, [dedupe, onForeground, onTap]);
+}
+
+export async function getLastPushNotificationPayload(): Promise<Record<string, unknown> | null> {
+  if (!Notifications) return null;
+  const response = await Notifications.getLastNotificationResponseAsync();
+  return notificationPayload(response?.notification.request.content.data);
 }
 
 export interface PushTokenRegistrarDeps {

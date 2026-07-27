@@ -46,9 +46,10 @@ export const NAVIGATION_LINKING_CONFIG: NavigationLinkingConfig = {
   prefixes: ['TJBot://', 'tjbot://'],
   getInitialURL: async () => {
     const url = await Linking.getInitialURL();
-    if (url) return url;
+    if (url) return parentReportTargetForDeepLinkUrl(url) ? null : url;
     if (!Notifications) return null;
-    return getInitialNotificationUrl(Notifications);
+    const notificationUrl = await getInitialNotificationUrl(Notifications);
+    return notificationUrl && parentReportTargetForDeepLinkUrl(notificationUrl) ? null : notificationUrl;
   },
   config: {
     screens: NAVIGATION_LINKING_SCREENS,
@@ -60,6 +61,13 @@ export function routeNameForDeepLinkUrl(url: string): keyof RootStackParamList |
 }
 
 export function navigationTargetForDeepLinkUrl(url: string): NavigationDeepLinkTarget | null {
+  const parentReportTarget = parentReportTargetForDeepLinkUrl(url);
+  if (parentReportTarget) {
+    return {
+      name: ROUTES.ParentSessionReportScreen,
+      params: parentReportTarget,
+    };
+  }
   const normalizedPath = normalizedPathForUrl(url);
   if (!normalizedPath) return null;
   const routeName = ROUTE_NAMES_BY_LINK_PATH.get(normalizedPath);
@@ -68,7 +76,23 @@ export function navigationTargetForDeepLinkUrl(url: string): NavigationDeepLinkT
   return notificationTargetForPath(normalizedPath);
 }
 
+export type ParentReportDeepLinkTarget = {
+  readonly childId: string;
+  readonly sessionId: string;
+};
+
+export function parentReportTargetForDeepLinkUrl(url: string): ParentReportDeepLinkTarget | null {
+  const match = /^TJBot:\/\/parent\/children\/([^/?#]+)\/sessions\/([^/?#]+)\/report$/.exec(url);
+  if (!match) return null;
+  try {
+    return { childId: decodeURIComponent(match[1]), sessionId: decodeURIComponent(match[2]) };
+  } catch {
+    return null;
+  }
+}
+
 export function shouldHandleDeepLinkManually(url: string): boolean {
+  if (parentReportTargetForDeepLinkUrl(url)) return true;
   const normalizedPath = normalizedPathForUrl(url);
   return normalizedPath !== null
     && !ROUTE_NAMES_BY_LINK_PATH.has(normalizedPath)

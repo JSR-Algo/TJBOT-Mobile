@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   createPushTokenRegistrar,
+  createNotificationPresentationHandler,
   getInitialNotificationUrl,
   notificationPayloadToUrl,
 } from '../../src/hooks/usePushNotifications';
@@ -141,5 +142,17 @@ describe('notification deep links', () => {
     };
 
     await expect(getInitialNotificationUrl(notifications)).resolves.toBe('TJBot://device/device-1/summary/2026-05-16');
+  });
+
+  it('suppresses duplicate provider presentation by stable notification id', async () => {
+    const claim = jest.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    const handler = createNotificationPresentationHandler({ claim });
+    const notification = {
+      request: { content: { data: { notificationId: 'completed-session-1' } } },
+    };
+
+    await expect(handler(notification)).resolves.toMatchObject({ shouldShowAlert: true, shouldShowBanner: true });
+    await expect(handler(notification)).resolves.toMatchObject({ shouldShowAlert: false, shouldShowBanner: false });
+    expect(claim).toHaveBeenCalledWith('presentation', 'completed-session-1');
   });
 });
