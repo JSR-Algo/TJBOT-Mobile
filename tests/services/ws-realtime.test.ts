@@ -1,4 +1,4 @@
-import { openRealtime, type RealtimeSocket } from '@/services/ws/realtime';
+import { createReconnectingSocket, openRealtime, type RealtimeSocket } from '@/services/ws/realtime';
 
 const tokenProvider = jest.fn<Promise<string | null>, []>();
 const sockets: FakeSocket[] = [];
@@ -306,6 +306,26 @@ describe('openRealtime', () => {
     jest.advanceTimersByTime(50);
 
     expect(sockets).toHaveLength(1);
+  });
+});
+
+describe('createReconnectingSocket', () => {
+  it('reports reconnect exhaustion after the configured attempts', async () => {
+    jest.useFakeTimers();
+    sockets.length = 0;
+    tokenProvider.mockResolvedValue('token-1');
+    const exhausted = jest.fn();
+    const connection = await createReconnectingSocket('wss://api.test/parent-progress', {
+      createSocket,
+      onReconnectExhausted: exhausted,
+      reconnect: { initialDelayMs: 5, maxAttempts: 1, maxDelayMs: 5 },
+      tokenProvider,
+    });
+    sockets[0].emitClose();
+    await actReconnectTimer(5);
+    sockets[1].emitClose();
+    expect(exhausted).toHaveBeenCalledTimes(1);
+    connection.close();
   });
 });
 

@@ -51,6 +51,19 @@ export interface RealtimeConnection {
   send(payload: unknown): void;
 }
 
+export interface CreateReconnectingSocketOptions {
+  readonly createSocket?: RealtimeSocketFactory;
+  readonly onClose?: (event: RealtimeSocketCloseEvent) => void;
+  readonly onError?: (error: Error) => void;
+  readonly onMessage?: (event: RealtimeSocketMessageEvent) => void;
+  readonly onOpen?: () => void;
+  readonly onReconnect?: () => void;
+  readonly onReconnectExhausted?: () => void;
+  readonly reconnect?: RealtimeReconnectOptions | false;
+  readonly shouldReconnect?: (event: RealtimeSocketCloseEvent) => boolean;
+  readonly tokenProvider?: RealtimeTokenProvider;
+}
+
 export class RealtimeConnectionError extends Error {
   constructor(
     readonly code: string,
@@ -79,8 +92,34 @@ export async function openRealtime(
     );
   }
 
-  const tokenProvider = options.tokenProvider ?? getAccessToken;
   const url = observerUrl(options.baseUrl ?? Config.API_BASE_URL, normalizedSessionId);
+  return createReconnectingSocket(url, {
+    createSocket: options.createSocket,
+    onClose: options.onClose,
+    onError: options.onError,
+    onMessage: (event) => {
+      let frame: unknown;
+      try {
+        frame = JSON.parse(event.data) as unknown;
+      } catch {
+        throw new RealtimeConnectionError(
+          'REALTIME_FRAME_INVALID_JSON',
+          'Realtime frame was not valid JSON',
+        );
+      }
+      options.onFrame?.(frame);
+    },
+    onOpen: options.onOpen,
+    reconnect: options.reconnect,
+    tokenProvider: options.tokenProvider,
+  });
+}
+
+export async function createReconnectingSocket(
+  url: string,
+  options: CreateReconnectingSocketOptions = {},
+): Promise<RealtimeConnection> {
+  const tokenProvider = options.tokenProvider ?? getAccessToken;
   const createSocket = options.createSocket ?? createDefaultSocket;
   const reconnect = normalizeReconnect(options.reconnect);
   let socket = await openSocket(url, tokenProvider, createSocket);
@@ -89,135 +128,55 @@ export async function openRealtime(
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   const notifyError = (error: Error): void => {
-    try {
-      options.onError?.(error);
-    } catch (callbackError) {
-      captureError(callbackError);
-    }
+    try { options.onError?.(error); } catch (callbackError) { captureError(callbackError); }
   };
-
+  const invoke = (callback: (() => void) | undefined): void => {
+    try { callback?.(); } catch (error) { notifyError(toError(error)); }
+  };
   const clearReconnectTimer = (): void => {
-    if (reconnectTimer !== null) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
-  };
-
-  const attachHandlers = (nextSocket: RealtimeSocket): void => {
-    nextSocket.onopen = () => {
-      try {
-        options.onOpen?.();
-      } catch (error) {
-        notifyError(toError(error));
-      }
-    };
-
-    nextSocket.onmessage = (event) => {
-      let frame: unknown;
-      try {
-        frame = JSON.parse(event.data) as unknown;
-      } catch {
-        notifyError(
-          new RealtimeConnectionError(
-            'REALTIME_FRAME_INVALID_JSON',
-            'Realtime frame was not valid JSON',
-          ),
-        );
-        return;
-      }
-      reconnectAttempts = 0;
-      try {
-        options.onFrame?.(frame);
-      } catch (error) {
-        notifyError(toError(error));
-      }
-    };
-
-    nextSocket.onerror = (event) => {
-      notifyError(new Error(event.message ?? 'Realtime websocket error'));
-    };
-
-    nextSocket.onclose = (event) => {
-      try {
-        options.onClose?.(event);
-      } catch (error) {
-        notifyError(toError(error));
-      }
-      scheduleReconnect();
-    };
-  };
-
-  const runReconnectAttempt = (): void => {
+    if (reconnectTimer !== null) clearTimeout(reconnectTimer);
     reconnectTimer = null;
-    void openSocket(url, tokenProvider, createSocket)
-      .then((nextSocketForReconnect) => {
-        socket = nextSocketForReconnect;
-        attachHandlers(socket);
-      })
-      .catch((error) => {
-        notifyError(
-          new RealtimeConnectionError(
-            'REALTIME_SOCKET_CREATE_FAILED',
-            toError(error).message,
-          ),
-        );
-        scheduleReconnectAfterCreateFailure();
-      });
   };
-
-  const scheduleReconnectAfterCreateFailure = (): void => {
-    if (manualClose || reconnect === false) return;
-    if (reconnectAttempts >= reconnect.maxAttempts) {
-      notifyError(
-        new RealtimeConnectionError(
-          'REALTIME_RECONNECT_EXHAUSTED',
-          'Realtime reconnect attempts exhausted',
-        ),
-      );
-      return;
-    }
-
-    reconnectAttempts += 1;
-    const delay = Math.min(
-      reconnect.initialDelayMs * 2 ** (reconnectAttempts - 1),
-      reconnect.maxDelayMs,
-    );
-    reconnectTimer = setTimeout(runReconnectAttempt, delay);
+  const exhausted = (): void => {
+    notifyError(new RealtimeConnectionError('REALTIME_RECONNECT_EXHAUSTED', 'Realtime reconnect attempts exhausted'));
+    invoke(options.onReconnectExhausted);
   };
-
   const scheduleReconnect = (): void => {
     if (manualClose || reconnect === false) return;
-    if (reconnectAttempts >= reconnect.maxAttempts) {
-      notifyError(
-        new RealtimeConnectionError(
-          'REALTIME_RECONNECT_EXHAUSTED',
-          'Realtime reconnect attempts exhausted',
-        ),
-      );
-      return;
-    }
-
+    if (reconnectAttempts >= reconnect.maxAttempts) { exhausted(); return; }
     reconnectAttempts += 1;
-    const delay = Math.min(
-      reconnect.initialDelayMs * 2 ** (reconnectAttempts - 1),
-      reconnect.maxDelayMs,
-    );
+    const delay = Math.min(reconnect.initialDelayMs * 2 ** (reconnectAttempts - 1), reconnect.maxDelayMs);
     clearReconnectTimer();
     reconnectTimer = setTimeout(runReconnectAttempt, delay);
   };
-
+  const runReconnectAttempt = (): void => {
+    reconnectTimer = null;
+    void openSocket(url, tokenProvider, createSocket).then((nextSocket) => {
+      socket = nextSocket;
+      attachHandlers(socket);
+      invoke(options.onReconnect);
+    }).catch((error) => {
+      notifyError(new RealtimeConnectionError('REALTIME_SOCKET_CREATE_FAILED', toError(error).message));
+      scheduleReconnect();
+    });
+  };
+  const attachHandlers = (nextSocket: RealtimeSocket): void => {
+    nextSocket.onopen = () => invoke(options.onOpen);
+    nextSocket.onmessage = (event) => {
+      reconnectAttempts = 0;
+      try { options.onMessage?.(event); } catch (error) { notifyError(toError(error)); }
+    };
+    nextSocket.onerror = (event) => notifyError(new Error(event.message ?? 'Realtime websocket error'));
+    nextSocket.onclose = (event) => {
+      try { options.onClose?.(event); } catch (error) { notifyError(toError(error)); }
+      if (options.shouldReconnect?.(event) !== false) scheduleReconnect();
+    };
+  };
   attachHandlers(socket);
-
   return {
     url,
-    close(code?: number, reason?: string): void {
-      manualClose = true;
-      clearReconnectTimer();
-      socket.close(code, reason);
-    },
-    send(payload: unknown): void {
-      socket.send(JSON.stringify(payload));
-    },
+    close(code?: number, reason?: string): void { manualClose = true; clearReconnectTimer(); socket.close(code, reason); },
+    send(payload: unknown): void { socket.send(JSON.stringify(payload)); },
   };
 }
 
