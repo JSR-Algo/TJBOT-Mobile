@@ -9,6 +9,7 @@ import {
   getDeviceStatus,
   getProvisioningAttemptStatus,
   mintBootstrapToken,
+  reportProvisioningDeviceAuthenticated,
 } from '@/services/api/device.api';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
 import {
@@ -29,6 +30,7 @@ jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
   getProvisioningAttemptStatus: jest.fn(),
   mintBootstrapToken: jest.fn(),
+  reportProvisioningDeviceAuthenticated: jest.fn(),
 }));
 
 jest.mock('@/services/api/claim.api', () => ({
@@ -42,6 +44,7 @@ const mockedConfirmLocalBlePaired = confirmLocalBlePaired as jest.MockedFunction
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockedGetProvisioningAttemptStatus = getProvisioningAttemptStatus as jest.MockedFunction<typeof getProvisioningAttemptStatus>;
 const mockedMintBootstrapToken = mintBootstrapToken as jest.MockedFunction<typeof mintBootstrapToken>;
+const mockedReportProvisioningDeviceAuthenticated = reportProvisioningDeviceAuthenticated as jest.MockedFunction<typeof reportProvisioningDeviceAuthenticated>;
 const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
 const mockedRequestClaim = requestClaim as jest.MockedFunction<typeof requestClaim>;
 
@@ -56,7 +59,7 @@ function bleClaimParams(overrides: Record<string, unknown> = {}) {
     provisioningAttemptId: 'claim-1',
     ssid: 'Casa',
     bleDeviceId: 'ble-device-1',
-    provisioningTransport: 'ble',
+    provisioningTransport: 'ble_claim',
     ...overrides,
   } as never;
 }
@@ -113,6 +116,7 @@ describe('PairConnectingScreen US-005 invariants', () => {
       expiresAt: '2026-06-09T12:05:00.000Z',
       ttlSeconds: 300,
     });
+    mockedReportProvisioningDeviceAuthenticated.mockResolvedValue(undefined);
     mockedRequestClaim.mockResolvedValue({
       claimId: 'claim-1',
       deviceId: 'device-1',
