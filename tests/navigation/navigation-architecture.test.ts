@@ -340,10 +340,11 @@ describe('navigation architecture', () => {
     expect(guide).toContain('tabBarButtonTestID');
     expect(guide).toContain('modal-stack-back');
     expect(guide).toContain('modal-dismiss');
-    expect(guide).toContain('130 screen files');
-    expect(guide).toContain('122 routes registered');
-    expect(guide).toContain('122 feature route registrations');
-    expect(guide).toContain('0 duplicate screen registrations');
+    // Counts drift with route scope; guide points at the live coverage command.
+    expect(guide).toContain('npm run check:route-coverage');
+    expect(guide).not.toMatch(/\d+ screen files/);
+    expect(guide).not.toMatch(/\d+ routes registered/);
+    expect(guide).not.toMatch(/\d+ feature route registrations/);
   });
 
   it('exports a production navigation inventory for final delivery review', () => {
