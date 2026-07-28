@@ -11,11 +11,11 @@ metadata and do not import feature screen components directly.
 - `RootStackNavigator.tsx` gates auth, onboarding, and protected app routes from
   `AuthContext` and `HouseholdContext`; authenticated sessions remain on the
   loading gate while household/onboarding state resolves.
-- `AuthNavigator.tsx` renders only auth feature screens.
-- `OnboardingNavigator.tsx` renders only onboarding feature screens.
+- `AuthNavigator.tsx` renders production-visible auth feature screens.
+- `OnboardingNavigator.tsx` renders production-visible onboarding feature screens.
 - `MainTabNavigator.tsx` renders the five protected tab roots.
 - `ModalNavigator.tsx` renders every protected tab route as a tab-host screen,
-  plus protected stack screens and modal groups.
+  plus production-visible protected stack screens and modal groups.
 
 ## Source Of Truth
 
@@ -29,11 +29,18 @@ registry. `FEATURE_NAVIGATION_REGISTRY` in `featureRegistry.ts` imports only
 these feature navigation configs, then derives initial routes, tabs, modal
 groups, and protected stack groups from them.
 
+`mvpProductionRoutes.ts` owns the accepted parent-MVP production allowlist.
+Routes retained for development or future scope stay registered in their
+feature metadata with `productionVisible: false` and an explicit
+`productionHiddenReason`; mounted navigator exports and deep links filter those
+entries out. `tests/navigation/production-hidden-routes.test.ts` checks that
+feature metadata agrees with the allowlist.
+
 `featureRouteEntries.ts` flattens that registry into shared route entries.
 `routeOwnership.ts`, `routeMap.ts`, and coverage checks use those entries
 instead of keeping separate route lists.
-`linking.ts` also derives its route-to-path map from those entries, so deep
-links cannot drift from feature-owned screen registration.
+`linking.ts` derives its route-to-path map from production-visible entries, so
+hidden registrations cannot become production deep links.
 
 Do not register a feature screen directly inside a central navigator. Add or
 move route metadata in the owning feature `navigation.ts` file instead.
@@ -59,8 +66,9 @@ Route names live in `routes.ts`. New routes must be added there, then registered
 in exactly one feature navigation bucket.
 Deep-link paths are generated as `<feature>/<route-slug>` from the same feature
 route entries. `migrate-ui-ux-to-mobile-app-docs/architecture/route-mapping.json`
-records the same `deepLinkPath` for each route so exported architecture output
-cannot drift from `linking.ts`.
+records registered routes and marks hidden entries with
+`productionVisible: false`; visible entries record the same `deepLinkPath` used
+by `linking.ts`.
 `migrate-ui-ux-to-mobile-app-docs/architecture/navigation-forward-edges.json`
 records static forward navigation edges scanned from feature screen code. Run
 `npm run navigation:forward-edges -- --check` to prove hidden routes,
@@ -159,8 +167,11 @@ app-navigation aliases, the legacy `src/screens` tree, removed prototype
 - protected: `ModalNavigator`
 - generated tree output marks the auth initial route, onboarding initial route,
   protected default route, and pending device setup route
-- generated tree route nodes include each feature-owned route bucket and role,
-  for example `stackScreens / stack-entry` and `modalScreens / modal-entry`
+- generated tree route nodes include the full registered architecture inventory,
+  including production-hidden entries; `route-mapping.json` owns per-route
+  production visibility
+- tree nodes include each feature-owned route bucket and role, for example
+  `stackScreens / stack-entry` and `modalScreens / modal-entry`
 - protected tabs: Home, Devices, Library, Progress, Profile
 - protected stack: derived from `PROTECTED_STACK_SCREENS`
 - protected modals: derived from `PROTECTED_MODAL_SCREENS`
@@ -204,7 +215,9 @@ Current owners:
 
 - No legacy app-navigation system.
 - No central imports from `src/features/*/screens`.
-- No production-visible routes without forward inbound navigation or explicit entry role; contract-blocked prototypes must declare `productionVisible: false` and a reason.
+- No production-visible routes outside `MVP_PRODUCTION_ROUTE_NAMES`.
+- Non-MVP, contract-blocked, and prototype routes must declare
+  `productionVisible: false` and an explicit reason.
 - Forward-edge artifact must report zero hidden routes, zero visible-to-hidden
   production edges, and zero reciprocal cycle violations.
 - Back-only links (`backTarget`, `onBack`, `prev`) do not count as reachability.
@@ -247,9 +260,6 @@ Current owners:
   they are not entry-capable routes.
 - Auth and onboarding routes never enter the protected stack.
 
-Current route coverage check:
-
-- 130 screen files
-- 122 routes registered
-- 122 feature route registrations
-- 0 duplicate screen registrations
+Current route counts are generated in
+`migrate-ui-ux-to-mobile-app-docs/architecture/route-mapping.json`; run
+`npm run check:route-coverage` rather than copying those counts into prose.

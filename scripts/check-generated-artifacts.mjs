@@ -92,7 +92,7 @@ if (missed.length > 0 || falsePositives.length > 0 || ignoreMisses.length > 0 ||
 }
 
 if (process.argv.includes('--self-test')) {
-  console.log(`Generated-artifact guard self-test passed (${blockedFixtures.length} blocked, ${allowedFixtures.length} allowed).`);
+  console.info(`Generated-artifact guard self-test passed (${blockedFixtures.length} blocked, ${allowedFixtures.length} allowed).`);
   process.exit(0);
 }
 
@@ -145,4 +145,4 @@ if (violations.length > 0) {
 }
 
 const mode = checkTrackedTree ? 'tracked tree' : 'staged additions/modifications';
-console.log(`Generated-artifact guard: ${mode} clean (${paths.length} paths checked).`);
+console.info(`Generated-artifact guard: ${mode} clean (${paths.length} paths checked).`);

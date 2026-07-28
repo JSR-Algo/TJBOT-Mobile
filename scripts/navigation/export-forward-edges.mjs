@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* global console, process */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { basename, dirname, join, normalize, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -208,13 +207,13 @@ function run() {
       }
       process.exit(1);
     }
-    console.log(`export-forward-edges: OK — ${parsed.edgeCount} forward edges checked`);
+    console.info(`export-forward-edges: OK — ${parsed.edgeCount} forward edges checked`);
     process.exit(0);
   }
 
   mkdirSync(dirname(artifactPath), { recursive: true });
   writeFileSync(artifactPath, next);
-  console.log(`export-forward-edges: wrote ${basename(artifactPath)} with ${JSON.parse(next).edgeCount} forward edges`);
+  console.info(`export-forward-edges: wrote ${basename(artifactPath)} with ${JSON.parse(next).edgeCount} forward edges`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

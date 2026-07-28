@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* global console, process */
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -178,13 +177,13 @@ function run() {
       console.error(`export-route-mapping: FAIL — ${artifactPath.replace(`${root}/`, '')} is stale`);
       process.exit(1);
     }
-    console.log(`export-route-mapping: OK — ${Object.keys(JSON.parse(next).routes).length} routes checked`);
+    console.info(`export-route-mapping: OK — ${Object.keys(JSON.parse(next).routes).length} routes checked`);
     process.exit(0);
   }
 
   mkdirSync(dirname(artifactPath), { recursive: true });
   writeFileSync(artifactPath, next);
-  console.log(`export-route-mapping: wrote ${basename(artifactPath)} with ${Object.keys(JSON.parse(next).routes).length} routes`);
+  console.info(`export-route-mapping: wrote ${basename(artifactPath)} with ${Object.keys(JSON.parse(next).routes).length} routes`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

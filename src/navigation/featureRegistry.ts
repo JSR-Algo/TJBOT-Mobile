@@ -77,7 +77,7 @@ function pendingDeviceSetupRoute(): keyof RootStackParamList {
 
 export const AUTH_STACK_SCREENS = featuresByRootBranch('auth').flatMap(feature => feature.stackScreens);
 export const ONBOARDING_STACK_SCREENS = featuresByRootBranch('onboarding').flatMap(feature => feature.stackScreens);
-/** Production-mounted auth routes only (marketing intro tree stays registered for __DEV__). */
+/** Mounted auth routes; hidden entries remain in registry-derived architecture inventory. */
 export const AUTH_MOUNTED_STACK_SCREENS: readonly FeatureStackScreen[] =
   AUTH_STACK_SCREENS.filter(isProductionVisibleScreen);
 export const ONBOARDING_MOUNTED_STACK_SCREENS: readonly FeatureStackScreen[] =

@@ -6,7 +6,8 @@ import { ROUTES } from './routes';
  * Non-listed feature routes should set `productionVisible: false` with
  * `productionHiddenReason: 'mvp-scope-hidden'` (or an existing backend/prototype reason).
  *
- * Source: parent-app-mvp-scope.md + research KEEP table.
+ * This module is the authoritative production allowlist. Feature navigation
+ * metadata and generated route artifacts must agree with it.
  */
 export const MVP_PRODUCTION_ROUTE_NAMES = [
   // today-command
