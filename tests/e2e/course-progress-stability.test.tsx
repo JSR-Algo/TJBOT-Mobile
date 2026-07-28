@@ -452,7 +452,7 @@ describe('course, course-library, and progress stable screen states', () => {
     await waitFor(() => expect(subscriptions.getByText('Manage billing')).toBeTruthy());
   });
 
-  it('preserves selected course id through detail, buy, and unlock handoff', async () => {
+  it('preserves selected course id through the detail-to-robot handoff', async () => {
     mockGetDeviceStatus.mockResolvedValueOnce({
       id: 'device-1',
       name: 'Casa Robot',
@@ -468,7 +468,7 @@ describe('course, course-library, and progress stable screen states', () => {
     );
     fireEvent.press(detail.getByText('Add to Robot'));
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'c_animals' });
+      expect(mockNavigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, { courseId: 'c_animals' });
     });
     detail.unmount();
   });

@@ -69,11 +69,12 @@ function inboundRoutes(): ReadonlySet<string> {
 }
 
 describe('route reachability', () => {
-  it('requires Parent Settings to own the inbound edge for the robot privacy screen', () => {
+  it('requires Parent Settings to own the inbound edge for account privacy', () => {
     const parentSettings = readFileSync(join(root, 'src', 'features', 'parent', 'screens', 'ParentSettingsScreen.tsx'), 'utf8');
 
-    expect(ROBOT_MGMT_SCREENS.find(screen => screen.name === ROUTES.MyRobotScreen)?.role).toBe('stack-entry');
-    expect(parentSettings).toMatch(/navigation\.navigate\(ROUTES\.MyRobotScreen\)/);
+    expect(ROBOT_MGMT_SCREENS.find(screen => screen.name === ROUTES.MyRobotScreen)?.productionVisible).toBe(false);
+    expect(parentSettings).toMatch(/navigation\.navigate\(ROUTES\.ParentAccountPrivacyScreen\)/);
+    expect(parentSettings).not.toMatch(/navigation\.navigate\(ROUTES\.DeviceOverviewScreen\)/);
   });
 
   it('has no hidden routes without static inbound navigation or explicit entry role', () => {

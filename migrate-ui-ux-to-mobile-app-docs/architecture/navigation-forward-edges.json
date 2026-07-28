@@ -1,6 +1,6 @@
 {
   "generated": "2026-05-14",
-  "edgeCount": 198,
+  "edgeCount": 193,
   "source": "src/features/**/*.{ts,tsx}",
   "routeSource": "src/features/*/navigation.ts",
   "forwardEdges": [
@@ -170,15 +170,15 @@
       "sourceFeature": "course-library",
       "targetFeature": "device",
       "file": "src/features/course-library/screens/CourseDetailScreen.tsx",
-      "lineNumber": 228
+      "lineNumber": 229
     },
     {
       "sourceRoute": "CourseDetailScreen",
-      "targetRoute": "UnlockConfirmScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/screens/CourseDetailScreen.tsx",
-      "lineNumber": 59
+      "lineNumber": 60
     },
     {
       "sourceRoute": "CourseLibraryScreen",
@@ -230,27 +230,11 @@
     },
     {
       "sourceRoute": "DeviceHomeScreen",
-      "targetRoute": "DeviceFirmwareScreen",
-      "sourceFeature": "device",
-      "targetFeature": "device",
-      "file": "src/features/device/screens/DeviceHomeScreen.tsx",
-      "lineNumber": 158
-    },
-    {
-      "sourceRoute": "DeviceHomeScreen",
       "targetRoute": "DeviceLostScreen",
       "sourceFeature": "device",
       "targetFeature": "device",
       "file": "src/features/device/screens/DeviceHomeScreen.tsx",
       "lineNumber": 155
-    },
-    {
-      "sourceRoute": "DeviceHomeScreen",
-      "targetRoute": "DeviceSessionScreen",
-      "sourceFeature": "device",
-      "targetFeature": "device",
-      "file": "src/features/device/screens/DeviceHomeScreen.tsx",
-      "lineNumber": 136
     },
     {
       "sourceRoute": "DeviceHomeScreen",
@@ -398,14 +382,6 @@
     },
     {
       "sourceRoute": "HomeHubScreen",
-      "targetRoute": "CourseScreen",
-      "sourceFeature": "home",
-      "targetFeature": "course",
-      "file": "src/features/home/screens/HomeHubScreen.tsx",
-      "lineNumber": 114
-    },
-    {
-      "sourceRoute": "HomeHubScreen",
       "targetRoute": "DeviceOverviewScreen",
       "sourceFeature": "home",
       "targetFeature": "device",
@@ -422,19 +398,19 @@
     },
     {
       "sourceRoute": "HomeHubScreen",
+      "targetRoute": "ParentHistoryScreen",
+      "sourceFeature": "home",
+      "targetFeature": "parent",
+      "file": "src/features/home/screens/HomeHubScreen.tsx",
+      "lineNumber": 115
+    },
+    {
+      "sourceRoute": "HomeHubScreen",
       "targetRoute": "ParentSettingsScreen",
       "sourceFeature": "home",
       "targetFeature": "parent",
       "file": "src/features/home/screens/HomeHubScreen.tsx",
       "lineNumber": 67
-    },
-    {
-      "sourceRoute": "HomeHubScreen",
-      "targetRoute": "ReviewNeededScreen",
-      "sourceFeature": "home",
-      "targetFeature": "progress",
-      "file": "src/features/home/screens/HomeHubScreen.tsx",
-      "lineNumber": 115
     },
     {
       "sourceRoute": "HomeHubScreen",
@@ -542,14 +518,6 @@
     },
     {
       "sourceRoute": "LessonSummaryScreen",
-      "targetRoute": "CelebrationScreen",
-      "sourceFeature": "progress",
-      "targetFeature": "progress",
-      "file": "src/features/progress/screens/LessonSummaryScreen.tsx",
-      "lineNumber": 30
-    },
-    {
-      "sourceRoute": "LessonSummaryScreen",
       "targetRoute": "SendToRobotScreen",
       "sourceFeature": "progress",
       "targetFeature": "course-library",
@@ -614,7 +582,7 @@
     },
     {
       "sourceRoute": "NeedsSyncScreen",
-      "targetRoute": "CourseAddedScreen",
+      "targetRoute": "SendToRobotScreen",
       "sourceFeature": "course-library",
       "targetFeature": "course-library",
       "file": "src/features/course-library/screens/NeedsSyncScreen.tsx",
@@ -1170,15 +1138,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
-      "lineNumber": 384
-    },
-    {
-      "sourceRoute": "ParentSettingsScreen",
-      "targetRoute": "MyRobotScreen",
-      "sourceFeature": "parent",
-      "targetFeature": "robot-mgmt",
-      "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
-      "lineNumber": 459
+      "lineNumber": 461
     },
     {
       "sourceRoute": "ParentSettingsScreen",
@@ -1186,7 +1146,7 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
-      "lineNumber": 475
+      "lineNumber": 536
     },
     {
       "sourceRoute": "ParentSettingsScreen",
@@ -1194,7 +1154,15 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
-      "lineNumber": 526
+      "lineNumber": 552
+    },
+    {
+      "sourceRoute": "ParentSettingsScreen",
+      "targetRoute": "ParentAccountPrivacyScreen",
+      "sourceFeature": "parent",
+      "targetFeature": "parent",
+      "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
+      "lineNumber": 603
     },
     {
       "sourceRoute": "ParentSettingsScreen",
@@ -1202,19 +1170,11 @@
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSettingsScreen.tsx",
-      "lineNumber": 467
+      "lineNumber": 544
     },
     {
       "sourceRoute": "ParentSummaryScreen",
       "targetRoute": "ParentHistoryScreen",
-      "sourceFeature": "parent",
-      "targetFeature": "parent",
-      "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
-      "lineNumber": 45
-    },
-    {
-      "sourceRoute": "ParentSummaryScreen",
-      "targetRoute": "ParentRewardsScreen",
       "sourceFeature": "parent",
       "targetFeature": "parent",
       "file": "src/features/parent/screens/ParentSummaryScreen.tsx",
@@ -1470,11 +1430,11 @@
     },
     {
       "sourceRoute": "SplashScreen",
-      "targetRoute": "WelcomeScreen",
+      "targetRoute": "LoginScreen",
       "sourceFeature": "auth",
       "targetFeature": "auth",
       "file": "src/features/auth/screens/SplashScreen.tsx",
-      "lineNumber": 14
+      "lineNumber": 15
     },
     {
       "sourceRoute": "SubscriptionsScreen",
@@ -1591,5 +1551,6 @@
   ],
   "reciprocalCycleViolations": [],
   "crossFeatureInteriorViolations": [],
+  "productionVisibilityViolations": [],
   "hiddenRoutes": []
 }

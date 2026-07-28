@@ -133,7 +133,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Today</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📚" title="Unit 2 · Animals" body="Lesson 4 of 6 · about 4 minutes" onClick={() => navigation.navigate(ROUTES.DeviceSessionScreen)} />
+          <DeviceRow icon="📚" title="Unit 2 · Animals" body="Lesson 4 of 6 · about 4 minutes" onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)} />
           <DeviceRow icon="🔁" title="3 words to revisit" body="Robot will sneak these in tomorrow" />
           <DeviceRow icon="⭐" title="Yesterday: 1 lesson · 4 min" body="Tap to see what your child practiced" />
         </Box>
@@ -155,7 +155,6 @@ export default function DeviceHomeScreen({ navigation }: Props) {
           <DeviceRow icon="🎵" title="Make Robot chime" body="Find Robot if it's misplaced" onClick={() => navigation.navigate(ROUTES.DeviceLostScreen)} />
           <DeviceRow icon="🌙" title="Quiet hours" body="9:00 PM – 7:00 AM" />
           <DeviceRow icon="🔄" title="Sync content" body="Up to date · 2 minutes ago" />
-          <DeviceRow icon="⬆️" title="Firmware" body="v1.4.2 · update available" onClick={() => navigation.navigate(ROUTES.DeviceFirmwareScreen)} />
         </Box>
       </Box>
 

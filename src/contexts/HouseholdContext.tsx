@@ -109,7 +109,10 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
       const active = households[0] ?? null;
       let childList: Child[] = [];
       if (active) {
-        childList = await householdsApi.listChildren(active.id);
+        const listed = await householdsApi.listChildren(active.id);
+        // Backend/mock payloads can omit or mis-shape the array; never let
+        // render crash on children.find during splash/login.
+        childList = Array.isArray(listed) ? listed : [];
       }
       const completed = households.length > 0;
       if (completed) writeOnboardingCompleteToStore(true);
@@ -209,7 +212,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
   const setActiveChild = (id: string) => {
     // Only accept ids that are actually in the current children list; ignore
     // stale/foreign ids so the resolved activeChild can never go out of range.
-    if (!state.children.some((c) => c.id === id)) return;
+    if (!(Array.isArray(state.children) ? state.children : []).some((c) => c.id === id)) return;
     writeActiveChildIdToStore(id);
     setState((s) => ({ ...s, activeChildId: id }));
   };
@@ -237,11 +240,23 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
   // Resolve the active child: the persisted pick when it's still present,
   // otherwise children[0]. This keeps single-child households byte-identical to
   // the old children[0] reads (activeChild === children[0]).
+  const safeChildren = Array.isArray(state.children) ? state.children : [];
   const activeChild =
-    state.children.find((c) => c.id === state.activeChildId) ?? state.children[0] ?? null;
+    safeChildren.find((c) => c.id === state.activeChildId) ?? safeChildren[0] ?? null;
 
   return (
-    <HouseholdContext.Provider value={{ ...state, activeChild, setActiveChild, createHousehold, selectHousehold, addChild, refresh, completeOnboarding, clearPendingDeviceSetup }}>
+    <HouseholdContext.Provider value={{
+      ...state,
+      children: safeChildren,
+      activeChild,
+      setActiveChild,
+      createHousehold,
+      selectHousehold,
+      addChild,
+      refresh,
+      completeOnboarding,
+      clearPendingDeviceSetup,
+    }}>
       {children}
     </HouseholdContext.Provider>
   );

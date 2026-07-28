@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* global console, process */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { basename, dirname, join, normalize, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -140,6 +139,16 @@ function crossFeatureInteriorViolations(mapping, edges) {
     .sort();
 }
 
+function productionVisibilityViolations(mapping, edges) {
+  return edges
+    .filter(edge =>
+      mapping.routes[edge.sourceRoute].productionVisible !== false
+      && mapping.routes[edge.targetRoute].productionVisible === false,
+    )
+    .map(edge => `${edge.file}:${edge.lineNumber} ${edge.sourceRoute} -> ${edge.targetRoute}`)
+    .sort();
+}
+
 function hiddenRoutes(mapping, edges) {
   const inbound = new Set(edges.map(edge => edge.targetRoute));
   return Object.entries(mapping.routes)
@@ -168,6 +177,7 @@ export function buildForwardEdges() {
     forwardEdges: edges,
     reciprocalCycleViolations: reciprocalCycleViolations(mapping, edges),
     crossFeatureInteriorViolations: crossFeatureInteriorViolations(mapping, edges),
+    productionVisibilityViolations: productionVisibilityViolations(mapping, edges),
     hiddenRoutes: hiddenRoutes(mapping, edges),
   };
 }
@@ -181,13 +191,29 @@ function run() {
       process.exit(1);
     }
     const parsed = JSON.parse(next);
-    console.log(`export-forward-edges: OK — ${parsed.edgeCount} forward edges checked`);
+    const violationGroups = [
+      ['reciprocal cycle', parsed.reciprocalCycleViolations],
+      ['cross-feature interior', parsed.crossFeatureInteriorViolations],
+      ['production visibility', parsed.productionVisibilityViolations],
+      ['hidden route', parsed.hiddenRoutes],
+    ];
+    const violations = violationGroups.flatMap(([label, entries]) =>
+      entries.map(entry => `${label}: ${entry}`),
+    );
+    if (violations.length > 0) {
+      console.error(`export-forward-edges: FAIL — ${violations.length} navigation violations`);
+      for (const violation of violations) {
+        console.error(`- ${violation}`);
+      }
+      process.exit(1);
+    }
+    console.info(`export-forward-edges: OK — ${parsed.edgeCount} forward edges checked`);
     process.exit(0);
   }
 
   mkdirSync(dirname(artifactPath), { recursive: true });
   writeFileSync(artifactPath, next);
-  console.log(`export-forward-edges: wrote ${basename(artifactPath)} with ${JSON.parse(next).edgeCount} forward edges`);
+  console.info(`export-forward-edges: wrote ${basename(artifactPath)} with ${JSON.parse(next).edgeCount} forward edges`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

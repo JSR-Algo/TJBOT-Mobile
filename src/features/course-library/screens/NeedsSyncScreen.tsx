@@ -25,7 +25,7 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
     try {
       const status = await getRobotSyncStatus(courseId);
       if (status.synced) {
-        navigation.navigate(ROUTES.CourseAddedScreen, { courseId });
+        navigation.navigate(ROUTES.SendToRobotScreen, { courseId });
       } else {
         setSyncMsg('Robot has not synced this course yet. Check Wi-Fi and try again.');
       }

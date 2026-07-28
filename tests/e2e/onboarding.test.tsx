@@ -66,6 +66,8 @@ describe('SplashScreen', () => {
 
   it('auto-navigates to WelcomeScreen after 1.7s', () => {
     jest.useFakeTimers();
+    // This file exercises the onboarding Splash (legacy kid-intro path),
+    // not production auth SplashScreen which goes Splash → Login.
     render(<SplashScreen navigation={mockNav} route={mockRoute as never} />);
     act(() => {
       jest.advanceTimersByTime(1700);

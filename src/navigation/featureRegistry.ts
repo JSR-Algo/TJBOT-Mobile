@@ -13,6 +13,8 @@ import { ROBOT_MGMT_NAVIGATION } from '@/features/robot-mgmt/navigation';
 import type { RootStackParamList } from './routes';
 import type { FeatureNavigationConfig, FeatureRootBranch, FeatureRouteOwner, FeatureStackScreen, FeatureTabScreen } from './types';
 
+export { MVP_PRODUCTION_ROUTE_NAMES, isMvpProductionRoute } from './mvpProductionRoutes';
+
 type ProductionRouteEntry = {
   readonly owner: FeatureRouteOwner;
   readonly screen: FeatureStackScreen;
@@ -75,6 +77,11 @@ function pendingDeviceSetupRoute(): keyof RootStackParamList {
 
 export const AUTH_STACK_SCREENS = featuresByRootBranch('auth').flatMap(feature => feature.stackScreens);
 export const ONBOARDING_STACK_SCREENS = featuresByRootBranch('onboarding').flatMap(feature => feature.stackScreens);
+/** Mounted auth routes; hidden entries remain in registry-derived architecture inventory. */
+export const AUTH_MOUNTED_STACK_SCREENS: readonly FeatureStackScreen[] =
+  AUTH_STACK_SCREENS.filter(isProductionVisibleScreen);
+export const ONBOARDING_MOUNTED_STACK_SCREENS: readonly FeatureStackScreen[] =
+  ONBOARDING_STACK_SCREENS.filter(isProductionVisibleScreen);
 export const AUTH_INITIAL_ROUTE = initialRouteFor('auth');
 export const ONBOARDING_INITIAL_ROUTE = initialRouteFor('onboarding');
 

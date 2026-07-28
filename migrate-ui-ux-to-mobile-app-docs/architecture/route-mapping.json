@@ -35,7 +35,7 @@
       "bucket": "stackScreens",
       "role": "auth",
       "backBehavior": "blocked-auth",
-      "deepLinkPath": "auth/welcome",
+      "productionVisible": false,
       "stateMachineId": "onb_welcome"
     },
     "MicAskScreen": {
@@ -56,7 +56,7 @@
       "bucket": "stackScreens",
       "role": "auth",
       "backBehavior": "blocked-auth",
-      "deepLinkPath": "auth/trust",
+      "productionVisible": false,
       "backTarget": "IntroCelebrateScreen",
       "stateMachineId": "onb_trust"
     },
@@ -67,7 +67,7 @@
       "bucket": "stackScreens",
       "role": "auth",
       "backBehavior": "blocked-auth",
-      "deepLinkPath": "auth/intro-listen",
+      "productionVisible": false,
       "backTarget": "WelcomeScreen",
       "stateMachineId": "onb_intro_listen"
     },
@@ -78,7 +78,7 @@
       "bucket": "stackScreens",
       "role": "auth",
       "backBehavior": "blocked-auth",
-      "deepLinkPath": "auth/intro-speak",
+      "productionVisible": false,
       "backTarget": "IntroListenScreen",
       "stateMachineId": "onb_intro_speak"
     },
@@ -89,7 +89,7 @@
       "bucket": "stackScreens",
       "role": "auth",
       "backBehavior": "blocked-auth",
-      "deepLinkPath": "auth/intro-retry",
+      "productionVisible": false,
       "backTarget": "IntroSpeakScreen",
       "stateMachineId": "onb_intro_retry"
     },
@@ -100,7 +100,7 @@
       "bucket": "stackScreens",
       "role": "auth",
       "backBehavior": "blocked-auth",
-      "deepLinkPath": "auth/intro-celebrate",
+      "productionVisible": false,
       "backTarget": "IntroRetryScreen",
       "stateMachineId": "onb_intro_celebrate"
     },
@@ -156,7 +156,7 @@
       "bucket": "stackScreens",
       "role": "stack-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "course/course",
+      "productionVisible": false,
       "stateMachineId": "course"
     },
     "LevelScreen": {
@@ -210,7 +210,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "course/review-entry",
+      "productionVisible": false,
       "backTarget": "HomeHubScreen",
       "stateMachineId": "review_entry"
     },
@@ -253,7 +253,7 @@
       "bucket": "stackScreens",
       "role": "stack-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/buy-course",
+      "productionVisible": false,
       "backTarget": "CourseDetailScreen",
       "stateMachineId": "cl_add_free"
     },
@@ -264,7 +264,7 @@
       "bucket": "stackScreens",
       "role": "stack-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/course-added",
+      "productionVisible": false,
       "stateMachineId": "cl_added"
     },
     "CourseCompleteScreen": {
@@ -274,7 +274,7 @@
       "bucket": "stackScreens",
       "role": "state-machine",
       "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/course-complete",
+      "productionVisible": false,
       "backTarget": "CourseLibraryScreen",
       "stateMachineId": "cl_complete"
     },
@@ -285,7 +285,7 @@
       "bucket": "stackScreens",
       "role": "state-machine",
       "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/course-locked",
+      "productionVisible": false,
       "backTarget": "CourseLibraryScreen",
       "stateMachineId": "cl_locked"
     },
@@ -353,7 +353,7 @@
       "bucket": "modalScreens",
       "role": "modal-entry",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/purchase-intro",
+      "productionVisible": false,
       "backTarget": "DeviceHomeScreen",
       "stateMachineId": "pr_intro"
     },
@@ -364,7 +364,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/how-it-works",
+      "productionVisible": false,
       "backTarget": "PurchaseIntroScreen",
       "stateMachineId": "pr_how"
     },
@@ -375,7 +375,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/bundle",
+      "productionVisible": false,
       "backTarget": "IncludedScreen",
       "stateMachineId": "pr_bundle"
     },
@@ -386,7 +386,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/included",
+      "productionVisible": false,
       "backTarget": "HowItWorksScreen",
       "stateMachineId": "pr_included"
     },
@@ -397,7 +397,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/checkout",
+      "productionVisible": false,
       "backTarget": "PrivacyScreen",
       "stateMachineId": "pr_checkout"
     },
@@ -408,7 +408,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/order-confirm",
+      "productionVisible": false,
       "backTarget": "CheckoutScreen",
       "stateMachineId": "pr_confirm"
     },
@@ -419,7 +419,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/shipping",
+      "productionVisible": false,
       "backTarget": "OrderConfirmScreen",
       "stateMachineId": "pr_shipping"
     },
@@ -430,7 +430,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/arrived",
+      "productionVisible": false,
       "backTarget": "ShippingScreen",
       "stateMachineId": "pr_arrived"
     },
@@ -441,7 +441,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/activate",
+      "productionVisible": false,
       "backTarget": "ArrivedScreen",
       "stateMachineId": "pr_activate"
     },
@@ -452,7 +452,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/first-course",
+      "productionVisible": false,
       "backTarget": "ActivateScreen",
       "stateMachineId": "pr_first_course"
     },
@@ -463,7 +463,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/privacy",
+      "productionVisible": false,
       "backTarget": "SubscriptionsScreen",
       "stateMachineId": "pr_privacy"
     },
@@ -474,7 +474,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "purchase/subscriptions",
+      "productionVisible": false,
       "backTarget": "BundleScreen",
       "stateMachineId": "pr_subs"
     },
@@ -741,7 +741,7 @@
       "bucket": "stackScreens",
       "role": "state-machine",
       "backBehavior": "stack-back",
-      "deepLinkPath": "progress/words-practiced",
+      "productionVisible": false,
       "backTarget": "TodayProgressScreen",
       "stateMachineId": "words_practiced"
     },
@@ -762,7 +762,7 @@
       "bucket": "stackScreens",
       "role": "stack-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "progress/review-needed",
+      "productionVisible": false,
       "backTarget": "HomeHubScreen",
       "stateMachineId": "review_needed"
     },
@@ -773,7 +773,7 @@
       "bucket": "stackScreens",
       "role": "state-machine",
       "backBehavior": "stack-back",
-      "deepLinkPath": "progress/celebration",
+      "productionVisible": false,
       "stateMachineId": "celebration"
     },
     "LeaderboardScreen": {
@@ -783,7 +783,7 @@
       "bucket": "stackScreens",
       "role": "stack-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "progress/leaderboard",
+      "productionVisible": false,
       "backTarget": "ParentSummaryScreen",
       "stateMachineId": "leaderboard"
     },
@@ -824,7 +824,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "parent/parent-history",
       "backTarget": "ParentSummaryScreen",
@@ -835,7 +835,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "parent/parent-session-report",
       "backTarget": "ParentHistoryScreen",
@@ -848,7 +848,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "parent/parent-rewards",
+      "productionVisible": false,
       "backTarget": "ParentSummaryScreen",
       "stateMachineId": "parent_rewards"
     },
@@ -1108,7 +1108,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "device/device-firmware",
+      "productionVisible": false,
       "backTarget": "DeviceHomeScreen",
       "stateMachineId": "dv_firmware"
     },
@@ -1119,7 +1119,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "device/device-session",
+      "productionVisible": false,
       "backTarget": "DeviceHomeScreen",
       "stateMachineId": "dv_session"
     },
@@ -1141,7 +1141,7 @@
       "bucket": "stackScreens",
       "role": "state-machine",
       "backBehavior": "stack-back",
-      "deepLinkPath": "device/lcdlesson-turn",
+      "productionVisible": false,
       "backTarget": "DeviceHomeScreen",
       "stateMachineId": "dv_lcd_turn"
     },
@@ -1152,7 +1152,7 @@
       "bucket": "stackScreens",
       "role": "fallback-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "device/lcdlibrary",
+      "productionVisible": false,
       "backTarget": "DeviceHomeScreen",
       "stateMachineId": "dv_lcd"
     },
@@ -1163,7 +1163,7 @@
       "bucket": "stackScreens",
       "role": "stack-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/my-robot",
+      "productionVisible": false,
       "backTarget": "ParentSummaryScreen",
       "stateMachineId": "rm_my_robot"
     },
@@ -1174,7 +1174,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/robot-status",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_status"
     },
@@ -1218,7 +1218,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/robot-wifi",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_wifi"
     },
@@ -1229,7 +1229,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/robot-sound",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_sound"
     },
@@ -1262,7 +1262,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/factory-reset",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_factory"
     },
@@ -1273,7 +1273,7 @@
       "bucket": "stackScreens",
       "role": "stack",
       "backBehavior": "stack-back",
-      "deepLinkPath": "robot-mgmt/offline-help",
+      "productionVisible": false,
       "backTarget": "MyRobotScreen",
       "stateMachineId": "rm_offline_help"
     },
@@ -1285,7 +1285,7 @@
       "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "robot-mgmt/support",
-      "backTarget": "MyRobotScreen",
+      "backTarget": "DeviceHomeScreen",
       "stateMachineId": "rm_support"
     },
     "NetworkErrorScreen": {
@@ -1373,7 +1373,7 @@
       "bucket": "stackScreens",
       "role": "fallback-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "fallback/kid-settings",
+      "productionVisible": false,
       "backTarget": "HomeHubScreen",
       "stateMachineId": "kid_settings"
     },
@@ -1384,7 +1384,7 @@
       "bucket": "stackScreens",
       "role": "fallback-entry",
       "backBehavior": "stack-back",
-      "deepLinkPath": "fallback/lesson-resume",
+      "productionVisible": false,
       "backTarget": "HomeHubScreen",
       "stateMachineId": "lesson_resume"
     },
@@ -1395,7 +1395,7 @@
       "bucket": "modalScreens",
       "role": "modal",
       "backBehavior": "modal-stack-back",
-      "deepLinkPath": "course-library/unlock-confirm",
+      "productionVisible": false,
       "backTarget": "CourseDetailScreen",
       "stateMachineId": "cl_unlock_confirm"
     },

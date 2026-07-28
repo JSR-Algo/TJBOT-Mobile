@@ -10,6 +10,7 @@ import ParentLockedOutScreen from './screens/ParentLockedOutScreen';
 import AddChildScreen from './screens/AddChildScreen';
 import ParentRewardsScreen from './screens/ParentRewardsScreen';
 import { User } from 'lucide-react-native';
+import { MVP_SCOPE_HIDDEN } from '@/navigation/mvpProductionRoutes';
 import { ROUTES } from '@/navigation/routes';
 import type { FeatureNavigationConfig } from '@/navigation/types';
 import { defineFeatureScreens } from '@/navigation/types';
@@ -29,9 +30,10 @@ export const PROFILE_TAB_SCREEN = {
 export const PARENT_SCREENS = defineFeatureScreens([
   { name: ROUTES.ParentGateScreen, component: ParentGateScreen, role: 'fallback-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_gate' },
   { name: ROUTES.ParentTodayScreen, component: ParentTodayScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_today' },
-  { name: ROUTES.ParentHistoryScreen, component: ParentHistoryScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_history' },
-  { name: ROUTES.ParentSessionReportScreen, component: ParentSessionReportScreen, role: 'stack', backTarget: ROUTES.ParentHistoryScreen, stateMachineId: 'parent_session_report' },
-  { name: ROUTES.ParentRewardsScreen, component: ParentRewardsScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_rewards' },
+  { name: ROUTES.ParentHistoryScreen, component: ParentHistoryScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_history' },
+  { name: ROUTES.ParentSessionReportScreen, component: ParentSessionReportScreen, role: 'stack-entry', backTarget: ROUTES.ParentHistoryScreen, stateMachineId: 'parent_session_report' },
+  // Deep rewards theater — MVP later.
+  { name: ROUTES.ParentRewardsScreen, component: ParentRewardsScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_rewards', ...MVP_SCOPE_HIDDEN },
   { name: ROUTES.ParentSafetyScreen, component: ParentSafetyScreen, role: 'stack', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_safety' },
   { name: ROUTES.ParentSettingsScreen, component: ParentSettingsScreen, role: 'stack-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'parent_settings' },
   { name: ROUTES.ParentAccountPrivacyScreen, component: ParentAccountPrivacyScreen, role: 'stack', backTarget: ROUTES.ParentSettingsScreen, stateMachineId: 'parent_account_privacy' },

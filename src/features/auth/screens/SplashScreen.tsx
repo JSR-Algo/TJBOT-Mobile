@@ -11,7 +11,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SplashScreen'>;
 
 export default function SplashScreen({ navigation }: Props) {
   React.useEffect(() => {
-    const t = setTimeout(() => navigation.navigate(ROUTES.WelcomeScreen), 1700);
+    // Production auth minimum is Splash → Login (marketing intro tree is mvp-scope-hidden).
+    const t = setTimeout(() => navigation.navigate(ROUTES.LoginScreen), 1700);
     return () => clearTimeout(t);
   }, [navigation]);
 
