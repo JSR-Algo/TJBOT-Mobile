@@ -64,13 +64,13 @@ describe('SplashScreen', () => {
     expect(getByText('Voice English for kids')).toBeTruthy();
   });
 
-  it('auto-navigates to WelcomeScreen after 1.7s', () => {
+  it('auto-navigates to LoginScreen after 1.7s', () => {
     jest.useFakeTimers();
     render(<SplashScreen navigation={mockNav} route={mockRoute as never} />);
     act(() => {
       jest.advanceTimersByTime(1700);
     });
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.WelcomeScreen);
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LoginScreen);
     jest.useRealTimers();
   });
 

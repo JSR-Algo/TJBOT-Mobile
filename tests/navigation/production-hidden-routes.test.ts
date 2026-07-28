@@ -1,8 +1,13 @@
 import {
+  AUTH_MOUNTED_STACK_SCREENS,
   FEATURE_NAVIGATION_REGISTRY,
+  MAIN_TAB_SCREENS,
+  MVP_PRODUCTION_ROUTE_NAMES,
   PRODUCTION_HIDDEN_ROUTE_NAMES,
   PRODUCTION_LINKING_ROUTE_ENTRIES,
+  PROTECTED_MOUNTED_MODAL_SCREENS,
   PROTECTED_MOUNTED_STACK_SCREENS,
+  isMvpProductionRoute,
   isProductionNavigableRoute,
 } from '@/navigation/featureRegistry';
 import { NAVIGATION_LINKING_SCREENS, navigationTargetForDeepLinkUrl } from '@/navigation/linking';
@@ -37,6 +42,22 @@ const LESSON_SESSION_PROTOTYPE_ROUTES = new Set<keyof typeof ROUTES>([
   ROUTES.ReconnectingScreen,
 ]);
 
+const MVP_SCOPE_KILL_SAMPLES = [
+  ROUTES.WelcomeScreen,
+  ROUTES.PurchaseIntroScreen,
+  ROUTES.CheckoutScreen,
+  ROUTES.BuyCourseScreen,
+  ROUTES.MyRobotScreen,
+  ROUTES.FactoryResetScreen,
+  ROUTES.DeviceSessionScreen,
+  ROUTES.LCDLibraryScreen,
+  ROUTES.ParentRewardsScreen,
+  ROUTES.LeaderboardScreen,
+  ROUTES.WordsPracticedScreen,
+  ROUTES.CourseScreen,
+  ROUTES.KidSettingsScreen,
+] as const;
+
 function listSourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(dir, entry.name);
@@ -58,7 +79,9 @@ describe('production-hidden routes', () => {
 
     expect(hiddenScreens.map(screen => screen.name)).toEqual(PRODUCTION_HIDDEN_ROUTE_NAMES);
     for (const screen of hiddenScreens) {
-      expect(screen.productionHiddenReason).toMatch(/^(backend-contract-unavailable|static-prototype-hidden)$/);
+      expect(screen.productionHiddenReason).toMatch(
+        /^(backend-contract-unavailable|static-prototype-hidden|mvp-scope-hidden)$/,
+      );
       if (LESSON_SESSION_PROTOTYPE_ROUTES.has(screen.name)) {
         expect(screen.productionHiddenReason).toBe('backend-contract-unavailable');
       }
@@ -86,7 +109,44 @@ describe('production-hidden routes', () => {
     }
   });
 
-  it('does not expose production-hidden lesson-session routes through deep links', () => {
+  it('hides parent-MVP kill clusters from production navigation', () => {
+    for (const route of MVP_SCOPE_KILL_SAMPLES) {
+      expect(PRODUCTION_HIDDEN_ROUTE_NAMES).toContain(route);
+      expect(isProductionNavigableRoute(route)).toBe(false);
+      expect(isMvpProductionRoute(route)).toBe(false);
+    }
+
+    expect(PROTECTED_MOUNTED_MODAL_SCREENS.map(screen => screen.name)).not.toContain(ROUTES.PurchaseIntroScreen);
+    expect(AUTH_MOUNTED_STACK_SCREENS.map(screen => screen.name)).toEqual([
+      ROUTES.SplashScreen,
+      ROUTES.LoginScreen,
+    ]);
+  });
+
+  it('keeps every production-navigable route inside the MVP allowlist', () => {
+    const productionRoutes = [
+      ...AUTH_MOUNTED_STACK_SCREENS,
+      ...MAIN_TAB_SCREENS,
+      ...PROTECTED_MOUNTED_STACK_SCREENS,
+      ...PROTECTED_MOUNTED_MODAL_SCREENS,
+    ].map(screen => screen.name);
+
+    for (const route of productionRoutes) {
+      expect(MVP_PRODUCTION_ROUTE_NAMES).toContain(route);
+      expect(isMvpProductionRoute(route)).toBe(true);
+      expect(isProductionNavigableRoute(route)).toBe(true);
+    }
+
+    expect(MAIN_TAB_SCREENS.map(screen => screen.tabName)).toEqual([
+      'Home',
+      'Devices',
+      'Library',
+      'Progress',
+      'Profile',
+    ]);
+  });
+
+  it('does not expose production-hidden routes through deep links', () => {
     const linkedRoutes = PRODUCTION_LINKING_ROUTE_ENTRIES.map(entry => entry.screen.name);
 
     for (const route of PRODUCTION_HIDDEN_ROUTE_NAMES) {
@@ -98,6 +158,8 @@ describe('production-hidden routes', () => {
     expect(navigationTargetForDeepLinkUrl('tjbot://lesson-session/connecting')).toBeNull();
     expect(navigationTargetForDeepLinkUrl('tjbot://course/level')).toBeNull();
     expect(navigationTargetForDeepLinkUrl('tjbot://course/lesson-detail')).toBeNull();
+    expect(navigationTargetForDeepLinkUrl('tjbot://purchase/purchase-intro')).toBeNull();
+    expect(navigationTargetForDeepLinkUrl('tjbot://auth/welcome')).toBeNull();
   });
 
   it('keeps the dead lesson-session state machine out of runtime source callers', () => {

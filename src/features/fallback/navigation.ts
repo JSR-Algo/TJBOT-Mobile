@@ -8,6 +8,7 @@ import HelpFaqScreen from './screens/HelpFaqScreen';
 import KidSettingsScreen from './screens/KidSettingsScreen';
 import LessonResumeScreen from './screens/LessonResumeScreen';
 import ReconnectingOverlay from './ReconnectingOverlay';
+import { MVP_SCOPE_HIDDEN } from '@/navigation/mvpProductionRoutes';
 import { ROUTES } from '@/navigation/routes';
 import type { FeatureNavigationConfig } from '@/navigation/types';
 import { defineFeatureScreens } from '@/navigation/types';
@@ -20,8 +21,9 @@ export const FALLBACK_SCREENS = defineFeatureScreens([
   { name: ROUTES.AudioRecoveryScreen, component: AudioRecoveryScreen, role: 'stack', backTarget: ROUTES.MicMissingScreen, stateMachineId: 'audio_recovery' },
   { name: ROUTES.SafetyRedirectScreen, component: SafetyRedirectScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'safety_redirect' },
   { name: ROUTES.HelpFaqScreen, component: HelpFaqScreen, role: 'fallback-entry', backTarget: ROUTES.ParentSummaryScreen, stateMachineId: 'help_faq' },
-  { name: ROUTES.KidSettingsScreen, component: KidSettingsScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'kid_settings' },
-  { name: ROUTES.LessonResumeScreen, component: LessonResumeScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'lesson_resume' },
+  // Child-phone settings / phone lesson resume — not parent MVP destinations.
+  { name: ROUTES.KidSettingsScreen, component: KidSettingsScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'kid_settings', ...MVP_SCOPE_HIDDEN },
+  { name: ROUTES.LessonResumeScreen, component: LessonResumeScreen, role: 'fallback-entry', backTarget: ROUTES.HomeHubScreen, stateMachineId: 'lesson_resume', ...MVP_SCOPE_HIDDEN },
 ]);
 
 export const FALLBACK_MODAL_SCREENS = defineFeatureScreens([

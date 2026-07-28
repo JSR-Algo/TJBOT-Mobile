@@ -56,7 +56,8 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
         showRobotConnectionModal();
         return;
       }
-      navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId });
+      // MVP: skip commerce unlock modal; send straight to robot dispatch.
+      navigation.navigate(ROUTES.SendToRobotScreen, { courseId });
     } catch {
       showRobotConnectionModal();
     } finally {

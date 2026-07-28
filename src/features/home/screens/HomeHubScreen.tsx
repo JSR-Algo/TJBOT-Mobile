@@ -111,8 +111,8 @@ export default function HomeHubScreen({ navigation }: Props) {
       </Box>
 
       <Box style={styles.secondaryRow} flexDirection="row" gap={10}>
-        <HomeSecondaryButton label="Course"   icon="🗺️" onPress={() => navigation.navigate(ROUTES.CourseScreen)}         dim={cfg.dimSecondary} />
-        <HomeSecondaryButton label="Review"   icon="🔁" onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}   dim={cfg.dimSecondary} badge={cfg.reviewBadge} />
+        <HomeSecondaryButton label="Course"   icon="🗺️" onPress={() => navigation.navigate(ROUTES.CourseLibraryScreen)} dim={cfg.dimSecondary} />
+        <HomeSecondaryButton label="Review"   icon="🔁" onPress={() => navigation.navigate(ROUTES.ParentHistoryScreen)} dim={cfg.dimSecondary} badge={cfg.reviewBadge} />
         <HomeSecondaryButton label="Progress" icon="⭐" onPress={() => navigation.navigate(ROUTES.TodayProgressScreen)} dim={cfg.dimSecondary} />
         <HomeSecondaryButton label="Robot"    icon="🤖" onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)} dim={cfg.dimSecondary} />
       </Box>

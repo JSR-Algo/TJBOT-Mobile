@@ -49,7 +49,10 @@ function parseRouteEntry(owner, bucket, block) {
     owner,
     bucket,
     role,
-    productionVisible: !block.includes('productionVisible: false') && !/\.\.\.HIDDEN_[A-Z_]+_ROUTE/.test(block),
+    productionVisible:
+      !block.includes('productionVisible: false')
+      && !/\.\.\.HIDDEN_[A-Z_]+_ROUTE/.test(block)
+      && !block.includes('...MVP_SCOPE_HIDDEN'),
     backTarget,
     forwardCycleGroup,
     stateMachineId,

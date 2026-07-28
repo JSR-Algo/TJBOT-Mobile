@@ -21,6 +21,7 @@ import DeviceLostScreen from './screens/DeviceLostScreen';
 import LCDLessonTurnScreen from './screens/LCDLessonTurnScreen';
 import LCDLibraryScreen from './screens/LCDLibraryScreen';
 import { Bot } from 'lucide-react-native';
+import { MVP_SCOPE_HIDDEN } from '@/navigation/mvpProductionRoutes';
 import { ROUTES } from '@/navigation/routes';
 import type { FeatureNavigationConfig } from '@/navigation/types';
 import { defineFeatureScreens } from '@/navigation/types';
@@ -61,11 +62,12 @@ export const DEVICE_SCREENS = defineFeatureScreens([
   { name: ROUTES.PairFailedScreen, component: PairFailedScreen, role: 'stack', backTarget: ROUTES.PairIntroScreen, forwardCycleGroup: 'device-pairing-retry', stateMachineId: 'dv_pair_failed' },
   { name: ROUTES.PairSuccessScreen, component: PairSuccessScreen, role: 'state-machine', backTarget: ROUTES.PairConnectingScreen, stateMachineId: 'dv_pair_success' },
   { name: ROUTES.PairFirstLessonScreen, component: PairFirstLessonScreen, role: 'stack', backTarget: ROUTES.PairRenameScreen, stateMachineId: 'dv_pair_first_lesson' },
-  { name: ROUTES.DeviceFirmwareScreen, component: DeviceFirmwareScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_firmware' },
-  { name: ROUTES.DeviceSessionScreen, component: DeviceSessionScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_session' },
+  // Deep OTA / demo session / LCD theater — fold into overview later.
+  { name: ROUTES.DeviceFirmwareScreen, component: DeviceFirmwareScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_firmware', ...MVP_SCOPE_HIDDEN },
+  { name: ROUTES.DeviceSessionScreen, component: DeviceSessionScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_session', ...MVP_SCOPE_HIDDEN },
   { name: ROUTES.DeviceLostScreen, component: DeviceLostScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lost' },
-  { name: ROUTES.LCDLessonTurnScreen, component: LCDLessonTurnScreen, role: 'state-machine', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd_turn' },
-  { name: ROUTES.LCDLibraryScreen, component: LCDLibraryScreen, role: 'fallback-entry', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd' },
+  { name: ROUTES.LCDLessonTurnScreen, component: LCDLessonTurnScreen, role: 'state-machine', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd_turn', ...MVP_SCOPE_HIDDEN },
+  { name: ROUTES.LCDLibraryScreen, component: LCDLibraryScreen, role: 'fallback-entry', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd', ...MVP_SCOPE_HIDDEN },
 ]);
 
 export const DEVICE_NAVIGATION = {
