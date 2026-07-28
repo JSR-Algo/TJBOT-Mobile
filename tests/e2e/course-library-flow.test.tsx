@@ -297,7 +297,7 @@ describe('course-library flow guards', () => {
     });
 
     expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'c_food' });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, { courseId: 'c_food' });
     expect(screen.queryByText('Choose a plan')).toBeNull();
     expect(screen.queryByText('Confirm & continue')).toBeNull();
   });
@@ -692,7 +692,7 @@ describe('course-library flow guards', () => {
     await waitFor(() => {
       expect(mockedGetRobotSyncStatus).toHaveBeenCalledWith('c_food');
     });
-    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.CourseAddedScreen, expect.anything());
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.SendToRobotScreen, expect.anything());
     expect(screen.getByText('Robot has not synced this course yet. Check Wi-Fi and try again.')).toBeTruthy();
   });
 });

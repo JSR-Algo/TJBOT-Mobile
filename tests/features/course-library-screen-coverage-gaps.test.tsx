@@ -182,7 +182,7 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
     return { courseId: 'c_food', synced } as RobotSyncStatus;
   }
 
-  it('reconnect → synced: navigates to CourseAddedScreen with the route courseId', async () => {
+  it('reconnect → synced: navigates to SendToRobotScreen with the route courseId', async () => {
     mockedGetRobotSyncStatus.mockResolvedValue(syncStatus(true));
     const navigation = navigationFor();
     render(
@@ -197,7 +197,7 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
     });
 
     await waitFor(() => expect(mockedGetRobotSyncStatus).toHaveBeenCalledWith('c_zoo'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_zoo' });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, { courseId: 'c_zoo' });
     // No failure copy on the success path.
     expect(screen.queryByText(/Robot has not synced this course yet/)).toBeNull();
   });
@@ -222,7 +222,7 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
       screen.getByText('Robot has not synced this course yet. Check Wi-Fi and try again.'),
     ).toBeTruthy();
     expect(navigation.navigate).not.toHaveBeenCalledWith(
-      ROUTES.CourseAddedScreen,
+      ROUTES.SendToRobotScreen,
       expect.anything(),
     );
   });
@@ -247,7 +247,7 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
       ).toBeTruthy(),
     );
     expect(navigation.navigate).not.toHaveBeenCalledWith(
-      ROUTES.CourseAddedScreen,
+      ROUTES.SendToRobotScreen,
       expect.anything(),
     );
   });

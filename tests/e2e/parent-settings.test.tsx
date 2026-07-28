@@ -443,7 +443,7 @@ describe('Parent settings and gate', () => {
 
     fireEvent.press(screen.getByRole('button', { name: label }));
 
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.MyRobotScreen);
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
   });
 
   it('lets parents allow AI voice lessons from settings so Robot leaves voice setup block', async () => {

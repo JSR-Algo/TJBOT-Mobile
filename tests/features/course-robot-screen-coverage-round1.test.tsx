@@ -513,11 +513,11 @@ describe('CourseDetailScreen — published overlay + CTAs', () => {
     expect(screen.queryByText('Yummy Words')).toBeNull();
     expect(screen.queryByText('Asking politely')).toBeNull();
 
-    // "Add to Robot" → UnlockConfirmScreen with the (unknown) courseId (line 100).
+    // "Add to Robot" → SendToRobotScreen with the unknown courseId.
     await act(async () => {
       fireEvent.press(screen.getByText('Add to Robot'));
     });
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'unknown-course' });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, { courseId: 'unknown-course' });
 
     // "Back to library" → CourseLibraryScreen (line 101).
     fireEvent.press(screen.getByText('Back to library'));
