@@ -533,7 +533,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={t('Robot leaderboard privacy')}
-          onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen)}
+          onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen)}
           activeOpacity={0.7}
         >
           <PRow icon="🏆" label="Robot leaderboard privacy" chevron />

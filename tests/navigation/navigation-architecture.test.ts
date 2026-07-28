@@ -310,6 +310,7 @@ describe('navigation architecture', () => {
       }[];
       reciprocalCycleViolations?: readonly string[];
       crossFeatureInteriorViolations?: readonly string[];
+      productionVisibilityViolations?: readonly string[];
       hiddenRoutes?: readonly string[];
     };
 
@@ -324,6 +325,7 @@ describe('navigation architecture', () => {
     );
     expect(artifact.reciprocalCycleViolations).toEqual([]);
     expect(artifact.crossFeatureInteriorViolations).toEqual([]);
+    expect(artifact.productionVisibilityViolations).toEqual([]);
     expect(artifact.hiddenRoutes).toEqual([]);
   });
 

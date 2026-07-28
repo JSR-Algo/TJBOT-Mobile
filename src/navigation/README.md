@@ -63,8 +63,8 @@ records the same `deepLinkPath` for each route so exported architecture output
 cannot drift from `linking.ts`.
 `migrate-ui-ux-to-mobile-app-docs/architecture/navigation-forward-edges.json`
 records static forward navigation edges scanned from feature screen code. Run
-`npm run navigation:forward-edges -- --check` to prove hidden routes and
-reciprocal cycle violations remain zero.
+`npm run navigation:forward-edges -- --check` to prove hidden routes,
+visible-to-hidden production edges, and reciprocal cycle violations remain zero.
 
 `inventory.ts` exports `NAVIGATION_INVENTORY` for final delivery review. It
 contains the architecture file list, route map, navigation tree, deleted legacy
@@ -205,8 +205,8 @@ Current owners:
 - No legacy app-navigation system.
 - No central imports from `src/features/*/screens`.
 - No production-visible routes without forward inbound navigation or explicit entry role; contract-blocked prototypes must declare `productionVisible: false` and a reason.
-- Forward-edge artifact must report zero hidden routes and zero reciprocal
-  cycle violations.
+- Forward-edge artifact must report zero hidden routes, zero visible-to-hidden
+  production edges, and zero reciprocal cycle violations.
 - Back-only links (`backTarget`, `onBack`, `prev`) do not count as reachability.
 - Home hub CTA targets enter feature flows through entry-capable routes only.
 - Cross-feature forward navigation targets entry-capable routes only; direct
