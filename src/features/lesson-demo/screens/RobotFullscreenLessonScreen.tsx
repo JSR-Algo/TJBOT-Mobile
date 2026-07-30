@@ -27,107 +27,126 @@ import { diagnosticLog } from '@/services/observability/diagnosticLog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotFullscreenLessonScreen'>;
 
-export function RobotFullscreenLessonScreen({ navigation, route }: Props): React.JSX.Element {
-  const insets = useSafeAreaInsets();
-  const ageBand = (route.params?.ageBand ?? '4-6') as LessonAgeBand;
-  const lessonId = route.params?.lessonId ?? BARN_SAY_IT_LESSON_ID;
-  const autoStartVoice = route.params?.autoStartVoice ?? true;
+// Helper: Determine if mic settings button should appear in error banner
+function shouldShowMicSettingsAction(readinessIssue: VoiceReadinessIssue): boolean {
+  return readinessIssue === 'mic_blocked' || readinessIssue === 'mic_denied';
+}
 
-  const lesson = useMemo(
-    () => staticLessonContentProvider.getLessonById(lessonId, ageBand)
-      ?? staticLessonContentProvider.getLessonById(BARN_SAY_IT_LESSON_ID, ageBand)!,
-    [ageBand, lessonId],
-  );
+// Helper: Determine if voice is currently active
+function isVoiceActive(voiceState: ReturnType<typeof useVoiceAssistantStore>['state']): boolean {
+  return voiceState !== 'IDLE' && voiceState !== 'ENDED' && voiceState !== 'ERROR_FATAL';
+}
 
+// Helper: Determine if robot is speaking
+function isSpeaking(voiceState: ReturnType<typeof useVoiceAssistantStore>['state']): boolean {
+  return voiceState === 'ASSISTANT_SPEAKING' || voiceState === 'WAITING_AI';
+}
+
+// Helper: Probe voice readiness and handle auth_missing case
+async function probeVoiceAndSetReadiness(
+  setReadinessIssue: (issue: VoiceReadinessIssue) => void,
+  setVoiceStarted: (started: boolean) => void,
+  startConversation: () => void,
+): Promise<void> {
+  const issue = await probeVoiceReadiness();
+  if (issue === 'auth_missing') {
+    setReadinessIssue(issue);
+    return;
+  }
+  // Speak-first: never gate the robot's voice on the mic
+  setReadinessIssue(issue);
+  setVoiceStarted(true);
+  void startConversation();
+}
+
+// Helper: Compute displayed error message
+function getDisplayedError(readinessIssue: VoiceReadinessIssue, voiceError: string | null): string | null {
+  const readinessMessage = voiceReadinessMessage(readinessIssue);
+  return readinessMessage || voiceError;
+}
+
+// Custom hook: Manage lesson step and choice selection state
+function useLessonStepState() {
   const [stepIndex, setStepIndex] = useState(0);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
-  const [voiceStarted, setVoiceStarted] = useState(false);
-  const [readinessIssue, setReadinessIssue] = useState<VoiceReadinessIssue>(null);
-  const completeLesson = useLessonDemoProgressStore((state) => state.completeLesson);
-
-  const voiceState = useVoiceAssistantStore((state) => state.state);
-  const aiTranscript = useVoiceAssistantStore((state) => state.aiTranscript);
-  const voiceError = useVoiceAssistantStore((state) => state.error);
-
-  const step = lesson.steps[stepIndex];
-  const isLastStep = stepIndex === lesson.steps.length - 1;
-  const isSpeaking = voiceState === 'ASSISTANT_SPEAKING' || voiceState === 'WAITING_AI';
-  const voiceActive = voiceState !== 'IDLE' && voiceState !== 'ENDED' && voiceState !== 'ERROR_FATAL';
-
-  const systemInstruction = useMemo(
-    () => buildLessonVoicePrompt(lesson, stepIndex),
-    [lesson, stepIndex],
-  );
-
-  const { startConversation, stopConversation } = useGeminiConversation({ systemInstruction });
 
   useEffect(() => {
     setSelectedChoiceId(null);
   }, [stepIndex]);
 
+  return { stepIndex, setStepIndex, selectedChoiceId, setSelectedChoiceId };
+}
+
+// Custom hook: Manage voice state and readiness
+function useVoiceState() {
+  const [voiceStarted, setVoiceStarted] = useState(false);
+  const [readinessIssue, setReadinessIssue] = useState<VoiceReadinessIssue>(null);
+
+  return {
+    voiceStarted,
+    setVoiceStarted,
+    readinessIssue,
+    setReadinessIssue,
+  };
+}
+
+// Custom hook: Extract and memoize lesson from route params
+function useLessonFromRoute(
+  lessonId: string | undefined,
+  ageBand: LessonAgeBand,
+): ReturnType<typeof staticLessonContentProvider.getLessonById> {
+  return useMemo(
+    () => staticLessonContentProvider.getLessonById(lessonId ?? BARN_SAY_IT_LESSON_ID, ageBand)
+      ?? staticLessonContentProvider.getLessonById(BARN_SAY_IT_LESSON_ID, ageBand)!,
+    [ageBand, lessonId],
+  );
+}
+
+// Custom hook: Compute voice state indicators
+function useVoiceStateIndicators(voiceState: ReturnType<typeof useVoiceAssistantStore>['state']) {
+  return {
+    isSpeakingNow: isSpeaking(voiceState),
+    voiceActive: isVoiceActive(voiceState),
+  };
+}
+
+// Custom hook: Auto-start voice on mount if enabled
+function useAutoStartVoice(
+  autoStartVoice: boolean,
+  voiceStarted: boolean,
+  setReadinessIssue: (issue: VoiceReadinessIssue) => void,
+  setVoiceStarted: (started: boolean) => void,
+  startConversation: () => void,
+) {
   useEffect(() => {
     if (!autoStartVoice || voiceStarted) return;
     let cancelled = false;
     (async () => {
-      const issue = await probeVoiceReadiness();
-      if (cancelled) return;
-      if (issue === 'auth_missing') {
-        setReadinessIssue(issue);
-        return;
+      if (!cancelled) {
+        await probeVoiceAndSetReadiness(setReadinessIssue, setVoiceStarted, startConversation);
       }
-      // Speak-first (2026-07-06): start immediately — TeeBot greets through
-      // the speaker while the voice hook requests mic permission in parallel.
-      // A blocked mic shows the Settings banner but never silences the robot.
-      setReadinessIssue(issue);
-      setVoiceStarted(true);
-      void startConversation();
     })();
     return () => {
       cancelled = true;
     };
-  }, [autoStartVoice, startConversation, voiceStarted]);
+  }, [autoStartVoice, startConversation, voiceStarted, setReadinessIssue, setVoiceStarted]);
+}
 
+// Custom hook: Cleanup conversation on unmount
+function useCleanupConversationOnUnmount(stopConversation: () => void) {
   useEffect(() => () => {
     stopConversation();
   }, [stopConversation]);
+}
 
-  const handleExit = useCallback(() => {
-    stopConversation();
-    navigation.goBack();
-  }, [navigation, stopConversation]);
-
-  const handleNext = useCallback(() => {
-    if (!isLastStep) {
-      setStepIndex((current) => current + 1);
-      return;
-    }
-    void completeLesson(lesson, ageBand);
-    stopConversation();
-    navigation.navigate(ROUTES.ParentLessonSummaryScreen, { lessonId: lesson.lessonId, ageBand });
-  }, [ageBand, completeLesson, isLastStep, lesson, navigation, stopConversation]);
-
-  const handleVoiceToggle = useCallback(() => {
-    if (voiceActive) {
-      stopConversation();
-      setVoiceStarted(false);
-      return;
-    }
-    void (async () => {
-      const issue = await probeVoiceReadiness();
-      if (issue === 'auth_missing') {
-        setReadinessIssue(issue);
-        return;
-      }
-      // Speak-first: never gate the robot's voice on the mic (see auto-start).
-      setReadinessIssue(issue);
-      setVoiceStarted(true);
-      void startConversation();
-    })();
-  }, [startConversation, stopConversation, voiceActive]);
-
-  const readinessMessage = voiceReadinessMessage(readinessIssue);
-  const displayedError = readinessMessage ?? voiceError;
-
+// Custom hook: Log diagnostic errors
+function useDiagnosticLogging(
+  displayedError: string | null,
+  lessonId: string,
+  stepIndex: number,
+  voiceState: ReturnType<typeof useVoiceAssistantStore>['state'],
+  readinessIssue: VoiceReadinessIssue,
+) {
   useEffect(() => {
     if (!displayedError) return;
     diagnosticLog({
@@ -136,13 +155,287 @@ export function RobotFullscreenLessonScreen({ navigation, route }: Props): React
       event: 'robot_lesson_error',
       message: displayedError,
       detail: {
-        lessonId: lesson.lessonId,
+        lessonId,
         stepIndex,
         voiceState,
         readinessIssue,
       },
     });
-  }, [displayedError, lesson.lessonId, readinessIssue, stepIndex, voiceState]);
+  }, [displayedError, lessonId, readinessIssue, stepIndex, voiceState]);
+}
+
+// Component: Voice icon rendering
+function VoiceIcon({ voiceState, voiceActive }: {
+  voiceState: ReturnType<typeof useVoiceAssistantStore>['state'];
+  voiceActive: boolean;
+}): React.JSX.Element {
+  if (voiceState === 'CONNECTING' || voiceState === 'PREPARING_AUDIO') {
+    return <ActivityIndicator color="#FFFFFF" />;
+  }
+  return <Text style={styles.iconButtonText}>{voiceActive ? '🎙️' : '🤖'}</Text>;
+}
+
+// Component: Top bar with exit and voice toggle
+function TopBar({
+  insets,
+  onExit,
+  onVoiceToggle,
+  voiceActive,
+  voiceState,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  onExit: () => void;
+  onVoiceToggle: () => void;
+  voiceActive: boolean;
+  voiceState: ReturnType<typeof useVoiceAssistantStore>['state'];
+}): React.JSX.Element {
+  return (
+    <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Close lesson"
+        onPress={onExit}
+        style={styles.iconButton}
+      >
+        <Text style={styles.iconButtonText}>✕</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={voiceActive ? 'Stop talking to Robot' : 'Talk to Robot'}
+        onPress={onVoiceToggle}
+        style={[styles.iconButton, voiceActive ? styles.iconButtonActive : null]}
+      >
+        <VoiceIcon voiceState={voiceState} voiceActive={voiceActive} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Component: Lesson choices
+function LessonChoices({
+  insets,
+  step,
+  selectedChoiceId,
+  onSelectChoice,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  step: ReturnType<typeof staticLessonContentProvider.getLessonById>['steps'][number];
+  selectedChoiceId: string | null;
+  onSelectChoice: (choiceId: string) => void;
+}): React.JSX.Element | null {
+  if (!step.choices) return null;
+  return (
+    <View style={[styles.choices, { bottom: insets.bottom + 96 }]}>
+      {step.choices.map((choice) => {
+        const selected = selectedChoiceId === choice.id;
+        return (
+          <TouchableOpacity
+            key={choice.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Choose ${choice.label}`}
+            onPress={() => onSelectChoice(choice.id)}
+            style={[styles.choice, selected ? styles.choiceSelected : null]}
+          >
+            <Text style={[styles.choiceText, selected ? styles.choiceTextSelected : null]}>
+              {choice.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+// Component: AI transcript
+function TranscriptDisplay({
+  insets,
+  aiTranscript,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  aiTranscript: string;
+}): React.JSX.Element | null {
+  if (!aiTranscript) return null;
+  return (
+    <View style={[styles.transcript, { bottom: insets.bottom + 168 }]} pointerEvents="none">
+      <Text style={styles.transcriptText} numberOfLines={3}>
+        {aiTranscript}
+      </Text>
+    </View>
+  );
+}
+
+// Component: Error banner
+function ErrorBanner({
+  insets,
+  displayedError,
+  readinessIssue,
+  onOpenSettings,
+  onOpenDiagnosticLog,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  displayedError: string | null;
+  readinessIssue: VoiceReadinessIssue;
+  onOpenSettings: () => void;
+  onOpenDiagnosticLog: () => void;
+}): React.JSX.Element | null {
+  if (!displayedError) return null;
+  return (
+    <View style={[styles.errorBanner, { top: insets.top + 64 }]}>
+      <Text style={styles.errorText}>{displayedError}</Text>
+      {shouldShowMicSettingsAction(readinessIssue) ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Open microphone settings"
+          onPress={onOpenSettings}
+          style={styles.errorAction}
+        >
+          <Text style={styles.errorActionText}>Open Settings</Text>
+        </TouchableOpacity>
+      ) : null}
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Open diagnostic log"
+        onPress={onOpenDiagnosticLog}
+        style={styles.errorAction}
+      >
+        <Text style={styles.errorActionText}>Open diagnostic log</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Component: Footer navigation
+function FooterNavigation({
+  insets,
+  stepIndex,
+  isLastStep,
+  onPrevious,
+  onNext,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  stepIndex: number;
+  isLastStep: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+}): React.JSX.Element {
+  return (
+    <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Previous step"
+        onPress={onPrevious}
+        style={[styles.footerButton, stepIndex === 0 ? styles.footerButtonDisabled : null]}
+        disabled={stepIndex === 0}
+      >
+        <Text style={styles.footerButtonText}>Back</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={isLastStep ? 'Finish lesson' : 'Next step'}
+        onPress={onNext}
+        style={[styles.footerButton, styles.footerButtonPrimary]}
+      >
+        <Text style={[styles.footerButtonText, styles.footerButtonTextPrimary]}>
+          {isLastStep ? 'Finish' : 'Next'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Handler: Process next step action
+function handleNextStepAction(
+  isLastStep: boolean,
+  completeLesson: (lesson: ReturnType<typeof staticLessonContentProvider.getLessonById>, ageBand: LessonAgeBand) => Promise<void>,
+  lesson: ReturnType<typeof staticLessonContentProvider.getLessonById>,
+  ageBand: LessonAgeBand,
+  stopConversation: () => void,
+  navigation: NativeStackScreenProps<RootStackParamList, 'RobotFullscreenLessonScreen'>['navigation'],
+  setStepIndex: (fn: (c: number) => number) => void,
+): void {
+  if (!isLastStep) {
+    setStepIndex((c) => c + 1);
+    return;
+  }
+  void completeLesson(lesson, ageBand);
+  stopConversation();
+  navigation.navigate(ROUTES.ParentLessonSummaryScreen, { lessonId: lesson.lessonId, ageBand });
+}
+
+// Handler: Process voice toggle action
+function handleVoiceToggleAction(
+  voiceActive: boolean,
+  stopConversation: () => void,
+  setVoiceStarted: (started: boolean) => void,
+  setReadinessIssue: (issue: VoiceReadinessIssue) => void,
+  startConversation: () => void,
+): void {
+  if (voiceActive) {
+    stopConversation();
+    setVoiceStarted(false);
+    return;
+  }
+  void probeVoiceAndSetReadiness(setReadinessIssue, setVoiceStarted, startConversation);
+}
+
+// Handler: Go to previous step
+function handlePreviousStep(stepIndex: number, setStepIndex: (fn: (c: number) => number) => void): void {
+  if (stepIndex > 0) setStepIndex((c) => c - 1);
+}
+
+
+export function RobotFullscreenLessonScreen({ navigation, route }: Props): React.JSX.Element {
+  const insets = useSafeAreaInsets();
+  const ageBand = (route.params?.ageBand ?? '4-6') as LessonAgeBand;
+  const lessonId = route.params?.lessonId;
+  const autoStartVoice = route.params?.autoStartVoice ?? true;
+
+  const lesson = useLessonFromRoute(lessonId, ageBand);
+  const { stepIndex, setStepIndex, selectedChoiceId, setSelectedChoiceId } = useLessonStepState();
+  const { voiceStarted, setVoiceStarted, readinessIssue, setReadinessIssue } = useVoiceState();
+
+  const voiceState = useVoiceAssistantStore((state) => state.state);
+  const aiTranscript = useVoiceAssistantStore((state) => state.aiTranscript);
+  const voiceError = useVoiceAssistantStore((state) => state.error);
+
+  const step = lesson.steps[stepIndex];
+  const isLastStep = stepIndex === lesson.steps.length - 1;
+  const { isSpeakingNow, voiceActive } = useVoiceStateIndicators(voiceState);
+
+  const systemInstruction = useMemo(
+    () => buildLessonVoicePrompt(lesson, stepIndex),
+    [lesson, stepIndex],
+  );
+
+  const { startConversation, stopConversation } = useGeminiConversation({ systemInstruction });
+  const completeLesson = useLessonDemoProgressStore((state) => state.completeLesson);
+
+  useAutoStartVoice(autoStartVoice, voiceStarted, setReadinessIssue, setVoiceStarted, startConversation);
+  useCleanupConversationOnUnmount(stopConversation);
+
+  const handleExit = useCallback(
+    () => { stopConversation(); navigation.goBack(); },
+    [navigation, stopConversation],
+  );
+
+  const handlePrevious = useCallback(
+    () => { handlePreviousStep(stepIndex, setStepIndex); },
+    [stepIndex, setStepIndex],
+  );
+
+  const handleNext = useCallback(
+    () => { handleNextStepAction(isLastStep, completeLesson, lesson, ageBand, stopConversation, navigation, setStepIndex); },
+    [ageBand, completeLesson, isLastStep, lesson, navigation, stopConversation, setStepIndex],
+  );
+
+  const handleVoiceToggle = useCallback(
+    () => { handleVoiceToggleAction(voiceActive, stopConversation, setVoiceStarted, setReadinessIssue, startConversation); },
+    [startConversation, stopConversation, voiceActive, setReadinessIssue, setVoiceStarted],
+  );
+
+  const displayedError = getDisplayedError(readinessIssue, voiceError);
+
+  useDiagnosticLogging(displayedError, lesson.lessonId, stepIndex, voiceState, readinessIssue);
 
   return (
     <View style={styles.root}>
@@ -154,108 +447,44 @@ export function RobotFullscreenLessonScreen({ navigation, route }: Props): React
         stepIndex={stepIndex}
         totalSteps={lesson.steps.length}
         voiceActive={voiceActive}
-        isSpeaking={isSpeaking}
+        isSpeaking={isSpeakingNow}
       />
 
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Close lesson"
-          onPress={handleExit}
-          style={styles.iconButton}
-        >
-          <Text style={styles.iconButtonText}>✕</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={voiceActive ? 'Stop talking to Robot' : 'Talk to Robot'}
-          onPress={handleVoiceToggle}
-          style={[styles.iconButton, voiceActive ? styles.iconButtonActive : null]}
-        >
-          {voiceState === 'CONNECTING' || voiceState === 'PREPARING_AUDIO' ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.iconButtonText}>{voiceActive ? '🎙️' : '🤖'}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <TopBar
+        insets={insets}
+        onExit={handleExit}
+        onVoiceToggle={handleVoiceToggle}
+        voiceActive={voiceActive}
+        voiceState={voiceState}
+      />
 
-      {step.choices ? (
-        <View style={[styles.choices, { bottom: insets.bottom + 96 }]}>
-          {step.choices.map((choice) => {
-            const selected = selectedChoiceId === choice.id;
-            return (
-              <TouchableOpacity
-                key={choice.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Choose ${choice.label}`}
-                onPress={() => setSelectedChoiceId(choice.id)}
-                style={[styles.choice, selected ? styles.choiceSelected : null]}
-              >
-                <Text style={[styles.choiceText, selected ? styles.choiceTextSelected : null]}>
-                  {choice.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ) : null}
+      <LessonChoices
+        insets={insets}
+        step={step}
+        selectedChoiceId={selectedChoiceId}
+        onSelectChoice={setSelectedChoiceId}
+      />
 
-      {aiTranscript ? (
-        <View style={[styles.transcript, { bottom: insets.bottom + 168 }]} pointerEvents="none">
-          <Text style={styles.transcriptText} numberOfLines={3}>
-            {aiTranscript}
-          </Text>
-        </View>
-      ) : null}
+      <TranscriptDisplay
+        insets={insets}
+        aiTranscript={aiTranscript}
+      />
 
-      {displayedError ? (
-        <View style={[styles.errorBanner, { top: insets.top + 64 }]}>
-          <Text style={styles.errorText}>{displayedError}</Text>
-          {readinessIssue === 'mic_blocked' || readinessIssue === 'mic_denied' ? (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Open microphone settings"
-              onPress={openAppSettings}
-              style={styles.errorAction}
-            >
-              <Text style={styles.errorActionText}>Open Settings</Text>
-            </TouchableOpacity>
-          ) : null}
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Open diagnostic log"
-            onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen)}
-            style={styles.errorAction}
-          >
-            <Text style={styles.errorActionText}>Open diagnostic log</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
+      <ErrorBanner
+        insets={insets}
+        displayedError={displayedError}
+        readinessIssue={readinessIssue}
+        onOpenSettings={openAppSettings}
+        onOpenDiagnosticLog={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen)}
+      />
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Previous step"
-          onPress={() => {
-            if (stepIndex > 0) setStepIndex((current) => current - 1);
-          }}
-          style={[styles.footerButton, stepIndex === 0 ? styles.footerButtonDisabled : null]}
-          disabled={stepIndex === 0}
-        >
-          <Text style={styles.footerButtonText}>Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={isLastStep ? 'Finish lesson' : 'Next step'}
-          onPress={handleNext}
-          style={[styles.footerButton, styles.footerButtonPrimary]}
-        >
-          <Text style={[styles.footerButtonText, styles.footerButtonTextPrimary]}>
-            {isLastStep ? 'Finish' : 'Next'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FooterNavigation
+        insets={insets}
+        stepIndex={stepIndex}
+        isLastStep={isLastStep}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+      />
     </View>
   );
 }
