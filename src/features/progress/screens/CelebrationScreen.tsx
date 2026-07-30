@@ -6,8 +6,10 @@ import type { RootStackParamList } from '@/navigation/routes';
 import RobotImage from '@/components/RobotImage';
 import PageScroll from '@/design-system/components/PageScroll';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CelebrationScreen'>;
@@ -16,7 +18,7 @@ const CONFETTI_COLORS = ['#FF6F61', '#6CE2B6', '#6FC1FF', '#fff', '#6B4A9B'];
 
 export default function CelebrationScreen({ navigation }: Props) {
   return (
-    <PageScroll bg="#FFC857">
+    <PageScroll bg={referenceColors.goldSoft}>
       <Box style={[StyleSheet.absoluteFillObject, styles.confettiLayer]} overflow="hidden">
         {Array.from({ length: 24 }).map((_, i) => (
           <Box
@@ -39,14 +41,23 @@ export default function CelebrationScreen({ navigation }: Props) {
       </Box>
 
       <Box position="relative" paddingTop={80} paddingHorizontal={24} paddingBottom={16} alignItems="center" gap={14}>
-        <Text style={{ fontSize: 26, letterSpacing: 5 }}>⭐⭐⭐</Text>
+        <Box
+          accessible
+          accessibilityLabel="Three lesson stars earned"
+          flexDirection="row"
+          gap={8}
+        >
+          {[0, 1, 2].map((star) => (
+            <Icon key={star} name="Star" size={26} color={referenceColors.gold} strokeWidth={2.5} />
+          ))}
+        </Box>
         <RobotImage variant="body" size={180} />
         <Text fontWeight="800" style={styles.hero}>You did it!</Text>
         <Text style={styles.msg}>You finished today's lesson. Great effort speaking out loud!</Text>
 
         <Box style={styles.stickerCard} flexDirection="row" alignItems="center" gap={14}>
           <Box style={styles.stickerIcon} alignItems="center" justifyContent="center">
-            <Text style={{ fontSize: 36 }}>🌟</Text>
+            <Icon name="Award" size={34} color={referenceColors.primaryDeep} strokeWidth={2.3} />
           </Box>
           <Box>
             <Text fontWeight="700" style={styles.newStickerLabel}>NEW STICKER</Text>
@@ -56,13 +67,16 @@ export default function CelebrationScreen({ navigation }: Props) {
       </Box>
 
       <Box position="relative" paddingHorizontal={24} paddingTop={24} paddingBottom={30} gap={10}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color="#FF6F61">Back to Robot Home</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} color={referenceColors.primary}>
+          Back to Robot Home
+        </PrimaryCTA>
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => navigation.navigate(ROUTES.ReviewNeededScreen)}
           style={styles.reviewBtn}
           activeOpacity={0.8}
         >
-          <Text fontWeight="700" style={{ fontSize: 18, color: '#2B2140' }}>Practice review words</Text>
+          <Text fontWeight="700" style={{ fontSize: 18, color: referenceColors.ink }}>Practice review words</Text>
         </TouchableOpacity>
       </Box>
     </PageScroll>
@@ -72,16 +86,15 @@ export default function CelebrationScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   confettiLayer: { pointerEvents: 'none' },
   confetti: { position: 'absolute' },
-  hero: { fontSize: 48, color: '#2B2140', lineHeight: 52, textShadowColor: 'rgba(255,255,255,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 0 },
+  hero: { fontSize: 48, color: referenceColors.ink, lineHeight: 52, textShadowColor: 'rgba(255,255,255,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 0 },
   msgCard: { backgroundColor: 'rgba(255,255,255,0.85)', paddingVertical: 14, paddingHorizontal: 22, borderRadius: 22, maxWidth: 300 },
-  msg: { fontSize: 18, color: '#2B2140', textAlign: 'center', lineHeight: 26 },
+  msg: { fontSize: 18, color: referenceColors.ink, textAlign: 'center', lineHeight: 26 },
   stickerCard: {
-    backgroundColor: '#fff', borderRadius: 24, paddingVertical: 14, paddingHorizontal: 18,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 26,
-    elevation: 4,
+    backgroundColor: referenceColors.card, borderColor: referenceColors.line, borderWidth: 1,
+    borderRadius: 24, paddingVertical: 14, paddingHorizontal: 18, ...referenceShadow.card,
   },
-  stickerIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFB3A8' },
-  newStickerLabel: { fontSize: 11, color: '#5C4F77', textTransform: 'uppercase', letterSpacing: 1 },
-  stickerName: { fontSize: 18, color: '#2B2140' },
-  reviewBtn: { width: '100%', minHeight: 56, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
+  stickerIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: referenceColors.primarySoft },
+  newStickerLabel: { fontSize: 11, color: referenceColors.inkSoft, textTransform: 'uppercase', letterSpacing: 1 },
+  stickerName: { fontSize: 18, color: referenceColors.ink },
+  reviewBtn: { width: '100%', minHeight: 56, borderRadius: 16, backgroundColor: referenceColors.cardSoft, alignItems: 'center', justifyContent: 'center' },
 });

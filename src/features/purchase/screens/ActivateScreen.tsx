@@ -91,7 +91,7 @@ export default function ActivateScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={18} paddingTop={18}>
         <Box style={styles.helpRow}>
-          <DeviceRow icon="❓" title="Can't find the code?" body="It's printed on the inside flap of the box" />
+          <DeviceRow icon="CircleHelp" title="Can't find the code?" body="It's printed on the inside flap of the box" />
         </Box>
       </Box>
 

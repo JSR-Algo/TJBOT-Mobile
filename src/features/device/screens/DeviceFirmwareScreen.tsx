@@ -2,10 +2,11 @@ import React from 'react';
 import { Alert, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RobotImage } from '@/components/RobotImage';
 import ConnectorStateNotice from '@/components/ConnectorStateNotice';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -96,8 +97,14 @@ export default function DeviceFirmwareScreen({ navigation }: Props) {
   return (
     <DeviceShell title={t('Software update')} onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
       {deviceId === undefined ? (
-        <Box paddingHorizontal={24} paddingTop={28} alignItems="center">
-          <Text style={styles.loading}>{t('Checking Robot software')}</Text>
+        <Box paddingHorizontal={20} paddingTop={28}>
+          <Box style={styles.loadingCard} alignItems="center" gap={12}>
+            <Box style={styles.statusIcon} alignItems="center" justifyContent="center">
+              <Icon name="RefreshCw" size={28} color={DV.accent} strokeWidth={2.3} />
+            </Box>
+            <Text fontWeight="700" style={styles.loading}>{t('Checking Robot software')}</Text>
+            <Text style={styles.loadingDetail}>{t('Reading the installed and latest safe versions.')}</Text>
+          </Box>
         </Box>
       ) : null}
 
@@ -126,11 +133,19 @@ export default function DeviceFirmwareScreen({ navigation }: Props) {
         <>
           <Box paddingHorizontal={16} paddingTop={24}>
             <Box style={styles.heroCard} flexDirection="row" gap={14} alignItems="center">
-              <RobotDevice emotion="charging" size={84} accent="#FF6F61" />
+              <RobotImage variant="body" size={92} />
               <Box flex={1}>
+                <Box flexDirection="row" alignItems="center" gap={6}>
+                  <Icon
+                    name={version.updateAvailable ? 'Download' : 'CircleCheck'}
+                    size={16}
+                    color={version.updateAvailable ? DV.warn : DV.good}
+                    strokeWidth={2.4}
+                  />
                 <Text fontWeight="700" style={styles.updateBadge}>
                   {t(version.updateAvailable ? 'Update available' : 'Robot software is current')}
                 </Text>
+                </Box>
                 <Text fontWeight="600" style={styles.versionText}>
                   {version.updateAvailable
                     ? `${version.current} → ${version.latest}`
@@ -168,8 +183,11 @@ function FirmwareActions({
 }
 
 const styles = StyleSheet.create({
-  loading: { fontSize: 14, color: DV.ink2, textAlign: 'center' },
-  heroCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, padding: 16 },
+  loadingCard: { backgroundColor: DV.card, borderColor: DV.hair, borderRadius: 24, borderWidth: 1, padding: 24 },
+  statusIcon: { width: 62, height: 62, borderRadius: 22, backgroundColor: '#FFE5E5' },
+  loading: { fontSize: 18, color: DV.ink, textAlign: 'center' },
+  loadingDetail: { fontSize: 13, color: DV.ink2, lineHeight: 20, textAlign: 'center' },
+  heroCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 24, padding: 18 },
   updateBadge: { fontSize: 11, color: DV.warn, textTransform: 'uppercase', letterSpacing: 0.6 },
   versionText: { fontSize: 16, color: DV.ink, marginTop: 2 },
   success: { fontSize: 13, color: DV.good, textAlign: 'center', lineHeight: 19 },

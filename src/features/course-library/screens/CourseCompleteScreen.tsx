@@ -2,7 +2,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import Robot from '@/design-system/components/Robot';
+import { Icon } from '@/design-system/icons';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -24,7 +25,7 @@ export default function CourseCompleteScreen({ navigation, route }: Props) {
         paddingHorizontal={24}
         alignItems="center"
       >
-        <RobotDevice emotion="celebrate" size={170} accent="#FF6F61" />
+        <Robot emotion="success" size={170} accessibilityLabel="TeeBot celebrating the completed lesson" />
         <Box style={styles.chipWrap}><CLChip state="completed" /></Box>
         <Text fontWeight="600" style={styles.heading}>
           {summary?.heading ?? 'Lesson complete'}
@@ -68,7 +69,16 @@ export default function CourseCompleteScreen({ navigation, route }: Props) {
                         styles.wordChip,
                         { backgroundColor: item.confident ? '#E6F4EE' : '#FFF4D9' },
                       ]}
+                      flexDirection="row"
+                      alignItems="center"
+                      gap={5}
                     >
+                      <Icon
+                        name={item.confident ? 'CircleCheck' : 'RefreshCcw'}
+                        size={13}
+                        color={item.confident ? '#1F8A5B' : '#8A6A12'}
+                        strokeWidth={2.4}
+                      />
                       <Text
                         fontWeight="600"
                         style={[
@@ -82,10 +92,7 @@ export default function CourseCompleteScreen({ navigation, route }: Props) {
                   ))}
                 </Box>
                 <Text style={styles.legend}>
-                  <Text fontWeight="700" style={{ color: '#1F8A5B' }}>Green</Text>
-                  {' = practiced confidently · '}
-                  <Text fontWeight="700" style={{ color: '#8A6A12' }}>Yellow</Text>
-                  {' = Robot will revisit'}
+                  Check means practiced confidently · refresh means Robot will revisit.
                 </Text>
               </Box>
             </Box>

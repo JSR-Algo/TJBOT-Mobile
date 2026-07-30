@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, TextInput, TouchableOpacity, View } from 'react-
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
+import { RobotImage } from '@/components/RobotImage';
+import { Icon, type IconName } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { gardenColors, gardenRadii, gardenShadows } from '@/design-system/tokens';
@@ -16,10 +18,10 @@ import { getPendingPairingContext } from '../pendingPairingContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
 const BUDDIES = [
-  { ic: '🐼', n: 'Panda' }, { ic: '🦊', n: 'Fox' }, { ic: '🐰', n: 'Bunny' },
-  { ic: '🐻', n: 'Bear' }, { ic: '🐸', n: 'Frog' }, { ic: '🦉', n: 'Owl' },
-  { ic: '🐢', n: 'Turtle' }, { ic: '🐱', n: 'Cat' },
-] as const;
+  { ic: 'Panda', n: 'Panda' }, { ic: 'Dog', n: 'Fox' }, { ic: 'Rabbit', n: 'Bunny' },
+  { ic: 'PawPrint', n: 'Bear' }, { ic: 'Bug', n: 'Frog' }, { ic: 'Bird', n: 'Owl' },
+  { ic: 'Turtle', n: 'Turtle' }, { ic: 'Cat', n: 'Cat' },
+] as const satisfies ReadonlyArray<{ ic: IconName; n: string }>;
 
 export default function PairRenameScreen({ navigation, route }: Props) {
   useAppLanguage();
@@ -39,7 +41,6 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
     const childId = activeChild?.id; // active-child (defaults to children[0]); was hardcoded children[0]
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.info('[TBOT PairRename] save pressed', {
         hasRouteDeviceId: Boolean(route.params?.deviceId),
         hasPendingDeviceId: Boolean(pendingContext?.deviceId),
@@ -99,7 +100,6 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     } catch (error) {
       const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
       if (__DEV__) {
-        // eslint-disable-next-line no-console
         console.warn('[TBOT PairRename] save failed', { code, deviceId, provisioningAttemptId, childId });
       }
       // A missing/mismatched child profile is a finalize-only problem — the robot
@@ -125,9 +125,12 @@ export default function PairRenameScreen({ navigation, route }: Props) {
 
   return (
     <ScreenShell>
-      <Box paddingHorizontal={20} paddingTop={16} paddingBottom={0}>
-        <Text fontWeight="600" style={styles.title}>Choose a Buddy</Text>
-        <Text style={styles.subtitle}>We don't ask for your child's name or photo.</Text>
+      <Box paddingHorizontal={20} paddingTop={10} paddingBottom={0} flexDirection="row" alignItems="center" gap={14}>
+        <RobotImage variant="body" size={78} />
+        <Box flex={1}>
+          <Text fontWeight="600" style={styles.title}>Choose a Buddy</Text>
+          <Text style={styles.subtitle}>We don't ask for your child's name or photo.</Text>
+        </Box>
       </Box>
       <Box paddingHorizontal={16} paddingTop={20}>
         <Text fontWeight="600" style={styles.sectionLabel}>Buddy</Text>
@@ -143,7 +146,12 @@ export default function PairRenameScreen({ navigation, route }: Props) {
               accessibilityState={{ selected: i === buddy }}
               testID={`buddy-${i}`}
             >
-              <Text style={{ fontSize: 24 }}>{b.ic}</Text>
+              <Icon
+                name={b.ic}
+                size={23}
+                color={i === buddy ? gardenColors.coral : gardenColors.inkSoft}
+                strokeWidth={2.2}
+              />
               <Text style={styles.buddyName}>{b.n}</Text>
             </TouchableOpacity>
           ))}
@@ -156,7 +164,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
           style={styles.nameCard}
           onPress={() => nameInputRef.current?.focus()}
         >
-          <Text style={{ fontSize: 18 }}>🤖</Text>
+          <Icon name="Bot" size={20} color={gardenColors.inkSoft} strokeWidth={2.3} />
           <TextInput
             ref={nameInputRef}
             accessibilityLabel="Robot's name"
@@ -176,6 +184,9 @@ export default function PairRenameScreen({ navigation, route }: Props) {
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} alignItems="center">
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Save Robot buddy and name"
+          accessibilityState={{ disabled: saving }}
           style={[styles.ctaButton, saving && styles.ctaButtonDisabled]}
           onPress={save}
           disabled={saving}

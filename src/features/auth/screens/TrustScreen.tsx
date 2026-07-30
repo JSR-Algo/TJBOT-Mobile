@@ -6,15 +6,16 @@ import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import OnboardingClayRobot from '@/features/onboarding/components/OnboardingClayRobot';
 import { Text } from '@/design-system/primitives/Text';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import { referenceColors } from '@/design-system/referenceTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TrustScreen'>;
 type PromiseKind = 'ads' | 'data' | 'content';
 
 const COLORS = {
-  background: '#E0F7FA',
-  ink: '#2D3436',
-  muted: '#636E72',
-  primary: '#FF6B6B',
+  background: referenceColors.bg,
+  ink: referenceColors.ink,
+  muted: referenceColors.inkSoft,
+  primary: referenceColors.primary,
   white: '#FFFFFF',
 } as const;
 

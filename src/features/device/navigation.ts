@@ -61,11 +61,11 @@ export const DEVICE_SCREENS = defineFeatureScreens([
   { name: ROUTES.PairFailedScreen, component: PairFailedScreen, role: 'stack', backTarget: ROUTES.PairIntroScreen, forwardCycleGroup: 'device-pairing-retry', stateMachineId: 'dv_pair_failed' },
   { name: ROUTES.PairSuccessScreen, component: PairSuccessScreen, role: 'state-machine', backTarget: ROUTES.PairConnectingScreen, stateMachineId: 'dv_pair_success' },
   { name: ROUTES.PairFirstLessonScreen, component: PairFirstLessonScreen, role: 'stack', backTarget: ROUTES.PairRenameScreen, stateMachineId: 'dv_pair_first_lesson' },
-  { name: ROUTES.DeviceFirmwareScreen, component: DeviceFirmwareScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_firmware' },
-  { name: ROUTES.DeviceSessionScreen, component: DeviceSessionScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_session' },
+  { name: ROUTES.DeviceFirmwareScreen, component: DeviceFirmwareScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_firmware', productionVisible: false, productionHiddenReason: 'mvp-scope-hidden' },
+  { name: ROUTES.DeviceSessionScreen, component: DeviceSessionScreen, role: 'fallback-entry', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_session', productionVisible: false, productionHiddenReason: 'mvp-scope-hidden' },
   { name: ROUTES.DeviceLostScreen, component: DeviceLostScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lost' },
-  { name: ROUTES.LCDLessonTurnScreen, component: LCDLessonTurnScreen, role: 'state-machine', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd_turn' },
-  { name: ROUTES.LCDLibraryScreen, component: LCDLibraryScreen, role: 'fallback-entry', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd' },
+  { name: ROUTES.LCDLessonTurnScreen, component: LCDLessonTurnScreen, role: 'state-machine', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd_turn', productionVisible: false, productionHiddenReason: 'mvp-scope-hidden' },
+  { name: ROUTES.LCDLibraryScreen, component: LCDLibraryScreen, role: 'fallback-entry', backTarget: ROUTES.DeviceHomeScreen, stateMachineId: 'dv_lcd', productionVisible: false, productionHiddenReason: 'mvp-scope-hidden' },
 ]);
 
 export const DEVICE_NAVIGATION = {

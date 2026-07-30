@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CloudDownload,
   LocateFixed,
+  Plus,
   Radio,
   RotateCcw,
   Wifi,
@@ -14,6 +15,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import ConnectorStateNotice from '@/components/ConnectorStateNotice';
+import FlowBreadcrumb from '@/components/FlowBreadcrumb';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { referenceColors, referenceImages, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
@@ -57,10 +59,18 @@ export default function DeviceOverviewScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content} testID="deviceOverviewScroll">
-      <Box paddingHorizontal={24} style={styles.header}>
+      <Box paddingHorizontal={20} style={styles.header}>
         <Text i18n={false} fontWeight="800" style={styles.screenTitle}>
           {device ? `Robot • ${device.serialNumber ?? shortDeviceId(device.id)}` : t('Robot')}
         </Text>
+      </Box>
+
+      <Box paddingHorizontal={20}>
+        <FlowBreadcrumb
+          currentIndex={1}
+          steps={['Robot hub', 'Robot detail', 'Pairing setup']}
+          testID="robotDetailBreadcrumb"
+        />
       </Box>
 
       {!statusResult && !error ? (
@@ -135,6 +145,15 @@ export default function DeviceOverviewScreen({ navigation, route }: Props) {
 
           <Section title={t('Robot')}>
             <DeviceRow
+              testID="openPairingSetup"
+              icon={Plus}
+              label={t('Pair another Robot')}
+              value={t('Guided setup')}
+              tone="teal"
+              onPress={() => navigation.navigate(ROUTES.PairAddScreen)}
+            />
+            <Divider />
+            <DeviceRow
               testID="deviceFirmwareRow"
               icon={CloudDownload}
               label={t('Update Robot Firmware')}
@@ -158,6 +177,7 @@ export default function DeviceOverviewScreen({ navigation, route }: Props) {
               onPress={() => navigation.navigate(ROUTES.FactoryResetScreen)}
             />
           </Section>
+
         </>
       ) : statusResult && statusResult.state !== 'ok' ? (
         <Box paddingHorizontal={20} style={styles.blockedWrap}>
@@ -229,7 +249,7 @@ function iconColor(tone: NonNullable<DeviceRowProps['tone']>): string {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: referenceColors.bg },
   content: { paddingTop: 30, paddingBottom: 128 },
-  header: { marginBottom: 18 },
+  header: { marginBottom: 14 },
   screenTitle: { fontSize: 29, lineHeight: 36, color: referenceColors.ink },
   loadingWrap: { minHeight: 220, alignItems: 'center', justifyContent: 'center' },
   blockedWrap: { marginTop: 8 },

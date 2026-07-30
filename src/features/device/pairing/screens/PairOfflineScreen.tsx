@@ -2,9 +2,10 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RobotImage } from '@/components/RobotImage';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import { Icon, type IconName } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -13,16 +14,16 @@ import { ROUTES } from '@/navigation/routes';
 type Props = NativeStackScreenProps<RootStackParamList, 'PairOfflineScreen'>;
 
 const TIPS = [
-  { ic: '🔌', t: 'Check Robot is plugged in', b: 'Or has at least 20% battery', nav: null },
-  { ic: '📶', t: 'Update Wi-Fi', b: 'If your network changed or password rotated', nav: ROUTES.PairWifiScreen },
-  { ic: '🔄', t: 'Open setup mode', b: 'Hold the top button for 5 seconds until Robot is ready to connect', nav: null },
-] as const;
+  { ic: 'PlugZap', t: 'Check Robot is plugged in', b: 'Or has at least 20% battery' },
+  { ic: 'Wifi', t: 'Update Wi-Fi', b: 'If your network changed or password rotated' },
+  { ic: 'RotateCw', t: 'Open setup mode', b: 'Hold the top button for 5 seconds until Robot is ready to connect' },
+] as const satisfies ReadonlyArray<{ ic: IconName; t: string; b: string }>;
 
 export default function PairOfflineScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Robot is offline" onBack={() => navigation.navigate(ROUTES.PairAddScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="reconnect" size={170} accent="#FF6F61" />
+        <RobotImage variant="body" size={170} />
         <Text fontWeight="600" style={styles.heading}>Robot needs a reconnect</Text>
         <Text style={styles.sub}>
           Pairing is safe. Put Robot in setup mode, bring it near your phone, then reconnect.
@@ -40,7 +41,7 @@ export default function PairOfflineScreen({ navigation }: Props) {
               alignItems="center"
             >
               <Box style={styles.tipIcon} alignItems="center" justifyContent="center">
-                <Text style={{ fontSize: 16 }}>{r.ic}</Text>
+                <Icon name={r.ic} size={18} color={DV.accent} strokeWidth={2.4} />
               </Box>
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.tipTitle}>{r.t}</Text>
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
   tipCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, padding: 4 },
   tipRow: { padding: 12 },
   tipBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
-  tipIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#EEF1F5', flexShrink: 0 },
+  tipIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: '#FFE5E5', flexShrink: 0 },
   tipTitle: { fontSize: 14, color: DV.ink },
   tipBody: { fontSize: 12, color: DV.ink2, lineHeight: 20, marginTop: 2 },
 });

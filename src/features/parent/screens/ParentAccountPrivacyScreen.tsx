@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { Icon, type IconName } from '@/design-system/icons';
 import ParentScroll, { PA } from '../components/ParentScroll';
 import PRowGroup from '../components/PRowGroup';
 import {
@@ -68,6 +69,7 @@ function PrivacyActionButton({
   style,
   textColor = PA.ink,
   disabled = false,
+  icon,
 }: {
   label: string;
   accessibilityLabel: string;
@@ -75,6 +77,7 @@ function PrivacyActionButton({
   style: StyleProp<ViewStyle>;
   textColor?: string;
   disabled?: boolean;
+  icon?: IconName;
 }): React.ReactElement {
   const { t } = useAppLanguage();
   const state = disabled ? { disabled: true } : { disabled: false };
@@ -90,9 +93,12 @@ function PrivacyActionButton({
       style={[style, disabled && styles.buttonDisabled]}
       activeOpacity={0.75}
     >
-      <Text accessible={false} style={[styles.actionText, { color: textColor }]}>
-        {label}
-      </Text>
+      <Box flexDirection="row" alignItems="center" gap={7}>
+        {icon ? <Icon name={icon} size={16} color={textColor} strokeWidth={2.4} /> : null}
+        <Text accessible={false} style={[styles.actionText, { color: textColor }]}>
+          {label}
+        </Text>
+      </Box>
     </TouchableOpacity>
   );
 }
@@ -266,7 +272,12 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
 
       <PRowGroup header="Export">
         <Box style={styles.section}>
-          <Text fontWeight="600" style={styles.heading}>{exportTitle}</Text>
+          <Box flexDirection="row" alignItems="center" gap={10} style={styles.sectionHeading}>
+            <Box style={styles.sectionIcon} alignItems="center" justifyContent="center">
+              <Icon name="FileArchive" size={20} color={PA.accent} strokeWidth={2.3} />
+            </Box>
+            <Text fontWeight="600" style={styles.heading}>{exportTitle}</Text>
+          </Box>
           <Text style={styles.body}>Your account archive is prepared securely and expires after the download window.</Text>
           <TextInput
             value={exportConfirm}
@@ -285,6 +296,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
               disabled={busy}
               style={styles.button}
               textColor="#fff"
+              icon="PackageOpen"
             />
             {exportJob ? (
               <PrivacyActionButton
@@ -293,6 +305,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
                 onPress={refreshExport}
                 disabled={busy}
                 style={styles.secondaryButton}
+                icon="RefreshCw"
               />
             ) : null}
           </Box>
@@ -302,6 +315,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
               accessibilityLabel="Download account export"
               onPress={openDownload}
               style={styles.linkButton}
+              icon="Download"
             />
           ) : null}
         </Box>
@@ -309,7 +323,12 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
 
       <PRowGroup header="Delete account">
         <Box style={styles.section}>
-          <Text fontWeight="600" style={styles.heading}>{deleteTitle}</Text>
+          <Box flexDirection="row" alignItems="center" gap={10} style={styles.sectionHeading}>
+            <Box style={styles.dangerIcon} alignItems="center" justifyContent="center">
+              <Icon name="Trash2" size={20} color="#C0392B" strokeWidth={2.3} />
+            </Box>
+            <Text fontWeight="600" style={styles.heading}>{deleteTitle}</Text>
+          </Box>
           <Text style={styles.body}>Deletion starts a 30-day grace period before account data is removed.</Text>
           <TextInput
             value={deleteConfirm}
@@ -337,6 +356,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
               disabled={deletionDisabled}
               style={styles.dangerButton}
               textColor="#fff"
+              icon="Trash2"
             />
             {deletionJob ? (
               <PrivacyActionButton
@@ -345,6 +365,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
                 onPress={refreshDeletion}
                 disabled={busy}
                 style={styles.secondaryButton}
+                icon="RefreshCw"
               />
             ) : null}
           </Box>
@@ -355,6 +376,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
               onPress={cancelDeletion}
               style={styles.linkButton}
               textColor={PA.accent}
+              icon="Undo2"
             />
           ) : null}
         </Box>
@@ -367,12 +389,16 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   section: { padding: 16, backgroundColor: PA.card },
-  heading: { fontSize: 16, color: PA.ink, marginBottom: 6 },
+  sectionHeading: { marginBottom: 8 },
+  sectionIcon: { backgroundColor: '#FFE5E5', borderRadius: 14, height: 40, width: 40 },
+  dangerIcon: { backgroundColor: '#FDECEC', borderRadius: 14, height: 40, width: 40 },
+  heading: { flex: 1, fontSize: 16, color: PA.ink },
   body: { fontSize: 14, color: PA.ink2, lineHeight: 20, marginBottom: 12 },
   input: {
     borderWidth: 1,
     borderColor: PA.hair,
-    borderRadius: 8,
+    backgroundColor: PA.card,
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
@@ -380,9 +406,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   buttonRow: { flexWrap: 'wrap' },
-  button: { overflow: 'hidden', backgroundColor: PA.accent, paddingVertical: 11, paddingHorizontal: 14, borderRadius: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  secondaryButton: { overflow: 'hidden', borderWidth: 1, borderColor: PA.hair, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  dangerButton: { overflow: 'hidden', backgroundColor: '#C0392B', paddingVertical: 11, paddingHorizontal: 14, borderRadius: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  button: { overflow: 'hidden', backgroundColor: PA.accent, paddingVertical: 11, paddingHorizontal: 14, borderRadius: 14, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  secondaryButton: { overflow: 'hidden', borderWidth: 1, borderColor: PA.hair, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  dangerButton: { overflow: 'hidden', backgroundColor: '#C0392B', paddingVertical: 11, paddingHorizontal: 14, borderRadius: 14, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   linkButton: { paddingTop: 12, paddingBottom: 12, minHeight: 44, justifyContent: 'center' },
   actionText: { fontWeight: '700', fontSize: 14 },
   buttonDisabled: { opacity: 0.45 },

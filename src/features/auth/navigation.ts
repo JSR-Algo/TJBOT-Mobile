@@ -20,6 +20,7 @@ export const AUTH_ENTRY_SCREEN = {
 export const AUTH_SCREENS = defineFeatureScreens([
   AUTH_ENTRY_SCREEN,
   { name: ROUTES.WelcomeScreen, component: WelcomeScreen, role: 'auth', stateMachineId: 'onb_welcome' },
+  // Approved first-five auth path: Welcome → Intro carousel → Trust → Login.
   { name: ROUTES.IntroListenScreen, component: IntroListenScreen, role: 'auth', backTarget: ROUTES.WelcomeScreen, stateMachineId: 'onb_intro_listen' },
   { name: ROUTES.IntroSpeakScreen, component: IntroSpeakScreen, role: 'auth', backTarget: ROUTES.IntroListenScreen, stateMachineId: 'onb_intro_speak' },
   { name: ROUTES.IntroRetryScreen, component: IntroRetryScreen, role: 'auth', backTarget: ROUTES.IntroSpeakScreen, stateMachineId: 'onb_intro_retry' },

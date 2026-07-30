@@ -4,6 +4,15 @@ import { ENV } from './src/__env__';
 import { name as appName } from './app.json';
 import { syncMetroBundlerSession } from './src/dev/metroBundlerSession';
 
+// These warnings fire while the App module tree is being imported (before
+// src/App.tsx body runs), so suppress them here. The LogBox pill overlaps the
+// bottom tab bar and swallows taps on pushed screens (Maestro + real users).
+LogBox.ignoreLogs([
+  'The global process.env.EXPO_OS is not defined',
+  'Require cycle: src/features/lesson-demo',
+  'Require cycle: src/navigation/featureRegistry',
+]);
+
 const App = require('./src/App').default;
 
 if (__DEV__) {

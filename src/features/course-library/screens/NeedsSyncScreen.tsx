@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import Robot from '@/design-system/components/Robot';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
@@ -55,7 +55,7 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
   return (
     <DeviceShell title="Robot needs to catch up" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="reconnect" size={170} accent="#FF6F61" />
+        <Robot emotion="worry" size={170} accessibilityLabel="TeeBot waiting to reconnect" />
         <Box style={styles.chipWrap}><CLChip state="needs_sync" /></Box>
         <Text fontWeight="600" style={styles.heading}>Robot has not synced this course yet</Text>
         <Text style={styles.sub}>
@@ -93,9 +93,9 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Try this</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="🔌" title="Check Robot is plugged in" body="Or has at least 20% battery" />
-          <DeviceRow icon="📶" title="Check Robot connection" body="If your network changed or password rotated" onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)} />
-          <DeviceRow icon="🔄" title="Restart Robot" body="Hold the top button for 5 seconds" />
+          <DeviceRow icon="PlugZap" title="Check Robot is plugged in" body="Or has at least 20% battery" />
+          <DeviceRow icon="Wifi" title="Check Robot connection" body="If your network changed or password rotated" onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)} />
+          <DeviceRow icon="RotateCcw" title="Restart Robot" body="Hold the top button for 5 seconds" />
         </Box>
       </Box>
 

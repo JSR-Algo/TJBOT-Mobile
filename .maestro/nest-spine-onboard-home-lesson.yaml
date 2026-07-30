@@ -214,20 +214,11 @@ name: Nest spine — signup → onboarding → Home → library
 - tapOn:
     id: "firstLessonStartCta"
 
-# The onboarding entry opens the backend-backed Lesson Ready screen. Verify
-# that bootstrap completed, then use the authenticated shell to return Home.
+# Robot-first: the first-lesson CTA completes onboarding and lands on HomeHub.
+# The phone lesson player is intentionally hidden (lessons run on the TeeBot).
 - extendedWaitUntil:
     visible:
-      id: "lessonReadyCta"
-    timeout: 60000
-- takeScreenshot: output/maestro/nest-spine/14-lesson-ready
-- tapOn:
-    id: "appShellBack"
-
-# HomeHub
-- extendedWaitUntil:
-    visible:
-      id: "home(PrimaryCta|EmptyCard)"
+      id: "home(PrimaryCta|EmptyCard|EmptyCta)"
     timeout: 60000
 - takeScreenshot: output/maestro/nest-spine/15-home
 

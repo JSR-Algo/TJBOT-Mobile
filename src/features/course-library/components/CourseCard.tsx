@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import LCDFace from '@/design-system/components/LCDFace';
+import RobotImage from '@/components/RobotImage';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from './CL';
@@ -24,14 +24,14 @@ type Props = {
   showLCD?: boolean;
 };
 
-export default function CourseCard({ course, onClick, accent, showLCD = true }: Props) {
+export default function CourseCard({ course, onClick, showLCD = true }: Props) {
   const chipState = isCourseState(course.state) ? course.state : 'not_installed';
   const accessibilityLabel = `${course.title} ${course.state} course`;
   const content = (
     <>
       {showLCD && (
         <Box style={styles.lcdWrap}>
-          <LCDFace emotion={course.lcd} size={72} accent={accent} />
+          <RobotImage variant="head" size={72} />
         </Box>
       )}
       <Box flex={1}>
@@ -89,7 +89,14 @@ const styles = StyleSheet.create({
     padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start',
     minHeight: 44,
   },
-  lcdWrap: { backgroundColor: '#0E1116', borderRadius: 10, padding: 6 },
+  lcdWrap: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: '#FFF9F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chipRow: { marginBottom: 4, flexWrap: 'wrap' },
   ages: { fontSize: 11 },
   title: { fontSize: 15, color: '#1A1A1F', lineHeight: 19 },

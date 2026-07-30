@@ -1,19 +1,33 @@
 appId: net.jasonle.tjbot
 name: ParentSummary required assert + interaction
 ---
-- runFlow:
-    when:
-      visible: "Open"
-    commands:
-      - tapOn: "Open"
+- launchApp:
+    clearState: false
+- openLink: "tjbot://home/home-hub"
 - extendedWaitUntil:
     visible:
-      text: ".*(Parent Space|Khu vực phụ huynh|Chất lượng khóa học|Course quality|Hoàn thành|Completion).*"
+      id: "authenticatedAppShellTabs"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: ".*Open debugger to view warnings.*"
+    commands:
+      - tapOn:
+          point: "92%,93%"
+- tapOn:
+    id: "profileTab"
+- extendedWaitUntil:
+    visible:
+      id: "parentProfileCard"
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      text: ".*(Your child's progress|Tiến độ của bé|Parent Space|Khu vực phụ huynh).*"
     timeout: 15000
 - runFlow:
     when:
-      visible: ".*(Past 30 days|30 ngày qua).*"
+      visible: ".*(Past 30 days|30 ngày qua|This week|Tuần này).*"
     commands:
-      - tapOn: ".*(Past 30 days|30 ngày qua).*"
+      - tapOn: ".*(Past 30 days|30 ngày qua|This week|Tuần này).*"
 - back
 - waitForAnimationToEnd

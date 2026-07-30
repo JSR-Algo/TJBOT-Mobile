@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { Star } from 'lucide-react-native';
+import { Star, Wheat } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -13,6 +13,7 @@ import { ROUTES } from '@/navigation/routes';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { legacyNavigate } from '../legacyNavigation';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FirstLessonEntryScreen'>;
 
@@ -21,15 +22,17 @@ export default function FirstLessonEntryScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useAppLanguage();
   const handleStart = () => {
+    // Robot-first: lessons play on the TeeBot, not the phone. The phone lesson
+    // player (LessonReadyScreen) is hidden from the MVP navigator.
     if (household) {
-      household.completeOnboarding(ROUTES.LessonReadyScreen, false);
+      household.completeOnboarding(ROUTES.HomeHubScreen, false);
       return;
     }
-    legacyNavigate(navigation, ROUTES.LessonReadyScreen);
+    legacyNavigate(navigation, ROUTES.HomeHubScreen);
   };
 
   return (
-    <ScreenShell bg="#E0F7FA" gradient={false}>
+    <ScreenShell bg={referenceColors.bg} gradient={false}>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 28, paddingBottom: Math.max(insets.bottom + 30, 44) }]}
         showsVerticalScrollIndicator={false}
@@ -51,7 +54,7 @@ export default function FirstLessonEntryScreen({ navigation }: Props) {
 
         <Box style={styles.lessonCard} alignItems="center">
           <Box style={styles.lessonArtwork} alignItems="center" justifyContent="center">
-            <Text i18n={false} style={styles.lessonEmoji}>🌾</Text>
+            <Wheat size={68} color="#A26D11" strokeWidth={1.8} accessibilityLabel={t('Farm vocabulary')} />
           </Box>
           <Text i18n={false} fontWeight="800" style={styles.lessonTitle}>{t('Hello, Farm!')}</Text>
           <Box style={styles.lessonMeta}>
@@ -134,12 +137,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 28,
     padding: 28,
-    shadowColor: '#2D3436',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.09,
-    shadowRadius: 22,
     width: '100%',
-    elevation: 5,
+    ...referenceShadow.card,
   },
   lessonArtwork: {
     backgroundColor: '#FFF9F5',
@@ -150,7 +149,6 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     width: 150,
   },
-  lessonEmoji: { fontSize: 76, lineHeight: 92 },
   lessonTitle: {
     color: '#2D3436',
     fontSize: 28,

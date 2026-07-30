@@ -11,6 +11,8 @@ import RobotImage from '@/components/RobotImage';
 import { parentColors } from '@/design-system/tokens';
 import PRChip from '../components/PRChip';
 import { ROUTES } from '@/navigation/routes';
+import { Icon } from '@/design-system/icons';
+import PurchaseStatusCard from '../components/PurchaseStatusCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ArrivedScreen'>;
 
@@ -20,8 +22,13 @@ export default function ArrivedScreen({ navigation, route }: Props) {
   if (!orderId) {
     return (
       <DeviceShell title="Robot is here">
-        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
-          <Text fontWeight="700" style={styles.heading}>Delivery link is missing</Text>
+        <Box paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="PackageOpen"
+            title="Delivery link is missing"
+            body="Open this setup guide from a delivered order so we can keep the correct Robot attached."
+            tone="warning"
+          />
           <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.ShippingScreen)}>Back to tracking</DeviceBigBtn>
         </Box>
       </DeviceShell>
@@ -33,7 +40,10 @@ export default function ArrivedScreen({ navigation, route }: Props) {
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
         <RobotImage variant="body" size={200} />
         <Box style={styles.chipWrap}>
-          <PRChip color={parentColors.success} bg={parentColors.okBg}>📦 Delivered today</PRChip>
+          <PRChip color={parentColors.success} bg={parentColors.okBg}>
+            <Icon name="PackageCheck" size={13} color={parentColors.success} strokeWidth={2.4} />
+            Delivered today
+          </PRChip>
         </Box>
         <Text fontWeight="600" style={styles.heading}>Your Robot has arrived</Text>
         <Text style={styles.sub}>Setup takes about 5 minutes. Find a quiet spot and a nearby outlet.</Text>
@@ -41,9 +51,9 @@ export default function ArrivedScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={16} paddingTop={30}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📦" title="1. Open the box"       body="Robot, charging dock, USB-C cable" />
-          <DeviceRow icon="🔌" title="2. Plug in the dock"   body="Place Robot on it — a soft chime means hello" />
-          <DeviceRow icon="📶" title="3. Connect to your Wi-Fi" body="We'll guide you screen-by-screen" />
+          <DeviceRow icon="Package" title="1. Open the box"       body="Robot, charging dock, USB-C cable" />
+          <DeviceRow icon="PlugZap" title="2. Plug in the dock"   body="Place Robot on it — a soft chime means hello" />
+          <DeviceRow icon="Wifi" title="3. Connect to your Wi-Fi" body="We'll guide you screen-by-screen" />
         </Box>
       </Box>
 

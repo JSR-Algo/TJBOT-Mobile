@@ -1,7 +1,8 @@
 import { StyleSheet } from 'react-native';
+import { referenceColors } from '@/design-system/referenceTheme';
 
 export const COLORS = {
-  background: '#E0F7FA',
+  background: referenceColors.bg,
   card: '#FFFFFF',
   ink: '#2D3436',
   muted: '#636E72',
@@ -87,19 +88,26 @@ export const styles = StyleSheet.create({
   },
   modeTabs: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(99,110,114,0.15)',
+    borderRadius: 20,
+    backgroundColor: '#F5ECDD',
+    padding: 4,
     marginBottom: 24,
   },
   modeTab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 4,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
+    minHeight: 46,
+    borderRadius: 16,
+    paddingHorizontal: 12,
   },
   modeTabActive: {
-    borderBottomColor: COLORS.primary,
+    backgroundColor: COLORS.white,
+    shadowColor: COLORS.ink,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   modeTabText: {
     color: COLORS.muted,

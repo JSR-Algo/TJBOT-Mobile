@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import Robot from '@/design-system/components/Robot';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -53,7 +53,7 @@ export default function CourseAddedScreen({ navigation, route }: Props) {
   return (
     <DeviceShell title={t('Queued for your robot')}>
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="celebrate" size={180} accent="#FF6F61" />
+        <Robot emotion="success" size={180} accessibilityLabel="TeeBot celebrating the queued course" />
         <Text fontWeight="600" style={styles.heading}>{c.title}</Text>
         <Text style={styles.sub}>{t("Robot will pick this up when it's back online.")}</Text>
       </Box>

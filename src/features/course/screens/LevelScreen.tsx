@@ -4,6 +4,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
+import { Icon, type IconName } from '@/design-system/icons';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
@@ -13,15 +14,15 @@ import { ROUTES } from '@/navigation/routes';
 type Props = NativeStackScreenProps<RootStackParamList, 'LevelScreen'>;
 
 const UNITS = [
-  { id: 'U1', title: 'Say hi',       icon: '👋', state: 'done',    color: '#FF6F61' },
-  { id: 'U2', title: 'My name',      icon: '🪪', state: 'done',    color: '#5BC8F5' },
-  { id: 'U3', title: 'How are you?', icon: '🙂', state: 'current', color: '#FF6F61' },
-  { id: 'U4', title: 'Numbers 1-5',  icon: '🔢', state: 'locked',  color: '#6CE2B6' },
-  { id: 'U5', title: 'Colors',       icon: '🎨', state: 'locked',  color: '#FFC857' },
-];
+  { id: 'U1', title: 'Say hi',       icon: 'Hand' as IconName,        state: 'done',    color: '#FF6F61' },
+  { id: 'U2', title: 'My name',      icon: 'Contact' as IconName,     state: 'done',    color: '#5BC8F5' },
+  { id: 'U3', title: 'How are you?', icon: 'Smile' as IconName,       state: 'current', color: '#FF6F61' },
+  { id: 'U4', title: 'Numbers 1-5',  icon: 'ListOrdered' as IconName, state: 'locked',  color: '#6CE2B6' },
+  { id: 'U5', title: 'Colors',       icon: 'Palette' as IconName,     state: 'locked',  color: '#FFC857' },
+] as const;
 
 function LessonNode({ state, icon, color, big, label, onPress }: {
-  state: string; icon: string; color: string; big?: boolean;
+  state: string; icon: IconName; color: string; big?: boolean;
   label?: string; onPress?: () => void;
 }) {
   const size = big ? 112 : 88;
@@ -37,6 +38,9 @@ function LessonNode({ state, icon, color, big, label, onPress }: {
         onPress={onPress}
         disabled={isLocked}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={label ?? 'Open unit'}
+        accessibilityState={{ disabled: isLocked }}
         style={[
           styles.node,
           { width: size, height: size, borderRadius: size / 2, backgroundColor: bg },
@@ -47,7 +51,7 @@ function LessonNode({ state, icon, color, big, label, onPress }: {
           ? <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#9A917F" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><Rect x={4} y={11} width={16} height={10} rx={2} /><Path d="M8 11V7a4 4 0 018 0v4" /></Svg>
           : isDone
           ? <Svg width={34} height={34} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round"><Path d="M5 12l5 5L20 7" /></Svg>
-          : <Text style={{ fontSize: big ? 44 : 36 }}>{icon}</Text>}
+          : <Icon name={icon} size={big ? 42 : 34} color="#FFFFFF" strokeWidth={2.3} />}
         {isReview && <Box style={styles.reviewBadge}><Text fontWeight="800" style={styles.reviewBadgeText}>!</Text></Box>}
       </TouchableOpacity>
       {label && (
@@ -83,6 +87,7 @@ export default function LevelScreen({ navigation }: Props) {
               icon={u.icon}
               color={u.color}
               big={u.state === 'current'}
+              label={`Unit ${i + 1}: ${u.title}`}
               onPress={() => u.state !== 'locked' && navigation.navigate(ROUTES.UnitScreen)}
             />
             <Text fontWeight="700" style={[styles.unitLabel, { color: u.state === 'locked' ? '#8B8B96' : '#2B2140' }]}>

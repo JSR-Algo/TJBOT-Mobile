@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import Robot from '@/design-system/components/Robot';
+import { Icon } from '@/design-system/icons';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -70,12 +70,20 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
   const lessonTitle = assignment?.lessonTitle?.trim() ? assignment.lessonTitle : "Today's lesson";
   const presentation = preload ? presentAssignmentState(preload.state) : null;
   const errorCopy = preload?.errorCode ? formatLessonCopy(getErrorMessage(preload.errorCode)) : null;
-  const statusCopy = presentation ? formatLessonCopy(presentation.copy, { lesson: lessonTitle }) : 'Getting things ready…';
+  const statusCopy = !deviceId
+    ? 'Choose a Robot to prepare this lesson.'
+    : presentation
+      ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
+      : 'Getting things ready…';
 
   return (
-    <DeviceShell title={ready ? 'Robot is ready' : statusCopy}>
+    <DeviceShell title={!deviceId ? 'Choose a Robot' : ready ? 'Robot is ready' : statusCopy}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion={ready ? 'happy' : 'listening'} size={200} accent="#FF6F61" />
+        <Robot
+          emotion={ready ? 'success' : deviceId ? 'listen' : 'curious'}
+          size={200}
+          accessibilityLabel={ready ? 'TeeBot ready for the lesson' : 'TeeBot preparing the lesson'}
+        />
         {ready ? (
           <Box style={styles.chipWrap}><CLChip state="ready" /></Box>
         ) : (
@@ -85,7 +93,9 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
         <Text style={styles.sub}>
           {ready
             ? 'Place Robot on the table. When your child taps it, the lesson starts.'
-            : 'Keep Robot powered on and connected while the lesson downloads.'}
+            : deviceId
+              ? 'Keep Robot powered on and connected while the lesson downloads.'
+              : 'Open your Robot list and choose the device that should receive this lesson.'}
         </Text>
         {errorCopy ? <Text style={styles.errorText}>{errorCopy}</Text> : null}
       </Box>
@@ -93,9 +103,9 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.checkCard}>
           {/* Lesson-loaded row — gated on the REAL preload state, never good:true. */}
-          <Box style={styles.checkRow} accessibilityLabel={ready ? 'Lesson loaded · Ready on Robot' : 'Lesson loading'}>
+          <Box style={styles.checkRow} accessibilityLabel={ready ? 'Lesson loaded · Ready on Robot' : deviceId ? 'Lesson loading' : 'Robot not selected'}>
             <Box style={styles.checkIcon}>
-              <Text style={{ fontSize: 14 }}>📚</Text>
+              <Icon name={deviceId ? 'BookOpen' : 'Bot'} size={16} color={CL.ink2} strokeWidth={2.3} />
             </Box>
             <Box flex={1}>
               <Text fontWeight="600" style={styles.checkTitle}>Lesson loaded</Text>
@@ -107,28 +117,30 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
                     : statusCopy}
               </Text>
             </Box>
-            {ready && (
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={CL.good} strokeWidth={2.4} strokeLinecap="round">
-                <Path d="M5 12l5 5 9-10" />
-              </Svg>
-            )}
+            {ready ? <Icon name="CircleCheck" size={18} color={CL.good} strokeWidth={2.4} /> : null}
           </Box>
         </Box>
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn
-          disabled={!ready}
-          onClick={() =>
-            navigation.navigate(ROUTES.RunningScreen, {
-              deviceId,
-              assignmentId: route.params?.assignmentId,
-              lessonTitle,
-            })
-          }
-        >
-          {ready ? 'Hand it to your child' : 'Preparing…'}
-        </DeviceBigBtn>
+        {deviceId ? (
+          <DeviceBigBtn
+            disabled={!ready}
+            onClick={() =>
+              navigation.navigate(ROUTES.RunningScreen, {
+                deviceId,
+                assignmentId: route.params?.assignmentId,
+                lessonTitle,
+              })
+            }
+          >
+            {ready ? 'Hand it to your child' : 'Preparing…'}
+          </DeviceBigBtn>
+        ) : (
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+            Choose a Robot
+          </DeviceBigBtn>
+        )}
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Pick a different lesson</DeviceBigBtn>
       </Box>
     </DeviceShell>

@@ -10,14 +10,15 @@ import RobotHero from '../components/RobotHero';
 import PRChip from '../components/PRChip';
 import { ROUTES } from '@/navigation/routes';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import { Icon, type IconName } from '@/design-system/icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PurchaseIntroScreen'>;
 
 const FEATURES = [
-  { ic: '🎙️', t: 'Built for spoken English', b: 'Robot is a patient listener — kids speak out loud, not type.' },
-  { ic: '🪶',  t: 'Calm, never pushy',        b: 'No streaks, no badges that hurt to lose. Just steady warmth.' },
-  { ic: '👨‍👩‍👧', t: 'Designed with parents',    b: 'You set the courses. Your child sees only what you choose.' },
-];
+  { icon: 'Mic' as IconName, t: 'Built for spoken English', b: 'Robot is a patient listener — kids speak out loud, not type.' },
+  { icon: 'Feather' as IconName, t: 'Calm, never pushy', b: 'No streaks, no badges that hurt to lose. Just steady warmth.' },
+  { icon: 'UsersRound' as IconName, t: 'Designed with parents', b: 'You set the courses. Your child sees only what you choose.' },
+] as const;
 
 export default function PurchaseIntroScreen({ navigation }: Props) {
   const { t } = useAppLanguage();
@@ -42,7 +43,9 @@ export default function PurchaseIntroScreen({ navigation }: Props) {
         <Box style={styles.featureCard}>
           {FEATURES.map((r, i) => (
             <Box key={r.t} style={[styles.featureRow, i < FEATURES.length - 1 && styles.featureBorder]}>
-              <Box style={styles.featureIcon}><Text style={{ fontSize: 16 }}>{r.ic}</Text></Box>
+              <Box style={styles.featureIcon}>
+                <Icon name={r.icon} size={18} color={PR.accent} strokeWidth={2.3} />
+              </Box>
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.featureTitle}>{r.t}</Text>
                 <Text style={styles.featureBody}>{r.b}</Text>

@@ -29,6 +29,10 @@ initSentry({ userRole: 'unknown', enableAutoSessionTracking: false });
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
+  // Benign dev warnings that must not raise the LogBox pill over the tab bar:
+  'The global process.env.EXPO_OS is not defined',
+  'Require cycle: src/features/lesson-demo',
+  'Require cycle: src/navigation/featureRegistry',
 ]);
 
 export const __ageGateBootPromise: Promise<ResolvedRole> = (async () => {

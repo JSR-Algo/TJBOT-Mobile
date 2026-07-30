@@ -56,7 +56,7 @@ export type RootStackParamList = {
   LevelScreen: undefined | { levelId?: string };
   UnitScreen: undefined | { unitId?: string };
   LessonListScreen: undefined | { unitId?: string };
-  LessonDetailScreen: undefined | { lessonId?: string };
+  LessonDetailScreen: undefined | { lessonId?: string; courseId?: string };
   ReviewEntryScreen: undefined;
   DailyMissionScreen: undefined;
 

@@ -3,10 +3,11 @@ import { StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RobotImage } from '@/components/RobotImage';
 import ConnectorStateNotice from '@/components/ConnectorStateNotice';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -46,8 +47,12 @@ export default function DeviceLostScreen({ navigation }: Props) {
   if (localDeviceQuery.isLoading || statusQuery.isLoading) {
     return (
       <DeviceShell title="Find Robot" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
-        <Box paddingHorizontal={24} paddingTop={30}>
-          <Text style={styles.sub}>Loading Robot...</Text>
+        <Box paddingHorizontal={20} paddingTop={30}>
+          <Box style={styles.loadingCard} alignItems="center" gap={12}>
+            <Icon name="Radar" size={32} color={DV.accent} strokeWidth={2.2} />
+            <Text fontWeight="700" style={styles.loadingTitle}>Loading Robot...</Text>
+            <Text style={styles.sub}>Checking the last known connection.</Text>
+          </Box>
         </Box>
       </DeviceShell>
     );
@@ -92,7 +97,7 @@ export default function DeviceLostScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Find Robot" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion={chiming ? 'happy' : device.online ? 'listen' : 'sleep'} size={180} accent="#FF6F61" />
+        <RobotImage variant="body" size={180} />
         <Text fontWeight="600" style={styles.heading}>
           {chiming ? 'Robot is chiming!' : "Can't find Robot?"}
         </Text>
@@ -105,7 +110,14 @@ export default function DeviceLostScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={16} paddingTop={30}>
         <Box style={styles.infoCard} flexDirection="row" alignItems="center" gap={10}>
-          <Box style={[styles.dot, !device.online && styles.dotOffline]} />
+          <Box style={[styles.statusIcon, !device.online && styles.statusIconOffline]} alignItems="center" justifyContent="center">
+            <Icon
+              name={device.online ? 'Wifi' : 'WifiOff'}
+              size={18}
+              color={device.online ? DV.good : DV.ink3}
+              strokeWidth={2.4}
+            />
+          </Box>
           <Text i18n={false} style={styles.infoText}>{statusSummary}</Text>
         </Box>
       </Box>
@@ -123,9 +135,11 @@ export default function DeviceLostScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   heading: { fontSize: 20, color: DV.ink, textAlign: 'center', marginTop: 24, maxWidth: 280 },
+  loadingCard: { backgroundColor: DV.card, borderColor: DV.hair, borderRadius: 24, borderWidth: 1, padding: 24 },
+  loadingTitle: { color: DV.ink, fontSize: 18 },
   sub: { fontSize: 14, color: DV.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 8 },
-  infoCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: DV.good },
-  dotOffline: { backgroundColor: DV.ink3 },
+  infoCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 18, padding: 14 },
+  statusIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: '#E6F8EF' },
+  statusIconOffline: { backgroundColor: '#EEF1F5' },
   infoText: { fontSize: 14, color: DV.ink2 },
 });

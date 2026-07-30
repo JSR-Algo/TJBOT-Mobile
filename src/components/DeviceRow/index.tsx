@@ -4,7 +4,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { referenceColors } from '@/design-system/referenceTheme';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
-import { Icon } from '@/design-system/icons';
+import { Icon, type IconName } from '@/design-system/icons';
 
 const DV = {
   ink: referenceColors.ink,
@@ -29,10 +29,24 @@ export default function DeviceRow({ icon, title, body, right, onClick, danger }:
     .filter((value): value is string => typeof value === 'string' && value.length > 0)
     .map(value => translateCopy(value, { locale: language }))
     .join('. ');
-  const renderedIcon =
-    typeof icon === 'string' || typeof icon === 'number'
-      ? <Text style={styles.iconText}>{icon}</Text>
-      : icon;
+  const semanticIconName = typeof icon === 'string' ? icon as IconName : undefined;
+  const renderedIcon = semanticIconName ? (
+    <Icon
+      name={semanticIconName}
+      size={19}
+      color={danger ? '#C0392B' : referenceColors.secondary}
+      strokeWidth={2.3}
+      testID="device-row-semantic-icon"
+    />
+  ) : typeof icon === 'number' ? (
+    <Icon
+      name="Circle"
+      size={19}
+      color={danger ? '#C0392B' : referenceColors.secondary}
+      strokeWidth={2.3}
+      testID="device-row-semantic-icon"
+    />
+  ) : icon;
   const content = (
     <>
       {icon ? (
@@ -93,9 +107,5 @@ const styles = StyleSheet.create({
     backgroundColor: referenceColors.secondarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconText: {
-    fontSize: 18,
-    lineHeight: 22,
   },
 });

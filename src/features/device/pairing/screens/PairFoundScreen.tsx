@@ -2,12 +2,13 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
+import { Icon } from '@/design-system/icons';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import { ROUTES } from '@/navigation/routes';
 import { CLAIM_COPY } from '../claimCopy';
 import { describeClaimFailure, type ClaimStatusDescriptor } from '../claimStatus';
@@ -19,6 +20,14 @@ import { requestClaim } from '@/services/api/claim.api';
 import { mintBootstrapToken } from '@/services/api/device.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFoundScreen'>;
+
+const PAIRING_STEPS = [
+  { title: 'Prepare', meta: 'Bluetooth and local network allowed', state: 'complete' },
+  { title: 'Confirm identity', meta: 'Match the code shown on TeeBot', state: 'current' },
+  { title: 'Connect Wi-Fi', meta: 'Securely hand off home network', state: 'upcoming' },
+  { title: 'Name and assign', meta: 'Choose a room and child', state: 'upcoming' },
+  { title: 'Verify', meta: 'Run speaker, screen and network checks', state: 'upcoming' },
+] as const;
 
 export default function PairFoundScreen({ navigation, route }: Props) {
   const params = route.params;
@@ -144,54 +153,127 @@ export default function PairFoundScreen({ navigation, route }: Props) {
     : wifiClaimError?.body ?? claimState.error?.body;
 
   return (
-    <DeviceShell title="We found your Robot" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
-      <Box paddingHorizontal={16} paddingTop={24}>
-        <Box style={styles.card} flexDirection="row" gap={14} alignItems="center">
-          <RobotDevice emotion="paired" size={84} accent="#FF6F61" />
-          <Box flex={1}>
-            <Text fontWeight="600" style={styles.robotName}>Robot · {serialNumber}</Text>
-            <Box flexDirection="row" alignItems="center" gap={6} style={{ marginTop: 2 }}>
-              <Box style={styles.greenDot} />
-              <Text style={styles.readyText}>Ready to pair</Text>
+    <DeviceShell
+      screenTestID="pairingSetupPage"
+      scrollTestID="pairingSetupScroll"
+      hideHeader
+    >
+      <Box paddingHorizontal={20}>
+        <Text fontWeight="800" style={styles.eyebrow}>Add a TeeBot</Text>
+        <Text fontWeight="800" style={styles.pageTitle}>Pairing setup</Text>
+        <Text style={styles.summary}>Search, confirm identity, connect Wi-Fi, name and verify the robot.</Text>
+
+        <Box style={styles.hero} flexDirection="row" alignItems="center" gap={16}>
+          <Box style={styles.heroDecoration} />
+          <Box style={styles.heroDecorationInner} />
+          <Box style={styles.heroIcon} alignItems="center" justifyContent="center">
+            <Icon name="Bluetooth" size={34} strokeWidth={2.7} color={referenceColors.primaryDeep} testID="pairingBluetoothIcon" />
+          </Box>
+          <Box flex={1} style={styles.heroContent}>
+            <Text fontWeight="800" style={styles.heroMetric}>Step 2 of 5</Text>
+            <Text fontWeight="700" style={styles.heroLabel}>Confirm the robot</Text>
+            <Box style={styles.heroProgress}>
+              <Box style={styles.heroProgressFill} />
             </Box>
-            <Text style={styles.signalText}>Signal: strong · Battery: 78%</Text>
           </Box>
         </Box>
-      </Box>
-      <Box paddingHorizontal={20} paddingTop={18}>
-        <Text style={styles.warning}>
-          Make sure this is <Text fontWeight="600" style={{ color: DV.ink }}>your</Text> Robot before pairing.
-        </Text>
+
+        <Box style={styles.stepsCard}>
+          {PAIRING_STEPS.map((step, index) => {
+            const current = step.state === 'current';
+            return (
+              <Box key={step.title} style={styles.stepRow} flexDirection="row" gap={12}>
+                <Box style={styles.stepRail} alignItems="center">
+                  <Box
+                    style={[styles.stepNumber, current && styles.stepNumberCurrent]}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Text
+                      i18n={false}
+                      fontWeight="800"
+                      style={[styles.stepNumberText, current && styles.stepNumberTextCurrent]}
+                    >
+                      {index + 1}
+                    </Text>
+                  </Box>
+                  {index < PAIRING_STEPS.length - 1 ? <Box style={styles.stepConnector} /> : null}
+                </Box>
+                <Box flex={1} paddingTop={4}>
+                  <Text fontWeight="800" style={styles.stepTitle}>{step.title}</Text>
+                  <Text style={styles.stepMeta}>{step.meta}</Text>
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+
+        <Box style={styles.robotCard}>
+          <Text i18n={false} fontWeight="800" style={styles.robotName}>{`TeeBot · ${serialNumber}`}</Text>
+          <Text style={styles.robotMeta}>Nearby · ready to confirm</Text>
+        </Box>
+
+        <Box style={styles.notice} flexDirection="row" gap={12}>
+          <Icon name="ShieldCheck" size={22} color={referenceColors.primaryDeep} />
+          <Box flex={1}>
+            <Text fontWeight="800" style={styles.noticeTitle}>Check the physical robot</Text>
+            <Text style={styles.noticeBody}>Only continue when the robot shown here is the one beside you.</Text>
+          </Box>
+        </Box>
+
         {statusTitle ? (
           <Box style={styles.statusBox} gap={4}>
             <Text fontWeight="600" style={styles.statusTitle}>{statusTitle}</Text>
             {statusBody ? <Text style={styles.statusBody}>{statusBody}</Text> : null}
           </Box>
         ) : null}
-      </Box>
-      <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={startClaim} disabled={primaryDisabled}>
-          {primaryLabel}
-        </DeviceBigBtn>
-        {claimState.phase === 'failed' && claimState.error?.retryable ? (
-          <DeviceBigBtn secondary onClick={claimActions.retry}>Try again</DeviceBigBtn>
-        ) : null}
-        {showFallbackButton ? (
-          <DeviceBigBtn secondary onClick={openFallback}>Scan QR or enter code</DeviceBigBtn>
-        ) : null}
-        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Search again</DeviceBigBtn>
+
+        <Box paddingTop={20} paddingBottom={30} gap={10}>
+          <DeviceBigBtn onClick={startClaim} disabled={primaryDisabled}>
+            {primaryLabel}
+          </DeviceBigBtn>
+          {claimState.phase === 'failed' && claimState.error?.retryable ? (
+            <DeviceBigBtn secondary onClick={claimActions.retry}>Try again</DeviceBigBtn>
+          ) : null}
+          {showFallbackButton ? (
+            <DeviceBigBtn secondary onClick={openFallback}>Scan QR or enter code</DeviceBigBtn>
+          ) : null}
+          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.PairSearchScreen)}>Search again</DeviceBigBtn>
+        </Box>
       </Box>
     </DeviceShell>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 14, padding: 16 },
-  robotName: { fontSize: 15, color: DV.ink, marginBottom: 2 },
-  greenDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: DV.good },
-  readyText: { fontSize: 13, color: DV.ink2 },
-  signalText: { fontSize: 12, color: DV.ink3, marginTop: 2 },
-  warning: { fontSize: 13, color: DV.ink2, lineHeight: 22 },
+  eyebrow: { color: referenceColors.primaryDeep, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase' },
+  pageTitle: { color: DV.ink, fontSize: 29, letterSpacing: -0.9, lineHeight: 34, marginTop: 6 },
+  summary: { color: DV.ink2, fontSize: 12, lineHeight: 18, marginTop: 7 },
+  hero: { backgroundColor: referenceColors.primarySoft, borderRadius: 28, marginTop: 18, minHeight: 126, overflow: 'hidden', padding: 18 },
+  heroDecoration: { borderColor: 'rgba(255,255,255,0.52)', borderRadius: 70, borderWidth: 18, bottom: -52, height: 118, position: 'absolute', right: -38, width: 118 },
+  heroDecorationInner: { borderColor: 'rgba(255,255,255,0.45)', borderRadius: 54, borderWidth: 12, bottom: -37, height: 90, position: 'absolute', right: -24, width: 90 },
+  heroIcon: { backgroundColor: referenceColors.card, borderRadius: 22, height: 68, width: 68, ...referenceShadow.card },
+  heroContent: { zIndex: 1 },
+  heroMetric: { color: DV.ink, fontSize: 25, letterSpacing: -0.8, lineHeight: 29 },
+  heroLabel: { color: DV.ink2, fontSize: 12, marginTop: 4 },
+  heroProgress: { backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: 99, height: 7, marginTop: 12, overflow: 'hidden' },
+  heroProgressFill: { backgroundColor: referenceColors.primary, borderRadius: 99, height: 7, width: '40%' },
+  stepsCard: { backgroundColor: referenceColors.card, borderRadius: 25, marginTop: 16, paddingHorizontal: 18, paddingVertical: 16, ...referenceShadow.card },
+  stepRow: { minHeight: 62 },
+  stepRail: { width: 38 },
+  stepNumber: { backgroundColor: referenceColors.bgWarm, borderColor: DV.hair, borderRadius: 19, borderWidth: 1, height: 38, width: 38, zIndex: 1 },
+  stepNumberCurrent: { backgroundColor: referenceColors.card, borderColor: referenceColors.primary, borderWidth: 2, shadowColor: referenceColors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 6, elevation: 2 },
+  stepNumberText: { color: DV.ink3, fontSize: 10 },
+  stepNumberTextCurrent: { color: referenceColors.primaryDeep },
+  stepConnector: { backgroundColor: DV.hair, flex: 1, marginVertical: -1, width: 2 },
+  stepTitle: { color: DV.ink, fontSize: 12 },
+  stepMeta: { color: DV.ink3, fontSize: 9, lineHeight: 13, marginTop: 3 },
+  robotCard: { backgroundColor: referenceColors.card, borderColor: referenceColors.primary, borderRadius: 20, borderWidth: 1, marginTop: 14, padding: 16 },
+  robotName: { color: DV.ink, fontSize: 13 },
+  robotMeta: { color: DV.ink2, fontSize: 11, marginTop: 5 },
+  notice: { backgroundColor: referenceColors.primarySoft, borderRadius: 18, marginTop: 14, padding: 14 },
+  noticeTitle: { color: DV.ink, fontSize: 12 },
+  noticeBody: { color: DV.ink2, fontSize: 10, lineHeight: 15, marginTop: 4 },
   statusBox: { marginTop: 14, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, backgroundColor: DV.card, padding: 12 },
   statusTitle: { fontSize: 14, color: DV.ink },
   statusBody: { fontSize: 12, color: DV.ink2, lineHeight: 20 },

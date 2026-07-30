@@ -2,10 +2,11 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import LCDFace from '@/design-system/components/LCDFace';
+import RobotImage from '@/components/RobotImage';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { RM } from '../components/RM';
@@ -37,12 +38,6 @@ export default function MicTestScreen({ navigation }: Props) {
     }
   }, []);
 
-  const emotion =
-    phase === 'disabled' ? 'sleep' :
-    phase === 'listening' ? 'listening' :
-    phase === 'pass' ? 'happy' :
-    phase === 'fail' ? 'sad' :
-    'idle';
   const heading =
     phase === 'disabled' ? 'Device tools are off' :
     phase === 'idle' ? 'Ready to listen' :
@@ -63,8 +58,16 @@ export default function MicTestScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Microphone test" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <Box style={styles.lcdWrap}>
-          <LCDFace emotion={emotion} size={140} accent="#FF6F61" />
+        <Box style={styles.robotStage} alignItems="center" justifyContent="center">
+          <RobotImage variant="body" size={150} />
+          <Box style={styles.micBadge} alignItems="center" justifyContent="center">
+            <Icon
+              name={phase === 'pass' ? 'BadgeCheck' : phase === 'fail' ? 'MicOff' : 'Mic2'}
+              size={22}
+              color={phase === 'pass' ? RM.good : phase === 'fail' ? RM.danger : RM.accent}
+              strokeWidth={2.4}
+            />
+          </Box>
         </Box>
         <Text fontWeight="600" style={styles.heading}>{heading}</Text>
         <Text style={styles.sub}>{sub}</Text>
@@ -81,8 +84,16 @@ export default function MicTestScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={24} paddingTop={24}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📍" title="Listening tips" body="Keep TVs and fans quiet during the test" />
-          <DeviceRow icon="🌬️" title="Background noise" body={phase === 'pass' ? 'Quiet enough for this test' : 'Checking…'} />
+          <DeviceRow
+            icon={<Icon name="MapPin" size={20} color={RM.ink2} />}
+            title="Listening tips"
+            body="Keep TVs and fans quiet during the test"
+          />
+          <DeviceRow
+            icon={<Icon name="AudioLines" size={20} color={RM.ink2} />}
+            title="Background noise"
+            body={phase === 'pass' ? 'Quiet enough for this test' : 'Checking…'}
+          />
         </Box>
       </Box>
 
@@ -107,7 +118,23 @@ export default function MicTestScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  lcdWrap: { backgroundColor: '#0E1116', borderRadius: 14, padding: 8 },
+  robotStage: {
+    width: 174,
+    height: 174,
+    borderRadius: 87,
+    backgroundColor: '#FFF9F0',
+  },
+  micBadge: {
+    position: 'absolute',
+    right: 2,
+    bottom: 14,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: RM.card,
+    borderWidth: 1,
+    borderColor: RM.hair,
+  },
   heading: { fontSize: 22, color: RM.ink, letterSpacing: -0.3, textAlign: 'center', marginTop: 18 },
   sub: { fontSize: 13, color: RM.ink2, textAlign: 'center', maxWidth: 280, lineHeight: 20, marginTop: 6 },
   meterRow: { paddingHorizontal: 30, paddingTop: 30, height: 90, flexDirection: 'row' },

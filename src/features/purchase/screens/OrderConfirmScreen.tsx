@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
@@ -13,6 +12,8 @@ import { parentColors } from '@/design-system/tokens';
 import { getOrder, type Order } from '@/services/api/purchase.api';
 import { refreshEntitlementsAfterPurchase } from '@/services/api/account';
 import { ROUTES } from '@/navigation/routes';
+import { Icon } from '@/design-system/icons';
+import PurchaseStatusCard from '../components/PurchaseStatusCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderConfirmScreen'>;
 
@@ -47,8 +48,13 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
   if (!orderId) {
     return (
       <DeviceShell title="Order placed">
-        <Box paddingHorizontal={24} paddingTop={40}>
-          <Text fontWeight="700" style={styles.heading}>Order link is missing</Text>
+        <Box paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="ReceiptText"
+            title="Order link is missing"
+            body="Open an order from checkout or billing history to see its confirmation."
+            tone="warning"
+          />
           <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CheckoutScreen)}>Back to checkout</DeviceBigBtn>
         </Box>
       </DeviceShell>
@@ -58,8 +64,12 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
   if (status === 'loading') {
     return (
       <DeviceShell title="Order placed">
-        <Box paddingHorizontal={24} paddingTop={40}>
-          <Text style={styles.sub}>Loading order...</Text>
+        <Box paddingHorizontal={20} paddingTop={28}>
+          <PurchaseStatusCard
+            icon="LoaderCircle"
+            title="Loading your order"
+            body="Checking payment and delivery details."
+          />
         </Box>
       </DeviceShell>
     );
@@ -68,8 +78,13 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
   if (status === 'error') {
     return (
       <DeviceShell title="Order placed">
-        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
-          <Text fontWeight="700" style={styles.heading}>Order needs a retry</Text>
+        <Box paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="RefreshCcw"
+            title="Order needs a retry"
+            body="We could not load the latest order status. Your payment has not been changed."
+            tone="danger"
+          />
           <DeviceBigBtn onClick={loadOrder}>Retry order status</DeviceBigBtn>
         </Box>
       </DeviceShell>
@@ -79,9 +94,14 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
   if (order?.status !== 'paid') {
     return (
       <DeviceShell title="Order placed">
-        <Box paddingHorizontal={24} paddingTop={40}>
-          <Text fontWeight="700" style={styles.heading}>Payment not complete</Text>
-          <Text style={styles.sub}>Finish payment before delivery setup.</Text>
+        <Box paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="CreditCard"
+            title="Payment not complete"
+            body="Finish payment before delivery setup. No delivery has been scheduled yet."
+            tone="warning"
+          />
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CheckoutScreen)}>Return to checkout</DeviceBigBtn>
         </Box>
       </DeviceShell>
     );
@@ -91,9 +111,7 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
     <DeviceShell title="Order placed">
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <Box style={styles.checkCircle}>
-          <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={parentColors.success} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M5 12l5 5 9-10" />
-          </Svg>
+          <Icon name="CircleCheck" size={32} color={parentColors.success} strokeWidth={2.6} />
         </Box>
         <Text fontWeight="600" style={styles.heading}>Order confirmed</Text>
         <Text style={styles.sub}>
@@ -116,9 +134,9 @@ export default function OrderConfirmScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={20}>
         <Text fontWeight="700" style={styles.sectionLabel}>Next</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📦" title="Today"        body="We're packing your order" />
-          <DeviceRow icon="🚚" title="Tue – Thu"    body="Arrives at 247 Linden St · free shipping" />
-          <DeviceRow icon="🤖" title="When it arrives" body="Open the app — we'll guide setup in 5 minutes" />
+          <DeviceRow icon="Package" title="Today"        body="We're packing your order" />
+          <DeviceRow icon="Truck" title="Tue – Thu"    body="Arrives at 247 Linden St · free shipping" />
+          <DeviceRow icon="Bot" title="When it arrives" body="Open the app — we'll guide setup in 5 minutes" />
         </Box>
       </Box>
 

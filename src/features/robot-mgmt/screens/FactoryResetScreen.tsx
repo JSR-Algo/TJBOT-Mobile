@@ -1,13 +1,13 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import Svg, { Path, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import RobotImage from '@/components/RobotImage';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import DeviceRow from '@/components/DeviceRow';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { getDeviceStatus, unpairDevice } from '@/services/api/device.api';
@@ -61,10 +61,7 @@ export default function FactoryResetScreen({ navigation }: Props) {
       <DeviceShell title="Factory reset" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
         <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
           <Box style={styles.dangerCircle} alignItems="center" justifyContent="center">
-            <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={RM.danger} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12 8v5M12 17v.01" />
-              <Circle cx={12} cy={12} r={9} />
-            </Svg>
+            <Icon name="TriangleAlert" size={32} color={RM.danger} strokeWidth={2.2} />
           </Box>
           <Text fontWeight="600" style={styles.heading}>This will erase your Robot</Text>
           <Text style={styles.sub}>
@@ -73,10 +70,10 @@ export default function FactoryResetScreen({ navigation }: Props) {
         </Box>
         <Box paddingHorizontal={16} paddingTop={24}>
           <Box style={styles.rowCard}>
-            <DeviceRow icon="🤖" title="Robot will forget your Wi-Fi" body="And the pairing with this app" />
-            <DeviceRow icon="📚" title="Courses will be removed" body="They stay in your library and re-download anytime" />
-            <DeviceRow icon="🌱" title="Your child's progress is safe" body="Stored in your account, not on the device" />
-            <DeviceRow icon="🔄" title="Robot will restart" body="Setup takes about 5 minutes" />
+            <DeviceRow icon={<Icon name="WifiOff" size={20} color={RM.ink2} />} title="Robot will forget your Wi-Fi" body="And the pairing with this app" />
+            <DeviceRow icon={<Icon name="BookX" size={20} color={RM.ink2} />} title="Courses will be removed" body="They stay in your library and re-download anytime" />
+            <DeviceRow icon={<Icon name="ShieldCheck" size={20} color={RM.good} />} title="Your child's progress is safe" body="Stored in your account, not on the device" />
+            <DeviceRow icon={<Icon name="RefreshCw" size={20} color={RM.ink2} />} title="Robot will restart" body="Setup takes about 5 minutes" />
           </Box>
         </Box>
         <Box paddingHorizontal={16} paddingTop={18}>
@@ -128,10 +125,15 @@ export default function FactoryResetScreen({ navigation }: Props) {
               const isBack = k === 'back';
               return (
                 <TouchableOpacity key={i} onPress={() => onPress(isBack ? 'back' : String(k))} activeOpacity={0.7}
-                  style={[styles.keyBtn, { width: '30%' }]}>
-                  <Text fontWeight="600" style={[styles.keyText, isBack && { fontSize: 14, color: RM.ink2 }]}>
-                    {isBack ? '⌫' : k}
-                  </Text>
+                  style={[styles.keyBtn, { width: '30%' }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={isBack ? 'Delete last digit' : `Enter ${k}`}
+                >
+                  {isBack ? (
+                    <Icon name="Delete" size={22} color={RM.ink2} strokeWidth={2.2} />
+                  ) : (
+                    <Text fontWeight="600" style={styles.keyText}>{k}</Text>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -144,14 +146,16 @@ export default function FactoryResetScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Last check" onBack={() => setStep('warning')}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="gentle" size={150} accent="#FF6F61" />
+        <Box style={styles.robotStage} alignItems="center" justifyContent="center">
+          <RobotImage variant="body" size={150} />
+        </Box>
         <Text fontWeight="600" style={styles.heading}>Erase Robot {robotName}?</Text>
         <Text style={styles.sub}>Robot will sleep, forget Wi-Fi, and need to be paired again.</Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="🛡️" title="Account & progress kept" body="Sign in again to restore everything" />
-          <DeviceRow icon="⏱️" title="Takes about 90 seconds" />
+          <DeviceRow icon={<Icon name="ShieldCheck" size={20} color={RM.good} />} title="Account & progress kept" body="Sign in again to restore everything" />
+          <DeviceRow icon={<Icon name="Timer" size={20} color={RM.ink2} />} title="Takes about 90 seconds" />
         </Box>
       </Box>
       {deviceQuery.isError ? (
@@ -189,6 +193,12 @@ const styles = StyleSheet.create({
   sub: { fontSize: 14, color: RM.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 8 },
   rowCard: { backgroundColor: RM.card, borderWidth: 1, borderColor: RM.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   warningNote: { backgroundColor: '#FBE6E2', borderRadius: 12, padding: 14 },
+  robotStage: {
+    width: 174,
+    height: 174,
+    borderRadius: 87,
+    backgroundColor: '#FFF9F0',
+  },
   errorText: { fontSize: 13, color: RM.danger, lineHeight: 18, textAlign: 'center' },
   gateLabel: { fontSize: 13, color: RM.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
   targetNum: { fontSize: 60, color: RM.ink, letterSpacing: 1, marginTop: 14 },

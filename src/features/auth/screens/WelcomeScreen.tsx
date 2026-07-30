@@ -8,14 +8,15 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { Pressable } from '@/design-system/primitives/Pressable';
-import { referenceShadow } from '@/design-system/referenceTheme';
+import { Icon } from '@/design-system/icons';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import OnboardingClayRobot from '@/features/onboarding/components/OnboardingClayRobot';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WelcomeScreen'>;
 
 export default function WelcomeScreen({ navigation }: Props) {
   return (
-    <ScreenShell bg="#E0F7FA" gradient={false} testID="welcomeScreen">
+    <ScreenShell bg={referenceColors.bg} gradient={false} testID="welcomeScreen">
       <Box pointerEvents="none" style={styles.glowTop} />
       <Box pointerEvents="none" style={styles.glowBottom} />
 
@@ -33,7 +34,9 @@ export default function WelcomeScreen({ navigation }: Props) {
         <Box style={styles.heroCopy} alignItems="center">
           <Text fontWeight="800" style={styles.heroTitle}>Let's learn English together!</Text>
           <Text fontWeight="700" style={styles.subtitle}>A little every day, and you'll speak English fluently.</Text>
-          <Text i18n={false} style={styles.decorativeStar}>★</Text>
+          <Box style={styles.decorativeStar} alignItems="center" justifyContent="center">
+            <Icon name="Sparkles" size={22} color={referenceColors.primary} strokeWidth={2.2} />
+          </Box>
         </Box>
       </Box>
 
@@ -67,7 +70,7 @@ const styles = StyleSheet.create({
     width: 256,
     height: 256,
     borderRadius: 128,
-    backgroundColor: 'rgba(255,255,255,0.42)',
+    backgroundColor: referenceColors.primarySoft,
   },
   glowBottom: {
     position: 'absolute',
@@ -76,7 +79,7 @@ const styles = StyleSheet.create({
     width: 256,
     height: 256,
     borderRadius: 128,
-    backgroundColor: 'rgba(255,255,255,0.42)',
+    backgroundColor: referenceColors.goldSoft,
   },
   content: {
     position: 'absolute',
@@ -128,10 +131,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   decorativeStar: {
-    color: 'rgba(255,107,107,0.32)',
-    fontSize: 24,
-    lineHeight: 28,
     marginTop: 12,
+    opacity: 0.45,
   },
   footer: {
     position: 'absolute',

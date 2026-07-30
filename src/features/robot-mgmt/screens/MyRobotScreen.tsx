@@ -11,6 +11,8 @@ import { parentColors, parentRadii, parentShadows } from '@/design-system/tokens
 import { ROUTES } from '@/navigation/routes';
 import ConnectorStateNotice from '@/components/ConnectorStateNotice';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import RobotImage from '@/components/RobotImage';
+import { Icon } from '@/design-system/icons';
 import { useAppLanguage } from '@/services/i18n/i18n';
 import { useRobotTelemetry } from '../telemetry';
 
@@ -80,7 +82,9 @@ export default function MyRobotScreen({ navigation }: Props) {
 
           <Box paddingHorizontal={16} paddingTop={14}>
             <Box style={styles.heroCard} flexDirection="row" gap={12} alignItems="center">
-              <Text style={styles.heroEmoji}>🤖</Text>
+              <Box style={styles.robotStage} alignItems="center" justifyContent="center">
+                <RobotImage variant="body" size={82} />
+              </Box>
               <Box flex={1} style={{ minWidth: 0 }}>
                 <Text fontWeight="600" style={styles.robotName}>{telemetry.robotName}</Text>
                 <Text i18n={false} style={styles.robotMeta}>{telemetry.serialNumber}</Text>
@@ -108,10 +112,10 @@ export default function MyRobotScreen({ navigation }: Props) {
           <Box paddingHorizontal={16} paddingTop={18}>
             <Text fontWeight="700" style={styles.sectionLabel}>Care</Text>
             <Box style={styles.rowCard}>
-              <DeviceRow icon="🔊" title="Sound & volume" body="Open robot sound controls" onClick={() => navigation.navigate(ROUTES.RobotSoundScreen)} />
-              <DeviceRow icon="🎙️" title="Microphone test" body="Check Robot can hear" onClick={() => navigation.navigate(ROUTES.MicTestScreen)} />
-              <DeviceRow icon="🔈" title="Speaker test" body="Check Robot can play sound" onClick={() => navigation.navigate(ROUTES.SpeakerTestScreen)} />
-              <DeviceRow icon="⬆️" title="Robot software" body={telemetry.firmwareLabel} onClick={() => navigation.navigate(ROUTES.RobotFirmwareScreen)} />
+              <DeviceRow icon={<Icon name="Volume2" size={20} color={parentColors.ink2} />} title="Sound & volume" body="Open robot sound controls" onClick={() => navigation.navigate(ROUTES.RobotSoundScreen)} />
+              <DeviceRow icon={<Icon name="Mic2" size={20} color={parentColors.ink2} />} title="Microphone test" body="Check Robot can hear" onClick={() => navigation.navigate(ROUTES.MicTestScreen)} />
+              <DeviceRow icon={<Icon name="AudioLines" size={20} color={parentColors.ink2} />} title="Speaker test" body="Check Robot can play sound" onClick={() => navigation.navigate(ROUTES.SpeakerTestScreen)} />
+              <DeviceRow icon={<Icon name="RefreshCw" size={20} color={parentColors.ink2} />} title="Robot software" body={telemetry.firmwareLabel} onClick={() => navigation.navigate(ROUTES.RobotFirmwareScreen)} />
             </Box>
           </Box>
         </>
@@ -120,15 +124,15 @@ export default function MyRobotScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Help</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📡" title="Robot offline help" body="Tips when Robot won't connect" onClick={() => navigation.navigate(ROUTES.OfflineHelpScreen)} />
-          <DeviceRow icon="🛟" title="Contact support" body="We usually reply in under a day" onClick={() => navigation.navigate(ROUTES.SupportScreen)} />
-          <DeviceRow icon="ℹ️" title="Detailed status" body="Battery, Wi-Fi, and software" onClick={() => navigation.navigate(ROUTES.RobotStatusScreen)} />
+          <DeviceRow icon={<Icon name="WifiOff" size={20} color={parentColors.ink2} />} title="Robot offline help" body="Tips when Robot won't connect" onClick={() => navigation.navigate(ROUTES.OfflineHelpScreen)} />
+          <DeviceRow icon={<Icon name="LifeBuoy" size={20} color={parentColors.ink2} />} title="Contact support" body="We usually reply in under a day" onClick={() => navigation.navigate(ROUTES.SupportScreen)} />
+          <DeviceRow icon={<Icon name="Info" size={20} color={parentColors.ink2} />} title="Detailed status" body="Battery, Wi-Fi, and software" onClick={() => navigation.navigate(ROUTES.RobotStatusScreen)} />
         </Box>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.rowCard}>
-          <DeviceRow danger icon="⚠️" title="Factory reset" body="Erase data and start fresh · parent gate" onClick={() => navigation.navigate(ROUTES.FactoryResetScreen)} />
+          <DeviceRow danger icon={<Icon name="TriangleAlert" size={20} color="#C0392B" />} title="Factory reset" body="Erase data and start fresh · parent gate" onClick={() => navigation.navigate(ROUTES.FactoryResetScreen)} />
         </Box>
       </Box>
 
@@ -172,8 +176,11 @@ const styles = StyleSheet.create({
     padding: 14,
     ...parentShadows.card,
   },
-  heroEmoji: {
-    fontSize: 48,
+  robotStage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: parentColors.card,
     flexShrink: 0,
   },
   robotName: {

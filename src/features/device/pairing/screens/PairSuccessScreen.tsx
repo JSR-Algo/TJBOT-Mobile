@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import { RobotImage } from '@/components/RobotImage';
+import { Icon, type IconName } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { gardenColors, gardenShadows } from '@/design-system/tokens';
@@ -13,24 +14,37 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairSuccessScreen'>;
 
 const TRUST_FACTS = [
   {
+    icon: 'ShieldCheck',
     title: 'Robot authenticated',
     body: 'The device checked in with the cloud before setup completed.',
   },
   {
+    icon: 'Wifi',
     title: 'Wi-Fi stayed transient',
     body: 'Network details were used only during setup.',
   },
   {
+    icon: 'HousePlug',
     title: 'Device assigned',
     body: 'Robot is now linked to your household and child profile.',
   },
-] as const;
+] as const satisfies ReadonlyArray<{ icon: IconName; title: string; body: string }>;
 
 export default function PairSuccessScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Robot connected">
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
-        <Text style={styles.stars}>⭐⭐⭐</Text>
+        <Box
+          accessible
+          accessibilityLabel="Three setup stars earned"
+          flexDirection="row"
+          gap={8}
+          style={styles.stars}
+        >
+          {[0, 1, 2].map((star) => (
+            <Icon key={star} name="Star" size={26} color={gardenColors.sun} strokeWidth={2.5} />
+          ))}
+        </Box>
         <View style={styles.robotWrapper}>
           <RobotImage variant="body" size={200} />
         </View>
@@ -53,9 +67,7 @@ export default function PairSuccessScreen({ navigation }: Props) {
               alignItems="flex-start"
             >
               <Box style={styles.factIcon} alignItems="center" justifyContent="center">
-                <Text style={styles.factIconText}>
-                  {index === 0 ? '✓' : index === 1 ? 'Wi' : 'ID'}
-                </Text>
+                <Icon name={fact.icon} size={18} color={gardenColors.sky} strokeWidth={2.4} />
               </Box>
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.factTitle}>{fact.title}</Text>
@@ -67,6 +79,8 @@ export default function PairSuccessScreen({ navigation }: Props) {
       </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} alignItems="center">
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Continue after Robot setup"
           style={styles.ctaButton}
           onPress={() => navigation.navigate(ROUTES.PairFirstLessonScreen)}
           activeOpacity={0.8}
@@ -80,8 +94,6 @@ export default function PairSuccessScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   stars: {
-    fontSize: 32,
-    letterSpacing: 6,
     marginBottom: 12,
   },
   robotWrapper: {
@@ -122,10 +134,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: gardenColors.skySoft,
     flexShrink: 0,
-  },
-  factIconText: {
-    fontSize: 16,
-    color: gardenColors.ink,
   },
   factTitle: {
     fontSize: 13,

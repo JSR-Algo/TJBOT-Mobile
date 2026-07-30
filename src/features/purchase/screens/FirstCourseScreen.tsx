@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import LCDFace from '@/design-system/components/LCDFace';
+import RobotImage from '@/components/RobotImage';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -24,7 +24,7 @@ export default function FirstCourseScreen({ navigation }: Props) {
       </Box>
       <Box paddingTop={24} paddingHorizontal={24} alignItems="center">
         <Box style={styles.lcdWrap}>
-          <LCDFace emotion="happy" size={150} accent="#FF6F61" />
+          <RobotImage variant="body" size={162} />
         </Box>
         <Box style={styles.chipWrap}><PRChip color={PR.good} bg="#E6F4EE">Robot · activated</PRChip></Box>
         <Text fontWeight="600" style={styles.heading}>Add your first course</Text>
@@ -36,7 +36,7 @@ export default function FirstCourseScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={22}>
         <Box style={styles.courseCard}>
           <Box style={styles.lcdSmall}>
-            <LCDFace emotion="happy" size={64} accent="#FF6F61" />
+            <RobotImage variant="head" size={66} />
           </Box>
           <Box flex={1}>
             <Box style={[styles.chipRow, { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }]}>
@@ -71,7 +71,14 @@ export default function FirstCourseScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  lcdWrap: { backgroundColor: '#0E1116', borderRadius: 14, padding: 8 },
+  lcdWrap: {
+    width: 184,
+    height: 184,
+    borderRadius: 92,
+    backgroundColor: '#FFF9F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chipWrap: { marginTop: 14 },
   heading: { fontSize: 24, color: PR.ink, letterSpacing: -0.4, textAlign: 'center', lineHeight: 29, marginTop: 14 },
   sub: { fontSize: 13, color: PR.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 20, marginTop: 8 },
@@ -79,7 +86,15 @@ const styles = StyleSheet.create({
     backgroundColor: PR.card, borderWidth: 2, borderColor: PR.accent, borderRadius: 14,
     padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start',
   },
-  lcdSmall: { backgroundColor: '#0E1116', borderRadius: 10, padding: 6, flexShrink: 0 },
+  lcdSmall: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#FFF9F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   chipRow: { marginBottom: 4 },
   ages: { fontSize: 11, color: PR.ink3 },
   courseName: { fontSize: 15, color: PR.ink },

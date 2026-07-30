@@ -16,6 +16,7 @@ import {
 } from '@/services/api/purchase.api';
 import { isSubscriptionFeatureEnabled } from '@/config/feature-flags';
 import { useAppLanguage } from '@/services/i18n/i18n';
+import PurchaseStatusCard from '../components/PurchaseStatusCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CheckoutScreen'>;
 
@@ -34,9 +35,14 @@ export default function CheckoutScreen({ navigation }: Props) {
   if (!isSubscriptionFeatureEnabled()) {
     return (
       <DeviceShell title="Checkout" onBack={() => navigation.navigate(ROUTES.PrivacyScreen)}>
-        <Box testID="checkoutDisabledPlaceholder" paddingHorizontal={24} paddingTop={40}>
-          <Text fontWeight="700" style={styles.disabledTitle}>Purchases return in v1.1</Text>
-          <Text style={styles.disabledBody}>Robot checkout is paused in this build.</Text>
+        <Box testID="checkoutDisabledPlaceholder" paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="ShoppingBag"
+            title="Purchases return in v1.1"
+            body="Robot checkout is paused in this build. You can still explore what is included and review our privacy promise."
+            tone="warning"
+          />
+          <DeviceBigBtn onClick={() => navigation.goBack()}>Privacy & safety</DeviceBigBtn>
         </Box>
       </DeviceShell>
     );
@@ -105,8 +111,8 @@ export default function CheckoutScreen({ navigation }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Payment</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="🍎" title="Apple Pay" body="Touch ID · default" />
-          <DeviceRow icon="💳" title="Card ending 4421" body="Visa · expires 12/27" />
+          <DeviceRow icon="Apple" title="Apple Pay" body="Touch ID · default" />
+          <DeviceRow icon="CreditCard" title="Card ending 4421" body="Visa · expires 12/27" />
         </Box>
       </Box>
 
@@ -142,6 +148,4 @@ const styles = StyleSheet.create({
   rowCard: { backgroundColor: PR.card, borderWidth: 1, borderColor: PR.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   legalNote: { fontSize: 11, color: PR.ink3, lineHeight: 18, textAlign: 'center', paddingHorizontal: 18, paddingVertical: 18 },
   errorText: { fontSize: 12, color: '#B42318', lineHeight: 18, textAlign: 'center', paddingHorizontal: 20 },
-  disabledTitle: { fontSize: 22, color: PR.ink, marginBottom: 8 },
-  disabledBody: { fontSize: 13, color: PR.ink2, lineHeight: 20 },
 });

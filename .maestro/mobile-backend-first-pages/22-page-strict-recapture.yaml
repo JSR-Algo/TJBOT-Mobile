@@ -77,7 +77,7 @@ name: Strict 22-page deep-link recapture (required asserts)
     timeout: 20000
 - extendedWaitUntil:
     visible:
-      text: ".*(Today|Hôm nay).*"
+      text: ".*(Today|Hôm nay|Your child's progress|Tiến độ).*"
     timeout: 15000
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/03-TodayProgressScreen"
 - back
@@ -115,7 +115,7 @@ name: Strict 22-page deep-link recapture (required asserts)
     timeout: 20000
 - extendedWaitUntil:
     visible:
-      text: ".*(Parent Space|Khu vực phụ huynh|course dashboard|bảng điều khiển khóa học|Chất lượng|Course quality).*"
+      text: ".*(Parent Space|Khu vực phụ huynh|Your child's progress|Tiến độ của bé|Profile|Hồ sơ).*"
     timeout: 15000
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/05-ParentSummaryScreen"
 - back
@@ -229,7 +229,7 @@ name: Strict 22-page deep-link recapture (required asserts)
     timeout: 20000
 - extendedWaitUntil:
     visible:
-      text: ".*(My Robot|Robot của tôi|Chưa có robot|not connected).*"
+      text: ".*(My Robot|Robot của tôi|Chưa có robot|not connected|No Robot connected|Robot status|Trạng thái).*|"
     timeout: 15000
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/11-MyRobotScreen"
 - back

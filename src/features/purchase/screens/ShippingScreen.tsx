@@ -13,6 +13,7 @@ import RobotHero from '../components/RobotHero';
 import PRChip from '../components/PRChip';
 import { getShippingStatus, type ShippingStatus } from '@/services/api/purchase.api';
 import { ROUTES } from '@/navigation/routes';
+import PurchaseStatusCard from '../components/PurchaseStatusCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShippingScreen'>;
 
@@ -49,8 +50,13 @@ export default function ShippingScreen({ navigation, route }: Props) {
   if (!orderId) {
     return (
       <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate(ROUTES.OrderConfirmScreen)}>
-        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
-          <Text fontWeight="700" style={styles.stepTitle}>Tracking link is missing</Text>
+        <Box paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="MapPinned"
+            title="Tracking link is missing"
+            body="Open delivery tracking from a confirmed order to see its route."
+            tone="warning"
+          />
           <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.OrderConfirmScreen)}>Back to order</DeviceBigBtn>
         </Box>
       </DeviceShell>
@@ -60,8 +66,12 @@ export default function ShippingScreen({ navigation, route }: Props) {
   if (status === 'loading') {
     return (
       <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate(ROUTES.OrderConfirmScreen, { orderId })}>
-        <Box paddingHorizontal={24} paddingTop={40}>
-          <Text style={styles.stepSub}>Loading shipping...</Text>
+        <Box paddingHorizontal={20} paddingTop={28}>
+          <PurchaseStatusCard
+            icon="Truck"
+            title="Loading delivery"
+            body="Checking the carrier for the latest delivery update."
+          />
         </Box>
       </DeviceShell>
     );
@@ -70,8 +80,13 @@ export default function ShippingScreen({ navigation, route }: Props) {
   if (status === 'error') {
     return (
       <DeviceShell title="Robot is on its way" onBack={() => navigation.navigate(ROUTES.OrderConfirmScreen, { orderId })}>
-        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
-          <Text fontWeight="700" style={styles.stepTitle}>Shipping needs a retry</Text>
+        <Box paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="RefreshCcw"
+            title="Shipping needs a retry"
+            body="The carrier update is temporarily unavailable. Your order is still safe."
+            tone="danger"
+          />
           <DeviceBigBtn onClick={loadShipping}>Retry shipping status</DeviceBigBtn>
         </Box>
       </DeviceShell>
@@ -119,8 +134,8 @@ export default function ShippingScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={16}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📍" title="Track with carrier" body={`Carrier ${shipping?.trackingNumber ?? 'pending'}`} />
-          <DeviceRow icon="✉️" title="Change delivery address" body="Until Tuesday at 6 PM" />
+          <DeviceRow icon="MapPin" title="Track with carrier" body={`Carrier ${shipping?.trackingNumber ?? 'pending'}`} />
+          <DeviceRow icon="Mail" title="Change delivery address" body="Until Tuesday at 6 PM" />
         </Box>
       </Box>
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import LCDFace from '@/design-system/components/LCDFace';
+import RobotImage from '@/components/RobotImage';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -32,7 +32,7 @@ export default function BuyCourseScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.courseTile}>
           <Box style={styles.lcdWrap}>
-            <LCDFace emotion={c.lcd} size={64} accent="#FF6F61" />
+            <RobotImage variant="head" size={66} />
           </Box>
           <Box>
             <Text fontWeight="600" style={styles.courseName}>{c.title}</Text>
@@ -62,7 +62,15 @@ export default function BuyCourseScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   courseTile: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, padding: 12, flexDirection: 'row', gap: 12, alignItems: 'center' },
-  lcdWrap: { backgroundColor: '#0E1116', borderRadius: 10, padding: 6, flexShrink: 0 },
+  lcdWrap: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#FFF9F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   courseName: { fontSize: 14, color: CL.ink },
   courseMeta: { fontSize: 12, color: CL.ink2, marginTop: 2 },
   freeCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, padding: 14 },
