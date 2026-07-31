@@ -3,7 +3,6 @@
 
 import {
   isRealtimeEvent,
-  RealtimeEventType,
   InterruptEvent,
   ExpressionEvent,
   MotionEvent,
@@ -271,7 +270,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "EXPRESSION",
         timestamp_ms: 1000,
-        payload: { expression: "happy", duration_ms: 500, source: "llm_tag" },
+        payload: { expression: "HAPPY", duration_ms: 500, source: "llm_tag" },
       };
       expect(isRealtimeEvent(event)).toBe(true);
     });
@@ -343,7 +342,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "MOTION",
         timestamp_ms: 1000,
-        payload: { motion: "wave", duration_ms: 500, intensity: 0.5 },
+        payload: { motion: "WAVE_ARM", duration_ms: 500, intensity: 0.5 },
       };
       expect(isRealtimeEvent(event)).toBe(true);
     });
@@ -353,7 +352,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "MOTION",
         timestamp_ms: 1000,
-        payload: { motion: "wave", duration_ms: 500, intensity: 0 },
+        payload: { motion: "WAVE_ARM", duration_ms: 500, intensity: 0 },
       };
       expect(isRealtimeEvent(event)).toBe(true);
     });
@@ -363,7 +362,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "MOTION",
         timestamp_ms: 1000,
-        payload: { motion: "wave", duration_ms: 500, intensity: 1 },
+        payload: { motion: "WAVE_ARM", duration_ms: 500, intensity: 1 },
       };
       expect(isRealtimeEvent(event)).toBe(true);
     });
@@ -413,7 +412,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "MOTION",
         timestamp_ms: 1000,
-        payload: { motion: "wave", duration_ms: 500, intensity: -0.1 },
+        payload: { motion: "WAVE_ARM", duration_ms: 500, intensity: -0.1 },
       };
       expect(isRealtimeEvent(event)).toBe(false);
     });
@@ -423,7 +422,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "MOTION",
         timestamp_ms: 1000,
-        payload: { motion: "wave", duration_ms: 500, intensity: 1.1 },
+        payload: { motion: "WAVE_ARM", duration_ms: 500, intensity: 1.1 },
       };
       expect(isRealtimeEvent(event)).toBe(false);
     });
@@ -433,7 +432,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "MOTION",
         timestamp_ms: 1000,
-        payload: { motion: "wave", duration_ms: 500, intensity: "0.5" },
+        payload: { motion: "WAVE_ARM", duration_ms: 500, intensity: "0.5" },
       };
       expect(isRealtimeEvent(event)).toBe(false);
     });
@@ -445,7 +444,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "ROBOT_STATE",
         timestamp_ms: 1000,
-        payload: { state: "READY" },
+        payload: { state: "IDLE" },
       };
       expect(isRealtimeEvent(event)).toBe(true);
     });
@@ -455,7 +454,7 @@ describe("isRealtimeEvent", () => {
         session_id: "sess-123",
         type: "ROBOT_STATE",
         timestamp_ms: 1000,
-        payload: { state: "READY", previous_state: "INITIALIZING" },
+        payload: { state: "LISTENING", previous_state: "IDLE" },
       };
       expect(isRealtimeEvent(event)).toBe(true);
     });

@@ -11,12 +11,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGeminiConversation } from '@/hooks/useGeminiConversation';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
-import { useVoiceAssistantStore } from '@/state/voiceAssistantStore';
+import { useVoiceAssistantStore, type VoiceState } from '@/state/voiceAssistantStore';
 import { BARN_SAY_IT_LESSON_ID } from '../content/barnSayItLesson';
 import { buildLessonVoicePrompt } from '../lessonVoicePrompt';
 import { staticLessonContentProvider, useLessonDemoProgressStore } from '../index';
 import { FullscreenLessonScene } from '../scene/FullscreenLessonScene';
-import type { LessonAgeBand } from '../types';
+import type { LessonAgeBand, LessonSession } from '../types';
 import {
   openAppSettings,
   probeVoiceReadiness,
@@ -33,12 +33,12 @@ function shouldShowMicSettingsAction(readinessIssue: VoiceReadinessIssue): boole
 }
 
 // Helper: Determine if voice is currently active
-function isVoiceActive(voiceState: ReturnType<typeof useVoiceAssistantStore>['state']): boolean {
+function isVoiceActive(voiceState: VoiceState): boolean {
   return voiceState !== 'IDLE' && voiceState !== 'ENDED' && voiceState !== 'ERROR_FATAL';
 }
 
 // Helper: Determine if robot is speaking
-function isSpeaking(voiceState: ReturnType<typeof useVoiceAssistantStore>['state']): boolean {
+function isSpeaking(voiceState: VoiceState): boolean {
   return voiceState === 'ASSISTANT_SPEAKING' || voiceState === 'WAITING_AI';
 }
 
@@ -94,7 +94,7 @@ function useVoiceState() {
 function useLessonFromRoute(
   lessonId: string | undefined,
   ageBand: LessonAgeBand,
-): ReturnType<typeof staticLessonContentProvider.getLessonById> {
+): LessonSession {
   return useMemo(
     () => staticLessonContentProvider.getLessonById(lessonId ?? BARN_SAY_IT_LESSON_ID, ageBand)
       ?? staticLessonContentProvider.getLessonById(BARN_SAY_IT_LESSON_ID, ageBand)!,
@@ -103,7 +103,7 @@ function useLessonFromRoute(
 }
 
 // Custom hook: Compute voice state indicators
-function useVoiceStateIndicators(voiceState: ReturnType<typeof useVoiceAssistantStore>['state']) {
+function useVoiceStateIndicators(voiceState: VoiceState) {
   return {
     isSpeakingNow: isSpeaking(voiceState),
     voiceActive: isVoiceActive(voiceState),
@@ -144,7 +144,7 @@ function useDiagnosticLogging(
   displayedError: string | null,
   lessonId: string,
   stepIndex: number,
-  voiceState: ReturnType<typeof useVoiceAssistantStore>['state'],
+  voiceState: VoiceState,
   readinessIssue: VoiceReadinessIssue,
 ) {
   useEffect(() => {
@@ -166,7 +166,7 @@ function useDiagnosticLogging(
 
 // Component: Voice icon rendering
 function VoiceIcon({ voiceState, voiceActive }: {
-  voiceState: ReturnType<typeof useVoiceAssistantStore>['state'];
+  voiceState: VoiceState;
   voiceActive: boolean;
 }): React.JSX.Element {
   if (voiceState === 'CONNECTING' || voiceState === 'PREPARING_AUDIO') {
@@ -187,7 +187,7 @@ function TopBar({
   onExit: () => void;
   onVoiceToggle: () => void;
   voiceActive: boolean;
-  voiceState: ReturnType<typeof useVoiceAssistantStore>['state'];
+  voiceState: VoiceState;
 }): React.JSX.Element {
   return (
     <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
@@ -219,7 +219,7 @@ function LessonChoices({
   onSelectChoice,
 }: {
   insets: ReturnType<typeof useSafeAreaInsets>;
-  step: ReturnType<typeof staticLessonContentProvider.getLessonById>['steps'][number];
+  step: LessonSession['steps'][number];
   selectedChoiceId: string | null;
   onSelectChoice: (choiceId: string) => void;
 }): React.JSX.Element | null {
@@ -346,8 +346,8 @@ function FooterNavigation({
 // Handler: Process next step action
 function handleNextStepAction(
   isLastStep: boolean,
-  completeLesson: (lesson: ReturnType<typeof staticLessonContentProvider.getLessonById>, ageBand: LessonAgeBand) => Promise<void>,
-  lesson: ReturnType<typeof staticLessonContentProvider.getLessonById>,
+  completeLesson: (lesson: LessonSession, ageBand: LessonAgeBand) => Promise<void>,
+  lesson: LessonSession,
   ageBand: LessonAgeBand,
   stopConversation: () => void,
   navigation: NativeStackScreenProps<RootStackParamList, 'RobotFullscreenLessonScreen'>['navigation'],

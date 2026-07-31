@@ -5,7 +5,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
-import { Icon } from '@/design-system/icons';
+import { Icon, type IconName } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
@@ -30,7 +30,7 @@ function renderLoadingState(): React.ReactElement {
   );
 }
 
-function getErrorIconName(childId: string | null): string {
+function getErrorIconName(childId: string | null): IconName {
   return childId ? 'WifiOff' : 'UserRoundPlus';
 }
 
@@ -42,7 +42,7 @@ function getErrorTitle(childId: string | null): string {
   return childId ? 'Lesson needs a connection' : 'Add a child first';
 }
 
-function getErrorActionIcon(childId: string | null): string {
+function getErrorActionIcon(childId: string | null): IconName {
   return childId ? 'RefreshCw' : 'UserRoundPlus';
 }
 

@@ -19,7 +19,6 @@ import { VoiceSession } from '../native/VoiceSession';
 import { VoiceMic } from '../native/VoiceMic';
 import { useVoiceAssistantStore } from '../state/voiceAssistantStore';
 import { detectExpression } from '../utils/expressionDetector';
-import { chat as chatWithAI } from '../services/api/ai';
 import { startVoiceDebugProbe, stopVoiceDebugProbe } from '../debug/voiceDebugProbe';
 import {
   checkInput,
@@ -34,7 +33,6 @@ import { useVoiceTelemetry } from './useVoiceTelemetry';
 import { resolveGeminiUserError } from '../services/observability/geminiErrorMessages';
 import { logGeminiEvent } from '../services/observability/diagnosticLog';
 
-const SIMULATOR_CHAT_TIMEOUT_MS = 1500;
 /**
  * Speak-first greeting kickoff (2026-07-06): Gemini Live never takes the
  * first turn on its own — this text turn nudges it so TeeBot greets the
@@ -745,20 +743,10 @@ export function useGeminiConversation(
       store.getState().setUserTranscript(`${SIMULATOR_TEST_PROMPT} (simulator mode)`);
       store.getState().addMessage('user', `${SIMULATOR_TEST_PROMPT} (simulator mode)`);
       transition('WAITING_AI');
-      let aiText = SIMULATOR_FALLBACK_REPLY;
-      try {
-        const result = await Promise.race([
-          chatWithAI(SIMULATOR_TEST_PROMPT),
-          new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error('Simulator chat timeout')), SIMULATOR_CHAT_TIMEOUT_MS);
-          }),
-        ]);
-        if (typeof result?.response === 'string' && result.response.trim()) {
-          aiText = result.response.trim();
-        }
-      } catch {
-        aiText = SIMULATOR_FALLBACK_REPLY;
-      }
+      const aiText = SIMULATOR_FALLBACK_REPLY;
+      // Yield once so a session restarted during this tick still wins the
+      // run-scoping check below, as it did when a network call sat here.
+      await Promise.resolve();
       if (simulatorRunIdRef.current !== runId) return;
       const s = store.getState();
       s.setAiTranscript(aiText);

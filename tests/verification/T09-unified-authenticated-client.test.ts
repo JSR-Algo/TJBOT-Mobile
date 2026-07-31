@@ -130,11 +130,7 @@ describe('T09: unified authenticated client', () => {
     expect(source).not.toContain('setAiAuthInvalidatedHandler');
   });
 
-  it('refactors the AI module to use the shared authenticated client', () => {
-    const source = fs.readFileSync(AI_MODULE_PATH, 'utf8');
-
-    expect(source).toContain('createAuthenticatedClient');
-    expect(source).not.toContain('setAiAuthInvalidatedHandler');
-    expect(source).not.toContain('axios.create');
+  it('ships no AI chat module — the app has no chat surface', () => {
+    expect(fs.existsSync(AI_MODULE_PATH)).toBe(false);
   });
 });

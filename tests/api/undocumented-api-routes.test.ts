@@ -1,9 +1,4 @@
 import client from '@/services/http/client';
-import {
-  chat,
-  synthesize,
-  transcribe,
-} from '@/services/api/ai';
 import { controlsApi } from '@/services/api/controls';
 import {
   getSafetyEvents,
@@ -43,9 +38,6 @@ describe('undocumented API routes', () => {
     ['getWeeklySummary', () => getWeeklySummary('device-1')],
     ['getSessionCost', () => getSessionCost('device-1')],
     ['getBillingProviderStatus', () => getBillingProviderStatus()],
-    ['transcribe', () => transcribe('file:///tmp/audio.m4a')],
-    ['chat', () => chat('hello')],
-    ['synthesize', () => synthesize('hello')],
   ])('%s throws explicit contract-unavailable error before HTTP', async (_name, call) => {
     await expect(call()).rejects.toMatchObject({
       code: 'BACKEND_CONTRACT_UNAVAILABLE',
