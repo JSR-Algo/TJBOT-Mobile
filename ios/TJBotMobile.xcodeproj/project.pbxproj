@@ -17,10 +17,12 @@
 		71ECCB3B23D5183E13C7072C /* libPods-TJBotMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D783AF6183CE806AE0D29295 /* libPods-TJBotMobile.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.mm */; };
 		761780F02CA45674006654EE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 761780EF2CA45674006654EE /* main.m */; };
+		7F6BC7D5D0A14D5D9E68B4A1 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7F6BC7D5D0A14D5D9E68B4A2 /* Expo.plist */; };
 		8105F3091EF12F5F18AC2074 /* VoiceSessionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		9475E8F4DFB7471291FC40B8 /* VoiceMicModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66995590EE4FB9CD11B21587 /* VoiceMicModule.swift */; };
 		949E32A97359AC868382A1CC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641093E933E3175931169B50 /* ExpoModulesProvider.swift */; };
+		A83D08030000000000000001 /* TJBotExpoRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83D08030000000000000002 /* TJBotExpoRuntime.swift */; };
 		AFC3D3FEF28D45C081262290 /* VoiceMicModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AA62ED21BD0DAF878643B2E /* VoiceMicModule.m */; };
 		B1C2D3E4F5A60718293A4B5C /* MetroBundlerSession.m in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293A4B5D /* MetroBundlerSession.m */; };
 		D5D4243715E85F02397B186D /* VoiceSessionModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC442A2893028AD18D950524 /* VoiceSessionModuleTests.swift */; };
@@ -59,8 +61,10 @@
 		761780EB2CA45674006654EE /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = TJBotMobile/AppDelegate.h; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = TJBotMobile/AppDelegate.mm; sourceTree = "<group>"; };
 		761780EF2CA45674006654EE /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = TJBotMobile/main.m; sourceTree = "<group>"; };
+		7F6BC7D5D0A14D5D9E68B4A2 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = TJBotMobile/Expo.plist; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = TJBotMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9931D7340BCEDF165A264606 /* VoiceSessionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = VoiceSessionModule.m; path = TJBotMobile/VoiceSession/VoiceSessionModule.m; sourceTree = "<group>"; };
+		A83D08030000000000000002 /* TJBotExpoRuntime.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TJBotExpoRuntime.swift; path = TJBotMobile/TJBotExpoRuntime.swift; sourceTree = "<group>"; };
 		B1C2D3E4F5A60718293A4B5D /* MetroBundlerSession.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = MetroBundlerSession.m; path = TJBotMobile/MetroBundlerSession/MetroBundlerSession.m; sourceTree = "<group>"; };
 		B3B47F9F1C2E046CC0542C3E /* TJBotMobile-Bridging-Header.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = "TJBotMobile-Bridging-Header.h"; path = "TJBotMobile/TJBotMobile-Bridging-Header.h"; sourceTree = "<group>"; };
 		C427FF15ED2EA0D9AB3AE26C /* VoiceSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceSessionModule.swift; path = TJBotMobile/VoiceSession/VoiceSessionModule.swift; sourceTree = "<group>"; };
@@ -98,7 +102,9 @@
 				761780EB2CA45674006654EE /* AppDelegate.h */,
 				761780EC2CA45674006654EE /* AppDelegate.mm */,
 				761780EF2CA45674006654EE /* main.m */,
+				A83D08030000000000000002 /* TJBotExpoRuntime.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				7F6BC7D5D0A14D5D9E68B4A2 /* Expo.plist */,
 				2A80E0A4C87E4B1FB33D7B2E /* TJBotMobile.entitlements */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -325,6 +331,7 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				E9F771B944F96C6F72141DCD /* PrivacyInfo.xcprivacy in Resources */,
+				7F6BC7D5D0A14D5D9E68B4A1 /* Expo.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -437,6 +444,7 @@
 				761780ED2CA45674006654EE /* AppDelegate.mm in Sources */,
 				761780F02CA45674006654EE /* main.m in Sources */,
 				949E32A97359AC868382A1CC /* ExpoModulesProvider.swift in Sources */,
+				A83D08030000000000000001 /* TJBotExpoRuntime.swift in Sources */,
 				8105F3091EF12F5F18AC2074 /* VoiceSessionModule.swift in Sources */,
 				0D71015AB31EEE51B0DC8719 /* VoiceSessionModule.m in Sources */,
 				10B6FD8D772368862E15C177 /* SharedVoiceEngine.swift in Sources */,

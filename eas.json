@@ -26,6 +26,7 @@
     "staging-device": {
       "developmentClient": false,
       "distribution": "internal",
+      "channel": "staging",
       "env": {
         "EXPO_PUBLIC_TBOT_API_URL": "https://tbot-backend-8wmh.onrender.com/v1",
         "EXPO_PUBLIC_TBOT_AI_URL": "https://tbot-backend-8wmh.onrender.com/v1/ai",
