@@ -37,6 +37,14 @@ describe('T01 — canonical env schema, EAS alignment, and Expo capabilities', (
       expect(raw).not.toContain('EXPO_PUBLIC_API_BASE_URL');
       expect(raw).not.toContain('EXPO_PUBLIC_DEMO_SCREEN');
     });
+
+    it('uses report.tjbot.vn for production and staging-device builds', () => {
+      const raw = readText('eas.json');
+      expect(raw).toContain('EXPO_PUBLIC_TBOT_API_URL": "https://report.tjbot.vn/v1');
+      expect(raw).toContain('EXPO_PUBLIC_TBOT_AI_URL": "https://report.tjbot.vn/v1/ai');
+      expect(raw).toContain('EXPO_PUBLIC_WS_URL": "wss://report.tjbot.vn');
+      expect(raw).not.toContain('tbot-backend-8wmh.onrender.com');
+    });
   });
 
   describe('src/config.ts', () => {
@@ -62,6 +70,15 @@ describe('T01 — canonical env schema, EAS alignment, and Expo capabilities', (
       const config = readText('src/config.ts');
       expect(config).not.toContain('tbot-backend-8wmh.onrender.com');
       expect(config).toContain('ownedBackend');
+    });
+
+    it('uses report.tjbot.vn as the owned backend default', () => {
+      const ownedBackend = readText('src/constants/ownedBackend.ts');
+      const runtimeBackend = readText('scripts/runtime/owned-backend-url.mjs');
+      expect(ownedBackend).toContain("OWNED_BACKEND_ROOT = 'https://report.tjbot.vn'");
+      expect(runtimeBackend).toContain("OWNED_BACKEND_ROOT = 'https://report.tjbot.vn'");
+      expect(ownedBackend).not.toContain('onrender.com');
+      expect(runtimeBackend).not.toContain('api.TJBot.io');
     });
   });
 

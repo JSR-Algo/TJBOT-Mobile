@@ -2,8 +2,8 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { Home } from 'lucide-react-native';
-import { MainTabNavigator } from '@/navigation/MainTabNavigator';
-import { ROUTES } from '@/navigation/routes';
+import { MainTabNavigator, routeBreadcrumbsFor } from '@/navigation/MainTabNavigator';
+import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import { ChildProfileAvatar } from '@/navigation/ChildProfileAvatar';
 import { MainTabIcon, SLEEK_TAB_ICON_SOURCES } from '@/navigation/SleekTabBarVisuals';
 
@@ -114,5 +114,11 @@ describe('main tab active state', () => {
 
     fireEvent.press(screen.getByTestId('devicesTab'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
+  });
+
+  it('falls back to Home when an OTA receives a stale persisted route', () => {
+    const staleRoute = 'HomeChildProfileScreen' as keyof RootStackParamList;
+
+    expect(routeBreadcrumbsFor(staleRoute)).toEqual([ROUTES.HomeHubScreen, staleRoute]);
   });
 });

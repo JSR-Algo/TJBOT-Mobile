@@ -65,6 +65,10 @@ type Props = {
   routeName: keyof RootStackParamList;
 };
 
+function routeMapEntryFor(routeName: keyof RootStackParamList) {
+  return (ROUTE_MAP as Partial<typeof ROUTE_MAP>)[routeName];
+}
+
 export function routeBreadcrumbsFor(routeName: keyof RootStackParamList): readonly (keyof RootStackParamList)[] {
   const breadcrumbs: (keyof RootStackParamList)[] = [];
   const visited = new Set<keyof RootStackParamList>();
@@ -73,11 +77,11 @@ export function routeBreadcrumbsFor(routeName: keyof RootStackParamList): readon
   while (current && !visited.has(current)) {
     visited.add(current);
     breadcrumbs.unshift(current);
-    current = ROUTE_MAP[current].backTarget;
+    current = routeMapEntryFor(current)?.backTarget;
   }
 
   if (!breadcrumbs.some(route => TAB_NAME_BY_ROUTE.has(route))) {
-    const fallbackTab = OWNER_DEFAULT_TAB[ROUTE_MAP[routeName].feature] ?? DEFAULT_MAIN_TAB_NAME;
+    const fallbackTab = OWNER_DEFAULT_TAB[routeMapEntryFor(routeName)?.feature ?? 'fallback'] ?? DEFAULT_MAIN_TAB_NAME;
     const fallbackRoute = TAB_ROUTE_BY_NAME.get(fallbackTab) ?? ROUTES.HomeHubScreen;
     if (fallbackRoute !== breadcrumbs[0]) breadcrumbs.unshift(fallbackRoute);
   }
@@ -91,7 +95,7 @@ function activeTabFor(routeName: keyof RootStackParamList): FeatureTabName {
   const breadcrumbTab = routeBreadcrumbsFor(routeName)
     .map(route => TAB_NAME_BY_ROUTE.get(route))
     .find((tabName): tabName is FeatureTabName => tabName !== undefined);
-  return breadcrumbTab ?? OWNER_DEFAULT_TAB[ROUTE_MAP[routeName].feature] ?? DEFAULT_MAIN_TAB_NAME;
+  return breadcrumbTab ?? OWNER_DEFAULT_TAB[routeMapEntryFor(routeName)?.feature ?? 'fallback'] ?? DEFAULT_MAIN_TAB_NAME;
 }
 
 export function MainTabNavigator({ children, navigation, routeName }: Props): React.JSX.Element {
@@ -114,7 +118,7 @@ export function MainTabNavigator({ children, navigation, routeName }: Props): Re
       navigation.goBack();
       return;
     }
-    navigate(ROUTE_MAP[routeName].backTarget ?? ROUTES.HomeHubScreen);
+    navigate(routeMapEntryFor(routeName)?.backTarget ?? ROUTES.HomeHubScreen);
   };
 
   return (
