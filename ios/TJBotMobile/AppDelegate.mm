@@ -1,11 +1,23 @@
 #import "AppDelegate.h"
 
+#if __has_include(<ExpoModulesCore/ExpoModulesCore-Swift.h>)
+#import <ExpoModulesCore/ExpoModulesCore-Swift.h>
+#else
+#import "ExpoModulesCore-Swift.h"
+#endif
+#import "TJBOT-Swift.h"
+
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
-#import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
 
 static NSString *const kTJBotMetroBundlerHostKey = @"TJBotMetroBundlerHost";
 static NSString *const kTJBotMetroBundlerSchemeKey = @"TJBotMetroBundlerScheme";
+
+@interface AppDelegate ()
+
+@property (nonatomic, strong) TJBotExpoRuntime *expoRuntime;
+
+@end
 
 @implementation AppDelegate
 
@@ -56,19 +68,13 @@ static NSString *const kTJBotMetroBundlerSchemeKey = @"TJBotMetroBundlerScheme";
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
   [self applyPersistedMetroBundlerSession];
-  self.moduleName = @"TJBotMobile";
-  self.initialProps = @{};
-  self.dependencyProvider = [RCTAppDependencyProvider new];
-  return [super application:application didFinishLaunchingWithOptions:launchOptions];
-}
+  self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  self.expoRuntime = [TJBotExpoRuntime new];
+  [self.expoRuntime startWithModuleName:@"main"
+                               inWindow:self.window
+                          launchOptions:launchOptions];
 
-- (NSURL *)bundleURL
-{
-#if DEBUG
-  return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index"];
-#else
-  return [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
-#endif
+  return YES;
 }
 
 - (BOOL)application:(UIApplication *)application

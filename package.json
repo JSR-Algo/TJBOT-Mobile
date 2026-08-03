@@ -84,6 +84,7 @@
     "expo-linear-gradient": "~55.0.14",
     "expo-notifications": "~55.0.16",
     "expo-secure-store": "~55.0.11",
+    "expo-updates": "~55.0.26",
     "expo-video": "~55.0.17",
     "i18next": "^23.11.5",
     "i18next-resources-to-backend": "^1.2.1",

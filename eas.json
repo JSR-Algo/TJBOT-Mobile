@@ -26,6 +26,7 @@
     "staging-device": {
       "developmentClient": false,
       "distribution": "internal",
+      "channel": "staging",
       "env": {
         "EXPO_PUBLIC_TBOT_API_URL": "https://report.tjbot.vn/v1",
         "EXPO_PUBLIC_TBOT_AI_URL": "https://report.tjbot.vn/v1/ai",

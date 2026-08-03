@@ -138,11 +138,18 @@ describe('native Detox E2E coverage contract', () => {
     expect(releaseTarget).not.toContain('CODE_SIGN_IDENTITY = "Apple Distribution";');
   });
 
-  it('keeps debug iOS device builds Metro-backed for LAN backend discovery', () => {
+  it('keeps Expo Updates on the Expo React Native startup path', () => {
     const appDelegate = read('ios/TJBotMobile/AppDelegate.mm');
+    const expoRuntime = read('ios/TJBotMobile/TJBotExpoRuntime.swift');
+    const expoConfig = read('ios/TJBotMobile/Expo.plist');
+    const entryPoint = read('index.js');
 
-    expect(appDelegate).toContain('#if DEBUG\n  return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index"];');
-    expect(appDelegate).not.toContain('#if DEBUG && TARGET_OS_SIMULATOR');
+    expect(appDelegate).toContain('self.expoRuntime = [TJBotExpoRuntime new];');
+    expect(appDelegate).toContain('startWithModuleName:@"main"');
+    expect(expoRuntime).toContain('ExpoReactNativeFactory(delegate: delegate)');
+    expect(expoRuntime).toContain('RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")');
+    expect(expoConfig).toMatch(/<key>EXUpdatesEnabled<\/key>\s*<true\/>/);
+    expect(entryPoint).toContain('registerRootComponent(App);');
   });
 
   it('covers requested native flows in Detox scenarios', () => {

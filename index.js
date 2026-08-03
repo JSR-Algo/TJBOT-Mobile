@@ -1,7 +1,7 @@
-const { AppRegistry, LogBox } = require('react-native');
+const { LogBox } = require('react-native');
+import { registerRootComponent } from 'expo';
 import { enableScreens } from 'react-native-screens';
 import { ENV } from './src/__env__';
-import { name as appName } from './app.json';
 import { syncMetroBundlerSession } from './src/dev/metroBundlerSession';
 
 // These warnings fire while the App module tree is being imported (before
@@ -24,4 +24,4 @@ if (ENV.EXPO_PUBLIC_VOICE_TEST_HARNESS === 'true') {
 }
 
 enableScreens();
-AppRegistry.registerComponent(appName, () => App);
+registerRootComponent(App);

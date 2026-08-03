@@ -39,6 +39,18 @@
         "android.permission.BLUETOOTH_SCAN",
         "android.permission.BLUETOOTH_CONNECT"
       ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ca5f22ec-28d9-4f18-80eb-a357a6d03070"
+      }
+    },
+    "owner": "hellojason2",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/ca5f22ec-28d9-4f18-80eb-a357a6d03070",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }
