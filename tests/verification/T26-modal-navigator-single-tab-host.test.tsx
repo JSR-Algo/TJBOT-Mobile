@@ -68,27 +68,44 @@ jest.mock('@react-navigation/native-stack', () => ({
     });
 
     let currentInitialRouteName: string | undefined;
-    let currentScreenLayout:
-      | ((props: {
-          children: React.ReactElement;
-          navigation: MockNavigation;
-          route: { key: string; name: string; params: unknown };
-        }) => React.ReactElement)
-      | undefined;
-
     return {
       Navigator: ({
         children,
         initialRouteName,
-        screenLayout,
+        layout,
       }: {
         children: React.ReactNode;
         initialRouteName?: string;
-        screenLayout?: typeof currentScreenLayout;
+        layout?: (props: {
+          children: React.ReactNode;
+          navigation: MockNavigation;
+          state: {
+            index: number;
+            routes: Array<{ key: string; name: string; params: unknown }>;
+          };
+          descriptors: Record<string, unknown>;
+        }) => React.ReactElement;
       }): React.JSX.Element => {
         currentInitialRouteName = initialRouteName;
-        currentScreenLayout = screenLayout;
-        return React.createElement(ReactNative.View, { testID: 'protectedStackNavigator' }, children);
+        const navigation = createNavigation();
+        const route = {
+          key: `screen-${initialRouteName}`,
+          name: initialRouteName ?? 'HomeHubScreen',
+          params: undefined,
+        };
+        const content = React.createElement(
+          ReactNative.View,
+          { testID: 'protectedStackNavigator' },
+          children,
+        );
+        return layout
+          ? layout({
+              children: content,
+              navigation,
+              state: { index: 0, routes: [route] },
+              descriptors: {},
+            })
+          : content;
       },
       Group: ({ children }: { children: React.ReactNode }): React.JSX.Element =>
         React.createElement(ReactNative.View, { testID: 'modalGroup' }, children),
@@ -101,13 +118,8 @@ jest.mock('@react-navigation/native-stack', () => ({
         initialParams?: Record<string, unknown>;
       }): React.JSX.Element | null => {
         if (name !== currentInitialRouteName) return null;
-        const navigation = createNavigation();
-        const route = { key: `screen-${name}`, name, params: initialParams };
         mockCapturedInitialParams.push({ name, params: initialParams });
-        const page = React.createElement(ReactNative.View, { testID: `page-${name}` });
-        return currentScreenLayout
-          ? currentScreenLayout({ children: page, navigation, route })
-          : page;
+        return React.createElement(ReactNative.View, { testID: `page-${name}` });
       },
     };
   },
@@ -126,6 +138,12 @@ describe('T26 ModalNavigator single shared shell', () => {
 
     expect(screen.getAllByTestId('mainTabs')).toHaveLength(1);
     expect(mockCapturedShellProps).toEqual([{ routeName: ROUTES.HomeHubScreen }]);
+  });
+
+  it('uses one navigator-level layout instead of wrapping every page', () => {
+    render(<ModalNavigator initialRouteName={ROUTES.CourseLibraryScreen} />);
+
+    expect(mockCapturedShellProps).toEqual([{ routeName: ROUTES.CourseLibraryScreen }]);
   });
 
   it('renders the same shell for a non-tab direct deep-link entry', () => {
