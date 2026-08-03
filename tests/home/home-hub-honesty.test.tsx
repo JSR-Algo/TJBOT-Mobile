@@ -74,7 +74,7 @@ describe('HomeHubScreen honesty paths', () => {
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
-  it('zero child: mirrors the empty blueprint and routes recovery into child profile creation', () => {
+  it('zero child: keeps the canonical animated Home design and routes setup into child profile creation', () => {
     mockUseHomeState.mockReturnValue({
       variant: 'zero_child',
       isLoading: false,
@@ -98,18 +98,19 @@ describe('HomeHubScreen honesty paths', () => {
       cfg: {
         ...baseCfg,
         ctaLabel: 'Start today’s lesson',
-        ctaTarget: ROUTES.HomeChildProfileScreen,
+        ctaTarget: ROUTES.ChildProfileScreen,
       },
     });
 
     const { screen, navigation } = renderHome();
 
-    expect(screen.getByText('No lessons yet')).toBeTruthy();
-    expect(screen.getByText('First step')).toBeTruthy();
-    expect(screen.getByText('Name your child')).toBeTruthy();
-    expect(screen.getByTestId('homeEmptyCard')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('homeEmptyCta'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeChildProfileScreen);
+    expect(screen.getByTestId('overviewPage')).toBeTruthy();
+    expect(screen.getByTestId('homeHeroAnimatedRobot')).toBeTruthy();
+    expect(screen.getByTestId('homeHeroRobotAnimation')).toBeTruthy();
+    expect(screen.getAllByText('Name your child').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('homeEmptyCard')).toBeNull();
+    fireEvent.press(screen.getByTestId('homePrimaryCta'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ChildProfileScreen);
   });
 
   it('multiple children: selects a child before continuing and keeps Add child direct', () => {
@@ -150,7 +151,7 @@ describe('HomeHubScreen honesty paths', () => {
     expect(selectChild).toHaveBeenCalledWith('child-2');
 
     fireEvent.press(screen.getByTestId('homeAddChild'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeChildProfileScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ChildProfileScreen);
   });
 
   it('streak lost: shows only backend lesson and progress data, then opens that lesson', () => {

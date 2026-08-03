@@ -8,6 +8,7 @@ import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = {
   childName: string;
+  heroTitleOverride?: string;
   lessonTitle: string;
   durationMinutes: number;
   wordCount: number;
@@ -25,6 +26,7 @@ type Props = {
 
 export function TodayCommandView({
   childName,
+  heroTitleOverride,
   lessonTitle,
   durationMinutes,
   wordCount,
@@ -40,9 +42,9 @@ export function TodayCommandView({
   onReport,
 }: Props): React.JSX.Element {
   const { language, t } = useAppLanguage();
-  const heroTitle = lessonReady
+  const heroTitle = heroTitleOverride ?? (lessonReady
     ? translateTemplate('Ready when {{name}} is', { name: childName }, { locale: language })
-    : t('Home unavailable');
+    : t('Home unavailable'));
 
   return (
     <ScrollView

@@ -4,15 +4,12 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "@/navigation/routes";
 import ScreenShell from "@/components/ScreenShell";
 import { Box } from "@/design-system/primitives/Box";
-import { Text } from "@/design-system/primitives/Text";
-import { Icon } from "@/design-system/icons";
 import { ROUTES } from "@/navigation/routes";
 import { mascot } from "@/assets/mascot";
 import { useAppLanguage } from "@/services/i18n/i18n";
@@ -24,9 +21,6 @@ type Props = NativeStackScreenProps<RootStackParamList, "HomeHubScreen">;
 
 const SLEEK = {
   background: "#FAF5EB",
-  foreground: "#2D3436",
-  primary: "#FF6B6B",
-  secondary: "#4ECDC4",
 } as const;
 
 const ROBOT_HANG_TITLE = "Robot pairing later";
@@ -40,7 +34,6 @@ function showRobotHang(): void {
 // Blueprint page 01 robot = R4 cat-eared TeeBot (local SOT asset).
 const SLEEK_ASSETS = {
   robotHead: mascot.r4Head,
-  emptyRobot: mascot.r4Wave,
 } as const;
 
 export const HOME_HUB_ROBOT_STAGE_TOP_PADDING = 32;
@@ -136,71 +129,28 @@ export default function HomeHubScreen({
 
   if (variant === 'zero_child') {
     const openChildProfile = (): void => {
-      navigation.navigate(ROUTES.HomeChildProfileScreen);
+      navigation.navigate(ROUTES.ChildProfileScreen);
     };
 
     return (
-      <ScreenShell bg="#E0F7FA" gradient={false}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.emptyScene,
-            { paddingTop: Math.max(insets.top + 20, 48) },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          <Box alignItems="center">
-            <Text i18n={false} fontWeight="800" style={styles.emptyTitle}>
-              {t('No lessons yet')}
-            </Text>
-            <Text i18n={false} fontWeight="700" style={styles.emptySubtitle}>
-              {t("Let's start a joyful English journey with TeeBot")}
-            </Text>
-          </Box>
-
-          <Box style={styles.emptyRobotStage}>
-            <Box style={styles.emptyRobotGlow} />
-            <Image
-              source={SLEEK_ASSETS.emptyRobot}
-              style={styles.emptyRobot}
-              resizeMode="contain"
-              accessibilityLabel={t('TeeBot')}
-            />
-          </Box>
-
-          <TouchableOpacity
-            testID="homeEmptyCard"
-            style={styles.emptyCard}
-            onPress={openChildProfile}
-            accessibilityRole="button"
-            accessibilityLabel={t('Name your child')}
-          >
-            <Text i18n={false} fontWeight="800" style={styles.emptyStep}>
-              {t('First step')}
-            </Text>
-            <Box flexDirection="row" alignItems="center" gap={12}>
-              <Icon name="Edit3" size={24} color={SLEEK.secondary} />
-              <Text i18n={false} fontWeight="800" style={styles.emptyCardTitle}>
-                {t('Name your child')}
-              </Text>
-            </Box>
-            <Text i18n={false} fontWeight="700" style={styles.emptyCardCopy}>
-              {t('Your child will feel special with a name of their own')}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            testID="homeEmptyCta"
-            style={styles.emptyCta}
-            onPress={openChildProfile}
-            accessibilityRole="button"
-            accessibilityLabel={t("Start today's lesson")}
-          >
-            <Icon name="Play" size={24} color="#FFFFFF" />
-            <Text i18n={false} fontWeight="800" style={styles.emptyCtaCopy}>
-              {t("Start today's lesson")}
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+      <ScreenShell bg={SLEEK.background} gradient={false}>
+        <TodayCommandView
+          childName={t('Mia')}
+          durationMinutes={0}
+          heroTitleOverride={t('Name your child')}
+          lessonReady={false}
+          lessonStatusLabel="Set up a child"
+          lessonTitle={t('Name your child')}
+          onLiveStatus={openChildProfile}
+          onPrimary={openChildProfile}
+          onReport={openChildProfile}
+          online={false}
+          primaryEnabled
+          primaryLabel="Set up a child"
+          reportsReady={0}
+          wordCount={0}
+          wordsReady={0}
+        />
       </ScreenShell>
     );
   }
@@ -210,7 +160,7 @@ export default function HomeHubScreen({
       <HomeMultiChildState
         children={data.children}
         onContinue={selectChild}
-        onAddChild={() => navigation.navigate(ROUTES.HomeChildProfileScreen)}
+        onAddChild={() => navigation.navigate(ROUTES.ChildProfileScreen)}
       />
     );
   }
@@ -301,105 +251,6 @@ function navigateHomeCtaTarget(
 }
 
 const styles = StyleSheet.create({
-  emptyScene: {
-    alignItems: "center",
-    flexGrow: 1,
-    paddingBottom: 130,
-    paddingHorizontal: 24,
-  },
-  emptyTitle: {
-    color: SLEEK.foreground,
-    fontSize: 30,
-    lineHeight: 36,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    color: "rgba(99,110,114,0.82)",
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
-    maxWidth: 310,
-    textAlign: "center",
-  },
-  emptyRobotStage: {
-    alignItems: "center",
-    height: 264,
-    justifyContent: "center",
-    marginBottom: 28,
-    marginTop: 16,
-    position: "relative",
-    width: 264,
-  },
-  emptyRobotGlow: {
-    backgroundColor: "rgba(255,107,107,0.10)",
-    borderRadius: 132,
-    height: 264,
-    position: "absolute",
-    transform: [{ scale: 1.1 }],
-    width: 264,
-  },
-  emptyRobot: {
-    height: 256,
-    width: 256,
-    zIndex: 1,
-  },
-  emptyCard: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "rgba(235,220,199,0.36)",
-    borderRadius: 40,
-    borderWidth: 1,
-    gap: 12,
-    marginBottom: 28,
-    paddingHorizontal: 28,
-    paddingVertical: 28,
-    shadowColor: "#164E63",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    width: "100%",
-    elevation: 4,
-  },
-  emptyStep: {
-    color: SLEEK.secondary,
-    fontSize: 10,
-    letterSpacing: 2,
-    lineHeight: 14,
-    textTransform: "uppercase",
-  },
-  emptyCardTitle: {
-    color: SLEEK.foreground,
-    fontSize: 20,
-    lineHeight: 26,
-  },
-  emptyCardCopy: {
-    color: "rgba(99,110,114,0.82)",
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: "center",
-  },
-  emptyCta: {
-    alignItems: "center",
-    backgroundColor: SLEEK.primary,
-    borderRadius: 48,
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "center",
-    minHeight: 76,
-    paddingHorizontal: 24,
-    shadowColor: SLEEK.primary,
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    width: "100%",
-    elevation: 7,
-  },
-  emptyCtaCopy: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    lineHeight: 28,
-    textAlign: "center",
-  },
   loadingScene: {
     flexGrow: 1,
     paddingHorizontal: 24,
