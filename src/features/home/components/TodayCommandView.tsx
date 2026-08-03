@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { BookOpen, ClipboardList } from 'lucide-react-native';
+import RobotGreetLoop from '@/design-system/components/RobotGreetLoop';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
@@ -71,13 +72,13 @@ export function TodayCommandView({
             </Text>
           </Box>
         </Box>
-        <Image
-          accessibilityIgnoresInvertColors
-          accessibilityLabel={t('TeeBot')}
-          resizeMode="contain"
-          source={require('@/assets/mascot/alive-wave.png')}
-          style={styles.robot}
-        />
+        <Box style={styles.robot} testID="homeHeroAnimatedRobot">
+          <RobotGreetLoop
+            accessibilityLabel={t('TeeBot')}
+            testID="homeHeroRobotAnimation"
+            size={296}
+          />
+        </Box>
       </TouchableOpacity>
 
       <Box style={styles.lessonCard} flexDirection="row" alignItems="center" gap={13}>

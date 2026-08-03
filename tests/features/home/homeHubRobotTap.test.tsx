@@ -60,6 +60,8 @@ describe('HomeHub robot tap', () => {
     );
 
     expect(screen.getByTestId('overviewPage')).toBeTruthy();
+    expect(screen.getByTestId('homeHeroAnimatedRobot')).toBeTruthy();
+    expect(screen.getByTestId('homeHeroRobotAnimation')).toBeTruthy();
     expect(screen.getByText('Ready when Mia is')).toBeTruthy();
     expect(screen.getByText('Barn & Farm Words')).toBeTruthy();
     expect(screen.getByText('Since yesterday')).toBeTruthy();
