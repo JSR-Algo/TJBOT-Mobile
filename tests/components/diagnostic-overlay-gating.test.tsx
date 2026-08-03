@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { cleanup, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DiagnosticErrorBanner } from '@/components/DiagnosticErrorBanner';
 import { DiagnosticOverlayButton } from '@/components/DiagnosticOverlayButton';
@@ -34,6 +34,7 @@ describe('DiagnosticOverlayButton gating', () => {
   const originalFlag = process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY;
 
   afterEach(() => {
+    cleanup();
     process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY = originalFlag;
     clearPendingDiagnosticError();
   });
@@ -58,6 +59,7 @@ describe('DiagnosticErrorBanner gating (ordinary product use)', () => {
 
   afterEach(() => {
     process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY = originalFlag;
+    cleanup();
     clearPendingDiagnosticError();
   });
 

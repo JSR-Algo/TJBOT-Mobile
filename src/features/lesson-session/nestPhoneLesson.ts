@@ -1,7 +1,6 @@
 import {
   completeSession,
   getTodaySession,
-  saveInteraction,
   type LearningSession,
 } from '@/services/api/learning';
 
@@ -37,8 +36,8 @@ export async function bootstrapNestPhoneLesson(childId: string): Promise<NestPho
 }
 
 /**
- * Record a minimal phone interaction + complete the Nest session.
- * Safe to call once; subsequent calls re-complete with the same counts.
+ * Complete the Nest session without inventing speech-recognition results.
+ * The current phone path presents every prompt but does not yet score audio.
  */
 export async function finishNestPhoneLesson(
   context: NestPhoneLessonContext = activeNestLesson as NestPhoneLessonContext,
@@ -47,24 +46,15 @@ export async function finishNestPhoneLesson(
     throw new Error('No active Nest phone lesson to complete');
   }
 
-  const words = context.session.session_payload?.core_learning?.map((item) => item.word) ?? [];
-  const firstWord = words[0] ?? 'hello';
+  const words = context.session.session_payload?.core_learning?.map((item) => item.word).filter(Boolean) ?? [];
   const expected = context.session.session_payload?.interaction?.expected_vocab ?? words;
   const promptCount = Math.max(1, words.length || expected.length || 1);
-
-  await saveInteraction(context.childId, {
-    session_id: context.sessionId,
-    user_message: firstWord,
-    ai_response: context.session.session_payload?.reward?.message
-      ?? `Great job saying ${firstWord}!`,
-    confidence_signal: 85,
-  });
 
   await completeSession(context.childId, {
     session_id: context.sessionId,
     prompts_shown: promptCount,
-    responses_given: promptCount,
-    correct_responses: promptCount,
+    responses_given: 0,
+    correct_responses: 0,
   });
 }
 

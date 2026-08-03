@@ -1,7 +1,6 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-import { Cat, Dog, PawPrint, Rabbit, Sparkles, Squirrel, Turtle } from 'lucide-react-native';
-import Svg, { Path } from 'react-native-svg';
+import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Bot, Cat, Dog } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import OnbShell, { OB } from '@/components/OnbShell';
@@ -21,73 +20,54 @@ import {
   saveOnboardingChildProfile,
 } from '../childProfileSave';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen' | 'PairChildProfileScreen'>;
-
-const BUDDIES = [
-  { id: 'panda', icon: PawPrint, label: 'Panda' },
-  { id: 'cat', icon: Cat, label: 'Cat' },
-  { id: 'fox', icon: Squirrel, label: 'Fox' },
-  { id: 'rabbit', icon: Rabbit, label: 'Rabbit' },
-  { id: 'frog', icon: Turtle, label: 'Frog' },
-  { id: 'lion', icon: PawPrint, label: 'Lion' },
-  { id: 'unicorn', icon: Sparkles, label: 'Unicorn' },
-  { id: 'dog', icon: Dog, label: 'Dog' },
-] as const;
-
-const LEVELS = [
-  { id: 'starter', label: 'Just starting', body: 'New to English. Lots of Robot voice and pictures.' },
-  { id: 'building', label: 'Knows some words', body: 'Can say a few English words. Ready for short phrases.' },
-  { id: 'flowing', label: 'Speaks a bit', body: 'Can answer simple questions. Ready to talk in sentences.' },
-] as const;
-
-const LEVEL_TO_VOCABULARY: Record<(typeof LEVELS)[number]['id'], NonNullable<Child['vocabulary_level']>> = {
-  starter: 'beginner',
-  building: 'basic',
-  flowing: 'intermediate',
+type Props = NativeStackScreenProps<RootStackParamList, 'ChildProfileScreen' | 'PairChildProfileScreen'> & {
+  onProtectedFlowExit?: () => void;
 };
 
-// Age band selector — mirrors backend `AgeBand` (U4 / PRE_K / K_3 / OVER_10).
-// We deliberately do NOT collect a full date of birth: COPPA minimisation +
-// this screen's own promise ("We don't ask for your child's name or photo").
-// The picked band drives content age-gating; a representative birth-year
-// midpoint is sent to the backend so it can derive the same band server-side.
-const AGE_BANDS = [
-  { id: 'U4',      label: 'Under 4',  midpointYears: 3 },
-  { id: 'PRE_K',   label: '4 – 6',    midpointYears: 5 },
-  { id: 'K_3',     label: '7 – 10',   midpointYears: 8 },
-  { id: 'OVER_10', label: 'Over 10',  midpointYears: 11 },
+const BUDDIES = [
+  { id: 'dog', icon: Dog, label: 'Dog' },
+  { id: 'cat', icon: Cat, label: 'Cat' },
+  { id: 'robot', icon: Bot, label: 'Robot' },
 ] as const;
 
-type AgeBandId = (typeof AGE_BANDS)[number]['id'];
+const AGES = [4, 5, 6] as const;
+type ChildAge = (typeof AGES)[number];
 
-function dobFromAgeBand(bandId: AgeBandId): string {
-  const band = AGE_BANDS.find(b => b.id === bandId);
-  const years = band?.midpointYears ?? 5;
-  const now = new Date();
-  // Use July 1 of (this year - years) to avoid month-of-year bias and to
-  // keep the value deterministic across same-day re-saves.
-  const birthYear = now.getFullYear() - years;
-  return `${birthYear}-07-01`;
+function dobFromAge(age: ChildAge): string {
+  return `${new Date().getFullYear() - age}-07-01`;
 }
 
-export default function ChildProfileScreen({ navigation, route }: Props) {
+export default function ChildProfileScreen({ navigation, route, onProtectedFlowExit }: Props) {
   const { language, t } = useAppLanguage();
   const { activeHousehold, addChild, createHousehold } = useHousehold();
-  const [buddy, setBuddy] = React.useState<(typeof BUDDIES)[number]['id']>('panda');
-  const [level, setLevel] = React.useState<(typeof LEVELS)[number]['id']>('starter');
-  const [ageBand, setAgeBand] = React.useState<AgeBandId | null>(null);
+  const [childName, setChildName] = React.useState('');
+  const [buddy, setBuddy] = React.useState<(typeof BUDDIES)[number]['id']>('dog');
+  const [age, setAge] = React.useState<ChildAge>(5);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   // In the from-pairing path, the child can be created successfully but the
   // finalize step still fail. Remember the created child so a retry FINISHES the
   // pairing for that same child instead of creating a duplicate profile.
   const createdChildRef = React.useRef<Child | null>(null);
-  const sel = BUDDIES.find(b => b.id === buddy);
+
+  const returnToPreviousStep = (): void => {
+    if (onProtectedFlowExit) {
+      onProtectedFlowExit();
+      return;
+    }
+    const pairing = route.params?.pairing;
+    if (pairing) {
+      navigation.navigate(ROUTES.PairRenameScreen, pairing);
+      return;
+    }
+    navigation.navigate(ROUTES.ParentConsentScreen);
+  };
 
   const saveChildProfile = async (): Promise<void> => {
     if (saving) return;
-    if (!ageBand) {
-      setError('Pick an age range before saving.');
+    const normalizedName = childName.trim();
+    if (!normalizedName) {
+      setError(t("Enter your child's name."));
       return;
     }
     setSaving(true);
@@ -101,10 +81,9 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
     } else {
       try {
         child = await saveOnboardingChildProfile({
-          name: `${sel?.label ?? 'Panda'} friend`,
-          date_of_birth: dobFromAgeBand(ageBand),
-          vocabulary_level: LEVEL_TO_VOCABULARY[level],
-          learning_style: 'visual',
+          name: normalizedName,
+          date_of_birth: dobFromAge(age),
+          buddy,
         }, {
           activeHousehold,
           createHousehold,
@@ -140,162 +119,169 @@ export default function ChildProfileScreen({ navigation, route }: Props) {
       return;
     }
 
+    if (onProtectedFlowExit) {
+      onProtectedFlowExit();
+      return;
+    }
+
     // Plain onboarding (no pairing context): advance to the next onboarding step.
     navigation.navigate(ROUTES.MicAskScreen);
     setSaving(false);
   };
 
   return (
-    <OnbShell title="Your child's buddy">
-      <Box paddingHorizontal={20} paddingTop={18}>
-        <Text fontWeight="600" style={styles.heading}>Pick a buddy and a starting level</Text>
-        <Text style={styles.sub}>
-          We don't ask for your child's name or photo. The buddy is how Robot greets them.
-        </Text>
+    <OnbShell
+      title={t('Create profile')}
+      step={1}
+      total={3}
+      onBack={returnToPreviousStep}
+      backgroundColor="#E0F7FA"
+      testID="childProfileScreen"
+    >
+      <Box paddingHorizontal={20} paddingTop={18} alignItems="center">
+        <Text fontWeight="800" style={styles.stepBadge}>{t('Next step')}</Text>
+        <Text fontWeight="800" style={styles.heading}>{t('Tell TeeBot about your child')}</Text>
+      </Box>
+
+      <Box testID="childProfileCard" style={styles.profileCard}>
+      <Box paddingHorizontal={16} paddingTop={20}>
+        <Text fontWeight="800" style={styles.fieldLabel}>{t("Child's name")}</Text>
+        <TextInput
+          value={childName}
+          onChangeText={setChildName}
+          placeholder={t('For example: Minh, Lan, or Tung')}
+          placeholderTextColor={OB.ink3}
+          style={styles.nameInput}
+          autoCapitalize="words"
+          autoCorrect={false}
+          testID="childNameInput"
+          accessibilityLabel={t("Child's name")}
+        />
+        <Text style={styles.note}>{t('So TeeBot can greet your child by name.')}</Text>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={20}>
-        <Text style={styles.sectionLabel}>BUDDY</Text>
-        <Box style={styles.buddyGrid}>
-          {BUDDIES.map(b => {
-            const active = buddy === b.id;
-            const BuddyIcon = b.icon;
-            const accessibilityLabel = translateTemplate(
-              active ? 'Buddy {{label}} selected' : 'Buddy {{label}}',
-              { label: b.label },
-              { locale: language },
-            );
-            return (
-              <TouchableOpacity
-                key={b.id}
-                onPress={() => setBuddy(b.id)}
-                style={[
-                  styles.buddyBtn,
-                  { borderColor: active ? OB.accent : OB.hair, backgroundColor: active ? '#E8F0FE' : OB.card },
-                ]}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={accessibilityLabel}
-                accessibilityState={{ selected: active }}
-              >
-                <BuddyIcon
-                  size={30}
-                  color={active ? OB.accent : '#56565E'}
-                  strokeWidth={2.2}
-                />
-              </TouchableOpacity>
-            );
-          })}
-        </Box>
-        <Text style={styles.buddyNote}>Robot will say: <Text fontWeight="700">"Hi, {sel?.label} friend!"</Text></Text>
-      </Box>
-
-      <Box paddingHorizontal={16} paddingTop={20}>
-        <Text style={styles.sectionLabel}>AGE RANGE</Text>
+        <Text fontWeight="800" style={styles.fieldLabel}>{t('How old is your child?')}</Text>
         <Box style={styles.ageBandRow}>
-          {AGE_BANDS.map(b => {
-            const active = ageBand === b.id;
-            const localizedLabel = t(b.label);
-            const accessibilityLabel = translateTemplate(
-              active ? 'Age range {{label}} selected' : 'Age range {{label}}',
-              { label: localizedLabel },
-              { locale: language },
-            );
+          {AGES.map((candidate) => {
+            const active = age === candidate;
             return (
               <TouchableOpacity
-                key={b.id}
-                onPress={() => setAgeBand(b.id)}
-                style={[
-                  styles.ageBandBtn,
-                  { borderColor: active ? OB.accent : OB.hair, backgroundColor: active ? '#E8F0FE' : OB.card },
-                ]}
+                key={candidate}
+                onPress={() => setAge(candidate)}
+                style={[styles.ageButton, active && styles.ageButtonActive]}
                 activeOpacity={0.7}
-                testID={`childAgeBand_${b.id}`}
+                testID={candidate === 5 ? 'childAgeBand_PRE_K' : `childAge_${candidate}`}
                 accessibilityRole="button"
-                accessibilityLabel={accessibilityLabel}
+                accessibilityLabel={translateTemplate('{{age}} years old', { age: candidate }, { locale: language })}
                 accessibilityState={{ selected: active }}
               >
-                <Text fontWeight="700" style={[styles.ageBandText, active && { color: OB.accent }]}>{b.label}</Text>
+                <Text fontWeight="800" style={[styles.ageText, active && styles.ageTextActive]}>
+                  {translateTemplate('{{age}} years old', { age: candidate }, { locale: language })}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </Box>
-        <Text style={styles.note}>We only need an age range, not a birthday.</Text>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={20}>
-        <Text style={styles.sectionLabel}>STARTING LEVEL</Text>
-        <Box style={styles.levelList} borderRadius={14} borderWidth={1} borderColor={OB.hair} overflow="hidden">
-          {LEVELS.map((l, i) => {
-            const active = level === l.id;
-            const localizedLabel = t(l.label);
-            const accessibilityLabel = translateTemplate(
-              active ? 'Starting level {{label}} selected' : 'Starting level {{label}}',
-              { label: localizedLabel },
-              { locale: language },
-            );
+        <Text fontWeight="800" style={styles.fieldLabel}>{t('Which buddy does your child like?')}</Text>
+        <Box style={styles.buddyGrid}>
+          {BUDDIES.map((candidate) => {
+            const active = buddy === candidate.id;
+            const BuddyIcon = candidate.icon;
             return (
               <TouchableOpacity
-                key={l.id}
-                onPress={() => setLevel(l.id)}
-                style={[
-                  styles.levelRow,
-                  { backgroundColor: active ? '#E8F0FE' : 'transparent' },
-                  i < LEVELS.length - 1 && { borderBottomWidth: 1, borderBottomColor: OB.hair },
-                ]}
+                key={candidate.id}
+                onPress={() => setBuddy(candidate.id)}
+                style={[styles.buddyButton, active && styles.buddyButtonActive]}
+                testID={`childBuddy_${candidate.id}`}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={accessibilityLabel}
+                accessibilityLabel={t(candidate.label)}
                 accessibilityState={{ selected: active }}
               >
-                <Box
-                  style={[
-                    styles.radio,
-                    { borderColor: active ? OB.accent : 'rgba(0,0,0,0.2)', backgroundColor: active ? OB.accent : 'transparent' },
-                  ]}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  {active && (
-                    <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.5} strokeLinecap="round">
-                      <Path d="M5 12l5 5 9-10" />
-                    </Svg>
-                  )}
-                </Box>
-                <Box flex={1}>
-                  <Text fontWeight="600" style={{ fontSize: 15, color: OB.ink, marginBottom: 2 }}>{l.label}</Text>
-                  <Text style={{ fontSize: 13, color: OB.ink2, lineHeight: 19 }}>{l.body}</Text>
-                </Box>
+                <BuddyIcon size={40} color={active ? OB.accent : OB.ink3} strokeWidth={2.4} />
               </TouchableOpacity>
             );
           })}
         </Box>
-        <Text style={styles.note}>Robot adapts as you go — you can change this any time.</Text>
       </Box>
 
+      </Box>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : null}
-        <OnbBigBtn testID="childProfileSaveButton" onClick={saveChildProfile}>{saving ? 'Saving...' : 'Save and meet Tee'}</OnbBigBtn>
+        <OnbBigBtn testID="childProfileSaveButton" onClick={saveChildProfile}>{saving ? t('Saving...') : t('Continue')}</OnbBigBtn>
       </Box>
     </OnbShell>
   );
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, color: OB.ink, marginBottom: 6, letterSpacing: -0.3 },
-  sub: { fontSize: 14, color: OB.ink2, lineHeight: 21 },
-  sectionLabel: { fontSize: 12, color: OB.ink3, paddingHorizontal: 4, paddingBottom: 8, letterSpacing: 0.6, fontWeight: '600' },
-  buddyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  buddyBtn: { width: '23%', aspectRatio: 1, borderWidth: 2, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  buddyNote: { fontSize: 13, color: OB.ink2, paddingTop: 10, paddingHorizontal: 4 },
-  ageBandRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  ageBandBtn: { minHeight: 44, paddingHorizontal: 18, paddingVertical: 10, borderWidth: 2, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  ageBandText: { fontSize: 15, color: OB.ink },
-  levelList: { backgroundColor: OB.card },
-  levelRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 14 },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, flexShrink: 0, marginTop: 2 },
-  note: { fontSize: 12, color: OB.ink3, paddingTop: 8, paddingHorizontal: 4, lineHeight: 18 },
+  profileCard: {
+    marginHorizontal: 16,
+    marginTop: 22,
+    paddingTop: 8,
+    paddingBottom: 24,
+    borderRadius: 44,
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: '#F6E3CF',
+    shadowColor: '#164E63',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 5,
+  },
+  stepBadge: {
+    fontSize: 10,
+    color: OB.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  heading: { fontSize: 32, color: OB.ink, lineHeight: 38, textAlign: 'center', letterSpacing: -0.5 },
+  fieldLabel: { fontSize: 16, color: OB.ink, marginBottom: 12, marginLeft: 8 },
+  nameInput: {
+    minHeight: 62,
+    borderWidth: 2,
+    borderColor: OB.hair,
+    borderRadius: 28,
+    backgroundColor: OB.card,
+    paddingHorizontal: 24,
+    fontSize: 16,
+    fontWeight: '700',
+    color: OB.ink,
+  },
+  ageBandRow: { flexDirection: 'row', gap: 10 },
+  ageButton: {
+    flex: 1,
+    minHeight: 60,
+    borderWidth: 2,
+    borderColor: OB.hair,
+    borderRadius: 22,
+    backgroundColor: OB.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ageButtonActive: { borderColor: OB.accent, backgroundColor: OB.accent },
+  ageText: { fontSize: 14, color: OB.ink2 },
+  ageTextActive: { color: '#FFFFFF' },
+  buddyGrid: { flexDirection: 'row', gap: 18 },
+  buddyButton: {
+    width: 80,
+    height: 80,
+    borderWidth: 2,
+    borderColor: OB.hair,
+    borderRadius: 28,
+    backgroundColor: OB.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buddyButtonActive: { borderColor: OB.accent },
+  note: { fontSize: 12, color: OB.ink3, paddingTop: 8, paddingHorizontal: 12, lineHeight: 18 },
   error: { color: OB.danger, fontSize: 13, lineHeight: 19, marginBottom: 12 },
 });

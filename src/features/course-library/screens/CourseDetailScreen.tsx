@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, type ImageSourcePropType, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { FileText, Play } from 'lucide-react-native';
+import { BookOpen, FileText, Play } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
@@ -100,6 +100,20 @@ export default function CourseDetailScreen({ navigation, route }: Props): React.
         <TouchableOpacity
           accessibilityRole="button"
           activeOpacity={0.78}
+          onPress={() => navigation.navigate(ROUTES.LessonDetailScreen, { courseId: course.courseId })}
+          style={styles.lessonButton}
+          testID="openLessonDetails"
+        >
+          <BookOpen color="#149A88" size={19} strokeWidth={2.4} />
+          <Box flex={1}>
+            <Text fontWeight="800" style={styles.lessonButtonTitle}>{t('Open lesson details')}</Text>
+            <Text style={styles.lessonButtonCopy}>{t('Review the lesson before sending it to TeeBot')}</Text>
+          </Box>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.78}
           onPress={() => navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId: course.courseId })}
           style={styles.primaryButton}
           testID="coursePrimaryAction"
@@ -176,6 +190,9 @@ const styles = StyleSheet.create({
   learningTile: { backgroundColor: '#F8F4EE', borderRadius: 14, minHeight: 68, padding: 9 },
   learningTitle: { color: '#403E3B', fontSize: 9, lineHeight: 12 },
   learningCopy: { color: '#88827B', fontSize: 7, lineHeight: 10, marginTop: 4 },
+  lessonButton: { alignItems: 'center', backgroundColor: '#DDF7F3', borderColor: '#C8EAE4', borderRadius: 18, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 10, minHeight: 66, paddingHorizontal: 16, paddingVertical: 12 },
+  lessonButtonTitle: { color: '#176E63', fontSize: 14 },
+  lessonButtonCopy: { color: '#4D7C75', fontSize: 10, lineHeight: 14, marginTop: 2 },
   primaryButton: { alignItems: 'center', backgroundColor: '#202324', borderRadius: 24, flexDirection: 'row', justifyContent: 'space-between', minHeight: 48, paddingHorizontal: 20 },
   primaryText: { color: '#FFFFFF', fontSize: 13 },
   secondaryButton: { alignItems: 'center', borderColor: '#D9D0C5', borderRadius: 20, borderWidth: 1, minHeight: 48, justifyContent: 'center' },

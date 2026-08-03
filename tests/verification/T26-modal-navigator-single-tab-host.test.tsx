@@ -147,11 +147,11 @@ describe('T26 ModalNavigator single shared shell', () => {
   });
 
   it('renders the same shell for a non-tab direct deep-link entry', () => {
-    const screen = render(<ModalNavigator initialRouteName={ROUTES.CourseLockedScreen} />);
+    const screen = render(<ModalNavigator initialRouteName={ROUTES.CourseDetailScreen} />);
 
     expect(screen.getAllByTestId('mainTabs')).toHaveLength(1);
-    expect(screen.getByTestId(`page-${ROUTES.CourseLockedScreen}`)).toBeTruthy();
-    expect(mockCapturedShellProps).toEqual([{ routeName: ROUTES.CourseLockedScreen }]);
+    expect(screen.getByTestId(`page-${ROUTES.CourseDetailScreen}`)).toBeTruthy();
+    expect(mockCapturedShellProps).toEqual([{ routeName: ROUTES.CourseDetailScreen }]);
   });
 
   it('preserves direct-entry route params while applying the shell', () => {

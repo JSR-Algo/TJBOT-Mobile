@@ -48,7 +48,10 @@ function renderNavigationTree() {
   const authInitialRoute = initialRouteFromFeature('auth');
   const onboardingInitialRoute = initialRouteFromFeature('onboarding');
   const protectedDefaultRoute = routeBy(mapping, entry => entry.bucket === 'tabScreen' && entry.feature === 'home');
-  const pendingDeviceSetupRoute = routeBy(mapping, entry => entry.feature === 'device' && entry.role === 'stack-entry');
+  const pendingDeviceSetupRoute = routeBy(
+    mapping,
+    entry => entry.feature === 'device' && entry.stateMachineId === 'dv_overview',
+  );
   const nodeLabel = route => `${route}<br/>${mapping.routes[route].bucket} / ${mapping.routes[route].role}`;
 
   const lines = [

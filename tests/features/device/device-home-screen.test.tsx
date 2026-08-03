@@ -107,6 +107,44 @@ describe('DeviceHomeScreen', () => {
     expect(screen.queryByText('Wi-Fi not reported')).toBeNull();
   });
 
+  it('matches the accepted page-21 Robot hub and keeps every visible action wired', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'device-21',
+      name: 'TeeBot Living Room',
+      online: true,
+      batteryPercent: 87,
+      wifiSsid: 'Casa',
+    });
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Ready for today')).resolves.toBeTruthy();
+    for (const label of [
+      'Unit 2 · Animals',
+      '3 words to revisit',
+      'Yesterday: 1 lesson · 4 min',
+      'Make Robot chime',
+      'Quiet hours',
+    ]) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+
+    fireEvent.press(screen.getByText('Unit 2 · Animals'));
+    fireEvent.press(screen.getByText('3 words to revisit'));
+    fireEvent.press(screen.getByText('Yesterday: 1 lesson · 4 min'));
+    fireEvent.press(screen.getByText('Make Robot chime'));
+    fireEvent.press(screen.getByText('Quiet hours'));
+
+    expect(navigation.navigate).toHaveBeenNthCalledWith(1, ROUTES.CourseLibraryScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(2, ROUTES.TodayProgressScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(3, ROUTES.ParentHistoryScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(4, ROUTES.DeviceLostScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(5, ROUTES.ParentSafetyScreen);
+  });
+
   it('offers Robot setup from the loading state', async () => {
     localDeviceMocks.getLocalPairedDeviceId.mockImplementation(() => new Promise(() => undefined));
     const navigation = { navigate: jest.fn() };

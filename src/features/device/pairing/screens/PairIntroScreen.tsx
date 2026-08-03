@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RobotImage } from '@/components/RobotImage';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -22,7 +22,7 @@ export default function PairIntroScreen({ navigation }: Props) {
   return (
     <DeviceShell title="Turn on Robot" onBack={() => navigation.navigate(ROUTES.PairAddScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="charging" size={180} accent={DV.accent} />
+        <RobotImage variant="body" size={180} />
         <Text fontWeight="600" style={styles.heading}>Power on your Robot</Text>
         <Text style={styles.sub}>
           Hold the button on top for 2 seconds. You'll hear a chime and see a friendly face when it's ready.

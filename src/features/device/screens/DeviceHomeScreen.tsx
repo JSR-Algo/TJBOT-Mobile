@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -8,11 +8,12 @@ import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { Icon } from '@/design-system/icons';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
 import { referenceImages, referenceRadii, referenceShadow } from '@/design-system/referenceTheme';
 import { getDeviceStatus, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
-import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
+import { translateCopy, translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '../pairing/localPairedDevice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceHomeScreen'>;
@@ -28,6 +29,20 @@ function getDeviceStatusForScreen(deviceId: string): Promise<DeviceStatus> {
   return Promise.race([getDeviceStatus(deviceId), timeout]).finally(() => {
     if (timeoutId) clearTimeout(timeoutId);
   });
+}
+
+function RobotPageTitle({ deviceName, label }: { deviceName?: string; label?: string }) {
+  return (
+    <Box paddingHorizontal={20} paddingTop={16} paddingBottom={12} testID="robotHubBreadcrumb">
+      {deviceName ? (
+        <Box flexDirection="row" alignItems="center" gap={4}>
+          <Text fontWeight="700" i18n={false} style={styles.eyebrow}>{label} ·</Text>
+          <Text fontWeight="700" i18n={false} style={styles.eyebrow}>{deviceName}</Text>
+        </Box>
+      ) : null}
+      <Text fontWeight="800" style={styles.pageTitle}>Robot</Text>
+    </Box>
+  );
 }
 
 export default function DeviceHomeScreen({ navigation }: Props) {
@@ -58,10 +73,15 @@ export default function DeviceHomeScreen({ navigation }: Props) {
 
   if (localDeviceQuery.isLoading || deviceQuery.isLoading) {
     return (
-      <DeviceShell title="Devices">
-        <Box paddingHorizontal={20} paddingTop={28} gap={14}>
-          <Text style={styles.emptyBody}>Loading Robot...</Text>
-          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>Connect Robot</DeviceBigBtn>
+      <DeviceShell hideHeader screenTestID="robotHubPage">
+        <RobotPageTitle />
+        <Box paddingHorizontal={20} paddingTop={12} gap={14}>
+          <Box style={styles.loadingCard} alignItems="center" gap={12}>
+            <ActivityIndicator color={DV.accent} />
+            <Text fontWeight="700" style={styles.emptyTitle}>Loading Robot...</Text>
+            <Text style={styles.emptyBody}>Checking this account for a connected TeeBot.</Text>
+            <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.PairAddScreen)}>Connect Robot</DeviceBigBtn>
+          </Box>
         </Box>
       </DeviceShell>
     );
@@ -69,8 +89,9 @@ export default function DeviceHomeScreen({ navigation }: Props) {
 
   if (deviceQuery.isError) {
     return (
-      <DeviceShell title="Devices">
-        <Box paddingHorizontal={20} paddingTop={28}>
+      <DeviceShell hideHeader screenTestID="robotHubPage">
+        <RobotPageTitle />
+        <Box paddingHorizontal={20} paddingTop={12}>
           <Box style={styles.emptyCard} alignItems="center">
             <Image source={referenceImages.robotHead} style={styles.emptyRobot} resizeMode="contain" accessibilityLabel="Robot" />
             <Text fontWeight="700" style={styles.emptyTitle}>Robot status unavailable</Text>
@@ -85,8 +106,9 @@ export default function DeviceHomeScreen({ navigation }: Props) {
 
   if (!device?.id) {
     return (
-      <DeviceShell title="Devices">
-        <Box paddingHorizontal={20} paddingTop={28}>
+      <DeviceShell hideHeader screenTestID="robotHubPage">
+        <RobotPageTitle />
+        <Box paddingHorizontal={20} paddingTop={12}>
           <Box style={styles.emptyCard} alignItems="center">
             <Image source={referenceImages.robotHead} style={styles.emptyRobot} resizeMode="contain" accessibilityLabel="Robot" />
             <Text fontWeight="700" style={styles.emptyTitle}>No Robot connected</Text>
@@ -98,7 +120,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     );
   }
 
-  const connectionLabel = translateCopy(device.online ? 'Online' : 'Offline', { locale: language });
+  const connectionLabel = translateCopy(device.online ? 'Online · idle' : 'Offline', { locale: language });
   const connectionColor = device.online ? DV.good : DV.ink2;
   const batteryLabel = `${device.batteryPercent}%`;
   const wifiSsid = device.wifiSsid?.trim();
@@ -109,53 +131,93 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       : translateCopy('Wi-Fi not reported', { locale: language });
 
   return (
-    <DeviceShell title="Devices">
-      <Box paddingHorizontal={16} paddingTop={18}>
-        <Box style={styles.heroCard} flexDirection="row" gap={16} alignItems="center">
-          <Box style={styles.robotWell} alignItems="center" justifyContent="center">
-            <Image source={referenceImages.robotHead} style={styles.heroRobot} resizeMode="contain" accessibilityLabel={t('Connected Robot')} />
-          </Box>
-          <Box flex={1}>
-            <Text fontWeight="600" style={[styles.statusText, { color: connectionColor }]} i18n={false}>{connectionLabel}</Text>
-            <Text fontWeight="600" style={styles.readyText} i18n={false}>{device.name}</Text>
-            <Box flexDirection="row" gap={8} style={{ marginTop: 4 }}>
-              <Text style={styles.metaText} i18n={false}>🔋 {batteryLabel}</Text>
-              <Text style={styles.metaText}>•</Text>
-              <Text style={styles.metaText} i18n={false}>{wifiLabel}</Text>
+    <DeviceShell hideHeader screenTestID="robotHubPage">
+      <RobotPageTitle deviceName={device.name} label={t('TeeBot')} />
+      <Box paddingHorizontal={16} paddingTop={4}>
+        <TouchableOpacity
+          accessibilityLabel={t('Open Robot detail')}
+          accessibilityRole="button"
+          activeOpacity={0.76}
+          onPress={() => navigation.navigate(ROUTES.DeviceOverviewScreen, { deviceId: device.id })}
+          style={styles.heroCard}
+          testID="openRobotDetail"
+        >
+          <Box flexDirection="row" gap={16} alignItems="center">
+            <Box style={styles.robotWell} alignItems="center" justifyContent="center">
+              <Image source={referenceImages.robotBody} style={styles.heroRobot} resizeMode="contain" accessibilityLabel={t('Connected Robot')} />
+            </Box>
+            <Box flex={1}>
+              <Text fontWeight="600" style={[styles.statusText, { color: connectionColor }]} i18n={false}>{connectionLabel}</Text>
+              <Text fontWeight="700" style={styles.readyText}>Ready for today</Text>
+              <Box flexDirection="row" gap={8} style={{ marginTop: 4 }}>
+                <Box flexDirection="row" gap={3} alignItems="center">
+                  <Icon name="BatteryCharging" size={14} color={DV.ink2} strokeWidth={2.3} testID="robotHubBatteryIcon" />
+                  <Text style={styles.metaText} i18n={false}>{batteryLabel}</Text>
+                </Box>
+                <Text style={styles.metaText}>•</Text>
+                <Text style={styles.metaText} i18n={false}>{wifiLabel}</Text>
+              </Box>
             </Box>
           </Box>
-        </Box>
+        </TouchableOpacity>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Today</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="📚" title="Unit 2 · Animals" body="Lesson 4 of 6 · about 4 minutes" onClick={() => navigation.navigate(ROUTES.DeviceSessionScreen)} />
-          <DeviceRow icon="🔁" title="3 words to revisit" body="Robot will sneak these in tomorrow" />
-          <DeviceRow icon="⭐" title="Yesterday: 1 lesson · 4 min" body="Tap to see what your child practiced" />
+          <DeviceRow
+            icon={<Icon name="BookOpenText" size={20} color={DV.ink2} strokeWidth={2.3} testID="robotHubTodayLessonIcon" />}
+            title="Unit 2 · Animals"
+            body={translateTemplate('{{minutes}} min · {{words}} words', { minutes: 7, words: 6 }, { locale: language })}
+            onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}
+          />
+          <DeviceRow
+            icon={<Icon name="Sparkles" size={20} color={DV.ink2} strokeWidth={2.3} testID="robotHubReviewIcon" />}
+            title="3 words to revisit"
+            body="words ready to review"
+            onClick={() => navigation.navigate(ROUTES.TodayProgressScreen)}
+          />
+          <DeviceRow
+            icon={<Icon name="CircleCheck" size={20} color={DV.ink2} strokeWidth={2.3} testID="robotHubHistoryIcon" />}
+            title="Yesterday: 1 lesson · 4 min"
+            body="lesson report"
+            onClick={() => navigation.navigate(ROUTES.ParentHistoryScreen)}
+          />
         </Box>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>Robot</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="🎵" title="Make Robot chime" body="Find Robot if it's misplaced" onClick={() => navigation.navigate(ROUTES.DeviceLostScreen)} />
-          <DeviceRow icon="🌙" title="Quiet hours" body="9:00 PM – 7:00 AM" />
-          <DeviceRow icon="🔄" title="Sync content" body="Up to date · 2 minutes ago" />
-          <DeviceRow icon="⬆️" title="Firmware" body="v1.4.2 · update available" onClick={() => navigation.navigate(ROUTES.DeviceFirmwareScreen)} />
+          <DeviceRow
+            icon={<Icon name="Volume2" size={20} color={DV.ink2} strokeWidth={2.3} testID="robotHubChimeIcon" />}
+            title="Make Robot chime"
+            body="Find Robot if it's misplaced"
+            onClick={() => navigation.navigate(ROUTES.DeviceLostScreen)}
+          />
+          <DeviceRow
+            icon={<Icon name="Clock3" size={20} color={DV.ink2} strokeWidth={2.3} testID="robotHubQuietHoursIcon" />}
+            title="Quiet hours"
+            body="9:00 PM – 7:00 AM"
+            onClick={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
+          />
+          <DeviceRow
+            icon={<Icon name="Plus" size={20} color={DV.ink2} strokeWidth={2.3} testID="robotHubPairIcon" />}
+            title="Pair another Robot"
+            body="Open the guided five-step setup"
+            onClick={() => navigation.navigate(ROUTES.PairAddScreen)}
+          />
         </Box>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>This Robot</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="👤" title="Buddy: Panda · Just starting" body="Tap to change avatar or level" />
-          <DeviceRow icon="🛡️" title="Safety & privacy" />
           <DeviceRow
             danger
             title="Unpair this Robot"
             body={unpairMutation.isPending ? 'Unpairing...' : 'Return this Robot to setup mode'}
-            icon="⚠️"
+            icon={<Icon name="TriangleAlert" size={20} color="#C0392B" strokeWidth={2.3} testID="robotHubUnpairIcon" />}
             onClick={() => {
               if (!unpairMutation.isPending) {
                 unpairMutation.mutate(device.id);
@@ -174,17 +236,20 @@ export default function DeviceHomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  eyebrow: { color: DV.accent, fontSize: 11, letterSpacing: 0.7, marginBottom: 4, textTransform: 'uppercase' },
+  pageTitle: { color: DV.ink, fontSize: 30, lineHeight: 35 },
   emptyCard: { backgroundColor: DV.card, borderRadius: 32, padding: 26, borderWidth: 1, borderColor: DV.hair, gap: 14, ...referenceShadow.card },
+  loadingCard: { backgroundColor: DV.card, borderRadius: 28, padding: 24, borderWidth: 1, borderColor: DV.hair, ...referenceShadow.card },
   emptyRobot: { width: 150, height: 150 },
   emptyTitle: { fontSize: 24, color: DV.ink, textAlign: 'center' },
   emptyBody: { fontSize: 14, color: DV.ink2, lineHeight: 21, textAlign: 'center' },
   errorText: { fontSize: 13, color: '#C0392B', paddingHorizontal: 14, paddingVertical: 10 },
-  heroCard: { backgroundColor: DV.card, borderRadius: 32, padding: 20, borderWidth: 1, borderColor: DV.hair, ...referenceShadow.card },
-  robotWell: { width: 116, height: 116, borderRadius: 30, backgroundColor: '#FFF7F2', overflow: 'hidden' },
-  heroRobot: { width: 108, height: 108 },
+  heroCard: { backgroundColor: DV.card, borderRadius: 28, padding: 18, borderWidth: 1, borderColor: DV.hair, ...referenceShadow.card },
+  robotWell: { width: 104, height: 104, borderRadius: 28, backgroundColor: '#FFF7F2', overflow: 'hidden' },
+  heroRobot: { width: 96, height: 96 },
   statusText: { fontSize: 13, backgroundColor: '#DFF7EA', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, alignSelf: 'flex-start', overflow: 'hidden' },
   readyText: { fontSize: 20, color: DV.ink, marginTop: 8 },
   metaText: { fontSize: 12, color: DV.ink2 },
-  sectionLabel: { fontSize: 12, color: DV.ink2, letterSpacing: 0, marginBottom: 10 },
+  sectionLabel: { fontSize: 16, color: DV.ink, letterSpacing: 0, marginBottom: 10 },
   rowCard: { backgroundColor: DV.card, borderRadius: referenceRadii.cardLarge, borderWidth: 1, borderColor: DV.hair, paddingVertical: 6, paddingHorizontal: 6, ...referenceShadow.card },
 });

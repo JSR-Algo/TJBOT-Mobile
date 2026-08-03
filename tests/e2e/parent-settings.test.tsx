@@ -6,9 +6,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
 import {
   APP_LANGUAGE_STORAGE_KEY,
-  loadAppLanguagePreference,
   setAppLanguage,
 } from '../../src/services/i18n/i18n';
+import {
+  ACCESSIBILITY_PREFERENCES_STORAGE_KEY,
+} from '../../src/services/accessibility/preferences';
 import ParentSettingsScreen from '../../src/features/parent/screens/ParentSettingsScreen';
 import ParentGateScreen from '../../src/features/parent/screens/ParentGateScreen';
 import ParentLockedOutScreen from '../../src/features/parent/screens/ParentLockedOutScreen';
@@ -19,7 +21,6 @@ import ParentAccountPrivacyScreen from '../../src/features/parent/screens/Parent
 import * as parentApi from '../../src/services/api/parent.api';
 import * as accountApi from '../../src/services/api/account';
 import { getChildLessonProgress, getChildProgress } from '../../src/services/api/progress.api';
-import { getChildProfile, updateChildProfile } from '../../src/services/api/learning';
 import { useHousehold } from '@/contexts/HouseholdContext';
 
 jest.setTimeout(120_000);
@@ -82,11 +83,6 @@ jest.mock('../../src/services/api/progress.api', () => ({
   getChildLessonProgress: jest.fn(),
 }));
 
-jest.mock('../../src/services/api/learning', () => ({
-  __esModule: true,
-  getChildProfile: jest.fn(),
-  updateChildProfile: jest.fn(),
-}));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
   __esModule: true,
@@ -97,8 +93,6 @@ const parentApiMock = parentApi as jest.Mocked<typeof parentApi>;
 const accountApiMock = accountApi as jest.Mocked<typeof accountApi>;
 const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getChildProgress>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
-const mockGetChildProfile = getChildProfile as jest.MockedFunction<typeof getChildProfile>;
-const mockUpdateChildProfile = updateChildProfile as jest.MockedFunction<typeof updateChildProfile>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 
 // ParentToday/History read the child-scoped lesson-progress feed via TanStack
@@ -113,7 +107,7 @@ async function renderParentSettings() {
   const screen = render(
     <ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />,
   );
-  await screen.findByText('Mai');
+  await screen.findByText('Language & access');
   return screen;
 }
 
@@ -139,28 +133,6 @@ describe('Parent settings and gate', () => {
     mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
     mockGetChildProgress.mockResolvedValue({ childId: 'child-1', lessonsCompleted: 0, currentStreakDays: 0, masteredWords: 0, byCourse: [] });
     mockGetChildLessonProgress.mockResolvedValue([]);
-    mockGetChildProfile.mockResolvedValue({
-      id: 'child-1',
-      name: 'Mai',
-      vocabulary_level: 'beginner',
-      speaking_confidence: 50,
-      listening_score: 40,
-      interests: ['animals'],
-      attention_span_seconds: 180,
-      learning_style: 'visual',
-      parent_career: 'engineer',
-    });
-    mockUpdateChildProfile.mockImplementation(async (_childId, dto) => ({
-      id: 'child-1',
-      name: 'Mai',
-      vocabulary_level: dto.vocabulary_level ?? 'beginner',
-      speaking_confidence: 50,
-      listening_score: 40,
-      interests: dto.interests ?? ['animals'],
-      attention_span_seconds: 180,
-      learning_style: dto.learning_style ?? 'visual',
-      parent_career: dto.parent_career ?? 'engineer',
-    }));
     accountApiMock.refreshEntitlementsAfterPurchase.mockResolvedValue({
       courses: [],
       subscriptionStatus: 'none',
@@ -168,86 +140,62 @@ describe('Parent settings and gate', () => {
     });
   });
 
-  it('uses AuthContext logout for sign out so the root auth gate resets navigation', async () => {
-    const { getByText } = await renderParentSettings();
+  it('matches the language and accessibility blueprint without unrelated prototype settings', async () => {
+    const { getByText, queryByText } = await renderParentSettings();
 
-    fireEvent.press(getByText('Sign out'));
-
-    expect(mockLogout).toHaveBeenCalledTimes(1);
-    expect(mockNavigate).not.toHaveBeenCalledWith(ROUTES.LoginScreen);
+    expect(getByText('Language & access')).toBeTruthy();
+    expect(getByText('LANGUAGE')).toBeTruthy();
+    expect(getByText('ACCESSIBILITY')).toBeTruthy();
+    expect(getByText('Reduce motion')).toBeTruthy();
+    expect(getByText('Enable larger text')).toBeTruthy();
+    expect(getByText('Save settings')).toBeTruthy();
+    expect(queryByText('Plan status')).toBeNull();
+    expect(queryByText('PERSONALITY FILTERS')).toBeNull();
+    expect(queryByText('Sign out')).toBeNull();
   });
 
-  it('blocks plan status instead of rendering hardcoded or schema-less entitlement text', async () => {
-    const { getAllByText, getByText, queryByText } = await renderParentSettings();
-
-    expect(getByText('Plan status')).toBeTruthy();
-    expect(getAllByText('Unavailable').length).toBeGreaterThanOrEqual(1);
-    expect(queryByText('Robot English Plus')).toBeNull();
-    expect(queryByText('Active')).toBeNull();
-  });
-
-  it('does not render prototype child profile or subscription data in parent settings', async () => {
-    const { getAllByText, queryByText } = await renderParentSettings();
-
-    expect(queryByText('Mira')).toBeNull();
-    expect(queryByText('7')).toBeNull();
-    expect(queryByText('Active')).toBeNull();
-    expect(getAllByText('Unavailable').length).toBeGreaterThanOrEqual(4);
-  });
-
-  it('lets parents update career and child interest filters used for lesson personalization', async () => {
-    const screen = await renderParentSettings();
-
-    expect(await screen.findByText('PERSONALITY FILTERS')).toBeTruthy();
-    expect(await screen.findByText('Engineer')).toBeTruthy();
-    expect(await screen.findByText('animals')).toBeTruthy();
-
-    await act(async () => {
-      fireEvent.press(screen.getByText('Teacher'));
-    });
-    expect(mockUpdateChildProfile).toHaveBeenCalledWith('child-1', expect.objectContaining({ parent_career: 'teacher' }));
-
-    await act(async () => {
-      fireEvent.press(screen.getByText('space'));
-    });
-    expect(mockUpdateChildProfile).toHaveBeenCalledWith('child-1', expect.objectContaining({ interests: expect.arrayContaining(['space']) }));
-  });
-
-  it('opens account privacy controls from settings', async () => {
-    const { getByText } = await renderParentSettings();
-
-    fireEvent.press(getByText('Account privacy'));
-
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
-  });
-
-  it('labels parent settings rows with their action and current state for screen readers', async () => {
+  it('labels language choices and accessibility switches with their current state', async () => {
     const { getByLabelText } = await renderParentSettings();
 
-    fireEvent.press(getByLabelText('Open Safety & Privacy details'));
-
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentSafetyScreen);
     expect(getByLabelText('English, Selected')).toBeTruthy();
     expect(getByLabelText('Tiếng Việt, Not selected')).toBeTruthy();
+    expect(getByLabelText('Reduce motion').props.accessibilityState).toEqual({ checked: false });
+    expect(getByLabelText('Enable larger text').props.accessibilityState).toEqual({ checked: false });
   });
 
-  it('defaults app language to Vietnamese, switches to English, and persists the choice', async () => {
-    await AsyncStorage.clear();
-    await loadAppLanguagePreference();
-
+  it('saves language and accessibility preferences together', async () => {
     const view = await renderParentSettings();
 
-    expect(view.getByText('Ngôn ngữ ứng dụng')).toBeTruthy();
-    expect(view.getAllByText('Tiếng Việt').length).toBeGreaterThanOrEqual(1);
-
-    await act(async () => {
-      fireEvent.press(view.getByText('English'));
-    });
+    fireEvent.press(view.getByLabelText('Tiếng Việt, Not selected'));
+    fireEvent.press(view.getByLabelText('Reduce motion'));
+    fireEvent.press(view.getByLabelText('Enable larger text'));
+    fireEvent.press(view.getByText('Save settings'));
 
     await waitFor(() => {
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(APP_LANGUAGE_STORAGE_KEY, 'en');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(APP_LANGUAGE_STORAGE_KEY, 'vi');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        ACCESSIBILITY_PREFERENCES_STORAGE_KEY,
+        JSON.stringify({ reduceMotion: true, largeText: true }),
+      );
     });
-    expect(view.getByText('App language')).toBeTruthy();
+    expect(await view.findByText('Đã lưu cài đặt')).toBeTruthy();
+  });
+
+  it('shows an honest error when accessibility preferences cannot be persisted', async () => {
+    const setItemMock = jest.mocked(AsyncStorage.setItem);
+    setItemMock.mockClear();
+    setItemMock.mockRejectedValueOnce(new Error('storage unavailable'));
+    const view = await renderParentSettings();
+
+    fireEvent.press(view.getByLabelText('Reduce motion'));
+    fireEvent.press(view.getByText('Save settings'));
+
+    expect(await view.findByText('Settings could not be saved. Try again.')).toBeTruthy();
+    expect(setItemMock).toHaveBeenCalledTimes(1);
+    expect(setItemMock).toHaveBeenCalledWith(
+      ACCESSIBILITY_PREFERENCES_STORAGE_KEY,
+      expect.any(String),
+    );
   });
 
   it('requires export confirmation and refreshes status only from user action', async () => {
@@ -722,110 +670,25 @@ describe('Parent settings and gate', () => {
     });
   });
 
-  it('keeps parent summary failures explicit when the backend contract is unavailable', async () => {
-    parentApiMock.getParentSummary.mockRejectedValueOnce(Object.assign(new Error('Parent summary API route not documented'), { code: 'BACKEND_CONTRACT_UNAVAILABLE' }));
-    const { getByText, queryByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    expect(getByText('Loading parent summary')).toBeTruthy();
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
-    expect(getByText('Parent summary unavailable')).toBeTruthy();
-    expect(getByText('Try again.')).toBeTruthy();
-    expect(getByText('Retry')).toBeTruthy();
-    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
-    expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
-    expect(queryByText('Your child practiced 3 lessons for 18 minutes this week.')).toBeNull();
-  });
-
-  it('does not stay loading when parent summary unexpectedly resolves without a typed contract', async () => {
-    parentApiMock.getParentSummary.mockResolvedValueOnce(undefined as never);
-
-    const { getByText, queryByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
-    expect(getByText('Parent summary unavailable')).toBeTruthy();
-    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
-    expect(queryByText('Loading parent summary')).toBeNull();
-  });
-
-  it('shows parent summary failure copy when the backend contract is unavailable', async () => {
-    parentApiMock.getParentSummary.mockRejectedValueOnce(new Error('Parent summary API route not documented'));
-
-    const { getByText, queryByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(getByText('Parent summary unavailable')).toBeTruthy());
-    expect(queryByText('No lesson activity has synced yet.')).toBeNull();
-    expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
-  });
-
-  it('shows requested summary context from notification route params without guessing backend fields', async () => {
-    const { getByText, queryByText } = render(
-      <ParentSummaryScreen
-        navigation={mockNavigation as never}
-        route={{
-          ...mockRoute,
-          params: { deviceId: 'device-1', summaryDate: '2026-05-16' },
-        } as never}
-      />,
-    );
-
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(1));
-    expect(getByText('Requested summary: 2026-05-16')).toBeTruthy();
-    expect(getByText('Robot: device-1')).toBeTruthy();
-    expect(queryByText('Mira practiced greetings and feelings for about 8 minutes.')).toBeNull();
-  });
-
-  it('shows parent summary rate limit and outage states with retry copy', async () => {
-    parentApiMock.getParentSummary.mockRejectedValueOnce(
-      Object.assign(new Error('Rate limited'), { status: 429, retryAfterSeconds: 30, code: 'RATE_LIMIT_EXCEEDED' }),
-    );
-
-    const rateLimited = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(rateLimited.getByText('Parent summary refresh limited')).toBeTruthy());
-    expect(rateLimited.getByText('Try again in 30 seconds.')).toBeTruthy();
-    fireEvent.press(rateLimited.getByLabelText('Retry Parent summary refresh limited'));
-    await waitFor(() => expect(parentApiMock.getParentSummary).toHaveBeenCalledTimes(2));
-    rateLimited.unmount();
-
-    parentApiMock.getParentSummary.mockRejectedValueOnce(
-      Object.assign(new Error('Bad gateway'), { status: 502, code: 'INTERNAL_ERROR' }),
-    );
-    const outage = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(outage.getByText('Parent summary service unavailable')).toBeTruthy());
-    expect(outage.getByText('Retry in a moment.')).toBeTruthy();
-  });
-
-  it('renders dynamic parent summary copy in Vietnamese', async () => {
-    await setAppLanguage('vi');
-    parentApiMock.getParentSummary.mockResolvedValueOnce({ weekMinutes: 5, weekLessons: 2, streak: 3, topWords: [] });
-
-    const { getByText } = render(
-      <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
-    );
-
-    await waitFor(() => expect(getByText('Tuần này: 2 bài và 5 phút.')).toBeTruthy());
-    expect(getByText('2 bài trong tuần này')).toBeTruthy();
-  });
-
-  it('exposes parent summary navigation controls with clear accessibility labels', async () => {
+  it('uses Parent Summary as the Parent Zone account and safety hub without loading a report', () => {
     const screen = render(
       <ParentSummaryScreen navigation={mockNavigation as never} route={mockRoute as never} />,
     );
 
-    fireEvent.press(screen.getByLabelText('Open Parent Space settings'));
+    expect(screen.getByText('Parent Zone')).toBeTruthy();
+    expect(screen.getByText('Parent One')).toBeTruthy();
+    expect(screen.getByText('parent@example.com')).toBeTruthy();
+    expect(screen.getByText('Safety & Limits')).toBeTruthy();
+    expect(screen.getByText('Daily Limit')).toBeTruthy();
+    expect(screen.getByText('Safety Filter')).toBeTruthy();
+    expect(screen.getAllByText('Account')).toHaveLength(2);
+    expect(screen.getByText('Subscription')).toBeTruthy();
+    expect(screen.getByText('Help & FAQ')).toBeTruthy();
+    expect(parentApiMock.getParentSummary).not.toHaveBeenCalled();
 
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentSettingsScreen);
+    fireEvent.press(screen.getByTestId('parentProfileCard'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ParentAccountPrivacyScreen);
+
     screen.unmount();
   });
 

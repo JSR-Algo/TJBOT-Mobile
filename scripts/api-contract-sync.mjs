@@ -10,6 +10,7 @@ const WORKSPACE_ROOT = path.resolve(APP_ROOT, '..', '..');
 const BACKEND_OPENAPI_PATH = process.env.TBOT_BACKEND_OPENAPI_PATH
   ? path.resolve(APP_ROOT, process.env.TBOT_BACKEND_OPENAPI_PATH)
   : resolveFirstExistingPath([
+      resolveSiblingBackendOpenApi(),
       path.join(WORKSPACE_ROOT, 'backend', 'openapi.json'),
       path.join(REPO_ROOT, 'tbot-backend', 'openapi.json'),
     ]);
@@ -34,6 +35,13 @@ const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 // `client.post(url, data)` cannot accidentally pick up a string literal from a
 // later function (e.g. the GET sync-status path inside a POST unlock body).
 const CALL_RE = /\b(?:client|http|_aiClient|axios)\.(get|post|put|patch|delete)[^\n;]*?\(\s*(`([^`]+)`|'([^']+)'|"([^"]+)")/g;
+
+function resolveSiblingBackendOpenApi() {
+  const mobileDirectory = path.basename(APP_ROOT);
+  const suffix = mobileDirectory.replace(/^TJBOT-Mobile-?/, '');
+  const superprojectDirectory = suffix ? `TbotREAL-${suffix}` : 'TbotREAL';
+  return path.join(REPO_ROOT, superprojectDirectory, 'backend', 'openapi.json');
+}
 
 function resolveFirstExistingPath(candidates) {
   return candidates.find((candidate) => fs.existsSync(candidate)) ?? candidates[0];

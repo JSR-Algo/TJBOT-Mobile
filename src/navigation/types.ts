@@ -30,12 +30,13 @@ export type FeatureRouteRole =
   | 'fallback-entry';
 
 export type FeatureForwardCycleGroup =
+  | 'auth-trust-login'
   | 'course-dispatch-picker'
   | 'device-pairing-retry'
   | 'lesson-demo-review'
-  | 'lesson-exit-resume'
-  | 'lesson-summary-loop'
-  | 'network-retry';
+  | 'lesson-session-loop'
+  | 'network-retry'
+  | 'support-help';
 
 export type FeatureTabName =
   | 'Home'
@@ -53,6 +54,8 @@ export type FeatureStackScreen<RouteName extends keyof RootStackParamList = keyo
   readonly name: RouteName;
   readonly component: React.ElementType;
   readonly role: FeatureRouteRole;
+  readonly productionVisible?: boolean;
+  readonly productionHiddenReason?: 'backend-contract-unavailable' | 'static-prototype-hidden' | 'mvp-scope-hidden';
   readonly backTarget?: keyof RootStackParamList;
   readonly forwardCycleGroup?: FeatureForwardCycleGroup;
   readonly stateMachineId?: string;

@@ -1,43 +1,29 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
-import WaveBars from '@/design-system/components/WaveBars';
-import { referenceColors } from '@/design-system/referenceTheme';
-import OnboardingClayRobot from '@/features/onboarding/components/OnboardingClayRobot';
+import { useAppLanguage } from '@/services/i18n/i18n';
 import IntroFrame from '../components/IntroFrame';
-import { Box } from '@/design-system/primitives/Box';
-import { Text } from '@/design-system/primitives/Text';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IntroSpeakScreen'>;
 
 export default function IntroSpeakScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
+
   return (
     <IntroFrame
       idx={1}
+      variant="card"
       onBack={() => navigation.navigate(ROUTES.IntroListenScreen)}
       onNext={() => navigation.navigate(ROUTES.IntroRetryScreen)}
-      bg="#E8F8F0"
-      kicker="How it works · 2"
-      title="Robot speaks back"
-      body="Robot replies out loud, so kids hear how words really sound."
-      illo={(
-        <Box style={styles.illoWrap} flexDirection="row" alignItems="center" justifyContent="center" gap={14}>
-          <OnboardingClayRobot size={140} />
-          <Box gap={8}>
-            <Box style={styles.bubble}>
-              <Text fontWeight="700" style={styles.bubbleText}>"Hello!"</Text>
-            </Box>
-            <WaveBars count={8} color={referenceColors.primary} height={26} />
-          </Box>
-        </Box>
-      )}
+      onSkip={() => navigation.navigate(ROUTES.TrustScreen)}
+      header={t('Explore TeeBot')}
+      title={t('Learn through play')}
+      body={t('No tests, no pressure — just joy.')}
+      nextLabel={t('Continue')}
+      skipLabel={t('Skip')}
+      stepLabel={t('2/3')}
+      robotEmotion="curious"
+      testID="introSpeakScreen"
     />
   );
 }
-
-const styles = StyleSheet.create({
-  illoWrap: { width: 240, height: 200 },
-  bubble: { backgroundColor: '#fff', padding: 10, borderRadius: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  bubbleText: { fontSize: 14, color: '#1A1A1F' },
-});

@@ -12,6 +12,7 @@ jest.mock('@react-navigation/native', () => {
       goBack: jest.fn(),
       replace: jest.fn(),
     }),
+    useIsFocused: jest.fn(() => true),
     useRoute: () => ({ params: {} }),
     NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
   };
@@ -60,6 +61,8 @@ jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const View = (props: Record<string, unknown>) =>
     React.createElement('View', props);
+  const Image = (props: Record<string, unknown>) =>
+    React.createElement('Image', props);
   const id = <T,>(v: T): T => v;
   const noop = (): void => {};
   const useSharedValue = <T,>(v: T): { value: T } => ({ value: v });
@@ -68,11 +71,10 @@ jest.mock('react-native-reanimated', () => {
   const useDerivedValue = useSharedValue;
   return {
     __esModule: true,
-    default: { View, createAnimatedComponent: (c: unknown) => c },
+    default: { View, Image, createAnimatedComponent: (c: unknown) => c },
     View,
     Text: (props: Record<string, unknown>) => React.createElement('Text', props),
-    Image: (props: Record<string, unknown>) =>
-      React.createElement('Image', props),
+    Image,
     ScrollView: (props: Record<string, unknown>) =>
       React.createElement('ScrollView', props),
     createAnimatedComponent: (c: unknown) => c,

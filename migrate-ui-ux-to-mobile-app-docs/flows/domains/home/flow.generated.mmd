@@ -1,9 +1,10 @@
-%% GENERATED FROM nav-graph-data.json sha=f0475d686227. Do not edit by hand.
+%% GENERATED FROM nav-graph-data.json sha=38651fd18e8a. Do not edit by hand.
 %% domain: home
 flowchart TD
   classDef happy fill:#dcfce7,stroke:#166534
   classDef edge  fill:#fee2e2,stroke:#991b1b
   subgraph Home["Home"]
+    home_child_profile["Home · Child profile"]
     home_hub_daily["Home · Today"]
     home_hub_done["Home · Lesson done today"]
     home_hub_error["Home · Refresh error"]
@@ -18,5 +19,5 @@ flowchart TD
     home_hub_unpaired_robot["Home · Robot not paired"]
     home_hub_zero_child["Home · No child profile"]
   end
-  class home_hub_daily,home_hub_done,home_hub_error,home_hub_greet,home_hub_idle,home_hub_multiple_children,home_hub_unpaired_robot,home_hub_zero_child happy
+  class home_child_profile,home_hub_daily,home_hub_done,home_hub_error,home_hub_greet,home_hub_idle,home_hub_multiple_children,home_hub_unpaired_robot,home_hub_zero_child happy
   class home_hub_mic,home_hub_offline,home_hub_offline_24h,home_hub_paused,home_hub_quiet_hours edge

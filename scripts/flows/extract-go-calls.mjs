@@ -173,6 +173,7 @@ async function main() {
     version:      prevMeta.version || '1.0.0',
     generatedAt:  prevMeta.generatedAt || '2026-05-11T00:00:00Z',
     sourceCommit: prevMeta.sourceCommit || gitHeadSha() || 'unknown',
+    ...(dedup.length === 0 ? { retired: true } : {}),
   };
   // Only update generatedAt + sourceCommit if the data actually changed (idempotent commit policy).
   const out = { states: newStates, edges: dedup, groups: sortedGroups, meta };
@@ -183,6 +184,7 @@ async function main() {
       version: meta.version,
       generatedAt: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
       sourceCommit: gitHeadSha() || meta.sourceCommit,
+      ...(dedup.length === 0 ? { retired: true } : {}),
     };
   }
 

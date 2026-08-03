@@ -93,7 +93,7 @@ function loadBackendModule(modulePath) {
 }
 
 function readDocumentedParentPin() {
-  const openApiPath = path.join(__dirname, '..', OPENAPI_RELATIVE_PATH);
+  const openApiPath = process.env.TBOT_OPENAPI_PATH || path.join(__dirname, '..', OPENAPI_RELATIVE_PATH);
   if (!fs.existsSync(openApiPath)) return undefined;
   const openApi = JSON.parse(fs.readFileSync(openApiPath, 'utf8'));
   return openApi.paths?.['/v1/parent/auth']?.post?.requestBody?.content?.['application/json']?.examples?.default?.value?.pin;

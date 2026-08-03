@@ -2,8 +2,8 @@ import {
   applyLessonCompletion,
   getInitialLessonDemoProgress,
   nextLessonPosition,
-} from '../../../src/features/lessonDemo/store/useLessonDemoProgressStore';
-import { staticLessonContentProvider } from '../../../src/features/lessonDemo/providers/StaticLessonContentProvider';
+} from '../../../src/features/lesson-demo/store/useLessonDemoProgressStore';
+import { staticLessonContentProvider } from '../../../src/features/lesson-demo/providers/StaticLessonContentProvider';
 
 describe('lesson demo progress store helpers', () => {
   it('moves through week/day positions safely', () => {

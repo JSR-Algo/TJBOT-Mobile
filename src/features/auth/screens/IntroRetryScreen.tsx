@@ -1,43 +1,27 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
-import { referenceColors } from '@/design-system/referenceTheme';
-import OnboardingClayRobot from '@/features/onboarding/components/OnboardingClayRobot';
+import { useAppLanguage } from '@/services/i18n/i18n';
 import IntroFrame from '../components/IntroFrame';
-import { Box } from '@/design-system/primitives/Box';
-import { Text } from '@/design-system/primitives/Text';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IntroRetryScreen'>;
 
 export default function IntroRetryScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
+
   return (
     <IntroFrame
       idx={2}
-      onBack={() => navigation.navigate(ROUTES.IntroSpeakScreen)}
-      onNext={() => navigation.navigate(ROUTES.IntroCelebrateScreen)}
-      bg="#FFF1D6"
-      kicker="How it works · 3"
-      title="It's okay to try again"
-      body="If a word is tricky, Robot says it once more — slowly, with no pressure."
-      illo={(
-        <Box style={styles.illoWrap} flexDirection="row" alignItems="center" justifyContent="center" gap={12}>
-          <OnboardingClayRobot size={140} />
-          <Box style={styles.bubble} flexDirection="row" alignItems="center" gap={8}>
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={referenceColors.primary} strokeWidth="2.4" strokeLinecap="round">
-              <Path d="M3 12a9 9 0 1015-6.7L21 8M21 3v5h-5" />
-            </Svg>
-            <Text fontWeight="700" style={styles.bubbleText}>Once more!</Text>
-          </Box>
-        </Box>
-      )}
+      variant="parent"
+      onNext={() => navigation.navigate(ROUTES.TrustScreen)}
+      onSkip={() => navigation.navigate(ROUTES.TrustScreen)}
+      title={t('Parents are always alongside')}
+      body={t('See what your child learned each week, right on your phone.')}
+      nextLabel={t("Create your child's profile")}
+      skipLabel={t('Skip')}
+      stepLabel={t('Step 3/3')}
+      robotEmotion="gentle"
+      testID="introRetryScreen"
     />
   );
 }
-
-const styles = StyleSheet.create({
-  illoWrap: { width: 240, height: 200 },
-  bubble: { backgroundColor: '#fff', padding: 12, borderRadius: 18, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  bubbleText: { fontSize: 14, color: '#1A1A1F' },
-});

@@ -3,7 +3,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './routes';
 import type { FeatureStackScreen } from './types';
 import { MainTabNavigator } from './MainTabNavigator';
-import { MAIN_TAB_SCREENS, PROTECTED_DEFAULT_ROUTE, PROTECTED_MODAL_SCREENS, PROTECTED_STACK_SCREENS } from './featureRegistry';
+import {
+  MAIN_TAB_SCREENS,
+  PROTECTED_DEFAULT_ROUTE,
+  PROTECTED_MOUNTED_MODAL_SCREENS,
+  PROTECTED_MOUNTED_STACK_SCREENS,
+} from './featureRegistry';
 import { MODAL_STACK_SCREEN_OPTIONS, PROTECTED_STACK_SCREEN_OPTIONS } from './options';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -35,10 +40,10 @@ export function ModalNavigator({ initialRouteName = PROTECTED_DEFAULT_ROUTE, ini
       screenOptions={PROTECTED_STACK_SCREEN_OPTIONS}
     >
       {MAIN_TAB_SCREENS.map(renderTabHostScreen)}
-      {PROTECTED_STACK_SCREENS.map(renderProtectedScreen)}
+      {PROTECTED_MOUNTED_STACK_SCREENS.map(renderProtectedScreen)}
 
       <Stack.Group screenOptions={MODAL_STACK_SCREEN_OPTIONS}>
-        {PROTECTED_MODAL_SCREENS.map(renderProtectedScreen)}
+        {PROTECTED_MOUNTED_MODAL_SCREENS.map(renderProtectedScreen)}
       </Stack.Group>
     </Stack.Navigator>
   );

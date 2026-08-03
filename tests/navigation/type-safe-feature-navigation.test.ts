@@ -201,7 +201,7 @@ describe('type-safe feature navigation', () => {
     const routeByScreenFile = registeredRouteByScreenFile();
     const offenders = Array.from(routeByScreenFile.entries()).flatMap(([file, routeName]) => {
       const source = readFileSync(file, 'utf8');
-      const routePropType = source.match(/NativeStackScreenProps<RootStackParamList,\s*'([^']+)'(?:\s*\|\s*'([^']+)')?>/);
+      const routePropType = source.match(/NativeStackScreenProps<RootStackParamList,\s*['"]([^'"]+)['"](?:\s*\|\s*['"]([^'"]+)['"])?\s*>/);
       const declaredRoutes = [routePropType?.[1], routePropType?.[2]].filter(Boolean);
 
       if (declaredRoutes.includes(routeName)) return [];

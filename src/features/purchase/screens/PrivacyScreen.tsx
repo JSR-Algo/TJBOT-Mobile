@@ -9,17 +9,18 @@ import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRChip from '../components/PRChip';
 import { ROUTES } from '@/navigation/routes';
+import { Icon, type IconName } from '@/design-system/icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PrivacyScreen'>;
 
 const ROWS = [
-  { ic: '🎙️', t: "We don't save audio",       b: "What your child says is processed in real time and discarded. There is no transcript stored." },
-  { ic: '🚫', t: 'No ads, ever',               b: 'Robot will never show, mention, or hint at advertising — at any age, in any course.' },
-  { ic: '🔒', t: 'Parent-only purchases',      b: "Buying Robot, adding courses, or upgrading always passes through a parent gate." },
-  { ic: '🌐', t: 'Stops if Robot is offline',  b: 'Robot only listens during a lesson, and a lesson can only start with your Wi-Fi.' },
-  { ic: '📁', t: 'Easy data export & delete',  b: "Download or wipe your child's summary history with one tap, anytime." },
-  { ic: '🇺🇸', t: 'COPPA & GDPR-K compliant', b: "Independently audited. Reports available in Settings → Safety & Privacy." },
-];
+  { icon: 'MicOff' as IconName, t: "We don't save audio", b: "What your child says is processed in real time and discarded. There is no transcript stored." },
+  { icon: 'BadgeX' as IconName, t: 'No ads, ever', b: 'Robot will never show, mention, or hint at advertising — at any age, in any course.' },
+  { icon: 'LockKeyhole' as IconName, t: 'Parent-only purchases', b: "Buying Robot, adding courses, or upgrading always passes through a parent gate." },
+  { icon: 'WifiOff' as IconName, t: 'Stops if Robot is offline', b: 'Robot only listens during a lesson, and a lesson can only start with your Wi-Fi.' },
+  { icon: 'FolderLock' as IconName, t: 'Easy data export & delete', b: "Download or wipe your child's summary history with one tap, anytime." },
+  { icon: 'ShieldCheck' as IconName, t: 'COPPA & GDPR-K compliant', b: "Independently audited. Reports available in Settings → Safety & Privacy." },
+] as const;
 
 export default function PrivacyScreen({ navigation }: Props) {
   return (
@@ -33,7 +34,9 @@ export default function PrivacyScreen({ navigation }: Props) {
         <Box style={styles.listCard}>
           {ROWS.map((r, i) => (
             <Box key={r.t} style={[styles.listRow, i < ROWS.length - 1 && styles.listBorder]}>
-              <Box style={styles.listIcon}><Text style={{ fontSize: 14 }}>{r.ic}</Text></Box>
+              <Box style={styles.listIcon}>
+                <Icon name={r.icon} size={17} color={PR.good} strokeWidth={2.3} />
+              </Box>
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.listTitle}>{r.t}</Text>
                 <Text style={styles.listBody}>{r.b}</Text>

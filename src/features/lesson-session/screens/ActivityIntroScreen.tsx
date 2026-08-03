@@ -10,10 +10,10 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
 import { gardenColors } from '@/design-system/tokens';
+import { getActiveNestLesson } from '../nestPhoneLesson';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivityIntroScreen'>;
 
-const TOTAL = 5;
 
 function ProgressDots({ total, current }: { total: number; current: number }) {
   return (
@@ -33,27 +33,33 @@ function ProgressDots({ total, current }: { total: number; current: number }) {
   );
 }
 
-export default function ActivityIntroScreen({ navigation }: Props) {
+export default function ActivityIntroScreen({ navigation, route }: Props) {
+  const words = getActiveNestLesson()?.session.session_payload?.core_learning
+    ?.map((item) => item.word)
+    .filter(Boolean) ?? [];
+  const total = Math.max(route.params?.activityTotal ?? words.length, 1);
   return (
     <ScreenShell>
-      <LessonHeader progress={0.15} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
+      <LessonHeader progress={0.15} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen, route.params)} />
       <Box style={styles.dotsRow} alignItems="center">
-        <ProgressDots total={TOTAL} current={0} />
+        <ProgressDots total={total} current={0} />
       </Box>
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Box style={styles.activityBadge}>
-          <Text fontWeight="700" style={styles.activityBadgeText}>Activity 1 of {TOTAL}</Text>
+          <Text fontWeight="700" style={styles.activityBadgeText}>Activity 1 of {total}</Text>
         </Box>
         <Robot emotion="happy" size={120} />
-        <Text fontWeight="800" style={styles.title}>Let's name some animals!</Text>
-        <Box flexDirection="row" gap={14}>
-          {['🐱', '🐶', '🐰'].map(e => (
-            <Text key={e} style={{ fontSize: 48 }}>{e}</Text>
+        <Text fontWeight="800" style={styles.title}>{route.params?.lessonTitle ?? "Today's lesson"}</Text>
+        <Box flexDirection="row" gap={10} style={styles.wordList}>
+          {words.map((word) => (
+            <Box key={word} style={styles.wordPill}>
+              <Text fontWeight="700" style={styles.wordPillText}>{word}</Text>
+            </Box>
           ))}
         </Box>
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)} color={gardenColors.coral}>Start</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen, route.params)} color={gardenColors.coral}>Start</PrimaryCTA>
       </Box>
     </ScreenShell>
   );
@@ -65,6 +71,9 @@ const styles = StyleSheet.create({
   activityBadge: { backgroundColor: '#fff', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 999 },
   activityBadgeText: { fontSize: 14, color: gardenColors.coral, textTransform: 'uppercase', letterSpacing: 1 },
   title: { fontSize: 28, color: gardenColors.ink, textAlign: 'center' },
+  wordList: { flexWrap: 'wrap', justifyContent: 'center' },
+  wordPill: { backgroundColor: '#FFFFFF', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  wordPillText: { fontSize: 16, color: gardenColors.ink },
   dot: { height: 12, borderRadius: 6 },
   dotDone: { width: 12, backgroundColor: '#7BD389' },
   dotActive: { width: 28, backgroundColor: gardenColors.coral },

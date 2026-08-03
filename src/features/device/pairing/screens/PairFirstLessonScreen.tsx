@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import RobotImage from '@/components/RobotImage';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -25,7 +25,9 @@ export default function PairFirstLessonScreen({ navigation }: Props) {
         <Text fontWeight="600" style={styles.parentText}>Place Robot on the table. Hand it over when you're ready.</Text>
       </Box>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="happy" size={220} accent="#FF6F61" />
+        <Box style={styles.robotStage} alignItems="center" justifyContent="center">
+          <RobotImage variant="body" size={210} />
+        </Box>
         <Text fontWeight="800" style={styles.heroTitle}>Robot is waiting!</Text>
         <Text style={styles.heroSub}>
           Your child will tap "yes" on the Robot to start their very first lesson.
@@ -66,6 +68,12 @@ const styles = StyleSheet.create({
   parentBar: { paddingTop: 56, paddingHorizontal: 20, paddingBottom: 12, backgroundColor: 'rgba(255,255,255,0.7)', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
   parentKicker: { fontSize: 11, color: DV.accent, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 },
   parentText: { fontSize: 14, color: DV.ink, lineHeight: 20 },
+  robotStage: {
+    width: 238,
+    height: 238,
+    borderRadius: 119,
+    backgroundColor: '#FFF9F0',
+  },
   heroTitle: { fontSize: 28, color: DV.ink, letterSpacing: -0.4, textAlign: 'center', lineHeight: 33, marginTop: 24 },
   heroSub: { fontSize: 14, color: DV.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 8 },
   sectionLabel: { fontSize: 11, color: DV.ink2, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 },

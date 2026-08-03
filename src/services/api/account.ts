@@ -53,14 +53,24 @@ function mapExport(raw: ExportRawPayload): AccountExportJob {
   };
 }
 
+function getGracePeriodEndsAt(cancelled: boolean, gracePeriodEndsAt: string | null | undefined): string | null {
+  if (cancelled) return null;
+  return gracePeriodEndsAt ?? null;
+}
+
+function getCancelableState(cancelled: boolean, cancelable: boolean | undefined): boolean {
+  if (cancelled) return false;
+  return cancelable ?? false;
+}
+
 function mapDeletion(raw: DeletionRawPayload): AccountDeletionJob {
   const cancelled = raw.status === 'cancelled';
   return {
     deletionJobId: raw.deletion_job_id,
     status: raw.status,
-    gracePeriodEndsAt: cancelled ? null : (raw.grace_period_ends_at ?? null),
+    gracePeriodEndsAt: getGracePeriodEndsAt(cancelled, raw.grace_period_ends_at),
     completedAt: raw.completed_at ?? null,
-    cancelable: cancelled ? false : (raw.cancelable ?? false),
+    cancelable: getCancelableState(cancelled, raw.cancelable),
     cancelledAt: raw.cancelled_at ?? null,
   };
 }
@@ -150,6 +160,41 @@ export async function exportData(): Promise<object> {
   return response.data.data ?? response.data;
 }
 
+type AccountExportData = {
+  account?: { id?: string; email?: string; name?: string };
+  user_id?: string;
+  id?: string;
+  email?: string;
+  name?: string;
+};
+
+function getFirstValue(value1: string | undefined, value2: string | undefined, value3: string | undefined): string | undefined {
+  if (value1) return value1;
+  if (value2) return value2;
+  return value3;
+}
+
+function extractId(data: AccountExportData): string | undefined {
+  return getFirstValue(data?.account?.id, data?.id, data?.user_id);
+}
+
+function extractEmail(data: AccountExportData): string | undefined {
+  return data?.account?.email || data?.email;
+}
+
+function extractName(data: AccountExportData): string | undefined {
+  return data?.account?.name || data?.name;
+}
+
+function buildUserFromExtractedFields(id: string | undefined, email: string | undefined, name: string | undefined): User | null {
+  if (!id || !email) return null;
+  return {
+    id,
+    email,
+    name: name ?? '',
+  };
+}
+
 /**
  * Fetch the current user's account summary.
  *
@@ -164,23 +209,11 @@ export async function exportData(): Promise<object> {
  */
 export async function getAccountSummary(): Promise<User | null> {
   const response = await client.get('/account/export');
-  const data = (response.data.data ?? response.data) as {
-    account?: { id?: string; email?: string; name?: string };
-    user_id?: string;
-    id?: string;
-    email?: string;
-    name?: string;
-  };
-  const account = data?.account;
-  const id = account?.id ?? data?.id ?? data?.user_id;
-  const email = account?.email ?? data?.email;
-  const name = account?.name ?? data?.name;
-  if (!id || !email) return null;
-  return {
-    id,
-    email,
-    name: name ?? '',
-  };
+  const data = (response.data.data ?? response.data) as AccountExportData;
+  const id = extractId(data);
+  const email = extractEmail(data);
+  const name = extractName(data);
+  return buildUserFromExtractedFields(id, email, name);
 }
 
 /** True when Render already has COPPA consent for this parent account. */

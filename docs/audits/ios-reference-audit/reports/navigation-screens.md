@@ -52,7 +52,7 @@ Route organization, deep links, modal usage, screen ownership, prop types, and n
 - `src/screens/dashboard/ParentDashboardScreen.tsx`
 - `src/screens/learning/ChildPracticeScreen.tsx`
 - `src/screens/learning/LessonPlannerScreen.tsx`
-- `src/screens/robot-lesson/RobotLessonControlScreen.tsx`
+- `src/features/lesson-demo/screens/RobotLessonControlScreen.tsx`
 
 ### Navigation tests
 - `tests/navigation/navigation-architecture.test.ts`

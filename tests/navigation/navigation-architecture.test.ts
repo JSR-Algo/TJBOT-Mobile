@@ -16,6 +16,7 @@ import {
   MAIN_TAB_SCREENS,
   ONBOARDING_INITIAL_ROUTE,
   PENDING_DEVICE_SETUP_ROUTE,
+  PROTECTED_MOUNTED_STACK_SCREENS,
   PROTECTED_MODAL_SCREENS,
   PROTECTED_STACK_SCREENS,
   PROTECTED_DEFAULT_ROUTE,
@@ -40,6 +41,12 @@ function listSourceFiles(dir: string): string[] {
 
 describe('navigation architecture', () => {
   const protectedInitialRouteRoles = new Set(['tab', 'stack-entry', 'state-machine', 'fallback-entry']);
+
+  it('mounts the protected child-profile route used by Home setup actions', () => {
+    expect(PROTECTED_MOUNTED_STACK_SCREENS.map(screen => screen.name)).toContain(
+      ROUTES.HomeChildProfileScreen,
+    );
+  });
 
   it('uses the production src/navigation navigator layout', () => {
     const navigationDir = join(root, 'src', 'navigation');
@@ -572,8 +579,9 @@ describe('navigation architecture', () => {
       routesMissingComponents: [],
     });
     expect(inventory.forwardCycleGovernance).toEqual({
-      cycleGroupCount: 6,
+      cycleGroupCount: 7,
       cycleGroups: {
+        'auth-trust-login': [ROUTES.LoginScreen, ROUTES.TrustScreen],
         'course-dispatch-picker': [ROUTES.RobotReadyScreen, ROUTES.SendToRobotScreen],
         'device-pairing-retry': [
           ROUTES.PairCodeScreen,
@@ -591,21 +599,35 @@ describe('navigation architecture', () => {
           ROUTES.LessonSessionScreen,
           ROUTES.ParentLessonSummaryScreen,
         ],
-        'lesson-exit-resume': [
-          ROUTES.ExitConfirmScreen,
-          ROUTES.RobotListeningScreen,
-          ROUTES.RobotSpeakingScreen,
-          ROUTES.SuccessScreen,
-          ROUTES.ThinkingScreen,
-          ROUTES.UserSpeakingScreen,
-        ],
-        'lesson-summary-loop': [
+        'lesson-session-loop': [
+          ROUTES.AbandonedDisconnectScreen,
+          ROUTES.ActivityDoneScreen,
+          ROUTES.ActivityIntroScreen,
+          ROUTES.AudioErrorScreen,
+          ROUTES.BargeinScreen,
           ROUTES.ConnectingScreen,
+          ROUTES.CostCappedScreen,
+          ROUTES.ExitConfirmScreen,
+          ROUTES.GentleScreen,
+          ROUTES.GreetingScreen,
           ROUTES.LessonDoneScreen,
           ROUTES.LessonReadyScreen,
           ROUTES.LessonSummaryScreen,
+          ROUTES.OfftopicScreen,
+          ROUTES.ParentStoppedScreen,
+          ROUTES.ReconnectingScreen,
+          ROUTES.RetryScreen,
+          ROUTES.RobotListeningScreen,
+          ROUTES.RobotSpeakingScreen,
+          ROUTES.SafetyScreen,
+          ROUTES.SilenceScreen,
+          ROUTES.SuccessScreen,
+          ROUTES.ThinkingScreen,
+          ROUTES.TimedOutScreen,
+          ROUTES.UserSpeakingScreen,
         ],
         'network-retry': [ROUTES.NetworkErrorScreen, ROUTES.ReconnectingOverlay],
+        'support-help': [ROUTES.HelpFaqScreen, ROUTES.OfflineHelpScreen, ROUTES.SupportScreen],
       },
       routesWithUnknownCycleGroups: [],
       cycleGroupsWithSingleRoute: [],

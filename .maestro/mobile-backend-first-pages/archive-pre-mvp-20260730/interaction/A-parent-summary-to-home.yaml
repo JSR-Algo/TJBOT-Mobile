@@ -1,0 +1,14 @@
+appId: net.jasonle.tjbot
+name: A Summary product path back to Home
+---
+# Parent Zone is a protected tab; Home is reached through the persistent tab bar.
+- tapOn: "^(Home|Trang chủ)$"
+- waitForAnimationToEnd
+# Unique Home postcondition — must not remain on Parent Space or Library.
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 20000
+- assertVisible:
+    id: "homePrimaryCta"
+- assertNotVisible: ".*(Parent Space|Khu vực phụ huynh|Return to child play area|Quay về khu vực chơi của trẻ).*"

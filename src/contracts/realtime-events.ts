@@ -106,6 +106,165 @@ export type RealtimeEvent =
   | PerceivedReactionEvent
   | LatencyTickEvent;
 
+// Enumerations for payload validation
+const INTERRUPT_REASONS = Object.freeze(["USER_TAP", "USER_VOICE", "SERVER_ABORT", "SYSTEM_ERROR"]);
+const INTERRUPT_SOURCES = Object.freeze(["mobile", "backend", "firmware"]);
+const PERCEIVED_REACTION_TRIGGERS = Object.freeze(["AUDIO_END", "VAD_SILENCE", "TAP"]);
+const LATENCY_METRICS = Object.freeze([
+  "perceived_reaction_ms",
+  "transcript_ms",
+  "first_audio_ms",
+  "full_completion_ms",
+  "interrupt_to_stop_ms",
+]);
+
+/**
+ * Checks if session_id field is valid.
+ */
+function hasValidSessionId(v: { [k: string]: unknown }): boolean {
+  return typeof v.session_id === "string" && v.session_id.length > 0;
+}
+
+/**
+ * Checks if timestamp_ms field is valid.
+ */
+function hasValidTimestamp(v: { [k: string]: unknown }): boolean {
+  return typeof v.timestamp_ms === "number" && v.timestamp_ms >= 0;
+}
+
+/**
+ * Checks if turn_id field is valid (optional).
+ */
+function hasValidTurnId(v: { [k: string]: unknown }): boolean {
+  return v.turn_id === undefined || typeof v.turn_id === "string";
+}
+
+/**
+ * Validates the common EventEnvelope fields present in all realtime events.
+ */
+function isValidEventEnvelope(v: { [k: string]: unknown }): boolean {
+  return hasValidSessionId(v) && hasValidTimestamp(v) && hasValidTurnId(v);
+}
+
+/**
+ * Validates that the object has a recognized event type.
+ */
+function isKnownEventType(v: { [k: string]: unknown }): v is { [k: string]: unknown } & { type: RealtimeEventType } {
+  if (typeof v.type !== "string") return false;
+  return (ALL_EVENT_TYPES as readonly string[]).includes(v.type);
+}
+
+/**
+ * Checks if intensity value is valid or absent.
+ */
+function isValidIntensity(intensity: unknown): boolean {
+  if (intensity === undefined) return true;
+  return typeof intensity === "number" && intensity >= 0 && intensity <= 1;
+}
+
+/**
+ * Validates an INTERRUPT payload.
+ */
+function isValidInterruptPayload(p: { [k: string]: unknown }): boolean {
+  return (
+    typeof p.reason === "string" &&
+    (INTERRUPT_REASONS as readonly string[]).includes(p.reason) &&
+    typeof p.source === "string" &&
+    (INTERRUPT_SOURCES as readonly string[]).includes(p.source)
+  );
+}
+
+/**
+ * Validates an EXPRESSION payload.
+ */
+function isValidExpressionPayload(p: { [k: string]: unknown }): boolean {
+  return (
+    typeof p.expression === "string" &&
+    typeof p.duration_ms === "number" &&
+    p.duration_ms > 0 &&
+    typeof p.source === "string"
+  );
+}
+
+/**
+ * Validates a MOTION payload.
+ */
+function isValidMotionPayload(p: { [k: string]: unknown }): boolean {
+  return (
+    typeof p.motion === "string" &&
+    typeof p.duration_ms === "number" &&
+    p.duration_ms > 0 &&
+    isValidIntensity(p.intensity)
+  );
+}
+
+/**
+ * Validates a ROBOT_STATE payload.
+ */
+function isValidRobotStatePayload(p: { [k: string]: unknown }): boolean {
+  return typeof p.state === "string";
+}
+
+/**
+ * Validates a PERCEIVED_REACTION payload.
+ */
+function isValidPerceivedReactionPayload(p: { [k: string]: unknown }): boolean {
+  return (
+    typeof p.trigger === "string" &&
+    (PERCEIVED_REACTION_TRIGGERS as readonly string[]).includes(p.trigger)
+  );
+}
+
+/**
+ * Validates a LATENCY_TICK payload.
+ */
+function isValidLatencyTickPayload(p: { [k: string]: unknown }): boolean {
+  return (
+    typeof p.metric === "string" &&
+    (LATENCY_METRICS as readonly string[]).includes(p.metric) &&
+    typeof p.value_ms === "number" &&
+    p.value_ms >= 0
+  );
+}
+
+/**
+ * Map of event type to its payload validator function.
+ */
+const PAYLOAD_VALIDATORS: Record<RealtimeEventType, (p: { [k: string]: unknown }) => boolean> = {
+  INTERRUPT: isValidInterruptPayload,
+  EXPRESSION: isValidExpressionPayload,
+  MOTION: isValidMotionPayload,
+  ROBOT_STATE: isValidRobotStatePayload,
+  PERCEIVED_REACTION: isValidPerceivedReactionPayload,
+  LATENCY_TICK: isValidLatencyTickPayload,
+};
+
+/**
+ * Dispatches payload validation to the appropriate event-type validator.
+ */
+function isValidPayloadForEventType(
+  eventType: RealtimeEventType,
+  payload: { [k: string]: unknown },
+): boolean {
+  const validator = PAYLOAD_VALIDATORS[eventType];
+  return validator ? validator(payload) : false;
+}
+
+/**
+ * Checks if value is a plain object.
+ */
+function isPlainObject(value: unknown): value is { [k: string]: unknown } {
+  return value !== null && typeof value === "object";
+}
+
+/**
+ * Extracts and validates the payload field.
+ */
+function extractValidPayload(v: { [k: string]: unknown }): { [k: string]: unknown } | null {
+  const p = v.payload as { [k: string]: unknown } | undefined;
+  return (p && typeof p === "object") ? p : null;
+}
+
 /**
  * Structural narrowing for a parsed JSON payload from the backend gateway.
  * Returns `true` iff the object matches one of the 6 event shapes. Used as a
@@ -113,65 +272,13 @@ export type RealtimeEvent =
  * lives server-side (Zod in TJBot-infra/contracts/realtime-events.js).
  */
 export function isRealtimeEvent(value: unknown): value is RealtimeEvent {
-  if (!value || typeof value !== "object") return false;
-  const v = value as { [k: string]: unknown };
-  if (typeof v.session_id !== "string" || v.session_id.length === 0) return false;
-  if (typeof v.timestamp_ms !== "number" || v.timestamp_ms < 0) return false;
-  if (v.turn_id !== undefined && typeof v.turn_id !== "string") return false;
-  if (typeof v.type !== "string") return false;
-  if (!(ALL_EVENT_TYPES as readonly string[]).includes(v.type)) return false;
-  const p = v.payload as { [k: string]: unknown } | undefined;
-  if (!p || typeof p !== "object") return false;
-  switch (v.type as RealtimeEventType) {
-    case "INTERRUPT":
-      return (
-        typeof p.reason === "string" &&
-        ["USER_TAP", "USER_VOICE", "SERVER_ABORT", "SYSTEM_ERROR"].includes(
-          p.reason,
-        ) &&
-        typeof p.source === "string" &&
-        ["mobile", "backend", "firmware"].includes(p.source)
-      );
-    case "EXPRESSION":
-      return (
-        typeof p.expression === "string" &&
-        typeof p.duration_ms === "number" &&
-        p.duration_ms > 0 &&
-        typeof p.source === "string"
-      );
-    case "MOTION":
-      return (
-        typeof p.motion === "string" &&
-        typeof p.duration_ms === "number" &&
-        p.duration_ms > 0 &&
-        (p.intensity === undefined ||
-          (typeof p.intensity === "number" &&
-            p.intensity >= 0 &&
-            p.intensity <= 1))
-      );
-    case "ROBOT_STATE":
-      return typeof p.state === "string";
-    case "PERCEIVED_REACTION":
-      return (
-        typeof p.trigger === "string" &&
-        ["AUDIO_END", "VAD_SILENCE", "TAP"].includes(p.trigger)
-      );
-    case "LATENCY_TICK":
-      return (
-        typeof p.metric === "string" &&
-        [
-          "perceived_reaction_ms",
-          "transcript_ms",
-          "first_audio_ms",
-          "full_completion_ms",
-          "interrupt_to_stop_ms",
-        ].includes(p.metric) &&
-        typeof p.value_ms === "number" &&
-        p.value_ms >= 0
-      );
-    default:
-      return false;
-  }
+  if (!isPlainObject(value)) return false;
+  const v = value;
+  if (!isValidEventEnvelope(v)) return false;
+  if (!isKnownEventType(v)) return false;
+  const p = extractValidPayload(v);
+  if (!p) return false;
+  return isValidPayloadForEventType(v.type, p);
 }
 
 export function createInterrupt(args: {

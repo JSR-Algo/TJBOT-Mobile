@@ -17,6 +17,23 @@ metadata and do not import feature screen components directly.
 - `ModalNavigator.tsx` renders every protected tab route as a tab-host screen,
   plus protected stack screens and modal groups.
 
+
+## Bottom menu visual SOT (locked 2026-07-23)
+
+The authenticated bottom menu is colorful picture icons, not monochrome stroke
+icons.
+
+- Implementation: `MainTabNavigator.tsx` + `SleekTabBarVisuals.tsx`
+- Local artwork: `src/assets/tab-icons/{home,devices,library,progress,profile}.png`
+  plus dedicated greyscale idle twins `*-idle.png`
+- Behavior: selected tab = full-color artwork + animated coral pill; idle tabs =
+  dedicated greyscale artwork (never residual color / tinted color source)
+- Tabs: Home · Devices · Library · Progress · Profile
+- Home overview proof: `/tmp/teebot-colorful-menu-home-sot.png` (simulator)
+
+All later authenticated pages must keep this menu shell. Do not reintroduce
+stroke-only tab icons without an explicit product decision.
+
 ## Source Of Truth
 
 Each feature with routes has `src/features/<feature>/navigation.ts`.
@@ -165,10 +182,9 @@ app-navigation aliases, the legacy `src/screens` tree, removed prototype
 - protected stack: derived from `PROTECTED_STACK_SCREENS`
 - protected modals: derived from `PROTECTED_MODAL_SCREENS`
 
-Tab roots are registered through `tabScreen` only. `ModalNavigator` mounts the
-same tab navigator under every tab route name so `navigation.navigate()` can
-target `DeviceHomeScreen`, `CourseLibraryScreen`, `TodayProgressScreen`, and
-other feature tab routes deterministically. Each tab root owns its
+Tab roots are registered through `tabScreen` only. `ModalNavigator` keeps one
+navigator-level `MainTabNavigator` layout mounted around the protected stack so
+page content can move while the animated pill menu remains stable. Each tab root owns its
 `tabName`, `title`, `tabIcon`, and `tabBarButtonTestID` in feature metadata.
 Tab order is feature-owned through `tabOrder`; `featureRegistry.ts` sorts the
 tab screens by that value instead of keeping a central tab-label array.

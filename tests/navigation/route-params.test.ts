@@ -15,14 +15,18 @@ function routeParamDeclarations(): ReadonlyMap<string, RouteParamShape> {
   const routeNames: ReadonlySet<string> = new Set(Object.values(ROUTES));
   const lines = block?.[1].split('\n') ?? [];
   for (let index = 0; index < lines.length; index += 1) {
-    const routeMatch = lines[index].match(/^\s{2}'?(\w+)'?:\s*(.*)$/);
+    const routeMatch = lines[index].match(/^ {2}'?(\w+)'?:\s*(.*)$/);
     const route = routeMatch?.[1];
     if (!route || !routeNames.has(route)) continue;
 
     const paramLines = [routeMatch[2] ?? ''];
     let cursor = index + 1;
-    while (!paramLines.join('\n').trim().endsWith(';') && cursor < lines.length && !lines[cursor].match(/^\s{2}'?\w+'?:/)) {
-      paramLines.push(lines[cursor]);
+    let braceDepth = (paramLines[0].match(/\{/g) ?? []).length - (paramLines[0].match(/\}/g) ?? []).length;
+    while ((braceDepth > 0 || !paramLines.join('\n').trim().endsWith(';')) && cursor < lines.length) {
+      const nextLine = lines[cursor];
+      if (braceDepth === 0 && nextLine.match(/^ {2}'?\w+'?:/)) break;
+      paramLines.push(nextLine);
+      braceDepth += (nextLine.match(/\{/g) ?? []).length - (nextLine.match(/\}/g) ?? []).length;
       cursor += 1;
     }
     const params = paramLines.join('\n').trim().replace(/;\s*$/, '');

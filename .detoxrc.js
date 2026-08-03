@@ -35,7 +35,7 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath:
-        'ios/build/Build/Products/Debug-iphonesimulator/TJBotMobile.app',
+        'ios/build/Build/Products/Debug-iphonesimulator/TJBOT.app',
       build:
         `EXPO_PUBLIC_TBOT_API_URL=${IOS_API_URL} EXPO_PUBLIC_TBOT_AI_URL=${IOS_AI_URL} SIMULATION_MODE=true EXPO_PUBLIC_VOICE_TEST_HARNESS=true xcodebuild -workspace ios/TJBotMobile.xcworkspace -scheme TJBotMobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- -destination 'generic/platform=iOS Simulator'`,
       launchArgs: {

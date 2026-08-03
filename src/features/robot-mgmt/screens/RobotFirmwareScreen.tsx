@@ -4,6 +4,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import ConnectorStateNotice from '@/components/ConnectorStateNotice';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import RobotImage from '@/components/RobotImage';
 import { Box } from '@/design-system/primitives/Box';
 import { ROUTES } from '@/navigation/routes';
 
@@ -12,6 +13,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RobotFirmwareScreen'>;
 export default function RobotFirmwareScreen({ navigation }: Props): React.JSX.Element {
   return (
     <DeviceShell title="Robot software" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
+      <Box paddingTop={20} alignItems="center">
+        <RobotImage variant="body" size={150} />
+      </Box>
       <ConnectorStateNotice state="unsupported_until_connector" />
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30}>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>

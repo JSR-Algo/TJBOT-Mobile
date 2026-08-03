@@ -110,7 +110,7 @@ describe('HomeHubScreen honesty paths', () => {
     expect(screen.getAllByText('Name your child').length).toBeGreaterThan(0);
     expect(screen.queryByTestId('homeEmptyCard')).toBeNull();
     fireEvent.press(screen.getByTestId('homePrimaryCta'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ChildProfileScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeChildProfileScreen);
   });
 
   it('multiple children: selects a child before continuing and keeps Add child direct', () => {
@@ -151,7 +151,7 @@ describe('HomeHubScreen honesty paths', () => {
     expect(selectChild).toHaveBeenCalledWith('child-2');
 
     fireEvent.press(screen.getByTestId('homeAddChild'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ChildProfileScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeChildProfileScreen);
   });
 
   it('streak lost: shows only backend lesson and progress data, then opens that lesson', () => {

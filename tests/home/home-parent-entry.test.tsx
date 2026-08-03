@@ -53,6 +53,7 @@ describe('HomeHubScreen command center', () => {
     expect(screen.getByText('Barn & Farm Words')).toBeTruthy();
     expect(screen.getByText('Start')).toBeTruthy();
     expect(screen.getByText('Living room TeeBot · Online')).toBeTruthy();
+    expect(screen.getByTestId('homeHeroRobotAnimation')).toBeTruthy();
 
     fireEvent.press(screen.getByTestId('homePrimaryCta'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);

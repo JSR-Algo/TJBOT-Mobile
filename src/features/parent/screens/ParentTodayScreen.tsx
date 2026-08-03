@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -8,6 +8,7 @@ import PRowGroup from '../components/PRowGroup';
 import PRow from '../components/PRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { Icon } from '@/design-system/icons';
 import { PA } from '../components/ParentScroll';
 import { getChildLessonProgress, type AssignmentProgress } from '@/services/api/progress.api';
 import { useHousehold } from '@/contexts/HouseholdContext';
@@ -64,23 +65,27 @@ export default function ParentTodayScreen({ navigation }: Props) {
 
   const back = () => navigation.navigate(ROUTES.ParentSummaryScreen);
 
-  const BackLink = (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel={t('Back to Parent Space')}
-      onPress={back}
-      activeOpacity={0.7}
-    >
-      <Text style={{ color: PA.accent, fontSize: 15, fontWeight: '500', marginBottom: 12 }}>Back to Parent Space</Text>
-    </TouchableOpacity>
-  );
+  if (!childId) {
+    return (
+      <ParentScroll title="Today" onBack={back} backAccessibilityLabel="Back to Parent Space">
+        <ParentStateCard
+          icon="UserRoundPlus"
+          title="Add a child first"
+          body="Choose or add a child profile to see today’s learning."
+          actionLabel="Add child profile"
+          onAction={() => navigation.navigate(ROUTES.HomeChildProfileScreen)}
+        />
+      </ParentScroll>
+    );
+  }
 
   if (query.isLoading) {
     return (
-      <ParentScroll title="Today" onBack={back}>
-        <Box paddingHorizontal={24} paddingTop={40}>
-          {BackLink}
-          <Text style={{ fontSize: 13, color: PA.ink3 }}>Loading today's progress</Text>
+      <ParentScroll title="Today" onBack={back} backAccessibilityLabel="Back to Parent Space">
+        <Box style={styles.stateCard} alignItems="center" gap={12}>
+          <ActivityIndicator color={PA.accent} />
+          <Text fontWeight="700" style={styles.stateTitle}>{"Loading today's progress"}</Text>
+          <Text style={styles.stateBody}>Checking the latest lesson activity.</Text>
         </Box>
       </ParentScroll>
     );
@@ -88,20 +93,15 @@ export default function ParentTodayScreen({ navigation }: Props) {
 
   if (query.isError) {
     return (
-      <ParentScroll title="Today" onBack={back}>
-        <Box paddingHorizontal={24} paddingTop={40} gap={12}>
-          {BackLink}
-          <Text fontWeight="700" style={{ fontSize: 20, color: PA.ink }}>Today summary unavailable</Text>
-          <Text style={{ fontSize: 13, color: PA.ink3 }}>Try again.</Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={translateTemplate('Retry {{title}}', { title: t('Today summary unavailable') }, { locale: language })}
-            onPress={() => { void query.refetch(); }}
-            activeOpacity={0.7}
-          >
-            <Text style={{ color: PA.accent, fontSize: 15, fontWeight: '500' }}>Retry</Text>
-          </TouchableOpacity>
-        </Box>
+      <ParentScroll title="Today" onBack={back} backAccessibilityLabel="Back to Parent Space">
+        <ParentStateCard
+          icon="WifiOff"
+          title="Today summary unavailable"
+          body="The latest lesson activity could not load."
+          actionLabel="Retry"
+          accessibilityLabel={translateTemplate('Retry {{title}}', { title: t('Today summary unavailable') }, { locale: language })}
+          onAction={() => { void query.refetch(); }}
+        />
       </ParentScroll>
     );
   }
@@ -114,11 +114,12 @@ export default function ParentTodayScreen({ navigation }: Props) {
 
   if (!current) {
     return (
-      <ParentScroll title="Today" onBack={back}>
-        <Box paddingHorizontal={24} paddingTop={40} gap={8}>
-          {BackLink}
-          <Text style={{ fontSize: 13, color: PA.ink3 }}>No lessons yet</Text>
-        </Box>
+      <ParentScroll title="Today" onBack={back} backAccessibilityLabel="Back to Parent Space">
+        <ParentStateCard
+          icon="BookOpen"
+          title="No lessons yet"
+          body="Today’s active lesson will appear here when it is ready."
+        />
       </ParentScroll>
     );
   }
@@ -126,9 +127,8 @@ export default function ParentTodayScreen({ navigation }: Props) {
   const startedLabel = formatTime(current.startedAt, language);
 
   return (
-    <ParentScroll title="Today" onBack={back}>
+    <ParentScroll title="Today" onBack={back} backAccessibilityLabel="Back to Parent Space">
       <Box paddingHorizontal={16} paddingTop={18} paddingBottom={8}>
-        {BackLink}
         {startedLabel ? (
           <Text style={{ fontSize: 13, color: PA.ink3, marginBottom: 6 }} i18n={false}>{startedLabel}</Text>
         ) : null}
@@ -168,3 +168,64 @@ export default function ParentTodayScreen({ navigation }: Props) {
     </ParentScroll>
   );
 }
+
+function ParentStateCard({
+  icon,
+  title,
+  body,
+  actionLabel,
+  accessibilityLabel,
+  onAction,
+}: {
+  icon: 'BookOpen' | 'UserRoundPlus' | 'WifiOff';
+  title: string;
+  body: string;
+  actionLabel?: string;
+  accessibilityLabel?: string;
+  onAction?: () => void;
+}): React.JSX.Element {
+  return (
+    <Box style={styles.stateCard} alignItems="center" gap={12}>
+      <Box style={styles.stateIcon} alignItems="center" justifyContent="center">
+        <Icon name={icon} size={28} color={PA.accent} strokeWidth={2.3} />
+      </Box>
+      <Text fontWeight="700" style={styles.stateTitle}>{title}</Text>
+      <Text style={styles.stateBody}>{body}</Text>
+      {actionLabel && onAction ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          onPress={onAction}
+          activeOpacity={0.75}
+          style={styles.stateAction}
+        >
+          <Text fontWeight="700" style={styles.stateActionText}>{actionLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
+    </Box>
+  );
+}
+
+const styles = StyleSheet.create({
+  stateCard: {
+    backgroundColor: PA.card,
+    borderColor: PA.hair,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginHorizontal: 20,
+    marginTop: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+  },
+  stateIcon: { backgroundColor: '#FFE5E5', borderRadius: 20, height: 58, width: 58 },
+  stateTitle: { color: PA.ink, fontSize: 20, textAlign: 'center' },
+  stateBody: { color: PA.ink2, fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  stateAction: {
+    backgroundColor: '#FFE5E5',
+    borderRadius: 999,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  stateActionText: { color: PA.accent, fontSize: 14 },
+});

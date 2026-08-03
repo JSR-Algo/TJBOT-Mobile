@@ -47,13 +47,24 @@ name: Nest spine — signup through HomeHub (local Nest)
           commands:
             - tapOn:
                 id: "introNextButton"
-      - runFlow:
-          when:
-            visible:
-              id: "trustContinueButton"
-          commands:
-            - tapOn:
-                id: "trustContinueButton"
+- runFlow:
+    when:
+      visible:
+        id: "trustContinueButton"
+    commands:
+      - tapOn:
+          id: "trustContinueButton"
+- runFlow:
+    when:
+      visible:
+        id: "trustScreen"
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "trustContinueButton"
+          direction: DOWN
+      - tapOn:
+          id: "trustContinueButton"
 - extendedWaitUntil:
     visible:
       id: "loginScreenScroll"
@@ -65,12 +76,20 @@ name: Nest spine — signup through HomeHub (local Nest)
     commands:
       - tapOn:
           id: "authModeTab_signup"
+- runFlow:
+    when:
+      visible:
+        id: "parentNameInput"
+    commands:
+      - tapOn:
+          id: "parentNameInput"
+      - inputText: "Maestro Parent"
+      - hideKeyboard
 - tapOn:
     id: "emailInput"
 - eraseText
-- inputText: "maestro.home.1784299400@example.com"
-- tapOn:
-    id: "passwordInputToggle"
+- inputText: "maestro.home.1785390484@example.com"
+- hideKeyboard
 - tapOn:
     id: "passwordInput"
 - eraseText
@@ -79,18 +98,16 @@ name: Nest spine — signup through HomeHub (local Nest)
     visible:
       id: "passwordRule_length_met"
     timeout: 15000
-- runFlow:
-    when:
-      visible:
-        id: "confirmPasswordInput"
-    commands:
-      - tapOn:
-          id: "confirmPasswordInput"
-      - eraseText
-      - inputText: "TestPass123!"
-- hideKeyboard
+# iOS keyboard covers the CTA; dismiss via return key before submit
+- pressKey: Enter
 - tapOn:
     id: "submitButton"
+# iOS Password AutoFill sheet appears after successful signup
+- runFlow:
+    when:
+      visible: "Save Password?"
+    commands:
+      - tapOn: "Not Now"
 - extendedWaitUntil:
     visible:
       id: "parentConsentNameInput"
@@ -99,15 +116,19 @@ name: Nest spine — signup through HomeHub (local Nest)
     id: "parentConsentNameInput"
 - eraseText
 - inputText: "Home Parent"
+- hideKeyboard
 - tapOn:
     id: "parentConsentCheckbox"
-- hideKeyboard
 - tapOn:
     id: "parentConsentSubmitButton"
 - extendedWaitUntil:
     visible:
       id: "childAgeBand_PRE_K"
     timeout: 45000
+- tapOn:
+    id: "childNameInput"
+- inputText: "Maestro Kid"
+- hideKeyboard
 - tapOn:
     id: "childAgeBand_PRE_K"
 - tapOn:
@@ -118,16 +139,17 @@ name: Nest spine — signup through HomeHub (local Nest)
     timeout: 45000
 - tapOn:
     id: "micAskContinueButton"
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: "firstLessonStartCta"
+    direction: DOWN
     timeout: 45000
 - tapOn:
     id: "firstLessonStartCta"
 - extendedWaitUntil:
     visible:
-      id: "homePrimaryCta"
+      id: "home(PrimaryCta|EmptyCard|EmptyCta)"
     timeout: 60000
 - takeScreenshot: output/maestro/nest-spine/03-home
 - assertVisible:
-    id: "homePrimaryCta"
+    id: "home(PrimaryCta|EmptyCard|EmptyCta)"

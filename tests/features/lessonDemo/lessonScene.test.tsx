@@ -2,11 +2,11 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LessonSessionScreen } from '../../../src/features/lessonDemo/screens/LessonSessionScreen';
-import { staticLessonContentProvider } from '../../../src/features/lessonDemo';
-import { resolveLessonSceneScript } from '../../../src/features/lessonDemo/scene';
+import { LessonSessionScreen } from '../../../src/features/lesson-demo/screens/LessonSessionScreen';
+import { staticLessonContentProvider } from '../../../src/features/lesson-demo';
+import { resolveLessonSceneScript } from '../../../src/features/lesson-demo/scene';
 import { ROUTES, type RootStackParamList } from '../../../src/navigation/routes';
-import type { LessonSession, LessonStep } from '../../../src/features/lessonDemo';
+import type { LessonSession, LessonStep } from '../../../src/features/lesson-demo';
 
 const navigation = {
   navigate: jest.fn(),

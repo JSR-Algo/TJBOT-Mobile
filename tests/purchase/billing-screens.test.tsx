@@ -209,7 +209,7 @@ describe('purchase billing screens', () => {
       />,
     );
 
-    expect(screen.getByText('Loading order...')).toBeTruthy();
+    expect(screen.getByText('Loading your order')).toBeTruthy();
     await screen.findByText('Order needs a retry');
 
     fireEvent.press(screen.getByText('Retry order status'));
@@ -273,7 +273,7 @@ describe('purchase billing screens', () => {
       />,
     );
 
-    expect(screen.getByText('Loading shipping...')).toBeTruthy();
+    expect(screen.getByText('Loading delivery')).toBeTruthy();
     await screen.findByText('Shipping needs a retry');
 
     fireEvent.press(screen.getByText('Retry shipping status'));
@@ -312,7 +312,7 @@ describe('purchase billing screens', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ShippingScreen);
   });
 
-  it('shows provider unavailable state for subscription, cancel, and refund UI', async () => {
+  it('shows one safe provider-unavailable state for every billing mutation', async () => {
     mockedGetBillingProviderStatus.mockResolvedValueOnce({
       providerAvailable: false,
       message: 'Stripe maintenance',
@@ -320,10 +320,9 @@ describe('purchase billing screens', () => {
     const navigation = navigationFor();
     render(<SubscriptionsScreen navigation={navigation as never} route={{ key: 'subs', name: ROUTES.SubscriptionsScreen } as never} />);
 
-    await screen.findByText('Billing provider unavailable');
-    expect(screen.getByText('Stripe maintenance')).toBeTruthy();
-    expect(screen.getByText('Cancel order unavailable')).toBeTruthy();
-    expect(screen.getByText('Refund request unavailable')).toBeTruthy();
+    await screen.findByText('Billing is temporarily unavailable');
+    expect(screen.getByText(/Stripe maintenance Existing courses are unchanged/)).toBeTruthy();
+    expect(screen.getByText('Back to bundles')).toBeTruthy();
   });
 
   it('loads backend plans and current subscription before creating a subscription checkout', async () => {

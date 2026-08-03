@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
+import { useAccessibilityPreferences } from '@/services/accessibility/preferences';
 
 export function useReduceMotion(override?: boolean): boolean {
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
+  const { reduceMotion: appReduceMotion } = useAccessibilityPreferences();
 
   useEffect(() => {
     if (override !== undefined) return undefined;
@@ -20,5 +22,5 @@ export function useReduceMotion(override?: boolean): boolean {
     };
   }, [override]);
 
-  return override ?? systemReduceMotion;
+  return override ?? (appReduceMotion || systemReduceMotion);
 }

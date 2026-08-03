@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { RobotCompanionScreen } from '../../../src/features/lessonDemo/screens/RobotCompanionScreen';
-import { BARN_SAY_IT_LESSON_ID } from '../../../src/features/lessonDemo/content/curatedLegacyLessons';
+import { RobotCompanionScreen } from '../../../src/features/lesson-demo/screens/RobotCompanionScreen';
+import { BARN_SAY_IT_LESSON_ID } from '../../../src/features/lesson-demo/content/curatedLegacyLessons';
 import { ROUTES } from '../../../src/navigation/routes';
 
 jest.mock('../../../src/hooks/useGeminiConversation', () => ({

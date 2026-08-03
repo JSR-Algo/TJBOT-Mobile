@@ -1,0 +1,38 @@
+appId: net.jasonle.tjbot
+name: Pairing setup blueprint — page 23
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "appRoot"
+    timeout: 60000
+- openLink: "tjbot://device/pair-found?serialNumber=TBT-2026-004217"
+- extendedWaitUntil:
+    visible:
+      id: "pairingSetupPage"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: ".*(Switch to English|Chuyển sang tiếng Anh).*"
+    commands:
+      - tapOn:
+          id: "appShellLanguage"
+- runFlow:
+    when:
+      visible: ".*Open debugger to view warnings.*"
+    commands:
+      - tapOn:
+          point: "92%,93%"
+- scrollUntilVisible:
+    element: ".*(Add a TeeBot|Thêm TeeBot).*"
+    direction: UP
+- assertVisible: ".*(Add a TeeBot|Thêm TeeBot).*"
+- assertVisible: ".*(Step 2 of 5|Bước 2 trên 5).*"
+- assertVisible: ".*(Confirm the robot|Xác nhận robot).*"
+- assertVisible: ".*(Confirm identity|Xác nhận danh tính).*"
+- assertVisible: ".*(Connect Wi-Fi|Kết nối Wi-Fi).*"
+- assertNotVisible: ".*(Before you begin|Trước khi bắt đầu).*"
+- assertNotVisible:
+    id: "pairingBreadcrumb"
+- takeScreenshot: "/tmp/teebot-page-23/pairing-setup-blueprint"

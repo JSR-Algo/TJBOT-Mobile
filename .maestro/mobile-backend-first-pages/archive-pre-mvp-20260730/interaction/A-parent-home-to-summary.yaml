@@ -1,0 +1,17 @@
+appId: net.jasonle.tjbot
+name: A Home to Parent Summary
+---
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 20000
+- tapOn: "^(Open parent dashboard|Mở bảng điều khiển phụ huynh)$"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Parent Space|Khu vực phụ huynh|Settings|Cài đặt|Chất lượng|Course quality|Hoàn thành).*"
+    timeout: 20000

@@ -2,12 +2,12 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LessonDemoHomeScreen } from '../../../src/features/lessonDemo/screens/LessonDemoHomeScreen';
-import { LessonRoadmapScreen } from '../../../src/features/lessonDemo/screens/LessonRoadmapScreen';
-import { LessonSessionScreen } from '../../../src/features/lessonDemo/screens/LessonSessionScreen';
-import { LessonShowcaseScreen } from '../../../src/features/lessonDemo/screens/LessonShowcaseScreen';
-import { ParentLessonSummaryScreen } from '../../../src/features/lessonDemo/screens/ParentLessonSummaryScreen';
-import { resetLessonDemoScreenProgress } from '../../../src/features/lessonDemo/screens/lessonDemoScreenModel';
+import { LessonDemoHomeScreen } from '../../../src/features/lesson-demo/screens/LessonDemoHomeScreen';
+import { LessonRoadmapScreen } from '../../../src/features/lesson-demo/screens/LessonRoadmapScreen';
+import { LessonSessionScreen } from '../../../src/features/lesson-demo/screens/LessonSessionScreen';
+import { LessonShowcaseScreen } from '../../../src/features/lesson-demo/screens/LessonShowcaseScreen';
+import { ParentLessonSummaryScreen } from '../../../src/features/lesson-demo/screens/ParentLessonSummaryScreen';
+import { resetLessonDemoScreenProgress } from '../../../src/features/lesson-demo/screens/lessonDemoScreenModel';
 import { ROUTES, type RootStackParamList } from '../../../src/navigation/routes';
 
 const navigation = {

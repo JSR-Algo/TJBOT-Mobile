@@ -67,16 +67,24 @@ function householdValue() {
   };
 }
 
-function renderScreen(navigate: jest.Mock, reset: jest.Mock, params?: Record<string, unknown>) {
+function renderScreen(
+  navigate: jest.Mock,
+  reset: jest.Mock,
+  params?: Record<string, unknown>,
+  onProtectedFlowExit?: () => void,
+) {
   return render(
-    <ChildProfileScreen navigation={{ navigate, reset } as never} route={{ params } as never} />,
+    <ChildProfileScreen
+      navigation={{ navigate, reset } as never}
+      route={{ params } as never}
+      onProtectedFlowExit={onProtectedFlowExit}
+    />,
   );
 }
 
-// The save handler short-circuits unless an age band is picked, so every flow
-// taps an age band first.
-function pickAgeAndSave(screen: ReturnType<typeof renderScreen>): void {
-  fireEvent.press(screen.getByText('4 – 6'));
+function completeProfileAndSave(screen: ReturnType<typeof renderScreen>): void {
+  fireEvent.changeText(screen.getByTestId('childNameInput'), 'Panda friend');
+  fireEvent.press(screen.getByTestId('childAge_4'));
   fireEvent.press(screen.getByTestId('childProfileSaveButton'));
 }
 
@@ -87,13 +95,39 @@ beforeEach(() => {
   mockedFinalize.mockResolvedValue(undefined);
 });
 
+describe('ChildProfileScreen — blueprint contract', () => {
+  it('shows the three-step profile form with the default age and buddy selected', () => {
+    const screen = renderScreen(jest.fn(), jest.fn());
+
+    expect(screen.getByText('Create profile')).toBeTruthy();
+    expect(screen.getByText('Step 1/3')).toBeTruthy();
+    expect(screen.getByText('Next step')).toBeTruthy();
+    expect(screen.getByText('Tell TeeBot about your child')).toBeTruthy();
+    expect(screen.getByTestId('childProfileCard')).toBeTruthy();
+    expect(screen.getByTestId('childAgeBand_PRE_K').props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByTestId('childBuddy_dog').props.accessibilityState).toEqual({ selected: true });
+  });
+
+  it('returns plain onboarding to consent and pairing onboarding to rename with context intact', () => {
+    const plainNavigate = jest.fn();
+    const plain = renderScreen(plainNavigate, jest.fn());
+    fireEvent.press(plain.getByLabelText('Go back'));
+    expect(plainNavigate).toHaveBeenCalledWith(ROUTES.ParentConsentScreen);
+
+    const pairingNavigate = jest.fn();
+    const pairing = renderScreen(pairingNavigate, jest.fn(), { pairing: PAIRING });
+    fireEvent.press(pairing.getByLabelText('Go back'));
+    expect(pairingNavigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, PAIRING);
+  });
+});
+
 describe('ChildProfileScreen — from-pairing finalize', () => {
   it('after creating the child, finalizes the pairing for that child and does NOT go to MicAskScreen', async () => {
     const navigate = jest.fn();
     const reset = jest.fn();
     const screen = renderScreen(navigate, reset, { pairing: PAIRING });
 
-    pickAgeAndSave(screen);
+    completeProfileAndSave(screen);
 
     await waitFor(() => expect(mockedSave).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(mockedFinalize).toHaveBeenCalledTimes(1));
@@ -112,7 +146,7 @@ describe('ChildProfileScreen — from-pairing finalize', () => {
     const reset = jest.fn();
     const screen = renderScreen(navigate, reset, { pairing: PAIRING });
 
-    pickAgeAndSave(screen);
+    completeProfileAndSave(screen);
 
     // The finalize failure produces a visible, sensible error message.
     await waitFor(() =>
@@ -135,11 +169,37 @@ describe('ChildProfileScreen — from-pairing finalize', () => {
     const reset = jest.fn();
     const screen = renderScreen(navigate, reset, { pairing: PAIRING });
 
-    pickAgeAndSave(screen);
+    completeProfileAndSave(screen);
 
     await waitFor(() => expect(screen.getByText('Your plan has reached its child profile limit.')).toBeTruthy());
     expect(mockedFinalize).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.MicAskScreen);
+  });
+});
+
+describe('ChildProfileScreen — protected home add-child flow', () => {
+  it('returns home on back without entering onboarding', () => {
+    const navigate = jest.fn();
+    const onProtectedFlowExit = jest.fn();
+    const screen = renderScreen(navigate, jest.fn(), undefined, onProtectedFlowExit);
+
+    fireEvent.press(screen.getByLabelText('Go back'));
+
+    expect(onProtectedFlowExit).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.ParentConsentScreen);
+  });
+
+  it('returns home after saving without entering microphone onboarding', async () => {
+    const navigate = jest.fn();
+    const onProtectedFlowExit = jest.fn();
+    const screen = renderScreen(navigate, jest.fn(), undefined, onProtectedFlowExit);
+
+    completeProfileAndSave(screen);
+
+    await waitFor(() => expect(mockedSave).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onProtectedFlowExit).toHaveBeenCalledTimes(1));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.MicAskScreen);
+    expect(mockedFinalize).not.toHaveBeenCalled();
   });
 });
 
@@ -149,7 +209,7 @@ describe('ChildProfileScreen — plain onboarding (no pairing context) is unchan
     const reset = jest.fn();
     const screen = renderScreen(navigate, reset, undefined);
 
-    pickAgeAndSave(screen);
+    completeProfileAndSave(screen);
 
     await waitFor(() => expect(mockedSave).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.MicAskScreen));

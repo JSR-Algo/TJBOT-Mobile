@@ -3,12 +3,13 @@ import { Image, type ImageSourcePropType, StyleSheet, View } from 'react-native'
 import type { FeatureTabName, FeatureTabScreen } from './types';
 
 const SLEEK = {
-  primarySoft: 'rgba(255,107,107,0.12)',
+  primarySoft: 'rgba(255, 107, 107, 0.16)',
 } as const;
 
 /**
  * Colorful tab icons — SOT for the authenticated bottom menu.
- * Selected = full color. Idle = the same artwork rendered neutral gray.
+ * Selected = full-color artwork + soft coral pill.
+ * Idle = dedicated greyscale artwork (never residual color).
  */
 export const SLEEK_TAB_ICON_SOURCES: Record<FeatureTabName, ImageSourcePropType> = {
   Home: require('@/assets/tab-icons/home.png'),
@@ -18,12 +19,22 @@ export const SLEEK_TAB_ICON_SOURCES: Record<FeatureTabName, ImageSourcePropType>
   Profile: require('@/assets/tab-icons/profile.png'),
 };
 
+export const SLEEK_TAB_IDLE_ICON_SOURCES: Record<FeatureTabName, ImageSourcePropType> = {
+  Home: require('@/assets/tab-icons/home-idle.png'),
+  Devices: require('@/assets/tab-icons/devices-idle.png'),
+  Library: require('@/assets/tab-icons/library-idle.png'),
+  Progress: require('@/assets/tab-icons/progress-idle.png'),
+  Profile: require('@/assets/tab-icons/profile-idle.png'),
+};
+
 type MainTabIconProps = {
   Icon: FeatureTabScreen['tabIcon'];
   color: string;
   focused: boolean;
   imageSource?: ImageSourcePropType;
+  idleImageSource?: ImageSourcePropType;
   layoutScale?: number;
+  tabName?: FeatureTabName;
 };
 
 export function MainTabIcon({
@@ -31,9 +42,17 @@ export function MainTabIcon({
   color,
   focused,
   imageSource,
+  idleImageSource,
   layoutScale = 1,
+  tabName,
 }: MainTabIconProps): React.JSX.Element {
   const iconSize = (focused ? 30 : 26) * layoutScale;
+  const resolvedColorSource = imageSource
+    ?? (tabName ? SLEEK_TAB_ICON_SOURCES[tabName] : undefined);
+  const resolvedIdleSource = idleImageSource
+    ?? (tabName ? SLEEK_TAB_IDLE_ICON_SOURCES[tabName] : undefined)
+    ?? resolvedColorSource;
+  const source = focused ? resolvedColorSource : resolvedIdleSource;
 
   return (
     <View
@@ -41,17 +60,17 @@ export function MainTabIcon({
       style={[
         styles.tabIconContainer,
         {
-          width: 36 * layoutScale,
-          height: 36 * layoutScale,
-          borderRadius: 18 * layoutScale,
+          width: 40 * layoutScale,
+          height: 40 * layoutScale,
+          borderRadius: 20 * layoutScale,
         },
         focused ? styles.tabIconContainerFocused : styles.tabIconContainerIdle,
       ]}
     >
-      {imageSource ? (
+      {source ? (
         <Image
           testID="mainTabColorIcon"
-          source={imageSource}
+          source={source}
           style={[
             { width: iconSize, height: iconSize },
             !focused && styles.sleekTabImageIdle,
@@ -81,7 +100,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   sleekTabImageIdle: {
-    opacity: 0.72,
-    tintColor: '#A6A3A0',
+    opacity: 0.92,
   },
 });

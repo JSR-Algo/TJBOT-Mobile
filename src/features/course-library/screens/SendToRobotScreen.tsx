@@ -6,6 +6,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import FlowBreadcrumb from '@/components/FlowBreadcrumb';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
@@ -218,7 +219,35 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   };
 
   return (
-    <DeviceShell title="Today's lesson" onBack={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+    <DeviceShell
+      title="Send lesson"
+      onBack={() => {
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+          return;
+        }
+        navigation.navigate(ROUTES.CourseLibraryScreen);
+      }}
+      screenTestID="sendToRobotPage"
+    >
+      <Box paddingHorizontal={20} paddingTop={2}>
+        <FlowBreadcrumb
+          currentIndex={1}
+          steps={['Lesson detail', 'Send', 'Robot ready']}
+          testID="sendToRobotBreadcrumb"
+        />
+      </Box>
+
+      <Box paddingHorizontal={16} paddingTop={16}>
+        <Box style={styles.statusHero}>
+          <Text fontWeight="800" style={styles.statusEyebrow}>SEND TO TEEBOT</Text>
+          <Text fontWeight="800" style={styles.statusTitle}>
+            {selectedLesson?.manifestReady ? 'Ready to send' : 'Choose a ready lesson'}
+          </Text>
+          <Text style={styles.statusCopy}>Robot readiness checked before sending</Text>
+        </Box>
+      </Box>
+
       <Text style={styles.intro}>
         Pick a lesson to send to Robot — about 4 minutes when your child is ready.
       </Text>
@@ -320,7 +349,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
                       <Box flex={1}>
                         <Text fontWeight="600" style={styles.pickTitle}>{lesson.title}</Text>
                         <Text style={styles.pickMeta}>
-                          {lesson.manifestReady ? 'Ready to send' : 'Preparing on server'}
+                          {lesson.manifestReady ? 'Lesson package ready' : 'Preparing on server'}
                         </Text>
                         {fitCopy ? <Text style={styles.fitMeta} i18n={false}>{fitCopy}</Text> : null}
                       </Box>
@@ -357,6 +386,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   intro: { fontSize: 13, color: CL.ink2, lineHeight: 20, paddingHorizontal: 20, paddingTop: 14 },
+  statusHero: { backgroundColor: '#DDF7F3', borderColor: '#C5EAE3', borderRadius: 26, borderWidth: 1, padding: 18 },
+  statusEyebrow: { color: '#168879', fontSize: 10, letterSpacing: 1.1 },
+  statusTitle: { color: CL.ink, fontSize: 24, lineHeight: 30, marginTop: 6 },
+  statusCopy: { color: '#4D7C75', fontSize: 12, lineHeight: 18, marginTop: 5 },
   sectionLabel: { fontSize: 11, color: CL.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   rowCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 4 },
   pickRow: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12 },

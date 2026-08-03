@@ -129,13 +129,13 @@ export default function HomeHubScreen({
 
   if (variant === 'zero_child') {
     const openChildProfile = (): void => {
-      navigation.navigate(ROUTES.ChildProfileScreen);
+      navigation.navigate(ROUTES.HomeChildProfileScreen);
     };
 
     return (
       <ScreenShell bg={SLEEK.background} gradient={false}>
         <TodayCommandView
-          childName={t('Mia')}
+          childName={t('Maestro')}
           durationMinutes={0}
           heroTitleOverride={t('Name your child')}
           lessonReady={false}
@@ -160,7 +160,7 @@ export default function HomeHubScreen({
       <HomeMultiChildState
         children={data.children}
         onContinue={selectChild}
-        onAddChild={() => navigation.navigate(ROUTES.ChildProfileScreen)}
+        onAddChild={() => navigation.navigate(ROUTES.HomeChildProfileScreen)}
       />
     );
   }
@@ -181,14 +181,14 @@ export default function HomeHubScreen({
     data && "childName" in data && typeof data.childName === "string" && data.childName.trim()
       ? data.childName.trim()
       : null;
-  const greetingName = childName ?? t("Mia");
+  const greetingName = childName ?? t('Maestro');
   const lesson = data?.nextLesson;
   const lessonReady = demoBadge.simulated || (!failed && !unavailable);
   const overviewLessonTitle = failed
     ? t('Could not load Home')
     : unavailable
       ? t('No lesson plan yet')
-      : lesson?.title || t('Barn & Farm Words');
+      : lesson?.title || t('Farm Friends');
   const runPrimary = (): void => {
     if (demoBadge.simulated) {
       navigation.navigate(ROUTES.LessonReadyScreen);

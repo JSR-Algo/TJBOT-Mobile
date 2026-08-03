@@ -65,6 +65,36 @@ describe('PairFoundScreen zero-code default path', () => {
     });
   });
 
+  it('matches the approved pairing blueprint without the invented setup summary', () => {
+    const screen = render(
+      <PairFoundScreen
+        navigation={{ navigate: jest.fn() } as never}
+        route={{
+          params: {
+            deviceId: 'device-1',
+            serialNumber: 'TBT-2026-004217',
+            provisioningAttemptId: 'attempt-1',
+            bleDeviceId: 'ble-device-1',
+            provisioningTransport: 'ble',
+          },
+        } as never}
+      />,
+    );
+
+    expect(screen.getByTestId('pairingSetupPage')).toBeTruthy();
+    expect(screen.getByText('Add a TeeBot')).toBeTruthy();
+    expect(screen.getByText('Pairing setup')).toBeTruthy();
+    expect(screen.getByText('Step 2 of 5')).toBeTruthy();
+    expect(screen.getByText('Confirm the robot')).toBeTruthy();
+
+    for (const label of ['Prepare', 'Confirm identity', 'Connect Wi-Fi', 'Name and assign', 'Verify']) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+
+    expect(screen.queryByText('Before you begin')).toBeNull();
+    expect(screen.queryByTestId('pairingBreadcrumb')).toBeNull();
+  });
+
   it('prepares a claim bootstrap token then routes BLE-discovered robots through Wi-Fi provisioning', async () => {
     const navigate = jest.fn();
     const screen = render(

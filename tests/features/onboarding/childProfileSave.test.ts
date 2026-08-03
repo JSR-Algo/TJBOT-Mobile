@@ -25,8 +25,7 @@ const child: Child = {
 const payload: OnboardingChildProfilePayload = {
   name: 'Panda friend',
   date_of_birth: '2018-07-01',
-  vocabulary_level: 'beginner',
-  learning_style: 'visual',
+  buddy: 'dog',
 };
 
 describe('child profile onboarding save', () => {

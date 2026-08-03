@@ -5,7 +5,7 @@ import {
   getLessonByWeekDay,
   getLessonsForAgeBand,
   sixMonthLessonPack,
-} from '../../../src/features/lessonDemo/content';
+} from '../../../src/features/lesson-demo/content';
 
 const childFacingText = (value: unknown): string[] => {
   if (typeof value === 'string') return [value];

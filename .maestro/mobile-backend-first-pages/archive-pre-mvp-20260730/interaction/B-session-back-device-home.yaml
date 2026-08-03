@@ -1,0 +1,13 @@
+appId: net.jasonle.tjbot
+name: B Session Back to Robot home
+---
+- assertVisible: ".*(Lesson on Robot|Bài học trên Robot).*"
+- scrollUntilVisible:
+    element:
+      text: ".*(Back to Robot home|Về trang chính của Robot|Về trang Robot).*"
+    direction: DOWN
+- tapOn: ".*(Back to Robot home|Về trang chính của Robot|Về trang Robot).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot|Thiết bị|Pair|Ghép|Device|My Robot|Robot của).*"
+    timeout: 20000

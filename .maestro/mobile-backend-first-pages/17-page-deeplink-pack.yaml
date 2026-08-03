@@ -29,12 +29,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       id: "homePrimaryCta"
     timeout: 15000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/01-HomeHubScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 02 CourseLibraryScreen ---
 - openLink: "tjbot://course-library/course-library"
@@ -53,12 +53,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Library.*"
     timeout: 8000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/02-CourseLibraryScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 03 TodayProgressScreen ---
 - openLink: "tjbot://progress/today-progress"
@@ -72,12 +72,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Today.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/03-TodayProgressScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 04 ParentSettingsScreen ---
 - openLink: "tjbot://parent/parent-settings"
@@ -91,12 +91,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Settings.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/04-ParentSettingsScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 05 ParentSummaryScreen ---
 - openLink: "tjbot://parent/parent-summary"
@@ -110,12 +110,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Parent.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/05-ParentSummaryScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 06 DeviceOverviewScreen ---
 - openLink: "tjbot://device/device-overview"
@@ -129,12 +129,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Robot.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/06-DeviceOverviewScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 07 DeviceHomeScreen ---
 - openLink: "tjbot://device/device-home"
@@ -148,12 +148,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Robot.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/07-DeviceHomeScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 08 DeviceLostScreen ---
 - openLink: "tjbot://device/device-lost"
@@ -167,12 +167,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Find.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/08-DeviceLostScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 09 DeviceFirmwareScreen ---
 - openLink: "tjbot://device/device-firmware"
@@ -186,12 +186,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Software.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/09-DeviceFirmwareScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 10 DeviceSessionScreen ---
 - openLink: "tjbot://device/device-session"
@@ -205,12 +205,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Lesson on Robot.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/10-DeviceSessionScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 11 MyRobotScreen ---
 - openLink: "tjbot://robot-mgmt/my-robot"
@@ -224,12 +224,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*My Robot.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/11-MyRobotScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 12 RobotStatusScreen ---
 - openLink: "tjbot://robot-mgmt/robot-status"
@@ -243,12 +243,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Robot status.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/12-RobotStatusScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 13 SupportScreen ---
 - openLink: "tjbot://robot-mgmt/support"
@@ -262,12 +262,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Contact support.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/13-SupportScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 14 OfflineHelpScreen ---
 - openLink: "tjbot://robot-mgmt/offline-help"
@@ -281,12 +281,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*offline.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/14-OfflineHelpScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 15 FactoryResetScreen ---
 - openLink: "tjbot://robot-mgmt/factory-reset"
@@ -300,12 +300,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Factory.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/15-FactoryResetScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 16 RobotFirmwareScreen ---
 - openLink: "tjbot://robot-mgmt/robot-firmware"
@@ -319,12 +319,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Robot software.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/16-RobotFirmwareScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 17 HelpFaqScreen ---
 - openLink: "tjbot://fallback/help-faq"
@@ -338,12 +338,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Help.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/17-HelpFaqScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 18 LessonReadyScreen ---
 - openLink: "tjbot://lesson-session/lesson-ready"
@@ -357,12 +357,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Lesson.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/18-LessonReadyScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 19 CourseCompleteScreen ---
 - openLink: "tjbot://course-library/course-complete"
@@ -376,12 +376,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Complete.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/19-CourseCompleteScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 20 NeedsSyncScreen ---
 - openLink: "tjbot://course-library/needs-sync"
@@ -395,12 +395,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Sync.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/20-NeedsSyncScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 21 CourseLockedScreen ---
 - openLink: "tjbot://course-library/course-locked"
@@ -414,12 +414,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Locked.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/21-CourseLockedScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 # --- 22 RobotReadyScreen ---
 - openLink: "tjbot://course-library/robot-ready"
@@ -433,12 +433,12 @@ name: Mobile-backend-first ≥17-page deep-link pack
       text: ".*Robot.*"
     timeout: 12000
     optional: true
-- scroll:
+- swipe:
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/22-RobotReadyScreen"
 - back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
     optional: true
 - openLink: "tjbot://home/home-hub"
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/99-return-home"

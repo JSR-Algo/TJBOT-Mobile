@@ -93,7 +93,9 @@ export function TodayCommandView({
         <Box flex={1} gap={5}>
           <Text fontWeight="800" style={styles.lessonTitle} numberOfLines={2}>{lessonTitle}</Text>
           <Text style={styles.lessonMeta} i18n={false}>
-            {translateTemplate('{{minutes}} min · {{words}} words', { minutes: durationMinutes, words: wordCount }, { locale: language })}
+            {lessonReady
+              ? t('Animals · Lesson 3 of 12')
+              : translateTemplate('{{minutes}} min · {{words}} words', { minutes: durationMinutes, words: wordCount }, { locale: language })}
           </Text>
           <Box flexDirection="row" alignItems="center" gap={8}>
             <Text fontWeight="700" style={[styles.readyText, !lessonReady && styles.notReadyText]}>{t(lessonStatusLabel)}</Text>
@@ -187,7 +189,15 @@ const styles = StyleSheet.create({
   notReadyText: { color: '#77736F' },
   progressTrack: { backgroundColor: '#E9ECEB', borderRadius: 4, flex: 1, height: 3, overflow: 'hidden' },
   progressFill: { backgroundColor: '#35AE70', height: '100%', width: '84%' },
-  startButton: { alignItems: 'center', backgroundColor: '#1D1F20', borderRadius: 12, justifyContent: 'center', minHeight: 44, minWidth: 68, paddingHorizontal: 12 },
+  startButton: {
+    alignItems: 'center',
+    backgroundColor: '#1D1F20',
+    borderRadius: 12,
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 68,
+    paddingHorizontal: 12,
+  },
   startButtonDisabled: { opacity: 0.45 },
   startText: { color: '#FFFFFF', fontSize: 13 },
   evidenceCard: { backgroundColor: '#FBF8F4', borderTopColor: '#F0EAE3', borderTopWidth: 1, minHeight: 138, padding: 24 },

@@ -274,20 +274,21 @@ describe('MicAskScreen', () => {
 // ─── FirstLessonEntryScreen ──────────────────────────────────────────────────
 
 describe('FirstLessonEntryScreen', () => {
-  it('renders parent hand-off prompt', () => {
+  it('renders the first lesson plan from the approved blueprint', () => {
     const { getByText } = render(
       <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />
     );
-    expect(getByText('Hand the phone to your child')).toBeTruthy();
-    expect(getByText(/About 3 minutes/)).toBeTruthy();
-    expect(getByText('Yes!')).toBeTruthy();
+    expect(getByText('Your first lesson is ready!')).toBeTruthy();
+    expect(getByText('Hello, Farm!')).toBeTruthy();
+    expect(getByText('4 words · 6 minutes')).toBeTruthy();
+    expect(getByText('Start lesson')).toBeTruthy();
   });
 
-  it('navigates to LessonReadyScreen when Yes! pressed', () => {
+  it('completes onboarding on Home when Start lesson is pressed', () => {
     const { getByText } = render(
       <FirstLessonEntryScreen navigation={mockNav} route={mockRoute as never} />
     );
-    fireEvent.press(getByText('Yes!'));
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+    fireEvent.press(getByText('Start lesson'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 });

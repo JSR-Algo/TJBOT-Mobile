@@ -1,0 +1,13 @@
+appId: net.jasonle.tjbot
+name: D CourseComplete Done to Device Home
+---
+- assertVisible: ".*(Lesson complete|Hoàn thành bài học|Today's lesson|Bài học hôm nay).*"
+- scrollUntilVisible:
+    element:
+      text: ".*(^Done$|^Xong$|Done|Xong).*"
+    direction: DOWN
+- tapOn: ".*(^Done$|^Xong$|Done|Xong).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot|Thiết bị|Pair|Ghép|Device|My Robot|Robot của).*"
+    timeout: 20000

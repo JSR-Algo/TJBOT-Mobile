@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useIsFocused } from '@react-navigation/native';
@@ -7,13 +7,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/design-system/icons';
 import { referenceShadow } from '@/design-system/referenceTheme';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
-import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
+import { useAppLanguage } from '@/services/i18n/i18n';
 import { DEFAULT_MAIN_TAB_NAME, MAIN_TAB_SCREENS } from './featureRegistry';
 import { ROUTE_MAP } from './routeMap';
 import { ROUTES, type RootStackParamList } from './routes';
 import type { FeatureRouteOwner, FeatureTabName } from './types';
 import { ChildProfileAvatar } from './ChildProfileAvatar';
-import { MainTabIcon, SLEEK_TAB_ICON_SOURCES } from './SleekTabBarVisuals';
+import { MainTabIcon, SLEEK_TAB_ICON_SOURCES, SLEEK_TAB_IDLE_ICON_SOURCES } from './SleekTabBarVisuals';
 
 const OWNER_DEFAULT_TAB: Readonly<Partial<Record<FeatureRouteOwner, FeatureTabName>>> = {
   home: 'Home',
@@ -53,6 +53,8 @@ const BLUEPRINT_TAB_LABELS: Readonly<Record<FeatureTabName, string>> = {
   Progress: 'Progress',
   Profile: 'Profile',
 };
+const TAB_BAR_HORIZONTAL_PADDING = 6;
+const TAB_BAR_ITEM_GAP = 1;
 
 type ShellNavigation = Pick<
   NativeStackNavigationProp<RootStackParamList>,
@@ -104,10 +106,38 @@ export function MainTabNavigator({ children, navigation, routeName }: Props): Re
   const { language, setLanguage, t } = useAppLanguage();
   const household = useOptionalHousehold();
   const activeTab = activeTabFor(routeName);
-  const childName = household?.activeChild?.name?.trim() || t('Mia');
+  const activeTabIndex = Math.max(
+    MAIN_TAB_SCREENS.findIndex(screen => screen.tabName === activeTab),
+    0,
+  );
+  const activeIndicatorIndex = React.useRef(new Animated.Value(activeTabIndex)).current;
+  const [tabBarWidth, setTabBarWidth] = React.useState(0);
+  const childName = household?.activeChild?.name?.trim() || t('Maestro');
   const showBack = !TAB_NAME_BY_ROUTE.has(routeName);
   const showTodayTitle = routeName === ROUTES.HomeHubScreen;
   const showLibraryMascot = routeName === ROUTES.CourseLibraryScreen;
+  const tabItemWidth = Math.max(
+    (
+      tabBarWidth
+      - (TAB_BAR_HORIZONTAL_PADDING * 2)
+      - (TAB_BAR_ITEM_GAP * (MAIN_TAB_SCREENS.length - 1))
+    ) / MAIN_TAB_SCREENS.length,
+    0,
+  );
+  const activeIndicatorTranslateX = activeIndicatorIndex.interpolate({
+    inputRange: [0, MAIN_TAB_SCREENS.length - 1],
+    outputRange: [0, (tabItemWidth + TAB_BAR_ITEM_GAP) * (MAIN_TAB_SCREENS.length - 1)],
+  });
+
+  React.useEffect(() => {
+    Animated.spring(activeIndicatorIndex, {
+      toValue: activeTabIndex,
+      damping: 18,
+      stiffness: 180,
+      mass: 0.8,
+      useNativeDriver: true,
+    }).start();
+  }, [activeIndicatorIndex, activeTabIndex]);
 
   const navigate = (route: keyof RootStackParamList): void => {
     navigation.navigate(route as never);
@@ -145,10 +175,9 @@ export function MainTabNavigator({ children, navigation, routeName }: Props): Re
           ) : null}
 
           {showTodayTitle ? (
-            <View style={styles.todayTitleBlock}>
-              <Text style={styles.todayTitle}>{t('Today')}</Text>
-              <Text numberOfLines={1} style={styles.todaySubtitle}>
-                {translateTemplate("{{name}}'s learning plan", { name: childName }, { locale: language })}
+            <View style={styles.todayTitleBlock} testID="appShellHomeTitleBlock">
+              <Text numberOfLines={1} style={styles.todayTitle}>
+                {t('Hello Maestro')}
               </Text>
             </View>
           ) : null}
@@ -209,10 +238,23 @@ export function MainTabNavigator({ children, navigation, routeName }: Props): Re
         accessibilityRole="tablist"
         colors={['rgba(255,255,255,0.97)', 'rgba(255,246,238,0.94)']}
         end={{ x: 1, y: 1 }}
+        onLayout={({ nativeEvent }) => setTabBarWidth(nativeEvent.layout.width)}
         start={{ x: 0, y: 0 }}
         style={[styles.tabBar, { marginBottom: Math.max(insets.bottom, 10) }]}
         testID="authenticatedAppShellTabs"
       >
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.activeTabIndicator,
+            {
+              opacity: tabItemWidth > 0 ? 1 : 0,
+              transform: [{ translateX: activeIndicatorTranslateX }],
+              width: tabItemWidth,
+            },
+          ]}
+          testID="activeTabIndicator"
+        />
         {MAIN_TAB_SCREENS.map(screen => {
           const selected = screen.tabName === activeTab;
           const TabIcon = screen.tabIcon;
@@ -225,7 +267,6 @@ export function MainTabNavigator({ children, navigation, routeName }: Props): Re
               onPress={() => navigate(screen.name)}
               style={({ pressed }) => [
                 styles.tabButton,
-                selected && styles.tabButtonSelected,
                 pressed && styles.pressed,
               ]}
               testID={screen.tabBarButtonTestID}
@@ -235,6 +276,8 @@ export function MainTabNavigator({ children, navigation, routeName }: Props): Re
                 color={selected ? COLORS.accent : COLORS.muted}
                 focused={selected}
                 imageSource={SLEEK_TAB_ICON_SOURCES[screen.tabName]}
+                idleImageSource={SLEEK_TAB_IDLE_ICON_SOURCES[screen.tabName]}
+                tabName={screen.tabName}
               />
               <Text style={[styles.tabLabel, selected && styles.tabLabelSelected]} numberOfLines={1}>
                 {t(BLUEPRINT_TAB_LABELS[screen.tabName])}
@@ -267,22 +310,17 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   todayTitleBlock: {
-    flexShrink: 1,
+    flex: 1,
     justifyContent: 'center',
-    minWidth: 102,
+    minWidth: 0,
+    overflow: 'hidden',
   },
   todayTitle: {
     color: '#17191A',
-    fontSize: 23,
+    fontSize: 20,
     fontWeight: '900',
-    letterSpacing: -0.6,
-    lineHeight: 27,
-  },
-  todaySubtitle: {
-    color: '#797774',
-    fontSize: 10,
-    fontWeight: '500',
-    lineHeight: 14,
+    letterSpacing: -0.5,
+    lineHeight: 24,
   },
   libraryMascot: {
     height: 40,
@@ -300,8 +338,8 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     alignItems: 'center',
-    flex: 1,
     flexDirection: 'row',
+    flexShrink: 0,
     gap: 6,
     justifyContent: 'flex-end',
   },
@@ -315,8 +353,8 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 44,
     justifyContent: 'center',
-    maxWidth: 132,
-    minWidth: 92,
+    maxWidth: 110,
+    minWidth: 82,
     paddingHorizontal: 8,
   },
   profileName: {
@@ -335,7 +373,7 @@ const styles = StyleSheet.create({
     gap: 5,
     height: 44,
     justifyContent: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
   languageText: {
     color: COLORS.ink,
@@ -369,9 +407,15 @@ const styles = StyleSheet.create({
     minHeight: 52,
     paddingHorizontal: 2,
     paddingVertical: 4,
+    zIndex: 1,
   },
-  tabButtonSelected: {
+  activeTabIndicator: {
     backgroundColor: COLORS.accentSoft,
+    borderRadius: 28,
+    bottom: 6,
+    left: TAB_BAR_HORIZONTAL_PADDING,
+    position: 'absolute',
+    top: 6,
   },
   tabLabel: {
     color: COLORS.muted,

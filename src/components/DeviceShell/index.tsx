@@ -13,9 +13,10 @@ type Props = {
   children?: React.ReactNode;
   screenTestID?: string;
   scrollTestID?: string;
+  hideHeader?: boolean;
 };
 
-export default function DeviceShell({ title, onBack, children, screenTestID, scrollTestID = 'deviceShellScroll' }: Props) {
+export default function DeviceShell({ title, onBack, children, screenTestID, scrollTestID = 'deviceShellScroll', hideHeader = false }: Props) {
   const { language } = useAppLanguage();
   const insets = useSafeAreaInsets();
   return (
@@ -27,30 +28,36 @@ export default function DeviceShell({ title, onBack, children, screenTestID, scr
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
     >
-      <Box
-        testID={screenTestID}
-        collapsable={false}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
-        flexDirection="row"
-        alignItems="center"
-        gap={12}
-      >
-        {onBack ? (
-          <TouchableOpacity
-            onPress={onBack}
-            style={styles.backBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel={translateCopy('Go back', { locale: language })}
+      {hideHeader ? (
+        <Box testID={screenTestID} collapsable={false}>{children}</Box>
+      ) : (
+        <>
+          <Box
+            testID={screenTestID}
+            collapsable={false}
+            style={[styles.header, { paddingTop: insets.top + 12 }]}
+            flexDirection="row"
+            alignItems="center"
+            gap={12}
           >
-            <Icon name="ChevronLeft" size={18} color={referenceColors.inkSoft} />
-          </TouchableOpacity>
-        ) : null}
-        <Text fontWeight="800" style={styles.title}>
-          {title}
-        </Text>
-      </Box>
-      {children}
+            {onBack ? (
+              <TouchableOpacity
+                onPress={onBack}
+                style={styles.backBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel={translateCopy('Go back', { locale: language })}
+              >
+                <Icon name="ChevronLeft" size={18} color={referenceColors.inkSoft} />
+              </TouchableOpacity>
+            ) : null}
+            <Text fontWeight="800" style={styles.title}>
+              {title}
+            </Text>
+          </Box>
+          {children}
+        </>
+      )}
     </ScrollView>
   );
 }

@@ -1,4 +1,5 @@
 import HomeHubScreen from './screens/HomeHubScreen';
+import HomeChildProfileScreen from './screens/HomeChildProfileScreen';
 import { Home } from 'lucide-react-native';
 import { ROUTES } from '@/navigation/routes';
 import type { FeatureNavigationConfig } from '@/navigation/types';
@@ -30,7 +31,15 @@ export const HOME_TAB_SCREEN = {
   ],
 } as const;
 
-export const HOME_SCREENS = defineFeatureScreens([]);
+export const HOME_SCREENS = defineFeatureScreens([
+  {
+    name: ROUTES.HomeChildProfileScreen,
+    component: HomeChildProfileScreen,
+    role: 'stack-entry',
+    backTarget: ROUTES.HomeHubScreen,
+    stateMachineId: 'home_child_profile',
+  },
+]);
 
 export const HOME_NAVIGATION = {
   owner: 'home',

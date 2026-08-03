@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
 import { RobotImage } from '@/components/RobotImage';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { gardenColors, gardenRadii } from '@/design-system/tokens';
@@ -183,7 +183,24 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
 
   return (
     <ScreenShell>
-      <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
+      <Box
+        accessible
+        accessibilityLabel="Robot pairing progress"
+        paddingTop={30}
+        paddingHorizontal={24}
+        alignItems="center"
+      >
+        <Box style={styles.statusPill} flexDirection="row" alignItems="center" gap={7}>
+          <Icon
+            name={status === 'authenticated' ? 'ShieldCheck' : status === 'failed' ? 'CircleX' : 'Radio'}
+            size={16}
+            color={status === 'authenticated' ? gardenColors.mint : gardenColors.coral}
+            strokeWidth={2.4}
+          />
+          <Text fontWeight="700" style={styles.statusPillText}>
+            {status === 'authenticated' ? 'Secure connection ready' : status === 'failed' ? 'Connection needs attention' : 'Secure setup in progress'}
+          </Text>
+        </Box>
         <RobotImage variant="body" size={180} />
         <Text fontWeight="600" style={styles.heading}>
           {status === 'authenticated' ? 'Robot authenticated' : status === 'failed' ? 'Pairing failed' : 'Hang tight — about 30 seconds'}
@@ -217,9 +234,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
                 justifyContent="center"
               >
                 {done ? (
-                  <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
-                    <Path d="M5 12l5 5 9-10" />
-                  </Svg>
+                  <Icon name="Check" size={13} color={gardenColors.paper} strokeWidth={3} />
                 ) : active ? (
                   <Box style={styles.blinkDot} />
                 ) : (
@@ -508,6 +523,16 @@ function readNumber(record: Record<string, unknown> | null | undefined, key: str
 }
 
 const styles = StyleSheet.create({
+  statusPill: {
+    backgroundColor: gardenColors.paper,
+    borderColor: gardenColors.line,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+  },
+  statusPillText: { color: gardenColors.inkSoft, fontSize: 12 },
   heading: { fontSize: 20, fontWeight: '600', color: gardenColors.ink, textAlign: 'center', marginTop: 12 },
   subheading: { fontSize: 14, color: gardenColors.inkSoft, textAlign: 'center', marginTop: 12 },
   progressTrack: {

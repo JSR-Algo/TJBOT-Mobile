@@ -10,27 +10,62 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { finishNestPhoneLesson, getActiveNestLesson } from '../nestPhoneLesson';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SuccessScreen'>;
 
-export default function SuccessScreen({ navigation }: Props) {
+export default function SuccessScreen({ navigation, route }: Props) {
+  const { t } = useAppLanguage();
+  const activityIndex = route.params?.activityIndex ?? 1;
+  const activityTotal = Math.max(route.params?.activityTotal ?? 1, 1);
+  const word = getActiveNestLesson()?.session.session_payload?.core_learning?.[activityIndex - 1]?.word ?? 'word';
+  const [finishing, setFinishing] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleNext = async (): Promise<void> => {
+    if (finishing) return;
+    if (activityIndex < activityTotal) {
+      navigation.navigate(ROUTES.RobotSpeakingScreen, {
+        ...route.params,
+        activityIndex: activityIndex + 1,
+      });
+      return;
+    }
+
+    setFinishing(true);
+    setError(null);
+    try {
+      await finishNestPhoneLesson();
+      navigation.navigate(ROUTES.LessonDoneScreen, {
+        ...route.params,
+        wordsLearned: activityTotal,
+      });
+    } catch {
+      setError(t('Nest could not complete this lesson. Try again in a moment.'));
+    } finally {
+      setFinishing(false);
+    }
+  };
+
   return (
     <ScreenShell bg="#E8F8F0">
-      <LessonHeader progress={0.45} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
+      <LessonHeader
+        progress={Math.min(1, activityIndex / activityTotal)}
+        onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen, route.params)}
+      />
       <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center" gap={18}>
         <Robot emotion="success" size={150} accent="#E8A33C" />
         <SpeechBubble color="#fff">
-          <Text style={{ color: '#7BD389' }}>Nice speaking!</Text>{'\n'}
-          <Text style={styles.saidText}>You said "cat" 🐱</Text>
+          <Text style={{ color: '#7BD389' }}>{t('You practiced speaking!')}</Text>{'\n'}
+          <Text i18n={false} style={styles.saidText}>{word}</Text>
         </SpeechBubble>
-        <Box flexDirection="row" gap={6}>
-          {[0, 1, 2].map(i => (
-            <Text key={i} style={{ fontSize: 32 }}>⭐</Text>
-          ))}
-        </Box>
+        {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
       </Box>
       <Box style={styles.footer}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.RobotSpeakingScreen)} color="#7BD389">Next →</PrimaryCTA>
+        <PrimaryCTA disabled={finishing} onPress={handleNext} color="#7BD389">
+          {activityIndex < activityTotal ? t('Next →') : t('Done')}
+        </PrimaryCTA>
       </Box>
     </ScreenShell>
   );
@@ -39,5 +74,6 @@ export default function SuccessScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   center: { paddingTop: 120, paddingHorizontal: 24, paddingBottom: 200 },
   saidText: { fontSize: 13.5, color: 'rgba(0,0,0,0.5)' },
+  error: { fontSize: 13.5, color: '#B42318', textAlign: 'center' },
   footer: { position: 'absolute', left: 24, right: 24, bottom: 48 },
 });
