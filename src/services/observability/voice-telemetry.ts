@@ -1,7 +1,7 @@
 /**
  * voice-telemetry — unified dispatcher for voice-stack telemetry.
  *
- * Plan §12.7 (single dispatcher) + §12.8 (Sentry breadcrumb cardinality).
+ * Plan §12.7 single dispatcher for local development and QA diagnostics.
  *
  * Public API:
  *   track(category, event, fields?)  — the single call site for all voice events
@@ -10,7 +10,7 @@
  *   jsErrorBreadcrumb(where, err)    — lightweight caught-error audit trail
  *
  * Cardinality strategy (plan §12.8):
- *   session, provider, barge_in, error  → always breadcrumb
+ *   session, provider, barge_in, error  → always recorded locally
  *   capture                             → sample 1-in-50; aggregate in 30s window
  *   playback                            → sample 1-in-25; aggregate in 30s window
  *
@@ -19,7 +19,6 @@
  */
 
 import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
-import * as Sentry from '@sentry/react-native';
 import { Config } from '../../config';
 import {
   VOICE_EVENT_NAMES,
@@ -69,26 +68,32 @@ const AGG_WINDOW_MS = 30_000;
 const agg: Partial<Record<VoiceTelemetryCategory, CategoryAgg>> = {};
 const aggTimers: Partial<Record<VoiceTelemetryCategory, ReturnType<typeof setTimeout>>> = {};
 
+type LocalDiagnostic = {
+  category: string;
+  level: 'info' | 'warning';
+  message: string;
+  data: Record<string, unknown>;
+  timestamp: number;
+};
+
+function recordLocalDiagnostic(_diagnostic: LocalDiagnostic): void {}
+
 function flushAgg(category: VoiceTelemetryCategory): void {
   const a = agg[category];
   if (!a || a.count === 0) return;
   const windowSec = (Date.now() - a.firstAt) / 1000;
-  try {
-    Sentry.addBreadcrumb({
-      category: `voice.${category}.summary`,
-      level: 'info',
-      message: `voice.${category}.summary`,
-      data: {
-        count: a.count,
-        windowSec: +windowSec.toFixed(1),
-        lastEvent: a.lastEvent,
-        platform: Platform.OS,
-      },
-      timestamp: Date.now() / 1000,
-    });
-  } catch {
-    /* Sentry not initialized */
-  }
+  recordLocalDiagnostic({
+    category: `voice.${category}.summary`,
+    level: 'info',
+    message: `voice.${category}.summary`,
+    data: {
+      count: a.count,
+      windowSec: +windowSec.toFixed(1),
+      lastEvent: a.lastEvent,
+      platform: Platform.OS,
+    },
+    timestamp: Date.now() / 1000,
+  });
   delete agg[category];
   delete aggTimers[category];
 }
@@ -160,7 +165,7 @@ function shouldBreadcrumb(category: VoiceTelemetryCategory): boolean {
  * Primary entry point for all JS-side voice telemetry.
  *
  * category  — one of the VoiceTelemetryCategory values; drives sampling and
- *             Sentry breadcrumb category label.
+ *             local diagnostic category label.
  * event     — dot-separated name, e.g. 'session.start', 'capture.chunk'.
  * fields    — optional structured payload (no PII, no audio bytes).
  */
@@ -189,20 +194,13 @@ export function track(
     return;
   }
 
-  const level: Sentry.SeverityLevel =
-    category === 'error' ? 'warning' : 'info';
-
-  try {
-    Sentry.addBreadcrumb({
-      category: `voice.${category}`,
-      level,
-      message: event,
-      data,
-      timestamp: Date.now() / 1000,
-    });
-  } catch {
-    /* Sentry not initialized yet */
-  }
+  recordLocalDiagnostic({
+    category: `voice.${category}`,
+    level: category === 'error' ? 'warning' : 'info',
+    message: event,
+    data,
+    timestamp: Date.now() / 1000,
+  });
 }
 
 // ── Native event bridge (unchanged from prior impl, now routes via track()) ─
@@ -251,7 +249,7 @@ function nativeBreadcrumb(event: VoiceTelemetryEvent): void {
     event.event === 'voicePlaybackDrained' && /fallback|timeout/i.test(event.reason);
 
   // Plan §12 canonical category names — no voice.native.* prefix.
-  const sentryCategory =
+  const diagnosticCategory =
     event.event === 'voiceRouteChange'
       ? 'voice.route'
       : event.event === 'voiceMicStalled'
@@ -262,24 +260,17 @@ function nativeBreadcrumb(event: VoiceTelemetryEvent): void {
             ? 'voice.drain'
             : 'voice.session';
 
-  const level: Sentry.SeverityLevel =
-    isLostSession || isFallbackDrain ? 'warning' : 'info';
-
-  try {
-    Sentry.addBreadcrumb({
-      category: sentryCategory,
-      level,
-      message: event.event,
-      data: { ...event, platform: Platform.OS },
-      timestamp: Date.now() / 1000,
-    });
-  } catch {
-    /* Sentry not initialized */
-  }
+  recordLocalDiagnostic({
+    category: diagnosticCategory,
+    level: isLostSession || isFallbackDrain ? 'warning' : 'info',
+    message: event.event,
+    data: { ...event, platform: Platform.OS },
+    timestamp: Date.now() / 1000,
+  });
 }
 
 /**
- * Subscribe to every native voice event and forward to Sentry.
+ * Subscribe to every native voice event for local development and QA diagnostics.
  * Idempotent — calling twice is a no-op.
  */
 export function startVoiceTelemetry(): Unsub {

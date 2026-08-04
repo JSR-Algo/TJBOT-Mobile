@@ -149,21 +149,6 @@ jest.mock('lucide-react-native', () => {
 
 export const mockToastShow = jest.fn();
 
-jest.mock('@sentry/react-native', () => ({
-  init: jest.fn(),
-  captureException: jest.fn(),
-}));
-
-jest.mock('posthog-react-native', () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-    identify: jest.fn(),
-    capture: jest.fn(),
-    reset: jest.fn(),
-  },
-}));
-
 jest.mock('../src/components/Toast', () => ({
   useToast: () => ({ show: mockToastShow }),
   ToastProvider: ({ children }: { children: React.ReactNode }) => children,

@@ -149,6 +149,17 @@ describe('design-system accessibility primitives', () => {
     expect(tree).toContain('"keyboardDismissMode":"on-drag"');
   });
 
+  it('keeps onboarding form actions responsive while the keyboard is open', () => {
+    const tree = renderSnapshot(
+      <OnbShell title="Parent account">
+        <Text>Login form</Text>
+      </OnbShell>,
+    );
+
+    expect(tree).toContain('"keyboardShouldPersistTaps":"handled"');
+    expect(tree).toContain('"keyboardDismissMode":"on-drag"');
+  });
+
   it('keeps the DeviceShell route anchor outside the viewport scroll container', () => {
     let renderer: ReturnType<typeof create> | undefined;
     act(() => {

@@ -6,6 +6,7 @@ import { createDetoxEnv, createMobileEnv } from './mobile-env.mjs';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 const mobileRunSource = fs.readFileSync(new URL('./mobile-run.mjs', import.meta.url), 'utf8');
+const detoxConfigSource = fs.readFileSync(new URL('../../.detoxrc.js', import.meta.url), 'utf8');
 
 test('createMobileEnv preserves caller env and prepends discovered runtimes', () => {
   const env = createMobileEnv({
@@ -42,6 +43,14 @@ test('embedded Android builds disable Metro devtools', () => {
 
   assert.ok(buildAndroid, 'build-android command must exist');
   assert.match(buildAndroid, /'--dev',\s*'false'/);
+});
+
+test('embedded iOS Detox builds use a non-development bundle', () => {
+  const iosApp = detoxConfigSource.match(/'ios\.debug':\s*\{[\s\S]*?\n    \},\n    'android\.debug'/)?.[0];
+
+  assert.ok(iosApp, 'iOS Detox app configuration must exist');
+  assert.match(iosApp, /Release-iphonesimulator\/TJBOT\.app/);
+  assert.match(iosApp, /-configuration Release/);
 });
 
 test('createDetoxEnv defaults to isolated local mock ports', () => {

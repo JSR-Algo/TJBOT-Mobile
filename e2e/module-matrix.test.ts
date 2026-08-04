@@ -4,12 +4,12 @@ import {
   assertLocalAiSimulationReady,
   assertLocalBackendReady,
   seedAccountWithoutHousehold,
+  setMockCourseCatalogUnavailable,
   stopLocalMockAi,
   stopLocalMockBackend,
   type SeededAccount,
 } from './helpers/localServices';
 import {
-  blockLocalBackend,
   completeOnboarding,
   disableDetoxSync,
   expectHealthyVisibleText,
@@ -152,10 +152,13 @@ describe('module matrix: local native E2E', () => {
   });
 
   it('renders offline/error fallback instead of hanging beyond 10 seconds', async () => {
-    await blockLocalBackend();
-    await openRoute('course/course', 'English with Robot');
-    await expectNoStuckLoading(['Course catalog offline', 'Courses unavailable', 'Course refresh timed out'], 30000);
-    await resetUrlBlacklist();
+    setMockCourseCatalogUnavailable(true);
+    try {
+      await openRoute('course/course', 'English with Robot');
+      await expectNoStuckLoading(['Course catalog offline', 'Courses unavailable', 'Course refresh timed out'], 30000);
+    } finally {
+      setMockCourseCatalogUnavailable(false);
+    }
   });
 
   it('keeps the native app alive after module coverage', async () => {

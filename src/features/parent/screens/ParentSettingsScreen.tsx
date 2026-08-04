@@ -16,8 +16,6 @@ import { useHousehold } from '@/contexts/HouseholdContext';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { captureError } from '@/services/observability/sentry';
-import { isAnalyticsEnabled } from '@/services/observability/analytics';
-import { getAnalyticsPreference, setAnalyticsPreference } from '@/services/observability/analyticsPreference';
 import { translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 import { getChildProfile, updateChildProfile, type ChildProfile, type UpdateProfileDto } from '@/services/api/learning';
 import { deleteChild, setActiveChild as confirmActiveChild, updateChildDisplayName } from '@/services/api/households';
@@ -67,7 +65,6 @@ export default function ParentSettingsScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentSettingsScreen);
   const { logout } = useAuth();
   const { activeChild, children, refresh, setActiveChild } = useHousehold();
-  const [analytics, setAnalytics] = React.useState(isAnalyticsEnabled());
   const [lessonReportNotifications, setLessonReportNotifications] = React.useState<boolean | null>(null);
   const [notificationSaveFailed, setNotificationSaveFailed] = React.useState(false);
   const persistedNotificationPreferenceRef = React.useRef<boolean | null>(null);
@@ -134,20 +131,6 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     setChildNameDraft(hydratedChildName);
   }, [hydratedChildName]);
 
-  // Hydrate the analytics switch from the parent's persisted choice (falls back
-  // to the current role-based enable state when nothing is stored).
-  React.useEffect(() => {
-    let mounted = true;
-    getAnalyticsPreference()
-      .then((pref) => {
-        if (mounted) setAnalytics(pref ?? isAnalyticsEnabled());
-      })
-      .catch(() => {
-        if (mounted) setAnalytics(isAnalyticsEnabled());
-      });
-    return () => { mounted = false; };
-  }, []);
-
   React.useEffect(() => {
     let mounted = true;
     getPreferences().then(
@@ -207,15 +190,6 @@ export default function ParentSettingsScreen({ navigation }: Props) {
     setNotificationSaveFailed(false);
     void persistNotificationPreference(next);
   }, [persistNotificationPreference]);
-
-  const onToggleAnalytics = React.useCallback((next: boolean) => {
-    // Optimistic: reflect immediately, then persist + flip the live client. A
-    // storage failure is captured inside setAnalyticsPreference; the live gate
-    // still changes so collection stops/starts right away.
-    setAnalytics(next);
-    void setAnalyticsPreference(next);
-  }, []);
-
   const updateLanguage = React.useCallback(async (nextLanguage: AppLocale): Promise<void> => {
     setSavingLanguage(nextLanguage);
     setLanguageSaveFailed(false);
@@ -528,8 +502,7 @@ export default function ParentSettingsScreen({ navigation }: Props) {
         </Box>
       </PRowGroup>
 
-      <PRowGroup header="Privacy" footer="Anonymous analytics help us improve lessons. No child names, audio, or personal data are ever collected.">
-        <PRow icon="📊" label="Anonymous usage analytics" toggle={analytics} onToggle={onToggleAnalytics} />
+      <PRowGroup header="Privacy">
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={t('Robot leaderboard privacy')}

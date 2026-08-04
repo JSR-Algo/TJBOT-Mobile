@@ -22,7 +22,6 @@ const mockGetAccountSummary = jest.fn<Promise<User>, []>(async () => {
   throw new Error('Network Error');
 });
 
-const mockResetAnalytics = jest.fn();
 const mockLogin = jest.fn<Promise<{ user?: User }>, [string, string]>();
 const mockClearLocalPairedDevice = jest.fn<Promise<void>, []>(async () => undefined);
 const mockClearRewardSeenQueue = jest.fn<Promise<void>, [string | null]>(async () => undefined);
@@ -51,12 +50,6 @@ jest.mock('../../src/services/api/auth', () => ({
   login: (...args: [string, string]) => mockLogin(...args),
   logout: jest.fn(),
   signup: jest.fn(),
-}));
-
-jest.mock('../../src/services/observability/analytics', () => ({
-  identifyAnalyticsUser: jest.fn(),
-  resetAnalytics: () => mockResetAnalytics(),
-  trackEvent: jest.fn(),
 }));
 
 jest.mock('../../src/features/device/pairing/localPairedDevice', () => ({
@@ -145,7 +138,6 @@ describe('AuthContext auth invalidation handler', () => {
     expect(mockClearRewardSeenQueue).not.toHaveBeenCalled();
     expect(mockSetRewardQueueScope).toHaveBeenLastCalledWith(null, null);
     expect(mockRemoveQueries).toHaveBeenCalledWith({ queryKey: ['rewards'] });
-    expect(mockResetAnalytics).toHaveBeenCalled();
   });
 
   it('sets account scope without replaying before household hydration', async () => {
@@ -174,7 +166,6 @@ describe('AuthContext auth invalidation handler', () => {
     expect(mockClearLocalPairedDevice).toHaveBeenCalled();
     expect(mockClearRewardSeenQueue).not.toHaveBeenCalled();
     expect(mockReplayRewardSeenQueue).not.toHaveBeenCalled();
-    expect(mockResetAnalytics).toHaveBeenCalled();
   });
 });
 
@@ -268,10 +259,9 @@ describe('AuthContext — multiple simultaneous auth-invalidated events', () => 
       expect(getByTestId('auth-state').props.children).toBe('NO_AUTH');
     });
 
-    // clearTokens and deleteSecureItem may be called multiple times (calls are
-    // idempotent), but resetAnalytics must have been called at least once.
+    // clearTokens and deleteSecureItem may be called multiple times; both are
+    // idempotent and the final unauthenticated state is what matters.
     expect(mockClearTokens).toHaveBeenCalled();
     expect(mockDeleteSecureItem).toHaveBeenCalledWith('TJBot_user');
-    expect(mockResetAnalytics).toHaveBeenCalled();
   });
 });

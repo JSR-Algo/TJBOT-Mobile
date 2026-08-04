@@ -29,7 +29,12 @@ type Props = {
 export default function OnbShell({ children, step, total, onBack, title, testID }: Props) {
   const { t } = useAppLanguage();
   return (
-    <ScrollView style={[styles.root, { backgroundColor: OB.bg }]} testID={testID}>
+    <ScrollView
+      style={[styles.root, { backgroundColor: OB.bg }]}
+      testID={testID}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
       <Box
         style={[styles.header, { backgroundColor: OB.bg, borderBottomColor: OB.hair }]}
         flexDirection="row"

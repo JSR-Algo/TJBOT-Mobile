@@ -10,8 +10,6 @@ import {
   type AgeBandId,
 } from '@/features/onboarding/ageGate';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
-import { setAnalyticsUserRole, initAnalytics, isAnalyticsEnabled } from '@/services/observability/analytics';
-import { captureError, setSentryUserRole } from '@/services/observability/sentry';
 
 const BANDS: Array<{ id: AgeBandId; label: string; helper?: string }> = [
   { id: 'U13', label: 'Under 13' },
@@ -39,7 +37,6 @@ export default function AgeScreen({ onComplete }: Props): React.JSX.Element {
     setError(null);
     try {
       const answer = await writeAgeAnswer(band);
-      applyAgeAnswerObservability(answer);
       onComplete?.(answer);
     } catch {
       setError('We could not save your answer. Please try again.');
@@ -111,21 +108,6 @@ export default function AgeScreen({ onComplete }: Props): React.JSX.Element {
       </Box>
     </OnbShell>
   );
-}
-
-function applyAgeAnswerObservability(answer: AgeAnswer): void {
-  try {
-    setSentryUserRole(answer.role);
-    if (answer.role === 'child') {
-      setAnalyticsUserRole('child');
-    } else if (!isAnalyticsEnabled()) {
-      initAnalytics(answer.role);
-    } else {
-      setAnalyticsUserRole(answer.role);
-    }
-  } catch (error) {
-    captureError(error);
-  }
 }
 
 const styles = StyleSheet.create({

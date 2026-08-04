@@ -5,7 +5,7 @@ describe('analytics', () => {
     jest.clearAllMocks();
   });
 
-  it('no-ops when PostHog key is undefined', () => {
+  it('always no-ops because third-party analytics is disabled', () => {
     initAnalytics();
 
     expect(isAnalyticsEnabled()).toBe(false);
