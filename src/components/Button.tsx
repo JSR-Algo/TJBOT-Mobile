@@ -1,13 +1,14 @@
 import React from 'react';
 import {
   TouchableOpacity,
-  Text,
   ActivityIndicator,
   StyleSheet,
   ViewStyle,
   TextStyle,
 } from 'react-native';
 import { colors, spacing, radius, typography } from '@/design-system/tokens/legacy-semantic';
+import { Text } from '@/design-system/primitives';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -32,7 +33,10 @@ export function Button({
   style,
   testID,
 }: ButtonProps): React.JSX.Element {
+  const { t } = useAppLanguage();
   const isDisabled = disabled || loading;
+  const translatedLabel = t(label);
+  const translatedAccessibilityLabel = t(accessibilityLabel ?? label);
 
   const containerStyle = [
     styles.base,
@@ -50,7 +54,7 @@ export function Button({
       disabled={isDisabled}
       activeOpacity={0.8}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityLabel={translatedAccessibilityLabel}
       accessibilityState={{ disabled: isDisabled }}
       testID={testID}
     >
@@ -60,7 +64,7 @@ export function Button({
           size="small"
         />
       ) : (
-        <Text style={textStyle}>{label}</Text>
+        <Text i18n={false} style={textStyle}>{translatedLabel}</Text>
       )}
     </TouchableOpacity>
   );

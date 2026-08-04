@@ -178,7 +178,7 @@ export const FSM_TIMER_TABLE: Partial<Record<VoiceState, FsmTimerConfig>> = {
   USER_SPEAKING: {
     deadlineMs: 30_000,
     fallbackState: 'ERROR_RECOVERABLE',
-    errorMessage: 'VAD bị kẹt.',
+    errorMessage: 'Voice detection got stuck. Tap the robot button to try again.',
     metricEvent: 'voice.fsm.timeout',
   },
   USER_SPEECH_FINALIZING: {
@@ -194,13 +194,13 @@ export const FSM_TIMER_TABLE: Partial<Record<VoiceState, FsmTimerConfig>> = {
   RECONNECTING: {
     deadlineMs: 8000,
     fallbackState: 'ERROR_RECOVERABLE',
-    errorMessage: 'Kết nối lại quá chậm.',
+    errorMessage: 'Reconnect is taking too long. Check Wi‑Fi and try again.',
     metricEvent: 'voice.fsm.timeout',
   },
   INTERRUPTED: {
     deadlineMs: 800,
     fallbackState: 'ERROR_RECOVERABLE',
-    errorMessage: 'Ngắt audio không phản hồi.',
+    errorMessage: 'Stopping audio took too long. Tap the robot button to try again.',
     metricEvent: 'voice.assistant_turn.interrupted_timeout',
   },
   ERROR_RECOVERABLE: {

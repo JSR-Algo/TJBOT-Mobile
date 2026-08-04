@@ -3,13 +3,13 @@ import {
   ActivityIndicator,
   StatusBar,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGeminiConversation } from '@/hooks/useGeminiConversation';
+import { Text } from '@/design-system/primitives';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import { useVoiceAssistantStore, type VoiceState } from '@/state/voiceAssistantStore';
 import { BARN_SAY_IT_LESSON_ID } from '../content/barnSayItLesson';
@@ -24,6 +24,7 @@ import {
   type VoiceReadinessIssue,
 } from '../voiceReadiness';
 import { diagnosticLog } from '@/services/observability/diagnosticLog';
+import { translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotFullscreenLessonScreen'>;
 
@@ -94,11 +95,12 @@ function useVoiceState() {
 function useLessonFromRoute(
   lessonId: string | undefined,
   ageBand: LessonAgeBand,
+  language: AppLocale,
 ): LessonSession {
   return useMemo(
     () => staticLessonContentProvider.getLessonById(lessonId ?? BARN_SAY_IT_LESSON_ID, ageBand)
       ?? staticLessonContentProvider.getLessonById(BARN_SAY_IT_LESSON_ID, ageBand)!,
-    [ageBand, lessonId],
+    [ageBand, language, lessonId],
   );
 }
 
@@ -189,11 +191,12 @@ function TopBar({
   voiceActive: boolean;
   voiceState: VoiceState;
 }): React.JSX.Element {
+  const { t } = useAppLanguage();
   return (
     <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Close lesson"
+        accessibilityLabel={t('Close lesson')}
         onPress={onExit}
         style={styles.iconButton}
       >
@@ -201,7 +204,7 @@ function TopBar({
       </TouchableOpacity>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel={voiceActive ? 'Stop talking to Robot' : 'Talk to Robot'}
+        accessibilityLabel={t(voiceActive ? 'Stop talking to Robot' : 'Talk to Robot')}
         onPress={onVoiceToggle}
         style={[styles.iconButton, voiceActive ? styles.iconButtonActive : null]}
       >
@@ -223,6 +226,7 @@ function LessonChoices({
   selectedChoiceId: string | null;
   onSelectChoice: (choiceId: string) => void;
 }): React.JSX.Element | null {
+  const { language } = useAppLanguage();
   if (!step.choices) return null;
   return (
     <View style={[styles.choices, { bottom: insets.bottom + 96 }]}>
@@ -232,7 +236,11 @@ function LessonChoices({
           <TouchableOpacity
             key={choice.id}
             accessibilityRole="button"
-            accessibilityLabel={`Choose ${choice.label}`}
+            accessibilityLabel={translateTemplate(
+              'Choose {{choice}}',
+              { choice: choice.label },
+              { locale: language },
+            )}
             onPress={() => onSelectChoice(choice.id)}
             style={[styles.choice, selected ? styles.choiceSelected : null]}
           >
@@ -278,6 +286,7 @@ function ErrorBanner({
   onOpenSettings: () => void;
   onOpenDiagnosticLog: () => void;
 }): React.JSX.Element | null {
+  const { t } = useAppLanguage();
   if (!displayedError) return null;
   return (
     <View style={[styles.errorBanner, { top: insets.top + 64 }]}>
@@ -285,7 +294,7 @@ function ErrorBanner({
       {shouldShowMicSettingsAction(readinessIssue) ? (
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Open microphone settings"
+          accessibilityLabel={t('Open microphone settings')}
           onPress={onOpenSettings}
           style={styles.errorAction}
         >
@@ -294,7 +303,7 @@ function ErrorBanner({
       ) : null}
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Open diagnostic log"
+        accessibilityLabel={t('Open diagnostic log')}
         onPress={onOpenDiagnosticLog}
         style={styles.errorAction}
       >
@@ -318,11 +327,12 @@ function FooterNavigation({
   onPrevious: () => void;
   onNext: () => void;
 }): React.JSX.Element {
+  const { t } = useAppLanguage();
   return (
     <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Previous step"
+        accessibilityLabel={t('Previous step')}
         onPress={onPrevious}
         style={[styles.footerButton, stepIndex === 0 ? styles.footerButtonDisabled : null]}
         disabled={stepIndex === 0}
@@ -331,7 +341,7 @@ function FooterNavigation({
       </TouchableOpacity>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel={isLastStep ? 'Finish lesson' : 'Next step'}
+        accessibilityLabel={t(isLastStep ? 'Finish lesson' : 'Next step')}
         onPress={onNext}
         style={[styles.footerButton, styles.footerButtonPrimary]}
       >
@@ -386,11 +396,12 @@ function handlePreviousStep(stepIndex: number, setStepIndex: (fn: (c: number) =>
 
 export function RobotFullscreenLessonScreen({ navigation, route }: Props): React.JSX.Element {
   const insets = useSafeAreaInsets();
+  const { language } = useAppLanguage();
   const ageBand = (route.params?.ageBand ?? '4-6') as LessonAgeBand;
   const lessonId = route.params?.lessonId;
   const autoStartVoice = route.params?.autoStartVoice ?? true;
 
-  const lesson = useLessonFromRoute(lessonId, ageBand);
+  const lesson = useLessonFromRoute(lessonId, ageBand, language);
   const { stepIndex, setStepIndex, selectedChoiceId, setSelectedChoiceId } = useLessonStepState();
   const { voiceStarted, setVoiceStarted, readinessIssue, setReadinessIssue } = useVoiceState();
 

@@ -1,14 +1,17 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
+import { Text } from '@/design-system/primitives';
 import { getCuratedLessonCatalog } from '../content/curatedLegacyLessons';
 import type { LessonAgeBand } from '../types';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonPickScreen'>;
 
 export function LessonPickScreen({ navigation, route }: Props): React.JSX.Element {
+  const { language } = useAppLanguage();
   const ageBand = (route.params?.ageBand ?? '4-6') as LessonAgeBand;
   const lessons = useMemo(() => getCuratedLessonCatalog(ageBand), [ageBand]);
 
@@ -23,7 +26,11 @@ export function LessonPickScreen({ navigation, route }: Props): React.JSX.Elemen
           <TouchableOpacity
             key={lesson.lessonId}
             accessibilityRole="button"
-            accessibilityLabel={`Start ${lesson.title ?? lesson.theme}`}
+            accessibilityLabel={translateTemplate(
+              'Start {{lesson}}',
+              { lesson: lesson.title ?? lesson.theme },
+              { locale: language },
+            )}
             style={styles.card}
             onPress={() => navigation.navigate(ROUTES.RobotCompanionScreen, {
               lessonId: lesson.lessonId,

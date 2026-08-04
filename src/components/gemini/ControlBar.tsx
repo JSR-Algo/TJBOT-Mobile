@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Icon } from '@/design-system/icons';
+import { Text } from '@/design-system/primitives';
 import type { VoiceState } from '../../state/voiceAssistantStore';
 
 interface ControlBarProps {
@@ -11,20 +12,20 @@ interface ControlBarProps {
 }
 
 const STATUS_LABEL: Partial<Record<VoiceState, string>> = {
-  IDLE: 'Bấm để bắt đầu',
-  PREPARING_AUDIO: 'Xin quyền micro...',
-  CONNECTING: 'Đang kết nối...',
-  READY: 'Đang chuẩn bị...',
-  LISTENING: 'Đang nghe...',
-  USER_SPEAKING: 'Đang nghe...',
-  USER_SPEECH_FINALIZING: 'Đang nghĩ...',
-  WAITING_AI: 'Đang nghĩ...',
-  ASSISTANT_SPEAKING: 'Suka đang nói...',
-  RECONNECTING: 'Đang kết nối lại...',
-  INTERRUPTED: 'Đã ngắt',
-  ERROR_RECOVERABLE: 'Lỗi kết nối',
-  ERROR_FATAL: 'Lỗi nghiêm trọng',
-  ENDED: 'Đã kết thúc',
+  IDLE: 'Tap to start',
+  PREPARING_AUDIO: 'Requesting microphone access...',
+  CONNECTING: 'Connecting...',
+  READY: 'Getting ready...',
+  LISTENING: 'Listening...',
+  USER_SPEAKING: 'Listening...',
+  USER_SPEECH_FINALIZING: 'Thinking...',
+  WAITING_AI: 'Thinking...',
+  ASSISTANT_SPEAKING: 'Suka is speaking...',
+  RECONNECTING: 'Reconnecting...',
+  INTERRUPTED: 'Disconnected',
+  ERROR_RECOVERABLE: 'Connection error',
+  ERROR_FATAL: 'Critical error',
+  ENDED: 'Ended',
 };
 
 export function ControlBar({ voiceState, onMicPress, onSettingsPress, micDisabled }: ControlBarProps) {

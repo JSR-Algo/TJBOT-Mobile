@@ -5,9 +5,12 @@
 
 # Brand
 TJBot
+TeeBot
+TJBot Future Tech
 Robot
 Mira
 Mai
+Suka
 
 # Tech / proper nouns
 Wi-Fi
@@ -30,6 +33,8 @@ Colors
 I am happy
 I'm fine
 Goodbye
+Aa
+word
 
 # Sticker names (content)
 Brave Speaker
@@ -41,6 +46,13 @@ Daily Star
 —
 –
 …
+
+# Runtime data and telemetry composites (data is intentionally unchanged)
+TeeBot · {{value1}}
+{{value1}}%
+Wi-Fi {{value1}} dBm
+{{value1}} · {{value2}} · {{value3}}%
+Robot • {{value1}}
 
 # Phase 11.1 — additional brand + sample data
 Buddy Panda
@@ -63,6 +75,26 @@ EXPORT
 
 # Locale names shown in their own language
 Tiếng Việt
+
+# English-learning target words intentionally stay in English
+ball
+barn
+blue
+brave
+car
+happy
+hello
+house
+red
+sad
+tree
+yellow
+
+# Internal identifiers and non-copy rendering values
+contain
+en
+vi
+w01-d01-hello-greetings
 
 # Phase 11.1 — design-canvas chrome (debug-only, never user-facing)
 All Frames

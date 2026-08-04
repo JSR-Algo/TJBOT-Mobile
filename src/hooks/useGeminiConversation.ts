@@ -32,6 +32,7 @@ import { useGeminiTimers } from './useGeminiTimers';
 import { useVoiceTelemetry } from './useVoiceTelemetry';
 import { resolveGeminiUserError } from '../services/observability/geminiErrorMessages';
 import { logGeminiEvent } from '../services/observability/diagnosticLog';
+import { translateCopy, translateTemplate } from '@/services/i18n/i18n';
 
 /**
  * Speak-first greeting kickoff (2026-07-06): Gemini Live never takes the
@@ -41,9 +42,8 @@ import { logGeminiEvent } from '../services/observability/diagnosticLog';
 const GREETING_KICKOFF_TURN =
   '[app-event] The child just arrived and is looking at you. ' +
   'Greet them warmly by voice right now, then begin.';
-const SIMULATOR_TEST_PROMPT = 'Xin chào! Tớ là bạn mới.';
-const SIMULATOR_FALLBACK_REPLY =
-  'Simulator không hỗ trợ micro live ổn định. Mình đã chuyển sang chế độ test văn bản để bạn vẫn kiểm tra được màn Gemini.';
+const SIMULATOR_TEST_PROMPT = 'Hello! I am your new friend.';
+const SIMULATOR_FALLBACK_REPLY = 'The simulator cannot use live microphone audio reliably. Text test mode is active so you can still check the Gemini screen.';
 
 interface GeminiConversationOptions {
   voiceName?: string;
@@ -156,7 +156,7 @@ export function useGeminiConversation(
         if (!start) return;
         start().catch((err) => {
           telemetry.jsErrorBreadcrumb('gemini.reconnect.start', err);
-          store.getState().setError('Kết nối lại thất bại.');
+          store.getState().setError('Reconnect failed.');
           store.getState().transition('ERROR_RECOVERABLE');
         });
       });
@@ -271,9 +271,7 @@ export function useGeminiConversation(
           fatal: evt.fatal,
         });
         if (evt.fatal) {
-          store
-            .getState()
-            .setError(`Micro mất frame ${Math.round(evt.lastFrameAgeMs)} ms. Tắt/bật lại voice.`);
+          store.getState().setError(translateTemplate('Microphone stopped receiving audio for {{milliseconds}} ms. Turn voice off and on, then try again.', { milliseconds: Math.round(evt.lastFrameAgeMs) }));
         }
       });
       VoiceMic.setAecFallbackGate(false, 0).catch((err) => {
@@ -347,9 +345,7 @@ export function useGeminiConversation(
           // E_MIC_PERMISSION_OR_AUDIO_SESSION vs E_MIC_START behave
           // very differently) instead of one opaque string.
           const nativeCode = (err as { code?: string } | null)?.code;
-          store
-            .getState()
-            .setError(`Micro không khả dụng.${nativeCode ? ` (${nativeCode})` : ''}`);
+          store.getState().setError(translateTemplate('Microphone is unavailable{{code}}. Close other apps using the mic and try again.', { code: nativeCode ? ` (${nativeCode})` : '' }));
           store.getState().transition('ERROR_RECOVERABLE');
         });
     } catch {
@@ -483,7 +479,7 @@ export function useGeminiConversation(
         if (s.state !== 'IDLE' && s.state !== 'ERROR_RECOVERABLE') {
           stopAudioCaptureRef.current?.();
           playback.interrupt();
-          s.setError(detail.reason || `Gemini Live ngắt kết nối (${detail.code ?? 'unknown'}).`);
+          s.setError(translateTemplate('Gemini Live disconnected ({{code}}).', { code: detail.code ?? 'unknown' }));
           s.transition('ERROR_RECOVERABLE');
         }
       },
@@ -502,7 +498,7 @@ export function useGeminiConversation(
           detail.reason ||
           detail.errorString ||
           (detail.code != null ? String(detail.code) : null);
-        const shownError = resolveGeminiUserError(rawError, 'Lỗi kết nối Gemini');
+        const shownError = resolveGeminiUserError(rawError, 'Gemini connection failed.');
         logGeminiEvent('live_error', shownError, detail as Record<string, unknown>, 'error');
         store.getState().setError(shownError);
         store.getState().transition('ERROR_RECOVERABLE');
@@ -705,7 +701,7 @@ export function useGeminiConversation(
     player.onFatalStall((payload) => {
       telemetry.track('error', 'playback_fatal_stall', { ...payload });
       const s = store.getState();
-      s.setError('Phát âm thanh bị gián đoạn, vui lòng thử lại.');
+      s.setError('Audio playback was interrupted. Please try again.');
       s.transition('ERROR_RECOVERABLE');
     });
     player.onPoorNetwork((poor: boolean) => {
@@ -740,10 +736,11 @@ export function useGeminiConversation(
       transition('READY');
       transition('LISTENING');
       store.getState().setError(null);
-      store.getState().setUserTranscript(`${SIMULATOR_TEST_PROMPT} (simulator mode)`);
-      store.getState().addMessage('user', `${SIMULATOR_TEST_PROMPT} (simulator mode)`);
+      const simulatorPrompt = translateTemplate('{{prompt}} (simulator mode)', { prompt: translateCopy(SIMULATOR_TEST_PROMPT) });
+      store.getState().setUserTranscript(simulatorPrompt);
+      store.getState().addMessage('user', simulatorPrompt);
       transition('WAITING_AI');
-      const aiText = SIMULATOR_FALLBACK_REPLY;
+      const aiText = translateCopy(SIMULATOR_FALLBACK_REPLY);
       // Yield once so a session restarted during this tick still wins the
       // run-scoping check below, as it did when a network call sat here.
       await Promise.resolve();
@@ -788,9 +785,7 @@ export function useGeminiConversation(
           if (!granted) {
             // Speak-first by design (owner-decreed): deny NEVER errors the FSM
             // or stops the robot's voice — parent-facing notice only.
-            setError(
-              'Bé chưa bật micro — TeeBot vẫn nói được. Bật micro trong Cài đặt để trò chuyện.',
-            );
+            setError('Your child has not enabled the microphone — TeeBot can still speak. Enable the microphone in Settings to talk.');
             return;
           }
           // Capture is gated on a LIVE session state, which makes it correct
@@ -812,9 +807,7 @@ export function useGeminiConversation(
           // (speak-only) and NEVER dead-ends the FSM — but surface a notice for
           // the asking run so a real mic problem is not silently swallowed.
           if (voiceRunIdRef.current === permissionRunId) {
-            setError(
-              'Không kiểm tra được micro — TeeBot vẫn nói được. Thử bật micro trong Cài đặt.',
-            );
+            setError('Could not check the microphone — TeeBot can still speak. Try enabling the microphone in Settings.');
           }
         });
     } else if (VoiceMic.isAvailable) {

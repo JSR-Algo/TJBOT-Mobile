@@ -16,6 +16,7 @@ import { initializeBle, scanForTJBotDevices } from '@/services/ble/service';
 import type { BleDeviceCandidate } from '@/services/ble/types';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
 import { serialFromCandidate } from '../serialFromCandidate';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairSearchScreen'>;
 
@@ -35,6 +36,7 @@ type SearchBlocker = 'bluetoothOff' | null;
 const MAX_BLE_DISCOVERY_ATTEMPTS = 3;
 
 export default function PairSearchScreen({ navigation, route }: Props) {
+  const { language, t } = useAppLanguage();
   const cancelledRef = React.useRef(false);
   const [searchState, setSearchState] = React.useState<SearchState>('searching');
   const [searchBlocker, setSearchBlocker] = React.useState<SearchBlocker>(null);
@@ -239,7 +241,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           </Text>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Try Bluetooth search again"
+            accessibilityLabel={t('Try Bluetooth search again')}
             onPress={retryBluetoothSearch}
             style={styles.linkButton}
           >
@@ -266,7 +268,11 @@ export default function PairSearchScreen({ navigation, route }: Props) {
               activeOpacity={0.7}
               onPress={() => chooseCandidate(item)}
               accessibilityRole="button"
-              accessibilityLabel={`${reconnectMode ? 'Reconnect' : 'Pair'} Robot ${item.displayName}`}
+              accessibilityLabel={translateTemplate(
+                reconnectMode ? 'Reconnect Robot {{name}}' : 'Pair Robot {{name}}',
+                { name: item.displayName },
+                { locale: language },
+              )}
             >
               <Box style={styles.rowIcon} alignItems="center" justifyContent="center">
                 <Icon name="Bot" size={20} color={DV.accent} strokeWidth={2.3} />
@@ -284,7 +290,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         <Box paddingHorizontal={24} paddingBottom={30}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="I do not see my Robot"
+            accessibilityLabel={t('I do not see my Robot')}
             onPress={cancelSearchToFailed}
             style={styles.missingButton}
           >
@@ -315,7 +321,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         </Text>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="I do not see my Robot"
+          accessibilityLabel={t('I do not see my Robot')}
           onPress={cancelSearchToFailed}
           style={styles.linkButton}
         >

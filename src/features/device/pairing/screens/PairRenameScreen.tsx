@@ -24,7 +24,7 @@ const BUDDIES = [
 ] as const satisfies ReadonlyArray<{ ic: IconName; n: string }>;
 
 export default function PairRenameScreen({ navigation, route }: Props) {
-  useAppLanguage();
+  const { t } = useAppLanguage();
   const defaultDisplayName = React.useMemo(() => translateCopy('Living-room Robot'), []);
   const [buddy, setBuddy] = React.useState(2);
   const [saving, setSaving] = React.useState(false);
@@ -167,13 +167,13 @@ export default function PairRenameScreen({ navigation, route }: Props) {
           <Icon name="Bot" size={20} color={gardenColors.inkSoft} strokeWidth={2.3} />
           <TextInput
             ref={nameInputRef}
-            accessibilityLabel="Robot's name"
+          accessibilityLabel={t("Robot's name")}
             autoCorrect={false}
             blurOnSubmit
             editable={!saving}
             maxLength={40}
             onChangeText={setDisplayName}
-            placeholder="Living-room Robot"
+          placeholder={t('Living-room Robot')}
             returnKeyType="done"
             selectTextOnFocus
             style={styles.nameInput}
@@ -185,7 +185,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} alignItems="center">
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Save Robot buddy and name"
+          accessibilityLabel={t('Save Robot buddy and name')}
           accessibilityState={{ disabled: saving }}
           style={[styles.ctaButton, saving && styles.ctaButtonDisabled]}
           onPress={save}

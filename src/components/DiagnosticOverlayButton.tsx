@@ -8,6 +8,7 @@ import {
   getPendingDiagnosticError,
   subscribePendingDiagnosticError,
 } from '@/services/observability/diagnosticErrorState';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 /**
  * DiagnosticOverlayButton — always-visible floating button on every screen that
@@ -26,6 +27,7 @@ type SendState = 'idle' | 'sending' | 'sent' | 'failed';
 const RESET_MS = 2500;
 
 export function DiagnosticOverlayButton(): React.JSX.Element | null {
+  const { t } = useAppLanguage();
   const insets = useSafeAreaInsets();
   const [state, setState] = useAutoResetState<SendState>('idle');
   const [, bump] = React.useReducer((n: number) => n + 1, 0);
@@ -61,7 +63,7 @@ export function DiagnosticOverlayButton(): React.JSX.Element | null {
   return (
     <TouchableOpacity
       accessibilityRole="button"
-      accessibilityLabel="Send diagnostic screenshot to Telegram"
+      accessibilityLabel={t('Send diagnostic screenshot to Telegram')}
       activeOpacity={0.8}
       style={[styles.btn, tint, { bottom: insets.bottom + 78 }]}
       onPress={() => {

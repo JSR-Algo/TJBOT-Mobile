@@ -40,6 +40,7 @@ import SubscriptionsScreen from '@/features/purchase/screens/SubscriptionsScreen
 import ArrivedScreen from '@/features/purchase/screens/ArrivedScreen';
 import ActivateScreen from '@/features/purchase/screens/ActivateScreen';
 import PurchaseIntroScreen from '@/features/purchase/screens/PurchaseIntroScreen';
+import { setAppLanguage } from '@/services/i18n/i18n';
 
 jest.setTimeout(120_000);
 
@@ -282,6 +283,26 @@ describe('purchase billing screens', () => {
     expect(screen.getByText('Carrier 1Z999')).toBeTruthy();
     expect(screen.queryByText('Robot has arrived')).toBeNull();
     expect(mockedGetShippingStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('localizes missing shipping estimates and tracking numbers in Vietnamese', async () => {
+    await setAppLanguage('vi');
+    mockedGetShippingStatus.mockResolvedValueOnce({
+      orderId: 'ord_123', status: 'in_transit', estimatedDelivery: null, trackingNumber: null,
+    });
+    const navigation = navigationFor();
+    const view = render(
+      <ShippingScreen
+        navigation={navigation as never}
+        route={{ key: 'shipping', name: ROUTES.ShippingScreen, params: { orderId: 'ord_123' } } as never}
+      />,
+    );
+
+    expect(await screen.findByText('Mã vận chuyển: đang chờ')).toBeTruthy();
+    expect(screen.getByText('Đang đến sắp tới')).toBeTruthy();
+    expect(screen.queryByText('Carrier pending')).toBeNull();
+    view.unmount();
+    await setAppLanguage('en');
   });
 
   it('shows a recovery state when shipping has no order id', () => {

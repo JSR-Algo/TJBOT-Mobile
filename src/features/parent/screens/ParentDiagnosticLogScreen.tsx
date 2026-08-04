@@ -14,10 +14,12 @@ import {
   subscribeDiagnosticLog,
 } from '@/services/observability/diagnosticLog';
 import { sendDiagnosticReport } from '@/services/observability/diagnosticRelay';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentDiagnosticLogScreen'>;
 
 export default function ParentDiagnosticLogScreen({ navigation }: Props): React.JSX.Element {
+  const { language, t } = useAppLanguage();
   useParentGateGuard(navigation, ROUTES.ParentDiagnosticLogScreen);
   const [, bump] = React.useReducer((n: number) => n + 1, 0);
   const [sending, setSending] = React.useState(false);
@@ -35,34 +37,34 @@ export default function ParentDiagnosticLogScreen({ navigation }: Props): React.
         includeScreenshot: true,
       });
       if (result.ok && result.sent !== false) {
-        Alert.alert('Diagnostic sent', 'Log and screenshot were relayed to Telegram via the VPS.');
+        Alert.alert(t('Diagnostic sent'), t('Log and screenshot were relayed to Telegram via the VPS.'));
         return;
       }
       Alert.alert(
-        'Could not send diagnostic',
-        result.error ?? result.skipped ?? 'The VPS relay did not accept this report.',
+        t('Could not send diagnostic'),
+        result.error ?? result.skipped ?? t('The VPS relay did not accept this report.'),
       );
     } catch {
-      Alert.alert('Could not send diagnostic', 'Check network and try again.');
+      Alert.alert(t('Could not send diagnostic'), t('Check network and try again.'));
     } finally {
       setSending(false);
     }
-  }, [sending]);
+  }, [sending, t]);
 
   const handleClear = React.useCallback(() => {
     Alert.alert(
-      'Clear diagnostic log?',
-      'This removes captured problems from this session. Send to Telegram first if you need them.',
+      t('Clear diagnostic log?'),
+      t('This removes captured problems from this session. Send to Telegram first if you need them.'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('Clear'),
           style: 'destructive',
           onPress: () => clearDiagnosticLog(),
         },
       ],
     );
-  }, []);
+  }, [t]);
 
   return (
     <ParentScroll title="Diagnostic log" onBack={() => navigation.navigate(ROUTES.ParentSettingsScreen)}>
@@ -74,14 +76,14 @@ export default function ParentDiagnosticLogScreen({ navigation }: Props): React.
           </Text>
         ))}
         <Text style={styles.metaLine} i18n={false}>
-          entries: {entries.length}
+          {translateTemplate('entries: {{count}}', { count: entries.length }, { locale: language })}
         </Text>
       </Box>
 
       <Box style={styles.actions}>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Send diagnostic to Telegram"
+          accessibilityLabel={t('Send diagnostic to Telegram')}
           disabled={sending}
           onPress={() => { void handleSendTelegram(); }}
           style={[styles.primaryBtn, sending && styles.primaryBtnDisabled]}
@@ -89,11 +91,11 @@ export default function ParentDiagnosticLogScreen({ navigation }: Props): React.
           {sending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text fontWeight="700" style={styles.primaryBtnText} i18n={false}>Send to Telegram</Text>
+            <Text fontWeight="700" style={styles.primaryBtnText}>Send to Telegram</Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity accessibilityRole="button" onPress={handleClear} style={styles.secondaryBtn}>
-          <Text fontWeight="600" style={styles.secondaryBtnText} i18n={false}>Clear</Text>
+          <Text fontWeight="600" style={styles.secondaryBtnText}>Clear</Text>
         </TouchableOpacity>
       </Box>
 

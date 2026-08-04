@@ -18,6 +18,7 @@ import {
 } from '../../../src/features/robot-mgmt/telemetry';
 import type { DeviceStatus } from '../../../src/services/api/device.api';
 import { ROUTES } from '../../../src/navigation/routes';
+import { setAppLanguage } from '../../../src/services/i18n/i18n';
 
 jest.mock('../../../src/features/robot-mgmt/telemetry', () => ({
   ...jest.requireActual('../../../src/features/robot-mgmt/telemetry'),
@@ -155,6 +156,16 @@ describe('RobotStatusScreen', () => {
     fireEvent.press(screen.getByLabelText('Library, tab'));
     expect(navigate).toHaveBeenCalledWith(ROUTES.CourseLibraryScreen);
     screen.unmount();
+  });
+
+  it('announces navigation tabs in Vietnamese without calling them cards', async () => {
+    await setAppLanguage('vi');
+    const screen = render(<RobotStatusScreen navigation={navigation} route={emptyRoute} />);
+
+    expect(screen.getByLabelText('Trang chủ, tab điều hướng')).toBeTruthy();
+    expect(screen.queryByLabelText('Trang chủ, thẻ')).toBeNull();
+    screen.unmount();
+    await setAppLanguage('en');
   });
 
   it('badges investor-demo data as simulated', () => {

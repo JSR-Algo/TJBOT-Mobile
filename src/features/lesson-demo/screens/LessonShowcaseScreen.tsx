@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Card } from '../../../components';
+import { Text } from '../../../design-system/primitives';
 import { ROUTES, type RootStackParamList } from '../../../navigation/routes';
 import theme from '../../../theme';
 import { staticLessonContentProvider } from '../providers/StaticLessonContentProvider';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonShowcaseScreen'>;
 
@@ -18,8 +20,12 @@ function showcaseLabel(week: number, day: number, theme: string): string {
 }
 
 export function LessonShowcaseScreen({ navigation, route }: Props): React.JSX.Element {
+  const { language } = useAppLanguage();
   const ageBand = route?.params?.ageBand ?? '7-9';
-  const lessons = useMemo(() => staticLessonContentProvider.getShowcaseLessons(ageBand), [ageBand]);
+  const lessons = useMemo(
+    () => staticLessonContentProvider.getShowcaseLessons(ageBand),
+    [ageBand, language],
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

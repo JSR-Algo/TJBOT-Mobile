@@ -11,6 +11,7 @@ import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewEntryScreen'>;
 
@@ -22,6 +23,7 @@ const WORDS: ReadonlyArray<{ word: string; icon: IconName }> = [
 ];
 
 export default function ReviewEntryScreen({ navigation }: Props) {
+  const { language } = useAppLanguage();
   return (
     <PageScroll>
       <PageHeader
@@ -37,7 +39,16 @@ export default function ReviewEntryScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={24} paddingBottom={16} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         {WORDS.map(({ word, icon }) => (
-          <Box key={word} style={styles.wordCard} width="47%" accessibilityLabel={`${word}. Practice`}>
+          <Box
+            key={word}
+            style={styles.wordCard}
+            width="47%"
+            accessibilityLabel={translateTemplate(
+              '{{word}}. Practice',
+              { word },
+              { locale: language },
+            )}
+          >
             <Box style={styles.wordIcon} alignItems="center" justifyContent="center">
               <Icon name={icon} size={28} color="#8B7BE8" strokeWidth={2.2} />
             </Box>

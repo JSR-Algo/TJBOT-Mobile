@@ -6,6 +6,7 @@ import {
   getLessonsForAgeBand,
   sixMonthLessonPack,
 } from '../../../src/features/lesson-demo/content';
+import { setAppLanguage } from '../../../src/services/i18n/i18n';
 
 const childFacingText = (value: unknown): string[] => {
   if (typeof value === 'string') return [value];
@@ -19,6 +20,10 @@ const childFacingText = (value: unknown): string[] => {
 };
 
 describe('sixMonthLessonPack', () => {
+  afterEach(async () => {
+    await setAppLanguage('en');
+  });
+
   it('contains a complete six-month spine with 24 weeks and 120 base sessions', () => {
     expect(sixMonthLessonPack).toHaveLength(120);
 
@@ -101,5 +106,13 @@ describe('sixMonthLessonPack', () => {
         expect(visibleText.join('\n')).not.toMatch(leakPattern);
       }
     }
+  });
+
+  it('renders generated lesson prompts in the selected app language', async () => {
+    await setAppLanguage('vi');
+    expect(getLessonByWeekDay(1, 1)?.steps[0]?.prompt).toMatch(/^Hãy chào TeeBot\./);
+
+    await setAppLanguage('en');
+    expect(getLessonByWeekDay(1, 1)?.steps[0]?.prompt).toMatch(/^Say hello to TeeBot\./);
   });
 });

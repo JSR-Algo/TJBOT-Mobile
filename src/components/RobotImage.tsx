@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, StyleSheet, type ImageStyle, type StyleProp } from 'react-native';
 import { mascot } from '@/assets/mascot';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 /**
  * RobotImage — the single way to render Tee the mascot anywhere in the app.
@@ -47,6 +48,7 @@ export function RobotImage({
   accessibilityLabel = 'Tee the robot',
   resizeMode,
 }: RobotImageProps): React.JSX.Element {
+  const { t } = useAppLanguage();
   const dimension = size != null ? { width: size, height: size } : undefined;
   return (
     <Image
@@ -54,7 +56,7 @@ export function RobotImage({
       resizeMode={resizeMode ?? DEFAULT_RESIZE[variant]}
       style={[styles.base, dimension, style]}
       accessible
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={t(accessibilityLabel)}
       accessibilityIgnoresInvertColors
     />
   );

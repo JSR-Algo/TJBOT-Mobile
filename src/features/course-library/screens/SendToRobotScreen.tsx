@@ -24,6 +24,7 @@ import { getDeviceStatus } from '@/services/api/device.api';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { formatLessonCopy, getErrorMessage, normalizeError } from '@/utils/errors';
 import { lessonFitCopy } from '@/features/parent/courseInsights';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SendToRobotScreen'>;
 
@@ -39,6 +40,7 @@ type CatalogState =
   | { kind: 'error'; message: string };
 
 export default function SendToRobotScreen({ navigation, route }: Props) {
+  const { language } = useAppLanguage();
   // childId = the parent-selected ACTIVE child (D-CHILD-RESOLUTION, ADR 0013 §N),
   // sent EXPLICITLY. For multi-child families the parent picks who they're
   // sending to via the selector below; single-child resolves to the one child
@@ -265,7 +267,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
                   style={[styles.pickRow, i < childrenList.length - 1 && styles.pickBorder, sel && styles.pickRowSel]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: sel }}
-                  accessibilityLabel={`Send to ${child.name}`}
+                  accessibilityLabel={translateTemplate(
+                    'Send to {{name}}',
+                    { name: child.name },
+                    { locale: language },
+                  )}
                 >
                   <Box flex={1}>
                     <Text fontWeight="600" style={styles.pickTitle} i18n={false}>{child.name}</Text>
@@ -311,7 +317,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
                       style={[styles.pickRow, i < courses.length - 1 && styles.pickBorder, sel && styles.pickRowSel]}
                       accessibilityRole="button"
                       accessibilityState={{ selected: sel }}
-                      accessibilityLabel={`Pick course ${course.title}`}
+                      accessibilityLabel={translateTemplate(
+                        'Pick course {{course}}',
+                        { course: course.title },
+                        { locale: language },
+                      )}
                     >
                       <Box flex={1}>
                         <Text fontWeight="600" style={styles.pickTitle}>{course.title}</Text>
@@ -343,7 +353,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
                       style={[styles.pickRow, i < lessons.length - 1 && styles.pickBorder, sel && styles.pickRowSel]}
                       accessibilityRole="button"
                       accessibilityState={{ selected: sel }}
-                      accessibilityLabel={`Pick lesson ${lesson.title}`}
+                      accessibilityLabel={translateTemplate(
+                        'Pick lesson {{lesson}}',
+                        { lesson: lesson.title },
+                        { locale: language },
+                      )}
                     >
                       <LCDPreview emotion="happy" accent="#FF6F61" size={48} />
                       <Box flex={1}>

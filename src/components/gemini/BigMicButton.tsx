@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { Icon } from '@/design-system/icons';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 interface BigMicButtonProps {
   isActive: boolean;
@@ -11,6 +12,7 @@ interface BigMicButtonProps {
 }
 
 export function BigMicButton({ isActive, disabled, onPress, color, reduceMotion = false }: BigMicButtonProps) {
+  const { t } = useAppLanguage();
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export function BigMicButton({ isActive, disabled, onPress, color, reduceMotion 
         disabled={disabled}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel={isActive ? 'Stop microphone' : 'Start microphone'}
+        accessibilityLabel={t(isActive ? 'Stop microphone' : 'Start microphone')}
         accessibilityState={{ disabled, selected: isActive }}
         style={[
           styles.button,
@@ -57,7 +59,7 @@ export function BigMicButton({ isActive, disabled, onPress, color, reduceMotion 
           name={isActive ? 'Square' : 'Mic'}
           size={40}
           color="#FFFFFF"
-          accessibilityLabel={isActive ? 'Stop microphone' : 'Start microphone'}
+          accessibilityLabel={t(isActive ? 'Stop microphone' : 'Start microphone')}
         />
       </TouchableOpacity>
     </Animated.View>

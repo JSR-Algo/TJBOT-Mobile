@@ -9,6 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { gardenColors, gardenShadows } from '@/design-system/tokens';
 import { ROUTES } from '@/navigation/routes';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairSuccessScreen'>;
 
@@ -31,12 +32,13 @@ const TRUST_FACTS = [
 ] as const satisfies ReadonlyArray<{ icon: IconName; title: string; body: string }>;
 
 export default function PairSuccessScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   return (
     <DeviceShell title="Robot connected">
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
         <Box
           accessible
-          accessibilityLabel="Three setup stars earned"
+          accessibilityLabel={t('Three setup stars earned')}
           flexDirection="row"
           gap={8}
           style={styles.stars}
@@ -80,7 +82,7 @@ export default function PairSuccessScreen({ navigation }: Props) {
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} alignItems="center">
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Continue after Robot setup"
+          accessibilityLabel={t('Continue after Robot setup')}
           style={styles.ctaButton}
           onPress={() => navigation.navigate(ROUTES.PairFirstLessonScreen)}
           activeOpacity={0.8}

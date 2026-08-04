@@ -11,7 +11,12 @@ import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
 import { isSubscriptionFeatureEnabled } from '@/config/feature-flags';
 import { ROUTES } from '@/navigation/routes';
-import { localeDateTag, useAppLanguage } from '@/services/i18n/i18n';
+import {
+  localeDateTag,
+  translateCopy,
+  translateTemplate,
+  useAppLanguage,
+} from '@/services/i18n/i18n';
 import {
   cancelOrder,
   cancelSubscription,
@@ -156,7 +161,11 @@ export default function SubscriptionsScreen({ navigation, route }: Props) {
           <PurchaseStatusCard
             icon="CloudOff"
             title="Billing is temporarily unavailable"
-            body={`${providerUnavailable} Existing courses are unchanged. Billing changes, cancellations, and refund requests are unavailable right now.`}
+            body={translateTemplate(
+              '{{reason}} Existing courses are unchanged. Billing changes, cancellations, and refund requests are unavailable right now.',
+              { reason: translateCopy(providerUnavailable, { locale: language }) },
+              { locale: language },
+            )}
             tone="danger"
           />
           <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.BundleScreen)}>Back to bundles</DeviceBigBtn>
@@ -184,7 +193,11 @@ export default function SubscriptionsScreen({ navigation, route }: Props) {
               const label = Number.isNaN(d.getTime())
                 ? null
                 : d.toLocaleDateString(localeDateTag(language), { month: 'short', day: 'numeric', year: 'numeric' });
-              return label ? <Text style={styles.statusLine} i18n={false}>Renews until {label}</Text> : null;
+              return label ? (
+                <Text style={styles.statusLine} i18n={false}>
+                  {translateTemplate('Renews until {{date}}', { date: label }, { locale: language })}
+                </Text>
+              ) : null;
             })()
           : null}
         {updating ? <Text style={styles.statusLine}>Updating subscription...</Text> : null}

@@ -14,6 +14,7 @@ import { getDeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '@/features/device/pairing/localPairedDevice';
 import { RM } from '../components/RM';
 import { ROUTES } from '@/navigation/routes';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FactoryResetScreen'>;
 type Step = 'warning' | 'gate' | 'confirm';
@@ -21,6 +22,7 @@ type Step = 'warning' | 'gate' | 'confirm';
 const KEYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'back'] as const;
 
 export default function FactoryResetScreen({ navigation }: Props) {
+  const { language, t } = useAppLanguage();
   const queryClient = useQueryClient();
   const [step, setStep] = React.useState<Step>('warning');
   const [target] = React.useState(() => 100 + Math.floor(Math.random() * 900));
@@ -127,7 +129,9 @@ export default function FactoryResetScreen({ navigation }: Props) {
                 <TouchableOpacity key={i} onPress={() => onPress(isBack ? 'back' : String(k))} activeOpacity={0.7}
                   style={[styles.keyBtn, { width: '30%' }]}
                   accessibilityRole="button"
-                  accessibilityLabel={isBack ? 'Delete last digit' : `Enter ${k}`}
+                  accessibilityLabel={isBack
+                    ? t('Delete last digit')
+                    : translateTemplate('Enter {{digit}}', { digit: k }, { locale: language })}
                 >
                   {isBack ? (
                     <Icon name="Delete" size={22} color={RM.ink2} strokeWidth={2.2} />

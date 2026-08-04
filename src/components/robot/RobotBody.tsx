@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 export type Motion =
   | 'LOOK_FORWARD'
@@ -30,6 +31,21 @@ export const ALL_MOTIONS: ReadonlyArray<Motion> = [
   'WAITING_POSE',
   'FAIL_SLUMP',
 ];
+
+const MOTION_ACCESSIBILITY_COPY: Record<Motion, string> = {
+  LOOK_FORWARD: 'Looking forward',
+  LOOK_LEFT: 'Looking left',
+  LOOK_RIGHT: 'Looking right',
+  NOD_YES: 'Nodding yes',
+  SHAKE_NO: 'Shaking no',
+  TILT_CURIOUS: 'Tilting curiously',
+  BOW_ACK: 'Bowing in acknowledgment',
+  WAVE_ARM: 'Waving',
+  IDLE_SWAY: 'Swaying gently',
+  EXCITED_BOUNCE: 'Bouncing excitedly',
+  WAITING_POSE: 'Waiting patiently',
+  FAIL_SLUMP: 'Slumping after a miss',
+};
 
 type MotionChannel = 'HEAD' | 'ARM' | 'POSE';
 
@@ -107,6 +123,7 @@ export function RobotBody({
   __disableAnimations = false,
   reduceMotion = false,
 }: RobotBodyProps): React.JSX.Element {
+  const { language, t } = useAppLanguage();
   const pose = poseFor(motion);
   const headSize = size * 0.55;
   const torsoWidth = size * 0.7;
@@ -125,7 +142,11 @@ export function RobotBody({
   return (
     <Animated.View
       testID="robot-body-root"
-      accessibilityLabel={`robot body ${motion}`}
+      accessibilityLabel={translateTemplate(
+        'Robot body, {{motion}}',
+        { motion: t(MOTION_ACCESSIBILITY_COPY[motion]) },
+        { locale: language },
+      )}
       style={[
         containerStyle,
         { transform: [{ translateY: motionEnabled ? pose.poseTranslate : 0 }] },

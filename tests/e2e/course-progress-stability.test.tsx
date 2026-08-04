@@ -333,6 +333,20 @@ describe('course, course-library, and progress stable screen states', () => {
     expect(outage.getByText('Retry in a moment.')).toBeTruthy();
   });
 
+  it('localizes the rate-limit retry duration in Vietnamese', async () => {
+    await setAppLanguage('vi');
+    mockListCourseCatalog.mockRejectedValueOnce({
+      status: 429,
+      code: 'RATE_LIMIT_EXCEEDED',
+      retryAfterSeconds: 45,
+    });
+    const screen = render(<CourseScreen navigation={navigation as never} route={route as never} />);
+
+    await waitFor(() => expect(screen.getByText('Thử lại sau 45 giây.')).toBeTruthy());
+    expect(screen.queryByText('Try again in 45 seconds.')).toBeNull();
+    screen.unmount();
+  });
+
   it('renders course-library loading, empty, error, offline, unlocked, and locked states', async () => {
     const pending = deferred<Awaited<ReturnType<typeof listLibrary>>>();
     mockListLibrary.mockReturnValueOnce(pending.promise);

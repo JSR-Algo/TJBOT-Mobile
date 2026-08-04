@@ -4,6 +4,7 @@ import Animated from 'react-native-reanimated';
 import type { VoiceState } from '../../state/voiceAssistantStore';
 import { useVoiceAssistantStore } from '../../state/voiceAssistantStore';
 import { ParticleEffect } from './ParticleEffect';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 const AVATAR_SIZE = 180;
 const GLOW_SIZE = AVATAR_SIZE + 40;
@@ -67,6 +68,7 @@ interface SukaAvatarProps {
 }
 
 export function SukaAvatar({ voiceState, audioLevel, reduceMotion = false }: SukaAvatarProps) {
+  const { t } = useAppLanguage();
   const expressionOverride = useVoiceAssistantStore((s) => s.expressionOverride);
   const expressionKey = (expressionOverride ?? voiceStateToExpression(voiceState)) as ExpressionKey;
   const speaking = expressionKey === 'speaking';
@@ -78,7 +80,7 @@ export function SukaAvatar({ voiceState, audioLevel, reduceMotion = false }: Suk
   const glowOpacity = reduceMotion ? 0.16 : speaking ? 0.42 : expressionKey === 'connecting' ? 0.3 : 0.2;
 
   return (
-    <View style={styles.wrapper} accessibilityLabel={speaking ? 'Suka is speaking' : 'Suka avatar'}>
+    <View style={styles.wrapper} accessibilityLabel={t(speaking ? 'Suka is speaking' : 'Suka avatar')}>
       <ParticleEffect active={expressionKey === 'celebrating'} reduceMotion={reduceMotion} />
       <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
       <Animated.View style={styles.head}>

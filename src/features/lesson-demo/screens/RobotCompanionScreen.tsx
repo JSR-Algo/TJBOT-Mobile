@@ -6,13 +6,13 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { referenceImages } from '@/design-system/referenceTheme';
+import { Text } from '@/design-system/primitives';
 import { useGeminiConversation } from '@/hooks/useGeminiConversation';
 import { ROUTES, type RootStackParamList } from '@/navigation/routes';
 import { useVoiceAssistantStore } from '@/state/voiceAssistantStore';
@@ -28,12 +28,14 @@ import {
 } from '../voiceReadiness';
 import { diagnosticLog } from '@/services/observability/diagnosticLog';
 import { gardenColors, gardenRadii } from '@/design-system/tokens';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotCompanionScreen'>;
 
 const CTA_REVEAL_MS = 4500;
 
 export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.Element {
+  const { language, t } = useAppLanguage();
   const insets = useSafeAreaInsets();
   const ageBand = (route.params?.ageBand ?? '4-6') as LessonAgeBand;
   const lessonId = route.params?.lessonId ?? BARN_SAY_IT_LESSON_ID;
@@ -42,7 +44,7 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
   const lesson = useMemo(
     () => staticLessonContentProvider.getLessonById(lessonId, ageBand)
       ?? staticLessonContentProvider.getLessonById(BARN_SAY_IT_LESSON_ID, ageBand)!,
-    [ageBand, lessonId],
+    [ageBand, language, lessonId],
   );
 
   const [voiceStarted, setVoiceStarted] = useState(false);
@@ -179,7 +181,7 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
             </View>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Close chat with Robot"
+              accessibilityLabel={t('Close chat with Robot')}
               onPress={handleExit}
               style={styles.closeBtn}
             >
@@ -206,7 +208,7 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
           {/* Tap to speak button */}
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={voiceActive ? 'Stop talking to Robot' : 'Tap to speak'}
+            accessibilityLabel={t(voiceActive ? 'Stop talking to Robot' : 'Tap to speak')}
             onPress={handleVoiceToggle}
             style={styles.speakBtn}
           >
@@ -222,7 +224,11 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
             <Animated.View style={{ transform: [{ scale: ctaPulse }] }}>
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityLabel={`Start lesson ${lessonTitle}`}
+                accessibilityLabel={translateTemplate(
+                  'Start lesson {{lesson}}',
+                  { lesson: lessonTitle },
+                  { locale: language },
+                )}
                 onPress={handleStartLesson}
                 style={styles.startLessonBtn}
               >
@@ -239,7 +245,7 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
             {readinessIssue === 'mic_blocked' || readinessIssue === 'mic_denied' ? (
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityLabel="Open microphone settings"
+                accessibilityLabel={t('Open microphone settings')}
                 onPress={openAppSettings}
                 style={styles.errorAction}
               >
@@ -248,7 +254,7 @@ export function RobotCompanionScreen({ navigation, route }: Props): React.JSX.El
             ) : null}
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Open diagnostic log"
+              accessibilityLabel={t('Open diagnostic log')}
               onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen)}
               style={styles.errorAction}
             >

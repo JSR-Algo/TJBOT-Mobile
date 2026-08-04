@@ -14,6 +14,7 @@ import PRChip from '../components/PRChip';
 import { getShippingStatus, type ShippingStatus } from '@/services/api/purchase.api';
 import { ROUTES } from '@/navigation/routes';
 import PurchaseStatusCard from '../components/PurchaseStatusCard';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShippingScreen'>;
 
@@ -26,6 +27,7 @@ const STEPS = [
 ];
 
 export default function ShippingScreen({ navigation, route }: Props) {
+  const { language, t } = useAppLanguage();
   const orderId = route.params?.orderId;
   const [shipping, setShipping] = React.useState<ShippingStatus | null>(null);
   const [status, setStatus] = React.useState<'loading' | 'error' | 'ready'>('loading');
@@ -99,7 +101,7 @@ export default function ShippingScreen({ navigation, route }: Props) {
         <Box style={styles.trackTile}>
           <RobotHero size={84} accent="#FF6F61" halo={false} />
           <Box flex={1}>
-            <PRChip color="#8A6A12" bg="#FFF4D9">Arriving {shipping?.estimatedDelivery ?? 'soon'}</PRChip>
+            <PRChip color="#8A6A12" bg="#FFF4D9">Arriving {shipping?.estimatedDelivery ?? t('soon')}</PRChip>
             <Text fontWeight="600" style={styles.orderNum}>Order #{orderId}</Text>
             <Text style={styles.address}>247 Linden St · Apt 3B</Text>
           </Box>
@@ -134,7 +136,15 @@ export default function ShippingScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={16}>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="MapPin" title="Track with carrier" body={`Carrier ${shipping?.trackingNumber ?? 'pending'}`} />
+          <DeviceRow
+            icon="MapPin"
+            title="Track with carrier"
+            body={translateTemplate(
+              'Carrier {{tracking}}',
+              { tracking: shipping?.trackingNumber ?? t('pending') },
+              { locale: language },
+            )}
+          />
           <DeviceRow icon="Mail" title="Change delivery address" body="Until Tuesday at 6 PM" />
         </Box>
       </Box>

@@ -8,6 +8,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import IntroDots from './IntroDots';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type IntroVariant = 'hero' | 'card' | 'parent';
 type RobotEmotion = React.ComponentProps<typeof Robot>['emotion'];
@@ -29,13 +30,14 @@ interface Props {
 }
 
 function BackButton({ onPress }: { onPress: () => void }) {
+  const { t } = useAppLanguage();
   return (
     <TouchableOpacity
       style={styles.backButton}
       onPress={onPress}
       testID="introBackButton"
       accessibilityRole="button"
-      accessibilityLabel="Go back"
+      accessibilityLabel={t('Go back')}
     >
       <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
         <Path

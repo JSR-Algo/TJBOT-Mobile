@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../../components/Button';
+import { Text } from '../../../design-system/primitives';
 import { ROUTES, type RootStackParamList } from '../../../navigation/routes';
 import { colors, radius, spacing, typography } from '../../../theme';
 import { staticLessonContentProvider, useLessonDemoProgressStore } from '../index';
 import { LessonScene } from '../scene';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonSessionScreen'> & {
   __disableSceneAnimations?: boolean;
@@ -24,13 +26,14 @@ export function LessonSessionScreen({
   route,
   __disableSceneAnimations = false,
 }: Props): React.JSX.Element {
+  const { language } = useAppLanguage();
   const ageBand = route?.params?.ageBand ?? '7-9';
   const requestedWeek = route?.params?.week ?? 1;
   const requestedDay = route?.params?.day ?? 1;
   const lesson = useMemo(
     () => staticLessonContentProvider.getLessonByWeekDay(requestedWeek, requestedDay, ageBand)
       ?? staticLessonContentProvider.getTodaySession(ageBand),
-    [ageBand, requestedDay, requestedWeek],
+    [ageBand, language, requestedDay, requestedWeek],
   );
   const [stepIndex, setStepIndex] = useState(0);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
@@ -84,7 +87,11 @@ export function LessonSessionScreen({
                 return (
                   <TouchableOpacity
                     key={choice.id}
-                    accessibilityLabel={`Choose ${choice.label}`}
+                    accessibilityLabel={translateTemplate(
+                      'Choose {{choice}}',
+                      { choice: choice.label },
+                      { locale: language },
+                    )}
                     accessibilityRole="button"
                     accessibilityState={{ selected: isSelected }}
                     onPress={() => setSelectedChoiceId(choice.id)}

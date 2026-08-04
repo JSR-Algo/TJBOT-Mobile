@@ -13,10 +13,12 @@ import CL from '../components/CL';
 import CLChip from '../components/CLChip';
 import LCDPreview from '../components/LCDPreview';
 import { getCourseDetail, getRobotSyncStatus, type CourseDetail } from '@/services/api/course-library.api';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NeedsSyncScreen'>;
 
 export default function NeedsSyncScreen({ navigation, route }: Props) {
+  const { language } = useAppLanguage();
   const courseId = route.params?.courseId ?? 'c_food';
   const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
   const [course, setCourse] = React.useState<CourseDetail | null>(null);
@@ -60,7 +62,11 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
         <Text fontWeight="600" style={styles.heading}>Robot has not synced this course yet</Text>
         <Text style={styles.sub}>
           {course
-            ? `"${course.title}" is waiting in the app. We'll send it when Robot is back online.`
+            ? translateTemplate(
+              '"{{course}}" is waiting in the app. We\'ll send it when Robot is back online.',
+              { course: course.title },
+              { locale: language },
+            )
             : courseError
               ? 'Course details are unavailable. Reconnect Robot to check again.'
               : 'Loading the pending course…'}
@@ -76,7 +82,13 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.pendingTitle}>{course.title}</Text>
                 <Text style={styles.pendingMeta}>
-                  {course.lessonCount === 1 ? '1 lesson' : `${course.lessonCount} lessons`}
+                  {course.lessonCount === 1
+                    ? '1 lesson'
+                    : translateTemplate(
+                      '{{count}} lessons',
+                      { count: course.lessonCount },
+                      { locale: language },
+                    )}
                 </Text>
               </Box>
             </Box>

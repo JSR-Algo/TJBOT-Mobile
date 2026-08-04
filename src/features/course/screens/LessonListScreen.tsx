@@ -71,7 +71,7 @@ export default function LessonListScreen({ navigation, route }: Props) {
             </Text>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Back to units"
+              accessibilityLabel={t('Back to units')}
               onPress={() => navigation.navigate(ROUTES.UnitScreen, unitId ? { unitId } : undefined)}
               style={styles.stateAction}
             >
@@ -95,7 +95,11 @@ export default function LessonListScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate(ROUTES.LessonDetailScreen, { lessonId: lesson.id })}
             style={styles.lessonRow}
             accessibilityRole="button"
-            accessibilityLabel={`${lesson.title}. ${lesson.durationMinutes} minutes`}
+            accessibilityLabel={translateTemplate(
+              '{{title}}. {{minutes}} minutes',
+              { title: lesson.title, minutes: lesson.durationMinutes },
+              { locale: language },
+            )}
           >
             <Box flex={1}>
               <Text fontWeight="800" style={styles.title}>{lesson.title}</Text>

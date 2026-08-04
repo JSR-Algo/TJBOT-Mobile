@@ -9,6 +9,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { PR } from '../purchase.local-tokens';
 import PRStepTab from '../components/PRStepTab';
 import { ROUTES } from '@/navigation/routes';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BundleScreen'>;
 
@@ -18,6 +19,7 @@ const OPTS = [
 ] as const;
 
 export default function BundleScreen({ navigation }: Props) {
+  const { language } = useAppLanguage();
   const [pick, setPick] = React.useState(0);
   return (
     <DeviceShell title="Pick your bundle" onBack={() => navigation.navigate(ROUTES.IncludedScreen)}>
@@ -30,7 +32,11 @@ export default function BundleScreen({ navigation }: Props) {
           const sel = i === pick;
           return (
             <TouchableOpacity key={o.id} onPress={() => setPick(i)} activeOpacity={0.8}
-              accessibilityLabel={`Select ${o.title} bundle`}
+              accessibilityLabel={translateTemplate(
+                'Select {{bundle}} bundle',
+                { bundle: o.title },
+                { locale: language },
+              )}
               accessibilityRole="button"
               accessibilityState={{ selected: sel }}
               style={[styles.optCard, sel && styles.optCardSel]}>

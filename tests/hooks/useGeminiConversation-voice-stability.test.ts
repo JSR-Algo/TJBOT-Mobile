@@ -20,7 +20,7 @@ describe('useGeminiConversation voice stability source locks', () => {
     expect(permissionBlock).toMatch(/micGrantedRef\.current = granted/);
     // Deny keeps the robot speaking: a parent-facing notice, no FSM error.
     expect(permissionBlock).toMatch(/if\s*\(!granted\)\s*\{/);
-    expect(permissionBlock).toMatch(/TeeBot vẫn nói được/);
+    expect(permissionBlock).toMatch(/TeeBot can still speak/);
     expect(permissionBlock).not.toMatch(/transition\('ERROR_RECOVERABLE'\)/);
     // Stale-run guard: a permission promise from a superseded run returns
     // BEFORE writing micGrantedRef, so it can never flip the live run's mic
@@ -82,7 +82,7 @@ describe('useGeminiConversation voice stability source locks', () => {
     expect(startFailureBlock).toMatch(/cleanupNativeCapture\(\)/);
     expect(startFailureBlock).toMatch(/jsErrorBreadcrumb\('voiceMic\.start'/);
     expect(startFailureBlock).toMatch(/audio_capture_start_failed/);
-    expect(startFailureBlock).toMatch(/setError\(`Micro không khả dụng\./);
+    expect(startFailureBlock).toMatch(/setError\(translateTemplate\('Microphone is unavailable\{\{code\}\}\./);
     expect(startFailureBlock).toMatch(/transition\('ERROR_RECOVERABLE'\)/);
   });
 

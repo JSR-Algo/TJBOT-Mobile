@@ -10,8 +10,10 @@ import {
   subscribePendingDiagnosticError,
 } from '@/services/observability/diagnosticErrorState';
 import { sendPendingDiagnosticManually } from '@/services/observability/installDiagnosticErrorRelay';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 export function DiagnosticErrorBanner(): React.JSX.Element | null {
+  const { language, t } = useAppLanguage();
   const insets = useSafeAreaInsets();
   const [, bump] = React.useReducer((n: number) => n + 1, 0);
   const pending = getPendingDiagnosticError();
@@ -34,24 +36,30 @@ export function DiagnosticErrorBanner(): React.JSX.Element | null {
       testID="diagnostic-error-banner"
     >
       <View style={styles.card}>
-        <Text fontWeight="700" style={styles.title} i18n={false}>
+        <Text fontWeight="700" style={styles.title}>
           Something went wrong
         </Text>
         <Text style={styles.message} i18n={false} numberOfLines={2}>
           {entry.message}
         </Text>
         {relayStatus === 'sent' ? (
-          <Text style={styles.statusOk} i18n={false}>Diagnostic sent to Telegram.</Text>
+          <Text style={styles.statusOk}>Diagnostic sent to Telegram.</Text>
         ) : null}
         {relayStatus === 'failed' ? (
           <Text style={styles.statusFail} i18n={false}>
-            Could not send diagnostic{relayError ? `: ${relayError}` : ''}.
+            {relayError
+              ? translateTemplate(
+                'Could not send diagnostic: {{error}}.',
+                { error: relayError },
+                { locale: language },
+              )
+              : t('Could not send diagnostic.')}
           </Text>
         ) : null}
         <View style={styles.actions}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Send diagnostic to Telegram"
+            accessibilityLabel={t('Send diagnostic to Telegram')}
             style={[styles.primaryBtn, sending && styles.primaryBtnDisabled]}
             disabled={sending}
             onPress={() => { void sendPendingDiagnosticManually(); }}
@@ -59,14 +67,14 @@ export function DiagnosticErrorBanner(): React.JSX.Element | null {
             {sending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text fontWeight="700" style={styles.primaryBtnText} i18n={false}>
+              <Text fontWeight="700" style={styles.primaryBtnText}>
                 Send diagnostic
               </Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Open diagnostic log"
+            accessibilityLabel={t('Open diagnostic log')}
             style={styles.secondaryBtn}
             onPress={() => {
               if (navigationRef.isReady()) {
@@ -74,11 +82,11 @@ export function DiagnosticErrorBanner(): React.JSX.Element | null {
               }
             }}
           >
-            <Text fontWeight="600" style={styles.secondaryBtnText} i18n={false}>View log</Text>
+            <Text fontWeight="600" style={styles.secondaryBtnText}>View log</Text>
           </TouchableOpacity>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Dismiss diagnostic banner"
+            accessibilityLabel={t('Dismiss diagnostic banner')}
             style={styles.dismissBtn}
             onPress={clearPendingDiagnosticError}
           >

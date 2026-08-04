@@ -378,7 +378,7 @@ export function useGeminiAudioSession(
           message: errMessage,
         });
         store.getState().setError(
-          resolveGeminiUserError(errMessage, 'Không thể kết nối Gemini Live.'),
+          resolveGeminiUserError(errMessage, 'Could not connect to Gemini Live.'),
         );
         store.getState().transition('ERROR_RECOVERABLE');
       }
@@ -410,4 +410,3 @@ export function useGeminiAudioSession(
     ],
   );
 }
-

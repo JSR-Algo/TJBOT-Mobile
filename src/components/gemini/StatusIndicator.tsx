@@ -1,25 +1,27 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, Animated, StyleSheet } from 'react-native';
 import type { VoiceState } from '../../state/voiceAssistantStore';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 const STATUS_MAP: Record<VoiceState, { label: string; color: string; pulse: boolean }> = {
-  IDLE:                       { label: 'Sẵn sàng trò chuyện',  color: '#A0A0A0', pulse: false },
-  PREPARING_AUDIO:            { label: 'Xin quyền micro...',  color: '#FFB74D', pulse: true },
-  CONNECTING:                 { label: 'Đang kết nối...',     color: '#FFB74D', pulse: true },
-  READY:                      { label: 'Đang chuẩn bị...',    color: '#FFB74D', pulse: true },
-  LISTENING:                  { label: 'Đang chờ...',          color: '#4CAF50', pulse: true },
-  USER_SPEAKING:              { label: 'Đang nghe...',         color: '#4CAF50', pulse: true },
-  USER_SPEECH_FINALIZING:     { label: 'Đang nghĩ...',          color: '#42A5F5', pulse: true },
-  WAITING_AI:                 { label: 'Đang nghĩ...',          color: '#42A5F5', pulse: true },
-  ASSISTANT_SPEAKING:         { label: 'Đang trả lời...',     color: '#A29BFE', pulse: true },
-  INTERRUPTED:                { label: 'Đã ngắt',             color: '#FF7043', pulse: false },
-  RECONNECTING:               { label: 'Đang kết nối lại...', color: '#FFB74D', pulse: true },
-  ERROR_RECOVERABLE:          { label: 'Lỗi kết nối',         color: '#FF4444', pulse: false },
-  ERROR_FATAL:                { label: 'Lỗi nghiêm trọng',    color: '#B71C1C', pulse: false },
-  ENDED:                      { label: 'Đã kết thúc',    color: '#A0A0A0', pulse: false },
+  IDLE:                       { label: 'Ready to talk',                  color: '#A0A0A0', pulse: false },
+  PREPARING_AUDIO:            { label: 'Requesting microphone access...', color: '#FFB74D', pulse: true },
+  CONNECTING:                 { label: 'Connecting...',                  color: '#FFB74D', pulse: true },
+  READY:                      { label: 'Getting ready...',               color: '#FFB74D', pulse: true },
+  LISTENING:                  { label: 'Waiting...',                     color: '#4CAF50', pulse: true },
+  USER_SPEAKING:              { label: 'Listening for your voice...',    color: '#4CAF50', pulse: true },
+  USER_SPEECH_FINALIZING:     { label: 'Thinking...',                    color: '#42A5F5', pulse: true },
+  WAITING_AI:                 { label: 'Thinking...',                    color: '#42A5F5', pulse: true },
+  ASSISTANT_SPEAKING:         { label: 'Responding...',                  color: '#A29BFE', pulse: true },
+  INTERRUPTED:                { label: 'Interrupted',                    color: '#FF7043', pulse: false },
+  RECONNECTING:               { label: 'Reconnecting...',                color: '#FFB74D', pulse: true },
+  ERROR_RECOVERABLE:          { label: 'Connection error',               color: '#FF4444', pulse: false },
+  ERROR_FATAL:                { label: 'Critical error',                 color: '#B71C1C', pulse: false },
+  ENDED:                      { label: 'Ended',                          color: '#A0A0A0', pulse: false },
 };
 
 export function StatusIndicator({ state }: { state: VoiceState }) {
+  const { t } = useAppLanguage();
   const { label, color, pulse: shouldPulse } = STATUS_MAP[state];
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -41,7 +43,7 @@ export function StatusIndicator({ state }: { state: VoiceState }) {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.dot, { backgroundColor: color, opacity: pulseAnim }]} />
-      <Text style={[styles.text, { color }]}>{label}</Text>
+      <Text style={[styles.text, { color }]}>{t(label)}</Text>
     </View>
   );
 }

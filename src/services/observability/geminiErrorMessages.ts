@@ -2,6 +2,7 @@
  * Maps raw Gemini / Google provider errors to parent-actionable copy.
  * Never echoes API key material — only classification + fix hints.
  */
+import { translateCopy } from '@/services/i18n/i18n';
 
 const LEAKED_KEY_RE = /leaked|reported as leaked|api.?key.*invalid/i;
 
@@ -16,23 +17,19 @@ export function mapGeminiProviderError(raw: string | null | undefined): string |
   if (!trimmed) return null;
 
   if (isLeakedGeminiKeyError(trimmed)) {
-    return (
-      'Google blocked the server Gemini key (reported leaked). ' +
-      'Create a new key in Google AI Studio, update GOOGLE_GEMINI_API_KEY on Render, ' +
-      'then restart the backend. Do not put API keys inside the mobile app.'
-    );
+    return translateCopy('Google blocked the server Gemini key (reported leaked). Create a new key in Google AI Studio, update GOOGLE_GEMINI_API_KEY on Render, then restart the backend. Do not put API keys inside the mobile app.');
   }
 
   if (/permission|forbidden|403/i.test(trimmed)) {
-    return 'Gemini access denied. Check API key restrictions and billing on the Google Cloud project.';
+    return translateCopy('Gemini access denied. Check API key restrictions and billing on the Google Cloud project.');
   }
 
   if (/quota|rate.?limit|429/i.test(trimmed)) {
-    return 'Gemini quota or rate limit hit. Wait a moment or check billing in Google AI Studio.';
+    return translateCopy('Gemini quota or rate limit hit. Wait a moment or check billing in Google AI Studio.');
   }
 
   if (/not found|404/i.test(trimmed) && /model/i.test(trimmed)) {
-    return 'Gemini Live model not found. Check EXPO_PUBLIC_GEMINI_LIVE_MODEL matches an enabled model.';
+    return translateCopy('Gemini Live model not found. Check EXPO_PUBLIC_GEMINI_LIVE_MODEL matches an enabled model.');
   }
 
   return null;
@@ -42,5 +39,5 @@ export function resolveGeminiUserError(
   raw: string | null | undefined,
   fallback = 'Could not connect to Robot voice. Try again.',
 ): string {
-  return mapGeminiProviderError(raw) ?? (raw?.trim() || fallback);
+  return mapGeminiProviderError(raw) ?? translateCopy(fallback);
 }

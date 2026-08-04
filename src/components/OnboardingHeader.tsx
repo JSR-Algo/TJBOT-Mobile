@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/design-system/primitives';
 import theme from '@/design-system/tokens/legacy-semantic';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 interface OnboardingHeaderProps {
   currentStep: number;
@@ -17,12 +19,19 @@ export function OnboardingHeader({
   subtitle,
   hero,
 }: OnboardingHeaderProps): React.JSX.Element {
+  const { language } = useAppLanguage();
   const progressRatio = Math.min(Math.max(currentStep / totalSteps, 0), 1);
 
   return (
     <View style={styles.container}>
       <View style={styles.heroCircle}>{hero}</View>
-      <Text style={styles.stepLabel}>{`Step ${currentStep} of ${totalSteps}`}</Text>
+      <Text style={styles.stepLabel} i18n={false}>
+        {translateTemplate(
+          'Step {{current}} of {{total}}',
+          { current: currentStep, total: totalSteps },
+          { locale: language },
+        )}
+      </Text>
       <View style={styles.progressTrack} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: totalSteps, now: currentStep }}>
         <View style={[styles.progressFill, { width: `${progressRatio * 100}%` }]} />
       </View>

@@ -11,6 +11,7 @@ import { normalizeError } from '@/utils/errors';
 import * as authApi from '@/services/api/auth';
 import * as accountApi from '@/services/api/account';
 import { getAccessToken } from '@/services/http/tokens';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentConsentScreen'>;
 
@@ -84,6 +85,7 @@ async function recordConsentWithRetry(): Promise<void> {
 }
 
 export default function ParentConsentScreen({ navigation }: Props) {
+  const { t } = useAppLanguage();
   const [parentName, setParentName] = React.useState('');
   const [accepted, setAccepted] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -174,14 +176,14 @@ export default function ParentConsentScreen({ navigation }: Props) {
             setParentName(value);
             if (error && !authBlocked) setError(null);
           }}
-          placeholder="Type your full name"
+          placeholder={t('Type your full name')}
           placeholderTextColor={OB.ink3}
           style={styles.input}
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="done"
           testID="parentConsentNameInput"
-          accessibilityLabel="Parent or guardian name"
+          accessibilityLabel={t('Parent or guardian name')}
         />
       </Box>
 
@@ -195,7 +197,7 @@ export default function ParentConsentScreen({ navigation }: Props) {
           activeOpacity={0.72}
           testID="parentConsentCheckbox"
           accessibilityRole="checkbox"
-          accessibilityLabel="I give parent consent"
+          accessibilityLabel={t('I give parent consent')}
           accessibilityState={{ checked: accepted }}
         >
           <Box

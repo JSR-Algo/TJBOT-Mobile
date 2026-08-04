@@ -3,16 +3,22 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { Button, Card, ErrorMessage, LoadingSpinner } from '../../components';
+import { Text } from '../../design-system/primitives';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import type { LearningScreenProps } from '../../navigation/types';
 import * as learningApi from '../../services/api/learning';
 import type { LearningSession } from '../../services/api/learning';
 import theme from '../../theme';
 import { normalizeError } from '../../utils/errors';
+import {
+  translateCopy,
+  translateTemplate,
+  useAppLanguage,
+  type AppLocale,
+} from '../../services/i18n/i18n';
 
 type LessonStep = {
   label: string;
@@ -25,28 +31,39 @@ function getFocusWords(session: LearningSession | null): string[] {
   return coreLearning.map((item) => item.word).filter(Boolean);
 }
 
-function buildLessonSteps(session: LearningSession | null): LessonStep[] {
+function buildLessonSteps(session: LearningSession | null, language: AppLocale): LessonStep[] {
   if (!session) return [];
   const payload = session.session_payload;
   const focusWords = getFocusWords(session);
+  const localize = (copy: string) => translateCopy(copy, { locale: language });
   return [
     {
       label: 'Warm up',
-      detail: payload.warmup?.question || payload.warmup?.greeting || 'Start with a short hello.',
+      detail: localize(
+        payload.warmup?.question || payload.warmup?.greeting || 'Start with a short hello.',
+      ),
     },
     {
       label: 'Review',
       detail: focusWords.length > 0
-        ? `Practice ${focusWords.slice(0, 2).join(', ')} from today.`
-        : 'Review one familiar word.',
+        ? translateTemplate(
+          'Practice {{words}} from today.',
+          { words: focusWords.slice(0, 2).join(', ') },
+          { locale: language },
+        )
+        : localize('Review one familiar word.'),
     },
     {
       label: 'Practice',
-      detail: payload.interaction?.prompt || 'Listen, repeat, and answer one simple question.',
+      detail: localize(
+        payload.interaction?.prompt || 'Listen, repeat, and answer one simple question.',
+      ),
     },
     {
       label: 'Reward',
-      detail: payload.reward?.message || 'Celebrate effort and show a short parent summary.',
+      detail: localize(
+        payload.reward?.message || 'Celebrate effort and show a short parent summary.',
+      ),
     },
   ];
 }
@@ -69,6 +86,7 @@ export function LessonPlannerScreen({
   navigation,
   route,
 }: LearningScreenProps<'LessonPlanner'>): React.JSX.Element {
+  const { language } = useAppLanguage();
   const { children } = useHousehold();
   const requestedChildId = route.params?.childId;
   const activeChild = useMemo(() => {
@@ -109,11 +127,15 @@ export function LessonPlannerScreen({
   };
 
   const focusWords = getFocusWords(session);
-  const steps = buildLessonSteps(session);
+  const steps = buildLessonSteps(session, language);
   const rewardStars = session?.session_payload?.reward?.stars ?? 1;
   const firstWord = focusWords[0] ?? 'hello';
   const objective = focusWords.length > 0
-    ? `Practice ${focusWords.slice(0, 3).join(', ')} in a short English lesson.`
+    ? translateTemplate(
+      'Practice {{words}} in a short English lesson.',
+      { words: focusWords.slice(0, 3).join(', ') },
+      { locale: language },
+    )
     : 'Practice one familiar English greeting safely.';
 
   if (!activeChild) {
@@ -133,7 +155,9 @@ export function LessonPlannerScreen({
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
       }
     >
-      <Text style={styles.eyebrow}>{activeChild.name}'s plan</Text>
+      <Text style={styles.eyebrow} i18n={false}>
+        {translateTemplate("{{name}}'s plan", { name: activeChild.name }, { locale: language })}
+      </Text>
       <Text style={styles.title}>Today's Lesson</Text>
       <Text style={styles.subtitle}>A short parent-visible lesson before child practice.</Text>
 
@@ -147,7 +171,13 @@ export function LessonPlannerScreen({
       {error ? (
         <Card style={styles.stateCard}>
           <ErrorMessage message={error} />
-          <Text style={styles.fallbackText}>Fallback ready: review "{firstWord}" with listen, repeat, and choice practice.</Text>
+          <Text style={styles.fallbackText} i18n={false}>
+            {translateTemplate(
+              'Fallback ready: review "{{word}}" with listen, repeat, and choice practice.',
+              { word: firstWord },
+              { locale: language },
+            )}
+          </Text>
           <Button
             label="Start fallback practice"
             variant="secondary"

@@ -14,6 +14,7 @@ import { enrollCourse } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { normalizeError } from '@/utils/errors';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnlockConfirmScreen'>;
 
@@ -21,6 +22,7 @@ const TARGET = ['7', '3', '5', '1'];
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
 
 export default function UnlockConfirmModal({ navigation, route }: Props) {
+  const { language, t } = useAppLanguage();
   const courseId = route.params?.courseId ?? 'c_food';
   // childId = the parent's currently-active child (D-CHILD-RESOLUTION). The
   // backend AuthGuard verifies the parent owns this child via req.auth.sub —
@@ -41,7 +43,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
       // No active child → enrollment has no target. Surface a friendly Vietnamese
       // message — same parent-onboarding cue used by SendToRobotScreen for the
       // childless-household state, just localized for the unlock modal.
-      setError('Vui lòng thêm bé vào tài khoản trước khi mở khoá khoá học.');
+      setError('Add a child to your account before unlocking a course.');
       return;
     }
     setPending(true);
@@ -63,7 +65,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         deviceId = undefined;
       }
       if (!deviceId) {
-        setError('Chưa có robot — kết nối robot trước khi mở khoá khoá học.');
+        setError('No Robot is connected. Connect a Robot before unlocking a course.');
         return;
       }
       try {
@@ -79,10 +81,10 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
       } catch (err) {
         const normalized = normalizeError(err);
         if (normalized.code === 'NO_DEVICE') {
-          setError('Chưa có robot — kết nối robot trước khi mở khoá khoá học.');
+          setError('No Robot is connected. Connect a Robot before unlocking a course.');
           return;
         }
-        setError('Không thể mở khoá khoá học. Vui lòng thử lại.');
+        setError('Could not unlock the course. Please try again.');
       }
     } finally {
       setPending(false);
@@ -135,7 +137,9 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {KEYS.map((k, i) => {
             if (!k) return <Box key={i} flex={1} height={54} />;
-            const label = k === '⌫' ? 'Delete last digit' : `Enter digit ${k}`;
+            const label = k === '⌫'
+              ? t('Delete last digit')
+              : translateTemplate('Enter digit {{digit}}', { digit: k }, { locale: language });
             return (
               <TouchableOpacity
                 key={i}

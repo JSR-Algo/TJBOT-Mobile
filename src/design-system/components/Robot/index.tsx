@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { tokens } from '@/design-system/tokens';
 import { Text } from '@/design-system/primitives/Text';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 export const ROBOT_EMOTES = [
   'idle', 'happy', 'greet', 'listen', 'think', 'speak',
@@ -66,6 +67,7 @@ interface RobotProps {
 }
 
 export default function Robot({ emotion = 'idle', size = 220, accessibilityLabel, reduceMotion = false }: RobotProps) {
+  const { t } = useAppLanguage();
   const cfg = CONFIGS[emotion] ?? CONFIGS.idle;
   const W = size;
   // Brand consistency: every screen shows the one white cat-eared TeeBot, so
@@ -145,7 +147,7 @@ export default function Robot({ emotion = 'idle', size = 220, accessibilityLabel
   return (
     <View
       accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel == null ? undefined : t(accessibilityLabel)}
       style={{ width: W, height: W * 1.05, position: 'relative', alignItems: 'center', justifyContent: 'center' }}
     >
       {/* glow */}

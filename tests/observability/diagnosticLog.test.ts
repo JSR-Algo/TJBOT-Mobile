@@ -83,4 +83,8 @@ describe('geminiErrorMessages', () => {
     expect(msg).toMatch(/Google blocked/);
     expect(msg).not.toBe('fallback');
   });
+
+  it('resolveGeminiUserError never exposes an unmapped provider string to the UI', () => {
+    expect(resolveGeminiUserError('provider-specific English detail', 'Safe fallback')).toBe('Safe fallback');
+  });
 });

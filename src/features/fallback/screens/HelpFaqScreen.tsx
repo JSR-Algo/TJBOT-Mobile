@@ -7,7 +7,7 @@ import TopBar from '@/components/TopBar';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
-import { useAppLanguage } from '@/services/i18n/i18n';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HelpFaqScreen'>;
 
@@ -21,7 +21,7 @@ const FAQS = [
 ] as const;
 
 export default function HelpFaqScreen({ navigation }: Props) {
-  const { t } = useAppLanguage();
+  const { language, t } = useAppLanguage();
   const [query, setQuery] = React.useState('');
   const [openQuestion, setOpenQuestion] = React.useState<string | null>(FAQS[0].q);
   const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -67,7 +67,11 @@ export default function HelpFaqScreen({ navigation }: Props) {
                   style={styles.faqBtn}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={`FAQ: ${t(f.q)}`}
+                  accessibilityLabel={translateTemplate(
+                    'FAQ: {{question}}',
+                    { question: t(f.q) },
+                    { locale: language },
+                  )}
                   accessibilityState={{ expanded: isOpen }}
                 >
                   <Text fontWeight="500" style={styles.faqQ}>{f.q}</Text>

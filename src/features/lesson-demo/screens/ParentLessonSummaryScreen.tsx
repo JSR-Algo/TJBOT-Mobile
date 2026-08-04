@@ -1,21 +1,24 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../../components/Button';
+import { Text } from '../../../design-system/primitives';
 import { ROUTES, type RootStackParamList } from '../../../navigation/routes';
 import { colors, radius, spacing, typography } from '../../../theme';
 import { staticLessonContentProvider, useLessonDemoProgressStore } from '../index';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentLessonSummaryScreen'>;
 
 export function ParentLessonSummaryScreen({ navigation, route }: Props): React.JSX.Element {
+  const { language } = useAppLanguage();
   const ageBand = route?.params?.ageBand ?? '7-9';
   const progress = useLessonDemoProgressStore((state) => state.progress);
   const latestLessonId = route?.params?.lessonId ?? progress.attempts[progress.attempts.length - 1]?.lessonId;
   const lesson = useMemo(
     () => (latestLessonId ? staticLessonContentProvider.getLessonById(latestLessonId, ageBand) : undefined)
       ?? staticLessonContentProvider.getTodaySession(ageBand),
-    [ageBand, latestLessonId],
+    [ageBand, language, latestLessonId],
   );
 
   return (
@@ -44,7 +47,15 @@ export function ParentLessonSummaryScreen({ navigation, route }: Props): React.J
       </View>
 
       <View style={styles.progressCard}>
-        <Text style={styles.statValue}>{progress.completedLessonIds.length === 1 ? '1 lesson' : `${progress.completedLessonIds.length} lessons`}</Text>
+        <Text style={styles.statValue} i18n={false}>
+          {progress.completedLessonIds.length === 1
+            ? translateTemplate('1 lesson', {}, { locale: language })
+            : translateTemplate(
+              '{{count}} lessons',
+              { count: progress.completedLessonIds.length },
+              { locale: language },
+            )}
+        </Text>
         <Text style={styles.statLabel}>completed in this demo</Text>
       </View>
 

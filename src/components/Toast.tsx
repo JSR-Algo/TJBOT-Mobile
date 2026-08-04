@@ -86,6 +86,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }): Reac
 function ToastBubble({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) {
   const { language } = useAppLanguage();
   const opacity = useRef(new Animated.Value(0)).current;
+  const translatedText = translateCopy(item.text, { locale: language });
 
   React.useEffect(() => {
     Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
@@ -94,7 +95,7 @@ function ToastBubble({ item, onDismiss }: { item: ToastItem; onDismiss: () => vo
   const c = SEVERITY_COLORS[item.severity];
   return (
     <Animated.View style={[styles.bubble, { opacity, backgroundColor: c.bg, borderColor: c.border }]}>
-      <Text style={[styles.text, { color: c.text }]} numberOfLines={3}>{item.text}</Text>
+      <Text style={[styles.text, { color: c.text }]} numberOfLines={3}>{translatedText}</Text>
       <TouchableOpacity onPress={onDismiss} accessibilityLabel={translateCopy('Dismiss notification', { locale: language })}>
         <Text style={[styles.dismiss, { color: c.text }]}>✕</Text>
       </TouchableOpacity>

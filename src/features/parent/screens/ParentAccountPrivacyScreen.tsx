@@ -19,11 +19,12 @@ import {
 } from '@/services/api/account';
 import { normalizeError } from '@/utils/errors';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
-import { useAppLanguage } from '@/services/i18n/i18n';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentAccountPrivacyScreen'>;
 
-const DELETE_PHRASE = 'DELETE my account';
+const API_EXPORT_PHRASE = 'EXPORT';
+const API_DELETE_PHRASE = 'DELETE my account';
 
 function newRequestId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -105,7 +106,7 @@ function PrivacyActionButton({
 
 export default function ParentAccountPrivacyScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentAccountPrivacyScreen);
-  const { t } = useAppLanguage();
+  const { language, t } = useAppLanguage();
   const [exportConfirm, setExportConfirm] = React.useState('');
   const [deleteConfirm, setDeleteConfirm] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -116,6 +117,8 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
   const [subscriptionBlocked, setSubscriptionBlocked] = React.useState(false);
   const [subscriptionCheckFailed, setSubscriptionCheckFailed] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const exportPhrase = t(API_EXPORT_PHRASE);
+  const deletePhrase = t(API_DELETE_PHRASE);
 
   React.useEffect(() => {
     let mounted = true;
@@ -150,8 +153,12 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
 
   const createExport = async (): Promise<void> => {
     if (busy) return;
-    if (exportConfirm !== 'EXPORT') {
-      setMessage('Type EXPORT to request your account archive.');
+    if (exportConfirm.trim() !== exportPhrase) {
+      setMessage(translateTemplate(
+        'Type {{phrase}} to request your account archive.',
+        { phrase: exportPhrase },
+        { locale: language },
+      ));
       return;
     }
     setBusy(true);
@@ -182,8 +189,12 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
 
   const createDeletion = async (): Promise<void> => {
     if (deletionDisabled) return;
-    if (deleteConfirm !== DELETE_PHRASE) {
-      setMessage(`Type ${DELETE_PHRASE} to continue.`);
+    if (deleteConfirm.trim() !== deletePhrase) {
+      setMessage(translateTemplate(
+        'Type {{phrase}} to continue.',
+        { phrase: deletePhrase },
+        { locale: language },
+      ));
       return;
     }
     if (!password) {
@@ -195,7 +206,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
     try {
       const job = await requestAccountDeletion(
         {
-          confirmPhrase: DELETE_PHRASE,
+          confirmPhrase: API_DELETE_PHRASE,
           password,
           reason: 'Requested from mobile parent settings.',
         },
@@ -282,7 +293,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
           <TextInput
             value={exportConfirm}
             onChangeText={setExportConfirm}
-            placeholder="EXPORT"
+            placeholder={exportPhrase}
             accessibilityLabel={t('Export confirmation')}
             placeholderTextColor={PA.ink3}
             autoCapitalize="characters"
@@ -333,7 +344,7 @@ export default function ParentAccountPrivacyScreen({ navigation }: Props) {
           <TextInput
             value={deleteConfirm}
             onChangeText={setDeleteConfirm}
-            placeholder={DELETE_PHRASE}
+            placeholder={deletePhrase}
             accessibilityLabel={t('Delete confirmation phrase')}
             placeholderTextColor={PA.ink3}
             autoCapitalize="none"

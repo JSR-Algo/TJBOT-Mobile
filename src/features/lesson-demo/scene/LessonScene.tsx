@@ -4,6 +4,7 @@ import ClayRobotScreen from '@/components/ClayRobotScreen';
 import { colors, radius, spacing, typography } from '../../../theme';
 import type { LessonSession, LessonStep } from '../types';
 import { resolveLessonSceneScript, type LessonSceneScript } from './lessonSceneScript';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 interface LessonSceneProps {
   lesson: LessonSession;
@@ -22,6 +23,7 @@ export function LessonScene({
   reducedMotion = false,
   __disableAnimations = false,
 }: LessonSceneProps): React.JSX.Element {
+  const { language } = useAppLanguage();
   const script = useMemo(
     () => resolveLessonSceneScript({ lesson, step, stepIndex, totalSteps, reducedMotion }),
     [lesson, reducedMotion, step, stepIndex, totalSteps],
@@ -105,7 +107,11 @@ export function LessonScene({
   return (
     <View
       testID="lesson-scene"
-      accessibilityLabel={`${script.targetWord} lesson scene`}
+      accessibilityLabel={translateTemplate(
+        '{{word}} lesson scene',
+        { word: script.targetWord },
+        { locale: language },
+      )}
       style={styles.scene}
     >
       <Animated.View style={[styles.world, cameraStyle]}>

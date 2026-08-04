@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LessonDemoHomeScreen } from '../../../src/features/lesson-demo/screens/LessonDemoHomeScreen';
@@ -9,6 +9,7 @@ import { LessonShowcaseScreen } from '../../../src/features/lesson-demo/screens/
 import { ParentLessonSummaryScreen } from '../../../src/features/lesson-demo/screens/ParentLessonSummaryScreen';
 import { resetLessonDemoScreenProgress } from '../../../src/features/lesson-demo/screens/lessonDemoScreenModel';
 import { ROUTES, type RootStackParamList } from '../../../src/navigation/routes';
+import { setAppLanguage } from '../../../src/services/i18n/i18n';
 
 const navigation = {
   navigate: jest.fn(),
@@ -145,6 +146,25 @@ describe('LessonDemo screens', () => {
     expect(getByText('Step 2 of 7')).toBeTruthy();
     expect(getByText('Learn')).toBeTruthy();
     expect(queryByText('Reward')).toBeNull();
+  });
+
+  it('refreshes generated lesson prompts when the app language changes', async () => {
+    await setAppLanguage('en');
+    const view = render(
+      <LessonSessionScreen
+        navigation={navigationFor<'LessonSessionScreen'>()}
+        route={lessonSessionRoute}
+      />,
+    );
+
+    expect(view.getByText(/^Say hello to TeeBot\./)).toBeTruthy();
+    await act(async () => {
+      await setAppLanguage('vi');
+    });
+    expect(view.getByText(/^Hãy chào TeeBot\./)).toBeTruthy();
+    expect(view.queryByText(/^Say hello to TeeBot\./)).toBeNull();
+    view.unmount();
+    await setAppLanguage('en');
   });
 
   it('writes local progress when the session is completed', () => {

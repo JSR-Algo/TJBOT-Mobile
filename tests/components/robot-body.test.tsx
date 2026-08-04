@@ -13,6 +13,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { RobotBody, ALL_MOTIONS, channelOf, type Motion } from '../../src/components/robot/RobotBody';
+import { setAppLanguage } from '../../src/services/i18n/i18n';
 
 describe('RobotBody — RM-03 12-motion renderer', () => {
   it('exports exactly the 12 canonical motion primitives in the canonical order', () => {
@@ -90,5 +91,15 @@ describe('RobotBody — RM-03 12-motion renderer', () => {
     }
 
     unmount();
+  });
+
+  it('announces the motion in Vietnamese without exposing the internal enum', async () => {
+    await setAppLanguage('vi');
+    const screen = render(<RobotBody motion="LOOK_LEFT" __disableAnimations />);
+
+    expect(screen.getByLabelText('Thân Robot, đang nhìn sang trái')).toBeTruthy();
+    expect(screen.queryByLabelText(/LOOK_LEFT/)).toBeNull();
+    screen.unmount();
+    await setAppLanguage('en');
   });
 });

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, ErrorMessage, LoadingSpinner } from '../../components';
+import { Text } from '../../design-system/primitives';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import * as learningApi from '../../services/api/learning';
+import { translateTemplate, useAppLanguage } from '../../services/i18n/i18n';
 import theme from '../../theme';
 
 type ParentDashboardNavigation = {
@@ -22,6 +24,7 @@ export function ParentDashboardScreen({
   navigation,
 }: ParentDashboardScreenProps): React.JSX.Element {
   const { children } = useHousehold();
+  const { language } = useAppLanguage();
   const activeChild = children[0] ?? null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +68,9 @@ export function ParentDashboardScreen({
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.eyebrow}>Progress</Text>
-      <Text style={styles.title}>{childName}'s learning</Text>
+      <Text style={styles.title} i18n={false}>
+        {translateTemplate("{{name}}'s learning", { name: childName }, { locale: language })}
+      </Text>
       <Text style={styles.subtitle}>Open today's lesson or preview the six-month lesson demo.</Text>
 
       {loading ? (

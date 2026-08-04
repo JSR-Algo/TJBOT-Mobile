@@ -11,6 +11,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import MiniProgress from '../components/MiniProgress';
 import { ROUTES } from '@/navigation/routes';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnitScreen'>;
 
@@ -23,6 +24,7 @@ const LESSONS = [
 ] as const;
 
 export default function UnitScreen({ navigation }: Props) {
+  const { language } = useAppLanguage();
   return (
     <PageScroll>
       <PageHeader
@@ -61,7 +63,11 @@ export default function UnitScreen({ navigation }: Props) {
               style={[styles.lessonRow, { opacity: isLocked ? 0.6 : 1 }]}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={`Lesson ${l.id}: ${l.title}`}
+              accessibilityLabel={translateTemplate(
+                'Lesson {{number}}: {{title}}',
+                { number: l.id, title: l.title },
+                { locale: language },
+              )}
               accessibilityState={{ disabled: isLocked }}
             >
               <Box style={[styles.lessonIcon, { backgroundColor: iconBg },
@@ -85,7 +91,11 @@ export default function UnitScreen({ navigation }: Props) {
                   style={styles.replayBtn}
                   activeOpacity={0.8}
                   accessibilityRole="button"
-                  accessibilityLabel={`Replay ${l.title}`}
+                  accessibilityLabel={translateTemplate(
+                    'Replay {{lesson}}',
+                    { lesson: l.title },
+                    { locale: language },
+                  )}
                 >
                   <Text fontWeight="700" style={styles.replayText}>Replay</Text>
                 </TouchableOpacity>

@@ -3,7 +3,6 @@ import {
   Animated,
   ImageBackground,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -11,6 +10,7 @@ import ClayRobotScreen from '@/components/ClayRobotScreen';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { referenceImages } from '@/design-system/referenceTheme';
 import PulseRing from '@/design-system/components/PulseRing';
+import { Text } from '@/design-system/primitives';
 import type { LessonSession, LessonStep, RobotReadyState } from '../types';
 
 interface FullscreenLessonSceneProps {

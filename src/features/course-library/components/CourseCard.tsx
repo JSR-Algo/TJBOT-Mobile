@@ -5,6 +5,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from './CL';
 import CLChip from './CLChip';
+import { translateCopy, translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Course = {
   state: string;
@@ -25,8 +26,13 @@ type Props = {
 };
 
 export default function CourseCard({ course, onClick, showLCD = true }: Props) {
+  const { language } = useAppLanguage();
   const chipState = isCourseState(course.state) ? course.state : 'not_installed';
-  const accessibilityLabel = `${course.title} ${course.state} course`;
+  const accessibilityLabel = translateTemplate(
+    '{{title}} {{state}} course',
+    { title: course.title, state: translateCopy(course.state, { locale: language }) },
+    { locale: language },
+  );
   const content = (
     <>
       {showLCD && (
@@ -72,7 +78,11 @@ export default function CourseCard({ course, onClick, showLCD = true }: Props) {
       style={[styles.card, { opacity: course.state === 'locked' ? 0.85 : 1 }]}
       activeOpacity={0.8}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${accessibilityLabel}`}
+      accessibilityLabel={translateTemplate(
+        'Open {{course}}',
+        { course: accessibilityLabel },
+        { locale: language },
+      )}
     >
       {content}
     </TouchableOpacity>

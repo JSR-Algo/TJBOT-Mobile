@@ -4,6 +4,7 @@ import { LessonPlannerScreen } from '../../src/screens/learning/LessonPlannerScr
 import { ChildPracticeScreen } from '../../src/screens/learning/ChildPracticeScreen';
 import { ParentDashboardScreen } from '../../src/screens/dashboard/ParentDashboardScreen';
 import * as learningApi from '../../src/services/api/learning';
+import { setAppLanguage } from '../../src/services/i18n/i18n';
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
@@ -52,6 +53,10 @@ const session = {
   },
 };
 
+afterEach(async () => {
+  await setAppLanguage('en');
+});
+
 describe('LessonPlannerScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -98,6 +103,40 @@ describe('LessonPlannerScreen', () => {
     fireEvent.press(getByText('Start fallback practice'));
 
     expect(mockNavigate).toHaveBeenCalledWith('ChildPractice', { childId: 'child-1' });
+  });
+
+  it('localizes Vietnamese fallback lesson instructions without English leakage', async () => {
+    await setAppLanguage('vi');
+    (learningApi.getTodaySession as jest.Mock).mockResolvedValue({
+      ...session,
+      session_payload: {
+        ...session.session_payload,
+        warmup: { greeting: '', question: '' },
+        core_learning: [],
+        interaction: { prompt: '', expected_vocab: [] },
+        reward: { message: '', stars: 1 },
+      },
+    });
+    const view = render(<LessonPlannerScreen navigation={navigation} route={route} />);
+
+    await waitFor(() => expect(view.getByText('Bắt đầu bằng một lời chào ngắn.')).toBeTruthy());
+    expect(view.getByText('Ôn lại một từ quen thuộc.')).toBeTruthy();
+    expect(view.getByText('Nghe, lặp lại và trả lời một câu hỏi đơn giản.')).toBeTruthy();
+    expect(view.getByText('Ghi nhận sự cố gắng và hiển thị bản tóm tắt ngắn cho phụ huynh.')).toBeTruthy();
+    expect(view.queryByText('Start with a short hello.')).toBeNull();
+    view.unmount();
+  });
+
+  it('localizes the Vietnamese fallback error instruction', async () => {
+    await setAppLanguage('vi');
+    (learningApi.getTodaySession as jest.Mock).mockRejectedValue(new Error('network down'));
+    const view = render(<LessonPlannerScreen navigation={navigation} route={route} />);
+
+    await waitFor(() => {
+      expect(view.getByText(/Bài luyện tập dự phòng đã sẵn sàng/)).toBeTruthy();
+      expect(view.queryByText(/Fallback ready/)).toBeNull();
+    });
+    view.unmount();
   });
 });
 
@@ -164,6 +203,25 @@ describe('ChildPracticeScreen', () => {
     await waitFor(() => expect(view.getByText('Step 1 of 3')).toBeTruthy());
     expect(view.getByText('Fallback practice is ready.')).toBeTruthy();
   });
+
+  it('localizes Vietnamese fallback practice steps without mixed instructions', async () => {
+    await setAppLanguage('vi');
+    const view = render(
+      <ChildPracticeScreen
+        navigation={navigation}
+        route={{
+          key: 'ChildPractice',
+          name: 'ChildPractice',
+          params: { childId: 'child-1' },
+        }}
+      />,
+    );
+
+    expect(view.getByText('Bước 1/3')).toBeTruthy();
+    expect(view.getByText('Hãy nghe từ này. Sau đó nói lại thật rõ.')).toBeTruthy();
+    expect(view.queryByText('Listen to the word. Then say it back clearly.')).toBeNull();
+    view.unmount();
+  });
 });
 
 describe('ParentDashboardScreen lesson entry', () => {
@@ -226,5 +284,19 @@ describe('ParentDashboardScreen lesson entry', () => {
     fireEvent.press(getByText("View today's lesson"));
 
     expect(mockNavigate).toHaveBeenCalledWith('LessonPlanner', { childId: 'child-1' });
+  });
+
+  it('uses natural Vietnamese word order for the child learning title', async () => {
+    await setAppLanguage('vi');
+    const view = render(
+      <ParentDashboardScreen
+        navigation={navigation}
+        route={{ key: 'Progress', name: 'Progress' }}
+      />,
+    );
+
+    await waitFor(() => expect(view.getByText('Việc học của Mai')).toBeTruthy());
+    expect(view.queryByText('Mai - học tập')).toBeNull();
+    view.unmount();
   });
 });

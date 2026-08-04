@@ -1,31 +1,52 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { Button, Card, ErrorMessage, LoadingSpinner } from '../../components';
+import { Text } from '../../design-system/primitives';
 import type { LearningScreenProps } from '../../navigation/types';
 import * as learningApi from '../../services/api/learning';
 import type { LearningSession } from '../../services/api/learning';
+import {
+  translateCopy,
+  translateTemplate,
+  useAppLanguage,
+  type AppLocale,
+} from '../../services/i18n/i18n';
 import theme from '../../theme';
 import { normalizeError } from '../../utils/errors';
 
 type PracticeStep = { label: string; prompt: string };
 
-const FALLBACK_PRACTICE_STEPS: PracticeStep[] = [
-  { label: 'Listen', prompt: 'Listen to the word. Then say it back clearly.' },
-  { label: 'Try', prompt: 'Take your turn when TeeBot asks.' },
-  { label: 'Finish', prompt: 'Good effort. Your parent will see a short summary after practice.' },
-];
-
-function buildLessonPracticeSteps(session: LearningSession | null): PracticeStep[] {
-  if (!session) return FALLBACK_PRACTICE_STEPS;
+function buildLessonPracticeSteps(session: LearningSession | null, language: AppLocale): PracticeStep[] {
+  const localize = (copy: string) => translateCopy(copy, { locale: language, persona: 'child' });
+  const fallbackSteps: PracticeStep[] = [
+    { label: localize('Listen'), prompt: localize('Listen to the word. Then say it back clearly.') },
+    { label: localize('Try'), prompt: localize('Take your turn when TeeBot asks.') },
+    {
+      label: localize('Finish'),
+      prompt: localize('Good effort. Your parent will see a short summary after practice.'),
+    },
+  ];
+  if (!session) return fallbackSteps;
   const focusWord = session.session_payload?.core_learning?.[0]?.word || 'hello';
-  const interactionPrompt = session.session_payload?.interaction?.prompt || 'Take your turn when TeeBot asks.';
-  const rewardMessage = session.session_payload?.reward?.message
-    || 'Good effort. Your parent will see a short summary after practice.';
+  const interactionPrompt = localize(
+    session.session_payload?.interaction?.prompt || 'Take your turn when TeeBot asks.',
+  );
+  const rewardMessage = localize(
+    session.session_payload?.reward?.message
+      || 'Good effort. Your parent will see a short summary after practice.',
+  );
 
   return [
-    { label: 'Listen', prompt: `Listen to "${focusWord}". Then say it back clearly.` },
-    { label: 'Try', prompt: interactionPrompt },
-    { label: 'Finish', prompt: rewardMessage },
+    {
+      label: localize('Listen'),
+      prompt: translateTemplate(
+        'Listen to "{{word}}". Then say it back clearly.',
+        { word: focusWord },
+        { locale: language, persona: 'child' },
+      ),
+    },
+    { label: localize('Try'), prompt: interactionPrompt },
+    { label: localize('Finish'), prompt: rewardMessage },
   ];
 }
 
@@ -35,6 +56,7 @@ export function ChildPracticeScreen({
 }: LearningScreenProps<'ChildPractice'>): React.JSX.Element {
   const childId = route.params.childId;
   const sessionId = route.params.sessionId;
+  const { language } = useAppLanguage();
 
   const [session, setSession] = useState<LearningSession | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,7 +99,10 @@ export function ChildPracticeScreen({
     };
   }, [childId, sessionId]);
 
-  const practiceSteps = useMemo(() => buildLessonPracticeSteps(session), [session]);
+  const practiceSteps = useMemo(
+    () => buildLessonPracticeSteps(session, language),
+    [language, session],
+  );
   useEffect(() => {
     setStepIndex(0);
   }, [childId, sessionId, practiceSteps.length]);
@@ -104,9 +129,15 @@ export function ChildPracticeScreen({
       ) : null}
 
       <Card style={styles.practiceCard}>
-        <Text style={styles.progressText}>Step {stepIndex + 1} of {practiceSteps.length}</Text>
-        <Text style={styles.stepLabel}>{activeStep.label}</Text>
-        <Text style={styles.promptText}>{activeStep.prompt}</Text>
+        <Text style={styles.progressText} i18n={false}>
+          {translateTemplate(
+            'Step {{current}} of {{total}}',
+            { current: stepIndex + 1, total: practiceSteps.length },
+            { locale: language, persona: 'child' },
+          )}
+        </Text>
+        <Text style={styles.stepLabel} i18n={false}>{activeStep.label}</Text>
+        <Text style={styles.promptText} i18n={false}>{activeStep.prompt}</Text>
       </Card>
 
       <Text style={styles.sessionText}>

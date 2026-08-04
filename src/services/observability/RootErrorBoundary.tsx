@@ -1,6 +1,7 @@
 import React from 'react';
-import { DevSettings, StyleSheet, Text, View } from 'react-native';
+import { DevSettings, StyleSheet, View } from 'react-native';
 import { Button } from '../../components';
+import { Text } from '../../design-system/primitives';
 import theme from '@/design-system/tokens/legacy-semantic';
 import { captureError } from './sentry';
 import { diagnosticLog } from './diagnosticLog';

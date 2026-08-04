@@ -10,10 +10,12 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
 import { RM } from '../components/RM';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SupportScreen'>;
 
 export default function SupportScreen({ navigation }: Props): React.JSX.Element {
+  const { t } = useAppLanguage();
   return (
     <DeviceShell title="Contact support" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
       <Box testID="support-honest-outlet" paddingHorizontal={20} paddingTop={20}>
@@ -35,7 +37,7 @@ export default function SupportScreen({ navigation }: Props): React.JSX.Element 
           style={styles.linkCard}
           onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
           accessibilityRole="button"
-          accessibilityLabel="Open help articles"
+          accessibilityLabel={t('Open help articles')}
         >
           <Box style={styles.linkIcon} alignItems="center" justifyContent="center">
             <Icon name="BookOpenText" size={21} color={RM.accent} strokeWidth={2.3} />
@@ -50,7 +52,7 @@ export default function SupportScreen({ navigation }: Props): React.JSX.Element 
           style={styles.linkCard}
           onPress={() => navigation.navigate(ROUTES.OfflineHelpScreen)}
           accessibilityRole="button"
-          accessibilityLabel="Open robot offline help"
+          accessibilityLabel={t('Open robot offline help')}
         >
           <Box style={styles.linkIcon} alignItems="center" justifyContent="center">
             <Icon name="WifiOff" size={21} color={RM.accent} strokeWidth={2.3} />

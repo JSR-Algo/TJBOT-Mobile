@@ -5,7 +5,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { Icon } from '@/design-system/icons';
 import ScreenShell from '@/components/ScreenShell';
-import { useAppLanguage } from '@/services/i18n/i18n';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 import type { HomeChild, HomeLesson } from '@/services/api/home.api';
 import { referenceColors } from '@/design-system/referenceTheme';
 
@@ -138,7 +138,7 @@ export function HomeStreakLostState({
   onStartLesson,
   onBrowseLessons,
 }: StreakLostProps): React.JSX.Element {
-  const { t } = useAppLanguage();
+  const { language, t } = useAppLanguage();
   const insets = useSafeAreaInsets();
 
   return (
@@ -149,7 +149,9 @@ export function HomeStreakLostState({
       >
         <Box style={styles.streakHeader}>
           <Text i18n={false} fontWeight="800" style={styles.streakGreeting}>
-            {childName ? `${t('Hi')}, ${childName}!` : t('Hi, friend!')}
+            {childName
+              ? translateTemplate('Hi, {{name}}!', { name: childName }, { locale: language })
+              : t('Hi, friend!')}
           </Text>
         </Box>
 

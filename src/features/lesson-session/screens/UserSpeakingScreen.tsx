@@ -43,7 +43,7 @@ export default function UserSpeakingScreen({ navigation, route }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} alignItems="center" gap={14}>
-        <MicButton on onClick={() => navigation.navigate(ROUTES.ThinkingScreen, route.params)} label="stop" />
+        <MicButton on onClick={() => navigation.navigate(ROUTES.ThinkingScreen, route.params)} label="Stop" />
         <Text fontWeight="700" style={styles.tapText}>Tap when done</Text>
       </Box>
       </Box>

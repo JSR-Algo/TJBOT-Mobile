@@ -8,6 +8,7 @@ import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { listCourseCatalog, type CourseCatalogItem } from '@/services/api/course.api';
+import { translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseScreen'>;
 
@@ -18,6 +19,7 @@ type LoadState =
 
 export default function CourseScreen({ navigation }: Props) {
   const [state, setState] = React.useState<LoadState>({ kind: 'loading' });
+  const { language } = useAppLanguage();
 
   const load = React.useCallback(() => {
     let active = true;
@@ -27,12 +29,12 @@ export default function CourseScreen({ navigation }: Props) {
         if (active) setState({ kind: 'ready', courses: courses ?? [] });
       })
       .catch((error: unknown) => {
-        if (active) setState(courseErrorState(error));
+        if (active) setState(courseErrorState(error, language));
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [language]);
 
   React.useEffect(() => load(), [load]);
 
@@ -83,7 +85,7 @@ export default function CourseScreen({ navigation }: Props) {
   );
 }
 
-function courseErrorState(error: unknown): LoadState {
+function courseErrorState(error: unknown, language: AppLocale): LoadState {
   const record = asRecord(error);
   if (record?.code === 'NETWORK_ERROR') {
     return { kind: 'error', title: 'Course catalog offline' };
@@ -93,7 +95,11 @@ function courseErrorState(error: unknown): LoadState {
     return {
       kind: 'error',
       title: 'Course refresh limited',
-      detail: `Try again in ${retryAfter} seconds.`,
+      detail: translateTemplate(
+        'Try again in {{value1}} seconds.',
+        { value1: retryAfter },
+        { locale: language },
+      ),
       retryLabel: 'Retry Course refresh limited',
     };
   }

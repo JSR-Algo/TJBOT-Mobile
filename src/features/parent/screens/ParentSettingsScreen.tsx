@@ -30,6 +30,8 @@ interface ToggleRowProps {
 }
 
 function ToggleRow({ label, description, value, onChange }: ToggleRowProps) {
+  const { t } = useAppLanguage();
+
   return (
     <Box style={styles.toggleRow} flexDirection="row" alignItems="center" justifyContent="space-between" gap={16}>
       <Box flex={1}>
@@ -38,7 +40,7 @@ function ToggleRow({ label, description, value, onChange }: ToggleRowProps) {
       </Box>
       <TouchableOpacity
         accessibilityRole="switch"
-        accessibilityLabel={label}
+        accessibilityLabel={t(label)}
         accessibilityState={{ checked: value }}
         activeOpacity={0.8}
         onPress={() => onChange(!value)}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { Text } from '@/design-system/primitives';
 import { translateCopy } from '@/services/i18n/i18n';
 
 type State = { error: Error | null; info: React.ErrorInfo | null };

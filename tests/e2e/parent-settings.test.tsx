@@ -163,6 +163,14 @@ describe('Parent settings and gate', () => {
     expect(getByLabelText('Enable larger text').props.accessibilityState).toEqual({ checked: false });
   });
 
+  it('localizes accessibility switch labels in Vietnamese', async () => {
+    await setAppLanguage('vi');
+    const screen = render(<ParentSettingsScreen navigation={mockNavigation as never} route={mockRoute as never} />);
+    await screen.findByText('Ngôn ngữ & hỗ trợ');
+    expect(screen.getByLabelText('Bật giảm chuyển động').props.accessibilityState).toEqual({ checked: false });
+    expect(screen.getByLabelText('Bật chữ lớn hơn').props.accessibilityState).toEqual({ checked: false });
+  });
+
   it('saves language and accessibility preferences together', async () => {
     const view = await renderParentSettings();
 
@@ -390,6 +398,31 @@ describe('Parent settings and gate', () => {
       expect.stringMatching(/^privacy-delete-/),
     );
     expect(screen.getByText('Deletion grace period active')).toBeTruthy();
+  });
+
+  it('renders privacy controls fully in Vietnamese while keeping the canonical deletion payload', async () => {
+    await setAppLanguage('vi');
+    accountApiMock.requestAccountDeletion.mockResolvedValueOnce({
+      deletionJobId: 'delete-vi-1', status: 'in_grace_period', gracePeriodEndsAt: '2026-06-15T00:00:00.000Z',
+      completedAt: null, cancelable: true, cancelledAt: null,
+    });
+    const screen = render(<ParentAccountPrivacyScreen navigation={mockNavigation as never} route={mockRoute as never} />);
+    await waitFor(() => expect(accountApiMock.refreshEntitlementsAfterPurchase).toHaveBeenCalledTimes(1));
+    expect(screen.getByText('Chưa yêu cầu xuất dữ liệu')).toBeTruthy();
+    expect(screen.getByText('Chưa yêu cầu xóa tài khoản')).toBeTruthy();
+    expect(screen.queryByText('No export requested')).toBeNull();
+    expect(screen.queryByText('No deletion requested')).toBeNull();
+    expect(screen.getByPlaceholderText('XUẤT')).toBeTruthy();
+    fireEvent.press(screen.getByText('Yêu cầu xuất dữ liệu'));
+    expect(screen.getByText('Nhập XUẤT để yêu cầu kho lưu trữ tài khoản.')).toBeTruthy();
+    fireEvent.changeText(screen.getByPlaceholderText('XÓA tài khoản của tôi'), 'XÓA tài khoản của tôi');
+    fireEvent.changeText(screen.getByPlaceholderText('Mật khẩu'), 'CorrectHorseBattery!9');
+    await act(async () => { fireEvent.press(screen.getByText('Yêu cầu xóa')); });
+    expect(accountApiMock.requestAccountDeletion).toHaveBeenCalledWith(
+      { confirmPhrase: 'DELETE my account', password: 'CorrectHorseBattery!9', reason: 'Requested from mobile parent settings.' },
+      expect.stringMatching(/^privacy-delete-/),
+    );
+    expect(screen.getByText('Đang trong thời gian chờ xóa')).toBeTruthy();
   });
 
   it('renders privacy 409, 403, and 410 errors with distinct copy', async () => {

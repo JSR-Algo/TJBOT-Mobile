@@ -18,6 +18,7 @@ import { useZeroCodeClaimFlow } from '../useZeroCodeClaimFlow';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
 import { requestClaim } from '@/services/api/claim.api';
 import { mintBootstrapToken } from '@/services/api/device.api';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFoundScreen'>;
 
@@ -31,6 +32,7 @@ const PAIRING_STEPS = [
 
 export default function PairFoundScreen({ navigation, route }: Props) {
   const params = route.params;
+  const { t } = useAppLanguage();
   // When the zero-code physical-confirm flow is explicitly disabled, PairFound
   // still offers a working forward path: route into the existing device.api
   // Wi-Fi pairing path via the QR/code code-funnel (PairQrScan -> PairWifi ->
@@ -41,7 +43,7 @@ export default function PairFoundScreen({ navigation, route }: Props) {
   // may dead-end (plan §4 C2/C5).
   const zeroCodeEnabled = isZeroCodeClaimEnabled();
   const deviceId = params?.deviceId ?? '';
-  const serialNumber = params?.serialNumber ?? params?.deviceId ?? 'Robot nearby';
+  const serialNumber = params?.serialNumber ?? params?.deviceId ?? t('Robot nearby');
   const provisioningAttemptId = params?.provisioningAttemptId;
   const [wifiClaimBusy, setWifiClaimBusy] = React.useState(false);
   const [wifiClaimError, setWifiClaimError] = React.useState<ClaimStatusDescriptor | null>(null);

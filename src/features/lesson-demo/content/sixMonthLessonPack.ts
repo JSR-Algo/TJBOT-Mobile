@@ -10,6 +10,7 @@ import type {
   LessonSession,
   LessonStep,
 } from '../types';
+import { getCurrentAppLanguage, translateTemplate } from '@/services/i18n/i18n';
 
 export const AGE_BANDS: LessonAgeBand[] = ['4-6', '7-9', '10-11'];
 
@@ -122,13 +123,18 @@ function createSteps(raw: RawLessonFixture, ageBand: LessonAgeBand): LessonStep[
   const visibleFocus = visibleFocusItems(raw, ageBand);
   const support = vietnameseSupport[raw.vietnamese_l1_target] ?? 'Listen first, then answer in English.';
   const review = raw.review_items[0] ?? focus;
+  const locale = getCurrentAppLanguage();
 
   return [
     {
       id: `${raw.lesson_id}-${ageBand}-warmup`,
       type: 'warmup',
       title: 'Warm up',
-      prompt: `Say hello to TeeBot. Review: ${review}.`,
+      prompt: translateTemplate(
+        'Say hello to TeeBot. Review: {{value1}}.',
+        { value1: review },
+        { locale, persona: 'child' },
+      ),
       helperText: 'A calm start helps the child feel ready.',
       robotState: 'listening',
     },
@@ -136,7 +142,11 @@ function createSteps(raw: RawLessonFixture, ageBand: LessonAgeBand): LessonStep[
       id: `${raw.lesson_id}-${ageBand}-teach`,
       type: 'teach',
       title: 'Learn',
-      prompt: `Today we practice: ${visibleFocus.join(', ')}.`,
+      prompt: translateTemplate(
+        'Today we practice: {{value1}}.',
+        { value1: visibleFocus.join(', ') },
+        { locale, persona: 'child' },
+      ),
       helperText: ageHelper(ageBand, raw),
       robotState: 'modeling',
     },
@@ -144,7 +154,11 @@ function createSteps(raw: RawLessonFixture, ageBand: LessonAgeBand): LessonStep[
       id: `${raw.lesson_id}-${ageBand}-listen`,
       type: 'listen',
       title: 'Listen',
-      prompt: `Listen to "${focus}". Then say it with TeeBot.`,
+      prompt: translateTemplate(
+        'Listen to "{{value1}}". Then say it with TeeBot.',
+        { value1: focus },
+        { locale, persona: 'child' },
+      ),
       helperText: support,
       robotState: 'modeling',
     },
@@ -152,7 +166,11 @@ function createSteps(raw: RawLessonFixture, ageBand: LessonAgeBand): LessonStep[
       id: `${raw.lesson_id}-${ageBand}-repeat`,
       type: 'repeat',
       title: 'Try it',
-      prompt: `Say "${focus}" one more time with a clear voice.`,
+      prompt: translateTemplate(
+        'Say "{{value1}}" one more time with a clear voice.',
+        { value1: focus },
+        { locale, persona: 'child' },
+      ),
       helperText: support,
       robotState: 'listening',
     },
@@ -160,7 +178,11 @@ function createSteps(raw: RawLessonFixture, ageBand: LessonAgeBand): LessonStep[
       id: `${raw.lesson_id}-${ageBand}-choice`,
       type: 'choice',
       title: 'Choose',
-      prompt: `Which answer uses ${focus}?`,
+      prompt: translateTemplate(
+        'Which answer uses {{value1}}?',
+        { value1: focus },
+        { locale, persona: 'child' },
+      ),
       helperText: 'Choose one, then say it out loud.',
       robotState: 'thinking',
       choices: [

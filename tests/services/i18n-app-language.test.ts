@@ -7,6 +7,7 @@ import i18n, {
   translateCopy,
   translateTemplate,
 } from '../../src/services/i18n/i18n';
+import { FSM_TIMER_TABLE } from '../../src/state/voiceAssistantStore';
 
 describe('app language preference', () => {
   beforeEach(async () => {
@@ -57,5 +58,24 @@ describe('app language preference', () => {
         { locale: 'vi' },
       ),
     ).toBe('Tuần này: 2 bài và 5 phút.');
+  });
+
+  it('translates every user-facing voice timeout instead of exposing English in Vietnamese mode', () => {
+    const messages = Object.values(FSM_TIMER_TABLE)
+      .map(config => config?.errorMessage)
+      .filter((message): message is string => Boolean(message));
+
+    expect(messages.length).toBeGreaterThan(0);
+    for (const message of messages) {
+      expect(translateCopy(message, { locale: 'en' })).toBe(message);
+      expect(translateCopy(message, { locale: 'vi' })).not.toBe(message);
+    }
+  });
+
+  it('translates the simulator fallback in both directions', () => {
+    const fallback = 'The simulator cannot use live microphone audio reliably. Text test mode is active so you can still check the Gemini screen.';
+
+    expect(translateCopy(fallback, { locale: 'en' })).toBe(fallback);
+    expect(translateCopy(fallback, { locale: 'vi' })).toContain('Chế độ kiểm tra văn bản');
   });
 });

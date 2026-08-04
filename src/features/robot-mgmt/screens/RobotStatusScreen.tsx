@@ -201,6 +201,7 @@ function DetailRow({ icon, label, value, onPress, isLast = false }: DetailRowPro
 }
 
 function RobotDetailTabBar({ navigation }: Pick<Props, 'navigation'>): React.JSX.Element {
+  const { language, t } = useAppLanguage();
   const { width, height } = useWindowDimensions();
   const tabLayout = getSleekTabBarLayout(width, height);
   const tabActions: Record<FeatureTabName, () => void> = {
@@ -241,7 +242,11 @@ function RobotDetailTabBar({ navigation }: Pick<Props, 'navigation'>): React.JSX
             ]}
             onPress={tabActions[screen.tabName]}
             accessibilityRole="tab"
-            accessibilityLabel={`${screen.title}, tab`}
+            accessibilityLabel={translateTemplate(
+              '{{title}}, tab',
+              { title: t(screen.title) },
+              { locale: language },
+            )}
             accessibilityState={{ selected: focused }}
             activeOpacity={0.78}
           >

@@ -1,19 +1,25 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../../components/Button';
+import { Text } from '../../../design-system/primitives';
 import { ROUTES, type RootStackParamList } from '../../../navigation/routes';
 import { colors, radius, spacing, typography } from '../../../theme';
 import { staticLessonContentProvider, useLessonDemoProgressStore } from '../index';
 import type { LessonAgeBand } from '../types';
 import { getAgeBandCopy, screenAgeBands } from './lessonDemoScreenModel';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonDemoHomeScreen'>;
 
 export function LessonDemoHomeScreen({ navigation }: Props): React.JSX.Element {
+  const { language } = useAppLanguage();
   const [ageBand, setAgeBand] = useState<LessonAgeBand>('4-6');
   const progress = useLessonDemoProgressStore((state) => state.progress);
-  const todayLesson = useMemo(() => staticLessonContentProvider.getTodaySession(ageBand), [ageBand]);
+  const todayLesson = useMemo(
+    () => staticLessonContentProvider.getTodaySession(ageBand),
+    [ageBand, language],
+  );
   const completedCount = progress.completedLessonIds.length;
 
   return (

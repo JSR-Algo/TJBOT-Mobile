@@ -109,7 +109,7 @@ export function TranscriptPanel() {
                 ]}>
                   {msg.role === 'ai' ? stripActionTags(msg.text) : msg.text}
                   {msg.role === 'ai' && msg.interrupted && (
-                    <Text style={styles.interruptedTag}> u2026</Text>
+                    <Text style={styles.interruptedTag}> …</Text>
                   )}
                 </Text>
               </View>

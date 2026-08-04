@@ -10,6 +10,7 @@ import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LevelScreen'>;
 
@@ -25,6 +26,7 @@ function LessonNode({ state, icon, color, big, label, onPress }: {
   state: string; icon: IconName; color: string; big?: boolean;
   label?: string; onPress?: () => void;
 }) {
+  const { t } = useAppLanguage();
   const size = big ? 112 : 88;
   const isLocked = state === 'locked';
   const isDone = state === 'done';
@@ -39,7 +41,7 @@ function LessonNode({ state, icon, color, big, label, onPress }: {
         disabled={isLocked}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel={label ?? 'Open unit'}
+        accessibilityLabel={label ?? t('Open unit')}
         accessibilityState={{ disabled: isLocked }}
         style={[
           styles.node,
@@ -64,6 +66,7 @@ function LessonNode({ state, icon, color, big, label, onPress }: {
 }
 
 export default function LevelScreen({ navigation }: Props) {
+  const { language } = useAppLanguage();
   return (
     <PageScroll>
       <PageHeader
@@ -87,7 +90,11 @@ export default function LevelScreen({ navigation }: Props) {
               icon={u.icon}
               color={u.color}
               big={u.state === 'current'}
-              label={`Unit ${i + 1}: ${u.title}`}
+              label={translateTemplate(
+                'Unit {{number}}: {{title}}',
+                { number: i + 1, title: u.title },
+                { locale: language },
+              )}
               onPress={() => u.state !== 'locked' && navigation.navigate(ROUTES.UnitScreen)}
             />
             <Text fontWeight="700" style={[styles.unitLabel, { color: u.state === 'locked' ? '#8B8B96' : '#2B2140' }]}>

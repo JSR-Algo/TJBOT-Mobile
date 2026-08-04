@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '@/components/Button';
+import { Text } from '@/design-system/primitives';
 import ConnectorStateNotice from '@/components/ConnectorStateNotice';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { INVESTOR_DEMO_DEVICE } from '@/demo/investorDemoSeed';

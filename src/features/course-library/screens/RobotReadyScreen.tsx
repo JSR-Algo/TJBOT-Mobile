@@ -20,6 +20,7 @@ import {
   type PreloadStatus,
 } from '@/services/api/course-library.api';
 import { formatLessonCopy, getErrorMessage } from '@/utils/errors';
+import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotReadyScreen'>;
 
@@ -27,6 +28,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RobotReadyScreen'>;
 const POLL_INTERVAL_MS = 2500;
 
 export default function RobotReadyScreen({ navigation, route }: Props) {
+  const { language } = useAppLanguage();
   const deviceId = route.params?.deviceId;
   const [preload, setPreload] = React.useState<PreloadStatus | null>(null);
   const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
@@ -113,7 +115,11 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
                 {ready
                   ? 'Ready on Robot'
                   : preload
-                    ? `${preload.criticalReady} of ${preload.criticalTotal} required files ready`
+                    ? translateTemplate(
+                      '{{ready}} of {{total}} required files ready',
+                      { ready: preload.criticalReady, total: preload.criticalTotal },
+                      { locale: language },
+                    )
                     : statusCopy}
               </Text>
             </Box>
