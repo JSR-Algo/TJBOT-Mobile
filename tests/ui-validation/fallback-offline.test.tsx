@@ -58,6 +58,10 @@ function createRoute(name: FallbackRouteName) {
 }
 
 describe('fallback and offline UI stability', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('accepts typed fallback recovery context in route params', () => {
     const checkpoint = fallbackCheckpoint();
     const resumeRoute = {
@@ -247,6 +251,45 @@ describe('fallback and offline UI stability', () => {
     fireEvent.press(screen.getByText('Keep going'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UserSpeakingScreen);
+  });
+
+  it('hands real course resume context to the course-library entry route', async () => {
+    const navigation = createNavigation();
+    const checkpoint = {
+      lessonTitle: 'Food Words',
+      progressLabel: '75%',
+      resumeTarget: ROUTES.SendToRobotScreen,
+      reason: 'voice_failed' as const,
+      courseId: 'c_food',
+      childId: 'ch-1',
+      assignmentId: 'asg-old',
+      assignmentVersion: 5,
+      manifestChecksum: 'sha256:old',
+    };
+
+    const screen = render(
+      <LessonResumeScreen
+        navigation={navigation as never}
+        route={{ key: ROUTES.LessonResumeScreen, name: ROUTES.LessonResumeScreen, params: { checkpoint } } as never}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Keep going'));
+    });
+
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, {
+      courseId: 'c_food',
+      resumeContext: {
+        courseId: 'c_food',
+        childId: 'ch-1',
+        assignmentId: 'asg-old',
+        assignmentVersion: 5,
+        lessonTitle: 'Food Words',
+        manifestChecksum: 'sha256:old',
+      },
+    });
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
   });
 
   it('coerces legacy hidden lesson resume targets to robot assignment', () => {

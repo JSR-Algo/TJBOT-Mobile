@@ -24,6 +24,21 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
   const activityLabel = checkpoint?.activityLabel;
   const resumeTarget = resolveSafeResumeTarget(checkpoint?.resumeTarget);
   const resumeLesson = (): void => {
+    if (hasCourseResumeContext(checkpoint)) {
+      navigation.navigate(ROUTES.SendToRobotScreen, {
+        courseId: checkpoint.courseId,
+        resumeContext: {
+          courseId: checkpoint.courseId,
+          childId: checkpoint.childId,
+          deviceId: checkpoint.deviceId,
+          assignmentId: checkpoint.assignmentId,
+          assignmentVersion: checkpoint.assignmentVersion,
+          lessonTitle: checkpoint.lessonTitle,
+          manifestChecksum: checkpoint.manifestChecksum,
+        },
+      });
+      return;
+    }
     if (resumeTarget === ROUTES.HomeHubScreen) {
       navigation.navigate(ROUTES.HomeHubScreen);
       return;
@@ -52,9 +67,7 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
         </Box>
       </Box>
       <Box style={styles.cta} gap={10}>
-        <PrimaryCTA color="#FF6F61" onPress={resumeLesson}>
-          Keep going
-        </PrimaryCTA>
+        <PrimaryCTA color="#FF6F61" onPress={resumeLesson}>Keep going</PrimaryCTA>
         <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7}>
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Stop for now</Text>
         </TouchableOpacity>
@@ -76,6 +89,25 @@ function parseProgressPercent(label: string): number {
 
 function resolveSafeResumeTarget(target: unknown): typeof ROUTES.SendToRobotScreen | typeof ROUTES.HomeHubScreen {
   return target === ROUTES.HomeHubScreen ? ROUTES.HomeHubScreen : ROUTES.SendToRobotScreen;
+}
+
+function hasCourseResumeContext(checkpoint: unknown): checkpoint is {
+  courseId: string;
+  childId: string;
+  deviceId?: string;
+  assignmentId?: string;
+  assignmentVersion?: number;
+  lessonTitle?: string;
+  manifestChecksum?: string | null;
+} {
+  return Boolean(
+    checkpoint &&
+      typeof checkpoint === 'object' &&
+      typeof (checkpoint as { courseId?: unknown }).courseId === 'string' &&
+      Boolean((checkpoint as { courseId: string }).courseId) &&
+      typeof (checkpoint as { childId?: unknown }).childId === 'string' &&
+      Boolean((checkpoint as { childId: string }).childId),
+  );
 }
 
 const styles = StyleSheet.create({

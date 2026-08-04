@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
@@ -13,12 +14,16 @@ import {
   getCurrentAssignment,
   getRobotSyncStatus,
   enrollCourse,
+  listChildEnrollments,
+  cancelCourseEnrollment,
   unlockCourse,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 import { authenticateParent } from '@/services/api/parent.api';
 import { setAppLanguage } from '@/services/i18n/i18n';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
+
+let mockHousehold = { children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } };
 
 // Keep the pure helpers (e.g. isLessonProfile / presentAssignmentState) real —
 // mock ONLY the network reads/writes the flow exercises.
@@ -36,6 +41,8 @@ jest.mock('@/services/api/course-library.api', () => {
     getCourses: jest.fn(),
     getCourseLessons: jest.fn(),
     enrollCourse: jest.fn(),
+    listChildEnrollments: jest.fn(),
+    cancelCourseEnrollment: jest.fn(),
   };
 });
 
@@ -48,11 +55,13 @@ jest.mock('@/services/api/parent.api', () => ({
 }));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
-  useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } })),
+  useOptionalHousehold: jest.fn(() => mockHousehold),
 }));
 
 const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockedEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
+const mockedListChildEnrollments = listChildEnrollments as jest.MockedFunction<typeof listChildEnrollments>;
+const mockedCancelCourseEnrollment = cancelCourseEnrollment as jest.MockedFunction<typeof cancelCourseEnrollment>;
 const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
@@ -88,6 +97,16 @@ function navigationFor() {
   };
 }
 
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: unknown) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 function renderWithQueryClient(element: React.ReactElement, queryClient: QueryClient) {
   return render(
     <QueryClientProvider client={queryClient}>
@@ -100,10 +119,12 @@ describe('course-library flow guards', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     stubPublishedCatalog();
+    mockHousehold = { children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } };
     mockedAuthenticateParent.mockResolvedValue({ authenticated: true });
     // CourseAddedScreen reads the device's real seat on mount; default to "no
     // seat known" unless a test overrides it.
     mockedGetCurrentAssignment.mockResolvedValue(null);
+    mockedListChildEnrollments.mockResolvedValue({ enrollments: [] });
   });
 
   afterEach(() => {
@@ -300,6 +321,396 @@ describe('course-library flow guards', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'c_food' });
     expect(screen.queryByText('Choose a plan')).toBeNull();
     expect(screen.queryByText('Confirm & continue')).toBeNull();
+  });
+
+  it('loads the active child course enrollment and resumes directly to robot-ready', async () => {
+    mockedListChildEnrollments.mockResolvedValueOnce({
+      enrollments: [
+        { id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-old', status: 'PAUSED', currentLessonKey: 'w01-d02' },
+      ],
+    });
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+    });
+    mockedEnrollCourse.mockResolvedValueOnce({
+      enrollment: { id: 'enr-1', courseId: 'c_food', childId: 'ch-1', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d02' },
+      assignment: {
+        id: 'asg-resume-1', assignmentVersion: 4, deviceId: 'dev-1', childId: 'ch-1',
+        lessonId: 'lesson-2', lessonTitle: 'Next Food Lesson', lessonVersion: 2,
+        manifestChecksum: 'sha256:resume', profile: 'espTft', state: 'PRELOADING',
+      },
+    });
+    const navigation = navigationFor();
+    render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Course paused')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Resume course'));
+    });
+
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
+    expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      childId: 'ch-1',
+      courseId: 'c_food',
+      deviceId: 'dev-1',
+      assignmentId: 'asg-resume-1',
+      assignmentVersion: 4,
+      lessonTitle: 'Next Food Lesson',
+      manifestChecksum: 'sha256:resume',
+    });
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
+  });
+
+  it('auto-resumes a fallback course handoff inside the course-library entry route', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+    });
+    mockedEnrollCourse.mockResolvedValueOnce({
+      enrollment: { id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d02' },
+      assignment: {
+        id: 'asg-resume-1',
+        assignmentVersion: 6,
+        deviceId: 'dev-1',
+        childId: 'ch-1',
+        lessonId: 'lesson-2',
+        lessonTitle: 'Food Words',
+        lessonVersion: 2,
+        manifestChecksum: 'sha256:food',
+        profile: 'espTft',
+        state: 'PRELOADING',
+      },
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{
+          key: 'send',
+          name: ROUTES.SendToRobotScreen,
+          params: {
+            courseId: 'c_food',
+            resumeContext: {
+              courseId: 'c_food',
+              childId: 'ch-1',
+              assignmentId: 'asg-old',
+              assignmentVersion: 5,
+              lessonTitle: 'Food Words',
+              manifestChecksum: 'sha256:old',
+            },
+          },
+        } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' }));
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      childId: 'ch-1',
+      courseId: 'c_food',
+      deviceId: 'dev-1',
+      assignmentId: 'asg-resume-1',
+      assignmentVersion: 6,
+      lessonTitle: 'Food Words',
+      manifestChecksum: 'sha256:food',
+    });
+  });
+
+  it('does not mask an invalid auto-resume assignment version with stale handoff data', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+    });
+    mockedEnrollCourse.mockResolvedValueOnce({
+      enrollment: { id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d02' },
+      assignment: {
+        id: 'asg-resume-1',
+        assignmentVersion: 0,
+        deviceId: 'dev-1',
+        childId: 'ch-1',
+        lessonId: 'lesson-2',
+        lessonTitle: 'Food Words',
+        lessonVersion: 2,
+        manifestChecksum: 'sha256:food',
+        profile: 'espTft',
+        state: 'PRELOADING',
+      },
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{
+          key: 'send',
+          name: ROUTES.SendToRobotScreen,
+          params: {
+            courseId: 'c_food',
+            resumeContext: {
+              courseId: 'c_food',
+              childId: 'ch-1',
+              assignmentId: 'asg-old',
+              assignmentVersion: 5,
+              lessonTitle: 'Food Words',
+              manifestChecksum: 'sha256:old',
+            },
+          },
+        } as never}
+      />,
+    );
+
+    await waitFor(() => expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' }));
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.objectContaining({ assignmentVersion: 5 }));
+    expect(await screen.findByText('An unexpected error occurred. Please try again.')).toBeTruthy();
+  });
+
+  it('does not enroll or navigate when the route course changes while resume is resolving the device', async () => {
+    const device = deferred<Awaited<ReturnType<typeof getDeviceStatus>>>();
+    mockedListChildEnrollments
+      .mockResolvedValueOnce({ enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'PAUSED', currentLessonKey: 'w01-d02' }] })
+      .mockResolvedValueOnce({ enrollments: [] });
+    mockedGetDeviceStatus.mockReturnValueOnce(device.promise);
+    const navigation = navigationFor();
+    const rendered = render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Course paused')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Resume course'));
+    });
+
+    rendered.rerender(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail-2', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_animals' } } as never}
+      />,
+    );
+    await act(async () => {
+      device.resolve({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      await device.promise;
+    });
+
+    expect(mockedEnrollCourse).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+  });
+
+  it('does not enroll or navigate when the active child changes while resume is resolving the device', async () => {
+    const device = deferred<Awaited<ReturnType<typeof getDeviceStatus>>>();
+    mockedListChildEnrollments
+      .mockResolvedValueOnce({ enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'PAUSED', currentLessonKey: 'w01-d02' }] })
+      .mockResolvedValueOnce({ enrollments: [] });
+    mockedGetDeviceStatus.mockReturnValueOnce(device.promise);
+    const navigation = navigationFor();
+    const rendered = render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Course paused')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Resume course'));
+    });
+
+    mockHousehold = { children: [{ id: 'ch-2' }], activeChild: { id: 'ch-2' } };
+    rendered.rerender(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+    await act(async () => {
+      device.resolve({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      await device.promise;
+    });
+
+    expect(mockedEnrollCourse).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+  });
+
+  it('confirms active enrollment cancellation, guards double-submit, and refetches lifecycle state', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.find((button) => button.style === 'destructive')?.onPress?.();
+    });
+    const pending = new Promise<Awaited<ReturnType<typeof cancelCourseEnrollment>>>((resolve) => {
+      setTimeout(() => resolve({
+        cancelled: true,
+      }), 0);
+    });
+    mockedListChildEnrollments
+      .mockResolvedValueOnce({ enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d01' }] })
+      .mockResolvedValueOnce({ enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'CANCELLED', currentLessonKey: null }] });
+    mockedCancelCourseEnrollment.mockReturnValueOnce(pending);
+    const navigation = navigationFor();
+    render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Course active')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Cancel course'));
+      fireEvent.press(screen.getByText('Cancel course'));
+    });
+    await act(async () => {
+      await pending;
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Cancel course?',
+      expect.stringContaining('progress stays saved'),
+      expect.any(Array),
+    );
+    expect(mockedCancelCourseEnrollment).toHaveBeenCalledTimes(1);
+    expect(mockedCancelCourseEnrollment).toHaveBeenCalledWith('c_food', 'ch-1');
+    await waitFor(() => expect(screen.getByText('Course cancelled')).toBeTruthy());
+  });
+
+  it('refetches authoritative enrollment state when cancel returns already-cancelled false', async () => {
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.find((button) => button.style === 'destructive')?.onPress?.();
+    });
+    mockedListChildEnrollments
+      .mockResolvedValueOnce({ enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d01' }] })
+      .mockResolvedValueOnce({ enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'CANCELLED', currentLessonKey: null }] });
+    mockedCancelCourseEnrollment.mockResolvedValueOnce({ cancelled: false });
+    const navigation = navigationFor();
+    render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Course active')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Cancel course'));
+    });
+
+    expect(mockedCancelCourseEnrollment).toHaveBeenCalledWith('c_food', 'ch-1');
+    expect(mockedListChildEnrollments).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(screen.getByText('Course cancelled')).toBeTruthy());
+    expect(screen.queryByText('An unexpected error occurred. Please try again.')).toBeNull();
+  });
+
+  it('does not let a stale cancel refetch write lifecycle state after route changes', async () => {
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.find((button) => button.style === 'destructive')?.onPress?.();
+    });
+    const cancel = deferred<Awaited<ReturnType<typeof cancelCourseEnrollment>>>();
+    mockedListChildEnrollments
+      .mockResolvedValueOnce({ enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: 'w01-d01' }] })
+      .mockResolvedValueOnce({ enrollments: [] });
+    mockedCancelCourseEnrollment.mockReturnValueOnce(cancel.promise);
+    const navigation = navigationFor();
+    const rendered = render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Course active')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Cancel course'));
+    });
+    rendered.rerender(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail-2', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_animals' } } as never}
+      />,
+    );
+    await waitFor(() => expect(screen.queryByText('Course active')).toBeNull());
+
+    await act(async () => {
+      cancel.resolve({
+        cancelled: true,
+      });
+      await cancel.promise;
+    });
+
+    expect(screen.queryByText('Course cancelled')).toBeNull();
+    expect(mockedCancelCourseEnrollment).toHaveBeenCalledTimes(1);
+    expect(mockedListChildEnrollments).toHaveBeenCalledTimes(2);
+  });
+
+  it('recovers an enrollment conflict using a fresh authoritative lesson list', async () => {
+    mockedListChildEnrollments.mockResolvedValueOnce({
+      enrollments: [{ id: 'enr-1', childId: 'ch-1', courseId: 'c_food', deviceId: 'dev-1', status: 'PAUSED', currentLessonKey: 'w01-d02' }],
+    });
+    mockedGetCourseLessons
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { lessonId: 'lesson-fresh', lessonVersion: 2, title: 'Fresh Lesson', profile: 'espTft', manifestReady: true },
+      ]);
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+    });
+    mockedEnrollCourse.mockRejectedValueOnce({ response: { status: 409, data: { error: { code: 'ASSIGNMENT_CONFLICT' } } } });
+    mockedGetCurrentAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-fresh',
+      sessionId: null,
+      assignmentVersion: 8,
+      lessonId: 'lesson-fresh',
+      lessonTitle: 'Fresh Lesson',
+      lessonVersion: 2,
+      manifestChecksum: 'sha256:fresh',
+      state: 'PRELOADING',
+      childId: 'ch-1',
+      profile: 'espTft',
+    });
+    const navigation = navigationFor();
+    render(
+      <CourseDetailScreen
+        navigation={navigation as never}
+        route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Course paused')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Resume course'));
+    });
+
+    expect(mockedGetCourseLessons).toHaveBeenCalledTimes(2);
+    expect(mockedGetCourseLessons).toHaveBeenLastCalledWith('c_food');
+    expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1');
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      childId: 'ch-1',
+      courseId: 'c_food',
+      deviceId: 'dev-1',
+      assignmentId: 'asg-fresh',
+      assignmentVersion: 8,
+      lessonTitle: 'Fresh Lesson',
+      manifestChecksum: 'sha256:fresh',
+    });
   });
 
   it('opens robot setup from the connection modal when the robot is offline', async () => {

@@ -79,6 +79,9 @@ jest.mock('@/services/api/course-library.api', () => ({
   // Empty list → static fallback renders (preserves the c_animals assertion).
   getCourses: jest.fn(() => Promise.resolve([])),
   getCourseLessons: jest.fn(() => Promise.resolve([])),
+  listChildEnrollments: jest.fn(() => Promise.resolve({ enrollments: [] })),
+  cancelCourseEnrollment: jest.fn(),
+  getCurrentAssignment: jest.fn(() => Promise.resolve(null)),
 }));
 
 jest.mock('../../src/services/api/progress.api', () => ({

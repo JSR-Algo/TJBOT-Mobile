@@ -309,4 +309,11 @@ describe('feature-owned navigation', () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it('keeps fallback course resume handoff on the course-library entry route', () => {
+    const lessonResumeSource = readFileSync(join(root, 'src', 'features', 'fallback', 'screens', 'LessonResumeScreen.tsx'), 'utf8');
+
+    expect(lessonResumeSource).toContain('ROUTES.SendToRobotScreen');
+    expect(lessonResumeSource).not.toContain('ROUTES.RobotReadyScreen');
+  });
 });
