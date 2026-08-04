@@ -85,7 +85,31 @@ describe('DeviceHomeScreen', () => {
 
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
     expect(screen.queryByText('No Robot connected')).toBeNull();
+    expect(screen.getByText('Robots')).toBeTruthy();
+    expect(screen.queryByTestId('robotHubBreadcrumb')).toBeNull();
     expect(apiMocks.getDeviceStatus).toHaveBeenCalledWith('primary');
+  });
+
+  it('opens pairing from the fleet header and robot detail from the fleet card', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: 'Living Room Robot',
+      online: true,
+      batteryPercent: 87,
+    });
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Living Room Robot')).resolves.toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('addRobotButton'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
+
+    fireEvent.press(screen.getByTestId('openRobotDetail'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.DeviceOverviewScreen, { deviceId: 'device-1' });
   });
 
   it('shows Wi-Fi signal strength when backend reports RSSI without an SSID', async () => {
