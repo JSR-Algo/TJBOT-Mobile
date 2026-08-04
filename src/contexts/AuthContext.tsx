@@ -13,7 +13,6 @@ import {
   setSecureJson,
 } from '../services/http/tokens';
 import { normalizeError } from '../utils/errors';
-import { identifyAnalyticsUser, resetAnalytics, trackEvent } from '../services/observability/analytics';
 import { captureError } from '@/services/observability/sentry';
 import { clearLocalPairedDevice } from '@/features/device/pairing/localPairedDevice';
 import { setRewardQueueScope } from '@/features/rewards/offline/rewardSeenQueue';
@@ -75,7 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     rewardAccountRef.current = null;
     setRewardQueueScope(null, null);
     appQueryClient.removeQueries({ queryKey: ['rewards'] });
-    resetAnalytics();
     setState({ user: null, isLoading: false, isAuthenticated: false, error: null });
   }, []);
 
@@ -184,9 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         } catch {
           // non-blocking
         }
-        identifyAnalyticsUser(user.id, user.email);
       }
-      trackEvent('mobile.login.success');
       setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
     } catch (err) {
       const normalized = normalizeError(err);
@@ -228,9 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           } catch {
             // non-blocking
           }
-          identifyAnalyticsUser(user.id, user.email);
         }
-        trackEvent('mobile.signup.success');
         setState((s) => ({ ...s, user, isAuthenticated: true, error: null }));
       }
     } catch (err) {

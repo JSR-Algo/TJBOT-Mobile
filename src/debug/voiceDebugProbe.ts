@@ -11,8 +11,8 @@
  *  D — native start() silent failure: running=false / engineRunning=false after start
  *  E — voiceProcessingIO bug:         voiceProcessingEnabled + playback silent
  *
- * Not a production telemetry surface — `voice-telemetry.ts` is the right
- * home for Sentry breadcrumbs. This probe is a deliberately high-volume,
+ * Not a production telemetry surface — `voice-telemetry.ts` owns local QA
+ * diagnostics. This probe is a deliberately high-volume,
  * human-readable console dump meant for Console.app / adb logcat during
  * on-device repro sessions only.
  */

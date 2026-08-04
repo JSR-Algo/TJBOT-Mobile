@@ -1,6 +1,5 @@
 import { by, device, element, expect as detoxExpect, waitFor } from 'detox';
 import { resources, type Locale, type TranslationResourceValue } from '../../src/services/i18n/resources';
-import { apiRoot, backendBlacklistPatterns } from './localServices';
 
 const SCREEN_TIMEOUT_MS = 10000;
 const COLD_START_TIMEOUT_MS = 30000;
@@ -579,8 +578,4 @@ export async function enableDetoxSync(): Promise<void> {
 
 export async function resetUrlBlacklist(): Promise<void> {
   await device.setURLBlacklist([]);
-}
-
-export async function blockLocalBackend(): Promise<void> {
-  await device.setURLBlacklist(backendBlacklistPatterns(apiRoot()));
 }

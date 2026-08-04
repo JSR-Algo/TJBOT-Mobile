@@ -161,7 +161,7 @@ describe('P0-5 + P0-5b — media-services reset engine recovery loop', () => {
     expect(hook).toMatch(/VoiceSession\.onSessionRecovered/);
   });
 
-  it('voice-telemetry forwards voiceSessionRecovered as a Sentry breadcrumb', () => {
+  it('voice-telemetry handles voiceSessionRecovered as a local diagnostic', () => {
     expect(telemetry).toMatch(/tagSessionRecovered|VoiceSessionRecoveredEvent/);
     expect(telemetry).toMatch(/VOICE_EVENT_NAMES\.sessionRecovered/);
   });

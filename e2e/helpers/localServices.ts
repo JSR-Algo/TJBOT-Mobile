@@ -14,6 +14,7 @@ const DEFAULT_API_ROOT = 'http://127.0.0.1:3000';
 const DEFAULT_AI_ROOT = 'http://127.0.0.1:3001/api/ai';
 let mockBackend: http.Server | null = null;
 let mockAi: http.Server | null = null;
+let mockCourseCatalogUnavailable = false;
 
 function e2eAuthMode(): string {
   return process.env.E2E_AUTH_MODE ?? 'preseed';
@@ -174,7 +175,12 @@ export async function assertLocalBackendReady(): Promise<void> {
 }
 
 export async function stopLocalMockBackend(): Promise<void> {
+  mockCourseCatalogUnavailable = false;
   await stopMockServer('backend');
+}
+
+export function setMockCourseCatalogUnavailable(unavailable: boolean): void {
+  mockCourseCatalogUnavailable = unavailable;
 }
 
 export async function stopLocalMockAi(): Promise<void> {
@@ -448,6 +454,9 @@ async function startMockBackend(): Promise<void> {
       }
       if (method === 'POST' && path === '/v1/notifications/push-token') {
         return send(res, 200, { data: { ok: true } });
+      }
+      if (method === 'GET' && path === '/v1/courses' && mockCourseCatalogUnavailable) {
+        return send(res, 503, { error: { code: 'COURSE_CATALOG_UNAVAILABLE' } });
       }
 
       return send(res, 200, { data: {} });

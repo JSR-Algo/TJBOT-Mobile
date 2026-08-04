@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LogBox, StyleSheet } from 'react-native';
@@ -12,15 +12,9 @@ import { RootErrorBoundary } from './services/observability/RootErrorBoundary';
 import { QueryProvider } from './app/providers/QueryProvider';
 import { ParentSessionProvider } from './features/parent/context/ParentSessionContext';
 import * as SecureStore from 'expo-secure-store';
-import { initAnalytics, setAnalyticsUserRole } from './services/observability/analytics';
-import { applyStoredAnalyticsPreference } from './services/observability/analyticsPreference';
-import { initSentry, setSentryUserRole } from './services/observability/sentry';
-import { startVoiceTelemetry } from './services/observability/voice-telemetry';
 import { useLoadAppLanguagePreference } from './services/i18n/i18n';
 
 type ResolvedRole = 'child' | 'teen' | 'adult' | 'unknown';
-
-initSentry({ userRole: 'unknown', enableAutoSessionTracking: false });
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -39,32 +33,12 @@ export const __ageGateBootPromise: Promise<ResolvedRole> = (async () => {
       } catch { /* malformed — keep unknown */ }
     }
   } catch { /* keychain failure — keep unknown */ }
-  setSentryUserRole(role);
-  if (role === 'child') {
-    setAnalyticsUserRole('child');
-  } else if (role !== 'unknown') {
-    initAnalytics(role);
-  }
   return role;
 })();
 
 function AppInner(): React.JSX.Element {
   useLoadAppLanguagePreference();
   usePushNotifications();
-
-  useEffect(() => {
-    // Subscribe native voice-stack events to Sentry breadcrumbs (sys-16).
-    // Safe in dev/sim where the native modules are absent — idempotent
-    // and tears down its listeners on unmount.
-    const stop = startVoiceTelemetry();
-    return stop;
-  }, []);
-
-  useEffect(() => {
-    // Honor a parent's stored analytics opt-out after the role-based init has
-    // run at module load, so the Settings toggle persists across launches.
-    void applyStoredAnalyticsPreference();
-  }, []);
 
   return (
     <HouseholdProvider>

@@ -56,7 +56,7 @@ export default function ParentSafetyScreen({ navigation }: Props) {
       />
       <Section
         title="What we collect"
-        body="A pseudonymous learner ID, lesson summaries (last 30 days), app version, and crash diagnostics. We do not collect contact info or location."
+        body="A pseudonymous learner ID, lesson summaries (last 30 days), and app version. We do not collect contact info, location, analytics, or crash diagnostics."
       />
 
       <PRowGroup>
