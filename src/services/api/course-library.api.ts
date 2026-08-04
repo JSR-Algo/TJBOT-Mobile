@@ -546,19 +546,27 @@ const ENROLLMENT_STATUSES: readonly EnrollmentStatus[] = ['ACTIVE', 'PAUSED', 'C
 
 function toEnrollmentStatus(value: unknown): EnrollmentStatus {
   const normalized = typeof value === 'string' ? value.toUpperCase() : '';
-  return (ENROLLMENT_STATUSES as readonly string[]).includes(normalized)
-    ? (normalized as EnrollmentStatus)
-    : 'ACTIVE';
+  if ((ENROLLMENT_STATUSES as readonly string[]).includes(normalized)) {
+    return normalized as EnrollmentStatus;
+  }
+  throw new Error('Invalid enrollment payload');
 }
 
 export function normalizeEnrollmentPayload(payload: unknown): Enrollment {
   const r = asRecord(payload);
+  const id = (r.id ?? r.enrollment_id ?? r.enrollmentId ?? '') as string;
+  const childId = (r.child_id ?? r.childId ?? '') as string;
+  const courseId = (r.course_id ?? r.courseId ?? '') as string;
+  if (!id || !childId || !courseId) {
+    throw new Error('Invalid enrollment payload');
+  }
+  const status = toEnrollmentStatus(r.status);
   return {
-    id: (r.id ?? r.enrollment_id ?? r.enrollmentId ?? '') as string,
-    childId: (r.child_id ?? r.childId ?? '') as string,
-    courseId: (r.course_id ?? r.courseId ?? '') as string,
+    id,
+    childId,
+    courseId,
     deviceId: (r.device_id ?? r.deviceId ?? null) as string | null,
-    status: toEnrollmentStatus(r.status),
+    status,
     currentLessonKey: (r.current_lesson_key ?? r.currentLessonKey ?? null) as string | null,
   };
 }
@@ -579,6 +587,14 @@ export function normalizeAssignmentRefPayload(payload: unknown): AssignmentRef {
   };
 }
 
+function normalizeCancelCourseEnrollmentPayload(payload: unknown): { cancelled: boolean } {
+  const envelope = pickEnvelope<Record<string, unknown>>(payload) ?? {};
+  if (typeof envelope.cancelled !== 'boolean') {
+    throw new Error('Invalid cancel enrollment payload');
+  }
+  return { cancelled: envelope.cancelled };
+}
+
 // Enroll the given child in the course. When `deviceId` is supplied the backend
 // also creates (or returns the existing) lesson assignment for the course's
 // first lesson on that device, so the parent lands on a screen that can
@@ -595,6 +611,11 @@ export async function enrollCourse(
     enrollment: normalizeEnrollmentPayload(envelope.enrollment ?? {}),
     assignment: normalizeAssignmentRefPayload(envelope.assignment ?? {}),
   };
+}
+
+export async function cancelCourseEnrollment(courseId: string, childId: string): Promise<{ cancelled: boolean }> {
+  const response = await client.delete(`/courses/${courseId}/enroll/${childId}`);
+  return normalizeCancelCourseEnrollmentPayload(response.data);
 }
 
 // List a child's enrollments. AuthGuard-scoped: backend verifies the caller is

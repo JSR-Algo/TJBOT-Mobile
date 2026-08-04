@@ -414,11 +414,8 @@ describe('course-library.api normalizer fallback branches', () => {
     });
   });
 
-  it('enrollment payload defaults to ACTIVE status and null device/lessonKey', () => {
-    const e = normalizeEnrollmentPayload({ status: 'unknown-state' });
-    expect(e.status).toBe('ACTIVE');
-    expect(e.deviceId).toBeNull();
-    expect(e.currentLessonKey).toBeNull();
+  it('enrollment payload rejects unknown status and missing identifiers', () => {
+    expect(() => normalizeEnrollmentPayload({ status: 'unknown-state' })).toThrow('Invalid enrollment payload');
   });
 
   // assignmentRef payload: assignment_id fallback + snake_case (561-571)

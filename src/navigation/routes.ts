@@ -1,5 +1,15 @@
 export type PairingProvisioningTransport = 'ble' | 'ble_claim' | 'ble_reconnect';
 
+export type CourseResumeContext = {
+    courseId: string;
+    childId: string;
+    deviceId?: string;
+    assignmentId?: string;
+    assignmentVersion?: number;
+    lessonTitle?: string;
+    manifestChecksum?: string | null;
+};
+
 export type RootStackParamList = {
   // auth
   LoginScreen: undefined;
@@ -46,7 +56,7 @@ export type RootStackParamList = {
   // from courseId to deviceId (DIV-MOBILE-DEVICEKEY). assignmentId/Version thread
   // forward for the ASSIGNMENT_CONFLICT refresh-and-retry; courseId stays for
   // back-compat with the existing browse entry.
-  SendToRobotScreen: undefined | { courseId?: string };
+  SendToRobotScreen: undefined | { courseId?: string; resumeContext?: CourseResumeContext };
   RobotReadyScreen: undefined | { childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; lessonTitle?: string; manifestChecksum?: string | null };
   RunningScreen: undefined | { childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
   CompanionScreen: undefined | { childId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };

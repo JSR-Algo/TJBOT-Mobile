@@ -15,6 +15,9 @@ jest.mock('@/services/api/course-library.api', () => {
     ...actual,
     getCourses: jest.fn(),
     getCourseLessons: jest.fn(),
+    listChildEnrollments: jest.fn(() => Promise.resolve({ enrollments: [] })),
+    cancelCourseEnrollment: jest.fn(),
+    getCurrentAssignment: jest.fn(() => Promise.resolve(null)),
   };
 });
 

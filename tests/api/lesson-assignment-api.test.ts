@@ -2,6 +2,7 @@ import client from '@/services/http/client';
 import {
   createAssignment,
   enrollCourse,
+  cancelCourseEnrollment,
   getCurrentAssignment,
   getPreloadStatus,
   isPreloadReady,
@@ -20,6 +21,7 @@ jest.mock('@/services/http/client', () => ({
   default: {
     get: jest.fn(),
     post: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
@@ -248,9 +250,43 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
     });
 
     it('normalizes lowercase backend enrollment statuses without reopening completed courses as active', () => {
-      expect(normalizeEnrollmentPayload({ id: 'enr-1', status: 'active' }).status).toBe('ACTIVE');
-      expect(normalizeEnrollmentPayload({ id: 'enr-2', status: 'completed' }).status).toBe('COMPLETED');
-      expect(normalizeEnrollmentPayload({ id: 'enr-3', status: 'cancelled' }).status).toBe('CANCELLED');
+      expect(normalizeEnrollmentPayload({ id: 'enr-1', child_id: 'ch-1', course_id: 'c_barn', status: 'active' }).status).toBe('ACTIVE');
+      expect(normalizeEnrollmentPayload({ id: 'enr-2', child_id: 'ch-1', course_id: 'c_barn', status: 'completed' }).status).toBe('COMPLETED');
+      expect(normalizeEnrollmentPayload({ id: 'enr-3', child_id: 'ch-1', course_id: 'c_barn', status: 'cancelled' }).status).toBe('CANCELLED');
+    });
+
+    it('throws on malformed enrollment ids or statuses instead of fabricating a lifecycle', () => {
+      expect(() => normalizeEnrollmentPayload({ id: '', child_id: 'ch-1', course_id: 'c_barn', status: 'active' })).toThrow('Invalid enrollment payload');
+      expect(() => normalizeEnrollmentPayload({ id: 'enr-bad', child_id: 'ch-1', course_id: 'c_barn', status: 'unknown' })).toThrow('Invalid enrollment payload');
+      expect(() => normalizeEnrollmentPayload({ id: 'enr-bad', child_id: '', course_id: 'c_barn', status: 'active' })).toThrow('Invalid enrollment payload');
+    });
+
+    it('DELETEs the exact child enrollment path and strictly parses the cancelled boolean', async () => {
+      mockedClient.delete.mockResolvedValueOnce({
+        data: {
+          data: {
+            cancelled: true,
+          },
+        },
+      });
+
+      const result = await cancelCourseEnrollment('c_barn', 'ch-1');
+
+      expect(mockedClient.delete).toHaveBeenCalledWith('/courses/c_barn/enroll/ch-1');
+      expect(result).toEqual({ cancelled: true });
+    });
+
+    it('rejects cancel responses that do not contain a boolean cancelled result', async () => {
+      mockedClient.delete.mockResolvedValueOnce({
+        data: {
+          data: {
+            cancelled: 'yes',
+          },
+        },
+      });
+
+      await expect(cancelCourseEnrollment('c_barn', 'ch-1')).rejects.toThrow('Invalid cancel enrollment payload');
+      expect(mockedClient.delete).toHaveBeenCalledWith('/courses/c_barn/enroll/ch-1');
     });
   });
 

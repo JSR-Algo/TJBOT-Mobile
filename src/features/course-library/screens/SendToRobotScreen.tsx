@@ -53,6 +53,10 @@ function currentMatchesCourse(current: CurrentAssignment, childId: string, cours
     courseLessons.some((lesson) => current.lessonId === lesson.lessonId && current.lessonVersion === lesson.lessonVersion);
 }
 
+function isValidAssignmentVersion(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) > 0;
+}
+
 export default function SendToRobotScreen({ navigation, route }: Props) {
   // childId = the parent-selected ACTIVE child (D-CHILD-RESOLUTION, ADR 0013 §N),
   // sent EXPLICITLY. For multi-child families the parent picks who they're
@@ -62,6 +66,9 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   // degrades gracefully outside a provider.
   const household = useOptionalHousehold();
   const queryClient = React.useContext(QueryClientContext);
+  const mountedRef = React.useRef(true);
+  const resumeSeqRef = React.useRef(0);
+  const resumeKeyRef = React.useRef('');
   const childrenList = household?.children ?? [];
   const childId = household?.activeChild?.id;
   const hasChild = Boolean(childId);
@@ -75,6 +82,27 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const [error, setError] = React.useState<string | null>(null);
 
   const preferredCourseId = route.params?.courseId;
+  const resumeContext = route.params?.resumeContext;
+  const resumeKey = resumeContext
+    ? [
+      resumeContext.courseId,
+      resumeContext.childId,
+      resumeContext.deviceId ?? '',
+      resumeContext.assignmentId ?? '',
+      resumeContext.assignmentVersion ?? '',
+    ].join('|')
+    : '';
+  resumeKeyRef.current = resumeKey;
+
+  React.useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const isCurrentResume = React.useCallback((seq: number, key: string): boolean => (
+    mountedRef.current && resumeSeqRef.current === seq && resumeKeyRef.current === key
+  ), []);
 
   // Fetch the published catalog + each course's lessons once on mount. Lessons
   // are fetched eagerly per course so switching the course selection never shows
@@ -160,6 +188,54 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       !!selectedLesson &&
       selectedLessonReady &&
       !sending;
+
+  React.useEffect(() => {
+    if (!resumeContext?.courseId || !resumeContext.childId) return;
+    const actionSeq = ++resumeSeqRef.current;
+    const actionKey = resumeKey;
+    setError(null);
+    if (childId && childId !== resumeContext.childId) {
+      setError('Switch back to this child before resuming the course.');
+      return;
+    }
+    setSending(true);
+    void (async () => {
+      try {
+        const device = resumeContext.deviceId
+          ? { id: resumeContext.deviceId, name: 'Robot', online: true }
+          : await getDeviceStatus('primary', resumeContext.childId);
+        if (!isCurrentResume(actionSeq, actionKey)) return;
+        const deviceId = device.id;
+        if (!deviceId || device.online !== true) {
+          if (isCurrentResume(actionSeq, actionKey)) {
+            setError(formatLessonCopy(getErrorMessage('ROBOT_OFFLINE'), { robot: device.name }));
+          }
+          return;
+        }
+        const { assignment } = await enrollCourse(resumeContext.courseId, { childId: resumeContext.childId, deviceId });
+        if (!isCurrentResume(actionSeq, actionKey)) return;
+        if (!assignment.id || !isValidAssignmentVersion(assignment.assignmentVersion)) {
+          throw new Error('Invalid resume assignment');
+        }
+        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', resumeContext.childId] });
+        navigation.navigate(ROUTES.RobotReadyScreen, {
+          childId: resumeContext.childId,
+          courseId: resumeContext.courseId,
+          deviceId,
+          assignmentId: assignment.id,
+          assignmentVersion: assignment.assignmentVersion,
+          lessonTitle: assignment.lessonTitle || resumeContext.lessonTitle,
+          manifestChecksum: assignment.manifestChecksum ?? resumeContext.manifestChecksum ?? null,
+        });
+      } catch (err) {
+        if (isCurrentResume(actionSeq, actionKey)) {
+          setError(getErrorMessage(normalizeError(err).code));
+        }
+      } finally {
+        if (isCurrentResume(actionSeq, actionKey)) setSending(false);
+      }
+    })();
+  }, [childId, isCurrentResume, navigation, queryClient, resumeContext, resumeKey]);
 
   const handleSelectMode = (mode: AssignmentMode) => {
     setError(null);

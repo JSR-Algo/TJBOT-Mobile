@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
+import { QueryClientContext } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
@@ -16,10 +17,17 @@ import RobotConnectionPrompt from '../components/RobotConnectionPrompt';
 import {
   getCourseLessons,
   getCourses,
+  enrollCourse,
+  listChildEnrollments,
+  cancelCourseEnrollment,
+  getCurrentAssignment,
+  type CurrentAssignment,
+  type Enrollment,
   type PublishedCourse,
   type PublishedLesson,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
+import { formatLessonCopy, getErrorMessage, normalizeError } from '@/utils/errors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetailScreen'>;
 
@@ -28,22 +36,196 @@ type LessonsState =
   | { kind: 'ready'; lessons: PublishedLesson[] }
   | { kind: 'error' };
 
+type EnrollmentState =
+  | { kind: 'idle'; enrollment: null }
+  | { kind: 'loading'; enrollment: null }
+  | { kind: 'ready'; enrollment: Enrollment | null }
+  | { kind: 'error'; enrollment: null; message: string };
+
 const ICONS = ['🗣️', '🎯', '💛', '🔢'];
 const COURSE = COURSES[2]!;
 
 export default function CourseDetailScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? COURSE.id;
   const household = useOptionalHousehold();
+  const queryClient = React.useContext(QueryClientContext);
   const childId = household?.activeChild?.id;
+  const mountedRef = React.useRef(true);
+  const courseIdRef = React.useRef(courseId);
+  const childIdRef = React.useRef(childId);
+  const actionSeqRef = React.useRef(0);
+  const enrollmentLoadSeqRef = React.useRef(0);
+  const cancellingRef = React.useRef(false);
   const [checkingRobot, setCheckingRobot] = React.useState(false);
+  const [cancelling, setCancelling] = React.useState(false);
+  const [lifecycleError, setLifecycleError] = React.useState<string | null>(null);
   const [robotConnectionModalVisible, setRobotConnectionModalVisible] = React.useState(false);
+  const [enrollmentState, setEnrollmentState] = React.useState<EnrollmentState>({ kind: 'idle', enrollment: null });
 
   const showRobotConnectionModal = React.useCallback(() => {
     setRobotConnectionModalVisible(true);
   }, []);
 
+  courseIdRef.current = courseId;
+  childIdRef.current = childId;
+
+  React.useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const canWriteEnrollmentLoad = React.useCallback((loadSeq: number, courseIdForLoad: string, childIdForLoad: string | undefined, expectedActionSeq?: number): boolean => (
+    mountedRef.current &&
+    enrollmentLoadSeqRef.current === loadSeq &&
+    courseIdRef.current === courseIdForLoad &&
+    childIdRef.current === childIdForLoad &&
+    (expectedActionSeq === undefined || actionSeqRef.current === expectedActionSeq)
+  ), []);
+
+  const isSameAction = React.useCallback((actionSeq: number): boolean => (
+    mountedRef.current && actionSeqRef.current === actionSeq
+  ), []);
+
+  const isCurrentAction = React.useCallback((actionSeq: number, courseIdForAction: string, childIdForAction: string): boolean => (
+    mountedRef.current &&
+    actionSeqRef.current === actionSeq &&
+    courseIdRef.current === courseIdForAction &&
+    childIdRef.current === childIdForAction
+  ), []);
+
+  const loadEnrollment = React.useCallback(async (courseIdForLoad = courseId, expectedActionSeq?: number, childIdForLoad = childId): Promise<Enrollment | null | undefined> => {
+    if (courseIdRef.current !== courseIdForLoad || childIdRef.current !== childIdForLoad) return;
+    const loadSeq = ++enrollmentLoadSeqRef.current;
+    if (!childIdForLoad) {
+      if (canWriteEnrollmentLoad(loadSeq, courseIdForLoad, childIdForLoad, expectedActionSeq)) {
+        setEnrollmentState({ kind: 'idle', enrollment: null });
+      }
+      return null;
+    }
+    setEnrollmentState({ kind: 'loading', enrollment: null });
+    try {
+      const result = await listChildEnrollments(childIdForLoad);
+      if (!canWriteEnrollmentLoad(loadSeq, courseIdForLoad, childIdForLoad, expectedActionSeq)) return;
+      const enrollmentForCourse = result.enrollments.find((enrollment) => enrollment.courseId === courseIdForLoad) ?? null;
+      setEnrollmentState({
+        kind: 'ready',
+        enrollment: enrollmentForCourse,
+      });
+      return enrollmentForCourse;
+    } catch {
+      if (!canWriteEnrollmentLoad(loadSeq, courseIdForLoad, childIdForLoad, expectedActionSeq)) return;
+      setEnrollmentState({ kind: 'error', enrollment: null, message: 'Course status unavailable right now' });
+      return undefined;
+    }
+  }, [canWriteEnrollmentLoad, childId, courseId]);
+
+  React.useEffect(() => {
+    void loadEnrollment(courseId, undefined, childId);
+  }, [childId, courseId, loadEnrollment]);
+
+  const navigateToRobotReady = React.useCallback((params: {
+    childId: string;
+    courseId: string;
+    deviceId: string;
+    assignmentId: string;
+    assignmentVersion: number;
+    lessonTitle?: string;
+    manifestChecksum: string | null;
+  }) => {
+    navigation.navigate(ROUTES.RobotReadyScreen, params);
+  }, [navigation]);
+
+  // The lesson list is the point of this screen — the stat grid's count alone
+  // told a parent "6 lessons" and then showed none of them.
+  const [lessons, setLessons] = React.useState<LessonsState>({ kind: 'loading' });
+  React.useEffect(() => {
+    let active = true;
+    setLessons({ kind: 'loading' });
+    void getCourseLessons(courseId)
+      .then((list) => {
+        if (active) setLessons({ kind: 'ready', lessons: list });
+      })
+      .catch(() => {
+        if (active) setLessons({ kind: 'error' });
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseId]);
+
+  const handleResumeCourse = React.useCallback(async () => {
+    if (checkingRobot) return;
+    setLifecycleError(null);
+    if (!childId) {
+      showRobotConnectionModal();
+      return;
+    }
+    const actionSeq = ++actionSeqRef.current;
+    setCheckingRobot(true);
+    try {
+      const robot = await getDeviceStatus('primary', childId);
+      if (!isCurrentAction(actionSeq, courseId, childId)) return;
+      const deviceId = robot.id;
+      if (!deviceId || robot.online !== true) {
+        if (isCurrentAction(actionSeq, courseId, childId)) showRobotConnectionModal();
+        return;
+      }
+      try {
+        const { assignment } = await enrollCourse(courseId, { childId, deviceId });
+        if (!isCurrentAction(actionSeq, courseId, childId)) return;
+        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+        navigateToRobotReady({
+          childId,
+          courseId,
+          deviceId,
+          assignmentId: assignment.id,
+          assignmentVersion: assignment.assignmentVersion,
+          lessonTitle: assignment.lessonTitle || undefined,
+          manifestChecksum: assignment.manifestChecksum,
+        });
+      } catch (err) {
+        const normalized = normalizeError(err);
+        if (!isCurrentAction(actionSeq, courseId, childId)) return;
+        if (normalized.code === 'ASSIGNMENT_CONFLICT') {
+          const [current, authoritativeLessons] = await Promise.all([
+            getCurrentAssignment(deviceId),
+            getCourseLessons(courseId),
+          ]);
+          if (!isCurrentAction(actionSeq, courseId, childId)) return;
+          if (current && currentMatchesCourse(current, childId, authoritativeLessons)) {
+            void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+            navigateToRobotReady({
+              childId,
+              courseId,
+              deviceId,
+              assignmentId: current.assignmentId,
+              assignmentVersion: current.assignmentVersion,
+              lessonTitle: current.lessonTitle || undefined,
+              manifestChecksum: current.manifestChecksum,
+            });
+            return;
+          }
+        }
+        if (isCurrentAction(actionSeq, courseId, childId)) {
+          setLifecycleError(formatLessonCopy(getErrorMessage(normalized.code), { robot: robot.name }));
+        }
+      }
+    } catch (err) {
+      if (isCurrentAction(actionSeq, courseId, childId)) {
+        setLifecycleError(formatLessonCopy(getErrorMessage(normalizeError(err).code)));
+      }
+    } finally {
+      if (isSameAction(actionSeq)) setCheckingRobot(false);
+    }
+  }, [checkingRobot, childId, courseId, isCurrentAction, isSameAction, navigateToRobotReady, queryClient, showRobotConnectionModal]);
+
   const handleAddToRobot = React.useCallback(async () => {
     if (checkingRobot) return;
+    if (enrollmentState.kind === 'ready' && enrollmentState.enrollment && enrollmentState.enrollment.status !== 'COMPLETED') {
+      await handleResumeCourse();
+      return;
+    }
     if (!childId) {
       showRobotConnectionModal();
       return;
@@ -62,7 +244,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
     } finally {
       setCheckingRobot(false);
     }
-  }, [checkingRobot, childId, courseId, navigation, showRobotConnectionModal]);
+  }, [checkingRobot, childId, courseId, enrollmentState, handleResumeCourse, navigation, showRobotConnectionModal]);
 
   // Static catalog supplies the rich UI metadata (blurb / lcd / teaches) the
   // published endpoints don't return. The dynamic published catalog overlays the
@@ -83,23 +265,54 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
     };
   }, [courseId]);
 
-  // The lesson list is the point of this screen — the stat grid's count alone
-  // told a parent "6 lessons" and then showed none of them.
-  const [lessons, setLessons] = React.useState<LessonsState>({ kind: 'loading' });
-  React.useEffect(() => {
-    let active = true;
-    setLessons({ kind: 'loading' });
-    void getCourseLessons(courseId)
-      .then((list) => {
-        if (active) setLessons({ kind: 'ready', lessons: list });
-      })
-      .catch(() => {
-        if (active) setLessons({ kind: 'error' });
-      });
-    return () => {
-      active = false;
-    };
-  }, [courseId]);
+  const enrollment = enrollmentState.enrollment;
+  const lifecycleLabel = enrollment ? `Course ${enrollment.status.toLowerCase()}` : null;
+  const canResume = enrollment?.status === 'ACTIVE' || enrollment?.status === 'PAUSED' || enrollment?.status === 'CANCELLED';
+  const canCancel = enrollment?.status === 'ACTIVE' || enrollment?.status === 'PAUSED';
+  const primaryLabel = canResume
+    ? enrollment.status === 'ACTIVE'
+      ? 'Continue course'
+      : 'Resume course'
+    : 'Add to Robot';
+
+  const handleConfirmCancel = React.useCallback(() => {
+    if (!childId || !canCancel || cancellingRef.current) return;
+    Alert.alert(
+      'Cancel course?',
+      'This removes the course from Robot for now; progress stays saved if you resume later.',
+      [
+        { text: 'Keep course', style: 'cancel' },
+        {
+          text: 'Cancel course',
+          style: 'destructive',
+          onPress: () => {
+            if (cancellingRef.current) return;
+            cancellingRef.current = true;
+            const actionSeq = ++actionSeqRef.current;
+            setLifecycleError(null);
+            setCancelling(true);
+            void cancelCourseEnrollment(courseId, childId)
+              .then(async (result) => {
+                const authoritativeEnrollment = await loadEnrollment(courseId, actionSeq, childId);
+                if (!result.cancelled && authoritativeEnrollment && (authoritativeEnrollment.status === 'ACTIVE' || authoritativeEnrollment.status === 'PAUSED')) {
+                  throw new Error('Course enrollment was not cancelled');
+                }
+              })
+              .catch((err) => {
+                if (!mountedRef.current || actionSeq !== actionSeqRef.current || courseIdRef.current !== courseId || childIdRef.current !== childId) return;
+                setLifecycleError(getErrorMessage(normalizeError(err).code));
+              })
+              .finally(() => {
+                cancellingRef.current = false;
+                if (mountedRef.current) setCancelling(false);
+              });
+          },
+        },
+      ],
+    );
+  }, [canCancel, childId, courseId, loadEnrollment]);
+
+  const primaryAction = canResume ? handleResumeCourse : handleAddToRobot;
 
   // Authored courses carry backend UUIDs, which never match a static catalog id.
   // Resolving to an arbitrary hardcoded course would print ANOTHER course's
@@ -216,7 +429,16 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={handleAddToRobot} disabled={checkingRobot}>Add to Robot</DeviceBigBtn>
+        {enrollmentState.kind === 'loading' ? <Text style={styles.lifecycleText}>Loading course status</Text> : null}
+        {enrollmentState.kind === 'error' ? <Text style={styles.errorText}>{enrollmentState.message}</Text> : null}
+        {lifecycleLabel ? <Text style={styles.lifecycleText}>{lifecycleLabel}</Text> : null}
+        {lifecycleError ? <Text style={styles.errorText}>{lifecycleError}</Text> : null}
+        <DeviceBigBtn onClick={primaryAction} disabled={checkingRobot || cancelling || enrollment?.status === 'COMPLETED'}>{checkingRobot ? 'Preparing course' : primaryLabel}</DeviceBigBtn>
+        {canCancel ? (
+          <DeviceBigBtn danger onClick={handleConfirmCancel} disabled={checkingRobot || cancelling}>
+            {cancelling ? 'Cancelling course' : 'Cancel course'}
+          </DeviceBigBtn>
+        ) : null}
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>Back to library</DeviceBigBtn>
       </Box>
       </DeviceShell>
@@ -252,4 +474,11 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: CL.ink2, marginTop: 2 },
   noteCard: { backgroundColor: '#F8F6F1', borderRadius: 12, padding: 14 },
   noteText: { fontSize: 12, color: CL.ink2, lineHeight: 20 },
+  lifecycleText: { fontSize: 13, color: CL.ink2, textAlign: 'center' },
+  errorText: { fontSize: 13, color: '#9F2D20', textAlign: 'center' },
 });
+
+function currentMatchesCourse(current: CurrentAssignment, childId: string, courseLessons: PublishedLesson[]): boolean {
+  return current.childId === childId &&
+    courseLessons.some((lesson) => current.lessonId === lesson.lessonId && current.lessonVersion === lesson.lessonVersion);
+}

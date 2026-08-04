@@ -19,6 +19,12 @@ export type LessonCheckpoint = {
   readonly reason: RecoveryReason;
   readonly activityLabel?: string;
   readonly elapsedLabel?: string;
+  readonly courseId?: string;
+  readonly childId?: string;
+  readonly deviceId?: string;
+  readonly assignmentId?: string;
+  readonly assignmentVersion?: number;
+  readonly manifestChecksum?: string | null;
 };
 
 export type ReconnectContext = {

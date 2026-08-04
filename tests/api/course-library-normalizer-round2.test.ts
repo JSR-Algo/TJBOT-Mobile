@@ -257,27 +257,19 @@ describe('normalizers — terminal default arms when every alt-key is absent', (
 });
 
 describe('enrollment status coercion — non-string value arm (line 540)', () => {
-  it('a non-string status value coerces to ACTIVE via the empty-string arm', () => {
+  it('a non-string status value throws instead of fabricating a lifecycle', () => {
     // status is a number → `typeof value === 'string'` false → normalized '' →
-    // not in ENROLLMENT_STATUSES → ACTIVE default.
-    const e = normalizeEnrollmentPayload({ id: 'en-x', status: 99 });
-    expect(e.status).toBe('ACTIVE');
+    // not in ENROLLMENT_STATUSES → strict parser rejects.
+    expect(() => normalizeEnrollmentPayload({ id: 'en-x', child_id: 'ch-1', course_id: 'c_food', status: 99 })).toThrow('Invalid enrollment payload');
   });
 });
 
 describe('enrollCourse / listChildEnrollments — pickEnvelope ?? {} fallbacks (lines 585-596)', () => {
-  it('enrollCourse with a NON-object response.data → envelope ?? {} → default enrollment + assignment', async () => {
+  it('enrollCourse with a NON-object response.data rejects instead of fabricating an enrollment', async () => {
     mockedClient.post.mockResolvedValueOnce({ data: null } as never);
-    const result = await enrollCourse('c_food', { childId: 'ch-1' });
 
+    await expect(enrollCourse('c_food', { childId: 'ch-1' })).rejects.toThrow('Invalid enrollment payload');
     expect(mockedClient.post).toHaveBeenCalledWith('/courses/c_food/enroll', { childId: 'ch-1' });
-    // envelope.enrollment / envelope.assignment are undefined → `?? {}` arms feed
-    // the normalizers, which produce fully-defaulted objects (no throw).
-    expect(result.enrollment.id).toBe('');
-    expect(result.enrollment.status).toBe('ACTIVE');
-    expect(result.assignment.id).toBe('');
-    expect(result.assignment.profile).toBe('espTft');
-    expect(result.assignment.state).toBe('UNASSIGNED');
   });
 
   it('enrollCourse unwraps a populated { data: { enrollment, assignment } } envelope', async () => {
@@ -305,17 +297,17 @@ describe('enrollCourse / listChildEnrollments — pickEnvelope ?? {} fallbacks (
 
   it('listChildEnrollments accepts a BARE-array envelope of enrollments', async () => {
     mockedClient.get.mockResolvedValueOnce({
-      data: [{ id: 'en-a', status: 'paused' }, { id: 'en-b' }],
+      data: [
+        { id: 'en-a', child_id: 'ch-2', course_id: 'c_food', status: 'paused' },
+        { id: 'en-b', status: 'active' },
+      ],
     } as never);
-    const result = await listChildEnrollments('ch-2');
-    expect(result.enrollments).toHaveLength(2);
-    expect(result.enrollments[0]).toMatchObject({ id: 'en-a', status: 'PAUSED' });
-    expect(result.enrollments[1]).toMatchObject({ id: 'en-b', status: 'ACTIVE' });
+    await expect(listChildEnrollments('ch-2')).rejects.toThrow('Invalid enrollment payload');
   });
 
   it('listChildEnrollments unwraps a { data: { enrollments: [...] } } envelope', async () => {
     mockedClient.get.mockResolvedValueOnce({
-      data: { data: { enrollments: [{ id: 'en-c', course_id: 'c_food' }] } },
+      data: { data: { enrollments: [{ id: 'en-c', child_id: 'ch-3', course_id: 'c_food', status: 'active' }] } },
     } as never);
     const result = await listChildEnrollments('ch-3');
     expect(result.enrollments).toHaveLength(1);
