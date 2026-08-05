@@ -32,6 +32,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   // context.reason="low_storage"; do not branch on it.)
   ASSET_CHECKSUM_MISMATCH: "Couldn't get this lesson ready. Tap to try again.",
   ASSET_PROFILE_UNAVAILABLE: "This lesson isn't available for <robot> yet.",
+  ASSET_PACK_NOT_READY: "This lesson is still being prepared. Tap to try again in a moment.",
   PRELOAD_TIMEOUT: "Couldn't get this lesson ready. Tap to try again.",
   STEP_TIMEOUT: 'Something interrupted the lesson. Tap to restart.',
   ROBOT_OFFLINE: "Couldn't reach <robot>. Check it's on and connected.",
@@ -123,7 +124,11 @@ export function normalizeError(error: unknown): AppError {
         status?: number;
         headers?: Record<string, string | number | undefined>;
         data?: {
-          error?: { code?: string; message?: string; retryable?: boolean };
+          error?: { code?: string; message?: string };
+          // GlobalExceptionFilter (tbot-backend) puts `retryable` at the TOP
+          // LEVEL of the envelope, alongside the nested `error` object — never
+          // nested inside it. Read it from here for both Shape 1 and Shape 2.
+          retryable?: boolean;
           // NestJS / Express common shapes
           message?: string | string[];
           statusCode?: number;
@@ -160,7 +165,7 @@ export function normalizeError(error: unknown): AppError {
       return {
         code,
         message,
-        retryable: errData.retryable ?? false,
+        retryable: data.retryable ?? false,
         ...metadata,
       };
     }
@@ -173,7 +178,7 @@ export function normalizeError(error: unknown): AppError {
       return {
         code: data.code,
         message,
-        retryable: false,
+        retryable: data.retryable ?? false,
         ...metadata,
       };
     }

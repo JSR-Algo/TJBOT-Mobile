@@ -245,6 +245,38 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
     });
   });
 
+  // ── ASSET_PACK_NOT_READY assign failure ────────────────────────────────────
+  // Backend main 327da71 gates direct lesson assignment on pack materialization.
+  // A 409 ASSET_PACK_NOT_READY must render friendly retry copy — never the raw
+  // backend sentence ("...is not materialized yet") — and must not navigate.
+  describe('ASSET_PACK_NOT_READY assign failure', () => {
+    it('renders friendly retry copy — not the raw backend sentence — and does not navigate', async () => {
+      mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+      mockedCreateAssignment.mockRejectedValueOnce({
+        response: {
+          status: 409,
+          data: {
+            error: { code: 'ASSET_PACK_NOT_READY', message: 'The exact lesson asset pack is not materialized yet' },
+            retryable: true,
+          },
+        },
+      });
+      const navigation = renderSend();
+
+      await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+      await act(async () => {
+        fireEvent.press(screen.getByText('Send to Robot'));
+      });
+
+      expect(mockedCreateAssignment).toHaveBeenCalled();
+      expect(mockedGetCurrentAssignment).not.toHaveBeenCalled();
+      expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+      expect(screen.queryByText('The exact lesson asset pack is not materialized yet')).toBeNull();
+      expect(screen.getByText('This lesson is still being prepared. Tap to try again in a moment.')).toBeTruthy();
+    });
+  });
+
   // ── Whole-course renderability gate ───────────────────────────────────────
   // Course assignment must be all-or-nothing for the current robot renderer. A
   // single non-espTft lesson would strand the child mid-course, so even stale

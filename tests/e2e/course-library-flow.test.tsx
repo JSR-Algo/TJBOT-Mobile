@@ -297,6 +297,38 @@ describe('course-library flow guards', () => {
     expect(screen.getByText('This course is still preparing on the server. Try again in a moment.')).toBeTruthy();
   });
 
+  it('shows friendly retry copy — not the raw backend sentence — when the asset pack is not materialized yet', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedEnrollCourse.mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: {
+          error: { code: 'ASSET_PACK_NOT_READY', message: 'The exact lesson asset pack is not materialized yet' },
+          retryable: true,
+        },
+      },
+    });
+    const navigation = navigationFor();
+    render(
+      <UnlockConfirmModal
+        navigation={navigation as never}
+        route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    for (const digit of ['2', '4', '6', '8']) {
+      fireEvent.press(screen.getByText(digit));
+    }
+    await act(async () => {
+      fireEvent.press(screen.getByText('Confirm add'));
+    });
+
+    expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
+    expect(navigation.replace).not.toHaveBeenCalledWith(ROUTES.CourseAddedScreen, expect.anything());
+    expect(screen.queryByText('The exact lesson asset pack is not materialized yet')).toBeNull();
+    expect(screen.getByText('This lesson is still being prepared. Tap to try again in a moment.')).toBeTruthy();
+  });
+
   it('starts the free add path from detail without billing plan selection', async () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({
       id: 'dev-1',

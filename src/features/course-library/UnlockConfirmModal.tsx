@@ -14,7 +14,7 @@ import { enrollCourse } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 import { authenticateParent } from '@/services/api/parent.api';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
-import { normalizeError } from '@/utils/errors';
+import { getErrorMessage, normalizeError } from '@/utils/errors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnlockConfirmScreen'>;
 
@@ -133,6 +133,10 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         }
         if (normalized.code === 'LESSON_NOT_PLAYABLE') {
           setError('This course is still preparing on the server. Try again in a moment.');
+          return;
+        }
+        if (normalized.code === 'ASSET_PACK_NOT_READY') {
+          setError(getErrorMessage(normalized.code));
           return;
         }
         setError('Could not unlock the course. Try again.');

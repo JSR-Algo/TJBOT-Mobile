@@ -177,4 +177,53 @@ describe('US-006 course-flow edge cases (pure logic)', () => {
       expect(sentBody.childId).toBeDefined();
     });
   });
+
+  // ── ASSET_PACK_NOT_READY → parent-facing copy (no raw backend jargon) ──────
+  // Backend main 327da71 gates enroll/assign/auto-advance on pack materialization
+  // and throws ASSET_PACK_NOT_READY (409, retryable:true) with the raw message
+  // "The exact lesson asset pack is not materialized yet" when the pack isn't
+  // ready. That code has zero entry in ERROR_MESSAGES today, so it falls through
+  // preferServerMessage() and leaks the raw backend sentence verbatim to a
+  // parent. These pin the code surviving normalization and the copy NOT being
+  // the raw backend string (nor the generic UNKNOWN_ERROR fallback).
+  describe('ASSET_PACK_NOT_READY → friendly retry copy (no raw "materialized" leak)', () => {
+    const RAW_BACKEND_MESSAGE = 'The exact lesson asset pack is not materialized yet';
+
+    it('maps ASSET_PACK_NOT_READY to parent-facing copy, not the raw backend sentence', () => {
+      const result = normalizeError({
+        response: {
+          status: 409,
+          data: { error: { code: 'ASSET_PACK_NOT_READY', message: RAW_BACKEND_MESSAGE } },
+        },
+      });
+      expect(result.code).toBe('ASSET_PACK_NOT_READY');
+      expect(result.message).not.toBe(RAW_BACKEND_MESSAGE);
+      expect(result.message).not.toBe(getErrorMessage(undefined));
+      expect(result.message).toBe(getErrorMessage('ASSET_PACK_NOT_READY'));
+    });
+
+    it('getErrorMessage(ASSET_PACK_NOT_READY) is defined and distinct from UNKNOWN_ERROR', () => {
+      const message = getErrorMessage('ASSET_PACK_NOT_READY');
+      expect(message).toBeDefined();
+      expect(message).not.toBe(getErrorMessage(undefined));
+      expect(message.toLowerCase()).not.toContain('materialized');
+    });
+
+    it('surfaces the backend retryable:true flag through normalizeError (flat top-level field)', () => {
+      // The real GlobalExceptionFilter envelope puts `retryable` at the TOP
+      // LEVEL of the response body, not nested inside `error`. A 409 whose only
+      // recovery is "try again shortly" must not silently normalize to
+      // retryable:false — that would suppress a retry affordance in the UI.
+      const result = normalizeError({
+        response: {
+          status: 409,
+          data: {
+            error: { code: 'ASSET_PACK_NOT_READY', message: RAW_BACKEND_MESSAGE },
+            retryable: true,
+          },
+        },
+      });
+      expect(result.retryable).toBe(true);
+    });
+  });
 });
