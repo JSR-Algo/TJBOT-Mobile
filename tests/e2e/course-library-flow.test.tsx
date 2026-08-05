@@ -329,6 +329,38 @@ describe('course-library flow guards', () => {
     expect(screen.getByText('This lesson is still being prepared. Tap to try again in a moment.')).toBeTruthy();
   });
 
+  it('shows the robot-busy copy — not the generic unlock-failed fallback — when the device already has an active assignment', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
+    mockedEnrollCourse.mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: {
+          error: { code: 'ROBOT_BUSY', message: 'Device already has an active assignment' },
+          retryable: true,
+        },
+      },
+    });
+    const navigation = navigationFor();
+    render(
+      <UnlockConfirmModal
+        navigation={navigation as never}
+        route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: { courseId: 'c_food' } } as never}
+      />,
+    );
+
+    for (const digit of ['2', '4', '6', '8']) {
+      fireEvent.press(screen.getByText(digit));
+    }
+    await act(async () => {
+      fireEvent.press(screen.getByText('Confirm add'));
+    });
+
+    expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
+    expect(navigation.replace).not.toHaveBeenCalledWith(ROUTES.CourseAddedScreen, expect.anything());
+    expect(screen.queryByText('Could not unlock the course. Try again.')).toBeNull();
+    expect(screen.getByText('Casa Robot is finishing another lesson. Try again in a moment.')).toBeTruthy();
+  });
+
   it('starts the free add path from detail without billing plan selection', async () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({
       id: 'dev-1',

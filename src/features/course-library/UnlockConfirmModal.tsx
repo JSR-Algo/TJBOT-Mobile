@@ -14,7 +14,7 @@ import { enrollCourse } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 import { authenticateParent } from '@/services/api/parent.api';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
-import { getErrorMessage, normalizeError } from '@/utils/errors';
+import { formatLessonCopy, getErrorMessage, normalizeError } from '@/utils/errors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnlockConfirmScreen'>;
 
@@ -88,15 +88,17 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
       // Resolve the household device for the ACTIVE child the same way
       // SendToRobotScreen does — 'primary' lets the server pick the bound robot
       // (devices.assigned_child_profile_id === childId) and falls back to the
-      // first-listed device in single-robot households. When no device is
-      // available we still attempt the enrollment WITHOUT deviceId so the parent
-      // can finish the unlock flow; the backend creates the enrollment and
-      // returns a placeholder/no-op assignment that RobotReadyScreen will show
-      // as "no robot yet".
+      // first-listed device in single-robot households. This screen requires a
+      // resolved device before enrolling (unlike SendToRobotScreen's lesson-only
+      // path) so the parent always lands on a real RobotReadyScreen next.
       let deviceId: string | undefined;
+      let deviceName: string | undefined;
       try {
         const device = await getDeviceStatus('primary', childId);
-        if (device.id) deviceId = device.id;
+        if (device.id) {
+          deviceId = device.id;
+          deviceName = device.name;
+        }
       } catch (deviceError) {
         const normalized = normalizeError(deviceError);
         if (normalized.code === 'NETWORK_ERROR') {
@@ -127,19 +129,14 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         });
       } catch (err) {
         const normalized = normalizeError(err);
-        if (normalized.code === 'NO_DEVICE') {
-          setError('No Robot yet — connect Robot before unlocking a course.');
-          return;
-        }
         if (normalized.code === 'LESSON_NOT_PLAYABLE') {
           setError('This course is still preparing on the server. Try again in a moment.');
           return;
         }
-        if (normalized.code === 'ASSET_PACK_NOT_READY') {
-          setError(getErrorMessage(normalized.code));
-          return;
-        }
-        setError('Could not unlock the course. Try again.');
+        // Same fallback shape as SendToRobotScreen/CourseDetailScreen: the
+        // centralized copy map + <robot> token covers ROBOT_BUSY, ROBOT_OFFLINE,
+        // LOW_BATTERY, ASSET_PACK_NOT_READY, etc. without a per-code branch here.
+        setError(formatLessonCopy(getErrorMessage(normalized.code), { robot: deviceName }));
       }
     } finally {
       setPending(false);
