@@ -122,10 +122,10 @@ export async function getRobotSyncStatus(courseId: string): Promise<RobotSyncSta
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// P4 — authored published catalog (NEW public endpoints behind the parent
-// AuthGuard). These RETIRE the SEED_LESSON literal: SendToRobotScreen now reads
-// the real published courses/lessons so the assignment carries the lessonId /
-// lessonVersion / profile the parent actually picked.
+// P4 — authored published catalog endpoints behind the parent AuthGuard.
+// The mobile World Map reads these published courses and lessons. Assignment
+// APIs remain available for Robot/backend clients even though phone dispatch UI
+// is intentionally absent.
 //
 //   GET /courses                 → [{ courseId, title, lessonCount }]
 //   GET /courses/{courseId}/lessons → [{ lessonId, lessonVersion (NUMBER),

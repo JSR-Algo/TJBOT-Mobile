@@ -17,19 +17,14 @@ export const MVP_PRODUCTION_ROUTE_NAMES = [
   ROUTES.HomeChildProfileScreen,
   ROUTES.ParentTodayScreen,
   ROUTES.DailyMissionScreen,
-  // live-status
-  ROUTES.RunningScreen,
-  ROUTES.CompanionScreen,
+  // connection recovery chrome
   ROUTES.ReconnectingOverlay,
   // report-detail
   ROUTES.LessonSummaryScreen,
-  // course-library / course-detail / send-robot
+  // course-library / course map
   ROUTES.CourseLibraryScreen,
   ROUTES.CourseDetailScreen,
   ROUTES.LessonDetailScreen,
-  ROUTES.SendToRobotScreen,
-  ROUTES.RobotReadyScreen,
-  ROUTES.NeedsSyncScreen,
   // robot-fleet / robot-detail
   ROUTES.DeviceHomeScreen,
   ROUTES.DeviceOverviewScreen,

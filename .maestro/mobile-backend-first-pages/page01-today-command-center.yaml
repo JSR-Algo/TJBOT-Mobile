@@ -11,7 +11,8 @@ name: Page 01 Today command center
 - assertVisible:
     id: "homeHeroRobot"
 - assertVisible:
-    id: "homePrimaryCta"
+    id: "homeProgressCard"
+- assertNotVisible: ".*(Live lesson|Bài học trực tiếp|Start lesson|Bắt đầu bài học).*"
 - assertVisible:
     id: "authenticatedAppShellTabs"
 - assertVisible: "Home"

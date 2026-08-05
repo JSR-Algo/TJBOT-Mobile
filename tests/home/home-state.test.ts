@@ -127,7 +127,7 @@ describe('deriveHomeState', () => {
     expect(state.cfg.ctaTarget).toBe(ROUTES.HomeHubScreen);
   });
 
-  it('preserves the backend streak-lost variant and opens the published lesson library', () => {
+  it('preserves the backend streak-lost variant without starting a phone lesson', () => {
     const state = deriveHomeState({
       children: baseChildren,
       selectedChildId: 'child-1',
@@ -141,7 +141,8 @@ describe('deriveHomeState', () => {
     });
 
     expect(state.variant).toBe('streak_lost');
-    expect(state.cfg.ctaTarget).toBe(ROUTES.CourseLibraryScreen);
+    expect(state.cfg.ctaLabel).toBe('View progress');
+    expect(state.cfg.ctaTarget).toBe(ROUTES.TodayProgressScreen);
   });
 
   it('keeps primary CTAs and quick actions on route-entry-safe targets', () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Alert, StyleSheet, TouchableOpacity } from 'react-native';
-import { BookOpenText, CheckCircle2, ShieldCheck } from 'lucide-react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
+import { BookOpenText, ShieldCheck } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import DeviceShell from '@/components/DeviceShell';
 import FlowBreadcrumb from '@/components/FlowBreadcrumb';
@@ -111,7 +111,7 @@ export default function LessonDetailScreen({ navigation, route }: Props): React.
     return (
       <DeviceShell hideHeader title="Lesson detail" screenTestID="lessonDetailPage">
         <Box style={styles.page}>
-          <FlowBreadcrumb currentIndex={1} steps={['Course detail', 'Lesson detail', 'Send to Robot']} testID="lessonDetailBreadcrumb" />
+          <FlowBreadcrumb currentIndex={1} steps={['Course map', 'Lesson detail']} testID="lessonDetailBreadcrumb" />
           <LessonHeading eyebrow="LESSON 3" />
           <Box style={styles.stateCard}>
             <Text style={styles.stateText}>{t('Loading lesson details')}</Text>
@@ -126,7 +126,7 @@ export default function LessonDetailScreen({ navigation, route }: Props): React.
     return (
       <DeviceShell hideHeader title="Lesson detail" screenTestID="lessonDetailPage">
         <Box style={styles.page}>
-          <FlowBreadcrumb currentIndex={1} steps={['Course detail', 'Lesson detail', 'Send to Robot']} testID="lessonDetailBreadcrumb" />
+          <FlowBreadcrumb currentIndex={1} steps={['Course map', 'Lesson detail']} testID="lessonDetailBreadcrumb" />
           <LessonHeading eyebrow="LESSON 3" />
           <Box style={styles.stateCard} gap={8}>
             <Text fontWeight="800" style={styles.stateTitle}>
@@ -146,21 +146,12 @@ export default function LessonDetailScreen({ navigation, route }: Props): React.
 
   const lesson = state.lesson;
   const brief = lessonBriefFor(lesson);
-  const isPublishedFlow = Boolean(courseId);
   const ready = lesson.manifestReady && isLessonProfile(lesson.profile);
-
-  const continueLesson = () => {
-    if (isPublishedFlow && courseId) {
-      navigation.navigate(ROUTES.SendToRobotScreen, { courseId });
-      return;
-    }
-    navigation.navigate(ROUTES.LessonReadyScreen);
-  };
 
   return (
     <DeviceShell hideHeader title="Lesson detail" screenTestID="lessonDetailPage">
       <Box style={styles.page}>
-        <FlowBreadcrumb currentIndex={1} steps={['Course detail', 'Lesson detail', 'Send to Robot']} testID="lessonDetailBreadcrumb" />
+        <FlowBreadcrumb currentIndex={1} steps={['Course map', 'Lesson detail']} testID="lessonDetailBreadcrumb" />
         <LessonHeading eyebrow={ready ? 'LESSON 3 · READY' : 'LESSON 3 · PREPARING'} />
 
         <Box style={styles.heroCard} flexDirection="row" alignItems="center" gap={16}>
@@ -170,7 +161,7 @@ export default function LessonDetailScreen({ navigation, route }: Props): React.
           </Box>
           <Box flex={1} style={styles.heroContent}>
             <Text i18n={false} fontWeight="800" style={styles.heroMetric}>{brief.durationMinutes} {t('min')}</Text>
-            <Text i18n={false} fontWeight="800" style={styles.heroLabel}>{BLUEPRINT_LESSON_IDS.has(lesson.lessonId) ? t(brief.displayTitle) : brief.displayTitle}</Text>
+              <Text i18n={false} fontWeight="800" style={styles.heroLabel}>{t(brief.displayTitle)}</Text>
             <Box style={styles.progressTrack}>
               <Box style={[styles.progressFill, { width: ready ? '100%' : '48%' }]} />
             </Box>
@@ -216,34 +207,11 @@ export default function LessonDetailScreen({ navigation, route }: Props): React.
             <Text style={styles.compatibilityCopy}>
               {t(ready
                 ? 'TeeBot has the required audio, scene clips and 42 MB of free storage.'
-                : 'Sending stays locked until the lesson package is ready.')}
+                : 'Course material will appear here when the lesson package is ready.')}
             </Text>
           </Box>
         </Box>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !ready }}
-          activeOpacity={0.78}
-          disabled={!ready}
-          onPress={continueLesson}
-          style={[styles.primaryButton, !ready && styles.primaryButtonDisabled]}
-          testID="sendLessonToRobot"
-        >
-          <CheckCircle2 color="#FFFFFF" size={20} strokeWidth={2.6} />
-          <Text fontWeight="800" style={styles.primaryButtonText}>
-            {t(isPublishedFlow ? 'Send lesson to TeeBot' : 'Start Lesson')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.78}
-          onPress={() => Alert.alert(t('Preview for parents'), t('Parent preview is planned for a later MVP step.'))}
-          style={styles.secondaryButton}
-        >
-          <Text fontWeight="800" style={styles.secondaryButtonText}>{t('Preview for parents')}</Text>
-        </TouchableOpacity>
       </Box>
     </DeviceShell>
   );
@@ -312,9 +280,6 @@ const styles = StyleSheet.create({
   compatibilityCardBlocked: { backgroundColor: referenceColors.primarySoft, borderColor: referenceColors.primary },
   compatibilityTitle: { color: '#246F69', fontSize: 11 },
   compatibilityCopy: { color: referenceColors.inkSoft, fontSize: 9, lineHeight: 13, marginTop: 4 },
-  primaryButton: { alignItems: 'center', backgroundColor: referenceColors.primary, borderRadius: 19, flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 18, minHeight: 56, paddingHorizontal: 15, ...referenceShadow.button },
-  primaryButtonDisabled: { opacity: 0.45 },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 14 },
   stateCard: { backgroundColor: referenceColors.card, borderColor: referenceColors.line, borderRadius: 25, borderWidth: 1, marginTop: 18, padding: 20 },
   stateTitle: { color: '#1C1E1F', fontSize: 20 },
   stateText: { color: referenceColors.inkSoft, fontSize: 14, lineHeight: 21 },

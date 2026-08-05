@@ -1,0 +1,75 @@
+appId: net.jasonle.tjbot
+name: STEP-7 motion smoke — five tabs + motion testIDs
+---
+- launchApp:
+    clearState: false
+- openLink: "tjbot://home/home-hub"
+- extendedWaitUntil:
+    visible:
+      id: "authenticatedAppShellTabs"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: ".*Open debugger to view warnings.*"
+    commands:
+      - tapOn:
+          point: "92%,92%"
+- extendedWaitUntil:
+    visible:
+      id: "overviewPage"
+    timeout: 60000
+- assertVisible:
+    id: "homeProgressCard"
+- assertVisible:
+    id: "homeProgressSheen"
+- assertNotVisible: ".*(Live lesson|Bài học trực tiếp|Start lesson|Bắt đầu bài học).*"
+- takeScreenshot: output/maestro/step7-motion/01-home
+
+- tapOn:
+    id: "devicesTab"
+- assertVisible:
+    id: "devicesTab"
+    selected: true
+- takeScreenshot: output/maestro/step7-motion/02-devices
+
+- tapOn:
+    id: "libraryTab"
+- extendedWaitUntil:
+    visible:
+      id: "courseLibraryPage"
+    timeout: 60000
+- assertVisible:
+    id: "libraryTab"
+    selected: true
+- takeScreenshot: output/maestro/step7-motion/03-library
+
+- tapOn:
+    id: "progressTab"
+- assertVisible:
+    id: "progressTab"
+    selected: true
+- takeScreenshot: output/maestro/step7-motion/04-progress
+
+- tapOn:
+    id: "profileTab"
+- extendedWaitUntil:
+    visible:
+      id: "parentProfileCard"
+    timeout: 60000
+- assertVisible:
+    id: "profileTab"
+    selected: true
+- takeScreenshot: output/maestro/step7-motion/05-profile
+
+- tapOn:
+    id: "homeTab"
+- extendedWaitUntil:
+    visible:
+      id: "overviewPage"
+    timeout: 60000
+- assertVisible:
+    id: "homeTab"
+    selected: true
+- assertVisible:
+    id: "activeTabIndicator"
+- takeScreenshot: output/maestro/step7-motion/06-home-return

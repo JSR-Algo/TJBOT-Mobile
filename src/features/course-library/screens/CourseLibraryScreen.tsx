@@ -1,9 +1,10 @@
 import React from 'react';
 import { Image, type ImageSourcePropType, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { ChevronRight, Lock, Search } from 'lucide-react-native';
+import { ArrowRight, Lock, Search } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
+import { Reveal } from '@/design-system/animations';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import ScreenShell from '@/components/ScreenShell';
@@ -51,6 +52,10 @@ export default function CourseLibraryScreen({ navigation }: Props): React.JSX.El
     if (!normalizedQuery) return state.courses;
     return state.courses.filter(course => `${course.title} ${course.description ?? ''}`.toLowerCase().includes(normalizedQuery));
   }, [query, state]);
+  const featuredCourse = visibleCourses.find(course => course.owned && course.locked !== true) ?? visibleCourses[0];
+  const exploreCourses = featuredCourse
+    ? visibleCourses.filter(course => course.courseId !== featuredCourse.courseId)
+    : [];
 
   return (
     <ScreenShell bg="#FAF5EB" gradient={false}>
@@ -60,22 +65,26 @@ export default function CourseLibraryScreen({ navigation }: Props): React.JSX.El
         showsVerticalScrollIndicator={false}
         testID="courseLibraryPage"
       >
-        <Text fontWeight="800" style={styles.heading}>{t('Course Library')}</Text>
-        <Text style={styles.intro}>{t('Pick what TeeBot teaches.')}</Text>
+        <Reveal index={0}>
+          <Text fontWeight="800" style={styles.heading}>{t('Course Library')}</Text>
+          <Text style={styles.intro}>{t('Pick what TeeBot teaches.')}</Text>
+        </Reveal>
 
-        <Box style={styles.searchBox} flexDirection="row" alignItems="center" gap={10}>
-          <Search size={19} color="#827D77" strokeWidth={2.4} />
-          <TextInput
-            accessibilityLabel={t('Search courses')}
-            autoCapitalize="none"
-            autoCorrect={false}
-            onChangeText={setQuery}
-            placeholder={t('Search courses...')}
-            placeholderTextColor="#8B8782"
-            style={styles.searchInput}
-            value={query}
-          />
-        </Box>
+        <Reveal index={1}>
+          <Box style={styles.searchBox} flexDirection="row" alignItems="center" gap={10}>
+            <Search size={19} color="#827D77" strokeWidth={2.4} />
+            <TextInput
+              accessibilityLabel={t('Search courses')}
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setQuery}
+              placeholder={t('Search courses...')}
+              placeholderTextColor="#8B8782"
+              style={styles.searchInput}
+              value={query}
+            />
+          </Box>
+        </Reveal>
 
         <Box gap={9}>
           {state.kind === 'loading' ? <StatusCard title={t('Loading library')} /> : null}
@@ -87,25 +96,50 @@ export default function CourseLibraryScreen({ navigation }: Props): React.JSX.El
           ) : null}
           {state.kind === 'ready' && state.courses.length === 0 ? <StatusCard title={t('No library courses yet')} /> : null}
           {state.kind === 'ready' && state.courses.length > 0 && visibleCourses.length === 0 ? <StatusCard title={t('No matching courses')} /> : null}
-          {visibleCourses.map((course, index) => (
-            <CourseCard
-              course={course}
-              imageSource={artworkForCourse(course, index)}
-              key={course.courseId}
-              onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.courseId })}
-            />
-          ))}
+          {featuredCourse ? (
+            <Reveal index={2} testID="libraryFeaturedReveal">
+              <Text fontWeight="800" style={styles.sectionTitle}>{t('Currently learning')}</Text>
+              <FeaturedCourseCard
+                course={featuredCourse}
+                imageSource={artworkForCourse(featuredCourse, 0)}
+                onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: featuredCourse.courseId })}
+              />
+            </Reveal>
+          ) : null}
         </Box>
 
-        <Text fontWeight="800" style={styles.moreTitle}>{t('More in Plan')}</Text>
-        <PlanRow label={t('Six-month roadmap')} />
-        <PlanRow label={t('Week planner')} />
+        {exploreCourses.length > 0 ? (
+          <Reveal index={3} testID="libraryExploreReveal">
+            <Text fontWeight="800" style={styles.sectionTitle}>{t('Explore')}</Text>
+            <ScrollView
+              contentContainerStyle={styles.exploreRow}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              testID="courseExploreRail"
+            >
+              {exploreCourses.map((course, index) => (
+                <ExploreCourseCard
+                  course={course}
+                  imageSource={artworkForCourse(course, index + 1)}
+                  key={course.courseId}
+                  onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.courseId })}
+                />
+              ))}
+            </ScrollView>
+          </Reveal>
+        ) : null}
+
+        <Reveal index={4}>
+          <Text fontWeight="800" style={styles.moreTitle}>{t('More in Plan')}</Text>
+          <PlanRow label={t('Six-month roadmap')} />
+          <PlanRow label={t('Week planner')} />
+        </Reveal>
       </ScrollView>
     </ScreenShell>
   );
 }
 
-function CourseCard({ course, imageSource, onPress }: { course: LibraryItem; imageSource: ImageSourcePropType; onPress: () => void }) {
+function FeaturedCourseCard({ course, imageSource, onPress }: { course: LibraryItem; imageSource: ImageSourcePropType; onPress: () => void }) {
   const { language, t } = useAppLanguage();
   const locked = course.locked === true || !course.owned;
   const status = locked ? ` ${t('Locked').toLowerCase()}` : '';
@@ -113,18 +147,46 @@ function CourseCard({ course, imageSource, onPress }: { course: LibraryItem; ima
   const lessonCount = course.lessonCount && course.lessonCount > 0 ? course.lessonCount : 1;
 
   return (
-    <TouchableOpacity accessibilityLabel={accessibilityLabel} accessibilityRole="button" activeOpacity={0.82} onPress={onPress} style={styles.courseCard}>
-      <Image accessibilityIgnoresInvertColors resizeMode="cover" source={imageSource} style={styles.courseArtwork} />
-      <Box flex={1} gap={5}>
-        <Text fontWeight="800" style={styles.title} numberOfLines={2}>{course.title}</Text>
-        <Text i18n={false} style={styles.metadata}>
-          {translateTemplate('{{language}} · {{count}} lessons', { language: course.language.toUpperCase(), count: lessonCount }, { locale: language })}
-        </Text>
-        {course.syncedToDevice ? <Text fontWeight="800" style={styles.availableStatus}>{t('On Robot')}</Text> : null}
-        {locked ? <Text fontWeight="800" style={styles.lockedStatus}>{t('Locked')}</Text> : null}
+    <TouchableOpacity accessibilityLabel={accessibilityLabel} accessibilityRole="button" activeOpacity={0.82} onPress={onPress} style={styles.featuredCard} testID="featuredCourseCard">
+      <Image accessibilityIgnoresInvertColors resizeMode="cover" source={imageSource} style={styles.featuredArtwork} />
+      <Box style={styles.featuredBody} flexDirection="row" alignItems="center" gap={12}>
+        <Box flex={1} gap={5}>
+          <Text fontWeight="800" style={styles.featuredTitle} numberOfLines={2}>{course.title}</Text>
+          <Text i18n={false} style={styles.metadata}>
+            {translateTemplate('{{language}} · {{count}} lessons', { language: course.language.toUpperCase(), count: lessonCount }, { locale: language })}
+          </Text>
+          <Text fontWeight="800" style={locked ? styles.lockedStatus : styles.availableStatus}>
+            {t(locked ? 'Locked' : 'Open course map')}
+          </Text>
+        </Box>
+        <Box style={styles.openButton} alignItems="center" justifyContent="center">
+          {locked ? <Lock accessibilityLabel={t('Locked')} color="#FFFFFF" size={18} strokeWidth={2.5} /> : <ArrowRight color="#FFFFFF" size={20} strokeWidth={2.7} />}
+        </Box>
       </Box>
-      {locked ? <Lock accessibilityLabel={t('Locked')} color="#A7A29B" size={18} strokeWidth={2.5} /> : null}
-      <ChevronRight color="#8C8781" size={21} strokeWidth={2.5} />
+    </TouchableOpacity>
+  );
+}
+
+function ExploreCourseCard({ course, imageSource, onPress }: { course: LibraryItem; imageSource: ImageSourcePropType; onPress: () => void }) {
+  const { language, t } = useAppLanguage();
+  const locked = course.locked === true || !course.owned;
+  const lessonCount = course.lessonCount && course.lessonCount > 0 ? course.lessonCount : 1;
+  return (
+    <TouchableOpacity
+      accessibilityLabel={translateTemplate('Open {{title}}{{status}} course', { title: course.title, status: locked ? ` ${t('Locked').toLowerCase()}` : '' }, { locale: language })}
+      accessibilityRole="button"
+      activeOpacity={0.82}
+      onPress={onPress}
+      style={styles.exploreCard}
+    >
+      <Image accessibilityIgnoresInvertColors resizeMode="cover" source={imageSource} style={styles.exploreArtwork} />
+      <Box style={styles.exploreBody} gap={4}>
+        <Text fontWeight="800" numberOfLines={2} style={styles.exploreTitle}>{course.title}</Text>
+        <Text i18n={false} style={styles.metadata}>
+          {translateTemplate('{{count}} lessons', { count: lessonCount }, { locale: language })}
+        </Text>
+        {locked ? <Lock accessibilityLabel={t('Locked')} color="#8C8378" size={15} strokeWidth={2.4} /> : null}
+      </Box>
     </TouchableOpacity>
   );
 }
@@ -133,7 +195,7 @@ function PlanRow({ label }: { label: string }): React.JSX.Element {
   return (
     <Box style={styles.planRow} flexDirection="row" alignItems="center">
       <Text i18n={false} fontWeight="800" style={styles.planLabel}>{label}</Text>
-      <ChevronRight color="#918B84" size={20} />
+      <ArrowRight color="#918B84" size={20} />
     </Box>
   );
 }
@@ -164,12 +226,20 @@ const styles = StyleSheet.create({
   intro: { color: '#7B7772', fontSize: 11, marginBottom: 12, marginTop: 3 },
   searchBox: { backgroundColor: '#FFFFFF', borderColor: '#EEE6DC', borderRadius: 18, borderWidth: 1, height: 46, marginBottom: 12, paddingHorizontal: 14 },
   searchInput: { color: '#262829', flex: 1, fontSize: 12, paddingVertical: 0 },
-  courseCard: { alignItems: 'center', backgroundColor: '#FFFFFF', borderColor: '#EEE6DC', borderRadius: 19, borderWidth: 1, flexDirection: 'row', gap: 10, minHeight: 72, padding: 9 },
-  courseArtwork: { backgroundColor: '#FFF4DE', borderRadius: 14, height: 54, overflow: 'hidden', width: 54 },
-  title: { color: '#2A2B2C', fontSize: 13, lineHeight: 16 },
+  sectionTitle: { color: '#343536', fontSize: 16, marginBottom: 8, marginTop: 12 },
+  featuredCard: { backgroundColor: '#FFFFFF', borderColor: '#EEE6DC', borderRadius: 24, borderWidth: 1, overflow: 'hidden', shadowColor: '#6D5D4B', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.09, shadowRadius: 16, elevation: 3 },
+  featuredArtwork: { backgroundColor: '#FFF4DE', height: 154, width: '100%' },
+  featuredBody: { minHeight: 98, padding: 15 },
+  featuredTitle: { color: '#242627', fontSize: 18, lineHeight: 23 },
+  openButton: { backgroundColor: '#FF6868', borderRadius: 20, height: 40, width: 40 },
   metadata: { color: '#8A8580', fontSize: 9 },
   availableStatus: { color: '#238763', fontSize: 8 },
   lockedStatus: { color: '#8C8378', fontSize: 8 },
+  exploreRow: { gap: 12, paddingBottom: 4, paddingRight: 18 },
+  exploreCard: { backgroundColor: '#FFFFFF', borderColor: '#EEE6DC', borderRadius: 22, borderWidth: 1, overflow: 'hidden', width: 172 },
+  exploreArtwork: { backgroundColor: '#F0ECFF', height: 112, width: '100%' },
+  exploreBody: { minHeight: 82, padding: 12 },
+  exploreTitle: { color: '#292B2C', fontSize: 13, lineHeight: 17 },
   statusCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18 },
   message: { color: '#353637', fontSize: 14 },
   detail: { color: '#7A7772', fontSize: 12, marginTop: 5 },

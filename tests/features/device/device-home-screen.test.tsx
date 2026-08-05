@@ -107,7 +107,7 @@ describe('DeviceHomeScreen', () => {
     expect(screen.queryByText('Wi-Fi not reported')).toBeNull();
   });
 
-  it('matches the accepted page-21 Robot hub and keeps every visible action wired', async () => {
+  it('matches the redesigned Robot hub and keeps every visible action wired', async () => {
     apiMocks.getDeviceStatus.mockResolvedValue({
       id: 'device-21',
       name: 'TeeBot Living Room',
@@ -121,28 +121,28 @@ describe('DeviceHomeScreen', () => {
       <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
     );
 
-    await expect(screen.findByText('Ready for today')).resolves.toBeTruthy();
+    await expect(screen.findByText('TeeBot Living Room')).resolves.toBeTruthy();
     for (const label of [
-      'Unit 2 · Animals',
-      '3 words to revisit',
-      'Yesterday: 1 lesson · 4 min',
-      'Make Robot chime',
-      'Quiet hours',
+      'Battery',
+      'Wi-Fi',
+      'Review learning progress',
+      'Find Robot',
+      'Robot settings',
     ]) {
       expect(screen.getByText(label)).toBeTruthy();
     }
 
-    fireEvent.press(screen.getByText('Unit 2 · Animals'));
-    fireEvent.press(screen.getByText('3 words to revisit'));
-    fireEvent.press(screen.getByText('Yesterday: 1 lesson · 4 min'));
-    fireEvent.press(screen.getByText('Make Robot chime'));
-    fireEvent.press(screen.getByText('Quiet hours'));
+    fireEvent.press(screen.getByTestId('addRobotButton'));
+    fireEvent.press(screen.getByTestId('openRobotDetail'));
+    fireEvent.press(screen.getByTestId('robotProgressCard'));
+    fireEvent.press(screen.getByText('Find Robot'));
+    fireEvent.press(screen.getByText('Robot settings'));
 
-    expect(navigation.navigate).toHaveBeenNthCalledWith(1, ROUTES.CourseLibraryScreen);
-    expect(navigation.navigate).toHaveBeenNthCalledWith(2, ROUTES.TodayProgressScreen);
-    expect(navigation.navigate).toHaveBeenNthCalledWith(3, ROUTES.ParentHistoryScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(1, ROUTES.PairAddScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(2, ROUTES.DeviceOverviewScreen, { deviceId: 'device-21' });
+    expect(navigation.navigate).toHaveBeenNthCalledWith(3, ROUTES.TodayProgressScreen);
     expect(navigation.navigate).toHaveBeenNthCalledWith(4, ROUTES.DeviceLostScreen);
-    expect(navigation.navigate).toHaveBeenNthCalledWith(5, ROUTES.ParentSafetyScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(5, ROUTES.DeviceOverviewScreen, { deviceId: 'device-21' });
   });
 
   it('offers Robot setup from the loading state', async () => {
@@ -218,9 +218,31 @@ describe('DeviceHomeScreen', () => {
 
     await expect(screen.findByText('Settings')).resolves.toBeTruthy();
     expect(screen.getByText('Language')).toBeTruthy();
+    expect(screen.getByText('Học tập')).toBeTruthy();
+    expect(screen.getByText('Điều khiển')).toBeTruthy();
+    expect(screen.getByText('Xem lại tiến độ học tập')).toBeTruthy();
+    expect(screen.getByText('Cài đặt Robot')).toBeTruthy();
     expect(screen.getByLabelText('Hủy ghép nối Robot. Đưa Robot này về chế độ thiết lập')).toBeTruthy();
     expect(screen.queryByText('Cài đặt')).toBeNull();
     expect(screen.queryByLabelText('Unpair this Robot. Return this Robot to setup mode')).toBeNull();
+  });
+
+  it('renders an honest fallback when the last-seen timestamp is malformed', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'device-invalid-timestamp',
+      name: 'Living Room Robot',
+      online: false,
+      batteryPercent: 42,
+      lastSeenAt: 'not-a-date',
+    });
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={{ navigate: jest.fn() } as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Living Room Robot')).resolves.toBeTruthy();
+    expect(screen.getByText('Not reported')).toBeTruthy();
+    expect(screen.queryByText('Invalid Date')).toBeNull();
   });
 
   it('unpairs the backend primary device from the device screen', async () => {

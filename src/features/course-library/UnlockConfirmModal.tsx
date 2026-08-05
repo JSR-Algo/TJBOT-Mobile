@@ -38,22 +38,19 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
     if (!ok || pending) return;
     setError(null);
     if (!childId) {
-      // No active child → enrollment has no target. Surface a friendly Vietnamese
-      // message — same parent-onboarding cue used by SendToRobotScreen for the
-      // childless-household state, just localized for the unlock modal.
+      // No active child → enrollment has no target. Surface the same localized
+      // parent-onboarding cue used by other child-scoped flows.
       setError('Vui lòng thêm bé vào tài khoản trước khi mở khoá khoá học.');
       return;
     }
     setPending(true);
     try {
-      // Resolve the household device for the ACTIVE child the same way
-      // SendToRobotScreen does — 'primary' lets the server pick the bound robot
+      // Resolve the household device for the ACTIVE child. 'primary' lets the server pick the bound robot
       // (devices.assigned_child_profile_id === childId) and falls back to the
       // first-listed device in single-robot households. When no device is
       // available we still attempt the enrollment WITHOUT deviceId so the parent
       // can finish the unlock flow; the backend creates the enrollment and
-      // returns a placeholder/no-op assignment that RobotReadyScreen will show
-      // as "no robot yet".
+      // may return a placeholder/no-op assignment; never claim the Robot is ready.
       let deviceId: string | undefined;
       try {
         const device = await getDeviceStatus('primary', childId);
