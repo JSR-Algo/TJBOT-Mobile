@@ -211,5 +211,92 @@ terminal rule.
 
 ## Gate
 
-Repro: `lesson-prod/repros/t32.sh` (RED on base, GREEN on tip).
-Gate log line and post-merge re-run recorded below.
+Repro: `lesson-prod/repros/t32.sh`. It writes a self-contained probe into the
+worktree at run time so the **identical** assertions execute on the pre-patch base
+and on the fix tip — one assertion per defect (MOB-T32-1…4) plus the projection /
+unknown-state-fallback gap.
+
+**First attempt was rejected, correctly.** The initial repro just listed the new
+test files. Jest treats positional args as path *patterns* and silently ignores
+ones that match nothing, so on base it ran only the one pre-existing suite and
+exited 0 — a tautological repro. `gate.sh` caught it:
+
+```
+| t32 | REJECTED (repro green on base) | base=654b48d2 tip=ce55850f | 2026-08-06T10:33:49Z |
+```
+
+Rewritten as a behavioural probe, then:
+
+```
+$ ./lesson-prod/scripts/gate.sh t32 tbot-mobile lesson-prod/t32-mobile-session-machine
+gate[t32] RED phase @ base 654b48d2ad74efae25a7af5e1099375aac2149ef
+gate[t32] GREEN phase @ tip ce55850fdc5c1b1d28507bcdc3b38bf1f57098f2
+GATE PASS: t32 VERIFIED (RED@base rc=1, GREEN@tip rc=0)
+
+| t32 | VERIFIED | base=654b48d2 tip=ce55850f red=9f284e4b434f green=caaf1dfe6322 | 2026-08-06T10:36:51Z |
+```
+
+RED log — every assertion reproduces the bug on base, none passes vacuously:
+
+```
+✕ RECONNECTING recovers to AUDIO_FAILED when audio cannot re-init on resume
+✕ resume returns to the substate the child was in, not the greeting
+✕ drops a realtime frame that belongs to another session
+✕ gates Android hardware-back through ExitConfirm on live screens beyond the four voice screens
+✕ projects machine states onto screens and never crashes on an unknown state
+Tests: 5 failed, 5 total
+```
+
+## Ship checklist
+
+1. **Re-verify at tip.** Rebased twice (main moved under this session:
+   `97f21cc8` → `b1536165` → `654b48d2` as T3.1's docs and T3.3 landed).
+   At the final tip: typecheck clean, lint clean, `test:state-machines`
+   196/196, `test:navigation` 137/138 with only the pre-existing `age-screen`
+   load flake (intermittent across 4 runs on the branch: pass / fail / fail /
+   pass — and it failed on the **unmodified** branch point before any change in
+   this session).
+   A/B control: `no-circular-forward-navigation` (the test most affected by the
+   9 new cycle-group routes) 3306 ms on branch vs 2752 ms on main — a 20 %
+   graph-walk increase, not the flake's cause.
+2. **Merge via the gate.** `merge-task.sh t32` → gate VERIFIED → merged to
+   `main` as `e33f5a2e` with a merge commit (no squash).
+   **Not pushed** — `merge-task.sh` deliberately leaves pushing a human step,
+   and `origin/main` is likewise behind for T3.1/T3.3. `lesson-prod/.merge-counter` = 10.
+3. **Deploy.** None — mobile per task; merged changes ship in the next EAS/fastlane
+   release, a user decision. The feature also remains `productionVisible: false`.
+4. **Re-test on main** (`e33f5a2e`, canonical checkout):
+
+   ```
+   $ npm run typecheck                 # clean
+   $ npm run lint                      # clean
+   $ npm run test:state-machines       Test Suites: 10 passed  Tests: 196 passed
+   $ npm run test:navigation           Test Suites: 26 passed  Tests: 138 passed
+   $ lesson-prod/repros/t32.sh         Tests:  5 passed, 5 total
+   ```
+
+5. **Worktree removed.** `worktrees/t32-mobile-session-machine` deleted after
+   confirming `git status` clean and `git merge-base --is-ancestor` true; local
+   branch `lesson-prod/t32-mobile-session-machine` deleted. It was never pushed,
+   so there is no remote branch to delete.
+
+### Integration re-gate (merge #10, every-5-merges)
+
+The re-gate reported 11 repros failing on main. **None is caused by this merge**:
+
+- `t11 t12 t15 t21 t22 t24 t42 t42-backend` live in `tbot-backend`,
+  `robot/esp32-server` and `manager-web` — repos a mobile-only merge cannot touch.
+  Their tasks are still IN_PROGRESS, so their repros are committed ahead of their
+  fixes, exactly as the T0.4 protocol prescribes (commit repro → CLAIMED).
+- `t31` and `t34` are mobile but fail identically at **pre-merge** main
+  `654b48d2` (verified in a detached worktree): `t31` references
+  `tests/features/course-flow-error-edges.test.tsx` — "0 matches", the file is
+  not on main; `t34` calls `decideLessonRecovery` / `recoveryScreenForReason`,
+  which `recoveryTypes` does not yet export. Both are unmerged in-flight work.
+- `tdry` is the dry-run placeholder; its `# repo:` header reads `(dry-run)`, so
+  the harness `cd`s into a directory that does not exist.
+- **`t32` and `t33` are absent from the failure list** — both pass on main.
+
+The re-gate re-runs *every* repro in the campaign against *every* repo's current
+main, including tasks whose fixes have not merged, so its verdict is currently a
+permanent false "REGRESSION". Routed to the findings log for T0.4.
