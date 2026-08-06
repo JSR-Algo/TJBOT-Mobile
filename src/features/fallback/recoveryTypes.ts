@@ -61,12 +61,13 @@ export type RecoveryDecision =
 type RecoveryScreen =
   | typeof ROUTES.NetworkErrorScreen
   | typeof ROUTES.VoiceFailedScreen
+  | typeof ROUTES.MicMissingScreen
   | typeof ROUTES.AudioRecoveryScreen
   | typeof ROUTES.LessonResumeScreen
   | typeof ROUTES.SafetyRedirectScreen
   | typeof ROUTES.AppErrorScreen;
 
-const recoveryReasons = new Set<RecoveryReason>([
+const recoveryReasons: ReadonlySet<string> = new Set([
   'network',
   'voice_failed',
   'mic_missing',
@@ -76,12 +77,12 @@ const recoveryReasons = new Set<RecoveryReason>([
   'app_error',
 ]);
 
-const resumeTargets = new Set<ResumeTarget>([
+const resumeTargets: ReadonlySet<string> = new Set([
   ROUTES.SendToRobotScreen,
   ROUTES.HomeHubScreen,
 ]);
 
-const lessonPhases = new Set<LessonPhase>([
+const lessonPhases: ReadonlySet<string> = new Set([
   'connecting',
   'greeting',
   'listening',
@@ -89,13 +90,13 @@ const lessonPhases = new Set<LessonPhase>([
   'done',
 ]);
 
-const sessionStates = new Set<RecoverySessionState>([
+const sessionStates: ReadonlySet<string> = new Set([
   'active',
   'terminated',
   'expired',
 ]);
 
-const authStates = new Set<RecoveryAuthState>([
+const authStates: ReadonlySet<string> = new Set([
   'authenticated',
   'expired',
 ]);
@@ -109,23 +110,23 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isRecoveryReason(value: unknown): value is RecoveryReason {
-  return typeof value === 'string' && recoveryReasons.has(value as RecoveryReason);
+  return typeof value === 'string' && recoveryReasons.has(value);
 }
 
 function isResumeTarget(value: unknown): value is ResumeTarget {
-  return typeof value === 'string' && resumeTargets.has(value as ResumeTarget);
+  return typeof value === 'string' && resumeTargets.has(value);
 }
 
 function isLessonPhase(value: unknown): value is LessonPhase {
-  return typeof value === 'string' && lessonPhases.has(value as LessonPhase);
+  return typeof value === 'string' && lessonPhases.has(value);
 }
 
 function isSessionState(value: unknown): value is RecoverySessionState {
-  return typeof value === 'string' && sessionStates.has(value as RecoverySessionState);
+  return typeof value === 'string' && sessionStates.has(value);
 }
 
 function isAuthState(value: unknown): value is RecoveryAuthState {
-  return typeof value === 'string' && authStates.has(value as RecoveryAuthState);
+  return typeof value === 'string' && authStates.has(value);
 }
 
 function isCompleteCheckpoint(value: unknown): value is LessonCheckpoint & {
@@ -179,6 +180,7 @@ export function recoveryScreenForReason(reason: RecoveryReason): RecoveryScreen 
     case 'voice_failed':
       return ROUTES.VoiceFailedScreen;
     case 'mic_missing':
+      return ROUTES.MicMissingScreen;
     case 'audio_route_changed':
       return ROUTES.AudioRecoveryScreen;
     case 'audio_recovered':

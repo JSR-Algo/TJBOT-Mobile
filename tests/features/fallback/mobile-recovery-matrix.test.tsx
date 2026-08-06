@@ -92,7 +92,7 @@ describe('mobile lesson recovery decision matrix', () => {
     const expectations: Readonly<Record<RecoveryReason, string>> = {
       network: ROUTES.NetworkErrorScreen,
       voice_failed: ROUTES.VoiceFailedScreen,
-      mic_missing: ROUTES.AudioRecoveryScreen,
+      mic_missing: ROUTES.MicMissingScreen,
       audio_route_changed: ROUTES.AudioRecoveryScreen,
       audio_recovered: ROUTES.LessonResumeScreen,
       safety: ROUTES.SafetyRedirectScreen,
