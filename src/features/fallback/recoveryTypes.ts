@@ -25,9 +25,9 @@ export type LessonCheckpoint = {
   readonly progressLabel: string;
   readonly resumeTarget: ResumeTarget;
   readonly reason: RecoveryReason;
-  readonly phase?: LessonPhase;
-  readonly sessionState?: RecoverySessionState;
-  readonly authState?: RecoveryAuthState;
+  readonly phase: LessonPhase;
+  readonly sessionState: RecoverySessionState;
+  readonly authState: RecoveryAuthState;
   readonly activityLabel?: string;
   readonly elapsedLabel?: string;
   readonly courseId?: string;

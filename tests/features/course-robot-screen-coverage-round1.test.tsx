@@ -7,7 +7,13 @@ import { fallbackCheckpoint } from '@/features/fallback/recoveryTypes';
 import BuyCourseScreen from '@/features/course-library/screens/BuyCourseScreen';
 import CourseLockedScreen from '@/features/course-library/screens/CourseLockedScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
-import { getCourseLessons, getCourses, type PublishedCourse } from '@/services/api/course-library.api';
+import {
+  getCourseLessons,
+  getCourses,
+  getCurrentAssignment,
+  type CurrentAssignment,
+  type PublishedCourse,
+} from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 
 // CourseDetailScreen reads the published catalog AND the course's lesson list on
@@ -36,7 +42,24 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
 const mockedGetCourseLessons = getCourseLessons as jest.MockedFunction<typeof getCourseLessons>;
+const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
+
+function liveAssignment(overrides: Partial<CurrentAssignment> = {}): CurrentAssignment {
+  return {
+    assignmentId: 'assignment-1',
+    sessionId: 'session-1',
+    assignmentVersion: 2,
+    lessonId: 'lesson-1',
+    lessonTitle: 'Colors at the Park',
+    lessonVersion: 1,
+    manifestChecksum: 'sha256:current',
+    state: 'RUNNING',
+    childId: 'child-1',
+    profile: 'espTft',
+    ...overrides,
+  };
+}
 
 function navigationFor() {
   return {
@@ -129,7 +152,8 @@ describe('LessonResumeScreen — resume routing + render', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
-  it('resumes to SendToRobotScreen and renders activityLabel when checkpoint provides them', () => {
+  it('resumes a matching assignment to RunningScreen and renders activityLabel', async () => {
+    mockedGetCurrentAssignment.mockResolvedValueOnce(liveAssignment());
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -140,22 +164,29 @@ describe('LessonResumeScreen — resume routing + render', () => {
             lessonTitle: 'Colors at the Park',
             progressLabel: '40%',
             activityLabel: 'Activity 2 of 3',
-            resumeTarget: ROUTES.SendToRobotScreen,
+            resumeTarget: ROUTES.RunningScreen,
           },
         })}
       />,
     );
 
     // checkpoint-supplied copy + activityLabel true leg (lines 18-20, 51).
-    expect(screen.getByText('Colors at the Park')).toBeTruthy();
+    expect(await screen.findByText('Colors at the Park')).toBeTruthy();
     expect(screen.getByText('40%')).toBeTruthy();
     expect(screen.getByText('Activity 2 of 3')).toBeTruthy();
 
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
+      deviceId: 'device-1',
+      assignmentId: 'assignment-1',
+      sessionId: 'session-1',
+      childId: 'child-1',
+      lessonTitle: 'Colors at the Park',
+    });
   });
 
-  it('resumes to HomeHubScreen when checkpoint explicitly requests home', () => {
+  it('ignores a stale HomeHub resume target when the assignment is still live', async () => {
+    mockedGetCurrentAssignment.mockResolvedValueOnce(liveAssignment());
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -165,8 +196,10 @@ describe('LessonResumeScreen — resume routing + render', () => {
         })}
       />,
     );
-    fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
+    fireEvent.press(await screen.findByText('Keep going'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, expect.objectContaining({
+      assignmentId: 'assignment-1',
+    }));
   });
 
   it('ends legacy hidden resume targets instead of sending children to hidden lesson routes', () => {
@@ -185,7 +218,8 @@ describe('LessonResumeScreen — resume routing + render', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
-  it('"Stop for now" + TopBar back both route to HomeHubScreen (lines 39, 62)', () => {
+  it('"Stop for now" + TopBar back both route to HomeHubScreen', async () => {
+    mockedGetCurrentAssignment.mockResolvedValueOnce(liveAssignment());
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -199,7 +233,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
 
     navigation.navigate.mockClear();
     // "Stop for now" text CTA (line 62).
-    fireEvent.press(screen.getByText('Stop for now'));
+    fireEvent.press(await screen.findByText('Stop for now'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 });
