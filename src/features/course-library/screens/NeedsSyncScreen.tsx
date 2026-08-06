@@ -12,25 +12,48 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import CLChip from '../components/CLChip';
 import LCDPreview from '../components/LCDPreview';
-import { getRobotSyncStatus } from '@/services/api/course-library.api';
+import { getPreloadStatus, isPreloadReady } from '@/services/api/course-library.api';
+import { getDeviceStatus } from '@/services/api/device.api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NeedsSyncScreen'>;
+
+const NO_DEVICE_MSG = 'No robot is paired yet. Pair one from the Robot tab, then try again.';
+const NOT_READY_MSG = "Robot hasn't finished downloading this course. Keep it on Wi-Fi and try again.";
+const UNREACHABLE_MSG = "We couldn't reach Robot just now. Check Wi-Fi and try again.";
 
 export default function NeedsSyncScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? 'c_food';
   const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
+  // Guards the retry against a double-tap firing two preload reads.
+  const checking = React.useRef(false);
 
+  // Readiness comes from the device's live preload status. The old
+  // /course-library/:id/sync-status route is retired server-side (410
+  // ENDPOINT_RETIRED), so asking it could never report a synced robot.
   const handleReconnect = async () => {
+    if (checking.current) return;
+    checking.current = true;
     setSyncMsg(null);
     try {
-      const status = await getRobotSyncStatus(courseId);
-      if (status.synced) {
+      let deviceId = route.params?.deviceId;
+      if (!deviceId) {
+        const device = await getDeviceStatus('primary', route.params?.childId);
+        deviceId = device?.id;
+      }
+      if (!deviceId) {
+        setSyncMsg(NO_DEVICE_MSG);
+        return;
+      }
+      const preload = await getPreloadStatus(deviceId);
+      if (isPreloadReady(preload)) {
         navigation.navigate(ROUTES.CourseAddedScreen, { courseId });
       } else {
-        setSyncMsg('Robot has not synced this course yet. Check Wi-Fi and try again.');
+        setSyncMsg(NOT_READY_MSG);
       }
     } catch {
-      setSyncMsg('Robot has not synced this course yet. Check Wi-Fi and try again.');
+      setSyncMsg(UNREACHABLE_MSG);
+    } finally {
+      checking.current = false;
     }
   };
 
