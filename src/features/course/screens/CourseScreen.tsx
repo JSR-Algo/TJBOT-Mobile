@@ -86,7 +86,10 @@ export default function CourseScreen({ navigation }: Props) {
 function courseErrorState(error: unknown): LoadState {
   const record = asRecord(error);
   if (record?.code === 'NETWORK_ERROR') {
-    return { kind: 'error', title: 'Course catalog offline' };
+    // A transport failure is the MOST retryable error there is — it was the one
+    // case with no Retry, so airplane mode dead-ended the browse flow while a
+    // rate-limit and a generic 500 both offered one.
+    return { kind: 'error', title: 'Course catalog offline', retryLabel: 'Retry Course catalog offline' };
   }
   if (record?.status === 429 || record?.code === 'RATE_LIMIT_EXCEEDED') {
     const retryAfter = typeof record?.retryAfterSeconds === 'number' ? record.retryAfterSeconds : 45;

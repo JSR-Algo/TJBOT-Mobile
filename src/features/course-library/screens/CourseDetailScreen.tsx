@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { QueryClientContext } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -139,6 +139,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
   // The lesson list is the point of this screen — the stat grid's count alone
   // told a parent "6 lessons" and then showed none of them.
   const [lessons, setLessons] = React.useState<LessonsState>({ kind: 'loading' });
+  const [lessonsNonce, setLessonsNonce] = React.useState(0);
   React.useEffect(() => {
     let active = true;
     setLessons({ kind: 'loading' });
@@ -152,7 +153,13 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [courseId]);
+  }, [courseId, lessonsNonce]);
+
+  // The lesson list is the point of this screen; a dropped connection left
+  // "Lessons unavailable right now" with no way back short of leaving.
+  const reloadLessons = React.useCallback(() => {
+    setLessonsNonce((value) => value + 1);
+  }, []);
 
   const handleResumeCourse = React.useCallback(async () => {
     if (checkingRobot) return;
@@ -381,8 +388,17 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
             </Box>
           ) : null}
           {lessons.kind === 'error' ? (
-            <Box style={styles.listRow}>
+            <Box style={styles.listRow} gap={10}>
               <Text style={styles.listMuted}>Lessons unavailable right now</Text>
+              <TouchableOpacity
+                onPress={reloadLessons}
+                accessibilityRole="button"
+                accessibilityLabel="Try again"
+                style={styles.lessonsRetryBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text fontWeight="700" style={styles.lessonsRetryText}>Try again</Text>
+              </TouchableOpacity>
             </Box>
           ) : null}
           {lessons.kind === 'ready' && lessons.lessons.length === 0 ? (
@@ -468,6 +484,16 @@ const styles = StyleSheet.create({
   listIcon: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#EEF1F5', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   listText: { fontSize: 14, color: CL.ink, flex: 1 },
   listMuted: { fontSize: 14, color: CL.ink2 },
+  lessonsRetryBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: CL.hair,
+    backgroundColor: CL.card,
+  },
+  lessonsRetryText: { fontSize: 13, color: CL.ink },
   lessonIndex: { fontSize: 13, color: CL.ink2 },
   statCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 8 },
   statVal: { fontSize: 18, color: CL.ink },

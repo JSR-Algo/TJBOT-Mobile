@@ -37,6 +37,12 @@ export const ERROR_MESSAGES: Record<string, string> = {
   STEP_TIMEOUT: 'Something interrupted the lesson. Tap to restart.',
   ROBOT_OFFLINE: "Couldn't reach <robot>. Check it's on and connected.",
   ROBOT_BUSY: '<robot> is finishing another lesson. Try again in a moment.',
+  // A conflict is a KNOWN state, not an unknown failure: the device's single
+  // active-assignment slot is held by something other than what this screen
+  // thinks. Name the occupying lesson so the parent can act (finish it, or
+  // cancel it) instead of re-tapping into the same 409. Callers pass the real
+  // title as `lesson`; fall back to a neutral noun, never to "this lesson".
+  ASSIGNMENT_CONFLICT: '<robot> is already set up with <lesson>. Finish or cancel that before sending a new one.',
   LOW_BATTERY: '<robot> needs more charge before this lesson can start.',
 };
 
