@@ -113,8 +113,9 @@ after all fixes and before merge.
 
 ## Ship Checklist
 
-- Rebase and tip re-verification: pending final main synchronization.
-- T0.4 gate: pending; repro RED/GREEN is proven above.
+- Rebase and tip re-verification: PASS after rebasing onto `c68ff3df`; complete static, contract, focused, screen, and unit verification recorded above.
+- T0.4 gate: PASS twice (explicit verification and `merge-task.sh`), RED at `c68ff3df`, GREEN at `763421c2`; rows appended to `lesson-prod/GATE_LOG.md`.
+- Merge: PASS — merge commit `1b35341e` (`merge lesson-prod/t34-mobile-recovery-completion (t34) [gate: VERIFIED]`).
 - Deploy: none for mobile; changes ship in the next operator-chosen app release.
-- Main re-test: pending merge.
-- Worktree/branch cleanup: pending successful main verification.
+- Main re-test at `1b35341e`: focused recovery/navigation 6 suites / 151 tests, `npm run test:screens` 72 suites / 1000 tests, and `npm test` 228 suites / 2691 active tests all passed.
+- Worktree/branch cleanup: pending evidence commit/push and ancestry/cleanliness checks.
