@@ -3,13 +3,17 @@ import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { colors } from '@/design-system/tokens/legacy-semantic';
+import { readRecoveryCheckpoint } from '@/features/fallback/recoveryCheckpointStore';
+import type { LessonCheckpoint } from '@/features/fallback/recoveryTypes';
 import AgeScreen from '@/navigation/AgeScreen';
 import { readAgeAnswer, type AgeAnswer } from '@/features/onboarding/ageGate';
+import { captureError } from '@/services/observability/sentry';
 import { AuthNavigator } from './AuthNavigator';
 import { PENDING_DEVICE_SETUP_ROUTE, PROTECTED_DEFAULT_ROUTE, isProductionNavigableRoute } from './featureRegistry';
 import { ModalNavigator } from './ModalNavigator';
 import type { NavigationDeepLinkTarget } from './linking';
 import { OnboardingNavigator } from './OnboardingNavigator';
+import { ROUTES } from './routes';
 
 type Props = {
   pendingDeepLinkTarget?: NavigationDeepLinkTarget | null;
@@ -20,6 +24,10 @@ type AgeGateState =
   | { status: 'needed' }
   | { status: 'answered'; answer: AgeAnswer };
 
+type RecoveryCheckpointState =
+  | { status: 'loading' }
+  | { status: 'loaded'; checkpoint: LessonCheckpoint | null };
+
 export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): React.JSX.Element {
   const { isAuthenticated, isLoading } = useAuth();
   const {
@@ -29,6 +37,7 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
     protectedInitialRoute = PROTECTED_DEFAULT_ROUTE,
   } = useHousehold();
   const [ageGate, setAgeGate] = React.useState<AgeGateState>({ status: 'loading' });
+  const [recoveryCheckpoint, setRecoveryCheckpoint] = React.useState<RecoveryCheckpointState>({ status: 'loading' });
 
   React.useEffect(() => {
     let cancelled = false;
@@ -47,7 +56,28 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
     };
   }, []);
 
-  if (ageGate.status === 'loading' || isLoading || (isAuthenticated && householdLoading)) {
+  React.useEffect(() => {
+    let cancelled = false;
+    readRecoveryCheckpoint().then(
+      (checkpoint) => {
+        if (!cancelled) setRecoveryCheckpoint({ status: 'loaded', checkpoint });
+      },
+      (error: unknown) => {
+        captureError(error);
+        if (!cancelled) setRecoveryCheckpoint({ status: 'loaded', checkpoint: null });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (
+    ageGate.status === 'loading' ||
+    recoveryCheckpoint.status === 'loading' ||
+    isLoading ||
+    (isAuthenticated && householdLoading)
+  ) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -71,9 +101,17 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
   const productionInitialRoute = isProductionNavigableRoute(requestedInitialRoute)
     ? requestedInitialRoute
     : PROTECTED_DEFAULT_ROUTE;
-  const initialTarget: NavigationDeepLinkTarget = pendingDeepLinkTarget && isProductionNavigableRoute(pendingDeepLinkTarget.name)
-    ? pendingDeepLinkTarget
-    : { name: productionInitialRoute };
+  let initialTarget: NavigationDeepLinkTarget;
+  if (pendingDeepLinkTarget && isProductionNavigableRoute(pendingDeepLinkTarget.name)) {
+    initialTarget = pendingDeepLinkTarget;
+  } else if (!pendingDeviceSetup && recoveryCheckpoint.checkpoint) {
+    initialTarget = {
+      name: ROUTES.LessonResumeScreen,
+      params: { checkpoint: recoveryCheckpoint.checkpoint },
+    };
+  } else {
+    initialTarget = { name: productionInitialRoute };
+  }
 
   return <ModalNavigator key="protected" initialRouteName={initialTarget.name} initialRouteParams={initialTarget.params} />;
 }
