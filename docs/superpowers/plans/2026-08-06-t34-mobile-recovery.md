@@ -63,7 +63,7 @@ export type RecoveryDecision =
   | { readonly kind: 'ended'; readonly reason: 'done' | 'terminated' | 'expired' | 'invalid_checkpoint' };
 ```
 
-Extend `LessonCheckpoint` with optional `phase`, `sessionState`, and `authState`. `decideLessonRecovery(unknown)` must require complete core checkpoint strings plus a known phase/session/auth value; missing or malformed data returns `invalid_checkpoint`. `done`, `terminated`, and expired session states return terminal outcomes before any resume target is used. Add `recoveryScreenForReason(reason)` with a `never` default so every `RecoveryReason` maps to a screen. Add `audio_route_changed` to the reason union. Update `fallbackCheckpoint()` to return a complete active speaking checkpoint.
+Extend `LessonCheckpoint` with optional `phase`, `sessionState`, and `authState`. `decideLessonRecovery(unknown)` must require complete core checkpoint strings plus a known phase/session/auth value; missing or malformed data returns `invalid_checkpoint`. `done`, `terminated`, and expired session states return terminal outcomes before any resume target is used. Add `recoveryScreenForReason(reason)` with a `never` default so every `RecoveryReason` maps to a screen. Preserve the dedicated `MicMissingScreen` mapping for `mic_missing`; map `audio_route_changed` to `AudioRecoveryScreen`. Update `fallbackCheckpoint()` to return a complete active speaking checkpoint.
 
 - [ ] **Step 4: Run the pure-model tests and verify GREEN**
 
