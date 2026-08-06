@@ -65,6 +65,10 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
     if (didResume.current) return;
     didResume.current = true;
 
+    if (checkpoint.resumeTarget === ROUTES.HomeHubScreen) {
+      navigation.navigate(ROUTES.HomeHubScreen);
+      return;
+    }
     if (hasCourseResumeContext(checkpoint)) {
       navigation.navigate(ROUTES.SendToRobotScreen, {
         courseId: checkpoint.courseId,
@@ -78,10 +82,6 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
           manifestChecksum: checkpoint.manifestChecksum,
         },
       });
-      return;
-    }
-    if (checkpoint.resumeTarget === ROUTES.HomeHubScreen) {
-      navigation.navigate(ROUTES.HomeHubScreen);
       return;
     }
     navigation.navigate(ROUTES.SendToRobotScreen);

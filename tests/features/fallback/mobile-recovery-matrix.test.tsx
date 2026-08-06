@@ -247,6 +247,27 @@ describe('mobile lesson recovery screen matrix', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
+  it('honors HomeHub resume target before course resume context', () => {
+    const navigation = createNavigation();
+    render(
+      <LessonResumeScreen
+        navigation={navigation as never}
+        route={routeFor(ROUTES.LessonResumeScreen, {
+          checkpoint: {
+            ...activeCheckpoint('speaking'),
+            resumeTarget: ROUTES.HomeHubScreen,
+            courseId: 'c_food',
+            childId: 'child-1',
+          },
+        })}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Keep going'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.SendToRobotScreen, expect.anything());
+  });
+
   it('preserves network checkpoint through retry and escalates only after max attempts', () => {
     jest.useFakeTimers();
     const checkpoint = { ...activeCheckpoint('connecting'), reason: 'network' as const };
