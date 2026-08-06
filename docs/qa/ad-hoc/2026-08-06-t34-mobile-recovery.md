@@ -56,6 +56,7 @@ Implementation commits:
 - `b6154c77` / `6a7832d8` — cold-start, auth-return, timeout, and requalification
 - `6fefbb00` — multi-hop reconnect target preservation
 - `1474bf77` — reject stale session identity and mount auth without waiting on recovery storage
+- `2098066a` — require matching assignment identity before attaching a route observer session
 
 ## Recovery Matrix
 
@@ -106,8 +107,9 @@ Each implementation slice passed separate specification and quality review.
 Review-driven fixes covered pending-checkpoint races, failed-write ordering,
 observer terminal handling, unknown `session.end` reasons, bootstrap timeout,
 post-auth requalification, reconnect-target preservation, stale route-session
-grafting, authoritative session equality, and immediate unauthenticated startup.
-A final whole-branch re-review was requested after all fixes and before merge.
+grafting, authoritative session equality, stale realtime observer attachment, and
+immediate unauthenticated startup. A final whole-branch re-review was requested
+after all fixes and before merge.
 
 ## Ship Checklist
 
