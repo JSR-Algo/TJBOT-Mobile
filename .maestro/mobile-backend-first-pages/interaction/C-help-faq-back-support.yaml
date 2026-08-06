@@ -1,9 +1,0 @@
-appId: net.jasonle.tjbot
-name: C Help FAQ product back to Support
----
-# TopBar a11y label is "Back to home" but onBack now goBack() → Support
-- tapOn: ".*(Back to home|Go back|Quay lại|Về trang chủ).*"
-- extendedWaitUntil:
-    visible:
-      text: ".*(Help & support|Trợ giúp & hỗ trợ|Open help articles|Mở bài viết|In-app support|tin nhắn hỗ trợ).*"
-    timeout: 20000

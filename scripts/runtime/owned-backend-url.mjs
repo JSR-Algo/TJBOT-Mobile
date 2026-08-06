@@ -1,7 +1,6 @@
 /** Canonical owned-backend URLs shared by mobile runtime scripts. */
 export const OWNED_BACKEND_ROOT = 'https://report.tjbot.vn';
 export const OWNED_API_V1 = `${OWNED_BACKEND_ROOT}/v1`;
-export const LOCAL_OWNED_API_V1 = 'http://localhost:3000/v1';
 
 function ensureV1(url) {
   const trimmed = url.replace(/\/+$/, '');
@@ -23,5 +22,5 @@ export function resolveDevRegistryRoot(env = process.env) {
 export function resolveOwnedApiRoot(env = process.env) {
   const api = env.TBOT_API_URL?.trim() || env.EXPO_PUBLIC_TBOT_API_URL?.trim();
   if (api) return ensureV1(api);
-  return LOCAL_OWNED_API_V1;
+  return OWNED_API_V1;
 }

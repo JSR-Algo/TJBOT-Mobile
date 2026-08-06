@@ -46,6 +46,30 @@ describe('diagnosticLog', () => {
     expect(exported).toContain('gemini.token_fetch_failed');
     expect(exported).toContain('test failure');
   });
+
+  it('keeps captured errors out of React Native LogBox', () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const infoSpy = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+
+    diagnosticLog({
+      severity: 'error',
+      category: 'api',
+      event: 'http_error',
+      message: 'Handled backend failure',
+      detail: { status: 500 },
+    });
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(infoSpy).toHaveBeenCalledWith(
+      '%s %s %o',
+      '[diag:api] http_error',
+      'Handled backend failure',
+      { status: 500 },
+    );
+
+    errorSpy.mockRestore();
+    infoSpy.mockRestore();
+  });
 });
 
 describe('geminiErrorMessages', () => {

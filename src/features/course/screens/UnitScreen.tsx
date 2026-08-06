@@ -4,6 +4,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
+import { Icon, type IconName } from '@/design-system/icons';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
 import { Box } from '@/design-system/primitives/Box';
@@ -14,12 +15,12 @@ import { ROUTES } from '@/navigation/routes';
 type Props = NativeStackScreenProps<RootStackParamList, 'UnitScreen'>;
 
 const LESSONS = [
-  { id: 1, title: 'Hello!',       icon: '👋', state: 'done' },
-  { id: 2, title: 'I am happy',   icon: '😊', state: 'done' },
-  { id: 3, title: 'How are you?', icon: '🙂', state: 'current' },
-  { id: 4, title: "I'm fine",     icon: '👍', state: 'locked' },
-  { id: 5, title: 'Goodbye',      icon: '👋', state: 'locked' },
-];
+  { id: 1, title: 'Hello!',       icon: 'Hand' as IconName,          state: 'done' },
+  { id: 2, title: 'I am happy',   icon: 'Smile' as IconName,         state: 'done' },
+  { id: 3, title: 'How are you?', icon: 'MessageCircle' as IconName, state: 'current' },
+  { id: 4, title: "I'm fine",     icon: 'ThumbsUp' as IconName,      state: 'locked' },
+  { id: 5, title: 'Goodbye',      icon: 'Hand' as IconName,          state: 'locked' },
+] as const;
 
 export default function UnitScreen({ navigation }: Props) {
   return (
@@ -59,6 +60,9 @@ export default function UnitScreen({ navigation }: Props) {
               onPress={() => navigation.navigate(ROUTES.LessonDetailScreen)}
               style={[styles.lessonRow, { opacity: isLocked ? 0.6 : 1 }]}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Lesson ${l.id}: ${l.title}`}
+              accessibilityState={{ disabled: isLocked }}
             >
               <Box style={[styles.lessonIcon, { backgroundColor: iconBg },
                 isCurrent && styles.lessonIconCurrent]}>
@@ -66,7 +70,7 @@ export default function UnitScreen({ navigation }: Props) {
                   ? <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.5} strokeLinecap="round"><Path d="M5 12l5 5L20 7" /></Svg>
                   : isLocked
                   ? <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#9A917F" strokeWidth={2.5} strokeLinecap="round"><Rect x={4} y={11} width={16} height={10} rx={2} /><Path d="M8 11V7a4 4 0 018 0v4" /></Svg>
-                  : <Text style={{ fontSize: 24 }}>{l.icon}</Text>}
+                  : <Icon name={l.icon} size={24} color="#FFFFFF" strokeWidth={2.4} />}
               </Box>
               <Box flex={1}>
                 <Text fontWeight="700" style={styles.lessonNum}>Lesson {l.id}</Text>
@@ -80,6 +84,8 @@ export default function UnitScreen({ navigation }: Props) {
                   onPress={() => navigation.navigate(ROUTES.ReviewEntryScreen)}
                   style={styles.replayBtn}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Replay ${l.title}`}
                 >
                   <Text fontWeight="700" style={styles.replayText}>Replay</Text>
                 </TouchableOpacity>

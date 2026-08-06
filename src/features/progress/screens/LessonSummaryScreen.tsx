@@ -101,7 +101,7 @@ export default function LessonSummaryScreen({ navigation, route }: Props): React
         <TouchableOpacity
           accessibilityRole="button"
           activeOpacity={0.78}
-          onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)}
+          onPress={() => navigation.navigate(ROUTES.CourseLibraryScreen)}
           style={styles.nextAction}
           testID="reportRecommendedAction"
         >

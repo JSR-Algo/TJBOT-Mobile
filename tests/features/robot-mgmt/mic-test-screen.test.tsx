@@ -54,7 +54,7 @@ describe('MicTestScreen', () => {
     fireEvent.press(screen.getByText('Start mic test'));
 
     expect(await screen.findByText('A little too quiet')).toBeTruthy();
-    expect(screen.getByText('Move closer to Robot and try again.')).toBeTruthy();
+    expect(screen.getByText('Try again in a quieter spot.')).toBeTruthy();
     screen.unmount();
   });
 });

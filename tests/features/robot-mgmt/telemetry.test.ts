@@ -22,7 +22,7 @@ describe('useRobotTelemetry', () => {
     jest.clearAllMocks();
   });
 
-  it('renders coming-soon state when firmware endpoint is unavailable', async () => {
+  it('keeps robot status available when optional firmware details are unavailable', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'primary',
       name: 'TJBot-0001',
@@ -42,8 +42,11 @@ describe('useRobotTelemetry', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.featureUnavailable).toBe(true);
-    expect(result.current.errorMessage).toBe('Robot details are coming soon.');
+    expect(result.current.telemetry.deviceId).toBe('primary');
+    expect(result.current.telemetry.robotName).toBe('TJBot-0001');
+    expect(result.current.telemetry.firmwareLabel).toBe('Software unavailable');
+    expect(result.current.featureUnavailable).toBe(false);
+    expect(result.current.errorMessage).toBeNull();
   });
 
   it('renders generic error state for non-contract failures', async () => {
@@ -58,5 +61,6 @@ describe('useRobotTelemetry', () => {
 
     expect(result.current.featureUnavailable).toBe(false);
     expect(result.current.errorMessage).toBe('Robot details are temporarily unavailable.');
+    expect(mockedGetFirmwareVersion).not.toHaveBeenCalled();
   });
 });

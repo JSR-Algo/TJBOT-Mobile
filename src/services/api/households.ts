@@ -23,7 +23,7 @@ export async function get(id: string): Promise<Household> {
 
 export async function addChild(
   householdId: string,
-  dto: { name: string; date_of_birth: string; vocabulary_level?: string; learning_style?: string },
+  dto: { name: string; date_of_birth: string; buddy?: 'dog' | 'cat' | 'robot' },
   requestId?: string,
 ): Promise<Child> {
   const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;

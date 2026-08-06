@@ -570,12 +570,11 @@ export const NAVIGATION_SCREEN_COMPONENT_RESPONSIBILITY = {
 } as const;
 
 const FORWARD_CYCLE_GROUPS: readonly FeatureForwardCycleGroup[] = [
-  'course-dispatch-picker',
+  'auth-trust-login', 'course-dispatch-picker',
   'device-pairing-retry',
   'lesson-demo-review',
-  'lesson-exit-resume',
-  'lesson-summary-loop',
-  'network-retry',
+  'lesson-session-loop',
+  'network-retry', 'support-help',
 ] as const;
 
 function isFeatureForwardCycleGroup(value: unknown): value is FeatureForwardCycleGroup {
@@ -584,12 +583,13 @@ function isFeatureForwardCycleGroup(value: unknown): value is FeatureForwardCycl
 
 function forwardCycleGroups(): Record<FeatureForwardCycleGroup, readonly string[]> {
   const grouped: Record<FeatureForwardCycleGroup, string[]> = {
+    'auth-trust-login': [],
     'course-dispatch-picker': [],
     'device-pairing-retry': [],
     'lesson-demo-review': [],
-    'lesson-exit-resume': [],
-    'lesson-summary-loop': [],
+    'lesson-session-loop': [],
     'network-retry': [],
+    'support-help': [],
   };
   for (const route of Object.values(ROUTE_MAP)) {
     const cycleGroup = Reflect.get(route, 'forwardCycleGroup');

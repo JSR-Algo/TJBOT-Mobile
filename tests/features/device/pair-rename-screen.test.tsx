@@ -696,11 +696,8 @@ describe('PairRenameScreen — buddy selection', () => {
     return node;
   }
 
-  function isSelected(node: { props: { style?: unknown } } | null): boolean {
-    const flat = Array.isArray(node?.props?.style) ? node?.props?.style.flat(Infinity) : [node?.props?.style];
-    return (flat as Array<Record<string, unknown> | undefined>).some(
-      (s) => s && s.borderColor === '#FF6F61' && s.borderWidth === 2,
-    );
+  function isSelected(node: { props: { accessibilityState?: { selected?: boolean } } } | null): boolean {
+    return node?.props.accessibilityState?.selected === true;
   }
 
   it('renders all eight buddy options', () => {

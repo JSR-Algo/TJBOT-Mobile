@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { RobotLessonControlScreen } from '@/screens/robot-lesson/RobotLessonControlScreen';
+import { RobotLessonControlScreen } from '@/features/lesson-demo/screens/RobotLessonControlScreen';
 import {
   startRobotLesson,
   stopRobotLesson,

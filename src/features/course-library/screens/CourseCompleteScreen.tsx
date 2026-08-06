@@ -2,7 +2,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import Robot from '@/design-system/components/Robot';
+import { Icon } from '@/design-system/icons';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -13,58 +14,98 @@ import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseCompleteScreen'>;
 
-const STATS = [
-  { v: '10',   l: 'Words played with' },
-  { v: '7',    l: 'Tried out loud' },
-  { v: '4 min', l: 'Time together' },
-  { v: '3',    l: 'Words to revisit' },
-];
 
-const WORDS = [
-  { w: 'cat',    good: true }, { w: 'dog',    good: true }, { w: 'bird',   good: true },
-  { w: 'fish',   good: true }, { w: 'rabbit', good: false }, { w: 'happy',  good: true },
-  { w: 'big',    good: true }, { w: 'small',  good: false }, { w: 'jump',   good: true },
-  { w: 'sleep',  good: false },
-];
-
-export default function CourseCompleteScreen({ navigation }: Props) {
+export default function CourseCompleteScreen({ navigation, route }: Props) {
+  const summary = route.params?.summary;
   return (
     <DeviceShell title="Today's lesson">
-      <Box paddingTop={36} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="celebrate" size={170} accent="#FF6F61" />
+      <Box
+        testID={summary ? undefined : 'course-complete-no-summary'}
+        paddingTop={36}
+        paddingHorizontal={24}
+        alignItems="center"
+      >
+        <Robot emotion="success" size={170} accessibilityLabel="TeeBot celebrating the completed lesson" />
         <Box style={styles.chipWrap}><CLChip state="completed" /></Box>
-        <Text fontWeight="600" style={styles.heading}>A lovely 4 minutes</Text>
-        <Text style={styles.sub}>Synced from Robot just now. Audio was never saved.</Text>
+        <Text fontWeight="600" style={styles.heading}>
+          {summary?.heading ?? 'Lesson complete'}
+        </Text>
+        <Text style={styles.sub}>
+          {summary
+            ? 'Results from this lesson. Audio was never saved.'
+            : 'A full summary will show when lesson results are available. Audio was never saved.'}
+        </Text>
       </Box>
-
-      <Box paddingHorizontal={16} paddingTop={24} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {STATS.map(s => (
-          <Box key={s.l} style={styles.statCard} width="47%">
-            <Text fontWeight="700" style={styles.statVal}>{s.v}</Text>
-            <Text style={styles.statLabel}>{s.l}</Text>
-          </Box>
-        ))}
-      </Box>
-
-      <Box paddingHorizontal={16} paddingTop={20}>
-        <Text fontWeight="700" style={styles.sectionLabel}>What Robot taught</Text>
-        <Box style={styles.wordsCard}>
-          <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {WORDS.map(t => (
-              <Box key={t.w} style={[styles.wordChip, { backgroundColor: t.good ? '#E6F4EE' : '#FFF4D9' }]}>
-                <Text fontWeight="600" style={[styles.wordText, { color: t.good ? '#1F8A5B' : '#8A6A12' }]}>{t.w}</Text>
+      {summary ? (
+        <>
+          <Box
+            testID="course-complete-stats"
+            paddingHorizontal={16}
+            paddingTop={24}
+            style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}
+          >
+            {summary.minutesTogether !== undefined ? (
+              <Box style={styles.statCard} width="47%">
+                <Text fontWeight="700" style={styles.statVal}>{summary.minutesTogether}</Text>
+                <Text style={styles.statLabel}>Minutes together</Text>
               </Box>
-            ))}
+            ) : null}
+            {summary.wordsPlayed !== undefined ? (
+              <Box style={styles.statCard} width="47%">
+                <Text fontWeight="700" style={styles.statVal}>{summary.wordsPlayed}</Text>
+                <Text style={styles.statLabel}>Words played with</Text>
+              </Box>
+            ) : null}
           </Box>
-          <Text style={styles.legend}>
-            <Text fontWeight="700" style={{ color: '#1F8A5B' }}>Green</Text> = practiced confidently · <Text fontWeight="700" style={{ color: '#8A6A12' }}>Yellow</Text> = Robot will revisit
-          </Text>
-        </Box>
-      </Box>
-
+          {summary.words?.length ? (
+            <Box testID="course-complete-words" paddingHorizontal={16} paddingTop={20}>
+              <Text fontWeight="700" style={styles.sectionLabel}>What Robot taught</Text>
+              <Box style={styles.wordsCard}>
+                <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {summary.words.map(item => (
+                    <Box
+                      key={item.word}
+                      style={[
+                        styles.wordChip,
+                        { backgroundColor: item.confident ? '#E6F4EE' : '#FFF4D9' },
+                      ]}
+                      flexDirection="row"
+                      alignItems="center"
+                      gap={5}
+                    >
+                      <Icon
+                        name={item.confident ? 'CircleCheck' : 'RefreshCcw'}
+                        size={13}
+                        color={item.confident ? '#1F8A5B' : '#8A6A12'}
+                        strokeWidth={2.4}
+                      />
+                      <Text
+                        fontWeight="600"
+                        style={[
+                          styles.wordText,
+                          { color: item.confident ? '#1F8A5B' : '#8A6A12' },
+                        ]}
+                      >
+                        {item.word}
+                      </Text>
+                    </Box>
+                  ))}
+                </Box>
+                <Text style={styles.legend}>
+                  Check means practiced confidently · refresh means Robot will revisit.
+                </Text>
+              </Box>
+            </Box>
+          ) : null}
+        </>
+      ) : null}
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>Plan tomorrow's lesson</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>Done</DeviceBigBtn>
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>
+          Plan tomorrow's lesson
+        </DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+          Done
+        </DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

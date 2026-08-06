@@ -131,4 +131,109 @@ describe('account privacy API', () => {
     expect(mockedClient.post).toHaveBeenCalledWith('/identity/account/delete-request/delete-1/cancel');
     expect(mockedClient.post).toHaveBeenCalledTimes(1);
   });
+
+  it('nullifies grace period when deletion is cancelled', async () => {
+    mockedClient.post.mockResolvedValueOnce({
+      data: {
+        deletion_job_id: 'delete-2',
+        status: 'cancelled',
+        grace_period_ends_at: '2026-06-20T00:00:00.000Z',
+        cancelable: true,
+        cancelled_at: '2026-05-17T00:00:00.000Z',
+      },
+    });
+
+    const result = await cancelAccountDeletion('delete-2');
+
+    expect(result.gracePeriodEndsAt).toBeNull();
+    expect(result.status).toBe('cancelled');
+  });
+
+  it('sets cancelable to false when deletion is cancelled', async () => {
+    mockedClient.post.mockResolvedValueOnce({
+      data: {
+        deletion_job_id: 'delete-3',
+        status: 'cancelled',
+        cancelable: true,
+        cancelled_at: '2026-05-18T00:00:00.000Z',
+      },
+    });
+
+    const result = await cancelAccountDeletion('delete-3');
+
+    expect(result.cancelable).toBe(false);
+  });
+
+  it('preserves grace period when deletion is in progress', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        deletion_job_id: 'delete-4',
+        status: 'in_grace_period',
+        grace_period_ends_at: '2026-06-25T00:00:00.000Z',
+        cancelable: true,
+      },
+    });
+
+    const result = await getAccountDeletionStatus('delete-4');
+
+    expect(result.gracePeriodEndsAt).toBe('2026-06-25T00:00:00.000Z');
+    expect(result.cancelable).toBe(true);
+  });
+
+  it('defaults null grace period when not provided', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        deletion_job_id: 'delete-5',
+        status: 'in_grace_period',
+      },
+    });
+
+    const result = await getAccountDeletionStatus('delete-5');
+
+    expect(result.gracePeriodEndsAt).toBeNull();
+  });
+
+  it('defaults cancelable to false when not provided', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        deletion_job_id: 'delete-6',
+        status: 'in_grace_period',
+      },
+    });
+
+    const result = await getAccountDeletionStatus('delete-6');
+
+    expect(result.cancelable).toBe(false);
+  });
+
+  it('handles completed deletion status', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        deletion_job_id: 'delete-7',
+        status: 'completed',
+        completed_at: '2026-06-01T00:00:00.000Z',
+      },
+    });
+
+    const result = await getAccountDeletionStatus('delete-7');
+
+    expect(result.status).toBe('completed');
+    expect(result.gracePeriodEndsAt).toBeNull();
+    expect(result.cancelable).toBe(false);
+  });
+
+  it('handles failed deletion status', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        deletion_job_id: 'delete-8',
+        status: 'failed',
+      },
+    });
+
+    const result = await getAccountDeletionStatus('delete-8');
+
+    expect(result.status).toBe('failed');
+    expect(result.gracePeriodEndsAt).toBeNull();
+    expect(result.cancelable).toBe(false);
+  });
 });

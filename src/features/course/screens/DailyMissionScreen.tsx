@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
+import { Icon, type IconName } from '@/design-system/icons';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import PageScroll from '@/design-system/components/PageScroll';
 import PageHeader from '@/design-system/components/PageHeader';
@@ -14,10 +15,10 @@ import { ROUTES } from '@/navigation/routes';
 type Props = NativeStackScreenProps<RootStackParamList, 'DailyMissionScreen'>;
 
 const MISSIONS = [
-  { done: true,  icon: '📚', title: "Today's lesson",   sub: 'Lesson 3 — How are you?' },
-  { done: false, icon: '🔁', title: 'Review 4 words',   sub: 'Quick 2-min refresh' },
-  { done: false, icon: '🎮', title: 'Play a word game', sub: '1 mini-game' },
-];
+  { done: true,  icon: 'BookOpen' as IconName,   title: "Today's lesson",   sub: 'Lesson 3 — How are you?' },
+  { done: false, icon: 'RefreshCcw' as IconName, title: 'Review 4 words',   sub: 'Quick 2-min refresh' },
+  { done: false, icon: 'Gamepad2' as IconName,   title: 'Play a word game', sub: '1 mini-game' },
+] as const;
 
 export default function DailyMissionScreen({ navigation }: Props) {
   return (
@@ -38,7 +39,7 @@ export default function DailyMissionScreen({ navigation }: Props) {
             <Box style={[styles.missionIcon, { backgroundColor: m.done ? '#6CE2B6' : '#FFE6CC' }]}>
               {m.done
                 ? <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.5} strokeLinecap="round"><Path d="M5 12l5 5L20 7" /></Svg>
-                : <Text style={{ fontSize: 20 }}>{m.icon}</Text>}
+                : <Icon name={m.icon} size={21} color="#A26D11" strokeWidth={2.3} />}
             </Box>
             <Box flex={1}>
               <Text fontWeight="800" style={[styles.missionTitle, m.done && styles.missionDone]}>{m.title}</Text>
@@ -51,7 +52,7 @@ export default function DailyMissionScreen({ navigation }: Props) {
       <Box paddingHorizontal={24} paddingBottom={16}>
         <Box style={styles.rewardRow}>
           <Box style={styles.rewardIcon}>
-            <Text style={{ fontSize: 28 }}>🎁</Text>
+            <Icon name="Gift" size={26} color="#7A5311" strokeWidth={2.2} />
           </Box>
           <Box flex={1}>
             <Text fontWeight="800" style={styles.rewardTitle}>Finish all 3</Text>
@@ -62,7 +63,7 @@ export default function DailyMissionScreen({ navigation }: Props) {
       </Box>
 
       <Box paddingHorizontal={24} paddingBottom={30}>
-        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.LessonReadyScreen)} color="#FF6F61">Continue Mission</PrimaryCTA>
+        <PrimaryCTA onPress={() => navigation.navigate(ROUTES.CourseLibraryScreen)} color="#FF6F61">Continue Mission</PrimaryCTA>
       </Box>
     </PageScroll>
   );

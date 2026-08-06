@@ -1,11 +1,11 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { RobotDevice } from '@/design-system/components/LCDFace';
+import { RobotImage } from '@/components/RobotImage';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import { Icon, type IconName } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -24,11 +24,11 @@ type GoScreen =
 
 type FailureParams = NonNullable<RootStackParamList['PairFailedScreen']>;
 
-const REASONS: { ic: string; t: string; b: string; go: GoScreen }[] = [
-  { ic: '🔋', t: 'Robot looks asleep', b: 'Hold the top button until you hear a chime.', go: ROUTES.PairIntroScreen },
-  { ic: '📶', t: 'Wrong Wi-Fi password', b: 'Try entering it again — common typos: O vs 0.', go: ROUTES.PairWifiPasswordScreen },
-  { ic: '📡', t: 'Robot is too far', b: 'Bring Robot within 1–2 m of your phone.', go: ROUTES.PairSearchScreen },
-  { ic: '🔌', t: 'Battery is low', b: 'Plug Robot in for 5 minutes, then try again.', go: ROUTES.PairIntroScreen },
+const REASONS: { ic: IconName; t: string; b: string; go: GoScreen }[] = [
+  { ic: 'Power', t: 'Robot looks asleep', b: 'Hold the top button until you hear a chime.', go: ROUTES.PairIntroScreen },
+  { ic: 'WifiOff', t: 'Wrong Wi-Fi password', b: 'Try entering it again — common typos: O vs 0.', go: ROUTES.PairWifiPasswordScreen },
+  { ic: 'RadioTower', t: 'Robot is too far', b: 'Bring Robot within 1–2 m of your phone.', go: ROUTES.PairSearchScreen },
+  { ic: 'BatteryLow', t: 'Battery is low', b: 'Plug Robot in for 5 minutes, then try again.', go: ROUTES.PairIntroScreen },
 ];
 
 export default function PairFailedScreen({ navigation, route }: Props) {
@@ -96,7 +96,7 @@ export default function PairFailedScreen({ navigation, route }: Props) {
   return (
     <DeviceShell title="Pairing didn't work" onBack={() => navigation.navigate(ROUTES.PairIntroScreen)}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <RobotDevice emotion="gentle" size={160} accent="#FF6F61" />
+        <RobotImage variant="body" size={160} />
         <Text fontWeight="600" style={styles.heading}>{copy.heading}</Text>
         <Text style={styles.sub}>
           {copy.body}
@@ -125,15 +125,13 @@ export default function PairFailedScreen({ navigation, route }: Props) {
               accessibilityLabel={t(r.t === 'Wrong Wi-Fi password' ? 'Fix wrong Wi-Fi password' : r.t)}
             >
               <Box style={styles.reasonIcon} alignItems="center" justifyContent="center">
-                <Text style={{ fontSize: 16 }}>{r.ic}</Text>
+                <Icon name={r.ic} size={18} color={DV.accent} strokeWidth={2.4} />
               </Box>
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.reasonTitle}>{r.t}</Text>
                 <Text style={styles.reasonBody}>{r.b}</Text>
               </Box>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={DV.ink3} strokeWidth="2.5" strokeLinecap="round">
-                <Path d="M9 6l6 6-6 6" />
-              </Svg>
+              <Icon name="ChevronRight" size={16} color={DV.ink3} strokeWidth={2.5} />
             </TouchableOpacity>
           ))}
         </Box>
@@ -314,7 +312,7 @@ const styles = StyleSheet.create({
   heading: { fontSize: 20, color: DV.ink, letterSpacing: -0.3, textAlign: 'center', marginTop: 20 },
   sub: { fontSize: 13, color: DV.ink2, textAlign: 'center', maxWidth: 300, lineHeight: 22, marginTop: 6 },
   reasonCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14, flexDirection: 'row', gap: 12, alignItems: 'center' },
-  reasonIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#EEF1F5', flexShrink: 0 },
+  reasonIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: '#FFE5E5', flexShrink: 0 },
   reasonTitle: { fontSize: 14, color: DV.ink },
   reasonBody: { fontSize: 12, color: DV.ink2, marginTop: 2, lineHeight: 20 },
 });

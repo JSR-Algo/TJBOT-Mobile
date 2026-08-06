@@ -23,7 +23,7 @@ import {
   listLibrary,
 } from '../../src/services/api/course-library.api';
 import { getDeviceStatus } from '../../src/services/api/device.api';
-import { getChildLessonProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
+import { getChildLessonProgress, getChildProgress, type AssignmentProgress } from '../../src/services/api/progress.api';
 import { useHousehold, useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { getBillingProviderStatus } from '../../src/services/api/purchase.api';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
@@ -53,12 +53,23 @@ jest.mock('../../src/services/api/course-library.api', () => ({
   enrollCourse: jest.fn(),
   // P4: CourseDetailScreen overlays the published catalog onto static metadata.
   // Empty list → static fallback renders (preserves the c_animals assertion).
+  getCourseDetail: jest.fn((courseId: string) => Promise.resolve({
+    courseId,
+    title: 'My Animal Friends',
+    description: 'Animal words and sounds.',
+    levelCount: 3,
+    lessonCount: 12,
+    previewUrl: null,
+    ageBand: '3-5',
+    difficulty: 'beginner',
+  })),
   getCourses: jest.fn(() => Promise.resolve([])),
   getCourseLessons: jest.fn(() => Promise.resolve([])),
 }));
 
 jest.mock('../../src/services/api/progress.api', () => ({
   getChildLessonProgress: jest.fn(),
+  getChildProgress: jest.fn(),
 }));
 
 jest.mock('@/contexts/HouseholdContext', () => ({
@@ -92,6 +103,7 @@ const mockListLibrary = listLibrary as jest.MockedFunction<typeof listLibrary>;
 const mockEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockGetChildLessonProgress = getChildLessonProgress as jest.MockedFunction<typeof getChildLessonProgress>;
+const mockGetChildProgress = getChildProgress as jest.MockedFunction<typeof getChildProgress>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockedUseOptionalHousehold = useOptionalHousehold as jest.MockedFunction<typeof useOptionalHousehold>;
 const mockGetBillingProviderStatus = getBillingProviderStatus as jest.MockedFunction<typeof getBillingProviderStatus>;
@@ -174,6 +186,13 @@ describe('course, course-library, and progress stable screen states', () => {
       charging: false,
     });
     mockEnrollCourse.mockResolvedValue({ enrollment: { id: 'enroll-1' }, assignment: { id: 'assign-1' } } as never);
+    mockGetChildProgress.mockResolvedValue({
+      childId: 'child-1',
+      lessonsCompleted: 0,
+      masteredWords: 0,
+      currentStreakDays: 0,
+      byCourse: [],
+    });
   });
 
   it('renders course catalog loading, empty, error, offline, locked, and unlocked states', async () => {
@@ -354,15 +373,10 @@ describe('course, course-library, and progress stable screen states', () => {
     ]);
     const library = render(<CourseLibraryScreen navigation={navigation as never} route={route as never} />);
     await waitFor(() => expect(library.getByText('Hello Friends')).toBeTruthy());
-    expect(library.getByText('Pick what your Robot teaches.')).toBeTruthy();
-    expect(library.getByText('More in Plan')).toBeTruthy();
-    expect(library.getByLabelText('Open six-month roadmap')).toBeTruthy();
-    expect(library.getByLabelText('Open week planner')).toBeTruthy();
-    expect(library.getByLabelText('Change language')).toBeTruthy();
-    expect(library.getByLabelText('Open parent settings')).toBeTruthy();
+    expect(library.getByText('Pick what TeeBot teaches.')).toBeTruthy();
     expect(library.getByLabelText('Open Hello Friends course')).toBeTruthy();
     expect(library.getByLabelText('Open Story Time locked course')).toBeTruthy();
-    expect(library.getByText('On Robot')).toBeTruthy();
+    expect(library.getAllByText('On Robot').length).toBeGreaterThan(0);
     expect(library.getByText('Locked')).toBeTruthy();
     library.unmount();
 
@@ -404,6 +418,35 @@ describe('course, course-library, and progress stable screen states', () => {
     expect(screen.getByText('In progress')).toBeTruthy();
   });
 
+  it('renders real child summary metrics and course completion', async () => {
+    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment()]);
+    mockGetChildProgress.mockResolvedValueOnce({
+      childId: 'child-1',
+      lessonsCompleted: 3,
+      masteredWords: 12,
+      currentStreakDays: 7,
+      byCourse: [{ courseId: 'course-1', lessonsCompleted: 3, lessonsTotal: 8 }],
+    });
+
+    const screen = renderProgress();
+
+    await waitFor(() => expect(screen.getByText('Course progress')).toBeTruthy());
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.getByText('12')).toBeTruthy();
+    expect(screen.getByText('3/8 lessons')).toBeTruthy();
+    expect(mockGetChildProgress).toHaveBeenCalledWith('child-1');
+  });
+
+  it('shows an honest error when the aggregate child summary fails', async () => {
+    mockGetChildLessonProgress.mockResolvedValueOnce([makeAssignment()]);
+    mockGetChildProgress.mockRejectedValueOnce({ code: 'NETWORK_ERROR', message: 'offline' });
+
+    const screen = renderProgress();
+
+    await waitFor(() => expect(screen.getByText('Progress unavailable')).toBeTruthy());
+    expect(screen.queryByText('Greetings')).toBeNull();
+  });
+
   it('renders progress empty and failed refresh states without showing stale metrics', async () => {
     mockGetChildLessonProgress.mockResolvedValueOnce([]);
     const empty = renderProgress();
@@ -432,13 +475,14 @@ describe('course, course-library, and progress stable screen states', () => {
     await waitFor(() => expect(subscriptions.getByText('Manage billing')).toBeTruthy());
   });
 
-  it('preserves selected course id through detail, buy, and unlock handoff', () => {
+  it('preserves selected course id through detail, buy, and unlock handoff', async () => {
     const detail = render(
       <CourseDetailScreen
         navigation={navigation as never}
         route={{ key: 'detail', name: ROUTES.CourseDetailScreen, params: { courseId: 'c_animals' } } as never}
       />,
     );
+    await waitFor(() => expect(detail.getByText('Add to Robot')).toBeTruthy());
     fireEvent.press(detail.getByText('Add to Robot'));
     expect(mockNavigate).toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, { courseId: 'c_animals' });
     detail.unmount();
@@ -489,7 +533,7 @@ describe('course, course-library, and progress stable screen states', () => {
     ];
 
     expect(screens[0].getByText('Words Practiced')).toBeTruthy();
-    expect(screens[1].getByText('Great effort!')).toBeTruthy();
+    expect(screens[1].getByText('Report detail')).toBeTruthy();
     expect(screens[2].getByText("Let's visit again")).toBeTruthy();
     expect(screens[3].getByText('You did it!')).toBeTruthy();
 

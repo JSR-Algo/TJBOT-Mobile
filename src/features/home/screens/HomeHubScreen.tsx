@@ -238,7 +238,7 @@ export default function HomeHubScreen({
     ? t('Could not load Home')
     : unavailable
       ? t('No lesson plan yet')
-      : lesson?.title || t('Barn & Farm Words');
+      : lesson?.title || t('Farm Friends');
   const runPrimary = (): void => {
     if (demoBadge.simulated) {
       navigation.navigate(ROUTES.LessonReadyScreen);

@@ -3,8 +3,7 @@ import type { Child, Household } from '@/types';
 export type OnboardingChildProfilePayload = {
   name: string;
   date_of_birth: string;
-  vocabulary_level?: Child['vocabulary_level'];
-  learning_style?: Child['learning_style'];
+  buddy?: 'dog' | 'cat' | 'robot';
 };
 
 type SaveOnboardingChildProfileDeps = {

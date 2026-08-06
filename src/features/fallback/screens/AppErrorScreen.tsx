@@ -3,10 +3,12 @@ import { StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ScreenShell from '@/components/ScreenShell';
-import Robot from '@/design-system/components/Robot';
-import PrimaryCTA from '@/design-system/components/PrimaryCTA';
+import RobotImage from '@/components/RobotImage';
+import DeviceBigBtn from '@/components/DeviceBigBtn';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import { ROUTES } from '@/navigation/routes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AppErrorScreen'> & {
@@ -16,26 +18,36 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AppErrorScreen'> & {
 
 export default function AppErrorScreen({ navigation, error: _error, reset }: Props) {
   return (
-    <ScreenShell>
+    <ScreenShell bg={referenceColors.bg} gradient={false}>
       <Box flex={1} alignItems="center" justifyContent="center" padding={24}>
-        <Robot emotion="worry" size={180} />
-        <Text fontWeight="800" style={styles.title}>Something went wrong</Text>
-        <Text style={styles.msg}>Something did not load. Your account and progress are safe.</Text>
-        <Box flexDirection="row" gap={12} marginTop={24}>
+        <Box style={styles.card} alignItems="center">
+          <Box style={styles.robotStage} alignItems="center" justifyContent="center">
+            <RobotImage variant="body" size={156} />
+            <Box style={styles.errorBadge} alignItems="center" justifyContent="center">
+              <Icon name="TriangleAlert" size={22} color="#C0392B" strokeWidth={2.4} />
+            </Box>
+          </Box>
+          <Text fontWeight="800" style={styles.title}>Something went wrong</Text>
+          <Text style={styles.msg}>Something did not load. Your account and progress are safe.</Text>
+        </Box>
+        <Box gap={10} marginTop={24} style={styles.actions}>
           {reset ? (
-            <PrimaryCTA color="#FF6F61" onPress={reset}>Try again</PrimaryCTA>
+            <DeviceBigBtn onClick={reset}>Try again</DeviceBigBtn>
           ) : null}
-          <PrimaryCTA color="#6FC1FF" onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>
+          <DeviceBigBtn
+            secondary={Boolean(reset)}
+            onClick={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          >
             Back home
-          </PrimaryCTA>
-          <PrimaryCTA
-            color="#6FC1FF"
-            onPress={() => navigation.navigate(ROUTES.SupportScreen, {
+          </DeviceBigBtn>
+          <DeviceBigBtn
+            secondary
+            onClick={() => navigation.navigate(ROUTES.SupportScreen, {
               context: { topic: 'app_error', errorFamily: 'app_error' },
             })}
           >
             Contact support
-          </PrimaryCTA>
+          </DeviceBigBtn>
         </Box>
       </Box>
     </ScreenShell>
@@ -43,6 +55,27 @@ export default function AppErrorScreen({ navigation, error: _error, reset }: Pro
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 28, color: '#2B2140', marginTop: 20, marginBottom: 8 },
-  msg: { fontSize: 16, color: '#5C4F77', textAlign: 'center', lineHeight: 24 },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: referenceColors.card,
+    borderColor: referenceColors.line,
+    borderRadius: 30,
+    borderWidth: 1,
+    padding: 24,
+    ...referenceShadow.card,
+  },
+  robotStage: { width: 178, height: 178, borderRadius: 89, backgroundColor: referenceColors.bgWarm },
+  errorBadge: {
+    position: 'absolute',
+    right: 4,
+    bottom: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: referenceColors.primarySoft,
+  },
+  title: { fontSize: 28, color: referenceColors.ink, marginTop: 20, marginBottom: 8 },
+  msg: { fontSize: 15, color: referenceColors.inkSoft, textAlign: 'center', lineHeight: 23 },
+  actions: { width: '100%', maxWidth: 420 },
 });

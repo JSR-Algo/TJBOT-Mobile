@@ -1,6 +1,6 @@
 {
   "generated": "2026-05-12",
-  "routeCount": 135,
+  "routeCount": 136,
   "navigators": {
     "AuthNavigator": "unauthenticated auth routes",
     "OnboardingNavigator": "authenticated setup routes before protected app",
@@ -16,6 +16,7 @@
       "role": "auth",
       "backBehavior": "blocked-auth",
       "deepLinkPath": "auth/login",
+      "forwardCycleGroup": "auth-trust-login",
       "stateMachineId": "onb_login"
     },
     "SplashScreen": {
@@ -58,6 +59,7 @@
       "backBehavior": "blocked-auth",
       "deepLinkPath": "auth/trust",
       "backTarget": "IntroCelebrateScreen",
+      "forwardCycleGroup": "auth-trust-login",
       "stateMachineId": "onb_trust"
     },
     "IntroListenScreen": {
@@ -159,6 +161,17 @@
         "home_hub_quiet_hours",
         "home_hub_error"
       ]
+    },
+    "HomeChildProfileScreen": {
+      "feature": "home",
+      "rootBranch": "protected",
+      "navigator": "ModalNavigator",
+      "bucket": "stackScreens",
+      "role": "stack-entry",
+      "backBehavior": "stack-back",
+      "deepLinkPath": "home/home-child-profile",
+      "backTarget": "HomeHubScreen",
+      "stateMachineId": "home_child_profile"
     },
     "CourseScreen": {
       "feature": "course",
@@ -340,7 +353,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "course-library/running",
       "backTarget": "RobotReadyScreen",
@@ -351,7 +364,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "course-library/companion",
       "backTarget": "RunningScreen",
@@ -483,7 +496,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "modalScreens",
-      "role": "modal",
+      "role": "modal-entry",
       "backBehavior": "modal-stack-back",
       "deepLinkPath": "purchase/subscriptions",
       "backTarget": "BundleScreen",
@@ -504,7 +517,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-demo/lesson-roadmap",
       "backTarget": "LessonDemoHomeScreen",
@@ -598,7 +611,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/connecting",
-      "forwardCycleGroup": "lesson-summary-loop",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "connecting"
     },
     "GreetingScreen": {
@@ -609,6 +622,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/greeting",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "greeting"
     },
     "LessonReadyScreen": {
@@ -619,7 +633,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/lesson-ready",
-      "forwardCycleGroup": "lesson-summary-loop",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "lesson_ready"
     },
     "RobotListeningScreen": {
@@ -630,7 +644,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/robot-listening",
-      "forwardCycleGroup": "lesson-exit-resume",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "robot_listening"
     },
     "UserSpeakingScreen": {
@@ -641,7 +655,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/user-speaking",
-      "forwardCycleGroup": "lesson-exit-resume",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "user_speaking"
     },
     "RobotSpeakingScreen": {
@@ -652,7 +666,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/robot-speaking",
-      "forwardCycleGroup": "lesson-exit-resume",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "robot_speaking"
     },
     "ThinkingScreen": {
@@ -663,7 +677,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/thinking",
-      "forwardCycleGroup": "lesson-exit-resume",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "thinking"
     },
     "ActivityIntroScreen": {
@@ -674,6 +688,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/activity-intro",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "activity_intro"
     },
     "ActivityDoneScreen": {
@@ -684,6 +699,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/activity-done",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "activity_done"
     },
     "SuccessScreen": {
@@ -694,7 +710,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/success",
-      "forwardCycleGroup": "lesson-exit-resume",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "success"
     },
     "LessonDoneScreen": {
@@ -705,7 +721,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/lesson-done",
-      "forwardCycleGroup": "lesson-summary-loop",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "lesson_done"
     },
     "ExitConfirmScreen": {
@@ -716,7 +732,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/exit-confirm",
-      "forwardCycleGroup": "lesson-exit-resume",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "exit_confirm"
     },
     "RetryScreen": {
@@ -727,6 +743,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/retry",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "retry"
     },
     "SilenceScreen": {
@@ -737,6 +754,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/silence",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "silence"
     },
     "BargeinScreen": {
@@ -747,6 +765,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/bargein",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "bargein"
     },
     "GentleScreen": {
@@ -757,6 +776,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/gentle",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "gentle"
     },
     "OfftopicScreen": {
@@ -767,6 +787,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/offtopic",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "offtopic"
     },
     "SafetyScreen": {
@@ -777,6 +798,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/safety",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "safety"
     },
     "CostCappedScreen": {
@@ -787,6 +809,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/cost-capped",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "cost_capped"
     },
     "ParentStoppedScreen": {
@@ -797,6 +820,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/parent-stopped",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "parent_stopped"
     },
     "TimedOutScreen": {
@@ -807,6 +831,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/timed-out",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "timed_out"
     },
     "AudioErrorScreen": {
@@ -817,6 +842,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/audio-error",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "audio_error"
     },
     "AbandonedDisconnectScreen": {
@@ -827,6 +853,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/abandoned-disconnect",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "abandoned_disconnect"
     },
     "ReconnectingScreen": {
@@ -837,6 +864,7 @@
       "role": "state-machine",
       "backBehavior": "stack-back",
       "deepLinkPath": "lesson-session/reconnecting",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "reconnecting"
     },
     "TodayProgressScreen": {
@@ -868,7 +896,7 @@
       "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "progress/lesson-summary",
-      "forwardCycleGroup": "lesson-summary-loop",
+      "forwardCycleGroup": "lesson-session-loop",
       "stateMachineId": "lesson_summary"
     },
     "ReviewNeededScreen": {
@@ -918,7 +946,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "parent/parent-today",
       "backTarget": "ParentSummaryScreen",
@@ -1066,7 +1094,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "device/pair-add",
       "backTarget": "DeviceOverviewScreen",
@@ -1077,7 +1105,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "device/pair-rename",
       "backTarget": "PairSuccessScreen",
@@ -1255,7 +1283,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "robot-mgmt/robot-status",
       "backTarget": "MyRobotScreen",
@@ -1266,7 +1294,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "robot-mgmt/robot-battery",
       "backTarget": "MyRobotScreen",
@@ -1343,7 +1371,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "robot-mgmt/factory-reset",
       "backTarget": "MyRobotScreen",
@@ -1358,6 +1386,7 @@
       "backBehavior": "stack-back",
       "deepLinkPath": "robot-mgmt/offline-help",
       "backTarget": "MyRobotScreen",
+      "forwardCycleGroup": "support-help",
       "stateMachineId": "rm_offline_help"
     },
     "SupportScreen": {
@@ -1369,6 +1398,7 @@
       "backBehavior": "stack-back",
       "deepLinkPath": "robot-mgmt/support",
       "backTarget": "MyRobotScreen",
+      "forwardCycleGroup": "support-help",
       "stateMachineId": "rm_support"
     },
     "NetworkErrorScreen": {
@@ -1447,6 +1477,7 @@
       "backBehavior": "stack-back",
       "deepLinkPath": "fallback/help-faq",
       "backTarget": "ParentSummaryScreen",
+      "forwardCycleGroup": "support-help",
       "stateMachineId": "help_faq"
     },
     "KidSettingsScreen": {

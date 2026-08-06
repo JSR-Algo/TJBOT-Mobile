@@ -1,8 +1,9 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import WelcomeScreen from '../../../src/features/auth/screens/WelcomeScreen';
 import { resources } from '../../../src/services/i18n/resources';
 import { setAppLanguage } from '../../../src/services/i18n/i18n';
+import { ROUTES } from '../../../src/navigation/routes';
 
 const mockNavigate = jest.fn();
 const mockNav = {
@@ -15,11 +16,11 @@ const mockNav = {
 const mockRoute = { key: 'welcome', name: 'WelcomeScreen', params: undefined } as never;
 
 const WELCOME_COPY = [
-  "Hi! I'm Tee.",
-  'I help kids talk in English.',
-  'A gentle voice buddy for ages 6–10.',
-  'A grown-up sets things up the first time.',
+  "Hello! I'm Tee.",
+  "Let's learn English together!",
+  "A little every day, and you'll speak English fluently.",
   'Get started',
+  'Already have an account? Sign in',
 ] as const;
 
 function localeHasCopy(locale: 'en' | 'vi', copy: string): boolean {
@@ -45,13 +46,27 @@ describe('WelcomeScreen i18n', () => {
       <WelcomeScreen navigation={mockNav} route={mockRoute} />,
     );
 
-    expect(getByText(/Chào con! Mình là Tee/)).toBeTruthy();
-    expect(getByText(/Mình giúp các bé nói tiếng Anh/)).toBeTruthy();
-    expect(getByText(/Bạn đồng hành nói chuyện nhẹ nhàng cho bé 6–10 tuổi/)).toBeTruthy();
-    expect(getByText(/Người lớn sẽ cài đặt giúp bé lần đầu/)).toBeTruthy();
+    expect(getByText(/Xin chào! Mình là Tee/)).toBeTruthy();
+    expect(getByText(/Cùng nhau học tiếng Anh nào/)).toBeTruthy();
+    expect(getByText(/Mỗi ngày một chút, con sẽ nói tiếng Anh lưu loát/)).toBeTruthy();
+    expect(getByText('Bắt đầu')).toBeTruthy();
+    expect(getByText('Đã có tài khoản? Đăng nhập')).toBeTruthy();
 
     // Mixed-language regression: English source must not remain visible.
-    expect(queryByText(/Hi! I'm Tee/)).toBeNull();
-    expect(queryByText(/A gentle voice buddy/)).toBeNull();
+    expect(queryByText(/Hello! I'm Tee/)).toBeNull();
+    expect(queryByText(/Let's learn English together/)).toBeNull();
+  });
+
+  it('keeps both blueprint actions connected to onboarding and sign-in', async () => {
+    await setAppLanguage('en');
+    const { getByTestId } = render(
+      <WelcomeScreen navigation={mockNav} route={mockRoute} />,
+    );
+
+    fireEvent.press(getByTestId('getStartedButton'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.IntroListenScreen);
+
+    fireEvent.press(getByTestId('signInButton'));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LoginScreen);
   });
 });

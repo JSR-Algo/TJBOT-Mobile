@@ -74,7 +74,7 @@ Sources:
    ```
    Keeping `| undefined` preserves existing navigation calls that omit params entirely (e.g., `navigation.navigate('ConnectingScreen')`).
 3. **Normalize optional param unions.** Convert every remaining `ScreenName: undefined | { ... }` to `ScreenName: { ... }`. This includes course, course-library, purchase, lesson-demo, device/pairing, parent, fallback, and modal screens. Screens that genuinely accept no params remain `ScreenName: undefined;`.
-4. **Clean up inline imports (optional but recommended).** Move the inline `import('@/features/lessonDemo/types').LessonAgeBand` and `import('@/features/fallback/recoveryTypes').*` type references to top-level `import type` statements so the param list object is easier to scan.
+4. **Clean up inline imports (optional but recommended).** Move the inline `import('@/features/lesson-demo/types').LessonAgeBand` and `import('@/features/fallback/recoveryTypes').*` type references to top-level `import type` statements so the param list object is easier to scan.
 5. **Run typecheck and fix call sites mechanically.** Because removing `undefined |` from object-style params can make `navigate('ScreenName')` calls without a params argument fail, run `npx tsc --noEmit` and add `{}` where the compiler requires it. Do not change screen logic.
 6. **Run the verification test.** `npx jest tests/verification/T25-lesson-session-params-refactor.test.ts` must pass.
 

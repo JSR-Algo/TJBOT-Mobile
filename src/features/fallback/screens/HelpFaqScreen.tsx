@@ -22,15 +22,31 @@ const FAQS = [
 
 export default function HelpFaqScreen({ navigation }: Props) {
   const { t } = useAppLanguage();
-  const [open, setOpen] = React.useState(0);
+  const [query, setQuery] = React.useState('');
+  const [openQuestion, setOpenQuestion] = React.useState<string | null>(FAQS[0].q);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const visibleFaqs = normalizedQuery.length === 0
+    ? FAQS
+    : FAQS.filter(faq => t(faq.q).toLocaleLowerCase().includes(normalizedQuery)
+      || t(faq.a).toLocaleLowerCase().includes(normalizedQuery));
 
   return (
     <Screen
-      header={<TopBar title="Help & FAQ" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)} />}
+      header={<TopBar title="Help & FAQ" onBack={() => {
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+          return;
+        }
+        navigation.navigate(ROUTES.ParentSummaryScreen);
+      }} />}
       scroll
     >
       <Box paddingHorizontal={16} paddingTop={14} paddingBottom={4}>
         <TextInput
+          testID="helpFaqSearchInput"
+          accessibilityLabel={t('Search help…')}
+          value={query}
+          onChangeText={setQuery}
           placeholder={t('Search help…')}
           placeholderTextColor="#8B8B96"
           style={styles.searchInput}
@@ -39,15 +55,15 @@ export default function HelpFaqScreen({ navigation }: Props) {
 
       <Box paddingHorizontal={16} paddingTop={12}>
         <Box style={styles.faqList} borderRadius={14} overflow="hidden">
-          {FAQS.map((f, i) => {
-            const isOpen = open === i;
+          {visibleFaqs.map((f, i) => {
+            const isOpen = openQuestion === f.q;
             return (
               <Box
-                key={i}
-                style={i < FAQS.length - 1 ? styles.faqItemBorder : undefined}
+                key={f.q}
+                style={i < visibleFaqs.length - 1 ? styles.faqItemBorder : undefined}
               >
                 <TouchableOpacity
-                  onPress={() => setOpen(isOpen ? -1 : i)}
+                  onPress={() => setOpenQuestion(isOpen ? null : f.q)}
                   style={styles.faqBtn}
                   activeOpacity={0.7}
                   accessibilityRole="button"
@@ -65,6 +81,11 @@ export default function HelpFaqScreen({ navigation }: Props) {
               </Box>
             );
           })}
+          {visibleFaqs.length === 0 ? (
+            <Text testID="helpFaqEmptyResult" style={styles.emptyResult}>
+              {t('No help topics found.')}
+            </Text>
+          ) : null}
         </Box>
       </Box>
 
@@ -107,6 +128,7 @@ const styles = StyleSheet.create({
   faqQ: { flex: 1, fontSize: 15, color: '#2B2140', lineHeight: 21 },
   chevron: { fontSize: 14, color: '#8B8B96', marginTop: 1 },
   faqA: { fontSize: 14, color: '#5C4F77', lineHeight: 21 },
+  emptyResult: { padding: 16, textAlign: 'center', fontSize: 14, color: '#5C4F77' },
   sectionHeader: { fontSize: 12, color: '#8B8B96', letterSpacing: 0.8, fontWeight: '600', paddingBottom: 8 },
   helpList: { backgroundColor: '#fff', borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' },
   helpRow: { padding: 14, flexDirection: 'row', alignItems: 'center' },

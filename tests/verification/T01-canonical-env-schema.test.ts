@@ -18,6 +18,21 @@ function sanitizeJson(raw: string): string {
 }
 
 describe('T01 — canonical env schema, EAS alignment, and Expo capabilities', () => {
+  describe('.env.example', () => {
+    it('defaults fresh local and production builds to the shared Linux backend', () => {
+      const env = readText('.env.example');
+      const productionEnv = readText('.env.production.example');
+
+      expect(env).toContain('EXPO_PUBLIC_TBOT_API_URL=https://report.tjbot.vn/v1');
+      expect(env).toContain('EXPO_PUBLIC_TBOT_AI_URL=https://report.tjbot.vn/v1/ai');
+      expect(env).toContain('EXPO_PUBLIC_WS_URL=wss://report.tjbot.vn');
+      expect(env).not.toContain('auto-derived LAN host');
+      expect(productionEnv).toContain('EXPO_PUBLIC_TBOT_API_URL=https://report.tjbot.vn/v1');
+      expect(productionEnv).toContain('EXPO_PUBLIC_TBOT_AI_URL=https://report.tjbot.vn/v1/ai');
+      expect(productionEnv).toContain('EXPO_PUBLIC_WS_URL=wss://report.tjbot.vn');
+    });
+  });
+
   describe('eas.json', () => {
     it('production profile exposes the canonical EXPO_PUBLIC_* env keys', () => {
       const raw = readText('eas.json');
@@ -72,11 +87,15 @@ describe('T01 — canonical env schema, EAS alignment, and Expo capabilities', (
       expect(config).toContain('ownedBackend');
     });
 
-    it('uses report.tjbot.vn as the owned backend default', () => {
+    it('uses report.tjbot.vn as the shared default without implicit localhost or LAN routing', () => {
+      const config = readText('src/config.ts');
       const ownedBackend = readText('src/constants/ownedBackend.ts');
       const runtimeBackend = readText('scripts/runtime/owned-backend-url.mjs');
+
       expect(ownedBackend).toContain("OWNED_BACKEND_ROOT = 'https://report.tjbot.vn'");
       expect(runtimeBackend).toContain("OWNED_BACKEND_ROOT = 'https://report.tjbot.vn'");
+      expect(config).not.toContain('10.0.2.2');
+      expect(config).not.toContain('deriveDevHostFromBundleUrl');
       expect(ownedBackend).not.toContain('onrender.com');
       expect(runtimeBackend).not.toContain('api.TJBot.io');
     });

@@ -30,7 +30,7 @@ State Management, Feature Architecture & Data Flow for TJBot-mobile: compare the
 - `src/features/lesson-session/sessionContext.ts`
 - `src/features/lesson-session/screens/ConnectingScreen.tsx`
 - `src/features/home/hooks/useHomeState.ts`
-- `src/features/lessonDemo/store/useLessonDemoProgressStore.ts`
+- `src/features/lesson-demo/store/useLessonDemoProgressStore.ts`
 - `src/navigation/RootStackNavigator.tsx`
 - `src/navigation/MainTabNavigator.tsx`
 - `src/services/http/client.ts`
@@ -47,7 +47,7 @@ State Management, Feature Architecture & Data Flow for TJBot-mobile: compare the
 - `src/hooks/useVoiceActivity.ts`
 - `src/hooks/useLatencyBudget.ts`
 - `src/components/robot/LatencyHud.tsx`
-- `src/screens/robot-lesson/RobotLessonControlScreen.tsx`
+- `src/features/lesson-demo/screens/RobotLessonControlScreen.tsx`
 - Tests under `tests/state/`, `tests/contexts/`, `tests/learning/`
 
 ### Reference cards reviewed

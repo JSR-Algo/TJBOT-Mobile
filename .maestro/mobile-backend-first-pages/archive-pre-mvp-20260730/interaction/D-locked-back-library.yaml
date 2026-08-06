@@ -1,0 +1,13 @@
+appId: net.jasonle.tjbot
+name: D CourseLocked Back to library
+---
+- assertVisible: ".*(Locked for now|Tạm khóa|Tạm thời bị khóa).*"
+- scrollUntilVisible:
+    element:
+      text: "^(Back to library|Về thư viện)$"
+    direction: DOWN
+- tapOn: "^(Back to library|Về thư viện)$"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Hello Friends|My Animal|Course|Khóa học|Library|Thư viện|Yummy).*"
+    timeout: 20000

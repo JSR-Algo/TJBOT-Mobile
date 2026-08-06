@@ -1,7 +1,9 @@
 import HomeHubScreen from './screens/HomeHubScreen';
+import HomeChildProfileScreen from './screens/HomeChildProfileScreen';
 import { STATES } from './states';
 
 export const SCREEN_MAP = {
+  home_child_profile: HomeChildProfileScreen,
   home_hub_idle: HomeHubScreen,
   home_hub_greet: HomeHubScreen,
   home_hub_daily: HomeHubScreen,

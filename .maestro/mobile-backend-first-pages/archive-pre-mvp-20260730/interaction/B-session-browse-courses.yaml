@@ -1,0 +1,13 @@
+appId: net.jasonle.tjbot
+name: B Session Browse courses to Library
+---
+- assertVisible: ".*(Lesson on Robot|Bài học trên Robot).*"
+- scrollUntilVisible:
+    element:
+      text: ".*(Browse courses|Duyệt khóa học).*"
+    direction: DOWN
+- tapOn: ".*(Browse courses|Duyệt khóa học).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Course|Khóa học|Library|Thư viện|Hello Friends|My Animal|Yummy).*"
+    timeout: 20000

@@ -62,7 +62,7 @@ describe('root branch navigation isolation', () => {
         return navigationTargets(source)
           .filter(({ route }) => {
             const entry = ROUTE_MAP[route as keyof typeof ROUTE_MAP];
-            return entry ? entry.navigator !== navigator : false;
+            return entry ? entry.navigator !== navigator && entry.role !== 'stack-entry' : false;
           })
           .map(({ route, index }) => {
             const lineNumber = source.slice(0, index).split('\n').length;

@@ -24,6 +24,7 @@ type Plan = {
   contractFallbacksAllowed: boolean;
   schemaDriftCheckRequired?: boolean;
   openApiPath?: string;
+  backendBlockers: string[];
   modules: PlanModule[];
 };
 
@@ -133,34 +134,34 @@ describe('e2e-mobile local production gate', () => {
 
   it('uses the documented local parent PIN for parent-gate contract checks', () => {
     const source = fs.readFileSync(SCRIPT, 'utf8');
-    const openApi = JSON.parse(
-      fs.readFileSync(path.join(ROOT, 'migrate-ui-ux-to-mobile-app-docs/api/openapi.json'), 'utf8'),
-    ) as {
-      paths?: {
-        '/v1/parent/auth'?: {
-          post?: {
-            requestBody?: {
-              content?: {
-                'application/json'?: {
-                  examples?: {
-                    default?: {
-                      value?: {
-                        pin?: string;
-                      };
-                    };
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-    const documentedPin =
-      openApi.paths?.['/v1/parent/auth']?.post?.requestBody?.content?.['application/json']?.examples?.default?.value?.pin;
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'TJBot-mobile-openapi-'));
+    const openApiPath = path.join(dir, 'openapi.json');
+    fs.writeFileSync(openApiPath, JSON.stringify({
+      paths: {
+        '/v1/parent/auth': {
+          post: {
+            requestBody: {
+              content: {
+                'application/json': {
+                  examples: {
+                    default: { value: { pin: '0000' } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    }));
 
-    expect(documentedPin).toBe('0000');
-    expect(source).toContain(`PARENT_PIN = '${documentedPin}'`);
+    const plan = runPlanWithEnv({
+      ...process.env,
+      SIMULATION_MODE: 'true',
+      TBOT_OPENAPI_PATH: openApiPath,
+    });
+
+    expect(plan.backendBlockers).toEqual([]);
+    expect(source).toContain("PARENT_PIN = '0000'");
     expect(source).toContain('pin: PARENT_PIN');
     expect(source).toContain('seedParentPin');
     expect(source).toContain('parent_pins (household_id, parent_id, pin_hash)');
@@ -203,8 +204,8 @@ describe('e2e-mobile local production gate', () => {
     expect(() => runPlan(['--url=https://staging.TJBot.ai'])).toThrow(/local backend/i);
   });
 
-  it('rejects non-local AI service URLs', () => {
-    expect(() => runPlan(['--ai-url=https://ai.example.test'])).toThrow(/local AI simulation/i);
+  it('does not require an AI service for the Nest-only checkpoint plan', () => {
+    expect(() => runPlan(['--ai-url=https://ai.example.test'])).not.toThrow();
   });
 
   it('requires simulation mode before plan inspection', () => {

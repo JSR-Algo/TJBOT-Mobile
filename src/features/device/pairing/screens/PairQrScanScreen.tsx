@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -78,8 +79,12 @@ export default function PairQrScanScreen({ navigation, route }: Props): React.JS
   if (!permission) {
     return (
       <DeviceShell title={t('Scan QR Code')} onBack={() => navigation.navigate(ROUTES.PairFoundScreen, params)}>
-        <Box paddingHorizontal={20} paddingTop={40} alignItems="center">
-          <Text style={styles.permissionText}>{t('Checking camera permission...')}</Text>
+        <Box style={styles.stateCard} alignItems="center" gap={14}>
+          <Box style={styles.stateIcon} alignItems="center" justifyContent="center">
+            <Icon name="ScanLine" size={32} color={DV.accent} strokeWidth={2.2} />
+          </Box>
+          <Text fontWeight="700" style={styles.stateTitle}>{t('Checking camera permission...')}</Text>
+          <Text style={styles.permissionText}>{t('You can enter the pairing code manually at any time.')}</Text>
         </Box>
       </DeviceShell>
     );
@@ -88,7 +93,11 @@ export default function PairQrScanScreen({ navigation, route }: Props): React.JS
   if (!permission.granted) {
     return (
       <DeviceShell title={t('Scan QR Code')} onBack={() => navigation.navigate(ROUTES.PairFoundScreen, params)}>
-        <Box paddingHorizontal={20} paddingTop={32} gap={20}>
+        <Box style={styles.stateCard} alignItems="center" gap={16}>
+          <Box style={styles.stateIcon} alignItems="center" justifyContent="center">
+            <Icon name="CameraOff" size={32} color={DV.accent} strokeWidth={2.2} />
+          </Box>
+          <Text fontWeight="700" style={styles.stateTitle}>{t('Camera access is off')}</Text>
           <Text style={styles.permissionText}>
             {t('Camera access is needed. Enter the code manually.')}
           </Text>
@@ -125,7 +134,8 @@ export default function PairQrScanScreen({ navigation, route }: Props): React.JS
         </Box>
 
         {scanError ? (
-          <Box paddingHorizontal={20} paddingTop={12}>
+          <Box style={styles.errorCard} marginHorizontal={20} marginTop={12}>
+            <Icon name="CircleAlert" size={20} color="#C0392B" strokeWidth={2.4} />
             <Text style={styles.errorText}>{scanError}</Text>
             <TouchableOpacity
               onPress={() => setScanError(null)}
@@ -154,6 +164,17 @@ export default function PairQrScanScreen({ navigation, route }: Props): React.JS
 }
 
 const styles = StyleSheet.create({
+  stateCard: {
+    backgroundColor: DV.card,
+    borderColor: DV.hair,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginHorizontal: 20,
+    marginTop: 32,
+    padding: 24,
+  },
+  stateIcon: { width: 68, height: 68, borderRadius: 24, backgroundColor: '#FFE5E5' },
+  stateTitle: { color: DV.ink, fontSize: 19, textAlign: 'center' },
   instruction: { fontSize: 14, color: DV.ink2, lineHeight: 22, textAlign: 'center' },
   cameraContainer: { flex: 1, minHeight: 280, overflow: 'hidden', marginHorizontal: 20, borderRadius: 16, backgroundColor: '#000' },
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
@@ -165,6 +186,14 @@ const styles = StyleSheet.create({
     borderColor: DV.accent,
   },
   permissionText: { fontSize: 14, color: DV.ink2, lineHeight: 22, textAlign: 'center' },
+  errorCard: {
+    alignItems: 'center',
+    backgroundColor: '#FFF5F3',
+    borderColor: '#F2C7C1',
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+  },
   errorText: { fontSize: 14, color: '#E53E3E', lineHeight: 22, textAlign: 'center' },
   dismissBtn: { marginTop: 8, padding: 8, alignItems: 'center' },
   dismissText: { fontSize: 14, color: DV.accent, fontWeight: '500' },

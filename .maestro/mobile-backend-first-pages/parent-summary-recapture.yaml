@@ -12,6 +12,6 @@ name: ParentSummary clean recapture
       - tapOn: "Open"
 - extendedWaitUntil:
     visible:
-      text: ".*(Parent Space|Khu vực phụ huynh|Chất lượng khóa học|Course quality|Hoàn thành|Completion|Lịch sử|History).*"
+      text: ".*(Parent Space|Khu vực phụ huynh|Your child's progress|Tiến độ của bé|Profile|Hồ sơ).*"
     timeout: 20000
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots-v2/05-ParentSummaryScreen-i18n-icons"

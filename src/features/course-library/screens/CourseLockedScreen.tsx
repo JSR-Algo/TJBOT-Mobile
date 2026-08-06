@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import LCDFace from '@/design-system/components/LCDFace';
+import Robot from '@/design-system/components/Robot';
+import { Icon } from '@/design-system/icons';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
@@ -25,13 +25,10 @@ export default function CourseLockedScreen({ navigation, route }: Props) {
     <DeviceShell title="Locked for now" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.heroCard}>
-          <Box style={styles.heroLCD} alignItems="center" justifyContent="center">
-            <LCDFace emotion={c.lcd} size={140} accent="#FF6F61" />
+          <Box style={styles.heroMascot} alignItems="center" justifyContent="center">
+            <Robot emotion="gentle" size={150} accessibilityLabel="TeeBot waiting with the locked course" />
             <Box style={styles.lockBadge}>
-              <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth={2.5} strokeLinecap="round">
-                <Rect x={5} y={11} width={14} height={10} rx={2} />
-                <Path d="M8 11V7a4 4 0 018 0v4" />
-              </Svg>
+              <Icon name="LockKeyhole" size={13} color="#8A6A12" strokeWidth={2.4} />
               <Text fontWeight="700" style={styles.lockBadgeText}>Locked</Text>
             </Box>
           </Box>
@@ -78,13 +75,13 @@ export default function CourseLockedScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   heroCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, overflow: 'hidden' },
-  heroLCD: { backgroundColor: '#0E1116', paddingVertical: 18, paddingHorizontal: 16, opacity: 0.5 },
+  heroMascot: { minHeight: 190, backgroundColor: '#FFF9F0', paddingVertical: 12, paddingHorizontal: 16 },
   lockBadge: {
     position: 'absolute', top: 10, right: 10,
-    backgroundColor: 'rgba(255,255,255,0.1)', flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#FCEFC9', flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingVertical: 5, paddingHorizontal: 9, borderRadius: 999,
   },
-  lockBadgeText: { fontSize: 10, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.5 },
+  lockBadgeText: { fontSize: 10, color: '#8A6A12', textTransform: 'uppercase', letterSpacing: 0.5 },
   chipRow: { marginBottom: 6, flexWrap: 'wrap' },
   agesText: { fontSize: 11, color: CL.ink3 },
   title: { fontSize: 20, color: CL.ink, letterSpacing: -0.2 },

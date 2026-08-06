@@ -25,7 +25,7 @@ name: First five mobile MVP screens and screenshot pack
       visible: ".*Open debugger to view warnings.*"
     commands:
       - tapOn:
-          point: "92%,92%"
+          point: "92%,91%"
 - assertVisible:
     id: "appShellProfile"
 - assertVisible:
@@ -62,6 +62,12 @@ name: First five mobile MVP screens and screenshot pack
 - takeScreenshot: "output/maestro/first-five/03-report-detail"
 
 # 04 — Course library
+- runFlow:
+    when:
+      visible: ".*Open debugger to view warnings.*"
+    commands:
+      - tapOn:
+          point: "92%,93%"
 - tapOn:
     id: "libraryTab"
 - extendedWaitUntil:

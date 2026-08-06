@@ -12,18 +12,25 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
 import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
+import { useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UserSpeakingScreen'>;
 
-export default function UserSpeakingScreen({ navigation }: Props) {
+export default function UserSpeakingScreen({ navigation, route }: Props) {
   // Android hardware-back during this active voice turn must funnel through
   // ExitConfirm, not silently pop the stack (MOB-2).
   useLessonHardwareBack(navigation, 'USER_SPEAKING');
+  const { t } = useAppLanguage();
   return (
     <ScreenShell bg="#E8F8F0">
-      <Box accessible accessibilityLabel="Student voice is being heard" flex={1}>
-      <LessonHeader progress={0.32} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
-      <Box style={[StyleSheet.absoluteFillObject, styles.center]} alignItems="center">
+      <Box flex={1}>
+      <LessonHeader progress={0.32} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen, route.params)} />
+      <Box
+        style={[StyleSheet.absoluteFillObject, styles.center]}
+        alignItems="center"
+        accessible
+        accessibilityLabel={t('Student voice is being heard')}
+      >
         <Text fontWeight="800" style={styles.iHearYou}>I hear you!</Text>
         <Box style={styles.pulseWrap} alignItems="center" justifyContent="center">
           <PulseRing size={260} color="#7BD389" />
@@ -36,7 +43,7 @@ export default function UserSpeakingScreen({ navigation }: Props) {
         </Box>
       </Box>
       <Box style={styles.footer} alignItems="center" gap={14}>
-        <MicButton on onClick={() => navigation.navigate(ROUTES.ThinkingScreen)} label="stop" />
+        <MicButton on onClick={() => navigation.navigate(ROUTES.ThinkingScreen, route.params)} label="stop" />
         <Text fontWeight="700" style={styles.tapText}>Tap when done</Text>
       </Box>
       </Box>

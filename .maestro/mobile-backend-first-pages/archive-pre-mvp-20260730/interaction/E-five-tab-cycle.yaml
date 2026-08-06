@@ -1,0 +1,26 @@
+appId: net.jasonle.tjbot
+name: E Five-tab cycle
+---
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 20000
+# Devices
+- tapOn: "^(Devices|Thiết bị)$"
+- waitForAnimationToEnd
+# Library
+- tapOn: "^(Library|Thư viện)$"
+- waitForAnimationToEnd
+# Progress
+- tapOn: "^(Progress|Tiến độ)$"
+- waitForAnimationToEnd
+# Profile
+- tapOn: "^(Profile|Hồ sơ)$"
+- waitForAnimationToEnd
+# Home
+- tapOn: "^(Home|Trang chủ)$"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "homePrimaryCta"
+    timeout: 20000

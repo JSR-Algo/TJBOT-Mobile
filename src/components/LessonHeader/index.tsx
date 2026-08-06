@@ -4,6 +4,8 @@ import type { DimensionValue } from 'react-native';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CircleBtn from '@/design-system/components/CircleBtn';
+import { Icon } from '@/design-system/icons';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = {
   progress?: number;
@@ -11,29 +13,30 @@ type Props = {
 };
 
 export default function LessonHeader({ progress = 0.4, onExit }: Props) {
+  const boundedProgress = Math.min(Math.max(progress, 0), 1);
+
   return (
     <Box style={styles.root} flexDirection="row" alignItems="center" gap={12}>
       <CircleBtn size={42} onPress={onExit} ariaLabel="exit">
-        <CloseIcon />
+        <Icon name="X" size={18} color={referenceColors.ink} strokeWidth={3} />
       </CircleBtn>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${progress * 100}%` as DimensionValue }]} />
+        <View style={[styles.fill, { width: `${boundedProgress * 100}%` as DimensionValue }]} />
       </View>
-      <Box style={styles.badge}>
+      <Box
+        accessible
+        accessibilityLabel="12 lesson stars"
+        style={styles.badge}
+        flexDirection="row"
+        alignItems="center"
+        gap={4}
+      >
+        <Icon name="Star" size={15} color={referenceColors.gold} strokeWidth={2.5} />
         <Text fontWeight="700" style={{ fontSize: 14, color: '#5C4F77' }}>
-          ⭐ 12
+          12
         </Text>
       </Box>
     </Box>
-  );
-}
-
-function CloseIcon() {
-  const { Svg, Path } = require('react-native-svg');
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round">
-      <Path d="M5 5l14 14M19 5L5 19" />
-    </Svg>
   );
 }
 
@@ -48,24 +51,22 @@ const styles = StyleSheet.create({
   track: {
     flex: 1,
     height: 14,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: referenceColors.card,
+    borderColor: referenceColors.line,
+    borderWidth: 1,
     borderRadius: 8,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    backgroundColor: '#7AC9A0',
+    backgroundColor: referenceColors.success,
     borderRadius: 8,
   },
   badge: {
-    backgroundColor: '#fff',
+    backgroundColor: referenceColors.card,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    ...referenceShadow.card,
   },
 });

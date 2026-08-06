@@ -46,10 +46,11 @@ describe('course-library API', () => {
         courseId: 'c_food',
         title: 'Yummy Words',
         language: 'en',
-        price: 0,
-        owned: true,
+        price: 24,
+        owned: false,
         syncedToDevice: true,
-        locked: false,
+        locked: true,
+        isFree: false,
       },
     ]);
   });

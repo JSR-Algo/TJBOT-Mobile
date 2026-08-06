@@ -1,10 +1,11 @@
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
+import { RobotImage } from '@/components/RobotImage';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -229,11 +230,19 @@ export default function PairSearchScreen({ navigation, route }: Props) {
     return (
       <DeviceShell title="Bluetooth is off" onBack={cancelSearchToIntro}>
         <Box paddingTop={40} paddingHorizontal={24} paddingBottom={30} alignItems="center" gap={16}>
+          <Box style={styles.blockerIcon} alignItems="center" justifyContent="center">
+            <Icon name="BluetoothOff" size={36} color={DV.accent} strokeWidth={2.2} />
+          </Box>
           <Text fontWeight="600" style={styles.heading}>Turn on Bluetooth</Text>
           <Text style={styles.sub}>
             Bluetooth is off. Enable it in Control Center or Settings, then try pairing again.
           </Text>
-          <TouchableOpacity onPress={retryBluetoothSearch} style={{ marginTop: 20 }}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Try Bluetooth search again"
+            onPress={retryBluetoothSearch}
+            style={styles.linkButton}
+          >
             <Text fontWeight="500" style={styles.link}>Try again</Text>
           </TouchableOpacity>
         </Box>
@@ -259,20 +268,26 @@ export default function PairSearchScreen({ navigation, route }: Props) {
               accessibilityRole="button"
               accessibilityLabel={`${reconnectMode ? 'Reconnect' : 'Pair'} Robot ${item.displayName}`}
             >
+              <Box style={styles.rowIcon} alignItems="center" justifyContent="center">
+                <Icon name="Bot" size={20} color={DV.accent} strokeWidth={2.3} />
+              </Box>
               <Box flex={1}>
                 <Text fontWeight="600" style={styles.robotName}>{item.displayName}</Text>
                 {item.displayName !== item.serialNumber ? (
                   <Text style={styles.robotSerial}>{item.serialNumber}</Text>
                 ) : null}
               </Box>
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={DV.ink3} strokeWidth="2.5" strokeLinecap="round">
-                <Path d="M9 6l6 6-6 6" />
-              </Svg>
+              <Icon name="ChevronRight" size={16} color={DV.ink3} strokeWidth={2.5} />
             </TouchableOpacity>
           ))}
         </ScrollView>
         <Box paddingHorizontal={24} paddingBottom={30}>
-          <TouchableOpacity onPress={cancelSearchToFailed} style={{ marginTop: 12, alignItems: 'center' }}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="I do not see my Robot"
+            onPress={cancelSearchToFailed}
+            style={styles.missingButton}
+          >
             <Text fontWeight="500" style={styles.link}>I don't see my Robot</Text>
           </TouchableOpacity>
         </Box>
@@ -287,12 +302,10 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           {[0, 1, 2].map(i => (
             <Box key={i} style={styles.pulseRing} />
           ))}
-          <Svg width={60} height={60} viewBox="0 0 24 24" fill="none" stroke={DV.accent} strokeWidth="1.6" strokeLinecap="round">
-            <Path d="M5 12.55a11 11 0 0114 0" />
-            <Path d="M8.5 16.5a7 7 0 017 0" />
-            <Path d="M12 20l.01 0" />
-            <Path d="M2 8.82a15 15 0 0120 0" />
-          </Svg>
+          <RobotImage variant="body" size={132} />
+          <Box style={styles.radioBadge} alignItems="center" justifyContent="center">
+            <Icon name="Radio" size={18} color={DV.accent} strokeWidth={2.4} />
+          </Box>
         </Box>
         <Text fontWeight="600" style={styles.heading}>Looking nearby…</Text>
         <Text style={styles.sub}>
@@ -300,7 +313,12 @@ export default function PairSearchScreen({ navigation, route }: Props) {
             ? 'Hold the top button for 5 seconds to open setup mode, then keep Robot within 3 meters.'
             : 'Make sure Robot is in setup mode and within 3 meters of your phone.'}
         </Text>
-        <TouchableOpacity onPress={cancelSearchToFailed} style={{ marginTop: 20 }}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="I do not see my Robot"
+          onPress={cancelSearchToFailed}
+          style={styles.linkButton}
+        >
           <Text fontWeight="500" style={styles.link}>I don't see my Robot</Text>
         </TouchableOpacity>
       </Box>
@@ -415,12 +433,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const styles = StyleSheet.create({
   pulseWrap: { width: 200, height: 200 },
   pulseRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 2, borderColor: DV.accent, opacity: 0.5 },
+  radioBadge: {
+    backgroundColor: DV.card,
+    borderColor: DV.hair,
+    borderRadius: 18,
+    borderWidth: 1,
+    bottom: 14,
+    height: 36,
+    position: 'absolute',
+    right: 24,
+    width: 36,
+  },
+  blockerIcon: { width: 76, height: 76, borderRadius: 26, backgroundColor: '#FFE5E5' },
   heading: { fontSize: 18, color: DV.ink, textAlign: 'center' },
   sub: { fontSize: 13, color: DV.ink2, textAlign: 'center', maxWidth: 280, lineHeight: 22 },
   link: { fontSize: 14, color: DV.accent },
   pickerIntro: { fontSize: 13, color: DV.ink2, lineHeight: 22 },
+  linkButton: { marginTop: 20, minHeight: 44, justifyContent: 'center' },
+  missingButton: { marginTop: 12, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   pickerList: { paddingHorizontal: 16, paddingTop: 16, gap: 8 },
   robotRow: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 16, flexDirection: 'row', gap: 12, alignItems: 'center' },
+  rowIcon: { width: 40, height: 40, borderRadius: 14, backgroundColor: '#FFE5E5' },
   robotName: { fontSize: 15, color: DV.ink },
   robotSerial: { fontSize: 12, color: DV.ink3, marginTop: 2 },
 });

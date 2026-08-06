@@ -234,25 +234,40 @@ export interface AssignmentProgress {
   updatedAt: string;
 }
 
-function normalizeAssignmentProgress(entry: unknown): AssignmentProgress {
+function normalizeStringField(obj: Record<string, unknown>, key: string): string {
+  return (obj[key] ?? '') as string;
+}
+
+function normalizeNumberField(obj: Record<string, unknown>, key: string): number {
+  return Number(obj[key] ?? 0);
+}
+
+function normalizeNullableStringField(obj: Record<string, unknown>, key: string): string | null {
+  return (obj[key] ?? null) as string | null;
+}
+
+function normalizeLessonTitle(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+export function normalizeAssignmentProgress(entry: unknown): AssignmentProgress {
   const r = (entry ?? {}) as Record<string, unknown>;
-  const lessonTitle = r.lessonTitle;
   return {
-    assignmentId: (r.assignmentId ?? '') as string,
-    deviceId: (r.deviceId ?? '') as string,
-    childId: (r.childId ?? '') as string,
-    lessonId: (r.lessonId ?? '') as string,
-    lessonVersion: Number(r.lessonVersion ?? 0),
-    lessonTitle: typeof lessonTitle === 'string' ? lessonTitle : null,
-    profile: (r.profile ?? '') as string,
+    assignmentId: normalizeStringField(r, 'assignmentId'),
+    deviceId: normalizeStringField(r, 'deviceId'),
+    childId: normalizeStringField(r, 'childId'),
+    lessonId: normalizeStringField(r, 'lessonId'),
+    lessonVersion: normalizeNumberField(r, 'lessonVersion'),
+    lessonTitle: normalizeLessonTitle(r.lessonTitle),
+    profile: normalizeStringField(r, 'profile'),
     state: toAssignmentState(r.state),
-    startedAt: (r.startedAt ?? null) as string | null,
-    completedAt: (r.completedAt ?? null) as string | null,
-    stepsCompleted: Number(r.stepsCompleted ?? 0),
-    stepsSucceeded: Number(r.stepsSucceeded ?? 0),
-    lastEventAt: (r.lastEventAt ?? null) as string | null,
-    createdAt: (r.createdAt ?? '') as string,
-    updatedAt: (r.updatedAt ?? '') as string,
+    startedAt: normalizeNullableStringField(r, 'startedAt'),
+    completedAt: normalizeNullableStringField(r, 'completedAt'),
+    stepsCompleted: normalizeNumberField(r, 'stepsCompleted'),
+    stepsSucceeded: normalizeNumberField(r, 'stepsSucceeded'),
+    lastEventAt: normalizeNullableStringField(r, 'lastEventAt'),
+    createdAt: normalizeStringField(r, 'createdAt'),
+    updatedAt: normalizeStringField(r, 'updatedAt'),
   };
 }
 

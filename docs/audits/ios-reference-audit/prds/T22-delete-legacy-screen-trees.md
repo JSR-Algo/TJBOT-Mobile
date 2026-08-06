@@ -43,7 +43,7 @@ Files and symbols to delete or clean up:
 - Empty parent directories (`src/screens/dashboard/`, `src/screens/learning/`) may be removed if they contain no other files
 
 ### Out of scope
-- `src/screens/robot-lesson/RobotLessonControlScreen.tsx` and the `src/screens/robot-lesson/` directory (still imported by `src/features/lessonDemo/navigation.ts` and not listed in the registry scope)
+- `src/features/lesson-demo/screens/RobotLessonControlScreen.tsx` and the `src/screens/robot-lesson/` directory (still imported by `src/features/lesson-demo/navigation.ts` and not listed in the registry scope)
 - `src/navigation/routes.ts`
 - `src/features/**`
 - `src/app/providers/*`
@@ -65,7 +65,7 @@ Files and symbols to delete or clean up:
 2. **Remove empty directories**
    - After deleting the three alias files, remove `src/app/screens/`.
    - Remove `src/screens/dashboard/` and `src/screens/learning/` if empty.
-   - Do **not** remove `src/screens/` itself because `src/screens/robot-lesson/RobotLessonControlScreen.tsx` is out of scope and still referenced.
+   - Do **not** remove `src/screens/` itself because `src/features/lesson-demo/screens/RobotLessonControlScreen.tsx` is out of scope and still referenced.
 
 3. **Clean up `src/navigation/types.ts`**
    - Delete the `LearningStackParamList` type (lines 86–91).
@@ -108,7 +108,7 @@ None.
 | `tests/screens/LessonPlannerScreen.test.tsx` breaks after the screen files are deleted. | Delete the obsolete test as part of this task; it tests only dead screens. |
 | A deep link, notification payload, or external reference still points to `LessonPlanner`, `ChildPractice`, `LessonDemo`, `SpeakScreen`, `ListenScreen`, or `DevicePairWifiScreen`. | Before merging, grep `src/navigation/linking.ts`, notification handlers, and marketing-link configs for these names. T23 adds a fallback for unknown links. |
 | `src/navigation/types.ts` is imported by unexpected callers. | Run `npx tsc --noEmit` after removing the legacy types; TypeScript will surface any remaining consumers. |
-| `src/screens/robot-lesson/RobotLessonControlScreen.tsx` is accidentally deleted because it lives under `src/screens/`. | Keep it out of scope; do not delete the `src/screens/` root. The verification test asserts only the specific legacy files are gone. |
+| `src/features/lesson-demo/screens/RobotLessonControlScreen.tsx` is accidentally deleted because it lives under `src/screens/`. | Keep it out of scope; do not delete the `src/screens/` root. The verification test asserts only the specific legacy files are gone. |
 
 ## Coordination notes
 No cross-role coordination required (`coordination_required: false`).
@@ -118,5 +118,5 @@ Optional product check: confirm that no live marketing links or push-notificatio
 ## Implementation hints
 - The audit report uses the names `LegacyMainStackParamList` / `MainStackScreenProps`, but the current code uses `LearningStackParamList` / `LearningScreenProps` in `src/navigation/types.ts`. Remove whichever names are present.
 - Use `grep -R "ParentDashboardScreen\|ChildPracticeScreen\|LessonPlannerScreen\|LearningScreenProps\|LearningStackParamList" src/` after deletion to confirm no references remain.
-- `src/features/lessonDemo/navigation.ts` imports `RobotLessonControlScreen` from `../../screens/robot-lesson/RobotLessonControlScreen`; that path must keep working, so do not remove `src/screens/robot-lesson/`.
+- `src/features/lesson-demo/navigation.ts` imports `RobotLessonControlScreen` from `./screens/RobotLessonControlScreen`; that path must keep working, so do not remove `src/screens/robot-lesson/`.
 - `tests/navigation/no-phantom-routes.test.ts` already asserts the route map does not expose the alias routes; it should continue to pass without changes.

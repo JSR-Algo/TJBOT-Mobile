@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -87,10 +88,13 @@ export default function PairWifiScreen({ navigation, route }: Props) {
     <DeviceShell title="Connect to Wi-Fi" onBack={() => navigation.navigate(ROUTES.PairFoundScreen, route.params)}>
       <Box paddingHorizontal={20} paddingTop={18}>
         <Box style={styles.whyBox}>
-          <Text style={styles.whyText}>
-            <Text fontWeight="600" style={{ color: DV.ink }}>Why Wi-Fi? </Text>
-            Robot uses your home Wi-Fi to fetch lessons and run voice. Without it, lessons can't play.
-          </Text>
+          <Box style={styles.whyIcon} alignItems="center" justifyContent="center">
+            <Icon name="Wifi" size={20} color={DV.accent} strokeWidth={2.4} />
+          </Box>
+          <Box flex={1}>
+            <Text fontWeight="600" style={styles.whyTitle}>Why Wi-Fi?</Text>
+            <Text style={styles.whyText}>{"Robot uses your home Wi-Fi to fetch lessons and run voice. Without it, lessons can't play."}</Text>
+          </Box>
         </Box>
       </Box>
       <Box paddingHorizontal={16} paddingTop={18}>
@@ -98,6 +102,7 @@ export default function PairWifiScreen({ navigation, route }: Props) {
         <Box style={styles.netCard}>
           {scanState === 'scanning' ? (
             <Box style={styles.netRow}>
+              <ActivityIndicator color={DV.accent} />
               <Text style={styles.netName}>Scanning from Robot…</Text>
             </Box>
           ) : visibleNetworks.length > 0 ? visibleNetworks.map((network, index) => (
@@ -108,11 +113,17 @@ export default function PairWifiScreen({ navigation, route }: Props) {
               accessibilityRole="button"
               accessibilityLabel={translateTemplate('Use Wi-Fi network {{ssid}}', { ssid: network.ssid }, { locale: language })}
             >
+              <Box style={styles.networkIcon} alignItems="center" justifyContent="center">
+                <Icon name="Wifi" size={17} color={DV.accent} strokeWidth={2.3} />
+              </Box>
               <Text style={styles.netName}>{network.ssid}</Text>
               {typeof network.rssi === 'number' ? <Text style={styles.netMeta}>{signalLabel(network.rssi)}</Text> : null}
             </TouchableOpacity>
           )) : (
             <Box style={styles.netRow}>
+              <Box style={styles.networkIcon} alignItems="center" justifyContent="center">
+                <Icon name={scanState === 'failed' ? 'WifiOff' : 'SearchX'} size={17} color={DV.ink3} strokeWidth={2.3} />
+              </Box>
               <Text style={styles.netName}>{scanState === 'failed' ? 'Robot scan unavailable. Enter the network name manually.' : 'No Robot-scanned networks found. Enter the network name manually.'}</Text>
             </Box>
           )}
@@ -164,11 +175,14 @@ function signalScore(rssi: RobotWifiNetwork['rssi']): number {
 }
 
 const styles = StyleSheet.create({
-  whyBox: { backgroundColor: '#EEF1F5', borderRadius: 12, padding: 14 },
+  whyBox: { backgroundColor: DV.card, borderColor: DV.hair, borderWidth: 1, borderRadius: 18, padding: 14, flexDirection: 'row', gap: 12 },
+  whyIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: '#FFE5E5' },
+  whyTitle: { fontSize: 14, color: DV.ink, marginBottom: 3 },
   whyText: { fontSize: 13, color: DV.ink2, lineHeight: 22 },
   netLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   netCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, overflow: 'hidden' },
   netRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
+  networkIcon: { width: 34, height: 34, borderRadius: 12, backgroundColor: '#FFF5F3' },
   netRowSel: { backgroundColor: '#E8F0FE' },
   netBorder: { borderBottomWidth: 1, borderBottomColor: DV.hair },
   netName: { fontSize: 15, color: DV.ink, flex: 1 },

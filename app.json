@@ -14,7 +14,7 @@
     ],
     "ios": {
       "bundleIdentifier": "net.jasonle.tjbot",
-      "buildNumber": "12",
+      "buildNumber": "26",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "TJBot uses the microphone to listen to your child's voice and provide AI-powered responses.",
         "NSCameraUsageDescription": "TJBot uses the camera to scan setup codes when pairing your child's device.",

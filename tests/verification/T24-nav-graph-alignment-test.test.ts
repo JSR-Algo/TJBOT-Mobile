@@ -13,7 +13,7 @@ const FEATURE_DIRS = [
   'course',
   'course-library',
   'purchase',
-  'lessonDemo',
+  'lesson-demo',
   'lesson-session',
   'progress',
   'parent',

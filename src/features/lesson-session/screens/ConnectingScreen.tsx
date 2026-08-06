@@ -5,8 +5,10 @@ import type { RootStackParamList } from '@/navigation/routes';
 import Robot from '@/design-system/components/Robot';
 import ScreenShell from '@/components/ScreenShell';
 import WaveBars from '@/design-system/components/WaveBars';
+import { Icon } from '@/design-system/icons';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 import { isInvestorDemoEnabled } from '@/config/investorDemo';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { ROUTES } from '@/navigation/routes';
@@ -119,13 +121,18 @@ export default function ConnectingScreen({ navigation }: Props) {
   }, [actor, navigation]);
 
   return (
-    <ScreenShell bg="#E8F4FF">
+    <ScreenShell bg={referenceColors.bg} gradient={false}>
       <Box accessible accessibilityLabel="Robot connection is tuning in" flex={1}>
-        <Box style={StyleSheet.absoluteFillObject} alignItems="center" justifyContent="center" gap={28}>
+        <Box style={StyleSheet.absoluteFillObject} alignItems="center" justifyContent="center" gap={20}>
+          <Box style={styles.statusPill} flexDirection="row" alignItems="center" gap={7}>
+            <Icon name="Radio" size={16} color={referenceColors.secondary} strokeWidth={2.5} />
+            <Text fontWeight="700" style={styles.statusText}>{"Preparing today's lesson"}</Text>
+          </Box>
           <Robot emotion="curious" size={220} />
           <Text fontWeight="700" style={styles.title}>Tuning in…</Text>
+          <Text style={styles.detail}>TeeBot is opening a calm, private lesson connection.</Text>
           <Box accessible accessibilityLabel="Connection activity">
-            <WaveBars color="#6FC1FF" height={28} count={10} />
+            <WaveBars color={referenceColors.secondary} height={28} count={10} />
           </Box>
         </Box>
       </Box>
@@ -134,5 +141,22 @@ export default function ConnectingScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, color: '#1A1A1F' },
+  statusPill: {
+    backgroundColor: referenceColors.card,
+    borderColor: referenceColors.line,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    ...referenceShadow.card,
+  },
+  statusText: { color: referenceColors.inkSoft, fontSize: 13 },
+  title: { fontSize: 28, color: referenceColors.ink },
+  detail: {
+    color: referenceColors.inkSoft,
+    fontSize: 15,
+    lineHeight: 21,
+    maxWidth: 300,
+    textAlign: 'center',
+  },
 });

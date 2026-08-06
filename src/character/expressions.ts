@@ -1,5 +1,5 @@
 import type { ClayExpression, EyePiece, MouthPiece } from './types';
-import type { RobotReadyState } from '@/features/lessonDemo/types';
+import type { RobotReadyState } from '@/features/lesson-demo/types';
 
 const DEFAULT: ClayExpression = {
   eye: 'open',

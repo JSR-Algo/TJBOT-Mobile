@@ -18,6 +18,8 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { ROBOT_LINK_STATE_COPY, type RobotLinkState } from '@/services/connectors/types';
+import { Icon, type IconName } from '@/design-system/icons';
+import { referenceColors, referenceShadow } from '@/design-system/referenceTheme';
 
 type Props = {
   state: RobotLinkState;
@@ -25,31 +27,77 @@ type Props = {
   testID?: string;
 };
 
+const STATE_ICONS: Record<RobotLinkState, IconName> = {
+  not_connected: 'Unplug',
+  simulated: 'FlaskConical',
+  queued_for_robot: 'Clock3',
+  robot_offline: 'WifiOff',
+  server_unavailable: 'CloudOff',
+  unsupported_until_connector: 'Cable',
+};
+
 export default function ConnectorStateNotice({ state, onRetry, testID }: Props) {
   const copy = ROBOT_LINK_STATE_COPY[state];
   return (
     <Box
       testID={testID ?? `connector-state-${state}`}
-      paddingHorizontal={24}
-      paddingTop={16}
-      alignItems="center"
+      paddingHorizontal={20}
+      paddingTop={20}
     >
-      <Text fontWeight="600" style={styles.title}>
-        {copy.title}
-      </Text>
-      <Text style={styles.body}>{copy.body}</Text>
-      {onRetry ? (
-        <Box paddingTop={12}>
-          <DeviceBigBtn secondary onClick={onRetry}>
-            Try again
-          </DeviceBigBtn>
+      <Box style={styles.card} alignItems="center">
+        <Box style={styles.iconBadge} alignItems="center" justifyContent="center">
+          <Icon
+            name={STATE_ICONS[state]}
+            size={26}
+            color={referenceColors.primary}
+            strokeWidth={2.3}
+          />
         </Box>
-      ) : null}
+        <Text fontWeight="800" style={styles.title}>
+          {copy.title}
+        </Text>
+        <Text style={styles.body}>{copy.body}</Text>
+        {onRetry ? (
+          <Box paddingTop={16} style={styles.action}>
+            <DeviceBigBtn secondary onClick={onRetry}>
+              Try again
+            </DeviceBigBtn>
+          </Box>
+        ) : null}
+      </Box>
     </Box>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 17, textAlign: 'center', color: '#1C1C1E' },
-  body: { fontSize: 13, textAlign: 'center', marginTop: 4, color: '#4A4A52', maxWidth: 300, lineHeight: 19 },
+  card: {
+    width: '100%',
+    backgroundColor: referenceColors.card,
+    borderColor: referenceColors.line,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 22,
+    ...referenceShadow.card,
+  },
+  iconBadge: {
+    width: 54,
+    height: 54,
+    borderRadius: 20,
+    backgroundColor: referenceColors.primarySoft,
+  },
+  title: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: referenceColors.ink,
+    marginTop: 14,
+  },
+  body: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 6,
+    color: referenceColors.inkSoft,
+    maxWidth: 300,
+    lineHeight: 20,
+  },
+  action: { width: '100%' },
 });

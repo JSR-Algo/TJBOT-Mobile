@@ -28,13 +28,15 @@ type Props = {
   children?: React.ReactNode;
   title?: string;
   onBack?: () => void;
+  backAccessibilityLabel?: string;
   right?: React.ReactNode;
 };
 
-export default function ParentScroll({ children, title, onBack, right }: Props) {
+export default function ParentScroll({ children, title, onBack, backAccessibilityLabel, right }: Props) {
   const { language } = useAppLanguage();
   return (
     <ScrollView
+      testID="parentScroll"
       style={[styles.root, { backgroundColor: PA.bg }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -52,7 +54,7 @@ export default function ParentScroll({ children, title, onBack, right }: Props) 
               style={styles.backBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
-              accessibilityLabel={translateCopy('Go back', { locale: language })}
+              accessibilityLabel={translateCopy(backAccessibilityLabel ?? 'Go back', { locale: language })}
             >
               <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={PA.ink2} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <Path d="M15 18l-6-6 6-6" />
@@ -74,7 +76,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    paddingBottom: 130,
+    paddingBottom: PARENT_SCROLL_TAB_CLEARANCE,
   },
   header: {
     paddingTop: 56, paddingBottom: 18, paddingHorizontal: 24,

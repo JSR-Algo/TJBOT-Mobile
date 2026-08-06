@@ -2,7 +2,6 @@ import React from 'react';
 import {
   getDeviceStatus,
   getFirmwareVersion,
-  isBackendContractUnavailableError,
   type DeviceStatus,
 } from '@/services/api/device.api';
 import { getDemoBadgeState } from '@/config/investorDemo';
@@ -12,7 +11,6 @@ import {
 } from '@/services/connectors/types';
 
 export const ROBOT_DETAILS_ERROR_COPY = 'Robot details are temporarily unavailable.';
-export const ROBOT_DETAILS_COMING_SOON_COPY = 'Robot details are coming soon.';
 export const PRIMARY_ROBOT_ID = 'primary';
 
 const STALE_AFTER_MS = 5 * 60 * 1000;
@@ -106,10 +104,14 @@ export function useRobotTelemetry(): RobotTelemetryState {
         simulated,
       }));
       try {
-        const [status, firmware] = await Promise.all([
-          getDeviceStatus(PRIMARY_ROBOT_ID),
-          getFirmwareVersion(PRIMARY_ROBOT_ID),
-        ]);
+        const status = await getDeviceStatus(PRIMARY_ROBOT_ID);
+        let firmwareVersion: string | undefined;
+        try {
+          firmwareVersion = (await getFirmwareVersion(PRIMARY_ROBOT_ID)).current;
+        } catch {
+          // Firmware metadata is optional. A missing firmware route must not
+          // hide otherwise valid robot status and controls.
+        }
 
         if (cancelled) {
           return;
@@ -119,7 +121,7 @@ export function useRobotTelemetry(): RobotTelemetryState {
         setState({
           telemetry: normalizeRobotTelemetry({
             ...status,
-            firmwareVersion: firmware.current,
+            firmwareVersion,
           }),
           loading: false,
           errorMessage: null,
@@ -133,13 +135,12 @@ export function useRobotTelemetry(): RobotTelemetryState {
           return;
         }
 
-        const featureUnavailable = isBackendContractUnavailableError(error);
         setState({
           telemetry: normalizeRobotTelemetry(undefined),
           loading: false,
-          errorMessage: featureUnavailable ? ROBOT_DETAILS_COMING_SOON_COPY : ROBOT_DETAILS_ERROR_COPY,
+          errorMessage: ROBOT_DETAILS_ERROR_COPY,
           failureReason: describeError(error),
-          featureUnavailable,
+          featureUnavailable: false,
           linkState: mapErrorToLinkState(error) ?? 'server_unavailable',
           simulated,
         });

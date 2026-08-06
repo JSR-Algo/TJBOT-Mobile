@@ -15,10 +15,14 @@ export function DiagnosticErrorBanner(): React.JSX.Element | null {
   const insets = useSafeAreaInsets();
   const [, bump] = React.useReducer((n: number) => n + 1, 0);
   const pending = getPendingDiagnosticError();
+  const overlayEnabled = process.env.EXPO_PUBLIC_DIAGNOSTIC_OVERLAY === '1';
 
-  React.useEffect(() => subscribePendingDiagnosticError(bump), []);
+  React.useEffect(
+    () => (overlayEnabled ? subscribePendingDiagnosticError(bump) : undefined),
+    [overlayEnabled],
+  );
 
-  if (!pending) return null;
+  if (!overlayEnabled || !pending) return null;
 
   const { entry, relayStatus, relayError } = pending;
   const sending = relayStatus === 'sending';

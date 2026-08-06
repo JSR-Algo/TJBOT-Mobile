@@ -28,19 +28,31 @@ type Props = {
   onBack?: () => void;
   title?: string;
   testID?: string;
+  backgroundColor?: string;
 };
 
-export default function OnbShell({ children, step, total, onBack, title, testID }: Props) {
+export default function OnbShell({
+  children,
+  step,
+  total,
+  onBack,
+  title,
+  testID,
+  backgroundColor = OB.bg,
+}: Props) {
   const { t } = useAppLanguage();
+  const progress = step != null && total != null && total > 0
+    ? Math.min(1, Math.max(0, step / total))
+    : null;
   return (
     <ScrollView
-      style={[styles.root, { backgroundColor: OB.bg }]}
-      contentContainerStyle={styles.content}
+      style={[styles.root, { backgroundColor }]}
+      contentContainerStyle={[styles.content, { backgroundColor }]}
       showsVerticalScrollIndicator={false}
       testID={testID}
     >
       <Box
-        style={[styles.header, { backgroundColor: OB.bg, borderBottomColor: OB.hair }]}
+        style={[styles.header, { backgroundColor, borderBottomColor: OB.hair }]}
         flexDirection="row"
         alignItems="center"
         gap={12}
@@ -60,11 +72,21 @@ export default function OnbShell({ children, step, total, onBack, title, testID 
           {title}
         </Text>
         {step != null && total != null ? (
-          <Text fontWeight="500" style={{ fontSize: 13, color: OB.ink3 }}>
-            {step} of {total}
+          <Text fontWeight="800" style={styles.stepPill}>
+            {t(`Step ${step}/${total}`)}
           </Text>
         ) : null}
       </Box>
+      {progress != null ? (
+        <Box
+          style={styles.progressTrack}
+          testID="onboardingProgress"
+          accessibilityRole="progressbar"
+          accessibilityValue={{ min: 0, max: total, now: step }}
+        >
+          <Box style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        </Box>
+      ) : null}
       {children}
     </ScrollView>
   );
@@ -95,5 +117,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: referenceColors.line,
     ...referenceShadow.card,
+  },
+  stepPill: {
+    fontSize: 11,
+    color: OB.ink3,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  progressTrack: {
+    height: 10,
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(235,220,199,0.45)',
+    padding: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: referenceColors.secondary,
   },
 });

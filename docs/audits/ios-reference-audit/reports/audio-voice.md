@@ -20,7 +20,7 @@ Audio capture/playback, voice activity detection, latency, file size, on-device 
 - `src/components/robot/RobotFace.tsx`, `RobotAnimations.ts`, `RobotModeTheme.ts`, `LatencyHud.tsx`
 - `src/lib/suka-prompt.ts`
 - `src/config.ts`
-- `src/screens/robot-lesson/RobotLessonControlScreen.tsx`
+- `src/features/lesson-demo/screens/RobotLessonControlScreen.tsx`
 - `src/app/screens/ListenScreen.tsx`, `SpeakScreen.tsx`
 - `src/features/lesson-session/screens/RobotListeningScreen.tsx`, `UserSpeakingScreen.tsx`, `RobotSpeakingScreen.tsx`
 - `src/services/ws/xiaozhi-device.ts`

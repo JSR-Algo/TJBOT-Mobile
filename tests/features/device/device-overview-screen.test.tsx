@@ -58,12 +58,34 @@ describe('DeviceOverviewScreen', () => {
     const { screen } = renderScreen();
 
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
-    expect(screen.getByText('Online')).toBeTruthy();
-    expect(screen.getByText('87%')).toBeTruthy();
-    expect(screen.getByText('Casa')).toBeTruthy();
+    expect(screen.getAllByText('Online')).toHaveLength(2);
+    expect(screen.getAllByText('87%')).toHaveLength(2);
+    expect(screen.getAllByText('Casa')).toHaveLength(2);
     expect(screen.queryByText('Online · idle')).toBeNull();
     expect(screen.queryByText('78%')).toBeNull();
     expect(screen.queryByText('Home')).toBeNull();
+  });
+
+  it('routes status, firmware, find, and reset rows to real device screens', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: 'Seed Robot',
+      online: true,
+      batteryPercent: 87,
+      wifiSsid: 'Casa',
+    });
+    const { navigation, screen } = renderScreen();
+
+    await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
+    fireEvent.press(screen.getByTestId('deviceStatusRow'));
+    fireEvent.press(screen.getByTestId('deviceFirmwareRow'));
+    fireEvent.press(screen.getByTestId('deviceFindRow'));
+    fireEvent.press(screen.getByTestId('deviceResetRow'));
+
+    expect(navigation.navigate).toHaveBeenNthCalledWith(1, ROUTES.RobotStatusScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(2, ROUTES.DeviceFirmwareScreen, { deviceId: 'device-1' });
+    expect(navigation.navigate).toHaveBeenNthCalledWith(3, ROUTES.DeviceLostScreen);
+    expect(navigation.navigate).toHaveBeenNthCalledWith(4, ROUTES.FactoryResetScreen);
   });
 
   it('renders the connector notice when status is blocked, with working retry', async () => {
@@ -100,7 +122,7 @@ describe('DeviceOverviewScreen', () => {
     expect(screen.queryByText('78%')).toBeNull();
   });
 
-  it('keeps the static explainer sections and setup CTA', async () => {
+  it('keeps the no-device state focused on recovery instead of marketing copy', async () => {
     apiMocks.getDeviceStatus.mockResolvedValue({
       id: '',
       name: 'TJBot',
@@ -109,12 +131,11 @@ describe('DeviceOverviewScreen', () => {
     });
     const { navigation, screen } = renderScreen();
 
-    await expect(screen.findByText('Why a device, not a screen')).resolves.toBeTruthy();
-    expect(screen.getByText('Robot does')).toBeTruthy();
-    expect(screen.getByText('Phone does')).toBeTruthy();
+    await expect(screen.findByText('No robot connected yet')).resolves.toBeTruthy();
+    expect(screen.queryByText('Why a device, not a screen')).toBeNull();
+    expect(screen.queryByText('Robot does')).toBeNull();
+    expect(screen.queryByText('Phone does')).toBeNull();
 
-    // CTA appears only after status settles with no real device id.
-    await expect(screen.findByText('Set up your Robot')).resolves.toBeTruthy();
     fireEvent.press(screen.getByText('Set up your Robot'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
   });

@@ -1,0 +1,15 @@
+appId: net.jasonle.tjbot
+name: D Library open course detail
+---
+- extendedWaitUntil:
+    visible:
+      text: ".*(This Is a Barn|Barnyard Basics|Color Safari|Number Train).*"
+    timeout: 25000
+- tapOn: "^(Open course|Mở khóa học) (This Is a Barn|Barnyard Basics|Color Safari|Number Train|Backyard Farm)$"
+- waitForAnimationToEnd
+# Detail-only postcondition — not library list titles alone.
+- extendedWaitUntil:
+    visible:
+      text: ".*(Course details|Chi tiết khóa học).*"
+    timeout: 20000
+- assertVisible: ".*(Course details|Chi tiết khóa học).*"

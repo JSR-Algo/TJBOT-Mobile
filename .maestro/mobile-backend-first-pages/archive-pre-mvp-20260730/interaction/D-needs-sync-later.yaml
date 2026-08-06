@@ -1,0 +1,13 @@
+appId: net.jasonle.tjbot
+name: D NeedsSync later to Device Home
+---
+- assertVisible: ".*(Robot needs to catch up|Robot cần đồng bộ thêm|Robot cần cập nhật).*"
+- scrollUntilVisible:
+    element:
+      text: ".*(I'll do it later|Để sau).*"
+    direction: DOWN
+- tapOn: ".*(I'll do it later|Để sau).*"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Robot|Thiết bị|Pair|Ghép|Device|My Robot|Robot của).*"
+    timeout: 20000

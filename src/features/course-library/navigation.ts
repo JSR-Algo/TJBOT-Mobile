@@ -11,6 +11,7 @@ import RunningScreen from './screens/RunningScreen';
 import CompanionScreen from './screens/CompanionScreen';
 import UnlockConfirmModal from './UnlockConfirmModal';
 import { BookOpen } from 'lucide-react-native';
+import { MVP_SCOPE_HIDDEN } from '@/navigation/mvpProductionRoutes';
 import { ROUTES } from '@/navigation/routes';
 import type { FeatureNavigationConfig } from '@/navigation/types';
 import { defineFeatureScreens } from '@/navigation/types';
@@ -29,19 +30,19 @@ export const LIBRARY_TAB_SCREEN = {
 
 export const COURSE_LIBRARY_SCREENS = defineFeatureScreens([
   { name: ROUTES.CourseDetailScreen, component: CourseDetailScreen, role: 'stack', backTarget: ROUTES.CourseLibraryScreen, stateMachineId: 'cl_detail' },
-  { name: ROUTES.BuyCourseScreen, component: BuyCourseScreen, role: 'stack-entry', backTarget: ROUTES.CourseDetailScreen, stateMachineId: 'cl_add_free' },
-  { name: ROUTES.CourseAddedScreen, component: CourseAddedScreen, role: 'stack-entry', stateMachineId: 'cl_added' },
-  { name: ROUTES.CourseCompleteScreen, component: CourseCompleteScreen, role: 'state-machine', backTarget: ROUTES.CourseLibraryScreen, stateMachineId: 'cl_complete' },
-  { name: ROUTES.CourseLockedScreen, component: CourseLockedScreen, role: 'state-machine', backTarget: ROUTES.CourseLibraryScreen, stateMachineId: 'cl_locked' },
+  { name: ROUTES.BuyCourseScreen, component: BuyCourseScreen, role: 'stack-entry', backTarget: ROUTES.CourseDetailScreen, stateMachineId: 'cl_add_free', ...MVP_SCOPE_HIDDEN },
+  { name: ROUTES.CourseAddedScreen, component: CourseAddedScreen, role: 'stack-entry', stateMachineId: 'cl_added', ...MVP_SCOPE_HIDDEN },
+  { name: ROUTES.CourseCompleteScreen, component: CourseCompleteScreen, role: 'state-machine', backTarget: ROUTES.CourseLibraryScreen, stateMachineId: 'cl_complete', ...MVP_SCOPE_HIDDEN },
+  { name: ROUTES.CourseLockedScreen, component: CourseLockedScreen, role: 'state-machine', backTarget: ROUTES.CourseLibraryScreen, stateMachineId: 'cl_locked', ...MVP_SCOPE_HIDDEN },
   { name: ROUTES.NeedsSyncScreen, component: NeedsSyncScreen, role: 'state-machine', backTarget: ROUTES.CourseLibraryScreen, stateMachineId: 'cl_needs_sync' },
-  { name: ROUTES.SendToRobotScreen, component: SendToRobotScreen, role: 'stack', backTarget: ROUTES.DeviceHomeScreen, forwardCycleGroup: 'course-dispatch-picker', stateMachineId: 'cl_send' },
+  { name: ROUTES.SendToRobotScreen, component: SendToRobotScreen, role: 'stack-entry', backTarget: ROUTES.DeviceHomeScreen, forwardCycleGroup: 'course-dispatch-picker', stateMachineId: 'cl_send' },
   { name: ROUTES.RobotReadyScreen, component: RobotReadyScreen, role: 'stack', backTarget: ROUTES.SendToRobotScreen, forwardCycleGroup: 'course-dispatch-picker', stateMachineId: 'cl_robot_ready' },
-  { name: ROUTES.RunningScreen, component: RunningScreen, role: 'stack', backTarget: ROUTES.RobotReadyScreen, stateMachineId: 'cl_running' },
-  { name: ROUTES.CompanionScreen, component: CompanionScreen, role: 'stack', backTarget: ROUTES.RunningScreen, stateMachineId: 'cl_companion' },
+  { name: ROUTES.RunningScreen, component: RunningScreen, role: 'stack-entry', backTarget: ROUTES.RobotReadyScreen, stateMachineId: 'cl_running' },
+  { name: ROUTES.CompanionScreen, component: CompanionScreen, role: 'stack-entry', backTarget: ROUTES.RunningScreen, stateMachineId: 'cl_companion' },
 ]);
 
 export const COURSE_LIBRARY_MODAL_SCREENS = defineFeatureScreens([
-  { name: ROUTES.UnlockConfirmScreen, component: UnlockConfirmModal, role: 'modal', backTarget: ROUTES.CourseDetailScreen, stateMachineId: 'cl_unlock_confirm' },
+  { name: ROUTES.UnlockConfirmScreen, component: UnlockConfirmModal, role: 'modal', backTarget: ROUTES.CourseDetailScreen, stateMachineId: 'cl_unlock_confirm', ...MVP_SCOPE_HIDDEN },
 ]);
 
 export const COURSE_LIBRARY_NAVIGATION = {

@@ -4,6 +4,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
 import ConnectorStateNotice from '@/components/ConnectorStateNotice';
 import DeviceBigBtn from '@/components/DeviceBigBtn';
+import RobotImage from '@/components/RobotImage';
 import { Box } from '@/design-system/primitives/Box';
 import { ROUTES } from '@/navigation/routes';
 
@@ -12,6 +13,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SpeakerTestScreen'>;
 export default function SpeakerTestScreen({ navigation }: Props): React.JSX.Element {
   return (
     <DeviceShell title="Speaker test" onBack={() => navigation.navigate(ROUTES.MyRobotScreen)}>
+      <Box paddingTop={20} alignItems="center">
+        <RobotImage variant="body" size={150} />
+      </Box>
       <ConnectorStateNotice state="unsupported_until_connector" />
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={30} gap={10}>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.MyRobotScreen)}>

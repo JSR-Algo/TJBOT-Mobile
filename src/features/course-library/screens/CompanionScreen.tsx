@@ -5,6 +5,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import LCDFace from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
 import DeviceRow from '@/components/DeviceRow';
+import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
@@ -92,7 +93,9 @@ export default function CompanionScreen({ navigation, route }: Props) {
       : null;
   const statusCopy = presentation
     ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
-    : 'Lesson running on Robot';
+    : deviceId
+      ? 'Lesson running on Robot'
+      : 'Choose a Robot to view its live lesson.';
 
   return (
     <DeviceShell title="What Robot sees" onBack={() => navigation.navigate(ROUTES.RunningScreen, { deviceId, assignmentId: assignment?.assignmentId })}>
@@ -103,13 +106,21 @@ export default function CompanionScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.lcdMirror} alignItems="center" gap={12}>
           <Box flexDirection="row" alignItems="center" gap={10} style={styles.liveRow}>
-            <Box style={styles.liveDot} />
-            <Text style={styles.liveText}>Live</Text>
+            <Box style={[styles.liveDot, !deviceId && styles.previewDot]} />
+            <Text style={styles.liveText}>{deviceId ? 'Live' : 'Preview'}</Text>
           </Box>
           <LCDFace emotion={completed ? 'happy' : faceFor(assignment?.state)} size={220} accent="#FF6F61" />
           <Text fontWeight="600" style={styles.phaseLabel}>{statusCopy}</Text>
         </Box>
       </Box>
+
+      {!deviceId ? (
+        <Box paddingHorizontal={20} paddingTop={18}>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
+            Choose a Robot
+          </DeviceBigBtn>
+        </Box>
+      ) : null}
 
       <Box paddingHorizontal={16} paddingTop={18}>
         <Box style={styles.progressCard}>
@@ -121,8 +132,8 @@ export default function CompanionScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={16} paddingTop={18}>
         <Text fontWeight="700" style={styles.sectionLabel}>If you need to</Text>
         <Box style={styles.rowCard}>
-          <DeviceRow icon="🔉" title="Turn volume down" body="Currently at 6 of 10" />
-          <DeviceRow icon="⏸️" title="Pause Robot gently" body="Robot will say 'Let's take a quick break'" />
+          <DeviceRow icon="Volume1" title="Turn volume down" body="Currently at 6 of 10" />
+          <DeviceRow icon="Pause" title="Pause Robot gently" body="Robot will say 'Let's take a quick break'" />
         </Box>
       </Box>
 
@@ -136,6 +147,7 @@ const styles = StyleSheet.create({
   lcdMirror: { backgroundColor: '#0E1116', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 18 },
   liveRow: { alignSelf: 'flex-start' },
   liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#EF5454' },
+  previewDot: { backgroundColor: '#F7C047' },
   liveText: { fontSize: 11, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: '600' },
   phaseLabel: { fontSize: 15, color: '#fff', marginTop: 4, textAlign: 'center' },
   progressCard: { backgroundColor: CL.card, borderWidth: 1, borderColor: CL.hair, borderRadius: 14, padding: 14 },

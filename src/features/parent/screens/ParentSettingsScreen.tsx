@@ -1,269 +1,381 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import ParentScroll, { PA } from '../components/ParentScroll';
-import PRowGroup from '../components/PRowGroup';
-import PRow from '../components/PRow';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
-import { useAuth } from '@/contexts/AuthContext';
-import { useHousehold } from '@/contexts/HouseholdContext';
 import { ROUTES } from '@/navigation/routes';
 import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { captureError } from '@/services/observability/sentry';
 import { useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
-import { getChildProfile, updateChildProfile, type ChildProfile, type UpdateProfileDto } from '@/services/api/learning';
+import {
+  setAccessibilityPreferences,
+  useAccessibilityPreferences,
+} from '@/services/accessibility/preferences';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentSettingsScreen'>;
 
-const LANG_OPTIONS: { v: AppLocale; label: string }[] = [
-  { v: 'vi', label: 'Tiếng Việt' },
-  { v: 'en', label: 'English' },
+const LANG_OPTIONS: { value: AppLocale; label: string; subtitle: string }[] = [
+  { value: 'vi', label: 'Tiếng Việt', subtitle: 'Vietnamese' },
+  { value: 'en', label: 'English', subtitle: 'Tiếng Anh' },
 ];
 
-const CAREER_OPTIONS = [
-  { value: 'teacher', label: 'Teacher' },
-  { value: 'engineer', label: 'Engineer' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'business', label: 'Business' },
-] as const;
+interface ToggleRowProps {
+  label: string;
+  description: string;
+  value: boolean;
+  onChange: (nextValue: boolean) => void;
+}
 
-const INTEREST_OPTIONS = ['animals', 'space', 'music', 'sports', 'stories', 'numbers'] as const;
-
-function languageLabel(locale: AppLocale): string {
-  return LANG_OPTIONS.find(option => option.v === locale)?.label ?? 'Tiếng Việt';
+function ToggleRow({ label, description, value, onChange }: ToggleRowProps) {
+  return (
+    <Box style={styles.toggleRow} flexDirection="row" alignItems="center" justifyContent="space-between" gap={16}>
+      <Box flex={1}>
+        <Text fontWeight="800" style={styles.toggleLabel}>{label}</Text>
+        <Text fontWeight="800" style={styles.toggleDescription}>{description}</Text>
+      </Box>
+      <TouchableOpacity
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: value }}
+        activeOpacity={0.8}
+        onPress={() => onChange(!value)}
+        style={[styles.toggleTrack, value && styles.toggleTrackEnabled]}
+      >
+        <Box style={[styles.toggleThumb, value && styles.toggleThumbEnabled]} />
+      </TouchableOpacity>
+    </Box>
+  );
 }
 
 export default function ParentSettingsScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentSettingsScreen);
-  const { logout } = useAuth();
-  const { activeChild } = useHousehold();
-  const [mic, setMic] = React.useState(false);
-  const [sound, setSound] = React.useState(false);
-  const [haptics, setHaptics] = React.useState(false);
-  const [analytics, setAnalytics] = React.useState(false);
-  const [savingLanguage, setSavingLanguage] = React.useState<AppLocale | null>(null);
-  const [languageSaveFailed, setLanguageSaveFailed] = React.useState(false);
-  const [profile, setProfile] = React.useState<ChildProfile | null>(null);
-  const [profileSaving, setProfileSaving] = React.useState(false);
-  const [profileSaveFailed, setProfileSaveFailed] = React.useState(false);
   const { language, setLanguage, t } = useAppLanguage();
-  const childId = activeChild?.id;
+  const preferences = useAccessibilityPreferences();
+  const [draftLanguage, setDraftLanguage] = React.useState(language);
+  const [reduceMotion, setReduceMotion] = React.useState(preferences.reduceMotion);
+  const [largeText, setLargeText] = React.useState(preferences.largeText);
+  const [saving, setSaving] = React.useState(false);
+  const [saveStatus, setSaveStatus] = React.useState<'idle' | 'saved' | 'error'>('idle');
 
   React.useEffect(() => {
-    let mounted = true;
-    if (!childId) {
-      setProfile(null);
-      return () => { mounted = false; };
-    }
-    getChildProfile(childId)
-      .then((nextProfile) => {
-        if (mounted) setProfile(nextProfile);
-      })
-      .catch((error) => {
-        captureError(error);
-        if (mounted) setProfile(null);
-      });
-    return () => { mounted = false; };
-  }, [childId]);
+    setDraftLanguage(language);
+  }, [language]);
 
-  const updateLanguage = React.useCallback(async (nextLanguage: AppLocale): Promise<void> => {
-    setSavingLanguage(nextLanguage);
-    setLanguageSaveFailed(false);
+  React.useEffect(() => {
+    setReduceMotion(preferences.reduceMotion);
+    setLargeText(preferences.largeText);
+  }, [preferences.largeText, preferences.reduceMotion]);
+
+  const save = React.useCallback(async () => {
+    if (saving) return;
+    setSaving(true);
+    setSaveStatus('idle');
     try {
-      await setLanguage(nextLanguage);
+      await setAccessibilityPreferences({ reduceMotion, largeText });
+      await setLanguage(draftLanguage);
+      setSaveStatus('saved');
     } catch (error) {
       captureError(error);
-      setLanguageSaveFailed(true);
+      setSaveStatus('error');
     } finally {
-      setSavingLanguage(null);
+      setSaving(false);
     }
-  }, [setLanguage]);
-
-  const saveProfile = React.useCallback(async (patch: UpdateProfileDto): Promise<void> => {
-    if (!childId || profileSaving) return;
-    setProfileSaving(true);
-    setProfileSaveFailed(false);
-    try {
-      const nextProfile = await updateChildProfile(childId, patch);
-      setProfile(nextProfile);
-    } catch (error) {
-      captureError(error);
-      setProfileSaveFailed(true);
-    } finally {
-      setProfileSaving(false);
-    }
-  }, [childId, profileSaving]);
-
-  const toggleInterest = React.useCallback((interest: string) => {
-    const current = profile?.interests ?? [];
-    const next = current.includes(interest)
-      ? current.filter((item) => item !== interest)
-      : [...current, interest];
-    void saveProfile({ interests: next });
-  }, [profile?.interests, saveProfile]);
-
-  const unavailableRows = [
-    'Child name',
-    'Child age',
-    'Learning level',
-    'Lesson length',
-    'Daily reminder',
-    'Plan status',
-    'Billing portal',
-    'Help center',
-    'App version',
-  ] as const;
+  }, [draftLanguage, largeText, reduceMotion, saving, setLanguage]);
 
   return (
-    <ParentScroll title="Settings" onBack={() => navigation.navigate(ROUTES.ParentSummaryScreen)}>
-      <PRowGroup header="Language" footer="Changes apply to the whole app — for both child and parent surfaces.">
-        <PRow icon="🌐" label="App language" value={languageLabel(language)} isLast />
-        <Box paddingHorizontal={16} paddingBottom={14} paddingTop={0} flexDirection="row" gap={8} style={{ backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: PA.hair }}>
-          {LANG_OPTIONS.map(o => (
-            <TouchableOpacity
-              key={o.v}
-              accessibilityRole="radio"
-              accessibilityLabel={`${o.label}, ${language === o.v ? t('Selected') : t('Not selected')}`}
-              accessibilityState={{ selected: language === o.v, disabled: savingLanguage !== null }}
-              disabled={savingLanguage !== null}
-              onPress={() => { void updateLanguage(o.v); }}
-              style={[
-                styles.langBtn,
-                { borderColor: language === o.v ? PA.accent : PA.hair, backgroundColor: language === o.v ? PA.accent : '#fff', opacity: savingLanguage !== null && savingLanguage !== o.v ? 0.6 : 1 },
-              ]}
-              activeOpacity={0.7}
-            >
-              <Text fontWeight="600" style={{ fontSize: 14, color: language === o.v ? '#fff' : PA.ink }} i18n={false}>
-                {o.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </Box>
-        {languageSaveFailed ? (
-          <Box paddingHorizontal={16} paddingBottom={14} style={{ backgroundColor: '#fff' }}>
-            <Text style={{ fontSize: 13, color: '#C0392B' }}>Language could not be saved. Try again.</Text>
-          </Box>
-        ) : null}
-      </PRowGroup>
+    <ParentScroll>
+      <Box style={styles.header} flexDirection="row" alignItems="center" gap={16}>
+        <TouchableOpacity
+          testID="languageAccessBackButton"
+          accessibilityRole="button"
+          accessibilityLabel={t('Go back')}
+          activeOpacity={0.75}
+          onPress={() => navigation.navigate(ROUTES.ParentSummaryScreen)}
+          style={styles.backButton}
+        >
+          <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M15 5L8 12L15 19" stroke={PA.ink} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+        </TouchableOpacity>
+        <Text fontWeight="800" style={styles.title}>Language & access</Text>
+      </Box>
 
-      <PRowGroup header="Profile and plan">
-        <PRow label="Child name" value={activeChild?.name ?? profile?.name ?? 'Unavailable'} />
-        <PRow label="Learning level" value={profile?.vocabulary_level ?? 'Unavailable'} />
-        <PRow label="Lesson length" value={profile?.attention_span_seconds ? `${Math.round(profile.attention_span_seconds / 60)} min` : 'Unavailable'} />
-        {unavailableRows.slice(3).map((label, index) => (
-          <PRow key={label} label={label} value="Unavailable" isLast={index === unavailableRows.slice(3).length - 1} />
-        ))}
-      </PRowGroup>
-
-      <PRowGroup header="Personality filters" footer="These signals personalize lesson ordering without exposing the raw child profile in lesson cards.">
-        <Box style={styles.personalityBlock}>
-          <Text fontWeight="600" style={styles.filterTitle}>Parent career</Text>
-          <Box flexDirection="row" gap={8} style={styles.chipWrap}>
-            {CAREER_OPTIONS.map((option) => {
-              const selected = profile?.parent_career === option.value;
+      <Box style={styles.content} gap={24}>
+        <Box style={styles.card}>
+          <Text fontWeight="800" style={styles.eyebrow}>LANGUAGE</Text>
+          <Text fontWeight="700" style={styles.cardDescription}>Choose your child's main learning language</Text>
+          <Box gap={16}>
+            {LANG_OPTIONS.map(option => {
+              const selected = draftLanguage === option.value;
               return (
                 <TouchableOpacity
                   key={option.value}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected, disabled: profileSaving }}
-                  disabled={profileSaving || !childId}
-                  onPress={() => { void saveProfile({ parent_career: option.value }); }}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                  activeOpacity={0.7}
+                  accessibilityRole="radio"
+                  accessibilityLabel={`${option.label}, ${selected ? t('Selected') : t('Not selected')}`}
+                  accessibilityState={{ selected, disabled: saving }}
+                  activeOpacity={0.8}
+                  disabled={saving}
+                  onPress={() => {
+                    setDraftLanguage(option.value);
+                    setSaveStatus('idle');
+                  }}
+                  style={[styles.languageOption, selected && styles.languageOptionSelected]}
                 >
-                  <Text fontWeight="600" style={[styles.chipText, selected && styles.chipTextSelected]} i18n={false}>{option.label}</Text>
+                  <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={12}>
+                    <Box flexDirection="row" alignItems="center" gap={16} flex={1}>
+                      <Box style={[styles.checkBox, selected && styles.checkBoxSelected]} alignItems="center" justifyContent="center">
+                        {selected ? (
+                          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                            <Path d="M5 12.5L9.5 17L19 7.5" stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+                          </Svg>
+                        ) : null}
+                      </Box>
+                      <Box>
+                        <Text i18n={false} fontWeight="800" style={[styles.languageLabel, selected && styles.selectedText]}>{option.label}</Text>
+                        <Text i18n={false} fontWeight="800" style={[styles.languageSubtitle, selected && styles.selectedSubtitle]}>{option.subtitle}</Text>
+                      </Box>
+                    </Box>
+                    <Box style={[styles.statusPill, selected && styles.statusPillSelected]}>
+                      <Text fontWeight="800" style={[styles.statusText, selected && styles.selectedText]}>
+                        {selected ? 'CURRENT' : 'AVAILABLE'}
+                      </Text>
+                    </Box>
+                  </Box>
                 </TouchableOpacity>
               );
             })}
           </Box>
         </Box>
-        <Box style={[styles.personalityBlock, styles.personalityBorder]}>
-          <Text fontWeight="600" style={styles.filterTitle}>Child interests</Text>
-          <Box flexDirection="row" gap={8} style={styles.chipWrap}>
-            {INTEREST_OPTIONS.map((interest) => {
-              const selected = profile?.interests.includes(interest) ?? false;
-              return (
-                <TouchableOpacity
-                  key={interest}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected, disabled: profileSaving }}
-                  disabled={profileSaving || !childId}
-                  onPress={() => toggleInterest(interest)}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                  activeOpacity={0.7}
-                >
-                  <Text fontWeight="600" style={[styles.chipText, selected && styles.chipTextSelected]} i18n={false}>{interest}</Text>
-                </TouchableOpacity>
-              );
-            })}
+
+        <Box style={styles.card}>
+          <Text fontWeight="800" style={styles.eyebrow}>ACCESSIBILITY</Text>
+          <Text fontWeight="700" style={styles.cardDescription}>Adjust the app to make learning easier</Text>
+          <Box gap={28}>
+            <ToggleRow
+              label="Reduce motion"
+              description="Reduce animated effects"
+              value={reduceMotion}
+              onChange={nextValue => {
+                setReduceMotion(nextValue);
+                setSaveStatus('idle');
+              }}
+            />
+            <ToggleRow
+              label="Enable larger text"
+              description="Increase the font size"
+              value={largeText}
+              onChange={nextValue => {
+                setLargeText(nextValue);
+                setSaveStatus('idle');
+              }}
+            />
           </Box>
-          {profileSaveFailed ? <Text style={styles.profileError}>Profile filters could not be saved. Try again.</Text> : null}
+
+          <TouchableOpacity
+            testID="saveLanguageAccessButton"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: saving }}
+            activeOpacity={0.82}
+            disabled={saving}
+            onPress={() => { void save(); }}
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          >
+            {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text fontWeight="800" style={styles.saveButtonText}>Save settings</Text>}
+          </TouchableOpacity>
+          {saveStatus === 'saved' ? <Text testID="languageAccessSaveStatus" fontWeight="700" style={styles.successText}>Settings saved</Text> : null}
+          {saveStatus === 'error' ? <Text testID="languageAccessSaveError" fontWeight="700" style={styles.errorText}>Settings could not be saved. Try again.</Text> : null}
         </Box>
-      </PRowGroup>
-
-      <PRowGroup header="Audio & feedback" footer="Microphone is required for speaking practice. Turning it off pauses voice lessons.">
-        <PRow icon="🎤" label="Microphone" toggle={mic} onToggle={setMic} />
-        <PRow icon="🔊" label="Sound effects" toggle={sound} onToggle={setSound} />
-        <PRow icon="📳" label="Haptics" toggle={haptics} onToggle={setHaptics} isLast />
-      </PRowGroup>
-
-      <PRowGroup header="Privacy">
-        <PRow icon="📊" label="Anonymous usage analytics" toggle={analytics} onToggle={setAnalytics} />
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={t('Open Safety & Privacy details')}
-          onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
-          activeOpacity={0.7}
-        >
-          <PRow icon="🛡" label="Safety & Privacy details" chevron />
-        </TouchableOpacity>
-        <PRow icon="🗑" label="Delete child's data" value="Unavailable" chevron isLast />
-      </PRowGroup>
-
-      <PRowGroup header="Support" footer="Errors auto-send a screenshot and log to Telegram via the VPS. Open Diagnostic log to resend manually.">
-        <PRow
-          icon="🩺"
-          label="Diagnostic log"
-          chevron
-          onPress={() => navigation.navigate(ROUTES.ParentDiagnosticLogScreen as never)}
-        />
-        <PRow icon="?" label="Help center" value="Unavailable" chevron />
-        <PRow icon="✉" label="Contact support" value="Unavailable" chevron />
-        <PRow icon="ⓘ" label="About Robot English" value="Unavailable" chevron />
-        <PRow icon="🛡" label="Account privacy" chevron onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen as never)} isLast />
-      </PRowGroup>
-
-      <PRowGroup>
-        <PRow label="Sign out" danger onPress={() => { void logout(); }} isLast />
-      </PRowGroup>
-
-      <Box height={36} />
+      </Box>
     </ParentScroll>
   );
 }
 
 const styles = StyleSheet.create({
-  langBtn: {
-    flex: 1, paddingVertical: 10, paddingHorizontal: 8, marginTop: 12,
-    borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center',
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 56,
+    paddingBottom: 24,
   },
-  personalityBlock: { paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff' },
-  personalityBorder: { borderTopWidth: 1, borderTopColor: PA.hair },
-  filterTitle: { fontSize: 14, color: PA.ink, marginBottom: 10 },
-  chipWrap: { flexWrap: 'wrap' },
-  chip: {
-    minHeight: 36,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: PA.card,
     borderWidth: 1,
-    borderColor: PA.hair,
-    borderRadius: 10,
-    backgroundColor: '#fff',
+    borderColor: 'rgba(235,220,199,0.45)',
+    shadowColor: '#1D2B53',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
-  chipSelected: { backgroundColor: PA.accent, borderColor: PA.accent },
-  chipText: { fontSize: 13, color: PA.ink },
-  chipTextSelected: { color: '#fff' },
-  profileError: { fontSize: 13, color: '#C0392B', marginTop: 10 },
+  title: {
+    flex: 1,
+    color: PA.ink,
+    fontSize: 20,
+    lineHeight: 24,
+  },
+  content: {
+    paddingHorizontal: 24,
+  },
+  card: {
+    padding: 32,
+    borderRadius: 40,
+    backgroundColor: PA.card,
+    borderWidth: 1,
+    borderColor: 'rgba(235,220,199,0.4)',
+    shadowColor: '#1D2B53',
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  eyebrow: {
+    color: PA.ink2,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 2.2,
+    marginBottom: 24,
+  },
+  cardDescription: {
+    color: PA.ink2,
+    opacity: 0.82,
+    fontSize: 14,
+    lineHeight: 18,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 24,
+  },
+  languageOption: {
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(235,220,199,0.35)',
+    backgroundColor: PA.card,
+  },
+  languageOptionSelected: {
+    borderColor: 'rgba(255,107,107,0.22)',
+    backgroundColor: 'rgba(255,107,107,0.06)',
+  },
+  checkBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(235,220,199,0.7)',
+  },
+  checkBoxSelected: {
+    backgroundColor: PA.accent,
+    borderColor: PA.accent,
+  },
+  languageLabel: {
+    color: PA.ink,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  languageSubtitle: {
+    color: PA.ink2,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  selectedText: {
+    color: PA.accent,
+  },
+  selectedSubtitle: {
+    color: 'rgba(255,107,107,0.65)',
+  },
+  statusPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: PA.hair,
+  },
+  statusPillSelected: {
+    backgroundColor: 'rgba(255,107,107,0.11)',
+  },
+  statusText: {
+    color: PA.ink2,
+    fontSize: 9,
+    lineHeight: 11,
+    letterSpacing: 0.5,
+  },
+  toggleRow: {
+    minHeight: 48,
+  },
+  toggleLabel: {
+    color: PA.ink,
+    fontSize: 16,
+    lineHeight: 20,
+    textTransform: 'uppercase',
+  },
+  toggleDescription: {
+    color: PA.ink2,
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    marginTop: 4,
+  },
+  toggleTrack: {
+    width: 56,
+    height: 32,
+    borderRadius: 16,
+    padding: 4,
+    backgroundColor: PA.hair,
+  },
+  toggleTrackEnabled: {
+    backgroundColor: PA.accent,
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOpacity: 0.16,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  toggleThumbEnabled: {
+    transform: [{ translateX: 24 }],
+  },
+  saveButton: {
+    minHeight: 60,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: PA.accent,
+    marginTop: 40,
+    shadowColor: PA.accent,
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  saveButtonDisabled: {
+    opacity: 0.65,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    lineHeight: 24,
+  },
+  successText: {
+    color: PA.good,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  errorText: {
+    color: '#C0392B',
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 14,
+  },
 });

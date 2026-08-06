@@ -27,6 +27,7 @@ import {
   type BillingPlan,
   type Subscription,
 } from '@/services/api/purchase.api';
+import PurchaseStatusCard from '../components/PurchaseStatusCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionsScreen'>;
 
@@ -85,9 +86,14 @@ export default function SubscriptionsScreen({ navigation, route }: Props) {
   if (!isSubscriptionFeatureEnabled()) {
     return (
       <DeviceShell title="Add courses?" onBack={() => navigation.navigate(ROUTES.BundleScreen)}>
-        <Box testID="subscriptionsDisabledPlaceholder" paddingHorizontal={24} paddingTop={40}>
-          <Text fontWeight="700" style={styles.heading}>Subscriptions return in v1.1</Text>
-          <Text style={styles.sub}>Course subscriptions are paused in this build.</Text>
+        <Box testID="subscriptionsDisabledPlaceholder" paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="LibraryBig"
+            title="Subscriptions return in v1.1"
+            body="Course subscriptions are paused in this build. The included starter course remains available."
+            tone="warning"
+          />
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.BundleScreen)}>Review course bundles</DeviceBigBtn>
         </Box>
       </DeviceShell>
     );
@@ -146,11 +152,14 @@ export default function SubscriptionsScreen({ navigation, route }: Props) {
   if (providerUnavailable) {
     return (
       <DeviceShell title="Add courses?" onBack={() => navigation.navigate(ROUTES.BundleScreen)}>
-        <Box paddingHorizontal={24} paddingTop={40} gap={10}>
-          <Text fontWeight="700" style={styles.heading}>Billing provider unavailable</Text>
-          <Text style={styles.sub}>{providerUnavailable}</Text>
-          <Text style={styles.note}>Cancel order unavailable</Text>
-          <Text style={styles.note}>Refund request unavailable</Text>
+        <Box paddingHorizontal={20} paddingTop={28} gap={16}>
+          <PurchaseStatusCard
+            icon="CloudOff"
+            title="Billing is temporarily unavailable"
+            body={`${providerUnavailable} Existing courses are unchanged. Billing changes, cancellations, and refund requests are unavailable right now.`}
+            tone="danger"
+          />
+          <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.BundleScreen)}>Back to bundles</DeviceBigBtn>
         </Box>
       </DeviceShell>
     );
