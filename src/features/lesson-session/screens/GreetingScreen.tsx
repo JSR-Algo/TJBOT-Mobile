@@ -9,10 +9,14 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GreetingScreen'>;
 
 export default function GreetingScreen({ navigation }: Props) {
+  // Lesson is still live on this screen: Android hardware-back must
+  // funnel through ExitConfirm, never pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'GREETING');
   return (
     <ScreenShell>
       <LessonHeader progress={0.05} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />

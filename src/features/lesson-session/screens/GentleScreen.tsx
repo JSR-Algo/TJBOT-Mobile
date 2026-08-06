@@ -10,10 +10,14 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GentleScreen'>;
 
 export default function GentleScreen({ navigation }: Props) {
+  // Lesson is still live on this screen: Android hardware-back must
+  // funnel through ExitConfirm, never pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'INTERRUPTED_GENTLE');
   return (
     <ScreenShell bg="#F5F5F2">
       <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />

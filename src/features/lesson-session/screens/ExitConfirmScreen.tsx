@@ -19,8 +19,20 @@ export default function ExitConfirmScreen({ navigation, route }: Props) {
   // interruption (forwarded as voiceStateBeforeInterruption from
   // useLessonHardwareBack.ts:31) so "Keep playing" returns the child to where
   // they actually were, not always Listening.
+  //
+  // One arm per token in LESSON_RESUME_TOKEN_BY_SCREEN — every screen that
+  // mounts the hardware-back guard must land back on itself. The arms are
+  // written as literal ROUTES.* navigate calls (rather than a lookup table) so
+  // the navigation-graph analysis in tests/navigation/*.test.ts keeps seeing
+  // these edges.
   const resumeLesson = (): void => {
     switch (route.params?.voiceStateBeforeInterruption) {
+      case 'GREETING':
+        navigation.navigate(ROUTES.GreetingScreen);
+        return;
+      case 'ACTIVITY_INTRO':
+        navigation.navigate(ROUTES.ActivityIntroScreen);
+        return;
       case 'ASSISTANT_SPEAKING':
         navigation.navigate(ROUTES.RobotSpeakingScreen);
         return;
@@ -29,6 +41,30 @@ export default function ExitConfirmScreen({ navigation, route }: Props) {
         return;
       case 'USER_SPEAKING':
         navigation.navigate(ROUTES.UserSpeakingScreen);
+        return;
+      case 'SILENCE':
+        navigation.navigate(ROUTES.SilenceScreen);
+        return;
+      case 'ACTIVITY_DONE':
+        navigation.navigate(ROUTES.ActivityDoneScreen);
+        return;
+      case 'SUCCESS':
+        navigation.navigate(ROUTES.SuccessScreen);
+        return;
+      case 'INTERRUPTED_BARGEIN':
+        navigation.navigate(ROUTES.BargeinScreen);
+        return;
+      case 'INTERRUPTED_GENTLE':
+        navigation.navigate(ROUTES.GentleScreen);
+        return;
+      case 'INTERRUPTED_RETRY':
+        navigation.navigate(ROUTES.RetryScreen);
+        return;
+      case 'INTERRUPTED_OFFTOPIC':
+        navigation.navigate(ROUTES.OfftopicScreen);
+        return;
+      case 'RECONNECTING':
+        navigation.navigate(ROUTES.ReconnectingScreen);
         return;
       case 'LISTENING':
       default:

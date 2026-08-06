@@ -9,12 +9,16 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivityDoneScreen'>;
 
 const ANIMALS = ['🐱', '🐶', '🐰'] as const;
 
 export default function ActivityDoneScreen({ navigation }: Props) {
+  // Lesson is still live on this screen: Android hardware-back must
+  // funnel through ExitConfirm, never pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'ACTIVITY_DONE');
   return (
     <ScreenShell bg="#E8F8F0">
       <LessonHeader progress={0.6} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />

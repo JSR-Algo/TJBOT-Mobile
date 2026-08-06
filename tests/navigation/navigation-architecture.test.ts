@@ -587,10 +587,22 @@ describe('navigation architecture', () => {
           ROUTES.PairWifiPasswordScreen,
           ROUTES.PairWifiScreen,
         ],
+        // T3.2: ExitConfirm's "Keep playing" now resumes into every screen
+        // where the lesson is still live, not just the four voice screens, so
+        // each of those routes joins the shared resume cycle group.
         'lesson-exit-resume': [
+          ROUTES.ActivityDoneScreen,
+          ROUTES.ActivityIntroScreen,
+          ROUTES.BargeinScreen,
           ROUTES.ExitConfirmScreen,
+          ROUTES.GentleScreen,
+          ROUTES.GreetingScreen,
+          ROUTES.OfftopicScreen,
+          ROUTES.ReconnectingScreen,
+          ROUTES.RetryScreen,
           ROUTES.RobotListeningScreen,
           ROUTES.RobotSpeakingScreen,
+          ROUTES.SilenceScreen,
           ROUTES.SuccessScreen,
           ROUTES.ThinkingScreen,
           ROUTES.UserSpeakingScreen,
