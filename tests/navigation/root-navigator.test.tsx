@@ -8,6 +8,7 @@ import { PENDING_DEVICE_SETUP_ROUTE } from '@/navigation/featureRegistry';
 import { RootStackNavigator } from '@/navigation/RootStackNavigator';
 import { ROUTES } from '@/navigation/routes';
 import type { NavigationDeepLinkTarget } from '@/navigation/linking';
+import { captureError } from '@/services/observability/sentry';
 
 const root = join(__dirname, '..', '..');
 
@@ -41,6 +42,7 @@ const mockHouseholdState: HouseholdState = {
 
 const mockCreateElement = React.createElement;
 const mockedReadRecoveryCheckpoint = jest.mocked(readRecoveryCheckpoint);
+const mockedCaptureError = jest.mocked(captureError);
 let consoleErrorSpy: jest.SpyInstance<void, Parameters<typeof console.error>>;
 
 const checkpoint: LessonCheckpoint = {
@@ -83,6 +85,10 @@ jest.mock('@/features/fallback/recoveryCheckpointStore', () => ({
   readRecoveryCheckpoint: jest.fn(() => Promise.resolve(null)),
 }));
 
+jest.mock('@/services/observability/sentry', () => ({
+  captureError: jest.fn(),
+}));
+
 jest.mock('@/navigation/AgeScreen', () => ({
   __esModule: true,
   default: () => mockCreateElement('Text', { testID: 'age-screen' }, 'AgeScreen'),
@@ -120,6 +126,7 @@ describe('RootNavigator', () => {
     mockHouseholdState.children = [];
     mockedReadRecoveryCheckpoint.mockReset();
     mockedReadRecoveryCheckpoint.mockResolvedValue(null);
+    mockedCaptureError.mockReset();
   });
 
   afterEach(() => {
@@ -193,6 +200,32 @@ describe('RootNavigator', () => {
     expect(await screen.findByTestId('auth-stack')).toBeTruthy();
   });
 
+  it('times out a hanging recovery checkpoint read and continues normal routing', async () => {
+    jest.useFakeTimers();
+    try {
+      mockedReadRecoveryCheckpoint.mockImplementation(() => new Promise(() => undefined));
+
+      render(<RootStackNavigator />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByTestId('auth-stack')).toBeNull();
+
+      await act(async () => {
+        jest.advanceTimersByTime(5_000);
+        await Promise.resolve();
+      });
+
+      expect(await screen.findByTestId('auth-stack')).toBeTruthy();
+      expect(mockedCaptureError).toHaveBeenCalledWith(expect.objectContaining({
+        message: expect.stringContaining('Recovery checkpoint bootstrap timed out'),
+      }));
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('starts protected navigation at lesson resume with the loaded checkpoint', async () => {
     mockAuthState.isAuthenticated = true;
     mockHouseholdState.onboardingComplete = true;
@@ -219,6 +252,25 @@ describe('RootNavigator', () => {
     expect(protectedStack.props.children).toBe(ROUTES.LessonResumeScreen);
     expect(protectedStack.props.initialRouteParams).toEqual({ checkpoint });
     expect(mockedReadRecoveryCheckpoint).toHaveBeenCalledTimes(1);
+  });
+
+  it('requalifies an expired checkpoint after authentication without mutating the loaded value', async () => {
+    const expiredCheckpoint = { ...checkpoint, authState: 'expired' } satisfies LessonCheckpoint;
+    mockedReadRecoveryCheckpoint.mockResolvedValue(expiredCheckpoint);
+    const api = await renderRoot();
+
+    expect(await screen.findByTestId('auth-stack')).toBeTruthy();
+
+    mockAuthState.isAuthenticated = true;
+    mockHouseholdState.onboardingComplete = true;
+    api.rerender(<RootStackNavigator />);
+
+    const protectedStack = await screen.findByTestId('protected-stack');
+    expect(protectedStack.props.children).toBe(ROUTES.LessonResumeScreen);
+    expect(protectedStack.props.initialRouteParams).toEqual({
+      checkpoint: { ...expiredCheckpoint, authState: 'authenticated' },
+    });
+    expect(expiredCheckpoint.authState).toBe('expired');
   });
 
   it('keeps onboarding ahead of pending lesson recovery', async () => {

@@ -15,6 +15,8 @@ import type { NavigationDeepLinkTarget } from './linking';
 import { OnboardingNavigator } from './OnboardingNavigator';
 import { ROUTES } from './routes';
 
+const RECOVERY_BOOTSTRAP_TIMEOUT_MS = 5_000;
+
 type Props = {
   pendingDeepLinkTarget?: NavigationDeepLinkTarget | null;
 };
@@ -58,17 +60,32 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
 
   React.useEffect(() => {
     let cancelled = false;
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled || settled) return;
+      settled = true;
+      captureError(new Error(`Recovery checkpoint bootstrap timed out after ${RECOVERY_BOOTSTRAP_TIMEOUT_MS}ms`));
+      setRecoveryCheckpoint({ status: 'loaded', checkpoint: null });
+    }, RECOVERY_BOOTSTRAP_TIMEOUT_MS);
+
     readRecoveryCheckpoint().then(
       (checkpoint) => {
-        if (!cancelled) setRecoveryCheckpoint({ status: 'loaded', checkpoint });
+        if (cancelled || settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        setRecoveryCheckpoint({ status: 'loaded', checkpoint });
       },
       (error: unknown) => {
+        if (cancelled || settled) return;
+        settled = true;
+        clearTimeout(timeout);
         captureError(error);
-        if (!cancelled) setRecoveryCheckpoint({ status: 'loaded', checkpoint: null });
+        setRecoveryCheckpoint({ status: 'loaded', checkpoint: null });
       },
     );
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
     };
   }, []);
 
@@ -101,13 +118,16 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
   const productionInitialRoute = isProductionNavigableRoute(requestedInitialRoute)
     ? requestedInitialRoute
     : PROTECTED_DEFAULT_ROUTE;
+  const authenticatedRecoveryCheckpoint: LessonCheckpoint | null = recoveryCheckpoint.checkpoint
+    ? { ...recoveryCheckpoint.checkpoint, authState: 'authenticated' }
+    : null;
   let initialTarget: NavigationDeepLinkTarget;
   if (pendingDeepLinkTarget && isProductionNavigableRoute(pendingDeepLinkTarget.name)) {
     initialTarget = pendingDeepLinkTarget;
-  } else if (!pendingDeviceSetup && recoveryCheckpoint.checkpoint) {
+  } else if (!pendingDeviceSetup && authenticatedRecoveryCheckpoint) {
     initialTarget = {
       name: ROUTES.LessonResumeScreen,
-      params: { checkpoint: recoveryCheckpoint.checkpoint },
+      params: { checkpoint: authenticatedRecoveryCheckpoint },
     };
   } else {
     initialTarget = { name: productionInitialRoute };
