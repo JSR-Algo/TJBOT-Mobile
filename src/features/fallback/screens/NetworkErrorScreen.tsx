@@ -18,6 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'NetworkErrorScreen'>;
 export default function NetworkErrorScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
   const attempt = getAttempt(route.params);
+  const checkpoint = route.params?.checkpoint;
   return (
     <ScreenShell bg="#E8E5F0" testID="networkErrorScreen">
       <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
@@ -36,7 +37,7 @@ export default function NetworkErrorScreen({ navigation, route }: Props) {
           color="#6B4A9B"
           onPress={() => navigation.navigate(ROUTES.ReconnectingOverlay, {
             attempt,
-            checkpoint: undefined,
+            checkpoint,
             failureTarget: ROUTES.HelpFaqScreen,
             maxAttempts: 3,
             reconnectDelayMs: 15000,

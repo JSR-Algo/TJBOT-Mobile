@@ -9,6 +9,7 @@ import TopBar from '@/components/TopBar';
 import { ROUTES } from '@/navigation/routes';
 import { useAppLanguage } from '@/services/i18n/i18n';
 import { openAppSettings } from '@/features/device/pairing/deviceSettings';
+import { decideLessonRecovery } from '@/features/fallback/recoveryTypes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AudioRecoveryScreen'>;
 
@@ -18,8 +19,22 @@ const STEPS = [
   { n: 3, title: 'Allow Microphone', body: 'Toggle Microphone on. Then return to the app.' },
 ] as const;
 
-export default function AudioRecoveryScreen({ navigation }: Props) {
+export default function AudioRecoveryScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
+  const handleAudioWorking = (): void => {
+    const decision = decideLessonRecovery(route.params?.checkpoint);
+    if (decision.kind === 'resume') {
+      navigation.navigate(ROUTES.LessonResumeScreen, {
+        checkpoint: {
+          ...decision.checkpoint,
+          reason: 'audio_recovered',
+        },
+      });
+      return;
+    }
+    navigation.navigate(ROUTES.HomeHubScreen);
+  };
+
   return (
     <Screen header={<TopBar title="Microphone access" onBack={() => navigation.goBack()} />} scroll>
       <Box paddingHorizontal={20} paddingTop={18} paddingBottom={8}>
@@ -60,6 +75,15 @@ export default function AudioRecoveryScreen({ navigation }: Props) {
           accessibilityLabel={t('Open device Settings')}
         >
           <Text fontWeight="600" style={{ fontSize: 15, color: '#fff' }}>Open device Settings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleAudioWorking}
+          style={styles.secondaryBtn}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('Audio is working')}
+        >
+          <Text fontWeight="500" style={{ fontSize: 15, color: '#2B2140' }}>Audio is working</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} style={styles.secondaryBtn} activeOpacity={0.7}>
           <Text fontWeight="500" style={{ fontSize: 15, color: '#2B2140' }}>Back to play area</Text>

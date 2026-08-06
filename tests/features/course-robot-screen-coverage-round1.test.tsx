@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { ROUTES } from '@/navigation/routes';
 import LCDLessonTurnScreen from '@/features/device/screens/LCDLessonTurnScreen';
 import LessonResumeScreen from '@/features/fallback/screens/LessonResumeScreen';
+import { fallbackCheckpoint } from '@/features/fallback/recoveryTypes';
 import BuyCourseScreen from '@/features/course-library/screens/BuyCourseScreen';
 import CourseLockedScreen from '@/features/course-library/screens/CourseLockedScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
@@ -107,12 +108,12 @@ describe('LCDLessonTurnScreen — lesson-turn LCD gallery render', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// LessonResumeScreen — resume-fallback. Covers the safe resume target resolver,
-// the activityLabel conditional, and both bottom CTAs. Defaults applied when no
-// checkpoint.
+// LessonResumeScreen — resume-fallback. Covers the decision-gated resume,
+// the activityLabel conditional, and both bottom CTAs. Missing or incomplete
+// checkpoints fail closed to the ended path.
 // ───────────────────────────────────────────────────────────────────────────
 describe('LessonResumeScreen — resume routing + render', () => {
-  it('uses default lesson copy and resumes to SendToRobotScreen when no checkpoint', () => {
+  it('fails closed to ended copy when no checkpoint is present', () => {
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -121,12 +122,11 @@ describe('LessonResumeScreen — resume routing + render', () => {
       />,
     );
 
-    // Defaults (lines 18-21): no activityLabel branch (line 51 false leg).
-    expect(screen.getByText('How are you?')).toBeTruthy();
-    expect(screen.getByText('60%')).toBeTruthy();
+    expect(screen.getByText(/Lesson ended/)).toBeTruthy();
+    expect(screen.queryByText('Keep going')).toBeNull();
 
-    fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    fireEvent.press(screen.getByText('Back home'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
   it('resumes to SendToRobotScreen and renders activityLabel when checkpoint provides them', () => {
@@ -136,6 +136,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
         navigation={navigation as never}
         route={routeFor(ROUTES.LessonResumeScreen, {
           checkpoint: {
+            ...fallbackCheckpoint(),
             lessonTitle: 'Colors at the Park',
             progressLabel: '40%',
             activityLabel: 'Activity 2 of 3',
@@ -160,7 +161,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
       <LessonResumeScreen
         navigation={navigation as never}
         route={routeFor(ROUTES.LessonResumeScreen, {
-          checkpoint: { resumeTarget: ROUTES.HomeHubScreen },
+          checkpoint: { ...fallbackCheckpoint(), resumeTarget: ROUTES.HomeHubScreen },
         })}
       />,
     );
@@ -168,7 +169,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
-  it('coerces legacy hidden resume targets to SendToRobotScreen', () => {
+  it('ends legacy hidden resume targets instead of sending children to hidden lesson routes', () => {
     const navigation = navigationFor();
     render(
       <LessonResumeScreen
@@ -178,8 +179,10 @@ describe('LessonResumeScreen — resume routing + render', () => {
         })}
       />,
     );
-    fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(screen.getByText(/Lesson ended/)).toBeTruthy();
+    expect(screen.queryByText('Keep going')).toBeNull();
+    fireEvent.press(screen.getByText('Back home'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
   it('"Stop for now" + TopBar back both route to HomeHubScreen (lines 39, 62)', () => {
@@ -187,7 +190,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
     render(
       <LessonResumeScreen
         navigation={navigation as never}
-        route={routeFor(ROUTES.LessonResumeScreen, undefined)}
+        route={routeFor(ROUTES.LessonResumeScreen, { checkpoint: fallbackCheckpoint() })}
       />,
     );
     // TopBar back button (line 39 onBack arrow).

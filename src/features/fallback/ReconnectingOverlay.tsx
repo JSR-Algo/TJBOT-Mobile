@@ -16,6 +16,8 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
   const maxAttempts = Math.max(1, route.params?.maxAttempts ?? 3);
   const attempt = Math.min(Math.max(1, route.params?.attempt ?? 1), maxAttempts);
   const failureTarget = route.params?.failureTarget ?? ROUTES.HelpFaqScreen;
+  const reconnectDelayMs = route.params?.reconnectDelayMs ?? 2400;
+  const checkpoint = route.params?.checkpoint;
 
   React.useEffect(() => {
     const t = setTimeout(() => {
@@ -26,11 +28,14 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
           navigation.navigate(ROUTES.HelpFaqScreen);
         }
       } else {
-        navigation.navigate(ROUTES.HomeHubScreen);
+        navigation.navigate(ROUTES.NetworkErrorScreen, {
+          checkpoint,
+          attemptCount: attempt + 1,
+        });
       }
-    }, 2400);
+    }, reconnectDelayMs);
     return () => clearTimeout(t);
-  }, [attempt, failureTarget, maxAttempts, navigation]);
+  }, [attempt, checkpoint, failureTarget, maxAttempts, navigation, reconnectDelayMs]);
 
   return (
     <ScreenShell testID="reconnectingOverlay">
