@@ -39,6 +39,16 @@ export type LessonCheckpoint = {
   readonly manifestChecksum?: string | null;
 };
 
+export type CurrentAssignmentCheckpointInput = {
+  readonly assignmentId?: unknown;
+  readonly sessionId?: unknown;
+  readonly assignmentVersion?: unknown;
+  readonly lessonTitle?: unknown;
+  readonly manifestChecksum?: unknown;
+  readonly state?: unknown;
+  readonly childId?: unknown;
+};
+
 export type ReconnectContext = {
   readonly attempt?: number;
   readonly maxAttempts?: number;
@@ -141,6 +151,110 @@ function isOptionalFiniteNumber(value: unknown): value is number | undefined {
 
 function isOptionalChecksum(value: unknown): value is string | null | undefined {
   return value === undefined || value === null || isNonEmptyString(value);
+}
+
+function lessonPhaseForAssignmentState(state: unknown): LessonPhase | null {
+  switch (state) {
+    case 'ASSIGNED':
+    case 'PRELOADING':
+    case 'READY':
+      return 'connecting';
+    case 'RUNNING':
+      return 'speaking';
+    case 'PAUSED':
+      return 'listening';
+    default:
+      return null;
+  }
+}
+
+function phaseValue(value: unknown): LessonPhase | null {
+  switch (value) {
+    case 'connecting':
+    case 'greeting':
+    case 'listening':
+    case 'speaking':
+      return value;
+    case 'idle':
+      return 'listening';
+    default:
+      return null;
+  }
+}
+
+export function lessonPhaseFromObserverFrame(frame: unknown): LessonPhase | null {
+  if (!isObjectRecord(frame)) {
+    return null;
+  }
+
+  if (frame.type === 'observer_snapshot') {
+    return phaseValue(frame.current_phase);
+  }
+
+  if (frame.type === 'turn.started' || frame.type === 'turn.completed') {
+    return phaseValue(frame.phase);
+  }
+
+  return null;
+}
+
+export function isTerminalLessonObserverFrame(frame: unknown): boolean {
+  if (!isObjectRecord(frame)) {
+    return false;
+  }
+
+  const assignmentState = frame.state ?? frame.current_state;
+  if (assignmentState === 'COMPLETED' || assignmentState === 'FAILED' || assignmentState === 'CANCELLED') {
+    return true;
+  }
+
+  return frame.type === 'session.end' || frame.type === 'safety.halt';
+}
+
+export function checkpointFromCurrentAssignment(
+  assignment: CurrentAssignmentCheckpointInput | null | undefined,
+  deviceId: string | null | undefined,
+  observerPhase?: LessonPhase | null,
+): LessonCheckpoint | null {
+  if (!assignment || !isNonEmptyString(deviceId)) {
+    return null;
+  }
+
+  const phase = observerPhase ?? lessonPhaseForAssignmentState(assignment.state);
+  if (
+    !phase ||
+    !isNonEmptyString(assignment.assignmentId) ||
+    !isNonEmptyString(assignment.lessonTitle) ||
+    !isNonEmptyString(assignment.childId) ||
+    !(assignment.sessionId === null || isOptionalNonEmptyString(assignment.sessionId)) ||
+    !isOptionalFiniteNumber(assignment.assignmentVersion) ||
+    !isOptionalChecksum(assignment.manifestChecksum)
+  ) {
+    return null;
+  }
+
+  return {
+    version: 1,
+    lessonTitle: assignment.lessonTitle,
+    progressLabel: 'Lesson in progress',
+    resumeTarget: ROUTES.RunningScreen,
+    reason: 'network',
+    phase,
+    sessionState: 'active',
+    authState: 'authenticated',
+    deviceId,
+    assignmentId: assignment.assignmentId,
+    childId: assignment.childId,
+    ...(assignment.sessionId === undefined || assignment.sessionId === null
+      ? {}
+      : { sessionId: assignment.sessionId }),
+    ...(assignment.assignmentVersion === undefined
+      ? {}
+      : { assignmentVersion: assignment.assignmentVersion }),
+    ...(assignment.manifestChecksum === undefined
+      ? {}
+      : { manifestChecksum: assignment.manifestChecksum }),
+  };
 }
 
 export function parseLessonCheckpoint(input: unknown): LessonCheckpoint | null {

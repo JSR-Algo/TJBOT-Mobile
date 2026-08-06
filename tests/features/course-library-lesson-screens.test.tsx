@@ -12,6 +12,12 @@ import {
   type PreloadStatus,
 } from '@/services/api/course-library.api';
 import { openRealtime, type OpenRealtimeOptions, type RealtimeConnection } from '@/services/ws/realtime';
+import {
+  clearRecoveryCheckpoint,
+  writeRecoveryCheckpoint,
+} from '@/features/fallback/recoveryCheckpointStore';
+import { captureError } from '@/services/observability/sentry';
+import { lessonPhaseFromObserverFrame } from '@/features/fallback/recoveryTypes';
 
 // Partial mock — keep the pure helpers (isPreloadReady / presentAssignmentState)
 // real, mock ONLY the two network reads.
@@ -21,10 +27,18 @@ jest.mock('@/services/api/course-library.api', () => {
 });
 
 jest.mock('@/services/ws/realtime', () => ({ openRealtime: jest.fn() }));
+jest.mock('@/features/fallback/recoveryCheckpointStore', () => ({
+  clearRecoveryCheckpoint: jest.fn(),
+  writeRecoveryCheckpoint: jest.fn(),
+}));
+jest.mock('@/services/observability/sentry', () => ({ captureError: jest.fn() }));
 
 const mockedGetPreloadStatus = getPreloadStatus as jest.MockedFunction<typeof getPreloadStatus>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedOpenRealtime = openRealtime as jest.MockedFunction<typeof openRealtime>;
+const mockedClearRecoveryCheckpoint = jest.mocked(clearRecoveryCheckpoint);
+const mockedWriteRecoveryCheckpoint = jest.mocked(writeRecoveryCheckpoint);
+const mockedCaptureError = jest.mocked(captureError);
 
 type CapturedRealtimeAttach = {
   readonly sessionId: string;
@@ -65,6 +79,46 @@ function emitRealtimeFrame(frame: unknown): void {
   latest.options.onFrame?.(frame);
 }
 
+type ProductionLessonScreen = 'RunningScreen' | 'CompanionScreen';
+
+function renderProductionLessonScreen(
+  screenName: ProductionLessonScreen,
+  params: { deviceId?: string; sessionId?: string; childId?: string; lessonTitle?: string } = { deviceId: 'dev-1' },
+) {
+  const navigation = navigationFor();
+  const rendered = screenName === 'RunningScreen'
+    ? render(
+        <RunningScreen
+          navigation={navigation as never}
+          route={{ key: 'run', name: ROUTES.RunningScreen, params } as never}
+        />,
+      )
+    : render(
+        <CompanionScreen
+          navigation={navigation as never}
+          route={{ key: 'comp', name: ROUTES.CompanionScreen, params } as never}
+        />,
+      );
+  return { navigation, rendered };
+}
+
+const liveCheckpoint = {
+  version: 1,
+  lessonTitle: 'This Is a Barn',
+  progressLabel: 'Lesson in progress',
+  resumeTarget: ROUTES.RunningScreen,
+  reason: 'network',
+  phase: 'speaking',
+  sessionState: 'active',
+  authState: 'authenticated',
+  deviceId: 'dev-1',
+  assignmentId: 'asg-1',
+  sessionId: 'session-live-1',
+  childId: 'ch-1',
+  assignmentVersion: 1,
+  manifestChecksum: 'sha256:w01-d01',
+} as const;
+
 async function advancePolls(count: number): Promise<void> {
   for (let i = 0; i < count; i += 1) {
     await act(async () => {
@@ -89,10 +143,261 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       };
       return Promise.resolve(connection);
     });
+    mockedWriteRecoveryCheckpoint.mockResolvedValue(undefined);
+    mockedClearRecoveryCheckpoint.mockResolvedValue(undefined);
     // These assertions are on English copy; a sibling suite may have left the
     // shared i18n singleton in vi. Pin the locale so the suite is order-stable.
     await setAppLanguage('en');
   });
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s persists an exact versioned checkpoint and updates it from observer turn phase',
+    async (screenName) => {
+      mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-live-1'));
+      renderProductionLessonScreen(screenName);
+
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith(liveCheckpoint));
+      await waitFor(() => expect(mockedOpenRealtime).toHaveBeenCalledWith(
+        'session-live-1',
+        expect.objectContaining({ onFrame: expect.any(Function) }),
+      ));
+
+      act(() => {
+        emitRealtimeFrame({ type: 'turn.started', turn_id: 'turn-2', turn_count: 2, phase: 'listening' });
+      });
+
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenLastCalledWith({
+        ...liveCheckpoint,
+        phase: 'listening',
+      }));
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s persists assignment identity before a realtime session id is available',
+    async (screenName) => {
+      mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
+      renderProductionLessonScreen(screenName);
+
+      const { sessionId: omittedSessionId, ...checkpointWithoutSession } = liveCheckpoint;
+      void omittedSessionId;
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith(checkpointWithoutSession));
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s includes a known route session id when the live assignment has not projected it yet',
+    async (screenName) => {
+      mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
+      renderProductionLessonScreen(screenName, { deviceId: 'dev-1', sessionId: 'session-route-known' });
+
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith({
+        ...liveCheckpoint,
+        sessionId: 'session-route-known',
+      }));
+    },
+  );
+
+  it('maps only supported observer snapshot and turn phases', () => {
+    expect(lessonPhaseFromObserverFrame({ type: 'observer_snapshot', current_phase: 'speaking' })).toBe('speaking');
+    expect(lessonPhaseFromObserverFrame({ type: 'turn.started', phase: 'listening' })).toBe('listening');
+    expect(lessonPhaseFromObserverFrame({ type: 'turn.completed', phase: 'idle' })).toBe('listening');
+    expect(lessonPhaseFromObserverFrame({ type: 'turn.started', phase: 'unknown' })).toBeNull();
+    expect(lessonPhaseFromObserverFrame({ type: 'unrelated', phase: 'listening' })).toBeNull();
+  });
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s updates the checkpoint from an observer snapshot and ignores an unknown frame phase',
+    async (screenName) => {
+      mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-live-1'));
+      renderProductionLessonScreen(screenName);
+
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith(liveCheckpoint));
+      act(() => {
+        emitRealtimeFrame({ type: 'observer_snapshot', current_state: 'ACTIVE', current_phase: 'greeting' });
+      });
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenLastCalledWith({
+        ...liveCheckpoint,
+        phase: 'greeting',
+      }));
+      const writesAfterSupportedFrame = mockedWriteRecoveryCheckpoint.mock.calls.length;
+
+      act(() => {
+        emitRealtimeFrame({ type: 'turn.started', phase: 'unrecognized-phase' });
+      });
+
+      expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledTimes(writesAfterSupportedFrame);
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s clears the checkpoint when a live assignment disappears',
+    async (screenName) => {
+      jest.useFakeTimers();
+      try {
+        mockedGetCurrentAssignment
+          .mockResolvedValueOnce(currentWithSession('RUNNING', 'session-live-1'))
+          .mockResolvedValue(null);
+        renderProductionLessonScreen(screenName);
+
+        await act(async () => {
+          await Promise.resolve();
+          await Promise.resolve();
+        });
+        expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith(liveCheckpoint);
+
+        await advancePolls(1);
+
+        expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1);
+      } finally {
+        jest.useRealTimers();
+      }
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s clears the checkpoint for every explicit assignment terminal',
+    async (screenName) => {
+      for (const state of ['COMPLETED', 'FAILED', 'CANCELLED'] as const) {
+        jest.clearAllMocks();
+        mockedWriteRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedClearRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedGetCurrentAssignment.mockResolvedValue(current(state));
+
+        const { rendered } = renderProductionLessonScreen(screenName);
+        await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
+        expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalled();
+        rendered.unmount();
+      }
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s clears the checkpoint for all terminal observer end reasons',
+    async (screenName) => {
+      for (const endReason of ['completed', 'complete', 'timed_out', 'cost_capped', 'parent_stopped', 'abandoned', 'abandoned_disconnect'] as const) {
+        jest.clearAllMocks();
+        realtimeAttaches.length = 0;
+        mockedWriteRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedClearRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-live-1'));
+        mockedOpenRealtime.mockImplementation((sessionId, options = {}) => {
+          const close = jest.fn<void, [number?, string?]>();
+          realtimeAttaches.push({ sessionId, options, close });
+          return Promise.resolve({
+            url: `wss://example.test/realtime/v1/observer/${sessionId}`,
+            close,
+            send: jest.fn<void, [unknown]>(),
+          });
+        });
+
+        const { rendered } = renderProductionLessonScreen(screenName);
+        await waitFor(() => expect(realtimeAttaches).toHaveLength(1));
+        act(() => {
+          emitRealtimeFrame({ type: 'session.end', end_reason: endReason });
+        });
+        await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
+        rendered.unmount();
+      }
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s does not rewrite a checkpoint when a late live poll resolves after an observer terminal',
+    async (screenName) => {
+      let resolveAssignment: ((assignment: CurrentAssignment | null) => void) | undefined;
+      mockedGetCurrentAssignment.mockImplementation(() => new Promise((resolve) => {
+        resolveAssignment = resolve;
+      }));
+      renderProductionLessonScreen(screenName, { deviceId: 'dev-1', sessionId: 'session-route-terminal' });
+
+      await waitFor(() => expect(realtimeAttaches).toHaveLength(1));
+      act(() => {
+        emitRealtimeFrame({ type: 'session.end', end_reason: 'timed_out' });
+      });
+      await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
+
+      await act(async () => {
+        resolveAssignment?.(currentWithSession('RUNNING', 'session-route-terminal'));
+        await Promise.resolve();
+      });
+
+      expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s ignores a live poll that resolves after unmount',
+    async (screenName) => {
+      let resolveAssignment: ((assignment: CurrentAssignment | null) => void) | undefined;
+      mockedGetCurrentAssignment.mockImplementation(() => new Promise((resolve) => {
+        resolveAssignment = resolve;
+      }));
+      const { rendered } = renderProductionLessonScreen(screenName);
+      rendered.unmount();
+
+      await act(async () => {
+        resolveAssignment?.(currentWithSession('RUNNING', 'session-after-unmount'));
+        await Promise.resolve();
+      });
+
+      expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s never persists incomplete assignment identity',
+    async (screenName) => {
+      for (const assignment of [
+        { ...current('RUNNING'), assignmentId: '' },
+        { ...current('RUNNING'), childId: '' },
+        { ...current('RUNNING'), lessonTitle: '' },
+      ]) {
+        jest.clearAllMocks();
+        mockedGetCurrentAssignment.mockResolvedValue(assignment);
+        const { rendered } = renderProductionLessonScreen(screenName);
+
+        await waitFor(() => expect(mockedGetCurrentAssignment).toHaveBeenCalledWith('dev-1'));
+        expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalled();
+        rendered.unmount();
+      }
+
+      jest.clearAllMocks();
+      mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
+      const { rendered } = renderProductionLessonScreen(screenName, {});
+      expect(mockedGetCurrentAssignment).not.toHaveBeenCalled();
+      expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalled();
+      rendered.unmount();
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s reports checkpoint storage rejection without changing the live UI',
+    async (screenName) => {
+      const storageError = new Error('secure storage unavailable');
+      mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-live-1'));
+      mockedWriteRecoveryCheckpoint.mockRejectedValue(storageError);
+      renderProductionLessonScreen(screenName);
+
+      await waitFor(() => expect(mockedCaptureError).toHaveBeenCalledWith(storageError));
+      expect(screen.getByText('This Is a Barn')).toBeTruthy();
+      expect(screen.queryByText(/secure storage unavailable/)).toBeNull();
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s reports checkpoint clear rejection without changing terminal UI',
+    async (screenName) => {
+      const storageError = new Error('secure storage clear unavailable');
+      mockedGetCurrentAssignment.mockResolvedValue(current('COMPLETED'));
+      mockedClearRecoveryCheckpoint.mockRejectedValue(storageError);
+      renderProductionLessonScreen(screenName);
+
+      await waitFor(() => expect(mockedCaptureError).toHaveBeenCalledWith(storageError));
+      expect(screen.getByText('Finished! 🎉')).toBeTruthy();
+      expect(screen.queryByText(/secure storage clear unavailable/)).toBeNull();
+    },
+  );
 
   // §10.4 — Preload-status render (kills fake-ready, DIV-MOBILE-FAKEREADY).
   it('RobotReadyScreen does NOT show ready while PRELOADING (no hardcoded good:true)', async () => {

@@ -19,6 +19,16 @@ import {
 import { openRealtime, type RealtimeConnection } from '@/services/ws/realtime';
 import { captureError } from '@/services/observability/sentry';
 import { formatLessonCopy } from '@/utils/errors';
+import {
+  clearRecoveryCheckpoint,
+  writeRecoveryCheckpoint,
+} from '@/features/fallback/recoveryCheckpointStore';
+import {
+  checkpointFromCurrentAssignment,
+  isTerminalLessonObserverFrame,
+  lessonPhaseFromObserverFrame,
+  type LessonPhase,
+} from '@/features/fallback/recoveryTypes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanionScreen'>;
 
@@ -43,8 +53,38 @@ export default function CompanionScreen({ navigation, route }: Props) {
   const [assignmentStale, setAssignmentStale] = React.useState(false);
   const [retryNonce, setRetryNonce] = React.useState(0);
   const sawLiveRef = React.useRef(false);
+  const assignmentRef = React.useRef<CurrentAssignment | null>(null);
+  const observerPhaseRef = React.useRef<LessonPhase | null>(null);
+  const terminalRef = React.useRef(false);
+  const checkpointQueueRef = React.useRef<Promise<void>>(Promise.resolve());
+  const checkpointStateRef = React.useRef<string | null>(null);
+  const routeSessionId = route.params?.sessionId?.trim() || null;
   const sessionId = assignment?.sessionId ?? route.params?.sessionId;
   const observerSessionId = sessionId?.trim() ? sessionId.trim() : null;
+
+  const queueCheckpointOperation = React.useCallback((stateKey: string, operation: () => Promise<void>) => {
+    if (checkpointStateRef.current === stateKey) return;
+    checkpointStateRef.current = stateKey;
+    checkpointQueueRef.current = checkpointQueueRef.current
+      .then(operation)
+      .catch((error) => {
+        if (checkpointStateRef.current === stateKey) checkpointStateRef.current = null;
+        captureError(error);
+      });
+  }, []);
+
+  const persistLiveCheckpoint = React.useCallback((current: CurrentAssignment, phase?: LessonPhase | null) => {
+    const checkpointAssignment = current.sessionId?.trim() || !routeSessionId
+      ? current
+      : { ...current, sessionId: routeSessionId };
+    const checkpoint = checkpointFromCurrentAssignment(checkpointAssignment, deviceId, phase);
+    if (!checkpoint) return;
+    queueCheckpointOperation(`write:${JSON.stringify(checkpoint)}`, () => writeRecoveryCheckpoint(checkpoint));
+  }, [deviceId, queueCheckpointOperation, routeSessionId]);
+
+  const clearCheckpoint = React.useCallback(() => {
+    queueCheckpointOperation('clear', clearRecoveryCheckpoint);
+  }, [queueCheckpointOperation]);
 
   React.useEffect(() => {
     if (!deviceId) return;
@@ -54,14 +94,20 @@ export default function CompanionScreen({ navigation, route }: Props) {
     setAssignmentStale(false);
 
     const poll = async () => {
+      if (!active || terminalRef.current) return;
       try {
         const current = await getCurrentAssignment(deviceId);
-        if (!active) return;
+        if (!active || terminalRef.current) return;
         const live = current && current.state !== 'COMPLETED' && current.state !== 'FAILED' && current.state !== 'CANCELLED';
         if (live) {
           sawLiveRef.current = true;
           settlingPolls = 0;
+          if (assignmentRef.current?.assignmentId !== current.assignmentId) observerPhaseRef.current = null;
+          assignmentRef.current = current.sessionId?.trim() || !routeSessionId
+            ? current
+            : { ...current, sessionId: routeSessionId };
           setAssignment(current);
+          persistLiveCheckpoint(current, observerPhaseRef.current);
           timer = setTimeout(poll, POLL_INTERVAL_MS);
           return;
         }
@@ -70,10 +116,18 @@ export default function CompanionScreen({ navigation, route }: Props) {
         if (current) setAssignment(current);
         const successfulTerminal = current?.state === 'COMPLETED' || (current === null && sawLiveRef.current);
         if (successfulTerminal) {
+          terminalRef.current = true;
+          assignmentRef.current = null;
+          clearCheckpoint();
           setFinished(true);
           return;
         }
-        if (current?.state === 'FAILED' || current?.state === 'CANCELLED') return;
+        if (current?.state === 'FAILED' || current?.state === 'CANCELLED') {
+          terminalRef.current = true;
+          assignmentRef.current = null;
+          clearCheckpoint();
+          return;
+        }
         // Non-terminal: most importantly current===null && !sawLiveRef.current,
         // the read-after-write race right after createAssignment where the
         // assignment isn't visible yet. Keep polling — stopping here would
@@ -100,7 +154,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [deviceId, retryNonce]);
+  }, [clearCheckpoint, deviceId, persistLiveCheckpoint, retryNonce, routeSessionId]);
 
   React.useEffect(() => {
     if (!observerSessionId) return;
@@ -109,7 +163,18 @@ export default function CompanionScreen({ navigation, route }: Props) {
 
     void openRealtime(observerSessionId, {
       onFrame: (frame) => {
-        if (isCompletedRealtimeFrame(frame)) setFinished(true);
+        if (!active) return;
+        if (isTerminalLessonObserverFrame(frame)) {
+          terminalRef.current = true;
+          assignmentRef.current = null;
+          clearCheckpoint();
+          if (isCompletedRealtimeFrame(frame)) setFinished(true);
+          return;
+        }
+        const phase = lessonPhaseFromObserverFrame(frame);
+        if (!phase || !assignmentRef.current) return;
+        observerPhaseRef.current = phase;
+        persistLiveCheckpoint(assignmentRef.current, phase);
       },
     }).then(
       (nextConnection) => {
@@ -128,13 +193,16 @@ export default function CompanionScreen({ navigation, route }: Props) {
       active = false;
       connection?.close(1000, 'screen unmounted');
     };
-  }, [observerSessionId]);
+  }, [clearCheckpoint, observerSessionId, persistLiveCheckpoint]);
 
   const retryCurrentAssignment = React.useCallback(() => {
     setAssignment(null);
     setFinished(false);
     setAssignmentStale(false);
     sawLiveRef.current = false;
+    assignmentRef.current = null;
+    observerPhaseRef.current = null;
+    terminalRef.current = false;
     setRetryNonce((value) => value + 1);
   }, []);
 
@@ -229,7 +297,7 @@ function isCompletedRealtimeFrame(frame: unknown): boolean {
   return (
     stringProp(frame, 'state') === 'COMPLETED' ||
     stringProp(frame, 'current_state') === 'COMPLETED' ||
-    (type === 'session.end' && stringProp(frame, 'end_reason') === 'complete')
+    (type === 'session.end' && ['complete', 'completed'].includes(stringProp(frame, 'end_reason') ?? ''))
   );
 }
 
