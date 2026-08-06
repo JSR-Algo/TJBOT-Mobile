@@ -369,3 +369,24 @@ describe('production-only modular routes are declared as such', () => {
     expect(String(url).startsWith('/billing/')).toBe(false);
   });
 });
+
+describe('the gate itself reports the production-only mount', () => {
+  // The assertions above are characterisation — they hold on the pre-fix tree
+  // too, which is exactly why the T0.4 gate rejected them as tautological. This
+  // one exercises the checker's real behaviour: before the fix it says nothing
+  // about the mount condition, so it fails on the pre-patch base.
+  it('names the mount condition and lists the calls that depend on it', () => {
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const out = execFileSync('node', ['scripts/check-api-contract-sync.mjs'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      timeout: 120000,
+    });
+
+    expect(out).toContain('PRODUCTION-ONLY');
+    expect(out).toContain("NODE_ENV==='production'");
+    // The billing surface is the part that vanishes on a non-production backend.
+    expect(out).toContain('/v1/billing/orders/{}');
+    expect(out).toMatch(/PASS — no backend\/mobile contract drift/);
+  });
+});
