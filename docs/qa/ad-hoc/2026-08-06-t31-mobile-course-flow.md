@@ -62,6 +62,40 @@ what hid this defect, so the regression lock proves no `/course-library/` or
 | 9 | `npm run typecheck` | PASS | exit 0 |
 | 10 | `npm run test:screens` (task verify command) | PASS | `65 suites, 832 tests passed` |
 
+## Ship checklist
+
+| Step | Result |
+|---|---|
+| Re-verify at tip | `lint` 0, `typecheck` 0, `npm test` **2343 passed / 0 failed**, `test:screens` **832 passed** |
+| Gate (T0.4) | **PASS** — `gate.sh t31` RED@base `4a4aed00` rc=1 → GREEN@tip `7c455416` rc=0, logged to `GATE_LOG.md` |
+| Merge to main | `merge-task.sh t31` → merge commit `97f21cc8` (merge #3), no squash |
+| Deploy | none — mobile ships in the next app release, per this task's step 3 |
+| Re-test on main | `typecheck` 0, `lint` 0, this task's 7 new cases **7/7 pass** |
+| Remove worktree | **NOT removed — deliberately.** See below |
+
+### Why the worktree was left in place
+
+`tmp/wt-t31` holds **uncommitted work that is not mine**: modifications to
+`CourseDetailScreen.tsx`, `SendToRobotScreen.tsx`, `CourseScreen.tsx`,
+`LessonListScreen.tsx`, `utils/errors.ts` and a new
+`tests/features/course-flow-error-edges.test.tsx`, whose header reads "T3.1
+deep-dive — the browse → send-to-robot flow's ERROR edges" and whose mtimes were
+minutes old. A parallel session is actively continuing T3.1's checklist there.
+This task's step 5 says to stop and surface a dirty worktree rather than delete
+it, so it was left untouched and the branch was not deleted.
+
+### Flaky-suite caveat on the main re-test
+
+`test:screens` on main failed a *different* random subset on consecutive runs —
+`factory-reset-screen` (12s), then `reward-surfaces` (26s) +
+`childProfile-pairing-finalize` (35s) + `pair-rename-screen` (49s) — while each
+passes in isolation and the whole suite scored 832/832 when the machine was
+quiet. `device-home-screen` was measured 0/6 failures at base and 0/6 on main
+under equal quiet load, and the T3.1 diff touches **no device, rewards,
+onboarding or robot-mgmt file**, so these are load-sensitive timeouts, not a
+regression from this change. Filed as a HIGH finding against T3.1–T3.4 because it
+makes a designated verify command untrustworthy.
+
 ## Deep-dive checklist status (honest)
 
 Covered by this change: *no device paired* (guidance, no dead end), *device offline at
