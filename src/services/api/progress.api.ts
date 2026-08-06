@@ -1,5 +1,6 @@
 import client from '@/services/http/client';
 import type { AssignmentState } from '@/services/api/course-library.api';
+import { backendContractUnavailable } from '@/services/api/undocumented-api-routes';
 import { toFiniteNumber, toNonNegativeNumber } from '@/utils/number';
 
 export interface TodayProgress {
@@ -170,9 +171,16 @@ export function normalizeChildProgressPayload(payload: unknown): ChildProgress {
   };
 }
 
+// `GET /learning/children/:childId/progress` was never implemented: the backend's
+// `@Controller('learning/children/:childId')` exposes profile/session/interactions/
+// kpis/vocab/difficulty/pronunciation-trend and no `progress` route, so this call
+// could only ever 404. It has no production caller — the parent dashboard reads the
+// canonical projection via `parentLearning.api.ts`, and the per-assignment feed via
+// `getChildLessonProgress` below. Fail closed on the documented-contract sentinel
+// rather than leaving a call that silently 404s for whoever wires it up next.
+// (Routed finding: LESSON_PRODUCTION_PLAN.md §5, T0.2 contract drift -> T3.3.)
 export async function getChildProgress(childId: string): Promise<ChildProgress> {
-  const response = await client.get(`/learning/children/${childId}/progress`);
-  return normalizeChildProgressPayload(response.data);
+  return backendContractUnavailable(`getChildProgress:${childId}`);
 }
 
 // ───────────────────────────────────────────────────────────────────────────

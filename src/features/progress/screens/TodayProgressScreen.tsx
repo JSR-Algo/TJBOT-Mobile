@@ -39,11 +39,13 @@ function Dashboard({ data }: { data: ChildProgressDashboard }) {
   const { language } = useAppLanguage();
   return <>
     <Box style={styles.hero} flexDirection="row">
+      {/* The two day-scoped stats bucket on the Asia/Ho_Chi_Minh calendar day, so they
+          reset at local midnight rather than trailing a rolling recent window. */}
+      <Stat value={String(data.todayLessonsCompleted)} label="Lessons today" />
+      <Box style={styles.divider} />
+      <Stat value={`${Math.floor(data.todayActiveSec / 60)} min`} label="Active time today" />
+      <Box style={styles.divider} />
       <Stat value={String(data.completedLessons)} label="Lessons completed" />
-      <Box style={styles.divider} />
-      <Stat value={String(data.totalLessons)} label="Lessons in courses" />
-      <Box style={styles.divider} />
-      <Stat value={`${Math.floor(data.recentDurationSec / 60)} min`} label="Recent active time" />
     </Box>
     <Box style={styles.card} gap={10}>
       <Text fontWeight="800" style={styles.title}>Learning path</Text>

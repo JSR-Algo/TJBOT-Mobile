@@ -190,7 +190,7 @@ describe('course, course-library, and progress stable screen states', () => {
     // Dashboard enrichment sources: default to a zeroed aggregate + rejected KPI/
     // trend so the assignment feed (the backbone these tests assert on) stays the
     // only signal. buildCourseInsightDashboard tolerates the nulls.
-    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: null, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, failedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: null, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, failedSessions: 0, recentDurationSec: 0, todayLessonsCompleted: 0, todayActiveSec: 0 }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() });
   });
 
   it('renders course catalog loading, empty, error, offline, locked, and unlocked states', async () => {
@@ -419,7 +419,7 @@ describe('course, course-library, and progress stable screen states', () => {
   });
 
   it('renders the latest lesson with real step counts', async () => {
-    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: { assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Greetings', state: 'LISTEN', startedAt: null, currentStep: null, positionPercent: 40, activeDurationSec: 90 }, sessions: [], courses: [{ courseId: 'c-1', title: 'English', currentLessonPosition: 3, completedLessonCount: 2, totalLessonCount: 10, positionPercent: 20, suggestedNextLesson: null }], completedLessons: 2, totalLessons: 10, completedSessions: 0, failedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: { assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Greetings', state: 'LISTEN', startedAt: null, currentStep: null, positionPercent: 40, activeDurationSec: 90 }, sessions: [], courses: [{ courseId: 'c-1', title: 'English', currentLessonPosition: 3, completedLessonCount: 2, totalLessonCount: 10, positionPercent: 20, suggestedNextLesson: null }], completedLessons: 2, totalLessons: 10, completedSessions: 0, failedSessions: 0, recentDurationSec: 0, todayLessonsCompleted: 0, todayActiveSec: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
 
     const screen = renderProgress();
     expect(screen.getByText('Greetings')).toBeTruthy();
@@ -502,7 +502,7 @@ describe('course, course-library, and progress stable screen states', () => {
 
   it('translates the lesson state label in Vietnamese', async () => {
     await setAppLanguage('vi');
-    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: { assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Greetings', state: 'LISTEN', startedAt: null, currentStep: null, positionPercent: 40, activeDurationSec: 90 }, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, failedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
+    mockUseChildProgressDashboardQuery.mockReturnValue({ data: { activeLearning: { assignmentId: 'a-1', sessionId: 's-1', deviceId: 'd-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Greetings', state: 'LISTEN', startedAt: null, currentStep: null, positionPercent: 40, activeDurationSec: 90 }, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, failedSessions: 0, recentDurationSec: 0, todayLessonsCompleted: 0, todayActiveSec: 0 }, isLoading: false, isError: false, refetch: jest.fn() });
 
     const screen = renderProgress();
 

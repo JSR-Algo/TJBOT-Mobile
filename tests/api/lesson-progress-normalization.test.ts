@@ -71,9 +71,12 @@ describe('US-006 S11 — aggregate child progress (M3 surface-b)', () => {
     expect(legacy).toHaveProperty('weeklyBars');
   });
 
-  it('reads the learning/children tree (plan M3 — extends the existing kpis tree)', async () => {
-    mockedClient.get.mockResolvedValueOnce({ data: { data: { childId: 'ch-1', summary: {}, byCourse: [] } } });
-    await getChildProgress('ch-1');
-    expect(mockedClient.get).toHaveBeenCalledWith('/learning/children/ch-1/progress');
+  // T3.3: the learning/children tree has no `progress` route on the backend
+  // (profile/session/interactions/kpis/vocab/difficulty/pronunciation-trend only),
+  // so this read could only ever 404. It now fails closed on the documented-contract
+  // sentinel and must not put a request on the wire at all.
+  it('fails closed instead of requesting the non-existent learning/children progress route', async () => {
+    await expect(getChildProgress('ch-1')).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+    expect(mockedClient.get).not.toHaveBeenCalled();
   });
 });

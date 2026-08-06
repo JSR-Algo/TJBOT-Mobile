@@ -14,6 +14,7 @@ const canonical = {
   sessions: [{ childId: 'child-1', assignmentId: 'a-1', sessionId: 's-1', courseId: 'c-1', courseTitle: 'English', lessonId: 'l-1', lessonTitle: 'Farm', terminalState: 'COMPLETED', startedAt: new Date().toISOString(), completedAt: new Date().toISOString(), durationSec: 300, reportAvailable: true }],
   courses: [{ courseId: 'c-1', title: 'English', currentLessonPosition: 5, completedLessonCount: 4, totalLessonCount: 10, positionPercent: 40, suggestedNextLesson: { lessonId: 'l-2', lessonTitle: 'Animals' } }],
   completedLessons: 4, totalLessons: 10, completedSessions: 1, failedSessions: 0, recentDurationSec: 300,
+  todayLessonsCompleted: 1, todayActiveSec: 300,
 };
 
 function renderScreen() {
@@ -31,7 +32,7 @@ describe('TodayProgressScreen canonical aggregate', () => {
   it('renders canonical course, session, and active lesson facts', () => {
     const screen = renderScreen();
     expect(screen.getByText('4')).toBeTruthy();
-    expect(screen.getByText('10')).toBeTruthy();
+    expect(screen.getByText('1')).toBeTruthy();
     expect(screen.getByText('5 min')).toBeTruthy();
     expect(screen.getAllByText('English')).toHaveLength(2);
     expect(screen.getByText('4 of 10 lessons')).toBeTruthy();
