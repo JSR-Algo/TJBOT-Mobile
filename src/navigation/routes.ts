@@ -51,7 +51,7 @@ export type RootStackParamList = {
   CourseAddedScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; manifestChecksum?: string | null };
   CourseCompleteScreen: undefined | { courseId?: string };
   CourseLockedScreen: undefined | { courseId?: string };
-  NeedsSyncScreen: undefined | { courseId?: string };
+  NeedsSyncScreen: undefined | { courseId?: string; deviceId?: string; childId?: string };
   // US-006 Slice-01 (LANE-MOBILE): the lesson-assignment happy path is re-keyed
   // from courseId to deviceId (DIV-MOBILE-DEVICEKEY). assignmentId/Version thread
   // forward for the ASSIGNMENT_CONFLICT refresh-and-retry; courseId stays for

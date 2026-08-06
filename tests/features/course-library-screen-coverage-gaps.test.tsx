@@ -10,10 +10,8 @@ import CompanionScreen from '@/features/course-library/screens/CompanionScreen';
 import {
   getCurrentAssignment,
   getPreloadStatus,
-  getRobotSyncStatus,
   type CurrentAssignment,
   type PreloadStatus,
-  type RobotSyncStatus,
 } from '@/services/api/course-library.api';
 
 // Partial mock — keep the pure helpers (isPreloadReady / presentAssignmentState)
@@ -26,13 +24,11 @@ jest.mock('@/services/api/course-library.api', () => {
     ...actual,
     getPreloadStatus: jest.fn(),
     getCurrentAssignment: jest.fn(),
-    getRobotSyncStatus: jest.fn(),
   };
 });
 
 const mockedGetPreloadStatus = getPreloadStatus as jest.MockedFunction<typeof getPreloadStatus>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
-const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
 
 function navigationFor() {
   return {
@@ -173,22 +169,30 @@ describe('CourseAddedScreen — assignment handoff integrity', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// NeedsSyncScreen — FAILED→needs_sync terminal. The gap is handleReconnect's
-// three outcomes (synced / not-synced / throw) + the render body + the
-// DeviceRow onClick. Covers lines 20, 28, 33, 38-87.
+// NeedsSyncScreen — FAILED→needs_sync terminal. handleReconnect reads the
+// device's live preload status; the old /course-library/:id/sync-status route is
+// retired server-side (410), so these assert the device-scoped contract instead.
+// URL-level coverage lives in needs-sync-live-preload.test.tsx.
 // ───────────────────────────────────────────────────────────────────────────
 describe('NeedsSyncScreen — reconnect handler + render', () => {
-  function syncStatus(synced: boolean): RobotSyncStatus {
-    return { courseId: 'c_food', synced } as RobotSyncStatus;
+  function preloadStatus(state: PreloadStatus['state']): PreloadStatus {
+    return {
+      assignmentId: 'asg-1',
+      state,
+      profile: 'espTft',
+      criticalTotal: 3,
+      criticalReady: state === 'READY' ? 3 : 1,
+      assets: [],
+    } as PreloadStatus;
   }
 
-  it('reconnect → synced: navigates to CourseAddedScreen with the route courseId', async () => {
-    mockedGetRobotSyncStatus.mockResolvedValue(syncStatus(true));
+  it('reconnect → READY preload: navigates to CourseAddedScreen with the route courseId', async () => {
+    mockedGetPreloadStatus.mockResolvedValue(preloadStatus('READY'));
     const navigation = navigationFor();
     render(
       <NeedsSyncScreen
         navigation={navigation as never}
-        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_zoo' } } as never}
+        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_zoo', deviceId: 'dev-1' } } as never}
       />,
     );
 
@@ -196,19 +200,19 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
 
-    await waitFor(() => expect(mockedGetRobotSyncStatus).toHaveBeenCalledWith('c_zoo'));
+    await waitFor(() => expect(mockedGetPreloadStatus).toHaveBeenCalledWith('dev-1'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_zoo' });
     // No failure copy on the success path.
-    expect(screen.queryByText(/Robot has not synced this course yet/)).toBeNull();
+    expect(screen.queryByText(/hasn't finished downloading/i)).toBeNull();
   });
 
-  it('reconnect → not synced: shows the "not synced yet" message, does NOT navigate forward', async () => {
-    mockedGetRobotSyncStatus.mockResolvedValue(syncStatus(false));
+  it('reconnect → non-READY preload: shows download guidance, does NOT navigate forward', async () => {
+    mockedGetPreloadStatus.mockResolvedValue(preloadStatus('PRELOADING'));
     const navigation = navigationFor();
     render(
       <NeedsSyncScreen
         navigation={navigation as never}
-        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: undefined } as never}
+        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: { deviceId: 'dev-1' } } as never}
       />,
     );
 
@@ -216,10 +220,9 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
 
-    // route.params?.courseId is undefined → falls back to default 'c_food' (line 20).
-    await waitFor(() => expect(mockedGetRobotSyncStatus).toHaveBeenCalledWith('c_food'));
+    await waitFor(() => expect(mockedGetPreloadStatus).toHaveBeenCalledWith('dev-1'));
     expect(
-      screen.getByText('Robot has not synced this course yet. Check Wi-Fi and try again.'),
+      screen.getByText("Robot hasn't finished downloading this course. Keep it on Wi-Fi and try again."),
     ).toBeTruthy();
     expect(navigation.navigate).not.toHaveBeenCalledWith(
       ROUTES.CourseAddedScreen,
@@ -227,13 +230,13 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
     );
   });
 
-  it('reconnect → network throw: catch branch shows the same fallback message', async () => {
-    mockedGetRobotSyncStatus.mockRejectedValue(new Error('offline'));
+  it('reconnect → network throw: catch branch reports an unreachable robot', async () => {
+    mockedGetPreloadStatus.mockRejectedValue(new Error('offline'));
     const navigation = navigationFor();
     render(
       <NeedsSyncScreen
         navigation={navigation as never}
-        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_food' } } as never}
+        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_food', deviceId: 'dev-1' } } as never}
       />,
     );
 
@@ -243,7 +246,7 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText('Robot has not synced this course yet. Check Wi-Fi and try again.'),
+        screen.getByText("We couldn't reach Robot just now. Check Wi-Fi and try again."),
       ).toBeTruthy(),
     );
     expect(navigation.navigate).not.toHaveBeenCalledWith(
