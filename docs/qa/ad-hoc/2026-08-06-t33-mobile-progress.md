@@ -155,3 +155,45 @@ Appended to `LESSON_PRODUCTION_PLAN.md` §5:
 
 Corroborates the existing flaky-suite finding (T3.1 deep-dive → T0.4/T6.5) rather
 than filing a new one: see the Ship checklist below.
+
+## Ship checklist
+
+| Step | Result |
+|---|---|
+| 1. Re-verify at tip (rebased on `b1536165`) | `typecheck` 0 · `lint` 0 (`--max-warnings=0`) · `test:screens` 68 suites / 850 tests, 7 suites failed — **all** load-timeouts in device/onboarding/robot-mgmt/course-library, every `features/progress` and `features/parent` suite green · `npm test` 2384 tests, 6 suites failed, same flake class |
+| 2. Gate (T0.4) | **PASS twice.** Standalone `gate.sh t33 tbot-mobile lesson-prod/t33-mobile-progress`: RED@`b1536165` (4 failed / 4 total) → GREEN@`5b6df955` (4 passed / 4 total). Re-gated by `merge-task.sh` at tip `92f84318`. Both rows in `GATE_LOG.md` |
+| 3. Merge to main | `merge-task.sh t33` → merge commit `654b48d2`, no squash, merge #8 (the every-5th integration re-gate does not fire on 8). **Not pushed** — `merge-task.sh` leaves pushing as a deliberate human step; mobile main was already 1 commit ahead of `origin/main` before this merge |
+| 4. Deploy | none — mobile ships in the next app release (fastlane/EAS), per this task's step 3 |
+| 5. Re-test on main (`654b48d2`) | `typecheck` 0 · `lint` 0 · `test:screens --maxWorkers=2` **66/68 suites, 848/850 tests**; the 2 failures (`course-lesson-branch-coverage`, `childProfile-pairing-finalize`) both **PASS** on a serial re-run (18/18) · `npm test` **220/222 suites, 2362/2384 tests**; the 2 failures (`device-home-screen`, `pair-rename-screen`) both **PASS** on a serial re-run (49/49). All 18 T3.3 cases green in every run |
+| 6. Remove worktree | done — see below |
+
+### Flaky-suite caveat on the main re-test
+
+Every failure in every run above is `Exceeded timeout of 5000 ms` (Jest's default),
+in a *different* random subset each time, on a machine carrying load averages of
+**70–105 across 10 cores** from concurrent campaign sessions. Nothing this task
+touches is involved: the diff is confined to `features/progress`, `progress.api`'s
+`getChildProgress`, and tests.
+
+Controlled A/B on the suite that failed most often — `device-home-screen`, run 3×
+on `main` (pre-merge `b1536165`) and 3× on the fix branch at `--maxWorkers=1`:
+
+```
+main  run1: 11 passed   t33 run1: 11 passed
+main  run2: 11 passed   t33 run2: 11 passed
+main  run3: 11 passed   t33 run3: 11 passed
+```
+
+6/6 green on each side. The failures track machine load, not the change. This
+corroborates the existing finding (T3.1 deep-dive → T0.4/T6.5, "tbot-mobile unit
+suites are not load-robust") rather than being a new one; `lesson-prod/repros/t33.sh`
+is a single 4-case probe and completed in 6 s, so the gate verdict is not exposed to
+this class of noise.
+
+### Worktree removal
+
+`worktrees/t33-mobile-progress` was clean (`git status` empty apart from the
+untracked, gitignored `node_modules`) and `lesson-prod/t33-mobile-progress` was an
+ancestor of `main` (`git merge-base --is-ancestor` exit 0) before removal. Worktree
+removed and the local branch deleted; the branch was never pushed, so there is no
+remote branch to delete.
