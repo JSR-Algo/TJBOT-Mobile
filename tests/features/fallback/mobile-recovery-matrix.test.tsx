@@ -480,6 +480,63 @@ describe('authoritative lesson resume', () => {
     expect(await screen.findByText('Keep going')).toBeTruthy();
   });
 
+  it('validates a replacement checkpoint and ignores the stale request completion', async () => {
+    const pendingA = deferred<CurrentAssignment | null>();
+    const pendingB = deferred<CurrentAssignment | null>();
+    mockedGetCurrentAssignment
+      .mockReturnValueOnce(pendingA.promise)
+      .mockReturnValueOnce(pendingB.promise);
+    const navigation = createNavigation();
+    const checkpointA = {
+      ...activeCheckpoint('speaking'),
+      deviceId: 'device-a',
+      assignmentId: 'assignment-a',
+      lessonTitle: 'Checkpoint A',
+    };
+    const checkpointB = {
+      ...activeCheckpoint('listening'),
+      deviceId: 'device-b',
+      assignmentId: 'assignment-b',
+      lessonTitle: 'Checkpoint B',
+    };
+    const view = render(
+      <LessonResumeScreen
+        navigation={navigation as never}
+        route={routeFor(ROUTES.LessonResumeScreen, { checkpoint: checkpointA })}
+      />,
+    );
+
+    view.rerender(
+      <LessonResumeScreen
+        navigation={navigation as never}
+        route={routeFor(ROUTES.LessonResumeScreen, { checkpoint: checkpointB })}
+      />,
+    );
+
+    expect(mockedGetCurrentAssignment).toHaveBeenNthCalledWith(1, 'device-a');
+    expect(mockedGetCurrentAssignment).toHaveBeenNthCalledWith(2, 'device-b');
+
+    await act(async () => {
+      pendingB.resolve(currentAssignment({
+        assignmentId: 'assignment-b',
+        lessonTitle: 'Authoritative B',
+      }));
+      await pendingB.promise;
+    });
+
+    expect(await screen.findByText('Checkpoint B')).toBeTruthy();
+    expect(screen.getByText('Keep going')).toBeTruthy();
+
+    await act(async () => {
+      pendingA.resolve(null);
+      await pendingA.promise;
+    });
+
+    expect(screen.getByText('Checkpoint B')).toBeTruthy();
+    expect(screen.queryByText(/Lesson ended/)).toBeNull();
+    expect(mockedClearRecoveryCheckpoint).not.toHaveBeenCalled();
+  });
+
   it.each(['ASSIGNED', 'PRELOADING', 'READY', 'RUNNING', 'PAUSED'] as const)(
     'resumes a matching %s assignment directly to RunningScreen exactly once',
     async (state) => {

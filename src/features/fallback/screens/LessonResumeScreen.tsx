@@ -40,10 +40,14 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
     [route.params?.checkpoint],
   );
   const checkpoint = decision.kind === 'resume' ? decision.checkpoint : null;
+  const checkpointKey = checkpoint
+    ? JSON.stringify([checkpoint.deviceId, checkpoint.assignmentId, checkpoint.sessionId ?? null])
+    : null;
   const [verification, setVerification] = React.useState<VerificationState>({ kind: 'checking' });
   const [retryNonce, setRetryNonce] = React.useState(0);
   const didResume = React.useRef(false);
-  const requestInFlight = React.useRef(false);
+  const validationGeneration = React.useRef(0);
+  const activeValidation = React.useRef<{ readonly generation: number; readonly checkpointKey: string } | null>(null);
   const retryRequested = React.useRef(false);
 
   React.useEffect(() => {
@@ -52,15 +56,20 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
   }, [decision.kind]);
 
   React.useEffect(() => {
-    if (!checkpoint || requestInFlight.current) return;
+    const generation = validationGeneration.current + 1;
+    validationGeneration.current = generation;
+    if (!checkpoint || !checkpointKey) {
+      activeValidation.current = null;
+      return;
+    }
     let active = true;
-    requestInFlight.current = true;
+    activeValidation.current = { generation, checkpointKey };
     retryRequested.current = false;
     setVerification({ kind: 'checking' });
 
     void getCurrentAssignment(checkpoint.deviceId).then(
       (current) => {
-        if (!active) return;
+        if (!active || validationGeneration.current !== generation) return;
         if (isMatchingLiveAssignment(checkpoint.assignmentId, checkpoint.sessionId, current)) {
           setVerification({ kind: 'ready', assignment: current });
           return;
@@ -69,21 +78,28 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
         void clearRecoveryCheckpoint().catch(captureError);
       },
       (error) => {
-        if (!active) return;
+        if (!active || validationGeneration.current !== generation) return;
+        activeValidation.current = null;
         captureError(error);
         setVerification({ kind: 'error' });
       },
     ).finally(() => {
-      requestInFlight.current = false;
+      if (activeValidation.current?.generation === generation) {
+        activeValidation.current = null;
+      }
     });
 
     return () => {
       active = false;
     };
-  }, [checkpoint, retryNonce]);
+  }, [checkpoint, checkpointKey, retryNonce]);
 
   const retryVerification = (): void => {
-    if (requestInFlight.current || retryRequested.current) return;
+    if (
+      !checkpointKey ||
+      retryRequested.current ||
+      activeValidation.current?.checkpointKey === checkpointKey
+    ) return;
     retryRequested.current = true;
     setVerification({ kind: 'checking' });
     setRetryNonce((value) => value + 1);
