@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, configure, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
 import NeedsSyncScreen from '@/features/course-library/screens/NeedsSyncScreen';
 import client from '@/services/http/client';
@@ -26,6 +26,11 @@ jest.mock('@/services/http/client', () => ({
 // gate run in BOTH phases, so the timeout is raised here rather than left to
 // chance. See the load-robustness finding routed to T0.4/T6.5.
 jest.setTimeout(30_000);
+
+// RNTL's waitFor keeps its own 1000 ms default regardless of jest.setTimeout, and
+// under load it fires first — surfacing a slow machine as "Unable to find an
+// element", which reads like a broken assertion. Assertions are unchanged.
+configure({ asyncUtilTimeout: 15_000 });
 
 const mockedClient = client as jest.Mocked<typeof client>;
 

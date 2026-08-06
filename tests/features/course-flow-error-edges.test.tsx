@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, configure, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
 import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
@@ -61,6 +61,14 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 // failing fast on an actual hang. See the load-robustness finding routed to
 // T0.4/T6.5 in LESSON_PRODUCTION_PLAN.md §5.
 jest.setTimeout(30_000);
+
+// jest.setTimeout alone is NOT enough: RNTL's waitFor has its own 1000 ms
+// default, so under load it gives up first and reports "Unable to find an
+// element" — a *lying* failure that looks like a broken assertion rather than a
+// slow machine. A T0.4 gate run failed exactly this way on tests that pass 9/9
+// under the identical command locally. The assertions are unchanged; only the
+// wall-clock allowance is.
+configure({ asyncUtilTimeout: 15_000 });
 
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
