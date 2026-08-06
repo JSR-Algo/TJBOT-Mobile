@@ -70,8 +70,13 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
     void getCurrentAssignment(checkpoint.deviceId).then(
       (current) => {
         if (!active || validationGeneration.current !== generation) return;
-        if (isMatchingLiveAssignment(checkpoint.assignmentId, checkpoint.sessionId, current)) {
-          setVerification({ kind: 'ready', assignment: current });
+        const match = classifyLiveAssignment(checkpoint.assignmentId, checkpoint.sessionId, current);
+        if (match.kind === 'ready') {
+          setVerification({ kind: 'ready', assignment: match.assignment });
+          return;
+        }
+        if (match.kind === 'unconfirmed') {
+          setVerification({ kind: 'error' });
           return;
         }
         setVerification({ kind: 'ended' });
@@ -226,15 +231,26 @@ function renderEnded(navigation: Props['navigation']): React.ReactElement {
   );
 }
 
-function isMatchingLiveAssignment(
+function classifyLiveAssignment(
   assignmentId: string,
   checkpointSessionId: string | undefined,
   current: CurrentAssignment | null,
-): current is CurrentAssignment {
+):
+  | { readonly kind: 'ready'; readonly assignment: CurrentAssignment }
+  | { readonly kind: 'ended' }
+  | { readonly kind: 'unconfirmed' } {
   if (!current || !LIVE_ASSIGNMENT_STATES.has(current.state) || current.assignmentId !== assignmentId) {
-    return false;
+    return { kind: 'ended' };
   }
-  return !(checkpointSessionId && current.sessionId && checkpointSessionId !== current.sessionId);
+  if (!checkpointSessionId) {
+    return { kind: 'ready', assignment: current };
+  }
+  if (!current.sessionId) {
+    return { kind: 'unconfirmed' };
+  }
+  return checkpointSessionId === current.sessionId
+    ? { kind: 'ready', assignment: current }
+    : { kind: 'ended' };
 }
 
 function parseProgressPercent(label: string): number {

@@ -83,7 +83,7 @@ type ProductionLessonScreen = 'RunningScreen' | 'CompanionScreen';
 
 function renderProductionLessonScreen(
   screenName: ProductionLessonScreen,
-  params: { deviceId?: string; sessionId?: string; childId?: string; lessonTitle?: string } = { deviceId: 'dev-1' },
+  params: { deviceId?: string; assignmentId?: string; sessionId?: string; childId?: string; lessonTitle?: string } = { deviceId: 'dev-1' },
 ) {
   const navigation = navigationFor();
   const rendered = screenName === 'RunningScreen'
@@ -189,11 +189,34 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     '%s includes a known route session id when the live assignment has not projected it yet',
     async (screenName) => {
       mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
-      renderProductionLessonScreen(screenName, { deviceId: 'dev-1', sessionId: 'session-route-known' });
+      renderProductionLessonScreen(screenName, {
+        deviceId: 'dev-1',
+        assignmentId: 'asg-1',
+        sessionId: 'session-route-known',
+      });
 
       await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith({
         ...liveCheckpoint,
         sessionId: 'session-route-known',
+      }));
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s does not graft a stale route session onto a different live assignment',
+    async (screenName) => {
+      mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
+      renderProductionLessonScreen(screenName, {
+        deviceId: 'dev-1',
+        assignmentId: 'stale-assignment',
+        sessionId: 'stale-session',
+      });
+
+      const { sessionId: omittedSessionId, ...checkpointWithoutSession } = liveCheckpoint;
+      void omittedSessionId;
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith(checkpointWithoutSession));
+      expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalledWith(expect.objectContaining({
+        sessionId: 'stale-session',
       }));
     },
   );

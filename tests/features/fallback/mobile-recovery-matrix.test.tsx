@@ -666,7 +666,7 @@ describe('authoritative lesson resume', () => {
     },
   );
 
-  it('retains the checkpoint session when the matching assignment has not projected one yet', async () => {
+  it('does not resume until authority projects the checkpoint session', async () => {
     mockedGetCurrentAssignment.mockResolvedValueOnce(currentAssignment({ sessionId: null }));
     const navigation = createNavigation();
     const checkpoint = { ...activeCheckpoint('speaking'), sessionId: 'session-1' };
@@ -678,10 +678,10 @@ describe('authoritative lesson resume', () => {
       />,
     );
 
-    fireEvent.press(await screen.findByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, expect.objectContaining({
-      sessionId: 'session-1',
-    }));
+    expect(await screen.findByText("We can't confirm this lesson yet")).toBeTruthy();
+    expect(screen.queryByText('Keep going')).toBeNull();
+    expect(mockedClearRecoveryCheckpoint).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   it.each([

@@ -135,6 +135,8 @@ describe('RootNavigator', () => {
   });
 
   it('shows auth stack when session is unauthenticated', async () => {
+    mockedReadRecoveryCheckpoint.mockImplementation(() => new Promise(() => undefined));
+
     await renderRoot();
 
     expect(await screen.findByTestId('auth-stack')).toBeTruthy();
@@ -171,6 +173,8 @@ describe('RootNavigator', () => {
   });
 
   it('keeps the boot loading gate while the recovery checkpoint resolves', async () => {
+    mockAuthState.isAuthenticated = true;
+    mockHouseholdState.onboardingComplete = true;
     let resolveCheckpoint: ((value: LessonCheckpoint | null) => void) | undefined;
     mockedReadRecoveryCheckpoint.mockImplementation(() => new Promise((resolve) => {
       resolveCheckpoint = resolve;
@@ -188,7 +192,7 @@ describe('RootNavigator', () => {
     });
 
     expect(mockedReadRecoveryCheckpoint).toHaveBeenCalledTimes(1);
-    expect(await screen.findByTestId('auth-stack')).toBeTruthy();
+    expect((await screen.findByTestId('protected-stack')).props.children).toBe(ROUTES.HomeHubScreen);
   });
 
   it('continues normal routing when the recovery checkpoint read rejects', async () => {
@@ -203,6 +207,8 @@ describe('RootNavigator', () => {
   it('times out a hanging recovery checkpoint read and continues normal routing', async () => {
     jest.useFakeTimers();
     try {
+      mockAuthState.isAuthenticated = true;
+      mockHouseholdState.onboardingComplete = true;
       mockedReadRecoveryCheckpoint.mockImplementation(() => new Promise(() => undefined));
 
       render(<RootStackNavigator />);
@@ -210,14 +216,14 @@ describe('RootNavigator', () => {
         await Promise.resolve();
       });
 
-      expect(screen.queryByTestId('auth-stack')).toBeNull();
+      expect(screen.queryByTestId('protected-stack')).toBeNull();
 
       await act(async () => {
         jest.advanceTimersByTime(5_000);
         await Promise.resolve();
       });
 
-      expect(await screen.findByTestId('auth-stack')).toBeTruthy();
+      expect((await screen.findByTestId('protected-stack')).props.children).toBe(ROUTES.HomeHubScreen);
       expect(mockedCaptureError).toHaveBeenCalledWith(expect.objectContaining({
         message: expect.stringContaining('Recovery checkpoint bootstrap timed out'),
       }));

@@ -59,6 +59,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
   const terminalRef = React.useRef(false);
   const checkpointQueueRef = React.useRef<Promise<void>>(Promise.resolve());
   const checkpointStateRef = React.useRef<string | null>(null);
+  const routeAssignmentId = route.params?.assignmentId?.trim() || null;
   const routeSessionId = route.params?.sessionId?.trim() || null;
   const sessionId = assignment?.sessionId ?? route.params?.sessionId;
   const observerSessionId = sessionId?.trim() ? sessionId.trim() : null;
@@ -80,13 +81,13 @@ export default function CompanionScreen({ navigation, route }: Props) {
   }, []);
 
   const persistLiveCheckpoint = React.useCallback((current: CurrentAssignment, phase?: LessonPhase | null) => {
-    const checkpointAssignment = current.sessionId?.trim() || !routeSessionId
+    const checkpointAssignment = current.sessionId?.trim() || !routeSessionId || routeAssignmentId !== current.assignmentId
       ? current
       : { ...current, sessionId: routeSessionId };
     const checkpoint = checkpointFromCurrentAssignment(checkpointAssignment, deviceId, phase);
     if (!checkpoint) return;
     queueCheckpointOperation(`write:${JSON.stringify(checkpoint)}`, () => writeRecoveryCheckpoint(checkpoint));
-  }, [deviceId, queueCheckpointOperation, routeSessionId]);
+  }, [deviceId, queueCheckpointOperation, routeAssignmentId, routeSessionId]);
 
   const clearCheckpoint = React.useCallback(() => {
     queueCheckpointOperation('clear', clearRecoveryCheckpoint);
@@ -109,7 +110,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
           sawLiveRef.current = true;
           settlingPolls = 0;
           if (assignmentRef.current?.assignmentId !== current.assignmentId) observerPhaseRef.current = null;
-          assignmentRef.current = current.sessionId?.trim() || !routeSessionId
+          assignmentRef.current = current.sessionId?.trim() || !routeSessionId || routeAssignmentId !== current.assignmentId
             ? current
             : { ...current, sessionId: routeSessionId };
           setAssignment(current);
@@ -161,7 +162,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [clearCheckpoint, deviceId, persistLiveCheckpoint, retryNonce, routeSessionId]);
+  }, [clearCheckpoint, deviceId, persistLiveCheckpoint, retryNonce, routeAssignmentId, routeSessionId]);
 
   React.useEffect(() => {
     if (!observerSessionId) return;

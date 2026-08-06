@@ -91,7 +91,6 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
 
   if (
     ageGate.status === 'loading' ||
-    recoveryCheckpoint.status === 'loading' ||
     isLoading ||
     (isAuthenticated && householdLoading)
   ) {
@@ -113,6 +112,13 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
 
   if (!isAuthenticated) return <AuthNavigator key="auth" />;
   if (!onboardingComplete) return <OnboardingNavigator key="onboarding" />;
+  if (recoveryCheckpoint.status === 'loading') {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   const requestedInitialRoute = pendingDeviceSetup ? PENDING_DEVICE_SETUP_ROUTE : protectedInitialRoute;
   const productionInitialRoute = isProductionNavigableRoute(requestedInitialRoute)
