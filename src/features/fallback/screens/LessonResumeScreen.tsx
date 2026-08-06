@@ -10,20 +10,62 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { decideLessonRecovery } from '@/features/fallback/recoveryTypes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonResumeScreen'>;
 
 export default function LessonResumeScreen({ navigation, route }: Props) {
-  const checkpoint = route.params?.checkpoint;
-  const lessonTitle = checkpoint?.lessonTitle ?? 'How are you?';
-  const progressLabel = checkpoint?.progressLabel ?? '60%';
+  const decision = decideLessonRecovery(route.params?.checkpoint);
+  const didResume = React.useRef(false);
+
+  if (decision.kind === 'reauth') {
+    return (
+      <ScreenShell bg="#FFF4E3">
+        <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
+        <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
+          <Robot emotion="worry" size={220} accent="#FFB85C" />
+          <SpeechBubble>Session expired{'\n'}Please return home.</SpeechBubble>
+          <Text style={styles.safeText}>Your lesson cannot continue until the session is refreshed.</Text>
+        </Box>
+        <Box style={styles.cta}>
+          <PrimaryCTA color="#FF6F61" onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>Back home</PrimaryCTA>
+        </Box>
+      </ScreenShell>
+    );
+  }
+
+  if (decision.kind === 'ended') {
+    return (
+      <ScreenShell bg="#E8E5F0">
+        <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
+        <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
+          <Robot emotion="idle" size={220} accent="#6B4A9B" />
+          <SpeechBubble>Lesson ended{'\n'}You can start another activity from home.</SpeechBubble>
+          <Text style={styles.safeText}>This lesson cannot be resumed from the saved checkpoint.</Text>
+        </Box>
+        <Box style={styles.cta}>
+          <PrimaryCTA color="#6B4A9B" onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>Back home</PrimaryCTA>
+        </Box>
+      </ScreenShell>
+    );
+  }
+
+  const checkpoint = decision.checkpoint;
+  const lessonTitle = checkpoint.lessonTitle;
+  const progressLabel = checkpoint.progressLabel;
   // Drive the bar width off the same label the text shows, so a data-bound
   // "40%" label no longer sits over a hardcoded 60% fill. Clamp to 0–100;
   // fall back to 0 when the label has no parseable percentage.
   const progressPercent = parseProgressPercent(progressLabel);
   const activityLabel = checkpoint?.activityLabel;
-  const resumeTarget = resolveSafeResumeTarget(checkpoint?.resumeTarget);
   const resumeLesson = (): void => {
+    if (didResume.current) return;
+    didResume.current = true;
+
+    if (checkpoint.resumeTarget === ROUTES.HomeHubScreen) {
+      navigation.navigate(ROUTES.HomeHubScreen);
+      return;
+    }
     if (hasCourseResumeContext(checkpoint)) {
       navigation.navigate(ROUTES.SendToRobotScreen, {
         courseId: checkpoint.courseId,
@@ -37,10 +79,6 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
           manifestChecksum: checkpoint.manifestChecksum,
         },
       });
-      return;
-    }
-    if (resumeTarget === ROUTES.HomeHubScreen) {
-      navigation.navigate(ROUTES.HomeHubScreen);
       return;
     }
     navigation.navigate(ROUTES.SendToRobotScreen);
@@ -87,10 +125,6 @@ function parseProgressPercent(label: string): number {
   return Math.max(0, Math.min(100, value));
 }
 
-function resolveSafeResumeTarget(target: unknown): typeof ROUTES.SendToRobotScreen | typeof ROUTES.HomeHubScreen {
-  return target === ROUTES.HomeHubScreen ? ROUTES.HomeHubScreen : ROUTES.SendToRobotScreen;
-}
-
 function hasCourseResumeContext(checkpoint: unknown): checkpoint is {
   courseId: string;
   childId: string;
@@ -119,5 +153,6 @@ const styles = StyleSheet.create({
   progressLabel: { fontSize: 13, color: '#5C4F77', marginTop: 2 },
   progressTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.06)', overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#6CE2B6', borderRadius: 3 },
+  safeText: { color: '#5C4F77', fontSize: 14, lineHeight: 20, textAlign: 'center', maxWidth: 320 },
   cta: { position: 'absolute', left: 24, right: 24, bottom: 48 },
 });

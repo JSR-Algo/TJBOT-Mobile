@@ -77,8 +77,16 @@ describe('fallback and offline UI stability', () => {
 
   it('renders network fallback and navigates only through route constants', () => {
     const navigation = createNavigation();
+    const checkpoint = { ...fallbackCheckpoint(), reason: 'network' as const };
     const { getByLabelText, getByText } = render(
-      <NetworkErrorScreen navigation={navigation as never} route={createRoute(ROUTES.NetworkErrorScreen) as never} />,
+      <NetworkErrorScreen
+        navigation={navigation as never}
+        route={{
+          key: ROUTES.NetworkErrorScreen,
+          name: ROUTES.NetworkErrorScreen,
+          params: { checkpoint },
+        } as never}
+      />,
     );
 
     fireEvent.press(getByLabelText('Back to home'));
@@ -89,7 +97,7 @@ describe('fallback and offline UI stability', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ReconnectingOverlay, {
       attempt: 1,
-      checkpoint: undefined,
+      checkpoint,
       failureTarget: ROUTES.HelpFaqScreen,
       maxAttempts: 3,
       reconnectDelayMs: 15000,
@@ -99,10 +107,11 @@ describe('fallback and offline UI stability', () => {
 
   it('does not send exhausted retry attempts from network fallback CTA', () => {
     const navigation = createNavigation();
+    const checkpoint = { ...fallbackCheckpoint(), reason: 'network' as const };
     const route = {
       key: ROUTES.NetworkErrorScreen,
       name: ROUTES.NetworkErrorScreen,
-      params: { attemptCount: 3 },
+      params: { attemptCount: 3, checkpoint },
     };
     const { getByText } = render(
       <NetworkErrorScreen navigation={navigation as never} route={route as never} />,
@@ -112,7 +121,7 @@ describe('fallback and offline UI stability', () => {
 
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ReconnectingOverlay, {
       attempt: 3,
-      checkpoint: undefined,
+      checkpoint,
       failureTarget: ROUTES.HelpFaqScreen,
       maxAttempts: 3,
       reconnectDelayMs: 15000,
@@ -231,10 +240,7 @@ describe('fallback and offline UI stability', () => {
   it('renders lesson resume from checkpoint and navigates to target', () => {
     const navigation = createNavigation();
     const checkpoint = {
-      lessonTitle: 'How are you?',
-      progressLabel: '60%',
-      resumeTarget: ROUTES.SendToRobotScreen,
-      reason: 'voice_failed' as const,
+      ...fallbackCheckpoint(),
       activityLabel: 'Speaking practice',
     };
 
@@ -256,6 +262,7 @@ describe('fallback and offline UI stability', () => {
   it('hands real course resume context to the course-library entry route', async () => {
     const navigation = createNavigation();
     const checkpoint = {
+      ...fallbackCheckpoint(),
       lessonTitle: 'Food Words',
       progressLabel: '75%',
       resumeTarget: ROUTES.SendToRobotScreen,
@@ -292,7 +299,7 @@ describe('fallback and offline UI stability', () => {
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
   });
 
-  it('coerces legacy hidden lesson resume targets to robot assignment', () => {
+  it('ends legacy hidden lesson resume targets instead of resuming to hidden routes', () => {
     const navigation = createNavigation();
     const legacyCheckpoint = {
       lessonTitle: 'How are you?',
@@ -308,8 +315,10 @@ describe('fallback and offline UI stability', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(screen.getByText(/Lesson ended/)).toBeTruthy();
+    expect(screen.queryByText('Keep going')).toBeNull();
+    fireEvent.press(screen.getByText('Back home'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotListeningScreen);
   });
 
@@ -330,6 +339,8 @@ describe('fallback and offline UI stability', () => {
       <AudioRecoveryScreen navigation={recoveryNavigation as never} route={createRoute(ROUTES.AudioRecoveryScreen) as never} />,
     );
     fireEvent.press(recovery.getByText('Back to play area'));
+    expect(recoveryNavigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
+    fireEvent.press(recovery.getByText('Audio is working'));
     expect(recoveryNavigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
   });
 
