@@ -69,3 +69,6 @@ tbot-design/
 src/components/gemini/.omc/
 # Generated env module — values come from .env at Metro load time; do not commit.
 src/__env__.ts
+.ua/
+output/
+ios/DerivedData-*/

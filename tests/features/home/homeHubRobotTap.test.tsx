@@ -37,21 +37,19 @@ const navigation = {
   goBack: jest.fn(),
 };
 
-describe('HomeHub robot tap', () => {
+describe('HomeHub progress entry', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('opens live lesson status from the overview robot', () => {
+  it('opens progress from the coral overview card', () => {
     const screen = render(
       <HomeHubScreen navigation={navigation as never} route={{ key: 'home', name: ROUTES.HomeHubScreen }} />,
     );
 
-    fireEvent.press(screen.getByTestId('homeHeroRobot'));
+    fireEvent.press(screen.getByTestId('homeProgressCard'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
-      lessonTitle: 'Barn & Farm Words',
-    });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.TodayProgressScreen);
   });
 
   it('renders the Today command center without the legacy garden dashboard', () => {
@@ -63,7 +61,9 @@ describe('HomeHub robot tap', () => {
     expect(screen.getByTestId('homeHeroAnimatedRobot')).toBeTruthy();
     expect(screen.getByTestId('homeHeroRobotAnimation')).toBeTruthy();
     expect(screen.getByText('Ready when Mia is')).toBeTruthy();
-    expect(screen.getByText('Barn & Farm Words')).toBeTruthy();
+    expect(screen.getByText('Progress')).toBeTruthy();
+    expect(screen.queryByText('Barn & Farm Words')).toBeNull();
+    expect(screen.queryByText('Start')).toBeNull();
     expect(screen.getByText('Since yesterday')).toBeTruthy();
     expect(screen.queryByText('My Garden')).toBeNull();
   });

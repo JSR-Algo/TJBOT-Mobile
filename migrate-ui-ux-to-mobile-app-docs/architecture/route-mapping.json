@@ -1,6 +1,6 @@
 {
   "generated": "2026-05-12",
-  "routeCount": 136,
+  "routeCount": 131,
   "navigators": {
     "AuthNavigator": "unauthenticated auth routes",
     "OnboardingNavigator": "authenticated setup routes before protected app",
@@ -221,10 +221,10 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "course/lesson-detail",
-      "backTarget": "UnitScreen",
+      "backTarget": "CourseDetailScreen",
       "stateMachineId": "lesson_detail"
     },
     "ReviewEntryScreen": {
@@ -312,63 +312,6 @@
       "deepLinkPath": "course-library/course-locked",
       "backTarget": "CourseLibraryScreen",
       "stateMachineId": "cl_locked"
-    },
-    "NeedsSyncScreen": {
-      "feature": "course-library",
-      "rootBranch": "protected",
-      "navigator": "ModalNavigator",
-      "bucket": "stackScreens",
-      "role": "state-machine",
-      "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/needs-sync",
-      "backTarget": "CourseLibraryScreen",
-      "stateMachineId": "cl_needs_sync"
-    },
-    "SendToRobotScreen": {
-      "feature": "course-library",
-      "rootBranch": "protected",
-      "navigator": "ModalNavigator",
-      "bucket": "stackScreens",
-      "role": "stack",
-      "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/send-to-robot",
-      "backTarget": "DeviceHomeScreen",
-      "forwardCycleGroup": "course-dispatch-picker",
-      "stateMachineId": "cl_send"
-    },
-    "RobotReadyScreen": {
-      "feature": "course-library",
-      "rootBranch": "protected",
-      "navigator": "ModalNavigator",
-      "bucket": "stackScreens",
-      "role": "stack",
-      "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/robot-ready",
-      "backTarget": "SendToRobotScreen",
-      "forwardCycleGroup": "course-dispatch-picker",
-      "stateMachineId": "cl_robot_ready"
-    },
-    "RunningScreen": {
-      "feature": "course-library",
-      "rootBranch": "protected",
-      "navigator": "ModalNavigator",
-      "bucket": "stackScreens",
-      "role": "stack-entry",
-      "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/running",
-      "backTarget": "RobotReadyScreen",
-      "stateMachineId": "cl_running"
-    },
-    "CompanionScreen": {
-      "feature": "course-library",
-      "rootBranch": "protected",
-      "navigator": "ModalNavigator",
-      "bucket": "stackScreens",
-      "role": "stack-entry",
-      "backBehavior": "stack-back",
-      "deepLinkPath": "course-library/companion",
-      "backTarget": "RunningScreen",
-      "stateMachineId": "cl_companion"
     },
     "PurchaseIntroScreen": {
       "feature": "purchase",
@@ -1228,7 +1171,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "fallback-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "device/device-session",
       "backTarget": "DeviceHomeScreen",

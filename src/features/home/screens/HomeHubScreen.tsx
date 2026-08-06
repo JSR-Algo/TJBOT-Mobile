@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -29,14 +28,6 @@ const SLEEK = {
   secondary: "#4ECDC4",
 } as const;
 
-const ROBOT_HANG_TITLE = "Robot pairing later";
-const ROBOT_HANG_BODY =
-  "Phone lessons work with Nest now. Physical robot pairing and send-to-robot are not connected yet.";
-
-function showRobotHang(): void {
-  Alert.alert(ROBOT_HANG_TITLE, ROBOT_HANG_BODY, [{ text: "OK" }]);
-}
-
 // Blueprint page 01 robot = R4 cat-eared TeeBot (local SOT asset).
 const SLEEK_ASSETS = {
   robotHead: mascot.r4Head,
@@ -50,20 +41,18 @@ export default function HomeHubScreen({
 }: Props): React.JSX.Element {
   const {
     variant,
-    cfg,
     isLoading,
     isError = false,
     contentMode = 'live',
     data,
-    refetch,
     demoBadge = { simulated: false, label: null },
+    refetch,
     selectChild,
   } = useHomeState();
   const { t } = useAppLanguage();
   const insets = useSafeAreaInsets();
   const unavailable = contentMode === 'unavailable';
   const failed = contentMode === 'error' || isError;
-  const primaryEnabled = failed || unavailable || cfg.ctaEnabled;
 
   if (isLoading) {
     return (
@@ -150,10 +139,10 @@ export default function HomeHubScreen({
         >
           <Box alignItems="center">
             <Text i18n={false} fontWeight="800" style={styles.emptyTitle}>
-              {t('No lessons yet')}
+              {t('No progress yet')}
             </Text>
             <Text i18n={false} fontWeight="700" style={styles.emptySubtitle}>
-              {t("Let's start a joyful English journey with TeeBot")}
+              {t('Set up a child profile to start tracking progress')}
             </Text>
           </Box>
 
@@ -193,11 +182,11 @@ export default function HomeHubScreen({
             style={styles.emptyCta}
             onPress={openChildProfile}
             accessibilityRole="button"
-            accessibilityLabel={t("Start today's lesson")}
+            accessibilityLabel={t('Set up child profile')}
           >
-            <Icon name="Play" size={24} color="#FFFFFF" />
+            <Icon name="Edit3" size={24} color="#FFFFFF" />
             <Text i18n={false} fontWeight="800" style={styles.emptyCtaCopy}>
-              {t("Start today's lesson")}
+              {t('Set up child profile')}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -219,10 +208,8 @@ export default function HomeHubScreen({
     return (
       <HomeStreakLostState
         childName={data.childName}
-        lesson={data.nextLesson}
         wordsLearnedThisWeek={data.wordsLearnedThisWeek}
-        onStartLesson={() => navigation.navigate(ROUTES.LessonReadyScreen)}
-        onBrowseLessons={() => navigation.navigate(ROUTES.CourseLibraryScreen)}
+        onProgress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
       />
     );
   }
@@ -233,71 +220,22 @@ export default function HomeHubScreen({
       : null;
   const greetingName = childName ?? t("Mia");
   const lesson = data?.nextLesson;
-  const lessonReady = demoBadge.simulated || (!failed && !unavailable);
-  const overviewLessonTitle = failed
-    ? t('Could not load Home')
-    : unavailable
-      ? t('No lesson plan yet')
-      : lesson?.title || t('Farm Friends');
-  const runPrimary = (): void => {
-    if (demoBadge.simulated) {
-      navigation.navigate(ROUTES.LessonReadyScreen);
-    } else if (failed) {
-      void refetch?.();
-    } else if (unavailable) {
-      navigation.navigate(ROUTES.CourseLibraryScreen);
-    } else {
-      navigateHomeCtaTarget(navigation, cfg.ctaTarget);
-    }
-  };
+  const homeReady = demoBadge.simulated || (!failed && !unavailable);
 
   return (
     <ScreenShell bg={SLEEK.background} gradient={false}>
       <TodayCommandView
         childName={greetingName}
-        durationMinutes={lesson?.durationMinutes ?? 7}
-        lessonReady={lessonReady}
-        lessonStatusLabel={failed ? 'Try again' : unavailable ? 'Browse lessons' : 'Ready'}
-        lessonTitle={overviewLessonTitle}
-        onLiveStatus={() => navigation.navigate(ROUTES.RunningScreen, { lessonTitle: lesson?.title })}
-        onPrimary={runPrimary}
+        homeReady={homeReady}
+        recoveryLabel={failed ? t('Retry') : unavailable ? t('Browse library') : undefined}
+        onProgress={() => navigation.navigate(ROUTES.TodayProgressScreen)}
         onReport={() => navigation.navigate(ROUTES.LessonSummaryScreen, { lessonId: lesson?.id })}
-        online={lessonReady}
-        primaryEnabled={demoBadge.simulated || primaryEnabled}
-        primaryLabel={demoBadge.simulated ? 'Start' : failed ? 'Retry' : unavailable ? 'Browse' : 'Start'}
-        reportsReady={data?.lessonsCompletedToday ?? 1}
-        wordCount={Math.max(lesson?.focusItems.length ?? 6, 1)}
-        wordsReady={data?.wordsLearnedThisWeek ?? 3}
+        onRecovery={failed ? () => { void refetch(); } : unavailable ? () => navigation.navigate(ROUTES.CourseLibraryScreen) : undefined}
+        reportsReady={data?.lessonsCompletedToday ?? 0}
+        wordsReady={data?.wordsLearnedThisWeek ?? 0}
       />
     </ScreenShell>
   );
-}
-
-function navigateHomeCtaTarget(
-  navigation: Props["navigation"],
-  target: keyof RootStackParamList,
-): void {
-  if (target === ROUTES.LessonReadyScreen) {
-    navigation.navigate(ROUTES.LessonReadyScreen);
-    return;
-  }
-  if (target === ROUTES.TodayProgressScreen) {
-    navigation.navigate(ROUTES.TodayProgressScreen);
-    return;
-  }
-  if (target === ROUTES.ParentSummaryScreen) {
-    navigation.navigate(ROUTES.ParentSummaryScreen);
-    return;
-  }
-  if (target === ROUTES.DeviceOverviewScreen) {
-    showRobotHang();
-    return;
-  }
-  if (target === ROUTES.CourseLibraryScreen) {
-    navigation.navigate(ROUTES.CourseLibraryScreen);
-    return;
-  }
-  navigation.navigate(ROUTES.HomeHubScreen);
 }
 
 const styles = StyleSheet.create({

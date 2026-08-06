@@ -25,17 +25,14 @@ name: Next five MVP screens and breadcrumb chain
     commands:
       - tapOn:
           point: "92%,93%"
-- tapOn: ".*(Open|Mở).*(course|khóa học).*"
+- tapOn:
+    id: "featuredCourseCard"
 - extendedWaitUntil:
     visible:
       id: "courseDetailPage"
     timeout: 30000
-- scrollUntilVisible:
-    element:
-      id: "openLessonDetails"
-    direction: DOWN
 - tapOn:
-    id: "openLessonDetails"
+    id: "courseStage-1"
 
 # 14 — Lesson detail
 - extendedWaitUntil:
@@ -44,29 +41,13 @@ name: Next five MVP screens and breadcrumb chain
     timeout: 30000
 - assertVisible:
     id: "lessonDetailBreadcrumb"
-- assertVisible: ".*(Robot compatibility confirmed|Đã xác nhận tương thích robot|Ready for TeeBot|Sẵn sàng cho TeeBot).*"
-- takeScreenshot: "/tmp/teebot-next-five/14-lesson-detail"
-- scrollUntilVisible:
-    element:
-      id: "sendLessonToRobot"
-    direction: DOWN
-- tapOn:
+- assertVisible: ".*(Course map|Bản đồ khóa học|Lesson detail|Chi tiết bài học).*"
+- assertNotVisible:
     id: "sendLessonToRobot"
-
-# 18 — Send to Robot
-- extendedWaitUntil:
-    visible:
-      id: "sendToRobotPage"
-    timeout: 30000
-- assertVisible:
-    id: "sendToRobotBreadcrumb"
-- assertVisible: ".*(Ready to send|Sẵn sàng gửi).*"
-- takeScreenshot: "/tmp/teebot-next-five/18-send-to-robot"
+- takeScreenshot: "/tmp/teebot-next-five/14-lesson-detail"
 
 # 21 — Robot hub (the right-sized one-Robot MVP version of fleet)
 - waitForAnimationToEnd
-# The send screen's honest 503 (ROBOT_BRIDGE_UNAVAILABLE) can raise the LogBox
-# pill over the tab bar — dismiss before tapping tabs.
 - runFlow:
     when:
       visible: ".*Open debugger to view warnings.*"
@@ -79,8 +60,6 @@ name: Next five MVP screens and breadcrumb chain
     visible:
       id: "robotHubPage"
     timeout: 30000
-- assertVisible:
-    id: "robotHubBreadcrumb"
 - extendedWaitUntil:
     visible:
       id: "openRobotDetail"
@@ -105,21 +84,13 @@ name: Next five MVP screens and breadcrumb chain
 - assertVisible:
     id: "robotDetailBreadcrumb"
 - takeScreenshot: "/tmp/teebot-next-five/22-robot-detail"
-- scrollUntilVisible:
-    element:
-      id: "openPairingSetup"
-    direction: DOWN
-- tapOn:
-    id: "openPairingSetup"
 
-# 23 — Pairing setup (PairFoundScreen = blueprint page 23)
-- openLink: "tjbot://device/pair-found?serialNumber=TBT-2026-004217"
+# 23 — Parent profile
+- tapOn:
+    id: "profileTab"
 - extendedWaitUntil:
     visible:
-      id: "pairingSetupPage"
+      id: "parentProfileCard"
     timeout: 30000
-- assertVisible: ".*(Add a TeeBot|Thêm TeeBot).*"
-- assertVisible: ".*(Step 2 of 5|Bước 2 trên 5).*"
-- assertVisible: ".*(Confirm identity|Xác nhận danh tính).*"
-- assertVisible: ".*(Connect Wi-Fi|Kết nối Wi-Fi).*"
-- takeScreenshot: "/tmp/teebot-next-five/23-pairing-setup"
+- assertVisible: ".*(Safety & Limits|An toàn & giới hạn).*"
+- takeScreenshot: "/tmp/teebot-next-five/23-parent-profile"

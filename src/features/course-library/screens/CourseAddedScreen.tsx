@@ -19,14 +19,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CourseAddedScreen'>;
 export default function CourseAddedScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
   const courseId = route.params?.courseId ?? 'c_food';
-  // assignmentId is set by the enroll-course flow (UnlockConfirmModal →
-  // enrollCourse → { enrollment, assignment }). It's only used as a presence
-  // signal here — RobotReadyScreen polls the live assignment by deviceId via
-  // getCurrentAssignment (no extra wiring needed). When present, swap the
-  // "Send today's lesson now" copy so the parent knows the lesson is already
-  // queued on the robot.
-  const assignmentId = route.params?.assignmentId;
-  const hasAssignment = Boolean(assignmentId);
   // Static catalog supplies the LCD emotion; the published catalog overlays the
   // REAL course title for authored courses. `?? COURSES[2]` guards against a
   // courseId that is neither published nor static so the screen never crashes.
@@ -51,30 +43,30 @@ export default function CourseAddedScreen({ navigation, route }: Props) {
     title: published?.title?.trim() ? published.title : staticCourse.title,
   };
   return (
-    <DeviceShell title={t('Queued for your robot')}>
+    <DeviceShell title={t('Added to your library')}>
       <Box paddingTop={40} paddingHorizontal={24} alignItems="center">
         <Robot emotion="success" size={180} accessibilityLabel="TeeBot celebrating the queued course" />
         <Text fontWeight="600" style={styles.heading}>{c.title}</Text>
-        <Text style={styles.sub}>{t("Robot will pick this up when it's back online.")}</Text>
+        <Text style={styles.sub}>{t('Explore the course map and follow learning progress here.')}</Text>
       </Box>
 
       <Box paddingHorizontal={16} paddingTop={24}>
         <Box style={styles.card}>
           <LCDPreview emotion={c.lcd} accent="#FF6F61" size={72} />
           <Box flex={1}>
-            <Text fontWeight="700" style={styles.onRobotLabel}>{t('Queued for your robot')}</Text>
+            <Text fontWeight="700" style={styles.onRobotLabel}>{t('In your library')}</Text>
             <Text fontWeight="600" style={styles.lessonTitle}>{c.title}</Text>
-            <Text style={styles.lessonMeta}>{t('Waiting to send')}</Text>
+            <Text style={styles.lessonMeta}>{t('Course map available')}</Text>
           </Box>
         </Box>
       </Box>
 
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen, { courseId })}>
-          {hasAssignment ? t('Reconnect Robot now') : t("Send today's lesson now")}
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId })}>
+          {t('Open course map')}
         </DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>{t('Back to Robot home')}</DeviceBigBtn>
+        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>{t('Back to library')}</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

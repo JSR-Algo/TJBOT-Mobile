@@ -2,18 +2,15 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
-import SendToRobotScreen from '@/features/course-library/screens/SendToRobotScreen';
 import LessonDetailScreen from '@/features/course/screens/LessonDetailScreen';
 import PairAddScreen from '@/features/device/pairing/screens/PairAddScreen';
 import DeviceHomeScreen from '@/features/device/screens/DeviceHomeScreen';
 import DeviceOverviewScreen from '@/features/device/screens/DeviceOverviewScreen';
 import { ROUTES } from '@/navigation/routes';
 import {
-  createAssignment,
   getCourseDetail,
   getCourseLessons,
   getCourses,
-  getCurrentAssignment,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { fetchRobotStatus } from '@/services/connectors/robot-status.connector';
@@ -25,11 +22,9 @@ jest.mock('@/services/api/course-library.api', () => {
   const actual = jest.requireActual('@/services/api/course-library.api');
   return {
     ...actual,
-    createAssignment: jest.fn(),
     getCourseDetail: jest.fn(),
     getCourseLessons: jest.fn(),
     getCourses: jest.fn(),
-    getCurrentAssignment: jest.fn(),
   };
 });
 
@@ -52,12 +47,10 @@ jest.mock('@/contexts/HouseholdContext', () => ({
 }));
 
 const mocks = {
-  createAssignment: createAssignment as jest.MockedFunction<typeof createAssignment>,
   fetchRobotStatus: fetchRobotStatus as jest.MockedFunction<typeof fetchRobotStatus>,
   getCourseDetail: getCourseDetail as jest.MockedFunction<typeof getCourseDetail>,
   getCourseLessons: getCourseLessons as jest.MockedFunction<typeof getCourseLessons>,
   getCourses: getCourses as jest.MockedFunction<typeof getCourses>,
-  getCurrentAssignment: getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>,
   getDeviceStatus: getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>,
   getLocalPairedDeviceId: getLocalPairedDeviceId as jest.MockedFunction<typeof getLocalPairedDeviceId>,
   unpairDevice: unpairDevice as jest.MockedFunction<typeof unpairDevice>,
@@ -148,7 +141,7 @@ describe('next five MVP screen chain', () => {
 
   it('connects Course Detail to the published Lesson Detail page', async () => {
     const navigation = navigationFor();
-    render(
+    renderWithQuery(
       <CourseDetailScreen
         navigation={navigation as never}
         route={{ key: 'course', name: ROUTES.CourseDetailScreen, params: { courseId: COURSE.courseId } } as never}
@@ -156,14 +149,37 @@ describe('next five MVP screen chain', () => {
     );
 
     await screen.findByText(COURSE.title);
-    fireEvent.press(screen.getByTestId('openLessonDetails'));
+    fireEvent.press(screen.getByTestId('courseStage-1'));
 
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonDetailScreen, {
       courseId: COURSE.courseId,
+      lessonId: LESSON.lessonId,
     });
   });
 
-  it('matches the blueprint Lesson Detail brief and continues to Send to Robot', async () => {
+  it('keeps the Vietnamese Course World Map free of English demo titles', async () => {
+    await setAppLanguage('vi');
+    mocks.getCourseDetail.mockResolvedValueOnce({
+      ...COURSE,
+      title: 'Barn & Farm Words',
+      description: 'Gentle animal words, listening turns, and short repeat-after-me practice.',
+    });
+    mocks.getCourseLessons.mockResolvedValueOnce([{ ...LESSON, title: 'Barn Animals Say Hello' }]);
+
+    renderWithQuery(
+      <CourseDetailScreen
+        navigation={navigationFor() as never}
+        route={{ key: 'course-vi', name: ROUTES.CourseDetailScreen, params: { courseId: COURSE.courseId } } as never}
+      />,
+    );
+
+    await screen.findByText('Từ vựng nông trại');
+    expect(screen.getByText('Các bạn động vật nông trại chào bạn')).toBeTruthy();
+    expect(screen.getByText('Từ vựng nhẹ nhàng về động vật, lượt nghe và bài luyện nhắc lại ngắn.')).toBeTruthy();
+    expect(screen.queryByText('Barn Animals Say Hello')).toBeNull();
+  });
+
+  it('matches the read-only Lesson Detail brief without dispatch controls', async () => {
     const navigation = navigationFor();
     render(
       <LessonDetailScreen
@@ -190,14 +206,12 @@ describe('next five MVP screen chain', () => {
       expect(screen.getByText(beat)).toBeTruthy();
     }
     expect(screen.getByText('Robot compatibility confirmed')).toBeTruthy();
-
-    fireEvent.press(screen.getByTestId('sendLessonToRobot'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, {
-      courseId: COURSE.courseId,
-    });
+    expect(screen.queryByText('Send to Robot')).toBeNull();
+    expect(screen.queryByText('Send lesson to TeeBot')).toBeNull();
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
-  it('keeps Send to TeeBot disabled until the lesson package is ready', async () => {
+  it('shows an honest preparing state without adding a dispatch action', async () => {
     mocks.getCourseLessons.mockResolvedValueOnce([{ ...LESSON, manifestReady: false }]);
     const navigation = navigationFor();
     render(
@@ -214,10 +228,7 @@ describe('next five MVP screen chain', () => {
     await screen.findByText(LESSON.title);
     expect(screen.getByText('LESSON 3 · PREPARING')).toBeTruthy();
     expect(screen.getByText('Lesson is still preparing')).toBeTruthy();
-    const sendButton = screen.getByTestId('sendLessonToRobot');
-    expect(sendButton.props.accessibilityState).toEqual({ disabled: true });
-
-    fireEvent.press(sendButton);
+    expect(screen.queryByText('Send lesson to TeeBot')).toBeNull();
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
@@ -237,43 +248,21 @@ describe('next five MVP screen chain', () => {
     await screen.findByText('Âm thanh Nông trại');
     expect(screen.getAllByText('Chi tiết bài học').length).toBeGreaterThan(0);
     expect(screen.getByText('Đã xác nhận tương thích robot')).toBeTruthy();
-    expect(screen.getByText('Gửi bài học đến TeeBot')).toBeTruthy();
+    expect(screen.queryByText('Gửi bài học đến TeeBot')).toBeNull();
   });
 
-  it('shows a Send to Robot breadcrumb without weakening the existing assignment gate', async () => {
-    const navigation = navigationFor();
-    renderWithQuery(
-      <SendToRobotScreen
-        navigation={navigation as never}
-        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: { courseId: COURSE.courseId } } as never}
-      />,
-    );
-
-    await screen.findByText(LESSON.title);
-    expect(screen.getByTestId('sendToRobotBreadcrumb')).toBeTruthy();
-    expect(screen.getByText('Ready to send')).toBeTruthy();
-    expect(screen.getByText('Robot readiness checked before sending')).toBeTruthy();
-  });
-
-  it('keeps the MVP Robot hub focused on detail, lessons, and pairing', async () => {
+  it('keeps the MVP Robot hub focused on real status, progress, controls, and pairing', async () => {
     const navigation = navigationFor();
     renderWithQuery(
       <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
     );
 
     await screen.findByText('TeeBot');
-    expect(screen.getByTestId('robotHubBreadcrumb')).toBeTruthy();
-    for (const testID of [
-      'robotHubBatteryIcon',
-      'robotHubOpenDetailIcon',
-      'robotHubChooseLessonIcon',
-      'robotHubPairIcon',
-      'robotHubUnpairIcon',
-    ]) {
+    for (const testID of ['robotHubBatteryIcon', 'robotProgressCard', 'robotHubUnpairIcon']) {
       expect(screen.getByTestId(testID)).toBeTruthy();
     }
-    expect(screen.queryByTestId('robotHubFindIcon')).toBeNull();
-    expect(screen.queryByTestId('robotHubFirmwareIcon')).toBeNull();
+    expect(screen.getByText('Find Robot')).toBeTruthy();
+    expect(screen.getByText('Robot settings')).toBeTruthy();
     fireEvent.press(screen.getByTestId('openRobotDetail'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.DeviceOverviewScreen, { deviceId: 'device-1' });
   });
@@ -285,7 +274,7 @@ describe('next five MVP screen chain', () => {
     );
 
     await hub.findByText('TeeBot');
-    fireEvent.press(hub.getByLabelText('Pair another Robot. Open the guided five-step setup'));
+    fireEvent.press(hub.getByTestId('addRobotButton'));
     expect(hubNavigation.navigate).toHaveBeenCalledWith(ROUTES.PairAddScreen);
     hub.unmount();
 

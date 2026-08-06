@@ -88,7 +88,7 @@ name: Nest spine — signup through HomeHub (local Nest)
 - tapOn:
     id: "emailInput"
 - eraseText
-- inputText: "maestro.home.1785390484@example.com"
+- inputText: "maestro.home.1785405424@example.com"
 - hideKeyboard
 - tapOn:
     id: "passwordInput"

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { BookOpen, ClipboardList, Play } from 'lucide-react-native';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ArrowRight, BookOpen, ClipboardList, TrendingUp } from 'lucide-react-native';
+import { Reveal, Sheen, StatusPulse } from '@/design-system/animations';
 import RobotGreetLoop from '@/design-system/components/RobotGreetLoop';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -8,43 +9,31 @@ import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
 
 type Props = {
   childName: string;
-  lessonTitle: string;
-  durationMinutes: number;
-  wordCount: number;
   wordsReady: number;
   reportsReady: number;
-  online: boolean;
-  lessonReady: boolean;
-  lessonStatusLabel: string;
-  primaryLabel: string;
-  primaryEnabled: boolean;
-  onPrimary: () => void;
-  onLiveStatus: () => void;
+  homeReady: boolean;
+  recoveryLabel?: string;
+  onProgress: () => void;
   onReport: () => void;
+  onRecovery?: () => void;
 };
 
 export function TodayCommandView({
   childName,
-  lessonTitle,
-  durationMinutes,
-  wordCount,
   wordsReady,
   reportsReady,
-  online: _online,
-  lessonReady,
-  lessonStatusLabel,
-  primaryLabel,
-  primaryEnabled,
-  onPrimary,
-  onLiveStatus,
+  homeReady,
+  recoveryLabel,
+  onProgress,
   onReport,
+  onRecovery,
 }: Props): React.JSX.Element {
   const { language, t } = useAppLanguage();
-  const heroTitle = lessonReady
+  const heroTitle = homeReady
     ? translateTemplate('Ready when {{name}} is', { name: childName }, { locale: language })
     : t('Home unavailable');
-  const heroSubtitle = lessonReady
-    ? t('TeeBot is polished and waiting for the next lesson.')
+  const heroSubtitle = homeReady
+    ? t('TeeBot is ready for your child.')
     : t('TeeBot needs attention');
 
   return (
@@ -53,111 +42,124 @@ export function TodayCommandView({
       showsVerticalScrollIndicator={false}
       testID="overviewPage"
     >
-      <TouchableOpacity
-        accessibilityLabel={t('Open live lesson status')}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !lessonReady }}
-        activeOpacity={0.9}
-        disabled={!lessonReady}
-        onPress={onLiveStatus}
-        style={styles.hero}
-        testID="homeHeroRobot"
-      >
-        <Box style={styles.heroGlow} />
-        <Box style={styles.heroCopy}>
-          <Text fontWeight="800" style={styles.heroTitle} i18n={false}>
-            {heroTitle}
-          </Text>
-          {lessonReady ? (
-            <Text fontWeight="600" style={styles.heroSubtitle} i18n={false}>
-              {heroSubtitle}
+      <Reveal index={0} testID="homeHeroReveal">
+        <Box style={styles.hero} testID="homeHeroRobot">
+          <Box style={styles.heroGlow} />
+          <Box style={styles.heroCopy}>
+            <Text fontWeight="800" style={styles.heroTitle} i18n={false}>
+              {heroTitle}
             </Text>
-          ) : (
-            <Box flexDirection="row" alignItems="center" gap={7} style={styles.onlineRow}>
-              <Box style={[styles.onlineDot, styles.offlineDot]} />
-              <Text fontWeight="700" style={[styles.onlineText, styles.offlineText]}>
-                {t('TeeBot needs attention')}
-              </Text>
-            </Box>
-          )}
-        </Box>
-        <Box style={styles.robot} testID="homeHeroAnimatedRobot">
-          <RobotGreetLoop
-            accessibilityLabel={t('TeeBot')}
-            testID="homeHeroRobotAnimation"
-            size={296}
-          />
-        </Box>
-      </TouchableOpacity>
-
-      <Box style={styles.lessonCard} flexDirection="row" alignItems="center" gap={13}>
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="cover"
-          source={require('@/assets/lessons/barn-round-field-poster.jpg')}
-          style={styles.courseArt}
-        />
-        <Box flex={1} gap={5}>
-          <Text fontWeight="800" style={styles.lessonTitle} numberOfLines={2}>{lessonTitle}</Text>
-          <Text style={styles.lessonMeta} i18n={false}>
-            {lessonReady
-              ? t('Animals · Lesson 3 of 12')
-              : translateTemplate('{{minutes}} min · {{words}} words', { minutes: durationMinutes, words: wordCount }, { locale: language })}
-          </Text>
-          <Box flexDirection="row" alignItems="center" gap={8}>
-            <Text fontWeight="700" style={[styles.readyText, !lessonReady && styles.notReadyText]}>{t(lessonStatusLabel)}</Text>
-            <Box style={styles.progressTrack}><Box style={styles.progressFill} /></Box>
+            {homeReady ? (
+              <Box flexDirection="row" alignItems="center" gap={7} style={styles.onlineRow}>
+                <StatusPulse
+                  active
+                  color="#35AE70"
+                  size={9}
+                  testID="homeOnlinePulse"
+                />
+                <Text fontWeight="600" style={styles.heroSubtitle} i18n={false}>
+                  {heroSubtitle}
+                </Text>
+              </Box>
+            ) : (
+              <Box flexDirection="row" alignItems="center" gap={7} style={styles.onlineRow}>
+                <StatusPulse
+                  active={false}
+                  color="#A6A3A0"
+                  size={9}
+                  testID="homeOfflineDot"
+                />
+                <Text fontWeight="700" style={[styles.onlineText, styles.offlineText]}>
+                  {t('TeeBot needs attention')}
+                </Text>
+              </Box>
+            )}
+          </Box>
+          <Box style={styles.robot} testID="homeHeroAnimatedRobot">
+            <RobotGreetLoop
+              accessibilityLabel={t('TeeBot')}
+              testID="homeHeroRobotAnimation"
+              size={320}
+            />
           </Box>
         </Box>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !primaryEnabled }}
-          activeOpacity={0.78}
-          disabled={!primaryEnabled}
-          onPress={onPrimary}
-          style={[
-            styles.startButton,
-            lessonReady && styles.startButtonReady,
-            !primaryEnabled && styles.startButtonDisabled,
-          ]}
-          testID="homePrimaryCta"
-        >
-          {lessonReady && primaryLabel === 'Start' ? (
-            <Play size={22} color="#FFFFFF" fill="#FFFFFF" />
-          ) : (
-            <Text fontWeight="800" style={styles.startText}>{t(primaryLabel)}</Text>
-          )}
-          {lessonReady && primaryLabel === 'Start' ? (
-            <Text style={styles.hiddenCtaLabel}>{t(primaryLabel)}</Text>
-          ) : null}
-        </TouchableOpacity>
-      </Box>
+      </Reveal>
 
-      <Box style={styles.evidenceCard}>
-        <Text fontWeight="700" style={styles.sectionLabel}>{t('Since yesterday')}</Text>
-        <Box flexDirection="row" alignItems="stretch" style={styles.metricRow}>
-          <EvidenceMetric
-            icon={<BookOpen size={21} color="#6A4FE8" />}
-            label={t('words ready to review')}
-            value={wordsReady}
-          />
-          <Box style={styles.divider} />
+      {!homeReady && recoveryLabel && onRecovery ? (
+        <Reveal index={1}>
           <TouchableOpacity
-            accessibilityLabel={t('Open latest lesson report')}
+            accessibilityLabel={recoveryLabel}
             accessibilityRole="button"
-            activeOpacity={0.75}
-            onPress={onReport}
-            style={styles.metricButton}
-            testID="homeLessonReport"
+            activeOpacity={0.8}
+            onPress={onRecovery}
+            style={styles.recoveryButton}
+            testID="homeRecoveryCta"
           >
-            <EvidenceMetric
-              icon={<ClipboardList size={21} color="#6A4FE8" />}
-              label={t('lesson report')}
-              value={reportsReady}
-            />
+            <Text fontWeight="800" style={styles.recoveryButtonText}>{recoveryLabel}</Text>
           </TouchableOpacity>
+        </Reveal>
+      ) : null}
+
+      <Reveal index={homeReady ? 1 : 2} testID="homeProgressReveal">
+        <Sheen
+          active={homeReady}
+          style={styles.progressCard}
+          testID="homeProgressSheen"
+        >
+          <TouchableOpacity
+            accessibilityLabel={t('View progress')}
+            accessibilityRole="button"
+            activeOpacity={0.82}
+            onPress={onProgress}
+            style={styles.progressCardInner}
+            testID="homeProgressCard"
+          >
+            <Box style={styles.progressIcon} alignItems="center" justifyContent="center">
+              <TrendingUp color="#FFFFFF" size={25} strokeWidth={2.7} />
+            </Box>
+            <Box flex={1} gap={5}>
+              <Text fontWeight="800" style={styles.progressTitle}>{t('Progress')}</Text>
+              <Text style={styles.progressCopy} i18n={false}>
+                {translateTemplate('{{count}} words learned this week', { count: wordsReady }, { locale: language })}
+              </Text>
+              <Text fontWeight="800" style={styles.progressReports} i18n={false}>
+                {translateTemplate('{{count}} lesson reports ready', { count: reportsReady }, { locale: language })}
+              </Text>
+            </Box>
+            <Box style={styles.progressArrow} alignItems="center" justifyContent="center">
+              <ArrowRight color="#FFFFFF" size={20} strokeWidth={2.8} />
+            </Box>
+          </TouchableOpacity>
+        </Sheen>
+      </Reveal>
+
+      <Reveal index={homeReady ? 2 : 3} testID="homeEvidenceReveal">
+        <Box style={styles.evidenceCard}>
+          <Text fontWeight="700" style={styles.sectionLabel}>{t('Since yesterday')}</Text>
+          <Box flexDirection="row" alignItems="stretch" style={styles.metricRow}>
+            <EvidenceMetric
+              icon={<BookOpen size={21} color="#6A4FE8" />}
+              label={t('words ready to review')}
+              value={wordsReady}
+            />
+            <Box style={styles.divider} />
+            <TouchableOpacity
+              accessibilityLabel={t('Open latest lesson report')}
+              accessibilityRole="button"
+              activeOpacity={0.75}
+              onPress={onReport}
+              style={styles.metricButton}
+              testID="homeLessonReport"
+            >
+              <EvidenceMetric
+                icon={<ClipboardList size={21} color="#6A4FE8" />}
+                label={t('lesson report')}
+                value={reportsReady}
+              />
+            </TouchableOpacity>
+          </Box>
         </Box>
-      </Box>
+      </Reveal>
     </ScrollView>
   );
 }
@@ -196,46 +198,35 @@ const styles = StyleSheet.create({
   heroTitle: { color: '#141617', fontSize: 30, letterSpacing: -0.9, lineHeight: 36, marginBottom: 10 },
   heroSubtitle: { color: '#6F6861', fontSize: 14, lineHeight: 20, marginBottom: 12 },
   onlineRow: { marginTop: 2 },
-  onlineDot: { backgroundColor: '#35AE70', borderRadius: 5, height: 9, width: 9 },
-  offlineDot: { backgroundColor: '#A6A3A0' },
   onlineText: { color: '#35AE70', flexShrink: 1, fontSize: 11 },
   offlineText: { color: '#77736F' },
-  robot: { bottom: 12, height: 340, position: 'absolute', right: -8, width: 250 },
-  lessonCard: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#F0EAE3',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    minHeight: 132,
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-  },
-  courseArt: { backgroundColor: '#FFF3D8', borderRadius: 18, height: 78, overflow: 'hidden', width: 78 },
-  lessonTitle: { color: '#1C1E20', fontSize: 18, lineHeight: 23 },
-  lessonMeta: { color: '#787774', fontSize: 13 },
-  readyText: { color: '#35AE70', fontSize: 11 },
-  notReadyText: { color: '#77736F' },
-  progressTrack: { backgroundColor: '#E9ECEB', borderRadius: 4, flex: 1, height: 3, overflow: 'hidden' },
-  progressFill: { backgroundColor: '#35AE70', height: '100%', width: '84%' },
-  startButton: {
-    alignItems: 'center',
-    backgroundColor: '#1D1F20',
-    borderRadius: 12,
-    justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 68,
-    paddingHorizontal: 12,
-  },
-  startButtonReady: {
-    backgroundColor: '#35AE70',
+  robot: { alignItems: 'center', bottom: 12, height: 320, position: 'absolute', right: -29, width: 324 },
+  progressCard: {
+    backgroundColor: '#FF6868',
     borderRadius: 28,
-    height: 56,
-    minHeight: 56,
-    minWidth: 56,
-    width: 56,
+    marginHorizontal: 20,
+    marginTop: -22,
+    minHeight: 116,
+    shadowColor: '#A94141',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 5,
+    zIndex: 2,
   },
-  startButtonDisabled: { opacity: 0.45 },
-  startText: { color: '#FFFFFF', fontSize: 13 },
-  hiddenCtaLabel: { height: 0, opacity: 0, overflow: 'hidden', position: 'absolute', width: 0 },
+  progressCardInner: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 13,
+    minHeight: 116,
+    padding: 18,
+    zIndex: 2,
+  },
+  progressIcon: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 18, height: 48, width: 48 },
+  progressTitle: { color: '#FFFFFF', fontSize: 19, lineHeight: 24 },
+  progressCopy: { color: 'rgba(255,255,255,0.9)', fontSize: 12, lineHeight: 17 },
+  progressReports: { color: '#FFFFFF', fontSize: 11, lineHeight: 15 },
+  progressArrow: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 19, height: 38, width: 38 },
   evidenceCard: { backgroundColor: '#FBF8F4', borderTopColor: '#F0EAE3', borderTopWidth: 1, minHeight: 138, padding: 24 },
   sectionLabel: { color: '#292B2D', fontSize: 12, marginBottom: 15 },
   metricRow: { minHeight: 64 },
@@ -245,4 +236,6 @@ const styles = StyleSheet.create({
   metricValue: { color: '#6A4FE8', fontSize: 18 },
   metricLabel: { color: '#807D79', fontSize: 10 },
   divider: { backgroundColor: '#E9E3DC', marginHorizontal: 12, width: 1 },
+  recoveryButton: { minHeight: 52, borderRadius: 18, borderWidth: 1, borderColor: '#FFBDB6', backgroundColor: '#FFF5F2', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, marginTop: 16 },
+  recoveryButtonText: { color: '#D84D4D', fontSize: 15 },
 });

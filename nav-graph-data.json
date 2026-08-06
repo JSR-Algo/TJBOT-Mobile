@@ -54,17 +54,11 @@
       "g": "Course Library",
       "kind": "happy"
     },
-    "cl_added": {
-      "f": "src/features/course-library/screens/CourseAddedScreen.tsx",
-      "title": "Course · Added to Robot",
-      "g": "Course Library",
-      "kind": "happy"
-    },
-    "cl_companion": {
-      "f": "src/features/course-library/screens/CompanionScreen.tsx",
-      "title": "Course · App companion view",
-      "g": "Course Library",
-      "kind": "happy"
+      "cl_added": {
+        "f": "src/features/course-library/screens/CourseAddedScreen.tsx",
+        "title": "Course · Added to Library",
+        "g": "Course Library",
+        "kind": "happy"
     },
     "cl_complete": {
       "f": "src/features/course-library/screens/CourseCompleteScreen.tsx",
@@ -90,31 +84,7 @@
       "g": "Course Library",
       "kind": "edge"
     },
-    "cl_needs_sync": {
-      "f": "src/features/course-library/screens/NeedsSyncScreen.tsx",
-      "title": "Course · Robot needs sync",
-      "g": "Course Library",
-      "kind": "happy"
-    },
-    "cl_robot_ready": {
-      "f": "src/features/course-library/screens/RobotReadyScreen.tsx",
-      "title": "Course · Robot ready for today",
-      "g": "Course Library",
-      "kind": "happy"
-    },
-    "cl_running": {
-      "f": "src/features/course-library/screens/RunningScreen.tsx",
-      "title": "Course · Lesson running on Robot",
-      "g": "Course Library",
-      "kind": "happy"
-    },
-    "cl_send": {
-      "f": "src/features/course-library/screens/SendToRobotScreen.tsx",
-      "title": "Course · Send lesson to Robot",
-      "g": "Course Library",
-      "kind": "happy"
-    },
-    "cl_unlock_confirm": {
+      "cl_unlock_confirm": {
       "f": "src/features/course-library/UnlockConfirmModal.tsx",
       "title": "Course · Parent unlock confirmation",
       "g": "Course Library",
@@ -903,20 +873,15 @@
       "review_entry",
       "unit"
     ],
-    "Course Library": [
-      "cl_add_free",
-      "cl_added",
-      "cl_companion",
-      "cl_complete",
-      "cl_detail",
-      "cl_library",
-      "cl_locked",
-      "cl_needs_sync",
-      "cl_robot_ready",
-      "cl_running",
-      "cl_send",
-      "cl_unlock_confirm"
-    ],
+      "Course Library": [
+        "cl_add_free",
+        "cl_added",
+        "cl_complete",
+        "cl_detail",
+        "cl_library",
+        "cl_locked",
+        "cl_unlock_confirm"
+      ],
     "Done": [
       "activity_done",
       "lesson_done"

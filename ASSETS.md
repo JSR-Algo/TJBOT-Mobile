@@ -8,10 +8,10 @@ The canonical cross-project registry remains the TeeBot root `ASSETS.md`.
 
 | Lane | Files | Why committed |
 |---|---|---|
-| Transparent greet loop | `src/assets/mascot/greet-frames/frame-*.png` (77 frames) | Build-critical Metro inputs for the Home hero. Derived from the registered legacy 77-frame loop with its locked alpha-matte method; the legacy stage, border, and debug badge are excluded. |
+| Transparent greet loop | `src/assets/mascot/greet-frames/frame-*.png` (77 frames) | Build-critical Metro inputs for the main Home hero. Derived from the legacy 77-frame JPEG loop with the locked alpha-matte method; the legacy stage, border, and debug badge are not included. |
 | R4 mobile mascot | `src/assets/mascot/r4-head.png`, `src/assets/mascot/r4-wave.png` | Required by `src/assets/mascot/index.ts` for the Home and parent-facing mascot UI. |
 | Five-tab artwork | `src/assets/tab-icons/*.png` | Required by `src/navigation/SleekTabBarVisuals.tsx` for active and idle tab states. |
 
-These PNGs are application build inputs only. Source artwork, generation
-outputs, and other media remain disk-only and must be registered in the
-canonical TeeBot asset registry.
+These listed PNGs are approved only as application build inputs. Source artwork,
+generation outputs, and other media remain disk-only and must be registered in
+the canonical TeeBot asset registry.

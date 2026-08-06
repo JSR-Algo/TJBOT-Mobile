@@ -32,7 +32,6 @@ const OWNER_DEFAULT_TAB: Readonly<Partial<Record<FeatureRouteOwner, FeatureTabNa
 const TAB_ROUTE_BY_NAME = new Map(MAIN_TAB_SCREENS.map(screen => [screen.tabName, screen.name] as const));
 const TAB_NAME_BY_ROUTE = new Map(MAIN_TAB_SCREENS.map(screen => [screen.name, screen.tabName] as const));
 const ROUTE_TAB_OVERRIDES: Readonly<Partial<Record<keyof RootStackParamList, FeatureTabName>>> = {
-  [ROUTES.RunningScreen]: 'Home',
   [ROUTES.LessonSummaryScreen]: 'Home',
 };
 const COLORS = {

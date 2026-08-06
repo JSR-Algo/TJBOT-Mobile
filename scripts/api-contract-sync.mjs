@@ -10,6 +10,7 @@ const WORKSPACE_ROOT = path.resolve(APP_ROOT, '..', '..');
 const BACKEND_OPENAPI_PATH = process.env.TBOT_BACKEND_OPENAPI_PATH
   ? path.resolve(APP_ROOT, process.env.TBOT_BACKEND_OPENAPI_PATH)
   : resolveFirstExistingPath([
+      path.join(REPO_ROOT, 'backend', 'openapi.json'),
       resolveSiblingBackendOpenApi(),
       path.join(WORKSPACE_ROOT, 'backend', 'openapi.json'),
       path.join(REPO_ROOT, 'tbot-backend', 'openapi.json'),

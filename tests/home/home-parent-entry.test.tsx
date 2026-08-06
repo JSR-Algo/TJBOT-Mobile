@@ -42,7 +42,7 @@ jest.mock('@/features/home/hooks/useHomeState', () => {
 });
 
 describe('HomeHubScreen command center', () => {
-  it('shows the approved Today command actions', () => {
+  it('shows the approved progress-first Home composition', () => {
     const navigation = { navigate: jest.fn() };
 
     const screen = render(
@@ -50,24 +50,22 @@ describe('HomeHubScreen command center', () => {
     );
 
     expect(screen.getByText('Ready when Mai is')).toBeTruthy();
-    expect(screen.getByText('Barn & Farm Words')).toBeTruthy();
-    expect(screen.getByText('Start')).toBeTruthy();
-    expect(screen.getByText('TeeBot is polished and waiting for the next lesson.')).toBeTruthy();
+    expect(screen.getByText('Progress')).toBeTruthy();
+    expect(screen.queryByText('Barn & Farm Words')).toBeNull();
+    expect(screen.queryByText('Start')).toBeNull();
 
-    fireEvent.press(screen.getByTestId('homePrimaryCta'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonReadyScreen);
+    fireEvent.press(screen.getByTestId('homeProgressCard'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.TodayProgressScreen);
   });
 
-  it('opens the live robot lesson status from the hero', () => {
+  it('keeps the Robot hero presentational instead of opening phone Live', () => {
     const navigation = { navigate: jest.fn() };
 
     const screen = render(
       <HomeHubScreen navigation={navigation as never} route={{} as never} />,
     );
 
-    fireEvent.press(screen.getByTestId('homeHeroRobot'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
-      lessonTitle: 'Barn & Farm Words',
-    });
+    expect(screen.getByTestId('homeHeroRobot')).toBeTruthy();
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 });

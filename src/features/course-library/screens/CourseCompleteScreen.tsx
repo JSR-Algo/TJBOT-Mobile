@@ -100,8 +100,8 @@ export default function CourseCompleteScreen({ navigation, route }: Props) {
         </>
       ) : null}
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
-        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.SendToRobotScreen)}>
-          Plan tomorrow's lesson
+        <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.TodayProgressScreen)}>
+          View progress
         </DeviceBigBtn>
         <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>
           Done

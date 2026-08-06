@@ -8,7 +8,6 @@ import CourseLockedScreen from '../../src/features/course-library/screens/Course
 import LessonResumeScreen from '../../src/features/fallback/screens/LessonResumeScreen';
 import HelpFaqScreen from '../../src/features/fallback/screens/HelpFaqScreen';
 import MicMissingScreen from '../../src/features/fallback/screens/MicMissingScreen';
-import NeedsSyncScreen from '../../src/features/course-library/screens/NeedsSyncScreen';
 import NetworkErrorScreen from '../../src/features/fallback/screens/NetworkErrorScreen';
 import ReconnectingOverlay from '../../src/features/fallback/ReconnectingOverlay';
 import SafetyRedirectScreen from '../../src/features/fallback/screens/SafetyRedirectScreen';
@@ -28,8 +27,7 @@ type FallbackRouteName =
   | typeof ROUTES.HelpFaqScreen
   | typeof ROUTES.PairOfflineScreen
   | typeof ROUTES.PairFailedScreen
-  | typeof ROUTES.SafetyRedirectScreen
-  | typeof ROUTES.NeedsSyncScreen;
+  | typeof ROUTES.SafetyRedirectScreen;
 
 function createNavigation() {
   return {
@@ -391,7 +389,7 @@ describe('fallback and offline UI stability', () => {
     });
   });
 
-  it('keeps course lock and sync recovery paths actionable', () => {
+  it('keeps the course lock recovery path actionable', () => {
     const lockedNavigation = createNavigation();
     const locked = render(
       <CourseLockedScreen
@@ -404,14 +402,6 @@ describe('fallback and offline UI stability', () => {
       context: { topic: 'app_error', errorFamily: 'app_error' },
     });
 
-    const syncNavigation = createNavigation();
-    const sync = render(
-      <NeedsSyncScreen navigation={syncNavigation as never} route={createRoute(ROUTES.NeedsSyncScreen) as never} />,
-    );
-    fireEvent.press(sync.getByLabelText('Go back'));
-    expect(syncNavigation.navigate).toHaveBeenCalledWith(ROUTES.CourseLibraryScreen);
-    fireEvent.press(sync.getByText('Check Robot connection'));
-    expect(syncNavigation.navigate).toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
   });
 
   it('renders offline banner as non-blocking status chrome', () => {
