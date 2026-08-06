@@ -118,4 +118,4 @@ after all fixes and before merge.
 - Merge: PASS — merge commit `1b35341e` (`merge lesson-prod/t34-mobile-recovery-completion (t34) [gate: VERIFIED]`).
 - Deploy: none for mobile; changes ship in the next operator-chosen app release.
 - Main re-test at `1b35341e`: focused recovery/navigation 6 suites / 151 tests, `npm run test:screens` 72 suites / 1000 tests, and `npm test` 228 suites / 2691 active tests all passed.
-- Worktree/branch cleanup: pending evidence commit/push and ancestry/cleanliness checks.
+- Worktree/branch cleanup: PASS — clean branch ancestry was verified, `.worktrees/t34-completion` and the temporary RED worktree were removed, and the local completion branch was deleted. No remote completion branch existed.
