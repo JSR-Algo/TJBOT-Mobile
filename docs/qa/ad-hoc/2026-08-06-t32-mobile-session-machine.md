@@ -261,11 +261,22 @@ Tests: 5 failed, 5 total
    graph-walk increase, not the flake's cause.
 2. **Merge via the gate.** `merge-task.sh t32` → gate VERIFIED → merged to
    `main` as `e33f5a2e` with a merge commit (no squash).
-   **Not pushed** — `merge-task.sh` deliberately leaves pushing a human step,
-   and `origin/main` is likewise behind for T3.1/T3.3. `lesson-prod/.merge-counter` = 10.
+   `lesson-prod/.merge-counter` = 10.
+   **Pushed** (`97f21cc8..a62abf88`) once T3.1, T3.2 and T3.3 were all `DONE`, so
+   every one of the 16 published commits is completed, gate-VERIFIED work.
+   `merge-task.sh` leaves pushing a human step because a `tbot-backend` push
+   auto-deploys on Render; `tbot-mobile` has no such trigger, so this push runs
+   CI only. Expect that CI run to be **red** — mobile `main` CI has failed on
+   every run since 2026-07-03 for two causes unrelated to this change
+   (integration-test timeout + `react-native-worklets` NDK symbol strip), both
+   already logged in §5 against T6.5 / T3.4.
 3. **Deploy.** None — mobile per task; merged changes ship in the next EAS/fastlane
    release, a user decision. The feature also remains `productionVisible: false`.
-4. **Re-test on main** (`e33f5a2e`, canonical checkout):
+4. **Re-test on main.** Run twice, because T3.1's session-2 fix merged on top of
+   this one while the checklist was running. Identical results at both
+   `e33f5a2e` (this merge) and `a62abf88` (current `main`/`origin/main`, four
+   T3.1 commits later) — so T3.2 is green both in isolation and after the
+   sibling mobile task landed on it:
 
    ```
    $ npm run typecheck                 # clean
@@ -275,10 +286,17 @@ Tests: 5 failed, 5 total
    $ lesson-prod/repros/t32.sh         Tests:  5 passed, 5 total
    ```
 
+   The `age-screen` load flake did not reproduce in either main run.
+
 5. **Worktree removed.** `worktrees/t32-mobile-session-machine` deleted after
    confirming `git status` clean and `git merge-base --is-ancestor` true; local
    branch `lesson-prod/t32-mobile-session-machine` deleted. It was never pushed,
-   so there is no remote branch to delete.
+   and `git ls-remote --heads origin 'lesson-prod/*'` returns empty, so there is
+   no remote branch to delete.
+
+6. **Closed out.** Status `DONE` in this file and in LESSON_PRODUCTION_PLAN.md §2;
+   6 findings routed to §5 (3 deep-dive gaps, the `success` orphan, 2 T0.4 tooling
+   defects, 1 flaky-suite row).
 
 ### Integration re-gate (merge #10, every-5-merges)
 
