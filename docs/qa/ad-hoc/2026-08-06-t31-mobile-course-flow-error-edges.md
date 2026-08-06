@@ -121,8 +121,16 @@ This is the only pre-existing assertion this change inverts. It is called out he
 | Gate (T0.4) | **VERIFIED** — `gate.sh t31` RED@base `e33f5a2e` rc=1 → GREEN@tip `148fe3fa` rc=0, logged to `GATE_LOG.md`. Took **three attempts**; the first two REJECTED for test-harness reasons, documented below |
 | Merge to main | `merge-task.sh t31` → merge commit `f47fac70` (merge #13), `--no-ff`, no squash |
 | Deploy | none — mobile ships in the next app release (fastlane/EAS), a user decision per this task's step 3 |
-| Re-test on main | `typecheck` 0, `lint` 0, this task's three suites **30/30 pass** on `f47fac70` |
+| Re-test on main | `typecheck` 0, `lint` 0, this task's three suites **30/30**, `npm test` **2553 passed / 0 failed** (exit 0), `test:screens` **70 suites / 925 tests, 0 failed** — all on `f47fac70` |
+| Remove worktree | `tmp/wt-t31` removed after confirming clean + merged; branch deleted (local only — it was never pushed) |
 | Push | **NOT pushed.** `merge-task.sh` deliberately leaves pushing a human step; `main` is 1 merge ahead of `origin/main` |
+
+The main re-test is the **fully green** run this task had been unable to obtain earlier: `npm test`
+2553/2553 with exit 0, on a machine that hours before was producing a different random failure set
+every run. Two things changed — host load fell, and the timeout hardening above landed. One
+transient blip in the first `test:screens` pass was a concurrent T3.2 session's temp probe file
+disappearing mid-enumeration (`ENOENT … t32-repro-probe.test.tsx`, 925/925 tests still passed); an
+immediate re-run was clean at 70 suites / 925 tests.
 
 ### The gate took three attempts — all three were the harness, not the fix
 
