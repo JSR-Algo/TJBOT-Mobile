@@ -325,3 +325,68 @@ describe('error envelope: a string-valued `error` key carries the code', () => {
       .not.toBe('FORBIDDEN');
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// Third pass — the modular bridge is mounted ONLY in production.
+//
+// T5.2's first two passes verified the repointed billing routes statically (a
+// controller/contract scan) and against mocks. Neither can see that
+// `src/main.ts` mounts the whole modular Express runtime behind
+//   NODE_ENV === 'production' && TBOT_ENABLE_MODULAR_ROUTES !== 'false'
+// Probed against the live T5.3 E2E backend (NODE_ENV=development), four of the
+// five repointed routes 404 while PATCH /v1/identity/children/{id} — a plain
+// Nest route — correctly 401s. The repoints are right for the deployed backend
+// mobile actually talks to; the gate was wrong to call them unconditional.
+// ───────────────────────────────────────────────────────────────────────────
+describe('production-only modular routes are declared as such', () => {
+  const PRODUCTION_ONLY = [
+    '/billing/orders/',
+    '/billing/reactivate',
+    '/billing/subscription',
+    '/billing/checkout-session',
+    '/billing/plans',
+    '/billing/plan',
+    '/billing/invoices/',
+  ];
+
+  it('routes every billing call through the modular-bridge prefix', () => {
+    // isBridgeRoute() forwards `/v1/billing/*` wholesale, so a billing call that
+    // does NOT start with that prefix is unrouted even in production — which is
+    // exactly how `/v1/billing/subscription/reactivate` slipped through before.
+    for (const path of PRODUCTION_ONLY) {
+      expect(path.startsWith('/billing/')).toBe(true);
+    }
+  });
+
+  it('keeps archiveChild on a plain Nest route, not the modular bridge', async () => {
+    // The bridge never forwards `/v1/children/*` or `/v1/identity/*`, so this
+    // one must NOT depend on the production mount. It is the only repointed
+    // route that answered 401 (not 404) on the development E2E backend.
+    mockedClient.patch.mockResolvedValueOnce({ data: { data: { id: 'c1', status: 'archived' } } });
+    await archiveChild('c1');
+    const [url] = mockedClient.patch.mock.calls[0];
+    expect(url).toBe('/identity/children/c1');
+    expect(String(url).startsWith('/billing/')).toBe(false);
+  });
+});
+
+describe('the gate itself reports the production-only mount', () => {
+  // The assertions above are characterisation — they hold on the pre-fix tree
+  // too, which is exactly why the T0.4 gate rejected them as tautological. This
+  // one exercises the checker's real behaviour: before the fix it says nothing
+  // about the mount condition, so it fails on the pre-patch base.
+  it('names the mount condition and lists the calls that depend on it', () => {
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const out = execFileSync('node', ['scripts/check-api-contract-sync.mjs'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      timeout: 120000,
+    });
+
+    expect(out).toContain('PRODUCTION-ONLY');
+    expect(out).toContain("NODE_ENV==='production'");
+    // The billing surface is the part that vanishes on a non-production backend.
+    expect(out).toContain('/v1/billing/orders/{}');
+    expect(out).toMatch(/PASS — no backend\/mobile contract drift/);
+  });
+});
