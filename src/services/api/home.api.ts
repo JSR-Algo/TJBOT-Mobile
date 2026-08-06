@@ -15,10 +15,12 @@ export interface DailyState {
   minutesDone: number;
 }
 
+import { backendContractUnavailable } from './undocumented-api-routes';
+
 export async function getHomeHub(): Promise<HomeHub> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getHomeHub');
 }
 
 export async function getDailyState(): Promise<DailyState> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getDailyState');
 }

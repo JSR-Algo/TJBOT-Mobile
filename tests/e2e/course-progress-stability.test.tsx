@@ -21,7 +21,6 @@ import {
 import {
   listLibrary,
   enrollCourse,
-  unlockCourse,
 } from '@/services/api/course-library.api';
 import { useHousehold, useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { getDeviceStatus } from '@/services/api/device.api';
@@ -74,7 +73,6 @@ jest.mock('../../src/services/api/course.api', () => ({
 jest.mock('@/services/api/course-library.api', () => ({
   listLibrary: jest.fn(),
   enrollCourse: jest.fn(),
-  unlockCourse: jest.fn(),
   // P4: CourseDetailScreen overlays the published catalog onto static metadata.
   // Empty list → static fallback renders (preserves the c_animals assertion).
   getCourses: jest.fn(() => Promise.resolve([])),
@@ -133,7 +131,6 @@ const mockListCourseCatalog = listCourseCatalog as jest.MockedFunction<typeof li
 const mockGetLessonList = getLessonList as jest.MockedFunction<typeof getLessonList>;
 const mockListLibrary = listLibrary as jest.MockedFunction<typeof listLibrary>;
 const mockEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
-const mockUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockedUseOptionalHousehold = useOptionalHousehold as jest.MockedFunction<typeof useOptionalHousehold>;
 const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
@@ -399,7 +396,8 @@ describe('course, course-library, and progress stable screen states', () => {
     await waitFor(() => expect(mockEnrollCourse).toHaveBeenCalledTimes(1));
     expect(mockAuthenticateParent).toHaveBeenCalledWith({ pin: '2468' });
     expect(mockEnrollCourse).toHaveBeenCalledWith('course-open', { childId: 'child-1', deviceId: 'device-1' });
-    expect(mockUnlockCourse).not.toHaveBeenCalled();
+    // The retired unlockCourse shim is gone from the client entirely, so
+    // "enrollment does not go through unlock" is now structural, not asserted.
 
     pending.resolve({
       enrollment: { id: 'enroll-1', childId: 'child-1', courseId: 'course-open', deviceId: 'device-1', status: 'ACTIVE', currentLessonKey: null },

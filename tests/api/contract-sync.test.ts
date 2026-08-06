@@ -33,6 +33,25 @@ import {
 } from '@/services/api/parent.api';
 import { refreshEntitlementsAfterPurchase } from '@/services/api/account';
 import { archiveChild } from '@/services/api/households';
+import { normalizeError } from '@/utils/errors';
+import * as courseLibraryApi from '@/services/api/course-library.api';
+import { getHelpFaq, submitSupportTicket } from '@/services/api/support.api';
+import { getDailyState, getHomeHub } from '@/services/api/home.api';
+import {
+  factoryReset,
+  getBattery,
+  getRobotStatus,
+  getStorage,
+  getSupportInfo,
+  runSpeakerTest,
+} from '@/services/api/robot-mgmt.api';
+import {
+  getLessonSummary,
+  getProgressSummary,
+  getReviewQueue,
+  getTodayProgress,
+  getWordsPracticed,
+} from '@/services/api/progress.api';
 
 jest.mock('@/services/http/client', () => ({
   __esModule: true,
@@ -238,5 +257,71 @@ describe('UNDOCUMENTED_API_ROUTES registry', () => {
     expect(findUndocumentedRoute('getParentToday')?.status).toBe('no-backend-contract');
     expect(findUndocumentedRoute('controlsApi.getControls')?.status).toBe('backend-route-exists');
     expect(findUndocumentedRoute('nope')).toBeUndefined();
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Second pass — findings other sessions routed to T5.2 (plan §5).
+// ───────────────────────────────────────────────────────────────────────────
+describe('retired backend routes are not called at all', () => {
+  it('no longer exports the three 410-GONE course-library shims', () => {
+    // CourseLibraryController retired unlock / send-to-robot / sync-status:
+    // each handler is a bare `throw new HttpException(retiredBody(), 410)`. A
+    // route that always 410s is exactly as unusable as a 404, and a decorator
+    // scan alone calls it "served" — which is why the gate now classifies it.
+    for (const gone of ['unlockCourse', 'sendCourseToRobot', 'getRobotSyncStatus']) {
+      expect(gone in courseLibraryApi).toBe(false);
+    }
+  });
+});
+
+describe('every uncontracted operation fails on the same sentinel', () => {
+  it.each([
+    ['getHelpFaq', () => getHelpFaq()],
+    ['submitSupportTicket', () => submitSupportTicket({ subject: 's', description: 'd', category: 'c' })],
+    ['getHomeHub', () => getHomeHub()],
+    ['getDailyState', () => getDailyState()],
+    ['getRobotStatus', () => getRobotStatus()],
+    ['getBattery', () => getBattery()],
+    ['getStorage', () => getStorage()],
+    ['runSpeakerTest', () => runSpeakerTest()],
+    ['factoryReset', () => factoryReset()],
+    ['getSupportInfo', () => getSupportInfo()],
+    ['getProgressSummary', () => getProgressSummary()],
+    ['getTodayProgress', () => getTodayProgress()],
+    ['getWordsPracticed', () => getWordsPracticed()],
+    ['getLessonSummary', () => getLessonSummary('l1')],
+    ['getReviewQueue', () => getReviewQueue()],
+  ])('%s rejects with BACKEND_CONTRACT_UNAVAILABLE, not a bare Error', async (_name, call) => {
+    // These 15 used to `throw new Error('not implemented')`, which carries no
+    // `code` and normalizes to UNKNOWN_ERROR — indistinguishable from a real
+    // server fault. getProgressSummary was worse: it RESOLVED a frozen all-zero
+    // summary, so a caller could not tell "no data yet" from "no contract".
+    await expect(call()).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+  });
+
+  it('getProgressSummary no longer resolves fabricated zeros', async () => {
+    await expect(getProgressSummary()).rejects.toBeInstanceOf(BackendContractUnavailableError);
+  });
+});
+
+describe('error envelope: a string-valued `error` key carries the code', () => {
+  // The backend emits BOTH `{error:{code,message}}` and `{error:'CODE'}` — the
+  // latter from CourseLibraryController's retired 410 body and from
+  // device-assignment.controller's PARENT_TOKEN_REQUIRED, which sits next to a
+  // sibling using `{code:'DEVICE_FORBIDDEN'}`. Mobile must parse one shape.
+  it.each([
+    [410, { error: 'ENDPOINT_RETIRED', useInstead: '/v1/courses/:courseId/enroll' }, 'ENDPOINT_RETIRED'],
+    [403, { error: 'PARENT_TOKEN_REQUIRED' }, 'PARENT_TOKEN_REQUIRED'],
+    [403, { code: 'DEVICE_FORBIDDEN' }, 'DEVICE_FORBIDDEN'],
+    [403, { error: { code: 'FORBIDDEN', message: 'nope' } }, 'FORBIDDEN'],
+  ])('status %i body %p -> code %s', (status, data, expected) => {
+    expect(normalizeError({ response: { status, data } }).code).toBe(expected);
+  });
+
+  it('does not swallow the code into a generic status mapping', () => {
+    // Pre-fix this returned FORBIDDEN, losing PARENT_TOKEN_REQUIRED entirely.
+    expect(normalizeError({ response: { status: 403, data: { error: 'PARENT_TOKEN_REQUIRED' } } }).code)
+      .not.toBe('FORBIDDEN');
   });
 });

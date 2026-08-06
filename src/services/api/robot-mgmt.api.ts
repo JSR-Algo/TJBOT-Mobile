@@ -1,3 +1,4 @@
+import { backendContractUnavailable } from './undocumented-api-routes';
 export interface RobotStatus {
   id: string;
   name: string;
@@ -25,15 +26,15 @@ export interface SupportInfo {
 }
 
 export async function getRobotStatus(): Promise<RobotStatus> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getRobotStatus');
 }
 
 export async function getBattery(): Promise<BatteryInfo> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getBattery');
 }
 
 export async function getStorage(): Promise<StorageInfo> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getStorage');
 }
 
 export async function runMicTest(): Promise<{ passed: boolean }> {
@@ -71,14 +72,14 @@ export async function runMicTest(): Promise<{ passed: boolean }> {
 }
 
 export async function runSpeakerTest(): Promise<{ passed: boolean }> {
-  throw new Error('not implemented');
+  backendContractUnavailable('runSpeakerTest');
 }
 
 export async function factoryReset(): Promise<void> {
-  throw new Error('not implemented');
+  backendContractUnavailable('factoryReset');
 }
 
 export async function getSupportInfo(): Promise<SupportInfo> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getSupportInfo');
 }
 import { VoiceMic } from '@/native/VoiceMic';

@@ -169,11 +169,11 @@ export const UNDOCUMENTED_API_ROUTES = [
     reason: 'Only GET /v1/lessons/{lessonId}/manifest is published, and it serves the robot render manifest rather than a parent-facing lesson detail.',
   },
   {
-    operation: 'getReviewQueue',
+    operation: 'course.getReviewQueue',
     module: 'course.api.ts',
     attemptedRoute: 'GET /v1/review-queue',
     status: 'no-backend-contract',
-    reason: 'The spaced-repetition review queue was never implemented backend-side; the nearest live surface is GET /v1/learning/children/{childId}/vocab/due.',
+    reason: 'The user-scoped review queue was never implemented backend-side. Distinct from progress.getReviewQueue, which targets the child-scoped vocab/due read model.',
   },
   {
     operation: 'getDailyMission',
@@ -183,7 +183,126 @@ export const UNDOCUMENTED_API_ROUTES = [
     reason: 'No daily-mission entity or route exists backend-side.',
   },
 
+  // ── support.api.ts ───────────────────────────────────────────────────────
+  {
+    operation: 'getHelpFaq',
+    module: 'support.api.ts',
+    attemptedRoute: 'GET /v1/support/faq',
+    status: 'no-backend-contract',
+    reason: 'No support or FAQ controller exists backend-side; Help FAQ content ships in the app bundle.',
+  },
+  {
+    operation: 'submitSupportTicket',
+    module: 'support.api.ts',
+    attemptedRoute: 'POST /v1/support/tickets',
+    status: 'no-backend-contract',
+    reason: 'No ticketing route or entity exists backend-side; support intake is out-of-band today.',
+  },
+
+  // ── home.api.ts ──────────────────────────────────────────────────────────
+  {
+    operation: 'getHomeHub',
+    module: 'home.api.ts',
+    attemptedRoute: 'GET /v1/home/hub',
+    status: 'no-backend-contract',
+    reason: 'No home-hub aggregate route exists. The caller in useHomeState is already gated off by HOME_BACKEND_CONTRACT_AVAILABLE=false, so the query never runs.',
+  },
+  {
+    operation: 'getDailyState',
+    module: 'home.api.ts',
+    attemptedRoute: 'GET /v1/summaries/daily/{deviceId}',
+    status: 'backend-route-exists',
+    reason: 'DashboardController serves the daily summary, but it is device-scoped while this function takes no argument and returns a different shape; it needs a deviceId and a mapper.',
+    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-03 (dashboard feature)',
+  },
+
+  // ── robot-mgmt.api.ts ────────────────────────────────────────────────────
+  {
+    operation: 'getRobotStatus',
+    module: 'robot-mgmt.api.ts',
+    attemptedRoute: 'GET /v1/robots/{deviceId}/status',
+    status: 'backend-route-exists',
+    reason: 'RobotsController serves device status, but this function takes no deviceId and no mapper exists; the paired-device surface reads getDevice instead.',
+    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-04 (device management feature)',
+  },
+  {
+    operation: 'getBattery',
+    module: 'robot-mgmt.api.ts',
+    attemptedRoute: 'GET /v1/robots/{deviceId}/battery',
+    status: 'no-backend-contract',
+    reason: 'No battery route exists. battery_level rides the generic device-state frame only, which is also why no lesson code can read it (see F-T25-08).',
+  },
+  {
+    operation: 'getStorage',
+    module: 'robot-mgmt.api.ts',
+    attemptedRoute: 'GET /v1/robots/{deviceId}/storage',
+    status: 'no-backend-contract',
+    reason: 'No storage route exists; SD capacity is reported to the ESP server over the lesson SD-pack path, not to mobile.',
+  },
+  {
+    operation: 'runSpeakerTest',
+    module: 'robot-mgmt.api.ts',
+    attemptedRoute: 'POST /v1/robots/{deviceId}/commands/speaker-test',
+    status: 'no-backend-contract',
+    reason: 'POST /v1/robots/{deviceId}/commands/{command} is generic, but no speaker-test command is defined in the robot action schema, so there is nothing to call.',
+  },
+  {
+    operation: 'factoryReset',
+    module: 'robot-mgmt.api.ts',
+    attemptedRoute: 'POST /v1/devices/{deviceId}/factory-reset',
+    status: 'backend-route-exists',
+    reason: 'DevicesController serves factory reset, but this function takes no deviceId; wiring a destructive action to a parent-facing screen is a product decision.',
+    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-04 (device management feature)',
+  },
+  {
+    operation: 'getSupportInfo',
+    module: 'robot-mgmt.api.ts',
+    attemptedRoute: 'GET /v1/robots/{deviceId}/support-info',
+    status: 'no-backend-contract',
+    reason: 'No composite support-info route exists; serial and firmware come from the device record via getDevice, and supportEmail is app config, not API data.',
+  },
+
   // ── progress.api.ts ──────────────────────────────────────────────────────
+  {
+    operation: 'getProgressSummary',
+    module: 'progress.api.ts',
+    attemptedRoute: 'GET /v1/summaries/progress/{deviceId}',
+    status: 'backend-route-exists',
+    reason: 'DashboardController serves the progress summary, but it is device-scoped while this function takes no argument, and no mapper exists for its payload.',
+    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-03 (dashboard feature)',
+  },
+  {
+    operation: 'getTodayProgress',
+    module: 'progress.api.ts',
+    attemptedRoute: 'GET /v1/summaries/daily/{deviceId}',
+    status: 'backend-route-exists',
+    reason: 'Same device-scoped daily summary as getDailyState; needs a deviceId and a mapper to the TodayProgress shape.',
+    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-03 (dashboard feature)',
+  },
+  {
+    operation: 'getWordsPracticed',
+    module: 'progress.api.ts',
+    attemptedRoute: 'GET /v1/learning/children/{childId}/vocab',
+    status: 'backend-route-exists',
+    reason: 'LearningController serves the child vocab list, but this function takes no childId and no mapper to WordsPracticed exists.',
+    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-03 (dashboard feature)',
+  },
+  {
+    operation: 'getLessonSummary',
+    module: 'progress.api.ts',
+    attemptedRoute: 'GET /v1/lessons/{lessonId}/summary',
+    status: 'no-backend-contract',
+    reason: 'No per-lesson parent summary route exists; the closest live surface is the session report GET /v1/mobile/children/{childId}/learning-sessions/{sessionId}/report.',
+  },
+  {
+    operation: 'progress.getReviewQueue',
+    module: 'progress.api.ts',
+    attemptedRoute: 'GET /v1/learning/children/{childId}/vocab/due',
+    status: 'backend-route-exists',
+    reason: 'LearningController serves the due-vocab queue, but this function takes no childId and no mapper to ReviewQueueItem exists.',
+    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-03 (dashboard feature)',
+  },
+
   {
     operation: 'getChildProgress',
     module: 'progress.api.ts',
@@ -289,7 +408,7 @@ export const UNDOCUMENTED_API_ROUTES = [
     module: 'course-library.api.ts',
     attemptedRoute: 'POST /v1/course-library/{courseId}/purchase',
     status: 'no-backend-contract',
-    reason: 'There is no purchase route; entitlement is granted by POST /v1/course-library/{courseId}/unlock, which unlockCourse already calls.',
+    reason: 'There is no purchase route. The course-library unlock endpoint that used to grant entitlement is retired (410 GONE); enrollment now runs through POST /v1/courses/{courseId}/enroll, which enrollCourse calls.',
   },
 
   // ── controls.ts ─────────────────────────────────────────────────────────
@@ -373,7 +492,7 @@ export const UNDOCUMENTED_API_ROUTES = [
     module: 'device.api.ts',
     attemptedRoute: 'POST /v1/devices/{deviceId}/courses',
     status: 'no-backend-contract',
-    reason: 'Push is course-scoped, not device-scoped: POST /v1/course-library/{courseId}/send-to-robot is the live route and sendCourseToRobot already calls it.',
+    reason: 'No device-scoped course push exists. The course-scoped send-to-robot endpoint is retired (410 GONE); the live path is per-lesson assignment via POST /v1/devices/{deviceId}/assignments, which createAssignment calls.',
   },
 ] as const satisfies readonly UndocumentedRoute[];
 

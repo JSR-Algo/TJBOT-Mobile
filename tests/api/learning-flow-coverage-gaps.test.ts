@@ -240,11 +240,15 @@ describe('learning-flow API coverage gaps', () => {
   // These endpoints are NOT designed yet; they deterministically reject so a
   // caller can't silently get a fake value. Covering them pins that contract.
   describe('progress.api stubs reject until the backend is designed', () => {
-    it('rejects with "not implemented"', async () => {
-      await expect(getTodayProgress()).rejects.toThrow('not implemented');
-      await expect(getWordsPracticed()).rejects.toThrow('not implemented');
-      await expect(getLessonSummary('l1')).rejects.toThrow('not implemented');
-      await expect(getProgressReviewQueue()).rejects.toThrow('not implemented');
+    // They used to reject with a bare `new Error('not implemented')`, which
+    // carries no `code` and normalizes to UNKNOWN_ERROR — indistinguishable
+    // from a real server fault. T5.2 moved them onto the typed sentinel every
+    // other uncontracted operation uses.
+    it('rejects with the typed backend-contract error', async () => {
+      await expect(getTodayProgress()).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+      await expect(getWordsPracticed()).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+      await expect(getLessonSummary('l1')).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+      await expect(getProgressReviewQueue()).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
     });
   });
 
@@ -301,7 +305,7 @@ describe('learning-flow API coverage gaps', () => {
       await expect(getLevel('lv1')).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
       await expect(getUnit('u1')).rejects.toThrow('getUnit:u1');
       await expect(getLessonDetail('l1')).rejects.toThrow('getLessonDetail:l1');
-      await expect(getCourseReviewQueue('user1')).rejects.toThrow('getReviewQueue:user1');
+      await expect(getCourseReviewQueue('user1')).rejects.toThrow('course.getReviewQueue:user1');
       await expect(getDailyMission('user1')).rejects.toThrow('getDailyMission:user1');
     });
   });

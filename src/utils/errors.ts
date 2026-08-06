@@ -130,7 +130,9 @@ export function normalizeError(error: unknown): AppError {
         status?: number;
         headers?: Record<string, string | number | undefined>;
         data?: {
-          error?: { code?: string; message?: string };
+          // `error` arrives either as a { code, message } object (Shape 1) or
+          // as the code string itself (Shape 1b) — the backend emits both.
+          error?: { code?: string; message?: string } | string;
           // GlobalExceptionFilter (tbot-backend) puts `retryable` at the TOP
           // LEVEL of the envelope, alongside the nested `error` object — never
           // nested inside it. Read it from here for both Shape 1 and Shape 2.
@@ -174,6 +176,25 @@ export function normalizeError(error: unknown): AppError {
         retryable: data.retryable ?? false,
         ...metadata,
       };
+    }
+
+    // Shape 1b: { error: 'CODE_STRING' } — `error` holding the code directly
+    // rather than a { code, message } object. Backend emits this from at least
+    // two places: CourseLibraryController's retired 410 body
+    // (`{error:'ENDPOINT_RETIRED', useInstead}`) and
+    // device-assignment.controller's `{error:'PARENT_TOKEN_REQUIRED'}` — which
+    // sits next to a sibling that uses `{code:'DEVICE_FORBIDDEN'}`. Without
+    // this branch the string falls past Shapes 1-3 to the bare-status handler
+    // and the code is lost, so a 403 reads as a generic FORBIDDEN.
+    // (Backend-side envelope normalization is routed as F-T52-10.)
+    if (typeof data?.error === 'string' && data.error.length > 0) {
+      const code = data.error;
+      const mapped = ERROR_MESSAGES[code];
+      const message =
+        mapped !== undefined
+          ? mapped
+          : preferServerMessage(typeof data.message === 'string' ? data.message : undefined, code);
+      return { code, message, retryable: data.retryable ?? false, ...metadata };
     }
 
     // Shape 2: { code, message } at root

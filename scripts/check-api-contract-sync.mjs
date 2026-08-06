@@ -147,6 +147,9 @@ function walk(dir, out = []) {
 }
 
 const served = new Map();
+// Routes whose handler exists but unconditionally returns 410 GONE. Tracked
+// separately so the failure can say "retired" rather than "missing".
+const retired = new Map();
 const addServed = (key, source) => {
   if (!served.has(key)) served.set(key, []);
   served.get(key).push(source);
@@ -175,8 +178,31 @@ for (const file of walk(backendSrc)) {
     for (const c of controllers) if (c.at < mm.index) prefix = c.prefix;
     const segments = ['v1', prefix, mm[2] ?? ''].filter(Boolean).join('/');
     const line = src.slice(0, mm.index).split('\n').length;
-    addServed(opKey(mm[1], `/${segments}`), `${relative(BACKEND_ROOT, file)}:${line}`);
+    const key = opKey(mm[1], `/${segments}`);
+    const source = `${relative(BACKEND_ROOT, file)}:${line}`;
+
+    // A decorator is not a contract. `CourseLibraryController` keeps @Post
+    // handlers whose whole body is `throw new HttpException(retiredBody(), 410)`
+    // — the route resolves, so a decorator scan calls it "served", but calling
+    // it is exactly as broken as a 404. Classify those as retired instead.
+    if (isRetiredHandler(src, mm.index)) retired.set(key, source);
+    else addServed(key, source);
   }
+}
+
+// Look at the handler body immediately after the decorator: a signature
+// returning `never` plus an unconditional throw carrying a Gone/410 status is a
+// deliberately retired endpoint. Deliberately narrow — it only matches an
+// unconditional throw in the first statement, never a conditional one.
+function isRetiredHandler(src, decoratorIndex) {
+  const body = src.slice(decoratorIndex, decoratorIndex + 400);
+  const openBrace = body.indexOf('{');
+  if (openBrace === -1) return false;
+  const firstStatement = body.slice(openBrace + 1, openBrace + 200).trim();
+  return (
+    /^throw\s+new\s+HttpException\([^;]*,\s*(?:410|HttpStatus\.GONE)\s*\)/.test(firstStatement) ||
+    /^throw\s+new\s+GoneException\(/.test(firstStatement)
+  );
 }
 
 for (const route of modularRoutes) {
@@ -235,7 +261,14 @@ if (calls.length === 0) {
 
 // ── check 1: every mobile call is served ──────────────────────────────────
 for (const call of calls) {
-  if (!served.has(call.key)) {
+  if (retired.has(call.key) && !served.has(call.key)) {
+    fail(
+      'retired-route',
+      `${call.key} (${call.file}:${call.line}) — the handler at ${retired.get(call.key)} exists but ` +
+        'unconditionally throws 410 GONE, so this call can only ever fail. Repoint it to the ' +
+        'replacement the backend names, or delete it.',
+    );
+  } else if (!served.has(call.key)) {
     fail(
       'unserved-route',
       `${call.key} (${call.file}:${call.line}) — no Nest controller and no bridged modular route serves this; ` +
@@ -280,8 +313,20 @@ if (registry.length !== declaredRowCount) {
 
 const registryByOp = new Map(registry.map((row) => [row.operation, row]));
 
-// ── check 2: every thrown operation is declared ───────────────────────────
+// ── check 2: every thrown operation is declared, and names are unambiguous ─
 for (const [op, sites] of thrownOperations) {
+  // Two modules throwing the same operation name would silently share one
+  // registry row and one justification — e.g. course.api.ts and progress.api.ts
+  // both export `getReviewQueue` against different backend surfaces. Qualify
+  // the name (`course.getReviewQueue`) instead.
+  const modules = new Set(sites.map((s) => s.split(':')[0]));
+  if (modules.size > 1) {
+    fail(
+      'ambiguous-operation',
+      `'${op}' is thrown from ${modules.size} modules (${[...modules].join(', ')}), so one registry ` +
+        'row would have to justify both. Qualify the operation name per module.',
+    );
+  }
   if (!registryByOp.has(op)) {
     fail(
       'unjustified-stub',

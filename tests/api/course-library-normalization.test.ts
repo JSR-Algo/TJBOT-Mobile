@@ -1,14 +1,11 @@
 import client from '@/services/http/client';
 import {
   getCourseDetail,
-  getRobotSyncStatus,
   isAssignablePublishedLesson,
   listLibrary,
   normalizeCourseLibraryDetailPayload,
   normalizeCourseLibraryPayload,
   normalizeRobotSyncStatusPayload,
-  sendCourseToRobot,
-  unlockCourse,
 } from '@/services/api/course-library.api';
 
 jest.mock('@/services/http/client', () => ({
@@ -97,15 +94,12 @@ describe('course-library API', () => {
     await getCourseDetail('c_food');
     expect(mockedClient.get).toHaveBeenCalledWith('/course-library/c_food');
 
-    mockedClient.post.mockResolvedValue({ data: { data: { courseId: 'c_food' } } });
-    await unlockCourse('c_food');
-    await sendCourseToRobot('c_food');
-    expect(mockedClient.post).toHaveBeenCalledWith('/course-library/c_food/unlock');
-    expect(mockedClient.post).toHaveBeenCalledWith('/course-library/c_food/send-to-robot');
-
-    mockedClient.get.mockResolvedValueOnce({ data: { data: { course_id: 'c_food', synced: false } } });
-    await getRobotSyncStatus('c_food');
-    expect(mockedClient.get).toHaveBeenCalledWith('/course-library/c_food/sync-status');
+    // unlockCourse / sendCourseToRobot / getRobotSyncStatus are gone: the
+    // backend retired all three (410 GONE), so the client no longer exposes a
+    // call that could only fail. Assert they are not reachable any more.
+    expect(mockedClient.post).not.toHaveBeenCalledWith(expect.stringContaining('/unlock'));
+    expect(mockedClient.post).not.toHaveBeenCalledWith(expect.stringContaining('/send-to-robot'));
+    expect(mockedClient.get).not.toHaveBeenCalledWith(expect.stringContaining('/sync-status'));
 
     expect(mockedClient.get).not.toHaveBeenCalledWith(expect.stringContaining('/billing'));
     expect(mockedClient.post).not.toHaveBeenCalledWith(expect.stringContaining('/billing'));
