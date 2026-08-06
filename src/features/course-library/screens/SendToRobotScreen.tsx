@@ -57,6 +57,29 @@ function isValidAssignmentVersion(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) > 0;
 }
 
+// Both codes mean the same thing to this screen: the device's assignment is not
+// what we assumed. ROBOT_BUSY is what a create against an occupied device
+// actually returns — the single-slot partial index
+// `ux_one_active_assignment_per_device` (tbot-backend lesson-assignment.service.ts
+// :299,:325). ASSIGNMENT_CONFLICT is the optimistic-concurrency / stale-version
+// code (:480,:573). Keying recovery on ASSIGNMENT_CONFLICT alone meant the branch
+// never ran against the real backend.
+const CONFLICT_CODES = ['ASSIGNMENT_CONFLICT', 'ROBOT_BUSY'];
+
+function isConflictCode(code: string | undefined): boolean {
+  return code !== undefined && CONFLICT_CODES.includes(code);
+}
+
+function conflictMessage(current: CurrentAssignment | null, robotName?: string): string {
+  return formatLessonCopy(getErrorMessage('ASSIGNMENT_CONFLICT'), {
+    robot: robotName,
+    // formatLessonCopy's own `<lesson>` default is "this lesson", which reads as
+    // if the robot already holds the parent's pick. When the current assignment
+    // is unreadable, say "another lesson" instead.
+    lesson: current?.lessonTitle || 'another lesson',
+  });
+}
+
 export default function SendToRobotScreen({ navigation, route }: Props) {
   // childId = the parent-selected ACTIVE child (D-CHILD-RESOLUTION, ADR 0013 §N),
   // sent EXPLICITLY. For multi-child families the parent picks who they're
@@ -80,6 +103,12 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // Bumped to re-run the catalog fetch: parent-pressed retry after a load
+  // failure, and after an unrecoverable conflict (this screen's view is stale).
+  const [catalogNonce, setCatalogNonce] = React.useState(0);
+  // `sending` is STATE, so two taps dispatched in the same frame both observe
+  // `sending === false` and both fire. Only a ref closes that window.
+  const sendingRef = React.useRef(false);
 
   const preferredCourseId = route.params?.courseId;
   const resumeContext = route.params?.resumeContext;
@@ -139,7 +168,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [childId]);
+  }, [childId, catalogNonce]);
+
+  const reloadCatalog = React.useCallback(() => {
+    setCatalogNonce((value) => value + 1);
+  }, []);
 
   // Resolve the active course: an explicit user pick wins, then the course passed
   // in via route params (deep-link from the library), then the first published
@@ -198,6 +231,9 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       setError('Switch back to this child before resuming the course.');
       return;
     }
+    // Share the in-flight ref with handleSend: a resume enroll and a manual send
+    // are the same single-slot write, so one must never overlap the other.
+    sendingRef.current = true;
     setSending(true);
     void (async () => {
       try {
@@ -232,7 +268,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           setError(getErrorMessage(normalizeError(err).code));
         }
       } finally {
-        if (isCurrentResume(actionSeq, actionKey)) setSending(false);
+        if (isCurrentResume(actionSeq, actionKey)) {
+          sendingRef.current = false;
+          setSending(false);
+        }
       }
     })();
   }, [childId, isCurrentResume, navigation, queryClient, resumeContext, resumeKey]);
@@ -254,6 +293,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   };
 
   const handleSend = async () => {
+    if (sendingRef.current) return;
     setError(null);
     // Empty children → explicit "add a child first" state; never send childId: undefined.
     if (!childId) {
@@ -276,15 +316,22 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       setError('This lesson is still preparing on the server. Try again in a moment.');
       return;
     }
+    sendingRef.current = true;
     setSending(true);
     try {
       // Resolve the household device for the ACTIVE child, not blindly the
       // first-listed robot. In a multi-robot household this routes the lesson to
-      // the child's own robot (device whose assignedChildProfileId === childId),
-      // falling back to the first device when no per-child binding is available.
+      // the child's own robot (device whose assignedChildProfileId === childId).
+      // When that child has no bound robot, resolveHouseholdDevice returns an
+      // empty device — it deliberately does NOT fall back to devices[0], so a
+      // lesson can never land on a sibling's robot. The guard below catches it.
       const device = await getDeviceStatus('primary', childId);
       const deviceId = device.id;
-      if (!deviceId) {
+      // Gate on `online !== true`, matching the resume path above and
+      // CourseDetailScreen. Assigning to a robot we already know is unreachable
+      // burns a round-trip and returns a server error instead of the actionable
+      // "check it's on and connected" guidance.
+      if (!deviceId || device.online !== true) {
         setError(formatLessonCopy(getErrorMessage('ROBOT_OFFLINE'), { robot: device.name }));
         return;
       }
@@ -302,8 +349,8 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           });
         } catch (err) {
           const normalized = normalizeError(err);
-          if (normalized.code === 'ASSIGNMENT_CONFLICT') {
-            const current = await getCurrentAssignment(deviceId);
+          if (isConflictCode(normalized.code)) {
+            const current = await getCurrentAssignment(deviceId).catch(() => null);
             if (current && currentMatchesCourse(current, childId, lessons)) {
               void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
               navigation.navigate(ROUTES.RobotReadyScreen, {
@@ -315,6 +362,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
               });
               return;
             }
+            // Not ours to resume. Surface WHAT holds the robot and re-read the
+            // catalog so the next tap is decided on fresh data.
+            reloadCatalog();
+            setError(conflictMessage(current, device.name));
+            return;
           }
           setError(formatLessonCopy(getErrorMessage(normalized.code), { robot: device.name }));
         }
@@ -346,10 +398,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         });
       } catch (err) {
         const normalized = normalizeError(err);
-        // ASSIGNMENT_CONFLICT → refetch the current assignment and proceed from
-        // the fresh assignment_version; never blind-retry a stale create.
-        if (normalized.code === 'ASSIGNMENT_CONFLICT') {
-          const current = await getCurrentAssignment(deviceId);
+        // Conflict → refetch the current assignment and proceed from the fresh
+        // assignment_version; never blind-retry a stale create.
+        if (isConflictCode(normalized.code)) {
+          const current = await getCurrentAssignment(deviceId).catch(() => null);
           if (current && currentMatchesLesson(current, childId, selectedLesson)) {
             void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
             navigation.navigate(ROUTES.RobotReadyScreen, {
@@ -361,12 +413,16 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
             });
             return;
           }
+          reloadCatalog();
+          setError(conflictMessage(current, device.name));
+          return;
         }
         setError(formatLessonCopy(getErrorMessage(normalized.code), { robot: device.name }));
       }
     } catch (err) {
       setError(formatLessonCopy(getErrorMessage(normalizeError(err).code)));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   };
@@ -443,8 +499,20 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       )}
 
       {catalog.kind === 'error' && (
-        <Box paddingHorizontal={20} paddingTop={18}>
+        <Box paddingHorizontal={20} paddingTop={18} gap={10}>
           <Text style={styles.errorText}>{catalog.message}</Text>
+          {/* Without this the screen is a dead end: the fetch effect only re-runs
+              when childId changes, so a dropped connection on mount stranded the
+              parent on an error with nothing to press. */}
+          <TouchableOpacity
+            onPress={reloadCatalog}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+            style={styles.retryBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text fontWeight="700" style={styles.retryText}>Try again</Text>
+          </TouchableOpacity>
         </Box>
       )}
 
@@ -566,4 +634,17 @@ const styles = StyleSheet.create({
   pickCheck: { fontSize: 16, color: CL.accent },
   hintText: { fontSize: 13, color: CL.ink2, lineHeight: 19 },
   errorText: { fontSize: 13, color: '#C0392B', lineHeight: 19 },
+  retryBtn: {
+    minHeight: 44,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: CL.card,
+    borderWidth: 1,
+    borderColor: CL.hair,
+  },
+  retryText: { fontSize: 14, color: CL.ink },
 });
