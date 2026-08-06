@@ -1,117 +1,120 @@
-# T3.4 Mobile Recovery — Scoped Verification and Blocker Evidence
+# T3.4 Mobile Recovery — Production Completion Evidence
 
-**Repo:** tbot-mobile  
+**Repo:** `tbot-mobile`  
 **Date:** 2026-08-06  
-**Branch:** `lesson-prod/t34-mobile-recovery`  
-**Status:** BLOCKED — fallback behavior is hardened and tested, but the task's cold-start, authoritative termination, and post-auth continuation requirements need production integration outside the permitted `src/features/fallback/**` scope.
+**Original completion base:** `f4435e44`
+
+**Rebased main:** `c68ff3df`
+**Completion branch:** `lesson-prod/t34-mobile-recovery-completion`  
+**Architecture:** ADR 0006 remains authoritative: the robot owns the lesson runtime and the phone reattaches a read-only observer.
 
 ## Reproduction
 
-The first focused run of
+The executable campaign repro is `lesson-prod/repros/t34.sh`. It materializes the
+same production-checkpoint probe in the tested worktree and runs the recovery
+store, authoritative resume matrix, and root-navigation recovery suites.
 
-```bash
-npx jest --selectProjects unit --runInBand tests/features/fallback/mobile-recovery-matrix.test.tsx
+RED on the pre-completion base `f4435e44`:
+
+```text
+FAIL tests/features/fallback/t34-gate-probe.test.ts
+Cannot find module '@/features/fallback/recoveryCheckpointStore'
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       29 passed, 29 total
 ```
 
-failed 7/7 tests because no recovery decision function or exhaustive reason-to-screen mapping existed.
-
-Screen-level RED runs then reproduced the shipped gaps:
-
-- missing, terminal, and auth-expired checkpoints still rendered `Keep going`;
-- `NetworkErrorScreen` discarded its checkpoint;
-- `ReconnectingOverlay` treated an intermediate timeout as a successful return home;
-- `AudioRecoveryScreen` had no return-to-lesson action;
-- double-tapping resume navigated twice;
-- a Home target with course context was incorrectly preempted by `SendToRobotScreen`;
-- expired-auth audio recovery discarded the checkpoint;
-- direct fallback-to-login navigation violated the feature-owned navigation contract.
-
-The executable campaign repro is `lesson-prod/repros/t34.sh`. On the feature branch it passes 2/2 assertions for fail-closed terminated/corrupt recovery and audio-route mapping. It has not been promoted through `gate.sh` because the full T3.4 Done criteria are blocked below.
-
-## Fix Diff Summary
-
-| Area | Change |
-| --- | --- |
-| `recoveryTypes.ts` | Adds typed phases/session/auth states, strict checkpoint validation, fail-closed decisions, terminal-session outcomes, and exhaustive recovery-screen mapping. |
-| `LessonResumeScreen.tsx` | Renders resume/expired/ended outcomes, blocks duplicate navigation, honors Home before course context, and never resumes invalid or terminal checkpoints. Expired auth stays inside protected navigation because cross-root post-login continuation is not available. |
-| `NetworkErrorScreen.tsx` / `ReconnectingOverlay.tsx` | Preserves lesson checkpoints, advances retry attempts, uses the configured delay, and escalates only at the threshold. |
-| `AudioRecoveryScreen.tsx` | Adds explicit audio-restored recovery, preserves active and auth-expired checkpoints, and fails invalid checkpoints home. |
-| Tests | Adds the recovery matrix and updates legacy fallback expectations to the safe checkpoint contract. |
-
-Commits:
-
-- `db963a94` — safe recovery decisions
-- `132b8345` — align recovery mapping with fallback routes
-- `8fe98a7d` — harden recovery screens
-- `53bab141` — honor Home recovery targets
-- `3c982ddc` — preserve expired-auth audio recovery
-- `973247c7` — keep recovery within protected navigation
-
-## Recovery Matrix
-
-| Failure point | Scoped result | Verdict |
-| --- | --- | --- |
-| App killed: connecting | Complete active checkpoint renders resume choice | PASS at routed-checkpoint boundary |
-| App killed: greeting | Complete active checkpoint renders resume choice | PASS at routed-checkpoint boundary |
-| App killed: listening | Complete active checkpoint renders resume choice | PASS at routed-checkpoint boundary |
-| App killed: speaking | Complete active checkpoint renders resume choice | PASS at routed-checkpoint boundary |
-| App killed: done | Clean `Lesson ended`; no resume CTA | PASS |
-| Robot/backend terminated | Terminal checkpoint never navigates to `SendToRobotScreen` | PASS for supplied authoritative state; stale-local revalidation BLOCKED |
-| Airplane mode mid-step | Checkpoint survives retry; attempt increments; threshold escalates | PASS for production Help-FAQ target |
-| Bluetooth/device audio route change | Audio recovery returns active/expired-auth checkpoints to the resume decision | PASS |
-| Auth/session expiry | Expired checkpoint renders safe expired-state UI | PARTIAL — post-login continuation BLOCKED |
-| Double-tap resume | One navigation request | PASS |
-| Recovery reason mapping | Every reason maps; TypeScript `never` guard | PASS |
-| Partial/interrupted persisted state | Invalid checkpoint fails closed to `Lesson ended` | PASS at validation boundary; cold-start hydration BLOCKED |
-
-## Passing Re-runs
-
-Focused fallback plus navigation architecture:
+GREEN at the pre-rebase completion tip and again after the final review fixes:
 
 ```text
 Test Suites: 4 passed, 4 total
-Tests:       74 passed, 74 total
-Time:        6.179 s
+Tests:       67 passed, 67 total
+Snapshots:   0 total
 ```
 
-Full unit suite:
+The pre-completion app had no persisted checkpoint store, no cold-start or
+post-auth recovery bootstrap, no authoritative assignment validation, and lost
+custom reconnect targets after the first retry hop.
 
-```text
-Test Suites: 2 skipped, 219 passed, 219 of 221 total
-Tests:       23 skipped, 2359 passed, 2382 total
-Time:        77.353 s
-```
+## Fix Diff Summary
 
-Static checks:
+| Area | Production change |
+| --- | --- |
+| Persisted intent | Added a versioned SecureStore checkpoint. Invalid JSON, partial writes, unsupported versions, incomplete identity, and read failures return no resumable state. |
+| Authoritative resume | `LessonResumeScreen` checks `GET /devices/:deviceId/assignment/current`. Only a matching live assignment can expose `Keep going`; terminal, missing, or mismatched authority clears the checkpoint and ends cleanly. Query errors preserve the checkpoint and offer retry. |
+| Observer lifecycle | `RunningScreen` and `CompanionScreen` persist live assignment identity, update supported observer phases, and clear on completed/failed/cancelled/safety/known terminal outcomes. |
+| Boot/auth return | `RootStackNavigator` loads recovery during boot, preserves it through authentication, requalifies expired auth in memory, and enters `LessonResumeScreen` only after onboarding and device-setup prerequisites. A five-second timeout prevents a hanging storage read from blocking the app. |
+| Reconnect escalation | `failureTarget` now survives every NetworkError/overlay retry hop, including custom Home escalation. |
+| Navigation invariant | Recovery reattaches `RunningScreen`; it never starts or restarts an assignment through `SendToRobotScreen`. |
 
-```text
-npm run typecheck: PASS
-scoped ESLint --max-warnings=0: PASS
-```
+Implementation commits:
 
-Required `npm run test:screens` is not deterministic on this checkout. Latest recorded run:
+- `5a3e1edb` — versioned secure checkpoint persistence
+- `1df278d8` — authoritative assignment validation
+- `7d6ac92a` — authoritative recovery navigation contract
+- `17dd5d81` — stale async validation race protection
+- `375a34f4` / `9a1f6bf5` — production observer checkpoint lifecycle and terminal hardening
+- `b6154c77` / `6a7832d8` — cold-start, auth-return, timeout, and requalification
+- `6fefbb00` — multi-hop reconnect target preservation
+- `1474bf77` — reject stale session identity and mount auth without waiting on recovery storage
+- `2098066a` — require matching assignment identity before attaching a route observer session
 
-```text
-Test Suites: 2 failed, 64 passed, 66 total
-Tests:       2 failed, 846 passed, 848 total
-```
+## Recovery Matrix
 
-Failures were outside fallback (`device-home-screen` timeout and cancelled-session course UI); other runs failed different unrelated tests, while full-unit in-band passed all of them. Routed to `LESSON_PRODUCTION_PLAN.md` §5 under T0.4/T3.1.
+| Failure point / state | Expected recovery outcome | Evidence | Verdict |
+| --- | --- | --- | --- |
+| App killed in connecting | Persist and restore; resume only after matching live authority | matrix + store + root tests | PASS |
+| App killed in greeting | Persist and restore; resume only after matching live authority | matrix + observer phase tests | PASS |
+| App killed in listening | Persist and restore; resume only after matching live authority | matrix + observer phase tests | PASS |
+| App killed in speaking | Persist and restore; resume only after matching live authority | matrix + production screen tests | PASS |
+| App killed after done | Clear/ended path; no resume CTA | matrix + terminal lifecycle tests | PASS |
+| Backend/robot completed, failed, or cancelled | Clear checkpoint; `Lesson ended`; never fake-resume | authoritative matrix tests | PASS |
+| Assignment missing or identity mismatched | Clear checkpoint; `Lesson ended` | authoritative matrix tests | PASS |
+| Authority unavailable | Keep checkpoint; show cannot-confirm + retry; no resume | authoritative matrix tests | PASS |
+| Airplane mode mid-step | Preserve checkpoint and target; escalate at configured threshold | multi-hop fake-timer tests | PASS |
+| Bluetooth/audio-route change | Route through AudioRecovery and back to the recovery decision | recovery matrix | PASS |
+| Auth/session expiry | Keep persisted intent through auth stack replacement, then re-evaluate | root navigator + matrix tests | PASS |
+| Double-tap resume | Single navigation to `RunningScreen` | recovery matrix | PASS |
+| Recovery reason/type mapping | Exhaustive mapping guarded by TypeScript | recovery matrix + typecheck | PASS |
+| Partial/corrupt/version-mismatched storage | Fail closed to no resumable checkpoint | checkpoint store tests | PASS |
+| Hanging storage read | Boot continues after five seconds; late completion ignored | root navigator fake-timer tests | PASS |
 
-## Blocking Integration Gaps
+## Branch-Tip Verification
 
-1. **Cold-start entry is absent.** No production code navigates to `LessonResumeScreen`; only route registration and tests reference it. No app-boot hydration supplies the checkpoint.
-2. **Authoritative status is absent.** `src/services/api/lesson-session.api.ts` contains only `backendContractUnavailable(...)` throw-stubs and no session-status query, so a stale local `active` checkpoint cannot be checked against the robot/backend.
-3. **Post-auth continuation is absent.** Auth replaces the root navigator, `LoginScreen` has no recovery return params, and no persisted protected intent reopens the resume decision after login.
-4. **Custom retry target propagation is incomplete.** The production Help-FAQ route works, but the optional Home target cannot survive a multi-hop retry without a navigation-contract change.
+All task-owned tests and required static/contract checks passed after rebasing onto
+`c68ff3df` and applying the final review fixes:
 
-These findings are routed to T3.2/T5.2/auth integration in the master findings log. Implementing them here would violate T3.4's surgical file scope.
+| Command | Result |
+| --- | --- |
+| `npm run typecheck` | PASS |
+| `npm run lint` | PASS |
+| `npm run test:state-machines` | 10 suites / 196 tests passed |
+| `npm run test:navigation` | 26 suites / 149 tests passed |
+| `npm run api:contract-sync:check` | PASS — 280 served operations, 201 documented operations, 94 mobile calls, 53 registry rows |
+| focused six-suite recovery run | 6 suites / 151 tests passed |
+| `lesson-prod/repros/t34.sh` | 4 suites / 67 tests passed |
+| `npm run test:screens` | 72 suites / 1000 tests passed |
+| `npm test` | 228 suites / 2691 tests passed; 1 suite and 19 tests skipped |
+
+Repeated `test:screens`/`npm test` attempts reproduced the already logged T3.3
+pagination order failure as the only failure; unchanged reruns passed all 1000
+screen tests and all 2691 active full-suite tests. This is the existing F-T52-09 /
+T0.4 screen-gate instability in `LESSON_PRODUCTION_PLAN.md` section 5, not a T3.4
+code failure. No out-of-scope production code was changed.
+
+## Review
+
+Each implementation slice passed separate specification and quality review.
+Review-driven fixes covered pending-checkpoint races, failed-write ordering,
+observer terminal handling, unknown `session.end` reasons, bootstrap timeout,
+post-auth requalification, reconnect-target preservation, stale route-session
+grafting, authoritative session equality, stale realtime observer attachment, and
+immediate unauthenticated startup. A final whole-branch re-review was requested
+after all fixes and before merge.
 
 ## Ship Checklist
 
-- Re-verify at branch tip: **STOPPED** — focused and full unit suites pass, but `test:screens` is red and the runtime Done criteria above remain blocked.
-- Gate/merge to main: **NOT RUN** — no unverified/incomplete recovery claim was merged.
-- Mobile deploy: **NONE**.
-- Re-test on main: **NOT APPLICABLE** because the branch was not merged.
-- Remove worktree/branch: **NOT RUN**; preserved for the required scope decision or cross-owner continuation.
-- Close out: task set to **BLOCKED**, not DONE.
+- Rebase and tip re-verification: pending final main synchronization.
+- T0.4 gate: pending; repro RED/GREEN is proven above.
+- Deploy: none for mobile; changes ship in the next operator-chosen app release.
+- Main re-test: pending merge.
+- Worktree/branch cleanup: pending successful main verification.

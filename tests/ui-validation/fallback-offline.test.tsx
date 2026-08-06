@@ -17,6 +17,36 @@ import PairFailedScreen from '../../src/features/device/pairing/screens/PairFail
 import PairOfflineScreen from '../../src/features/device/pairing/screens/PairOfflineScreen';
 import { fallbackCheckpoint } from '../../src/features/fallback/recoveryTypes';
 import { ROUTES } from '../../src/navigation/routes';
+import {
+  getCurrentAssignment,
+  type CurrentAssignment,
+} from '../../src/services/api/course-library.api';
+
+jest.mock('@/services/api/course-library.api', () => {
+  const actual = jest.requireActual('@/services/api/course-library.api');
+  return {
+    ...actual,
+    getCurrentAssignment: jest.fn(),
+  };
+});
+
+const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
+
+function liveAssignment(overrides: Partial<CurrentAssignment> = {}): CurrentAssignment {
+  return {
+    assignmentId: 'assignment-1',
+    sessionId: 'session-1',
+    assignmentVersion: 2,
+    lessonId: 'lesson-1',
+    lessonTitle: 'How are you?',
+    lessonVersion: 1,
+    manifestChecksum: 'sha256:current',
+    state: 'RUNNING',
+    childId: 'child-1',
+    profile: 'espTft',
+    ...overrides,
+  };
+}
 
 type FallbackRouteName =
   | typeof ROUTES.AppErrorScreen
@@ -60,6 +90,7 @@ function createRoute(name: FallbackRouteName) {
 describe('fallback and offline UI stability', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedGetCurrentAssignment.mockResolvedValue(liveAssignment());
   });
 
   it('accepts typed fallback recovery context in route params', () => {
@@ -72,7 +103,7 @@ describe('fallback and offline UI stability', () => {
       },
     };
 
-    expect(resumeRoute.params.checkpoint.resumeTarget).toBe(ROUTES.SendToRobotScreen);
+    expect(resumeRoute.params.checkpoint.resumeTarget).toBe(ROUTES.RunningScreen);
   });
 
   it('renders network fallback and navigates only through route constants', () => {
@@ -237,7 +268,7 @@ describe('fallback and offline UI stability', () => {
     expect(voiceNavigation.navigate).not.toHaveBeenCalledWith(ROUTES.LessonResumeScreen, { checkpoint });
   });
 
-  it('renders lesson resume from checkpoint and navigates to target', () => {
+  it('renders lesson resume from checkpoint and navigates to the authoritative assignment', async () => {
     const navigation = createNavigation();
     const checkpoint = {
       ...fallbackCheckpoint(),
@@ -251,21 +282,31 @@ describe('fallback and offline UI stability', () => {
       />,
     );
 
-    expect(screen.getByText('How are you?')).toBeTruthy();
+    expect(await screen.findByText('How are you?')).toBeTruthy();
     expect(screen.getByText('60%')).toBeTruthy();
     expect(screen.getByText('Speaking practice')).toBeTruthy();
     fireEvent.press(screen.getByText('Keep going'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen);
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
+      deviceId: 'device-1',
+      assignmentId: 'assignment-1',
+      sessionId: 'session-1',
+      childId: 'child-1',
+      lessonTitle: 'How are you?',
+    });
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UserSpeakingScreen);
   });
 
-  it('hands real course resume context to the course-library entry route', async () => {
+  it('preserves supported course context while using authoritative running identity', async () => {
+    mockedGetCurrentAssignment.mockResolvedValueOnce(liveAssignment({
+      assignmentId: 'asg-old',
+      lessonTitle: 'Food Words',
+    }));
     const navigation = createNavigation();
     const checkpoint = {
       ...fallbackCheckpoint(),
       lessonTitle: 'Food Words',
       progressLabel: '75%',
-      resumeTarget: ROUTES.SendToRobotScreen,
+      resumeTarget: ROUTES.RunningScreen,
       reason: 'voice_failed' as const,
       courseId: 'c_food',
       childId: 'ch-1',
@@ -281,20 +322,15 @@ describe('fallback and offline UI stability', () => {
       />,
     );
 
-    await act(async () => {
-      fireEvent.press(screen.getByText('Keep going'));
-    });
+    fireEvent.press(await screen.findByText('Keep going'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, {
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
       courseId: 'c_food',
-      resumeContext: {
-        courseId: 'c_food',
-        childId: 'ch-1',
-        assignmentId: 'asg-old',
-        assignmentVersion: 5,
-        lessonTitle: 'Food Words',
-        manifestChecksum: 'sha256:old',
-      },
+      deviceId: 'device-1',
+      assignmentId: 'asg-old',
+      sessionId: 'session-1',
+      childId: 'child-1',
+      lessonTitle: 'Food Words',
     });
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
   });

@@ -28,6 +28,12 @@ const FEATURES_WITH_ROUTES = [
 // treats onboarding-root as an entry); the two were out of sync.
 const ENTRY_ROLES = new Set(['onboarding-root', 'tab', 'stack-entry', 'modal-entry', 'state-machine', 'fallback-entry']);
 
+// Recovery resumes an already-authorized live assignment at its runtime screen;
+// this is intentionally narrower than allowing arbitrary cross-feature stack targets.
+const EXPLICIT_CROSS_FEATURE_FORWARD_EDGES = new Set([
+  `${ROUTE_MAP.LessonResumeScreen.route}->${ROUTE_MAP.RunningScreen.route}`,
+]);
+
 function listFiles(dir: string, predicate: (file: string) => boolean): string[] {
   const entries = readdirSync(dir);
   const files: string[] = [];
@@ -301,6 +307,7 @@ describe('feature-owned navigation', () => {
           if (sourceEntry.feature === targetEntry.feature) return [];
           if (sourceEntry.backTarget === targetRoute) return [];
           if (ENTRY_ROLES.has(targetEntry.role)) return [];
+          if (EXPLICIT_CROSS_FEATURE_FORWARD_EDGES.has(`${sourceRoute}->${targetRoute}`)) return [];
 
           return [`${file.replace(`${root}/`, '')}:${index + 1} ${sourceRoute} -> ${targetRoute} (${targetEntry.role})`];
         }),
@@ -310,10 +317,11 @@ describe('feature-owned navigation', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('keeps fallback course resume handoff on the course-library entry route', () => {
+  it('keeps authoritative fallback recovery on the running route only', () => {
     const lessonResumeSource = readFileSync(join(root, 'src', 'features', 'fallback', 'screens', 'LessonResumeScreen.tsx'), 'utf8');
 
-    expect(lessonResumeSource).toContain('ROUTES.SendToRobotScreen');
+    expect(lessonResumeSource).toContain('navigation.navigate(ROUTES.RunningScreen');
+    expect(lessonResumeSource).not.toContain('ROUTES.SendToRobotScreen');
     expect(lessonResumeSource).not.toContain('ROUTES.RobotReadyScreen');
   });
 });

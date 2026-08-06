@@ -31,6 +31,7 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
         navigation.navigate(ROUTES.NetworkErrorScreen, {
           checkpoint,
           attemptCount: attempt + 1,
+          failureTarget,
         });
       }
     }, reconnectDelayMs);

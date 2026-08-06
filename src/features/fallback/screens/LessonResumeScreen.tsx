@@ -11,12 +11,104 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
 import { decideLessonRecovery } from '@/features/fallback/recoveryTypes';
+import { clearRecoveryCheckpoint } from '@/features/fallback/recoveryCheckpointStore';
+import {
+  getCurrentAssignment,
+  type CurrentAssignment,
+} from '@/services/api/course-library.api';
+import { captureError } from '@/services/observability/sentry';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonResumeScreen'>;
 
+type VerificationState =
+  | { readonly kind: 'checking' }
+  | { readonly kind: 'ready'; readonly assignment: CurrentAssignment }
+  | { readonly kind: 'ended' }
+  | { readonly kind: 'error' };
+
+const LIVE_ASSIGNMENT_STATES: ReadonlySet<CurrentAssignment['state']> = new Set([
+  'ASSIGNED',
+  'PRELOADING',
+  'READY',
+  'RUNNING',
+  'PAUSED',
+]);
+
 export default function LessonResumeScreen({ navigation, route }: Props) {
-  const decision = decideLessonRecovery(route.params?.checkpoint);
+  const decision = React.useMemo(
+    () => decideLessonRecovery(route.params?.checkpoint),
+    [route.params?.checkpoint],
+  );
+  const checkpoint = decision.kind === 'resume' ? decision.checkpoint : null;
+  const checkpointKey = checkpoint
+    ? JSON.stringify([checkpoint.deviceId, checkpoint.assignmentId, checkpoint.sessionId ?? null])
+    : null;
+  const [verification, setVerification] = React.useState<VerificationState>({ kind: 'checking' });
+  const [retryNonce, setRetryNonce] = React.useState(0);
   const didResume = React.useRef(false);
+  const validationGeneration = React.useRef(0);
+  const activeValidation = React.useRef<{ readonly generation: number; readonly checkpointKey: string } | null>(null);
+  const retryRequested = React.useRef(false);
+
+  React.useEffect(() => {
+    if (decision.kind !== 'ended') return;
+    void clearRecoveryCheckpoint().catch(captureError);
+  }, [decision.kind]);
+
+  React.useEffect(() => {
+    const generation = validationGeneration.current + 1;
+    validationGeneration.current = generation;
+    if (!checkpoint || !checkpointKey) {
+      activeValidation.current = null;
+      return;
+    }
+    let active = true;
+    activeValidation.current = { generation, checkpointKey };
+    retryRequested.current = false;
+    setVerification({ kind: 'checking' });
+
+    void getCurrentAssignment(checkpoint.deviceId).then(
+      (current) => {
+        if (!active || validationGeneration.current !== generation) return;
+        const match = classifyLiveAssignment(checkpoint.assignmentId, checkpoint.sessionId, current);
+        if (match.kind === 'ready') {
+          setVerification({ kind: 'ready', assignment: match.assignment });
+          return;
+        }
+        if (match.kind === 'unconfirmed') {
+          setVerification({ kind: 'error' });
+          return;
+        }
+        setVerification({ kind: 'ended' });
+        void clearRecoveryCheckpoint().catch(captureError);
+      },
+      (error) => {
+        if (!active || validationGeneration.current !== generation) return;
+        activeValidation.current = null;
+        captureError(error);
+        setVerification({ kind: 'error' });
+      },
+    ).finally(() => {
+      if (activeValidation.current?.generation === generation) {
+        activeValidation.current = null;
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [checkpoint, checkpointKey, retryNonce]);
+
+  const retryVerification = (): void => {
+    if (
+      !checkpointKey ||
+      retryRequested.current ||
+      activeValidation.current?.checkpointKey === checkpointKey
+    ) return;
+    retryRequested.current = true;
+    setVerification({ kind: 'checking' });
+    setRetryNonce((value) => value + 1);
+  };
 
   if (decision.kind === 'reauth') {
     return (
@@ -24,7 +116,7 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
         <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
         <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
           <Robot emotion="worry" size={220} accent="#FFB85C" />
-          <SpeechBubble>Session expired{'\n'}Please return home.</SpeechBubble>
+          <SpeechBubble>Session expired{`\n`}Please return home.</SpeechBubble>
           <Text style={styles.safeText}>Your lesson cannot continue until the session is refreshed.</Text>
         </Box>
         <Box style={styles.cta}>
@@ -34,61 +126,65 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
     );
   }
 
-  if (decision.kind === 'ended') {
+  if (decision.kind === 'ended' || verification.kind === 'ended') {
+    return renderEnded(navigation);
+  }
+
+  if (verification.kind === 'checking') {
     return (
-      <ScreenShell bg="#E8E5F0">
+      <ScreenShell bg="#FFF4E3">
         <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
         <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
-          <Robot emotion="idle" size={220} accent="#6B4A9B" />
-          <SpeechBubble>Lesson ended{'\n'}You can start another activity from home.</SpeechBubble>
-          <Text style={styles.safeText}>This lesson cannot be resumed from the saved checkpoint.</Text>
-        </Box>
-        <Box style={styles.cta}>
-          <PrimaryCTA color="#6B4A9B" onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>Back home</PrimaryCTA>
+          <Robot emotion="idle" size={220} accent="#FFB85C" />
+          <SpeechBubble>Checking your lesson...</SpeechBubble>
+          <Text style={styles.safeText}>We are making sure this lesson is still ready on your robot.</Text>
         </Box>
       </ScreenShell>
     );
   }
 
-  const checkpoint = decision.checkpoint;
-  const lessonTitle = checkpoint.lessonTitle;
-  const progressLabel = checkpoint.progressLabel;
-  // Drive the bar width off the same label the text shows, so a data-bound
-  // "40%" label no longer sits over a hardcoded 60% fill. Clamp to 0–100;
-  // fall back to 0 when the label has no parseable percentage.
+  if (verification.kind === 'error') {
+    return (
+      <ScreenShell bg="#FFF4E3">
+        <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
+        <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
+          <Robot emotion="worry" size={220} accent="#FFB85C" />
+          <SpeechBubble>We can't confirm this lesson yet</SpeechBubble>
+          <Text style={styles.safeText}>Check your connection, then try again.</Text>
+        </Box>
+        <Box style={styles.cta}>
+          <PrimaryCTA color="#FF6F61" onPress={retryVerification}>Try again</PrimaryCTA>
+        </Box>
+      </ScreenShell>
+    );
+  }
+
+  const resumableCheckpoint = decision.checkpoint;
+  const assignment = verification.assignment;
+  const lessonTitle = resumableCheckpoint.lessonTitle;
+  const progressLabel = resumableCheckpoint.progressLabel;
   const progressPercent = parseProgressPercent(progressLabel);
-  const activityLabel = checkpoint?.activityLabel;
+  const activityLabel = resumableCheckpoint.activityLabel;
   const resumeLesson = (): void => {
     if (didResume.current) return;
     didResume.current = true;
-
-    if (checkpoint.resumeTarget === ROUTES.HomeHubScreen) {
-      navigation.navigate(ROUTES.HomeHubScreen);
-      return;
-    }
-    if (hasCourseResumeContext(checkpoint)) {
-      navigation.navigate(ROUTES.SendToRobotScreen, {
-        courseId: checkpoint.courseId,
-        resumeContext: {
-          courseId: checkpoint.courseId,
-          childId: checkpoint.childId,
-          deviceId: checkpoint.deviceId,
-          assignmentId: checkpoint.assignmentId,
-          assignmentVersion: checkpoint.assignmentVersion,
-          lessonTitle: checkpoint.lessonTitle,
-          manifestChecksum: checkpoint.manifestChecksum,
-        },
-      });
-      return;
-    }
-    navigation.navigate(ROUTES.SendToRobotScreen);
+    const sessionId = assignment.sessionId ?? resumableCheckpoint.sessionId;
+    navigation.navigate(ROUTES.RunningScreen, {
+      deviceId: resumableCheckpoint.deviceId,
+      assignmentId: assignment.assignmentId,
+      ...(sessionId ? { sessionId } : {}),
+      childId: assignment.childId,
+      lessonTitle: assignment.lessonTitle,
+      ...(resumableCheckpoint.courseId ? { courseId: resumableCheckpoint.courseId } : {}),
+    });
   };
+
   return (
     <ScreenShell bg="#C5F1DD">
       <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
       <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
         <Robot emotion="happy" size={220} accent="#6CE2B6" />
-        <SpeechBubble>Welcome back!{'\n'}Want to keep going?</SpeechBubble>
+        <SpeechBubble>Welcome back!{`\n`}Want to keep going?</SpeechBubble>
         <Box style={styles.card} flexDirection="row" alignItems="center" gap={14}>
           <Box style={styles.bookIcon}>
             <Text style={{ fontSize: 28 }}>📖</Text>
@@ -106,7 +202,12 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
       </Box>
       <Box style={styles.cta} gap={10}>
         <PrimaryCTA color="#FF6F61" onPress={resumeLesson}>Keep going</PrimaryCTA>
-        <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7}>
+        <TouchableOpacity
+          accessibilityLabel="Stop for now"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          activeOpacity={0.7}
+        >
           <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Stop for now</Text>
         </TouchableOpacity>
       </Box>
@@ -114,34 +215,50 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
   );
 }
 
-// Pull the leading numeric percent out of a label like "40%" / "Step 2 · 75%".
-// Returns 0 when nothing parseable is present so the bar collapses rather than
-// lying about progress; clamps to the 0–100 range.
+function renderEnded(navigation: Props['navigation']): React.ReactElement {
+  return (
+    <ScreenShell bg="#E8E5F0">
+      <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
+      <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
+        <Robot emotion="idle" size={220} accent="#6B4A9B" />
+        <SpeechBubble>Lesson ended{`\n`}You can start another activity from home.</SpeechBubble>
+        <Text style={styles.safeText}>This lesson cannot be resumed from the saved checkpoint.</Text>
+      </Box>
+      <Box style={styles.cta}>
+        <PrimaryCTA color="#6B4A9B" onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>Back home</PrimaryCTA>
+      </Box>
+    </ScreenShell>
+  );
+}
+
+function classifyLiveAssignment(
+  assignmentId: string,
+  checkpointSessionId: string | undefined,
+  current: CurrentAssignment | null,
+):
+  | { readonly kind: 'ready'; readonly assignment: CurrentAssignment }
+  | { readonly kind: 'ended' }
+  | { readonly kind: 'unconfirmed' } {
+  if (!current || !LIVE_ASSIGNMENT_STATES.has(current.state) || current.assignmentId !== assignmentId) {
+    return { kind: 'ended' };
+  }
+  if (!checkpointSessionId) {
+    return { kind: 'ready', assignment: current };
+  }
+  if (!current.sessionId) {
+    return { kind: 'unconfirmed' };
+  }
+  return checkpointSessionId === current.sessionId
+    ? { kind: 'ready', assignment: current }
+    : { kind: 'ended' };
+}
+
 function parseProgressPercent(label: string): number {
   const match = label.match(/(\d+(?:\.\d+)?)\s*%/);
   if (!match) return 0;
   const value = Number(match[1]);
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, value));
-}
-
-function hasCourseResumeContext(checkpoint: unknown): checkpoint is {
-  courseId: string;
-  childId: string;
-  deviceId?: string;
-  assignmentId?: string;
-  assignmentVersion?: number;
-  lessonTitle?: string;
-  manifestChecksum?: string | null;
-} {
-  return Boolean(
-    checkpoint &&
-      typeof checkpoint === 'object' &&
-      typeof (checkpoint as { courseId?: unknown }).courseId === 'string' &&
-      Boolean((checkpoint as { courseId: string }).courseId) &&
-      typeof (checkpoint as { childId?: unknown }).childId === 'string' &&
-      Boolean((checkpoint as { childId: string }).childId),
-  );
 }
 
 const styles = StyleSheet.create({

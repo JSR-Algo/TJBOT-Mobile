@@ -162,7 +162,7 @@ export type RootStackParamList = {
   SupportScreen: undefined | { context?: import('@/features/fallback/recoveryTypes').SupportContext };
 
   // fallback screens
-  NetworkErrorScreen: undefined | { checkpoint?: import('@/features/fallback/recoveryTypes').LessonCheckpoint; attemptCount?: number };
+  NetworkErrorScreen: undefined | { checkpoint?: import('@/features/fallback/recoveryTypes').LessonCheckpoint; attemptCount?: number; failureTarget?: typeof ROUTES.HelpFaqScreen | typeof ROUTES.HomeHubScreen };
   AppErrorScreen: undefined | { supportContext?: import('@/features/fallback/recoveryTypes').SupportContext };
   MicMissingScreen: undefined | { checkpoint?: import('@/features/fallback/recoveryTypes').LessonCheckpoint };
   VoiceFailedScreen: undefined | { checkpoint?: import('@/features/fallback/recoveryTypes').LessonCheckpoint };
