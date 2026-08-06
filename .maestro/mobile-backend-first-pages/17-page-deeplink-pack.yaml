@@ -383,25 +383,6 @@ name: Mobile-backend-first ≥17-page deep-link pack
 - back
 - waitForAnimationToEnd:
     optional: true
-# --- 20 NeedsSyncScreen ---
-- openLink: "tjbot://course-library/needs-sync"
-- waitForAnimationToEnd
-- extendedWaitUntil:
-    visible:
-      id: "appRoot"
-    timeout: 20000
-- extendedWaitUntil:
-    visible:
-      text: ".*Sync.*"
-    timeout: 12000
-    optional: true
-- swipe:
-    direction: DOWN
-    optional: true
-- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/20-NeedsSyncScreen"
-- back
-- waitForAnimationToEnd:
-    optional: true
 # --- 21 CourseLockedScreen ---
 - openLink: "tjbot://course-library/course-locked"
 - waitForAnimationToEnd
@@ -418,25 +399,6 @@ name: Mobile-backend-first ≥17-page deep-link pack
     direction: DOWN
     optional: true
 - takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/21-CourseLockedScreen"
-- back
-- waitForAnimationToEnd:
-    optional: true
-# --- 22 RobotReadyScreen ---
-- openLink: "tjbot://course-library/robot-ready"
-- waitForAnimationToEnd
-- extendedWaitUntil:
-    visible:
-      id: "appRoot"
-    timeout: 20000
-- extendedWaitUntil:
-    visible:
-      text: ".*Robot.*"
-    timeout: 12000
-    optional: true
-- swipe:
-    direction: DOWN
-    optional: true
-- takeScreenshot: "output/maestro/mobile-backend-first-pages/shots/22-RobotReadyScreen"
 - back
 - waitForAnimationToEnd:
     optional: true

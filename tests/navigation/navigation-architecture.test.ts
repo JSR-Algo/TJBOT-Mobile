@@ -82,6 +82,30 @@ describe('navigation architecture', () => {
     expect(paths.every(path => /^[a-z0-9-]+\/[a-z0-9-]+$/.test(path))).toBe(true);
   });
 
+  it('does not register the removed phone Live or lesson-dispatch routes', () => {
+    const removedRoutes = [
+      'RunningScreen',
+      'CompanionScreen',
+      'SendToRobotScreen',
+      'RobotReadyScreen',
+      'NeedsSyncScreen',
+    ];
+    const registeredRoutes = Object.keys(ROUTE_MAP);
+    const deepLinkPaths = Object.values(NAVIGATION_LINKING_CONFIG.config?.screens ?? {});
+
+    for (const route of removedRoutes) {
+      expect(ROUTES).not.toHaveProperty(route);
+      expect(registeredRoutes).not.toContain(route);
+    }
+    expect(deepLinkPaths).not.toEqual(expect.arrayContaining([
+      'course-library/running',
+      'course-library/companion',
+      'course-library/send-to-robot',
+      'course-library/robot-ready',
+      'course-library/needs-sync',
+    ]));
+  });
+
   it('does not suppress all native warnings at app startup', () => {
     const entrySource = readFileSync(join(root, 'index.js'), 'utf8');
     const appSource = readFileSync(join(root, 'src', 'App.tsx'), 'utf8');
@@ -316,7 +340,7 @@ describe('navigation architecture', () => {
     expect(artifact.edgeCount).toBeGreaterThan(0);
     expect(artifact.forwardEdges).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ sourceRoute: ROUTES.HomeHubScreen, targetRoute: ROUTES.LessonReadyScreen }),
+        expect.objectContaining({ sourceRoute: ROUTES.CourseDetailScreen, targetRoute: ROUTES.LessonDetailScreen }),
         expect.objectContaining({ sourceRoute: ROUTES.PairIntroScreen, targetRoute: ROUTES.PairSearchScreen }),
         expect.objectContaining({ sourceRoute: ROUTES.PurchaseIntroScreen, targetRoute: ROUTES.HowItWorksScreen }),
       ]),
@@ -572,10 +596,9 @@ describe('navigation architecture', () => {
       routesMissingComponents: [],
     });
     expect(inventory.forwardCycleGovernance).toEqual({
-      cycleGroupCount: 7,
+      cycleGroupCount: 6,
       cycleGroups: {
         'auth-trust-login': [ROUTES.LoginScreen, ROUTES.TrustScreen],
-        'course-dispatch-picker': [ROUTES.RobotReadyScreen, ROUTES.SendToRobotScreen],
         'device-pairing-retry': [
           ROUTES.PairCodeScreen,
           ROUTES.PairConnectingScreen,

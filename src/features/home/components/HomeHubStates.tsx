@@ -6,7 +6,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { Icon } from '@/design-system/icons';
 import ScreenShell from '@/components/ScreenShell';
 import { useAppLanguage } from '@/services/i18n/i18n';
-import type { HomeChild, HomeLesson } from '@/services/api/home.api';
+import type { HomeChild } from '@/services/api/home.api';
 import { referenceColors } from '@/design-system/referenceTheme';
 
 const COLORS = {
@@ -125,18 +125,14 @@ export function HomeMultiChildState({
 
 type StreakLostProps = {
   childName: string | null;
-  lesson: HomeLesson | null;
   wordsLearnedThisWeek: number;
-  onStartLesson: () => void;
-  onBrowseLessons: () => void;
+  onProgress: () => void;
 };
 
 export function HomeStreakLostState({
   childName,
-  lesson,
   wordsLearnedThisWeek,
-  onStartLesson,
-  onBrowseLessons,
+  onProgress,
 }: StreakLostProps): React.JSX.Element {
   const { t } = useAppLanguage();
   const insets = useSafeAreaInsets();
@@ -168,37 +164,23 @@ export function HomeStreakLostState({
 
         <Box style={styles.lessonCard}>
           <Text i18n={false} fontWeight="800" style={styles.sectionLabel}>
-            {t("Today's lesson")}
+            {t('This week')}
           </Text>
           <Text i18n={false} fontWeight="800" style={styles.lessonTitle}>
-            {lesson?.title ?? t('No lesson is assigned yet')}
+            {`${wordsLearnedThisWeek} ${t('Words learned').toLowerCase()}`}
           </Text>
-          {lesson && lesson.focusItems.length > 0 ? (
-            <Text i18n={false} fontWeight="700" style={styles.lessonMeta}>
-              {`${lesson.focusItems.length} ${t('words')}`}
-            </Text>
-          ) : null}
           <TouchableOpacity
             testID="homeStreakLessonCta"
             style={styles.lessonButton}
-            onPress={lesson ? onStartLesson : onBrowseLessons}
+            onPress={onProgress}
             accessibilityRole="button"
-            accessibilityLabel={lesson ? t("Start Today's Lesson") : t('Browse lessons')}
+            accessibilityLabel={t('View progress')}
           >
-            <Icon name={lesson ? 'Play' : 'Library'} size={20} color="#FFFFFF" />
+            <Icon name="BarChart3" size={20} color="#FFFFFF" />
             <Text i18n={false} fontWeight="800" style={styles.lessonButtonCopy}>
-              {lesson ? t("Start Today's Lesson") : t('Browse lessons')}
+              {t('View progress')}
             </Text>
           </TouchableOpacity>
-        </Box>
-
-        <Box style={styles.weekCard}>
-          <Text i18n={false} fontWeight="800" style={styles.sectionLabel}>
-            {t('This week')}
-          </Text>
-          <Text i18n={false} fontWeight="800" style={styles.weekValue}>
-            {`${wordsLearnedThisWeek} ${t('words')}`}
-          </Text>
         </Box>
       </ScrollView>
     </ScreenShell>

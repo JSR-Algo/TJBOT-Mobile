@@ -105,12 +105,7 @@ describe('state-machine route alignment', () => {
       [ROUTES.BuyCourseScreen, 'cl_add_free'],
       [ROUTES.UnlockConfirmScreen, 'cl_unlock_confirm'],
       [ROUTES.CourseAddedScreen, 'cl_added'],
-      [ROUTES.SendToRobotScreen, 'cl_send'],
-      [ROUTES.RobotReadyScreen, 'cl_robot_ready'],
-      [ROUTES.RunningScreen, 'cl_running'],
-      [ROUTES.CompanionScreen, 'cl_companion'],
       [ROUTES.CourseCompleteScreen, 'cl_complete'],
-      [ROUTES.NeedsSyncScreen, 'cl_needs_sync'],
       [ROUTES.CourseLockedScreen, 'cl_locked'],
     ]);
     const actualCourseLibraryStateIds = new Map(

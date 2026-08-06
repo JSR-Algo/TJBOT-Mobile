@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ChevronRight, HelpCircle, LockKeyhole, ShieldCheck, SlidersHorizontal, UserRound } from 'lucide-react-native';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
+import { Reveal } from '@/design-system/animations';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,69 +46,77 @@ export default function ParentSummaryScreen({ navigation }: Props) {
   return (
     <ParentScroll title={t('Parent Zone')}>
       <Box paddingHorizontal={24} paddingTop={10}>
-        <TouchableOpacity
-          testID="parentProfileCard"
-          accessibilityRole="button"
-          accessibilityLabel={t('Edit Profile')}
-          activeOpacity={0.78}
-          onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen)}
-          style={styles.profileCard}
-        >
-          <View style={styles.avatar}>
-            <Text i18n={false} fontWeight="800" style={styles.avatarText}>{initials}</Text>
-          </View>
-          <View style={styles.profileCopy}>
-            <Text i18n={false} fontWeight="800" numberOfLines={1} ellipsizeMode="tail" style={styles.profileName}>
-              {parentName}
-            </Text>
-            {parentEmail ? (
-              <Text i18n={false} numberOfLines={1} ellipsizeMode="tail" style={styles.profileEmail}>
-                {parentEmail}
-              </Text>
-            ) : null}
-          </View>
-          <Text fontWeight="700" numberOfLines={1} style={styles.editProfile}>{t('Edit Profile')}</Text>
-        </TouchableOpacity>
-
-        <SectionTitle>{t('Safety & Limits')}</SectionTitle>
-        <View style={styles.menuCard}>
-          <ParentMenuRow
-            icon={SlidersHorizontal}
-            label={t('Daily Limit')}
-            value={t('Manage limits')}
-            onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
-          />
-          <Divider />
-          <ParentMenuRow
-            icon={ShieldCheck}
-            label={t('Safety Filter')}
-            value={t('Review settings')}
-            onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
-          />
-        </View>
-
-        <SectionTitle>{t('Account')}</SectionTitle>
-        <View style={styles.menuCard}>
-          <ParentMenuRow
-            icon={UserRound}
-            label={t('Account')}
+        <Reveal index={0} testID="parentProfileReveal">
+          <TouchableOpacity
+            testID="parentProfileCard"
+            accessibilityRole="button"
+            accessibilityLabel={t('Edit Profile')}
+            activeOpacity={0.78}
             onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen)}
-          />
-          <Divider />
-          <ParentMenuRow
-            icon={LockKeyhole}
-            label={t('Subscription')}
-            value={t('Manage')}
-            onPress={() => navigation.navigate(ROUTES.SubscriptionsScreen)}
-          />
-          <Divider />
-          <ParentMenuRow
-            icon={HelpCircle}
-            label={t('Help & FAQ')}
-            onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
-          />
-        </View>
+            style={styles.profileCard}
+          >
+            <View style={styles.avatar}>
+              <Text i18n={false} fontWeight="800" style={styles.avatarText}>{initials}</Text>
+            </View>
+            <View style={styles.profileCopy}>
+              <Text i18n={false} fontWeight="800" numberOfLines={1} ellipsizeMode="tail" style={styles.profileName}>
+                {parentName}
+              </Text>
+              {parentEmail ? (
+                <Text i18n={false} numberOfLines={1} ellipsizeMode="tail" style={styles.profileEmail}>
+                  {parentEmail}
+                </Text>
+              ) : null}
+            </View>
+            <Text fontWeight="700" numberOfLines={1} style={styles.editProfile}>{t('Edit Profile')}</Text>
+          </TouchableOpacity>
+        </Reveal>
 
+        <Reveal index={1} testID="parentSafetyReveal">
+          <SectionTitle>{t('Safety & Limits')}</SectionTitle>
+          <View style={styles.safetyGrid}>
+            <SafetyTile
+              icon={SlidersHorizontal}
+              label={t('Daily Limit')}
+              value={t('Manage limits')}
+              tone="mint"
+              onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
+            />
+            <SafetyTile
+              icon={ShieldCheck}
+              label={t('Safety Filter')}
+              value={t('Review settings')}
+              tone="lavender"
+              onPress={() => navigation.navigate(ROUTES.ParentSafetyScreen)}
+            />
+          </View>
+        </Reveal>
+
+        <Reveal index={2} testID="parentAccountReveal">
+          <SectionTitle>{t('Account')}</SectionTitle>
+          <View style={styles.menuCard}>
+            <ParentMenuRow
+              icon={UserRound}
+              label={t('Account')}
+              onPress={() => navigation.navigate(ROUTES.ParentAccountPrivacyScreen)}
+            />
+            <Divider />
+            <ParentMenuRow
+              icon={LockKeyhole}
+              label={t('Subscription')}
+              value={t('Manage')}
+              onPress={() => navigation.navigate(ROUTES.SubscriptionsScreen)}
+            />
+            <Divider />
+            <ParentMenuRow
+              icon={HelpCircle}
+              label={t('Help & FAQ')}
+              onPress={() => navigation.navigate(ROUTES.HelpFaqScreen)}
+            />
+          </View>
+        </Reveal>
+
+        {/* Destructive control stays visually stable — no entrance motion. */}
         <TouchableOpacity
           testID="parentSignOut"
           accessibilityRole="button"
@@ -141,6 +150,36 @@ function ParentMenuRow({ icon: Icon, label, value, destructive = false, onPress 
   );
 }
 
+function SafetyTile({
+  icon: Icon,
+  label,
+  onPress,
+  tone,
+  value,
+}: {
+  icon: IconComponent;
+  label: string;
+  onPress: () => void;
+  tone: 'mint' | 'lavender';
+  value: string;
+}) {
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      activeOpacity={0.78}
+      onPress={onPress}
+      style={[styles.safetyTile, tone === 'mint' ? styles.safetyTileMint : styles.safetyTileLavender]}
+    >
+      <View style={styles.safetyIcon}>
+        <Icon color={tone === 'mint' ? '#187A54' : '#6752A8'} size={21} strokeWidth={2.4} />
+      </View>
+      <Text fontWeight="800" style={styles.safetyLabel}>{label}</Text>
+      <Text fontWeight="700" style={styles.safetyValue}>{value}</Text>
+    </TouchableOpacity>
+  );
+}
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <Text fontWeight="800" style={styles.sectionTitle}>{children}</Text>;
 }
@@ -161,13 +200,13 @@ function profileInitials(name: string, email: string): string {
 
 const styles = StyleSheet.create({
   profileCard: {
-    minHeight: 96,
+    minHeight: 86,
     borderRadius: 26,
     backgroundColor: PA.card,
     borderWidth: 1,
     borderColor: PA.hair,
     paddingHorizontal: 18,
-    paddingVertical: 18,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
@@ -178,9 +217,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: '#FFE8E3',
     alignItems: 'center',
     justifyContent: 'center',
@@ -217,6 +256,38 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginLeft: 4,
   },
+  safetyGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  safetyTile: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 144,
+    borderRadius: 24,
+    padding: 16,
+    justifyContent: 'flex-end',
+    shadowColor: PA.ink,
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  safetyTileMint: { backgroundColor: '#DCF6E9' },
+  safetyTileLavender: { backgroundColor: '#EEE8FF' },
+  safetyIcon: {
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.68)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  safetyLabel: { color: PA.ink, fontSize: 16, lineHeight: 21 },
+  safetyValue: { color: PA.ink2, fontSize: 12, lineHeight: 17, marginTop: 5 },
   menuCard: {
     borderRadius: 24,
     backgroundColor: PA.card,

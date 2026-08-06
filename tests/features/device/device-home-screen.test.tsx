@@ -204,9 +204,31 @@ describe('DeviceHomeScreen', () => {
 
     await expect(screen.findByText('Settings')).resolves.toBeTruthy();
     expect(screen.getByText('Language')).toBeTruthy();
+    expect(screen.getByText('Học tập')).toBeTruthy();
+    expect(screen.getByText('Điều khiển')).toBeTruthy();
+    expect(screen.getByText('Xem lại tiến độ học tập')).toBeTruthy();
+    expect(screen.getByText('Cài đặt Robot')).toBeTruthy();
     expect(screen.getByLabelText('Hủy ghép nối Robot. Đưa Robot này về chế độ thiết lập')).toBeTruthy();
     expect(screen.queryByText('Cài đặt')).toBeNull();
     expect(screen.queryByLabelText('Unpair this Robot. Return this Robot to setup mode')).toBeNull();
+  });
+
+  it('renders an honest fallback when the last-seen timestamp is malformed', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'device-invalid-timestamp',
+      name: 'Living Room Robot',
+      online: false,
+      batteryPercent: 42,
+      lastSeenAt: 'not-a-date',
+    });
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={{ navigate: jest.fn() } as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Living Room Robot')).resolves.toBeTruthy();
+    expect(screen.getByText('Not reported')).toBeTruthy();
+    expect(screen.queryByText('Invalid Date')).toBeNull();
   });
 
   it('unpairs the backend primary device from the device screen', async () => {

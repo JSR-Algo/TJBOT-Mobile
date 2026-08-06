@@ -1,10 +1,15 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { BookOpen, CalendarDays, Flame } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
-import { ROUTES } from '@/navigation/routes';
+import {
+  ChartBar,
+  CountUp,
+  ProgressFill,
+  Reveal,
+} from '@/design-system/animations';
 import PageScroll from '@/design-system/components/PageScroll';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -15,7 +20,7 @@ import {
   type ChildProgress,
 } from '@/services/api/progress.api';
 import { useHousehold } from '@/contexts/HouseholdContext';
-import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
+import { localeDateTag, translateTemplate, useAppLanguage, type AppLocale } from '@/services/i18n/i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TodayProgressScreen'>;
 
@@ -41,8 +46,9 @@ function stateLabel(state: string): string {
 }
 
 
-export default function TodayProgressScreen({ navigation }: Props) {
+export default function TodayProgressScreen(_props: Props) {
   const { activeChild } = useHousehold();
+  const { language, t } = useAppLanguage();
   const childId = activeChild?.id;
   const assignmentQuery = useQuery({
     queryKey: ['lesson-progress', 'child', childId],
@@ -62,17 +68,20 @@ export default function TodayProgressScreen({ navigation }: Props) {
   const isError = assignmentQuery.isError || summaryQuery.isError;
   const hasProgress = Boolean(latest)
     || Boolean(summary && (summary.lessonsCompleted || summary.currentStreakDays || summary.masteredWords));
+  const childName = activeChild?.name?.trim() || t('Mia');
 
   return (
     <PageScroll bg="#E0F7FA">
       <Box style={styles.header} flexDirection="row" alignItems="flex-end" justifyContent="space-between">
         <Box flex={1}>
-          <Text fontWeight="800" style={styles.heading}>Your child's progress</Text>
-          <Text fontWeight="700" style={styles.subheading}>See what your child has learned</Text>
+          <Text i18n={false} fontWeight="800" style={styles.heading}>
+            {translateTemplate("{{name}}'s progress", { name: childName }, { locale: language })}
+          </Text>
+          <Text fontWeight="700" style={styles.subheading}>{t('See what your child has learned')}</Text>
         </Box>
         <Box style={styles.rangeChip} flexDirection="row" alignItems="center" gap={7}>
           <CalendarDays size={17} color="#FF6F61" />
-          <Text fontWeight="800" style={styles.rangeText}>This week</Text>
+          <Text fontWeight="800" style={styles.rangeText}>{t('This week')}</Text>
         </Box>
       </Box>
 
@@ -88,31 +97,25 @@ export default function TodayProgressScreen({ navigation }: Props) {
         ) : null}
         {!isLoading && !isError && !hasProgress ? <StatusCard title="No lessons yet" /> : null}
         {!isLoading && !isError && hasProgress ? (
-          <ProgressBody latest={latest} summary={summary} />
+          <ProgressBody assignments={assignments} latest={latest} summary={summary} />
         ) : null}
-      </Box>
-
-      <Box paddingHorizontal={24} paddingTop={8} paddingBottom={28}>
-        <TouchableOpacity
-          style={styles.homeButton}
-          accessibilityRole="button"
-          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
-        >
-          <Text fontWeight="800" style={styles.homeButtonText}>Back home</Text>
-        </TouchableOpacity>
       </Box>
     </PageScroll>
   );
 }
 
 function ProgressBody({
+  assignments,
   latest,
   summary,
 }: {
+  assignments: AssignmentProgress[];
   latest?: AssignmentProgress;
   summary?: ChildProgress;
 }) {
   const { language, t } = useAppLanguage();
+  const activity = weeklyCompletedActivity(assignments, language);
+  const maxActivity = Math.max(...activity.map(day => day.count), 1);
   const courseTotals = summary?.byCourse.reduce(
     (totals, course) => ({
       completed: totals.completed + course.lessonsCompleted,
@@ -126,63 +129,138 @@ function ProgressBody({
 
   return (
     <>
-      <Box flexDirection="row" gap={12}>
-        <MetricCard
-          icon={<Flame size={24} color="#B68A1F" />}
-          iconBackground="rgba(255,204,77,0.24)"
-          value={summary?.currentStreakDays ?? 0}
-          label={t('day streak')}
-          background="#FFF9E5"
-        />
-        <MetricCard
-          icon={<BookOpen size={24} color="#318C7D" />}
-          iconBackground="rgba(76,183,165,0.14)"
-          value={summary?.masteredWords ?? 0}
-          label={t('Words learned')}
-          background="#F3FFF9"
-        />
-      </Box>
-
-      {courseTotals.total > 0 ? (
-        <Box style={styles.activityCard} gap={14}>
-          <Text fontWeight="800" style={styles.sectionTitle}>Course progress</Text>
-          <Text
-            i18n={false}
-            fontWeight="800"
-            style={styles.courseCount}
-          >
-            {translateTemplate('{{completed}}/{{total}} lessons', courseTotals, { locale: language })}
-          </Text>
-          <Box style={styles.progressTrack}>
-            <Box style={[styles.progressFill, { width: `${coursePercent}%` as `${number}%` }]} />
+      <Reveal index={0} testID="progressLeadReveal">
+        <Box style={styles.leadCard}>
+          <Text fontWeight="800" style={styles.leadEyebrow}>{t('Lessons completed')}</Text>
+          <CountUp
+            testID="progressLeadValue"
+            value={summary?.lessonsCompleted ?? 0}
+            style={styles.leadValue}
+          />
+          <Text fontWeight="700" style={styles.chartTitle}>{t('Completed activity · 7 days')}</Text>
+          <Box style={styles.chart} flexDirection="row" alignItems="flex-end" justifyContent="space-between">
+            {activity.map((day, index) => (
+              <Box alignItems="center" flex={1} gap={7} key={day.key}>
+                <Box style={styles.barTrack} justifyContent="flex-end">
+                  <ChartBar
+                    count={day.count}
+                    maxCount={maxActivity}
+                    trackHeight={118}
+                    index={index}
+                    isToday={day.isToday}
+                    testID={`progressBar-${day.key}`}
+                  />
+                </Box>
+                <Text i18n={false} fontWeight="800" style={[styles.dayLabel, day.isToday && styles.dayLabelToday]}>
+                  {day.label}
+                </Text>
+              </Box>
+            ))}
           </Box>
         </Box>
+      </Reveal>
+
+      <Reveal index={1} testID="progressMetricsReveal">
+        <Box flexDirection="row" gap={12}>
+          <MetricCard
+            icon={<Flame size={24} color="#B68A1F" />}
+            iconBackground="rgba(255,204,77,0.24)"
+            value={summary?.currentStreakDays ?? 0}
+            label={t('day streak')}
+            background="#FFF9E5"
+            testID="progressStreakValue"
+          />
+          <MetricCard
+            icon={<BookOpen size={24} color="#318C7D" />}
+            iconBackground="rgba(76,183,165,0.14)"
+            value={summary?.masteredWords ?? 0}
+            label={t('Words learned')}
+            background="#F3FFF9"
+            testID="progressWordsValue"
+          />
+        </Box>
+      </Reveal>
+
+      {courseTotals.total > 0 ? (
+        <Reveal index={2} testID="progressCourseReveal">
+          <Box style={styles.activityCard} gap={14}>
+            <Text fontWeight="800" style={styles.sectionTitle}>{t('Course progress')}</Text>
+            <Text
+              i18n={false}
+              fontWeight="800"
+              style={styles.courseCount}
+            >
+              {translateTemplate('{{completed}}/{{total}} lessons', courseTotals, { locale: language })}
+            </Text>
+            <ProgressFill
+              percent={coursePercent}
+              testID="progressCourseFill"
+            />
+          </Box>
+        </Reveal>
       ) : null}
 
       {latest ? (
-        <Box style={styles.latestCard}>
-          <Text fontWeight="800" style={styles.sectionTitle}>Latest lesson</Text>
-          {latest.lessonTitle ? (
-            <Text fontWeight="800" style={styles.lessonTitle} i18n={false}>{latest.lessonTitle}</Text>
-          ) : null}
-          <Box flexDirection="row" gap={10}>
-            <StatChip value={String(latest.stepsSucceeded)} label="steps right" />
-            <StatChip value={String(latest.stepsCompleted)} label="steps done" />
+        <Reveal index={courseTotals.total > 0 ? 3 : 2} testID="progressLatestReveal">
+          <Box style={styles.latestCard}>
+            <Text fontWeight="800" style={styles.sectionTitle}>{t('Latest lesson')}</Text>
+            {latest.lessonTitle ? (
+              <Text fontWeight="800" style={styles.lessonTitle} i18n={false}>{latest.lessonTitle}</Text>
+            ) : null}
+            <Box flexDirection="row" gap={10}>
+              <StatChip value={String(latest.stepsSucceeded)} label="steps right" />
+              <StatChip value={String(latest.stepsCompleted)} label="steps done" />
+            </Box>
+            <Box style={styles.stateCard}>
+              <Text fontWeight="700" style={styles.stateLabel}>{t(stateLabel(latest.state))}</Text>
+              <Text style={styles.stateDetail} i18n={false}>
+                {translateTemplate('{{succeeded}} of {{completed}} {{stepLabel}}', {
+                  succeeded: latest.stepsSucceeded,
+                  completed: latest.stepsCompleted,
+                  stepLabel: translateTemplate('steps', {}, { locale: language }),
+                }, { locale: language })}
+              </Text>
+            </Box>
           </Box>
-          <Box style={styles.stateCard}>
-            <Text fontWeight="700" style={styles.stateLabel}>{stateLabel(latest.state)}</Text>
-            <Text style={styles.stateDetail} i18n={false}>
-              {translateTemplate('{{succeeded}} of {{completed}} {{stepLabel}}', {
-                succeeded: latest.stepsSucceeded,
-                completed: latest.stepsCompleted,
-                stepLabel: translateTemplate('steps', {}, { locale: language }),
-              }, { locale: language })}
-            </Text>
-          </Box>
-        </Box>
+        </Reveal>
       ) : null}
     </>
   );
+}
+
+function weeklyCompletedActivity(assignments: AssignmentProgress[], locale: AppLocale): Array<{
+  key: string;
+  label: string;
+  count: number;
+  isToday: boolean;
+}> {
+  const today = startOfLocalDay(new Date());
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(today);
+    day.setDate(today.getDate() - (6 - index));
+    const nextDay = new Date(day);
+    nextDay.setDate(day.getDate() + 1);
+    const count = assignments.filter(assignment => {
+      if (assignment.state !== 'COMPLETED') return false;
+      const completedAt = assignment.completedAt ? new Date(assignment.completedAt) : null;
+      return completedAt !== null
+        && !Number.isNaN(completedAt.getTime())
+        && completedAt >= day
+        && completedAt < nextDay;
+    }).length;
+    return {
+      key: day.toISOString().slice(0, 10),
+      label: new Intl.DateTimeFormat(localeDateTag(locale), { weekday: 'narrow' }).format(day),
+      count,
+      isToday: index === 6,
+    };
+  });
+}
+
+function startOfLocalDay(value: Date): Date {
+  const result = new Date(value);
+  result.setHours(0, 0, 0, 0);
+  return result;
 }
 
 function MetricCard({
@@ -191,19 +269,21 @@ function MetricCard({
   value,
   label,
   background,
+  testID,
 }: {
   icon: React.ReactNode;
   iconBackground: string;
   value: number;
   label: string;
   background: string;
+  testID?: string;
 }) {
   return (
     <Box style={[styles.metricCard, { backgroundColor: background }]} flex={1}>
       <Box style={[styles.metricIcon, { backgroundColor: iconBackground }]} alignItems="center" justifyContent="center">
         {icon}
       </Box>
-      <Text i18n={false} fontWeight="800" style={styles.metricValue}>{value}</Text>
+      <CountUp testID={testID} value={value} style={styles.metricValue} />
       <Text i18n={false} fontWeight="800" style={styles.metricLabel}>{label}</Text>
     </Box>
   );
@@ -264,6 +344,25 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     paddingHorizontal: 20,
   },
+  leadCard: {
+    backgroundColor: '#FFFDF9',
+    borderColor: 'rgba(45,52,54,0.08)',
+    borderRadius: 34,
+    borderWidth: 1,
+    padding: 22,
+    shadowColor: '#2D3436',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  leadEyebrow: { color: '#77736F', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
+  leadValue: { color: '#2D3436', fontSize: 52, fontWeight: '800', letterSpacing: -1.8, lineHeight: 60, marginTop: 5 },
+  chartTitle: { color: '#77736F', fontSize: 12, marginBottom: 10, marginTop: 4 },
+  chart: { borderBottomColor: '#DED6CC', borderBottomWidth: StyleSheet.hairlineWidth, minHeight: 154, paddingTop: 8 },
+  barTrack: { alignItems: 'center', height: 122, width: '100%' },
+  dayLabel: { color: '#928C85', fontSize: 10 },
+  dayLabelToday: { color: '#FF5F65' },
   message: {
     backgroundColor: '#FFFDF9',
     borderColor: 'rgba(45,52,54,0.08)',
@@ -296,6 +395,7 @@ const styles = StyleSheet.create({
   metricValue: {
     color: '#2D3436',
     fontSize: 36,
+    fontWeight: '800',
     lineHeight: 40,
   },
   metricLabel: {
@@ -320,17 +420,6 @@ const styles = StyleSheet.create({
     color: '#FF6F61',
     fontSize: 24,
     lineHeight: 30,
-  },
-  progressTrack: {
-    backgroundColor: '#E8EFF0',
-    borderRadius: 999,
-    height: 12,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    backgroundColor: '#4CB7A5',
-    borderRadius: 999,
-    height: '100%',
   },
   sectionTitle: {
     color: '#2D3436',
@@ -378,16 +467,5 @@ const styles = StyleSheet.create({
   stateDetail: {
     color: '#636E72',
     fontSize: 13,
-  },
-  homeButton: {
-    alignItems: 'center',
-    backgroundColor: '#FF6F61',
-    borderRadius: 28,
-    justifyContent: 'center',
-    minHeight: 64,
-  },
-  homeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
   },
 });

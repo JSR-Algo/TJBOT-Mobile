@@ -75,15 +75,6 @@ export type RootStackParamList = {
     };
   };
   CourseLockedScreen: undefined | { courseId?: string };
-  NeedsSyncScreen: undefined | { courseId?: string };
-  // US-006 Slice-01 (LANE-MOBILE): the lesson-assignment happy path is re-keyed
-  // from courseId to deviceId (DIV-MOBILE-DEVICEKEY). assignmentId/Version thread
-  // forward for the ASSIGNMENT_CONFLICT refresh-and-retry; courseId stays for
-  // back-compat with the existing browse entry.
-  SendToRobotScreen: undefined | { courseId?: string };
-  RobotReadyScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; lessonTitle?: string };
-  RunningScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; lessonTitle?: string };
-  CompanionScreen: undefined | { deviceId?: string; assignmentId?: string };
 
   // purchase
   PurchaseIntroScreen: undefined;
@@ -238,11 +229,6 @@ export const ROUTES = {
   'CourseAddedScreen': 'CourseAddedScreen',
   'CourseCompleteScreen': 'CourseCompleteScreen',
   'CourseLockedScreen': 'CourseLockedScreen',
-  'NeedsSyncScreen': 'NeedsSyncScreen',
-  'SendToRobotScreen': 'SendToRobotScreen',
-  'RobotReadyScreen': 'RobotReadyScreen',
-  'RunningScreen': 'RunningScreen',
-  'CompanionScreen': 'CompanionScreen',
   'PurchaseIntroScreen': 'PurchaseIntroScreen',
   'HowItWorksScreen': 'HowItWorksScreen',
   'BundleScreen': 'BundleScreen',

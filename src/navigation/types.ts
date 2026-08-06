@@ -31,7 +31,6 @@ export type FeatureRouteRole =
 
 export type FeatureForwardCycleGroup =
   | 'auth-trust-login'
-  | 'course-dispatch-picker'
   | 'device-pairing-retry'
   | 'lesson-demo-review'
   | 'lesson-session-loop'

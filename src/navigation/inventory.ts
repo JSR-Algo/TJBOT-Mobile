@@ -570,7 +570,7 @@ export const NAVIGATION_SCREEN_COMPONENT_RESPONSIBILITY = {
 } as const;
 
 const FORWARD_CYCLE_GROUPS: readonly FeatureForwardCycleGroup[] = [
-  'auth-trust-login', 'course-dispatch-picker',
+  'auth-trust-login',
   'device-pairing-retry',
   'lesson-demo-review',
   'lesson-session-loop',
@@ -584,7 +584,6 @@ function isFeatureForwardCycleGroup(value: unknown): value is FeatureForwardCycl
 function forwardCycleGroups(): Record<FeatureForwardCycleGroup, readonly string[]> {
   const grouped: Record<FeatureForwardCycleGroup, string[]> = {
     'auth-trust-login': [],
-    'course-dispatch-picker': [],
     'device-pairing-retry': [],
     'lesson-demo-review': [],
     'lesson-session-loop': [],
