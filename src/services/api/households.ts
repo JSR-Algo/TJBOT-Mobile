@@ -65,8 +65,14 @@ export async function updateChildDisplayName(
   return { id: item.id, displayName: returnedName };
 }
 
+// `POST /v1/children/{id}/archive` is declared in the modular route contract but
+// `isBridgeRoute()` only forwards `/v1/billing/*`, the entitlements internal,
+// the Stripe webhook, and the two notification routes — so the declaration is
+// unrouted and the call 404s. Archiving is a status transition on the same
+// endpoint `deleteChild` already uses (ADR-0011 D1 state machine), which any
+// household parent may drive and which is idempotent on the current status.
 export async function archiveChild(childId: string): Promise<{ id: string; status: string }> {
-  const response = await client.post(`/children/${childId}/archive`);
+  const response = await client.patch(`/identity/children/${childId}`, { status: 'archived' });
   return unwrap<{ id: string; status: string }>(response);
 }
 

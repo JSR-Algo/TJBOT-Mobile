@@ -1,52 +1,37 @@
+// `GET /account/entitlements` never existed backend-side: @Controller('account')
+// serves only `DELETE /` and `GET /export`, and the entitlement read model is
+// the server-to-server `GET /internal/v1/entitlements/{householdId}`, which a
+// parent JWT cannot reach. This file used to assert the in-flight dedup of a
+// call that could only 404; it now pins the fail-closed contract (T5.2).
+import client from '@/services/http/client';
+import { refreshEntitlementsAfterPurchase } from '@/services/api/account';
+
+jest.mock('@/services/http/client', () => ({
+  __esModule: true,
+  default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+}));
+
+const mockedClient = client as jest.Mocked<typeof client>;
+
 describe('purchase entitlement refresh', () => {
-  it('shares concurrent refreshes and allows a later refresh after settle', async () => {
-    jest.resetModules();
-    const get = jest.fn()
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            courses: ['hello-friends'],
-            subscription_status: 'active',
-            robot_activated: true,
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            courses: ['hello-friends', 'animals'],
-            subscription_status: 'active',
-            robot_activated: true,
-          },
-        },
-      });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    jest.doMock('@/services/http/client', () => ({
-      __esModule: true,
-      default: { get },
-    }));
-
-
-    const { refreshEntitlementsAfterPurchase } = require('@/services/api/account') as typeof import('@/services/api/account');
-
-    const [first, second] = await Promise.all([
-      refreshEntitlementsAfterPurchase(),
-      refreshEntitlementsAfterPurchase(),
-    ]);
-
-    expect(get).toHaveBeenCalledTimes(1);
-    expect(first).toEqual(second);
-    expect(first).toEqual({
-      courses: ['hello-friends'],
-      subscriptionStatus: 'active',
-      robotActivated: true,
+  it('rejects on the contract sentinel without issuing a request', async () => {
+    await expect(refreshEntitlementsAfterPurchase()).rejects.toMatchObject({
+      code: 'BACKEND_CONTRACT_UNAVAILABLE',
     });
+    expect(mockedClient.get).not.toHaveBeenCalled();
+  });
 
-    await expect(refreshEntitlementsAfterPurchase()).resolves.toEqual({
-      courses: ['hello-friends', 'animals'],
-      subscriptionStatus: 'active',
-      robotActivated: true,
+  it('stays rejected across repeated calls', async () => {
+    await expect(refreshEntitlementsAfterPurchase()).rejects.toMatchObject({
+      code: 'BACKEND_CONTRACT_UNAVAILABLE',
     });
-    expect(get).toHaveBeenCalledTimes(2);
+    await expect(refreshEntitlementsAfterPurchase()).rejects.toMatchObject({
+      code: 'BACKEND_CONTRACT_UNAVAILABLE',
+    });
+    expect(mockedClient.get).not.toHaveBeenCalled();
   });
 });

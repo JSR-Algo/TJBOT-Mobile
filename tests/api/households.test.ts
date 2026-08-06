@@ -86,7 +86,9 @@ describe('households child profile API', () => {
 
   it('updates, archives, schedules deletion, and switches active child through backend routes', async () => {
     mockedClient.put.mockResolvedValueOnce({ data: { data: { id: 'child-1', name: 'Fox friend' } } });
-    mockedClient.post.mockResolvedValueOnce({ data: { data: { id: 'child-1', status: 'archived' } } });
+    // archive and schedule-deletion are both PATCHes on the ADR-0011 D1 status
+    // route; only the target status differs.
+    mockedClient.patch.mockResolvedValueOnce({ data: { data: { id: 'child-1', status: 'archived' } } });
     mockedClient.patch.mockResolvedValueOnce({ data: { data: { id: 'child-1', status: 'scheduled_for_deletion' } } });
     mockedClient.post.mockResolvedValueOnce({ data: { data: { active_child_id: 'child-1' } } });
 
@@ -97,7 +99,7 @@ describe('households child profile API', () => {
     expect(activeChild).toEqual({ active_child_id: 'child-1' });
 
     expect(mockedClient.put).toHaveBeenCalledWith('/households/household-1/children/child-1', { display_name: 'Fox friend' });
-    expect(mockedClient.post).toHaveBeenCalledWith('/children/child-1/archive');
+    expect(mockedClient.patch).toHaveBeenCalledWith('/identity/children/child-1', { status: 'archived' });
     expect(mockedClient.patch).toHaveBeenCalledWith('/identity/children/child-1', { status: 'scheduled_for_deletion' });
     expect(mockedClient.post).toHaveBeenCalledWith('/profile/active-child', { child_id: 'child-1' });
   });
