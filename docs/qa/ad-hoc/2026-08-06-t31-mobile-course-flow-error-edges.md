@@ -71,6 +71,30 @@ taps dispatched in the same frame both observed `sending === false` and both fir
 `getCurrentAssignment` in the conflict branches is now `.catch(() => null)` — a failed recovery
 refetch degrades to the conflict message instead of the generic outer-catch copy.
 
+### One existing test was changed, deliberately
+
+`tests/api/lesson-flow-edge-cases.test.ts` asserted the opposite of fix #2:
+
+```ts
+it('falls back to the generic copy (no bespoke ASSIGNMENT_CONFLICT string leaks to parents)', () => {
+  // The code is preserved for routing, but there is intentionally no parent-
+  // facing ASSIGNMENT_CONFLICT copy — the flow recovers silently by refetch.
+  expect(getErrorMessage('ASSIGNMENT_CONFLICT')).toBe(getErrorMessage(undefined));
+});
+```
+
+That premise — *"the flow recovers silently by refetch"* — is true only for a **self**-conflict.
+The refetch recovers only when the device's current assignment IS the lesson the parent picked
+(`currentMatchesLesson` / `currentMatchesCourse`). When another parent got there first with a
+*different* lesson, there is nothing to recover to and the screen must render something; it was
+rendering `UNKNOWN_ERROR`. The assertion was therefore locking in the defect, so it was replaced
+rather than worked around — with the two assertions it was protecting kept intact (the code must
+survive normalization as `ASSIGNMENT_CONFLICT`, and must not become `retryable: true`) plus a new
+one proving the token-carrying copy never leaks a raw `<robot>`/`<lesson>` to a parent.
+
+This is the only pre-existing assertion this change inverts. It is called out here because
+"a test failed, so I changed the test" is exactly the move that deserves scrutiny.
+
 ## Acceptance criteria
 
 | # | AC | Verdict | Evidence |

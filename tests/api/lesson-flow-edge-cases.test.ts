@@ -7,7 +7,7 @@ import {
   type PreloadStatus,
 } from '@/services/api/course-library.api';
 import client from '@/services/http/client';
-import { getErrorMessage, normalizeError } from '@/utils/errors';
+import { ERROR_MESSAGES, formatLessonCopy, getErrorMessage, normalizeError } from '@/utils/errors';
 
 jest.mock('@/services/http/client', () => ({
   __esModule: true,
@@ -33,10 +33,19 @@ describe('US-006 course-flow edge cases (pure logic)', () => {
   });
 
   // ── ASSIGNMENT_CONFLICT ────────────────────────────────────────────────────
-  // The screen branches on `normalizeError(err).code === 'ASSIGNMENT_CONFLICT'`.
-  // That only works if the code survives normalization unchanged. ASSIGNMENT_CONFLICT
-  // is NOT in ERROR_MESSAGES, so its copy falls back to UNKNOWN_ERROR — but the
-  // CODE must NOT be rewritten to CONFLICT/UNKNOWN, or the refetch path dies.
+  // The screen branches on the normalized CODE, so the code must survive
+  // normalization unchanged — it must NOT be rewritten to the status-derived
+  // CONFLICT/UNKNOWN, or the refetch path dies.
+  //
+  // T3.1 (2026-08-06): this block used to also assert that the code has *no*
+  // parent copy, on the premise that "the flow recovers silently by refetch".
+  // That premise only holds for a self-conflict. The refetch recovers only when
+  // the device's current assignment IS the lesson the parent picked; when
+  // another parent got there first with a different lesson there is nothing to
+  // recover to, and the screen must render something. It was rendering
+  // UNKNOWN_ERROR ("An unexpected error occurred"), which tells a parent a known,
+  // explainable state is a mystery. ASSIGNMENT_CONFLICT now carries real copy;
+  // the silent-recovery path is unchanged and still preferred when it applies.
   describe('ASSIGNMENT_CONFLICT normalization', () => {
     it('preserves the ASSIGNMENT_CONFLICT code from a 409 {error:{code}} envelope', () => {
       const result = normalizeError({
@@ -57,10 +66,27 @@ describe('US-006 course-flow edge cases (pure logic)', () => {
       expect(result.retryable).toBe(false);
     });
 
-    it('falls back to the generic copy (no bespoke ASSIGNMENT_CONFLICT string leaks to parents)', () => {
-      // The code is preserved for routing, but there is intentionally no parent-
-      // facing ASSIGNMENT_CONFLICT copy — the flow recovers silently by refetch.
-      expect(getErrorMessage('ASSIGNMENT_CONFLICT')).toBe(getErrorMessage(undefined));
+    it('carries real parent copy instead of falling through to the unknown-error string', () => {
+      const copy = getErrorMessage('ASSIGNMENT_CONFLICT');
+      // A conflict the refetch cannot resolve is still a KNOWN state. Rendering
+      // the unknown-error copy for it is what this assertion now forbids.
+      expect(copy).not.toBe(getErrorMessage(undefined));
+      expect(copy).not.toBe(ERROR_MESSAGES.UNKNOWN_ERROR);
+    });
+
+    it('resolves its interpolation tokens so no raw <robot>/<lesson> reaches a parent', () => {
+      // The copy is token-carrying like ROBOT_OFFLINE/ROBOT_BUSY, so every render
+      // path must go through formatLessonCopy. Both the named and the fallback
+      // form must come out clean.
+      const named = formatLessonCopy(getErrorMessage('ASSIGNMENT_CONFLICT'), {
+        robot: 'Casa Robot',
+        lesson: 'Counting Sheep',
+      });
+      expect(named).toContain('Casa Robot');
+      expect(named).toContain('Counting Sheep');
+      expect(named).not.toMatch(/<robot>|<lesson>/);
+
+      expect(formatLessonCopy(getErrorMessage('ASSIGNMENT_CONFLICT'))).not.toMatch(/<robot>|<lesson>/);
     });
   });
 
