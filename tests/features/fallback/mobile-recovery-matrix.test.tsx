@@ -378,6 +378,7 @@ describe('mobile lesson recovery screen matrix', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.NetworkErrorScreen, {
       checkpoint,
       attemptCount: 2,
+      failureTarget: ROUTES.HelpFaqScreen,
     });
 
     navigation.navigate.mockClear();
@@ -397,6 +398,98 @@ describe('mobile lesson recovery screen matrix', () => {
       jest.advanceTimersByTime(10);
     });
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HelpFaqScreen);
+  });
+
+  it('preserves a home failure target across intermediate reconnect attempts', () => {
+    jest.useFakeTimers();
+    const checkpoint = { ...activeCheckpoint('connecting'), reason: 'network' as const };
+    const navigation = createNavigation();
+    const network = render(
+      <NetworkErrorScreen
+        navigation={navigation as never}
+        route={routeFor(ROUTES.NetworkErrorScreen, {
+          checkpoint,
+          attemptCount: 2,
+          failureTarget: ROUTES.HomeHubScreen,
+        })}
+      />,
+    );
+
+    fireEvent.press(network.getByText('Try again'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ReconnectingOverlay, {
+      attempt: 2,
+      checkpoint,
+      failureTarget: ROUTES.HomeHubScreen,
+      maxAttempts: 3,
+      reconnectDelayMs: 15000,
+    });
+
+    navigation.navigate.mockClear();
+    network.unmount();
+    const intermediateOverlay = render(
+      <ReconnectingOverlay
+        navigation={navigation as never}
+        route={routeFor(ROUTES.ReconnectingOverlay, {
+          attempt: 2,
+          maxAttempts: 3,
+          reconnectDelayMs: 10,
+          checkpoint,
+          failureTarget: ROUTES.HomeHubScreen,
+        })}
+      />,
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(10);
+    });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.NetworkErrorScreen, {
+      checkpoint,
+      attemptCount: 3,
+      failureTarget: ROUTES.HomeHubScreen,
+    });
+
+    navigation.navigate.mockClear();
+    intermediateOverlay.unmount();
+    const finalNetwork = render(
+      <NetworkErrorScreen
+        navigation={navigation as never}
+        route={routeFor(ROUTES.NetworkErrorScreen, {
+          checkpoint,
+          attemptCount: 3,
+          failureTarget: ROUTES.HomeHubScreen,
+        })}
+      />,
+    );
+
+    fireEvent.press(finalNetwork.getByText('Try again'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.ReconnectingOverlay, {
+      attempt: 3,
+      checkpoint,
+      failureTarget: ROUTES.HomeHubScreen,
+      maxAttempts: 3,
+      reconnectDelayMs: 15000,
+    });
+
+    navigation.navigate.mockClear();
+    finalNetwork.unmount();
+    render(
+      <ReconnectingOverlay
+        navigation={navigation as never}
+        route={routeFor(ROUTES.ReconnectingOverlay, {
+          attempt: 3,
+          maxAttempts: 3,
+          reconnectDelayMs: 10,
+          checkpoint,
+          failureTarget: ROUTES.HomeHubScreen,
+        })}
+      />,
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(10);
+    });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.HelpFaqScreen);
   });
 
   it('routes audio recovery back through lesson resume with recovered reason', () => {

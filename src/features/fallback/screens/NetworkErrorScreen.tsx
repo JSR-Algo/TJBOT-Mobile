@@ -19,6 +19,7 @@ export default function NetworkErrorScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
   const attempt = getAttempt(route.params);
   const checkpoint = route.params?.checkpoint;
+  const failureTarget = route.params?.failureTarget ?? ROUTES.HelpFaqScreen;
   return (
     <ScreenShell bg="#E8E5F0" testID="networkErrorScreen">
       <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
@@ -38,7 +39,7 @@ export default function NetworkErrorScreen({ navigation, route }: Props) {
           onPress={() => navigation.navigate(ROUTES.ReconnectingOverlay, {
             attempt,
             checkpoint,
-            failureTarget: ROUTES.HelpFaqScreen,
+            failureTarget,
             maxAttempts: 3,
             reconnectDelayMs: 15000,
           })}
