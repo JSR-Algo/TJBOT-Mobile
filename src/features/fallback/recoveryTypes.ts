@@ -10,7 +10,7 @@ export type RecoveryReason =
   | 'app_error';
 
 export type ResumeTarget =
-  | typeof ROUTES.SendToRobotScreen
+  | typeof ROUTES.RunningScreen
   | typeof ROUTES.HomeHubScreen;
 
 export type LessonPhase = 'connecting' | 'greeting' | 'listening' | 'speaking' | 'done';
@@ -20,6 +20,7 @@ export type RecoverySessionState = 'active' | 'terminated' | 'expired';
 export type RecoveryAuthState = 'authenticated' | 'expired';
 
 export type LessonCheckpoint = {
+  readonly version: 1;
   readonly lessonTitle: string;
   readonly progressLabel: string;
   readonly resumeTarget: ResumeTarget;
@@ -31,8 +32,9 @@ export type LessonCheckpoint = {
   readonly elapsedLabel?: string;
   readonly courseId?: string;
   readonly childId?: string;
-  readonly deviceId?: string;
-  readonly assignmentId?: string;
+  readonly deviceId: string;
+  readonly assignmentId: string;
+  readonly sessionId?: string;
   readonly assignmentVersion?: number;
   readonly manifestChecksum?: string | null;
 };
@@ -78,7 +80,7 @@ const recoveryReasons: ReadonlySet<string> = new Set([
 ]);
 
 const resumeTargets: ReadonlySet<string> = new Set([
-  ROUTES.SendToRobotScreen,
+  ROUTES.RunningScreen,
   ROUTES.HomeHubScreen,
 ]);
 
@@ -129,48 +131,90 @@ function isAuthState(value: unknown): value is RecoveryAuthState {
   return typeof value === 'string' && authStates.has(value);
 }
 
-function isCompleteCheckpoint(value: unknown): value is LessonCheckpoint & {
-  readonly phase: LessonPhase;
-  readonly sessionState: RecoverySessionState;
-  readonly authState: RecoveryAuthState;
-} {
+function isOptionalNonEmptyString(value: unknown): value is string | undefined {
+  return value === undefined || isNonEmptyString(value);
+}
+
+function isOptionalFiniteNumber(value: unknown): value is number | undefined {
+  return value === undefined || (typeof value === 'number' && Number.isFinite(value));
+}
+
+function isOptionalChecksum(value: unknown): value is string | null | undefined {
+  return value === undefined || value === null || isNonEmptyString(value);
+}
+
+export function parseLessonCheckpoint(input: unknown): LessonCheckpoint | null {
+  const value = input;
   if (!isObjectRecord(value)) {
-    return false;
+    return null;
   }
 
-  return (
+  if (!(
+    value.version === 1 &&
     isNonEmptyString(value.lessonTitle) &&
     isNonEmptyString(value.progressLabel) &&
     isResumeTarget(value.resumeTarget) &&
     isRecoveryReason(value.reason) &&
     isLessonPhase(value.phase) &&
     isSessionState(value.sessionState) &&
-    isAuthState(value.authState)
-  );
+    isAuthState(value.authState) &&
+    isNonEmptyString(value.deviceId) &&
+    isNonEmptyString(value.assignmentId) &&
+    isOptionalNonEmptyString(value.sessionId) &&
+    isOptionalNonEmptyString(value.activityLabel) &&
+    isOptionalNonEmptyString(value.elapsedLabel) &&
+    isOptionalNonEmptyString(value.courseId) &&
+    isOptionalNonEmptyString(value.childId) &&
+    isOptionalFiniteNumber(value.assignmentVersion) &&
+    isOptionalChecksum(value.manifestChecksum)
+  )) {
+    return null;
+  }
+
+  return {
+    version: 1,
+    lessonTitle: value.lessonTitle,
+    progressLabel: value.progressLabel,
+    resumeTarget: value.resumeTarget,
+    reason: value.reason,
+    phase: value.phase,
+    sessionState: value.sessionState,
+    authState: value.authState,
+    deviceId: value.deviceId,
+    assignmentId: value.assignmentId,
+    ...(value.sessionId === undefined ? {} : { sessionId: value.sessionId }),
+    ...(value.activityLabel === undefined ? {} : { activityLabel: value.activityLabel }),
+    ...(value.elapsedLabel === undefined ? {} : { elapsedLabel: value.elapsedLabel }),
+    ...(value.courseId === undefined ? {} : { courseId: value.courseId }),
+    ...(value.childId === undefined ? {} : { childId: value.childId }),
+    ...(value.assignmentVersion === undefined ? {} : { assignmentVersion: value.assignmentVersion }),
+    ...(value.manifestChecksum === undefined ? {} : { manifestChecksum: value.manifestChecksum }),
+  };
 }
 
 export function decideLessonRecovery(input: unknown): RecoveryDecision {
-  if (!isCompleteCheckpoint(input)) {
+  const checkpoint = parseLessonCheckpoint(input);
+  if (!checkpoint) {
     return { kind: 'ended', reason: 'invalid_checkpoint' };
   }
 
-  if (input.phase === 'done') {
+  if (checkpoint.phase === 'done') {
     return { kind: 'ended', reason: 'done' };
   }
 
-  if (input.sessionState === 'terminated') {
+  if (checkpoint.sessionState === 'terminated') {
     return { kind: 'ended', reason: 'terminated' };
   }
 
-  if (input.sessionState === 'expired') {
+  if (checkpoint.sessionState === 'expired') {
     return { kind: 'ended', reason: 'expired' };
   }
 
-  if (input.authState === 'expired') {
-    return { kind: 'reauth', checkpoint: input };
+  if (checkpoint.authState === 'expired') {
+    return { kind: 'reauth', checkpoint };
   }
 
-  return { kind: 'resume', checkpoint: input };
+  return { kind: 'resume', checkpoint };
 }
 
 export function recoveryScreenForReason(reason: RecoveryReason): RecoveryScreen {
@@ -198,13 +242,16 @@ export function recoveryScreenForReason(reason: RecoveryReason): RecoveryScreen 
 
 export function fallbackCheckpoint(): LessonCheckpoint {
   return {
+    version: 1,
     lessonTitle: 'How are you?',
     progressLabel: '60%',
-    resumeTarget: ROUTES.SendToRobotScreen,
+    resumeTarget: ROUTES.RunningScreen,
     reason: 'voice_failed',
     phase: 'speaking',
     sessionState: 'active',
     authState: 'authenticated',
     activityLabel: 'Speaking practice',
+    deviceId: 'device-1',
+    assignmentId: 'assignment-1',
   };
 }

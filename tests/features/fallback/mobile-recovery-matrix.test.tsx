@@ -18,13 +18,16 @@ const phases: readonly LessonPhase[] = ['connecting', 'greeting', 'listening', '
 
 function activeCheckpoint(phase: LessonPhase): LessonCheckpoint {
   return {
+    version: 1,
     lessonTitle: 'Greetings',
     progressLabel: '2 of 5',
-    resumeTarget: ROUTES.SendToRobotScreen,
+    resumeTarget: ROUTES.RunningScreen,
     reason: 'voice_failed',
     phase,
     sessionState: 'active',
     authState: 'authenticated',
+    deviceId: 'device-1',
+    assignmentId: 'assignment-1',
   };
 }
 
@@ -113,6 +116,9 @@ describe('mobile lesson recovery decision matrix', () => {
       { ...activeCheckpoint('speaking'), phase: 'thinking' },
       { ...activeCheckpoint('speaking'), sessionState: 'paused' },
       { ...activeCheckpoint('speaking'), authState: 'anonymous' },
+      { ...activeCheckpoint('speaking'), version: 2 },
+      { ...activeCheckpoint('speaking'), deviceId: '' },
+      { ...activeCheckpoint('speaking'), assignmentId: '' },
       { lessonTitle: 'Missing everything else' },
     ];
 
@@ -144,9 +150,13 @@ describe('mobile lesson recovery decision matrix', () => {
     expect(decideLessonRecovery(fallbackCheckpoint())).toMatchObject({
       kind: 'resume',
       checkpoint: {
+        version: 1,
+        resumeTarget: ROUTES.RunningScreen,
         phase: 'speaking',
         sessionState: 'active',
         authState: 'authenticated',
+        deviceId: 'device-1',
+        assignmentId: 'assignment-1',
       },
     });
   });
