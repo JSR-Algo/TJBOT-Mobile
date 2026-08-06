@@ -114,6 +114,33 @@ function isBridgeRoute(routePath, method) {
   );
 }
 
+// The bridge is only MOUNTED under one condition (src/main.ts):
+//   if (NODE_ENV === 'production' && TBOT_ENABLE_MODULAR_ROUTES !== 'false')
+// so every modular route below is production-only. Mobile always talks to a
+// deployed backend, so this is the right contract for the app — but a local or
+// E2E backend running NODE_ENV=development serves NONE of them and answers 404.
+// Verified empirically against the T5.3 E2E stack (NODE_ENV=development):
+// /v1/billing/orders/{id}, /cancel, /return-request and /v1/billing/reactivate
+// all 404 there while PATCH /v1/identity/children/{id} (a plain Nest route)
+// correctly 401s.
+const MAIN_SOURCE = join(BACKEND_ROOT, 'src', 'main.ts');
+let modularMountCondition = 'unknown';
+if (existsSync(MAIN_SOURCE)) {
+  const mainSrc = readFileSync(MAIN_SOURCE, 'utf8');
+  const mounts = /process\.env\.NODE_ENV === 'production'[\s\S]{0,400}?createModularRouteBridge/.test(mainSrc);
+  modularMountCondition = mounts ? "NODE_ENV==='production'" : 'CHANGED';
+  if (!mounts) {
+    fail(
+      'bridge-mount-mirror',
+      "main.ts no longer mounts createModularRouteBridge behind NODE_ENV==='production'. " +
+        'This script labels every modular route production-only on that basis — re-check the ' +
+        'condition and update the mirror in scripts/check-api-contract-sync.mjs.',
+    );
+  }
+} else {
+  notes.push(`main.ts not found at ${MAIN_SOURCE}; modular mount condition not verified.`);
+}
+
 const BRIDGE_SOURCE = join(BACKEND_ROOT, 'src', 'modules', 'app', 'modular-route-bridge.ts');
 if (existsSync(BRIDGE_SOURCE)) {
   const bridgeSrc = readFileSync(BRIDGE_SOURCE, 'utf8');
@@ -147,6 +174,8 @@ function walk(dir, out = []) {
 }
 
 const served = new Map();
+// Routes that exist only when the modular bridge is mounted (production).
+const productionOnly = new Set();
 // Routes whose handler exists but unconditionally returns 410 GONE. Tracked
 // separately so the failure can say "retired" rather than "missing".
 const retired = new Map();
@@ -207,7 +236,11 @@ function isRetiredHandler(src, decoratorIndex) {
 
 for (const route of modularRoutes) {
   if (isBridgeRoute(route.path, route.method)) {
-    addServed(opKey(route.method, route.path), `modular-bridge ${route.controller}.${route.action}`);
+    addServed(
+      opKey(route.method, route.path),
+      `modular-bridge ${route.controller}.${route.action} [production-only: ${modularMountCondition}]`,
+    );
+    productionOnly.add(opKey(route.method, route.path));
   }
   documented.add(opKey(route.method, route.path));
 }
@@ -401,6 +434,16 @@ console.log(`  mobile client calls : ${calls.length}`);
 console.log(
   `  registry rows       : ${registry.length} (${registry.filter((x) => x.status === 'backend-route-exists').length} awaiting mobile wiring)`,
 );
+
+const productionOnlyCalls = calls.filter((c) => productionOnly.has(c.key));
+if (productionOnlyCalls.length > 0) {
+  console.log(
+    `\n  ${productionOnlyCalls.length} mobile call(s) hit PRODUCTION-ONLY routes ` +
+      `(modular bridge, mounted only when ${modularMountCondition}).`,
+  );
+  console.log('  Correct for the deployed backend; they 404 on a local/E2E stack running NODE_ENV=development:');
+  for (const c of [...new Set(productionOnlyCalls.map((c) => c.key))]) console.log(`    - ${c}`);
+}
 
 if (notes.length > 0) {
   console.log(`\n  ${notes.length} served-but-undocumented route(s) — informational, not a failure:`);
