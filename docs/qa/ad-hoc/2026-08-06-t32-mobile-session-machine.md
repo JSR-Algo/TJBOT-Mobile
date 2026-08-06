@@ -322,9 +322,12 @@ Tests: 5 failed, 5 total
    and `git ls-remote --heads origin 'lesson-prod/*'` returns empty, so there is
    no remote branch to delete.
 
-6. **Closed out.** Status `DONE` in this file and in LESSON_PRODUCTION_PLAN.md §2;
-   6 findings routed to §5 (3 deep-dive gaps, the `success` orphan, 2 T0.4 tooling
-   defects, 1 flaky-suite row).
+6. **Original closeout record.** Status `DONE` was recorded in this file and in
+   LESSON_PRODUCTION_PLAN.md §2. The pre-correction routing sent three runtime
+   rows, the `success` orphan, two T0.4 tooling defects, and one flaky-suite row
+   to §5. The later closeout correction applies ADR 0006 and reclassifies those
+   three runtime rows as not T3.2 production gaps; see
+   [Closeout correction evidence](#closeout-correction-evidence).
 
 ### Integration re-gate (merge #10, every-5-merges)
 
