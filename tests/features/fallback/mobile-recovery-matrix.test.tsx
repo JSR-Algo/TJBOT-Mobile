@@ -186,7 +186,7 @@ describe('mobile lesson recovery screen matrix', () => {
     expect(screen.queryByText('Keep going')).toBeNull();
   });
 
-  it('uses reauth UI for expired auth and routes sign-in without crashing', () => {
+  it('uses reauth UI for expired auth and stays within protected navigation', () => {
     const navigation = createNavigation();
     render(
       <LessonResumeScreen
@@ -199,8 +199,10 @@ describe('mobile lesson recovery screen matrix', () => {
 
     expect(screen.getByText(/Session expired/)).toBeTruthy();
     expect(screen.queryByText('Keep going')).toBeNull();
-    fireEvent.press(screen.getByText('Sign in again'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LoginScreen);
+    expect(screen.queryByText('Sign in again')).toBeNull();
+    fireEvent.press(screen.getByText('Back home'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.LoginScreen);
   });
 
   it('enforces terminal and partial-checkpoint invariants on the resume screen', () => {

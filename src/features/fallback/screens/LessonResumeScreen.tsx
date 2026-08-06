@@ -24,14 +24,11 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
         <TopBar onBack={() => navigation.navigate(ROUTES.HomeHubScreen)} />
         <Box style={[StyleSheet.absoluteFillObject, styles.content]} alignItems="center" justifyContent="center">
           <Robot emotion="worry" size={220} accent="#FFB85C" />
-          <SpeechBubble>Session expired{'\n'}Please sign in again.</SpeechBubble>
-          <Text style={styles.safeText}>Your lesson place is saved after you sign in.</Text>
+          <SpeechBubble>Session expired{'\n'}Please return home.</SpeechBubble>
+          <Text style={styles.safeText}>Your lesson cannot continue until the session is refreshed.</Text>
         </Box>
-        <Box style={styles.cta} gap={10}>
-          <PrimaryCTA color="#FF6F61" onPress={() => navigation.navigate(ROUTES.LoginScreen)}>Sign in again</PrimaryCTA>
-          <TouchableOpacity onPress={() => navigation.navigate(ROUTES.HomeHubScreen)} activeOpacity={0.7}>
-            <Text fontWeight="700" style={{ fontSize: 16, color: '#5C4F77', textAlign: 'center' }}>Back home</Text>
-          </TouchableOpacity>
+        <Box style={styles.cta}>
+          <PrimaryCTA color="#FF6F61" onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}>Back home</PrimaryCTA>
         </Box>
       </ScreenShell>
     );
