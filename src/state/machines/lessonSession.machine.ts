@@ -326,6 +326,14 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
           ACTIVITY_DONE: {
             on: { NEXT_ACTIVITY: { target: 'ROBOT_SPEAKING' } },
           },
+          // Shallow history so re-entering ACTIVE after a recoverable
+          // diversion (INTERRUPTED resume, PAUSED resume, WS_RESUMED)
+          // restores the substate the child was actually in. Targeting
+          // bare `ACTIVE` re-runs `initial: 'GREETING'`, which re-greets
+          // the child after a 2s WS blip and contradicts
+          // ExitConfirmScreen's `voiceStateBeforeInterruption` resume.
+          // Defaults to GREETING when no history exists yet.
+          hist: { type: 'history', history: 'shallow', target: 'GREETING' },
         },
       },
 
@@ -333,7 +341,7 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
         entry: ['emitInterruptedAnalytics'],
         on: {
           RESUME: {
-            target: 'ACTIVE',
+            target: 'ACTIVE.hist',
             actions: 'clearInterruptedReason',
           },
           USER_EXIT_TAP: { target: 'PAUSED' },
@@ -342,7 +350,7 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
 
       PAUSED: {
         on: {
-          RESUME: { target: 'ACTIVE' },
+          RESUME: { target: 'ACTIVE.hist' },
           CONFIRM_END: { target: 'COMPLETED' },
           CONFIRM_EXIT: {
             target: 'ABANDONED',
@@ -367,8 +375,17 @@ export const createLessonSessionMachine = (services: LessonSessionServices) =>
         },
         on: {
           WS_RESUMED: {
-            target: 'ACTIVE',
+            target: 'ACTIVE.hist',
             actions: 'clearOfflineBanner',
+          },
+          // Plan §4.2 row `RECONNECTING → AUDIO_FAILED
+          // (audio_init_fail_on_resume)`: the WS came back but the device
+          // audio pipeline failed to re-init. Without this edge the event
+          // is silently dropped and the child is stranded on Reconnecting
+          // with the offline banner and no recovery affordance.
+          AUDIO_INIT_FAIL: {
+            target: 'AUDIO_FAILED',
+            actions: ['assignAudioFailure', 'clearOfflineBanner'],
           },
         },
       },

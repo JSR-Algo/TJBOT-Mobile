@@ -8,6 +8,15 @@ type BackendTurnCompleteFrame = {
   fallback?: boolean;
 };
 
+/**
+ * The session epoch the frame is checked against. Callers pass the machine's
+ * live `context.sessionId`, which is `null` before `SESSION_STARTED` and stays
+ * pinned to the terminated session's id after a terminal.
+ */
+export type LessonSessionEpoch = {
+  sessionId: string | null;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
 }
@@ -22,8 +31,28 @@ function isBackendTurnCompleteFrame(value: unknown): value is BackendTurnComplet
   return true;
 }
 
-export function lessonSessionEventFromRealtimeFrame(value: unknown): LessonSessionEvent | null {
+/**
+ * Translate a backend realtime frame into a machine event, or `null` to drop it.
+ *
+ * The `epoch` argument is REQUIRED, not optional: the frame carries a
+ * `sessionId` and every frame must be proved to belong to the session the
+ * machine is currently running. A late frame from a previous session — the WS
+ * flushing a queued turn after the child exited, or a second session started on
+ * a retry tap — must never drive the current UI. Dropping the epoch check is
+ * what lets a stale `TURN_COMPLETE` pull a live `ACTIVE.THINKING` back to
+ * `ACTIVE.ROBOT_LISTENING` on behalf of a session that no longer exists.
+ *
+ * `epoch.sessionId === null` means no session has started (or the machine never
+ * received `SESSION_STARTED`), so there is nothing a frame could legitimately
+ * advance — every frame is dropped.
+ */
+export function lessonSessionEventFromRealtimeFrame(
+  value: unknown,
+  epoch: LessonSessionEpoch,
+): LessonSessionEvent | null {
   if (!isBackendTurnCompleteFrame(value)) return null;
+  if (epoch.sessionId === null) return null;
+  if (value.sessionId !== epoch.sessionId) return null;
   return {
     type: 'TURN_COMPLETE',
     turnId: value.turnId,

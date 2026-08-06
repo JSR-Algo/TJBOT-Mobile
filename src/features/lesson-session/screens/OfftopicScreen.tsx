@@ -9,10 +9,14 @@ import SpeechBubble from '@/design-system/components/SpeechBubble';
 import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OfftopicScreen'>;
 
 export default function OfftopicScreen({ navigation }: Props) {
+  // Lesson is still live on this screen: Android hardware-back must
+  // funnel through ExitConfirm, never pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'INTERRUPTED_OFFTOPIC');
   return (
     <ScreenShell>
       <LessonHeader progress={0.34} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />

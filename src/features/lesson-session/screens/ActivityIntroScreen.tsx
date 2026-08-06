@@ -9,6 +9,7 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActivityIntroScreen'>;
 
@@ -33,6 +34,9 @@ function ProgressDots({ total, current }: { total: number; current: number }) {
 }
 
 export default function ActivityIntroScreen({ navigation }: Props) {
+  // Lesson is still live on this screen: Android hardware-back must
+  // funnel through ExitConfirm, never pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'ACTIVITY_INTRO');
   return (
     <ScreenShell>
       <LessonHeader progress={0.15} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />

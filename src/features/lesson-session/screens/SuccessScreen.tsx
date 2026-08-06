@@ -10,10 +10,14 @@ import PrimaryCTA from '@/design-system/components/PrimaryCTA';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { ROUTES } from '@/navigation/routes';
+import { useLessonHardwareBack } from '../hooks/useLessonHardwareBack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SuccessScreen'>;
 
 export default function SuccessScreen({ navigation }: Props) {
+  // Lesson is still live on this screen: Android hardware-back must
+  // funnel through ExitConfirm, never pop the stack (MOB-2).
+  useLessonHardwareBack(navigation, 'SUCCESS');
   return (
     <ScreenShell bg="#E8F8F0">
       <LessonHeader progress={0.45} onExit={() => navigation.navigate(ROUTES.ExitConfirmScreen)} />
