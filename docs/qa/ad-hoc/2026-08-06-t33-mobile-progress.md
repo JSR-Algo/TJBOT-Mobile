@@ -197,3 +197,24 @@ untracked, gitignored `node_modules`) and `lesson-prod/t33-mobile-progress` was 
 ancestor of `main` (`git merge-base --is-ancestor` exit 0) before removal. Worktree
 removed and the local branch deleted; the branch was never pushed, so there is no
 remote branch to delete.
+
+### Clean re-test on main (quiet machine)
+
+The step-5 re-test above ran while the host carried load averages of 70–105 across
+10 cores, so every verify command came back green-modulo-flakes. Both were re-run on
+main at `f47fac70` once the campaign load had dropped to ~21:
+
+| Command | Result |
+|---|---|
+| `npm run test:screens` | **70 suites / 925 tests, 0 failed, exit 0** |
+| `npm test` | **225 suites / 2553 tests, 0 failed, 1 suite + 19 tests skipped, exit 0** |
+
+Both **unconditionally green** — no failures to explain away, and the 18 T3.3 cases
+green inside them. This is the result of record for the Ship checklist; the loaded
+runs above are kept because they are the evidence for the load-flake A/B.
+
+Note this does **not** close the flaky-suite finding (T3.1 deep-dive → T0.4/T6.5).
+That finding's claim is precisely that these suites fail under CPU contention and
+pass when quiet, which is what both sets of runs show. The `configure({
+asyncUtilTimeout })` / `--testTimeout` fixes merged with T3.1 (`77f65943`,
+`148fe3fa`) are scoped to that task's own suites, not applied tree-wide.
