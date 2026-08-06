@@ -53,6 +53,15 @@ jest.mock('@/contexts/HouseholdContext', () => ({
   useOptionalHousehold: jest.fn(() => ({ children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } })),
 }));
 
+// These cases take ~100-600 ms on an idle machine, but each drives several
+// render + waitFor cycles on real timers, so they are wall-clock sensitive: on a
+// contended host they blow through jest's 5000 ms default while doing nothing
+// wrong (observed in a gate run where a sibling suite's 200 ms test reported
+// 19.8 s elapsed). 30 s keeps ~50x headroom over the real cost while still
+// failing fast on an actual hang. See the load-robustness finding routed to
+// T0.4/T6.5 in LESSON_PRODUCTION_PLAN.md §5.
+jest.setTimeout(30_000);
+
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
