@@ -2,7 +2,9 @@
 
 **Repo:** `tbot-mobile`  
 **Date:** 2026-08-06  
-**Base:** `f4435e44`  
+**Original completion base:** `f4435e44`
+
+**Rebased main:** `c68ff3df`
 **Completion branch:** `lesson-prod/t34-mobile-recovery-completion`  
 **Architecture:** ADR 0006 remains authoritative: the robot owns the lesson runtime and the phone reattaches a read-only observer.
 
@@ -21,7 +23,7 @@ Test Suites: 1 failed, 2 passed, 3 total
 Tests:       29 passed, 29 total
 ```
 
-GREEN at completion tip `f94766cc`:
+GREEN at the pre-rebase completion tip and again after the final review fixes:
 
 ```text
 Test Suites: 4 passed, 4 total
@@ -46,13 +48,14 @@ custom reconnect targets after the first retry hop.
 
 Implementation commits:
 
-- `700b4521` — versioned secure checkpoint persistence
-- `aebd3775` — authoritative assignment validation
-- `6d802bff` — authoritative recovery navigation contract
-- `f4df3ef9` — stale async validation race protection
-- `331be1ac` / `14896728` — production observer checkpoint lifecycle and terminal hardening
-- `c29f6d34` / `28b85d35` — cold-start, auth-return, timeout, and requalification
-- `f94766cc` — multi-hop reconnect target preservation
+- `5a3e1edb` — versioned secure checkpoint persistence
+- `1df278d8` — authoritative assignment validation
+- `7d6ac92a` — authoritative recovery navigation contract
+- `17dd5d81` — stale async validation race protection
+- `375a34f4` / `9a1f6bf5` — production observer checkpoint lifecycle and terminal hardening
+- `b6154c77` / `6a7832d8` — cold-start, auth-return, timeout, and requalification
+- `6fefbb00` — multi-hop reconnect target preservation
+- `1474bf77` — reject stale session identity and mount auth without waiting on recovery storage
 
 ## Recovery Matrix
 
@@ -76,7 +79,8 @@ Implementation commits:
 
 ## Branch-Tip Verification
 
-All task-owned tests and required static/contract checks passed at `f94766cc`:
+All task-owned tests and required static/contract checks passed after rebasing onto
+`c68ff3df` and applying the final review fixes:
 
 | Command | Result |
 | --- | --- |
@@ -84,15 +88,15 @@ All task-owned tests and required static/contract checks passed at `f94766cc`:
 | `npm run lint` | PASS |
 | `npm run test:state-machines` | 10 suites / 196 tests passed |
 | `npm run test:navigation` | 26 suites / 149 tests passed |
-| `npm run api:contract-sync:check` | PASS — 283 served operations, 201 documented operations, 97 mobile calls, 38 registry rows |
-| focused six-suite recovery run | 6 suites / 149 tests passed |
+| `npm run api:contract-sync:check` | PASS — 280 served operations, 201 documented operations, 94 mobile calls, 53 registry rows |
+| focused six-suite recovery run | 6 suites / 151 tests passed |
 | `lesson-prod/repros/t34.sh` | 4 suites / 67 tests passed |
-| `npm run test:screens` | 72 suites / 998 tests passed |
-| `npm test` | 228 suites / 2664 tests passed; 1 suite and 19 tests skipped |
+| `npm run test:screens` | 72 suites / 1000 tests passed |
+| `npm test` | 228 suites / 2691 tests passed; 1 suite and 19 tests skipped |
 
-The first `test:screens` attempt reproduced the already logged T3.3 pagination
-order failure (`997/998` passed); the immediate unchanged rerun passed `998/998`,
-and the same test passed inside the full suite. This is the existing F-T52-09 /
+Repeated `test:screens`/`npm test` attempts reproduced the already logged T3.3
+pagination order failure as the only failure; unchanged reruns passed all 1000
+screen tests and all 2691 active full-suite tests. This is the existing F-T52-09 /
 T0.4 screen-gate instability in `LESSON_PRODUCTION_PLAN.md` section 5, not a T3.4
 code failure. No out-of-scope production code was changed.
 
@@ -101,8 +105,9 @@ code failure. No out-of-scope production code was changed.
 Each implementation slice passed separate specification and quality review.
 Review-driven fixes covered pending-checkpoint races, failed-write ordering,
 observer terminal handling, unknown `session.end` reasons, bootstrap timeout,
-post-auth requalification, and reconnect-target preservation. A final whole-
-branch review was requested after all fixes and before merge.
+post-auth requalification, reconnect-target preservation, stale route-session
+grafting, authoritative session equality, and immediate unauthenticated startup.
+A final whole-branch re-review was requested after all fixes and before merge.
 
 ## Ship Checklist
 
