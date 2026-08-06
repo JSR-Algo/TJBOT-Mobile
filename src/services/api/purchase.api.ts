@@ -5,15 +5,14 @@ import {
 } from '../../config/feature-flags';
 import { backendContractUnavailable } from './undocumented-api-routes';
 
-export const BACKEND_CONTRACT_UNAVAILABLE_CODE = 'BACKEND_CONTRACT_UNAVAILABLE' as const;
-
-export class BackendContractUnavailableError extends Error {
-  readonly code = BACKEND_CONTRACT_UNAVAILABLE_CODE;
-  constructor(operation: string) {
-    super(`BACKEND_CONTRACT_UNAVAILABLE: ${operation} has no documented backend contract`);
-    this.name = 'BackendContractUnavailableError';
-  }
-}
+// Re-exported, not redefined. This module used to declare its own copy of the
+// error class, so `err instanceof BackendContractUnavailableError` was false
+// across module boundaries even though `err.code` matched — two nominal types
+// behind one code. One class, one shape (T5.2 error-envelope consistency).
+export {
+  BACKEND_CONTRACT_UNAVAILABLE_CODE,
+  BackendContractUnavailableError,
+} from './undocumented-api-routes';
 
 export interface OrderParams {
   productId: string;
@@ -104,8 +103,13 @@ export interface RefundRequestResult {
 }
 
 interface RawOrder {
-  id: string;
-  status: Order['status'];
+  // Contract field names (GET /v1/billing/orders/{orderId}). Optional on the
+  // wire type only so the legacy `id`/`status` aliases below stay accepted.
+  orderId?: string;
+  order_id?: string;
+  state?: string;
+  id?: string;
+  status?: string;
   product_id?: string;
   productId?: string;
   total_cents?: number;
@@ -114,15 +118,9 @@ interface RawOrder {
   receiptEmail?: string | null;
 }
 
-interface RawShippingStatus {
-  order_id?: string;
-  orderId?: string;
-  status: string;
-  estimated_delivery?: string | null;
-  estimatedDelivery?: string | null;
-  tracking_number?: string | null;
-  trackingNumber?: string | null;
-}
+// RawShippingStatus and mapShippingStatus went with getShippingStatus's call:
+// they described a fulfilment payload the orders module does not produce. The
+// ShippingStatus domain type stays for the screen that still renders it.
 
 function unwrap<T>(response: { data: { data?: T } | T }): T {
   const body = response.data as { data?: T } & T;
@@ -183,22 +181,45 @@ function mapSubscription(raw: {
   };
 }
 
+// Backend `OrderState` (order-state.ts) and mobile `Order['status']` are two
+// different vocabularies that overlap on four names. Translate rather than
+// cast, so an unmapped backend state can never masquerade as a mobile one.
+// States mobile has no name for collapse to `pending` — the neutral
+// pre-fulfilment label — which preserves the only live consumer,
+// OrderConfirmScreen's `status === 'paid'` gate. Widening the mobile union to
+// the real state machine is purchase-feature work, routed as F-T52-05.
+const BACKEND_ORDER_STATE_TO_STATUS: Readonly<Record<string, Order['status']>> = {
+  created: 'pending',
+  paid: 'paid',
+  fulfilling: 'confirmed',
+  shipped: 'shipped',
+  arrived: 'delivered',
+  activated: 'delivered',
+  cancel_pending: 'pending',
+  cancel_failed: 'pending',
+  cancelled: 'cancelled',
+  refunded: 'refunded',
+};
+
+function mapOrderStatus(raw: RawOrder): Order['status'] {
+  const wire = raw.state ?? raw.status;
+  if (wire === undefined) return 'pending';
+  return BACKEND_ORDER_STATE_TO_STATUS[wire] ?? 'pending';
+}
+
+// The modular orders module answers with `{ data: { orderId, state,
+// stateVersion } }` — `orderId`/`state`, not `id`/`status`. Reading `raw.id`
+// left `Order.id` and `Order.status` undefined behind a `string` type, which is
+// how OrderConfirmScreen's `status === 'paid'` gate could never fire.
+// productId/totalCents/receiptEmail have no field in the contract at all; the
+// defaults below are placeholders, also routed as F-T52-05.
 function mapOrder(raw: RawOrder): Order {
   return {
-    id: raw.id,
-    status: raw.status,
+    id: raw.orderId ?? raw.order_id ?? raw.id ?? '',
+    status: mapOrderStatus(raw),
     productId: raw.product_id ?? raw.productId ?? '',
     totalCents: raw.total_cents ?? raw.totalCents ?? 0,
     receiptEmail: raw.receipt_email ?? raw.receiptEmail ?? null,
-  };
-}
-
-function mapShippingStatus(raw: RawShippingStatus): ShippingStatus {
-  return {
-    orderId: raw.order_id ?? raw.orderId ?? '',
-    status: raw.status,
-    estimatedDelivery: raw.estimated_delivery ?? raw.estimatedDelivery ?? null,
-    trackingNumber: raw.tracking_number ?? raw.trackingNumber ?? null,
   };
 }
 
@@ -207,7 +228,7 @@ export async function createOrder(_params: OrderParams): Promise<Order> {
 }
 
 export async function getOrder(orderId: string): Promise<Order> {
-  const response = await client.get(`/orders/${orderId}`);
+  const response = await client.get(`/billing/orders/${orderId}`);
   return mapOrder(unwrap<RawOrder>(response));
 }
 
@@ -215,13 +236,12 @@ export async function processPayment(_params: PaymentParams): Promise<{ success:
   backendContractUnavailable(`processPayment:${_params.orderId}`);
 }
 
-export async function getShippingStatus(orderId: string): Promise<ShippingStatus> {
-  const response = await client.get(`/orders/${orderId}/shipping`);
-  return mapShippingStatus(unwrap<RawShippingStatus>(response));
+export async function getShippingStatus(_orderId: string): Promise<ShippingStatus> {
+  backendContractUnavailable('getShippingStatus');
 }
 
-export async function activateRobot(activationCode: string): Promise<void> {
-  await client.post('/devices/activate', { activation_code: activationCode });
+export async function activateRobot(_activationCode: string): Promise<void> {
+  backendContractUnavailable('activateRobot');
 }
 
 export async function createCheckoutSession(
@@ -294,13 +314,15 @@ export async function cancelSubscription(requestId?: string): Promise<Subscripti
 export async function reactivateSubscription(requestId?: string): Promise<Subscription> {
   assertSubscriptionEnabled('reactivateSubscription');
   const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post('/billing/subscription/reactivate', {}, options);
+  // The modular payments module names this `/billing/reactivate`, not
+  // `/billing/subscription/reactivate` — the latter has never been routed.
+  const response = await client.post('/billing/reactivate', {}, options);
   return mapSubscription(unwrap<Parameters<typeof mapSubscription>[0]>(response));
 }
 
 export async function cancelOrder(orderId: string, requestId?: string): Promise<CancelOrderResult> {
   const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post(`/orders/${orderId}/cancel`, {}, options);
+  const response = await client.post(`/billing/orders/${orderId}/cancel`, {}, options);
   const raw = unwrap<{ order_id?: string; orderId?: string; state: string; cancelled_at?: string; cancelledAt?: string }>(response);
   return {
     orderId: raw.order_id ?? raw.orderId ?? orderId,
@@ -316,7 +338,8 @@ export async function requestReturn(
   requestId?: string,
 ): Promise<RefundRequestResult> {
   const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post(`/orders/${orderId}/return`, { reason, notes }, options);
+  // Contract route is `return-request`; `/return` was never routed.
+  const response = await client.post(`/billing/orders/${orderId}/return-request`, { reason, notes }, options);
   const raw = unwrap<{
     request_id?: string;
     requestId?: string;

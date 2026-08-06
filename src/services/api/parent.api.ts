@@ -1,14 +1,12 @@
 import client from '../http/client';
+import { backendContractUnavailable } from './undocumented-api-routes';
 
-export const BACKEND_CONTRACT_UNAVAILABLE_CODE = 'BACKEND_CONTRACT_UNAVAILABLE' as const;
-
-export class BackendContractUnavailableError extends Error {
-  readonly code = BACKEND_CONTRACT_UNAVAILABLE_CODE;
-  constructor(operation: string) {
-    super(`BACKEND_CONTRACT_UNAVAILABLE: ${operation} has no documented backend contract`);
-    this.name = 'BackendContractUnavailableError';
-  }
-}
+// Re-exported, not redefined — see the note in purchase.api.ts. One class, one
+// shape, so `instanceof` holds across module boundaries.
+export {
+  BACKEND_CONTRACT_UNAVAILABLE_CODE,
+  BackendContractUnavailableError,
+} from './undocumented-api-routes';
 
 function unwrap<T>(response: { data: { data?: T } | T }): T {
   const body = response.data as { data?: T } & T;
@@ -63,20 +61,6 @@ export interface ParentHistoryEntry {
   lessons: number;
 }
 
-interface RawParentToday {
-  date?: string;
-  minutes_done?: number;
-  minutesDone?: number;
-  lessons_completed?: number;
-  lessonsCompleted?: number;
-}
-
-interface RawParentHistoryEntry {
-  date: string;
-  minutes?: number;
-  lessons?: number;
-}
-
 export interface SafetyConfig {
   maxDailyMinutes: number;
   allowWeekends: boolean;
@@ -89,21 +73,11 @@ export interface ParentSettings {
   language: string;
 }
 
-function mapParentToday(raw: RawParentToday): ParentToday {
-  return {
-    date: raw.date ?? '',
-    minutesDone: raw.minutes_done ?? raw.minutesDone ?? 0,
-    lessonsCompleted: raw.lessons_completed ?? raw.lessonsCompleted ?? 0,
-  };
-}
-
-function mapParentHistoryEntry(raw: RawParentHistoryEntry): ParentHistoryEntry {
-  return {
-    date: raw.date,
-    minutes: raw.minutes ?? 0,
-    lessons: raw.lessons ?? 0,
-  };
-}
+// The RawParentToday/RawParentHistoryEntry wire types and their mappers went
+// with the calls: they described a `/v1/parent/today` and `/v1/parent/history`
+// payload that no controller has ever produced. The ParentToday and
+// ParentHistoryEntry domain types stay — they are the shape a future contract
+// would have to satisfy, and callers still reference them.
 
 export async function getParentSummary(): Promise<ParentSummary> {
   // The backend parent-summary contract is not designed yet. Keep the parent
@@ -112,27 +86,29 @@ export async function getParentSummary(): Promise<ParentSummary> {
 }
 
 export async function getParentToday(): Promise<ParentToday> {
-  const response = await client.get('/parent/today');
-  return mapParentToday(unwrap<RawParentToday>(response));
+  backendContractUnavailable('getParentToday');
 }
 
 export async function getParentHistory(): Promise<ParentHistoryEntry[]> {
-  const response = await client.get('/parent/history');
-  return unwrap<RawParentHistoryEntry[]>(response).map(mapParentHistoryEntry);
+  backendContractUnavailable('getParentHistory');
 }
 
+// These four used to reject with a bare `new Error('not implemented')`, which
+// carries no `code` and so normalizes to UNKNOWN_ERROR — indistinguishable from
+// a genuine server fault. They fail on the same typed sentinel as every other
+// uncontracted operation now.
 export async function getSafetyConfig(): Promise<SafetyConfig> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getSafetyConfig');
 }
 
 export async function updateSafetyConfig(_config: Partial<SafetyConfig>): Promise<void> {
-  throw new Error('not implemented');
+  backendContractUnavailable('updateSafetyConfig');
 }
 
 export async function getSettings(): Promise<ParentSettings> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getSettings');
 }
 
 export async function updateSettings(_settings: Partial<ParentSettings>): Promise<void> {
-  throw new Error('not implemented');
+  backendContractUnavailable('updateSettings');
 }

@@ -1,5 +1,6 @@
 import client from '../http/client';
 import { User } from '../../types';
+import { backendContractUnavailable } from './undocumented-api-routes';
 
 export type AccountExportJob = {
   jobId: string;
@@ -123,28 +124,14 @@ export type EntitlementsSnapshot = {
   robotActivated: boolean;
 };
 
-let entitlementsInFlight: Promise<EntitlementsSnapshot> | null = null;
-
+// `GET /account/entitlements` was never served: @Controller('account') exposes
+// only `DELETE /` and `GET /export`, and the entitlement read model is the
+// server-to-server `GET /internal/v1/entitlements/{householdId}`, which a
+// parent JWT cannot reach. The in-flight dedup below guarded a call that could
+// only 404, so it is gone with the call; fail closed on the contract sentinel
+// instead. (Registry: undocumented-api-routes.ts; routed finding F-T52-06.)
 export async function refreshEntitlementsAfterPurchase(): Promise<EntitlementsSnapshot> {
-  if (entitlementsInFlight) return entitlementsInFlight;
-  entitlementsInFlight = (async () => {
-    try {
-      const response = await client.get('/account/entitlements');
-      const raw = unwrap<{
-        courses?: string[];
-        subscription_status?: string;
-        robot_activated?: boolean;
-      }>(response.data);
-      return {
-        courses: raw.courses ?? [],
-        subscriptionStatus: raw.subscription_status ?? 'inactive',
-        robotActivated: raw.robot_activated ?? false,
-      };
-    } finally {
-      entitlementsInFlight = null;
-    }
-  })();
-  return entitlementsInFlight;
+  backendContractUnavailable('refreshEntitlementsAfterPurchase');
 }
 
 export async function deleteAccount(password: string): Promise<void> {
