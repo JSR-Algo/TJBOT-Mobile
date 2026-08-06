@@ -23,7 +23,7 @@ export default function AudioRecoveryScreen({ navigation, route }: Props) {
   const { t } = useAppLanguage();
   const handleAudioWorking = (): void => {
     const decision = decideLessonRecovery(route.params?.checkpoint);
-    if (decision.kind === 'resume') {
+    if (decision.kind === 'resume' || decision.kind === 'reauth') {
       navigation.navigate(ROUTES.LessonResumeScreen, {
         checkpoint: {
           ...decision.checkpoint,

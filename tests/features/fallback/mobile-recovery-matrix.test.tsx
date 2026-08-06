@@ -345,6 +345,32 @@ describe('mobile lesson recovery screen matrix', () => {
     });
   });
 
+  it('preserves expired-auth audio recovery checkpoints for lesson reauth', () => {
+    const checkpoint = {
+      ...activeCheckpoint('speaking'),
+      reason: 'audio_route_changed' as const,
+      authState: 'expired' as const,
+      courseId: 'c_food',
+      childId: 'child-1',
+      deviceId: 'device-1',
+      assignmentId: 'assignment-1',
+      assignmentVersion: 7,
+      manifestChecksum: 'sha256:lesson',
+    };
+    const navigation = createNavigation();
+    const view = render(
+      <AudioRecoveryScreen
+        navigation={navigation as never}
+        route={routeFor(ROUTES.AudioRecoveryScreen, { checkpoint })}
+      />,
+    );
+
+    fireEvent.press(view.getByText('Audio is working'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonResumeScreen, {
+      checkpoint: { ...checkpoint, reason: 'audio_recovered' },
+    });
+  });
+
   it('routes audio recovery home when the checkpoint is absent or invalid', () => {
     const navigation = createNavigation();
     const view = render(
