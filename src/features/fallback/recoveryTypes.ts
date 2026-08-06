@@ -19,6 +19,8 @@ export type RecoverySessionState = 'active' | 'terminated' | 'expired';
 
 export type RecoveryAuthState = 'authenticated' | 'expired';
 
+export type LessonObserverTerminalOutcome = 'completed' | 'unsuccessful';
+
 export type LessonCheckpoint = {
   readonly version: 1;
   readonly lessonTitle: string;
@@ -199,16 +201,46 @@ export function lessonPhaseFromObserverFrame(frame: unknown): LessonPhase | null
 }
 
 export function isTerminalLessonObserverFrame(frame: unknown): boolean {
+  return lessonObserverTerminalOutcome(frame) !== null;
+}
+
+export function lessonObserverTerminalOutcome(frame: unknown): LessonObserverTerminalOutcome | null {
   if (!isObjectRecord(frame)) {
-    return false;
+    return null;
   }
 
   const assignmentState = frame.state ?? frame.current_state;
-  if (assignmentState === 'COMPLETED' || assignmentState === 'FAILED' || assignmentState === 'CANCELLED') {
-    return true;
+  if (assignmentState === 'COMPLETED') {
+    return 'completed';
+  }
+  if (assignmentState === 'FAILED' || assignmentState === 'CANCELLED') {
+    return 'unsuccessful';
   }
 
-  return frame.type === 'session.end' || frame.type === 'safety.halt';
+  if (frame.type === 'safety.halt') {
+    return 'unsuccessful';
+  }
+  if (frame.type !== 'session.end') {
+    return null;
+  }
+
+  switch (frame.end_reason) {
+    case 'complete':
+    case 'completed':
+      return 'completed';
+    case 'timeout':
+    case 'timed_out':
+    case 'cost_limit':
+    case 'cost_capped':
+    case 'parent_stop':
+    case 'parent_stopped':
+    case 'disconnect_timeout':
+    case 'abandoned_disconnect':
+    case 'safety_halt':
+      return 'unsuccessful';
+    default:
+      return null;
+  }
 }
 
 export function checkpointFromCurrentAssignment(

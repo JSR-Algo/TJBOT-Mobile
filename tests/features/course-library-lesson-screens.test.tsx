@@ -273,9 +273,9 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   );
 
   it.each(['RunningScreen', 'CompanionScreen'] as const)(
-    '%s clears the checkpoint for all terminal observer end reasons',
+    '%s clears and renders completion for recognized successful observer end reasons',
     async (screenName) => {
-      for (const endReason of ['completed', 'complete', 'timed_out', 'cost_capped', 'parent_stopped', 'abandoned', 'abandoned_disconnect'] as const) {
+      for (const endReason of ['completed', 'complete'] as const) {
         jest.clearAllMocks();
         realtimeAttaches.length = 0;
         mockedWriteRecoveryCheckpoint.mockResolvedValue(undefined);
@@ -297,8 +297,130 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
           emitRealtimeFrame({ type: 'session.end', end_reason: endReason });
         });
         await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
+        expect(screen.getByText('Finished! 🎉')).toBeTruthy();
         rendered.unmount();
       }
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s clears and leaves the live presentation for recognized unsuccessful observer terminals',
+    async (screenName) => {
+      const terminalFrames = [
+        { type: 'session.end', end_reason: 'timeout' },
+        { type: 'session.end', end_reason: 'timed_out' },
+        { type: 'session.end', end_reason: 'cost_limit' },
+        { type: 'session.end', end_reason: 'cost_capped' },
+        { type: 'session.end', end_reason: 'parent_stop' },
+        { type: 'session.end', end_reason: 'parent_stopped' },
+        { type: 'session.end', end_reason: 'disconnect_timeout' },
+        { type: 'session.end', end_reason: 'abandoned_disconnect' },
+        { type: 'session.end', end_reason: 'safety_halt' },
+        { type: 'safety.halt', halt_reason: 'policy' },
+      ] as const;
+
+      for (const frame of terminalFrames) {
+        jest.clearAllMocks();
+        realtimeAttaches.length = 0;
+        mockedWriteRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedClearRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-live-1'));
+        mockedOpenRealtime.mockImplementation((sessionId, options = {}) => {
+          const close = jest.fn<void, [number?, string?]>();
+          realtimeAttaches.push({ sessionId, options, close });
+          return Promise.resolve({
+            url: `wss://example.test/realtime/v1/observer/${sessionId}`,
+            close,
+            send: jest.fn<void, [unknown]>(),
+          });
+        });
+
+        const { rendered } = renderProductionLessonScreen(screenName);
+        await waitFor(() => expect(realtimeAttaches).toHaveLength(1));
+        act(() => {
+          emitRealtimeFrame(frame);
+        });
+
+        await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
+        expect(screen.getByText('Robot could not finish this lesson.')).toBeTruthy();
+        expect(screen.queryByText('Finished! 🎉')).toBeNull();
+        if (screenName === 'RunningScreen') {
+          expect(screen.queryByText("See what's happening")).toBeNull();
+        } else {
+          expect(screen.queryByText('Live')).toBeNull();
+          expect(screen.getByText('Waiting')).toBeTruthy();
+        }
+        rendered.unmount();
+      }
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s ignores unknown or missing session end reasons',
+    async (screenName) => {
+      for (const frame of [
+        { type: 'session.end' },
+        { type: 'session.end', end_reason: '' },
+        { type: 'session.end', end_reason: 'abandoned' },
+        { type: 'session.end', end_reason: 'future_terminal' },
+      ] as const) {
+        jest.clearAllMocks();
+        realtimeAttaches.length = 0;
+        mockedWriteRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedClearRecoveryCheckpoint.mockResolvedValue(undefined);
+        mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-live-1'));
+        mockedOpenRealtime.mockImplementation((sessionId, options = {}) => {
+          const close = jest.fn<void, [number?, string?]>();
+          realtimeAttaches.push({ sessionId, options, close });
+          return Promise.resolve({
+            url: `wss://example.test/realtime/v1/observer/${sessionId}`,
+            close,
+            send: jest.fn<void, [unknown]>(),
+          });
+        });
+
+        const { rendered } = renderProductionLessonScreen(screenName);
+        await waitFor(() => expect(realtimeAttaches).toHaveLength(1));
+        act(() => {
+          emitRealtimeFrame(frame);
+        });
+
+        expect(mockedClearRecoveryCheckpoint).not.toHaveBeenCalled();
+        if (screenName === 'RunningScreen') {
+          expect(screen.getByText("See what's happening")).toBeTruthy();
+        } else {
+          expect(screen.getByText('Live')).toBeTruthy();
+        }
+        rendered.unmount();
+      }
+    },
+  );
+
+  it.each(['RunningScreen', 'CompanionScreen'] as const)(
+    '%s clears a terminal checkpoint after an in-flight checkpoint write rejects',
+    async (screenName) => {
+      const storageError = new Error('checkpoint write failed');
+      let rejectWrite: ((reason: Error) => void) | undefined;
+      mockedWriteRecoveryCheckpoint.mockImplementation(() => new Promise((_resolve, reject) => {
+        rejectWrite = reject;
+      }));
+      mockedGetCurrentAssignment.mockResolvedValue(currentWithSession('RUNNING', 'session-live-1'));
+      renderProductionLessonScreen(screenName);
+
+      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(realtimeAttaches).toHaveLength(1));
+      act(() => {
+        emitRealtimeFrame({ type: 'session.end', end_reason: 'timed_out' });
+      });
+      expect(mockedClearRecoveryCheckpoint).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rejectWrite?.(storageError);
+        await Promise.resolve();
+      });
+
+      await waitFor(() => expect(mockedCaptureError).toHaveBeenCalledWith(storageError));
+      await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
     },
   );
 

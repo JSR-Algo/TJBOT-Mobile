@@ -25,7 +25,7 @@ import {
 } from '@/features/fallback/recoveryCheckpointStore';
 import {
   checkpointFromCurrentAssignment,
-  isTerminalLessonObserverFrame,
+  lessonObserverTerminalOutcome,
   lessonPhaseFromObserverFrame,
   type LessonPhase,
 } from '@/features/fallback/recoveryTypes';
@@ -50,6 +50,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
   // state), so a live→null transition is the terminal signal — the face must
   // switch to 'happy' rather than freezing on 'think'.
   const [finished, setFinished] = React.useState(false);
+  const [observerTerminalUnsuccessful, setObserverTerminalUnsuccessful] = React.useState(false);
   const [assignmentStale, setAssignmentStale] = React.useState(false);
   const [retryNonce, setRetryNonce] = React.useState(0);
   const sawLiveRef = React.useRef(false);
@@ -65,12 +66,17 @@ export default function CompanionScreen({ navigation, route }: Props) {
   const queueCheckpointOperation = React.useCallback((stateKey: string, operation: () => Promise<void>) => {
     if (checkpointStateRef.current === stateKey) return;
     checkpointStateRef.current = stateKey;
-    checkpointQueueRef.current = checkpointQueueRef.current
-      .then(operation)
-      .catch((error) => {
+    const settledTail = checkpointQueueRef.current.catch((error) => {
+      captureError(error);
+    });
+    checkpointQueueRef.current = settledTail.then(async () => {
+      try {
+        await operation();
+      } catch (error) {
         if (checkpointStateRef.current === stateKey) checkpointStateRef.current = null;
         captureError(error);
-      });
+      }
+    });
   }, []);
 
   const persistLiveCheckpoint = React.useCallback((current: CurrentAssignment, phase?: LessonPhase | null) => {
@@ -119,6 +125,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
           terminalRef.current = true;
           assignmentRef.current = null;
           clearCheckpoint();
+          setObserverTerminalUnsuccessful(false);
           setFinished(true);
           return;
         }
@@ -164,11 +171,13 @@ export default function CompanionScreen({ navigation, route }: Props) {
     void openRealtime(observerSessionId, {
       onFrame: (frame) => {
         if (!active) return;
-        if (isTerminalLessonObserverFrame(frame)) {
+        const terminalOutcome = lessonObserverTerminalOutcome(frame);
+        if (terminalOutcome) {
           terminalRef.current = true;
           assignmentRef.current = null;
           clearCheckpoint();
-          if (isCompletedRealtimeFrame(frame)) setFinished(true);
+          setFinished(terminalOutcome === 'completed');
+          setObserverTerminalUnsuccessful(terminalOutcome === 'unsuccessful');
           return;
         }
         const phase = lessonPhaseFromObserverFrame(frame);
@@ -198,6 +207,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
   const retryCurrentAssignment = React.useCallback(() => {
     setAssignment(null);
     setFinished(false);
+    setObserverTerminalUnsuccessful(false);
     setAssignmentStale(false);
     sawLiveRef.current = false;
     assignmentRef.current = null;
@@ -206,7 +216,7 @@ export default function CompanionScreen({ navigation, route }: Props) {
     setRetryNonce((value) => value + 1);
   }, []);
 
-  const terminalUnsuccessful = assignment?.state === 'FAILED' || assignment?.state === 'CANCELLED';
+  const terminalUnsuccessful = observerTerminalUnsuccessful || assignment?.state === 'FAILED' || assignment?.state === 'CANCELLED';
   const statusUnavailable = assignmentStale || missingDeviceId || terminalUnsuccessful;
   const completed = !statusUnavailable && (finished || assignment?.state === 'COMPLETED');
   const lessonTitle =
@@ -289,21 +299,6 @@ export default function CompanionScreen({ navigation, route }: Props) {
       <Box height={30} />
     </DeviceShell>
   );
-}
-
-function isCompletedRealtimeFrame(frame: unknown): boolean {
-  if (typeof frame !== 'object' || frame === null) return false;
-  const type = stringProp(frame, 'type');
-  return (
-    stringProp(frame, 'state') === 'COMPLETED' ||
-    stringProp(frame, 'current_state') === 'COMPLETED' ||
-    (type === 'session.end' && ['complete', 'completed'].includes(stringProp(frame, 'end_reason') ?? ''))
-  );
-}
-
-function stringProp(value: object, key: string): string | null {
-  const prop = Reflect.get(value, key);
-  return typeof prop === 'string' ? prop : null;
 }
 
 function toError(error: unknown): Error {
