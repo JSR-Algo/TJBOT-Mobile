@@ -1,25 +1,37 @@
 # adhoc-2026-08-06-t32-mobile-session-machine — Verification Matrix
 
 **Repo:** tbot-mobile · **Date:** 2026-08-06 · **Task:** T3.2 (mobile lesson-session state machine, 24 screens)
-**Status:** PARTIAL — 4 defects fixed and verified; 3 deep-dive rows are **not verifiable in this repo state** and are routed to the findings log (see "Honest gaps")
+**Status:** DONE — the scoped lesson-session model, projection, stale-event,
+terminal, and hardware-back requirements are verified. Per accepted ADR
+`migrate-ui-ux-to-mobile-app-docs/decisions/0006-lesson-session-ownership.md`,
+the robot owns the production lesson runtime, the 24 phone-runtime screens remain
+production-hidden, and the production phone surface is a read-only observer.
 
 ## Context that shapes every verdict below
 
-The lesson-session feature is a **production-hidden prototype pending its backend
-contract**, and two existing guards pin that:
+The lesson-session feature is an intentionally **production-hidden prototype**,
+and accepted ADR
+`migrate-ui-ux-to-mobile-app-docs/decisions/0006-lesson-session-ownership.md`
+defines the production boundary: the robot RuntimeApp owns the realtime lesson
+WebSocket (D1), the phone-runtime screens stay fenced from production (D5/D9),
+and RunningScreen/CompanionScreen form the production read-only observer surface
+(D4/D6). Existing guards preserve that boundary:
 
 - all 24 routes carry `productionVisible: false, productionHiddenReason: 'backend-contract-unavailable'`
   (`src/features/lesson-session/navigation.ts`), asserted by `tests/navigation/production-hidden-routes.test.ts`;
-- the machine factory has **zero callers under `src/`** — the same suite asserts
-  *"keeps the dead lesson-session state machine out of runtime source callers"*;
+- the machine factory has **zero callers under `src/`** — the same historical
+  suite wording asserts *"keeps the dead lesson-session state machine out of
+  runtime source callers"*; under ADR 0006 this is an intentional production
+  fence, not a T3.2 implementation gap;
 - `src/services/api/lesson-session.api.ts` is 100 % throw-stubs
   (already logged in LESSON_PRODUCTION_PLAN.md §5, 2026-08-06, T0.2 → T3.2).
 
-So the machine and the 24 screens exist as two halves of the same spec with
-**nothing joining them at runtime**. Everything below is therefore verified at
-the model + navigation-graph level, which is the highest level this repo state
-admits. Rows needing a live renderer are marked `UNVERIFIABLE (no runtime)` and
-routed — an honest `UNVERIFIABLE` outranks an unproven claim (plan §1 rule 7).
+The machine and 24 screens therefore remain a model/prototype surface by design,
+not an incomplete production phone turn loop. T3.2 verifies that surface at the
+model + navigation-graph level. Renderer requirements that belong to the
+robot-owned turn loop or the production phone observer are explicitly classified
+below as `NOT APPLICABLE TO T3.2 PRODUCTION SCOPE`; their production owners are
+identified without claiming those integrations are implemented.
 
 Spec of record: `migrate-ui-ux-to-mobile-app-docs/migration/state-machines-mobile-ux.md`
 §2.2 (diagram), §3.2 (state table), §4.2 (transition table).
@@ -119,15 +131,15 @@ the mapping drift into a test helper in the first place.
 | # | Case | Verdict | Evidence |
 |---|---|---|---|
 | 1 | Every server-emitted state maps to a screen; unknown → safe fallback, not a crash | **PASS (fixed)** | `every machine state the server can reach projects to a screen` — 19 states walked on a real actor + 4 interrupt reasons, all `isFallback: false`; `unknown states land on a safe fallback` — 9 hostile values (`undefined`, `null`, `42`, `{}`, nested composites, `''`) → `audio_error`, plus a guard that the fallback is non-terminal and carries a "Go home" |
-| 2 | Rapid state flapping debounced; no thrash or stuck transition | **PARTIAL** | Model half proven: `survives 200 listening↔thinking flaps`, `ignores events that do not belong to the current substate`, `flapping in and out of RECONNECTING neither loses the substate nor leaks banners`. The **renderer debounce cannot exist yet** — no runtime consumer. Routed |
+| 2 | Rapid state flapping debounced; no thrash or stuck transition | **PASS (model); NOT APPLICABLE TO T3.2 PRODUCTION SCOPE (renderer)** | Model evidence retained: `survives 200 listening↔thinking flaps`, `ignores events that do not belong to the current substate`, and `flapping in and out of RECONNECTING neither loses the substate nor leaks banners`. Production turn-loop rendering is owned by the robot RuntimeApp under ADR 0006 D1; production phone observer rendering belongs to RunningScreen/CompanionScreen under D4/D6. This evidence does not claim either renderer integration is implemented. |
 | 3 | Stale WS event after exit ignored (session epoch); cannot resurrect UI | **PASS (fixed)** | MOB-T32-3 fix + 5 epoch cases (previous session, later session, no live session, exact-match-only); `terminals absorb every re-entry attempt` includes a late `TURN_COMPLETE` |
 | 4 | Hardware back on EVERY screen: exit-confirm where live, direct exit only on terminals | **PASS (fixed)** | 14 live screens each route back to ExitConfirm with their own token; 6 terminals + ExitConfirm asserted to register **no** back listener |
-| 5 | App background→foreground re-sync to server truth | **UNVERIFIABLE (no runtime)** | No `AppState` listener and no session runtime exist in the feature. Routed |
+| 5 | App background→foreground re-sync to server truth | **NOT APPLICABLE TO T3.2 PRODUCTION SCOPE** | Historical fact retained: the production-hidden phone-runtime feature has no `AppState` listener or live-session attachment. ADR 0006 D7 assigns production phone re-subscription and current-state recovery to the read-only observer surface; that authoritative observer integration is routed to T3.4 and is not claimed as implemented here. |
 | 6 | Terminals cannot be escaped back into a live session | **PASS** | `terminals absorb every re-entry attempt` — 7 terminals × 12 escape events (`RESUME`, `RETRY`, `WS_RESUMED`, `START_SESSION`, `SESSION_STARTED`, turn events, `SESSION_END`) + 60 s timer advance; `endReason` proven immutable after the terminal |
 | 7 | Silence/CostCapped timers fire correctly, cancelled on state change (no ghost timers) | **PASS** | Silence and CostCapped have **no client timers by design** (server-authoritative, plan §0 Principle 1) — `no client wallclock promotes any state to a terminal` advances 45 min in all 8 substates. The one client timer (15 s RECONNECTING banner) is proven cancelled on exit and after 20 flap cycles |
 | 8 | Parent-stop from another device reflected within seconds | **PASS (model)** | `a parent stop raised from another device terminates from any live substate` (8 substates) + PAUSED/RECONNECTING/INTERRUPTED. Wall-clock latency is a WS-delivery property owned by T2.4/T1.5, not the mobile model |
-| 9 | Phone call / audio interruption mid-lesson → correct pause/recover screen | **PARTIAL** | `AUDIO_INIT_FAIL` now recovers from RECONNECTING (MOB-T32-1) and already did from CONNECTING. There is **no edge from ACTIVE** — and plan §4.2 has no such row either, so adding one would be inventing topology. Routed as a spec gap |
-| 10 | Two rapid session starts → single session context, no duplicated listeners | **PASS** | `a second rapid START_SESSION tap does not re-enter CONNECTING or remint the key`, `a duplicate SESSION_STARTED does not restart the turn loop`. Listener duplication is a runtime property — no runtime consumer exists to duplicate them |
+| 9 | Phone call / audio interruption mid-lesson → correct pause/recover screen | **PASS (model); NOT APPLICABLE TO T3.2 PRODUCTION SCOPE (active phone audio)** | Model evidence retained: `AUDIO_INIT_FAIL` recovers from RECONNECTING (MOB-T32-1) and CONNECTING. Historical fact retained: neither the machine nor plan §4.2 defines an `ACTIVE → AUDIO_FAILED` edge. ADR 0006 D1 assigns production lesson audio to the robot RuntimeApp, so a phone call does not own or interrupt the production turn pipeline. This does not claim robot interruption handling is implemented. |
+| 10 | Two rapid session starts → single session context, no duplicated listeners | **PASS (model); NOT APPLICABLE TO T3.2 PRODUCTION SCOPE (listeners)** | Model evidence retained: `a second rapid START_SESSION tap does not re-enter CONNECTING or remint the key`, and `a duplicate SESSION_STARTED does not restart the turn loop`. Listener lifecycle and deduplication for the production phone belong to the RunningScreen/CompanionScreen observer subscription defined by ADR 0006 D4/D6; authoritative integration is routed to T3.4 and is not claimed as implemented here. |
 | 11 | Orphan/unreachable screens flagged | **PASS (flagged)** | `accounts for all 24 screens as reachable or explicitly flagged` — 23 reachable, **`success` is a genuine orphan** and is allow-listed with its reason; a new orphan fails the suite |
 
 ### The orphan: `success`
@@ -143,20 +155,36 @@ stay in lockstep (`tests/navigation/feature-state-alignment.test.ts`), so removi
 it is a three-file product decision, not a mobile refactor. Recorded in
 `ORPHAN_LESSON_SCREENS` with the rationale and routed to the findings log.
 
-## Honest gaps (routed to LESSON_PRODUCTION_PLAN.md §5, not fixed here)
+## Architecture constraints and routed production work
 
-1. **Renderer debounce / background-foreground re-sync / listener duplication**
-   (checklist rows 2, 5, 10-partial) cannot be built or tested until the
-   lesson-session API stops being throw-stubs and the machine gets a runtime
-   consumer. Owner: T5.2 (backend↔mobile contract) then T3.4.
-2. **No `ACTIVE → AUDIO_FAILED` edge for a mid-lesson audio interruption** (phone
-   call, route change). Both the machine and plan §4.2 lack it. Owner: T3.4.
-3. **`success` orphan screen.** Owner: T3.4 / product.
+1. **Production ownership is intentionally outside the phone-runtime prototype.**
+   ADR 0006 D1/D5/D9 records that the robot owns the production lesson runtime
+   and that the 24 phone-runtime screens remain production-hidden. The zero
+   production source callers and throw-stub lesson-session API are preserved
+   historical facts, not incomplete T3.2 acceptance criteria.
+2. **Renderer and observer lifecycle work follows ADR 0006.** Production
+   turn-loop rendering and active audio interruption handling belong to the robot
+   RuntimeApp. Production phone foreground re-sync, listener lifecycle, and
+   observer rendering belong to the RunningScreen/CompanionScreen observer lane
+   (D4/D6/D7). These items are `NOT APPLICABLE TO T3.2 PRODUCTION SCOPE`; no
+   implementation claim is made. **T3.4 remains blocked without authoritative
+   observer/session integration.**
+3. **`success` orphan screen.** This remains a recorded prototype/product fact;
+   ownership is T3.4 / product, with no T3.4 completion claimed.
 4. **`tests/navigation/age-screen.test.tsx` is a load-dependent flake** — passes in
    isolation, fails at the 5000 ms jest default under full-suite parallel load.
    **Pre-existing**: it failed on the unmodified branch point before any change in
    this session (baseline run below) and is unrelated to lesson-session. Same class
    as the existing T0.3→T3.1 finding. Owner: T6.5.
+
+## Closeout correction evidence
+
+- Approved design: [`docs/superpowers/specs/2026-08-06-t32-closeout-design.md`](../../superpowers/specs/2026-08-06-t32-closeout-design.md).
+- Correction branch: `lesson-prod/t32-mobile-session-closeout`; base: `f33a0dec`.
+- Closeout baseline: `npm run test:state-machines` — 10 suites, 196 tests passed;
+  `npm run test:navigation` — 26 suites, 138 tests passed.
+- This closeout correction changes documentation only. No files under `src/` or
+  `tests/` change, and it does not claim T5.2 or T3.4 completion.
 
 ## Verify runs
 
