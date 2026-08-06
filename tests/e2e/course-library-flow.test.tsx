@@ -12,7 +12,7 @@ import {
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
-  getRobotSyncStatus,
+  getPreloadStatus,
   enrollCourse,
   listChildEnrollments,
   cancelCourseEnrollment,
@@ -33,7 +33,7 @@ jest.mock('@/services/api/course-library.api', () => {
     ...actual,
     unlockCourse: jest.fn(),
     sendCourseToRobot: jest.fn(),
-    getRobotSyncStatus: jest.fn(),
+    getPreloadStatus: jest.fn(),
     // US-006 S11: SendToRobotScreen now assigns via the device-scoped lesson API.
     createAssignment: jest.fn(),
     getCurrentAssignment: jest.fn(),
@@ -62,7 +62,7 @@ const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCour
 const mockedEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockedListChildEnrollments = listChildEnrollments as jest.MockedFunction<typeof listChildEnrollments>;
 const mockedCancelCourseEnrollment = cancelCourseEnrollment as jest.MockedFunction<typeof cancelCourseEnrollment>;
-const mockedGetRobotSyncStatus = getRobotSyncStatus as jest.MockedFunction<typeof getRobotSyncStatus>;
+const mockedGetPreloadStatus = getPreloadStatus as jest.MockedFunction<typeof getPreloadStatus>;
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
@@ -1146,17 +1146,22 @@ describe('course-library flow guards', () => {
     expect(mockedCreateAssignment).not.toHaveBeenCalled();
   });
 
-  it('checks sync status before leaving NeedsSync', async () => {
-    mockedGetRobotSyncStatus.mockResolvedValueOnce({
-      courseId: 'c_food',
-      synced: false,
-      lastSyncAt: null,
+  // The reconnect gate reads the device's live preload status; the old
+  // /course-library/:id/sync-status route is retired server-side (410).
+  it('checks live preload status before leaving NeedsSync', async () => {
+    mockedGetPreloadStatus.mockResolvedValueOnce({
+      assignmentId: 'asg-1',
+      state: 'PRELOADING',
+      profile: 'espTft',
+      criticalTotal: 3,
+      criticalReady: 1,
+      assets: [],
     });
     const navigation = navigationFor();
     render(
       <NeedsSyncScreen
         navigation={navigation as never}
-        route={{ key: 'needs-sync', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_food' } } as never}
+        route={{ key: 'needs-sync', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_food', deviceId: 'dev-1' } } as never}
       />,
     );
 
@@ -1165,9 +1170,11 @@ describe('course-library flow guards', () => {
     });
 
     await waitFor(() => {
-      expect(mockedGetRobotSyncStatus).toHaveBeenCalledWith('c_food');
+      expect(mockedGetPreloadStatus).toHaveBeenCalledWith('dev-1');
     });
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.CourseAddedScreen, expect.anything());
-    expect(screen.getByText('Robot has not synced this course yet. Check Wi-Fi and try again.')).toBeTruthy();
+    expect(
+      screen.getByText("Robot hasn't finished downloading this course. Keep it on Wi-Fi and try again."),
+    ).toBeTruthy();
   });
 });
