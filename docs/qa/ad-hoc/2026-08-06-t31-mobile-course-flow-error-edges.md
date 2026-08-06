@@ -113,6 +113,39 @@ This is the only pre-existing assertion this change inverts. It is called out he
 | 12 | `npm run lint` | PASS | exit 0, `--max-warnings=0` |
 | 13 | `npm run test:screens` (task verify command) | PASS (1 pre-existing flake) | `66 suites, 840/841 passed` at `--maxWorkers=2`. The single failure is `PairRenameScreen — save() happy path`, a 5000 ms timeout. **Proven pre-existing:** the identical test fails identically (`1 failed, 37 passed`) on `main` at `b1536165` in a clean detached worktree with none of this change applied, and this diff touches no device / pairing / rewards / onboarding file |
 
+## Ship checklist
+
+| Step | Result |
+|---|---|
+| Re-verify at tip (rebased on main) | `typecheck` 0, `lint` 0, `npm test` **2351 passed / 2 failed** — both pre-existing load flakes, see below |
+| Gate (T0.4) | **VERIFIED** — `gate.sh t31` RED@base `e33f5a2e` rc=1 → GREEN@tip `148fe3fa` rc=0, logged to `GATE_LOG.md`. Took **three attempts**; the first two REJECTED for test-harness reasons, documented below |
+| Merge to main | `merge-task.sh t31` → merge commit `f47fac70` (merge #13), `--no-ff`, no squash |
+| Deploy | none — mobile ships in the next app release (fastlane/EAS), a user decision per this task's step 3 |
+| Re-test on main | `typecheck` 0, `lint` 0, this task's three suites **30/30 pass** on `f47fac70` |
+| Push | **NOT pushed.** `merge-task.sh` deliberately leaves pushing a human step; `main` is 1 merge ahead of `origin/main` |
+
+### The gate took three attempts — all three were the harness, not the fix
+
+Worth recording, because each failure looked like a product defect and wasn't:
+
+1. **REJECTED (repro red on tip).** Two cases hit jest's 5000 ms default. Worse, the
+   RED phase was red for the *wrong reason*: the repro also listed
+   `needs-sync-live-preload.test.tsx`, which **exists and passes on base**, and it flaked at
+   19.8 s. So the gate would have recorded a RED→GREEN transition that had nothing to do with the
+   bug — a false RED, precisely the unearned `VERIFIED` the T0.4 protocol exists to prevent.
+   Fixed by dropping that file from the repro (it stays locked by `npm test`) and pinning
+   `jest.setTimeout(30_000)`.
+2. **REJECTED again.** RED was now correct (`No tests found` on base → rc=1), but GREEN failed
+   with `Unable to find an element with text: This Is a Barn`. That reads like a broken
+   assertion; it wasn't. **RNTL's `waitFor` keeps its own 1000 ms default regardless of
+   `jest.setTimeout`**, so it gave up before the catalog resolved. The identical command passed
+   9/9 locally. Fixed with `configure({ asyncUtilTimeout: 15_000 })`.
+3. **PASS.**
+
+No assertion was weakened in any of the three — only wall-clock allowances for conditions that
+must still become true. A lying failure is worse than a slow one: it sends the next reader
+hunting a product bug that does not exist.
+
 ## Deep-dive checklist — final status
 
 Ten of twelve boxes pass. Two do not, and are routed rather than papered over:
