@@ -218,6 +218,11 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalledWith(expect.objectContaining({
         sessionId: 'stale-session',
       }));
+      expect(mockedOpenRealtime).not.toHaveBeenCalledWith(
+        'stale-session',
+        expect.anything(),
+      );
+      expect(mockedClearRecoveryCheckpoint).not.toHaveBeenCalled();
     },
   );
 
@@ -450,24 +455,45 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   it.each(['RunningScreen', 'CompanionScreen'] as const)(
     '%s does not rewrite a checkpoint when a late live poll resolves after an observer terminal',
     async (screenName) => {
-      let resolveAssignment: ((assignment: CurrentAssignment | null) => void) | undefined;
-      mockedGetCurrentAssignment.mockImplementation(() => new Promise((resolve) => {
-        resolveAssignment = resolve;
-      }));
-      renderProductionLessonScreen(screenName, { deviceId: 'dev-1', sessionId: 'session-route-terminal' });
+      jest.useFakeTimers();
+      try {
+        let resolveLateAssignment: ((assignment: CurrentAssignment | null) => void) | undefined;
+        mockedGetCurrentAssignment
+          .mockResolvedValueOnce(currentWithSession('RUNNING', 'session-live-1'))
+          .mockImplementationOnce(() => new Promise((resolve) => {
+            resolveLateAssignment = resolve;
+          }));
+        renderProductionLessonScreen(screenName);
 
-      await waitFor(() => expect(realtimeAttaches).toHaveLength(1));
-      act(() => {
-        emitRealtimeFrame({ type: 'session.end', end_reason: 'timed_out' });
-      });
-      await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
+        await act(async () => {
+          await Promise.resolve();
+          await Promise.resolve();
+        });
+        expect(realtimeAttaches).toHaveLength(1);
+        const writesBeforeTerminal = mockedWriteRecoveryCheckpoint.mock.calls.length;
 
-      await act(async () => {
-        resolveAssignment?.(currentWithSession('RUNNING', 'session-route-terminal'));
-        await Promise.resolve();
-      });
+        await act(async () => {
+          jest.advanceTimersByTime(2500);
+          await Promise.resolve();
+        });
+        act(() => {
+          emitRealtimeFrame({ type: 'session.end', end_reason: 'timed_out' });
+        });
+        await act(async () => {
+          await Promise.resolve();
+          await Promise.resolve();
+        });
+        expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1);
 
-      expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalled();
+        await act(async () => {
+          resolveLateAssignment?.(currentWithSession('RUNNING', 'session-live-1'));
+          await Promise.resolve();
+        });
+
+        expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledTimes(writesBeforeTerminal);
+      } finally {
+        jest.useRealTimers();
+      }
     },
   );
 
@@ -681,12 +707,12 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   });
 
   it('RunningScreen attaches observer from route sessionId and closes it on unmount', async () => {
-    mockedGetCurrentAssignment.mockResolvedValue(null);
+    mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
     const navigation = navigationFor();
     const rendered = render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', sessionId: 'session-route-1' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', sessionId: 'session-route-1' } } as never}
       />,
     );
 
@@ -829,12 +855,12 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   });
 
   it('CompanionScreen attaches observer from route sessionId and closes it on unmount', async () => {
-    mockedGetCurrentAssignment.mockResolvedValue(null);
+    mockedGetCurrentAssignment.mockResolvedValue(current('RUNNING'));
     const navigation = navigationFor();
     const rendered = render(
       <CompanionScreen
         navigation={navigation as never}
-        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', sessionId: 'session-route-2' } } as never}
+        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', sessionId: 'session-route-2' } } as never}
       />,
     );
 

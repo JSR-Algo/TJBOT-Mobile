@@ -61,8 +61,11 @@ export default function CompanionScreen({ navigation, route }: Props) {
   const checkpointStateRef = React.useRef<string | null>(null);
   const routeAssignmentId = route.params?.assignmentId?.trim() || null;
   const routeSessionId = route.params?.sessionId?.trim() || null;
-  const sessionId = assignment?.sessionId ?? route.params?.sessionId;
-  const observerSessionId = sessionId?.trim() ? sessionId.trim() : null;
+  const assignmentSessionId = assignment?.sessionId?.trim() || null;
+  const observerSessionId = assignmentSessionId ?? (
+    assignment && routeAssignmentId === assignment.assignmentId ? routeSessionId : null
+  );
+  const sessionId = observerSessionId;
 
   const queueCheckpointOperation = React.useCallback((stateKey: string, operation: () => Promise<void>) => {
     if (checkpointStateRef.current === stateKey) return;
