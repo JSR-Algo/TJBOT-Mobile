@@ -90,28 +90,29 @@ export function normalizeProgressSummaryPayload(payload: unknown): ProgressSumma
   };
 }
 
+// Used to resolve a frozen all-zero summary, so a caller could not tell "this
+// child has no data yet" from "this surface has no backend contract" — every
+// sibling in this file throws. `GET /v1/summaries/progress/{deviceId}` is the
+// real read model but is device-scoped and needs a mapper, so fail closed like
+// the siblings rather than keep inventing zeros. (Registry: F-T52-03.)
 export async function getProgressSummary(): Promise<ProgressSummary> {
-  return {
-    ...EMPTY_PROGRESS_SUMMARY,
-    words: [...EMPTY_PROGRESS_SUMMARY.words],
-    weeklyBars: [...EMPTY_PROGRESS_SUMMARY.weeklyBars],
-  };
+  backendContractUnavailable('getProgressSummary');
 }
 
 export async function getTodayProgress(): Promise<TodayProgress> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getTodayProgress');
 }
 
 export async function getWordsPracticed(): Promise<WordsPracticed> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getWordsPracticed');
 }
 
 export async function getLessonSummary(_lessonId: string): Promise<LessonSummary> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getLessonSummary');
 }
 
 export async function getReviewQueue(): Promise<ReviewQueueItem[]> {
-  throw new Error('not implemented');
+  backendContractUnavailable('progress.getReviewQueue');
 }
 
 // ───────────────────────────────────────────────────────────────────────────

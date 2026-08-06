@@ -18,10 +18,12 @@ export interface SupportTicket {
   createdAt: string;
 }
 
+import { backendContractUnavailable } from './undocumented-api-routes';
+
 export async function getHelpFaq(): Promise<FaqItem[]> {
-  throw new Error('not implemented');
+  backendContractUnavailable('getHelpFaq');
 }
 
 export async function submitSupportTicket(_params: SupportTicketParams): Promise<SupportTicket> {
-  throw new Error('not implemented');
+  backendContractUnavailable('submitSupportTicket');
 }

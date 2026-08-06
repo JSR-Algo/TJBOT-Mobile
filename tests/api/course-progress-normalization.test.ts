@@ -4,7 +4,6 @@ import {
   normalizeLessonListPayload,
 } from '../../src/services/api/course.api';
 import {
-  EMPTY_PROGRESS_SUMMARY,
   getProgressSummary,
   normalizeProgressSummaryPayload,
 } from '../../src/services/api/progress.api';
@@ -156,7 +155,10 @@ describe('course/progress API payload normalization', () => {
     });
   });
 
-  it('returns empty progress while the progress summary backend is not designed', async () => {
-    await expect(getProgressSummary()).resolves.toEqual(EMPTY_PROGRESS_SUMMARY);
+  it('fails closed instead of resolving fabricated zeros', async () => {
+    // It used to resolve a frozen all-zero summary, so a caller could not tell
+    // "this child has no data yet" from "this surface has no backend contract"
+    // — every sibling in progress.api.ts throws. (T5.2, plan §5 finding.)
+    await expect(getProgressSummary()).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
   });
 });

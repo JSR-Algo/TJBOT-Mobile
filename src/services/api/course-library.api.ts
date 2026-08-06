@@ -103,29 +103,16 @@ export async function purchaseCourse(_courseId: string): Promise<void> {
   backendContractUnavailable(`purchaseCourse:${_courseId}`);
 }
 
-/**
- * @deprecated The `/course-library/:id/unlock` stub returns 410 GONE. The real
- * enrollment flow lives at POST `/v1/courses/:courseId/enroll` — call
- * {@link enrollCourse} instead. Retained as a no-op shim so older callers fall
- * through gracefully; new code MUST NOT call this.
- */
-export async function unlockCourse(courseId: string): Promise<void> {
-  await client.post(`/course-library/${courseId}/unlock`);
-}
-
-/**
- * @deprecated The `/course-library/:id/send-to-robot` stub returns 410 GONE.
- * Use {@link createAssignment} (device-scoped lesson assignment) for the real
- * send-to-robot flow; for course enrollment use {@link enrollCourse}.
- */
-export async function sendCourseToRobot(courseId: string): Promise<void> {
-  await client.post(`/course-library/${courseId}/send-to-robot`);
-}
-
-export async function getRobotSyncStatus(courseId: string): Promise<RobotSyncStatus> {
-  const response = await client.get(`/course-library/${courseId}/sync-status`);
-  return normalizeRobotSyncStatusPayload(response.data);
-}
+// `unlockCourse`, `sendCourseToRobot` and `getRobotSyncStatus` are gone.
+// `CourseLibraryController` retired all three server-side — each handler is a
+// bare `throw new HttpException(retiredBody(), 410)` — so the shims could only
+// ever fail, and they had no caller in `src/` (they were `@deprecated` no-ops
+// kept "so older callers fall through gracefully", which a 410 does not do).
+// The live replacements the backend names are `enrollCourse`
+// (POST /v1/courses/{courseId}/enroll) and `createAssignment`
+// (POST /v1/devices/{deviceId}/assignments); preload state comes from
+// `getPreloadStatus`. `normalizeRobotSyncStatusPayload` below is retained: it
+// is a pure normalizer with its own tests and no network dependency.
 
 // ───────────────────────────────────────────────────────────────────────────
 // P4 — authored published catalog (NEW public endpoints behind the parent

@@ -170,7 +170,9 @@ export async function getLessonList(courseId: string): Promise<LessonDetail[]> {
 }
 
 export async function getReviewQueue(_userId: string): Promise<ReviewQueueItem[]> {
-  backendContractUnavailable(`getReviewQueue:${_userId}`);
+  // Module-qualified: progress.api.ts exports a different `getReviewQueue`
+  // against a different backend surface, and the registry is keyed by operation.
+  backendContractUnavailable(`course.getReviewQueue:${_userId}`);
 }
 
 export async function getDailyMission(_userId: string): Promise<DailyMission> {

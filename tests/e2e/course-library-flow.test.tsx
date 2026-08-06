@@ -16,7 +16,6 @@ import {
   enrollCourse,
   listChildEnrollments,
   cancelCourseEnrollment,
-  unlockCourse,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
 import { authenticateParent } from '@/services/api/parent.api';
@@ -31,8 +30,6 @@ jest.mock('@/services/api/course-library.api', () => {
   const actual = jest.requireActual('@/services/api/course-library.api');
   return {
     ...actual,
-    unlockCourse: jest.fn(),
-    sendCourseToRobot: jest.fn(),
     getPreloadStatus: jest.fn(),
     // US-006 S11: SendToRobotScreen now assigns via the device-scoped lesson API.
     createAssignment: jest.fn(),
@@ -58,7 +55,6 @@ jest.mock('@/contexts/HouseholdContext', () => ({
   useOptionalHousehold: jest.fn(() => mockHousehold),
 }));
 
-const mockedUnlockCourse = unlockCourse as jest.MockedFunction<typeof unlockCourse>;
 const mockedEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse>;
 const mockedListChildEnrollments = listChildEnrollments as jest.MockedFunction<typeof listChildEnrollments>;
 const mockedCancelCourseEnrollment = cancelCourseEnrollment as jest.MockedFunction<typeof cancelCourseEnrollment>;
@@ -189,7 +185,8 @@ describe('course-library flow guards', () => {
     expect(mockedAuthenticateParent).toHaveBeenCalledWith({ pin: '2468' });
     expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
-    expect(mockedUnlockCourse).not.toHaveBeenCalled();
+    // The retired unlockCourse shim is gone from the client entirely, so
+    // "enrollment does not go through unlock" is now structural, not asserted.
     expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, {
       courseId: 'c_food',
       deviceId: 'dev-1',
