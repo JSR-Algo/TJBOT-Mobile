@@ -40,12 +40,55 @@ function isCoppaConsentMissingError(error: unknown): boolean {
   return code === 'COPPA_REQUIRED' || code === 'COPPA_NOT_VERIFIED' || code === 'missing_coppa_consent';
 }
 
+// The backend emits `MAX_CHILDREN_REACHED` (household.service.ts — the only
+// occurrence). The client used to test for `MAX_CHILD_LIMIT_REACHED`, which the
+// backend never sends, so hitting the 6-profile limit fell through to the generic
+// "check your connection" message and sent parents to debug their Wi-Fi. Both
+// spellings are accepted so the fix holds whichever side is corrected later.
+const CHILD_LIMIT_CODES = new Set(['MAX_CHILDREN_REACHED', 'MAX_CHILD_LIMIT_REACHED']);
+
+function errorStatus(error: unknown): number | null {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'status' in error &&
+    typeof error.status === 'number'
+  )
+    ? error.status
+    : null;
+}
+
 export function childProfileSaveErrorMessage(saveError: unknown): string {
   if (isNoActiveHouseholdError(saveError)) return 'Create a household before saving a child profile.';
   if (isCoppaConsentMissingError(saveError)) return 'Verify parental consent before creating a child profile.';
   const code = errorCode(saveError);
-  if (code === 'MAX_CHILD_LIMIT_REACHED') return 'Your plan has reached its child profile limit.';
-  return 'Could not save child profile. Check your connection and try again.';
+  if (code !== null && CHILD_LIMIT_CODES.has(code)) return 'Your plan has reached its child profile limit.';
+
+  // Never blame the connection for an error the server actually answered. The
+  // old text asserted a network fault for EVERY unrecognised failure — a 403 from
+  // the membership check, a 409, a 500 — which is both wrong and undebuggable:
+  // it is the only thing the parent sees, and nothing else surfaces the cause.
+  // Carry the code/status through so a failure can be identified from a screenshot.
+  const status = errorStatus(saveError);
+  const detail = code ?? (status !== null ? `HTTP ${status}` : null);
+  if (detail !== null) {
+    return `Could not save child profile (${detail}). Please try again, or send this code to support.`;
+  }
+  if (code === null && status === null && isTransportLikeError(saveError)) {
+    return 'Could not save child profile. Check your connection and try again.';
+  }
+  return 'Could not save child profile. Please try again, or contact support if it keeps failing.';
+}
+
+// Only a genuine transport failure earns the "check your connection" wording.
+function isTransportLikeError(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    /network|timeout|fetch|connection|offline/i.test(error.message)
+  );
 }
 
 // Used when the child profile saved but finishing the (already-claimed) robot's

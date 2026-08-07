@@ -94,3 +94,37 @@ describe('child profile onboarding save', () => {
     expect(addChild).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('childProfileSaveErrorMessage — real cause must survive to the screen', () => {
+  it('maps the backend child-limit code the server actually sends', () => {
+    // Regression: the client tested for MAX_CHILD_LIMIT_REACHED, which the backend
+    // never emits — it sends MAX_CHILDREN_REACHED (household.service.ts).
+    expect(childProfileSaveErrorMessage({ code: 'MAX_CHILDREN_REACHED', message: 'x' })).toBe(
+      'Your plan has reached its child profile limit.',
+    );
+  });
+
+  it('still accepts the legacy spelling', () => {
+    expect(childProfileSaveErrorMessage({ code: 'MAX_CHILD_LIMIT_REACHED', message: 'x' })).toBe(
+      'Your plan has reached its child profile limit.',
+    );
+  });
+
+  it('does not blame the connection for a server-answered error, and shows the code', () => {
+    const msg = childProfileSaveErrorMessage({ code: 'FORBIDDEN', message: 'nope', status: 403 });
+    expect(msg).toContain('FORBIDDEN');
+    expect(msg).not.toContain('Check your connection');
+  });
+
+  it('falls back to the HTTP status when no code is present', () => {
+    const msg = childProfileSaveErrorMessage({ message: 'Internal', status: 500 });
+    expect(msg).toContain('HTTP 500');
+    expect(msg).not.toContain('Check your connection');
+  });
+
+  it('keeps the connection wording only for a genuine transport failure', () => {
+    expect(childProfileSaveErrorMessage({ message: 'Network request failed' })).toBe(
+      'Could not save child profile. Check your connection and try again.',
+    );
+  });
+});
