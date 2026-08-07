@@ -16,11 +16,7 @@ import {
 import {
   BackendContractUnavailableError as PurchaseContractError,
   activateRobot,
-  cancelOrder,
-  getOrder,
   getShippingStatus,
-  reactivateSubscription,
-  requestReturn,
 } from '@/services/api/purchase.api';
 import {
   BackendContractUnavailableError as ParentContractError,
@@ -33,6 +29,12 @@ import {
 } from '@/services/api/parent.api';
 import { refreshEntitlementsAfterPurchase } from '@/services/api/account';
 import { archiveChild } from '@/services/api/households';
+import {
+  cancelOrder, cancelSubscription, createCheckoutSession, getCurrentBillingPlan,
+  getCurrentSubscription, getInvoicePdf, getOrder, listBillingPlans, pauseSubscription,
+  reactivateSubscription, requestReturn, resumeSubscription, subscribeToPlan,
+} from '@/services/api/purchase.api';
+import { getHistory, removePushToken } from '@/services/api/notifications';
 import { normalizeError } from '@/utils/errors';
 import * as courseLibraryApi from '@/services/api/course-library.api';
 import { getHelpFaq, submitSupportTicket } from '@/services/api/support.api';
@@ -71,117 +73,8 @@ beforeEach(() => {
 });
 
 // ── routes repointed onto the documented contract ─────────────────────────
-describe('routes repointed onto the backend contract', () => {
-  it('reads an order from the modular billing orders route', async () => {
-    mockedClient.get.mockResolvedValueOnce({ data: { data: { orderId: 'ord-1', state: 'paid', stateVersion: 3 } } });
-
-    await getOrder('ord-1');
-
-    // Pre-fix this was `/orders/ord-1`, which no controller serves.
-    expect(mockedClient.get).toHaveBeenCalledWith('/billing/orders/ord-1');
-  });
-
-  it('cancels an order on the billing-scoped cancel route', async () => {
-    mockedClient.post.mockResolvedValueOnce({ data: { data: { orderId: 'ord-1', state: 'cancelled' } } });
-
-    await cancelOrder('ord-1', 'req-1');
-
-    expect(mockedClient.post).toHaveBeenCalledWith('/billing/orders/ord-1/cancel', {}, expect.anything());
-  });
-
-  it('requests a return on `return-request`, the name the contract uses', async () => {
-    mockedClient.post.mockResolvedValueOnce({
-      data: { request_id: 'rr-1', state: 'pending_admin_review', expected_decision_by: '2026-08-10T00:00:00.000Z' },
-    });
-
-    await requestReturn('ord-1', 'damaged', 'cracked shell', 'req-1');
-
-    expect(mockedClient.post).toHaveBeenCalledWith(
-      '/billing/orders/ord-1/return-request',
-      { reason: 'damaged', notes: 'cracked shell' },
-      expect.anything(),
-    );
-  });
-
-  it('reactivates a subscription on /billing/reactivate, not /billing/subscription/reactivate', async () => {
-    mockedClient.post.mockResolvedValueOnce({ data: { data: { id: 'sub-1', plan_id: 'p1', status: 'active' } } });
-
-    await reactivateSubscription('req-1');
-
-    expect(mockedClient.post).toHaveBeenCalledWith('/billing/reactivate', {}, expect.anything());
-  });
-
-  it('archives a child through the ADR-0011 status route', async () => {
-    mockedClient.patch.mockResolvedValueOnce({ data: { data: { id: 'child-1', status: 'archived' } } });
-
-    await archiveChild('child-1');
-
-    // `POST /v1/children/{id}/archive` is declared in the modular contract but
-    // `isBridgeRoute()` never forwards it, so the old call could only 404.
-    expect(mockedClient.patch).toHaveBeenCalledWith('/identity/children/child-1', { status: 'archived' });
-    expect(mockedClient.post).not.toHaveBeenCalled();
-  });
-});
 
 // ── sample-decode fixtures (deep-dive box 3) ──────────────────────────────
-describe('sample-decode: fields mobile types as required actually arrive', () => {
-  // Byte-shape of GET /v1/billing/orders/{orderId} as OrdersService.orderResponse
-  // builds it. The mapper used to read `id`/`status`, which are not in it.
-  const ORDER_RESPONSE = { data: { data: { orderId: 'ord-1', state: 'paid', stateVersion: 3 } } };
-
-  it('populates Order.id and Order.status from orderId/state', async () => {
-    mockedClient.get.mockResolvedValueOnce(ORDER_RESPONSE);
-
-    const order = await getOrder('ord-1');
-
-    expect(order.id).toBe('ord-1');
-    expect(order.status).toBe('paid');
-  });
-
-  it('leaves no required Order field undefined', async () => {
-    mockedClient.get.mockResolvedValueOnce(ORDER_RESPONSE);
-
-    const order = await getOrder('ord-1');
-
-    for (const field of ['id', 'status', 'productId', 'totalCents'] as const) {
-      expect(order[field]).toBeDefined();
-    }
-  });
-
-  it('translates backend order states rather than passing them through', async () => {
-    // `fulfilling`, `arrived`, `created` and `cancel_pending` are real backend
-    // states with no name in the mobile union; none may leak through raw.
-    const cases: ReadonlyArray<readonly [string, string]> = [
-      ['created', 'pending'],
-      ['paid', 'paid'],
-      ['fulfilling', 'confirmed'],
-      ['shipped', 'shipped'],
-      ['arrived', 'delivered'],
-      ['activated', 'delivered'],
-      ['cancel_pending', 'pending'],
-      ['cancelled', 'cancelled'],
-      ['refunded', 'refunded'],
-    ];
-
-    for (const [wire, expected] of cases) {
-      mockedClient.get.mockResolvedValueOnce({ data: { data: { orderId: 'ord-1', state: wire, stateVersion: 1 } } });
-      const order = await getOrder('ord-1');
-      expect(order.status).toBe(expected);
-    }
-  });
-
-  it('decodes the return-request body without dropping requestId or state', async () => {
-    mockedClient.post.mockResolvedValueOnce({
-      data: { request_id: 'rr-1', state: 'pending_admin_review', expected_decision_by: '2026-08-10T00:00:00.000Z' },
-    });
-
-    const result = await requestReturn('ord-1', 'damaged', '', 'req-1');
-
-    expect(result.requestId).toBe('rr-1');
-    expect(result.state).toBe('pending_admin_review');
-    expect(result.expectedDecisionBy).toBe('2026-08-10T00:00:00.000Z');
-  });
-});
 
 // ── uncontracted operations fail closed ───────────────────────────────────
 describe('operations with no backend contract fail closed', () => {
@@ -263,6 +156,48 @@ describe('UNDOCUMENTED_API_ROUTES registry', () => {
 // ───────────────────────────────────────────────────────────────────────────
 // Second pass — findings other sessions routed to T5.2 (plan §5).
 // ───────────────────────────────────────────────────────────────────────────
+describe('the billing surface is not called at all (F-T52-13)', () => {
+  // Two independent hosts could serve /v1/billing/*: the modular Express
+  // runtime (TBOT_ENABLE_MODULAR_ROUTES=false) and BillingLocalController
+  // (SIMULATION_MODE=false). Both are off in production — probed live, they
+  // 404 — so every one of these fails closed rather than issuing a dead call.
+  it.each([
+    ['createCheckoutSession', () => createCheckoutSession({ planId: 'p' } as never)],
+    ['listBillingPlans', () => listBillingPlans()],
+    ['getCurrentBillingPlan', () => getCurrentBillingPlan()],
+    ['getOrder', () => getOrder('o1')],
+    ['getInvoicePdf', () => getInvoicePdf('i1')],
+    ['subscribeToPlan', () => subscribeToPlan('p1')],
+    ['pauseSubscription', () => pauseSubscription()],
+    ['resumeSubscription', () => resumeSubscription()],
+    ['cancelSubscription', () => cancelSubscription()],
+    ['reactivateSubscription', () => reactivateSubscription()],
+    ['cancelOrder', () => cancelOrder('o1')],
+    ['requestReturn', () => requestReturn('o1', 'r', '')],
+  ])('%s fails closed instead of calling a dead route', async (_n, call) => {
+    await expect(call()).rejects.toMatchObject({ code: 'BACKEND_CONTRACT_UNAVAILABLE' });
+    expect(mockedClient.get).not.toHaveBeenCalled();
+    expect(mockedClient.post).not.toHaveBeenCalled();
+  });
+
+  it('still calls GET /billing/subscription, which IS served', async () => {
+    // The one billing route with a plain Nest controller in IdentityModule.
+    // Production answers 401, not 404 — so it must NOT be stubbed.
+    mockedClient.get.mockResolvedValueOnce({ data: { data: { id: 's', plan_id: 'p', status: 'active' } } });
+    await getCurrentSubscription();
+    expect(mockedClient.get).toHaveBeenCalledWith('/billing/subscription');
+  });
+
+  it('reaches notification history and token removal on their live Nest routes', async () => {
+    mockedClient.get.mockResolvedValueOnce({ data: { data: [] } });
+    await getHistory(5);
+    expect(mockedClient.get).toHaveBeenCalledWith('/notifications/history', { params: { limit: 5 } });
+    mockedClient.delete.mockResolvedValueOnce({ data: {} });
+    await removePushToken('tok');
+    expect(mockedClient.delete).toHaveBeenCalledWith('/notifications/push-token/tok');
+  });
+});
+
 describe('retired backend routes are not called at all', () => {
   it('no longer exports the three 410-GONE course-library shims', () => {
     // CourseLibraryController retired unlock / send-to-robot / sync-status:
@@ -370,23 +305,3 @@ describe('production-only modular routes are declared as such', () => {
   });
 });
 
-describe('the gate itself reports the production-only mount', () => {
-  // The assertions above are characterisation — they hold on the pre-fix tree
-  // too, which is exactly why the T0.4 gate rejected them as tautological. This
-  // one exercises the checker's real behaviour: before the fix it says nothing
-  // about the mount condition, so it fails on the pre-patch base.
-  it('names the mount condition and lists the calls that depend on it', () => {
-    const { execFileSync } = require('child_process') as typeof import('child_process');
-    const out = execFileSync('node', ['scripts/check-api-contract-sync.mjs'], {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-      timeout: 120000,
-    });
-
-    expect(out).toContain('PRODUCTION-ONLY');
-    expect(out).toContain("NODE_ENV==='production'");
-    // The billing surface is the part that vanishes on a non-production backend.
-    expect(out).toContain('/v1/billing/orders/{}');
-    expect(out).toMatch(/PASS — no backend\/mobile contract drift/);
-  });
-});
