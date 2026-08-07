@@ -2,6 +2,7 @@ import type { Child, Household } from '@/types';
 import {
   allowsDevelopmentCoppaConsentBypass,
   childProfileSaveErrorMessage,
+  pairingFinalizeErrorMessage,
   saveOnboardingChildProfile,
   type OnboardingChildProfilePayload,
 } from '@/features/onboarding/childProfileSave';
@@ -126,5 +127,50 @@ describe('childProfileSaveErrorMessage — real cause must survive to the screen
     expect(childProfileSaveErrorMessage({ message: 'Network request failed' })).toBe(
       'Could not save child profile. Check your connection and try again.',
     );
+  });
+});
+
+describe('pairingFinalizeErrorMessage — all eight backend codes, not two', () => {
+  it('tells the parent to wait when the robot is not ready yet', () => {
+    const msg = pairingFinalizeErrorMessage({ code: 'PROVISIONING_ATTEMPT_NOT_READY', message: 'x' });
+    expect(msg).toContain('has not finished starting up');
+    expect(msg).not.toContain('Check your connection');
+  });
+
+  it('does not ask the parent to retry something already completed', () => {
+    const msg = pairingFinalizeErrorMessage({ code: 'PROVISIONING_ATTEMPT_ALREADY_COMPLETED', message: 'x' });
+    expect(msg).toContain('already set up');
+  });
+
+  it('names a wrong-robot mismatch instead of blaming the network', () => {
+    for (const code of ['PROVISIONING_DEVICE_MISMATCH', 'PROVISIONING_SERIAL_MISMATCH']) {
+      const msg = pairingFinalizeErrorMessage({ code, message: 'x' });
+      expect(msg).toContain('different robot');
+      expect(msg).not.toContain('Check your connection');
+    }
+  });
+
+  it('names a wrong-account attempt', () => {
+    expect(pairingFinalizeErrorMessage({ code: 'PROVISIONING_ATTEMPT_NOT_OWNED', message: 'x' }))
+      .toContain('different account');
+  });
+
+  it('keeps the timeout wording for expired / not-found / timeout', () => {
+    for (const code of ['PROVISIONING_ATTEMPT_EXPIRED', 'PROVISIONING_ATTEMPT_NOT_FOUND', 'PROVISIONING_TIMEOUT']) {
+      expect(pairingFinalizeErrorMessage({ code, message: 'x' }))
+        .toBe('Setup timed out. Start pairing again from the robot screen.');
+    }
+  });
+
+  it('surfaces an unmapped code and still says the child was saved', () => {
+    const msg = pairingFinalizeErrorMessage({ code: 'SOMETHING_NEW', message: 'x', status: 409 });
+    expect(msg).toContain('SOMETHING_NEW');
+    expect(msg).toContain('Saved your child');
+    expect(msg).not.toContain('Check your connection');
+  });
+
+  it('keeps the connection wording only for a real transport failure', () => {
+    expect(pairingFinalizeErrorMessage({ message: 'Network request failed' }))
+      .toContain('Check your connection');
   });
 });

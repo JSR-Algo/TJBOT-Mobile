@@ -94,12 +94,50 @@ function isTransportLikeError(error: unknown): boolean {
 // Used when the child profile saved but finishing the (already-claimed) robot's
 // pairing failed. The profile exists, so the parent only needs to retry the
 // finalize step — which a second save does without re-creating the child.
+// The backend has EIGHT provisioning failure codes; this mapping used to cover two
+// of them, and one of those two (`PROVISIONING_ATTEMPT_EXPIRED`) is not even an
+// ErrorCode member — it is thrown as a bare string from device-claim.service.ts:82.
+// Everything else fell through to "check your connection", which is actively
+// misleading for e.g. DEVICE_MISMATCH (wrong robot) or ALREADY_COMPLETED (nothing
+// wrong at all). Each code now gets the action that actually resolves it.
+const PAIRING_FINALIZE_MESSAGES: Record<string, string> = {
+  // Attempt is gone or timed out — the parent must start pairing over.
+  PROVISIONING_ATTEMPT_EXPIRED: 'Setup timed out. Start pairing again from the robot screen.',
+  PROVISIONING_ATTEMPT_NOT_FOUND: 'Setup timed out. Start pairing again from the robot screen.',
+  PROVISIONING_TIMEOUT: 'Setup timed out. Start pairing again from the robot screen.',
+  // Already done — retrying is pointless and the parent should just continue.
+  PROVISIONING_ATTEMPT_ALREADY_COMPLETED:
+    'This robot is already set up. You can close setup and start using it.',
+  // The robot has not reported itself ready yet — waiting is the fix, not retrying.
+  PROVISIONING_ATTEMPT_NOT_READY:
+    'The robot has not finished starting up. Wait until it is connected, then try again.',
+  // Wrong account / wrong robot — retrying can never succeed.
+  PROVISIONING_ATTEMPT_NOT_OWNED:
+    'This setup belongs to a different account. Start pairing again from this robot.',
+  PROVISIONING_DEVICE_MISMATCH:
+    'This setup is for a different robot. Start pairing again from the robot you want to set up.',
+  PROVISIONING_SERIAL_MISMATCH:
+    'This setup is for a different robot. Start pairing again from the robot you want to set up.',
+};
+
 export function pairingFinalizeErrorMessage(finalizeError: unknown): string {
   const code = errorCode(finalizeError);
-  if (code === 'PROVISIONING_ATTEMPT_EXPIRED' || code === 'PROVISIONING_ATTEMPT_NOT_FOUND') {
-    return 'Setup timed out. Start pairing again from the robot screen.';
+  if (code !== null && code in PAIRING_FINALIZE_MESSAGES) {
+    return PAIRING_FINALIZE_MESSAGES[code];
   }
-  return 'Saved your child, but could not finish setting up the robot. Check your connection and try again.';
+
+  // Same rule as childProfileSaveErrorMessage: never assert a network fault for a
+  // failure the server answered. The child IS saved at this point, so say so —
+  // otherwise the parent re-enters the profile expecting it was lost.
+  const status = errorStatus(finalizeError);
+  const detail = code ?? (status !== null ? `HTTP ${status}` : null);
+  if (detail !== null) {
+    return `Saved your child, but could not finish setting up the robot (${detail}). Try again, or send this code to support.`;
+  }
+  if (isTransportLikeError(finalizeError)) {
+    return 'Saved your child, but could not finish setting up the robot. Check your connection and try again.';
+  }
+  return 'Saved your child, but could not finish setting up the robot. Try again, or contact support if it keeps failing.';
 }
 
 export function allowsDevelopmentCoppaConsentBypass(_isDev: boolean, apiBaseUrl: string): boolean {
