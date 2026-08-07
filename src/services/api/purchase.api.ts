@@ -102,21 +102,6 @@ export interface RefundRequestResult {
   expectedDecisionBy: string | null;
 }
 
-interface RawOrder {
-  // Contract field names (GET /v1/billing/orders/{orderId}). Optional on the
-  // wire type only so the legacy `id`/`status` aliases below stay accepted.
-  orderId?: string;
-  order_id?: string;
-  state?: string;
-  id?: string;
-  status?: string;
-  product_id?: string;
-  productId?: string;
-  total_cents?: number;
-  totalCents?: number;
-  receipt_email?: string | null;
-  receiptEmail?: string | null;
-}
 
 // RawShippingStatus and mapShippingStatus went with getShippingStatus's call:
 // they described a fulfilment payload the orders module does not produce. The
@@ -147,23 +132,6 @@ export function mapCheckoutSessionResponse(payload: {
   };
 }
 
-function mapBillingPlan(raw: {
-  id: string;
-  name: string;
-  amount_cents: number;
-  currency: string;
-  interval?: string | null;
-  trial_days?: number | null;
-}): BillingPlan {
-  return {
-    id: raw.id,
-    name: raw.name,
-    amountCents: raw.amount_cents,
-    currency: raw.currency,
-    interval: raw.interval ?? null,
-    trialDays: raw.trial_days ?? null,
-  };
-}
 
 function mapSubscription(raw: {
   id: string;
@@ -188,24 +156,7 @@ function mapSubscription(raw: {
 // pre-fulfilment label — which preserves the only live consumer,
 // OrderConfirmScreen's `status === 'paid'` gate. Widening the mobile union to
 // the real state machine is purchase-feature work, routed as F-T52-05.
-const BACKEND_ORDER_STATE_TO_STATUS: Readonly<Record<string, Order['status']>> = {
-  created: 'pending',
-  paid: 'paid',
-  fulfilling: 'confirmed',
-  shipped: 'shipped',
-  arrived: 'delivered',
-  activated: 'delivered',
-  cancel_pending: 'pending',
-  cancel_failed: 'pending',
-  cancelled: 'cancelled',
-  refunded: 'refunded',
-};
 
-function mapOrderStatus(raw: RawOrder): Order['status'] {
-  const wire = raw.state ?? raw.status;
-  if (wire === undefined) return 'pending';
-  return BACKEND_ORDER_STATE_TO_STATUS[wire] ?? 'pending';
-}
 
 // The modular orders module answers with `{ data: { orderId, state,
 // stateVersion } }` — `orderId`/`state`, not `id`/`status`. Reading `raw.id`
@@ -213,23 +164,13 @@ function mapOrderStatus(raw: RawOrder): Order['status'] {
 // how OrderConfirmScreen's `status === 'paid'` gate could never fire.
 // productId/totalCents/receiptEmail have no field in the contract at all; the
 // defaults below are placeholders, also routed as F-T52-05.
-function mapOrder(raw: RawOrder): Order {
-  return {
-    id: raw.orderId ?? raw.order_id ?? raw.id ?? '',
-    status: mapOrderStatus(raw),
-    productId: raw.product_id ?? raw.productId ?? '',
-    totalCents: raw.total_cents ?? raw.totalCents ?? 0,
-    receiptEmail: raw.receipt_email ?? raw.receiptEmail ?? null,
-  };
-}
 
 export async function createOrder(_params: OrderParams): Promise<Order> {
   backendContractUnavailable(`createOrder:${_params.productId}:${_params.quantity}`);
 }
 
-export async function getOrder(orderId: string): Promise<Order> {
-  const response = await client.get(`/billing/orders/${orderId}`);
-  return mapOrder(unwrap<RawOrder>(response));
+export async function getOrder(_orderId: string): Promise<Order> {
+  backendContractUnavailable('getOrder');
 }
 
 export async function processPayment(_params: PaymentParams): Promise<{ success: boolean }> {
@@ -245,25 +186,19 @@ export async function activateRobot(_activationCode: string): Promise<void> {
 }
 
 export async function createCheckoutSession(
-  payload: CheckoutSessionPayload,
-  requestId?: string,
+  _payload: CheckoutSessionPayload,
+  _requestId?: string,
 ): Promise<CheckoutSessionResponse> {
   assertSubscriptionEnabled('createCheckoutSession');
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post('/billing/checkout-session', payload, options);
-  return mapCheckoutSessionResponse(unwrap<Parameters<typeof mapCheckoutSessionResponse>[0]>(response));
+  backendContractUnavailable('createCheckoutSession');
 }
 
 export async function listBillingPlans(): Promise<BillingPlan[]> {
-  const response = await client.get('/billing/plans');
-  const raw = unwrap<Parameters<typeof mapBillingPlan>[0][]>(response);
-  return raw.map(mapBillingPlan);
+  backendContractUnavailable('listBillingPlans');
 }
 
 export async function getCurrentBillingPlan(): Promise<BillingPlan | null> {
-  const response = await client.get('/billing/plan');
-  const raw = unwrap<Parameters<typeof mapBillingPlan>[0] | null>(response);
-  return raw ? mapBillingPlan(raw) : null;
+  backendContractUnavailable('getCurrentBillingPlan');
 }
 
 export async function getCurrentSubscription(): Promise<Subscription | null> {
@@ -276,80 +211,46 @@ export async function getBillingProviderStatus(): Promise<BillingProviderStatus>
   backendContractUnavailable('getBillingProviderStatus');
 }
 
-export async function getInvoicePdf(invoiceId: string): Promise<InvoicePdf> {
-  const response = await client.get(`/billing/invoices/${invoiceId}/pdf`);
-  const headers = (response as { headers?: Record<string, string> }).headers ?? {};
-  const url = headers.location ?? headers.Location ?? '';
-  return { invoiceId, url };
+export async function getInvoicePdf(_invoiceId: string): Promise<InvoicePdf> {
+  backendContractUnavailable('getInvoicePdf');
 }
 
-export async function subscribeToPlan(planId: string, requestId?: string): Promise<CheckoutSessionResponse> {
+export async function subscribeToPlan(_planId: string, _requestId?: string): Promise<CheckoutSessionResponse> {
   assertSubscriptionEnabled('subscribeToPlan');
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post('/billing/subscription', { plan_id: planId }, options);
-  return mapCheckoutSessionResponse(unwrap<Parameters<typeof mapCheckoutSessionResponse>[0]>(response));
+  backendContractUnavailable('subscribeToPlan');
 }
 
-export async function pauseSubscription(requestId?: string): Promise<Subscription> {
+export async function pauseSubscription(_requestId?: string): Promise<Subscription> {
   assertSubscriptionEnabled('pauseSubscription');
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post('/billing/subscription/pause', {}, options);
-  return mapSubscription(unwrap<Parameters<typeof mapSubscription>[0]>(response));
+  backendContractUnavailable('pauseSubscription');
 }
 
-export async function resumeSubscription(requestId?: string): Promise<Subscription> {
+export async function resumeSubscription(_requestId?: string): Promise<Subscription> {
   assertSubscriptionEnabled('resumeSubscription');
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post('/billing/subscription/resume', {}, options);
-  return mapSubscription(unwrap<Parameters<typeof mapSubscription>[0]>(response));
+  backendContractUnavailable('resumeSubscription');
 }
 
-export async function cancelSubscription(requestId?: string): Promise<Subscription> {
+export async function cancelSubscription(_requestId?: string): Promise<Subscription> {
   assertSubscriptionEnabled('cancelSubscription');
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post('/billing/subscription/cancel', {}, options);
-  return mapSubscription(unwrap<Parameters<typeof mapSubscription>[0]>(response));
+  backendContractUnavailable('cancelSubscription');
 }
 
-export async function reactivateSubscription(requestId?: string): Promise<Subscription> {
+export async function reactivateSubscription(_requestId?: string): Promise<Subscription> {
   assertSubscriptionEnabled('reactivateSubscription');
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
   // The modular payments module names this `/billing/reactivate`, not
   // `/billing/subscription/reactivate` — the latter has never been routed.
-  const response = await client.post('/billing/reactivate', {}, options);
-  return mapSubscription(unwrap<Parameters<typeof mapSubscription>[0]>(response));
+  backendContractUnavailable('reactivateSubscription');
 }
 
-export async function cancelOrder(orderId: string, requestId?: string): Promise<CancelOrderResult> {
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  const response = await client.post(`/billing/orders/${orderId}/cancel`, {}, options);
-  const raw = unwrap<{ order_id?: string; orderId?: string; state: string; cancelled_at?: string; cancelledAt?: string }>(response);
-  return {
-    orderId: raw.order_id ?? raw.orderId ?? orderId,
-    state: raw.state,
-    cancelledAt: raw.cancelled_at ?? raw.cancelledAt ?? '',
-  };
+export async function cancelOrder(_orderId: string, _requestId?: string): Promise<CancelOrderResult> {
+  backendContractUnavailable('cancelOrder');
 }
 
 export async function requestReturn(
-  orderId: string,
-  reason: string,
-  notes: string,
-  requestId?: string,
+  _orderId: string,
+  _reason: string,
+  _notes: string,
+  _requestId?: string,
 ): Promise<RefundRequestResult> {
-  const options = requestId ? { headers: { 'X-Request-Id': requestId } } : undefined;
-  // Contract route is `return-request`; `/return` was never routed.
-  const response = await client.post(`/billing/orders/${orderId}/return-request`, { reason, notes }, options);
-  const raw = unwrap<{
-    request_id?: string;
-    requestId?: string;
-    state: string;
-    expected_decision_by?: string | null;
-    expectedDecisionBy?: string | null;
-  }>(response);
-  return {
-    requestId: raw.request_id ?? raw.requestId ?? '',
-    state: raw.state,
-    expectedDecisionBy: raw.expected_decision_by ?? raw.expectedDecisionBy ?? null,
-  };
+  backendContractUnavailable('requestReturn');
 }

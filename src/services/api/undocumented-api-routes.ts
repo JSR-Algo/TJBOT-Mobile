@@ -397,9 +397,8 @@ export const UNDOCUMENTED_API_ROUTES = [
     operation: 'createOrder',
     module: 'purchase.api.ts',
     attemptedRoute: 'POST /v1/billing/orders',
-    status: 'backend-route-exists',
-    reason: 'The modular billing orders route is live and bridged, but wiring the client needs the skuId/amountCents/shippingAddress request contract and a checkout screen — purchase-feature work, not contract sync.',
-    owner: 'LESSON_PRODUCTION_PLAN.md §5 — F-T52-01 (purchase feature)',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
   },
 
   // ── course-library.api.ts ────────────────────────────────────────────────
@@ -493,6 +492,98 @@ export const UNDOCUMENTED_API_ROUTES = [
     attemptedRoute: 'POST /v1/devices/{deviceId}/courses',
     status: 'no-backend-contract',
     reason: 'No device-scoped course push exists. The course-scoped send-to-robot endpoint is retired (410 GONE); the live path is per-lesson assignment via POST /v1/devices/{deviceId}/assignments, which createAssignment calls.',
+  },
+
+  // ── the billing surface is mounted NOWHERE (F-T52-13) ────────────────────
+  // Two independent hosts could serve these and both are switched off in
+  // production: the modular Express runtime (TBOT_ENABLE_MODULAR_ROUTES=false)
+  // and BillingLocalController (SIMULATION_MODE=false). Probed live:
+  // /v1/billing/plans, /plan, /orders/{id} and /invoices/{id}/pdf all 404, while
+  // /v1/billing/subscription answers 401 — that one IS served, by a plain Nest
+  // controller in IdentityModule, and is deliberately still called.
+  {
+    operation: 'createCheckoutSession',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/checkout-session',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'listBillingPlans',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'GET /v1/billing/plans',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'getCurrentBillingPlan',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'GET /v1/billing/plan',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'getOrder',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'GET /v1/billing/orders/{orderId}',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'getInvoicePdf',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'GET /v1/billing/invoices/{invoiceId}/pdf',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'subscribeToPlan',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/subscription',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'pauseSubscription',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/subscription/pause',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'resumeSubscription',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/subscription/resume',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'cancelSubscription',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/subscription/cancel',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'reactivateSubscription',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/reactivate',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'cancelOrder',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/orders/{orderId}/cancel',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
+  },
+  {
+    operation: 'requestReturn',
+    module: 'purchase.api.ts',
+    attemptedRoute: 'POST /v1/billing/orders/{orderId}/return-request',
+    status: 'no-backend-contract',
+    reason: 'The modular Express runtime that owns this route is mounted nowhere: src/main.ts gates it on TBOT_ENABLE_MODULAR_ROUTES not being "false", and render.yaml sets that var to "false" on both production services. The BillingLocalController fallback is off too (registered only when SIMULATION_MODE is "true"). Verified 404 against production.',
   },
 ] as const satisfies readonly UndocumentedRoute[];
 

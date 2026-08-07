@@ -190,9 +190,36 @@ if (!existsSync(backendSrc)) {
   process.exit(2);
 }
 
+// A @Controller is only reachable if its MODULE is registered. app.module.ts
+// registers BillingLocalModule only when SIMULATION_MODE === 'true', and
+// render.yaml sets it to "false", so those controllers serve nothing in
+// production — confirmed by the live 404 on /v1/billing/plans. Scanning
+// decorators alone counts them as served, which is the third variant of the
+// same mistake: path exists != handler works != router mounted != module
+// registered.
+const CONDITIONAL_MODULE_DIRS = [];
+const APP_MODULE = join(backendSrc, 'app.module.ts');
+if (existsSync(APP_MODULE)) {
+  const appSrc = readFileSync(APP_MODULE, 'utf8');
+  if (/SIMULATION_MODE === 'true' \? \[BillingLocalModule\]/.test(appSrc)) {
+    CONDITIONAL_MODULE_DIRS.push({ dir: join(backendSrc, 'billing-local'), why: "SIMULATION_MODE==='true'" });
+  } else if (appSrc.includes('BillingLocalModule')) {
+    fail(
+      'conditional-module-mirror',
+      'app.module.ts still references BillingLocalModule but no longer gates it on SIMULATION_MODE. ' +
+        'This script excludes src/billing-local on that basis — re-check and update the mirror.',
+    );
+  }
+}
+
 for (const file of walk(backendSrc)) {
   const src = readFileSync(file, 'utf8');
   if (!src.includes('@Controller')) continue;
+  const conditional = CONDITIONAL_MODULE_DIRS.find((m) => file.startsWith(m.dir));
+  if (conditional) {
+    notes.push(`skipped ${relative(BACKEND_ROOT, file)} — module registered only when ${conditional.why}`);
+    continue;
+  }
 
   const controllers = [];
   const ctrlRe = /@Controller\(\s*(?:['"`]([^'"`]*)['"`]|\{[^}]*path:\s*['"`]([^'"`]*)['"`][^}]*\})?\s*\)/g;
@@ -236,10 +263,12 @@ function isRetiredHandler(src, decoratorIndex) {
 
 for (const route of modularRoutes) {
   if (isBridgeRoute(route.path, route.method)) {
-    addServed(
-      opKey(route.method, route.path),
-      `modular-bridge ${route.controller}.${route.action} [production-only: ${modularMountCondition}]`,
-    );
+    // NOT addServed. The bridge is mounted nowhere: main.ts requires
+    // TBOT_ENABLE_MODULAR_ROUTES !== 'false' and render.yaml sets it to
+    // "false" on both production services, so a bridged modular route is
+    // declared-but-unmounted exactly like an unbridged one (F-T52-13).
+    // Counting these as served is what let 16 dead mobile calls pass three
+    // rounds of this gate.
     productionOnly.add(opKey(route.method, route.path));
   }
   documented.add(opKey(route.method, route.path));

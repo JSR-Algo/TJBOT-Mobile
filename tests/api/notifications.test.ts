@@ -38,14 +38,12 @@ describe('notifications API', () => {
     });
   });
 
-  it('unregisters push tokens through the delete-by-body backend contract', async () => {
+  it('unregisters push tokens on the live path-param route (the delete-by-body modular route is unmounted)', async () => {
     mockDelete.mockResolvedValueOnce({ data: { data: { revoked: true } } });
 
     await removePushToken('ExponentPushToken[abc]');
 
-    expect(mockDelete).toHaveBeenCalledWith('/notifications/push-token', {
-      data: { token: 'ExponentPushToken[abc]' },
-    });
+    expect(mockDelete).toHaveBeenCalledWith('/notifications/push-token/ExponentPushToken%5Babc%5D');
   });
 
   it('roundtrips notification preferences through GET and PUT', async () => {
@@ -69,12 +67,12 @@ describe('notifications API', () => {
     expect(mockPut).toHaveBeenCalledWith('/notifications/preferences', { push_enabled: true });
   });
 
-  it('loads the live notification inbox endpoint when history is requested', async () => {
+  it('loads notification history from the live Nest route (/me/notifications is unmounted)', async () => {
     mockGet.mockResolvedValueOnce({ data: { data: [] } });
 
     await expect(getHistory(10)).resolves.toEqual([]);
 
-    expect(mockGet).toHaveBeenCalledWith('/me/notifications', { params: { limit: 10 } });
+    expect(mockGet).toHaveBeenCalledWith('/notifications/history', { params: { limit: 10 } });
   });
 
   it('surfaces shared-client auth and rate-limit failures unchanged', async () => {
