@@ -18,6 +18,7 @@ import { finalizeDevicePairing, type DevicePairingContext } from '@/features/dev
 import {
   allowsDevelopmentCoppaConsentBypass,
   childProfileSaveErrorMessage,
+  isChildProfileLimitError,
   pairingFinalizeErrorMessage,
   saveOnboardingChildProfile,
 } from '../childProfileSave';
@@ -81,7 +82,11 @@ function dobFromAgeBand(bandId: AgeBandId): string {
 
 export function ChildProfileContent({ navigation, route }: ChildProfileContentProps): React.JSX.Element {
   const { language, t } = useAppLanguage();
-  const { activeHousehold, addChild, createHousehold } = useHousehold();
+  // `children` defaults to [] rather than being assumed present: the provider
+  // always supplies it, but this screen renders in harnesses that stub the
+  // context, and a missing list must degrade to "no picker", never to a crash on
+  // the one screen a blocked parent is already stuck on.
+  const { activeHousehold, addChild, createHousehold, children: existingChildren = [] } = useHousehold();
   const [buddy, setBuddy] = React.useState<(typeof BUDDIES)[number]['id']>('panda');
   const [childDisplayName, setChildDisplayName] = React.useState('');
   const [childDisplayNameEdited, setChildDisplayNameEdited] = React.useState(false);
@@ -89,6 +94,9 @@ export function ChildProfileContent({ navigation, route }: ChildProfileContentPr
   const [ageBand, setAgeBand] = React.useState<AgeBandId | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // F-T54-09b: shown once the child cap blocks a new profile, so the parent can
+  // continue with a child they already have instead of dead-ending.
+  const [offerExistingChildren, setOfferExistingChildren] = React.useState(false);
   // In the from-pairing path, the child can be created successfully but the
   // finalize step still fail. Remember the created child so a retry FINISHES the
   // pairing for that same child instead of creating a duplicate profile.
@@ -102,6 +110,47 @@ export function ChildProfileContent({ navigation, route }: ChildProfileContentPr
   );
   const displayedChildName = childDisplayNameEdited ? childDisplayName : suggestedChildDisplayName;
   const effectiveChildName = normalizeChildDisplayName(displayedChildName, suggestedChildDisplayName);
+
+  // The tail of the flow once we HAVE a child, whether it was just created or
+  // picked from the household. Shared so the child-cap recovery path lands on
+  // exactly the same terminus as a successful save.
+  const continueWithChild = async (child: Child): Promise<void> => {
+    // Entered mid-pairing (PairRenameScreen routed here because the household had
+    // no child): FINISH the pairing the parent started with the child they just
+    // created, landing on the same DeviceHome/PairSuccess terminus as the happy
+    // path. Do NOT fall through to MicAskScreen — that would abandon the
+    // already-claimed robot in onboarding.
+    const pairing = route.params?.pairing;
+    if (pairing) {
+      try {
+        await finalizeDevicePairing(navigation, pairing, child.id);
+      } catch (finalizeError: unknown) {
+        // The child was created successfully; only the finalize step failed.
+        // Surface a sensible error in-place (the parent can retry the save, which
+        // now finds the existing child) rather than silently dead-ending.
+        setError(pairingFinalizeErrorMessage(finalizeError));
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // Plain onboarding (no pairing context): advance to the next onboarding step.
+    navigation.navigate(ROUTES.MicAskScreen);
+    setSaving(false);
+  };
+
+  // F-T54-09b: continue onboarding with a child that already exists. This is the
+  // ONLY way out of the child cap from inside onboarding — child management lives
+  // in ParentSettingsScreen, which RootStackNavigator does not render until
+  // onboarding completes.
+  const useExistingChild = async (child: Child): Promise<void> => {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    createdChildRef.current = child;
+    await continueWithChild(child);
+  };
 
   const saveChildProfile = async (): Promise<void> => {
     if (saving) return;
@@ -133,35 +182,18 @@ export function ChildProfileContent({ navigation, route }: ChildProfileContentPr
         });
       } catch (saveError: unknown) {
         setError(childProfileSaveErrorMessage(saveError));
+        // Hitting the cap means the household already HAS children, so offering
+        // them is both possible and the only recovery available here.
+        if (isChildProfileLimitError(saveError) && existingChildren.length > 0) {
+          setOfferExistingChildren(true);
+        }
         setSaving(false);
         return;
       }
       createdChildRef.current = child;
     }
 
-    // Entered mid-pairing (PairRenameScreen routed here because the household had
-    // no child): FINISH the pairing the parent started with the child they just
-    // created, landing on the same DeviceHome/PairSuccess terminus as the happy
-    // path. Do NOT fall through to MicAskScreen — that would abandon the
-    // already-claimed robot in onboarding.
-    const pairing = route.params?.pairing;
-    if (pairing) {
-      try {
-        await finalizeDevicePairing(navigation, pairing, child.id);
-      } catch (finalizeError: unknown) {
-        // The child was created successfully; only the finalize step failed.
-        // Surface a sensible error in-place (the parent can retry the save, which
-        // now finds the existing child) rather than silently dead-ending.
-        setError(pairingFinalizeErrorMessage(finalizeError));
-      } finally {
-        setSaving(false);
-      }
-      return;
-    }
-
-    // Plain onboarding (no pairing context): advance to the next onboarding step.
-    navigation.navigate(ROUTES.MicAskScreen);
-    setSaving(false);
+    await continueWithChild(child);
   };
 
   return (
@@ -303,6 +335,43 @@ export function ChildProfileContent({ navigation, route }: ChildProfileContentPr
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : null}
+        {offerExistingChildren && existingChildren.length > 0 ? (
+          <Box
+            testID="existingChildPicker"
+            style={styles.existingChildBox}
+            borderRadius={14}
+            borderWidth={1}
+            borderColor={OB.hair}
+          >
+            <Text fontWeight="600" style={styles.existingChildTitle}>
+              Continue with a child you already added
+            </Text>
+            <Text style={styles.existingChildBody}>
+              This household is at its child profile limit. Pick one to finish setting up Robot.
+              You can manage profiles in Parent Settings once setup is done.
+            </Text>
+            {existingChildren.map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                testID={`existingChild_${c.id}`}
+                onPress={() => { void useExistingChild(c); }}
+                disabled={saving}
+                style={styles.existingChildRow}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={translateTemplate(
+                  'Continue with {{label}}',
+                  { label: c.name || 'this child' },
+                  { locale: language },
+                )}
+              >
+                <Text fontWeight="600" style={styles.existingChildName}>
+                  {c.name || 'Child'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </Box>
+        ) : null}
         <OnbBigBtn testID="childProfileSaveButton" onClick={saveChildProfile}>{saving ? 'Saving...' : 'Save and meet Robot'}</OnbBigBtn>
       </Box>
     </OnbShell>
@@ -329,4 +398,9 @@ const styles = StyleSheet.create({
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, flexShrink: 0, marginTop: 2 },
   note: { fontSize: 12, color: OB.ink3, paddingTop: 8, paddingHorizontal: 4, lineHeight: 18 },
   error: { color: OB.danger, fontSize: 13, lineHeight: 19, marginBottom: 12 },
+  existingChildBox: { backgroundColor: OB.card, padding: 14, marginBottom: 16 },
+  existingChildTitle: { fontSize: 15, color: OB.ink, marginBottom: 6 },
+  existingChildBody: { fontSize: 13, color: OB.ink2, lineHeight: 19, marginBottom: 10 },
+  existingChildRow: { minHeight: 44, justifyContent: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: OB.hair },
+  existingChildName: { fontSize: 15, color: OB.accent },
 });

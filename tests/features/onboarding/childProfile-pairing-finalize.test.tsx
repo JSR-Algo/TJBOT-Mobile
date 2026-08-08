@@ -117,9 +117,15 @@ describe('ChildProfileScreen — from-pairing finalize', () => {
     pickAgeAndSave(screen);
 
     // The finalize failure produces a visible, sensible error message.
+    // This assertion used to pin the pre-a2a3ae6a copy, which claimed a network
+    // fault for a code the SERVER answered with — the exact defect that fix
+    // removed. The test was left behind and had been failing ever since. The
+    // code must reach the screen, and the connection must not be blamed.
     await waitFor(() =>
       expect(
-        screen.getByText('Saved your child, but could not finish setting up the robot. Check your connection and try again.'),
+        screen.getByText(
+          'Saved your child, but could not finish setting up the robot (PROVISIONING_COMPLETE_FAILED). Try again, or send this code to support.',
+        ),
       ).toBeTruthy(),
     );
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.MicAskScreen);
