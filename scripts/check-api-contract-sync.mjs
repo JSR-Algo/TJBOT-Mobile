@@ -435,6 +435,182 @@ for (const row of registry) {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// ERROR-CODE DRIFT (F-T54-10)
+//
+// Routes were only half the contract. A mobile call can hit a route that exists
+// and still be undebuggable, because the CODE the route answers with has no
+// meaning on the client: the backend threw MAX_CHILDREN_REACHED, mobile tested
+// for MAX_CHILD_LIMIT_REACHED, each string occurred exactly once in its own
+// repo, and nothing connected them — so a 409 with a precise cause was shown to
+// a parent as "check your connection". Six of eight provisioning codes had the
+// same defect.
+//
+// Same shape as the route checks above: read backend reality from source, read
+// mobile reality from source, and require every difference to be justified in a
+// registry row that itself goes stale loudly.
+// ───────────────────────────────────────────────────────────────────────────
+
+// The onboarding + pairing request surface. consumer-provisioning.service.ts is
+// the service behind POST /v1/devices/provision/complete — the actual "finish
+// pairing" call — and carries five codes the original audit scope missed.
+const ONBOARDING_PAIRING_SOURCES = [
+  'identity/household.service.ts',
+  'identity/coppa-consent.service.ts',
+  'devices/claim.service.ts',
+  'devices/device-claim.service.ts',
+  'devices/bootstrap-token.service.ts',
+  'devices/devices.service.ts',
+  'devices/consumer-provisioning.service.ts',
+  'database/reward-contract.queries.ts',
+];
+
+const CODE_REGISTRY_FILE = join(API_DIR, 'unhandled-error-codes.ts');
+
+// Blank comments out WITHOUT changing length so reported line numbers stay
+// truthful. Collapsing them shifted every line after the first block comment.
+function blankComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length));
+}
+
+// Exact bounds of a `throw ...;`. A fixed-width window bleeds into the NEXT
+// throw and attributes its code to this one, which invented codes no site emits.
+function throwStatementAt(src, start) {
+  let depth = 0;
+  for (let i = start; i < src.length; i += 1) {
+    const c = src[i];
+    if (c === '(' || c === '{' || c === '[') depth += 1;
+    else if (c === ')' || c === '}' || c === ']') depth -= 1;
+    else if (c === ';' && depth <= 0) return src.slice(start, i + 1);
+  }
+  return src.slice(start, start + 600);
+}
+
+// Backend: every code an onboarding/pairing throw can put on the wire. Both
+// envelope keys count — http-exception.filter.ts promotes `{error:'X'}` and
+// `{code:'X'}` alike to the top-level `code`.
+const backendCodes = new Map();
+let scannedThrowSites = 0;
+for (const rel of ONBOARDING_PAIRING_SOURCES) {
+  const abs = join(BACKEND_ROOT, 'src', rel);
+  if (!existsSync(abs)) {
+    fail('error-code-source', `${rel} not found under ${BACKEND_ROOT}/src — the scan list is stale.`);
+    continue;
+  }
+  const src = blankComments(readFileSync(abs, 'utf8'));
+  for (const m of src.matchAll(/\bthrow\s+/g)) {
+    const stmt = throwStatementAt(src, m.index);
+    const line = src.slice(0, m.index).split('\n').length;
+    scannedThrowSites += 1;
+    const record = (code) => {
+      if (!backendCodes.has(code)) backendCodes.set(code, []);
+      backendCodes.get(code).push(`${rel}:${line}`);
+    };
+    for (const lit of stmt.matchAll(/\b(?:error|code):\s*'([^']+)'/g)) {
+      if (/^[A-Z][A-Z0-9_]{2,}$/.test(lit[1])) record(lit[1]);
+    }
+    for (const em of stmt.matchAll(/ErrorCode\.([A-Z][A-Z0-9_]*)/g)) record(em[1]);
+  }
+}
+if (scannedThrowSites < 40) {
+  fail(
+    'error-code-scan',
+    `scanned only ${scannedThrowSites} backend throw sites across ${ONBOARDING_PAIRING_SOURCES.length} files; ` +
+      'the scanner is broken, not the contract. A scan that matches nothing makes every check below vacuously pass.',
+  );
+}
+
+// Mobile: a code counts as handled when it appears either as a quoted literal
+// (Set member, `code === 'X'`) or as an object key (an ERROR_MESSAGES /
+// PAIRING_FINALIZE_MESSAGES entry). Matching only quoted literals reported every
+// mapped pairing code as unhandled, because those maps use bare keys.
+function walkMobileSources(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    if (entry === 'node_modules' || entry.startsWith('.')) continue;
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) walkMobileSources(full, out);
+    else if (/\.tsx?$/.test(full)) out.push(full);
+  }
+  return out;
+}
+
+const handledCodes = new Map();
+const MOBILE_SRC = join(MOBILE_ROOT, 'src');
+for (const file of walkMobileSources(MOBILE_SRC)) {
+  // The registry itself lists codes precisely because they are NOT handled;
+  // counting its rows as handlers would make every row self-justifying.
+  if (file === CODE_REGISTRY_FILE) continue;
+  const src = blankComments(readFileSync(file, 'utf8'));
+  const rel = relative(MOBILE_ROOT, file);
+  for (const re of [/['"`]([A-Z][A-Z0-9_]{2,})['"`]/g, /^\s*([A-Z][A-Z0-9_]{2,})\s*:/gm]) {
+    for (const m of src.matchAll(re)) {
+      if (!handledCodes.has(m[1])) handledCodes.set(m[1], []);
+      handledCodes.get(m[1]).push(`${rel}:${src.slice(0, m.index).split('\n').length}`);
+    }
+  }
+}
+
+// Registry parse — read the literal, same as UNDOCUMENTED_API_ROUTES: this
+// script runs under plain node with no TypeScript loader.
+const codeRegistry = [];
+if (!existsSync(CODE_REGISTRY_FILE)) {
+  fail('error-code-registry', `${relative(MOBILE_ROOT, CODE_REGISTRY_FILE)} is missing; the error-code gate cannot run.`);
+} else {
+  const regSrc = readFileSync(CODE_REGISTRY_FILE, 'utf8');
+  const body = regSrc.slice(regSrc.indexOf('export const UNHANDLED_ERROR_CODES'));
+  const rowRe =
+    /\{\s*code:\s*'([^']+)',\s*thrownBy:\s*'([^']+)',\s*reason:\s*'([^']+)',\s*justification:\s*(['"])((?:\\.|(?!\4)[\s\S])*)\4,\s*\}/g;
+  let cr;
+  while ((cr = rowRe.exec(body))) {
+    codeRegistry.push({ code: cr[1], thrownBy: cr[2], reason: cr[3], justification: cr[5] });
+  }
+  const declaredRows = (body.match(/\bcode:\s*'/g) ?? []).length;
+  if (codeRegistry.length !== declaredRows) {
+    fail(
+      'error-code-registry',
+      `parsed ${codeRegistry.length} registry rows but the literal declares ${declaredRows}; ` +
+        'a row is missing a required field or the parser needs updating.',
+    );
+  }
+}
+const codeRegistryByCode = new Map(codeRegistry.map((row) => [row.code, row]));
+
+// ── check 6: every backend code is handled or justified ───────────────────
+for (const [code, sites] of [...backendCodes].sort()) {
+  if (handledCodes.has(code) || codeRegistryByCode.has(code)) continue;
+  fail(
+    'unhandled-error-code',
+    `${code} (thrown at ${sites.join(', ')}) has no mobile handler and no UNHANDLED_ERROR_CODES row. ` +
+      'A code no client can name is a code the parent sees as a generic failure — give it copy, or justify the omission.',
+  );
+}
+
+// ── checks 7-9: registry rows stay true ───────────────────────────────────
+for (const row of codeRegistry) {
+  if (!backendCodes.has(row.code)) {
+    fail(
+      'stale-error-code-row',
+      `'${row.code}' is in UNHANDLED_ERROR_CODES but no scanned backend source throws it any more. Remove the row.`,
+    );
+  } else if (!backendCodes.get(row.code).some((s) => s.startsWith(row.thrownBy))) {
+    fail(
+      'stale-error-code-row',
+      `'${row.code}' names thrownBy '${row.thrownBy}' but is now thrown from ${backendCodes.get(row.code).join(', ')}. Correct the row.`,
+    );
+  }
+  if (handledCodes.has(row.code)) {
+    fail(
+      'stale-error-code-row',
+      `'${row.code}' is declared unhandled but mobile now handles it at ${handledCodes.get(row.code)[0]}. Remove the row.`,
+    );
+  }
+  if (!row.justification || row.justification.trim().length < 20) {
+    fail('error-code-registry', `'${row.code}' needs a real justification.`);
+  }
+}
+
 // ── report ────────────────────────────────────────────────────────────────
 if (asJson) {
   console.log(
@@ -445,6 +621,8 @@ if (asJson) {
         backendServedOperations: served.size,
         backendDocumentedOperations: documented.size,
         registryRows: registry.length,
+        backendErrorCodes: backendCodes.size,
+        errorCodeRegistryRows: codeRegistry.length,
         failures,
         notes,
       },
@@ -462,6 +640,11 @@ console.log(`  backend documented  : ${documented.size}`);
 console.log(`  mobile client calls : ${calls.length}`);
 console.log(
   `  registry rows       : ${registry.length} (${registry.filter((x) => x.status === 'backend-route-exists').length} awaiting mobile wiring)`,
+);
+console.log(
+  `  onboarding codes    : ${backendCodes.size} thrown, ` +
+    `${[...backendCodes.keys()].filter((c) => handledCodes.has(c)).length} handled by mobile, ` +
+    `${codeRegistry.length} justified as unhandled`,
 );
 
 const productionOnlyCalls = calls.filter((c) => productionOnly.has(c.key));
