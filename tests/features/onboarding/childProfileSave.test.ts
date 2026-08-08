@@ -173,4 +173,88 @@ describe('pairingFinalizeErrorMessage — all eight backend codes, not two', () 
     expect(pairingFinalizeErrorMessage({ message: 'Network request failed' }))
       .toContain('Check your connection');
   });
+  // ── F-T54-10: codes from POST /v1/devices/provision/complete ──────────────
+  // consumer-provisioning.service.ts is the service the finalize step actually
+  // calls, and it was missing from the original audit scope entirely, so all of
+  // these fell through to the generic message.
+
+  it('tells the parent to wait when the robot has not authenticated yet', () => {
+    for (const code of ['DEVICE_AUTH_NOT_VERIFIED', 'DEVICE_AUTH_TIMEOUT']) {
+      const msg = pairingFinalizeErrorMessage({ code, message: 'x' });
+      expect(msg).toMatch(/connect/i);
+      expect(msg).not.toContain('Check your connection');
+    }
+  });
+
+  it('names a permission failure on finalize instead of blaming the network', () => {
+    for (const code of ['NOT_HOUSEHOLD_MEMBER', 'CALLER_HAS_NO_HOUSEHOLD']) {
+      const msg = pairingFinalizeErrorMessage({ code, message: 'x' });
+      expect(msg).not.toContain('Check your connection');
+      expect(msg).toMatch(/account|household/i);
+    }
+  });
+
+  it('names a child-profile problem on the assign step', () => {
+    for (const code of ['CHILD_PROFILE_NOT_FOUND', 'CHILD_PROFILE_INACTIVE', 'CHILD_PROFILE_HOUSEHOLD_MISMATCH']) {
+      const msg = pairingFinalizeErrorMessage({ code, message: 'x' });
+      expect(msg).toMatch(/child/i);
+      expect(msg).not.toContain('Check your connection');
+    }
+  });
+
+  it('tells the parent to restart setup when the attempt changed underneath them', () => {
+    expect(pairingFinalizeErrorMessage({ code: 'PROVISIONING_ATTEMPT_CHANGED', message: 'x' }))
+      .toMatch(/start pairing again/i);
+  });
+
+  it('tells the parent the robot is not in setup mode', () => {
+    expect(pairingFinalizeErrorMessage({ code: 'NO_PROVISIONING_ATTEMPT', message: 'x' }))
+      .toMatch(/setup mode/i);
+  });
+
+  it('never blames the network for any mapped finalize code', () => {
+    // The whole defect class in one assertion: every code the finalize endpoint
+    // can answer with must produce copy that does not assert a transport fault.
+    const codes = [
+      'PROVISIONING_ATTEMPT_EXPIRED', 'PROVISIONING_ATTEMPT_NOT_FOUND', 'PROVISIONING_TIMEOUT',
+      'PROVISIONING_ATTEMPT_ALREADY_COMPLETED', 'PROVISIONING_ATTEMPT_NOT_READY',
+      'PROVISIONING_ATTEMPT_NOT_OWNED', 'PROVISIONING_DEVICE_MISMATCH', 'PROVISIONING_SERIAL_MISMATCH',
+      'DEVICE_AUTH_NOT_VERIFIED', 'DEVICE_AUTH_TIMEOUT', 'PROVISIONING_ATTEMPT_CHANGED',
+      'NO_PROVISIONING_ATTEMPT', 'NOT_HOUSEHOLD_MEMBER', 'CALLER_HAS_NO_HOUSEHOLD',
+      'CHILD_PROFILE_NOT_FOUND', 'CHILD_PROFILE_INACTIVE', 'CHILD_PROFILE_HOUSEHOLD_MISMATCH',
+    ];
+    for (const code of codes) {
+      expect(pairingFinalizeErrorMessage({ code, message: 'x' })).not.toContain('Check your connection');
+    }
+  });
+});
+
+describe('childProfileSaveErrorMessage — codes the add-child path can answer with (F-T54-11)', () => {
+  it('names a COPPA server fault instead of a connection problem', () => {
+    // These three were bare `throw new Error()` backend-side, so they arrived
+    // with NO code at all and hit the "check your connection" branch — telling a
+    // parent on a working network to debug their Wi-Fi for a server fault.
+    for (const code of [
+      'COPPA_BIRTH_YEAR_UNRESOLVED',
+      'COPPA_LOCK_KEY_UNRESOLVED',
+      'COPPA_CONSENT_WRITE_FAILED',
+    ]) {
+      const msg = childProfileSaveErrorMessage({ code, message: 'x', status: 500 });
+      expect(msg).not.toContain('Check your connection');
+      expect(msg).toContain(code);
+    }
+  });
+
+  it('names a household permission failure on add-child', () => {
+    for (const code of ['NOT_HOUSEHOLD_MEMBER', 'CALLER_HAS_NO_HOUSEHOLD']) {
+      const msg = childProfileSaveErrorMessage({ code, message: 'x', status: 403 });
+      expect(msg).not.toContain('Check your connection');
+      expect(msg).toMatch(/account|household/i);
+    }
+  });
+
+  it('names a missing child profile', () => {
+    expect(childProfileSaveErrorMessage({ code: 'CHILD_NOT_FOUND', message: 'x', status: 404 }))
+      .toMatch(/could not find/i);
+  });
 });
