@@ -64,6 +64,12 @@ const AGE_BANDS = [
 
 type AgeBandId = (typeof AGE_BANDS)[number]['id'];
 
+// Picking an age range is no longer required to save. An unpicked band falls back
+// to this one so `date_of_birth` stays a real value the backend can derive a band
+// from. Content age-gating then runs against the fallback, not the child's real
+// age, until the parent edits the profile.
+const DEFAULT_AGE_BAND: AgeBandId = 'PRE_K';
+
 function dobFromAgeBand(bandId: AgeBandId): string {
   const band = AGE_BANDS.find(b => b.id === bandId);
   const years = band?.midpointYears ?? 5;
@@ -94,10 +100,6 @@ export function AddChildContent({ navigation }: Pick<Props, 'navigation'>): Reac
 
   const saveChild = async (): Promise<void> => {
     if (saving) return;
-    if (!ageBand) {
-      setError('Pick an age range before saving.');
-      return;
-    }
     setSaving(true);
     setError(null);
 
@@ -105,7 +107,7 @@ export function AddChildContent({ navigation }: Pick<Props, 'navigation'>): Reac
     try {
       child = await saveOnboardingChildProfile({
         name: effectiveChildName,
-        date_of_birth: dobFromAgeBand(ageBand),
+        date_of_birth: dobFromAgeBand(ageBand ?? DEFAULT_AGE_BAND),
         vocabulary_level: LEVEL_TO_VOCABULARY[level],
         learning_style: 'visual',
       }, {

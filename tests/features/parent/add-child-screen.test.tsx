@@ -115,15 +115,24 @@ describe('AddChildScreen', () => {
     expect(navigate).toHaveBeenCalledWith(ROUTES.ParentSettingsScreen);
   });
 
-  it('requires an age range before saving (no creation attempt)', () => {
+  // Contract change: picking an age range no longer gates saving. An unpicked band
+  // falls back to PRE_K so date_of_birth is still a value the backend can derive a
+  // band from — content age-gating then runs against that fallback, not the child's
+  // real age, until the parent edits the profile.
+  it('saves without an age range, defaulting the band instead of blocking', async () => {
     const navigate = jest.fn();
     const screen = renderScreen(navigate);
 
     fireEvent.press(screen.getByTestId('addChildSaveButton'));
 
-    expect(screen.getByText('Pick an age range before saving.')).toBeTruthy();
-    expect(mockedSave).not.toHaveBeenCalled();
-    expect(setActiveChild).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockedSave).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('Pick an age range before saving.')).toBeNull();
+    const defaultBirthYear = new Date().getFullYear() - 5;
+    expect(mockedSave).toHaveBeenCalledWith(
+      expect.objectContaining({ date_of_birth: `${defaultBirthYear}-07-01` }),
+      expect.anything(),
+    );
+    await waitFor(() => expect(setActiveChild).toHaveBeenCalledWith('child-new-1'));
   });
 
   it('surfaces a save error and neither sets the active child nor navigates', async () => {
