@@ -851,7 +851,11 @@ describe('BLE service', () => {
     expect(cancelConnection).toHaveBeenCalledTimes(1);
   });
 
-  test('treats ESP-IDF Wi-Fi scan-fail error-info as an empty Robot Wi-Fi list response', async () => {
+  // Contract change (adhoc-2026-08-08-blufi-mtu-frag-leak): WIFI_SCAN_FAIL used to
+  // resolve to [], which the pairing screen rendered as "No Robot-scanned networks
+  // found" — blaming the environment for a robot-side failure. It now surfaces the
+  // raw BluFi code so the screen can say the robot's scan was unavailable.
+  test('surfaces ESP-IDF Wi-Fi scan-fail error-info as a coded robot error, not an empty list', async () => {
     const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
     const remove = jest.fn();
     const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: (error: Error | null, characteristic: { value: string | null } | null) => void) => {
@@ -874,8 +878,11 @@ describe('BLE service', () => {
     await expect(scanRobotWifiNetworks({
       device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
       connectDevice: connect,
-    })).resolves.toEqual([]);
+    })).rejects.toMatchObject({ code: 'BLE_WIFI_SCAN_ROBOT_ERROR', blufiErrorCode: 0x0b });
 
+    // Retried once — a robot whose Wi-Fi driver is still starting reports scan-fail
+    // transiently — then surfaced rather than silently downgraded to "no networks".
+    expect(connect).toHaveBeenCalledTimes(2);
     expect(remove).toHaveBeenCalled();
     expect(cancelConnection).toHaveBeenCalled();
   });
@@ -2235,6 +2242,223 @@ describe('BLE service', () => {
     expect(connect).toHaveBeenCalledTimes(1);
     expect(remove).toHaveBeenCalledTimes(1);
     expect(cancelConnection).toHaveBeenCalledTimes(1);
+  });
+
+  // ===========================================================================
+  // BluFi fragment-size invariant: ESP-IDF carries `blufi_env.frag_size` over
+  // from the previous BLE session, so a session that skips MTU negotiation gets
+  // its robot->phone frames truncated by GATT. Every session must negotiate.
+  // ===========================================================================
+
+  test('negotiates MTU before writing the Wi-Fi scan request', async () => {
+    const order: string[] = [];
+    const requestMTU = jest.fn(() => {
+      order.push('mtu');
+      return Promise.resolve({});
+    });
+    const writeCharacteristicWithResponseForService = jest.fn(() => {
+      order.push('write');
+      return Promise.resolve({});
+    });
+    const remove = jest.fn();
+    const monitorCharacteristicForService = jest.fn((_s: string, _c: string, listener: BleNotifyListener) => {
+      listener(null, { value: encodeBase64([0x45, 0x04, 0x00, 0x06, 0x05, 0xc9, ...asciiBytes('Casa')]) });
+      return { remove };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+      requestMTU,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    await expect(scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    })).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
+
+    expect(requestMTU).toHaveBeenCalledWith(512);
+    expect(order).toEqual(['mtu', 'write']);
+  });
+
+  test('still scans when the Wi-Fi scan session MTU request rejects', async () => {
+    const requestMTU = jest.fn().mockRejectedValue(new Error('native MTU negotiation failed'));
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    const monitorCharacteristicForService = jest.fn((_s: string, _c: string, listener: BleNotifyListener) => {
+      listener(null, { value: encodeBase64([0x45, 0x04, 0x00, 0x06, 0x05, 0xc9, ...asciiBytes('Casa')]) });
+      return { remove };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+      requestMTU,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    await expect(scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    })).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
+
+    expect(requestMTU).toHaveBeenCalledWith(512);
+    expect(writeCharacteristicWithResponseForService).toHaveBeenCalled();
+  });
+
+  test('negotiates MTU before writing claim bootstrap token frames', async () => {
+    const order: string[] = [];
+    const discoveredRequestMTU = jest.fn<Promise<unknown>, [number]>(() => {
+      order.push('mtu');
+      return Promise.resolve({});
+    });
+    const writeCharacteristicWithResponseForService = jest.fn<Promise<unknown>, [string, string, string]>(() => {
+      order.push('write');
+      return Promise.resolve({});
+    });
+    const { connect } = createSecureProvisioningMocks({
+      discoveredRequestMTU,
+      writeCharacteristicWithResponseForService,
+    });
+
+    await sendClaimBootstrapTokenViaBle({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+      connectDevice: connect,
+    });
+
+    expect(discoveredRequestMTU).toHaveBeenCalledWith(512);
+    expect(order[0]).toBe('mtu');
+    expect(order).toContain('write');
+  });
+
+  // ===========================================================================
+  // BluFi error-info frames must end the wait instead of burning the timeout.
+  // ===========================================================================
+
+  test('rejects BLE_WIFI_SCAN_ROBOT_ERROR immediately on a non-scan-fail BluFi error-info frame', async () => {
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    // 0x00 = ESP_BLUFI_SEQUENCE_ERROR — the robot rejected the request outright.
+    const monitorCharacteristicForService = jest.fn((_s: string, _c: string, listener: BleNotifyListener) => {
+      listener(null, { value: encodeBase64([0x49, 0x00, 0x00, 0x01, 0x00]) });
+      return { remove };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    await expect(scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    })).rejects.toMatchObject({ code: 'BLE_WIFI_SCAN_ROBOT_ERROR', blufiErrorCode: 0x00 });
+
+    // Bounded at BLE_WIFI_SCAN_ATTEMPTS, and each link is released. Running under
+    // real timers is the immediacy proof: waiting out the 15s response timeout
+    // twice would blow Jest's 5s default test timeout.
+    expect(connect).toHaveBeenCalledTimes(2);
+    expect(remove).toHaveBeenCalledTimes(2);
+    expect(cancelConnection).toHaveBeenCalledTimes(2);
+  });
+
+  test('discards a broken fragment run so a later frame in the same session still parses', async () => {
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    const monitorCharacteristicForService = jest.fn((_s: string, _c: string, listener: BleNotifyListener) => {
+      // Fragment claims 0x20 more bytes but the run is closed by a short final
+      // frame — a dropped fragment. Without a reset the stale chunks would be
+      // measured against 0x20 forever and the good frame below never parses.
+      listener(null, { value: encodeBase64([0x45, 0x10, 0x00, 0x06, 0x20, 0x00, 0xaa, 0xbb, 0xcc, 0xdd]) });
+      listener(null, { value: encodeBase64([0x45, 0x00, 0x01, 0x02, 0xee, 0xff]) });
+      listener(null, { value: encodeBase64([0x45, 0x00, 0x02, 0x06, 0x05, 0xc9, ...asciiBytes('Casa')]) });
+      return { remove };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    await expect(scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    })).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
+  });
+
+  test('logs and does not resolve a Wi-Fi list frame truncated below its declared data length', async () => {
+    jest.useFakeTimers();
+    const info = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    // Header declares 0x40 payload bytes but GATT delivered only 2 — exactly what
+    // an oversized robot frag_size looks like on a 23-byte MTU link.
+    const monitorCharacteristicForService = jest.fn((_s: string, _c: string, listener: BleNotifyListener) => {
+      listener(null, { value: encodeBase64([0x45, 0x00, 0x00, 0x40, 0x05, 0xc9]) });
+      return { remove };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+    const connect = jest.fn().mockResolvedValue({
+      discoverAllServicesAndCharacteristics,
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    const scan = scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    });
+
+    const scanExpectation = expect(scan).rejects.toMatchObject({ code: 'BLE_WIFI_SCAN_FAILED' });
+    await jest.advanceTimersByTimeAsync(15000);
+    await jest.advanceTimersByTimeAsync(300);
+    await jest.advanceTimersByTimeAsync(15000);
+    await scanExpectation;
+
+    // The truncation is named in diagnostics — otherwise it is indistinguishable
+    // from a robot that never answered, which is what hid this bug in the field.
+    expect(info).toHaveBeenCalledWith(
+      '[TBOT BLE WiFiScan]',
+      expect.objectContaining({ stage: 'frame_truncated', frameLength: 6, declaredDataLength: 0x40 }),
+    );
+
+    info.mockRestore();
+    jest.useRealTimers();
   });
 
   // ===========================================================================

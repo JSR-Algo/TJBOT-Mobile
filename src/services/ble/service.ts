@@ -224,7 +224,6 @@ const BLE_PROVISIONING_STATIC_MESSAGE = 'Robot did not accept local Wi-Fi provis
 const BLUFI_WIFI_LIST_TYPE = 0x45;
 const BLUFI_ERROR_INFO_TYPE = 0x49;
 const BLUFI_FRAME_CONTROL_FRAGMENT = 0x10;
-const ESP_BLUFI_WIFI_SCAN_FAIL = 0x0b;
 const BLUFI_WIFI_SCAN_RESPONSE_TIMEOUT_MS = 15000;
 const BLE_WIFI_SCAN_ATTEMPTS = 2;
 const BLE_WIFI_SCAN_RETRY_DELAY_MS = 300;
@@ -456,6 +455,11 @@ const SAFE_BLE_LOG_DETAIL_KEYS = new Set([
   'nativeCode',
   'errorCode',
   'backendCode',
+  // BluFi transport diagnostics. Numeric only — never carries SSID, password,
+  // token, or address material.
+  'blufiErrorCode',
+  'frameLength',
+  'declaredDataLength',
 ]);
 
 function safeBleLogDetail(detail: Record<string, unknown>): Record<string, unknown> {
@@ -513,6 +517,12 @@ export async function sendClaimBootstrapTokenViaBle(params: {
         tokenEntries.push({ tag: 0x03, value: params.deviceId });
       }
       securityResponse = waitForBluFiSecurityResponse(boundMonitor, BLUFI_SECURITY_RESPONSE_TIMEOUT_MS);
+      // Same fragment-size invariant as the Wi-Fi scan session: without this the
+      // robot's 128-byte DH public key is cut to the default MTU and the security
+      // handshake dies on its own timeout.
+      await requestBleMtu(connected, discovered).catch((error) => {
+        logBleProvision('mtu_skipped', { deviceId: params.device.id, message: errorMessage(error) });
+      });
       const security = buildBluFiSecurityNegotiationFrames({}, 0);
       const setSecurityFrame = security.frames[security.frames.length - 1];
       const negotiateFrames = security.frames.slice(0, -1);
@@ -572,7 +582,12 @@ export async function scanRobotWifiNetworks(params: {
       return await scanRobotWifiNetworksOnce(params.device, connectDevice, attempt, params.signal);
     } catch (error) {
       lastError = error;
-      logBleWifiScan('failed', { attempt, code: errorCode(error), message: errorMessage(error) });
+      logBleWifiScan('failed', {
+        attempt,
+        code: errorCode(error),
+        message: errorMessage(error),
+        blufiErrorCode: blufiErrorCodeOf(error),
+      });
       if (!isRetryableWifiScanError(error) || attempt >= BLE_WIFI_SCAN_ATTEMPTS) {
         throw normalizeWifiScanError(error);
       }
@@ -619,6 +634,14 @@ async function scanRobotWifiNetworksOnce(
     }
 
     const scanResult = waitForBluFiWifiList(monitor.bind(monitorTarget), signal);
+    // ESP-IDF keeps `blufi_env.frag_size` from the last MTU exchange and never
+    // resets it on BLE disconnect. A session that skips MTU negotiation inherits
+    // the previous session's larger fragment size while running at the 23-byte
+    // default MTU, so every robot->phone frame is truncated by GATT and the list
+    // never arrives. Every BluFi session must negotiate the same MTU.
+    await requestBleMtu(connected, discovered).catch((error) => {
+      logBleWifiScan('mtu_skipped', { attempt, message: errorMessage(error) });
+    });
     logBleWifiScan('write_scan_request', { attempt });
     const writeResult = withBleAbort(
       writeBluFiFrames(writer.bind(target), buildBluFiWifiScanFrames(), {
@@ -649,11 +672,36 @@ function logBleWifiScan(stage: string, detail: Record<string, unknown>): void {
   }
 }
 
+/**
+ * The robot answered our GET_WIFI_LIST with a BluFi error-info frame. `blufiErrorCode`
+ * is the raw `esp_blufi_error_state_t` value so the failure stays diagnosable.
+ */
+function blufiScanRobotError(blufiErrorCode: number): Error & { code: string; blufiErrorCode: number } {
+  return Object.assign(
+    codedError('BLE_WIFI_SCAN_ROBOT_ERROR', 'Robot rejected the BLE Wi-Fi scan request.'),
+    { blufiErrorCode },
+  );
+}
+
+function blufiErrorCodeOf(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const candidate = (error as { blufiErrorCode?: unknown }).blufiErrorCode;
+  return typeof candidate === 'number' ? candidate : undefined;
+}
+
 function isRetryableWifiScanError(error: unknown): boolean {
-  return !hasCode(error) || error.code === 'BLE_WIFI_SCAN_FAILED';
+  if (!hasCode(error)) return true;
+  // A robot-reported error is worth one more session: WIFI_SCAN_FAIL in particular
+  // is transient while the robot's Wi-Fi driver is still coming up. It is retried
+  // here rather than by the screen, which used to re-run the whole scan three times
+  // because an empty array carried no failure signal at all.
+  return error.code === 'BLE_WIFI_SCAN_FAILED' || error.code === 'BLE_WIFI_SCAN_ROBOT_ERROR';
 }
 
 function normalizeWifiScanError(error: unknown): Error & { code: string } {
+  if (error instanceof Error && hasCode(error) && error.code === 'BLE_WIFI_SCAN_ROBOT_ERROR') {
+    return Object.assign(error, { code: error.code });
+  }
   if (hasCode(error) && (
     error.code === 'BLE_WIFI_SCAN_FAILED' ||
     error.code === 'BLE_WIFI_SCAN_UNSUPPORTED' ||
@@ -991,7 +1039,13 @@ function waitForBluFiWifiList(
           return;
         }
 
-        const parsed = parseBluFiWifiListFrame(characteristic?.value, accumulator);
+        let parsed: RobotWifiNetwork[] | undefined;
+        try {
+          parsed = parseBluFiWifiListFrame(characteristic?.value, accumulator);
+        } catch (parseError) {
+          finish(() => reject(parseError));
+          return;
+        }
         if (parsed) {
           finish(() => resolve(parsed));
         }
@@ -1183,11 +1237,27 @@ function parseBluFiWifiListFrame(base64Value: string | null | undefined, accumul
   if (!frame || frame.length < 4) return undefined;
   const [type, frameControl, , dataLength] = frame;
 
-  if (type === BLUFI_ERROR_INFO_TYPE && frame.length >= 4 + dataLength) {
-    return frame[4] === ESP_BLUFI_WIFI_SCAN_FAIL ? [] : undefined;
+  if (type === BLUFI_ERROR_INFO_TYPE && frame.length >= 4 + dataLength && dataLength >= 1) {
+    // Every error-info code — including WIFI_SCAN_FAIL (0x0b) — means the robot could not
+    // answer with a list. Reporting that as an empty array made it indistinguishable
+    // from "no networks are in range", so the user was told to type an SSID under
+    // the wrong explanation. End the wait with the raw code instead.
+    resetBluFiListAccumulator(accumulator);
+    throw blufiScanRobotError(frame[4]);
   }
 
-  if (type !== BLUFI_WIFI_LIST_TYPE || frame.length < 4 + dataLength) return undefined;
+  if (type === BLUFI_WIFI_LIST_TYPE && frame.length < 4 + dataLength) {
+    // GATT cut the notify short: the robot's BluFi fragment size is larger than
+    // the ATT MTU actually negotiated for this session. Logged because the frame
+    // is otherwise indistinguishable from "robot never answered".
+    logBleWifiScan('frame_truncated', { frameLength: frame.length, declaredDataLength: dataLength });
+    // A half-frame poisons any run in progress; start clean so a later retry in
+    // this same session can still assemble a list.
+    resetBluFiListAccumulator(accumulator);
+    return undefined;
+  }
+
+  if (type !== BLUFI_WIFI_LIST_TYPE) return undefined;
 
   const payload = frame.slice(4, 4 + dataLength);
   const isFragment = (frameControl & BLUFI_FRAME_CONTROL_FRAGMENT) !== 0;
@@ -1202,11 +1272,26 @@ function parseBluFiWifiListFrame(base64Value: string | null | undefined, accumul
 
   if (accumulator.expectedLength !== undefined) {
     accumulator.chunks.push(...payload);
-    if (accumulator.chunks.length !== accumulator.expectedLength) return undefined;
-    return parseBluFiWifiListPayload(accumulator.chunks);
+    const expectedLength = accumulator.expectedLength;
+    const chunks = accumulator.chunks;
+    if (chunks.length !== expectedLength) {
+      // A fragment was dropped or over-delivered. Without this reset the stale
+      // chunks stay in the accumulator and every later frame in the session is
+      // measured against a length it can never reach.
+      logBleWifiScan('fragment_run_discarded', { frameLength: chunks.length, declaredDataLength: expectedLength });
+      resetBluFiListAccumulator(accumulator);
+      return undefined;
+    }
+    resetBluFiListAccumulator(accumulator);
+    return parseBluFiWifiListPayload(chunks);
   }
 
   return parseBluFiWifiListPayload(payload);
+}
+
+function resetBluFiListAccumulator(accumulator: BluFiListAccumulator): void {
+  accumulator.expectedLength = undefined;
+  accumulator.chunks = [];
 }
 
 function parseBluFiWifiListPayload(payload: number[]): RobotWifiNetwork[] {
