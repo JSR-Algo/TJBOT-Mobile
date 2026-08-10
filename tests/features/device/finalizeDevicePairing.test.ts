@@ -53,6 +53,16 @@ const COMPLETE_OK: CompleteDeviceProvisioningResult = {
   },
 };
 
+const COMPLETE_OK_WITHOUT_CHILD: CompleteDeviceProvisioningResult = {
+  device: {
+    id: 'device-1',
+    status: 'active',
+    lifecycleState: 'provisioned',
+    displayName: 'Living-room Robot',
+    assignedChildProfileId: null,
+  },
+};
+
 const CONTEXT = { deviceId: 'device-1', provisioningAttemptId: 'claim-1', serialNumber: 'TBT-2026-004217' };
 
 beforeEach(() => {
@@ -127,6 +137,33 @@ describe('finalizeDevicePairing', () => {
       assignChildProfileId: 'child-9',
       displayName: 'Living-room Robot',
     });
+    expect(mockedMarkLocal).toHaveBeenCalledWith('device-1');
+    expect(reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: { deviceId: 'device-1', serialNumber: 'TBT-2026-004217', provisioningAttemptId: 'claim-1' },
+        },
+      ],
+    });
+  });
+
+  it('completes provisioning without a child profile and omits assignChildProfileId from the claim payload', async () => {
+    mockedComplete.mockResolvedValueOnce(COMPLETE_OK_WITHOUT_CHILD);
+    const reset = jest.fn();
+
+    await finalizeDevicePairing({ reset }, CONTEXT);
+
+    expect(mockedComplete).toHaveBeenCalledTimes(1);
+    const [payload] = mockedComplete.mock.calls[0];
+    expect(payload).toEqual({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      displayName: 'Living-room Robot',
+    });
+    expect(payload).not.toHaveProperty('assignChildProfileId');
     expect(mockedMarkLocal).toHaveBeenCalledWith('device-1');
     expect(reset).toHaveBeenCalledWith({
       index: 1,

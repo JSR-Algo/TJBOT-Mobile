@@ -10,7 +10,7 @@ import { markLocalDevicePaired } from './localPairedDevice';
 import { clearPendingPairingContext } from './pendingPairingContext';
 
 // The terminal "finish pairing" step, shared by every place that turns an
-// already-claimed robot into a completed, child-assigned device. It is invoked
+// already-claimed robot into a completed household-owned device. It is invoked
 // from:
 //   - PairRenameScreen (the happy path: a child already exists), and
 //   - ChildProfileScreen (the zero-child path: the parent just created a child
@@ -84,7 +84,7 @@ function waitForDeviceAuthRetry(): Promise<void> {
 
 async function completeWhenDeviceAuthenticated(
   context: DevicePairingContext,
-  childId: string,
+  childId?: string,
   displayName?: string,
 ): Promise<void> {
   let localRecoveryAttempted = false;
@@ -93,8 +93,8 @@ async function completeWhenDeviceAuthenticated(
       await completeDeviceProvisioning({
         provisioningAttemptId: context.provisioningAttemptId,
         deviceId: context.deviceId,
-        assignChildProfileId: childId,
         displayName: normalizedDisplayName(displayName),
+        ...(childId ? { assignChildProfileId: childId } : {}),
       });
       return;
     } catch (error) {
@@ -160,7 +160,7 @@ export async function finishDevicePairingSuccess(
   });
 }
 
-// Completes provisioning for `childId`, marks the device locally paired, then
+// Completes provisioning, marks the device locally paired, then
 // resets the stack so the (now-finished) pairing screens are removed from the
 // back stack and DeviceHome becomes the root, with PairSuccess on top — the same
 // terminus the happy path uses. If the backend says the device is already
@@ -170,7 +170,7 @@ export async function finishDevicePairingSuccess(
 export async function finalizeDevicePairing(
   navigation: Pick<NavigationProp<RootStackParamList>, 'reset'>,
   context: DevicePairingContext,
-  childId: string,
+  childId?: string,
   displayName?: string,
 ): Promise<void> {
   await completeWhenDeviceAuthenticated(context, childId, displayName);

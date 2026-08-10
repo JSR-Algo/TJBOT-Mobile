@@ -41,7 +41,7 @@ export interface ProvisioningAttemptStatusResult {
 export interface CompleteDeviceProvisioningParams {
   provisioningAttemptId: string;
   deviceId: string;
-  assignChildProfileId: string;
+  assignChildProfileId?: string;
   displayName: string;
 }
 
@@ -51,7 +51,7 @@ export interface CompleteDeviceProvisioningResult {
     status: string;
     lifecycleState: string;
     displayName: string;
-    assignedChildProfileId: string;
+    assignedChildProfileId: string | null;
   };
 }
 
@@ -211,8 +211,8 @@ export async function completeDeviceProvisioning(params: CompleteDeviceProvision
   const response = await client.post<CompleteDeviceProvisioningResult>('/devices/provision/complete', {
     provisioningAttemptId: params.provisioningAttemptId,
     deviceId: params.deviceId,
-    assignChildProfileId: params.assignChildProfileId,
     displayName: params.displayName,
+    ...(params.assignChildProfileId ? { assignChildProfileId: params.assignChildProfileId } : {}),
   });
   return response.data;
 }
