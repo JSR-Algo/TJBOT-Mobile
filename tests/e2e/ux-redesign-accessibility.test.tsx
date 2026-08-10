@@ -787,7 +787,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
-      provisioningAttemptId: 'attempt-bad-status',
+      provisioningAttemptId: 'attempt-1',
     }));
     expect(apiMocks.getProvisioningAttemptStatus).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
@@ -906,7 +906,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
-      provisioningAttemptId: 'attempt-fail',
+      provisioningAttemptId: 'attempt-1',
       code: '123456',
       ssid: 'Casa Wi-Fi',
       bleDeviceId: 'ble-device-1',

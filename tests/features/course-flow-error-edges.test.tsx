@@ -138,6 +138,34 @@ beforeEach(() => {
 // "the device's assignment is not what you think it is", so both must take the
 // same recovery path.
 describe('SendToRobotScreen — assignment conflict is surfaced and refreshes state', () => {
+  it('sends to a household-owned unbound primary robot for the active child', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      ...ONLINE_ROBOT,
+      assignedChildProfileId: null,
+    });
+    mockedCreateAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-unbound',
+      id: 'asg-unbound',
+      assignmentVersion: 1,
+      manifestChecksum: 'sha256:w01-d01',
+    } as never);
+    const navigation = renderSend();
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+
+    await pressSend();
+
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
+    expect(mockedCreateAssignment).toHaveBeenCalledWith(expect.objectContaining({
+      deviceId: 'dev-1',
+      childId: 'ch-1',
+      lessonId: 'w01-d01-barn-say-it',
+    }));
+    expect(navigation.navigate).toHaveBeenCalledWith(
+      ROUTES.RobotReadyScreen,
+      expect.objectContaining({ deviceId: 'dev-1', assignmentId: 'asg-unbound' }),
+    );
+  });
+
   it('recovers from ROBOT_BUSY when the robot already holds the lesson the parent picked', async () => {
     mockedCreateAssignment.mockRejectedValueOnce(conflict('ROBOT_BUSY'));
     mockedGetCurrentAssignment.mockResolvedValueOnce({

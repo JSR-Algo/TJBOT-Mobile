@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
+import type { NavigationProp } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
@@ -17,25 +18,45 @@ export default function PairRenameScreen({ navigation, route }: Props) {
   const [authTimedOut, setAuthTimedOut] = React.useState(false);
   const inFlightRef = React.useRef(false);
   const mountedRef = React.useRef(true);
+  const runSeqRef = React.useRef(0);
 
   React.useEffect(() => {
     return () => {
       mountedRef.current = false;
+      runSeqRef.current += 1;
     };
   }, []);
+
+  React.useEffect(() => {
+    const removeBlurListener = navigation.addListener?.('blur', () => {
+      mountedRef.current = false;
+      runSeqRef.current += 1;
+    });
+    return () => {
+      removeBlurListener?.();
+    };
+  }, [navigation]);
 
   const finishPairing = React.useCallback(async (): Promise<void> => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
+    mountedRef.current = true;
+    const runSeq = ++runSeqRef.current;
+    const isActiveRun = () => mountedRef.current && runSeqRef.current === runSeq;
     setAuthTimedOut(false);
 
     const pendingContext = await getPendingPairingContext().catch(() => null);
+    if (!isActiveRun()) {
+      inFlightRef.current = false;
+      return;
+    }
     const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
     const provisioningAttemptId = route.params?.provisioningAttemptId ?? pendingContext?.provisioningAttemptId;
     const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
 
     if (!deviceId || !provisioningAttemptId) {
       inFlightRef.current = false;
+      if (!isActiveRun()) return;
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
         serialNumber,
@@ -46,13 +67,19 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     }
 
     try {
-      await finalizeDevicePairing(navigation, { deviceId, provisioningAttemptId, serialNumber });
+      const guardedNavigation: Pick<NavigationProp<RootStackParamList>, 'reset'> = {
+        reset: (state) => {
+          if (isActiveRun()) navigation.reset(state as Parameters<typeof navigation.reset>[0]);
+        },
+      };
+      await finalizeDevicePairing(guardedNavigation, { deviceId, provisioningAttemptId, serialNumber });
     } catch (error) {
       const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
       if (code === 'DEVICE_AUTH_TIMEOUT') {
-        if (mountedRef.current) setAuthTimedOut(true);
+        if (isActiveRun()) setAuthTimedOut(true);
         return;
       }
+      if (!isActiveRun()) return;
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
         serialNumber,
@@ -60,7 +87,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
         errorCode: code,
       });
     } finally {
-      inFlightRef.current = false;
+      if (isActiveRun()) inFlightRef.current = false;
     }
   }, [navigation, route.params?.deviceId, route.params?.provisioningAttemptId, route.params?.serialNumber]);
 

@@ -47,9 +47,14 @@ const COMPLETE_OK: CompleteDeviceProvisioningResult = {
   },
 };
 
-function renderScreen(navigate: jest.Mock, params?: Record<string, unknown>, reset: jest.Mock = jest.fn()) {
+function renderScreen(
+  navigate: jest.Mock,
+  params?: Record<string, unknown>,
+  reset: jest.Mock = jest.fn(),
+  navigationOverrides: Record<string, unknown> = {},
+) {
   return render(
-    <PairRenameScreen navigation={{ navigate, reset } as never} route={{ params } as never} />,
+    <PairRenameScreen navigation={{ navigate, reset, ...navigationOverrides } as never} route={{ params } as never} />,
   );
 }
 
@@ -198,6 +203,53 @@ describe('PairRenameScreen auto-finalization bridge', () => {
 
     await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(2));
     resolveComplete(COMPLETE_OK);
+  });
+
+  it('does not navigate after the bridge unmounts while finalization is still in flight', async () => {
+    let resolveComplete: (value: CompleteDeviceProvisioningResult) => void = () => undefined;
+    mockedComplete.mockImplementationOnce(
+      () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
+    );
+    const navigate = jest.fn();
+    const reset = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS, reset);
+
+    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(1));
+    screen.unmount();
+
+    await act(async () => {
+      resolveComplete(COMPLETE_OK);
+    });
+
+    expect(reset).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+  });
+
+  it('does not navigate after the bridge loses focus while finalization is still in flight', async () => {
+    let blurHandler: (() => void) | undefined;
+    let resolveComplete: (value: CompleteDeviceProvisioningResult) => void = () => undefined;
+    mockedComplete.mockImplementationOnce(
+      () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
+    );
+    const navigate = jest.fn();
+    const reset = jest.fn();
+    const addListener = jest.fn((event: string, handler: () => void) => {
+      if (event === 'blur') blurHandler = handler;
+      return jest.fn();
+    });
+    renderScreen(navigate, FULL_PARAMS, reset, { addListener });
+
+    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(1));
+    act(() => {
+      blurHandler?.();
+    });
+    await act(async () => {
+      resolveComplete(COMPLETE_OK);
+    });
+
+    expect(addListener).toHaveBeenCalledWith('blur', expect.any(Function));
+    expect(reset).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
   it('preserves typed non-timeout finalize errors on PairFailed', async () => {

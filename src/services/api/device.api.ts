@@ -70,7 +70,7 @@ export interface DeviceStatus {
   // column EXISTS in the DB (devices.assigned_child_profile_id, set at
   // provisioning complete) but GET /devices/household/me does NOT SELECT it, so
   // this is usually undefined and the resolver falls back to devices[0].
-  assignedChildProfileId?: string;
+  assignedChildProfileId?: string | null;
 }
 
 export interface FirmwareVersion {
@@ -98,8 +98,8 @@ interface DeviceDto {
   // DB row carries `assigned_child_profile_id`; the provision-complete response
   // uses the camelCase `assignedChildProfileId`. Either may appear if/when the
   // household list starts surfacing the column (currently it does not).
-  assigned_child_profile_id?: string;
-  assignedChildProfileId?: string;
+  assigned_child_profile_id?: string | null;
+  assignedChildProfileId?: string | null;
 }
 
 function normalizeDevice(dto: DeviceDto): DeviceStatus {
@@ -124,7 +124,7 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
     lastSeenAt: dto.last_seen_at,
     // Only surface the binding when present, so the single-device household
     // response stays byte-identical to the pre-binding shape (exact-match tests).
-    ...(assignedChildProfileId ? { assignedChildProfileId } : {}),
+    ...(assignedChildProfileId !== undefined ? { assignedChildProfileId } : {}),
   };
 }
 
@@ -139,6 +139,10 @@ function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceD
       (d) => (d.assigned_child_profile_id ?? d.assignedChildProfileId) === childId,
     );
     if (bound) return bound;
+    const unbound = devices.find(
+      (d) => (d.assigned_child_profile_id ?? d.assignedChildProfileId) == null,
+    );
+    if (unbound) return unbound;
     return {};
   }
   return devices[0] ?? {};

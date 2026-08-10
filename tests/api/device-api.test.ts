@@ -52,6 +52,23 @@ describe('device API client', () => {
     await expect(getDeviceStatus('primary', 'child-3')).resolves.toMatchObject({ id: '' });
   });
 
+  it('falls back to the unbound household robot when the active child has no bound robot', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: [
+        { id: 'robot-other-child', name: 'Other Child Robot', assigned_child_profile_id: 'child-2' },
+        { id: 'robot-household', name: 'Household Robot', assigned_child_profile_id: null },
+      ],
+    });
+    jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
+    const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getDeviceStatus('primary', 'child-1')).resolves.toMatchObject({
+      id: 'robot-household',
+      name: 'Household Robot',
+    });
+  });
+
   it('keeps Wi-Fi RSSI from household device connectivity metrics when SSID is absent', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({
