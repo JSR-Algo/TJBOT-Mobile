@@ -17,8 +17,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 export default function PairRenameScreen({ navigation, route }: Props) {
   const [authTimedOut, setAuthTimedOut] = React.useState(false);
   const inFlightRef = React.useRef(false);
+  const inFlightRunSeqRef = React.useRef<number | null>(null);
   const mountedRef = React.useRef(true);
+  const focusedRef = React.useRef(true);
   const runSeqRef = React.useRef(0);
+  const finishPairingRef = React.useRef<(() => Promise<void>) | null>(null);
 
   React.useEffect(() => {
     return () => {
@@ -27,69 +30,84 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     };
   }, []);
 
+  const finishPairing = React.useCallback(async (): Promise<void> => {
+    if (inFlightRef.current) return;
+    if (!mountedRef.current || !focusedRef.current) return;
+    inFlightRef.current = true;
+    const runSeq = ++runSeqRef.current;
+    inFlightRunSeqRef.current = runSeq;
+    const isCurrentRun = () => mountedRef.current && runSeqRef.current === runSeq;
+    const isActiveRun = () => isCurrentRun() && focusedRef.current;
+
+    try {
+      setAuthTimedOut(false);
+
+      const pendingContext = await getPendingPairingContext().catch(() => null);
+      if (!isActiveRun()) return;
+      const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
+      const provisioningAttemptId = route.params?.provisioningAttemptId ?? pendingContext?.provisioningAttemptId;
+      const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
+
+      if (!deviceId || !provisioningAttemptId) {
+        if (isActiveRun()) {
+          navigation.navigate(ROUTES.PairFailedScreen, {
+            deviceId,
+            serialNumber,
+            provisioningAttemptId,
+            errorCode: 'PAIRING_CONTEXT_MISSING',
+          });
+        }
+        return;
+      }
+
+      try {
+        const guardedNavigation: Pick<NavigationProp<RootStackParamList>, 'reset'> = {
+          reset: (state) => {
+            if (isActiveRun()) navigation.reset(state as Parameters<typeof navigation.reset>[0]);
+          },
+        };
+        await finalizeDevicePairing(guardedNavigation, { deviceId, provisioningAttemptId, serialNumber });
+      } catch (error) {
+        const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
+        if (code === 'DEVICE_AUTH_TIMEOUT') {
+          if (isActiveRun()) setAuthTimedOut(true);
+          return;
+        }
+        if (!isActiveRun()) return;
+        navigation.navigate(ROUTES.PairFailedScreen, {
+          deviceId,
+          serialNumber,
+          provisioningAttemptId,
+          errorCode: code,
+        });
+      }
+    } finally {
+      if (mountedRef.current && inFlightRunSeqRef.current === runSeq) {
+        inFlightRef.current = false;
+        inFlightRunSeqRef.current = null;
+        if (focusedRef.current && !isCurrentRun()) {
+          void Promise.resolve().then(() => finishPairingRef.current?.());
+        }
+      }
+    }
+  }, [navigation, route.params?.deviceId, route.params?.provisioningAttemptId, route.params?.serialNumber]);
+
+  finishPairingRef.current = finishPairing;
+
   React.useEffect(() => {
     const removeBlurListener = navigation.addListener?.('blur', () => {
-      mountedRef.current = false;
+      focusedRef.current = false;
       runSeqRef.current += 1;
+    });
+    const removeFocusListener = navigation.addListener?.('focus', () => {
+      focusedRef.current = true;
+      if (!inFlightRef.current) void finishPairing();
     });
     return () => {
       removeBlurListener?.();
+      removeFocusListener?.();
     };
-  }, [navigation]);
-
-  const finishPairing = React.useCallback(async (): Promise<void> => {
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
-    mountedRef.current = true;
-    const runSeq = ++runSeqRef.current;
-    const isActiveRun = () => mountedRef.current && runSeqRef.current === runSeq;
-    setAuthTimedOut(false);
-
-    const pendingContext = await getPendingPairingContext().catch(() => null);
-    if (!isActiveRun()) {
-      inFlightRef.current = false;
-      return;
-    }
-    const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
-    const provisioningAttemptId = route.params?.provisioningAttemptId ?? pendingContext?.provisioningAttemptId;
-    const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
-
-    if (!deviceId || !provisioningAttemptId) {
-      inFlightRef.current = false;
-      if (!isActiveRun()) return;
-      navigation.navigate(ROUTES.PairFailedScreen, {
-        deviceId,
-        serialNumber,
-        provisioningAttemptId,
-        errorCode: 'PAIRING_CONTEXT_MISSING',
-      });
-      return;
-    }
-
-    try {
-      const guardedNavigation: Pick<NavigationProp<RootStackParamList>, 'reset'> = {
-        reset: (state) => {
-          if (isActiveRun()) navigation.reset(state as Parameters<typeof navigation.reset>[0]);
-        },
-      };
-      await finalizeDevicePairing(guardedNavigation, { deviceId, provisioningAttemptId, serialNumber });
-    } catch (error) {
-      const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
-      if (code === 'DEVICE_AUTH_TIMEOUT') {
-        if (isActiveRun()) setAuthTimedOut(true);
-        return;
-      }
-      if (!isActiveRun()) return;
-      navigation.navigate(ROUTES.PairFailedScreen, {
-        deviceId,
-        serialNumber,
-        provisioningAttemptId,
-        errorCode: code,
-      });
-    } finally {
-      if (isActiveRun()) inFlightRef.current = false;
-    }
-  }, [navigation, route.params?.deviceId, route.params?.provisioningAttemptId, route.params?.serialNumber]);
+  }, [finishPairing, navigation]);
 
   React.useEffect(() => {
     void finishPairing();
