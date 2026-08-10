@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
@@ -8,85 +8,34 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
-import { useHousehold } from '@/contexts/HouseholdContext';
-import { getDeviceStatus } from '@/services/api/device.api';
-import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
-import { finalizeDevicePairing, finishDevicePairingSuccess } from '../finalizeDevicePairing';
+import { finalizeDevicePairing } from '../finalizeDevicePairing';
 import { getPendingPairingContext } from '../pendingPairingContext';
-import type { Child } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
-const BUDDIES = [
-  { ic: '🐼', n: 'Panda' }, { ic: '🦊', n: 'Fox' }, { ic: '🐰', n: 'Bunny' },
-  { ic: '🐻', n: 'Bear' }, { ic: '🐸', n: 'Frog' }, { ic: '🦉', n: 'Owl' },
-  { ic: '🐢', n: 'Turtle' }, { ic: '🐱', n: 'Cat' },
-] as const;
-
 export default function PairRenameScreen({ navigation, route }: Props) {
-  const { t } = useAppLanguage();
-  const defaultDisplayName = React.useMemo(() => translateCopy('Living-room Robot'), []);
-  const [buddy, setBuddy] = React.useState(2);
-  const [saving, setSaving] = React.useState(false);
-  const [saveError, setSaveError] = React.useState<string | null>(null);
-  const [displayName, setDisplayName] = React.useState(defaultDisplayName);
-  const nameInputRef = React.useRef<TextInput>(null);
-  const { activeChild, activeChildId, children, setActiveChild } = useHousehold();
-  const explicitActiveChildId = React.useMemo(
-    () => (activeChildId && children.some((child) => child.id === activeChildId) ? activeChildId : null),
-    [activeChildId, children],
-  );
-  const [selectedChildId, setSelectedChildId] = React.useState<string | null>(
-    () => explicitActiveChildId ?? (children.length === 1 ? children[0]?.id ?? null : null),
-  );
-  React.useEffect(() => {
-    setSelectedChildId((current) => {
-      if (current && children.some((child) => child.id === current)) return current;
-      return explicitActiveChildId ?? (children.length === 1 ? children[0]?.id ?? null : null);
-    });
-  }, [children, explicitActiveChildId]);
-  const needsExplicitChildSelection = children.length > 1;
-  const selectedChild = children.find((child) => child.id === selectedChildId) ?? null;
+  const [authTimedOut, setAuthTimedOut] = React.useState(false);
+  const inFlightRef = React.useRef(false);
+  const mountedRef = React.useRef(true);
 
-  const save = async (): Promise<void> => {
-    if (saving) return;
-    if (needsExplicitChildSelection && !selectedChildId) return;
-    setSaveError(null);
-    setSaving(true);
+  React.useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const finishPairing = React.useCallback(async (): Promise<void> => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    setAuthTimedOut(false);
+
     const pendingContext = await getPendingPairingContext().catch(() => null);
     const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
     const provisioningAttemptId = route.params?.provisioningAttemptId ?? pendingContext?.provisioningAttemptId;
     const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
-    const childId = needsExplicitChildSelection ? selectedChildId : activeChild?.id;
-    if (__DEV__) {
 
-      console.info('[TBOT PairRename] save pressed', {
-        hasRouteDeviceId: Boolean(route.params?.deviceId),
-        hasPendingDeviceId: Boolean(pendingContext?.deviceId),
-        deviceId,
-        provisioningAttemptId,
-        serialNumber,
-        childId,
-      });
-    }
-    // Genuine loss of pairing context — this IS a setup failure.
     if (!deviceId || !provisioningAttemptId) {
-      if (childId) {
-        try {
-          const householdDevice = await getDeviceStatus('primary', childId);
-          if (householdDevice.id) {
-            await finishDevicePairingSuccess(navigation, {
-              deviceId: householdDevice.id,
-              serialNumber,
-            });
-            return;
-          }
-        } catch {
-          // Fall through to the typed setup failure below. This recovery only
-          // applies when the backend already lists a paired household robot.
-        }
-      }
-      setSaving(false);
+      inFlightRef.current = false;
       navigation.navigate(ROUTES.PairFailedScreen, {
         deviceId,
         serialNumber,
@@ -95,44 +44,13 @@ export default function PairRenameScreen({ navigation, route }: Props) {
       });
       return;
     }
-    // The robot has ALREADY connected by this point (claim/confirm set the device
-    // active + owned). The only thing missing is a child profile to assign it to,
-    // so a missing/mismatched child is NOT a connection failure — sending the
-    // parent to the scary "connect failed" screen is wrong. Route them into the
-    // COPPA-safe child-creation UI, carrying the pairing context so that screen
-    // can FINISH this pairing once a child exists (instead of dropping them into
-    // onboarding and abandoning the already-claimed robot).
-    if (!childId) {
-      setSaving(false);
-      navigation.navigate(ROUTES.PairChildProfileScreen, {
-        pairing: { deviceId, provisioningAttemptId, serialNumber },
-      });
-      return;
-    }
+
     try {
-      // Pairing finalize (complete + mark paired + reset to DeviceHome/Success) is
-      // shared with the zero-child path so both terminate identically. Reset is
-      // required here because this flow is entered from DeviceOverview, not
-      // DeviceHome: a plain navigate would push Success on top of the whole pairing
-      // stack and Back would walk back THROUGH finished pairing screens.
-      await finalizeDevicePairing(navigation, { deviceId, provisioningAttemptId, serialNumber }, childId, displayName);
+      await finalizeDevicePairing(navigation, { deviceId, provisioningAttemptId, serialNumber });
     } catch (error) {
       const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
-      if (__DEV__) {
-        console.info('[TBOT PairRename] save failed', { code, deviceId, provisioningAttemptId, childId });
-      }
-      // A missing/mismatched child profile is a finalize-only problem — the robot
-      // is already connected — so guide to creating a child (with pairing context
-      // so the new child finishes this pairing) rather than reporting a
-      // connection failure.
-      if (code === 'CHILD_PROFILE_NOT_FOUND' || code === 'CHILD_PROFILE_HOUSEHOLD_MISMATCH') {
-        navigation.navigate(ROUTES.PairChildProfileScreen, {
-          pairing: { deviceId, provisioningAttemptId, serialNumber },
-        });
-        return;
-      }
       if (code === 'DEVICE_AUTH_TIMEOUT') {
-        setSaveError(t('Robot is still finishing its Wi-Fi connection. Wait a moment, then try again.'));
+        if (mountedRef.current) setAuthTimedOut(true);
         return;
       }
       navigation.navigate(ROUTES.PairFailedScreen, {
@@ -142,127 +60,49 @@ export default function PairRenameScreen({ navigation, route }: Props) {
         errorCode: code,
       });
     } finally {
-      setSaving(false);
+      inFlightRef.current = false;
     }
-  };
+  }, [navigation, route.params?.deviceId, route.params?.provisioningAttemptId, route.params?.serialNumber]);
+
+  React.useEffect(() => {
+    void finishPairing();
+  }, [finishPairing]);
 
   return (
-    <DeviceShell title="Choose a Buddy">
-      <Box paddingHorizontal={20} paddingTop={18}>
-        <Text style={styles.intro}>
-          Pick the avatar your child will see on Robot's face. <Text fontWeight="600" style={{ color: DV.ink }}>We don't ask for your child's name or photo.</Text>
-        </Text>
-      </Box>
-      {needsExplicitChildSelection ? (
-        <Box paddingHorizontal={16} paddingTop={20}>
-          <Text fontWeight="700" style={styles.sectionLabel}>Child</Text>
-          <Box style={styles.childGrid}>
-            {children.map((child) => (
-              <TouchableOpacity
-                key={child.id}
-                accessibilityLabel={`Pair Robot with ${childLabel(child)}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected: child.id === selectedChildId }}
-                activeOpacity={0.7}
-                onPress={() => {
-                  setSelectedChildId(child.id);
-                  setActiveChild(child.id);
-                }}
-                style={[styles.childBtn, child.id === selectedChildId && styles.childBtnSel]}
-              >
-                <Text fontWeight="600" style={[styles.childName, child.id === selectedChildId && styles.childNameSel]}>
-                  {childLabel(child)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </Box>
-          <Text style={styles.nameHint}>
-            Choose which child this Robot should belong to.
-          </Text>
-        </Box>
-      ) : null}
-      <Box paddingHorizontal={16} paddingTop={20}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Buddy</Text>
-        <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {BUDDIES.map((b, i) => (
-            <TouchableOpacity
-              key={b.n}
-              style={[styles.buddyBtn, i === buddy && styles.buddyBtnSel]}
-              activeOpacity={0.7}
-              onPress={() => setBuddy(i)}
-            >
-              <Text style={{ fontSize: 28 }}>{b.ic}</Text>
-              <Text fontWeight="600" style={styles.buddyName}>{b.n}</Text>
-            </TouchableOpacity>
-          ))}
-        </Box>
-      </Box>
-      <Box paddingHorizontal={16} paddingTop={24}>
-        <Text fontWeight="700" style={styles.sectionLabel}>Robot's name (optional)</Text>
-        <Pressable
-          testID="robot-name-focus-target"
-          style={styles.nameCard}
-          onPress={() => nameInputRef.current?.focus()}
-        >
-          <Text style={{ fontSize: 18 }}>🤖</Text>
-          <TextInput
-            ref={nameInputRef}
-            accessibilityLabel="Robot's name"
-            autoCorrect={false}
-            blurOnSubmit
-            editable={!saving}
-            maxLength={40}
-            onChangeText={setDisplayName}
-            placeholder="Living-room Robot"
-            returnKeyType="done"
-            selectTextOnFocus
-            style={styles.nameInput}
-            value={displayName}
-          />
-        </Pressable>
-        <Text style={styles.nameHint}>Helpful if you have more than one Robot in the house.</Text>
-      </Box>
-      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        {saveError ? (
+    <DeviceShell title="Finishing setup">
+      <Box paddingHorizontal={20} paddingTop={32} paddingBottom={30} style={styles.content}>
+        <ActivityIndicator color={DV.accent} size="large" />
+        {authTimedOut ? (
           <Text testID="pairing-auth-timeout-message" style={styles.retryMessage} i18n={false}>
-            {saveError}
+            Robot is still finishing its Wi-Fi connection. Wait a moment, then try again.
           </Text>
+        ) : (
+          <Text style={styles.status} i18n={false}>
+            Finalizing your Robot connection...
+          </Text>
+        )}
+        {authTimedOut ? (
+          <DeviceBigBtn onClick={() => void finishPairing()}>
+            Try again
+          </DeviceBigBtn>
         ) : null}
-        <DeviceBigBtn onClick={save} disabled={saving || (needsExplicitChildSelection && !selectedChild)}>
-          {saving ? 'Saving...' : 'Save & continue'}
-        </DeviceBigBtn>
       </Box>
     </DeviceShell>
   );
 }
 
-function childLabel(child: Pick<Child, 'id'> & Partial<Pick<Child, 'name'>>): string {
-  const name = child.name?.trim();
-  return name && name.length > 0 ? name : child.id;
-}
-
 function errorCodeFrom(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null) {
-    const record = error as { code?: unknown; response?: { data?: { code?: unknown } } };
+    const record = error as { code?: unknown; response?: { data?: { code?: unknown; error?: { code?: unknown } } } };
     if (typeof record.code === 'string') return record.code;
     if (typeof record.response?.data?.code === 'string') return record.response.data.code;
+    if (typeof record.response?.data?.error?.code === 'string') return record.response.data.error.code;
   }
   return fallback;
 }
 
 const styles = StyleSheet.create({
-  intro: { fontSize: 14, color: DV.ink2, lineHeight: 22 },
-  sectionLabel: { fontSize: 11, color: DV.ink3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  childGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  childBtn: { minHeight: 44, borderRadius: 12, backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
-  childBtnSel: { backgroundColor: '#EEF5FF', borderWidth: 2, borderColor: DV.accent },
-  childName: { fontSize: 14, color: DV.ink },
-  childNameSel: { color: DV.accent },
-  buddyBtn: { width: '22%', aspectRatio: 1, borderRadius: 14, backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  buddyBtnSel: { backgroundColor: '#FFF1C2', borderWidth: 2, borderColor: '#FF6F61' },
-  buddyName: { fontSize: 10, color: DV.ink },
-  nameCard: { backgroundColor: DV.card, borderWidth: 1, borderColor: DV.hair, borderRadius: 12, padding: 14, minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  nameInput: { fontSize: 18, color: DV.ink, flex: 1, paddingVertical: 8, minHeight: 48 },
-  nameHint: { fontSize: 12, color: DV.ink3, lineHeight: 22, marginTop: 8 },
-  retryMessage: { fontSize: 13, color: '#9A4D00', lineHeight: 20, marginBottom: 12, textAlign: 'center' },
+  content: { alignItems: 'center', gap: 18 },
+  status: { fontSize: 14, color: DV.ink2, lineHeight: 22, textAlign: 'center' },
+  retryMessage: { fontSize: 13, color: '#9A4D00', lineHeight: 20, textAlign: 'center' },
 });

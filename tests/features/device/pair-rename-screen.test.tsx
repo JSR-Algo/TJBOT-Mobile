@@ -2,45 +2,17 @@ import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import PairRenameScreen from '@/features/device/pairing/screens/PairRenameScreen';
 import { ROUTES } from '@/navigation/routes';
-import { completeDeviceProvisioning, getDeviceStatus } from '@/services/api/device.api';
+import { completeDeviceProvisioning } from '@/services/api/device.api';
 import type { CompleteDeviceProvisioningResult } from '@/services/api/device.api';
 import { markLocalDevicePaired } from '@/features/device/pairing/localPairedDevice';
 import { getPendingPairingContext } from '@/features/device/pairing/pendingPairingContext';
-import { useHousehold } from '@/contexts/HouseholdContext';
-
-// US-005 [mb-pair-rename] — PairRenameScreen.tsx (round-2 gap fill).
-//
-// This is the final "Choose a Buddy" step of the pairing flow. It is the single
-// place in the mobile app where a *local* BLE/Wi-Fi handoff is turned into a
-// backend-confirmed device claim via completeDeviceProvisioning, then advanced
-// to PairSuccess. The invariants this suite pins are the screen's save()
-// contract:
-//
-//  - Context completeness gate: the backend claim-complete call requires a
-//    deviceId, a provisioningAttemptId AND an assigned child profile. If ANY of
-//    the three is missing the screen must route to PairFailed with the typed
-//    PAIRING_CONTEXT_MISSING code and NEVER fire the network call (a half-
-//    populated complete request is the failure we are guarding against).
-//  - Error-code surfacing: a rejected completeDeviceProvisioning maps to
-//    PairFailed unless it is an idempotent already-claimed/assigned response;
-//    the code is lifted from error.code, then error.response.data.code, then
-//    falls back to PROVISIONING_COMPLETE_FAILED — never a raw error message.
-//  - Double-submit guard: a second press while a save is in flight is a no-op
-//    (one claim-complete call, not two).
-//  - In-flight affordance: the CTA flips "Save & continue" -> "Saving..." while
-//    the backend call is pending and back on settle.
-//  - Buddy selection is local UI state and must not leak into the claim payload
-//    (we send a fixed displayName; the avatar choice never rides the request).
-//
-// We mock the device.api (the claim-complete transport), the local-paired cache
-// (a best-effort side effect that must not undo a confirmed claim) and the
-// household context (the source of the assigned child). The household child is
-// real screen input, not a value we then assert against itself.
 
 jest.mock('@/services/api/device.api', () => ({
   __esModule: true,
   completeDeviceProvisioning: jest.fn(),
-  getDeviceStatus: jest.fn(),
+  confirmLocalBlePaired: jest.fn(),
+  mintBootstrapToken: jest.fn(),
+  reportProvisioningDeviceAuthenticated: jest.fn(),
 }));
 
 jest.mock('@/features/device/pairing/localPairedDevice', () => ({
@@ -54,23 +26,9 @@ jest.mock('@/features/device/pairing/pendingPairingContext', () => ({
   clearPendingPairingContext: jest.fn(),
 }));
 
-jest.mock('@/contexts/HouseholdContext', () => ({
-  __esModule: true,
-  useHousehold: jest.fn(),
-}));
-
 const mockedComplete = completeDeviceProvisioning as jest.MockedFunction<typeof completeDeviceProvisioning>;
-const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
 const mockedMarkLocal = markLocalDevicePaired as jest.MockedFunction<typeof markLocalDevicePaired>;
 const mockedGetPendingPairingContext = getPendingPairingContext as jest.MockedFunction<typeof getPendingPairingContext>;
-const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
-
-let consoleInfoSpy: jest.SpiedFunction<typeof console.info>;
-let consoleWarnSpy: jest.SpiedFunction<typeof console.warn>;
-
-function callsWithoutLabel(calls: unknown[][], expectedLabel: string): unknown[][] {
-  return calls.filter(([label]) => label !== expectedLabel);
-}
 
 const FULL_PARAMS = {
   deviceId: 'device-1',
@@ -78,38 +36,16 @@ const FULL_PARAMS = {
   provisioningAttemptId: 'claim-1',
 };
 
-// A minimal but real CompleteDeviceProvisioningResult the screen ignores the
-// body of — it only branches on resolve vs reject.
 const COMPLETE_OK: CompleteDeviceProvisioningResult = {
   device: {
     id: 'device-1',
     status: 'active',
     lifecycleState: 'provisioned',
     displayName: 'Living-room Robot',
-    assignedChildProfileId: 'child-1',
+    assignedChildProfileId: null,
   },
 };
 
-function child(id: string, name = id): { id: string; name: string } {
-  return { id, name };
-}
-
-// The real context resolves `activeChild` with a children[0] fallback, but also
-// exposes `activeChildId` so flows can distinguish an explicit parent choice
-// from that fallback.
-function householdWith(children: Array<{ id: string; name?: string }> | undefined, activeChildId: string | null = null): void {
-  const activeChild = children?.find((c) => c.id === activeChildId) ?? (children && children.length > 0 ? children[0] : null);
-  mockedUseHousehold.mockReturnValue({
-    children,
-    activeChild,
-    activeChildId,
-    setActiveChild: jest.fn(),
-  } as never);
-}
-
-// The happy path finalizes pairing via navigation.reset (DeviceHome + PairSuccess),
-// not navigate, so the screen needs a reset on its navigation. Tests that care
-// about the terminus pass their own reset mock; the rest get a throwaway one.
 function renderScreen(navigate: jest.Mock, params?: Record<string, unknown>, reset: jest.Mock = jest.fn()) {
   return render(
     <PairRenameScreen navigation={{ navigate, reset } as never} route={{ params } as never} />,
@@ -117,118 +53,48 @@ function renderScreen(navigate: jest.Mock, params?: Record<string, unknown>, res
 }
 
 beforeEach(() => {
-  consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation(() => undefined);
-  consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   jest.clearAllMocks();
-  // Default: a household with one assigned child and a resolving backend.
-  householdWith([{ id: 'child-1' }]);
   mockedComplete.mockResolvedValue(COMPLETE_OK);
-  mockedGetDeviceStatus.mockRejectedValue(Object.assign(new Error('no robot'), { code: 'DEVICE_NOT_FOUND' }));
-  mockedGetPendingPairingContext.mockResolvedValue(null);
   mockedMarkLocal.mockResolvedValue(undefined);
+  mockedGetPendingPairingContext.mockResolvedValue(null);
 });
 
-afterEach(() => {
-  try {
-    expect(
-      callsWithoutLabel(
-        callsWithoutLabel(consoleInfoSpy.mock.calls, '[TBOT PairRename] save pressed'),
-        '[TBOT PairRename] save failed',
-      ),
-    ).toEqual([]);
-    expect(consoleWarnSpy).not.toHaveBeenCalled();
-  } finally {
-    consoleInfoSpy.mockRestore();
-    consoleWarnSpy.mockRestore();
-  }
-});
-
-// ---------------------------------------------------------------------------
-// Happy path — full context -> backend claim-complete -> reset to PairSuccess.
-//
-// The screen finalizes via navigation.reset([DeviceHome, PairSuccess]) (not a
-// plain navigate): this flow is entered from DeviceOverview, so the back stack
-// must be rebased on DeviceHome with PairSuccess on top, otherwise Back walks
-// back THROUGH the finished pairing screens.
-// ---------------------------------------------------------------------------
-describe('PairRenameScreen — save() happy path', () => {
-  it('on full context, completes provisioning with the assigned child + fixed displayName and resets to PairSuccess', async () => {
+describe('PairRenameScreen auto-finalization bridge', () => {
+  it('renders only a finishing state and auto-completes pairing without a child profile', async () => {
     const navigate = jest.fn();
     const reset = jest.fn();
     const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
-    fireEvent.press(screen.getByText('Save & continue'));
+    expect(screen.getByText('Finishing setup')).toBeTruthy();
+    expect(screen.queryByText('Save & continue')).toBeNull();
+    expect(screen.queryByLabelText("Robot's name")).toBeNull();
+    expect(screen.queryByText('Buddy')).toBeNull();
+    expect(screen.queryByText('Child')).toBeNull();
 
     await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(1));
-    // The claim-complete request carries the FULL context the backend needs:
-    // the attempt to confirm, the device, the child to assign, and a name.
-    expect(mockedComplete).toHaveBeenCalledWith({
+    const [payload] = mockedComplete.mock.calls[0];
+    expect(payload).toEqual({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      assignChildProfileId: 'child-1',
       displayName: 'Living-room Robot',
     });
-
-    await waitFor(() =>
-      expect(reset).toHaveBeenCalledWith({
-        index: 1,
-        routes: [
-          { name: ROUTES.DeviceHomeScreen },
-          {
-            name: ROUTES.PairSuccessScreen,
-            params: { deviceId: 'device-1', serialNumber: 'TBT-2026-004217', provisioningAttemptId: 'claim-1' },
-          },
-        ],
-      }),
-    );
-    // Success means the reset terminus only — never a PairFailed hop on the happy path.
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-    expect(navigate).not.toHaveBeenCalled();
-    expect(reset).toHaveBeenCalledTimes(1);
-  });
-
-  it('marks the device locally paired (best-effort cache) before advancing to success', async () => {
-    const navigate = jest.fn();
-    const reset = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS, reset);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(reset).toHaveBeenCalled());
-    // The local cache is keyed by the backend-confirmed deviceId.
+    expect(payload).not.toHaveProperty('assignChildProfileId');
     expect(mockedMarkLocal).toHaveBeenCalledWith('device-1');
-  });
-
-  it('still reaches PairSuccess when the local-cache write fails (cache failure must not undo a confirmed claim)', async () => {
-    mockedMarkLocal.mockRejectedValue(new Error('disk full'));
-    const navigate = jest.fn();
-    const reset = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS, reset);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    // Backend completion is authoritative: a best-effort local-cache failure is
-    // swallowed and the flow still advances to success (not PairFailed).
-    await waitFor(() => expect(reset).toHaveBeenCalled());
+    expect(reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: { deviceId: 'device-1', serialNumber: 'TBT-2026-004217', provisioningAttemptId: 'claim-1' },
+        },
+      ],
+    });
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
-  it('forwards serialNumber to PairSuccess only when present (omitted when absent)', async () => {
-    const navigate = jest.fn();
-    const reset = jest.fn();
-    const screen = renderScreen(navigate, { deviceId: 'device-1', provisioningAttemptId: 'claim-1' }, reset);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(reset).toHaveBeenCalled());
-    const [{ routes }] = reset.mock.calls[0] as [{ routes: Array<{ name: string; params?: Record<string, unknown> }> }];
-    const successParams = routes.find((r) => r.name === ROUTES.PairSuccessScreen)?.params ?? {};
-    expect(successParams).toMatchObject({ deviceId: 'device-1', provisioningAttemptId: 'claim-1' });
-    // serialNumber is undefined in params (carried through verbatim), never invented.
-    expect(successParams.serialNumber).toBeUndefined();
-  });
-
-  it('uses the saved pending pairing context when route params were lost before Save & continue', async () => {
+  it('uses the pending pairing context when route params were lost', async () => {
     mockedGetPendingPairingContext.mockResolvedValue({
       deviceId: 'device-from-pending',
       serialNumber: 'TBOT-PENDING',
@@ -236,278 +102,109 @@ describe('PairRenameScreen — save() happy path', () => {
     });
     const navigate = jest.fn();
     const reset = jest.fn();
-    const screen = renderScreen(navigate, undefined, reset);
 
-    fireEvent.press(screen.getByText('Save & continue'));
+    renderScreen(navigate, undefined, reset);
 
     await waitFor(() => expect(mockedComplete).toHaveBeenCalledWith({
       provisioningAttemptId: 'claim-from-pending',
       deviceId: 'device-from-pending',
-      assignChildProfileId: 'child-1',
       displayName: 'Living-room Robot',
     }));
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-    expect(reset).toHaveBeenCalledWith(expect.objectContaining({ index: 1 }));
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Context-missing gate — PairFailed PAIRING_CONTEXT_MISSING, no network call.
-// ---------------------------------------------------------------------------
-describe('PairRenameScreen — missing-context gate (PAIRING_CONTEXT_MISSING)', () => {
-  it('routes to PairFailed with PAIRING_CONTEXT_MISSING and skips the backend call when deviceId is absent', async () => {
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, { provisioningAttemptId: 'claim-1', serialNumber: 'TBT-2026-004217' });
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
-        deviceId: undefined,
-        serialNumber: 'TBT-2026-004217',
-        provisioningAttemptId: 'claim-1',
-        errorCode: 'PAIRING_CONTEXT_MISSING',
-      }),
-    );
-    // The cardinal guard: a half-populated complete request must never fire.
-    expect(mockedComplete).not.toHaveBeenCalled();
-    expect(mockedMarkLocal).not.toHaveBeenCalled();
-  });
-
-  it('recovers missing route context by using the already-paired household robot instead of showing PairFailed', async () => {
-    mockedGetDeviceStatus.mockResolvedValue({
-      id: 'device-from-household',
-      name: 'TBOT-14C19FD1A84A',
-      online: true,
-      batteryPercent: 93,
-    });
-    const navigate = jest.fn();
-    const reset = jest.fn();
-    const screen = renderScreen(navigate, undefined, reset);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'child-1'));
-    expect(mockedComplete).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
     expect(reset).toHaveBeenCalledWith({
       index: 1,
       routes: [
         { name: ROUTES.DeviceHomeScreen },
         {
           name: ROUTES.PairSuccessScreen,
-          params: { deviceId: 'device-from-household', serialNumber: undefined, provisioningAttemptId: undefined },
+          params: {
+            deviceId: 'device-from-pending',
+            serialNumber: 'TBOT-PENDING',
+            provisioningAttemptId: 'claim-from-pending',
+          },
         },
       ],
     });
-  });
-
-  it('routes to PairFailed with PAIRING_CONTEXT_MISSING when provisioningAttemptId is absent', async () => {
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, { deviceId: 'device-1', serialNumber: 'TBT-2026-004217' });
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
-        deviceId: 'device-1',
-        serialNumber: 'TBT-2026-004217',
-        provisioningAttemptId: undefined,
-        errorCode: 'PAIRING_CONTEXT_MISSING',
-      }),
-    );
-    expect(mockedComplete).not.toHaveBeenCalled();
-  });
-
-  it('does not silently bind to children[0] when several children exist without an explicit selection', async () => {
-    householdWith([child('child-A', 'An'), child('child-B', 'Binh'), child('child-C', 'Chi')]);
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    expect(mockedComplete).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-
-    fireEvent.press(screen.getByText('Binh'));
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(1));
-    expect(mockedComplete).toHaveBeenCalledWith(expect.objectContaining({ assignChildProfileId: 'child-B' }));
-  });
-
-  it('routes to PairFailed with PAIRING_CONTEXT_MISSING when route.params is entirely undefined', async () => {
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, undefined);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
-        deviceId: undefined,
-        serialNumber: undefined,
-        provisioningAttemptId: undefined,
-        errorCode: 'PAIRING_CONTEXT_MISSING',
-      }),
-    );
-    expect(mockedComplete).not.toHaveBeenCalled();
-  });
-
-  it('does NOT flip the CTA to "Saving..." on the context-missing path (no in-flight state when nothing is in flight)', async () => {
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, { serialNumber: 'TBT-2026-004217' });
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()),
-    );
-    // setSaving(true) runs only after the gate passes, so the CTA stays put.
-    expect(screen.getByText('Save & continue')).toBeTruthy();
-    expect(screen.queryByText('Saving...')).toBeNull();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Zero-child path — pairing CONTEXT is present but the household has no child
-// profile yet. The robot is already claimed, so this is NOT a failure: route the
-// parent into the child-creation UI carrying the pairing context so they can
-// finish the pairing once a child exists. (This is the dead-end fix: previously
-// no-child was wrongly treated like missing context / sent to PairFailed.)
-// ---------------------------------------------------------------------------
-describe('PairRenameScreen — zero-child path (route into child creation with pairing context)', () => {
-  it('routes to PairChildProfileScreen carrying the pairing context when there is no child (children empty)', async () => {
-    householdWith([]);
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, {
-        pairing: {
-          deviceId: 'device-1',
-          provisioningAttemptId: 'claim-1',
-          serialNumber: 'TBT-2026-004217',
-        },
-      }),
-    );
-    // The robot is already claimed; no finalize fires and we never show PairFailed.
-    expect(mockedComplete).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-    expect(navigate).toHaveBeenCalledTimes(1);
-  });
-
-  it('treats a falsy active-child id as no child and routes into child creation (id is empty string)', async () => {
-    householdWith([{ id: '' }]);
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairChildProfileScreen,
-        expect.objectContaining({
-          pairing: expect.objectContaining({ deviceId: 'device-1', provisioningAttemptId: 'claim-1' }),
-        }),
-      ),
-    );
-    expect(mockedComplete).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-  });
-
-  it('still gates to PairFailed (NOT child creation) when the pairing CONTEXT itself is missing and there is no child', async () => {
-    // No deviceId/attemptId AND no child: this is a genuine context loss, so the
-    // missing-context gate wins over the zero-child path (the gate runs first).
-    householdWith([]);
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, { serialNumber: 'TBT-2026-004217' });
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairFailedScreen,
-        expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
-      ),
-    );
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
-    expect(mockedComplete).not.toHaveBeenCalled();
   });
 
-  it('omits serialNumber from the carried pairing context when absent', async () => {
-    householdWith([]);
+  it('routes to PairFailed with PAIRING_CONTEXT_MISSING when route and pending context are incomplete', async () => {
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, { deviceId: 'device-1', provisioningAttemptId: 'claim-1' });
 
-    fireEvent.press(screen.getByText('Save & continue'));
+    renderScreen(navigate, { serialNumber: 'TBT-2026-004217' });
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything()));
-    const [, params] = (navigate.mock.calls.find((c) => c[0] === ROUTES.PairChildProfileScreen) ?? []) as [
-      string,
-      { pairing?: { serialNumber?: string } },
-    ];
-    expect(params.pairing?.serialNumber).toBeUndefined();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Error surfacing — rejected complete -> PairFailed with the lifted code.
-// ---------------------------------------------------------------------------
-describe('PairRenameScreen — completeDeviceProvisioning rejection -> PairFailed', () => {
-  it('keeps a DEVICE_AUTH_TIMEOUT on the rename screen so the parent can retry', async () => {
-    mockedComplete.mockRejectedValue(Object.assign(new Error('robot is still initializing'), {
-      code: 'DEVICE_AUTH_TIMEOUT',
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      deviceId: undefined,
+      serialNumber: 'TBT-2026-004217',
+      provisioningAttemptId: undefined,
+      errorCode: 'PAIRING_CONTEXT_MISSING',
     }));
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(screen.getByTestId('pairing-auth-timeout-message')).toBeTruthy());
-    expect(screen.getByText('Save & continue')).toBeTruthy();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    expect(mockedComplete).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
   });
 
-  it('treats DEVICE_ALREADY_CLAIMED as idempotent success and does not show PairFailed', async () => {
-    mockedComplete.mockRejectedValue(Object.assign(new Error('boom'), { code: 'DEVICE_ALREADY_CLAIMED' }));
+  it('keeps DEVICE_AUTH_TIMEOUT on the bridge and retries with the same context when the parent taps retry', async () => {
+    mockedComplete
+      .mockRejectedValueOnce(Object.assign(new Error('robot is still initializing'), { code: 'DEVICE_AUTH_TIMEOUT' }))
+      .mockResolvedValueOnce(COMPLETE_OK);
     const navigate = jest.fn();
     const reset = jest.fn();
     const screen = renderScreen(navigate, FULL_PARAMS, reset);
 
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(reset).toHaveBeenCalledWith(expect.objectContaining({ index: 1 })));
+    await waitFor(() => expect(screen.getByTestId('pairing-auth-timeout-message')).toBeTruthy());
+    expect(screen.getByText('Try again')).toBeTruthy();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-    const [{ routes }] = reset.mock.calls[0] as [{ routes: Array<{ name: string }> }];
-    expect(routes.map((route) => route.name)).toEqual([ROUTES.DeviceHomeScreen, ROUTES.PairSuccessScreen]);
+
+    fireEvent.press(screen.getByText('Try again'));
+
+    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(2));
+    expect(mockedComplete).toHaveBeenNthCalledWith(2, {
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      displayName: 'Living-room Robot',
+    });
+    await waitFor(() => expect(reset).toHaveBeenCalledWith(expect.objectContaining({ index: 1 })));
   });
 
-  it('lifts error.code onto the PairFailed errorCode for non-idempotent errors', async () => {
+  it('ignores duplicate retry taps while a finalize call is already in flight', async () => {
+    mockedComplete.mockRejectedValueOnce(Object.assign(new Error('robot is still initializing'), { code: 'DEVICE_AUTH_TIMEOUT' }));
+    const navigate = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS);
+
+    await waitFor(() => expect(screen.getByText('Try again')).toBeTruthy());
+    let resolveComplete: (value: CompleteDeviceProvisioningResult) => void = () => undefined;
+    mockedComplete.mockImplementationOnce(
+      () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
+    );
+
+    const retryButton = screen.getByText('Try again');
+    fireEvent.press(retryButton);
+    fireEvent.press(retryButton);
+    fireEvent.press(retryButton);
+
+    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(2));
+    resolveComplete(COMPLETE_OK);
+  });
+
+  it('preserves typed non-timeout finalize errors on PairFailed', async () => {
     mockedComplete.mockRejectedValue(Object.assign(new Error('boom'), { code: 'BACKEND_5XX' }));
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
 
-    fireEvent.press(screen.getByText('Save & continue'));
+    renderScreen(navigate, FULL_PARAMS);
 
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
-        deviceId: 'device-1',
-        serialNumber: 'TBT-2026-004217',
-        provisioningAttemptId: 'claim-1',
-        errorCode: 'BACKEND_5XX',
-      }),
-    );
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      deviceId: 'device-1',
+      serialNumber: 'TBT-2026-004217',
+      provisioningAttemptId: 'claim-1',
+      errorCode: 'BACKEND_5XX',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
   });
 
-  it('lifts error.response.data.code when there is no top-level error.code (axios-shaped error)', async () => {
-    mockedComplete.mockRejectedValue({ response: { data: { code: 'PROVISIONING_ATTEMPT_EXPIRED' } } });
+  it('lifts axios-shaped error.response.data.error.code before falling back', async () => {
+    mockedComplete.mockRejectedValue({ response: { data: { error: { code: 'PROVISIONING_ATTEMPT_EXPIRED' } } } });
     const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
 
-    fireEvent.press(screen.getByText('Save & continue'));
+    renderScreen(navigate, FULL_PARAMS);
 
     await waitFor(() =>
       expect(navigate).toHaveBeenCalledWith(
@@ -515,307 +212,5 @@ describe('PairRenameScreen — completeDeviceProvisioning rejection -> PairFaile
         expect.objectContaining({ errorCode: 'PROVISIONING_ATTEMPT_EXPIRED' }),
       ),
     );
-  });
-
-  it('prefers top-level error.code over error.response.data.code when both are present', async () => {
-    mockedComplete.mockRejectedValue(
-      Object.assign(new Error('x'), {
-        code: 'TOP_LEVEL_WINS',
-        response: { data: { code: 'NESTED_SHOULD_LOSE' } },
-      }),
-    );
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairFailedScreen,
-        expect.objectContaining({ errorCode: 'TOP_LEVEL_WINS' }),
-      ),
-    );
-  });
-
-  it('falls back to PROVISIONING_COMPLETE_FAILED for a plain Error with no code', async () => {
-    mockedComplete.mockRejectedValue(new Error('network down'));
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairFailedScreen,
-        expect.objectContaining({ errorCode: 'PROVISIONING_COMPLETE_FAILED' }),
-      ),
-    );
-    // The raw error message must never become the user-facing error code.
-    const [, params] = (navigate.mock.calls.find((c) => c[0] === ROUTES.PairFailedScreen) ?? []) as [
-      string,
-      Record<string, unknown>,
-    ];
-    expect(params.errorCode).not.toBe('network down');
-  });
-
-  it('falls back to PROVISIONING_COMPLETE_FAILED when error.code is a non-string (e.g. a number)', async () => {
-    mockedComplete.mockRejectedValue({ code: 503 });
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairFailedScreen,
-        expect.objectContaining({ errorCode: 'PROVISIONING_COMPLETE_FAILED' }),
-      ),
-    );
-  });
-
-  it('falls back to PROVISIONING_COMPLETE_FAILED when the rejection is a bare string (not an object)', async () => {
-    mockedComplete.mockRejectedValue('kaboom');
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairFailedScreen,
-        expect.objectContaining({ errorCode: 'PROVISIONING_COMPLETE_FAILED' }),
-      ),
-    );
-  });
-
-  it('falls back to PROVISIONING_COMPLETE_FAILED when the rejection is null', async () => {
-    mockedComplete.mockRejectedValue(null);
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        ROUTES.PairFailedScreen,
-        expect.objectContaining({ errorCode: 'PROVISIONING_COMPLETE_FAILED' }),
-      ),
-    );
-  });
-
-  it('carries the same device/serial/attempt context into PairFailed as into the complete request', async () => {
-    mockedComplete.mockRejectedValue(Object.assign(new Error('x'), { code: 'BACKEND_5XX' }));
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()));
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
-      deviceId: 'device-1',
-      serialNumber: 'TBT-2026-004217',
-      provisioningAttemptId: 'claim-1',
-      errorCode: 'BACKEND_5XX',
-    });
-    // A rejected claim must NOT touch the local-paired cache.
-    expect(mockedMarkLocal).not.toHaveBeenCalled();
-  });
-
-  it.each(['CHILD_PROFILE_NOT_FOUND', 'CHILD_PROFILE_HOUSEHOLD_MISMATCH'])(
-    'routes a %s finalize error into PairChildProfileScreen with pairing context (NOT PairFailed)',
-    async (code) => {
-      // The child the screen tried to assign is gone/foreign, but the robot is
-      // already claimed — so this is a finalize-only problem: guide the parent to
-      // (re)create a child carrying the pairing context, not the scary fail screen.
-      mockedComplete.mockRejectedValue(Object.assign(new Error('x'), { code }));
-      const navigate = jest.fn();
-      const screen = renderScreen(navigate, FULL_PARAMS);
-
-      fireEvent.press(screen.getByText('Save & continue'));
-
-      await waitFor(() =>
-        expect(navigate).toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, {
-          pairing: {
-            deviceId: 'device-1',
-            provisioningAttemptId: 'claim-1',
-            serialNumber: 'TBT-2026-004217',
-          },
-        }),
-      );
-      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-    },
-  );
-});
-
-// ---------------------------------------------------------------------------
-// In-flight affordance + double-submit guard.
-// ---------------------------------------------------------------------------
-describe('PairRenameScreen — in-flight CTA + double-submit guard', () => {
-  it('flips the CTA from "Save & continue" to "Saving..." while the backend call is pending, then settles', async () => {
-    let resolveComplete: (v: CompleteDeviceProvisioningResult) => void = () => {};
-    mockedComplete.mockImplementation(
-      () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
-    );
-    const navigate = jest.fn();
-    const reset = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS, reset);
-
-    expect(screen.getByText('Save & continue')).toBeTruthy();
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    // While the claim-complete promise is unsettled, the CTA shows progress.
-    await waitFor(() => expect(screen.getByText('Saving...')).toBeTruthy());
-    expect(screen.queryByText('Save & continue')).toBeNull();
-
-    // Settle the backend call -> flow advances to success (reset terminus).
-    resolveComplete(COMPLETE_OK);
-    await waitFor(() => expect(reset).toHaveBeenCalled());
-  });
-
-  it('restores the CTA to "Save & continue" after a failed save (finally re-enables retry)', async () => {
-    mockedComplete.mockRejectedValue(Object.assign(new Error('x'), { code: 'BACKEND_5XX' }));
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()));
-    // finally { setSaving(false) } means the user can retry — CTA is back.
-    await waitFor(() => expect(screen.getByText('Save & continue')).toBeTruthy());
-    expect(screen.queryByText('Saving...')).toBeNull();
-  });
-
-  it('ignores a second press while a save is in flight (exactly one complete call, one reset)', async () => {
-    let resolveComplete: (v: CompleteDeviceProvisioningResult) => void = () => {};
-    mockedComplete.mockImplementation(
-      () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
-    );
-    const navigate = jest.fn();
-    const reset = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS, reset);
-
-    fireEvent.press(screen.getByText('Save & continue'));
-    await waitFor(() => expect(screen.getByText('Saving...')).toBeTruthy());
-
-    // Press again while still saving — the `if (saving) return` guard drops it.
-    fireEvent.press(screen.getByText('Saving...'));
-    fireEvent.press(screen.getByText('Saving...'));
-
-    resolveComplete(COMPLETE_OK);
-    await waitFor(() => expect(reset).toHaveBeenCalled());
-
-    // The guard collapsed the extra presses: one claim-complete, one reset.
-    expect(mockedComplete).toHaveBeenCalledTimes(1);
-    expect(reset).toHaveBeenCalledTimes(1);
-  });
-
-  it('allows a fresh save after the previous one settled (guard is per-flight, not permanent)', async () => {
-    mockedComplete.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'BACKEND_5XX' }));
-    const navigate = jest.fn();
-    const reset = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS, reset);
-
-    // First press fails and re-enables the CTA.
-    fireEvent.press(screen.getByText('Save & continue'));
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()));
-    await waitFor(() => expect(screen.getByText('Save & continue')).toBeTruthy());
-
-    // Second press now succeeds (reset terminus).
-    mockedComplete.mockResolvedValueOnce(COMPLETE_OK);
-    fireEvent.press(screen.getByText('Save & continue'));
-    await waitFor(() => expect(reset).toHaveBeenCalled());
-
-    // Two independent flights = two complete calls.
-    expect(mockedComplete).toHaveBeenCalledTimes(2);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Buddy selection — local UI state; never leaks into the claim payload.
-// ---------------------------------------------------------------------------
-describe('PairRenameScreen — buddy selection', () => {
-  // The selected buddy gets the buddyBtnSel style (2px #FF6F61 border) on its
-  // TouchableOpacity. We read selection by inspecting the flattened style on the
-  // pressable that wraps the buddy's name <Text>.
-  function buddyPressable(screen: ReturnType<typeof renderScreen>, name: string) {
-    // name Text -> wrapping TouchableOpacity is the nearest ancestor with onPress.
-    let node: ReturnType<typeof screen.getByText>['parent'] = screen.getByText(name);
-    while (node && typeof node.props?.onPress !== 'function') {
-      node = node.parent;
-    }
-    return node;
-  }
-
-  function isSelected(node: { props: { style?: unknown } } | null): boolean {
-    const flat = Array.isArray(node?.props?.style) ? node?.props?.style.flat(Infinity) : [node?.props?.style];
-    return (flat as Array<Record<string, unknown> | undefined>).some(
-      (s) => s && s.borderColor === '#FF6F61' && s.borderWidth === 2,
-    );
-  }
-
-  it('renders all eight buddy options', () => {
-    const screen = renderScreen(jest.fn(), FULL_PARAMS);
-    for (const name of ['Panda', 'Fox', 'Bunny', 'Bear', 'Frog', 'Owl', 'Turtle', 'Cat']) {
-      expect(screen.getByText(name)).toBeTruthy();
-    }
-  });
-
-  it('defaults the selection to index 2 (Bunny)', () => {
-    const screen = renderScreen(jest.fn(), FULL_PARAMS);
-    expect(isSelected(buddyPressable(screen, 'Bunny'))).toBe(true);
-    expect(isSelected(buddyPressable(screen, 'Panda'))).toBe(false);
-    expect(isSelected(buddyPressable(screen, 'Cat'))).toBe(false);
-  });
-
-  it('moves the selection highlight to the tapped buddy (and clears the previous one)', () => {
-    const screen = renderScreen(jest.fn(), FULL_PARAMS);
-
-    fireEvent.press(buddyPressable(screen, 'Owl')!);
-
-    expect(isSelected(buddyPressable(screen, 'Owl'))).toBe(true);
-    // Selection is single-choice: tapping Owl deselects the default Bunny.
-    expect(isSelected(buddyPressable(screen, 'Bunny'))).toBe(false);
-  });
-
-  it('sends the edited robot name as displayName and still keeps buddy out of the payload', async () => {
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    fireEvent.press(buddyPressable(screen, 'Frog')!);
-    fireEvent.changeText(screen.getByDisplayValue('Living-room Robot'), 'Robot phòng ngủ');
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(1));
-    const payload = mockedComplete.mock.calls[0][0];
-    expect(payload.displayName).toBe('Robot phòng ngủ');
-    expect(JSON.stringify(payload)).not.toContain('Frog');
-    expect(payload).not.toHaveProperty('buddy');
-    expect(payload).not.toHaveProperty('avatar');
-  });
-
-  it('lets the parent edit the robot name through the native text input', () => {
-    const screen = renderScreen(jest.fn(), FULL_PARAMS);
-    const input = screen.getByLabelText("Robot's name");
-
-    fireEvent.changeText(input, 'Robot phòng học');
-
-    expect(screen.getByDisplayValue('Robot phòng học')).toBeTruthy();
-  });
-
-  it('keeps a tappable focus target around the robot name input', () => {
-    const screen = renderScreen(jest.fn(), FULL_PARAMS);
-
-    expect(screen.getByTestId('robot-name-focus-target')).toBeTruthy();
-    expect(screen.getByLabelText("Robot's name")).toBeTruthy();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// COPPA-adjacent privacy copy — the screen explicitly disclaims child PII.
-// ---------------------------------------------------------------------------
-describe('PairRenameScreen — privacy copy', () => {
-  it("states it does not ask for the child's name or photo", () => {
-    const screen = renderScreen(jest.fn(), FULL_PARAMS);
-    expect(screen.getByText("We don't ask for your child's name or photo.")).toBeTruthy();
   });
 });
