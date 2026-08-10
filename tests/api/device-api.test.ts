@@ -300,6 +300,78 @@ describe('device API client', () => {
     });
   });
 
+  it('omits assignChildProfileId from the complete payload when no child is supplied', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({
+      data: {
+        device: {
+          id: 'device-4',
+          status: 'active',
+          lifecycleState: 'assigned',
+          displayName: 'Living-room Robot',
+          assignedChildProfileId: null,
+        },
+      },
+    });
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post },
+    }));
+
+    const { completeDeviceProvisioning } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(completeDeviceProvisioning({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      displayName: 'Living-room Robot',
+    })).resolves.toMatchObject({
+      device: { id: 'device-4', assignedChildProfileId: null },
+    });
+    const [, body] = post.mock.calls[0];
+    expect(body).toEqual({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      displayName: 'Living-room Robot',
+    });
+    expect(body).not.toHaveProperty('assignChildProfileId');
+  });
+
+  it('preserves an explicitly supplied empty child id on the complete payload', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({
+      data: {
+        device: {
+          id: 'device-4',
+          status: 'active',
+          lifecycleState: 'assigned',
+          displayName: 'Living-room Robot',
+          assignedChildProfileId: '',
+        },
+      },
+    });
+
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post },
+    }));
+
+    const { completeDeviceProvisioning } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await completeDeviceProvisioning({
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      assignChildProfileId: '',
+      displayName: 'Living-room Robot',
+    });
+    expect(post).toHaveBeenCalledWith('/devices/provision/complete', {
+      provisioningAttemptId: 'attempt-1',
+      deviceId: 'device-4',
+      assignChildProfileId: '',
+      displayName: 'Living-room Robot',
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // US-005 mb-device-api extensions: request-shape, status normalization,
   // failureCode passthrough, and the BLE-path "no Wi-Fi credentials" invariant.

@@ -212,7 +212,7 @@ export async function completeDeviceProvisioning(params: CompleteDeviceProvision
     provisioningAttemptId: params.provisioningAttemptId,
     deviceId: params.deviceId,
     displayName: params.displayName,
-    ...(params.assignChildProfileId ? { assignChildProfileId: params.assignChildProfileId } : {}),
+    ...(params.assignChildProfileId !== undefined ? { assignChildProfileId: params.assignChildProfileId } : {}),
   });
   return response.data;
 }

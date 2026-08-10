@@ -177,6 +177,20 @@ describe('finalizeDevicePairing', () => {
     });
   });
 
+  it('preserves an explicitly supplied empty child id instead of treating it as childless', async () => {
+    const reset = jest.fn();
+
+    await finalizeDevicePairing({ reset }, CONTEXT, '');
+
+    expect(mockedComplete).toHaveBeenCalledWith({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      assignChildProfileId: '',
+      displayName: 'Living-room Robot',
+    });
+    expect(reset).toHaveBeenCalledTimes(1);
+  });
+
   it('uses the supplied display name when the parent edits the robot name', async () => {
     const reset = jest.fn();
 

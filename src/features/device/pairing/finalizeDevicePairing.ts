@@ -94,7 +94,7 @@ async function completeWhenDeviceAuthenticated(
         provisioningAttemptId: context.provisioningAttemptId,
         deviceId: context.deviceId,
         displayName: normalizedDisplayName(displayName),
-        ...(childId ? { assignChildProfileId: childId } : {}),
+        ...(childId !== undefined ? { assignChildProfileId: childId } : {}),
       });
       return;
     } catch (error) {
