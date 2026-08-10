@@ -190,7 +190,10 @@ describe('T3.3 — long history pagination', () => {
     await waitFor(() => expect(view.result.current.data?.items).toHaveLength(2));
 
     await act(async () => { await view.result.current.fetchNextPage(); });
-    await waitFor(() => expect(view.result.current.isFetchingNextPage).toBe(false));
+    // Wait on the merged page count, not on `isFetchingNextPage`: that flag is still
+    // false in the window before fetchNextPage flips it, so waiting on it can observe
+    // the pre-fetch render instead of the post-merge one.
+    await waitFor(() => expect(view.result.current.data?.items).toHaveLength(3));
 
     expect(view.result.current.data?.items.map(item => item.sessionId)).toEqual(['s-1', 's-2', 's-3']);
     expect(view.result.current.data?.nextCursor).toBeNull();
