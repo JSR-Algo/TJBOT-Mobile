@@ -102,10 +102,24 @@ interface DeviceDto {
   assignedChildProfileId?: string | null;
 }
 
+function hasOwn(value: object, key: keyof DeviceDto): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function readAssignedChildProfileId(dto: DeviceDto): { present: boolean; value: string | null } {
+  if (hasOwn(dto, 'assigned_child_profile_id')) {
+    return { present: true, value: dto.assigned_child_profile_id ?? null };
+  }
+  if (hasOwn(dto, 'assignedChildProfileId')) {
+    return { present: true, value: dto.assignedChildProfileId ?? null };
+  }
+  return { present: false, value: null };
+}
+
 function normalizeDevice(dto: DeviceDto): DeviceStatus {
   const wifiRssi = dto.connectivity_metrics?.wifi_rssi;
   const serialNumber = dto.serial_number?.trim();
-  const assignedChildProfileId = dto.assigned_child_profile_id ?? dto.assignedChildProfileId;
+  const assignedChildProfileId = readAssignedChildProfileId(dto);
   const connectivityState = dto.connectivity_metrics?.connectivity_state;
   const operationalState = dto.status === 'active' || dto.status === 'online' || connectivityState === 'online'
     ? 'online'
@@ -122,9 +136,9 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
     wifiSsid: dto.connectivity_metrics?.wifi_ssid,
     ...(typeof wifiRssi === 'number' && Number.isFinite(wifiRssi) ? { wifiRssi } : {}),
     lastSeenAt: dto.last_seen_at,
-    // Only surface the binding when present, so the single-device household
-    // response stays byte-identical to the pre-binding shape (exact-match tests).
-    ...(assignedChildProfileId !== undefined ? { assignedChildProfileId } : {}),
+    // Only surface the binding metadata when the backend includes it, preserving
+    // explicit null while keeping omitted metadata byte-identical.
+    ...(assignedChildProfileId.present ? { assignedChildProfileId: assignedChildProfileId.value } : {}),
   };
 }
 
@@ -136,11 +150,17 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
 function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceDto {
   if (childId) {
     const bound = devices.find(
-      (d) => (d.assigned_child_profile_id ?? d.assignedChildProfileId) === childId,
+      (d) => {
+        const binding = readAssignedChildProfileId(d);
+        return binding.present && binding.value === childId;
+      },
     );
     if (bound) return bound;
     const unbound = devices.find(
-      (d) => (d.assigned_child_profile_id ?? d.assignedChildProfileId) == null,
+      (d) => {
+        const binding = readAssignedChildProfileId(d);
+        return binding.present && binding.value === null;
+      },
     );
     if (unbound) return unbound;
     return {};

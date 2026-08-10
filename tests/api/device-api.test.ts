@@ -66,7 +66,22 @@ describe('device API client', () => {
     await expect(getDeviceStatus('primary', 'child-1')).resolves.toMatchObject({
       id: 'robot-household',
       name: 'Household Robot',
+      assignedChildProfileId: null,
     });
+  });
+
+  it('does not treat omitted child binding metadata as an unbound household robot', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: [
+        { id: 'robot-other-child', name: 'Other Child Robot', assigned_child_profile_id: 'child-2' },
+        { id: 'robot-missing-binding', name: 'Missing Binding Robot' },
+      ],
+    });
+    jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
+    const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getDeviceStatus('primary', 'child-1')).resolves.toMatchObject({ id: '' });
   });
 
   it('keeps Wi-Fi RSSI from household device connectivity metrics when SSID is absent', async () => {
