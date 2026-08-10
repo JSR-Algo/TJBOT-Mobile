@@ -13,6 +13,7 @@ export interface ProvisionStartResult {
   provisioningAttemptId: string;
   deviceId: string;
   deviceStatus: string;
+  attemptStatus?: ProvisioningAttemptStatus;
 }
 
 export interface ConfirmLocalBlePairedParams {
@@ -28,7 +29,7 @@ export interface ConfirmLocalBlePairedResult {
   status: 'ble_paired';
 }
 
-export type ProvisioningAttemptStatus = 'started' | 'ble_paired' | 'device_authenticated' | 'completed' | 'failed' | 'expired';
+export type ProvisioningAttemptStatus = 'started' | 'ble_paired' | 'awaiting_physical_confirm' | 'device_authenticated' | 'completed' | 'failed' | 'expired';
 
 export interface ProvisioningAttemptStatusResult {
   provisioningAttemptId: string;

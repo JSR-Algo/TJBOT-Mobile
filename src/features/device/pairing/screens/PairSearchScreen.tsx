@@ -15,6 +15,7 @@ import { initializeBle, scanForTJBotDevices } from '@/services/ble/service';
 import type { BleDeviceCandidate } from '@/services/ble/types';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
 import { serialFromCandidate } from '../serialFromCandidate';
+import { savePendingPairingContext } from '../pendingPairingContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairSearchScreen'>;
 
@@ -55,13 +56,28 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           deviceId: attempt.deviceId,
           provisioningAttemptId: attempt.provisioningAttemptId,
           deviceStatus: attempt.deviceStatus,
+          attemptStatus: attempt.attemptStatus,
         });
+        if (attempt.attemptStatus === 'device_authenticated') {
+          await savePendingPairingContext({
+            deviceId: attempt.deviceId,
+            serialNumber: chosen.serialNumber,
+            provisioningAttemptId: attempt.provisioningAttemptId,
+          });
+          if (cancelledRef.current) return;
+          navigation.navigate(ROUTES.PairRenameScreen, {
+            deviceId: attempt.deviceId,
+            serialNumber: chosen.serialNumber,
+            provisioningAttemptId: attempt.provisioningAttemptId,
+          });
+          return;
+        }
         navigation.navigate(ROUTES.PairFoundScreen, {
           serialNumber: chosen.serialNumber,
           deviceId: attempt.deviceId,
           provisioningAttemptId: attempt.provisioningAttemptId,
           bleDeviceId: chosen.candidate.id,
-          provisioningTransport: 'ble',
+          provisioningTransport: attempt.attemptStatus === 'awaiting_physical_confirm' ? 'ble_claim' : 'ble',
         });
       } catch (error) {
         if (cancelledRef.current) return;

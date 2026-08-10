@@ -9,6 +9,7 @@ import { getDeviceStatus, startDeviceProvisioning } from '@/services/api/device.
 import { listAvailableClaimDevices } from '@/services/api/claim.api';
 import { initializeBle, scanForTJBotDevices } from '@/services/ble/service';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
+import { savePendingPairingContext } from '@/features/device/pairing/pendingPairingContext';
 
 // Round-2 gap fill for US-005. PairSearchScreen's helpers
 // (reconnectAndGoToWifi, labelCandidates, getMatchingPrimaryDevice /
@@ -43,6 +44,11 @@ jest.mock('@/services/api/claim.api', () => ({
   listAvailableClaimDevices: jest.fn(),
 }));
 
+jest.mock('@/features/device/pairing/pendingPairingContext', () => ({
+  __esModule: true,
+  savePendingPairingContext: jest.fn(() => Promise.resolve()),
+}));
+
 // Zero-code claim ON by default — that is the regime in which labelCandidates and
 // the backend claim lookup are live. `isZeroCodeClaimEnabled` is a jest.fn so a
 // dedicated block can flip it OFF per-test WITHOUT resetting modules (resetting
@@ -62,6 +68,7 @@ const mockedStartProvisioning = startDeviceProvisioning as jest.MockedFunction<t
 const mockedListAvailable = listAvailableClaimDevices as jest.MockedFunction<typeof listAvailableClaimDevices>;
 const mockedNetInfoFetch = NetInfo.fetch as jest.MockedFunction<typeof NetInfo.fetch>;
 const mockedZeroCodeEnabled = isZeroCodeClaimEnabled as jest.MockedFunction<typeof isZeroCodeClaimEnabled>;
+const mockedSavePendingPairingContext = savePendingPairingContext as jest.MockedFunction<typeof savePendingPairingContext>;
 
 type NetInfoState = Awaited<ReturnType<typeof NetInfo.fetch>>;
 type DeviceStatusResult = Awaited<ReturnType<typeof getDeviceStatus>>;
@@ -96,6 +103,7 @@ beforeEach(() => {
   mockedStartProvisioning.mockReset();
   mockedListAvailable.mockReset();
   mockedNetInfoFetch.mockReset();
+  mockedSavePendingPairingContext.mockReset();
 
   mockedInitializeBle.mockResolvedValue({ permission: 'granted', available: true });
   mockedNetInfoFetch.mockResolvedValue({ type: 'wifi', isConnected: true, isInternetReachable: true } as NetInfoState);
@@ -111,6 +119,7 @@ beforeEach(() => {
     batteryPercent: 0,
   });
   mockedListAvailable.mockResolvedValue([]);
+  mockedSavePendingPairingContext.mockResolvedValue();
   // Default regime: zero-code claim ON. Flag-OFF block overrides per-test.
   mockedZeroCodeEnabled.mockReturnValue(true);
 });
@@ -380,6 +389,51 @@ describe('normal add-robot route', () => {
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
     expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+  });
+
+  it('routes reused device-authenticated attempts directly to PairRename', async () => {
+    mockedStartProvisioning.mockResolvedValue({
+      provisioningAttemptId: 'attempt-authenticated',
+      deviceId: 'device-authenticated',
+      deviceStatus: 'started',
+      attemptStatus: 'device_authenticated',
+    });
+    mockedScan.mockResolvedValue({ allowed: [candidate('ble-authenticated', 'TBOT-AUTH')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate);
+
+    await waitFor(() => expect(mockedSavePendingPairingContext).toHaveBeenCalledWith({
+      deviceId: 'device-authenticated',
+      serialNumber: 'TBOT-AUTH',
+      provisioningAttemptId: 'attempt-authenticated',
+    }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-authenticated',
+      serialNumber: 'TBOT-AUTH',
+      provisioningAttemptId: 'attempt-authenticated',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen, expect.anything());
+  });
+
+  it('routes reused physical-confirm attempts through zero-code BLE claim', async () => {
+    mockedStartProvisioning.mockResolvedValue({
+      provisioningAttemptId: 'attempt-confirm',
+      deviceId: 'device-confirm',
+      deviceStatus: 'started',
+      attemptStatus: 'awaiting_physical_confirm',
+    });
+    mockedScan.mockResolvedValue({ allowed: [candidate('ble-confirm', 'TBOT-CONFIRM')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate);
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFoundScreen, {
+      serialNumber: 'TBOT-CONFIRM',
+      deviceId: 'device-confirm',
+      provisioningAttemptId: 'attempt-confirm',
+      bleDeviceId: 'ble-confirm',
+      provisioningTransport: 'ble_claim',
+    }));
+    expect(mockedSavePendingPairingContext).not.toHaveBeenCalled();
   });
 
   it('starts a fresh claim when the matching primary is also claimable over zero-code BLE', async () => {
