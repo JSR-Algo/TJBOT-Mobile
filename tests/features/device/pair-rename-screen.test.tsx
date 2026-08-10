@@ -1,11 +1,12 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import PairRenameScreen from '@/features/device/pairing/screens/PairRenameScreen';
 import { ROUTES } from '@/navigation/routes';
 import { completeDeviceProvisioning } from '@/services/api/device.api';
 import type { CompleteDeviceProvisioningResult } from '@/services/api/device.api';
 import { markLocalDevicePaired } from '@/features/device/pairing/localPairedDevice';
 import { getPendingPairingContext } from '@/features/device/pairing/pendingPairingContext';
+import { setAppLanguage } from '@/services/i18n/i18n';
 
 jest.mock('@/services/api/device.api', () => ({
   __esModule: true,
@@ -163,6 +164,20 @@ describe('PairRenameScreen auto-finalization bridge', () => {
       displayName: 'Living-room Robot',
     });
     await waitFor(() => expect(reset).toHaveBeenCalledWith(expect.objectContaining({ index: 1 })));
+  });
+
+  it('localizes the timeout message and retry CTA in Vietnamese', async () => {
+    await act(async () => {
+      await setAppLanguage('vi');
+    });
+    mockedComplete.mockRejectedValueOnce(Object.assign(new Error('robot is still initializing'), { code: 'DEVICE_AUTH_TIMEOUT' }));
+    const navigate = jest.fn();
+    const screen = renderScreen(navigate, FULL_PARAMS);
+
+    await waitFor(() =>
+      expect(screen.getByText('Robot vẫn đang hoàn tất kết nối Wi-Fi. Hãy đợi một chút rồi thử lại.')).toBeTruthy(),
+    );
+    expect(screen.getByText('Thử lại')).toBeTruthy();
   });
 
   it('ignores duplicate retry taps while a finalize call is already in flight', async () => {

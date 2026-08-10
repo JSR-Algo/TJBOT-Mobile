@@ -73,12 +73,12 @@ export default function PairRenameScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={20} paddingTop={32} paddingBottom={30} style={styles.content}>
         <ActivityIndicator color={DV.accent} size="large" />
         {authTimedOut ? (
-          <Text testID="pairing-auth-timeout-message" style={styles.retryMessage} i18n={false}>
+          <Text testID="pairing-auth-timeout-message" style={styles.retryMessage}>
             Robot is still finishing its Wi-Fi connection. Wait a moment, then try again.
           </Text>
         ) : (
-          <Text style={styles.status} i18n={false}>
-            Finalizing your Robot connection...
+          <Text style={styles.status}>
+            Preparing
           </Text>
         )}
         {authTimedOut ? (

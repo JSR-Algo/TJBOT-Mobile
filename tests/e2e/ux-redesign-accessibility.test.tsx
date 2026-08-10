@@ -819,14 +819,17 @@ describe('mobile UX redesign accessibility coverage', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText('Save & continue'));
+    expect(screen.getByText('Finishing setup')).toBeTruthy();
+    expect(screen.queryByText('Save & continue')).toBeNull();
 
-    await waitFor(() => expect(apiMocks.completeDeviceProvisioning).toHaveBeenCalledWith({
+    await waitFor(() => expect(apiMocks.completeDeviceProvisioning).toHaveBeenCalledTimes(1));
+    const [payload] = apiMocks.completeDeviceProvisioning.mock.calls[0];
+    expect(payload).toEqual({
       provisioningAttemptId: 'attempt-1',
       deviceId: 'device-1',
-      assignChildProfileId: 'child-1',
       displayName: 'Living-room Robot',
-    }));
+    });
+    expect(payload).not.toHaveProperty('assignChildProfileId');
     await waitFor(() => expect(localDeviceMocks.markLocalDevicePaired).toHaveBeenCalledWith('device-1'));
     // Finalize resets the stack to [DeviceHome, PairSuccess] so Back can't walk
     // back through the finished pairing screens.
@@ -844,16 +847,16 @@ describe('mobile UX redesign accessibility coverage', () => {
 
   it('keeps final success after backend completion even if local paired cache write fails', async () => {
     localDeviceMocks.markLocalDevicePaired.mockRejectedValueOnce(new Error('storage unavailable'));
-    const screen = render(
+    render(
       <PairRenameScreen
         navigation={navigation as never}
         route={{ params: { deviceId: 'device-1', serialNumber: 'TJBot-001', provisioningAttemptId: 'attempt-1' } } as never}
       />,
     );
 
-    fireEvent.press(screen.getByText('Save & continue'));
-
-    await waitFor(() => expect(apiMocks.completeDeviceProvisioning).toHaveBeenCalled());
+    await waitFor(() => expect(apiMocks.completeDeviceProvisioning).toHaveBeenCalledTimes(1));
+    const [payload] = apiMocks.completeDeviceProvisioning.mock.calls[0];
+    expect(payload).not.toHaveProperty('assignChildProfileId');
     await waitFor(() => expect(reset).toHaveBeenCalledWith({
       index: 1,
       routes: [
