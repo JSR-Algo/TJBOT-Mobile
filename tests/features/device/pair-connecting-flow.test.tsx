@@ -10,6 +10,7 @@ import {
   getProvisioningAttemptStatus,
   mintBootstrapToken,
   reportProvisioningDeviceAuthenticated,
+  startDeviceProvisioning,
 } from '@/services/api/device.api';
 import { getClaimStatus, requestClaim } from '@/services/api/claim.api';
 import { describeClaimFailure } from '@/features/device/pairing/claimStatus';
@@ -51,6 +52,7 @@ jest.mock('@/services/api/device.api', () => ({
   getProvisioningAttemptStatus: jest.fn(),
   mintBootstrapToken: jest.fn(),
   reportProvisioningDeviceAuthenticated: jest.fn(),
+  startDeviceProvisioning: jest.fn(),
 }));
 
 jest.mock('@/services/api/claim.api', () => ({
@@ -70,6 +72,7 @@ const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getD
 const mockedGetProvisioningAttemptStatus = getProvisioningAttemptStatus as jest.MockedFunction<typeof getProvisioningAttemptStatus>;
 const mockedMintBootstrapToken = mintBootstrapToken as jest.MockedFunction<typeof mintBootstrapToken>;
 const mockedReportProvisioningDeviceAuthenticated = reportProvisioningDeviceAuthenticated as jest.MockedFunction<typeof reportProvisioningDeviceAuthenticated>;
+const mockedStartDeviceProvisioning = startDeviceProvisioning as jest.MockedFunction<typeof startDeviceProvisioning>;
 const mockedGetClaimStatus = getClaimStatus as jest.MockedFunction<typeof getClaimStatus>;
 const mockedRequestClaim = requestClaim as jest.MockedFunction<typeof requestClaim>;
 const mockedSavePendingPairingContext = savePendingPairingContext as jest.MockedFunction<typeof savePendingPairingContext>;
@@ -161,6 +164,12 @@ beforeEach(() => {
     ttlSeconds: 300,
   });
   mockedReportProvisioningDeviceAuthenticated.mockResolvedValue(undefined);
+  mockedStartDeviceProvisioning.mockResolvedValue({
+    provisioningAttemptId: 'claim-replacement',
+    deviceId: 'device-replacement',
+    deviceStatus: 'provisioning',
+    attemptStatus: 'started',
+  });
   mockedRequestClaim.mockResolvedValue({
     claimId: 'claim-1',
     deviceId: 'device-1',
@@ -178,7 +187,7 @@ afterEach(() => {
     // Drain any leftover one-shot secrets so handoff TTL timers (and the
     // module-level bootstrap-token map, which persists across tests) do not bleed
     // across tests.
-    ['claim-1', 'attempt-1', 'attempt-rc-1', 'attempt-zc-1', 'claim-NEW'].forEach((id) => {
+    ['claim-1', 'attempt-1', 'attempt-rc-1', 'attempt-zc-1', 'claim-NEW', 'claim-replacement'].forEach((id) => {
       consumePairingWifiPassword(id);
       clearPairingBootstrapToken(id);
     });
@@ -598,6 +607,139 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       expect.objectContaining({ errorCode: 'INVALID_BLE_CODE' }),
     ));
     // A rejected confirm must not advance to the credential handoff.
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
+  it('reconciles a NOT_READY confirm race when the original attempt is already device_authenticated', async () => {
+    seedSecrets('claim-1');
+    mockedConfirmLocalBlePaired.mockRejectedValue(
+      Object.assign(new Error('not ready'), { code: 'PROVISIONING_ATTEMPT_NOT_READY' }),
+    );
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'device_authenticated',
+    });
+    const navigate = jest.fn();
+
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-1',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-1',
+    }));
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
+    expect(mockedStartDeviceProvisioning).not.toHaveBeenCalled();
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+    expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+  });
+
+  it('restarts once after an expired NOT_READY attempt and hands BLE off with the replacement ids', async () => {
+    seedSecrets('claim-1');
+    mockedConfirmLocalBlePaired.mockImplementation(async () => {
+      if (mockedConfirmLocalBlePaired.mock.calls.length === 1) {
+        throw Object.assign(new Error('not ready'), { code: 'PROVISIONING_ATTEMPT_NOT_READY' });
+      }
+      return {
+        deviceId: 'device-replacement',
+        provisioningAttemptId: 'claim-replacement',
+        status: 'ble_paired',
+      };
+    });
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'expired',
+    });
+    mockedStartDeviceProvisioning.mockResolvedValue({
+      provisioningAttemptId: 'claim-replacement',
+      deviceId: 'device-replacement',
+      deviceStatus: 'provisioning',
+      attemptStatus: 'started',
+    });
+    const navigate = jest.fn();
+
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-replacement',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-replacement',
+    }));
+    expect(mockedConfirmLocalBlePaired).toHaveBeenCalledTimes(2);
+    expect(mockedConfirmLocalBlePaired).toHaveBeenNthCalledWith(2, {
+      deviceId: 'device-replacement',
+      provisioningAttemptId: 'claim-replacement',
+      serialNumber: SERIAL,
+      code: PROVISIONING_CODE,
+    });
+    expect(mockedStartDeviceProvisioning).toHaveBeenCalledTimes(1);
+    expect(mockedStartDeviceProvisioning).toHaveBeenCalledWith({ serialNumber: SERIAL });
+    expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-replacement' });
+    expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(expect.objectContaining({
+      deviceId: 'device-replacement',
+      code: PROVISIONING_CODE,
+      ssid: SSID,
+      password: WIFI_PASSWORD,
+      token: BOOTSTRAP_TOKEN,
+    }));
+    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
+      deviceId: 'device-replacement',
+      code: PROVISIONING_CODE,
+      bootstrapToken: BOOTSTRAP_TOKEN,
+    });
+  });
+
+  it('bounds NOT_READY recovery to one restart when the replacement attempt is also not ready', async () => {
+    seedSecrets('claim-1');
+    mockedConfirmLocalBlePaired.mockRejectedValue(
+      Object.assign(new Error('not ready'), { code: 'PROVISIONING_ATTEMPT_NOT_READY' }),
+    );
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'failed',
+      failureCode: 'EXPIRED_PAIRING_CODE',
+    });
+    mockedStartDeviceProvisioning.mockResolvedValue({
+      provisioningAttemptId: 'claim-replacement',
+      deviceId: 'device-replacement',
+      deviceStatus: 'provisioning',
+      attemptStatus: 'started',
+    });
+    const navigate = jest.fn();
+
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({
+        errorCode: 'PROVISIONING_ATTEMPT_NOT_READY',
+        deviceId: 'device-replacement',
+        provisioningAttemptId: 'claim-replacement',
+      }),
+    ));
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+    expect(mockedStartDeviceProvisioning).toHaveBeenCalledTimes(1);
+    expect(mockedConfirmLocalBlePaired).toHaveBeenCalledTimes(2);
     expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
   });

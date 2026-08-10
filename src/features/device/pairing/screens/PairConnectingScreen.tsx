@@ -15,6 +15,8 @@ import {
   getProvisioningAttemptStatus,
   mintBootstrapToken,
   reportProvisioningDeviceAuthenticated,
+  startDeviceProvisioning,
+  type ProvisioningAttemptStatus,
 } from '@/services/api/device.api';
 import { provisionWifiViaLocalBle } from '@/services/ble/service';
 import { translateTemplate, useAppLanguage } from '@/services/i18n/i18n';
@@ -28,11 +30,10 @@ import {
 } from '../claimStatus';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
-type RuntimeProvisioningStatus = 'started' | 'ble_paired' | 'device_authenticated' | 'completed' | 'failed' | 'expired';
 type RuntimeProvisioningStatusResult = {
   provisioningAttemptId: string;
   deviceId: string;
-  status: RuntimeProvisioningStatus;
+  status: ProvisioningAttemptStatus;
   failureCode?: string;
 };
 type ProvisioningRunResult = {
@@ -40,6 +41,11 @@ type ProvisioningRunResult = {
   provisioningAttemptId: string;
   completionMode: 'device_authenticated' | 'claim_confirmed' | 'device_online';
   claimExpiresAt?: string | null;
+};
+type ActiveProvisioningContext = {
+  deviceId: string;
+  provisioningAttemptId: string;
+  skipBleHandoff: boolean;
 };
 
 const DEVICE_STATUS_POLL_INTERVAL_MS = CLAIM_POLL_INTERVAL_MS;
@@ -49,11 +55,12 @@ const PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS = Math.ceil(CLAIM_CONFIRM_TIMEOUT_M
 const PROVISIONING_STATUSES = [
   'started',
   'ble_paired',
+  'awaiting_physical_confirm',
   'device_authenticated',
   'completed',
   'failed',
   'expired',
-] as const satisfies readonly RuntimeProvisioningStatus[];
+] as const satisfies readonly ProvisioningAttemptStatus[];
 
 export default function PairConnectingScreen({ navigation, route }: Props) {
   const { language, t } = useAppLanguage();
@@ -158,6 +165,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     // applies to the claim-confirmed completion mode; the backend/auth paths keep
     // the original route attempt id on failure (their recovery contract).
     let recoveryAttemptId = provisioningAttemptId;
+    let recoveryDeviceId = deviceId;
     void run.then(async (result) => {
       if (result.completionMode === 'claim_confirmed') {
         recoveryAttemptId = result.provisioningAttemptId;
@@ -225,14 +233,16 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       });
     }).catch(async (error: unknown) => {
       if (cancelled) return;
-      recoveryAttemptId = readString(asRecord(error), 'provisioningAttemptId') ?? recoveryAttemptId;
+      const errorRecord = asRecord(error);
+      recoveryAttemptId = readString(errorRecord, 'provisioningAttemptId') ?? recoveryAttemptId;
+      recoveryDeviceId = readString(errorRecord, 'deviceId') ?? recoveryDeviceId;
       let resolvedError = error;
       const deliveryUnknown = isDeliveryUnknown(error);
       if (deliveryUnknown && (transport === 'ble' || transport === 'ble_claim')) {
         try {
-          const authenticated = code
-            ? await waitForDeviceAuthenticated(recoveryAttemptId, poll)
-            : await waitForClaimConfirmed(recoveryAttemptId, poll);
+        const authenticated = code
+          ? await waitForDeviceAuthenticated(recoveryAttemptId, poll)
+          : await waitForClaimConfirmed(recoveryAttemptId, poll);
           if (cancelled) return;
           clearPairingBootstrapToken(authenticated.provisioningAttemptId);
           setI(PAIRING_STEP_COUNT);
@@ -255,7 +265,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       const errorCode = errorCodeFrom(resolvedError, 'PAIRING_CONNECT_FAILED');
       logDevPairConnectingEvent('failed', {
         errorCode,
-        deviceId,
+        deviceId: recoveryDeviceId,
         serialNumber,
         provisioningAttemptId: recoveryAttemptId,
         transport: params?.provisioningTransport,
@@ -263,7 +273,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       });
       setStatus('failed');
       navigation.navigate(ROUTES.PairFailedScreen, {
-        deviceId,
+        deviceId: recoveryDeviceId,
         serialNumber,
         provisioningAttemptId: recoveryAttemptId,
         code,
@@ -373,6 +383,7 @@ async function runLocalBleProvisioning(params: {
 
   let token: string | undefined;
   let claimId = params.provisioningAttemptId;
+  let activeDeviceId = params.deviceId;
   let claimExpiresAt: string | null = null;
   let completionMode: ProvisioningRunResult['completionMode'] = params.claimBased
     ? 'claim_confirmed'
@@ -380,24 +391,29 @@ async function runLocalBleProvisioning(params: {
   const handoffCode = params.code ?? (params.claimBased ? undefined : createLocalBleCode());
 
   if (handoffCode) {
-    await confirmLocalBlePaired({
-      deviceId: params.deviceId,
-      provisioningAttemptId: params.provisioningAttemptId,
+    const active = await confirmLocalBlePairedWithNotReadyRecovery({
+      deviceId: activeDeviceId,
+      provisioningAttemptId: claimId,
       serialNumber: params.serialNumber,
       code: handoffCode,
     });
+    activeDeviceId = active.deviceId;
+    claimId = active.provisioningAttemptId;
     completionMode = 'device_authenticated';
+    if (active.skipBleHandoff) {
+      return { deviceId: activeDeviceId, provisioningAttemptId: claimId, completionMode };
+    }
   }
 
   if (params.claimBased && !params.code && !token && !isLikelyClaimId(claimId)) {
-    const claimed = await requestClaim({ deviceId: params.deviceId });
+    const claimed = await requestClaim({ deviceId: activeDeviceId });
     if (!claimed.claimId) {
       throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
     }
     claimId = claimed.claimId;
     claimExpiresAt = claimed.expiresAt || null;
     if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
-      return { deviceId: claimed.deviceId || params.deviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+      return { deviceId: claimed.deviceId || activeDeviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
     }
   }
 
@@ -420,12 +436,12 @@ async function runLocalBleProvisioning(params: {
       token,
       // Push the backend device_id (the id the claim attempt was created under) so
       // the robot claims/confirms under it instead of its random Board UUID.
-      deviceId: params.deviceId,
+      deviceId: activeDeviceId,
     });
     if (handoffCode && token) {
       try {
         await reportProvisioningDeviceAuthenticated({
-          deviceId: params.deviceId,
+          deviceId: activeDeviceId,
           code: handoffCode,
           bootstrapToken: token,
         });
@@ -443,12 +459,63 @@ async function runLocalBleProvisioning(params: {
   }
 
   logDevPairConnectingEvent('local_ble_handoff_complete', {
-    deviceId: params.deviceId,
+    deviceId: activeDeviceId,
     provisioningAttemptId: claimId,
     completionMode,
   });
 
-  return { deviceId: params.deviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+  return { deviceId: activeDeviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+}
+
+async function confirmLocalBlePairedWithNotReadyRecovery(params: {
+  deviceId: string;
+  provisioningAttemptId: string;
+  serialNumber: string;
+  code: string;
+}): Promise<ActiveProvisioningContext> {
+  try {
+    const confirmed = await confirmLocalBlePaired(params);
+    return {
+      deviceId: confirmed.deviceId,
+      provisioningAttemptId: confirmed.provisioningAttemptId,
+      skipBleHandoff: false,
+    };
+  } catch (error: unknown) {
+    if (errorCodeFrom(error, '') !== 'PROVISIONING_ATTEMPT_NOT_READY') {
+      throw error;
+    }
+
+    const status = parseProvisioningStatus(await getProvisioningAttemptStatus(params.provisioningAttemptId));
+    if (status.status === 'device_authenticated' || status.status === 'completed') {
+      return {
+        deviceId: status.deviceId,
+        provisioningAttemptId: status.provisioningAttemptId,
+        skipBleHandoff: true,
+      };
+    }
+    if (status.status !== 'failed' && status.status !== 'expired') {
+      throw error;
+    }
+
+    const replacement = await startDeviceProvisioning({ serialNumber: params.serialNumber });
+    try {
+      const confirmed = await confirmLocalBlePaired({
+        deviceId: replacement.deviceId,
+        provisioningAttemptId: replacement.provisioningAttemptId,
+        serialNumber: params.serialNumber,
+        code: params.code,
+      });
+      return {
+        deviceId: confirmed.deviceId,
+        provisioningAttemptId: confirmed.provisioningAttemptId,
+        skipBleHandoff: false,
+      };
+    } catch (replacementError: unknown) {
+      const wrapped = withProvisioningAttemptContext(replacementError, replacement.provisioningAttemptId);
+      wrapped.deviceId = replacement.deviceId;
+      throw wrapped;
+    }
+  }
 }
 
 function createLocalBleCode(): string {
@@ -611,7 +678,7 @@ function parseProvisioningStatus(value: unknown): RuntimeProvisioningStatusResul
   };
 }
 
-function isProvisioningStatus(value: string | undefined): value is RuntimeProvisioningStatus {
+function isProvisioningStatus(value: string | undefined): value is ProvisioningAttemptStatus {
   return PROVISIONING_STATUSES.some((status) => status === value);
 }
 
@@ -656,16 +723,19 @@ function isDeliveryUnknown(error: unknown): boolean {
 
 function withProvisioningAttemptContext(error: unknown, provisioningAttemptId: string): Error & {
   code: string;
+  deviceId?: string;
   provisioningAttemptId: string;
   deliveryUnknown?: boolean;
 } {
   const wrapped = new Error(error instanceof Error ? error.message : 'Pairing operation failed.') as Error & {
     code: string;
+    deviceId?: string;
     provisioningAttemptId: string;
     deliveryUnknown?: boolean;
   };
   wrapped.code = errorCodeFrom(error, 'PAIRING_CONNECT_FAILED');
-  wrapped.provisioningAttemptId = provisioningAttemptId;
+  wrapped.deviceId = readString(asRecord(error), 'deviceId');
+  wrapped.provisioningAttemptId = readString(asRecord(error), 'provisioningAttemptId') ?? provisioningAttemptId;
   if (isDeliveryUnknown(error)) wrapped.deliveryUnknown = true;
   Object.defineProperty(wrapped, 'cause', { value: error, configurable: true });
   return wrapped;
