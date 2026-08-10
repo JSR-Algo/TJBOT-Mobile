@@ -142,11 +142,12 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
   };
 }
 
-// Pick the device bound to the active child from a household list. The binding
-// (assignedChildProfileId) is only present when the backend surfaces the
-// devices.assigned_child_profile_id column — see the residual note. When no
-// device matches for an explicit child, return no device. Selecting another
-// household robot would cross the child/robot ownership boundary.
+// Pick the device bound to the active child from a household list. Exact
+// assignedChildProfileId matches win first; if none exists, only an explicitly
+// null binding may serve as the household-owned unbound fallback. Missing
+// binding metadata is excluded from child-scoped fallback because the client
+// cannot distinguish "unbound" from "backend did not surface the column".
+// Selecting another child's robot would cross the child/robot ownership boundary.
 function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceDto {
   if (childId) {
     const bound = devices.find(
