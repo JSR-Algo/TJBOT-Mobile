@@ -305,6 +305,72 @@ describe('PairRenameScreen auto-finalization bridge', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
+  it('retains pending pairing context across a blurred success before refocus retry', async () => {
+    let blurHandler: (() => void) | undefined;
+    let focusHandler: (() => void) | undefined;
+    let resolveFirst: (value: CompleteDeviceProvisioningResult) => void = () => undefined;
+    let resolveSecond: (value: CompleteDeviceProvisioningResult) => void = () => undefined;
+    mockedGetPendingPairingContext
+      .mockResolvedValueOnce(FULL_PARAMS)
+      .mockResolvedValue(null);
+    mockedComplete
+      .mockImplementationOnce(
+        () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveFirst = resolve; }),
+      )
+      .mockImplementationOnce(
+        () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveSecond = resolve; }),
+      );
+    const navigate = jest.fn();
+    const reset = jest.fn();
+    const addListener = jest.fn((event: string, handler: () => void) => {
+      if (event === 'blur') blurHandler = handler;
+      if (event === 'focus') focusHandler = handler;
+      return jest.fn();
+    });
+    renderScreen(navigate, undefined, reset, { addListener });
+
+    await waitFor(() => expect(mockedComplete).toHaveBeenCalledWith({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      displayName: 'Living-room Robot',
+    }));
+    act(() => {
+      blurHandler?.();
+    });
+    await act(async () => {
+      resolveFirst(COMPLETE_OK);
+    });
+    expect(reset).not.toHaveBeenCalled();
+
+    act(() => {
+      focusHandler?.();
+    });
+    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(2));
+    expect(mockedComplete).toHaveBeenNthCalledWith(2, {
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      displayName: 'Living-room Robot',
+    });
+    await act(async () => {
+      resolveSecond(COMPLETE_OK);
+    });
+
+    expect(reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: ROUTES.DeviceHomeScreen },
+        {
+          name: ROUTES.PairSuccessScreen,
+          params: { deviceId: 'device-1', serialNumber: 'TBT-2026-004217', provisioningAttemptId: 'claim-1' },
+        },
+      ],
+    });
+    expect(navigate).not.toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PAIRING_CONTEXT_MISSING' }),
+    );
+  });
+
   it('preserves typed non-timeout finalize errors on PairFailed', async () => {
     mockedComplete.mockRejectedValue(Object.assign(new Error('boom'), { code: 'BACKEND_5XX' }));
     const navigate = jest.fn();

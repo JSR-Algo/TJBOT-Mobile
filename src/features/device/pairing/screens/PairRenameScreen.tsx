@@ -9,7 +9,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
-import { finalizeDevicePairing } from '../finalizeDevicePairing';
+import { finalizeDevicePairing, type DevicePairingContext } from '../finalizeDevicePairing';
 import { getPendingPairingContext } from '../pendingPairingContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
@@ -22,6 +22,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
   const focusedRef = React.useRef(true);
   const runSeqRef = React.useRef(0);
   const finishPairingRef = React.useRef<(() => Promise<void>) | null>(null);
+  const resolvedPairingContextRef = React.useRef<DevicePairingContext | null>(null);
 
   React.useEffect(() => {
     return () => {
@@ -44,9 +45,29 @@ export default function PairRenameScreen({ navigation, route }: Props) {
 
       const pendingContext = await getPendingPairingContext().catch(() => null);
       if (!isActiveRun()) return;
-      const deviceId = route.params?.deviceId ?? pendingContext?.deviceId;
-      const provisioningAttemptId = route.params?.provisioningAttemptId ?? pendingContext?.provisioningAttemptId;
-      const serialNumber = route.params?.serialNumber ?? pendingContext?.serialNumber;
+      const routeContext = route.params?.deviceId && route.params?.provisioningAttemptId
+        ? {
+          deviceId: route.params.deviceId,
+          provisioningAttemptId: route.params.provisioningAttemptId,
+          serialNumber: route.params.serialNumber,
+        }
+        : null;
+      const pendingCompleteContext = pendingContext?.deviceId && pendingContext?.provisioningAttemptId
+        ? {
+          deviceId: pendingContext.deviceId,
+          provisioningAttemptId: pendingContext.provisioningAttemptId,
+          serialNumber: pendingContext.serialNumber,
+        }
+        : null;
+      const pairingContext = routeContext ?? pendingCompleteContext ?? resolvedPairingContextRef.current;
+      if (routeContext ?? pendingCompleteContext) {
+        resolvedPairingContextRef.current = routeContext ?? pendingCompleteContext;
+      }
+      const deviceId = pairingContext?.deviceId ?? route.params?.deviceId ?? pendingContext?.deviceId;
+      const provisioningAttemptId = pairingContext?.provisioningAttemptId
+        ?? route.params?.provisioningAttemptId
+        ?? pendingContext?.provisioningAttemptId;
+      const serialNumber = route.params?.serialNumber ?? pairingContext?.serialNumber ?? pendingContext?.serialNumber;
 
       if (!deviceId || !provisioningAttemptId) {
         if (isActiveRun()) {
