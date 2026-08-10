@@ -455,7 +455,7 @@ async function runLocalBleProvisioning(params: {
       }
     }
   } catch (error: unknown) {
-    throw withProvisioningAttemptContext(error, claimId);
+    throw withProvisioningAttemptContext(error, claimId, activeDeviceId);
   }
 
   logDevPairConnectingEvent('local_ble_handoff_complete', {
@@ -511,9 +511,7 @@ async function confirmLocalBlePairedWithNotReadyRecovery(params: {
         skipBleHandoff: false,
       };
     } catch (replacementError: unknown) {
-      const wrapped = withProvisioningAttemptContext(replacementError, replacement.provisioningAttemptId);
-      wrapped.deviceId = replacement.deviceId;
-      throw wrapped;
+      throw withProvisioningAttemptContext(replacementError, replacement.provisioningAttemptId, replacement.deviceId);
     }
   }
 }
@@ -721,7 +719,7 @@ function isDeliveryUnknown(error: unknown): boolean {
   return asRecord(error)?.deliveryUnknown === true;
 }
 
-function withProvisioningAttemptContext(error: unknown, provisioningAttemptId: string): Error & {
+function withProvisioningAttemptContext(error: unknown, provisioningAttemptId: string, deviceId?: string): Error & {
   code: string;
   deviceId?: string;
   provisioningAttemptId: string;
@@ -734,7 +732,7 @@ function withProvisioningAttemptContext(error: unknown, provisioningAttemptId: s
     deliveryUnknown?: boolean;
   };
   wrapped.code = errorCodeFrom(error, 'PAIRING_CONNECT_FAILED');
-  wrapped.deviceId = readString(asRecord(error), 'deviceId');
+  wrapped.deviceId = readString(asRecord(error), 'deviceId') ?? deviceId;
   wrapped.provisioningAttemptId = readString(asRecord(error), 'provisioningAttemptId') ?? provisioningAttemptId;
   if (isDeliveryUnknown(error)) wrapped.deliveryUnknown = true;
   Object.defineProperty(wrapped, 'cause', { value: error, configurable: true });

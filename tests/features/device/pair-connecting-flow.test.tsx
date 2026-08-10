@@ -703,6 +703,119 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     });
   });
 
+  it('restarts once after a failed NOT_READY attempt and saves/navigates with the replacement ids', async () => {
+    seedSecrets('claim-1');
+    mockedConfirmLocalBlePaired.mockImplementation(async () => {
+      if (mockedConfirmLocalBlePaired.mock.calls.length === 1) {
+        throw Object.assign(new Error('not ready'), { code: 'PROVISIONING_ATTEMPT_NOT_READY' });
+      }
+      return {
+        deviceId: 'device-replacement',
+        provisioningAttemptId: 'claim-replacement',
+        status: 'ble_paired',
+      };
+    });
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'failed',
+      failureCode: 'EXPIRED_PAIRING_CODE',
+    });
+    mockedStartDeviceProvisioning.mockResolvedValue({
+      provisioningAttemptId: 'claim-replacement',
+      deviceId: 'device-replacement',
+      deviceStatus: 'provisioning',
+      attemptStatus: 'started',
+    });
+    const navigate = jest.fn();
+
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      deviceId: 'device-replacement',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-replacement',
+    }));
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+    expect(mockedStartDeviceProvisioning).toHaveBeenCalledTimes(1);
+    expect(mockedConfirmLocalBlePaired).toHaveBeenCalledTimes(2);
+    expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-replacement' });
+    expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(expect.objectContaining({
+      deviceId: 'device-replacement',
+      code: PROVISIONING_CODE,
+      ssid: SSID,
+      password: WIFI_PASSWORD,
+      token: BOOTSTRAP_TOKEN,
+    }));
+    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
+      deviceId: 'device-replacement',
+      code: PROVISIONING_CODE,
+      bootstrapToken: BOOTSTRAP_TOKEN,
+    });
+    expect(mockedSavePendingPairingContext).toHaveBeenCalledWith({
+      deviceId: 'device-replacement',
+      serialNumber: SERIAL,
+      provisioningAttemptId: 'claim-replacement',
+    });
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+  });
+
+  it('keeps replacement device context when a post-restart token mint fails without its own deviceId', async () => {
+    seedSecrets('claim-1');
+    mockedConfirmLocalBlePaired.mockImplementation(async () => {
+      if (mockedConfirmLocalBlePaired.mock.calls.length === 1) {
+        throw Object.assign(new Error('not ready'), { code: 'PROVISIONING_ATTEMPT_NOT_READY' });
+      }
+      return {
+        deviceId: 'device-replacement',
+        provisioningAttemptId: 'claim-replacement',
+        status: 'ble_paired',
+      };
+    });
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1',
+      deviceId: 'device-1',
+      status: 'expired',
+    });
+    mockedStartDeviceProvisioning.mockResolvedValue({
+      provisioningAttemptId: 'claim-replacement',
+      deviceId: 'device-replacement',
+      deviceStatus: 'provisioning',
+      attemptStatus: 'started',
+    });
+    mockedMintBootstrapToken.mockRejectedValue(Object.assign(
+      new Error('Token service unavailable'),
+      { code: 'SERVICE_UNAVAILABLE' },
+    ));
+    const navigate = jest.fn();
+
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({
+        errorCode: 'SERVICE_UNAVAILABLE',
+        deviceId: 'device-replacement',
+        provisioningAttemptId: 'claim-replacement',
+      }),
+    ));
+    expect(mockedStartDeviceProvisioning).toHaveBeenCalledTimes(1);
+    expect(mockedConfirmLocalBlePaired).toHaveBeenCalledTimes(2);
+    expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-replacement' });
+    expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+  });
+
   it('bounds NOT_READY recovery to one restart when the replacement attempt is also not ready', async () => {
     seedSecrets('claim-1');
     mockedConfirmLocalBlePaired.mockRejectedValue(
