@@ -12,7 +12,6 @@ import PairOfflineScreen from './pairing/screens/PairOfflineScreen';
 import PairFailedScreen from './pairing/screens/PairFailedScreen';
 import PairSuccessScreen from './pairing/screens/PairSuccessScreen';
 import PairFirstLessonScreen from './pairing/screens/PairFirstLessonScreen';
-import PairChildProfileScreen from './pairing/screens/PairChildProfileScreen';
 import DeviceHomeScreen from './screens/DeviceHomeScreen';
 import DeviceOverviewScreen from './screens/DeviceOverviewScreen';
 import DeviceFirmwareScreen from './screens/DeviceFirmwareScreen';
@@ -54,7 +53,6 @@ export const DEVICE_SCREENS = defineFeatureScreens([
   { name: ROUTES.PairCodeScreen, component: PairCodeScreen, role: 'stack', backTarget: ROUTES.PairQrScanScreen, forwardCycleGroup: 'device-pairing-retry', stateMachineId: 'dv_pair_code' },
   { name: ROUTES.PairAddScreen, component: PairAddScreen, role: 'stack', backTarget: ROUTES.DeviceOverviewScreen, stateMachineId: 'dv_pair_add' },
   { name: ROUTES.PairRenameScreen, component: PairRenameScreen, role: 'stack', backTarget: ROUTES.PairSuccessScreen, forwardCycleGroup: 'device-pairing-retry', stateMachineId: 'dv_pair_rename' },
-  { name: ROUTES.PairChildProfileScreen, component: PairChildProfileScreen, role: 'stack', backTarget: ROUTES.PairRenameScreen, stateMachineId: 'dv_pair_child' },
   { name: ROUTES.PairWifiScreen, component: PairWifiScreen, role: 'stack', backTarget: ROUTES.PairCodeScreen, forwardCycleGroup: 'device-pairing-retry', stateMachineId: 'dv_pair_wifi' },
   { name: ROUTES.PairWifiPasswordScreen, component: PairWifiPasswordScreen, role: 'stack', backTarget: ROUTES.PairWifiScreen, forwardCycleGroup: 'device-pairing-retry', stateMachineId: 'dv_pair_wifi_pw' },
   { name: ROUTES.PairOfflineScreen, component: PairOfflineScreen, role: 'stack', backTarget: ROUTES.PairAddScreen, stateMachineId: 'dv_pair_offline' },

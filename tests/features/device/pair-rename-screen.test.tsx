@@ -96,7 +96,6 @@ describe('PairRenameScreen auto-finalization bridge', () => {
         },
       ],
     });
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
@@ -130,7 +129,6 @@ describe('PairRenameScreen auto-finalization bridge', () => {
         },
       ],
     });
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
   });
 
   it('routes to PairFailed with PAIRING_CONTEXT_MISSING when route and pending context are incomplete', async () => {
@@ -145,7 +143,6 @@ describe('PairRenameScreen auto-finalization bridge', () => {
       errorCode: 'PAIRING_CONTEXT_MISSING',
     }));
     expect(mockedComplete).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
   });
 
   it('keeps DEVICE_AUTH_TIMEOUT on the bridge and retries with the same context when the parent taps retry', async () => {
@@ -383,7 +380,6 @@ describe('PairRenameScreen auto-finalization bridge', () => {
       provisioningAttemptId: 'claim-1',
       errorCode: 'BACKEND_5XX',
     }));
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairChildProfileScreen, expect.anything());
   });
 
   it('lifts axios-shaped error.response.data.error.code before falling back', async () => {

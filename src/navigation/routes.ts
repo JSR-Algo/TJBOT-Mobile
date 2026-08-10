@@ -131,7 +131,6 @@ export type RootStackParamList = {
   PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairAddScreen: undefined;
   PairRenameScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
-  PairChildProfileScreen: undefined | { pairing?: { deviceId: string; provisioningAttemptId: string; serialNumber?: string } };
   PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairOfflineScreen: undefined;
@@ -270,7 +269,6 @@ export const ROUTES = {
   'PairCodeScreen': 'PairCodeScreen',
   'PairAddScreen': 'PairAddScreen',
   'PairRenameScreen': 'PairRenameScreen',
-  'PairChildProfileScreen': 'PairChildProfileScreen',
   'PairWifiScreen': 'PairWifiScreen',
   'PairWifiPasswordScreen': 'PairWifiPasswordScreen',
   'PairOfflineScreen': 'PairOfflineScreen',

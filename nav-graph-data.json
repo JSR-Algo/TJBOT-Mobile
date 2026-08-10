@@ -186,12 +186,6 @@
       "g": "Robot Device",
       "kind": "happy"
     },
-    "dv_pair_child": {
-      "f": "src/features/device/pairing/screens/PairChildProfileScreen.tsx",
-      "title": "Robot · Pair · child profile",
-      "g": "Robot Device",
-      "kind": "happy"
-    },
     "dv_pair_code": {
       "f": "src/features/device/pairing/screens/PairCodeScreen.tsx",
       "title": "Robot · Pair · confirm code",
@@ -551,6 +545,12 @@
     "parent_safety": {
       "f": "src/features/parent/screens/ParentSafetyScreen.tsx",
       "title": "Safety & Privacy",
+      "g": "Parent",
+      "kind": "happy"
+    },
+    "parent_session_report": {
+      "f": "src/features/parent/screens/ParentSessionReportScreen.tsx",
+      "title": "Session Report",
       "g": "Parent",
       "kind": "happy"
     },
@@ -925,6 +925,7 @@
       "parent_locked_out",
       "parent_rewards",
       "parent_safety",
+      "parent_session_report",
       "parent_settings",
       "parent_summary",
       "parent_today"
@@ -969,7 +970,6 @@
       "dv_lost",
       "dv_overview",
       "dv_pair_add",
-      "dv_pair_child",
       "dv_pair_code",
       "dv_pair_connecting",
       "dv_pair_failed",
@@ -1007,7 +1007,7 @@
   },
   "meta": {
     "version": "1.0.0",
-    "generatedAt": "2026-07-16T03:40:33Z",
-    "sourceCommit": "3dee3e2571c92ca8130e30473e2924fd51577239"
+    "generatedAt": "2026-08-10T09:56:00Z",
+    "sourceCommit": "5a0ffbc18d197363e956566c45fa5311356895d8"
   }
 }

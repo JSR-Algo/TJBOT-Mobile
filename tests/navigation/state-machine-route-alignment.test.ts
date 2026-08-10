@@ -80,7 +80,6 @@ describe('state-machine route alignment', () => {
       [ROUTES.PairFailedScreen, 'dv_pair_failed'],
       [ROUTES.PairOfflineScreen, 'dv_pair_offline'],
       [ROUTES.PairRenameScreen, 'dv_pair_rename'],
-      [ROUTES.PairChildProfileScreen, 'dv_pair_child'],
       [ROUTES.PairFirstLessonScreen, 'dv_pair_first_lesson'],
       [ROUTES.DeviceSessionScreen, 'dv_session'],
       [ROUTES.DeviceLostScreen, 'dv_lost'],
