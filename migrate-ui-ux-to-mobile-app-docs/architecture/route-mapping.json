@@ -329,7 +329,7 @@
       "rootBranch": "protected",
       "navigator": "ModalNavigator",
       "bucket": "stackScreens",
-      "role": "stack",
+      "role": "stack-entry",
       "backBehavior": "stack-back",
       "deepLinkPath": "course-library/running",
       "backTarget": "RobotReadyScreen",

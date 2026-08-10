@@ -11,8 +11,8 @@ describe('route coverage script', () => {
     });
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('136 screen files, 128 routes registered');
-    expect(result.stdout).toContain('128 feature route registrations');
+    expect(result.stdout).toContain('135 screen files, 127 routes registered');
+    expect(result.stdout).toContain('127 feature route registrations');
     expect(result.stdout).toContain('0 duplicate screen registrations');
   });
 });

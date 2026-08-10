@@ -150,7 +150,7 @@ export function ChildProfileContent({ navigation, route }: ChildProfileContentPr
   // ONLY way out of the child cap from inside onboarding — child management lives
   // in ParentSettingsScreen, which RootStackNavigator does not render until
   // onboarding completes.
-  const useExistingChild = async (child: Child): Promise<void> => {
+  const continueWithExistingChild = async (child: Child): Promise<void> => {
     if (saving) return;
     setSaving(true);
     setError(null);
@@ -356,7 +356,7 @@ export function ChildProfileContent({ navigation, route }: ChildProfileContentPr
               <TouchableOpacity
                 key={c.id}
                 testID={`existingChild_${c.id}`}
-                onPress={() => { void useExistingChild(c); }}
+                onPress={() => { void continueWithExistingChild(c); }}
                 disabled={saving}
                 style={styles.existingChildRow}
                 activeOpacity={0.7}
