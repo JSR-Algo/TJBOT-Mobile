@@ -488,7 +488,7 @@ describe('course-library flow guards', () => {
     );
 
     await waitFor(() => expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' }));
-    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1', { allowBoundChildFallback: true });
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
       childId: 'ch-1',
       courseId: 'c_food',
@@ -977,6 +977,33 @@ describe('course-library flow guards', () => {
       batteryPercent: 80,
       charging: false,
       assignedChildProfileId: 'foreign-child',
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+    expect(screen.getByText("Casa Robot is linked to a child who isn't in this household.")).toBeTruthy();
+  });
+
+  it('fails closed when the robot binding is present but blank', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+      assignedChildProfileId: '',
     });
     const navigation = navigationFor();
     render(

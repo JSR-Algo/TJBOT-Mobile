@@ -149,7 +149,11 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
 // cannot distinguish "unbound" from "backend did not surface the column".
 // If every robot is bound, return the first bound household robot so the caller
 // can consistently use that robot's child instead of submitting a mismatched id.
-function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceDto {
+function resolveHouseholdDevice(
+  devices: DeviceDto[],
+  childId?: string,
+  allowBoundChildFallback = false,
+): DeviceDto {
   if (childId) {
     const bound = devices.find(
       (d) => {
@@ -165,10 +169,13 @@ function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceD
       },
     );
     if (unbound) return unbound;
-    return devices.find((d) => {
-      const binding = readAssignedChildProfileId(d);
-      return binding.present && binding.value !== null;
-    }) ?? {};
+    if (allowBoundChildFallback) {
+      return devices.find((d) => {
+        const binding = readAssignedChildProfileId(d);
+        return binding.present && binding.value !== null;
+      }) ?? {};
+    }
+    return {};
   }
   return devices[0] ?? {};
 }
@@ -251,12 +258,20 @@ export async function completeDeviceProvisioning(params: CompleteDeviceProvision
 // being routed to the wrong robot: the device whose assignedChildProfileId
 // matches childId wins. An explicit child never falls back to another device.
 // Pass-through deviceIds (a real device id) ignore childId.
-export async function getDeviceStatus(deviceId: string, childId?: string): Promise<DeviceStatus> {
+export async function getDeviceStatus(
+  deviceId: string,
+  childId?: string,
+  options?: { allowBoundChildFallback?: boolean },
+): Promise<DeviceStatus> {
   if (deviceId === 'primary') {
     const response = await client.get<DeviceDto[] | { data?: DeviceDto[] }>('/devices/household/me');
     const payload = response.data;
     const devices = Array.isArray(payload) ? payload : payload.data ?? [];
-    return normalizeDevice(resolveHouseholdDevice(devices, childId));
+    return normalizeDevice(resolveHouseholdDevice(
+      devices,
+      childId,
+      options?.allowBoundChildFallback === true,
+    ));
   }
   const response = await client.get<DeviceDto>(`/devices/${deviceId}`);
   return normalizeDevice(response.data);

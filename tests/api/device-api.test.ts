@@ -38,7 +38,7 @@ describe('device API client', () => {
     expect(get).toHaveBeenCalledWith('/devices/household/me');
   });
 
-  it('returns the robot-bound child when the selected child has no matching robot', async () => {
+  it('keeps child-scoped primary lookup strict by default', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({
       data: [
@@ -50,6 +50,22 @@ describe('device API client', () => {
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
     await expect(getDeviceStatus('primary', 'child-3')).resolves.toMatchObject({
+      id: '',
+    });
+  });
+
+  it('returns the robot-bound child only when assignment explicitly allows fallback', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: [
+        { id: 'robot-1', name: 'Robot One', assigned_child_profile_id: 'child-1' },
+        { id: 'robot-2', name: 'Robot Two', assigned_child_profile_id: 'child-2' },
+      ],
+    });
+    jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
+    const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getDeviceStatus('primary', 'child-3', { allowBoundChildFallback: true })).resolves.toMatchObject({
       id: 'robot-1',
       assignedChildProfileId: 'child-1',
     });
@@ -66,7 +82,7 @@ describe('device API client', () => {
     jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
-    await expect(getDeviceStatus('primary', 'child-1')).resolves.toMatchObject({
+    await expect(getDeviceStatus('primary', 'child-1', { allowBoundChildFallback: true })).resolves.toMatchObject({
       id: 'robot-household',
       name: 'Household Robot',
       assignedChildProfileId: null,
@@ -84,7 +100,7 @@ describe('device API client', () => {
     jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
-    await expect(getDeviceStatus('primary', 'child-1')).resolves.toMatchObject({
+    await expect(getDeviceStatus('primary', 'child-1', { allowBoundChildFallback: true })).resolves.toMatchObject({
       id: 'robot-other-child',
       assignedChildProfileId: 'child-2',
     });

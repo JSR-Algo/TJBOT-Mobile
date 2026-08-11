@@ -183,7 +183,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
 
   const resolveEffectiveChild = React.useCallback((device: DeviceStatus) => {
     const boundChildId = device.assignedChildProfileId;
-    if (boundChildId) {
+    if (boundChildId !== undefined && boundChildId !== null) {
       return childrenList.find((child) => child.id === boundChildId) ?? null;
     }
     return childrenList.find((child) => child.id === childId) ?? null;
@@ -250,7 +250,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       try {
         const device = resumeContext.deviceId
           ? await getDeviceStatus(resumeContext.deviceId)
-          : await getDeviceStatus('primary', resumeContext.childId);
+          : await getDeviceStatus('primary', resumeContext.childId, { allowBoundChildFallback: true });
         if (!isCurrentResume(actionSeq, actionKey)) return;
         const deviceId = device.id;
         if (!deviceId || device.online !== true) {
@@ -265,12 +265,12 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           return;
         }
         const effectiveChildId = effectiveChild.id;
-        setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
         const { assignment } = await enrollCourse(resumeContext.courseId, { childId: effectiveChildId, deviceId });
         if (!isCurrentResume(actionSeq, actionKey)) return;
         if (!assignment.id || !isValidAssignmentVersion(assignment.assignmentVersion)) {
           throw new Error('Invalid resume assignment');
         }
+        setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
         void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
         navigation.navigate(ROUTES.RobotReadyScreen, {
           childId: effectiveChildId,
@@ -344,7 +344,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       // When that child has no bound robot, resolveHouseholdDevice returns an
       // empty device — it deliberately does NOT fall back to devices[0], so a
       // lesson can never land on a sibling's robot. The guard below catches it.
-      const device = await getDeviceStatus('primary', childId);
+      const device = await getDeviceStatus('primary', childId, { allowBoundChildFallback: true });
       const deviceId = device.id;
       // Gate on `online !== true`, matching the resume path above and
       // CourseDetailScreen. Assigning to a robot we already know is unreachable
@@ -360,11 +360,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         return;
       }
       const effectiveChildId = effectiveChild.id;
-      setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
       if (assignmentMode === 'course') {
         if (!activeCourseId) return;
         try {
           const { assignment } = await enrollCourse(activeCourseId, { childId: effectiveChildId, deviceId });
+          setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
           void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
           navigation.navigate(ROUTES.RobotReadyScreen, {
             childId: effectiveChildId,
@@ -378,6 +378,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           if (isConflictCode(normalized.code)) {
             const current = await getCurrentAssignment(deviceId).catch(() => null);
             if (current && currentMatchesCourse(current, effectiveChildId, lessons)) {
+              setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
               void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
               navigation.navigate(ROUTES.RobotReadyScreen, {
                 childId: effectiveChildId,
@@ -411,6 +412,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           // mis-sent as espTft (MOB-3).
           profile: isLessonProfile(selectedLesson.profile) ? selectedLesson.profile : undefined,
         });
+        setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
         // The new assignment is now the child's in-flight lesson. Invalidate the
         // shared progress cache (SAME key ParentToday/History/TodayProgress read)
         // so those screens refetch instead of showing stale pre-send data.
@@ -429,6 +431,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         if (isConflictCode(normalized.code)) {
           const current = await getCurrentAssignment(deviceId).catch(() => null);
           if (current && currentMatchesLesson(current, effectiveChildId, selectedLesson)) {
+            setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
             void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
             navigation.navigate(ROUTES.RobotReadyScreen, {
               childId: effectiveChildId,
