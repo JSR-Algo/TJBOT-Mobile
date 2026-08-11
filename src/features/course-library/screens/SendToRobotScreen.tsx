@@ -99,6 +99,12 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const childId = household?.activeChild?.id;
   const hasChild = Boolean(childId);
   const setActiveChild = household?.setActiveChild;
+  const activateAssignmentChild = React.useCallback((assignedChildId: string) => {
+    setActiveChild?.(assignedChildId);
+    void queryClient?.invalidateQueries({
+      queryKey: ['lesson-progress', 'child', assignedChildId],
+    });
+  }, [queryClient, setActiveChild]);
 
   const [catalog, setCatalog] = React.useState<CatalogState>({ kind: 'loading' });
   const [assignmentMode, setAssignmentMode] = React.useState<AssignmentMode>('lesson');
@@ -271,7 +277,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           throw new Error('Invalid resume assignment');
         }
         setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
-        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
+        activateAssignmentChild(effectiveChildId);
         navigation.navigate(ROUTES.RobotReadyScreen, {
           childId: effectiveChildId,
           courseId: resumeContext.courseId,
@@ -292,7 +298,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         }
       }
     })();
-  }, [isCurrentResume, navigation, queryClient, resolveEffectiveChild, resumeContext, resumeKey]);
+  }, [activateAssignmentChild, isCurrentResume, navigation, resolveEffectiveChild, resumeContext, resumeKey]);
 
   const handleSelectMode = (mode: AssignmentMode) => {
     setError(null);
@@ -365,7 +371,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         try {
           const { assignment } = await enrollCourse(activeCourseId, { childId: effectiveChildId, deviceId });
           setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
-          void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
+          activateAssignmentChild(effectiveChildId);
           navigation.navigate(ROUTES.RobotReadyScreen, {
             childId: effectiveChildId,
             deviceId,
@@ -379,7 +385,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
             const current = await getCurrentAssignment(deviceId).catch(() => null);
             if (current && currentMatchesCourse(current, effectiveChildId, lessons)) {
               setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
-              void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
+              activateAssignmentChild(effectiveChildId);
               navigation.navigate(ROUTES.RobotReadyScreen, {
                 childId: effectiveChildId,
                 deviceId,
@@ -416,7 +422,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         // The new assignment is now the child's in-flight lesson. Invalidate the
         // shared progress cache (SAME key ParentToday/History/TodayProgress read)
         // so those screens refetch instead of showing stale pre-send data.
-        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
+        activateAssignmentChild(effectiveChildId);
         navigation.navigate(ROUTES.RobotReadyScreen, {
           childId: effectiveChildId,
           deviceId,
@@ -432,7 +438,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           const current = await getCurrentAssignment(deviceId).catch(() => null);
           if (current && currentMatchesLesson(current, effectiveChildId, selectedLesson)) {
             setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
-            void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
+            activateAssignmentChild(effectiveChildId);
             navigation.navigate(ROUTES.RobotReadyScreen, {
               childId: effectiveChildId,
               deviceId,

@@ -918,7 +918,7 @@ describe('course-library flow guards', () => {
     });
   });
 
-  it('uses the robot-bound child without changing the globally selected child', async () => {
+  it('activates the robot-bound child after a successful assignment', async () => {
     mockHousehold = {
       children: [
         { id: 'ch-1', name: 'An' },
@@ -965,8 +965,7 @@ describe('course-library flow guards', () => {
       deviceId: 'dev-1',
     }));
     expect(screen.getByText('This lesson is assigned to Binh, who is linked to Casa Robot.')).toBeTruthy();
-    expect(mockSetActiveChild).not.toHaveBeenCalled();
-    expect(mockHousehold.activeChild.id).toBe('ch-1');
+    expect(mockSetActiveChild).toHaveBeenCalledWith('ch-2');
   });
 
   it('fails closed when the robot binding is not a household child', async () => {
