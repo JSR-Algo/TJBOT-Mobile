@@ -242,6 +242,7 @@ describe('SendToRobotScreen — course-flow edge cases (screen level)', () => {
       expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
       // The token-free STEP_TIMEOUT copy renders verbatim (robot name is a no-op here).
       expect(screen.getByText('Something interrupted the lesson. Tap to restart.')).toBeTruthy();
+      expect(screen.queryByText('This lesson is assigned to An, who is linked to Casa Robot.')).toBeNull();
     });
   });
 

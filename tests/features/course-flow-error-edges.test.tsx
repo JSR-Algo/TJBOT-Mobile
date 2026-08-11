@@ -154,7 +154,7 @@ describe('SendToRobotScreen — assignment conflict is surfaced and refreshes st
 
     await pressSend();
 
-    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1', { allowBoundChildFallback: true });
     expect(mockedCreateAssignment).toHaveBeenCalledWith(expect.objectContaining({
       deviceId: 'dev-1',
       childId: 'ch-1',

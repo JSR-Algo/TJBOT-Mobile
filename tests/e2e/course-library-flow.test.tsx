@@ -22,7 +22,12 @@ import { authenticateParent } from '@/services/api/parent.api';
 import { setAppLanguage } from '@/services/i18n/i18n';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 
-let mockHousehold = { children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } };
+const mockSetActiveChild = jest.fn();
+let mockHousehold = {
+  children: [{ id: 'ch-1', name: 'An' }],
+  activeChild: { id: 'ch-1', name: 'An' },
+  setActiveChild: mockSetActiveChild,
+};
 
 // Keep the pure helpers (e.g. isLessonProfile / presentAssignmentState) real —
 // mock ONLY the network reads/writes the flow exercises.
@@ -115,7 +120,11 @@ describe('course-library flow guards', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     stubPublishedCatalog();
-    mockHousehold = { children: [{ id: 'ch-1' }], activeChild: { id: 'ch-1' } };
+    mockHousehold = {
+      children: [{ id: 'ch-1', name: 'An' }],
+      activeChild: { id: 'ch-1', name: 'An' },
+      setActiveChild: mockSetActiveChild,
+    };
     mockedAuthenticateParent.mockResolvedValue({ authenticated: true });
     // CourseAddedScreen reads the device's real seat on mount; default to "no
     // seat known" unless a test overrides it.
@@ -479,7 +488,7 @@ describe('course-library flow guards', () => {
     );
 
     await waitFor(() => expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' }));
-    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1', { allowBoundChildFallback: true });
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
       childId: 'ch-1',
       courseId: 'c_food',
@@ -594,7 +603,11 @@ describe('course-library flow guards', () => {
       fireEvent.press(screen.getByText('Resume course'));
     });
 
-    mockHousehold = { children: [{ id: 'ch-2' }], activeChild: { id: 'ch-2' } };
+    mockHousehold = {
+      children: [{ id: 'ch-2', name: 'Binh' }],
+      activeChild: { id: 'ch-2', name: 'Binh' },
+      setActiveChild: mockSetActiveChild,
+    };
     rendered.rerender(
       <CourseDetailScreen
         navigation={navigation as never}
@@ -903,6 +916,111 @@ describe('course-library flow guards', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
       childId: 'ch-1', deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, manifestChecksum: 'sha256:w01-d01',
     });
+  });
+
+  it('uses the robot-bound child without changing the globally selected child', async () => {
+    mockHousehold = {
+      children: [
+        { id: 'ch-1', name: 'An' },
+        { id: 'ch-2', name: 'Binh' },
+      ],
+      activeChild: { id: 'ch-1', name: 'An' },
+      setActiveChild: mockSetActiveChild,
+    };
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+      assignedChildProfileId: 'ch-2',
+    });
+    mockedCreateAssignment.mockResolvedValueOnce({
+      assignmentId: 'asg-bound', assignmentVersion: 1, deviceId: 'dev-1', childId: 'ch-2',
+      lessonId: 'w01-d01-barn-say-it', lessonVersion: 1, manifestChecksum: 'sha256:w01-d01', profile: 'espTft', state: 'PRELOADING', createdAt: null,
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+    const navigation = navigationFor();
+    renderWithQueryClient(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+      queryClient,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).toHaveBeenCalledWith(expect.objectContaining({
+      deviceId: 'dev-1',
+      childId: 'ch-2',
+    }));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['lesson-progress', 'child', 'ch-2'] });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.objectContaining({
+      childId: 'ch-2',
+      deviceId: 'dev-1',
+    }));
+    expect(screen.getByText('This lesson is assigned to Binh, who is linked to Casa Robot.')).toBeTruthy();
+    expect(mockSetActiveChild).not.toHaveBeenCalled();
+    expect(mockHousehold.activeChild.id).toBe('ch-1');
+  });
+
+  it('fails closed when the robot binding is not a household child', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+      assignedChildProfileId: 'foreign-child',
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+    expect(screen.getByText("Casa Robot is linked to a child who isn't in this household.")).toBeTruthy();
+  });
+
+  it('fails closed when the robot binding is present but blank', async () => {
+    mockedGetDeviceStatus.mockResolvedValueOnce({
+      id: 'dev-1',
+      name: 'Casa Robot',
+      online: true,
+      batteryPercent: 80,
+      charging: false,
+      assignedChildProfileId: '',
+    });
+    const navigation = navigationFor();
+    render(
+      <SendToRobotScreen
+        navigation={navigation as never}
+        route={{ key: 'send', name: ROUTES.SendToRobotScreen, params: {} } as never}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(screen.getByText('Send to Robot'));
+    });
+
+    expect(mockedCreateAssignment).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.RobotReadyScreen, expect.anything());
+    expect(screen.getByText("Casa Robot is linked to a child who isn't in this household.")).toBeTruthy();
   });
 
   // P4: selecting a DIFFERENT lesson feeds its real lessonId + lessonVersion into
