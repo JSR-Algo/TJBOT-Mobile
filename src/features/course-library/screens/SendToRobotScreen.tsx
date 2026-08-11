@@ -298,7 +298,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         }
       }
     })();
-  }, [isCurrentResume, navigation, queryClient, resolveEffectiveChild, resumeContext, resumeKey]);
+  }, [activateAssignmentChild, isCurrentResume, navigation, resolveEffectiveChild, resumeContext, resumeKey]);
 
   const handleSelectMode = (mode: AssignmentMode) => {
     setError(null);
