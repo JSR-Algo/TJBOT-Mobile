@@ -147,7 +147,8 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
 // null binding may serve as the household-owned unbound fallback. Missing
 // binding metadata is excluded from child-scoped fallback because the client
 // cannot distinguish "unbound" from "backend did not surface the column".
-// Selecting another child's robot would cross the child/robot ownership boundary.
+// If every robot is bound, return the first bound household robot so the caller
+// can consistently use that robot's child instead of submitting a mismatched id.
 function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceDto {
   if (childId) {
     const bound = devices.find(
@@ -164,7 +165,10 @@ function resolveHouseholdDevice(devices: DeviceDto[], childId?: string): DeviceD
       },
     );
     if (unbound) return unbound;
-    return {};
+    return devices.find((d) => {
+      const binding = readAssignedChildProfileId(d);
+      return binding.present && binding.value !== null;
+    }) ?? {};
   }
   return devices[0] ?? {};
 }

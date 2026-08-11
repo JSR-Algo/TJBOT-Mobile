@@ -38,7 +38,7 @@ describe('device API client', () => {
     expect(get).toHaveBeenCalledWith('/devices/household/me');
   });
 
-  it('does not fall back to another child robot when the active child has no binding', async () => {
+  it('returns the robot-bound child when the selected child has no matching robot', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({
       data: [
@@ -49,7 +49,10 @@ describe('device API client', () => {
     jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
-    await expect(getDeviceStatus('primary', 'child-3')).resolves.toMatchObject({ id: '' });
+    await expect(getDeviceStatus('primary', 'child-3')).resolves.toMatchObject({
+      id: 'robot-1',
+      assignedChildProfileId: 'child-1',
+    });
   });
 
   it('falls back to the unbound household robot when the active child has no bound robot', async () => {
@@ -70,7 +73,7 @@ describe('device API client', () => {
     });
   });
 
-  it('does not treat omitted child binding metadata as an unbound household robot', async () => {
+  it('ignores omitted binding metadata and returns an explicitly bound robot', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({
       data: [
@@ -81,7 +84,10 @@ describe('device API client', () => {
     jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
-    await expect(getDeviceStatus('primary', 'child-1')).resolves.toMatchObject({ id: '' });
+    await expect(getDeviceStatus('primary', 'child-1')).resolves.toMatchObject({
+      id: 'robot-other-child',
+      assignedChildProfileId: 'child-2',
+    });
   });
 
   it('keeps Wi-Fi RSSI from household device connectivity metrics when SSID is absent', async () => {

@@ -22,7 +22,7 @@ import {
   type PublishedCourse,
   type PublishedLesson,
 } from '@/services/api/course-library.api';
-import { getDeviceStatus } from '@/services/api/device.api';
+import { getDeviceStatus, type DeviceStatus } from '@/services/api/device.api';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { formatLessonCopy, getErrorMessage, normalizeError } from '@/utils/errors';
 import { lessonFitCopy } from '@/features/parent/courseInsights';
@@ -92,7 +92,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const mountedRef = React.useRef(true);
   const resumeSeqRef = React.useRef(0);
   const resumeKeyRef = React.useRef('');
-  const childrenList = household?.children ?? [];
+  const childrenList = React.useMemo(
+    () => household?.children ?? [],
+    [household?.children],
+  );
   const childId = household?.activeChild?.id;
   const hasChild = Boolean(childId);
   const setActiveChild = household?.setActiveChild;
@@ -103,6 +106,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [assignmentTarget, setAssignmentTarget] = React.useState<{
+    childName: string;
+    robotName: string;
+  } | null>(null);
   // Bumped to re-run the catalog fetch: parent-pressed retry after a load
   // failure, and after an unrecoverable conflict (this screen's view is stale).
   const [catalogNonce, setCatalogNonce] = React.useState(0);
@@ -174,6 +181,14 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     setCatalogNonce((value) => value + 1);
   }, []);
 
+  const resolveEffectiveChild = React.useCallback((device: DeviceStatus) => {
+    const boundChildId = device.assignedChildProfileId;
+    if (boundChildId) {
+      return childrenList.find((child) => child.id === boundChildId) ?? null;
+    }
+    return childrenList.find((child) => child.id === childId) ?? null;
+  }, [childId, childrenList]);
+
   // Resolve the active course: an explicit user pick wins, then the course passed
   // in via route params (deep-link from the library), then the first published
   // course. Reset the lesson selection whenever the course changes.
@@ -227,10 +242,6 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     const actionSeq = ++resumeSeqRef.current;
     const actionKey = resumeKey;
     setError(null);
-    if (childId && childId !== resumeContext.childId) {
-      setError('Switch back to this child before resuming the course.');
-      return;
-    }
     // Share the in-flight ref with handleSend: a resume enroll and a manual send
     // are the same single-slot write, so one must never overlap the other.
     sendingRef.current = true;
@@ -238,7 +249,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     void (async () => {
       try {
         const device = resumeContext.deviceId
-          ? { id: resumeContext.deviceId, name: 'Robot', online: true }
+          ? await getDeviceStatus(resumeContext.deviceId)
           : await getDeviceStatus('primary', resumeContext.childId);
         if (!isCurrentResume(actionSeq, actionKey)) return;
         const deviceId = device.id;
@@ -248,14 +259,21 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           }
           return;
         }
-        const { assignment } = await enrollCourse(resumeContext.courseId, { childId: resumeContext.childId, deviceId });
+        const effectiveChild = resolveEffectiveChild(device);
+        if (!effectiveChild) {
+          setError(`${device.name} is linked to a child who isn't in this household.`);
+          return;
+        }
+        const effectiveChildId = effectiveChild.id;
+        setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
+        const { assignment } = await enrollCourse(resumeContext.courseId, { childId: effectiveChildId, deviceId });
         if (!isCurrentResume(actionSeq, actionKey)) return;
         if (!assignment.id || !isValidAssignmentVersion(assignment.assignmentVersion)) {
           throw new Error('Invalid resume assignment');
         }
-        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', resumeContext.childId] });
+        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
         navigation.navigate(ROUTES.RobotReadyScreen, {
-          childId: resumeContext.childId,
+          childId: effectiveChildId,
           courseId: resumeContext.courseId,
           deviceId,
           assignmentId: assignment.id,
@@ -274,7 +292,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         }
       }
     })();
-  }, [childId, isCurrentResume, navigation, queryClient, resumeContext, resumeKey]);
+  }, [isCurrentResume, navigation, queryClient, resolveEffectiveChild, resumeContext, resumeKey]);
 
   const handleSelectMode = (mode: AssignmentMode) => {
     setError(null);
@@ -295,6 +313,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const handleSend = async () => {
     if (sendingRef.current) return;
     setError(null);
+    setAssignmentTarget(null);
     // Empty children → explicit "add a child first" state; never send childId: undefined.
     if (!childId) {
       setError('Add a child to this household before sending a lesson.');
@@ -335,13 +354,20 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         setError(formatLessonCopy(getErrorMessage('ROBOT_OFFLINE'), { robot: device.name }));
         return;
       }
+      const effectiveChild = resolveEffectiveChild(device);
+      if (!effectiveChild) {
+        setError(`${device.name} is linked to a child who isn't in this household.`);
+        return;
+      }
+      const effectiveChildId = effectiveChild.id;
+      setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
       if (assignmentMode === 'course') {
         if (!activeCourseId) return;
         try {
-          const { assignment } = await enrollCourse(activeCourseId, { childId, deviceId });
-          void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+          const { assignment } = await enrollCourse(activeCourseId, { childId: effectiveChildId, deviceId });
+          void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
           navigation.navigate(ROUTES.RobotReadyScreen, {
-            childId,
+            childId: effectiveChildId,
             deviceId,
             assignmentId: assignment.id,
             assignmentVersion: assignment.assignmentVersion,
@@ -351,10 +377,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           const normalized = normalizeError(err);
           if (isConflictCode(normalized.code)) {
             const current = await getCurrentAssignment(deviceId).catch(() => null);
-            if (current && currentMatchesCourse(current, childId, lessons)) {
-              void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+            if (current && currentMatchesCourse(current, effectiveChildId, lessons)) {
+              void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
               navigation.navigate(ROUTES.RobotReadyScreen, {
-                childId,
+                childId: effectiveChildId,
                 deviceId,
                 assignmentId: current.assignmentId,
                 assignmentVersion: current.assignmentVersion,
@@ -377,7 +403,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         // The REAL lesson the parent picked drives the assignment + idempotency key.
         const assignment = await createAssignment({
           deviceId,
-          childId,
+          childId: effectiveChildId,
           lessonId: selectedLesson.lessonId,
           lessonVersion: selectedLesson.lessonVersion, // NUMBER (D-LV)
           // Forward the lesson's REAL profile (gated non-null + recognized by
@@ -388,9 +414,9 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         // The new assignment is now the child's in-flight lesson. Invalidate the
         // shared progress cache (SAME key ParentToday/History/TodayProgress read)
         // so those screens refetch instead of showing stale pre-send data.
-        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+        void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
         navigation.navigate(ROUTES.RobotReadyScreen, {
-          childId,
+          childId: effectiveChildId,
           deviceId,
           assignmentId: assignment.assignmentId,
           assignmentVersion: assignment.assignmentVersion,
@@ -402,10 +428,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         // assignment_version; never blind-retry a stale create.
         if (isConflictCode(normalized.code)) {
           const current = await getCurrentAssignment(deviceId).catch(() => null);
-          if (current && currentMatchesLesson(current, childId, selectedLesson)) {
-            void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
+          if (current && currentMatchesLesson(current, effectiveChildId, selectedLesson)) {
+            void queryClient?.invalidateQueries({ queryKey: ['lesson-progress', 'child', effectiveChildId] });
             navigation.navigate(ROUTES.RobotReadyScreen, {
-              childId,
+              childId: effectiveChildId,
               deviceId,
               assignmentId: current.assignmentId,
               assignmentVersion: current.assignmentVersion,
@@ -604,6 +630,14 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       {error && (
         <Box paddingHorizontal={20} paddingTop={12}>
           <Text style={styles.errorText}>{error}</Text>
+        </Box>
+      )}
+
+      {assignmentTarget && (
+        <Box paddingHorizontal={20} paddingTop={12}>
+          <Text style={styles.hintText} i18n={false}>
+            {`This lesson is assigned to ${assignmentTarget.childName}, who is linked to ${assignmentTarget.robotName}.`}
+          </Text>
         </Box>
       )}
 
