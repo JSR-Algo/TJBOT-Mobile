@@ -14,6 +14,7 @@
     "test:integration": "jest --selectProjects integration",
     "test:integration:rewards:live": "jest --config tests/integration/rewards-live/jest.config.js --runInBand",
     "test:rewards-runner": "node --test --test-concurrency=1 tests/scripts/rewards-jest-process-lifecycle.test.mjs tests/scripts/rewards-live-cross-platform-lifecycle.test.mjs tests/scripts/rewards-live-process-lifecycle.test.mjs",
+    "test:android-native-linkage": "node --test tests/scripts/android-worklets-linkage.test.mjs",
     "test:e2e:rewards:live": "node scripts/run-rewards-live-e2e.mjs",
     "test:state-machines": "jest --selectProjects unit --testPathPattern='tests/state/machines'",
     "test:navigation": "jest --selectProjects unit --testPathPattern='tests/navigation'",

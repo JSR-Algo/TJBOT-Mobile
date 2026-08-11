@@ -1,0 +1,24 @@
+diff --git a/node_modules/react-native-reanimated/android/CMakeLists.txt b/node_modules/react-native-reanimated/android/CMakeLists.txt
+index d4731e6..1d4a5a0 100644
+--- a/node_modules/react-native-reanimated/android/CMakeLists.txt
++++ b/node_modules/react-native-reanimated/android/CMakeLists.txt
+@@ -47,0 +48 @@
++find_package(react-native-worklets REQUIRED CONFIG)
+@@ -71,3 +72 @@
+-          "${REACT_NATIVE_DIR}/ReactCommon/react/renderer/graphics/platform/cxx"
+-          "${REACT_NATIVE_WORKLETS_DIR}/Common/cpp"
+-          "${REACT_NATIVE_WORKLETS_DIR}/android/src/main/cpp")
++          "${REACT_NATIVE_DIR}/ReactCommon/react/renderer/graphics/platform/cxx")
+@@ -83,9 +81,0 @@
+-add_library(worklets SHARED IMPORTED)
+-
+-set_target_properties(
+-  worklets
+-  PROPERTIES
+-    IMPORTED_LOCATION
+-    "${REACT_NATIVE_WORKLETS_DIR}/android/build/intermediates/cmake/${BUILD_TYPE}/obj/${ANDROID_ABI}/libworklets.so"
+-)
+-
+@@ -111 +101 @@
+-  worklets)
++  react-native-worklets::worklets)
