@@ -104,12 +104,25 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
     }, 12000);
 
     try {
-      const households = await householdsApi.list();
+      const [households, persistedActiveChildId] = await Promise.all([
+        householdsApi.list(),
+        readActiveChildIdFromStore(),
+      ]);
       clearTimeout(timeout);
-      const active = households[0] ?? null;
+      let active = households[0] ?? null;
       let childList: Child[] = [];
       if (active) {
         childList = await householdsApi.listChildren(active.id);
+        if (persistedActiveChildId && !childList.some((child) => child.id === persistedActiveChildId)) {
+          for (const household of households.slice(1)) {
+            const candidateChildren = await householdsApi.listChildren(household.id);
+            if (candidateChildren.some((child) => child.id === persistedActiveChildId)) {
+              active = household;
+              childList = candidateChildren;
+              break;
+            }
+          }
+        }
       }
       const completed = households.length > 0;
       if (completed) writeOnboardingCompleteToStore(true);
@@ -118,6 +131,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
         households,
         activeHousehold: active,
         children: childList,
+        activeChildId: s.activeChildId ?? persistedActiveChildId,
         isLoading: false,
         onboardingComplete: s.onboardingComplete || completed,
       }));
