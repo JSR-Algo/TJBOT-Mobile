@@ -20,6 +20,7 @@ import React from 'react';
 import { render, waitFor, act } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // The expo-secure-store mock at tests/__mocks__/expo-secure-store.ts exposes
 // these as jest.fn()s; cast for the per-test mock-state inspection below.
@@ -55,7 +56,7 @@ const mockList = jest.fn();
 const mockListChildren = jest.fn();
 jest.mock('../../src/services/api/households', () => ({
   list: () => mockList(),
-  listChildren: () => mockListChildren(),
+  listChildren: (householdId: string) => mockListChildren(householdId),
   create: jest.fn(),
   addChild: jest.fn(),
   get: jest.fn(),
@@ -74,12 +75,22 @@ function HouseholdProbe(): React.JSX.Element {
   );
 }
 
+function ActiveChildProbe(): React.JSX.Element {
+  const ctx = useHousehold();
+  return (
+    <Text testID="active-child-probe">
+      {`${ctx.activeHousehold?.id ?? 'none'}|${ctx.activeChild?.id ?? 'none'}`}
+    </Text>
+  );
+}
+
 describe('HouseholdContext cold-start race fix (B2)', () => {
   beforeEach(() => {
     authState.isAuthenticated = false;
     authState.isLoading = true;
     mockList.mockReset();
     mockListChildren.mockReset();
+    void AsyncStorage.clear();
   });
 
   it('does NOT clear onboarding_complete_v1 while AuthContext is still hydrating', async () => {
@@ -159,5 +170,31 @@ describe('HouseholdContext cold-start race fix (B2)', () => {
       expect(getByTestId('probe').props.children).toBe('COMPLETE');
     });
     expect(mockList).toHaveBeenCalled();
+  });
+
+  it('restores a persisted child from a non-first household on cold start', async () => {
+    await AsyncStorage.setItem('active_child_id', 'child-target');
+    mockList.mockResolvedValue([
+      { id: 'hh-first', name: 'First Household' },
+      { id: 'hh-target', name: 'Target Household' },
+    ]);
+    mockListChildren.mockImplementation(async (householdId: string) =>
+      householdId === 'hh-target'
+        ? [{ id: 'child-target', household_id: householdId, name: 'Target Child' }]
+        : [{ id: 'child-first', household_id: householdId, name: 'First Child' }],
+    );
+
+    authState.isLoading = false;
+    authState.isAuthenticated = true;
+
+    const { getByTestId } = render(
+      <HouseholdProvider>
+        <ActiveChildProbe />
+      </HouseholdProvider>,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('active-child-probe').props.children).toBe('hh-target|child-target');
+    });
   });
 });
