@@ -120,3 +120,29 @@ Gradle used Homebrew OpenJDK 17 and the same bundled Node binary on `PATH`.
   explicit JWT-`4401` fallback polling assertion; the maintained hook test and campaign
   repro now cover the 10-second tick. Focused re-review approved the correction with no
   new blocking findings.
+
+## Main closeout
+
+The campaign gate passed RED at `85db57ae` and GREEN at `0a16ca2c`. The no-ff merge
+created mobile main `ae0e43c0462e485ec2254527949b8d981e7a6d6c`, and the campaign's
+merge-100 integration re-gate reported no regressions. Its already-red repros were
+classified as pre-existing rather than caused by this merge.
+
+`verify-on-main.sh` created isolated worktrees of merged main and returned:
+
+```text
+Focused parent/realtime: 3 suites, 42 passed, 0 failed
+TypeScript: PASS
+Full unit: 228 suites passed, 2 skipped; 2720 passed, 23 skipped, 0 failed
+```
+
+The release APK was rebuilt from merged source `ae0e43c0462e485ec2254527949b8d981e7a6d6c`:
+
+```text
+Android release build: BUILD SUCCESSFUL in 4s; 677 actionable tasks
+Main APK SHA-256: 46b659e3953e44b5ddb6c8a9d47d9f310f295da4c02862b0b22dc722b4c9fc61
+```
+
+Physical Android target `efc5314f` was connected over USB. `adb install -r` returned
+`Success`; package verification returned `com.TJBotmobile`, `versionCode=3`,
+`versionName=1.0.2`, and `lastUpdateTime=2026-08-17 17:24:18` local time.
