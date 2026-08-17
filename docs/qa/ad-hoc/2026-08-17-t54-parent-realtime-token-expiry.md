@@ -1,8 +1,8 @@
 # T5.4 Parent Today realtime ready-state and token-expiry recovery
 
-**Draft status:** implementation and verification evidence only. M1 still owns merge/push to
-mobile main and installation of the main release APK. This document does not claim production
-resolution or satisfy the final T5.4 Parent SLA gate; H1 must provide the fresh s1-s9 capture.
+**Closeout status:** the mobile implementation is merged and pushed, and the merged-main
+release APK is installed on the physical Android target. This document does not claim the final
+T5.4 Parent SLA gate; H1 must still provide the fresh physical s1-s9 capture.
 
 ## Physical reproduction
 
