@@ -111,6 +111,9 @@ describe('useParentLearningStatusQuery', () => {
     await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeExpiry + 1));
     await act(async () => { await jest.advanceTimersByTimeAsync(500); });
     expect(sockets).toHaveLength(2);
+    const callsAfterReconnect = mockStatus.mock.calls.length;
+    await act(async () => { await jest.advanceTimersByTimeAsync(9_500); });
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsAfterReconnect + 1));
     view.unmount();
   });
 
