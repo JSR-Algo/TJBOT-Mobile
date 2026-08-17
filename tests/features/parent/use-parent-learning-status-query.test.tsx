@@ -129,6 +129,66 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
+  it('creates the first current step immediately from a complete realtime update', async () => {
+    const initial = { ...active, activeLearning: { ...active.activeLearning!, currentStep: null } };
+    mockStatus.mockResolvedValue(initial);
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    let resolveRefresh!: (status: ParentLearningStatus) => void;
+    mockStatus.mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve; }));
+    const callsBeforeUpdate = mockStatus.mock.calls.length;
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
+      occurredAt: '2026-08-17T00:00:00Z', publishedAt: '2026-08-17T00:00:01Z',
+      activeLearning: {
+        state: 'RUNNING', positionPercent: 11,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Meet the feelings', phase: 'teaching', subject: null },
+      },
+    }));
+
+    const immediate = view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'));
+    expect(immediate?.projectionRevision).toBe('2');
+    expect(immediate?.activeLearning?.positionPercent).toBe(11);
+    expect(immediate?.activeLearning?.currentStep).toEqual({
+      stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Meet the feelings', phase: 'teaching', subject: null,
+    });
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeUpdate + 1));
+
+    act(() => resolveRefresh({ ...initial, activeLearning: immediate!.activeLearning, projectionRevision: '2' }));
+    await waitFor(() => expect(view.result.current.isFetching).toBe(false));
+    view.unmount();
+  });
+
+  it('keeps the first current step null for an incomplete realtime update', async () => {
+    const initial = { ...active, activeLearning: { ...active.activeLearning!, currentStep: null } };
+    mockStatus.mockResolvedValue(initial);
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    let resolveRefresh!: (status: ParentLearningStatus) => void;
+    mockStatus.mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve; }));
+    const callsBeforeUpdate = mockStatus.mock.calls.length;
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
+      occurredAt: '2026-08-17T00:00:00Z', publishedAt: '2026-08-17T00:00:01Z',
+      activeLearning: {
+        state: 'RUNNING', positionPercent: 11,
+        currentStep: { stepNumber: 1, total: 9, activityTitle: 'Meet the feelings', phase: 'teaching', subject: null },
+      },
+    }));
+
+    const immediate = view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'));
+    expect(immediate?.projectionRevision).toBe('2');
+    expect(immediate?.activeLearning?.positionPercent).toBe(11);
+    expect(immediate?.activeLearning?.currentStep).toBeNull();
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeUpdate + 1));
+
+    act(() => resolveRefresh({ ...initial, projectionRevision: '2' }));
+    await waitFor(() => expect(view.result.current.isFetching).toBe(false));
+    view.unmount();
+  });
+
   it('clears terminal activity immediately while refreshing durable progress projections', async () => {
     const view = setup();
     view.client.setQueryData(['parent-learning-history', 'child-1'], { pages: [{ items: [], nextCursor: null }], pageParams: [null] });

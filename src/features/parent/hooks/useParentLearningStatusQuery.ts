@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useQuery, useQueryClient, type QueryClient, type UseQueryResult } from '@tanstack/react-query';
-import { getParentLearningStatus, type ParentLearningStatus } from '@/services/api/parentLearning.api';
+import { getParentLearningStatus, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
 import { openParentProgressRealtime, type ParentProgressUpdatedFrame } from '@/services/ws/parentProgressRealtime';
 import type { RealtimeConnection } from '@/services/ws/realtime';
 import { parentLearningHistoryKey } from './useParentLearningHistoryQuery';
@@ -23,6 +23,20 @@ interface SharedRealtimeEntry {
 
 const sharedRealtimeByClient = new WeakMap<QueryClient, Map<string, SharedRealtimeEntry>>();
 
+function isCompleteCurrentStep(step: Partial<ParentLearningStep>): step is ParentLearningStep {
+  return typeof step.stepId === 'string'
+    && step.stepId.trim().length > 0
+    && typeof step.stepNumber === 'number'
+    && Number.isFinite(step.stepNumber)
+    && step.stepNumber >= 0
+    && typeof step.total === 'number'
+    && Number.isFinite(step.total)
+    && step.total >= 0
+    && typeof step.activityTitle === 'string'
+    && typeof step.phase === 'string'
+    && (typeof step.subject === 'string' || step.subject === null);
+}
+
 function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: ParentProgressUpdatedFrame): void {
   const terminalUpdate = frame.activeLearning === null
     || (frame.activeLearning.state !== undefined && TERMINAL_STATES.has(frame.activeLearning.state));
@@ -38,7 +52,9 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
         ? null
         : current.activeLearning.currentStep
           ? { ...current.activeLearning.currentStep, ...stepDelta }
-          : null;
+          : stepDelta !== undefined && isCompleteCurrentStep(stepDelta)
+            ? stepDelta
+            : null;
     return { ...current, activeLearning: { ...current.activeLearning, ...activeDelta, currentStep }, projectionRevision: frame.projectionRevision };
   });
   void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
