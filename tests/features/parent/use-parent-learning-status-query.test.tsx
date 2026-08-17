@@ -160,6 +160,34 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
+  it('creates an active lesson when realtime starts after an initially inactive status', async () => {
+    mockStatus.mockResolvedValue(inactive);
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '3',
+      occurredAt: '2026-08-17T00:00:00Z', publishedAt: '2026-08-17T00:00:01Z',
+      activeLearning: {
+        assignmentId: 'assignment-1', sessionId: 'session-1', courseId: 'course-1', courseTitle: 'Feelings',
+        lessonId: 'lesson-1', lessonTitle: 'Meet the feelings', state: 'RUNNING', startedAt: '2026-08-17T00:00:00Z',
+        positionPercent: 11, activeDurationSec: 1,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Meet the feelings', phase: 'teaching', subject: null },
+      },
+    }));
+
+    expect(view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'))).toMatchObject({
+      projectionRevision: '3',
+      activeLearning: {
+        assignmentId: 'assignment-1', sessionId: 'session-1', courseId: 'course-1', courseTitle: 'Feelings',
+        lessonId: 'lesson-1', lessonTitle: 'Meet the feelings', state: 'RUNNING', startedAt: '2026-08-17T00:00:00Z',
+        positionPercent: 11, activeDurationSec: 1,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Meet the feelings', phase: 'teaching', subject: null },
+      },
+    });
+    view.unmount();
+  });
+
   it('keeps the first current step null for an incomplete realtime update', async () => {
     const initial = { ...active, activeLearning: { ...active.activeLearning!, currentStep: null } };
     mockStatus.mockResolvedValue(initial);

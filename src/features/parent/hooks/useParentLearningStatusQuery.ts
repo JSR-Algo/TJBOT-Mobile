@@ -1,8 +1,8 @@
 import React from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useQuery, useQueryClient, type QueryClient, type UseQueryResult } from '@tanstack/react-query';
-import { getParentLearningStatus, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
-import { openParentProgressRealtime, type ParentProgressUpdatedFrame } from '@/services/ws/parentProgressRealtime';
+import { getParentLearningStatus, type ParentActiveLearning, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
+import { openParentProgressRealtime, type ParentActiveLearningDelta, type ParentProgressUpdatedFrame } from '@/services/ws/parentProgressRealtime';
 import type { RealtimeConnection } from '@/services/ws/realtime';
 import { parentLearningHistoryKey } from './useParentLearningHistoryQuery';
 
@@ -37,6 +37,22 @@ function isCompleteCurrentStep(step: Partial<ParentLearningStep>): step is Paren
     && (typeof step.subject === 'string' || step.subject === null);
 }
 
+function isCompleteActiveLearning(active: ParentActiveLearningDelta): active is ParentActiveLearning {
+  return typeof active.assignmentId === 'string'
+    && (typeof active.sessionId === 'string' || active.sessionId === null)
+    && typeof active.courseId === 'string'
+    && typeof active.courseTitle === 'string'
+    && typeof active.lessonId === 'string'
+    && typeof active.lessonTitle === 'string'
+    && typeof active.state === 'string'
+    && (typeof active.startedAt === 'string' || active.startedAt === null)
+    && (active.currentStep === null || (active.currentStep !== undefined && isCompleteCurrentStep(active.currentStep)))
+    && typeof active.positionPercent === 'number'
+    && Number.isFinite(active.positionPercent)
+    && typeof active.activeDurationSec === 'number'
+    && Number.isFinite(active.activeDurationSec);
+}
+
 function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: ParentProgressUpdatedFrame): void {
   const terminalUpdate = frame.activeLearning === null
     || (frame.activeLearning.state !== undefined && TERMINAL_STATES.has(frame.activeLearning.state));
@@ -44,7 +60,10 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
     if (!current) return current;
     if (terminalUpdate) return { ...current, activeLearning: null, projectionRevision: frame.projectionRevision };
     if (frame.activeLearning === null) return current;
-    if (!current.activeLearning) return current;
+    if (!current.activeLearning) {
+      if (!isCompleteActiveLearning(frame.activeLearning)) return current;
+      return { ...current, activeLearning: frame.activeLearning, projectionRevision: frame.projectionRevision };
+    }
     const { currentStep: stepDelta, ...activeDelta } = frame.activeLearning;
     const currentStep = !Object.prototype.hasOwnProperty.call(frame.activeLearning, 'currentStep')
       ? current.activeLearning.currentStep
