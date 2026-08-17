@@ -56,7 +56,7 @@ export async function openParentProgressRealtime(
       if (event.code === 4401) callbacks.onAuthExpired();
       if (event.code === 4403) callbacks.onAccessRevoked();
     },
-    shouldReconnect: (event) => event.code !== 4401 && event.code !== 4403,
+    shouldReconnect: (event) => event.code !== 4403,
     onMessage: (event) => {
       let raw: unknown;
       try { raw = JSON.parse(event.data) as unknown; } catch { callbacks.onInvalidate(); return; }

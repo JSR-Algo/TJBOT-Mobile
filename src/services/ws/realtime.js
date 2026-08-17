@@ -77,13 +77,20 @@ export async function createReconnectingSocket(url, options = {}) {
     });
   };
   const attachHandlers = (nextSocket) => {
-    nextSocket.onopen = () => invoke(options.onOpen);
+    let openNotified = false;
+    const notifyOpen = () => {
+      if (openNotified) return;
+      openNotified = true;
+      invoke(options.onOpen);
+    };
+    nextSocket.onopen = notifyOpen;
     nextSocket.onmessage = (event) => { reconnectAttempts = 0; try { options.onMessage?.(event); } catch (error) { notifyError(toError(error)); } };
     nextSocket.onerror = (event) => notifyError(new Error(event.message ?? 'Realtime websocket error'));
     nextSocket.onclose = (event) => {
       try { options.onClose?.(event); } catch (error) { notifyError(toError(error)); }
       if (options.shouldReconnect?.(event) !== false) scheduleReconnect();
     };
+    if (nextSocket.readyState === 1) notifyOpen();
   };
   attachHandlers(socket);
   return {

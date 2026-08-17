@@ -32,6 +32,7 @@ class NativeSocket {
   send(data: string): void { this.sent.push(data); }
   close(): void { this.closed = true; }
   fail(): void { this.onclose?.({ code: 1006, reason: 'lost', wasClean: false }); }
+  closeFromServer(code: number, reason: string): void { this.onclose?.({ code, reason, wasClean: false }); }
   open(): void { this.onopen?.(); }
   message(frame: unknown): void { this.onmessage?.({ data: JSON.stringify(frame) }); }
 }
@@ -100,6 +101,22 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
+  it('refreshes and reconnects after the realtime access token expires', async () => {
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    const callsBeforeExpiry = mockStatus.mock.calls.length;
+
+    act(() => sockets[0].closeFromServer(4401, 'expired auth'));
+
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeExpiry + 1));
+    await act(async () => { await jest.advanceTimersByTimeAsync(500); });
+    expect(sockets).toHaveLength(2);
+    const callsAfterReconnect = mockStatus.mock.calls.length;
+    await act(async () => { await jest.advanceTimersByTimeAsync(9_500); });
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsAfterReconnect + 1));
+    view.unmount();
+  });
+
   it('merges a partial realtime update without losing active-learning identity', async () => {
     const view = setup();
     view.client.setQueryData(['lesson-progress', 'child', 'child-1'], [{ stale: true }]);
@@ -157,6 +174,34 @@ describe('useParentLearningStatusQuery', () => {
 
     act(() => resolveRefresh({ ...initial, activeLearning: immediate!.activeLearning, projectionRevision: '2' }));
     await waitFor(() => expect(view.result.current.isFetching).toBe(false));
+    view.unmount();
+  });
+
+  it('creates an active lesson when realtime starts after an initially inactive status', async () => {
+    mockStatus.mockResolvedValue(inactive);
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '3',
+      occurredAt: '2026-08-17T00:00:00Z', publishedAt: '2026-08-17T00:00:01Z',
+      activeLearning: {
+        assignmentId: 'assignment-1', sessionId: 'session-1', courseId: 'course-1', courseTitle: 'Feelings',
+        lessonId: 'lesson-1', lessonTitle: 'Meet the feelings', state: 'RUNNING', startedAt: '2026-08-17T00:00:00Z',
+        positionPercent: 11, activeDurationSec: 1,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Meet the feelings', phase: 'teaching', subject: null },
+      },
+    }));
+
+    expect(view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'))).toMatchObject({
+      projectionRevision: '3',
+      activeLearning: {
+        assignmentId: 'assignment-1', sessionId: 'session-1', courseId: 'course-1', courseTitle: 'Feelings',
+        lessonId: 'lesson-1', lessonTitle: 'Meet the feelings', state: 'RUNNING', startedAt: '2026-08-17T00:00:00Z',
+        positionPercent: 11, activeDurationSec: 1,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Meet the feelings', phase: 'teaching', subject: null },
+      },
+    });
     view.unmount();
   });
 

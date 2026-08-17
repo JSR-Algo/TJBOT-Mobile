@@ -310,6 +310,23 @@ describe('openRealtime', () => {
 });
 
 describe('createReconnectingSocket', () => {
+  it('reports an initial socket that is already open before handlers attach', async () => {
+    tokenProvider.mockResolvedValue('token-1');
+    const onOpen = jest.fn();
+    const alreadyOpen = new FakeSocket('wss://api.test/parent-progress', 'token-1') as FakeSocket & { readyState: number };
+    alreadyOpen.readyState = 1;
+
+    const connection = await createReconnectingSocket('wss://api.test/parent-progress', {
+      createSocket: () => alreadyOpen,
+      onOpen,
+      reconnect: false,
+      tokenProvider,
+    });
+
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    connection.close();
+  });
+
   it('reports reconnect exhaustion after the configured attempts', async () => {
     jest.useFakeTimers();
     sockets.length = 0;
