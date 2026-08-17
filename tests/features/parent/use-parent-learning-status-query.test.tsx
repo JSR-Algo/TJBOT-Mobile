@@ -32,6 +32,7 @@ class NativeSocket {
   send(data: string): void { this.sent.push(data); }
   close(): void { this.closed = true; }
   fail(): void { this.onclose?.({ code: 1006, reason: 'lost', wasClean: false }); }
+  closeFromServer(code: number, reason: string): void { this.onclose?.({ code, reason, wasClean: false }); }
   open(): void { this.onopen?.(); }
   message(frame: unknown): void { this.onmessage?.({ data: JSON.stringify(frame) }); }
 }
@@ -97,6 +98,19 @@ describe('useParentLearningStatusQuery', () => {
     await act(async () => { await jest.advanceTimersByTimeAsync(500); });
     expect(sockets).toHaveLength(2);
     await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(before + 1));
+    view.unmount();
+  });
+
+  it('refreshes and reconnects after the realtime access token expires', async () => {
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    const callsBeforeExpiry = mockStatus.mock.calls.length;
+
+    act(() => sockets[0].closeFromServer(4401, 'expired auth'));
+
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeExpiry + 1));
+    await act(async () => { await jest.advanceTimersByTimeAsync(500); });
+    expect(sockets).toHaveLength(2);
     view.unmount();
   });
 

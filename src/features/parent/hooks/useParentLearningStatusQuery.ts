@@ -99,7 +99,11 @@ function acquireParentRealtime(queryClient: QueryClient, childId: string, revisi
       onStatus: (status) => { queryClient.setQueryData(parentLearningStatusKey(childId), status); invalidateDependentProgress(queryClient, childId); },
       onUpdate: (frame) => mergeRealtimeUpdate(queryClient, childId, frame),
       onInvalidate: () => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); invalidateDependentProgress(queryClient, childId); },
-      onAuthExpired: () => broadcast(false), onAccessRevoked: () => broadcast(false), onReconnectExhausted: () => broadcast(true), onHealthy: () => broadcast(false),
+      onAuthExpired: () => {
+        broadcast(true);
+        void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
+      },
+      onAccessRevoked: () => broadcast(false), onReconnectExhausted: () => broadcast(true), onHealthy: () => broadcast(false),
     }).then(connection => { entry.resolved = connection; return connection; })
     .catch(() => { entry.resolved = null; broadcast(true); void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); return null; });
   entries.set(childId, entry);
