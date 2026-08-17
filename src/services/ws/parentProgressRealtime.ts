@@ -28,12 +28,26 @@ export async function openParentProgressRealtime(
   const normalizedChildId = childId.trim();
   const initialRevision = normalizeRevision(lastProjectionRevision);
   let currentRevision = initialRevision;
+  let connection: RealtimeConnection | null = null;
+  let subscribePending = false;
+  const subscribe = (): void => {
+    if (!connection) {
+      subscribePending = true;
+      return;
+    }
+    subscribePending = false;
+    connection.send({
+      type: 'subscribe',
+      childId: normalizedChildId,
+      lastProjectionRevision: currentRevision,
+    });
+  };
   if (activeChildConnection && activeChildConnection.childId !== normalizedChildId) activeChildConnection.connection.close(1000, 'child switched');
-  const connection: RealtimeConnection = await createReconnectingSocket(parentProgressUrl(options.baseUrl ?? Config.API_BASE_URL), {
+  connection = await createReconnectingSocket(parentProgressUrl(options.baseUrl ?? Config.API_BASE_URL), {
     ...options,
     continueAfterReconnectExhausted: true,
     onOpen: () => {
-      connection.send({ type: 'subscribe', childId: normalizedChildId, lastProjectionRevision: currentRevision });
+      subscribe();
       callbacks.onHealthy?.();
     },
     onReconnect: () => { callbacks.onReconnect?.(); callbacks.onInvalidate(); },
@@ -72,6 +86,7 @@ export async function openParentProgressRealtime(
     },
     reconnect: options.reconnect ?? { maxAttempts: 3 },
   });
+  if (subscribePending) subscribe();
   activeChildConnection = { childId: normalizedChildId, connection };
   const originalClose = connection.close.bind(connection);
   return { ...connection, close(code?: number, reason?: string) { if (activeChildConnection?.connection === connection) activeChildConnection = null; originalClose(code, reason); } };
