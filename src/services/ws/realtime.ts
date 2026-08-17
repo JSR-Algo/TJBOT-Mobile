@@ -17,6 +17,7 @@ export interface RealtimeSocketMessageEvent {
 }
 
 export interface RealtimeSocket {
+  readonly readyState?: number;
   onopen: (() => void) | null;
   onmessage: ((event: RealtimeSocketMessageEvent) => void) | null;
   onerror: ((event: RealtimeSocketErrorEvent) => void) | null;
@@ -173,7 +174,13 @@ export async function createReconnectingSocket(
     });
   };
   const attachHandlers = (nextSocket: RealtimeSocket): void => {
-    nextSocket.onopen = () => invoke(options.onOpen);
+    let openNotified = false;
+    const notifyOpen = (): void => {
+      if (openNotified) return;
+      openNotified = true;
+      invoke(options.onOpen);
+    };
+    nextSocket.onopen = notifyOpen;
     nextSocket.onmessage = (event) => {
       reconnectAttempts = 0;
       try { options.onMessage?.(event); } catch (error) { notifyError(toError(error)); }
@@ -183,6 +190,7 @@ export async function createReconnectingSocket(
       try { options.onClose?.(event); } catch (error) { notifyError(toError(error)); }
       if (options.shouldReconnect?.(event) !== false) scheduleReconnect();
     };
+    if (nextSocket.readyState === 1) notifyOpen();
   };
   attachHandlers(socket);
   return {
