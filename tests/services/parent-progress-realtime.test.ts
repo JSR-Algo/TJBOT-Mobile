@@ -18,6 +18,23 @@ class FakeSocket implements RealtimeSocket {
   closeFromServer(code: number) { this.onclose?.({ code, reason: '', wasClean: false }); }
 }
 
+class ImmediateOpenSocket implements RealtimeSocket {
+  private openHandler: (() => void) | null = null;
+  onmessage: ((event: { data: string }) => void) | null = null;
+  onerror: ((event: { message?: string }) => void) | null = null;
+  onclose: ((event: { code: number; reason: string; wasClean?: boolean }) => void) | null = null;
+  sent: string[] = [];
+
+  get onopen(): (() => void) | null { return this.openHandler; }
+  set onopen(handler: (() => void) | null) {
+    this.openHandler = handler;
+    handler?.();
+  }
+
+  send(data: string) { this.sent.push(data); }
+  close() {}
+}
+
 const sockets: FakeSocket[] = [];
 const createSocket = () => { const socket = new FakeSocket(); sockets.push(socket); return socket; };
 
@@ -72,6 +89,16 @@ describe('parent progress realtime', () => {
     sockets[0].message({ nope: true });
     expect(callbacks.onStatus).toHaveBeenCalledTimes(1);
     expect(callbacks.onInvalidate).toHaveBeenCalledTimes(2);
+    connection.close();
+  });
+
+  it('subscribes when the native socket opens during handler attachment', async () => {
+    const socket = new ImmediateOpenSocket();
+    const connection = await openParentProgressRealtime('child-1', '41', {
+      onStatus: jest.fn(), onInvalidate: jest.fn(), onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket: () => socket, tokenProvider: async () => 'parent-jwt', reconnect: false });
+
+    expect(socket.sent).toEqual(['{"type":"subscribe","childId":"child-1","lastProjectionRevision":"41"}']);
     connection.close();
   });
 
