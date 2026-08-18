@@ -36,4 +36,4 @@
   - State machine `.omc/plans/state-machines-mobile-ux.md` §2.4 ParentApproval.
   - Sequence `docs/sequences/07-parent/parent-gate-validate.sequence.mmd`.
   - Audit anomaly AN-14 closed by this UC + ADR.
-  - Downstream: course assignment is now the separate PIN-free UC-CL04 `UC_CL_CONFIRM_ADD` flow; parent approval remains scoped to Parent Settings security.
+  - Downstream: course assignment is now the separate PIN-free UC-CL04 `UC_CL_CONFIRM_ADD` flow. Current parent screens do not automatically invoke this UC because `useParentGateGuard` is a compatibility no-op.

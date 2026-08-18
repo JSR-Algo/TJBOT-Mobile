@@ -1,13 +1,13 @@
 @startuml TBOT-ParentGate
-title Domain · parent-gate — shared speed-bump service
+title Domain · parent-gate — explicit PIN compatibility + Robot activation reference
 left to right direction
 
 actor Child
 actor Parent
 
 package "parent-gate" <<service>> {
-  usecase "Pass Parent Gate (3-digit)"  as UC_PG_PASS
-  usecase "Confirm Activation (4-digit)" as UC_PG_UNLOCK
+  usecase "Authenticate Parent PIN" as UC_PG_PASS
+  usecase "Activate Robot\n(6-character code)" as UC_PG_UNLOCK
 }
 
 Child  --> UC_PG_PASS    : initiate
@@ -15,18 +15,19 @@ Parent --> UC_PG_PASS    : complete
 Parent --> UC_PG_UNLOCK
 
 note bottom of UC_PG_PASS
-  Used by: kid-hub (Enter Parent Space),
-  parent-summary, course-library, robot-mgmt.
-  Speed bump only — NOT real RBAC.
-  (ParentGatePage random 3-digit match)
+  ParentGateScreen calls authenticateParent only when
+  navigation explicitly opens this compatibility route.
+  useParentGateGuard is a no-op, so parent screens can
+  currently open without passing through this use case.
 end note
 
 note bottom of UC_PG_UNLOCK
-  Used by: purchase (Activate Robot via code).
-  Course assignment uses UC_CL_CONFIRM_ADD instead.
+  Purchase ActivateScreen collects six characters,
+  uppercases them, and calls activateRobot(code).
+  This is not a Parent PIN or course-assignment gate.
 end note
 
 ' Files:
-'   src/features/parent/ParentGatePage.jsx
+'   src/features/parent/screens/ParentGateScreen.tsx
 '   src/features/purchase/screens/ActivateScreen.tsx
 @enduml

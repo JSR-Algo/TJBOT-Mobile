@@ -40,8 +40,7 @@ lesson-session → kid-hub      (Confirm Exit)
 progress     → lesson-session (Review Needed → re-enter)
 
 parent-gate  ← parent-summary (gate include)
-parent-gate  ← course-library (browse/access gate include only)
-parent-gate  ← purchase       (UC_PG_UNLOCK on activation)
+purchase     → Robot Device   (UC_PG_UNLOCK legacy alias: 6-character code via activateRobot)
 parent-gate  ← device-pairing (gate include)
 parent-gate  ← robot-mgmt     (gate include)
 
@@ -60,7 +59,7 @@ fallback-shell → kid-hub      (Back home from any error)
 
 ## Shared services / actors
 
-- `parent-gate` is **shared** by every parent-only domain (5 importers).
+- `parent-gate` remains an explicit compatibility route; current parent-screen guards are no-ops rather than automatic importers.
 - `Robot Device` actor is shared by: course-library, purchase, device-pairing, robot-mgmt, lesson-session (indirect via voice).
 - `Realtime Voice Service` is unique to lesson-session.
 - `Payment Provider` is unique to purchase.

@@ -118,12 +118,6 @@
       "note": "Library requires robot paired"
     },
     {
-      "source": "UC-CL01",
-      "target": "UC-PR01",
-      "kind": "requires",
-      "note": "Browse Library requires gate"
-    },
-    {
       "source": "UC-CL03",
       "target": "UC-CL04",
       "kind": "include",

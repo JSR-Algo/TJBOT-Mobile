@@ -45,7 +45,7 @@ UC_CL_MONITOR ..> Robot : <<delegate>>
 UC_CL_RESYNC  ..> Robot : <<delegate>>
 
 note top of UC_CL_BROWSE
-  [requires] parent-gate : UC_PG_PASS
+  [entry] authenticated parent app; parent guard is currently a no-op
   [requires] device-pairing : robot must be paired
 end note
 

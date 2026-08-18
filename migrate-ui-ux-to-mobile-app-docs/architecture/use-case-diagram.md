@@ -14,7 +14,7 @@ Method: code-evidence only. No invented features. Anything ambiguous is marked.
 | Actor | Justification (code evidence) |
 |---|---|
 | **Child (Kid User)** | Default actor for kid-mode screens: `src/features/home/HomeHubPage.jsx`, `src/features/lesson-session/*`. No auth gate at router level; UI/copy is child-targeted. |
-| **Parent** | Parent-only settings use the dedicated Parent Gate. `src/features/course-library/UnlockConfirmModal.tsx` is a PIN-free Add to Robot confirmation for an authenticated parent. |
+| **Parent** | The authenticated app currently opens parent surfaces directly because `useParentGateGuard` is a no-op. `ParentGateScreen` validates a PIN only when explicitly opened; course assignment remains a separate PIN-free Add to Robot confirmation. |
 | **Guest (Unauthenticated User)** | `src/features/onboarding/*` and `src/features/auth/LoginPage.jsx` — pre-login surface. Auth store state `anonymous` (`src/store/auth.store.js`). |
 | **Authenticated User** | Auth store state `authenticated` (`src/store/auth.store.js`); selector `isAuthenticated()`. |
 | **Robot Device** *(external system)* | Pairing scan, firmware OTA, course sync, LCD turns. Evidence: `src/features/device/Pair*.jsx`, `src/features/robot-mgmt/*`, `src/services/api/device.api.js`. |
@@ -121,7 +121,7 @@ Method: code-evidence only. No invented features. Anything ambiguous is marked.
 - UC-PR11 Transfer Primary — 2-step 7-day async flow per ADR-0010 D7; sequence `07-parent/household-transfer-primary.sequence.mmd`
 - UC-PR12 Leave Household — secondary-only (primary must transfer first); sequence `07-parent/household-leave.sequence.mmd`
 
-### COURSE LIBRARY (parent-gated commerce + sync)
+### COURSE LIBRARY (authenticated-parent commerce + sync)
 - UC-CL01 Browse Library (`CourseLibraryPage`)
 - UC-CL02 View Course Detail (`CourseDetailPage`)
 - UC-CL03 Buy / Unlock Course (`BuyCoursePage`)

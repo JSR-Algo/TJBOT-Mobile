@@ -10,7 +10,7 @@
 
 - **Goal:** Parent browses all available courses (installed, in catalog, locked) and picks one to inspect.
 - **Trigger:** Navigation arrives at `cl_library` (`CourseLibraryPage`); typically reached from device-home, robot-mgmt storage, or parent settings.
-- **Preconditions:** Parent passed UC-PR01 (`[requires] parent-gate : UC_PG_PASS` per `course-library.usecase.puml:46-49`); a Robot is paired (`[requires] device-pairing`).
+- **Preconditions:** User is authenticated in the parent-operated app; the current parent-screen guard does not require UC-PR01. A Robot is paired (`[requires] device-pairing`).
 - **Main Flow:**
   1. `CourseLibraryPage` mounts and renders `DvShell title="Course Library"` (`CourseLibraryScreen.jsx:15`).
   2. Page renders sectioned course tiles ("On your Robot now" / catalog / etc.) — `CourseLibraryScreen.jsx:9-12`.
@@ -38,7 +38,7 @@
 
 - **Goal:** Parent purchases or subscription-unlocks a course so it can be sent to Robot.
 - **Trigger:** Parent taps "Add to Robot" on `CourseDetailPage` and lands on `BuyCoursePage` (`BuyCourseScreen.jsx`).
-- **Preconditions:** Parent has passed UC-PR01 (gate is `[requires]` for course-library entry per `course-library.usecase.puml`); a paired Robot exists (UC-DP10 or earlier prereq); the selected course is not already unlocked.
+- **Preconditions:** User is authenticated in the parent-operated app; a paired Robot exists (UC-DP10 or earlier prereq); the selected course is not already unlocked.
 - **Main Flow:**
   1. Parent sees course summary tile (LCD preview, lesson + week count) — `BuyCourseScreen.jsx:23-32`.
   2. Parent picks a plan: "All Courses" (subscription, $8.99/mo) or "Just this course" ($24 one-time) — `BuyCourseScreen.jsx:38-62`.
@@ -163,7 +163,7 @@
 
 - **Goal:** Parent sees a locked course with the path to unlock it (typically because a subscription tier or one-time purchase is missing).
 - **Trigger:** Parent tapped a locked course tile in UC-CL01, or routed via the `<<extend>> insufficient access` path from UC-CL03.
-- **Preconditions:** Parent passed UC-PR01; the selected course is not in the parent's entitlement set.
+- **Preconditions:** User is authenticated in the parent-operated app; the selected course is not in the parent's entitlement set.
 - **Main Flow:**
   1. `CourseLockedPage` renders `DvShell title="Locked for now"` (`CourseLockedScreen.jsx:14`).
   2. Page shows the locked-course preview + "what's locked" rationale.

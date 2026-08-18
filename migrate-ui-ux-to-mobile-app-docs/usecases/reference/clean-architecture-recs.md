@@ -29,11 +29,11 @@ All findings derive from the actual `src/` tree, not from speculation. Severity 
 - `src/features/parent/screens/ParentGateScreen.jsx:7-12` — generates a random 3-digit number, holds it in `useState`, compares input against `target`, schedules a 280ms `setTimeout` to navigate on match.
 - `src/features/course-library/UnlockConfirmModal.tsx` now presents a lightweight "Add to Robot" action and calls course enrollment without collecting a numeric PIN.
 
-The components no longer implement the same intent: Parent Gate protects parent-only settings, while UC-CL04 confirms a course assignment for an already authenticated parent.
+The components no longer implement the same intent: `ParentGateScreen` is an explicit PIN compatibility route, while the parent-screen guard is currently a no-op and UC-CL04 confirms a course assignment without a PIN.
 
 **Action:**
 
-Keep UC-CL04 (`UC_CL_CONFIRM_ADD`) in course-library and keep Parent Gate security isolated to parent-only settings and genuine purchase activation flows. Do not reintroduce a shared PIN hook for assignment.
+Keep UC-CL04 (`UC_CL_CONFIRM_ADD`) in course-library. Do not infer automatic Parent Settings enforcement from the compatibility gate, and do not reintroduce a shared PIN hook for assignment.
 
 ---
 
