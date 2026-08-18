@@ -3,8 +3,8 @@
 - Task: `adhoc-2026-08-18-remove-assignment-pin`
 - Scope: `sys-16` course-library assignment and its parent-gate/use-case documentation
 - Validation date: 2026-08-18
-- Commit A: `d277d7b305d8320071da45d1eae7b115b2636203`
-- Audited range: `ce94b256..d277d7b305d8320071da45d1eae7b115b2636203`
+- Commit A: `7e020a69998c26fc036715e4488ac7f785872e57`
+- Audited range: `ce94b256..7e020a69998c26fc036715e4488ac7f785872e57`
 - Range rule: the audit includes Commit A and excludes this QA refresh commit (Commit B).
 - Status: `VERIFIED_WITH_RESIDUALS`
 
@@ -15,7 +15,8 @@
 3. Parent Summary and Parent Settings open directly; `ParentGateScreen` authenticates only when explicitly navigated.
 4. Parent-gate documentation contains no duplicate Robot activation use case; purchase UC-BU13 / `UC_BUY_ACTIVATE` remains canonical.
 5. Use-case generators reproduce the PIN-free assignment aliases and edges without a course-library parent-gate dependency.
-6. The exact range above is reproducible, and this QA commit is not part of the audited evidence.
+6. Parent Summary and Settings are not modeled as automatically requiring UC-PR01; the compatibility gate remains explicit-route-only.
+7. The exact range above is reproducible, and this QA commit is not part of the audited evidence.
 
 ## Acceptance Verdicts
 
@@ -25,8 +26,9 @@
 | Retained assignment behavior and localization | PASS | Fresh focused run passed 103/103 tests, including assignment errors, metadata/navigation, duplicate-submit, Parent Settings, and i18n coverage. |
 | Current parent-gate behavior documented accurately | PASS | Home routes open Parent Summary/Settings directly; `useParentGateGuard` is a no-op; explicit gate success calls `markGated()` and replaces to the requested target. |
 | Duplicate activation retired | PASS | Active docs contain no retired parent-gate unlock alias; parent-gate diagrams contain only `UC_PG_PASS`; purchase index retains UC-BU13 alias `UC_BUY_ACTIVATE`. |
-| Generators preserve the current model | PASS | Full regeneration emits 154 index entries and 89 cross-domain edges; UC-CL04 maps to `UC_CL_CONFIRM_ADD`, and no UC-CL01 to UC-PR01 edge exists. |
-| Exact audit boundary | PASS | `git log`, `git diff --name-status`, `git diff --stat`, and `git diff --check` were run against `ce94b256..d277d7b3...`; Commit B is excluded by construction. |
+| Generators preserve the current model | PASS | Full regeneration emits 154 index entries and 88 cross-domain edges; neither UC-CL01 nor UC-PR02 automatically requires UC-PR01. |
+| Parent Summary edge resolved | PASS | The builder, generated JSON, README relation map, and both Parent Summary diagram sources no longer claim an automatic gate; the diagram records direct Home navigation and the no-op guard. |
+| Exact audit boundary | PASS | `git log`, `git diff --name-status`, `git diff --stat`, and `git diff --check` were run against `ce94b256..7e020a69...`; Commit B is excluded by construction. |
 
 ## Fresh Validation Evidence
 
@@ -38,15 +40,16 @@
 | Flow validator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run flows:validate` | 0 | Generated SHA checked for 16 files; 13 domain READMEs scanned; all checks passed. |
 | Use-case validators | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run usecases:check` | 0 | 157 use cases checked; 154 indexed IDs; 15 domains across 4 lanes; zero failures. |
 | Index generator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_build-index.mjs` | 0 | Wrote 154 index entries and 38 alias overrides. |
-| Cross-domain generator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_build-cross-domain.mjs` | 0 | Wrote 55 base edges. |
-| Lane-edge merge | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_merge-lane-edges.mjs` | 0 | Added 34, skipped 16 duplicates, total 89 edges. |
-| Second regeneration | Run the same three generator commands again and compare `git diff --binary` SHA-256 before/after | 0 | Hash remained `de190f16cd1c40766e83726584b718b967e16b09dc5a93365b75ab29e11fed34`; clean/idempotent. |
+| Cross-domain generator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_build-cross-domain.mjs` | 0 | Wrote 54 base edges. |
+| Lane-edge merge | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_merge-lane-edges.mjs` | 0 | Added 34, skipped 16 duplicates, total 88 edges. |
+| Second regeneration | Run the cross-domain generator and lane-edge merge again and compare `git diff --binary` SHA-256 before/after | 0 | Hash remained `bc2ce657023164538efb162b8e5a564bbb6161396d5912f4b3db3d568a2b5371`; clean/idempotent. |
 | Generator ESLint | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npx eslint scripts/usecases/_build-index.mjs scripts/usecases/_build-cross-domain.mjs --max-warnings=0` | 0 | No warnings or errors. |
 | Generator syntax | Bundled Node `--check` for both changed builder scripts | 0 | Both modules parse. |
-| JSON parse/counts | Bundled Node parsed the three generated reference JSON files and compared each `total` to its array length | 0 | Index 154; overrides 38; edges 89. |
+| JSON parse/counts | Bundled Node parsed the generated reference JSON and compared `total` to its array length | 0 | Cross-domain JSON has 88 edges and no UC-PR02 to UC-PR01 edge. |
+| Parent Summary PlantUML | `plantuml --check-syntax` for both Parent Summary sources, followed by `plantuml --png` for the architecture source | 0 | Sources are identical and valid; rendered SHA-256 is `5813c99fc44e20a2eee61bbb51d85d2ba4650a0ba82cc939431f5c0458226aee`. |
 | PlantUML syntax/render | `plantuml --check-syntax ...parent-gate.usecase.puml .../diagrams/parent-gate.usecase.puml && plantuml --png ...parent-gate.usecase.puml` | 0 | Both sources parse; rerender completed. |
 | Render determinism | SHA-256 before and after rerender | 0 | Both hashes: `3374ef0fc2e22024a726074de1e62ba0a2a10e1431aa0887307b6e1066909b9d`. |
-| Exact-range whitespace | `git diff --check ce94b256..d277d7b305d8320071da45d1eae7b115b2636203` | 0 | No whitespace errors. |
+| Exact-range whitespace | `git diff --check ce94b256..7e020a69998c26fc036715e4488ac7f785872e57` | 0 | No whitespace errors. |
 | i18n hardcoded scan | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run i18n:scan` | 1 | 23 unrelated pre-existing hardcoded strings; none are in files changed by this task's implementation/localization commits. |
 
 ## Historical Broad-Suite Evidence
@@ -62,7 +65,7 @@ These earlier runs remain relevant to the audited range and are not represented 
 Command:
 
 ```sh
-git log --reverse --format='%H %s' ce94b256..d277d7b305d8320071da45d1eae7b115b2636203
+git log --reverse --format='%H %s' ce94b256..7e020a69998c26fc036715e4488ac7f785872e57
 ```
 
 Output:
@@ -80,6 +83,8 @@ efafd0200ea4068d68f47d72150191760576ee5f docs(course-library): correct assignmen
 bbcaed1aed6d3bead4d6f24f0bd038f1745083c7 docs(parent-gate): retire duplicate activation use case
 3744769c2dfed6f201249ed4277e4855d194eb14 docs(course-library): refresh PIN removal evidence
 d277d7b305d8320071da45d1eae7b115b2636203 fix(usecases): keep PIN-free assignment generators current
+af3c345bc862b546cbc303dcddce237bb8b81293 docs(course-library): finalize PIN removal evidence
+7e020a69998c26fc036715e4488ac7f785872e57 fix(usecases): remove automatic parent gate edge
 ```
 
 ## Exact Range File Audit
@@ -87,7 +92,7 @@ d277d7b305d8320071da45d1eae7b115b2636203 fix(usecases): keep PIN-free assignment
 Command:
 
 ```sh
-git diff --name-status ce94b256..d277d7b305d8320071da45d1eae7b115b2636203
+git diff --name-status ce94b256..7e020a69998c26fc036715e4488ac7f785872e57
 ```
 
 Output:
@@ -97,8 +102,10 @@ M	migrate-ui-ux-to-mobile-app-docs/architecture/use-case-diagram.md
 M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/README.md
 M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/TBOT-CourseLibrary.png
 M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/TBOT-ParentGate.png
+M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/TBOT-ParentSummary.png
 M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/course-library.usecase.puml
 M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/parent-gate.usecase.puml
+M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/parent-summary.usecase.puml
 M	migrate-ui-ux-to-mobile-app-docs/migration/usecase-model-mobile.md
 M	migrate-ui-ux-to-mobile-app-docs/qa/2026-06-30-adhoc-lesson-production-readiness.md
 A	migrate-ui-ux-to-mobile-app-docs/qa/ad-hoc/2026-08-18-remove-assignment-pin.md
@@ -111,6 +118,7 @@ M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/course-library/use-cases.md
 M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/parent-gate/diagrams/parent-gate.usecase.puml
 M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/parent-gate/hot/UC-PR01.md
 M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/parent-gate/use-cases.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/parent-summary/diagrams/parent-summary.usecase.puml
 M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/alias-overrides.json
 M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/backend-mapping.md
 M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/clean-architecture-recs.md
@@ -131,13 +139,13 @@ The QA path appears as added because earlier commits in the audited range create
 Command:
 
 ```sh
-git diff --stat ce94b256..d277d7b305d8320071da45d1eae7b115b2636203
+git diff --stat ce94b256..7e020a69998c26fc036715e4488ac7f785872e57
 ```
 
 Summary:
 
 ```text
-31 files changed, 387 insertions(+), 384 deletions(-)
+34 files changed, 402 insertions(+), 393 deletions(-)
 ```
 
 ## Scope Scans
@@ -187,6 +195,7 @@ The generators now contain the same canonical mapping:
 UC-CL04 -> UC_CL_CONFIRM_ADD
 UC-CL03 -> UC-CL04: PIN-free Add to Robot confirmation
 UC-CL01 -> UC-PR01: absent
+UC-PR02 -> UC-PR01: absent
 ```
 
 ## Residual Risk
