@@ -3,8 +3,8 @@
 - Task: `adhoc-2026-08-18-remove-assignment-pin`
 - Scope: `sys-16` course-library assignment and its parent-gate/use-case documentation
 - Validation date: 2026-08-18
-- Commit A: `bbcaed1aed6d3bead4d6f24f0bd038f1745083c7`
-- Audited range: `ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7`
+- Commit A: `d277d7b305d8320071da45d1eae7b115b2636203`
+- Audited range: `ce94b256..d277d7b305d8320071da45d1eae7b115b2636203`
 - Range rule: the audit includes Commit A and excludes this QA refresh commit (Commit B).
 - Status: `VERIFIED_WITH_RESIDUALS`
 
@@ -14,7 +14,8 @@
 2. Assignment errors, query invalidation, metadata forwarding, navigation, and English/Vietnamese copy remain covered.
 3. Parent Summary and Parent Settings open directly; `ParentGateScreen` authenticates only when explicitly navigated.
 4. Parent-gate documentation contains no duplicate Robot activation use case; purchase UC-BU13 / `UC_BUY_ACTIVATE` remains canonical.
-5. The exact range above is reproducible, and this QA commit is not part of the audited evidence.
+5. Use-case generators reproduce the PIN-free assignment aliases and edges without a course-library parent-gate dependency.
+6. The exact range above is reproducible, and this QA commit is not part of the audited evidence.
 
 ## Acceptance Verdicts
 
@@ -24,7 +25,8 @@
 | Retained assignment behavior and localization | PASS | Fresh focused run passed 103/103 tests, including assignment errors, metadata/navigation, duplicate-submit, Parent Settings, and i18n coverage. |
 | Current parent-gate behavior documented accurately | PASS | Home routes open Parent Summary/Settings directly; `useParentGateGuard` is a no-op; explicit gate success calls `markGated()` and replaces to the requested target. |
 | Duplicate activation retired | PASS | Active docs contain no retired parent-gate unlock alias; parent-gate diagrams contain only `UC_PG_PASS`; purchase index retains UC-BU13 alias `UC_BUY_ACTIVATE`. |
-| Exact audit boundary | PASS | `git log`, `git diff --name-status`, `git diff --stat`, and `git diff --check` were run against `ce94b256..bbcaed1a...`; Commit B is excluded by construction. |
+| Generators preserve the current model | PASS | Full regeneration emits 154 index entries and 89 cross-domain edges; UC-CL04 maps to `UC_CL_CONFIRM_ADD`, and no UC-CL01 to UC-PR01 edge exists. |
+| Exact audit boundary | PASS | `git log`, `git diff --name-status`, `git diff --stat`, and `git diff --check` were run against `ce94b256..d277d7b3...`; Commit B is excluded by construction. |
 
 ## Fresh Validation Evidence
 
@@ -35,10 +37,16 @@
 | ESLint | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run lint` | 0 | `eslint src/ tests/ --max-warnings=0`; no warnings or errors. |
 | Flow validator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run flows:validate` | 0 | Generated SHA checked for 16 files; 13 domain READMEs scanned; all checks passed. |
 | Use-case validators | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run usecases:check` | 0 | 157 use cases checked; 154 indexed IDs; 15 domains across 4 lanes; zero failures. |
-| JSON parse | Bundled Node parsed both locale JSON files and the three touched/reference use-case JSON files | 0 | `JSON parse: 5 files OK`. |
+| Index generator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_build-index.mjs` | 0 | Wrote 154 index entries and 38 alias overrides. |
+| Cross-domain generator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_build-cross-domain.mjs` | 0 | Wrote 55 base edges. |
+| Lane-edge merge | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH node scripts/usecases/_merge-lane-edges.mjs` | 0 | Added 34, skipped 16 duplicates, total 89 edges. |
+| Second regeneration | Run the same three generator commands again and compare `git diff --binary` SHA-256 before/after | 0 | Hash remained `de190f16cd1c40766e83726584b718b967e16b09dc5a93365b75ab29e11fed34`; clean/idempotent. |
+| Generator ESLint | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npx eslint scripts/usecases/_build-index.mjs scripts/usecases/_build-cross-domain.mjs --max-warnings=0` | 0 | No warnings or errors. |
+| Generator syntax | Bundled Node `--check` for both changed builder scripts | 0 | Both modules parse. |
+| JSON parse/counts | Bundled Node parsed the three generated reference JSON files and compared each `total` to its array length | 0 | Index 154; overrides 38; edges 89. |
 | PlantUML syntax/render | `plantuml --check-syntax ...parent-gate.usecase.puml .../diagrams/parent-gate.usecase.puml && plantuml --png ...parent-gate.usecase.puml` | 0 | Both sources parse; rerender completed. |
 | Render determinism | SHA-256 before and after rerender | 0 | Both hashes: `3374ef0fc2e22024a726074de1e62ba0a2a10e1431aa0887307b6e1066909b9d`. |
-| Exact-range whitespace | `git diff --check ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7` | 0 | No whitespace errors. |
+| Exact-range whitespace | `git diff --check ce94b256..d277d7b305d8320071da45d1eae7b115b2636203` | 0 | No whitespace errors. |
 | i18n hardcoded scan | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run i18n:scan` | 1 | 23 unrelated pre-existing hardcoded strings; none are in files changed by this task's implementation/localization commits. |
 
 ## Historical Broad-Suite Evidence
@@ -54,7 +62,7 @@ These earlier runs remain relevant to the audited range and are not represented 
 Command:
 
 ```sh
-git log --reverse --format='%H %s' ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7
+git log --reverse --format='%H %s' ce94b256..d277d7b305d8320071da45d1eae7b115b2636203
 ```
 
 Output:
@@ -70,6 +78,8 @@ efafd0200ea4068d68f47d72150191760576ee5f docs(course-library): correct assignmen
 4a3f9e232429735bde145d04c7a72173a19a3b2b docs(course-library): detach assignment from parent PIN gate
 07c8bbe90a8e375927b678a1366c23aad9cfc4a9 docs(course-library): correct parent gate model and renders
 bbcaed1aed6d3bead4d6f24f0bd038f1745083c7 docs(parent-gate): retire duplicate activation use case
+3744769c2dfed6f201249ed4277e4855d194eb14 docs(course-library): refresh PIN removal evidence
+d277d7b305d8320071da45d1eae7b115b2636203 fix(usecases): keep PIN-free assignment generators current
 ```
 
 ## Exact Range File Audit
@@ -77,7 +87,7 @@ bbcaed1aed6d3bead4d6f24f0bd038f1745083c7 docs(parent-gate): retire duplicate act
 Command:
 
 ```sh
-git diff --name-status ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7
+git diff --name-status ce94b256..d277d7b305d8320071da45d1eae7b115b2636203
 ```
 
 Output:
@@ -106,6 +116,8 @@ M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/backend-mapping.md
 M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/clean-architecture-recs.md
 M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/cross-domain-edges.json
 M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/use-case-index.json
+M	scripts/usecases/_build-cross-domain.mjs
+M	scripts/usecases/_build-index.mjs
 M	src/features/course-library/UnlockConfirmModal.tsx
 M	src/services/i18n/locales/en.json
 M	src/services/i18n/locales/vi.json
@@ -119,13 +131,13 @@ The QA path appears as added because earlier commits in the audited range create
 Command:
 
 ```sh
-git diff --stat ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7
+git diff --stat ce94b256..d277d7b305d8320071da45d1eae7b115b2636203
 ```
 
 Summary:
 
 ```text
-29 files changed, 331 insertions(+), 348 deletions(-)
+31 files changed, 387 insertions(+), 384 deletions(-)
 ```
 
 ## Scope Scans
@@ -157,10 +169,10 @@ tests/e2e/course-library-flow.test.tsx:178:    expect(screen.queryByText('PARENT
 ### Use-Case Alias Audit
 
 ```sh
-rg -n 'UC_PG_''UNLOCK' migrate-ui-ux-to-mobile-app-docs
+rg -n 'UC_PG_''UNLOCK' scripts/usecases migrate-ui-ux-to-mobile-app-docs
 ```
 
-Result: no active documentation matches.
+Result: no active generator or documentation matches.
 
 Purchase activation remains canonical in `use-case-index.json`:
 
@@ -169,11 +181,12 @@ Purchase activation remains canonical in `use-case-index.json`:
 "UC_BUY_ACTIVATE"
 ```
 
-Two stale non-doc generator-source matches remain outside the authorized docs/artifacts scope:
+The generators now contain the same canonical mapping:
 
 ```text
-scripts/usecases/_build-index.mjs:139
-scripts/usecases/_build-cross-domain.mjs:55
+UC-CL04 -> UC_CL_CONFIRM_ADD
+UC-CL03 -> UC-CL04: PIN-free Add to Robot confirmation
+UC-CL01 -> UC-PR01: absent
 ```
 
 ## Residual Risk
@@ -181,4 +194,3 @@ scripts/usecases/_build-cross-domain.mjs:55
 - `npm run i18n:scan` still reports 23 unrelated pre-existing strings across fallback, course detail, progress, onboarding, device pairing, and parent safety screens.
 - Detox/native simulator testing was not run, so device-level rendering and tap behavior remain outside this evidence set.
 - Locale bundle freshness is not a separate artifact concern: `resources.ts` statically imports `en.json` and `vi.json`; fresh JSON parsing and i18n tests cover the changed locale resources.
-- The two generator-source retired-alias strings can recreate stale relationships if those scripts are run; removing them requires a separately authorized script change.
