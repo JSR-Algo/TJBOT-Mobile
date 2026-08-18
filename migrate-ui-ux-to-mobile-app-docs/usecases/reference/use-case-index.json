@@ -937,7 +937,7 @@
       "domain": "lesson-session",
       "source_md_line": 84,
       "aliases": [
-        "UC_LSN_LISTEN_bot"
+        "UC_LSN_LISTEN_BOT"
       ],
       "status": "defined"
     },
@@ -1220,7 +1220,9 @@
       "name": "Authenticate Parent",
       "domain": "parent-gate",
       "source_md_line": 111,
-      "aliases": [],
+      "aliases": [
+        "UC_PG_PASS"
+      ],
       "status": "defined"
     },
     {

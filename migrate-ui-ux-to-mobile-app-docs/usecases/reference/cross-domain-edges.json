@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/usecases/_build-cross-domain.mjs",
   "source": "Phase 0 hand-curated 56 edges + Phase 1.5 lane PR-description proposals (deterministic alpha-sort by {source,target,kind})",
-  "total": 90,
+  "total": 89,
   "edges": [
     {
       "source": "UC-A03",

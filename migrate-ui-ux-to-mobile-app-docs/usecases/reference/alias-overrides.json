@@ -2,7 +2,7 @@
   "generated_by": "scripts/usecases/_build-index.mjs",
   "fuzzy_threshold": 0.7,
   "ambiguity_band": 0.05,
-  "total": 39,
+  "total": 38,
   "overrides": [
     {
       "id": "UC-A02",
@@ -72,7 +72,7 @@
     {
       "id": "UC-CL04",
       "override": "manual: UC_CL_CONFIRM_ADD",
-      "reason": "course assignment confirmation maps to its course-library puml use case"
+      "reason": "course assignment confirmation maps to its PIN-free Confirm Add to Robot use case"
     },
     {
       "id": "UC-CL09",
@@ -138,11 +138,6 @@
       "id": "UC-O05",
       "override": "no-puml",
       "reason": "no match ≥0.7 in onboarding puml (best=UC_ONB_TRUST r=0.29)"
-    },
-    {
-      "id": "UC-PR01",
-      "override": "no-puml",
-      "reason": "no match ≥0.7 in parent-gate puml (best=UC_PG_PASS r=0.35)"
     },
     {
       "id": "UC-PR03",

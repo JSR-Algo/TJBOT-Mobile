@@ -3,9 +3,9 @@
 // Reads legacy doc + all .usecase.puml files, fuzzy-matches titles, writes JSON.
 // NOT a check script — intentionally a build helper. Idempotent.
 
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { DOCS_ROOT, APP_ROOT } from '../_lib/paths.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { DOCS_ROOT } from '../_lib/paths.mjs';
 
 const ROOT = DOCS_ROOT;
 const LEGACY = resolve(ROOT, 'architecture/use-case-diagram.md');
@@ -22,7 +22,7 @@ const HEADER_TO_DOMAIN = {
   'LESSON SESSION (voice + activity loop)': 'lesson-session',
   'PROGRESS': 'progress',
   'PARENT (gated)': 'parent-summary', // PR01 → parent-gate, PR02-07 → parent-summary
-  'COURSE LIBRARY (parent-gated commerce + sync)': 'course-library',
+  'COURSE LIBRARY (authenticated-parent commerce + sync)': 'course-library',
   'PURCHASE FUNNEL (hardware + subscription)': 'purchase',
   'DEVICE PAIRING (parent / setup)': 'device-pairing',
   'DEVICE MANAGEMENT (post-pair)': 'device-mgmt',
@@ -30,19 +30,6 @@ const HEADER_TO_DOMAIN = {
   'FALLBACK / SAFETY / RECOVERY': 'fallback-shell',
   // P5 (2026-05-12): mobile-shell promoted from fallback-shell interim placement
   'MOBILE SHELL (cross-cutting OS-bridge surfaces, added P3.F / promoted P5)': 'mobile-shell',
-};
-
-// UC ID prefix → domain folder (for fuzzy-match locality)
-const PREFIX_TO_DOMAIN = {
-  A: 'auth', O: 'onboarding', H: 'kid-hub', C: 'course-browse',
-  L: 'lesson-session', P: 'progress',
-  PR: 'parent-summary', // PR01 overridden below to parent-gate
-  CL: 'course-library', BU: 'purchase',
-  DP: 'device-pairing', DM: 'device-mgmt', RM: 'robot-mgmt', F: 'fallback-shell',
-  // 2026-05-12 P3.C / P3.F additions — bodies live in existing domain folders, no new puml yet
-  SUB: 'purchase',      // UC-SUB01..05 — subscription lifecycle, body in purchase/use-cases.md
-  INV: 'purchase',      // UC-INV01 — invoice history, body in purchase/use-cases.md
-  MOBILE: 'mobile-shell', // UC-MOBILE01 — push deep-link, body in mobile-shell/use-cases.md (P5 promotion)
 };
 
 // Domain folders that have no .usecase.puml (mobile-shell is net-new, device-mgmt is KD5).
@@ -136,7 +123,7 @@ const MANUAL = {
   'UC-A03': 'UC_AUTH_LOGIN',
   'UC-A09': 'UC_AUTH_REFRESH',
   'UC-C06': null,                    // "Start Lesson From Detail" — no equivalent puml entry
-  'UC-CL04': 'UC_PG_UNLOCK',         // shared parent-gate UC, lives in parent-gate puml
+  'UC-CL04': 'UC_CL_CONFIRM_ADD',     // PIN-free Confirm Add to Robot use case
   'UC-CL09': 'UC_CL_COMPANION',
   'UC-CL10': 'UC_CL_COMPLETE',
   'UC-L07':  'UC_LSN_SPEAK',
@@ -162,7 +149,10 @@ for (const e of entries) {
       overrides.push({ id: e.id, override: 'no-puml', reason: 'no equivalent in any puml file (legacy-only)' });
     } else {
       e.aliases = [MANUAL[e.id]];
-      overrides.push({ id: e.id, override: `manual: ${MANUAL[e.id]}`, reason: 'legacy title diverges from puml title; manually mapped' });
+      const reason = e.id === 'UC-CL04'
+        ? 'course assignment confirmation maps to its PIN-free Confirm Add to Robot use case'
+        : 'legacy title diverges from puml title; manually mapped';
+      overrides.push({ id: e.id, override: `manual: ${MANUAL[e.id]}`, reason });
     }
     continue;
   }
@@ -226,5 +216,5 @@ const overridesOut = {
 };
 writeFileSync(OUT_INDEX, JSON.stringify(indexOut, null, 2) + '\n');
 writeFileSync(OUT_OVR, JSON.stringify(overridesOut, null, 2) + '\n');
-console.log(`Wrote ${OUT_INDEX} (${entries.length} entries)`);
-console.log(`Wrote ${OUT_OVR} (${overrides.length} overrides)`);
+console.info(`Wrote ${OUT_INDEX} (${entries.length} entries)`);
+console.info(`Wrote ${OUT_OVR} (${overrides.length} overrides)`);

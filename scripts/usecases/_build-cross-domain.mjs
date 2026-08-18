@@ -7,8 +7,8 @@
 // Idempotent.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { DOCS_ROOT, APP_ROOT } from '../_lib/paths.mjs';
+import { resolve } from 'node:path';
+import { DOCS_ROOT } from '../_lib/paths.mjs';
 
 const ROOT = DOCS_ROOT;
 const INDEX = JSON.parse(readFileSync(resolve(ROOT, 'usecases/reference/use-case-index.json'), 'utf8'));
@@ -47,12 +47,11 @@ const HANDOFFS = [
   ['UC-L16', 'UC-P03',  'emits',     'Complete Lesson → Lesson Summary'],
   ['UC-L17', 'UC-H01',  'exits',     'Confirm Exit → Home Hub'],
   ['UC-P04', 'UC-L01',  're-enters', 'Review Needed → re-enter session'],
-  // parent-gate consumers (parent-summary, course-library, robot-mgmt, device-pairing, purchase)
+  // Explicit parent-gate consumers
   ['UC-PR02', 'UC-PR01', 'requires', 'Parent Summary requires gate'],
-  ['UC-CL01', 'UC-PR01', 'requires', 'Browse Library requires gate'],
   ['UC-DP01', 'UC-PR01', 'requires', 'Device Overview requires gate'],
   ['UC-RM01', 'UC-PR01', 'requires', 'My Robot requires gate'],
-  ['UC-CL03', 'UC-CL04', 'include',  'Buy/Unlock includes 4-digit confirm (UC_PG_UNLOCK)'],
+  ['UC-CL03', 'UC-CL04', 'include',  'Buy/Unlock includes PIN-free Add to Robot confirmation (UC_CL_CONFIRM_ADD)'],
   // parent-summary → robot-mgmt
   ['UC-PR06', 'UC-RM01', 'exits',    'Parent Settings → Robot software'],
   // course-library ↔ device-pairing, robot-mgmt
@@ -114,4 +113,4 @@ const out = {
   edges,
 };
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
-console.log(`Wrote ${OUT} (${edges.length} edges)`);
+console.info(`Wrote ${OUT} (${edges.length} edges)`);
