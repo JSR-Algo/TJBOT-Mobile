@@ -1,7 +1,6 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { QueryClientContext } from '@tanstack/react-query';
-import Svg, { Path, Rect } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { ROUTES } from '@/navigation/routes';
@@ -12,29 +11,10 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from './components/CL';
 import { enrollCourse } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
-import { authenticateParent } from '@/services/api/parent.api';
 import { useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { formatLessonCopy, getErrorMessage, normalizeError } from '@/utils/errors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UnlockConfirmScreen'>;
-
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
-
-function getErrorStatus(error: unknown): number | undefined {
-  if (!error || typeof error !== 'object') {
-    return undefined;
-  }
-  if ('status' in error && typeof error.status === 'number') {
-    return error.status;
-  }
-  if ('response' in error) {
-    const response = error.response;
-    if (response && typeof response === 'object' && 'status' in response && typeof response.status === 'number') {
-      return response.status;
-    }
-  }
-  return undefined;
-}
 
 export default function UnlockConfirmModal({ navigation, route }: Props) {
   const courseId = route.params?.courseId;
@@ -44,47 +24,22 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
   const household = useOptionalHousehold();
   const queryClient = React.useContext(QueryClientContext);
   const childId = household?.activeChild?.id;
-  const [vals, setVals] = React.useState(['', '', '', '']);
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const filled = vals.every(Boolean);
 
   const handleConfirm = async () => {
-    if (!filled || pending) return;
+    if (pending) return;
     setError(null);
     if (!courseId) {
-      setError('Choose a course before unlocking it.');
+      setError('Choose a course before adding it to Robot.');
       return;
     }
     if (!childId) {
-      setError('Add a child to this account before unlocking a course.');
+      setError('Add a child to this account before adding a course to Robot.');
       return;
     }
     setPending(true);
     try {
-      const pin = vals.join('');
-      try {
-        const auth = await authenticateParent({ pin });
-        if (!auth.authenticated) {
-          setError('Parent PIN was not accepted. Try again.');
-          return;
-        }
-      } catch (authError) {
-        const status = getErrorStatus(authError);
-        const normalized = normalizeError(authError);
-        if (status === 429) {
-          const wait = normalized.retryAfterSeconds ?? 30;
-          setError(`Too many attempts. Try again in ${wait} seconds.`);
-          return;
-        }
-        if (status === 423) {
-          setError('Too many wrong attempts. Parent check is locked for now.');
-          return;
-        }
-        setError('Wrong PIN. Try again.');
-        return;
-      }
-
       // Resolve the household device for the ACTIVE child the same way
       // SendToRobotScreen does — 'primary' lets the server pick the bound robot
       // (devices.assigned_child_profile_id === childId) and falls back to the
@@ -108,7 +63,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         deviceId = undefined;
       }
       if (!deviceId) {
-        setError('No Robot yet — connect Robot before unlocking a course.');
+        setError('No Robot yet — connect Robot before adding a course.');
         return;
       }
       try {
@@ -143,21 +98,6 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
     }
   };
 
-  const handleKey = (k: string) => {
-    setVals(prev => {
-      const next = [...prev];
-      if (k === '⌫') {
-        for (let j = next.length - 1; j >= 0; j--) {
-          if (next[j]) { next[j] = ''; break; }
-        }
-      } else {
-        const idx = next.findIndex(x => !x);
-        if (idx >= 0) next[idx] = k;
-      }
-      return next;
-    });
-  };
-
   const handleBack = () => {
     if (courseId) {
       navigation.navigate(ROUTES.CourseDetailScreen, { courseId });
@@ -167,57 +107,20 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
   };
 
   return (
-    <DeviceShell title="Quick parent check" onBack={handleBack}>
+    <DeviceShell title="Add course to Robot" onBack={handleBack}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
-        <Box style={styles.lockIcon}>
-          <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={CL.ink2} strokeWidth={1.8} strokeLinecap="round">
-            <Rect x={5} y={11} width={14} height={10} rx={2} />
-            <Path d="M8 11V7a4 4 0 018 0v4" />
-          </Svg>
-        </Box>
-        <Text fontWeight="600" style={styles.heading}>Parent PIN required</Text>
-        <Text style={styles.sub}>Enter your parent PIN before adding this course to Robot.</Text>
-      </Box>
-
-      <Box paddingHorizontal={20} paddingTop={24} alignItems="center">
-        <Text fontWeight="700" style={styles.pinLabel}>PARENT PIN</Text>
-      </Box>
-
-      <Box paddingHorizontal={20} paddingTop={18}>
-        <Box flexDirection="row" gap={10} justifyContent="center">
-          {vals.map((v, i) => (
-            <Box key={i} style={[styles.digit, { borderColor: v ? CL.accent : CL.hair }]}>
-              <Text fontWeight="700" style={styles.digitText}>{v ? '•' : ''}</Text>
-            </Box>
-          ))}
-        </Box>
-      </Box>
-
-      <Box paddingHorizontal={16} paddingTop={24}>
-        <Box style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {KEYS.map((k, i) => {
-            if (!k) return <Box key={i} flex={1} height={54} />;
-            const label = k === '⌫' ? 'Delete last digit' : `Enter digit ${k}`;
-            return (
-              <TouchableOpacity
-                key={i}
-                onPress={() => handleKey(k)}
-                style={styles.key}
-                activeOpacity={0.7}
-                accessibilityLabel={label}
-                accessibilityRole="button"
-              >
-                <Text fontWeight="600" style={styles.keyText}>{k}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </Box>
+        <Text fontWeight="600" style={styles.heading}>Ready to add this course?</Text>
+        <Text style={styles.sub}>Robot will prepare the first lesson for your child.</Text>
       </Box>
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <DeviceBigBtn onClick={() => { void handleConfirm(); }} disabled={pending || !filled}>
-          {pending ? 'Adding...' : filled ? 'Confirm add' : 'Enter parent PIN'}
+        <DeviceBigBtn
+          onClick={() => { void handleConfirm(); }}
+          disabled={pending}
+          accessibilityLabel={pending ? 'Adding...' : 'Add to Robot'}
+        >
+          {pending ? 'Adding...' : 'Add to Robot'}
         </DeviceBigBtn>
       </Box>
     </DeviceShell>
@@ -225,19 +128,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  lockIcon: { width: 64, height: 64, borderRadius: 18, backgroundColor: '#EEF1F5', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   heading: { fontSize: 20, color: CL.ink, letterSpacing: -0.2, textAlign: 'center' },
   sub: { fontSize: 13, color: CL.ink2, marginTop: 6, textAlign: 'center', maxWidth: 280, lineHeight: 20 },
-  pinLabel: { fontSize: 12, color: CL.ink2, letterSpacing: 0.8 },
-  digit: {
-    width: 54, height: 64, borderRadius: 12, backgroundColor: CL.card,
-    borderWidth: 2, alignItems: 'center', justifyContent: 'center',
-  },
-  digitText: { fontSize: 28, color: CL.ink, fontFamily: 'Courier New' },
-  key: {
-    width: '30%', height: 54, borderRadius: 12, borderWidth: 1, borderColor: CL.hair,
-    backgroundColor: CL.card, alignItems: 'center', justifyContent: 'center',
-  },
-  keyText: { fontSize: 20, color: CL.ink },
   errorText: { fontSize: 13, color: '#C0392B', textAlign: 'center', marginBottom: 10 },
 });
