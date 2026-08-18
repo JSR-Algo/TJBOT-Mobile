@@ -94,7 +94,7 @@ Two domain-axis sources exist:
 | `docs/architecture/usecases/*.usecase.puml` | 13 | auth, onboarding, kid-hub, course-browse, lesson-session, progress, **parent-gate**, **parent-summary**, course-library, purchase, device-pairing, robot-mgmt, fallback-shell |
 
 **Discrepancies:**
-- Legacy "PARENT (gated)" (7 UCs PR01–PR07) ↔ puml split into `parent-gate` (1 UC = `UC_PG_PASS` ↔ UC-PR01) + `parent-summary` (6 UCs = PR02–PR07) + a shared `UC_PG_UNLOCK` (course-library unlock = UC-CL04).
+- Legacy "PARENT (gated)" (7 UCs PR01–PR07) ↔ puml split into `parent-gate` (1 UC = `UC_PG_PASS` ↔ UC-PR01) + `parent-summary` (6 UCs = PR02–PR07). The former shared parent-gate mapping for course assignment was retired; UC-CL04 now maps to `UC_CL_CONFIRM_ADD` within course-library.
 - Legacy "DEVICE MANAGEMENT" (6 UCs DM01–DM06) has **no puml**. KD5 requires Lane D to author `device-mgmt.usecase.puml` in Phase 0.
 
 **Plan adopts puml axis as the new domain folder structure** — 13 folders under `docs/usecases/domains/` matching the puml file set, plus a 14th `device-mgmt/` folder added by Lane D for KD5 parity. Final folder count: **14** (13 from puml + 1 new = 14, matching the union of both axes).
@@ -195,7 +195,7 @@ For each domain owned by the lane:
     - **God components:** any `*Page.jsx` > 300 LOC OR with > 5 distinct store imports → flag as candidate for split.
     - **Leaked store mutations:** any `src/store/*.js` action mutating state owned by a different domain's store → flag as boundary violation.
     - **Duplicated state machines:** any pair of `*states.js` files with > 50% common state names → flag as candidate for shared abstraction.
-    - **Speed-bump duplication:** parent-gate + course-library/UnlockConfirmModal patterns → flag as `usePinGate(scope)` candidate.
+    - **Assignment/gate separation:** verify course-library/UnlockConfirmModal remains PIN-free and does not share parent-gate authentication state.
     - **Missing domain:** UCs marked `<<UNDEFINED>>` (KD1/2/3) clustered → flag as `account/` candidate.
     - **Cross-axis split:** parent-gate vs parent-summary puml split + DEVICE MGMT axis discrepancy → flag taxonomy ambiguity.
     Output `reference/clean-architecture-recs.md` with ≥ 3 findings (≥ 1 each kind), each with file:line + classification + action.

@@ -36,4 +36,4 @@
   - State machine `.omc/plans/state-machines-mobile-ux.md` §2.4 ParentApproval.
   - Sequence `docs/sequences/07-parent/parent-gate-validate.sequence.mmd`.
   - Audit anomaly AN-14 closed by this UC + ADR.
-  - Downstream: `UnlockConfirmModal` hardcoded `7351` removal — replaced by `POST /v1/parent/approvals (kind=course_unlock)` parent-approval flow, see §2.4 COURSE_APPROVAL_PENDING transitions + UC-CL04 future rewrite.
+  - Downstream: course assignment is now the separate PIN-free UC-CL04 `UC_CL_CONFIRM_ADD` flow; parent approval remains scoped to Parent Settings security.

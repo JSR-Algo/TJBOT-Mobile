@@ -7,7 +7,7 @@ actor Parent
 
 package "parent-gate" <<service>> {
   usecase "Pass Parent Gate (3-digit)"  as UC_PG_PASS
-  usecase "Confirm Unlock (4-digit)"    as UC_PG_UNLOCK
+  usecase "Confirm Activation (4-digit)" as UC_PG_UNLOCK
 }
 
 Child  --> UC_PG_PASS    : initiate
@@ -22,12 +22,11 @@ note bottom of UC_PG_PASS
 end note
 
 note bottom of UC_PG_UNLOCK
-  Used by: course-library (Buy/Unlock),
-  purchase (Activate Robot via code).
-  (UnlockConfirmModal hardcoded 7351 in prototype)
+  Used by: purchase (Activate Robot via code).
+  Course assignment uses UC_CL_CONFIRM_ADD instead.
 end note
 
 ' Files:
 '   src/features/parent/ParentGatePage.jsx
-'   src/features/course-library/UnlockConfirmModal.jsx
+'   src/features/purchase/screens/ActivateScreen.tsx
 @enduml

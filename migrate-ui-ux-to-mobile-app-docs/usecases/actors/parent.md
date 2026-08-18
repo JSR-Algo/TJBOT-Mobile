@@ -2,9 +2,9 @@
 
 **Type:** Internal, primary.
 
-**Source evidence:** gated by numeric speed bumps — `src/features/parent/ParentGatePage.jsx` (3-digit match) and `src/features/course-library/UnlockConfirmModal.jsx` (4-digit code `7351`). Owns parent-only screens under `src/features/parent/`, `src/features/course-library/`, `src/features/device/`, `src/features/robot-mgmt/`, `src/features/purchase/`.
+**Source evidence:** parent-only settings use the dedicated Parent Gate, while `src/features/course-library/UnlockConfirmModal.tsx` is a PIN-free assignment confirmation for an authenticated parent. Owns parent-only screens under `src/features/parent/`, `src/features/course-library/`, `src/features/device/`, `src/features/robot-mgmt/`, `src/features/purchase/`.
 
-**Auth boundary:** **speed bump only — NOT real RBAC** (KD4, KD7). The numeric gates are scope-markers, not security controls. A real Parent role would require backend enforcement that does not currently exist.
+**Auth boundary:** Parent Settings security is governed by the Parent Gate and backend parent session model. UC-CL04 does not establish or refresh that boundary; it confirms course enrollment and assignment only.
 
 **Generalization:** `Parent --|> Authenticated User` (overview puml).
 

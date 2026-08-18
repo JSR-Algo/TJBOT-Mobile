@@ -27,13 +27,11 @@ available.
 - `SendToRobotScreen` is now a `stack-entry` route because it is the production
   parent/child entry for assigning a lesson to Robot from outside the
   course-library stack.
-- `UnlockConfirmModal` now validates the entered parent PIN with the existing
-  `/parent/auth` mobile API before device resolution or course enrollment.
-- `UnlockConfirmModal` no longer renders a hardcoded challenge number and no
-  longer accepts a local literal PIN.
+- `UnlockConfirmModal` is now a PIN-free Add to Robot confirmation for an
+  authenticated parent and proceeds directly to device resolution and course enrollment.
 - Missing `courseId` now stops the unlock flow with explicit copy instead of
   falling back to demo course `c_food`.
-- Wrong parent PIN now blocks `getDeviceStatus` and `enrollCourse`.
+- Missing course, active child, or paired Robot blocks `enrollCourse` with recoverable copy.
 - `CourseScreen` now opens the real course-library detail/add flow instead of
   the static `LevelScreen` prototype.
 - `course.api.ts` now reads the documented public catalog endpoints

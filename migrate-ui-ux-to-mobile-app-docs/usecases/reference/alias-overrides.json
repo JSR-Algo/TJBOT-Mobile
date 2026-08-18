@@ -71,8 +71,8 @@
     },
     {
       "id": "UC-CL04",
-      "override": "manual: UC_PG_UNLOCK",
-      "reason": "legacy title diverges from puml title; manually mapped"
+      "override": "manual: UC_CL_CONFIRM_ADD",
+      "reason": "course assignment confirmation maps to its course-library puml use case"
     },
     {
       "id": "UC-CL09",

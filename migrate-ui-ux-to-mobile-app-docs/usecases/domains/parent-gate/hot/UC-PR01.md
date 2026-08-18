@@ -38,7 +38,7 @@ UC-PR01 is the **shared service** for all parent-mode entry. Every parent-only d
 
 **Implication:** one shared screen, six callers. Any UX or behavior change to the gate has 6-domain blast radius. Coordinate via PR comment to Lane C.
 
-**Sibling edge:** UC-CL03 includes UC-CL04 which is the 4-digit unlock variant (`UC_PG_UNLOCK`, the second parent-gate puml entry). UC-PR01 covers the 3-digit speed bump only — UC-CL04 is a different intent (transactional confirm, not access gate) and lives in course-library.
+**Sibling edge:** UC-CL03 includes the PIN-free UC-CL04 assignment confirmation (`UC_CL_CONFIRM_ADD`) entirely within course-library. UC-PR01 remains the parent access gate; course assignment no longer aliases or invokes a parent-gate PIN use case.
 
 ## Cross-domain edges
 

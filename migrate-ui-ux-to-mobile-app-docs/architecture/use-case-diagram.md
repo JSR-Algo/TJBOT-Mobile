@@ -14,7 +14,7 @@ Method: code-evidence only. No invented features. Anything ambiguous is marked.
 | Actor | Justification (code evidence) |
 |---|---|
 | **Child (Kid User)** | Default actor for kid-mode screens: `src/features/home/HomeHubPage.jsx`, `src/features/lesson-session/*`. No auth gate at router level; UI/copy is child-targeted. |
-| **Parent** | Gated by numeric speed bumps: `src/features/parent/ParentGatePage.jsx` (3-digit match) and `src/features/course-library/UnlockConfirmModal.jsx` (4-digit code `7351`). Owns parent-only screens. |
+| **Parent** | Parent-only settings use the dedicated Parent Gate. `src/features/course-library/UnlockConfirmModal.tsx` is a PIN-free Add to Robot confirmation for an authenticated parent. |
 | **Guest (Unauthenticated User)** | `src/features/onboarding/*` and `src/features/auth/LoginPage.jsx` — pre-login surface. Auth store state `anonymous` (`src/store/auth.store.js`). |
 | **Authenticated User** | Auth store state `authenticated` (`src/store/auth.store.js`); selector `isAuthenticated()`. |
 | **Robot Device** *(external system)* | Pairing scan, firmware OTA, course sync, LCD turns. Evidence: `src/features/device/Pair*.jsx`, `src/features/robot-mgmt/*`, `src/services/api/device.api.js`. |
@@ -125,7 +125,7 @@ Method: code-evidence only. No invented features. Anything ambiguous is marked.
 - UC-CL01 Browse Library (`CourseLibraryPage`)
 - UC-CL02 View Course Detail (`CourseDetailPage`)
 - UC-CL03 Buy / Unlock Course (`BuyCoursePage`)
-- UC-CL04 Confirm Unlock with Numeric Code (`UnlockConfirmModal` — speed-bump auth)
+- UC-CL04 Confirm Add to Robot (`UnlockConfirmModal` — PIN-free assignment confirmation)
 - UC-CL05 Course Added to Robot (`CourseAddedPage`)
 - UC-CL06 Send Lesson to Robot (`SendToRobotPage`)
 - UC-CL07 Confirm Robot Ready (`RobotReadyPage`)
@@ -376,7 +376,7 @@ package "Course Library" {
   usecase "Browse Library" as UC_CL01
   usecase "View Course Detail" as UC_CL02
   usecase "Buy / Unlock Course" as UC_CL03
-  usecase "Confirm Unlock (PIN)" as UC_CL04
+  usecase "Confirm Add to Robot" as UC_CL04
   usecase "Course Added to Robot" as UC_CL05
   usecase "Send Lesson to Robot" as UC_CL06
   usecase "Robot Ready" as UC_CL07

@@ -40,7 +40,7 @@ lesson-session → kid-hub      (Confirm Exit)
 progress     → lesson-session (Review Needed → re-enter)
 
 parent-gate  ← parent-summary (gate include)
-parent-gate  ← course-library (gate include + UC_PG_UNLOCK)
+parent-gate  ← course-library (browse/access gate include only)
 parent-gate  ← purchase       (UC_PG_UNLOCK on activation)
 parent-gate  ← device-pairing (gate include)
 parent-gate  ← robot-mgmt     (gate include)

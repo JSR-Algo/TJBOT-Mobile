@@ -43,7 +43,7 @@ For each UC: index entry present → use-cases.md H2 anchor present → backend-
 |---|---|---|---|---|---|---|---|
 | UC-A03 | `{id:UC-A03, name:"Log In with Email/Password", domain:auth, aliases:[UC_AUTH_LOGIN], status:defined}` | 1 | 1 | 1 | out=1 (UC-A03→UC-H01 exits) / in=1 | no KD entry; status `defined` consistent | **PASS** |
 | UC-L08 | `{id:UC-L08, name:"Process Utterance", domain:lesson-session, aliases:[UC_LSN_PROCESS], status:defined}` | 1 | 1 | 1 | out=1 (UC-L08→ACTOR:RealtimeVoice) / in=0 | no KD entry; consistent | **PASS** |
-| UC-CL04 | `{id:UC-CL04, name:"Confirm Unlock with Numeric Code", domain:course-library, aliases:[UC_PG_UNLOCK], status:defined}` | 1 | 1 | 1 | out=0 / in=1 (UC-CL03→UC-CL04 include) | no KD; alias `UC_PG_UNLOCK` (manual override correctly bridges course-library UC to parent-gate puml) | **PASS** |
+| UC-CL04 | `{id:UC-CL04, name:"Confirm Add to Robot", domain:course-library, aliases:[UC_CL_CONFIRM_ADD], status:defined}` | 1 | 1 | 1 | out=0 / in=1 (UC-CL03→UC-CL04 include) | PIN-free assignment confirmation is owned and modeled within course-library | **PASS** |
 | UC-DP09 | `{id:UC-DP09, name:"Connect Robot to Wi-Fi", domain:device-pairing, aliases:[UC_DP_CONNECT], status:defined}` | 1 | 1 | 1 | out=2 (UC-DP09→ACTOR:Robot, UC-DP09→ACTOR:WiFi) / in=0 | no KD; KD8 (pairing radio NOT CONFIRMED) applies to UC-DP04 not UC-DP09 — consistent | **PASS** |
 | UC-PR05 | `{id:UC-PR05, name:"View Safety & Privacy", domain:parent-summary, aliases:[UC_PRT_SAFETY], status:defined}` | 1 | 1 | 1 | out=1 (UC-PR05→UC-F07 emits — safety log on updateSafetyConfig) / in=0 | no KD; consistent | **PASS** |
 

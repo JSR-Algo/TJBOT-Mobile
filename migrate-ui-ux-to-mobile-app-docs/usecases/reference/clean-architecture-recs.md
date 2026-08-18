@@ -10,7 +10,7 @@
 
 | # | Kind | Severity | Title |
 |---|---|---|---|
-| F1 | Speed-bump duplication | medium | Two near-identical numeric-gate components — extract `usePinGate(scope)` hook |
+| F1 | Speed-bump duplication | resolved | Course assignment is PIN-free; keep it separate from the parent PIN gate |
 | F2 | Missing domain | medium | Three `<<UNDEFINED>>` UCs cluster in `auth` — propose `account/` domain when wiring lands |
 | F3 | Cross-axis split | low | `parent-gate` vs `parent-summary` puml split + KD5 device-mgmt axis discrepancy is now historical artifact, not active drag |
 | F4 | Simplification | low | `lesson-session/states.js` (26 entries) carries 4 "Done" terminal variants that no UC currently surfaces — candidate for collapse |
@@ -20,33 +20,20 @@ All findings derive from the actual `src/` tree, not from speculation. Severity 
 
 ---
 
-## F1 — Speed-bump duplication: extract `usePinGate(scope)` hook
+## F1 — Speed-bump duplication: resolved by separating course assignment
 
 **Classification:** Simplification.
 
 **Evidence:**
 
 - `src/features/parent/screens/ParentGateScreen.jsx:7-12` — generates a random 3-digit number, holds it in `useState`, compares input against `target`, schedules a 280ms `setTimeout` to navigate on match.
-- `src/features/course-library/UnlockConfirmModal.jsx:7-10` — accepts a hardcoded 4-digit `target = ['7','3','5','1']`, holds 4 input cells in `useState`, compares against target, navigates on match (no timer; navigation is on-button-press).
+- `src/features/course-library/UnlockConfirmModal.tsx` now presents a lightweight "Add to Robot" action and calls course enrollment without collecting a numeric PIN.
 
-both components implement the same "type-a-shown-number-to-proceed" intent with different rendering. The patterns are not currently abstracted; each lives inside its feature folder.
+The components no longer implement the same intent: Parent Gate protects parent-only settings, while UC-CL04 confirms a course assignment for an already authenticated parent.
 
 **Action:**
 
-```
-src/hooks/usePinGate.js
-  export function usePinGate({ length, target?, scope, onSuccess })
-    – generates target if not provided
-    – holds input state
-    – exposes { value, setValue, ok, target }
-    – owns the success-side effect (timer or button-press) per scope
-```
-
-Then `ParentGateScreen` becomes a renderer over `usePinGate({ length: 3, scope: 'parent-mode' })`, and `UnlockConfirmModal` becomes a renderer over `usePinGate({ length: 4, target: ['7','3','5','1'], scope: 'commerce-confirm' })`. Renderers stay UI-specific (input keypad layout, copy, confirm button).
-
-**Rationale:** the use-case model already calls these out as the same primitive — UC-PR01 (3-digit, parent-mode) and UC-CL04 (4-digit, transactional confirm). The puml puts both in `parent-gate` package as `UC_PG_PASS` + `UC_PG_UNLOCK`. The hook codifies the shared semantics.
-
-**Caveat:** these are speed bumps, not RBAC (KD4). Do **not** extend `usePinGate` into a real auth boundary in the same change — that's a separate decision tracked under `BACKLOG-PARENT-RBAC-DECISION` (proposed in `domains/parent-gate/hot/UC-PR01.md`).
+Keep UC-CL04 (`UC_CL_CONFIRM_ADD`) in course-library and keep Parent Gate security isolated to parent-only settings and genuine purchase activation flows. Do not reintroduce a shared PIN hook for assignment.
 
 ---
 
@@ -79,7 +66,7 @@ When Lane A resolves the backlog entries, three UI surfaces will need a home: a 
 
 **Evidence:**
 
-- Plan §1.4 documents the legacy "PARENT (gated)" 7-UC group split into puml `parent-gate` (1 UC, UC-PR01) + `parent-summary` (6 UCs, UC-PR02..PR07). UC-CL04 (the 4-digit unlock) is the second `parent-gate` puml entry but lives in `course-library/` per legacy ID prefix.
+- Plan §1.4 documents the legacy "PARENT (gated)" 7-UC group split into puml `parent-gate` (1 UC, UC-PR01) + `parent-summary` (6 UCs, UC-PR02..PR07). UC-CL04 is now the independent course-library `UC_CL_CONFIRM_ADD` use case.
 - KD5: legacy "DEVICE MANAGEMENT" had no puml; Lane D added it in Phase 1.
 - The 14-folder structure embeds both axis discrepancies; everything works because the index aliases reconcile them.
 

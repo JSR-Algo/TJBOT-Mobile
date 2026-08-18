@@ -127,7 +127,7 @@
       "source": "UC-CL03",
       "target": "UC-CL04",
       "kind": "include",
-      "note": "Buy/Unlock includes 4-digit confirm (UC_PG_UNLOCK)"
+      "note": "Buy/Unlock includes PIN-free Add to Robot confirmation (UC_CL_CONFIRM_ADD)"
     },
     {
       "source": "UC-CL06",

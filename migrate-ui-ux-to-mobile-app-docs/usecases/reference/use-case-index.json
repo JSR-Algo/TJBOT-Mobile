@@ -451,7 +451,7 @@
       "domain": "course-library",
       "source_md_line": 128,
       "aliases": [
-        "UC_PG_UNLOCK"
+        "UC_CL_CONFIRM_ADD"
       ],
       "status": "defined"
     },
