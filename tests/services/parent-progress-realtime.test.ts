@@ -85,10 +85,33 @@ describe('parent progress realtime', () => {
     expect(sockets[0].sent).toEqual(['{"type":"subscribe","childId":"child-1","lastProjectionRevision":"9007199254740993"}']);
     sockets[0].message({ type: 'lesson.progress.snapshot', childId: 'child-1', projectionRevision: '9007199254740994', status: { activeLearning: null, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '9007199254740994' } });
     sockets[0].message({ type: 'lesson.progress.updated', childId: 'child-1', sessionId: null, projectionRevision: '9007199254740994', occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z', activeLearning: null });
-    sockets[0].message({ type: 'lesson.progress.updated', childId: 'child-1', sessionId: null, projectionRevision: '9007199254740996', occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z', activeLearning: null });
+    sockets[0].message({ type: 'lesson.progress.updated', childId: 'child-1', sessionId: null, projectionRevision: '9007199254740996', occurredAt: '2026-07-27T00:00:00Z', publishedAt: '2026-07-27T00:00:01Z', activeLearning: { positionPercent: 99 } });
     sockets[0].message({ nope: true });
     expect(callbacks.onStatus).toHaveBeenCalledTimes(1);
     expect(callbacks.onInvalidate).toHaveBeenCalledTimes(2);
+    connection.close();
+  });
+
+  it('accepts a complete active-learning projection after a revision gap', async () => {
+    const onUpdate = jest.fn();
+    const onInvalidate = jest.fn();
+    const connection = await openParentProgressRealtime('child-1', '12', {
+      onStatus: jest.fn(), onUpdate, onInvalidate, onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket, tokenProvider: async () => 'jwt', reconnect: false });
+
+    sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '14',
+      occurredAt: '2026-08-17T00:00:00Z', publishedAt: '2026-08-17T00:00:01Z',
+      activeLearning: {
+        assignmentId: 'assignment-1', sessionId: 'session-1', courseId: 'course-1', courseTitle: 'Feelings',
+        lessonId: 'lesson-1', lessonTitle: 'Meet the feelings', state: 'RUNNING', startedAt: '2026-08-17T00:00:00Z',
+        positionPercent: 44, activeDurationSec: 30,
+        currentStep: { stepId: 'step-4', stepNumber: 4, total: 9, activityTitle: 'Name the feeling', phase: 'practice', subject: 'sad' },
+      },
+    });
+
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ projectionRevision: '14' }));
+    expect(onInvalidate).not.toHaveBeenCalled();
     connection.close();
   });
 
