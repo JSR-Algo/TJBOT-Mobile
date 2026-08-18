@@ -43,7 +43,7 @@
   1. Parent sees course summary tile (LCD preview, lesson + week count) — `BuyCourseScreen.jsx:23-32`.
   2. Parent picks a plan: "All Courses" (subscription, $8.99/mo) or "Just this course" ($24 one-time) — `BuyCourseScreen.jsx:38-62`.
   3. Parent taps "Confirm & continue" — navigation transitions to `cl_unlock_confirm`.
-  4. UC-CL04 (Confirm Unlock with Numeric Code) runs as an `<<include>>` step (4-digit speed-bump via `UnlockConfirmModal`).
+  4. UC-CL04 (Confirm Add to Robot) runs as a lightweight `<<include>>` confirmation via `UnlockConfirmModal`.
   5. On confirm, UC-CL05 (Course Added to Robot) runs.
 - **Postconditions:** Course is unlocked (client-side state — see KD11); navigation lands on `cl_added`.
 - **Alt Flow:**
@@ -52,20 +52,22 @@
   1. Insufficient access → `<<extend>>` to UC-CL12 View Locked Course.
   2. Payment failure → standard payment error edge case (see purchase domain UC-BU07/08/09 for the actual payment provider flow).
 
-## UC-CL04 — Confirm Unlock with Numeric Code
+## UC-CL04 — Confirm Add to Robot
 
-- **Goal:** Parent passes a 4-digit speed-bump (typing the number on screen) so kids cannot add courses by accident. Shared service with parent-gate (alias `UC_PG_UNLOCK`).
+- **Goal:** An authenticated Parent reviews a lightweight confirmation and explicitly adds the selected course to Robot without entering a numeric PIN.
 - **Trigger:** UC-CL03 reached the "Confirm & continue" step; modal `UnlockConfirmModal` opens.
-- **Preconditions:** UC-CL03 selected a plan; the modal target code is shown on screen (prototype: `7351` — `UnlockConfirmModal.jsx:8`).
+- **Preconditions:** Parent is authenticated, UC-CL03 selected a plan and course, an active child exists, and a paired Robot can be resolved for that child.
 - **Main Flow:**
-  1. `UnlockConfirmModalPage` renders `DvShell title="Quick parent check"` and shows the displayed code (`UnlockConfirmModal.jsx:11-25`).
-  2. Parent taps the 4 digits in order on the mini keypad; entered values appear in the slot row (`UnlockConfirmModal.jsx:27-39`).
-  3. When all 4 are entered correctly (`vals.join('') === target.join('')` — `UnlockConfirmModal.jsx:10`), the slots turn green; primary CTA enables and Parent taps confirm → navigation transitions to `cl_added` (UC-CL05).
-- **Postconditions:** Course is unlocked client-side (KD11 — server-side enforcement deferred); navigation lands on `cl_added`.
+  1. `UnlockConfirmModal` renders the "Add course to Robot" title, the selected-course confirmation, and a short explanation that Robot will prepare the first lesson.
+  2. Parent taps "Add to Robot"; the app resolves the active child's paired Robot and calls `enrollCourse(courseId, { childId, deviceId })`.
+  3. On enrollment success, the app preserves the returned assignment metadata and navigates to `cl_added` (UC-CL05).
+- **Postconditions:** The course is enrolled for the active child and assigned to Robot; navigation lands on `cl_added` with assignment metadata.
 - **Alt Flow:**
-  1. Parent taps back → returns to `cl_add_free` (UC-CL03) without unlock — `UnlockConfirmModal.jsx:11`.
+  1. Parent taps back → returns to the selected course detail without enrolling or assigning the course.
 - **Error Flow:**
-  1. Wrong code → slots stay red; CTA stays disabled. Parent retries (no lock-out in prototype — KD11).
+  1. Missing course, active child, or paired Robot keeps the modal open and presents the corresponding recovery message.
+  2. Robot-status or enrollment failure keeps the modal open so Parent can retry the "Add to Robot" action.
+  3. Parent-settings security remains governed by the parent-settings flow; this course-assignment confirmation does not request or change a Parent PIN.
 
 ## UC-CL05 — Course Added to Robot
 

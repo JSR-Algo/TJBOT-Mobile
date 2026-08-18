@@ -447,7 +447,7 @@
     },
     {
       "id": "UC-CL04",
-      "name": "Confirm Unlock with Numeric Code",
+      "name": "Confirm Add to Robot",
       "domain": "course-library",
       "source_md_line": 128,
       "aliases": [

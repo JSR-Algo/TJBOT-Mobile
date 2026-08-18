@@ -4,8 +4,6 @@
 >
 > `n/a` ratio per domain ≤ 50% (D5).
 >
-> KD11: Course-lock enforcement is client-side only — server enforcement deferred. UC-CL04 below records this in the `unauthorized` mode rationale.
-
 ---
 
 ## UC-CL01
@@ -27,9 +25,9 @@
 
 ## UC-CL04
 
-- **validation**: All 4 entered digits must match the displayed code before the confirm CTA enables.
-- **unauthorized**: client-side gate only — server enforcement deferred (KD11). Must not be treated as an entitlement check at the API boundary.
-- **retry**: Wrong code must not lock out the parent immediately (no rate-limit in prototype); a real-world build will need a rate-limit decision.
+- **validation**: A selected course, active child, and paired Robot must be available before "Add to Robot" can enroll and assign the course.
+- **error**: Robot-status or enrollment failure must keep the confirmation open and surface a recoverable message.
+- **retry**: After a recoverable failure, Parent can retry the same "Add to Robot" action without re-entering assignment details.
 
 ## UC-CL05
 

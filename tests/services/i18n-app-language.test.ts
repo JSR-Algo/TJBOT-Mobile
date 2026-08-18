@@ -40,6 +40,25 @@ describe('app language preference', () => {
     expect(i18n.language).toBe('en');
   });
 
+  it('translates the PIN-free course assignment confirmation in Vietnamese', async () => {
+    await setAppLanguage('vi');
+
+    expect(translateCopy('Add course to Robot')).toBe('Thêm khóa học vào Robot');
+    expect(translateCopy('Ready to add this course?')).toBe('Sẵn sàng thêm khóa học này?');
+    expect(translateCopy('Robot will prepare the first lesson for your child.')).toBe(
+      'Robot sẽ chuẩn bị bài học đầu tiên cho bé.',
+    );
+    expect(translateCopy('Choose a course before adding it to Robot.')).toBe(
+      'Chọn một khóa học trước khi thêm vào Robot.',
+    );
+    expect(translateCopy('Add a child to this account before adding a course to Robot.')).toBe(
+      'Thêm bé vào tài khoản này trước khi thêm khóa học vào Robot.',
+    );
+    expect(translateCopy('No Robot yet — connect Robot before adding a course.')).toBe(
+      'Chưa có Robot — hãy kết nối Robot trước khi thêm khóa học.',
+    );
+  });
+
   it('falls back to Vietnamese for unsupported persisted values', async () => {
     await AsyncStorage.setItem(APP_LANGUAGE_STORAGE_KEY, 'fr');
 

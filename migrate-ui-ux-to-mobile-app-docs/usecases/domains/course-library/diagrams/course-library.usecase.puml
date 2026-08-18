@@ -38,7 +38,7 @@ UC_CL_MONITOR ..> UC_CL_COMPANION : "See what's happening"
 UC_CL_RESYNC ..> UC_CL_ADDED : "Reconnect Robot now"
 
 UC_CL_BUY     ..> UC_CL_LOCKED : <<extend>> insufficient access
-UC_CL_BUY     ..> (Confirm Unlock 4-digit) : <<include>> UC_PG_UNLOCK
+UC_CL_BUY     ..> (Confirm Add to Robot) : <<include>> UC-CL04
 UC_CL_SEND    ..> Robot : <<delegate>>
 UC_CL_MONITOR ..> Robot : <<delegate>>
 UC_CL_RESYNC  ..> Robot : <<delegate>>
