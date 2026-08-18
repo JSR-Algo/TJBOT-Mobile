@@ -1,150 +1,184 @@
 # Remove Assignment PIN Verification
 
 - Task: `adhoc-2026-08-18-remove-assignment-pin`
-- Scope: `sys-16` mobile course-library assignment confirmation
-- Implementation commits: `8a2bee33`, `f078e875`, `45b8ef23`
+- Scope: `sys-16` course-library assignment and its parent-gate/use-case documentation
 - Validation date: 2026-08-18
-- Status: `DONE_WITH_CONCERNS` (all gates pass after exposing the bundled Node runtime to child processes; the first unit-suite attempt failed because `node` was absent from child-process `PATH`)
+- Commit A: `bbcaed1aed6d3bead4d6f24f0bd038f1745083c7`
+- Audited range: `ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7`
+- Range rule: the audit includes Commit A and excludes this QA refresh commit (Commit B).
+- Status: `VERIFIED_WITH_RESIDUALS`
 
 ## Acceptance Criteria
 
-1. Assignment confirmation renders no PIN prompt and makes no parent-auth API call.
-2. Course enrollment remains single-submit and preserves errors, cache invalidation, and navigation.
-3. Parent Settings PIN behavior remains unchanged.
+1. Course assignment confirmation renders no PIN prompt, makes no parent-auth call, and remains single-submit.
+2. Assignment errors, query invalidation, metadata forwarding, navigation, and English/Vietnamese copy remain covered.
+3. Parent Summary and Parent Settings open directly; `ParentGateScreen` authenticates only when explicitly navigated.
+4. Parent-gate documentation contains no duplicate Robot activation use case; purchase UC-BU13 / `UC_BUY_ACTIVATE` remains canonical.
+5. The exact range above is reproducible, and this QA commit is not part of the audited evidence.
 
 ## Acceptance Verdicts
 
 | Criterion | Verdict | Evidence |
 | --- | --- | --- |
-| PIN-free assignment confirmation | PASS | Focused Jest: 2 suites and 49 tests passed. Course-library production has no scope-scan match; the two test matches are negative assertions that the old PIN copy is absent. |
-| Single-submit enrollment and retained behavior | PASS | Focused Jest includes the pending duplicate-action regression and assignment error/navigation coverage; 49/49 tests passed. Full unit and integration suites also passed. |
-| Parent Settings remains PIN-protected | PASS | Parent scope scan retained `authenticateParent`, PIN entry, rejection, lockout, and re-enable coverage; `parent-settings.test.tsx` passed in the full unit suite. |
+| PIN-free, single-submit assignment | PASS | Fresh course-library and progress suites passed within the 4-suite focused run; production course-library code has no PIN/auth match. |
+| Retained assignment behavior and localization | PASS | Fresh focused run passed 103/103 tests, including assignment errors, metadata/navigation, duplicate-submit, Parent Settings, and i18n coverage. |
+| Current parent-gate behavior documented accurately | PASS | Home routes open Parent Summary/Settings directly; `useParentGateGuard` is a no-op; explicit gate success calls `markGated()` and replaces to the requested target. |
+| Duplicate activation retired | PASS | Active docs contain no retired parent-gate unlock alias; parent-gate diagrams contain only `UC_PG_PASS`; purchase index retains UC-BU13 alias `UC_BUY_ACTIVATE`. |
+| Exact audit boundary | PASS | `git log`, `git diff --name-status`, `git diff --stat`, and `git diff --check` were run against `ce94b256..bbcaed1a...`; Commit B is excluded by construction. |
 
-## Validation Evidence
+## Fresh Validation Evidence
 
 | Check | Exact command | Exit | Key evidence |
 | --- | --- | ---: | --- |
-| TypeScript | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/typescript/bin/tsc --noEmit` | 0 | No TypeScript diagnostics. |
-| ESLint | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/eslint/bin/eslint.js src/ tests/ --max-warnings=0` | 0 | No warnings or errors. |
-| Unit Jest, initial environment attempt | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/jest/bin/jest.js --selectProjects unit --runInBand` | 1 | 225 suites passed, 4 failed; 2,710 tests passed and 17 failed. All failures were `spawnSync node ENOENT` in tests that launch child Node processes. |
-| Unit Jest, child runtime available | `PATH=/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/jest/bin/jest.js --selectProjects unit --runInBand` | 0 | 229 suites passed, 1 skipped; 2,727 tests passed, 19 skipped. |
-| Focused assignment Jest | `PATH=/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/jest/bin/jest.js --selectProjects unit --runTestsByPath tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx --runInBand` | 0 | 2 suites passed; 49 tests passed. |
-| Integration Jest | `PATH=/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH node node_modules/jest/bin/jest.js --selectProjects integration --runInBand` | 0 | 3 suites passed; 6 tests passed. |
-| Flow validator | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/flows/validate-go-calls.mjs` | 0 | Generated SHA checked for 16 files; 13 domain README files scanned; all checks passed. |
-| Sequence validators | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/sequences/validate-sequences.mjs && /Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/sequences/validate-mermaid.mjs && /Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/sequences/build-index.mjs --check` | 0 | 22 systems and 103 sequence files validated; 103 Mermaid files parsed; index current. |
-| ERD validator | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/erd/validate-erd.mjs` | 0 | 109 DBML files and 107 entity Markdown files validated; all checks passed. |
-| Use-case validators | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/usecases/check-uc-sections.mjs && /Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/usecases/check-index-coverage.mjs && /Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/usecases/check-lane-coverage.mjs && /Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/usecases/check-edge-case-enum.mjs && /Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/usecases/check-backend-sentinel.mjs` | 0 | 157 use cases checked; 154 indexed IDs; 15 domains across 4 lanes; zero failures. |
-| Token parity | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/check-token-parity.mjs` | 0 | 7 token files verified. |
-| Route coverage | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/check-route-coverage.mjs` | 0 | 135 screen files, 127 routes, 127 feature registrations, zero duplicates. |
-| Screen prop types | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/check-screen-prop-types.mjs` | 0 | 135 screen files checked. |
-| Parent PIN scope scan | See `Scope Scan Commands` | 0 | Retained parent gate production matches and parent-settings success, rejection, lockout, and re-enable test coverage. |
-| Course-library PIN scope scan | See `Scope Scan Commands` | 0 | Only two negative assertions remain in `course-library-flow.test.tsx`; no production or authentication-call match. |
-| Cumulative diff check and status | `git diff --check ce94b256..HEAD && git status --short` | 0 | No whitespace errors; current worktree clean. |
-| Changed-file forbidden-pattern scan | See `Forbidden-Pattern Scan Commands` | 0 | Two pre-existing test-language matches: `expect.any(Array)` and prose containing `any`; neither is a TypeScript suppression. |
-| Added-line forbidden-pattern scan | See `Forbidden-Pattern Scan Commands` | git: 0, rg: 1 | Expected no-match result; no forbidden pattern was introduced in added implementation/test lines. |
+| Focused Jest | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npx jest --selectProjects unit --runInBand --runTestsByPath tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx tests/e2e/parent-settings.test.tsx tests/services/i18n-app-language.test.ts` | 0 | 4 suites passed; 103 tests passed; 0 snapshots. |
+| TypeScript | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npx tsc --noEmit` | 0 | No diagnostics. |
+| ESLint | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run lint` | 0 | `eslint src/ tests/ --max-warnings=0`; no warnings or errors. |
+| Flow validator | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run flows:validate` | 0 | Generated SHA checked for 16 files; 13 domain READMEs scanned; all checks passed. |
+| Use-case validators | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run usecases:check` | 0 | 157 use cases checked; 154 indexed IDs; 15 domains across 4 lanes; zero failures. |
+| JSON parse | Bundled Node parsed both locale JSON files and the three touched/reference use-case JSON files | 0 | `JSON parse: 5 files OK`. |
+| PlantUML syntax/render | `plantuml --check-syntax ...parent-gate.usecase.puml .../diagrams/parent-gate.usecase.puml && plantuml --png ...parent-gate.usecase.puml` | 0 | Both sources parse; rerender completed. |
+| Render determinism | SHA-256 before and after rerender | 0 | Both hashes: `3374ef0fc2e22024a726074de1e62ba0a2a10e1431aa0887307b6e1066909b9d`. |
+| Exact-range whitespace | `git diff --check ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7` | 0 | No whitespace errors. |
+| i18n hardcoded scan | `PATH=/Applications/ChatGPT.app/Contents/Resources/cua_node/bin:$PATH npm run i18n:scan` | 1 | 23 unrelated pre-existing hardcoded strings; none are in files changed by this task's implementation/localization commits. |
 
-## Scope Scan Commands
+## Historical Broad-Suite Evidence
 
-### Parent PIN Retention
+These earlier runs remain relevant to the audited range and are not represented as fresh runs for this QA refresh:
+
+- Full unit suite: 229 suites passed, 1 skipped; 2,727 tests passed, 19 skipped after adding the bundled Node directory to child-process `PATH`.
+- Initial full-unit environment attempt: 225 suites passed and 4 failed because child processes could not resolve `node` (`spawnSync node ENOENT`).
+- Integration suite: 3 suites passed; 6 tests passed.
+
+## Exact Range Commits
+
+Command:
 
 ```sh
-rg -n 'authenticateParent|Parent PIN' src/features/parent tests/e2e/parent-settings.test.tsx
+git log --reverse --format='%H %s' ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7
 ```
 
-Result: exit 0. Matches remain in `ParentGateScreen.tsx` and in the parent-settings tests for accepted PIN, rejected PIN, lockout, and retry behavior.
+Output:
+
+```text
+8a2bee333f4f6b1167aa0a72f4a8770d329c14a7 test(course-library): require PIN-free assignment confirmation
+f078e875bdb9d937cfe41b8b3e50a4c65defafdd fix(course-library): remove assignment PIN gate
+45b8ef235d241dd80dedc524860590b414a08f8d fix(course-library): prevent duplicate course assignment
+8224de39da75a88cae44f734f87b6920d955cce3 docs(course-library): record assignment PIN removal evidence
+efafd0200ea4068d68f47d72150191760576ee5f docs(course-library): correct assignment evidence range
+8d2dbf1e70029bb51e240772d7e005f4fef4db6d docs(course-library): make assignment evidence reproducible
+621b7027686b4214ca36129359e0db27c4e4f62c fix(course-library): localize PIN-free assignment flow
+4a3f9e232429735bde145d04c7a72173a19a3b2b docs(course-library): detach assignment from parent PIN gate
+07c8bbe90a8e375927b678a1366c23aad9cfc4a9 docs(course-library): correct parent gate model and renders
+bbcaed1aed6d3bead4d6f24f0bd038f1745083c7 docs(parent-gate): retire duplicate activation use case
+```
+
+## Exact Range File Audit
+
+Command:
+
+```sh
+git diff --name-status ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7
+```
+
+Output:
+
+```text
+M	migrate-ui-ux-to-mobile-app-docs/architecture/use-case-diagram.md
+M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/README.md
+M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/TBOT-CourseLibrary.png
+M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/TBOT-ParentGate.png
+M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/course-library.usecase.puml
+M	migrate-ui-ux-to-mobile-app-docs/architecture/usecases/parent-gate.usecase.puml
+M	migrate-ui-ux-to-mobile-app-docs/migration/usecase-model-mobile.md
+M	migrate-ui-ux-to-mobile-app-docs/qa/2026-06-30-adhoc-lesson-production-readiness.md
+A	migrate-ui-ux-to-mobile-app-docs/qa/ad-hoc/2026-08-18-remove-assignment-pin.md
+M	migrate-ui-ux-to-mobile-app-docs/qa/usecase-model-verification-2026-05-11.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/actors/parent.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/course-library/backend-mapping.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/course-library/diagrams/course-library.usecase.puml
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/course-library/edge-cases.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/course-library/use-cases.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/parent-gate/diagrams/parent-gate.usecase.puml
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/parent-gate/hot/UC-PR01.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/domains/parent-gate/use-cases.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/alias-overrides.json
+M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/backend-mapping.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/clean-architecture-recs.md
+M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/cross-domain-edges.json
+M	migrate-ui-ux-to-mobile-app-docs/usecases/reference/use-case-index.json
+M	src/features/course-library/UnlockConfirmModal.tsx
+M	src/services/i18n/locales/en.json
+M	src/services/i18n/locales/vi.json
+M	tests/e2e/course-library-flow.test.tsx
+M	tests/e2e/course-progress-stability.test.tsx
+M	tests/services/i18n-app-language.test.ts
+```
+
+The QA path appears as added because earlier commits in the audited range created it. The Commit B update to that path is outside the range.
+
+Command:
+
+```sh
+git diff --stat ce94b256..bbcaed1aed6d3bead4d6f24f0bd038f1745083c7
+```
+
+Summary:
+
+```text
+29 files changed, 331 insertions(+), 348 deletions(-)
+```
+
+## Scope Scans
 
 ### Course-Library PIN Removal
 
 ```sh
-rg -n 'authenticateParent|Parent PIN|PARENT PIN' src/features/course-library tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx
+rg -n 'authenticateParent|Parent PIN|PARENT PIN' \
+  src/features/course-library \
+  tests/e2e/course-library-flow.test.tsx \
+  tests/e2e/course-progress-stability.test.tsx
 ```
 
-Result: exit 0 with exactly these two negative-assertion matches and no production match:
+Only the two intended negative assertions remain:
 
 ```text
 tests/e2e/course-library-flow.test.tsx:177:    expect(screen.queryByText('Parent PIN required')).toBeNull();
 tests/e2e/course-library-flow.test.tsx:178:    expect(screen.queryByText('PARENT PIN')).toBeNull();
 ```
 
-## Forbidden-Pattern Scan Commands
+### Current Parent-Gate Boundary
 
-### Changed Files
+- `HomeHubScreen` navigates directly to Parent Summary and Parent Settings.
+- `SafetyRedirectScreen` is the current explicit in-app entry to `ParentGateScreen`.
+- `ParentGateScreen` calls `authenticateParent({ pin })`; success calls the in-memory `markGated()` helper and replaces to the requested target.
+- A false auth response stays on the gate; `423` routes to lockout; `429` applies a timed cooldown; other failures show retry copy.
+- `useParentGateGuard` intentionally does not redirect, so parent surfaces are not automatically protected by this compatibility route.
 
-```sh
-rg -n 'TODO|FIXME|HACK|@ts-ignore|@ts-expect-error|unknown as|\bany\b' src/features/course-library/UnlockConfirmModal.tsx tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx
-```
-
-Result: exit 0 with exactly two benign, pre-existing test-language matches:
-
-```text
-tests/e2e/course-library-flow.test.tsx:615:      expect.any(Array),
-tests/e2e/course-library-flow.test.tsx:1044:  it('gates whole-course assignment when any published lesson is still preparing', async () => {
-```
-
-### Added Implementation/Test Lines
-
-The zsh `pipestatus` array distinguishes a successful `git diff` from the expected ripgrep no-match result.
+### Use-Case Alias Audit
 
 ```sh
-git diff --unified=0 ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d -- src/features/course-library/UnlockConfirmModal.tsx tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx | rg '^\+.*(TODO|FIXME|HACK|@ts-ignore|@ts-expect-error|unknown as|\bany\b)'
-scan_statuses=("${pipestatus[@]}")
-printf 'git_diff_exit=%s rg_exit=%s\n' "${scan_statuses[1]}" "${scan_statuses[2]}"
+rg -n 'UC_PG_''UNLOCK' migrate-ui-ux-to-mobile-app-docs
 ```
 
-Result: no match output; status output was:
+Result: no active documentation matches.
+
+Purchase activation remains canonical in `use-case-index.json`:
 
 ```text
-git_diff_exit=0 rg_exit=1
+"id": "UC-BU13"
+"UC_BUY_ACTIVATE"
 ```
 
-## Scope Findings
-
-- The implementation range `ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d` changes exactly the three planned production/test files: 50 insertions and 204 deletions.
-- The cumulative range `ce94b256..8224de39` also includes this QA artifact: four files changed, 107 insertions and 204 deletions.
-- Course-library production no longer references `authenticateParent` or PIN copy. The focused test retains only explicit absence assertions for `Parent PIN required` and `PARENT PIN`.
-- Parent PIN behavior remains present in `ParentGateScreen.tsx` and is exercised by `parent-settings.test.tsx`, including accepted PIN, rejected PIN, lockout, and retry behavior.
-- No API endpoint, request payload, route, parent production file, or unrelated test file changed in the implementation range.
-
-### Exact Range Evidence
-
-`git diff --name-status ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d`
+Two stale non-doc generator-source matches remain outside the authorized docs/artifacts scope:
 
 ```text
-M	src/features/course-library/UnlockConfirmModal.tsx
-M	tests/e2e/course-library-flow.test.tsx
-M	tests/e2e/course-progress-stability.test.tsx
+scripts/usecases/_build-index.mjs:139
+scripts/usecases/_build-cross-domain.mjs:55
 ```
 
-`git diff --stat ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d`
+## Residual Risk
 
-```text
- src/features/course-library/UnlockConfirmModal.tsx | 140 +++------------------
- tests/e2e/course-library-flow.test.tsx             |  79 +++---------
- tests/e2e/course-progress-stability.test.tsx       |  35 +++---
- 3 files changed, 50 insertions(+), 204 deletions(-)
-```
-
-`git diff --name-status ce94b256..8224de39`
-
-```text
-A	migrate-ui-ux-to-mobile-app-docs/qa/ad-hoc/2026-08-18-remove-assignment-pin.md
-M	src/features/course-library/UnlockConfirmModal.tsx
-M	tests/e2e/course-library-flow.test.tsx
-M	tests/e2e/course-progress-stability.test.tsx
-```
-
-`git diff --stat ce94b256..8224de39`
-
-```text
- .../qa/ad-hoc/2026-08-18-remove-assignment-pin.md  |  57 +++++++++
- src/features/course-library/UnlockConfirmModal.tsx | 140 +++------------------
- tests/e2e/course-library-flow.test.tsx             |  79 +++---------
- tests/e2e/course-progress-stability.test.tsx       |  35 +++---
- 4 files changed, 107 insertions(+), 204 deletions(-)
-```
-
-## Honest Notes
-
-- The first full unit invocation used the bundled Node executable directly, but child tests resolve `node` through `PATH`; it failed for that environment reason. The complete suite passed after adding the same bundled runtime directory to `PATH`. This is recorded as a validation-environment concern, not hidden as a green first attempt.
-- TypeScript and ESLint are legitimately silent on success; the file-count requirement applies to documentation validators, all of which emitted non-zero coverage.
-- No native Detox build or simulator run was requested for this ad-hoc evidence task. Residual risk is limited to unverified device-level rendering/tap behavior; Jest covers the accessible action and submission logic.
+- `npm run i18n:scan` still reports 23 unrelated pre-existing strings across fallback, course detail, progress, onboarding, device pairing, and parent safety screens.
+- Detox/native simulator testing was not run, so device-level rendering and tap behavior remain outside this evidence set.
+- Locale bundle freshness is not a separate artifact concern: `resources.ts` statically imports `en.json` and `vi.json`; fresh JSON parsing and i18n tests cover the changed locale resources.
+- The two generator-source retired-alias strings can recreate stale relationships if those scripts are run; removing them requires a separately authorized script change.
