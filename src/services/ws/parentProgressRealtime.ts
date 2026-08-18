@@ -75,9 +75,14 @@ export async function openParentProgressRealtime(
       if (frame.type === 'lesson.progress.updated') {
         const comparison = compareProjectionRevisions(revision, currentRevision);
         if (comparison <= 0) return;
-        if (revision !== incrementRevision(currentRevision) || !isUpdateFrame(frame)) { callbacks.onInvalidate(); return; }
+        if (!isUpdateFrame(frame)) { callbacks.onInvalidate(); return; }
         const activeLearning = frame.activeLearning === null ? null : parseActiveLearningDelta(frame.activeLearning);
         if (activeLearning === undefined) { callbacks.onInvalidate(); return; }
+        // Gateway updates carry a full active-learning projection, so complete frames can safely close a revision gap.
+        if (revision !== incrementRevision(currentRevision) && activeLearning !== null && !isCompleteActiveLearning(activeLearning)) {
+          callbacks.onInvalidate();
+          return;
+        }
         currentRevision = revision;
         callbacks.onUpdate?.({ type: 'lesson.progress.updated', childId: normalizedChildId, sessionId: frame.sessionId, projectionRevision: revision, occurredAt: frame.occurredAt, publishedAt: frame.publishedAt, activeLearning });
         return;
@@ -105,6 +110,29 @@ function parentProgressUrl(baseUrl: string): string { const url = new URL(baseUr
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 function record(value: unknown): Record<string, unknown> { return isRecord(value) ? value : {}; }
 function isUpdateFrame(value: Record<string, unknown>): value is Record<string, unknown> & { sessionId: string | null; occurredAt: string; publishedAt: string; activeLearning: Record<string, unknown> | null } { return (typeof value.sessionId === 'string' || value.sessionId === null) && typeof value.occurredAt === 'string' && typeof value.publishedAt === 'string' && (value.activeLearning === null || isRecord(value.activeLearning)); }
+
+function isCompleteActiveLearning(active: ParentActiveLearningDelta): boolean {
+  return typeof active.assignmentId === 'string'
+    && (typeof active.sessionId === 'string' || active.sessionId === null)
+    && typeof active.courseId === 'string'
+    && typeof active.courseTitle === 'string'
+    && typeof active.lessonId === 'string'
+    && typeof active.lessonTitle === 'string'
+    && typeof active.state === 'string'
+    && (typeof active.startedAt === 'string' || active.startedAt === null)
+    && (active.currentStep === null || (active.currentStep !== undefined && isCompleteStep(active.currentStep)))
+    && typeof active.positionPercent === 'number'
+    && typeof active.activeDurationSec === 'number';
+}
+
+function isCompleteStep(step: Partial<ParentLearningStep>): boolean {
+  return typeof step.stepId === 'string'
+    && typeof step.stepNumber === 'number'
+    && typeof step.total === 'number'
+    && typeof step.activityTitle === 'string'
+    && typeof step.phase === 'string'
+    && (typeof step.subject === 'string' || step.subject === null);
+}
 
 function parseActiveLearningDelta(value: Record<string, unknown>): ParentActiveLearningDelta | undefined {
   const delta: ParentActiveLearningDelta = {};
