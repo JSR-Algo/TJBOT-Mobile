@@ -26,7 +26,8 @@ UC_PRT_SUMMARY ..> UC_PRT_SAFETY   : drill
 UC_PRT_SUMMARY ..> UC_PRT_SETTINGS : header
 
 note top of UC_PRT_SUMMARY
-  [requires] parent-gate : UC_PG_PASS
+  HomeHub opens Parent Summary and Settings directly.
+  useParentGateGuard is a compatibility no-op.
 end note
 note bottom of UC_PRT_SETTINGS
   [exit] → robot-mgmt : UC_RM_VIEW

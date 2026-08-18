@@ -48,7 +48,6 @@ const HANDOFFS = [
   ['UC-L17', 'UC-H01',  'exits',     'Confirm Exit → Home Hub'],
   ['UC-P04', 'UC-L01',  're-enters', 'Review Needed → re-enter session'],
   // Explicit parent-gate consumers
-  ['UC-PR02', 'UC-PR01', 'requires', 'Parent Summary requires gate'],
   ['UC-DP01', 'UC-PR01', 'requires', 'Device Overview requires gate'],
   ['UC-RM01', 'UC-PR01', 'requires', 'My Robot requires gate'],
   ['UC-CL03', 'UC-CL04', 'include',  'Buy/Unlock includes PIN-free Add to Robot confirmation (UC_CL_CONFIRM_ADD)'],

@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/usecases/_build-cross-domain.mjs",
   "source": "Phase 0 hand-curated 56 edges + Phase 1.5 lane PR-description proposals (deterministic alpha-sort by {source,target,kind})",
-  "total": 89,
+  "total": 88,
   "edges": [
     {
       "source": "UC-A03",
@@ -470,12 +470,6 @@
       "target": "UC-L01",
       "kind": "re-enters",
       "note": "Review Needed → re-enter session"
-    },
-    {
-      "source": "UC-PR02",
-      "target": "UC-PR01",
-      "kind": "requires",
-      "note": "Parent Summary requires gate"
     },
     {
       "source": "UC-PR03",

@@ -39,7 +39,6 @@ lesson-session → kid-hub      (Confirm Exit)
 
 progress     → lesson-session (Review Needed → re-enter)
 
-parent-gate  ← parent-summary (documented include; current screen guard is a no-op)
 purchase     → Robot Device   (UC-BU13 / UC_BUY_ACTIVATE: 6-character code via activateRobot)
 parent-gate  ← device-pairing (gate include)
 parent-gate  ← robot-mgmt     (gate include)
