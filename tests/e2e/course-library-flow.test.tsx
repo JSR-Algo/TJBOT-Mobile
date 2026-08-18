@@ -18,7 +18,6 @@ import {
   cancelCourseEnrollment,
 } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
-import { authenticateParent } from '@/services/api/parent.api';
 import { setAppLanguage } from '@/services/i18n/i18n';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
 
@@ -52,10 +51,6 @@ jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
 }));
 
-jest.mock('@/services/api/parent.api', () => ({
-  authenticateParent: jest.fn(),
-}));
-
 jest.mock('@/contexts/HouseholdContext', () => ({
   useOptionalHousehold: jest.fn(() => mockHousehold),
 }));
@@ -67,7 +62,6 @@ const mockedGetPreloadStatus = getPreloadStatus as jest.MockedFunction<typeof ge
 const mockedCreateAssignment = createAssignment as jest.MockedFunction<typeof createAssignment>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
 const mockedGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
-const mockedAuthenticateParent = authenticateParent as jest.MockedFunction<typeof authenticateParent>;
 const mockedGetCourses = getCourses as jest.MockedFunction<typeof getCourses>;
 const mockedGetCourseLessons = getCourseLessons as jest.MockedFunction<typeof getCourseLessons>;
 
@@ -125,7 +119,6 @@ describe('course-library flow guards', () => {
       activeChild: { id: 'ch-1', name: 'An' },
       setActiveChild: mockSetActiveChild,
     };
-    mockedAuthenticateParent.mockResolvedValue({ authenticated: true });
     // CourseAddedScreen reads the device's real seat on mount; default to "no
     // seat known" unless a test overrides it.
     mockedGetCurrentAssignment.mockResolvedValue(null);
@@ -163,7 +156,7 @@ describe('course-library flow guards', () => {
     expect(screen.getByText(/My Animal Friends/)).toBeTruthy();
   });
 
-  it('passes course assignment metadata into the added screen after parent unlock succeeds', async () => {
+  it('adds a course without requesting a parent PIN and forwards assignment metadata', async () => {
     mockedGetDeviceStatus.mockResolvedValueOnce({ id: 'dev-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockedEnrollCourse.mockResolvedValueOnce({
       enrollment: { id: 'enr-1', courseId: 'c_food', childId: 'ch-1', deviceId: 'dev-1', status: 'ACTIVE', currentLessonKey: null },
@@ -181,17 +174,17 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    expect(screen.queryByText('7 3 5 1')).toBeNull();
-    expect(screen.queryByText('Type the number below')).toBeNull();
-
-    for (const digit of ['2', '4', '6', '8']) {
-      fireEvent.press(screen.getByText(digit));
+    expect(screen.queryByText('Parent PIN required')).toBeNull();
+    expect(screen.queryByText('PARENT PIN')).toBeNull();
+    for (const digit of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) {
+      expect(screen.queryByLabelText(`Enter digit ${digit}`)).toBeNull();
     }
+    expect(screen.queryByLabelText('Delete last digit')).toBeNull();
+
     await act(async () => {
-      fireEvent.press(screen.getByText('Confirm add'));
+      fireEvent.press(screen.getByRole('button', { name: 'Add to Robot' }));
     });
 
-    expect(mockedAuthenticateParent).toHaveBeenCalledWith({ pin: '2468' });
     expect(mockedGetDeviceStatus).toHaveBeenCalledWith('primary', 'ch-1');
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
     // The retired unlockCourse shim is gone from the client entirely, so
@@ -205,30 +198,6 @@ describe('course-library flow guards', () => {
     });
   });
 
-  it('blocks course enrollment when the parent PIN is wrong', async () => {
-    mockedAuthenticateParent.mockResolvedValueOnce({ authenticated: false });
-    const navigation = navigationFor();
-    render(
-      <UnlockConfirmModal
-        navigation={navigation as never}
-        route={{ key: 'unlock', name: ROUTES.UnlockConfirmScreen, params: { courseId: 'c_food' } } as never}
-      />,
-    );
-
-    for (const digit of ['1', '1', '1', '1']) {
-      fireEvent.press(screen.getByText(digit));
-    }
-    await act(async () => {
-      fireEvent.press(screen.getByText('Confirm add'));
-    });
-
-    expect(mockedAuthenticateParent).toHaveBeenCalledWith({ pin: '1111' });
-    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
-    expect(mockedEnrollCourse).not.toHaveBeenCalled();
-    expect(navigation.replace).not.toHaveBeenCalledWith(ROUTES.CourseAddedScreen, expect.anything());
-    expect(screen.getByText('Parent PIN was not accepted. Try again.')).toBeTruthy();
-  });
-
   it('does not fall back to the demo course when unlock route has no courseId', async () => {
     const navigation = navigationFor();
     render(
@@ -238,17 +207,13 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    for (const digit of ['2', '4', '6', '8']) {
-      fireEvent.press(screen.getByText(digit));
-    }
     await act(async () => {
-      fireEvent.press(screen.getByText('Confirm add'));
+      fireEvent.press(screen.getByRole('button', { name: 'Add to Robot' }));
     });
 
-    expect(mockedAuthenticateParent).not.toHaveBeenCalled();
     expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
     expect(mockedEnrollCourse).not.toHaveBeenCalledWith('c_food', expect.anything());
-    expect(screen.getByText('Choose a course before unlocking it.')).toBeTruthy();
+    expect(screen.getByText('Choose a course before adding it to Robot.')).toBeTruthy();
   });
 
   it('opens the already-created lesson assignment from the added screen without re-sending', async () => {
@@ -291,11 +256,8 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    for (const digit of ['2', '4', '6', '8']) {
-      fireEvent.press(screen.getByText(digit));
-    }
     await act(async () => {
-      fireEvent.press(screen.getByText('Confirm add'));
+      fireEvent.press(screen.getByRole('button', { name: 'Add to Robot' }));
     });
 
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
@@ -322,11 +284,8 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    for (const digit of ['2', '4', '6', '8']) {
-      fireEvent.press(screen.getByText(digit));
-    }
     await act(async () => {
-      fireEvent.press(screen.getByText('Confirm add'));
+      fireEvent.press(screen.getByRole('button', { name: 'Add to Robot' }));
     });
 
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
@@ -354,11 +313,8 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    for (const digit of ['2', '4', '6', '8']) {
-      fireEvent.press(screen.getByText(digit));
-    }
     await act(async () => {
-      fireEvent.press(screen.getByText('Confirm add'));
+      fireEvent.press(screen.getByRole('button', { name: 'Add to Robot' }));
     });
 
     expect(mockedEnrollCourse).toHaveBeenCalledWith('c_food', { childId: 'ch-1', deviceId: 'dev-1' });
@@ -867,7 +823,7 @@ describe('course-library flow guards', () => {
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.UnlockConfirmScreen, expect.anything());
   });
 
-  it('labels parent unlock keypad controls', () => {
+  it('exposes an accessible course assignment action without PIN controls', () => {
     const navigation = navigationFor();
     render(
       <UnlockConfirmModal
@@ -876,8 +832,11 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Enter digit 7').props.accessibilityRole).toBe('button');
-    expect(screen.getByLabelText('Delete last digit').props.accessibilityRole).toBe('button');
+    expect(screen.getByRole('button', { name: 'Add to Robot' })).toBeTruthy();
+    for (const digit of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) {
+      expect(screen.queryByLabelText(`Enter digit ${digit}`)).toBeNull();
+    }
+    expect(screen.queryByLabelText('Delete last digit')).toBeNull();
   });
 
   // US-006 S11 (M1): send-to-robot is re-keyed from courseId→deviceId and now

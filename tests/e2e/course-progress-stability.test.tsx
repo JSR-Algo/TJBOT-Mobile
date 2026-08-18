@@ -24,7 +24,6 @@ import {
 } from '@/services/api/course-library.api';
 import { useHousehold, useOptionalHousehold } from '@/contexts/HouseholdContext';
 import { getDeviceStatus } from '@/services/api/device.api';
-import { authenticateParent } from '@/services/api/parent.api';
 import { getBillingProviderStatus } from '../../src/services/api/purchase.api';
 import { setAppLanguage } from '../../src/services/i18n/i18n';
 
@@ -108,10 +107,6 @@ jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
 }));
 
-jest.mock('@/services/api/parent.api', () => ({
-  authenticateParent: jest.fn(),
-}));
-
 jest.mock('../../src/services/api/purchase.api', () => ({
   getBillingProviderStatus: jest.fn(),
   listBillingPlans: jest.fn(() => Promise.resolve([])),
@@ -134,7 +129,6 @@ const mockEnrollCourse = enrollCourse as jest.MockedFunction<typeof enrollCourse
 const mockedUseHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockedUseOptionalHousehold = useOptionalHousehold as jest.MockedFunction<typeof useOptionalHousehold>;
 const mockGetDeviceStatus = getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>;
-const mockAuthenticateParent = authenticateParent as jest.MockedFunction<typeof authenticateParent>;
 const mockGetBillingProviderStatus = getBillingProviderStatus as jest.MockedFunction<typeof getBillingProviderStatus>;
 
 const mockNavigate = jest.fn();
@@ -183,7 +177,6 @@ describe('course, course-library, and progress stable screen states', () => {
     jest.clearAllMocks();
     mockedUseHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
     mockedUseOptionalHousehold.mockReturnValue({ children: [{ id: 'child-1' }], activeChild: { id: 'child-1' } } as never);
-    mockAuthenticateParent.mockResolvedValue({ authenticated: true });
     // Dashboard enrichment sources: default to a zeroed aggregate + rejected KPI/
     // trend so the assignment feed (the backbone these tests assert on) stays the
     // only signal. buildCourseInsightDashboard tolerates the nulls.
@@ -379,22 +372,17 @@ describe('course, course-library, and progress stable screen states', () => {
     await waitFor(() => expect(offline.getByText('Library offline')).toBeTruthy());
   });
 
-  it('prevents duplicate unlock actions while entitlement request is pending', async () => {
+  it('prevents duplicate course assignment actions while enrollment is pending', async () => {
     const pending = deferred<Awaited<ReturnType<typeof enrollCourse>>>();
     mockGetDeviceStatus.mockResolvedValueOnce({ id: 'device-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     mockEnrollCourse.mockReturnValueOnce(pending.promise);
 
     const screen = render(<UnlockConfirmModal navigation={navigation as never} route={unlockRoute as never} />);
-    for (const key of ['2', '4', '6', '8']) {
-      fireEvent.press(screen.getByText(key));
-    }
-
-    fireEvent.press(screen.getByText('Confirm add'));
+    fireEvent.press(screen.getByRole('button', { name: 'Add to Robot' }));
     await waitFor(() => expect(screen.getByText('Adding...')).toBeTruthy());
-    fireEvent.press(screen.getByText('Adding...'));
+    fireEvent.press(screen.getByRole('button', { name: 'Adding...' }));
 
     await waitFor(() => expect(mockEnrollCourse).toHaveBeenCalledTimes(1));
-    expect(mockAuthenticateParent).toHaveBeenCalledWith({ pin: '2468' });
     expect(mockEnrollCourse).toHaveBeenCalledWith('course-open', { childId: 'child-1', deviceId: 'device-1' });
     // The retired unlockCourse shim is gone from the client entirely, so
     // "enrollment does not go through unlock" is now structural, not asserted.
