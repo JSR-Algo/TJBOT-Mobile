@@ -14,7 +14,7 @@ One `.puml` file per bounded context. Render with PlantUML CLI or VS Code PlantU
 | `course-browse.usecase.puml` | Read-only course tree (kid) | Child | small |
 | `lesson-session.usecase.puml` | Voice activity loop + in-session recovery | Child, Voice | medium |
 | `progress.usecase.puml` | Post-session retrospectives | Child | small |
-| `parent-gate.usecase.puml` | Speed-bump gate (shared service) | Child→Parent | small |
+| `parent-gate.usecase.puml` | Explicit PIN compatibility route (shared service) | Child→Parent | small |
 | `parent-summary.usecase.puml` | Parent dashboards | Parent | small |
 | `course-library.usecase.puml` | Commerce + send-to-robot | Parent, Robot | medium |
 | `purchase.usecase.puml` | Hardware + subscription funnel | Parent, Pay, Robot | medium |
@@ -39,8 +39,8 @@ lesson-session → kid-hub      (Confirm Exit)
 
 progress     → lesson-session (Review Needed → re-enter)
 
-parent-gate  ← parent-summary (gate include)
-purchase     → Robot Device   (UC_PG_UNLOCK legacy alias: 6-character code via activateRobot)
+parent-gate  ← parent-summary (documented include; current screen guard is a no-op)
+purchase     → Robot Device   (UC-BU13 / UC_BUY_ACTIVATE: 6-character code via activateRobot)
 parent-gate  ← device-pairing (gate include)
 parent-gate  ← robot-mgmt     (gate include)
 

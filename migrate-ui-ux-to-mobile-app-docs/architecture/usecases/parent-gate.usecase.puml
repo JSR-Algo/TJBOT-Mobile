@@ -1,5 +1,5 @@
 @startuml TBOT-ParentGate
-title Domain · parent-gate — explicit PIN compatibility + Robot activation reference
+title Domain · parent-gate — explicit PIN compatibility route
 left to right direction
 
 actor Child
@@ -7,12 +7,10 @@ actor Parent
 
 package "parent-gate" <<service>> {
   usecase "Authenticate Parent PIN" as UC_PG_PASS
-  usecase "Activate Robot\n(6-character code)" as UC_PG_UNLOCK
 }
 
 Child  --> UC_PG_PASS    : initiate
 Parent --> UC_PG_PASS    : complete
-Parent --> UC_PG_UNLOCK
 
 note bottom of UC_PG_PASS
   ParentGateScreen calls authenticateParent only when
@@ -21,13 +19,6 @@ note bottom of UC_PG_PASS
   currently open without passing through this use case.
 end note
 
-note bottom of UC_PG_UNLOCK
-  Purchase ActivateScreen collects six characters,
-  uppercases them, and calls activateRobot(code).
-  This is not a Parent PIN or course-assignment gate.
-end note
-
 ' Files:
 '   src/features/parent/screens/ParentGateScreen.tsx
-'   src/features/purchase/screens/ActivateScreen.tsx
 @enduml
