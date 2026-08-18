@@ -24,11 +24,12 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
   const household = useOptionalHousehold();
   const queryClient = React.useContext(QueryClientContext);
   const childId = household?.activeChild?.id;
+  const pendingRef = React.useRef(false);
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const handleConfirm = async () => {
-    if (pending) return;
+    if (pendingRef.current) return;
     setError(null);
     if (!courseId) {
       setError('Choose a course before adding it to Robot.');
@@ -38,6 +39,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
       setError('Add a child to this account before adding a course to Robot.');
       return;
     }
+    pendingRef.current = true;
     setPending(true);
     try {
       // Resolve the household device for the ACTIVE child the same way
@@ -94,6 +96,7 @@ export default function UnlockConfirmModal({ navigation, route }: Props) {
         setError(formatLessonCopy(getErrorMessage(normalized.code), { robot: deviceName }));
       }
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   };

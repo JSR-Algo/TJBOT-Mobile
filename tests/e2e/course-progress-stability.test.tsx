@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ROUTES } from '@/navigation/routes';
 import CourseScreen from '../../src/features/course/screens/CourseScreen';
@@ -373,21 +373,26 @@ describe('course, course-library, and progress stable screen states', () => {
   });
 
   it('prevents duplicate course assignment actions while enrollment is pending', async () => {
-    const pending = deferred<Awaited<ReturnType<typeof enrollCourse>>>();
-    mockGetDeviceStatus.mockResolvedValueOnce({ id: 'device-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
-    mockEnrollCourse.mockReturnValueOnce(pending.promise);
+    const devicePending = deferred<Awaited<ReturnType<typeof getDeviceStatus>>>();
+    const enrollmentPending = deferred<Awaited<ReturnType<typeof enrollCourse>>>();
+    mockGetDeviceStatus.mockReturnValue(devicePending.promise);
+    mockEnrollCourse.mockReturnValue(enrollmentPending.promise);
 
     const screen = render(<UnlockConfirmModal navigation={navigation as never} route={unlockRoute as never} />);
-    fireEvent.press(screen.getByRole('button', { name: 'Add to Robot' }));
-    await waitFor(() => expect(screen.getByText('Adding...')).toBeTruthy());
-    fireEvent.press(screen.getByRole('button', { name: 'Adding...' }));
+    const addButton = screen.getByRole('button', { name: 'Add to Robot' });
+    act(() => {
+      fireEvent.press(addButton);
+      fireEvent.press(addButton);
+    });
 
+    expect(mockGetDeviceStatus).toHaveBeenCalledTimes(1);
+    devicePending.resolve({ id: 'device-1', name: 'Casa Robot', online: true, batteryPercent: 80, charging: false });
     await waitFor(() => expect(mockEnrollCourse).toHaveBeenCalledTimes(1));
     expect(mockEnrollCourse).toHaveBeenCalledWith('course-open', { childId: 'child-1', deviceId: 'device-1' });
     // The retired unlockCourse shim is gone from the client entirely, so
     // "enrollment does not go through unlock" is now structural, not asserted.
 
-    pending.resolve({
+    enrollmentPending.resolve({
       enrollment: { id: 'enroll-1', childId: 'child-1', courseId: 'course-open', deviceId: 'device-1', status: 'ACTIVE', currentLessonKey: null },
       assignment: {
         id: 'assignment-1', assignmentVersion: 1, deviceId: 'device-1', childId: 'child-1',
