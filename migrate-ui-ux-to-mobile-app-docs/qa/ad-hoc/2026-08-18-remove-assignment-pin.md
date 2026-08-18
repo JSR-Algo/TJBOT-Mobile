@@ -37,11 +37,65 @@
 | Token parity | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/check-token-parity.mjs` | 0 | 7 token files verified. |
 | Route coverage | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/check-route-coverage.mjs` | 0 | 135 screen files, 127 routes, 127 feature registrations, zero duplicates. |
 | Screen prop types | `/Users/manhhodinh/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/check-screen-prop-types.mjs` | 0 | 135 screen files checked. |
-| Parent PIN scope scan | `rg -n "authenticateParent|Parent PIN" src/features/parent tests/e2e/parent-settings.test.tsx` | 0 | Retained parent gate production matches and parent-settings success, rejection, lockout, and re-enable test coverage. |
-| Course-library PIN scope scan | `rg -n "authenticateParent|Parent PIN|PARENT PIN" src/features/course-library tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx` | 0 | Only two negative assertions remain in `course-library-flow.test.tsx`; no production or authentication-call match. |
-| Cumulative diff check and status | `git diff --check ce94b256..HEAD && git status --short` | 0 | No whitespace errors; worktree was clean before this QA file was created. |
-| Changed-file forbidden-pattern scan | `rg -n "TODO|FIXME|HACK|@ts-ignore|@ts-expect-error|unknown as|\bany\b" src/features/course-library/UnlockConfirmModal.tsx tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx` | 0 | Two pre-existing test-language matches: `expect.any(Array)` and prose containing `any`; neither is a TypeScript suppression. |
-| Added-line forbidden-pattern scan | `git diff -U0 ce94b256..HEAD -- src/features/course-library/UnlockConfirmModal.tsx tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx \| rg -n '^\+[^+].*(TODO\|FIXME\|HACK\|@ts-ignore\|@ts-expect-error\|unknown as\|\bany\b)'` | 1 | Expected no-match exit; no forbidden pattern was introduced in added production/test lines. |
+| Parent PIN scope scan | See `Scope Scan Commands` | 0 | Retained parent gate production matches and parent-settings success, rejection, lockout, and re-enable test coverage. |
+| Course-library PIN scope scan | See `Scope Scan Commands` | 0 | Only two negative assertions remain in `course-library-flow.test.tsx`; no production or authentication-call match. |
+| Cumulative diff check and status | `git diff --check ce94b256..HEAD && git status --short` | 0 | No whitespace errors; current worktree clean. |
+| Changed-file forbidden-pattern scan | See `Forbidden-Pattern Scan Commands` | 0 | Two pre-existing test-language matches: `expect.any(Array)` and prose containing `any`; neither is a TypeScript suppression. |
+| Added-line forbidden-pattern scan | See `Forbidden-Pattern Scan Commands` | git: 0, rg: 1 | Expected no-match result; no forbidden pattern was introduced in added implementation/test lines. |
+
+## Scope Scan Commands
+
+### Parent PIN Retention
+
+```sh
+rg -n 'authenticateParent|Parent PIN' src/features/parent tests/e2e/parent-settings.test.tsx
+```
+
+Result: exit 0. Matches remain in `ParentGateScreen.tsx` and in the parent-settings tests for accepted PIN, rejected PIN, lockout, and retry behavior.
+
+### Course-Library PIN Removal
+
+```sh
+rg -n 'authenticateParent|Parent PIN|PARENT PIN' src/features/course-library tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx
+```
+
+Result: exit 0 with exactly these two negative-assertion matches and no production match:
+
+```text
+tests/e2e/course-library-flow.test.tsx:177:    expect(screen.queryByText('Parent PIN required')).toBeNull();
+tests/e2e/course-library-flow.test.tsx:178:    expect(screen.queryByText('PARENT PIN')).toBeNull();
+```
+
+## Forbidden-Pattern Scan Commands
+
+### Changed Files
+
+```sh
+rg -n 'TODO|FIXME|HACK|@ts-ignore|@ts-expect-error|unknown as|\bany\b' src/features/course-library/UnlockConfirmModal.tsx tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx
+```
+
+Result: exit 0 with exactly two benign, pre-existing test-language matches:
+
+```text
+tests/e2e/course-library-flow.test.tsx:615:      expect.any(Array),
+tests/e2e/course-library-flow.test.tsx:1044:  it('gates whole-course assignment when any published lesson is still preparing', async () => {
+```
+
+### Added Implementation/Test Lines
+
+The zsh `pipestatus` array distinguishes a successful `git diff` from the expected ripgrep no-match result.
+
+```sh
+git diff --unified=0 ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d -- src/features/course-library/UnlockConfirmModal.tsx tests/e2e/course-library-flow.test.tsx tests/e2e/course-progress-stability.test.tsx | rg '^\+.*(TODO|FIXME|HACK|@ts-ignore|@ts-expect-error|unknown as|\bany\b)'
+scan_statuses=("${pipestatus[@]}")
+printf 'git_diff_exit=%s rg_exit=%s\n' "${scan_statuses[1]}" "${scan_statuses[2]}"
+```
+
+Result: no match output; status output was:
+
+```text
+git_diff_exit=0 rg_exit=1
+```
 
 ## Scope Findings
 
