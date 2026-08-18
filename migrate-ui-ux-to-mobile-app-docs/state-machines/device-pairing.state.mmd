@@ -5,6 +5,7 @@ stateDiagram-v2
     WifiSelection --> EncryptedBluFi: SSID + transient password ready
     EncryptedBluFi --> Failed: STA_CONN_FAIL / GATT error / timeout
     EncryptedBluFi --> BackendConfirmation: STA_CONN_SUCCESS
+    EncryptedBluFi --> BackendConfirmation: owned reconnect timeout + fresh post-handoff heartbeat
     BackendConfirmation --> Rename: first-pair claim confirmed
     BackendConfirmation --> Success: offline robot registered and online
     BackendConfirmation --> DeviceHome: owned robot reconnects online
@@ -23,5 +24,8 @@ stateDiagram-v2
 
     note right of BackendConfirmation
       Backend owns claim, ownership, token, status, and heartbeat.
+      A reconnect timeout is recoverable only when online=true and
+      lastSeenAt is valid and not older than the current handoff.
+      Stale or missing heartbeat timestamps remain failures.
       ESP server is contacted only after firmware is online.
     end note

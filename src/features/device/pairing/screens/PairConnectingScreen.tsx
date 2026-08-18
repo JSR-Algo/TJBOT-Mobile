@@ -144,6 +144,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       });
       return;
     }
+    const reconnectAttemptStartedAtMs = transport === 'ble_reconnect' ? Date.now() : undefined;
     const run = runLocalBleProvisioning({
       deviceId,
       serialNumber,
@@ -238,6 +239,29 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       recoveryDeviceId = readString(errorRecord, 'deviceId') ?? recoveryDeviceId;
       let resolvedError = error;
       const deliveryUnknown = isDeliveryUnknown(error);
+      if (
+        transport === 'ble_reconnect'
+        && reconnectAttemptStartedAtMs !== undefined
+        && errorCodeFrom(error, '') === 'WIFI_CONNECT_TIMEOUT'
+      ) {
+        try {
+          await waitForDeviceOnline(
+            recoveryDeviceId,
+            poll,
+            'WIFI_CONNECT_TIMEOUT',
+            DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+            reconnectAttemptStartedAtMs,
+          );
+          if (cancelled) return;
+          clearPairingBootstrapToken(recoveryAttemptId);
+          setI(PAIRING_STEP_COUNT);
+          setStatus('authenticated');
+          navigation.reset({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] });
+          return;
+        } catch (reconciliationError: unknown) {
+          resolvedError = reconciliationError;
+        }
+      }
       if (deliveryUnknown && (transport === 'ble' || transport === 'ble_claim')) {
         try {
         const authenticated = code
@@ -540,13 +564,14 @@ async function waitForDeviceOnline(
   poll: PollController,
   timeoutCode = 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
   maxAttempts = DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+  notBeforeMs?: number,
 ): Promise<Awaited<ReturnType<typeof getDeviceStatus>>> {
   let lastStatus: Awaited<ReturnType<typeof getDeviceStatus>> | undefined;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
       const status = await getDeviceStatus(deviceId);
       lastStatus = status;
-      if (status.online) return status;
+      if (isAcceptableOnlineStatus(status, notBeforeMs)) return status;
     } catch (error: unknown) {
       // 404 / DEVICE_NOT_FOUND / transient network while the robot is still
       // joining Wi-Fi must not abort the wait — only the timeout is terminal.
@@ -564,6 +589,17 @@ async function waitForDeviceOnline(
   throw Object.assign(new Error('Device did not come online'), {
     code: timeoutCode,
   });
+}
+
+function isAcceptableOnlineStatus(
+  status: Awaited<ReturnType<typeof getDeviceStatus>>,
+  notBeforeMs?: number,
+): boolean {
+  if (!status.online) return false;
+  if (notBeforeMs === undefined) return true;
+  if (!status.lastSeenAt) return false;
+  const lastSeenAtMs = Date.parse(status.lastSeenAt);
+  return Number.isFinite(lastSeenAtMs) && lastSeenAtMs >= notBeforeMs;
 }
 
 function isRetryableDeviceOnlinePollError(error: unknown): boolean {
