@@ -45,10 +45,49 @@
 
 ## Scope Findings
 
-- The implementation diff from `ce94b256..HEAD` changes only `UnlockConfirmModal.tsx` and the two planned course-library test files: 50 insertions and 204 deletions.
+- The implementation range `ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d` changes exactly the three planned production/test files: 50 insertions and 204 deletions.
+- The cumulative range `ce94b256..8224de39` also includes this QA artifact: four files changed, 107 insertions and 204 deletions.
 - Course-library production no longer references `authenticateParent` or PIN copy. The focused test retains only explicit absence assertions for `Parent PIN required` and `PARENT PIN`.
 - Parent PIN behavior remains present in `ParentGateScreen.tsx` and is exercised by `parent-settings.test.tsx`, including accepted PIN, rejected PIN, lockout, and retry behavior.
-- No API endpoint, request payload, route, parent production file, or unrelated test file changed in the cumulative implementation diff.
+- No API endpoint, request payload, route, parent production file, or unrelated test file changed in the implementation range.
+
+### Exact Range Evidence
+
+`git diff --name-status ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d`
+
+```text
+M	src/features/course-library/UnlockConfirmModal.tsx
+M	tests/e2e/course-library-flow.test.tsx
+M	tests/e2e/course-progress-stability.test.tsx
+```
+
+`git diff --stat ce94b256..45b8ef235d241dd80dedc524860590b414a08f8d`
+
+```text
+ src/features/course-library/UnlockConfirmModal.tsx | 140 +++------------------
+ tests/e2e/course-library-flow.test.tsx             |  79 +++---------
+ tests/e2e/course-progress-stability.test.tsx       |  35 +++---
+ 3 files changed, 50 insertions(+), 204 deletions(-)
+```
+
+`git diff --name-status ce94b256..8224de39`
+
+```text
+A	migrate-ui-ux-to-mobile-app-docs/qa/ad-hoc/2026-08-18-remove-assignment-pin.md
+M	src/features/course-library/UnlockConfirmModal.tsx
+M	tests/e2e/course-library-flow.test.tsx
+M	tests/e2e/course-progress-stability.test.tsx
+```
+
+`git diff --stat ce94b256..8224de39`
+
+```text
+ .../qa/ad-hoc/2026-08-18-remove-assignment-pin.md  |  57 +++++++++
+ src/features/course-library/UnlockConfirmModal.tsx | 140 +++------------------
+ tests/e2e/course-library-flow.test.tsx             |  79 +++---------
+ tests/e2e/course-progress-stability.test.tsx       |  35 +++---
+ 4 files changed, 107 insertions(+), 204 deletions(-)
+```
 
 ## Honest Notes
 
