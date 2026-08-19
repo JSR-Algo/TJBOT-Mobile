@@ -37,14 +37,14 @@ class NativeSocket {
   message(frame: unknown): void { this.onmessage?.({ data: JSON.stringify(frame) }); }
 }
 
-function setup(childId = 'child-1') {
+function setup(childId = 'child-1', reconcileWhileActive = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   const wrapper = ({ children }: React.PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   return {
     client,
-    ...renderHook<ReturnType<typeof useParentLearningStatusQuery>, { id: string }>(
-      ({ id }) => useParentLearningStatusQuery(id),
-      { initialProps: { id: childId }, wrapper },
+    ...renderHook<ReturnType<typeof useParentLearningStatusQuery>, { id: string; reconcile: boolean }>(
+      ({ id, reconcile }) => useParentLearningStatusQuery(id, { reconcileWhileActive: reconcile }),
+      { initialProps: { id: childId, reconcile: reconcileWhileActive }, wrapper },
     ),
   };
 }
@@ -287,6 +287,21 @@ describe('useParentLearningStatusQuery', () => {
 
     act(() => resolveRefresh({ ...inactive, projectionRevision: '2' }));
     await waitFor(() => expect(view.result.current.isFetching).toBe(false));
+    view.unmount();
+  });
+
+  it('reconciles an active Parent Today assignment while the socket remains healthy', async () => {
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    const afterInitialLoad = mockStatus.mock.calls.length;
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(10_000); });
+
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(afterInitialLoad + 1));
+    view.rerender({ id: 'child-1', reconcile: false });
+    const afterBlur = mockStatus.mock.calls.length;
+    await act(async () => { await jest.advanceTimersByTimeAsync(20_000); });
+    expect(mockStatus).toHaveBeenCalledTimes(afterBlur);
     view.unmount();
   });
 

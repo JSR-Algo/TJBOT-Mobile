@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
@@ -41,9 +42,10 @@ function updatedLabel(timestamp: number, locale: AppLocale): string {
 
 export default function ParentTodayScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentTodayScreen);
+  const isFocused = useIsFocused();
   const { activeChild } = useHousehold();
   const { language, t } = useAppLanguage();
-  const query = useParentLearningStatusQuery(activeChild?.id);
+  const query = useParentLearningStatusQuery(activeChild?.id, { reconcileWhileActive: isFocused });
   const back = () => navigation.navigate(ROUTES.ParentSummaryScreen);
 
   if (!activeChild) return <ParentScroll title="Today" onBack={back}><Message text="Add a child to see live progress" /></ParentScroll>;

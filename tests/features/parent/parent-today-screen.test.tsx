@@ -4,6 +4,13 @@ import { useHousehold } from '@/contexts/HouseholdContext';
 import { useParentLearningStatusQuery } from '@/features/parent/hooks/useParentLearningStatusQuery';
 import ParentTodayScreen from '@/features/parent/screens/ParentTodayScreen';
 
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+  return {
+    ...actual,
+    useIsFocused: jest.fn(() => true),
+  };
+});
 jest.mock('@/features/parent/hooks/useParentGateGuard', () => ({ useParentGateGuard: () => undefined }));
 jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: jest.fn() }));
 jest.mock('@/features/parent/hooks/useParentLearningStatusQuery', () => ({ useParentLearningStatusQuery: jest.fn() }));
@@ -33,6 +40,7 @@ describe('ParentTodayScreen', () => {
 
   it('shows the active child, live lesson state, authored activity, progress, duration, and update time', () => {
     const { getByText, getByLabelText } = renderScreen();
+    expect(mockStatus).toHaveBeenCalledWith('child-1', { reconcileWhileActive: true });
     expect(getByText('Mai')).toBeTruthy();
     expect(getByLabelText('Mai avatar')).toBeTruthy();
     expect(getByText('Listening')).toBeTruthy();
@@ -68,5 +76,21 @@ describe('ParentTodayScreen', () => {
   it('shows an empty state for a child with no active lesson', () => {
     mockStatus.mockReturnValue({ data: { activeLearning: null, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
     expect(renderScreen().getByText('No lesson is active right now')).toBeTruthy();
+  });
+
+  it('does not navigate away when a lesson reaches a terminal state', () => {
+    const { navigation, rerender } = renderScreen();
+    mockStatus.mockReturnValue({
+      data: { activeLearning: { ...activeLearning, state: 'COMPLETED' }, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '13' },
+      dataUpdatedAt: Date.now(),
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      fetchStatus: 'idle',
+      refetch: jest.fn(),
+    } as never);
+    rerender(<ParentTodayScreen navigation={navigation as never} route={{ key: 'today', name: 'ParentTodayScreen', params: undefined } as never} />);
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 });

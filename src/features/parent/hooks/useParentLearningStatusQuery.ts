@@ -136,7 +136,14 @@ function releaseParentRealtime(entries: Map<string, SharedRealtimeEntry>, childI
   else void entry.connection.then(connection => connection?.close(1000, 'unmounted'));
 }
 
-export function useParentLearningStatusQuery(childId: string | undefined): UseQueryResult<ParentLearningStatus, Error> {
+export type ParentLearningStatusQueryOptions = {
+  reconcileWhileActive?: boolean;
+};
+
+export function useParentLearningStatusQuery(
+  childId: string | undefined,
+  options: ParentLearningStatusQueryOptions = {},
+): UseQueryResult<ParentLearningStatus, Error> {
   const queryClient = useQueryClient();
   const enabled = Boolean(childId);
   const query = useQuery<ParentLearningStatus, Error>({
@@ -169,7 +176,12 @@ export function useParentLearningStatusQuery(childId: string | undefined): UseQu
   }, [childId, hasInitialStatus, queryClient]);
 
   const active = query.data?.activeLearning;
-  const shouldPoll = Boolean(active && !TERMINAL_STATES.has(active.state) && foreground && socketExhausted);
+  const shouldPoll = Boolean(
+    active
+    && !TERMINAL_STATES.has(active.state)
+    && foreground
+    && (socketExhausted || options.reconcileWhileActive),
+  );
   React.useEffect(() => {
     if (!shouldPoll || !childId) return undefined;
     const timer = setInterval(() => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); }, 10_000);
