@@ -62,9 +62,22 @@ describe('ParentTodayScreen', () => {
     expect(renderScreen().getByText(copy)).toBeTruthy();
   });
 
-  it('shows reconnecting and offline states without inventing lesson data', () => {
-    mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: true, fetchStatus: 'fetching', refetch: jest.fn() } as never);
-    expect(renderScreen().getByText('Reconnecting…')).toBeTruthy();
+  it('keeps live lesson status header when background refetching with existing data', () => {
+    mockStatus.mockReturnValue({
+      data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' },
+      dataUpdatedAt: Date.now(),
+      isLoading: false,
+      isError: false,
+      isFetching: true,
+      fetchStatus: 'fetching',
+      refetch: jest.fn(),
+    } as never);
+    const screen = renderScreen();
+    expect(screen.getByText('Live lesson status')).toBeTruthy();
+    expect(screen.queryByText('Reconnecting…')).toBeNull();
+  });
+
+  it('shows offline state on error without inventing lesson data', () => {
     mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: true, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
     expect(renderScreen().getByText('Live progress is offline')).toBeTruthy();
     mockStatus.mockReturnValue({ data: undefined, dataUpdatedAt: 0, isLoading: false, isError: true, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
