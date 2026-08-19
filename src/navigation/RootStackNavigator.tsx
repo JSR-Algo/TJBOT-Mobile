@@ -38,6 +38,7 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
     pendingDeviceSetup,
     protectedInitialRoute = PROTECTED_DEFAULT_ROUTE,
   } = useHousehold();
+  const protectedBranchMounted = React.useRef(false);
   const [ageGate, setAgeGate] = React.useState<AgeGateState>({ status: 'loading' });
   const [recoveryCheckpoint, setRecoveryCheckpoint] = React.useState<RecoveryCheckpointState>({ status: 'loading' });
 
@@ -92,7 +93,7 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
   if (
     ageGate.status === 'loading' ||
     isLoading ||
-    (isAuthenticated && householdLoading)
+    (isAuthenticated && householdLoading && !protectedBranchMounted.current)
   ) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
@@ -108,6 +109,10 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
         onComplete={(answer) => setAgeGate({ status: 'answered', answer })}
       />
     );
+  }
+
+  if (!isAuthenticated || !onboardingComplete) {
+    protectedBranchMounted.current = false;
   }
 
   if (!isAuthenticated) return <AuthNavigator key="auth" />;
@@ -139,5 +144,6 @@ export function RootStackNavigator({ pendingDeepLinkTarget = null }: Props): Rea
     initialTarget = { name: productionInitialRoute };
   }
 
+  protectedBranchMounted.current = true;
   return <ModalNavigator key="protected" initialRouteName={initialTarget.name} initialRouteParams={initialTarget.params} />;
 }
