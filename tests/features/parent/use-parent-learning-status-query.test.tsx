@@ -42,7 +42,7 @@ function setup(childId = 'child-1', reconcileWhileActive = false) {
   const wrapper = ({ children }: React.PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   return {
     client,
-    ...renderHook<ReturnType<typeof useParentLearningStatusQuery>, { id: string; reconcile: boolean }>(
+    ...renderHook<ReturnType<typeof useParentLearningStatusQuery>, { id: string; reconcile?: boolean }>(
       ({ id, reconcile }) => useParentLearningStatusQuery(id, { reconcileWhileActive: reconcile }),
       { initialProps: { id: childId, reconcile: reconcileWhileActive }, wrapper },
     ),
