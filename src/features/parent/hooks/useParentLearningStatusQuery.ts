@@ -176,11 +176,12 @@ export function useParentLearningStatusQuery(
   }, [childId, hasInitialStatus, queryClient]);
 
   const active = query.data?.activeLearning;
+  const isTerminal = Boolean(active && TERMINAL_STATES.has(active.state));
+  const hasActiveLesson = Boolean(active && !isTerminal);
   const shouldPoll = Boolean(
-    active
-    && !TERMINAL_STATES.has(active.state)
-    && foreground
-    && (socketExhausted || options.reconcileWhileActive),
+    foreground
+    && !isTerminal
+    && (options.reconcileWhileActive || (socketExhausted && hasActiveLesson)),
   );
   React.useEffect(() => {
     if (!shouldPoll || !childId) return undefined;

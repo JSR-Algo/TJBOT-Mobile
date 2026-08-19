@@ -290,6 +290,21 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
+  it('reconciles and surfaces a newly created assignment when opened with inactive status and healthy-silent socket', async () => {
+    mockStatus.mockResolvedValueOnce({ ...inactive, projectionRevision: '0' });
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    act(() => sockets[0].open());
+    await waitFor(() => expect(view.result.current.data?.activeLearning).toBeNull());
+    const afterInitial = mockStatus.mock.calls.length;
+
+    mockStatus.mockResolvedValueOnce(active);
+    await act(async () => { await jest.advanceTimersByTimeAsync(10_000); });
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(afterInitial + 1));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.assignmentId).toBe('a'));
+    view.unmount();
+  });
+
   it('reconciles an active Parent Today assignment while the socket remains healthy', async () => {
     const view = setup('child-1', true);
     await waitFor(() => expect(sockets).toHaveLength(1));
