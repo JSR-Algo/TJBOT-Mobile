@@ -2,7 +2,7 @@ import React from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useQuery, useQueryClient, type QueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { getParentLearningStatus, type ParentActiveLearning, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
-import { openParentProgressRealtime, type ParentActiveLearningDelta, type ParentProgressUpdatedFrame } from '@/services/ws/parentProgressRealtime';
+import { compareProjectionRevisions, openParentProgressRealtime, type ParentActiveLearningDelta, type ParentProgressUpdatedFrame } from '@/services/ws/parentProgressRealtime';
 import type { RealtimeConnection } from '@/services/ws/realtime';
 import { parentLearningHistoryKey } from './useParentLearningHistoryQuery';
 
@@ -22,6 +22,16 @@ interface SharedRealtimeEntry {
 }
 
 const sharedRealtimeByClient = new WeakMap<QueryClient, Map<string, SharedRealtimeEntry>>();
+
+function newestParentLearningStatus(
+  current: ParentLearningStatus | undefined,
+  incoming: ParentLearningStatus,
+): ParentLearningStatus {
+  if (!current) return incoming;
+  return compareProjectionRevisions(incoming.projectionRevision, current.projectionRevision) < 0
+    ? current
+    : incoming;
+}
 
 function isCompleteCurrentStep(step: Partial<ParentLearningStep>): step is ParentLearningStep {
   return typeof step.stepId === 'string'
@@ -58,6 +68,7 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
     || (frame.activeLearning.state !== undefined && TERMINAL_STATES.has(frame.activeLearning.state));
   queryClient.setQueryData<ParentLearningStatus>(parentLearningStatusKey(childId), (current) => {
     if (!current) return current;
+    if (compareProjectionRevisions(frame.projectionRevision, current.projectionRevision) < 0) return current;
     if (terminalUpdate) return { ...current, activeLearning: null, projectionRevision: frame.projectionRevision };
     if (frame.activeLearning === null) return current;
     if (!current.activeLearning) {
@@ -96,7 +107,13 @@ function acquireParentRealtime(queryClient: QueryClient, childId: string, revisi
   const broadcast = (value: boolean) => listeners.forEach(notify => notify(value));
   const entry: SharedRealtimeEntry = { refs: 1, listeners, connection: Promise.resolve(null) };
   entry.connection = openParentProgressRealtime(childId, revision, {
-      onStatus: (status) => { queryClient.setQueryData(parentLearningStatusKey(childId), status); invalidateDependentProgress(queryClient, childId); },
+      onStatus: (status) => {
+        queryClient.setQueryData<ParentLearningStatus>(
+          parentLearningStatusKey(childId),
+          current => newestParentLearningStatus(current, status),
+        );
+        invalidateDependentProgress(queryClient, childId);
+      },
       onUpdate: (frame) => mergeRealtimeUpdate(queryClient, childId, frame),
       onInvalidate: () => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); invalidateDependentProgress(queryClient, childId); },
       onAuthExpired: () => {
@@ -122,7 +139,15 @@ function releaseParentRealtime(entries: Map<string, SharedRealtimeEntry>, childI
 export function useParentLearningStatusQuery(childId: string | undefined): UseQueryResult<ParentLearningStatus, Error> {
   const queryClient = useQueryClient();
   const enabled = Boolean(childId);
-  const query = useQuery<ParentLearningStatus, Error>({ queryKey: parentLearningStatusKey(childId ?? ''), queryFn: () => getParentLearningStatus(childId!), enabled });
+  const query = useQuery<ParentLearningStatus, Error>({
+    queryKey: parentLearningStatusKey(childId ?? ''),
+    queryFn: async () => {
+      const incoming = await getParentLearningStatus(childId!);
+      const current = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId!));
+      return newestParentLearningStatus(current, incoming);
+    },
+    enabled,
+  });
   const [foreground, setForeground] = React.useState(AppState.currentState === 'active');
   const [socketExhausted, setSocketExhausted] = React.useState(false);
   const hasInitialStatus = query.data !== undefined;
