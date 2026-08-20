@@ -332,6 +332,142 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
+  it('does not regress when an older HTTP projection resolves after a newer realtime step', async () => {
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    let resolveRefresh!: (status: ParentLearningStatus) => void;
+    mockStatus.mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve; }));
+    const callsBeforeUpdate = mockStatus.mock.calls.length;
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '6',
+      occurredAt: '2026-08-20T00:00:00Z', publishedAt: '2026-08-20T00:00:01Z',
+      activeLearning: {
+        ...active.activeLearning,
+        state: 'RUNNING', positionPercent: 67, activeDurationSec: 60,
+        currentStep: { stepId: 'step-6', stepNumber: 6, total: 9, activityTitle: 'Activity 6', phase: 'practice', subject: null },
+      },
+    }));
+
+    await waitFor(() => expect(view.result.current.data).toMatchObject({
+      projectionRevision: '6',
+      activeLearning: { positionPercent: 67, currentStep: { stepNumber: 6 } },
+    }));
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeUpdate + 1));
+
+    act(() => resolveRefresh({
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!,
+        state: 'RUNNING', positionPercent: 44,
+        currentStep: { stepId: 'step-4', stepNumber: 4, total: 9, activityTitle: 'Activity 4', phase: 'practice', subject: null },
+      },
+      projectionRevision: '4',
+    }));
+
+    await waitFor(() => expect(view.result.current.isFetching).toBe(false));
+    expect(view.result.current.data).toMatchObject({
+      projectionRevision: '6',
+      activeLearning: { positionPercent: 67, currentStep: { stepNumber: 6 } },
+    });
+    view.unmount();
+  });
+
+  it('does not resurrect active learning when an older HTTP projection resolves after completion', async () => {
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    let resolveRefresh!: (status: ParentLearningStatus) => void;
+    mockStatus.mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve; }));
+    const callsBeforeUpdate = mockStatus.mock.calls.length;
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '10',
+      occurredAt: '2026-08-20T00:00:10Z', publishedAt: '2026-08-20T00:00:11Z', activeLearning: null,
+    }));
+
+    await waitFor(() => expect(view.result.current.data).toMatchObject({
+      projectionRevision: '10', activeLearning: null,
+    }));
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(callsBeforeUpdate + 1));
+
+    act(() => resolveRefresh({
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!,
+        state: 'RUNNING', positionPercent: 100,
+        currentStep: { stepId: 'step-9', stepNumber: 9, total: 9, activityTitle: 'Activity 9', phase: 'practice', subject: null },
+      },
+      projectionRevision: '9',
+    }));
+
+    await waitFor(() => expect(view.result.current.isFetching).toBe(false));
+    expect(view.result.current.data).toMatchObject({ projectionRevision: '10', activeLearning: null });
+    view.unmount();
+  });
+
+  it('does not let an older realtime frame overwrite a newer HTTP projection', async () => {
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    view.client.setQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'), {
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!,
+        state: 'RUNNING', positionPercent: 67,
+        currentStep: { stepId: 'step-6', stepNumber: 6, total: 9, activityTitle: 'Activity 6', phase: 'practice', subject: null },
+      },
+      projectionRevision: '6',
+    });
+
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
+      occurredAt: '2026-08-20T00:00:00Z', publishedAt: '2026-08-20T00:00:01Z',
+      activeLearning: {
+        ...active.activeLearning,
+        state: 'RUNNING', positionPercent: 22, activeDurationSec: 20,
+        currentStep: { stepId: 'step-2', stepNumber: 2, total: 9, activityTitle: 'Activity 2', phase: 'practice', subject: null },
+      },
+    }));
+
+    expect(view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'))).toMatchObject({
+      projectionRevision: '6',
+      activeLearning: { positionPercent: 67, currentStep: { stepNumber: 6 } },
+    });
+    view.unmount();
+  });
+
+  it('does not let an older realtime snapshot overwrite a newer HTTP projection', async () => {
+    const view = setup();
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    view.client.setQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'), {
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!,
+        state: 'RUNNING', positionPercent: 67,
+        currentStep: { stepId: 'step-6', stepNumber: 6, total: 9, activityTitle: 'Activity 6', phase: 'practice', subject: null },
+      },
+      projectionRevision: '6',
+    });
+
+    act(() => sockets[0].message({
+      type: 'lesson.progress.snapshot', childId: 'child-1', projectionRevision: '2',
+      status: {
+        ...active,
+        activeLearning: {
+          ...active.activeLearning!,
+          state: 'RUNNING', positionPercent: 22,
+          currentStep: { stepId: 'step-2', stepNumber: 2, total: 9, activityTitle: 'Activity 2', phase: 'practice', subject: null },
+        },
+        projectionRevision: '2',
+      },
+    }));
+
+    expect(view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'))).toMatchObject({
+      projectionRevision: '6',
+      activeLearning: { positionPercent: 67, currentStep: { stepNumber: 6 } },
+    });
+    view.unmount();
+  });
+
   it('falls back to polling when the initial realtime connection rejects', async () => {
     mockToken.mockResolvedValue(null);
     const view = setup();
