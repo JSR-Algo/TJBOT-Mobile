@@ -43,7 +43,7 @@ export default function ParentTodayScreen({ navigation }: Props) {
   useParentGateGuard(navigation, ROUTES.ParentTodayScreen);
   const { activeChild } = useHousehold();
   const { language, t } = useAppLanguage();
-  const query = useParentLearningStatusQuery(activeChild?.id);
+  const query = useParentLearningStatusQuery(activeChild?.id, { reconcileWhileActive: isFocused });
   const back = () => navigation.navigate(ROUTES.ParentSummaryScreen);
 
   if (!activeChild) return <ParentScroll title="Today" onBack={back}><Message text="Add a child to see live progress" /></ParentScroll>;

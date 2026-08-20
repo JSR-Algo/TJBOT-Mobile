@@ -37,14 +37,14 @@ class NativeSocket {
   message(frame: unknown): void { this.onmessage?.({ data: JSON.stringify(frame) }); }
 }
 
-function setup(childId = 'child-1') {
+function setup(childId = 'child-1', reconcileWhileActive = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   const wrapper = ({ children }: React.PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   return {
     client,
-    ...renderHook<ReturnType<typeof useParentLearningStatusQuery>, { id: string }>(
-      ({ id }) => useParentLearningStatusQuery(id),
-      { initialProps: { id: childId }, wrapper },
+    ...renderHook<ReturnType<typeof useParentLearningStatusQuery>, { id: string; reconcile?: boolean }>(
+      ({ id, reconcile }) => useParentLearningStatusQuery(id, { reconcileWhileActive: reconcile }),
+      { initialProps: { id: childId, reconcile: reconcileWhileActive }, wrapper },
     ),
   };
 }
@@ -258,6 +258,77 @@ describe('useParentLearningStatusQuery', () => {
 
     act(() => resolveRefresh({ ...inactive, projectionRevision: '2' }));
     await waitFor(() => expect(view.result.current.isFetching).toBe(false));
+    view.unmount();
+  });
+
+  it('reconciles and surfaces a newly created assignment when opened with inactive status and healthy-silent socket', async () => {
+    mockStatus.mockResolvedValueOnce({ ...inactive, projectionRevision: '0' });
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    act(() => sockets[0].open());
+    await waitFor(() => expect(view.result.current.data?.activeLearning).toBeNull());
+    const afterInitial = mockStatus.mock.calls.length;
+
+    mockStatus.mockResolvedValueOnce(active);
+    await act(async () => { await jest.advanceTimersByTimeAsync(9_000); });
+    expect(mockStatus).toHaveBeenCalledTimes(afterInitial);
+    await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(afterInitial + 1));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.assignmentId).toBe('a'));
+    view.unmount();
+  });
+
+  it('reconciles an active Parent Today assignment while the socket remains healthy', async () => {
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    const afterInitialLoad = mockStatus.mock.calls.length;
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
+
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(afterInitialLoad + 1));
+    view.rerender({ id: 'child-1', reconcile: false });
+    const afterBlur = mockStatus.mock.calls.length;
+    await act(async () => { await jest.advanceTimersByTimeAsync(20_000); });
+    expect(mockStatus).toHaveBeenCalledTimes(afterBlur);
+    view.unmount();
+  });
+
+  it('reconciles every short step transition while Parent Today is focused and realtime is silent', async () => {
+    mockStatus.mockResolvedValueOnce({
+      ...active,
+      activeLearning: { ...active.activeLearning!, currentStep: null, positionPercent: 0 },
+      projectionRevision: '0',
+    });
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    act(() => sockets[0].open());
+
+    const observedSteps: number[] = [];
+    for (let stepNumber = 1; stepNumber <= 9; stepNumber += 1) {
+      mockStatus.mockResolvedValueOnce({
+        ...active,
+        activeLearning: {
+          ...active.activeLearning!,
+          state: 'RUNNING',
+          currentStep: {
+            stepId: `step-${stepNumber}`,
+            stepNumber,
+            total: 9,
+            activityTitle: `Activity ${stepNumber}`,
+            phase: 'teaching',
+            subject: null,
+          },
+          positionPercent: Math.round((stepNumber / 9) * 100),
+        },
+        projectionRevision: String(stepNumber),
+      });
+
+      await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
+      await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(stepNumber));
+      observedSteps.push(view.result.current.data!.activeLearning!.currentStep!.stepNumber);
+    }
+
+    expect(observedSteps).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     view.unmount();
   });
 
