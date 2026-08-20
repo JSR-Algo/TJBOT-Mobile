@@ -8,6 +8,8 @@ import { parentLearningHistoryKey } from './useParentLearningHistoryQuery';
 
 export const parentLearningStatusKey = (childId: string) => ['parent-learning-status', childId] as const;
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'ABANDONED', 'CANCELLED']);
+const FOCUSED_ACTIVE_RECONCILE_INTERVAL_MS = 1_000;
+const FALLBACK_POLL_INTERVAL_MS = 10_000;
 
 function invalidateDependentProgress(queryClient: QueryClient, childId: string): void {
   void queryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
@@ -178,16 +180,20 @@ export function useParentLearningStatusQuery(
   const active = query.data?.activeLearning;
   const isTerminal = Boolean(active && TERMINAL_STATES.has(active.state));
   const hasActiveLesson = Boolean(active && !isTerminal);
-  const shouldPoll = Boolean(
-    foreground
-    && !isTerminal
-    && (options.reconcileWhileActive || (socketExhausted && hasActiveLesson)),
-  );
+  const focusedReconcile = foreground && !isTerminal && options.reconcileWhileActive;
+  const fallbackPoll = foreground && socketExhausted && hasActiveLesson;
+  const pollIntervalMs = focusedReconcile
+    ? hasActiveLesson
+      ? FOCUSED_ACTIVE_RECONCILE_INTERVAL_MS
+      : FALLBACK_POLL_INTERVAL_MS
+    : fallbackPoll
+      ? FALLBACK_POLL_INTERVAL_MS
+      : null;
   React.useEffect(() => {
-    if (!shouldPoll || !childId) return undefined;
-    const timer = setInterval(() => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); }, 10_000);
+    if (pollIntervalMs === null || !childId) return undefined;
+    const timer = setInterval(() => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); }, pollIntervalMs);
     return () => clearInterval(timer);
-  }, [childId, queryClient, shouldPoll]);
+  }, [childId, pollIntervalMs, queryClient]);
 
   return query;
 }
