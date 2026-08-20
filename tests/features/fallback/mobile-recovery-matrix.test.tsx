@@ -39,6 +39,7 @@ const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<t
 const mockedClearRecoveryCheckpoint = clearRecoveryCheckpoint as jest.MockedFunction<typeof clearRecoveryCheckpoint>;
 
 const phases: readonly LessonPhase[] = ['connecting', 'greeting', 'listening', 'speaking', 'done'];
+const resumablePhases = phases.filter((phase): phase is Exclude<LessonPhase, 'done'> => phase !== 'done');
 
 function activeCheckpoint(phase: LessonPhase): LessonCheckpoint {
   return {
@@ -218,26 +219,23 @@ describe('mobile lesson recovery screen matrix', () => {
     jest.useRealTimers();
   });
 
-  it('renders resume UI for authoritatively live app-killed phases and ended UI for done', async () => {
-    for (const phase of phases.filter((value) => value !== 'done')) {
-      const navigation = createNavigation();
-      const checkpoint = activeCheckpoint(phase);
-      const view = render(
-        <LessonResumeScreen
-          navigation={navigation as never}
-          route={routeFor(ROUTES.LessonResumeScreen, { checkpoint })}
-        />,
-      );
-
-      expect(await view.findByText('Greetings')).toBeTruthy();
-      expect(view.getByText('Keep going')).toBeTruthy();
-      view.unmount();
-    }
-
+  it.each(resumablePhases)('renders resume UI for an authoritatively live app-killed %s phase', async (phase) => {
     const navigation = createNavigation();
-    render(
+    const view = render(
       <LessonResumeScreen
         navigation={navigation as never}
+        route={routeFor(ROUTES.LessonResumeScreen, { checkpoint: activeCheckpoint(phase) })}
+      />,
+    );
+
+    expect(await view.findByText('Greetings')).toBeTruthy();
+    expect(view.getByText('Keep going')).toBeTruthy();
+  });
+
+  it('renders ended UI for a done checkpoint', () => {
+    render(
+      <LessonResumeScreen
+        navigation={createNavigation() as never}
         route={routeFor(ROUTES.LessonResumeScreen, { checkpoint: activeCheckpoint('done') })}
       />,
     );

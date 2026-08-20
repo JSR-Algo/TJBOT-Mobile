@@ -11,7 +11,7 @@
  */
 import { NativeModules, Platform } from 'react-native';
 import * as Device from 'expo-device';
-import { ENV } from './__env__';
+import { ENV } from 'tbot-runtime-env';
 
 const HOSTED_API_ROOT = 'https://tbot-backend-8wmh.onrender.com';
 const HOSTED_API = `${HOSTED_API_ROOT}/v1`;

@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 
 /**
@@ -10,7 +11,7 @@ import { join } from 'path';
  * The function re-reads ENV / NativeModules / Device.isDevice on each call,
  * but it captures __DEV__ and Platform.OS lazily through closures, so the
  * cleanest way to vary inputs per test is jest.isolateModules + per-test
- * jest.doMock of './__env__', 'react-native', and 'expo-device'.
+ * jest.doMock of the runtime env alias, 'react-native', and 'expo-device'.
  */
 
 describe('getApiBaseUrl resolution order', () => {
@@ -18,33 +19,24 @@ describe('getApiBaseUrl resolution order', () => {
     jest.resetModules();
   });
 
-  it('generates TBOT_API_URL from EXPO_PUBLIC_API_BASE_URL for EAS production builds', () => {
-    const generatedEnvPath = join(__dirname, '..', '..', 'src', '__env__.ts');
-    const originalGeneratedEnv = readFileSync(generatedEnvPath, 'utf8');
-    const originalTbotApiUrl = process.env.TBOT_API_URL;
-    const originalExpoApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  it('generates an external runtime module from EXPO_PUBLIC_API_BASE_URL for EAS production builds', () => {
+    const outputDir = mkdtempSync(join(tmpdir(), 'tbot-mobile-env-'));
+    const outputPath = join(outputDir, '__env__.ts');
+    const { writeRuntimeEnv } = require('../../scripts/runtime/generate-mobile-env.cjs') as {
+      writeRuntimeEnv: (repoRoot: string, env: Record<string, string | undefined>, outputPath: string) => string;
+    };
 
     try {
-      process.env.TBOT_API_URL = '';
-      process.env.EXPO_PUBLIC_API_BASE_URL = 'https://tbot-backend-8wmh.onrender.com/v1';
-      jest.resetModules();
-      jest.doMock('expo/metro-config', () => ({
-        getDefaultConfig: () => ({ resolver: { sourceExts: [], resolverMainFields: [] } }),
-      }));
+      writeRuntimeEnv(join(__dirname, '..', '..'), {
+        TBOT_API_URL: '',
+        EXPO_PUBLIC_API_BASE_URL: 'https://example.invalid/v1',
+      }, outputPath);
 
-
-      require('../../metro.config.js');
-
-      expect(readFileSync(generatedEnvPath, 'utf8')).toContain(
-        'TBOT_API_URL: "https://tbot-backend-8wmh.onrender.com/v1"',
+      expect(readFileSync(outputPath, 'utf8')).toContain(
+        'TBOT_API_URL: "https://example.invalid/v1"',
       );
     } finally {
-      writeFileSync(generatedEnvPath, originalGeneratedEnv);
-      if (originalTbotApiUrl === undefined) delete process.env.TBOT_API_URL;
-      else process.env.TBOT_API_URL = originalTbotApiUrl;
-      if (originalExpoApiBaseUrl === undefined) delete process.env.EXPO_PUBLIC_API_BASE_URL;
-      else process.env.EXPO_PUBLIC_API_BASE_URL = originalExpoApiBaseUrl;
-      jest.dontMock('expo/metro-config');
+      rmSync(outputDir, { recursive: true, force: true });
     }
   });
 
@@ -65,7 +57,7 @@ describe('getApiBaseUrl resolution order', () => {
       dev = true,
     } = opts;
 
-    jest.doMock('../../src/__env__', () => ({
+    jest.doMock('tbot-runtime-env', () => ({
       ENV: {
         TBOT_API_URL: envApiUrl,
         TBOT_AI_URL: envAiUrl,

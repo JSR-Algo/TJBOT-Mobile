@@ -25,6 +25,7 @@
     "release:ios:testflight": "bundle exec fastlane ios beta_ios",
     "pods:ios": "node scripts/runtime/mobile-run.mjs pods",
     "runtime:doctor": "node scripts/runtime/mobile-run.mjs doctor",
+    "runtime:env:generate": "node scripts/runtime/generate-mobile-env.cjs",
     "e2e:mobile": "node scripts/e2e-mobile.js",
     "e2e:mobile:local": "TBOT_API_URL=http://localhost:3000 node scripts/e2e-mobile.js",
     "smoke:provisioning:ios": "node scripts/physical-provisioning-smoke.mjs --platform=ios",
@@ -129,6 +130,7 @@
       {
         "displayName": "unit",
         "preset": "react-native",
+        "maxWorkers": 1,
         "setupFiles": [
           "<rootDir>/tests/setup.ts"
         ],
@@ -137,9 +139,11 @@
         ],
         "moduleNameMapper": {
           "^@/(.*)$": "<rootDir>/src/$1",
+          "^tbot-runtime-env$": "<rootDir>/src/__env__.defaults.ts",
           "expo-secure-store": "<rootDir>/tests/__mocks__/expo-secure-store.ts",
           "expo-av": "<rootDir>/tests/__mocks__/expo-av.ts",
           "expo-haptics": "<rootDir>/tests/__mocks__/expo-haptics.ts",
+          "expo-keep-awake": "<rootDir>/tests/__mocks__/expo-keep-awake.ts",
           "expo-audio": "<rootDir>/tests/__mocks__/expo-audio.ts",
           "expo-notifications": "<rootDir>/tests/__mocks__/expo-notifications.ts",
           "expo-device": "<rootDir>/tests/__mocks__/expo-device.ts",
@@ -171,6 +175,11 @@
         "setupFilesAfterEnv": [
           "<rootDir>/tests/setup-after-env.ts"
         ],
+        "moduleNameMapper": {
+          "^@/(.*)$": "<rootDir>/src/$1",
+          "^tbot-runtime-env$": "<rootDir>/src/__env__.defaults.ts",
+          "expo-keep-awake": "<rootDir>/tests/__mocks__/expo-keep-awake.ts"
+        },
         "testMatch": [
           "<rootDir>/tests/integration/**/*.test.{ts,tsx}"
         ],

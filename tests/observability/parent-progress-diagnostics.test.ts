@@ -2,7 +2,7 @@ import {
   logParentProgressDiagnostic,
   setParentProgressDiagnosticsEnabledForTest,
 } from '@/services/observability/parentProgressDiagnostics';
-import { ENV } from '@/__env__';
+import { ENV } from 'tbot-runtime-env';
 
 describe('parent progress diagnostics', () => {
   const info = jest.spyOn(console, 'info').mockImplementation(() => undefined);

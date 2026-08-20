@@ -1,4 +1,4 @@
-import { ENV } from '@/__env__';
+import { ENV } from 'tbot-runtime-env';
 
 export type ParentProgressDiagnosticSource = 'ws' | 'focused_http';
 
