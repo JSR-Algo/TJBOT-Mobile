@@ -5,6 +5,7 @@ import { useParentLearningStatusQuery } from '@/features/parent/hooks/useParentL
 import ParentTodayScreen from '@/features/parent/screens/ParentTodayScreen';
 
 jest.mock('@/features/parent/hooks/useParentGateGuard', () => ({ useParentGateGuard: () => undefined }));
+jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
 jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: jest.fn() }));
 jest.mock('@/features/parent/hooks/useParentLearningStatusQuery', () => ({ useParentLearningStatusQuery: jest.fn() }));
 
@@ -54,9 +55,14 @@ describe('ParentTodayScreen', () => {
     expect(renderScreen().getByText(copy)).toBeTruthy();
   });
 
-  it('shows reconnecting and offline states without inventing lesson data', () => {
+  it('keeps cached live status visible during background reconciliation', () => {
     mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: true, fetchStatus: 'fetching', refetch: jest.fn() } as never);
-    expect(renderScreen().getByText('Reconnecting…')).toBeTruthy();
+    const refreshing = renderScreen();
+    expect(refreshing.getByText('Live lesson status')).toBeTruthy();
+    expect(refreshing.queryByText('Reconnecting…')).toBeNull();
+  });
+
+  it('shows offline states without inventing lesson data', () => {
     mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: true, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
     expect(renderScreen().getByText('Live progress is offline')).toBeTruthy();
     mockStatus.mockReturnValue({ data: undefined, dataUpdatedAt: 0, isLoading: false, isError: true, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);

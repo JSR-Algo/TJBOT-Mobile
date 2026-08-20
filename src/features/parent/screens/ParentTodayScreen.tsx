@@ -64,7 +64,7 @@ export default function ParentTodayScreen({ navigation }: Props) {
           </Box>
           <Box flex={1}>
             <Text fontWeight="800" style={styles.childName} i18n={false}>{activeChild.name}</Text>
-            <Text style={styles.muted}>{query.isError ? 'Live progress is offline' : query.isFetching ? 'Reconnecting…' : 'Live lesson status'}</Text>
+            <Text style={styles.muted}>{query.isError ? 'Live progress is offline' : 'Live lesson status'}</Text>
           </Box>
         </Box>
 
