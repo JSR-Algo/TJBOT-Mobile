@@ -30,8 +30,9 @@ Android instrumentation loads it into the target application process/UID. The te
 target context, reads the encrypted Expo SecureStore preferences, decrypts the access token using
 the target UID's Android Keystore entry, and keeps the token only in memory.
 
-The bridge performs a read-only route preflight using the existing fail-closed H1 hierarchy
-artifact supplied as an instrumentation argument. It then issues one HTTPS JSON request with
+The bridge performs a read-only live route preflight through instrumentation `UiAutomation`; it
+requires the active package and current accessibility tree to expose the Parent Today READY
+markers at the moment of execution. It then issues one HTTPS JSON request with
 `HttpURLConnection`, parses the response, verifies device/child/lesson/version/state, writes a
 secret-free JSON result under target cache storage, and clears all in-memory references on exit.
 The host pulls only that result file.
@@ -53,8 +54,8 @@ identities.
 
 ### `ParentSessionAssignmentBridgeTest`
 
-Requires `routeXml`, `resultPath`, and a one-use `confirmAssignmentId=PASS42` arming value. It
-validates route XML markers before reading SecureStore, confirms the target package is foreground,
+Requires `resultPath` and a one-use `confirmAssignmentId=PASS42` arming value. It validates live
+route markers before reading SecureStore, confirms the target package is foreground,
 performs exactly one POST, validates the response, and writes only:
 
 ```json
@@ -79,11 +80,11 @@ JUnit success, a new nonempty result, and exact identity fields before arming th
 
 ## Verification
 
-Host unit tests cover SecureStore envelope validation, route marker validation, response identity
+Host/unit tests cover SecureStore envelope validation, route marker validation, response identity
 validation, and a source scan proving no token-bearing log calls. Android compile verification
 builds `assembleRelease` plus `assembleAndroidTest`, verifies both APK certificates match the
 installed certificate, and inspects the test manifest target package. Physical validation first
-runs a read-only mode that proves SecureStore availability and route readiness without making a
+runs a read-only mode that proves SecureStore availability and live route readiness without making a
 request; the one POST mode is used only inside the fresh strict H1 pass after capture/reset/cache
 and collector readiness gates are green.
 
