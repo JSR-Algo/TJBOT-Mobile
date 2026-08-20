@@ -30,8 +30,8 @@ import java.util.Deque;
 @RunWith(AndroidJUnit4.class)
 public class ParentSessionAssignmentBridgeTest {
     private static final String TARGET_PACKAGE = "com.TJBotmobile";
-    private static final String ARMING_VALUE = "PASS49";
-    private static final String RESULT_NAME = "t54-pass49-assignment.json";
+    private static final String ARMING_VALUE = "PASS50";
+    private static final String RESULT_NAME = "t54-pass50-assignment.json";
     private static final String[] READY_MARKERS = {
             "Hôm nay",
             "Trạng thái bài học trực tiếp",
@@ -55,7 +55,7 @@ public class ParentSessionAssignmentBridgeTest {
     }
 
     @Test
-    public void createPass49Assignment() throws Exception {
+    public void createPass50Assignment() throws Exception {
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         Context targetContext = instrumentation.getTargetContext();
         Bundle arguments = InstrumentationRegistry.getArguments();
@@ -102,7 +102,7 @@ public class ParentSessionAssignmentBridgeTest {
             connection.setRequestProperty("Idempotency-Key", "lesson-assign:"
                     + T54AssignmentContract.DEVICE_ID + ":" + T54AssignmentContract.LESSON_ID
                     + ":" + T54AssignmentContract.CHILD_ID);
-            connection.setRequestProperty("X-Request-Id", "t54-pass49-parent-session-bridge");
+            connection.setRequestProperty("X-Request-Id", "t54-pass50-parent-session-bridge");
 
             byte[] requestBytes = T54AssignmentContract.requestBody().toString()
                     .getBytes(StandardCharsets.UTF_8);
