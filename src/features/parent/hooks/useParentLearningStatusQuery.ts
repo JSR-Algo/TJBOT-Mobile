@@ -16,6 +16,13 @@ function invalidateDependentProgress(queryClient: QueryClient, childId: string):
   queryClient.removeQueries({ queryKey: ['child-progress-dashboard', 'child', childId], exact: true });
 }
 
+function reconcileParentLearningStatus(queryClient: QueryClient, childId: string): void {
+  void queryClient.invalidateQueries(
+    { queryKey: parentLearningStatusKey(childId) },
+    { cancelRefetch: false },
+  );
+}
+
 interface SharedRealtimeEntry {
   refs: number;
   listeners: Set<(exhausted: boolean) => void>;
@@ -96,7 +103,7 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
             : null;
     return { ...current, activeLearning: { ...current.activeLearning, ...activeDelta, currentStep }, projectionRevision: frame.projectionRevision };
   });
-  void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
+  reconcileParentLearningStatus(queryClient, childId);
   if (terminalUpdate) {
     void queryClient.invalidateQueries({ queryKey: parentLearningHistoryKey(childId) });
   }
@@ -124,7 +131,7 @@ function acquireParentRealtime(queryClient: QueryClient, childId: string, revisi
         invalidateDependentProgress(queryClient, childId);
       },
       onUpdate: (frame) => mergeRealtimeUpdate(queryClient, childId, frame),
-      onInvalidate: () => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); invalidateDependentProgress(queryClient, childId); },
+      onInvalidate: () => { reconcileParentLearningStatus(queryClient, childId); invalidateDependentProgress(queryClient, childId); },
       onAuthExpired: () => {
         broadcast(true);
         void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
@@ -198,7 +205,7 @@ export function useParentLearningStatusQuery(
       : null;
   React.useEffect(() => {
     if (pollIntervalMs === null || !childId) return undefined;
-    const timer = setInterval(() => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); }, pollIntervalMs);
+    const timer = setInterval(() => reconcileParentLearningStatus(queryClient, childId), pollIntervalMs);
     return () => clearInterval(timer);
   }, [childId, pollIntervalMs, queryClient]);
 

@@ -293,6 +293,78 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
+  it('does not starve a slow active reconciliation on the next focused poll tick', async () => {
+    const ready = {
+      ...active,
+      activeLearning: { ...active.activeLearning!, currentStep: null, positionPercent: 0 },
+      projectionRevision: '1',
+    };
+    const stepOne = {
+      ...ready,
+      activeLearning: {
+        ...ready.activeLearning!,
+        state: 'RUNNING', positionPercent: 11,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Activity 1', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '2',
+    };
+    let resolveSlowReconciliation!: (status: ParentLearningStatus) => void;
+    mockStatus
+      .mockResolvedValueOnce(ready)
+      .mockImplementationOnce(() => new Promise(resolve => { resolveSlowReconciliation = resolve; }))
+      .mockImplementation(() => new Promise(() => undefined));
+    const view = setup('child-1', true);
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.state).toBe('READY'));
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
+    expect(mockStatus).toHaveBeenCalledTimes(2);
+    await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
+
+    act(() => resolveSlowReconciliation(stepOne));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(1));
+    expect(mockStatus).toHaveBeenCalledTimes(2);
+    view.unmount();
+  });
+
+  it('does not starve inactive-cache discovery across consecutive partial realtime frames', async () => {
+    let resolveDiscovery!: (status: ParentLearningStatus) => void;
+    mockStatus
+      .mockResolvedValueOnce({ ...inactive, projectionRevision: '1' })
+      .mockImplementationOnce(() => new Promise(resolve => { resolveDiscovery = resolve; }))
+      .mockImplementation(() => new Promise(() => undefined));
+    const view = setup('child-1', true);
+    await waitFor(() => expect(sockets).toHaveLength(1));
+
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '2',
+      occurredAt: '2026-08-20T00:00:00Z', publishedAt: '2026-08-20T00:00:01Z',
+      activeLearning: { state: 'READY', currentStep: null, positionPercent: 0 },
+    }));
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(2));
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '3',
+      occurredAt: '2026-08-20T00:00:01Z', publishedAt: '2026-08-20T00:00:02Z',
+      activeLearning: {
+        state: 'RUNNING', positionPercent: 11,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Activity 1', phase: 'teaching', subject: null },
+      },
+    }));
+
+    act(() => resolveDiscovery({
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!,
+        state: 'RUNNING', positionPercent: 11,
+        currentStep: { stepId: 'step-1', stepNumber: 1, total: 9, activityTitle: 'Activity 1', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '3',
+    }));
+
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(1));
+    expect(mockStatus).toHaveBeenCalledTimes(2);
+    view.unmount();
+  });
+
   it('reconciles every short step transition while Parent Today is focused and realtime is silent', async () => {
     mockStatus.mockResolvedValueOnce({
       ...active,
