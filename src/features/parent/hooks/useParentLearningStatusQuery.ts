@@ -25,6 +25,23 @@ interface SharedRealtimeEntry {
 
 const sharedRealtimeByClient = new WeakMap<QueryClient, Map<string, SharedRealtimeEntry>>();
 
+function compareProjectionRevisions(left: string, right: string): -1 | 0 | 1 {
+  const normalizedLeft = left.replace(/^0+(?=\d)/, '');
+  const normalizedRight = right.replace(/^0+(?=\d)/, '');
+  if (normalizedLeft.length !== normalizedRight.length) return normalizedLeft.length > normalizedRight.length ? 1 : -1;
+  return normalizedLeft === normalizedRight ? 0 : normalizedLeft > normalizedRight ? 1 : -1;
+}
+
+function newestParentLearningStatus(
+  current: ParentLearningStatus | undefined,
+  incoming: ParentLearningStatus,
+): ParentLearningStatus {
+  if (!current) return incoming;
+  return compareProjectionRevisions(incoming.projectionRevision, current.projectionRevision) < 0
+    ? current
+    : incoming;
+}
+
 function isCompleteCurrentStep(step: Partial<ParentLearningStep>): step is ParentLearningStep {
   return typeof step.stepId === 'string'
     && step.stepId.trim().length > 0
@@ -60,6 +77,7 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
     || (frame.activeLearning.state !== undefined && TERMINAL_STATES.has(frame.activeLearning.state));
   queryClient.setQueryData<ParentLearningStatus>(parentLearningStatusKey(childId), (current) => {
     if (!current) return current;
+    if (compareProjectionRevisions(frame.projectionRevision, current.projectionRevision) < 0) return current;
     if (terminalUpdate) return { ...current, activeLearning: null, projectionRevision: frame.projectionRevision };
     if (frame.activeLearning === null) return current;
     if (!current.activeLearning) {
@@ -98,7 +116,13 @@ function acquireParentRealtime(queryClient: QueryClient, childId: string, revisi
   const broadcast = (value: boolean) => listeners.forEach(notify => notify(value));
   const entry: SharedRealtimeEntry = { refs: 1, listeners, connection: Promise.resolve(null) };
   entry.connection = openParentProgressRealtime(childId, revision, {
-      onStatus: (status) => { queryClient.setQueryData(parentLearningStatusKey(childId), status); invalidateDependentProgress(queryClient, childId); },
+      onStatus: (status) => {
+        queryClient.setQueryData<ParentLearningStatus>(
+          parentLearningStatusKey(childId),
+          current => newestParentLearningStatus(current, status),
+        );
+        invalidateDependentProgress(queryClient, childId);
+      },
       onUpdate: (frame) => mergeRealtimeUpdate(queryClient, childId, frame),
       onInvalidate: () => { void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) }); invalidateDependentProgress(queryClient, childId); },
       onAuthExpired: () => {
@@ -131,7 +155,15 @@ export function useParentLearningStatusQuery(
 ): UseQueryResult<ParentLearningStatus, Error> {
   const queryClient = useQueryClient();
   const enabled = Boolean(childId);
-  const query = useQuery<ParentLearningStatus, Error>({ queryKey: parentLearningStatusKey(childId ?? ''), queryFn: () => getParentLearningStatus(childId!), enabled });
+  const query = useQuery<ParentLearningStatus, Error>({
+    queryKey: parentLearningStatusKey(childId ?? ''),
+    queryFn: async () => {
+      const incoming = await getParentLearningStatus(childId!);
+      const current = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId!));
+      return newestParentLearningStatus(current, incoming);
+    },
+    enabled,
+  });
   const [foreground, setForeground] = React.useState(AppState.currentState === 'active');
   const [socketExhausted, setSocketExhausted] = React.useState(false);
   const hasInitialStatus = query.data !== undefined;
