@@ -30,10 +30,18 @@ function isTerminalParentLearningStatus(status: ParentLearningStatus): boolean {
   return status.activeLearning === null || TERMINAL_STATES.has(status.activeLearning.state);
 }
 
+function hasSameActiveLearningIdentity(current: ParentActiveLearning, incoming: ParentActiveLearning): boolean {
+  return current.assignmentId === incoming.assignmentId
+    && current.sessionId === incoming.sessionId
+    && current.lessonId === incoming.lessonId;
+}
+
 function isRegressiveFocusedProjection(current: ParentLearningStatus | undefined, incoming: ParentLearningStatus): boolean {
   return Boolean(
-    current?.activeLearning?.currentStep
+    current?.activeLearning
+      && current.activeLearning.currentStep
       && incoming.activeLearning
+      && hasSameActiveLearningIdentity(current.activeLearning, incoming.activeLearning)
       && !TERMINAL_STATES.has(incoming.activeLearning.state)
       && incoming.activeLearning.currentStep === null
       && incoming.activeLearning.positionPercent < current.activeLearning.positionPercent,
@@ -69,7 +77,10 @@ function sampleParentLearningStatus(queryClient: QueryClient, childId: string, p
   void getParentLearningStatus(childId).then(
     incoming => {
       const current = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId));
-      if (protectTerminal && isRegressiveFocusedProjection(current, incoming)) return;
+      if (protectTerminal && isRegressiveFocusedProjection(current, incoming)) {
+        deferTerminalReconciliation(queryClient, childId, incoming);
+        return;
+      }
       if (protectTerminal && isTerminalParentLearningStatus(incoming)) {
         if (current?.activeLearning && !isTerminalParentLearningStatus(current)) {
           deferTerminalReconciliation(queryClient, childId, incoming);

@@ -519,7 +519,7 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
-  it('does not let an incomplete higher-revision focused projection mask pending final steps', async () => {
+  it('defers an incomplete higher-revision focused projection until pending final steps drain', async () => {
     const stepSeven = {
       ...active,
       activeLearning: {
@@ -558,15 +558,59 @@ describe('useParentLearningStatusQuery', () => {
     }));
     await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(8));
 
-    act(() => pending[1]({
-      ...stepSeven,
-      activeLearning: {
-        ...stepSeven.activeLearning!, positionPercent: 100,
-        currentStep: { stepId: 'step-9', stepNumber: 9, total: 9, activityTitle: 'Activity 9', phase: 'teaching', subject: null },
-      },
-      projectionRevision: '9',
+    await act(async () => {
+      pending[1]({
+        ...stepSeven,
+        activeLearning: {
+          ...stepSeven.activeLearning!, positionPercent: 100,
+          currentStep: { stepId: 'step-9', stepNumber: 9, total: 9, activityTitle: 'Activity 9', phase: 'teaching', subject: null },
+        },
+        projectionRevision: '9',
+      });
+      await Promise.resolve();
+    });
+    expect(view.client.getQueryData<ParentLearningStatus>(parentLearningStatusKey('child-1'))?.activeLearning?.currentStep?.stepNumber).toBe(9);
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    await waitFor(() => expect(view.result.current.data).toMatchObject({
+      projectionRevision: '10',
+      activeLearning: { state: 'READY', currentStep: null, positionPercent: 0 },
     }));
-    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(9));
+    view.unmount();
+  });
+
+  it('accepts a new lesson identity while old focused samples are pending', async () => {
+    const oldStepSeven = {
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!, assignmentId: 'assignment-old', sessionId: 'session-old', lessonId: 'lesson-old',
+        state: 'RUNNING', positionPercent: 78,
+        currentStep: { stepId: 'step-7', stepNumber: 7, total: 9, activityTitle: 'Activity 7', phase: 'practice', subject: null },
+      },
+      projectionRevision: '7',
+    };
+    const newLessonReady = {
+      ...oldStepSeven,
+      activeLearning: {
+        ...oldStepSeven.activeLearning!, assignmentId: 'assignment-new', sessionId: 'session-new', lessonId: 'lesson-new',
+        state: 'READY', currentStep: null, positionPercent: 0,
+      },
+      projectionRevision: '10',
+    };
+    const pending: Array<(status: ParentLearningStatus) => void> = [];
+    mockStatus
+      .mockResolvedValueOnce(oldStepSeven)
+      .mockImplementation(() => new Promise(resolve => { pending.push(resolve); }));
+    const view = setup('child-1', true);
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.assignmentId).toBe('assignment-old'));
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(3_000); });
+    expect(pending).toHaveLength(3);
+
+    act(() => pending[2](newLessonReady));
+    await waitFor(() => expect(view.result.current.data).toMatchObject({
+      projectionRevision: '10',
+      activeLearning: { assignmentId: 'assignment-new', sessionId: 'session-new', lessonId: 'lesson-new', state: 'READY', currentStep: null },
+    }));
     view.unmount();
   });
 
