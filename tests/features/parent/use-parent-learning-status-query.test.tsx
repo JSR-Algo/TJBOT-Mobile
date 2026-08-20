@@ -270,8 +270,6 @@ describe('useParentLearningStatusQuery', () => {
     const afterInitial = mockStatus.mock.calls.length;
 
     mockStatus.mockResolvedValueOnce(active);
-    await act(async () => { await jest.advanceTimersByTimeAsync(9_000); });
-    expect(mockStatus).toHaveBeenCalledTimes(afterInitial);
     await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
     await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(afterInitial + 1));
     await waitFor(() => expect(view.result.current.data?.activeLearning?.assignmentId).toBe('a'));
@@ -322,7 +320,96 @@ describe('useParentLearningStatusQuery', () => {
 
     act(() => resolveSlowReconciliation(stepOne));
     await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(1));
-    expect(mockStatus).toHaveBeenCalledTimes(2);
+    expect(mockStatus).toHaveBeenCalledTimes(3);
+    view.unmount();
+  });
+
+  it('samples every second while earlier focused projections are still pending', async () => {
+    const ready = {
+      ...inactive,
+      projectionRevision: '1',
+    };
+    const pending: Array<(status: ParentLearningStatus) => void> = [];
+    mockStatus
+      .mockResolvedValueOnce(ready)
+      .mockImplementation(() => new Promise(resolve => { pending.push(resolve); }));
+    const view = setup('child-1', true);
+    await waitFor(() => expect(view.result.current.data?.activeLearning).toBeNull());
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(4_000); });
+    expect(pending).toHaveLength(4);
+
+    const observedSteps: number[] = [];
+    for (let index = 0; index < pending.length; index += 1) {
+      const stepNumber = index + 1;
+      act(() => pending[index]({
+        ...ready,
+        activeLearning: {
+          ...active.activeLearning!,
+          state: 'RUNNING', positionPercent: Math.round((stepNumber / 9) * 100),
+          currentStep: { stepId: `step-${stepNumber}`, stepNumber, total: 9, activityTitle: `Activity ${stepNumber}`, phase: 'teaching', subject: null },
+        },
+        projectionRevision: String(stepNumber + 1),
+      }));
+      await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(stepNumber));
+      observedSteps.push(view.result.current.data!.activeLearning!.currentStep!.stepNumber);
+    }
+
+    expect(observedSteps).toEqual([1, 2, 3, 4]);
+    view.unmount();
+  });
+
+  it('drains authoritative s8 and s9 samples before applying a partial terminal frame', async () => {
+    const stepSeven = {
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!, state: 'RUNNING', positionPercent: 78,
+        currentStep: { stepId: 'step-7', stepNumber: 7, total: 9, activityTitle: 'Activity 7', phase: 'practice', subject: null },
+      },
+      projectionRevision: '7',
+    };
+    const pending: Array<(status: ParentLearningStatus) => void> = [];
+    mockStatus
+      .mockResolvedValueOnce(stepSeven)
+      .mockImplementation(() => new Promise(resolve => { pending.push(resolve); }));
+    const view = setup('child-1', true);
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(7));
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(3_000); });
+    act(() => sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-1', projectionRevision: '10',
+      occurredAt: '2026-08-20T00:00:10Z', publishedAt: '2026-08-20T00:00:11Z', activeLearning: null,
+    }));
+
+    expect(pending).toHaveLength(3);
+    expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(7);
+
+    act(() => pending[2]({ ...inactive, projectionRevision: '10' }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(7));
+
+    act(() => pending[0]({
+      ...stepSeven,
+      activeLearning: {
+        ...stepSeven.activeLearning!, positionPercent: 89,
+        currentStep: { stepId: 'step-8', stepNumber: 8, total: 9, activityTitle: 'Activity 8', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '8',
+    }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(8));
+
+    act(() => pending[1]({
+      ...stepSeven,
+      activeLearning: {
+        ...stepSeven.activeLearning!, positionPercent: 100,
+        currentStep: { stepId: 'step-9', stepNumber: 9, total: 9, activityTitle: 'Activity 9', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '9',
+    }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(9));
+
+    await waitFor(() => expect(pending).toHaveLength(4));
+    act(() => pending[3]({ ...inactive, projectionRevision: '10' }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning).toBeNull());
     view.unmount();
   });
 
@@ -361,7 +448,7 @@ describe('useParentLearningStatusQuery', () => {
     }));
 
     await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(1));
-    expect(mockStatus).toHaveBeenCalledTimes(2);
+    expect(mockStatus).toHaveBeenCalledTimes(3);
     view.unmount();
   });
 

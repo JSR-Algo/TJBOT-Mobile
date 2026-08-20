@@ -83,3 +83,33 @@ Forbidden suppression/placeholder scan across changed `src` and `tests`: PASS
 ```
 
 Physical validation remains exclusively H1-owned.
+
+## Pass 38 correction: in-flight sampling and terminal drain
+
+Frozen Pass 38 evidence improved to exact s2, s4, s5, s6, and s7, but the four-second
+s1, s3, s8, and s9 projections were absent. The one-second timer did not imply one
+request per second: TanStack Query deduplicated every `cancelRefetch: false`
+invalidation behind the current request. A slow request therefore left the same
+sampling holes as a slower timer. Focused inactive discovery also still used the
+ten-second cadence, and a partial terminal realtime frame cleared s7 before the
+authoritative s8/s9 requests already in flight could settle.
+
+The corrected mobile behavior starts an independent authoritative status request on
+every focused one-second tick, including while Today is initially inactive. Partial
+realtime frames start independent reconciliation as well. Projection revisions still
+arbitrate stale results. When a partial terminal frame arrives with focused samples in
+flight, mobile retains the current step until those authoritative samples drain, then
+runs the normal terminal reconciliation. No step or percentage is inferred locally.
+
+Deterministic regressions reproduce both Pass 38 boundaries: four one-second samples
+remain independently pending from an inactive cache, and authoritative s8 then s9 are
+rendered before terminal inactive state is accepted.
+
+Pass 38 RED on merged main `cc8937a7`: both focused regressions failed because only one
+request existed (`Expected length: 4/3; Received length: 1`). The review-strengthened
+terminal ordering also failed when revision-10 inactive HTTP resolved before s8/s9.
+
+Pass 38 GREEN: six focused parent/realtime suites pass 78/78; TypeScript and ESLint pass.
+The full unit project reaches 2,735 passing tests, with the same five unrelated worktree
+baseline failures: four `parent-settings` tests lack a navigation container and the
+Worklets configuration test expects worktree-local `node_modules`.
