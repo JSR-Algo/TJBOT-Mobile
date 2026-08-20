@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { useHousehold } from '@/contexts/HouseholdContext';
@@ -12,6 +13,8 @@ import { useParentGateGuard } from '../hooks/useParentGateGuard';
 import { useParentLearningStatusQuery } from '../hooks/useParentLearningStatusQuery';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ParentTodayScreen'>;
+
+const PARENT_TODAY_KEEP_AWAKE_TAG = 'tbot-parent-today-foreground';
 
 const STATE_COPY: Record<string, string> = {
   ASSIGNED: 'Preparing', PRELOADING: 'Preparing', PREPARING: 'Preparing', READY: 'Preparing',
@@ -47,6 +50,15 @@ export default function ParentTodayScreen({ navigation }: Props) {
   const { language, t } = useAppLanguage();
   const query = useParentLearningStatusQuery(activeChild?.id, { reconcileWhileActive: isFocused });
   const back = () => navigation.navigate(ROUTES.ParentSummaryScreen);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      void activateKeepAwakeAsync(PARENT_TODAY_KEEP_AWAKE_TAG);
+      return () => {
+        void deactivateKeepAwake(PARENT_TODAY_KEEP_AWAKE_TAG);
+      };
+    }, []),
+  );
 
   if (!activeChild) return <ParentScroll title="Today" onBack={back}><Message text="Add a child to see live progress" /></ParentScroll>;
   if (query.isLoading) return <ParentScroll title="Today" onBack={back}><Message text="Loading live progress" /></ParentScroll>;

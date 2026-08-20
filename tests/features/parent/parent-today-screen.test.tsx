@@ -1,16 +1,31 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useHousehold } from '@/contexts/HouseholdContext';
 import { useParentLearningStatusQuery } from '@/features/parent/hooks/useParentLearningStatusQuery';
 import ParentTodayScreen from '@/features/parent/screens/ParentTodayScreen';
 
 jest.mock('@/features/parent/hooks/useParentGateGuard', () => ({ useParentGateGuard: () => undefined }));
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+const mockFocusCleanups: Array<undefined | (() => void)> = [];
+const mockUseFocusEffect = jest.fn((effect: () => undefined | (() => void)) => {
+  mockFocusCleanups.push(effect());
+});
+
+jest.mock('@react-navigation/native', () => ({
+  useIsFocused: () => true,
+  useFocusEffect: (effect: () => undefined | (() => void)) => mockUseFocusEffect(effect),
+}));
 jest.mock('@/contexts/HouseholdContext', () => ({ useHousehold: jest.fn() }));
 jest.mock('@/features/parent/hooks/useParentLearningStatusQuery', () => ({ useParentLearningStatusQuery: jest.fn() }));
+jest.mock('expo-keep-awake', () => ({
+  activateKeepAwakeAsync: jest.fn(() => Promise.resolve()),
+  deactivateKeepAwake: jest.fn(() => Promise.resolve()),
+}));
 
 const mockHousehold = useHousehold as jest.MockedFunction<typeof useHousehold>;
 const mockStatus = useParentLearningStatusQuery as jest.MockedFunction<typeof useParentLearningStatusQuery>;
+const mockActivateKeepAwake = activateKeepAwakeAsync as jest.MockedFunction<typeof activateKeepAwakeAsync>;
+const mockDeactivateKeepAwake = deactivateKeepAwake as jest.MockedFunction<typeof deactivateKeepAwake>;
 
 const activeLearning = {
   assignmentId: 'a-1', sessionId: 's-1', courseId: 'c-1', courseTitle: 'First English',
@@ -28,8 +43,20 @@ function renderScreen() {
 describe('ParentTodayScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFocusCleanups.length = 0;
     mockHousehold.mockReturnValue({ activeChild: { id: 'child-1', name: 'Mai' } } as never);
     mockStatus.mockReturnValue({ data: { activeLearning, recentSessions: { items: [], nextCursor: null }, courseProgress: [], projectionRevision: '12' }, dataUpdatedAt: Date.now(), isLoading: false, isError: false, isFetching: false, fetchStatus: 'idle', refetch: jest.fn() } as never);
+  });
+
+  it('keeps the screen awake only while Parent Today is focused', () => {
+    renderScreen();
+
+    expect(mockActivateKeepAwake).toHaveBeenCalledWith('tbot-parent-today-foreground');
+    expect(mockDeactivateKeepAwake).not.toHaveBeenCalled();
+
+    mockFocusCleanups.forEach((cleanup) => cleanup?.());
+
+    expect(mockDeactivateKeepAwake).toHaveBeenCalledWith('tbot-parent-today-foreground');
   });
 
   it('shows the active child, live lesson state, authored activity, progress, duration, and update time', () => {

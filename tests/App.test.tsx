@@ -20,11 +20,11 @@ describe('App', () => {
     expect(App).toBeDefined();
   });
 
-  it('keeps the foreground app awake while mounted', () => {
+  it('does not keep every app surface awake globally', () => {
     const App = require('../src/App').default;
 
     App();
 
-    expect(useKeepAwake).toHaveBeenCalledWith('tbot-mobile-foreground');
+    expect(useKeepAwake).not.toHaveBeenCalled();
   });
 });
