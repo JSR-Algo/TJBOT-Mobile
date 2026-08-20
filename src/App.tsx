@@ -13,6 +13,7 @@ import { QueryProvider } from './app/providers/QueryProvider';
 import { ParentSessionProvider } from './features/parent/context/ParentSessionContext';
 import * as SecureStore from 'expo-secure-store';
 import { useLoadAppLanguagePreference } from './services/i18n/i18n';
+import { useKeepAwake } from 'expo-keep-awake';
 
 type ResolvedRole = 'child' | 'teen' | 'adult' | 'unknown';
 
@@ -52,6 +53,8 @@ function AppInner(): React.JSX.Element {
 }
 
 export default function App(): React.JSX.Element {
+  useKeepAwake('tbot-mobile-foreground');
+
   return (
     <GestureHandlerRootView style={styles.root} testID="appRoot">
       <SafeAreaProvider>
