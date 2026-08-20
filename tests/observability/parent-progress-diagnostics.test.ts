@@ -2,23 +2,34 @@ import {
   logParentProgressDiagnostic,
   setParentProgressDiagnosticsEnabledForTest,
 } from '@/services/observability/parentProgressDiagnostics';
+import { ENV } from '@/__env__';
 
 describe('parent progress diagnostics', () => {
   const info = jest.spyOn(console, 'info').mockImplementation(() => undefined);
   const originalEnabled = process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS;
   const originalUntil = process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL;
+  const bundledEnv = ENV as typeof ENV & {
+    EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS?: string;
+    EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL?: string;
+  };
+  const originalBundledEnabled = bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS;
+  const originalBundledUntil = bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL;
 
   beforeEach(() => {
     info.mockClear();
     setParentProgressDiagnosticsEnabledForTest(null);
     process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS = originalEnabled;
     process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL = originalUntil;
+    bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS = originalBundledEnabled;
+    bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL = originalBundledUntil;
   });
 
   afterAll(() => {
     setParentProgressDiagnosticsEnabledForTest(null);
     process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS = originalEnabled;
     process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL = originalUntil;
+    bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS = originalBundledEnabled;
+    bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL = originalBundledUntil;
     info.mockRestore();
   });
 
@@ -41,5 +52,21 @@ describe('parent progress diagnostics', () => {
     }));
     expect(JSON.stringify(info.mock.calls)).not.toContain('child-secret');
     expect(JSON.stringify(info.mock.calls)).not.toContain('secret step with spaces');
+  });
+
+  it('uses the generated release environment when process.env is unavailable on device', () => {
+    delete process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS;
+    delete process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL;
+    bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS = 'true';
+    bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL = String(Date.now() + 60_000);
+
+    logParentProgressDiagnostic({ source: 'ws', decision: 'receive', childId: 'child-secret', revision: '8', stepId: 's8' });
+
+    expect(info).toHaveBeenCalledWith('parent_progress_diag', expect.objectContaining({
+      source: 'ws',
+      decision: 'receive',
+      revision: '8',
+      stepId: 's8',
+    }));
   });
 });

@@ -1,3 +1,5 @@
+import { ENV } from '@/__env__';
+
 export type ParentProgressDiagnosticSource = 'ws' | 'focused_http';
 
 export type ParentProgressDiagnosticDecision =
@@ -39,6 +41,10 @@ type ParentProgressDiagnosticLog = Omit<ParentProgressDiagnostic, 'childId'> & {
 };
 
 let enabledForTest: boolean | null = null;
+const diagnosticEnv = ENV as typeof ENV & {
+  EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS?: string;
+  EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL?: string;
+};
 
 export function setParentProgressDiagnosticsEnabledForTest(value: boolean | null): void {
   enabledForTest = value;
@@ -51,8 +57,13 @@ export function logParentProgressDiagnostic(event: ParentProgressDiagnostic): vo
 
 function isParentProgressDiagnosticsEnabled(nowMs = Date.now()): boolean {
   if (enabledForTest !== null) return enabledForTest;
-  if (process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS !== 'true') return false;
-  const expiresAt = parseDiagnosticExpiry(process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL);
+  const enabled = diagnosticEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS
+    || process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS;
+  if (enabled !== 'true') return false;
+  const expiresAt = parseDiagnosticExpiry(
+    diagnosticEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL
+      || process.env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL,
+  );
   return expiresAt !== null && nowMs <= expiresAt;
 }
 
