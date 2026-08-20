@@ -4,7 +4,7 @@ import 'expo-crypto';
 
 import { AppRegistry, LogBox } from 'react-native';
 import { enableScreens } from 'react-native-screens';
-import { ENV } from './src/__env__';
+import { ENV } from 'tbot-runtime-env';
 import { name as appName } from './app.json';
 import App from './src/App';
 

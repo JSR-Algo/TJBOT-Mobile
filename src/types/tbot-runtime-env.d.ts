@@ -1,0 +1,12 @@
+declare module 'tbot-runtime-env' {
+  export const ENV: {
+    TBOT_API_URL: string;
+    TBOT_AI_URL: string;
+    EXPO_PUBLIC_GEMINI_LIVE_MODEL: string;
+    EXPO_PUBLIC_VOICE_BARGE_IN_BUDGET_MS: string;
+    EXPO_PUBLIC_VOICE_TEST_HARNESS: string;
+    EXPO_PUBLIC_VOICE_CANCEL_UNACK_RECOVERY: string;
+    EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS: string;
+    EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL: string;
+  };
+}

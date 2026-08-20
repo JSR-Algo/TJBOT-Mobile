@@ -645,7 +645,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByText("See what's happening")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
     fireEvent.press(screen.getByText("See what's happening"));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CompanionScreen, {
       deviceId: 'dev-7',

@@ -232,13 +232,13 @@ describe('P0-8 — getDiagnostics bridge surface', () => {
 
 describe('DIAG-1 — VOICE_FORCE_NATIVE_IOS feature flag removed (P0-4)', () => {
   const config = read('config.ts');
-  const env = read('__env__.ts');
+  const env = read('__env__.defaults.ts');
 
   it('config.ts no longer exports VOICE_FORCE_NATIVE_IOS (P0-4: RNLAS removed)', () => {
     expect(config).not.toMatch(/VOICE_FORCE_NATIVE_IOS/);
   });
 
-  it('__env__.ts no longer contains EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS (P0-4: RNLAS removed)', () => {
+  it('__env__.defaults.ts no longer contains EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS (P0-4: RNLAS removed)', () => {
     expect(env).not.toMatch(/EXPO_PUBLIC_VOICE_FORCE_NATIVE_IOS/);
   });
 });

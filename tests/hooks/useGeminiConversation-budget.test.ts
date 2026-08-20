@@ -26,7 +26,7 @@ import * as path from 'path';
 
 const HOOK_PATH = path.resolve(__dirname, '../../src/hooks/useGeminiConversation.ts');
 const CONFIG_PATH = path.resolve(__dirname, '../../src/config.ts');
-const ENV_PATH = path.resolve(__dirname, '../../src/__env__.ts');
+const ENV_PATH = path.resolve(__dirname, '../../src/__env__.defaults.ts');
 const hook = fs.readFileSync(HOOK_PATH, 'utf8');
 const configSrc = fs.readFileSync(CONFIG_PATH, 'utf8');
 const envSrc = fs.readFileSync(ENV_PATH, 'utf8');

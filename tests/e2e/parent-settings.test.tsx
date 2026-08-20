@@ -57,6 +57,7 @@ jest.mock('@react-navigation/native', () => {
         return typeof cleanup === 'function' ? cleanup : undefined;
       }, [cb]);
     },
+    useIsFocused: () => true,
     useNavigation: () => ({
       navigate: jest.fn(),
       goBack: jest.fn(),
