@@ -12,7 +12,7 @@ const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'ABANDONED', 'CANCELLED'
 const FOCUSED_ACTIVE_RECONCILE_INTERVAL_MS = 1_000;
 const FALLBACK_POLL_INTERVAL_MS = 10_000;
 const pendingFocusedSamplesByClient = new WeakMap<QueryClient, Map<string, number>>();
-const deferredTerminalByClient = new WeakMap<QueryClient, Set<string>>();
+const deferredTerminalByClient = new WeakMap<QueryClient, Map<string, ParentLearningStatus>>();
 
 function invalidateDependentProgress(queryClient: QueryClient, childId: string): void {
   void queryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
@@ -41,19 +41,12 @@ function clearDeferredTerminal(queryClient: QueryClient, childId: string): void 
 }
 
 function finishDeferredTerminal(queryClient: QueryClient, childId: string): void {
-  void getParentLearningStatus(childId).then(
-    incoming => {
-      clearDeferredTerminal(queryClient, childId);
-      queryClient.setQueryData<ParentLearningStatus>(
-        parentLearningStatusKey(childId),
-        current => newestParentLearningStatus(current, incoming),
-      );
-    },
-    error => {
-      captureError(error);
-      clearDeferredTerminal(queryClient, childId);
-      reconcileParentLearningStatus(queryClient, childId);
-    },
+  const incoming = deferredTerminalByClient.get(queryClient)?.get(childId);
+  clearDeferredTerminal(queryClient, childId);
+  if (!incoming) return;
+  queryClient.setQueryData<ParentLearningStatus>(
+    parentLearningStatusKey(childId),
+    current => newestParentLearningStatus(current, incoming),
   );
 }
 
@@ -68,10 +61,13 @@ function sampleParentLearningStatus(queryClient: QueryClient, childId: string, p
       if (protectTerminal && isTerminalParentLearningStatus(incoming)) {
         const current = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId));
         if (current?.activeLearning && !isTerminalParentLearningStatus(current)) {
-          deferTerminalReconciliation(queryClient, childId);
+          deferTerminalReconciliation(queryClient, childId, incoming);
           return;
         }
-        if (isTerminalDeferred(queryClient, childId)) return;
+        if (isTerminalDeferred(queryClient, childId)) {
+          deferTerminalReconciliation(queryClient, childId, incoming);
+          return;
+        }
       }
       queryClient.setQueryData<ParentLearningStatus>(
         parentLearningStatusKey(childId),
@@ -91,7 +87,9 @@ function sampleParentLearningStatus(queryClient: QueryClient, childId: string, p
     if (remaining > 0) pending?.set(childId, remaining);
     else pending?.delete(childId);
     if (pending?.size === 0) pendingFocusedSamplesByClient.delete(queryClient);
-    if (remaining <= 0 && isTerminalDeferred(queryClient, childId)) finishDeferredTerminal(queryClient, childId);
+    if (remaining <= 0 && isTerminalDeferred(queryClient, childId)) {
+      setTimeout(() => finishDeferredTerminal(queryClient, childId), 0);
+    }
   });
 }
 
@@ -99,10 +97,11 @@ function hasPendingFocusedSamples(queryClient: QueryClient, childId: string): bo
   return (pendingFocusedSamplesByClient.get(queryClient)?.get(childId) ?? 0) > 0;
 }
 
-function deferTerminalReconciliation(queryClient: QueryClient, childId: string): void {
+function deferTerminalReconciliation(queryClient: QueryClient, childId: string, status: ParentLearningStatus): void {
   let deferred = deferredTerminalByClient.get(queryClient);
-  if (!deferred) { deferred = new Set(); deferredTerminalByClient.set(queryClient, deferred); }
-  deferred.add(childId);
+  if (!deferred) { deferred = new Map(); deferredTerminalByClient.set(queryClient, deferred); }
+  const current = deferred.get(childId);
+  deferred.set(childId, newestParentLearningStatus(current, status));
 }
 
 interface SharedRealtimeEntry {
@@ -165,6 +164,12 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
   const terminalUpdate = frame.activeLearning === null
     || (frame.activeLearning.state !== undefined && TERMINAL_STATES.has(frame.activeLearning.state));
   const protectTerminal = terminalUpdate && hasPendingFocusedSamples(queryClient, childId);
+  if (protectTerminal) {
+    const current = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId));
+    if (current && compareProjectionRevisions(frame.projectionRevision, current.projectionRevision) >= 0) {
+      deferTerminalReconciliation(queryClient, childId, { ...current, activeLearning: null, projectionRevision: frame.projectionRevision });
+    }
+  }
   queryClient.setQueryData<ParentLearningStatus>(parentLearningStatusKey(childId), (current) => {
     if (!current) return current;
     if (compareProjectionRevisions(frame.projectionRevision, current.projectionRevision) < 0) return current;
@@ -190,8 +195,7 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
             : null;
     return { ...current, activeLearning: { ...current.activeLearning, ...activeDelta, currentStep }, projectionRevision: frame.projectionRevision };
   });
-  if (protectTerminal) deferTerminalReconciliation(queryClient, childId);
-  else sampleParentLearningStatus(queryClient, childId);
+  if (!protectTerminal) sampleParentLearningStatus(queryClient, childId);
   if (terminalUpdate) {
     void queryClient.invalidateQueries({ queryKey: parentLearningHistoryKey(childId) });
   }
