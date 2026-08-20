@@ -1,4 +1,4 @@
-# T5.4 Parent-session assignment bridge: H1 Pass 45 handoff
+# T5.4 Parent-session assignment bridge: H1 Pass 46 handoff
 
 - Date: 2026-08-20
 - Owner: H1 only for every Android, robot, assignment, and strict-pass action
@@ -11,7 +11,7 @@
 The bridge uses the already authenticated Parent app session to create exactly one direct
 `w02-feelings` v7 assignment for device `91deb5af-c1c0-416b-956d-266d510eac5e` and child
 `2bbcd940-f9da-47cf-8a99-f1eaf2380e8c`. It is armed only by
-`confirmAssignmentId=PASS45`, accepts no identity override, performs one HTTP `POST`, requires
+`confirmAssignmentId=PASS46`, accepts no identity override, performs one HTTP `POST`, requires
 `201` plus the exact normalized identity and `ASSIGNED` state, and writes only a secret-free JSON
 result.
 
@@ -24,12 +24,12 @@ SESSION_PROBE_OK route=READY tokenPresent=true
 ```
 
 Pass 42 froze read-only with `ROUTE_ROOT` before SecureStore access or HTTP; it created no
-assignment. Pass 45 adds a bounded active-root acquisition wait of at most five seconds. Both
+assignment. Pass 46 adds a bounded active-root acquisition wait of at most five seconds. Both
 instrumentation commands retain `--no-restart`, so the runner must not restart or recreate the
 visible Parent activity while waiting for its active accessibility root.
 
 Any build, signer, manifest, install, probe, route, capture, Wi-Fi, WebSocket, cache, collector,
-HTTP, result, or helper-gate failure freezes Pass 45. After the assignment test is invoked once,
+HTTP, result, or helper-gate failure freezes Pass 46. After the assignment test is invoked once,
 there is no retry, rerun, replay, second assignment, or replacement assignment, even if the host
 loses the result or a later strict acceptance item fails.
 
@@ -74,8 +74,8 @@ APK_ANALYZER="$(find "$SDK_ROOT" -type f -name apkanalyzer | sort | tail -n 1)"
 MOBILE=/Users/manhhodinh/Documents/TBOT/tbot-mobile/.worktrees/t54-parent-session-bridge
 RELEASE_APK="$MOBILE/android/app/build/outputs/apk/release/app-release.apk"
 TEST_APK="$MOBILE/android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"
-PASS45=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-45
-SIGNERS="$PASS45/parent-session-bridge/signers"
+PASS46=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-46
+SIGNERS="$PASS46/parent-session-bridge/signers"
 
 test -x "$ADB"
 test -x "$BUILD_TOOLS"
@@ -126,10 +126,10 @@ set -euo pipefail
 ADB=/Users/manhhodinh/Library/Android/sdk/platform-tools/adb
 SERIAL=efc5314f
 TEST_APK=/Users/manhhodinh/Documents/TBOT/tbot-mobile/.worktrees/t54-parent-session-bridge/android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
-PASS45=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-45
-BRIDGE="$PASS45/parent-session-bridge"
+PASS46=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-46
+BRIDGE="$PASS46/parent-session-bridge"
 PROBE_LOG="$BRIDGE/session-probe.log"
-COLLECTOR="$PASS45/parent-progress"
+COLLECTOR="$PASS46/parent-progress"
 
 mkdir -p "$BRIDGE"
 rm -f "$PROBE_LOG"
@@ -159,15 +159,15 @@ fi
 
 The probe performs no HTTP request and creates no assignment. A missing READY marker, wrong
 foreground package, missing SecureStore value, invalid JWT shape, runner failure, or any
-JWT-shaped output freezes Pass 45 before assignment. The probe may spend at most five seconds
+JWT-shaped output freezes Pass 46 before assignment. The probe may spend at most five seconds
 waiting for a non-null active root; `ROUTE_ROOT` after that bound remains a hard pre-assignment
 failure. Do not run a separate `uiautomator dump`: the lease blocks all collector hierarchy
 dumps while the bridge performs its own READY route check, then requires a new collector READY
 observation after instrumentation exits.
 
-## Pass 45 one-shot pre-POST gate
+## Pass 46 one-shot pre-POST gate
 
-The following conditions must already be true in the same immutable Pass 45 evidence window:
+The following conditions must already be true in the same immutable Pass 46 evidence window:
 
 1. H1 started `lesson_e2e_live_capture.py --reset-on-start` before the one authorized reset.
 2. The live timeline proves `WifiStation: Got IP`, passive lesson WebSocket open, and
@@ -175,7 +175,7 @@ The following conditions must already be true in the same immutable Pass 45 evid
 3. The single four-worker collector is alive, its latest observation is fresh `READY`, no stop or
    route-violation marker exists, and the scoped UiAutomation collision count is zero.
 4. The read-only bridge probe above passed while Parent Today remained foreground.
-5. No assignment has been created in Pass 45 and the one-shot command below has never been
+5. No assignment has been created in Pass 46 and the one-shot command below has never been
    entered.
 
 H1 supplies the live capture PID and the scoped collector logcat file. This gate deliberately
@@ -184,14 +184,14 @@ reads existing evidence and processes only; it does not navigate, reset, trigger
 ```bash
 set -euo pipefail
 
-PASS45=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-45
-TIMELINE="$PASS45/live-capture/timeline.log"
-COLLECTOR="$PASS45/parent-progress"
-COLLISION_LOG="$PASS45/collector-logcat.txt"
-: "${T54_PASS45_CAPTURE_PID:?set to the already-running Pass 45 capture PID}"
+PASS46=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-46
+TIMELINE="$PASS46/live-capture/timeline.log"
+COLLECTOR="$PASS46/parent-progress"
+COLLISION_LOG="$PASS46/collector-logcat.txt"
+: "${T54_PASS46_CAPTURE_PID:?set to the already-running Pass 46 capture PID}"
 
-test "$T54_PASS45_CAPTURE_PID" -gt 1
-kill -0 "$T54_PASS45_CAPTURE_PID"
+test "$T54_PASS46_CAPTURE_PID" -gt 1
+kill -0 "$T54_PASS46_CAPTURE_PID"
 test -s "$TIMELINE"
 grep -Fq 'WifiStation: Got IP:' "$TIMELINE"
 grep -Fq 'passive_lesson_websocket_opened' "$TIMELINE"
@@ -219,19 +219,19 @@ done
 
 test -s "$COLLISION_LOG"
 test "$(grep -c 'UiAutomationService.*already registered' "$COLLISION_LOG" || true)" -eq 0
-grep -Fq 'OK (1 test)' "$PASS45/parent-session-bridge/session-probe.log"
+grep -Fq 'OK (1 test)' "$PASS46/parent-session-bridge/session-probe.log"
 grep -Fq 'SESSION_PROBE_OK route=READY tokenPresent=true' \
-  "$PASS45/parent-session-bridge/session-probe.log"
+  "$PASS46/parent-session-bridge/session-probe.log"
 ```
 
 If this block exits nonzero, freeze before assignment. Do not repair the evidence in place and do
 not proceed to the POST.
 
-## Gated Pass 45 assignment invocation: enter once only
+## Gated Pass 46 assignment invocation: enter once only
 
 This is the only assignment-creating command in the handoff. Run it immediately after the
 pre-POST gate, with the same Parent Today route and strict-pass processes still live. The result
-path is fixed by the Java bridge. Do not change `PASS45`, `resultPath`, the class name, or the
+path is fixed by the Java bridge. Do not change `PASS46`, `resultPath`, the class name, or the
 arming value.
 
 ```bash
@@ -239,11 +239,11 @@ set -euo pipefail
 
 ADB=/Users/manhhodinh/Library/Android/sdk/platform-tools/adb
 SERIAL=efc5314f
-PASS45=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-45
-BRIDGE="$PASS45/parent-session-bridge"
+PASS46=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-46
+BRIDGE="$PASS46/parent-session-bridge"
 RUNNER_LOG="$BRIDGE/assignment-runner.log"
-HOST_RESULT="$BRIDGE/t54-pass45-assignment.json"
-DEVICE_RESULT=/storage/emulated/0/Android/data/com.TJBotmobile/files/t54-pass45-assignment.json
+HOST_RESULT="$BRIDGE/t54-pass46-assignment.json"
+DEVICE_RESULT=/storage/emulated/0/Android/data/com.TJBotmobile/files/t54-pass46-assignment.json
 
 mkdir -p "$BRIDGE"
 test ! -e "$RUNNER_LOG"
@@ -252,20 +252,20 @@ $ADB -s "$SERIAL" shell test ! -e "$DEVICE_RESULT"
 
 # The marker is created only after the collector lease is acquired, immediately before
 # instrumentation. It remains after every success or failure.
-T54_COLLECTOR_OUT="$PASS45/parent-progress" \
+T54_COLLECTOR_OUT="$PASS46/parent-progress" \
 T54_COLLECTOR_MODE=with-uiautomation-lease \
 T54_COLLECTOR_UIAUTOMATOR_COLLISIONS=0 \
   bash /Users/manhhodinh/Documents/TBOT/t54-parent-collector-pass9.sh -- \
   bash -c 'mkdir "$1"; shift; exec "$@"' _ "$BRIDGE/.assignment-invoked" \
     "$ADB" -s "$SERIAL" shell am instrument --no-restart -w -r \
-      -e class com.TJBotmobile.t54.ParentSessionAssignmentBridgeTest#createPass45Assignment \
-      -e confirmAssignmentId PASS45 \
+      -e class com.TJBotmobile.t54.ParentSessionAssignmentBridgeTest#createPass46Assignment \
+      -e confirmAssignmentId PASS46 \
       -e resultPath "$DEVICE_RESULT" \
       com.TJBotmobile.test/androidx.test.runner.AndroidJUnitRunner \
   2>&1 | tee "$RUNNER_LOG"
 
 grep -Fq 'OK (1 test)' "$RUNNER_LOG"
-grep -Fq 'ASSIGNMENT_CREATED route=READY result=t54-pass45-assignment.json' "$RUNNER_LOG"
+grep -Fq 'ASSIGNMENT_CREATED route=READY result=t54-pass46-assignment.json' "$RUNNER_LOG"
 if grep -Eqi 'authorization|bearer[[:space:]]|access[_ -]?token|refresh[_ -]?token' \
   "$RUNNER_LOG"; then
   printf 'FAIL: token-bearing label appeared in assignment runner output\n' >&2
@@ -299,7 +299,7 @@ jq -e '
 The `.assignment-invoked` marker is permanent evidence that this block was entered; never delete
 or bypass it. The invocation has occurred once as soon as `am instrument` is entered. Any timeout, `401`,
 non-`201`, active-assignment conflict, malformed response, identity mismatch, missing/pull-failed
-result, `jq` failure, route loss, or later strict-pass failure is terminal for Pass 45. Do not run
+result, `jq` failure, route loss, or later strict-pass failure is terminal for Pass 46. Do not run
 the command a second time.
 
 ## Arm the answer helper from the safe result
@@ -310,15 +310,15 @@ and start exactly one helper. No readiness probe sends a child response.
 ```bash
 set -euo pipefail
 
-PASS45=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-45
-HOST_RESULT="$PASS45/parent-session-bridge/t54-pass45-assignment.json"
+PASS46=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-46
+HOST_RESULT="$PASS46/parent-session-bridge/t54-pass46-assignment.json"
 export T54_FRESH_ASSIGNMENT_ID="$(jq -er '.assignmentId' "$HOST_RESULT")"
 
-T54_ANSWER_LOG="$PASS45/live-capture/esp-server.log" \
-T54_ANSWER_STATE_DIR="$PASS45/answer-helper-state" \
+T54_ANSWER_LOG="$PASS46/live-capture/esp-server.log" \
+T54_ANSWER_STATE_DIR="$PASS46/answer-helper-state" \
 T54_ANSWER_EXPECTED_ASSIGNMENT_ID="$T54_FRESH_ASSIGNMENT_ID" \
   bash /Users/manhhodinh/Documents/TBOT/t54-answer-helper-pass9.sh \
-  2>&1 | tee "$PASS45/answer-helper.log"
+  2>&1 | tee "$PASS46/answer-helper.log"
 ```
 
 In another terminal, require both helper identity and the live route/collector gate before the
@@ -326,26 +326,26 @@ normal spoken trigger:
 
 ```bash
 set -euo pipefail
-PASS45=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-45
+PASS46=/Users/manhhodinh/Documents/TBOT/robot/docs/evidence/t54-live-20260820-final-closeout/final-parent-sla-pass-46
 export T54_FRESH_ASSIGNMENT_ID="$(jq -er '.assignmentId' \
-  "$PASS45/parent-session-bridge/t54-pass45-assignment.json")"
+  "$PASS46/parent-session-bridge/t54-pass46-assignment.json")"
 
 T54_ANSWER_MODE=check-ready \
-T54_ANSWER_LOG="$PASS45/live-capture/esp-server.log" \
-T54_ANSWER_STATE_DIR="$PASS45/answer-helper-state" \
+T54_ANSWER_LOG="$PASS46/live-capture/esp-server.log" \
+T54_ANSWER_STATE_DIR="$PASS46/answer-helper-state" \
 T54_ANSWER_EXPECTED_ASSIGNMENT_ID="$T54_FRESH_ASSIGNMENT_ID" \
   bash /Users/manhhodinh/Documents/TBOT/t54-answer-helper-pass9.sh
 
-T54_COLLECTOR_OUT="$PASS45/parent-progress" \
+T54_COLLECTOR_OUT="$PASS46/parent-progress" \
 T54_COLLECTOR_MODE=check-ready \
 T54_COLLECTOR_UIAUTOMATOR_COLLISIONS=0 \
-T54_ANSWER_STATE_DIR="$PASS45/answer-helper-state" \
+T54_ANSWER_STATE_DIR="$PASS46/answer-helper-state" \
 T54_ANSWER_EXPECTED_ASSIGNMENT_ID="$T54_FRESH_ASSIGNMENT_ID" \
   bash /Users/manhhodinh/Documents/TBOT/t54-parent-collector-pass9.sh
 ```
 
 Both commands must pass, and the collector command must print `ROUTE_READY`. Otherwise freeze the
-already-created assignment and Pass 45; never create another assignment. This handoff does not
+already-created assignment and Pass 46; never create another assignment. This handoff does not
 authorize manual Parent refresh, navigation, synthetic progress, assignment replay, an early
 protected nudge, or any action outside the existing strict H1 procedure.
 
@@ -356,7 +356,7 @@ protected nudge, or any action outside the existing strict H1 procedure.
 - Test APK install output and read-only session-probe output.
 - The exact pre-POST gate output and scoped collision log.
 - The single instrumentation runner log and normalized result JSON.
-- Helper and combined READY-gate output, followed by the existing strict Pass 45 evidence.
+- Helper and combined READY-gate output, followed by the existing strict Pass 46 evidence.
 
 None of these artifacts may contain an access token, refresh token, Authorization header, token
 fragment, SecureStore envelope, password, or raw assignment response.
