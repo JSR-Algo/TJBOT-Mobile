@@ -413,6 +413,54 @@ describe('useParentLearningStatusQuery', () => {
     view.unmount();
   });
 
+  it('defers an inactive focused sample until pending s8 and s9 samples drain', async () => {
+    const stepSeven = {
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!, state: 'RUNNING', positionPercent: 78,
+        currentStep: { stepId: 'step-7', stepNumber: 7, total: 9, activityTitle: 'Activity 7', phase: 'practice', subject: null },
+      },
+      projectionRevision: '7',
+    };
+    const pending: Array<(status: ParentLearningStatus) => void> = [];
+    mockStatus
+      .mockResolvedValueOnce(stepSeven)
+      .mockImplementation(() => new Promise(resolve => { pending.push(resolve); }));
+    const view = setup('child-1', true);
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(7));
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(3_000); });
+    expect(pending).toHaveLength(3);
+
+    act(() => pending[2]({ ...inactive, projectionRevision: '10' }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(7));
+
+    act(() => pending[0]({
+      ...stepSeven,
+      activeLearning: {
+        ...stepSeven.activeLearning!, positionPercent: 89,
+        currentStep: { stepId: 'step-8', stepNumber: 8, total: 9, activityTitle: 'Activity 8', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '8',
+    }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(8));
+
+    act(() => pending[1]({
+      ...stepSeven,
+      activeLearning: {
+        ...stepSeven.activeLearning!, positionPercent: 100,
+        currentStep: { stepId: 'step-9', stepNumber: 9, total: 9, activityTitle: 'Activity 9', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '9',
+    }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(9));
+
+    await waitFor(() => expect(pending).toHaveLength(4));
+    act(() => pending[3]({ ...inactive, projectionRevision: '10' }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning).toBeNull());
+    view.unmount();
+  });
+
   it('does not starve inactive-cache discovery across consecutive partial realtime frames', async () => {
     let resolveDiscovery!: (status: ParentLearningStatus) => void;
     mockStatus

@@ -65,7 +65,14 @@ function sampleParentLearningStatus(queryClient: QueryClient, childId: string, p
   }
   void getParentLearningStatus(childId).then(
     incoming => {
-      if (protectTerminal && isTerminalDeferred(queryClient, childId) && isTerminalParentLearningStatus(incoming)) return;
+      if (protectTerminal && isTerminalParentLearningStatus(incoming)) {
+        const current = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId));
+        if (current?.activeLearning && !isTerminalParentLearningStatus(current)) {
+          deferTerminalReconciliation(queryClient, childId);
+          return;
+        }
+        if (isTerminalDeferred(queryClient, childId)) return;
+      }
       queryClient.setQueryData<ParentLearningStatus>(
         parentLearningStatusKey(childId),
         current => newestParentLearningStatus(current, incoming),
