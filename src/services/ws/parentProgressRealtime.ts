@@ -1,5 +1,6 @@
 import { Config } from '@/config';
 import { normalizeParentLearningStatus, type ParentActiveLearning, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
+import { logParentProgressDiagnostic } from '@/services/observability/parentProgressDiagnostics';
 import { createReconnectingSocket, type CreateReconnectingSocketOptions, type RealtimeConnection } from '@/services/ws/realtime';
 
 export interface ParentProgressSnapshotFrame { type: 'lesson.progress.snapshot'; childId: string; projectionRevision: string; status: ParentLearningStatus }
@@ -59,34 +60,75 @@ export async function openParentProgressRealtime(
     shouldReconnect: (event) => event.code !== 4403,
     onMessage: (event) => {
       let raw: unknown;
-      try { raw = JSON.parse(event.data) as unknown; } catch { callbacks.onInvalidate(); return; }
+      try { raw = JSON.parse(event.data) as unknown; } catch {
+        logParentProgressDiagnostic({ source: 'ws', decision: 'drop_bad_json', childId: normalizedChildId });
+        callbacks.onInvalidate();
+        return;
+      }
       const frame = record(raw);
       const revision = validRevision(frame.projectionRevision);
-      if (frame.childId !== normalizedChildId || revision === null) { callbacks.onInvalidate(); return; }
+      if (frame.childId !== normalizedChildId) {
+        logParentProgressDiagnostic({ source: 'ws', decision: 'drop_child_mismatch', childId: normalizedChildId, revision: revision ?? undefined });
+        callbacks.onInvalidate();
+        return;
+      }
+      if (revision === null) {
+        logParentProgressDiagnostic({ source: 'ws', decision: 'drop_invalid_revision', childId: normalizedChildId });
+        callbacks.onInvalidate();
+        return;
+      }
       if (frame.type === 'lesson.progress.snapshot') {
-        if (compareProjectionRevisions(revision, currentRevision) <= 0) return;
-        if (!isRecord(frame.status)) { callbacks.onInvalidate(); return; }
+        logParentProgressDiagnostic({ source: 'ws', decision: 'receive', childId: normalizedChildId, revision });
+        if (compareProjectionRevisions(revision, currentRevision) <= 0) {
+          logParentProgressDiagnostic({ source: 'ws', decision: 'drop_stale', childId: normalizedChildId, revision });
+          return;
+        }
+        if (!isRecord(frame.status)) {
+          logParentProgressDiagnostic({ source: 'ws', decision: 'drop_invalid_snapshot', childId: normalizedChildId, revision });
+          callbacks.onInvalidate();
+          return;
+        }
         const status = normalizeParentLearningStatus(frame.status);
-        if (status.projectionRevision !== revision) { callbacks.onInvalidate(); return; }
+        if (status.projectionRevision !== revision) {
+          logParentProgressDiagnostic({ source: 'ws', decision: 'drop_invalid_snapshot', childId: normalizedChildId, revision });
+          callbacks.onInvalidate();
+          return;
+        }
         currentRevision = revision;
+        logParentProgressDiagnostic({ source: 'ws', decision: 'apply_snapshot', childId: normalizedChildId, revision, ...statusDiagnosticFields(status) });
         callbacks.onStatus(status);
         return;
       }
       if (frame.type === 'lesson.progress.updated') {
         const comparison = compareProjectionRevisions(revision, currentRevision);
-        if (comparison <= 0) return;
-        if (!isUpdateFrame(frame)) { callbacks.onInvalidate(); return; }
+        if (comparison <= 0) {
+          logParentProgressDiagnostic({ source: 'ws', decision: 'drop_stale', childId: normalizedChildId, revision });
+          return;
+        }
+        if (!isUpdateFrame(frame)) {
+          logParentProgressDiagnostic({ source: 'ws', decision: 'drop_invalid_update', childId: normalizedChildId, revision });
+          callbacks.onInvalidate();
+          return;
+        }
         const activeLearning = frame.activeLearning === null ? null : parseActiveLearningDelta(frame.activeLearning);
-        if (activeLearning === undefined) { callbacks.onInvalidate(); return; }
+        if (activeLearning === undefined) {
+          logParentProgressDiagnostic({ source: 'ws', decision: 'drop_invalid_update', childId: normalizedChildId, revision });
+          callbacks.onInvalidate();
+          return;
+        }
+        logParentProgressDiagnostic({ source: 'ws', decision: 'receive', childId: normalizedChildId, revision, ...activeDiagnosticFields(activeLearning) });
         // Gateway updates carry a full active-learning projection, so complete frames can safely close a revision gap.
         if (revision !== incrementRevision(currentRevision) && activeLearning !== null && !isCompleteActiveLearning(activeLearning)) {
+          logParentProgressDiagnostic({ source: 'ws', decision: 'drop_gap_incomplete', childId: normalizedChildId, revision, ...activeDiagnosticFields(activeLearning) });
           callbacks.onInvalidate();
           return;
         }
         currentRevision = revision;
+        logParentProgressDiagnostic({ source: 'ws', decision: 'apply_update', childId: normalizedChildId, revision, ...activeDiagnosticFields(activeLearning) });
         callbacks.onUpdate?.({ type: 'lesson.progress.updated', childId: normalizedChildId, sessionId: frame.sessionId, projectionRevision: revision, occurredAt: frame.occurredAt, publishedAt: frame.publishedAt, activeLearning });
         return;
       }
+      logParentProgressDiagnostic({ source: 'ws', decision: 'drop_unknown_type', childId: normalizedChildId, revision });
       callbacks.onInvalidate();
     },
     reconnect: options.reconnect ?? { maxAttempts: 3 },
@@ -110,6 +152,20 @@ function parentProgressUrl(baseUrl: string): string { const url = new URL(baseUr
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 function record(value: unknown): Record<string, unknown> { return isRecord(value) ? value : {}; }
 function isUpdateFrame(value: Record<string, unknown>): value is Record<string, unknown> & { sessionId: string | null; occurredAt: string; publishedAt: string; activeLearning: Record<string, unknown> | null } { return (typeof value.sessionId === 'string' || value.sessionId === null) && typeof value.occurredAt === 'string' && typeof value.publishedAt === 'string' && (value.activeLearning === null || isRecord(value.activeLearning)); }
+
+function statusDiagnosticFields(status: ParentLearningStatus): { state?: string | null; stepId?: string | null; stepNumber?: number | null; percent?: number | null; terminalReady?: boolean } {
+  return activeDiagnosticFields(status.activeLearning);
+}
+
+function activeDiagnosticFields(active: ParentActiveLearningDelta | ParentActiveLearning | null): { state?: string | null; stepId?: string | null; stepNumber?: number | null; percent?: number | null; terminalReady?: boolean } {
+  if (active === null) return { state: null, stepId: null, stepNumber: null, percent: null };
+  const state = typeof active.state === 'string' ? active.state : undefined;
+  const stepId = active.currentStep && typeof active.currentStep.stepId === 'string' ? active.currentStep.stepId : active.currentStep === null ? null : undefined;
+  const stepNumber = active.currentStep && typeof active.currentStep.stepNumber === 'number' ? active.currentStep.stepNumber : active.currentStep === null ? null : undefined;
+  const percent = typeof active.positionPercent === 'number' ? active.positionPercent : undefined;
+  const terminalReady = state === 'READY' && stepNumber === null;
+  return { state, stepId, stepNumber, percent, ...(terminalReady ? { terminalReady } : {}) };
+}
 
 function isCompleteActiveLearning(active: ParentActiveLearningDelta): boolean {
   return typeof active.assignmentId === 'string'

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { parentLearningStatusKey, useParentLearningStatusQuery } from '@/features/parent/hooks/useParentLearningStatusQuery';
 import { getParentLearningStatus, type ParentLearningStatus } from '@/services/api/parentLearning.api';
 import { getAccessToken } from '@/services/http/tokens';
+import { setParentProgressDiagnosticsEnabledForTest } from '@/services/observability/parentProgressDiagnostics';
 
 jest.mock('@/services/api/parentLearning.api', () => ({
   ...jest.requireActual('@/services/api/parentLearning.api'),
@@ -60,9 +61,13 @@ async function exhaustReconnects(): Promise<void> {
 }
 
 describe('useParentLearningStatusQuery', () => {
+  const info = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    info.mockClear();
+    setParentProgressDiagnosticsEnabledForTest(null);
     sockets = [];
     appStateChange = undefined;
     (global as unknown as { WebSocket: typeof NativeSocket }).WebSocket = NativeSocket;
@@ -71,7 +76,11 @@ describe('useParentLearningStatusQuery', () => {
     mockToken.mockResolvedValue('parent-jwt');
     mockStatus.mockResolvedValue(active);
   });
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => {
+    jest.useRealTimers();
+    setParentProgressDiagnosticsEnabledForTest(null);
+  });
+  afterAll(() => info.mockRestore());
 
   it('uses the canonical key and fetches immediately on mount', async () => {
     expect(parentLearningStatusKey('child-1')).toEqual(['parent-learning-status', 'child-1']);
@@ -464,6 +473,93 @@ describe('useParentLearningStatusQuery', () => {
     expect(pending).toHaveLength(3);
     await act(async () => { await jest.advanceTimersByTimeAsync(0); });
     await waitFor(() => expect(view.result.current.data?.activeLearning).toBeNull());
+    view.unmount();
+  });
+
+  it('emits non-PII diagnostics for focused sample apply, defer, cache, and drop decisions', async () => {
+    setParentProgressDiagnosticsEnabledForTest(true);
+    const stepSeven = {
+      ...active,
+      activeLearning: {
+        ...active.activeLearning!, assignmentId: 'assignment-secret', sessionId: 'session-secret', state: 'RUNNING', positionPercent: 78,
+        currentStep: { stepId: 'step-7', stepNumber: 7, total: 9, activityTitle: 'Activity 7', phase: 'practice', subject: null },
+      },
+      projectionRevision: '7',
+    };
+    const backendReadyWithoutStep = {
+      ...stepSeven,
+      activeLearning: {
+        ...stepSeven.activeLearning!, state: 'READY', currentStep: null, positionPercent: 0,
+      },
+      projectionRevision: '10',
+    };
+    const pending: Array<(status: ParentLearningStatus) => void> = [];
+    mockStatus
+      .mockResolvedValueOnce(stepSeven)
+      .mockImplementation(() => new Promise(resolve => { pending.push(resolve); }));
+    const view = setup('child-1', true);
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(7));
+
+    await act(async () => { await jest.advanceTimersByTimeAsync(3_000); });
+    expect(pending).toHaveLength(3);
+
+    act(() => pending[2](backendReadyWithoutStep));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(7));
+
+    act(() => pending[0]({
+      ...stepSeven,
+      activeLearning: {
+        ...stepSeven.activeLearning!, positionPercent: 89,
+        currentStep: { stepId: 'step-8', stepNumber: 8, total: 9, activityTitle: 'Activity 8', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '8',
+    }));
+    await waitFor(() => expect(view.result.current.data?.activeLearning?.currentStep?.stepNumber).toBe(8));
+
+    await act(async () => {
+      pending[1]({
+        ...stepSeven,
+        activeLearning: {
+          ...stepSeven.activeLearning!, positionPercent: 100,
+          currentStep: { stepId: 'step-9', stepNumber: 9, total: 9, activityTitle: 'Activity 9', phase: 'teaching', subject: null },
+        },
+        projectionRevision: '9',
+      });
+      await Promise.resolve();
+    });
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    await waitFor(() => expect(view.result.current.data).toMatchObject({
+      projectionRevision: '10',
+      activeLearning: { state: 'READY', currentStep: null, positionPercent: 0 },
+    }));
+
+    mockStatus.mockResolvedValueOnce({
+      ...stepSeven,
+      activeLearning: {
+        ...stepSeven.activeLearning!, positionPercent: 89,
+        currentStep: { stepId: 'step-8', stepNumber: 8, total: 9, activityTitle: 'Activity 8', phase: 'teaching', subject: null },
+      },
+      projectionRevision: '8',
+    });
+    await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(5));
+
+    const events = info.mock.calls
+      .filter(call => call[0] === 'parent_progress_diag')
+      .map(call => call[1]);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ source: 'focused_http', decision: 'sample_start', childKey: expect.stringMatching(/^child_[a-z0-9]+$/) }),
+      expect.objectContaining({ source: 'focused_http', decision: 'receive_sample', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '10', state: 'READY', stepId: null, stepNumber: null, percent: 0, terminalReady: true }),
+      expect.objectContaining({ source: 'focused_http', decision: 'defer_terminal', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '10', terminalReady: true }),
+      expect.objectContaining({ source: 'focused_http', decision: 'apply_sample', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '8', state: 'RUNNING', stepId: 'step-8', stepNumber: 8, percent: 89 }),
+      expect.objectContaining({ source: 'focused_http', decision: 'apply_sample', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '9', state: 'RUNNING', stepId: 'step-9', stepNumber: 9, percent: 100 }),
+      expect.objectContaining({ source: 'focused_http', decision: 'cache_deferred_terminal', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '10', terminalReady: true }),
+      expect.objectContaining({ source: 'focused_http', decision: 'apply_deferred_terminal', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '10', terminalReady: true }),
+      expect.objectContaining({ source: 'focused_http', decision: 'drop_stale_cache', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '8', cacheRevision: expect.any(String) }),
+    ]));
+    expect(JSON.stringify(events)).not.toContain('child-1');
+    expect(JSON.stringify(events)).not.toContain('assignment-secret');
+    expect(JSON.stringify(events)).not.toContain('session-secret');
     view.unmount();
   });
 

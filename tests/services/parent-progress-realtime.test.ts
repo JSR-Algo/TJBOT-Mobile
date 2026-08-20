@@ -3,6 +3,7 @@ import {
   openParentProgressRealtime,
   type ParentProgressRealtimeCallbacks,
 } from '@/services/ws/parentProgressRealtime';
+import { setParentProgressDiagnosticsEnabledForTest } from '@/services/observability/parentProgressDiagnostics';
 import type { RealtimeSocket } from '@/services/ws/realtime';
 
 class FakeSocket implements RealtimeSocket {
@@ -39,7 +40,19 @@ const sockets: FakeSocket[] = [];
 const createSocket = () => { const socket = new FakeSocket(); sockets.push(socket); return socket; };
 
 describe('parent progress realtime', () => {
-  beforeEach(() => { sockets.length = 0; jest.useRealTimers(); });
+  const info = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+
+  beforeEach(() => {
+    sockets.length = 0;
+    jest.useRealTimers();
+    info.mockClear();
+    setParentProgressDiagnosticsEnabledForTest(null);
+  });
+
+  afterAll(() => {
+    info.mockRestore();
+    setParentProgressDiagnosticsEnabledForTest(null);
+  });
 
   it('compares canonical decimal revisions without Number coercion', () => {
     expect(compareProjectionRevisions('9007199254740993', '9007199254740992')).toBe(1);
@@ -56,6 +69,53 @@ describe('parent progress realtime', () => {
     sockets[0].message({ type: 'lesson.progress.updated', childId: 'child-1', projectionRevision: 9007199254740994 });
 
     expect(onInvalidate).toHaveBeenCalledTimes(1);
+    connection.close();
+  });
+
+  it('keeps parent progress diagnostics silent unless explicitly enabled', async () => {
+    const onUpdate = jest.fn();
+    const connection = await openParentProgressRealtime('child-1', '12', {
+      onStatus: jest.fn(), onUpdate, onInvalidate: jest.fn(), onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket, tokenProvider: async () => 'jwt', reconnect: false });
+
+    sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-secret', projectionRevision: '13',
+      occurredAt: '2026-08-20T00:00:00Z', publishedAt: '2026-08-20T00:00:01Z',
+      activeLearning: { state: 'RUNNING', positionPercent: 89, currentStep: { stepId: 'step-8', stepNumber: 8, total: 9, activityTitle: 'Activity 8', phase: 'teaching', subject: null } },
+    });
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(info).not.toHaveBeenCalled();
+    connection.close();
+  });
+
+  it('emits non-PII parent progress diagnostics for websocket receive, drop, and apply decisions', async () => {
+    setParentProgressDiagnosticsEnabledForTest(true);
+    const onUpdate = jest.fn();
+    const onInvalidate = jest.fn();
+    const connection = await openParentProgressRealtime('child-1', '12', {
+      onStatus: jest.fn(), onUpdate, onInvalidate, onAuthExpired: jest.fn(), onAccessRevoked: jest.fn(), onReconnectExhausted: jest.fn(),
+    }, { createSocket, tokenProvider: async () => 'jwt', reconnect: false });
+
+    sockets[0].message({
+      type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-secret', projectionRevision: '13',
+      occurredAt: '2026-08-20T00:00:00Z', publishedAt: '2026-08-20T00:00:01Z',
+      activeLearning: { state: 'RUNNING', positionPercent: 89, currentStep: { stepId: 'step-8', stepNumber: 8, total: 9, activityTitle: 'Activity 8', phase: 'teaching', subject: null } },
+    });
+    sockets[0].message({ type: 'lesson.progress.updated', childId: 'child-1', sessionId: 'session-secret', projectionRevision: '13' });
+    sockets[0].message({ type: 'lesson.progress.nope', childId: 'child-1', projectionRevision: '14' });
+
+    const events = info.mock.calls
+      .filter(call => call[0] === 'parent_progress_diag')
+      .map(call => call[1]);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ source: 'ws', decision: 'receive', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '13', state: 'RUNNING', stepId: 'step-8', stepNumber: 8, percent: 89 }),
+      expect.objectContaining({ source: 'ws', decision: 'apply_update', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '13', state: 'RUNNING', stepId: 'step-8', stepNumber: 8, percent: 89 }),
+      expect.objectContaining({ source: 'ws', decision: 'drop_stale', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '13' }),
+      expect.objectContaining({ source: 'ws', decision: 'drop_unknown_type', childKey: expect.stringMatching(/^child_[a-z0-9]+$/), revision: '14' }),
+    ]));
+    expect(JSON.stringify(events)).not.toContain('child-1');
+    expect(JSON.stringify(events)).not.toContain('session-secret');
     connection.close();
   });
 

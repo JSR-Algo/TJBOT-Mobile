@@ -2,6 +2,7 @@ import React from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useQuery, useQueryClient, type QueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { getParentLearningStatus, type ParentActiveLearning, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
+import { logParentProgressDiagnostic } from '@/services/observability/parentProgressDiagnostics';
 import { captureError } from '@/services/observability/sentry';
 import { openParentProgressRealtime, type ParentActiveLearningDelta, type ParentProgressUpdatedFrame } from '@/services/ws/parentProgressRealtime';
 import type { RealtimeConnection } from '@/services/ws/realtime';
@@ -64,7 +65,7 @@ function finishDeferredTerminal(queryClient: QueryClient, childId: string): void
   if (!incoming) return;
   queryClient.setQueryData<ParentLearningStatus>(
     parentLearningStatusKey(childId),
-    current => newestParentLearningStatus(current, incoming),
+    current => newestParentLearningStatusWithDiagnostics(current, incoming, childId, 'apply_deferred_terminal'),
   );
 }
 
@@ -74,30 +75,44 @@ function sampleParentLearningStatus(queryClient: QueryClient, childId: string, p
     if (!pending) { pending = new Map(); pendingFocusedSamplesByClient.set(queryClient, pending); }
     pending.set(childId, (pending.get(childId) ?? 0) + 1);
   }
+  if (protectTerminal) {
+    logParentProgressDiagnostic({ source: 'focused_http', decision: 'sample_start', childId });
+  }
   void getParentLearningStatus(childId).then(
     incoming => {
+      if (protectTerminal) {
+        logParentProgressDiagnostic({ source: 'focused_http', decision: 'receive_sample', childId, revision: incoming.projectionRevision, ...statusDiagnosticFields(incoming) });
+      }
       const current = queryClient.getQueryData<ParentLearningStatus>(parentLearningStatusKey(childId));
       if (protectTerminal && isRegressiveFocusedProjection(current, incoming)) {
+        logParentProgressDiagnostic({ source: 'focused_http', decision: 'defer_terminal', childId, revision: incoming.projectionRevision, ...statusDiagnosticFields(incoming) });
         deferTerminalReconciliation(queryClient, childId, incoming);
         return;
       }
       if (protectTerminal && isTerminalParentLearningStatus(incoming)) {
         if (current?.activeLearning && !isTerminalParentLearningStatus(current)) {
+          logParentProgressDiagnostic({ source: 'focused_http', decision: 'defer_terminal', childId, revision: incoming.projectionRevision, ...statusDiagnosticFields(incoming) });
           deferTerminalReconciliation(queryClient, childId, incoming);
           return;
         }
         if (isTerminalDeferred(queryClient, childId)) {
+          logParentProgressDiagnostic({ source: 'focused_http', decision: 'defer_terminal', childId, revision: incoming.projectionRevision, ...statusDiagnosticFields(incoming) });
           deferTerminalReconciliation(queryClient, childId, incoming);
           return;
         }
       }
       queryClient.setQueryData<ParentLearningStatus>(
         parentLearningStatusKey(childId),
-        current => newestParentLearningStatus(current, incoming),
+        current => protectTerminal
+          ? newestParentLearningStatusWithDiagnostics(current, incoming, childId, 'apply_sample')
+          : newestParentLearningStatus(current, incoming),
       );
     },
     error => {
       captureError(error);
+      if (protectTerminal) {
+        logParentProgressDiagnostic({ source: 'focused_http', decision: 'sample_error', childId });
+      }
       if (!protectTerminal || !isTerminalDeferred(queryClient, childId)) {
         reconcileParentLearningStatus(queryClient, childId);
       }
@@ -123,6 +138,7 @@ function deferTerminalReconciliation(queryClient: QueryClient, childId: string, 
   let deferred = deferredTerminalByClient.get(queryClient);
   if (!deferred) { deferred = new Map(); deferredTerminalByClient.set(queryClient, deferred); }
   const current = deferred.get(childId);
+  logParentProgressDiagnostic({ source: 'focused_http', decision: 'cache_deferred_terminal', childId, revision: status.projectionRevision, cacheRevision: current?.projectionRevision, ...statusDiagnosticFields(status) });
   deferred.set(childId, newestParentLearningStatus(current, status));
 }
 
@@ -150,6 +166,35 @@ function newestParentLearningStatus(
   return compareProjectionRevisions(incoming.projectionRevision, current.projectionRevision) < 0
     ? current
     : incoming;
+}
+
+function newestParentLearningStatusWithDiagnostics(
+  current: ParentLearningStatus | undefined,
+  incoming: ParentLearningStatus,
+  childId: string,
+  applyDecision: 'apply_sample' | 'apply_deferred_terminal',
+): ParentLearningStatus {
+  if (current && compareProjectionRevisions(incoming.projectionRevision, current.projectionRevision) < 0) {
+    logParentProgressDiagnostic({ source: 'focused_http', decision: 'drop_stale_cache', childId, revision: incoming.projectionRevision, cacheRevision: current.projectionRevision, ...statusDiagnosticFields(incoming) });
+    return current;
+  }
+  logParentProgressDiagnostic({ source: 'focused_http', decision: applyDecision, childId, revision: incoming.projectionRevision, cacheRevision: current?.projectionRevision, ...statusDiagnosticFields(incoming) });
+  return incoming;
+}
+
+function statusDiagnosticFields(status: ParentLearningStatus): { state?: string | null; stepId?: string | null; stepNumber?: number | null; percent?: number | null; terminalReady?: boolean } {
+  const active = status.activeLearning;
+  if (active === null) return { state: null, stepId: null, stepNumber: null, percent: null };
+  const stepId = active.currentStep?.stepId ?? (active.currentStep === null ? null : undefined);
+  const stepNumber = active.currentStep?.stepNumber ?? (active.currentStep === null ? null : undefined);
+  const terminalReady = active.state === 'READY' && stepNumber === null;
+  return {
+    state: active.state,
+    stepId,
+    stepNumber,
+    percent: active.positionPercent,
+    ...(terminalReady ? { terminalReady } : {}),
+  };
 }
 
 function isCompleteCurrentStep(step: Partial<ParentLearningStep>): step is ParentLearningStep {
