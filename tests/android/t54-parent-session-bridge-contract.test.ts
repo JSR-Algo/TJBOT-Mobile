@@ -27,7 +27,7 @@ describe('T5.4 Parent session assignment bridge contract', () => {
     expect(contract).toContain('w02-feelings');
     expect(contract).toContain('LESSON_VERSION = 7');
     expect(contract).toContain('PROFILE = "espTft"');
-    expect(bridge).toContain('PASS46');
+    expect(bridge).toContain('PASS47');
     expect(bridge).toContain('waitForActiveRoot');
     expect(bridge).toContain('getUiAutomation()');
     expect(bridge).toContain('Hôm nay');
