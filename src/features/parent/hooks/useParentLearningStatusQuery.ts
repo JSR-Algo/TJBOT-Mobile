@@ -2,6 +2,7 @@ import React from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useQuery, useQueryClient, type QueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { getParentLearningStatus, type ParentActiveLearning, type ParentLearningStatus, type ParentLearningStep } from '@/services/api/parentLearning.api';
+import { captureError } from '@/services/observability/sentry';
 import { openParentProgressRealtime, type ParentActiveLearningDelta, type ParentProgressUpdatedFrame } from '@/services/ws/parentProgressRealtime';
 import type { RealtimeConnection } from '@/services/ws/realtime';
 import { parentLearningHistoryKey } from './useParentLearningHistoryQuery';
@@ -10,6 +11,8 @@ export const parentLearningStatusKey = (childId: string) => ['parent-learning-st
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'ABANDONED', 'CANCELLED']);
 const FOCUSED_ACTIVE_RECONCILE_INTERVAL_MS = 1_000;
 const FALLBACK_POLL_INTERVAL_MS = 10_000;
+const pendingFocusedSamplesByClient = new WeakMap<QueryClient, Map<string, number>>();
+const deferredTerminalByClient = new WeakMap<QueryClient, Set<string>>();
 
 function invalidateDependentProgress(queryClient: QueryClient, childId: string): void {
   void queryClient.invalidateQueries({ queryKey: ['lesson-progress', 'child', childId] });
@@ -21,6 +24,78 @@ function reconcileParentLearningStatus(queryClient: QueryClient, childId: string
     { queryKey: parentLearningStatusKey(childId) },
     { cancelRefetch: false },
   );
+}
+
+function isTerminalParentLearningStatus(status: ParentLearningStatus): boolean {
+  return status.activeLearning === null || TERMINAL_STATES.has(status.activeLearning.state);
+}
+
+function isTerminalDeferred(queryClient: QueryClient, childId: string): boolean {
+  return deferredTerminalByClient.get(queryClient)?.has(childId) ?? false;
+}
+
+function clearDeferredTerminal(queryClient: QueryClient, childId: string): void {
+  const deferred = deferredTerminalByClient.get(queryClient);
+  deferred?.delete(childId);
+  if (deferred?.size === 0) deferredTerminalByClient.delete(queryClient);
+}
+
+function finishDeferredTerminal(queryClient: QueryClient, childId: string): void {
+  void getParentLearningStatus(childId).then(
+    incoming => {
+      clearDeferredTerminal(queryClient, childId);
+      queryClient.setQueryData<ParentLearningStatus>(
+        parentLearningStatusKey(childId),
+        current => newestParentLearningStatus(current, incoming),
+      );
+    },
+    error => {
+      captureError(error);
+      clearDeferredTerminal(queryClient, childId);
+      reconcileParentLearningStatus(queryClient, childId);
+    },
+  );
+}
+
+function sampleParentLearningStatus(queryClient: QueryClient, childId: string, protectTerminal = false): void {
+  if (protectTerminal) {
+    let pending = pendingFocusedSamplesByClient.get(queryClient);
+    if (!pending) { pending = new Map(); pendingFocusedSamplesByClient.set(queryClient, pending); }
+    pending.set(childId, (pending.get(childId) ?? 0) + 1);
+  }
+  void getParentLearningStatus(childId).then(
+    incoming => {
+      if (protectTerminal && isTerminalDeferred(queryClient, childId) && isTerminalParentLearningStatus(incoming)) return;
+      queryClient.setQueryData<ParentLearningStatus>(
+        parentLearningStatusKey(childId),
+        current => newestParentLearningStatus(current, incoming),
+      );
+    },
+    error => {
+      captureError(error);
+      if (!protectTerminal || !isTerminalDeferred(queryClient, childId)) {
+        reconcileParentLearningStatus(queryClient, childId);
+      }
+    },
+  ).finally(() => {
+    if (!protectTerminal) return;
+    const pending = pendingFocusedSamplesByClient.get(queryClient);
+    const remaining = (pending?.get(childId) ?? 1) - 1;
+    if (remaining > 0) pending?.set(childId, remaining);
+    else pending?.delete(childId);
+    if (pending?.size === 0) pendingFocusedSamplesByClient.delete(queryClient);
+    if (remaining <= 0 && isTerminalDeferred(queryClient, childId)) finishDeferredTerminal(queryClient, childId);
+  });
+}
+
+function hasPendingFocusedSamples(queryClient: QueryClient, childId: string): boolean {
+  return (pendingFocusedSamplesByClient.get(queryClient)?.get(childId) ?? 0) > 0;
+}
+
+function deferTerminalReconciliation(queryClient: QueryClient, childId: string): void {
+  let deferred = deferredTerminalByClient.get(queryClient);
+  if (!deferred) { deferred = new Set(); deferredTerminalByClient.set(queryClient, deferred); }
+  deferred.add(childId);
 }
 
 interface SharedRealtimeEntry {
@@ -82,10 +157,15 @@ function isCompleteActiveLearning(active: ParentActiveLearningDelta): active is 
 function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: ParentProgressUpdatedFrame): void {
   const terminalUpdate = frame.activeLearning === null
     || (frame.activeLearning.state !== undefined && TERMINAL_STATES.has(frame.activeLearning.state));
+  const protectTerminal = terminalUpdate && hasPendingFocusedSamples(queryClient, childId);
   queryClient.setQueryData<ParentLearningStatus>(parentLearningStatusKey(childId), (current) => {
     if (!current) return current;
     if (compareProjectionRevisions(frame.projectionRevision, current.projectionRevision) < 0) return current;
-    if (terminalUpdate) return { ...current, activeLearning: null, projectionRevision: frame.projectionRevision };
+    if (terminalUpdate) {
+      return protectTerminal
+        ? current
+        : { ...current, activeLearning: null, projectionRevision: frame.projectionRevision };
+    }
     if (frame.activeLearning === null) return current;
     if (!current.activeLearning) {
       if (!isCompleteActiveLearning(frame.activeLearning)) return current;
@@ -103,7 +183,8 @@ function mergeRealtimeUpdate(queryClient: QueryClient, childId: string, frame: P
             : null;
     return { ...current, activeLearning: { ...current.activeLearning, ...activeDelta, currentStep }, projectionRevision: frame.projectionRevision };
   });
-  reconcileParentLearningStatus(queryClient, childId);
+  if (protectTerminal) deferTerminalReconciliation(queryClient, childId);
+  else sampleParentLearningStatus(queryClient, childId);
   if (terminalUpdate) {
     void queryClient.invalidateQueries({ queryKey: parentLearningHistoryKey(childId) });
   }
@@ -131,7 +212,7 @@ function acquireParentRealtime(queryClient: QueryClient, childId: string, revisi
         invalidateDependentProgress(queryClient, childId);
       },
       onUpdate: (frame) => mergeRealtimeUpdate(queryClient, childId, frame),
-      onInvalidate: () => { reconcileParentLearningStatus(queryClient, childId); invalidateDependentProgress(queryClient, childId); },
+      onInvalidate: () => { sampleParentLearningStatus(queryClient, childId); invalidateDependentProgress(queryClient, childId); },
       onAuthExpired: () => {
         broadcast(true);
         void queryClient.invalidateQueries({ queryKey: parentLearningStatusKey(childId) });
@@ -196,18 +277,19 @@ export function useParentLearningStatusQuery(
   const hasActiveLesson = Boolean(active && !isTerminal);
   const focusedReconcile = foreground && !isTerminal && options.reconcileWhileActive;
   const fallbackPoll = foreground && socketExhausted && hasActiveLesson;
-  const pollIntervalMs = focusedReconcile
-    ? hasActiveLesson
-      ? FOCUSED_ACTIVE_RECONCILE_INTERVAL_MS
-      : FALLBACK_POLL_INTERVAL_MS
-    : fallbackPoll
-      ? FALLBACK_POLL_INTERVAL_MS
-      : null;
   React.useEffect(() => {
-    if (pollIntervalMs === null || !childId) return undefined;
-    const timer = setInterval(() => reconcileParentLearningStatus(queryClient, childId), pollIntervalMs);
+    if (!focusedReconcile || !childId) return undefined;
+    const timer = setInterval(() => {
+      if (!isTerminalDeferred(queryClient, childId)) sampleParentLearningStatus(queryClient, childId, true);
+    }, FOCUSED_ACTIVE_RECONCILE_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [childId, pollIntervalMs, queryClient]);
+  }, [childId, focusedReconcile, queryClient]);
+
+  React.useEffect(() => {
+    if (!fallbackPoll || focusedReconcile || !childId) return undefined;
+    const timer = setInterval(() => reconcileParentLearningStatus(queryClient, childId), FALLBACK_POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [childId, fallbackPoll, focusedReconcile, queryClient]);
 
   return query;
 }
