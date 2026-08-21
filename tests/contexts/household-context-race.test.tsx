@@ -197,4 +197,29 @@ describe('HouseholdContext cold-start race fix (B2)', () => {
       expect(getByTestId('active-child-probe').props.children).toBe('hh-target|child-target');
     });
   });
+
+  it('falls back to the first household that has a child when no selection is persisted', async () => {
+    mockList.mockResolvedValue([
+      { id: 'hh-empty', name: 'Empty Household' },
+      { id: 'hh-target', name: 'Target Household' },
+    ]);
+    mockListChildren.mockImplementation(async (householdId: string) =>
+      householdId === 'hh-target'
+        ? [{ id: 'child-target', household_id: householdId, name: 'Target Child' }]
+        : [],
+    );
+
+    authState.isLoading = false;
+    authState.isAuthenticated = true;
+
+    const { getByTestId } = render(
+      <HouseholdProvider>
+        <ActiveChildProbe />
+      </HouseholdProvider>,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('active-child-probe').props.children).toBe('hh-target|child-target');
+    });
+  });
 });

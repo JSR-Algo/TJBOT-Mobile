@@ -49,6 +49,7 @@ jest.mock('@/services/api/parentLearning.api', () => ({
 // is covered by t33-parent-realtime-catchup; here the only refresh trigger under
 // test is screen focus.
 jest.mock('@/services/ws/parentProgressRealtime', () => ({
+  ...jest.requireActual('@/services/ws/parentProgressRealtime'),
   openParentProgressRealtime: jest.fn(async () => ({ url: 'wss://test/parent-progress', close: jest.fn(), send: jest.fn() })),
 }));
 

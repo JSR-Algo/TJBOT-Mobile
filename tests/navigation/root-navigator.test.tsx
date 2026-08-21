@@ -102,19 +102,29 @@ jest.mock('@/navigation/OnboardingNavigator', () => ({
   OnboardingNavigator: () => mockCreateElement('Text', { testID: 'onboarding-stack' }, 'OnboardingNavigator'),
 }));
 
-jest.mock('@/navigation/ModalNavigator', () => ({
-  ModalNavigator: ({ initialRouteName, initialRouteParams }: { initialRouteName?: string; initialRouteParams?: unknown }) => {
-    const { ROUTES: mockRoutes } = jest.requireActual('@/navigation/routes');
-    return mockCreateElement(
-      'Text',
-      { testID: 'protected-stack', initialRouteParams },
-      initialRouteName ?? mockRoutes.HomeHubScreen,
-    );
-  },
-}));
+let mockProtectedMounts = 0;
+
+jest.mock('@/navigation/ModalNavigator', () => {
+  const React = require('react');
+  return {
+    ModalNavigator: ({ initialRouteName, initialRouteParams }: { initialRouteName?: string; initialRouteParams?: unknown }) => {
+      const { ROUTES: mockRoutes } = jest.requireActual('@/navigation/routes');
+      const [mountId] = React.useState(() => {
+        mockProtectedMounts += 1;
+        return mockProtectedMounts;
+      });
+      return mockCreateElement(
+        'Text',
+        { testID: 'protected-stack', initialRouteParams, mountId },
+        initialRouteName ?? mockRoutes.HomeHubScreen,
+      );
+    },
+  };
+});
 
 describe('RootNavigator', () => {
   beforeEach(() => {
+    mockProtectedMounts = 0;
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     mockAuthState.isAuthenticated = false;
     mockAuthState.isLoading = false;
@@ -148,6 +158,23 @@ describe('RootNavigator', () => {
     await renderRoot();
 
     expect(await screen.findByTestId('onboarding-stack')).toBeTruthy();
+  });
+
+  it('keeps the protected stack mounted during a later household refresh', async () => {
+    mockAuthState.isAuthenticated = true;
+    mockHouseholdState.onboardingComplete = true;
+    mockHouseholdState.activeHousehold = { id: 'household-1' };
+    mockHouseholdState.children = [{ id: 'child-1' }];
+    const api = await renderRoot();
+    const firstMountId = (await screen.findByTestId('protected-stack')).props.mountId;
+
+    mockHouseholdState.isLoading = true;
+    api.rerender(<RootStackNavigator />);
+    expect(screen.getByTestId('protected-stack').props.mountId).toBe(firstMountId);
+
+    mockHouseholdState.isLoading = false;
+    api.rerender(<RootStackNavigator />);
+    expect(screen.getByTestId('protected-stack').props.mountId).toBe(firstMountId);
   });
 
   it('keeps the loading gate while authenticated household state resolves', async () => {

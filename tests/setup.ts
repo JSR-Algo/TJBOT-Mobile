@@ -8,6 +8,7 @@ jest.mock('@react-navigation/native', () => {
       goBack: jest.fn(),
       replace: jest.fn(),
     }),
+    useIsFocused: () => true,
     useRoute: () => ({ params: {} }),
     NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
   };

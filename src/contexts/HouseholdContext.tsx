@@ -122,6 +122,15 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }): 
               break;
             }
           }
+        } else if (!persistedActiveChildId && childList.length === 0) {
+          for (const household of households.slice(1)) {
+            const candidateChildren = await householdsApi.listChildren(household.id);
+            if (candidateChildren.length > 0) {
+              active = household;
+              childList = candidateChildren;
+              break;
+            }
+          }
         }
       }
       const completed = households.length > 0;
