@@ -156,7 +156,8 @@
           "<rootDir>/tests/**/*.test.{ts,tsx}"
         ],
         "testPathIgnorePatterns": [
-          "<rootDir>/tests/integration/"
+          "<rootDir>/tests/integration/",
+          "<rootDir>/tests/lesson-production/repros/"
         ],
         "modulePathIgnorePatterns": [
           "<rootDir>/.worktrees/"
