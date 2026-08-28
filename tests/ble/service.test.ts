@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { BLE_CONFIG, isAllowlistedDevice } from '../../src/services/ble/config';
 import { BLUFI_DATA_CUSTOM, buildBluFiStationProvisioningFrames, parseBluFiConnReport } from '../../src/services/ble/blufiProtocol';
 import { disposeBle, getBleManager, initializeBle, provisionWifiViaLocalBle, scanForTJBotDevices, scanRobotWifiNetworks, sendClaimBootstrapTokenViaBle, splitDevicesByAllowlist } from '../../src/services/ble/service';
@@ -9,6 +10,11 @@ const mockStopDeviceScan = jest.fn();
 const mockConnectToDevice = jest.fn();
 const mockIsDeviceConnected = jest.fn();
 const mockCancelDeviceConnection = jest.fn();
+const originalPlatformOS = Platform.OS;
+
+function setPlatformOS(os: typeof Platform.OS): void {
+  Object.defineProperty(Platform, 'OS', { value: os, configurable: true });
+}
 
 jest.mock('react-native-ble-plx', () => ({
   ScanMode: { LowPower: 0, Balanced: 1, LowLatency: 2 },
@@ -36,6 +42,11 @@ describe('BLE service', () => {
     jest.clearAllMocks();
     mockBleState = 'PoweredOn';
     mockBleStateQueue = [];
+  });
+
+  afterEach(() => {
+    setPlatformOS(originalPlatformOS);
+    jest.useRealTimers();
   });
 
   test('initializes BLE when permission is granted', async () => {
@@ -653,6 +664,7 @@ describe('BLE service', () => {
 
     await Promise.resolve();
     await Promise.resolve();
+    await jest.advanceTimersByTimeAsync(600);
     expect(discoverAllServicesAndCharacteristics).toHaveBeenCalled();
 
     await jest.advanceTimersByTimeAsync(15000);
@@ -1396,6 +1408,56 @@ describe('BLE service', () => {
     expect(secondCancel).toHaveBeenCalled();
 
     jest.useRealTimers();
+  });
+
+  test('waits 600 ms before starting Android service discovery', async () => {
+    jest.useFakeTimers();
+    setPlatformOS('android');
+
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: (error: Error | null, characteristic: { value: string | null } | null) => void) => {
+      listener(null, { value: encodeBase64([0x45, 0x04, 0x00, 0x06, 0x05, 0xc9, ...asciiBytes('Casa')]) });
+      return { remove: jest.fn() };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discoverAllServicesAndCharacteristics = jest.fn().mockResolvedValue({
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    });
+
+    const scan = scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: jest.fn().mockResolvedValue({
+        discoverAllServicesAndCharacteristics,
+        cancelConnection,
+      }),
+    });
+
+    await jest.advanceTimersByTimeAsync(599);
+    expect(discoverAllServicesAndCharacteristics).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(1);
+    expect(discoverAllServicesAndCharacteristics).toHaveBeenCalledTimes(1);
+    await expect(scan).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
+  });
+
+  test('starts iOS service discovery without the Android settle delay', async () => {
+    jest.useFakeTimers();
+    setPlatformOS('ios');
+
+    const discoverAllServicesAndCharacteristics = jest.fn(() => new Promise(() => undefined));
+    const scan = scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: jest.fn().mockResolvedValue({
+        discoverAllServicesAndCharacteristics,
+        cancelConnection: jest.fn().mockResolvedValue(undefined),
+      }),
+    });
+
+    await jest.advanceTimersByTimeAsync(0);
+    expect(discoverAllServicesAndCharacteristics).toHaveBeenCalledTimes(1);
+    void scan.catch(() => undefined);
   });
 
   test('allows Android service discovery to complete after the generic 10-second GATT bound', async () => {

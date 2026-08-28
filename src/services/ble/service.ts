@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { BleManager, Device, ScanMode } from 'react-native-ble-plx';
 import {
   buildBluFiCustomDataFrames,
@@ -210,6 +211,7 @@ const CLAIM_BOOTSTRAP_TOKEN_DELIVERY_ATTEMPTS = 2;
 const CLAIM_BOOTSTRAP_TOKEN_RETRY_DELAY_MS = 200;
 const BLE_GATT_OPERATION_TIMEOUT_MS = 10000;
 const BLE_SERVICE_DISCOVERY_TIMEOUT_MS = 15000;
+const BLE_ANDROID_DISCOVERY_SETTLE_MS = 600;
 /** Android often needs a fresh scan result before GATT connect after a prior disconnect. */
 const BLE_CONNECT_PRESCAN_TIMEOUT_MS = 5000;
 const BLE_CONNECT_TIMEOUT_MS = 20000;
@@ -242,6 +244,12 @@ const BLUFI_CONN_REPORT_TIMEOUT_MS = 15000;
 // Credential-only (offline / reconnect) has no backend authority — Wi-Fi join
 // itself is the success signal. Firmware waits up to 60s for STA connect.
 const BLUFI_CREDENTIAL_ONLY_CONN_REPORT_TIMEOUT_MS = 55000;
+
+async function settleBeforeBleServiceDiscovery(): Promise<void> {
+  if (Platform.OS === 'android') {
+    await delay(BLE_ANDROID_DISCOVERY_SETTLE_MS);
+  }
+}
 
 export async function provisionWifiViaLocalBle(params: {
   device: BleDeviceCandidate;
@@ -297,6 +305,7 @@ export async function provisionWifiViaLocalBle(params: {
       BLE_CONNECT_OPERATION_TIMEOUT_MS,
     );
     logBleProvision('connected', { deviceId: params.device.id });
+    await settleBeforeBleServiceDiscovery();
     const discovered = await withBleOperationTimeout(
       connected.discoverAllServicesAndCharacteristics(),
       'BLE_PROVISIONING_GATT_ERROR',
@@ -498,6 +507,7 @@ export async function sendClaimBootstrapTokenViaBle(params: {
         'Robot did not accept the claim token.',
         BLE_CONNECT_OPERATION_TIMEOUT_MS,
       );
+      await settleBeforeBleServiceDiscovery();
       const discovered = await withBleOperationTimeout(
         connected.discoverAllServicesAndCharacteristics(),
         'BLE_CLAIM_TOKEN_SEND_FAILED',
@@ -623,6 +633,7 @@ async function scanRobotWifiNetworksOnce(
       BLE_CONNECT_OPERATION_TIMEOUT_MS,
     );
     logBleWifiScan('connected', { attempt, deviceId: device.id });
+    await settleBeforeBleServiceDiscovery();
     const discovered = await withBleOperationTimeout(
       withBleAbort(connected.discoverAllServicesAndCharacteristics(), signal),
       'BLE_WIFI_SCAN_FAILED',
