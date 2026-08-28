@@ -209,6 +209,7 @@ const CLAIM_BOOTSTRAP_TOKEN_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
 const CLAIM_BOOTSTRAP_TOKEN_DELIVERY_ATTEMPTS = 2;
 const CLAIM_BOOTSTRAP_TOKEN_RETRY_DELAY_MS = 200;
 const BLE_GATT_OPERATION_TIMEOUT_MS = 10000;
+const BLE_SERVICE_DISCOVERY_TIMEOUT_MS = 15000;
 /** Android often needs a fresh scan result before GATT connect after a prior disconnect. */
 const BLE_CONNECT_PRESCAN_TIMEOUT_MS = 5000;
 const BLE_CONNECT_TIMEOUT_MS = 20000;
@@ -300,6 +301,7 @@ export async function provisionWifiViaLocalBle(params: {
       connected.discoverAllServicesAndCharacteristics(),
       'BLE_PROVISIONING_GATT_ERROR',
       BLE_PROVISIONING_STATIC_MESSAGE,
+      BLE_SERVICE_DISCOVERY_TIMEOUT_MS,
     );
     logBleProvision('services_discovered', { deviceId: params.device.id });
     const { writer, target } = resolveBluFiWriter(discovered, connected);
@@ -500,6 +502,7 @@ export async function sendClaimBootstrapTokenViaBle(params: {
         connected.discoverAllServicesAndCharacteristics(),
         'BLE_CLAIM_TOKEN_SEND_FAILED',
         'Robot did not accept the claim token.',
+        BLE_SERVICE_DISCOVERY_TIMEOUT_MS,
       );
       const { writer, target } = resolveBluFiWriter(discovered, connected);
       if (!writer) {
@@ -624,6 +627,7 @@ async function scanRobotWifiNetworksOnce(
       withBleAbort(connected.discoverAllServicesAndCharacteristics(), signal),
       'BLE_WIFI_SCAN_FAILED',
       'Robot BLE Wi-Fi scan notification failed.',
+      BLE_SERVICE_DISCOVERY_TIMEOUT_MS,
     );
     logBleWifiScan('services_discovered', { attempt, deviceId: device.id });
     const { writer, target } = resolveBluFiWriter(discovered, connected);
