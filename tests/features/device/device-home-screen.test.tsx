@@ -3,12 +3,13 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DeviceHomeScreen from '@/features/device/screens/DeviceHomeScreen';
 import { ROUTES } from '@/navigation/routes';
-import { getDeviceStatus, unpairDevice } from '@/services/api/device.api';
+import { getDeviceStatus, startDeviceWifiSetup, unpairDevice } from '@/services/api/device.api';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '@/features/device/pairing/localPairedDevice';
 import { setAppLanguage } from '@/services/i18n/i18n';
 
 jest.mock('@/services/api/device.api', () => ({
   getDeviceStatus: jest.fn(),
+  startDeviceWifiSetup: jest.fn(),
   unpairDevice: jest.fn(),
 }));
 
@@ -19,6 +20,7 @@ jest.mock('@/features/device/pairing/localPairedDevice', () => ({
 
 const apiMocks = {
   getDeviceStatus: getDeviceStatus as jest.MockedFunction<typeof getDeviceStatus>,
+  startDeviceWifiSetup: startDeviceWifiSetup as jest.MockedFunction<typeof startDeviceWifiSetup>,
   unpairDevice: unpairDevice as jest.MockedFunction<typeof unpairDevice>,
 };
 
@@ -115,17 +117,17 @@ describe('DeviceHomeScreen', () => {
       batteryPercent: 87,
     });
     const navigation = { navigate: jest.fn() };
+    apiMocks.startDeviceWifiSetup.mockResolvedValue(undefined);
     const screen = renderWithQuery(
       <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
     );
 
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
-    const changeWifi = screen.getByLabelText(
-      'Change Wi‑Fi. Double-click the BOOT button to change Wi-Fi without unpairing Robot.',
-    );
-    expect(screen.getByText('Double-click the BOOT button to change Wi-Fi without unpairing Robot.')).toBeTruthy();
+    const changeWifi = screen.getByLabelText('Change Wi‑Fi. Robot will open setup mode automatically.');
+    expect(screen.getByText('Robot will open setup mode automatically.')).toBeTruthy();
     fireEvent.press(changeWifi);
 
+    await waitFor(() => expect(apiMocks.startDeviceWifiSetup).toHaveBeenCalledWith('seed-device'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
       reconnectMode: true,
       reconnectDeviceId: 'seed-device',

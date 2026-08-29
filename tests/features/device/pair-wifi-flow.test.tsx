@@ -498,6 +498,25 @@ describe('PairWifiPasswordScreen — password handoff is transient + BLE-bound',
     expect(mockedPutPassword).not.toHaveBeenCalled();
   });
 
+  it('switching from a scanned network to manual entry clears the selected SSID and password', () => {
+    const navigate = jest.fn();
+    const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'HomeNet' });
+
+    fireEvent.changeText(screen.getByLabelText('Wi-Fi password'), WIFI_PASSWORD);
+    screen.rerender(
+      <PairWifiPasswordScreen
+        navigation={{ navigate } as never}
+        route={{ params: { ...BLE_PARAMS, ssid: 'Other network' } } as never}
+      />,
+    );
+
+    expect(screen.getByLabelText('Wi-Fi network name').props.value).toBe('');
+    expect(screen.getByLabelText('Wi-Fi password').props.value).toBe('');
+    fireEvent.press(screen.getByText('Connect Robot'));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(mockedPutPassword).not.toHaveBeenCalled();
+  });
+
   it('back navigation strips the password context from the params handed back to the Wi-Fi list', () => {
     const navigate = jest.fn();
     const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'HomeNet', code: '123456' });
@@ -528,6 +547,34 @@ describe('PairWifiPasswordScreen — password handoff is transient + BLE-bound',
     // Even revealed, the value stays inside the single TextInput; it is never
     // duplicated into a separate <Text> node (which would survive screenshots/logs).
     expect(screen.getByLabelText('Wi-Fi password').props.secureTextEntry).toBe(false);
+    expect(screen.queryByText(WIFI_PASSWORD)).toBeNull();
+  });
+
+  it('keeps the password while toggling its visibility on and off', () => {
+    const navigate = jest.fn();
+    const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'HomeNet' });
+
+    const input = screen.getByLabelText('Wi-Fi password');
+    const showButton = screen.getByLabelText('Show Wi-Fi password');
+    fireEvent.changeText(input, WIFI_PASSWORD);
+
+    expect(input.props.secureTextEntry).toBe(true);
+    expect(screen.getByText('Show password')).toBeTruthy();
+    expect(showButton.props.accessibilityState).toEqual({ selected: false });
+
+    fireEvent.press(showButton);
+
+    expect(screen.getByLabelText('Wi-Fi password').props.secureTextEntry).toBe(false);
+    expect(screen.getByLabelText('Wi-Fi password').props.value).toBe(WIFI_PASSWORD);
+    expect(screen.getByText('Hide password')).toBeTruthy();
+    expect(screen.getByLabelText('Hide Wi-Fi password').props.accessibilityState).toEqual({ selected: true });
+
+    fireEvent.press(screen.getByLabelText('Hide Wi-Fi password'));
+
+    expect(screen.getByLabelText('Wi-Fi password').props.secureTextEntry).toBe(true);
+    expect(screen.getByLabelText('Wi-Fi password').props.value).toBe(WIFI_PASSWORD);
+    expect(screen.getByText('Show password')).toBeTruthy();
+    expect(screen.getByLabelText('Show Wi-Fi password').props.accessibilityState).toEqual({ selected: false });
     expect(screen.queryByText(WIFI_PASSWORD)).toBeNull();
   });
 });

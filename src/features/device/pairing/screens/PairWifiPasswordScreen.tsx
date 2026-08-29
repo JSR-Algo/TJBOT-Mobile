@@ -21,7 +21,8 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   const params = route.params;
   const routeSsid = getPairWifiPasswordSsid(route.params);
   const manualSsid = routeSsid === 'Other network';
-  const [customSsid, setCustomSsid] = React.useState(manualSsid ? '' : routeSsid);
+  const [customSsidEntry, setCustomSsidEntry] = React.useState({ scope: routeSsid, value: '' });
+  const customSsid = customSsidEntry.scope === routeSsid ? customSsidEntry.value : '';
   const ssid = manualSsid ? customSsid.trim() : routeSsid;
   const passwordScope = `${manualSsid ? 'manual' : 'selected'}:${ssid}`;
   const [passwordEntry, setPasswordEntry] = React.useState({ scope: passwordScope, value: '' });
@@ -38,7 +39,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   const updateCustomSsid = (value: string): void => {
     const nextSsid = value.trim();
     const nextScope = `manual:${nextSsid}`;
-    setCustomSsid(value);
+    setCustomSsidEntry({ scope: routeSsid, value });
     setPasswordEntry((current) => {
       const currentValue = current.scope === passwordScope ? current.value : '';
       const keepsPendingPassword = !ssid || nextSsid === ssid;
@@ -103,12 +104,14 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
         accessibilityLabel={visible ? t('Hide Wi-Fi password') : t('Show Wi-Fi password')}
         accessibilityState={{ selected: visible }}
       >
-        <Box style={styles.checkBox} alignItems="center" justifyContent="center">
-          <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
-            <Path d="M5 12l5 5 9-10" />
-          </Svg>
+        <Box style={[styles.checkBox, visible && styles.checkBoxSelected]} alignItems="center" justifyContent="center">
+          {visible ? (
+            <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
+              <Path d="M5 12l5 5 9-10" />
+            </Svg>
+          ) : null}
         </Box>
-        <Text style={styles.showPw}>Show password</Text>
+        <Text style={styles.showPw}>{visible ? t('Hide password') : t('Show password')}</Text>
       </TouchableOpacity>
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
         <DeviceBigBtn onClick={submit} disabled={!ssid || !password}>Connect Robot</DeviceBigBtn>
@@ -147,6 +150,7 @@ const styles = StyleSheet.create({
   pwDots: { fontSize: 18, color: DV.ink, letterSpacing: 2 },
   passwordInput: { fontSize: 18, color: DV.ink, minHeight: 44 },
   showRow: { paddingHorizontal: 20, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  checkBox: { width: 18, height: 18, borderRadius: 4, backgroundColor: DV.accent },
+  checkBox: { width: 18, height: 18, borderRadius: 4, borderWidth: 1, borderColor: DV.ink3 },
+  checkBoxSelected: { backgroundColor: DV.accent, borderColor: DV.accent },
   showPw: { fontSize: 13, color: DV.ink2 },
 });

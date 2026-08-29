@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import Svg, { Path } from 'react-native-svg';
+import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
@@ -34,23 +35,29 @@ type SearchState = 'searching' | 'choosing' | 'provisioning';
 const MAX_BLE_DISCOVERY_ATTEMPTS = 3;
 
 export default function PairSearchScreen({ navigation, route }: Props) {
-  const cancelledRef = React.useRef(false);
+  const isFocused = useIsFocused();
+  const activeSearchRunRef = React.useRef(0);
   const [searchState, setSearchState] = React.useState<SearchState>('searching');
   const [candidates, setCandidates] = React.useState<RobotCandidate[]>([]);
   const reconnectMode = route.params?.reconnectMode === true;
   const reconnectDeviceId = route.params?.reconnectDeviceId;
   const reconnectSerialNumber = route.params?.reconnectSerialNumber;
+  const isSearchRunCurrent = React.useCallback(
+    (runId: number): boolean => activeSearchRunRef.current === runId,
+    [],
+  );
 
   // Run BLE provisioning for a chosen candidate and forward to PairFound. Shared
   // by the single-device fast path and the multi-device picker so both reach the
   // identical downstream flow.
   const provisionAndGoToFound = React.useCallback(
-    async (chosen: RobotCandidate): Promise<void> => {
+    async (chosen: RobotCandidate, runId: number): Promise<void> => {
+      if (!isSearchRunCurrent(runId)) return;
       setSearchState('provisioning');
       try {
         logDevPairSearchEvent('provision start requested', { serialNumber: chosen.serialNumber });
         const attempt = await startDeviceProvisioning({ serialNumber: chosen.serialNumber });
-        if (cancelledRef.current) return;
+        if (!isSearchRunCurrent(runId)) return;
         logDevPairSearchEvent('provision start succeeded', {
           serialNumber: chosen.serialNumber,
           deviceId: attempt.deviceId,
@@ -64,7 +71,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
             serialNumber: chosen.serialNumber,
             provisioningAttemptId: attempt.provisioningAttemptId,
           });
-          if (cancelledRef.current) return;
+          if (!isSearchRunCurrent(runId)) return;
           navigation.navigate(ROUTES.PairRenameScreen, {
             deviceId: attempt.deviceId,
             serialNumber: chosen.serialNumber,
@@ -80,10 +87,10 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           provisioningTransport: attempt.attemptStatus === 'awaiting_physical_confirm' ? 'ble_claim' : 'ble',
         });
       } catch (error) {
-        if (cancelledRef.current) return;
+        if (!isSearchRunCurrent(runId)) return;
         const errorCode = errorCodeFrom(error, 'PROVISIONING_START_FAILED');
         const zeroCodeRecovery = await resolveZeroCodeClaimableRecovery(chosen, errorCode);
-        if (cancelledRef.current) return;
+        if (!isSearchRunCurrent(runId)) return;
         if (zeroCodeRecovery) {
           logDevPairSearchEvent('provision start recovered via zero-code claim list', {
             serialNumber: chosen.serialNumber,
@@ -109,15 +116,16 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         });
       }
     },
-    [navigation],
+    [isSearchRunCurrent, navigation],
   );
 
   const reconnectAndGoToWifi = React.useCallback(
-    async (chosen: RobotCandidate, knownPrimaryDevice?: DeviceStatus): Promise<void> => {
+    async (chosen: RobotCandidate, runId: number, knownPrimaryDevice?: DeviceStatus): Promise<void> => {
+      if (!isSearchRunCurrent(runId)) return;
       setSearchState('provisioning');
       try {
         const device = knownPrimaryDevice ?? await getDeviceStatus(reconnectDeviceId || 'primary');
-        if (cancelledRef.current) return;
+        if (!isSearchRunCurrent(runId)) return;
         if (!device.id) {
           throw Object.assign(new Error('Primary device is missing'), { code: 'RECONNECT_DEVICE_NOT_FOUND' });
         }
@@ -140,32 +148,40 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           provisioningTransport: 'ble_reconnect',
         });
       } catch (error) {
-        if (cancelledRef.current) return;
+        if (!isSearchRunCurrent(runId)) return;
         navigation.navigate(ROUTES.PairFailedScreen, {
           errorCode: errorCodeFrom(error, 'RECONNECT_DEVICE_LOOKUP_FAILED'),
         });
       }
     },
-    [navigation, reconnectDeviceId, reconnectSerialNumber],
+    [isSearchRunCurrent, navigation, reconnectDeviceId, reconnectSerialNumber],
   );
 
   const routeResolvedCandidate = React.useCallback(
-    async (chosen: RobotCandidate): Promise<void> => {
+    async (chosen: RobotCandidate, runId: number): Promise<void> => {
       if (reconnectMode) {
-        await reconnectAndGoToWifi(chosen);
+        await reconnectAndGoToWifi(chosen, runId);
         return;
       }
-      await provisionAndGoToFound(chosen);
+      await provisionAndGoToFound(chosen, runId);
     },
     [provisionAndGoToFound, reconnectAndGoToWifi, reconnectMode],
   );
 
   React.useEffect(() => {
-    cancelledRef.current = false;
+    if (!isFocused) {
+      activeSearchRunRef.current += 1;
+      return;
+    }
+
+    const runId = activeSearchRunRef.current + 1;
+    activeSearchRunRef.current = runId;
+    setSearchState('searching');
+    setCandidates([]);
 
     async function scanAndResolveCandidates(): Promise<void> {
       const phoneOnline = await isPhoneOnline();
-      if (cancelledRef.current) return;
+      if (!isSearchRunCurrent(runId)) return;
       if (!phoneOnline) {
         navigation.navigate(ROUTES.PairFailedScreen, { errorCode: 'WIFI_UNAVAILABLE' });
         return;
@@ -177,7 +193,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         logDevPairSearchEvent('ble bootstrap failed', devErrorSummary(error));
         return undefined;
       });
-      if (cancelledRef.current) return;
+      if (!isSearchRunCurrent(runId)) return;
       if (!bootstrap?.available) {
         navigation.navigate(ROUTES.PairFailedScreen, {
           errorCode: bleBootstrapErrorCode(bootstrap, bleBootstrapFailed),
@@ -193,7 +209,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
           logDevPairSearchEvent('ble scan failed', { scanAttempt: attempt, ...devErrorSummary(error) });
           return undefined;
         });
-        if (cancelledRef.current) return;
+        if (!isSearchRunCurrent(runId)) return;
         if (lastScanFailureCode === 'BLE_SCAN_THROTTLED') {
           navigation.navigate(ROUTES.PairFailedScreen, { errorCode: lastScanFailureCode });
           return;
@@ -211,13 +227,14 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       }
 
       if (resolved.length === 0 && lastScanFailureCode) {
+        if (!isSearchRunCurrent(runId)) return;
         navigation.navigate(ROUTES.PairFailedScreen, { errorCode: lastScanFailureCode });
         return;
       }
 
       if (resolved.length === 0 && isZeroCodeClaimEnabled()) {
         const available = await listAvailableClaimDevicesForDiscovery();
-        if (cancelledRef.current) return;
+        if (!isSearchRunCurrent(runId)) return;
         logDevPairSearchEvent('backend claim candidates', {
           availableCount: available.length,
           resolvedCount: 0,
@@ -225,13 +242,14 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       }
 
       if (resolved.length === 0) {
+        if (!isSearchRunCurrent(runId)) return;
         navigation.navigate(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
         return;
       }
 
       // Single nearby robot → keep the fast path (no extra tap).
       if (resolved.length === 1) {
-        await routeResolvedCandidate(resolved[0]);
+        await routeResolvedCandidate(resolved[0], runId);
         return;
       }
 
@@ -240,31 +258,31 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       // when the zero-code flow is enabled (the list route is live then);
       // labelling failure is non-fatal and falls back to the serial.
       const labelled = await labelCandidates(resolved);
-      if (cancelledRef.current) return;
+      if (!isSearchRunCurrent(runId)) return;
       setCandidates(labelled);
       setSearchState('choosing');
     }
 
     void scanAndResolveCandidates();
     return () => {
-      cancelledRef.current = true;
+      if (activeSearchRunRef.current === runId) activeSearchRunRef.current += 1;
     };
-  }, [navigation, routeResolvedCandidate]);
+  }, [isFocused, isSearchRunCurrent, navigation, routeResolvedCandidate]);
 
   const chooseCandidate = React.useCallback(
     (item: RobotCandidate): void => {
-      void routeResolvedCandidate(item);
+      void routeResolvedCandidate(item, activeSearchRunRef.current);
     },
     [routeResolvedCandidate],
   );
 
   const cancelSearchToIntro = React.useCallback(() => {
-    cancelledRef.current = true;
+    activeSearchRunRef.current += 1;
     navigation.navigate(ROUTES.PairIntroScreen);
   }, [navigation]);
 
   const cancelSearchToFailed = React.useCallback(() => {
-    cancelledRef.current = true;
+    activeSearchRunRef.current += 1;
     navigation.navigate(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
   }, [navigation]);
 

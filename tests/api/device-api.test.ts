@@ -187,6 +187,21 @@ describe('device API client', () => {
     expect(deleteRequest).toHaveBeenCalledWith('/devices/device-3');
   });
 
+  it('requests remote Wi-Fi setup without unpairing the device', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({ data: { device_id: 'device-3', state: 'WIFI_SETUP_REQUESTED' } });
+    const deleteRequest = jest.fn();
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post, delete: deleteRequest },
+    }));
+    const { startDeviceWifiSetup } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(startDeviceWifiSetup('device-3')).resolves.toBeUndefined();
+    expect(post).toHaveBeenCalledWith('/devices/device-3/wifi-setup');
+    expect(deleteRequest).not.toHaveBeenCalled();
+  });
+
   it('starts consumer provisioning through the documented provisioning route', async () => {
     jest.resetModules();
     const post = jest.fn().mockResolvedValueOnce({

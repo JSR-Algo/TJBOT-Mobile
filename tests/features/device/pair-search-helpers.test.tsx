@@ -1,7 +1,7 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 import PairSearchScreen from '@/features/device/pairing/screens/PairSearchScreen';
 import { ROUTES } from '@/navigation/routes';
@@ -10,6 +10,16 @@ import { listAvailableClaimDevices } from '@/services/api/claim.api';
 import { initializeBle, scanForTJBotDevices } from '@/services/ble/service';
 import { isZeroCodeClaimEnabled } from '@/config/feature-flags';
 import { savePendingPairingContext } from '@/features/device/pairing/pendingPairingContext';
+
+let mockSearchFocused = true;
+
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native');
+  return {
+    ...actual,
+    useIsFocused: () => mockSearchFocused,
+  };
+});
 
 // Round-2 gap fill for US-005. PairSearchScreen's helpers
 // (reconnectAndGoToWifi, labelCandidates, getMatchingPrimaryDevice /
@@ -96,6 +106,7 @@ function renderSearch(
 }
 
 beforeEach(() => {
+  mockSearchFocused = true;
   jest.clearAllMocks();
   mockedInitializeBle.mockReset();
   mockedScan.mockReset();
@@ -122,6 +133,87 @@ beforeEach(() => {
   mockedSavePendingPairingContext.mockResolvedValue();
   // Default regime: zero-code claim ON. Flag-OFF block overrides per-test.
   mockedZeroCodeEnabled.mockReturnValue(true);
+});
+
+describe('focused BLE discovery lifecycle', () => {
+  it('starts a fresh reconnect scan when Wi-Fi selection returns to the existing search screen', async () => {
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-owned',
+      name: 'TBOT-OWNED',
+      serialNumber: 'TBOT-OWNED',
+      online: true,
+      batteryPercent: 42,
+    });
+    mockedScan
+      .mockResolvedValueOnce({ allowed: [candidate('ble-first', 'TBOT-OWNED')], blocked: [] })
+      .mockResolvedValueOnce({ allowed: [candidate('ble-second', 'TBOT-OWNED')], blocked: [] });
+    const navigate = jest.fn();
+    const navigation = { navigate } as never;
+    const params = { reconnectMode: true } as const;
+    const screen = render(<PairSearchScreen navigation={navigation} route={{ params } as never} />);
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairWifiScreen,
+      expect.objectContaining({ bleDeviceId: 'ble-first' }),
+    ));
+
+    mockSearchFocused = false;
+    screen.rerender(<PairSearchScreen navigation={navigation} route={{ params } as never} />);
+    navigate.mockClear();
+
+    mockSearchFocused = true;
+    screen.rerender(<PairSearchScreen navigation={navigation} route={{ params } as never} />);
+
+    await waitFor(() => expect(mockedScan).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairWifiScreen,
+      expect.objectContaining({ bleDeviceId: 'ble-second' }),
+    ));
+  });
+
+  it('prevents a blurred scan run from navigating after a newer focused run succeeds', async () => {
+    type ScanResult = Awaited<ReturnType<typeof scanForTJBotDevices>>;
+    let resolveFirstScan: (result: ScanResult) => void = () => undefined;
+    const firstScan = new Promise<ScanResult>((resolve) => {
+      resolveFirstScan = resolve;
+    });
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-owned',
+      name: 'TBOT-OWNED',
+      serialNumber: 'TBOT-OWNED',
+      online: true,
+      batteryPercent: 42,
+    });
+    mockedScan
+      .mockImplementationOnce(() => firstScan)
+      .mockResolvedValueOnce({ allowed: [candidate('ble-current', 'TBOT-OWNED')], blocked: [] });
+    const navigate = jest.fn();
+    const navigation = { navigate } as never;
+    const params = { reconnectMode: true } as const;
+    const screen = render(<PairSearchScreen navigation={navigation} route={{ params } as never} />);
+
+    await waitFor(() => expect(mockedScan).toHaveBeenCalledTimes(1));
+    mockSearchFocused = false;
+    screen.rerender(<PairSearchScreen navigation={navigation} route={{ params } as never} />);
+    mockSearchFocused = true;
+    screen.rerender(<PairSearchScreen navigation={navigation} route={{ params } as never} />);
+
+    await waitFor(() => expect(mockedScan).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairWifiScreen,
+      expect.objectContaining({ bleDeviceId: 'ble-current' }),
+    ));
+
+    await act(async () => {
+      resolveFirstScan({ allowed: [candidate('ble-stale', 'TBOT-OWNED')], blocked: [] });
+    });
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalledWith(
+      ROUTES.PairWifiScreen,
+      expect.objectContaining({ bleDeviceId: 'ble-stale' }),
+    );
+  });
 });
 
 it('serializes PairSearch diagnostics without raw robot identifiers or secrets', async () => {
@@ -695,8 +787,8 @@ describe('isPhoneOnline (connectivity gate)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// cancelSearchToIntro() — the DeviceShell back affordance. Sets cancelledRef so
-// any in-flight async settles into a no-op, and navigates to PairIntro.
+// cancelSearchToIntro() — the DeviceShell back affordance. Invalidates the
+// active run so in-flight work settles into a no-op, then navigates to PairIntro.
 // ---------------------------------------------------------------------------
 describe('cancelSearchToIntro (back-to-intro)', () => {
   it('tells new-pair users to put Robot in setup mode while searching', async () => {
@@ -748,8 +840,8 @@ describe('cancelSearchToIntro (back-to-intro)', () => {
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairIntroScreen);
   });
 
-  it('cancelling sets cancelledRef so a still-pending scan resolving afterward does not navigate onward', async () => {
-    // A scan that resolves AFTER cancel. The cancelledRef guard must suppress the
+  it('cancelling invalidates the active run so a pending scan cannot navigate onward', async () => {
+    // A scan that resolves AFTER cancel. The run-id guard must suppress the
     // late candidate-resolution side effects (no provisioning, no further nav).
     let resolveScan: ((value: { allowed: ReturnType<typeof candidate>[]; blocked: never[] }) => void) | undefined;
     mockedScan.mockReturnValue(
@@ -768,7 +860,7 @@ describe('cancelSearchToIntro (back-to-intro)', () => {
     resolveScan?.({ allowed: [candidate('ble-late', 'TBOT-LATE')], blocked: [] });
     await new Promise((r) => setTimeout(r, 0));
 
-    // cancelledRef short-circuited: no claim attempt, no PairFound navigation.
+    // The invalid run short-circuited: no claim attempt or PairFound navigation.
     expect(mockedStartProvisioning).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFoundScreen, expect.anything());
     // The only navigation remains the intentional intro hop.

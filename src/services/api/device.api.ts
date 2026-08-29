@@ -293,6 +293,10 @@ export async function unpairDevice(deviceId: string): Promise<void> {
   await client.delete(`/devices/${deviceId}`);
 }
 
+export async function startDeviceWifiSetup(deviceId: string): Promise<void> {
+  await client.post(`/devices/${deviceId}/wifi-setup`);
+}
+
 export async function pushCourseToDevice(_deviceId: string, _courseId: string): Promise<void> {
   backendContractUnavailable(`pushCourseToDevice:${_deviceId}:${_courseId}`);
 }

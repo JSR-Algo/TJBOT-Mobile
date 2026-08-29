@@ -11,7 +11,7 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
-import { getDeviceStatus, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
+import { getDeviceStatus, startDeviceWifiSetup, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '../pairing/localPairedDevice';
 
@@ -52,6 +52,16 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       await clearLocalPairedDevice();
       queryClient.setQueryData(['devices', 'local-paired-id'], null);
       queryClient.removeQueries({ queryKey: ['devices', 'paired'] });
+    },
+  });
+  const wifiSetupMutation = useMutation({
+    mutationFn: (deviceId: string) => startDeviceWifiSetup(deviceId),
+    onSuccess: (_result, deviceId) => {
+      navigation.navigate(ROUTES.PairSearchScreen, {
+        reconnectMode: true,
+        reconnectDeviceId: deviceId,
+        reconnectSerialNumber: device?.serialNumber,
+      });
     },
   });
   const device = deviceQuery.data;
@@ -145,13 +155,16 @@ export default function DeviceHomeScreen({ navigation }: Props) {
           <DeviceRow
             icon="📶"
             title="Change Wi‑Fi"
-            body="Double-click the BOOT button to change Wi-Fi without unpairing Robot."
-            onClick={() => navigation.navigate(ROUTES.PairSearchScreen, {
-              reconnectMode: true,
-              reconnectDeviceId: device.id,
-              reconnectSerialNumber: device.serialNumber,
-            })}
+            body={wifiSetupMutation.isPending
+              ? 'Opening setup mode...'
+              : 'Robot will open setup mode automatically.'}
+            onClick={() => {
+              if (!wifiSetupMutation.isPending) wifiSetupMutation.mutate(device.id);
+            }}
           />
+          {wifiSetupMutation.isError ? (
+            <Text style={styles.errorText}>Could not open Wi-Fi setup. Make sure Robot is online and try again.</Text>
+          ) : null}
           <DeviceRow icon="🎵" title="Make Robot chime" body="Find Robot if it's misplaced" onClick={() => navigation.navigate(ROUTES.DeviceLostScreen)} />
           <DeviceRow icon="🌙" title="Quiet hours" body="9:00 PM – 7:00 AM" />
           <DeviceRow icon="🔄" title="Sync content" body="Up to date · 2 minutes ago" />
