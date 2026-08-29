@@ -121,7 +121,7 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
   const serialNumber = dto.serial_number?.trim();
   const assignedChildProfileId = readAssignedChildProfileId(dto);
   const connectivityState = dto.connectivity_metrics?.connectivity_state;
-  const operationalState = dto.status === 'active' || dto.status === 'online' || connectivityState === 'online'
+  const operationalState = dto.status === 'online' || connectivityState === 'online'
     ? 'online'
     : dto.status === 'offline' || connectivityState === 'offline'
       ? 'offline'
