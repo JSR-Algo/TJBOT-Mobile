@@ -308,7 +308,72 @@ git add src/features/device/screens/DeviceHomeScreen.tsx tests/features/device/d
 git commit -m "fix(device): gate wifi setup on fresh heartbeat"
 ```
 
-### Task 4: Full Mobile Verification And Android Demo Build
+### Task 4: Align Visible Status And Vietnamese Guidance
+
+**Files:**
+- Modify: `tests/features/device/device-home-screen.test.tsx`
+- Modify: `src/features/device/screens/DeviceHomeScreen.tsx:108-145`
+
+- [ ] **Step 1: Write the failing stale-status and localized-copy test**
+
+Extend the existing blocked-heartbeat test with these assertions and remove its
+old English-copy assertions:
+
+```ts
+expect(screen.getByText('Ngoại tuyến')).toBeTruthy();
+expect(screen.queryByText('Trực tuyến')).toBeNull();
+expect(screen.getByText('Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.')).toBeTruthy();
+fireEvent.press(screen.getByLabelText('Đổi Wi‑Fi. Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.'));
+```
+
+- [ ] **Step 2: Run the focused screen test and verify RED**
+
+Run:
+
+```bash
+node node_modules/jest/bin/jest.js --selectProjects unit --runInBand tests/features/device/device-home-screen.test.tsx
+```
+
+Expected: FAIL because a stale explicit-online response still renders
+`Trực tuyến` and the blocked guidance remains English.
+
+- [ ] **Step 3: Implement one shared freshness decision**
+
+In `DeviceHomeScreen`, compute freshness once and use it for both the visible
+status and Wi-Fi gate:
+
+```ts
+const hasFreshHeartbeat = isDeviceHeartbeatFresh(device.lastSeenAt);
+const isRealtimeOnline = device.online === true && hasFreshHeartbeat;
+const connectionLabelKey = device.online === null
+  ? 'Status unavailable'
+  : isRealtimeOnline
+    ? 'Online'
+    : 'Offline';
+const connectionColor = isRealtimeOnline ? DV.good : DV.ink2;
+const canStartWifiSetup = isRealtimeOnline;
+```
+
+Change the blocked body to:
+
+```ts
+'Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.'
+```
+
+- [ ] **Step 4: Run the focused screen test and verify GREEN**
+
+Run the same Jest command from Step 2.
+
+Expected: all tests in `device-home-screen.test.tsx` pass.
+
+- [ ] **Step 5: Commit the UI consistency fix**
+
+```bash
+git add src/features/device/screens/DeviceHomeScreen.tsx tests/features/device/device-home-screen.test.tsx
+git commit -m "fix(device): align visible status with heartbeat"
+```
+
+### Task 5: Full Mobile Verification And Android Demo Build
 
 **Files:**
 - Verify only; no planned source edits.
