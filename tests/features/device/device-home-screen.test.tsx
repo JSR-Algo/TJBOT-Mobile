@@ -115,6 +115,7 @@ describe('DeviceHomeScreen', () => {
       serialNumber: 'TBOT-SEED-001',
       online: true,
       batteryPercent: 87,
+      lastSeenAt: new Date().toISOString(),
     });
     const navigation = { navigate: jest.fn() };
     apiMocks.startDeviceWifiSetup.mockResolvedValue(undefined);
@@ -133,6 +134,51 @@ describe('DeviceHomeScreen', () => {
       reconnectDeviceId: 'seed-device',
       reconnectSerialNumber: 'TBOT-SEED-001',
     });
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['stale', new Date(Date.now() - 5 * 60 * 1000 - 1).toISOString()],
+  ])('blocks Wi-Fi setup when the heartbeat is %s', async (_case, lastSeenAt) => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'seed-device',
+      name: 'Seed Robot',
+      online: true,
+      batteryPercent: 87,
+      lastSeenAt,
+    });
+    const navigation = { navigate: jest.fn() };
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
+    expect(screen.getByText('Robot must be online with a recent heartbeat.')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Change Wi‑Fi. Robot must be online with a recent heartbeat.'));
+
+    expect(apiMocks.startDeviceWifiSetup).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.PairSearchScreen, expect.anything());
+  });
+
+  it('keeps a backend Wi-Fi setup conflict visible without navigating', async () => {
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'seed-device',
+      name: 'Seed Robot',
+      online: true,
+      batteryPercent: 87,
+      lastSeenAt: new Date().toISOString(),
+    });
+    apiMocks.startDeviceWifiSetup.mockRejectedValue(new Error('409 DEVICE_NOT_ONLINE'));
+    const navigation = { navigate: jest.fn() };
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Change Wi‑Fi. Robot will open setup mode automatically.'));
+
+    await expect(screen.findByText('Could not open Wi-Fi setup. Make sure Robot is online and try again.')).resolves.toBeTruthy();
+    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.PairSearchScreen, expect.anything());
   });
 
   it('shows Wi-Fi signal strength when backend reports RSSI without an SSID', async () => {

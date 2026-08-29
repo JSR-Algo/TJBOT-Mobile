@@ -14,6 +14,7 @@ import { ROUTES } from '@/navigation/routes';
 import { getDeviceStatus, startDeviceWifiSetup, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '../pairing/localPairedDevice';
+import { isDeviceHeartbeatFresh } from '../connectivity';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceHomeScreen'>;
 
@@ -122,6 +123,12 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     : typeof device.wifiRssi === 'number'
       ? `Wi-Fi ${device.wifiRssi} dBm`
       : translateCopy('Wi-Fi not reported', { locale: language });
+  const canStartWifiSetup = device.online === true && isDeviceHeartbeatFresh(device.lastSeenAt);
+  const wifiSetupBody = wifiSetupMutation.isPending
+    ? 'Opening setup mode...'
+    : canStartWifiSetup
+      ? 'Robot will open setup mode automatically.'
+      : 'Robot must be online with a recent heartbeat.';
 
   return (
     <DeviceShell title="Devices">
@@ -155,11 +162,11 @@ export default function DeviceHomeScreen({ navigation }: Props) {
           <DeviceRow
             icon="📶"
             title="Change Wi‑Fi"
-            body={wifiSetupMutation.isPending
-              ? 'Opening setup mode...'
-              : 'Robot will open setup mode automatically.'}
+            body={wifiSetupBody}
             onClick={() => {
-              if (!wifiSetupMutation.isPending) wifiSetupMutation.mutate(device.id);
+              if (canStartWifiSetup && !wifiSetupMutation.isPending) {
+                wifiSetupMutation.mutate(device.id);
+              }
             }}
           />
           {wifiSetupMutation.isError ? (
