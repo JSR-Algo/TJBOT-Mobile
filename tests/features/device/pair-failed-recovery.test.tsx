@@ -116,6 +116,13 @@ describe('PairConnectingScreen US-005 invariants', () => {
       expiresAt: '2026-06-09T12:05:00.000Z',
       ttlSeconds: 300,
     });
+    mockedGetDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: 'TBT-2026-004217',
+      online: true,
+      batteryPercent: 90,
+      lastSeenAt: '2099-01-01T00:00:00.000Z',
+    });
     mockedReportProvisioningDeviceAuthenticated.mockResolvedValue(undefined);
     mockedRequestClaim.mockResolvedValue({
       claimId: 'claim-1',
@@ -126,7 +133,7 @@ describe('PairConnectingScreen US-005 invariants', () => {
     });
   });
 
-  it('[MB6] after wifi_credentials_sent, code-based pairing advances to rename without an auth poll', async () => {
+  it('[MB6] after wifi_credentials_sent, code-based pairing waits for a fresh heartbeat without an auth poll', async () => {
     seedSecrets('claim-1');
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
@@ -149,6 +156,7 @@ describe('PairConnectingScreen US-005 invariants', () => {
       provisioningAttemptId: 'claim-1',
     }));
     expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-1');
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen, expect.anything());
