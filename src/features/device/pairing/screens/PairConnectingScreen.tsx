@@ -144,7 +144,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       });
       return;
     }
-    const reconnectAttemptStartedAtMs = transport === 'ble_reconnect' ? Date.now() : undefined;
+    const handoffStartedAtMs = Date.now();
     const run = runLocalBleProvisioning({
       deviceId,
       serialNumber,
@@ -174,7 +174,13 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       if (cancelled) return;
       setI(PAIRING_STEP_COUNT - 1);
       if (result.completionMode === 'device_online') {
-        await waitForDeviceOnline(result.deviceId, poll);
+        await waitForDeviceOnline(
+          result.deviceId,
+          poll,
+          'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
+          DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+          handoffStartedAtMs,
+        );
         if (cancelled) return;
         clearPairingBootstrapToken(result.provisioningAttemptId);
         setI(PAIRING_STEP_COUNT);
@@ -198,6 +204,13 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           poll,
           result.claimExpiresAt,
         );
+        await waitForDeviceOnline(
+          authenticated.deviceId,
+          poll,
+          'PAIRING_DEVICE_OFFLINE_TIMEOUT',
+          DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+          handoffStartedAtMs,
+        );
         if (cancelled) return;
         clearPairingBootstrapToken(authenticated.provisioningAttemptId);
         setI(PAIRING_STEP_COUNT);
@@ -215,11 +228,14 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         return;
       }
 
-      // A successful BLE handoff is enough to leave this blocking screen. The
-      // robot intentionally drops BLE while joining Wi-Fi, so waiting here for
-      // backend authentication makes a normal restart look like a frozen app.
-      // Finalization remains backend-authoritative and retries the short auth
-      // race when the parent saves from PairRenameScreen.
+      await waitForDeviceOnline(
+        result.deviceId,
+        poll,
+        'PAIRING_DEVICE_OFFLINE_TIMEOUT',
+        DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+        handoffStartedAtMs,
+      );
+      if (cancelled) return;
       clearPairingBootstrapToken(result.provisioningAttemptId);
       setI(PAIRING_STEP_COUNT);
       await savePendingPairingContext({
@@ -241,7 +257,6 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       const deliveryUnknown = isDeliveryUnknown(error);
       if (
         transport === 'ble_reconnect'
-        && reconnectAttemptStartedAtMs !== undefined
         && errorCodeFrom(error, '') === 'WIFI_CONNECT_TIMEOUT'
       ) {
         try {
@@ -250,7 +265,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
             poll,
             'WIFI_CONNECT_TIMEOUT',
             DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
-            reconnectAttemptStartedAtMs,
+            handoffStartedAtMs,
           );
           if (cancelled) return;
           clearPairingBootstrapToken(recoveryAttemptId);
@@ -267,6 +282,13 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         const authenticated = code
           ? await waitForDeviceAuthenticated(recoveryAttemptId, poll)
           : await waitForClaimConfirmed(recoveryAttemptId, poll);
+          await waitForDeviceOnline(
+            authenticated.deviceId,
+            poll,
+            'PAIRING_DEVICE_OFFLINE_TIMEOUT',
+            DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+            handoffStartedAtMs,
+          );
           if (cancelled) return;
           clearPairingBootstrapToken(authenticated.provisioningAttemptId);
           setI(PAIRING_STEP_COUNT);

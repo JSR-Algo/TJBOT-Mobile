@@ -164,6 +164,13 @@ beforeEach(() => {
     ttlSeconds: 300,
   });
   mockedReportProvisioningDeviceAuthenticated.mockResolvedValue(undefined);
+  mockedGetDeviceStatus.mockResolvedValue({
+    id: 'device-1',
+    name: SERIAL,
+    online: true,
+    batteryPercent: 90,
+    lastSeenAt: '2099-01-01T00:00:00.000Z',
+  });
   mockedStartDeviceProvisioning.mockResolvedValue({
     provisioningAttemptId: 'claim-replacement',
     deviceId: 'device-replacement',
@@ -466,6 +473,78 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     expect(mockedReportProvisioningDeviceAuthenticated.mock.invocationCallOrder[0]).toBeLessThan(
       navigate.mock.invocationCallOrder[0],
     );
+  });
+
+  it('does not accept stale Robot connectivity after a code-based BLE handoff', async () => {
+    jest.useFakeTimers();
+    const handoffStartedAtMs = Date.parse('2026-08-29T06:00:00.000Z');
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(handoffStartedAtMs);
+    try {
+      seedSecrets('claim-1');
+      mockedGetProvisioningAttemptStatus.mockResolvedValue({
+        provisioningAttemptId: 'claim-1',
+        deviceId: 'device-1',
+        status: 'device_authenticated',
+      });
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: 'device-1',
+        name: SERIAL,
+        online: true,
+        batteryPercent: 90,
+        lastSeenAt: '2026-08-29T05:59:59.999Z',
+      });
+      const navigate = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+
+      await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalled());
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    } finally {
+      nowSpy.mockRestore();
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('accepts fresh Robot connectivity after a code-based BLE handoff', async () => {
+    const handoffStartedAtMs = Date.parse('2026-08-29T06:00:00.000Z');
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(handoffStartedAtMs);
+    try {
+      seedSecrets('claim-1');
+      mockedGetProvisioningAttemptStatus.mockResolvedValue({
+        provisioningAttemptId: 'claim-1',
+        deviceId: 'device-1',
+        status: 'device_authenticated',
+      });
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: 'device-1',
+        name: SERIAL,
+        online: true,
+        batteryPercent: 90,
+        lastSeenAt: '2026-08-29T06:00:01.000Z',
+      });
+      const navigate = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairRenameScreen,
+        expect.objectContaining({ deviceId: 'device-1' }),
+      ));
+      expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-1');
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
   it('[token-before-credentials] the bootstrap token is in hand before the Wi-Fi credential handoff', async () => {
@@ -1621,7 +1700,10 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
         .mockRejectedValueOnce({ response: { status: 408 } })
         .mockRejectedValueOnce({ response: { status: 429 } })
         .mockRejectedValueOnce({ response: { status: 503 } })
-        .mockResolvedValueOnce({ id: 'device-1', name: SERIAL, online: true, batteryPercent: 90 });
+        .mockResolvedValueOnce({
+          id: 'device-1', name: SERIAL, online: true, batteryPercent: 90,
+          lastSeenAt: '2099-01-01T00:00:00.000Z',
+        });
       const navigate = jest.fn();
       const reset = jest.fn();
 
@@ -1682,7 +1764,10 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
       mockedGetDeviceStatus
         .mockRejectedValueOnce({ response: { status: 404 }, code: 'DEVICE_NOT_FOUND' })
         .mockRejectedValueOnce({ response: { status: 503 } })
-        .mockResolvedValueOnce({ id: 'device-1', name: SERIAL, online: true, batteryPercent: 90 });
+        .mockResolvedValueOnce({
+          id: 'device-1', name: SERIAL, online: true, batteryPercent: 90,
+          lastSeenAt: '2099-01-01T00:00:00.000Z',
+        });
       const navigate = jest.fn();
       const reset = jest.fn();
       render(
@@ -1708,6 +1793,7 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
       name: SERIAL,
       online: true,
       batteryPercent: 90,
+      lastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
     const reset = jest.fn();
@@ -1784,6 +1870,7 @@ describe('PairConnectingScreen — secret lifecycle and anti-leak', () => {
       name: SERIAL,
       online: true,
       batteryPercent: 90,
+      lastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
     const reset = jest.fn();
