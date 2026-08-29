@@ -19,6 +19,12 @@ the remote Wi-Fi setup request. A missing, invalid, or stale heartbeat is treate
 as unavailable for this action. The UI will show an actionable offline message
 and will not send a request that is known to fail at the ESP boundary.
 
+The same freshness rule will drive the visible connection label. An explicit
+online signal with a stale, missing, or invalid heartbeat will be presented as
+offline rather than showing a contradictory online badge beside a blocked
+Change Wi-Fi action. The blocked-action copy will be Vietnamese:
+`Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.`
+
 The backend and ESP server remain authoritative. A fresh-looking device can
 still disconnect between the gate and delivery, so an actual 409 remains a
 normal handled error rather than being hidden or retried automatically.
@@ -30,6 +36,8 @@ normal handled error rather than being hidden or retried automatically.
 - Add a small, deterministic freshness predicate shared by the screen behavior
   and tests.
 - Prevent Change Wi-Fi submission for missing, invalid, or stale heartbeat data.
+- Keep the visible online/offline label consistent with the freshness gate.
+- Localize the stale-heartbeat guidance shown on the Vietnamese device screen.
 - Preserve the existing successful navigation into reconnect-mode BLE search.
 - Preserve backend ownership checks and ESP command delivery behavior.
 
@@ -39,6 +47,8 @@ normal handled error rather than being hidden or retried automatically.
 - Explicit online and offline connectivity signals retain their meanings.
 - Fresh heartbeat permits remote Wi-Fi setup.
 - Missing, invalid, and stale heartbeat block the request.
+- Missing, invalid, and stale heartbeat display the Robot as offline.
+- The blocked Wi-Fi action displays the approved Vietnamese guidance.
 - A delivered request still navigates to reconnect BLE search.
 - A backend 409 remains visible as the existing setup error.
 
