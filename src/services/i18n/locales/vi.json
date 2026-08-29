@@ -814,6 +814,7 @@
   "Pairing is safe. Double-click the BOOT button to change Wi-Fi without unpairing Robot.": "Ghép nối vẫn an toàn. Nhấn đúp nút BOOT để đổi Wi-Fi mà không huỷ ghép nối Robot.",
   "Robot joined Wi-Fi, but account pairing did not finish. Double-click the BOOT button to change Wi-Fi without unpairing Robot, then try again so the phone can claim it to your account.": "Robot đã kết nối Wi-Fi nhưng chưa hoàn tất ghép nối tài khoản. Nhấn đúp nút BOOT để đổi Wi-Fi mà không huỷ ghép nối Robot, sau đó thử lại để điện thoại liên kết Robot với tài khoản của bạn.",
   "Change Wi‑Fi": "Đổi Wi‑Fi",
+  "Robot must be online with a recent heartbeat.": "Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.",
   "Hold the top button for 5 seconds to open setup mode, then keep Robot within 3 meters.": "Giữ nút trên cùng 5 giây để mở chế độ cài đặt, rồi đặt Robot trong vòng 3 mét.",
   "I don't see my Robot": "Tôi không thấy Robot",
   "This is my Robot": "Đây là Robot của tôi",

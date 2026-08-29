@@ -109,13 +109,15 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     );
   }
 
+  const hasFreshHeartbeat = isDeviceHeartbeatFresh(device.lastSeenAt);
+  const isRealtimeOnline = device.online === true && hasFreshHeartbeat;
   const connectionLabelKey = device.online === null
     ? 'Status unavailable'
-    : device.online
+    : isRealtimeOnline
       ? 'Online'
       : 'Offline';
   const connectionLabel = translateCopy(connectionLabelKey, { locale: language });
-  const connectionColor = device.online === true ? DV.good : DV.ink2;
+  const connectionColor = isRealtimeOnline ? DV.good : DV.ink2;
   const batteryLabel = `${device.batteryPercent}%`;
   const wifiSsid = device.wifiSsid?.trim();
   const wifiLabel = wifiSsid && wifiSsid.length > 0
@@ -123,7 +125,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     : typeof device.wifiRssi === 'number'
       ? `Wi-Fi ${device.wifiRssi} dBm`
       : translateCopy('Wi-Fi not reported', { locale: language });
-  const canStartWifiSetup = device.online === true && isDeviceHeartbeatFresh(device.lastSeenAt);
+  const canStartWifiSetup = isRealtimeOnline;
   const wifiSetupBody = wifiSetupMutation.isPending
     ? 'Opening setup mode...'
     : canStartWifiSetup

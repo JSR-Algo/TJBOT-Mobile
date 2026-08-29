@@ -140,6 +140,7 @@ describe('DeviceHomeScreen', () => {
     ['missing', undefined],
     ['stale', new Date(Date.now() - 5 * 60 * 1000 - 1).toISOString()],
   ])('blocks Wi-Fi setup when the heartbeat is %s', async (_case, lastSeenAt) => {
+    await setAppLanguage('vi');
     apiMocks.getDeviceStatus.mockResolvedValue({
       id: 'seed-device',
       name: 'Seed Robot',
@@ -153,8 +154,10 @@ describe('DeviceHomeScreen', () => {
     );
 
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
-    expect(screen.getByText('Robot must be online with a recent heartbeat.')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('Change Wi‑Fi. Robot must be online with a recent heartbeat.'));
+    expect(screen.getByText('Ngoại tuyến')).toBeTruthy();
+    expect(screen.queryByText('Trực tuyến')).toBeNull();
+    expect(screen.getByText('Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Đổi Wi‑Fi. Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.'));
 
     expect(apiMocks.startDeviceWifiSetup).not.toHaveBeenCalled();
     expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.PairSearchScreen, expect.anything());
