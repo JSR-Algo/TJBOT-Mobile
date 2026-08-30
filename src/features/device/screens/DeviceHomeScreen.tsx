@@ -11,9 +11,10 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
 import { ROUTES } from '@/navigation/routes';
-import { getDeviceStatus, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
+import { getDeviceStatus, startDeviceWifiSetup, type DeviceStatus, unpairDevice } from '@/services/api/device.api';
 import { translateCopy, useAppLanguage } from '@/services/i18n/i18n';
 import { clearLocalPairedDevice, getLocalPairedDeviceId } from '../pairing/localPairedDevice';
+import { isDeviceHeartbeatFresh } from '../connectivity';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeviceHomeScreen'>;
 
@@ -52,6 +53,16 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       await clearLocalPairedDevice();
       queryClient.setQueryData(['devices', 'local-paired-id'], null);
       queryClient.removeQueries({ queryKey: ['devices', 'paired'] });
+    },
+  });
+  const wifiSetupMutation = useMutation({
+    mutationFn: (deviceId: string) => startDeviceWifiSetup(deviceId),
+    onSuccess: (_result, deviceId) => {
+      navigation.navigate(ROUTES.PairSearchScreen, {
+        reconnectMode: true,
+        reconnectDeviceId: deviceId,
+        reconnectSerialNumber: device?.serialNumber,
+      });
     },
   });
   const device = deviceQuery.data;
@@ -98,13 +109,15 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     );
   }
 
+  const hasFreshHeartbeat = isDeviceHeartbeatFresh(device.lastSeenAt);
+  const isRealtimeOnline = device.online === true && hasFreshHeartbeat;
   const connectionLabelKey = device.online === null
     ? 'Status unavailable'
-    : device.online
+    : isRealtimeOnline
       ? 'Online'
       : 'Offline';
   const connectionLabel = translateCopy(connectionLabelKey, { locale: language });
-  const connectionColor = device.online === true ? DV.good : DV.ink2;
+  const connectionColor = isRealtimeOnline ? DV.good : DV.ink2;
   const batteryLabel = `${device.batteryPercent}%`;
   const wifiSsid = device.wifiSsid?.trim();
   const wifiLabel = wifiSsid && wifiSsid.length > 0
@@ -112,6 +125,12 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     : typeof device.wifiRssi === 'number'
       ? `Wi-Fi ${device.wifiRssi} dBm`
       : translateCopy('Wi-Fi not reported', { locale: language });
+  const canStartWifiSetup = isRealtimeOnline;
+  const wifiSetupBody = wifiSetupMutation.isPending
+    ? 'Opening setup mode...'
+    : canStartWifiSetup
+      ? 'Robot will open setup mode automatically.'
+      : 'Robot must be online with a recent heartbeat.';
 
   return (
     <DeviceShell title="Devices">
@@ -145,13 +164,16 @@ export default function DeviceHomeScreen({ navigation }: Props) {
           <DeviceRow
             icon="📶"
             title="Change Wi‑Fi"
-            body="Double-click the BOOT button to change Wi-Fi without unpairing Robot."
-            onClick={() => navigation.navigate(ROUTES.PairSearchScreen, {
-              reconnectMode: true,
-              reconnectDeviceId: device.id,
-              reconnectSerialNumber: device.serialNumber,
-            })}
+            body={wifiSetupBody}
+            onClick={() => {
+              if (canStartWifiSetup && !wifiSetupMutation.isPending) {
+                wifiSetupMutation.mutate(device.id);
+              }
+            }}
           />
+          {wifiSetupMutation.isError ? (
+            <Text style={styles.errorText}>Could not open Wi-Fi setup. Make sure Robot is online and try again.</Text>
+          ) : null}
           <DeviceRow icon="🎵" title="Make Robot chime" body="Find Robot if it's misplaced" onClick={() => navigation.navigate(ROUTES.DeviceLostScreen)} />
           <DeviceRow icon="🌙" title="Quiet hours" body="9:00 PM – 7:00 AM" />
           <DeviceRow icon="🔄" title="Sync content" body="Up to date · 2 minutes ago" />

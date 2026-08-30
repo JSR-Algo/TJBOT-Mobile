@@ -121,7 +121,7 @@ function normalizeDevice(dto: DeviceDto): DeviceStatus {
   const serialNumber = dto.serial_number?.trim();
   const assignedChildProfileId = readAssignedChildProfileId(dto);
   const connectivityState = dto.connectivity_metrics?.connectivity_state;
-  const operationalState = dto.status === 'active' || dto.status === 'online' || connectivityState === 'online'
+  const operationalState = dto.status === 'online' || connectivityState === 'online'
     ? 'online'
     : dto.status === 'offline' || connectivityState === 'offline'
       ? 'offline'
@@ -291,6 +291,10 @@ export async function setDeviceWifi(_deviceId: string, _ssid: string, _password:
 
 export async function unpairDevice(deviceId: string): Promise<void> {
   await client.delete(`/devices/${deviceId}`);
+}
+
+export async function startDeviceWifiSetup(deviceId: string): Promise<void> {
+  await client.post(`/devices/${deviceId}/wifi-setup`);
 }
 
 export async function pushCourseToDevice(_deviceId: string, _courseId: string): Promise<void> {

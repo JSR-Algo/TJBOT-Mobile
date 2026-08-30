@@ -2,6 +2,7 @@ stateDiagram-v2
     [*] --> BLEScan
     BLEScan --> WifiSelection: robot discovered
     BLEScan --> Failed: permission denied / timeout
+    WifiSelection --> BLEScan: cancel Wi-Fi selection / refocus search
     WifiSelection --> EncryptedBluFi: SSID + transient password ready
     EncryptedBluFi --> Failed: STA_CONN_FAIL / GATT error / timeout
     EncryptedBluFi --> BackendConfirmation: STA_CONN_SUCCESS
@@ -28,4 +29,9 @@ stateDiagram-v2
       lastSeenAt is valid and not older than the current handoff.
       Stale or missing heartbeat timestamps remain failures.
       ESP server is contacted only after firmware is online.
+    end note
+
+    note right of BLEScan
+      Every focused search owns a unique run id.
+      Blur, cancel, or a newer focus invalidates stale async work.
     end note

@@ -38,6 +38,25 @@ describe('device API client', () => {
     expect(get).toHaveBeenCalledWith('/devices/household/me');
   });
 
+  it('does not treat the active ownership lifecycle as realtime connectivity', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: [{
+        id: 'device-owned',
+        status: 'active',
+        battery_level: 50,
+        last_seen_at: '2026-08-29T07:00:00.000Z',
+      }],
+    });
+    jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
+    const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getDeviceStatus('primary')).resolves.toMatchObject({
+      id: 'device-owned',
+      online: null,
+    });
+  });
+
   it('keeps child-scoped primary lookup strict by default', async () => {
     jest.resetModules();
     const get = jest.fn().mockResolvedValueOnce({
@@ -185,6 +204,21 @@ describe('device API client', () => {
 
     await expect(unpairDevice('device-3')).resolves.toBeUndefined();
     expect(deleteRequest).toHaveBeenCalledWith('/devices/device-3');
+  });
+
+  it('requests remote Wi-Fi setup without unpairing the device', async () => {
+    jest.resetModules();
+    const post = jest.fn().mockResolvedValueOnce({ data: { device_id: 'device-3', state: 'WIFI_SETUP_REQUESTED' } });
+    const deleteRequest = jest.fn();
+    jest.doMock('@/services/http/client', () => ({
+      __esModule: true,
+      default: { post, delete: deleteRequest },
+    }));
+    const { startDeviceWifiSetup } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(startDeviceWifiSetup('device-3')).resolves.toBeUndefined();
+    expect(post).toHaveBeenCalledWith('/devices/device-3/wifi-setup');
+    expect(deleteRequest).not.toHaveBeenCalled();
   });
 
   it('starts consumer provisioning through the documented provisioning route', async () => {
@@ -724,7 +758,7 @@ describe('device API client', () => {
 
   // -- getDeviceStatus: online:true carries no claim/completion semantics ------
 
-  it('reports online:true for an active device without inventing any claim/completion fields', async () => {
+  it('keeps active ownership separate from realtime connectivity fields', async () => {
     // US-005: getDeviceStatus online:true ALONE never completes a claim. The
     // device-status shape exposes connectivity only — no provisioning status,
     // no completed/authenticated/claimed marker the waiting screen could
@@ -738,7 +772,7 @@ describe('device API client', () => {
     const { getDeviceStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
     const result = await getDeviceStatus('device-on');
-    expect(result.online).toBe(true);
+    expect(result.online).toBeNull();
     expect(result).not.toHaveProperty('status');
     expect(result).not.toHaveProperty('provisioningStatus');
     expect(result).not.toHaveProperty('claimed');
@@ -861,7 +895,7 @@ describe('device API client', () => {
 
     await expect(getDeviceStatus('primary')).resolves.toMatchObject({
       id: 'wrapped-1',
-      online: true,
+      online: null,
       batteryPercent: 77,
       serialNumber: 'TBOT-WRAP',
     });
