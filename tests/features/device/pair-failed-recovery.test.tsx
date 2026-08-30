@@ -154,6 +154,9 @@ describe('PairConnectingScreen US-005 invariants', () => {
       deviceId: 'device-1',
       serialNumber: 'TBT-2026-004217',
       provisioningAttemptId: 'claim-1',
+      ssid: 'Casa',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble_claim',
     }));
     expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
     expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-1');
@@ -183,6 +186,9 @@ describe('PairConnectingScreen US-005 invariants', () => {
       deviceId: 'device-1',
       serialNumber: 'TBT-2026-004217',
       provisioningAttemptId: 'claim-1',
+      ssid: 'Casa',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble_claim',
     }));
   });
 
@@ -206,6 +212,9 @@ describe('PairConnectingScreen US-005 invariants', () => {
       deviceId: 'device-1',
       serialNumber: 'TBT-2026-004217',
       provisioningAttemptId: 'claim-1',
+      ssid: 'Casa',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble_claim',
     }));
   });
 

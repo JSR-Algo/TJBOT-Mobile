@@ -591,6 +591,9 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
       provisioningAttemptId: 'attempt-1',
+      ssid: 'Casa Wi-Fi',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble',
     });
   });
 
@@ -674,6 +677,9 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
       provisioningAttemptId: 'claim-1',
+      ssid: 'Casa Wi-Fi',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble_claim',
     });
   });
 
@@ -716,6 +722,9 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
       provisioningAttemptId: 'claim-refresh',
+      ssid: 'Casa Wi-Fi',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble_claim',
     });
   });
 
@@ -767,6 +776,9 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
       provisioningAttemptId: 'attempt-1',
+      ssid: 'Casa Wi-Fi',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble',
     });
   });
 
@@ -789,6 +801,9 @@ describe('mobile UX redesign accessibility coverage', () => {
       deviceId: 'device-1',
       serialNumber: 'TJBot-001',
       provisioningAttemptId: 'attempt-1',
+      ssid: 'Casa Wi-Fi',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble',
     }));
     expect(apiMocks.getProvisioningAttemptStatus).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
