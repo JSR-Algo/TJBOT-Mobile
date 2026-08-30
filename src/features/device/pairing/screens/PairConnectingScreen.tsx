@@ -14,7 +14,6 @@ import {
   getDeviceStatus,
   getProvisioningAttemptStatus,
   mintBootstrapToken,
-  reportProvisioningDeviceAuthenticated,
   startDeviceProvisioning,
   type ProvisioningAttemptStatus,
 } from '@/services/api/device.api';
@@ -211,6 +210,9 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           deviceId: authenticated.deviceId,
           serialNumber,
           provisioningAttemptId: authenticated.provisioningAttemptId,
+          ssid,
+          bleDeviceId,
+          provisioningTransport: transport,
         });
         return;
       }
@@ -231,6 +233,9 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         deviceId: result.deviceId,
         serialNumber,
         provisioningAttemptId: result.provisioningAttemptId,
+        ssid,
+        bleDeviceId,
+        provisioningTransport: transport,
       });
     }).catch(async (error: unknown) => {
       if (cancelled) return;
@@ -280,6 +285,9 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
             deviceId: authenticated.deviceId,
             serialNumber,
             provisioningAttemptId: authenticated.provisioningAttemptId,
+            ssid,
+            bleDeviceId,
+            provisioningTransport: transport,
           });
           return;
         } catch (reconciliationError: unknown) {
@@ -462,22 +470,9 @@ async function runLocalBleProvisioning(params: {
       // the robot claims/confirms under it instead of its random Board UUID.
       deviceId: activeDeviceId,
     });
-    if (handoffCode && token) {
-      try {
-        await reportProvisioningDeviceAuthenticated({
-          deviceId: activeDeviceId,
-          code: handoffCode,
-          bootstrapToken: token,
-        });
-      } catch (error: unknown) {
-        // The robot and phone can race to consume the one-shot token. If either
-        // side already advanced the attempt, the handoff is complete.
-        const current = await getProvisioningAttemptStatus(claimId).catch(() => null);
-        if (current?.status !== 'device_authenticated' && current?.status !== 'completed') {
-          throw error;
-        }
-      }
-    }
+    // Firmware owns the single-use device-authentication report after joining
+    // Wi-Fi. A second phone-side POST races the robot and turns the successful
+    // handoff into a false 401 when the robot consumes the token first.
   } catch (error: unknown) {
     throw withProvisioningAttemptContext(error, claimId, activeDeviceId);
   }

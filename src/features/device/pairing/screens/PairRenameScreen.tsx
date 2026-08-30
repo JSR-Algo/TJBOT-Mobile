@@ -4,7 +4,6 @@ import type { NavigationProp } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import DeviceShell from '@/components/DeviceShell';
-import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -15,7 +14,6 @@ import { getPendingPairingContext } from '../pendingPairingContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'PairRenameScreen'>;
 
 export default function PairRenameScreen({ navigation, route }: Props) {
-  const [authTimedOut, setAuthTimedOut] = React.useState(false);
   const inFlightRef = React.useRef(false);
   const inFlightRunSeqRef = React.useRef<number | null>(null);
   const mountedRef = React.useRef(true);
@@ -41,8 +39,6 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     const isActiveRun = () => isCurrentRun() && focusedRef.current;
 
     try {
-      setAuthTimedOut(false);
-
       const pendingContext = await getPendingPairingContext().catch(() => null);
       if (!isActiveRun()) return;
       const routeContext = route.params?.deviceId && route.params?.provisioningAttemptId
@@ -91,7 +87,17 @@ export default function PairRenameScreen({ navigation, route }: Props) {
       } catch (error) {
         const code = errorCodeFrom(error, 'PROVISIONING_COMPLETE_FAILED');
         if (code === 'DEVICE_AUTH_TIMEOUT') {
-          if (isActiveRun()) setAuthTimedOut(true);
+          if (isActiveRun()) {
+            navigation.navigate(ROUTES.PairFailedScreen, {
+              deviceId,
+              serialNumber,
+              provisioningAttemptId,
+              ssid: route.params?.ssid,
+              bleDeviceId: route.params?.bleDeviceId,
+              provisioningTransport: route.params?.provisioningTransport,
+              errorCode: 'WIFI_CONNECT_TIMEOUT',
+            });
+          }
           return;
         }
         if (!isActiveRun()) return;
@@ -111,7 +117,15 @@ export default function PairRenameScreen({ navigation, route }: Props) {
         }
       }
     }
-  }, [navigation, route.params?.deviceId, route.params?.provisioningAttemptId, route.params?.serialNumber]);
+  }, [
+    navigation,
+    route.params?.bleDeviceId,
+    route.params?.deviceId,
+    route.params?.provisioningAttemptId,
+    route.params?.provisioningTransport,
+    route.params?.serialNumber,
+    route.params?.ssid,
+  ]);
 
   finishPairingRef.current = finishPairing;
 
@@ -138,20 +152,7 @@ export default function PairRenameScreen({ navigation, route }: Props) {
     <DeviceShell title="Finishing setup">
       <Box paddingHorizontal={20} paddingTop={32} paddingBottom={30} style={styles.content}>
         <ActivityIndicator color={DV.accent} size="large" />
-        {authTimedOut ? (
-          <Text testID="pairing-auth-timeout-message" style={styles.retryMessage}>
-            Robot is still finishing its Wi-Fi connection. Wait a moment, then try again.
-          </Text>
-        ) : (
-          <Text style={styles.status}>
-            Preparing
-          </Text>
-        )}
-        {authTimedOut ? (
-          <DeviceBigBtn onClick={() => void finishPairing()}>
-            Try again
-          </DeviceBigBtn>
-        ) : null}
+        <Text style={styles.status}>Preparing</Text>
       </Box>
     </DeviceShell>
   );
@@ -170,5 +171,4 @@ function errorCodeFrom(error: unknown, fallback: string): string {
 const styles = StyleSheet.create({
   content: { alignItems: 'center', gap: 18 },
   status: { fontSize: 14, color: DV.ink2, lineHeight: 22, textAlign: 'center' },
-  retryMessage: { fontSize: 13, color: '#9A4D00', lineHeight: 20, textAlign: 'center' },
 });

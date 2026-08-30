@@ -275,6 +275,23 @@ describe('PairFailedScreen reason-card navigation', () => {
     expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
   });
 
+  it('"Wrong Wi-Fi password" starts a fresh BLE attempt after Wi-Fi authentication timed out', () => {
+    const { screen, nav } = renderScreen({
+      errorCode: 'WIFI_CONNECT_TIMEOUT',
+      deviceId: 'device-1',
+      serialNumber: 'TBOT-14C19FD1A84A',
+      provisioningAttemptId: 'attempt-that-cannot-be-reused',
+      ssid: 'Casa',
+      bleDeviceId: 'ble-device-1',
+      provisioningTransport: 'ble',
+    });
+
+    fireEvent.press(screen.getByText('Wrong Wi-Fi password'));
+
+    expect(nav.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, { reconnectMode: false });
+    expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiPasswordScreen, expect.anything());
+  });
+
   it('"Robot looks asleep" card routes to PairIntroScreen', () => {
     const { screen, nav } = renderScreen(undefined);
     fireEvent.press(screen.getByText('Robot looks asleep'));

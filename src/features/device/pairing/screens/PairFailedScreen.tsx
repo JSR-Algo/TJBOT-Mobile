@@ -296,7 +296,12 @@ function shouldShowReasonCards(errorCode: string | undefined): boolean {
 
 function needsFreshBleClaim(params: Props['route']['params']): boolean {
   return !!(
-    params?.errorCode === 'NO_DEVICE_AVAILABLE'
+    (
+      params?.errorCode === 'NO_DEVICE_AVAILABLE'
+      || params?.errorCode === 'WIFI_CONNECT_TIMEOUT'
+      || params?.errorCode === 'WIFI_CONNECT_FAILED'
+      || params?.errorCode === 'WIFI_AUTH_FAILED'
+    )
     && params.provisioningTransport === 'ble'
     && !params.code
   );

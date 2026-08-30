@@ -130,7 +130,7 @@ export type RootStackParamList = {
   PairConnectingScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairCodeScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairAddScreen: undefined;
-  PairRenameScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
+  PairRenameScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; ssid?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairOfflineScreen: undefined;

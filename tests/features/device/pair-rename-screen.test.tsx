@@ -1,12 +1,11 @@
 import React from 'react';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import PairRenameScreen from '@/features/device/pairing/screens/PairRenameScreen';
 import { ROUTES } from '@/navigation/routes';
 import { completeDeviceProvisioning } from '@/services/api/device.api';
 import type { CompleteDeviceProvisioningResult } from '@/services/api/device.api';
 import { markLocalDevicePaired } from '@/features/device/pairing/localPairedDevice';
 import { getPendingPairingContext } from '@/features/device/pairing/pendingPairingContext';
-import { setAppLanguage } from '@/services/i18n/i18n';
 
 jest.mock('@/services/api/device.api', () => ({
   __esModule: true,
@@ -35,6 +34,9 @@ const FULL_PARAMS = {
   deviceId: 'device-1',
   serialNumber: 'TBT-2026-004217',
   provisioningAttemptId: 'claim-1',
+  ssid: 'Test Wi-Fi',
+  bleDeviceId: 'ble-device-1',
+  provisioningTransport: 'ble' as const,
 };
 
 const COMPLETE_OK: CompleteDeviceProvisioningResult = {
@@ -145,61 +147,20 @@ describe('PairRenameScreen auto-finalization bridge', () => {
     expect(mockedComplete).not.toHaveBeenCalled();
   });
 
-  it('keeps DEVICE_AUTH_TIMEOUT on the bridge and retries with the same context when the parent taps retry', async () => {
-    mockedComplete
-      .mockRejectedValueOnce(Object.assign(new Error('robot is still initializing'), { code: 'DEVICE_AUTH_TIMEOUT' }))
-      .mockResolvedValueOnce(COMPLETE_OK);
+  it('routes DEVICE_AUTH_TIMEOUT to a fresh Wi-Fi recovery flow with the BLE context intact', async () => {
+    mockedComplete.mockRejectedValueOnce(
+      Object.assign(new Error('robot is still initializing'), { code: 'DEVICE_AUTH_TIMEOUT' }),
+    );
     const navigate = jest.fn();
     const reset = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS, reset);
+    renderScreen(navigate, FULL_PARAMS, reset);
 
-    await waitFor(() => expect(screen.getByTestId('pairing-auth-timeout-message')).toBeTruthy());
-    expect(screen.getByText('Try again')).toBeTruthy();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
-
-    fireEvent.press(screen.getByText('Try again'));
-
-    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(2));
-    expect(mockedComplete).toHaveBeenNthCalledWith(2, {
-      provisioningAttemptId: 'claim-1',
-      deviceId: 'device-1',
-      displayName: 'Living-room Robot',
-    });
-    await waitFor(() => expect(reset).toHaveBeenCalledWith(expect.objectContaining({ index: 1 })));
-  });
-
-  it('localizes the timeout message and retry CTA in Vietnamese', async () => {
-    await act(async () => {
-      await setAppLanguage('vi');
-    });
-    mockedComplete.mockRejectedValueOnce(Object.assign(new Error('robot is still initializing'), { code: 'DEVICE_AUTH_TIMEOUT' }));
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    await waitFor(() =>
-      expect(screen.getByText('Robot vẫn đang hoàn tất kết nối Wi-Fi. Hãy đợi một chút rồi thử lại.')).toBeTruthy(),
-    );
-    expect(screen.getByText('Thử lại')).toBeTruthy();
-  });
-
-  it('ignores duplicate retry taps while a finalize call is already in flight', async () => {
-    mockedComplete.mockRejectedValueOnce(Object.assign(new Error('robot is still initializing'), { code: 'DEVICE_AUTH_TIMEOUT' }));
-    const navigate = jest.fn();
-    const screen = renderScreen(navigate, FULL_PARAMS);
-
-    await waitFor(() => expect(screen.getByText('Try again')).toBeTruthy());
-    let resolveComplete: (value: CompleteDeviceProvisioningResult) => void = () => undefined;
-    mockedComplete.mockImplementationOnce(
-      () => new Promise<CompleteDeviceProvisioningResult>((resolve) => { resolveComplete = resolve; }),
-    );
-
-    const retryButton = screen.getByText('Try again');
-    fireEvent.press(retryButton);
-    fireEvent.press(retryButton);
-    fireEvent.press(retryButton);
-
-    await waitFor(() => expect(mockedComplete).toHaveBeenCalledTimes(2));
-    resolveComplete(COMPLETE_OK);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      ...FULL_PARAMS,
+      errorCode: 'WIFI_CONNECT_TIMEOUT',
+    }));
+    expect(mockedComplete).toHaveBeenCalledTimes(1);
+    expect(reset).not.toHaveBeenCalled();
   });
 
   it('does not navigate after the bridge unmounts while finalization is still in flight', async () => {

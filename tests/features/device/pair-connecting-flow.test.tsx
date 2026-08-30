@@ -419,16 +419,16 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
-    }));
+    })));
     expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
 
-  it('happy path: confirms, ensures token, hands off credentials, then device_authenticated advances', async () => {
+  it('happy path: firmware owns the single-use authentication report after credential handoff', async () => {
     seedSecrets('claim-1');
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
@@ -443,11 +443,11 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
-    }));
+    })));
     expect(mockedConfirmLocalBlePaired).toHaveBeenCalledWith({
       deviceId: 'device-1',
       provisioningAttemptId: 'claim-1',
@@ -455,15 +455,8 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       code: PROVISIONING_CODE,
     });
     expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledTimes(1);
-    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
-      deviceId: 'device-1',
-      code: PROVISIONING_CODE,
-      bootstrapToken: BOOTSTRAP_TOKEN,
-    });
+    expect(mockedReportProvisioningDeviceAuthenticated).not.toHaveBeenCalled();
     expect(mockedProvisionWifiViaLocalBle.mock.invocationCallOrder[0]).toBeLessThan(
-      mockedReportProvisioningDeviceAuthenticated.mock.invocationCallOrder[0],
-    );
-    expect(mockedReportProvisioningDeviceAuthenticated.mock.invocationCallOrder[0]).toBeLessThan(
       navigate.mock.invocationCallOrder[0],
     );
   });
@@ -543,11 +536,11 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
     }));
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
-    });
+    }));
     expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
   });
 
@@ -630,11 +623,11 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
-    }));
+    })));
     expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
     expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
     expect(mockedStartDeviceProvisioning).not.toHaveBeenCalled();
@@ -674,11 +667,11 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-replacement',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-replacement',
-    }));
+    })));
     expect(mockedConfirmLocalBlePaired).toHaveBeenCalledTimes(2);
     expect(mockedConfirmLocalBlePaired).toHaveBeenNthCalledWith(2, {
       deviceId: 'device-replacement',
@@ -696,11 +689,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       password: WIFI_PASSWORD,
       token: BOOTSTRAP_TOKEN,
     }));
-    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
-      deviceId: 'device-replacement',
-      code: PROVISIONING_CODE,
-      bootstrapToken: BOOTSTRAP_TOKEN,
-    });
+    expect(mockedReportProvisioningDeviceAuthenticated).not.toHaveBeenCalled();
   });
 
   it('restarts once after a failed NOT_READY attempt and saves/navigates with the replacement ids', async () => {
@@ -736,11 +725,11 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-replacement',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-replacement',
-    }));
+    })));
     expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
     expect(mockedStartDeviceProvisioning).toHaveBeenCalledTimes(1);
     expect(mockedConfirmLocalBlePaired).toHaveBeenCalledTimes(2);
@@ -752,11 +741,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       password: WIFI_PASSWORD,
       token: BOOTSTRAP_TOKEN,
     }));
-    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
-      deviceId: 'device-replacement',
-      code: PROVISIONING_CODE,
-      bootstrapToken: BOOTSTRAP_TOKEN,
-    });
+    expect(mockedReportProvisioningDeviceAuthenticated).not.toHaveBeenCalled();
     expect(mockedSavePendingPairingContext).toHaveBeenCalledWith({
       deviceId: 'device-replacement',
       serialNumber: SERIAL,
@@ -1017,11 +1002,11 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
-    }));
+    })));
     expect(mockedGetClaimStatus).toHaveBeenCalledWith('claim-1');
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
   });
@@ -1085,11 +1070,11 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
-    }));
+    })));
     // Zero-code path polls the claim, not the provisioning-attempt, status.
     expect(mockedGetClaimStatus).toHaveBeenCalledWith('claim-1');
     expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
@@ -1205,11 +1190,11 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
 
       await advancePairingPolls(24 * 3000);
 
-      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
         deviceId: 'device-1',
         serialNumber: SERIAL,
         provisioningAttemptId: 'claim-1',
-      }));
+      })));
       expect(mockedGetClaimStatus).toHaveBeenCalledTimes(25);
       expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
     } finally {
@@ -1256,11 +1241,11 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
 
       await advancePairingPolls(75 * 3000);
 
-      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
         deviceId: 'device-1',
         serialNumber: SERIAL,
         provisioningAttemptId: 'claim-1',
-      }));
+      })));
       expect(mockedGetClaimStatus).toHaveBeenCalledTimes(76);
       expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
     } finally {
@@ -1451,11 +1436,11 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-confirmed-1',
-    }));
+    })));
     expect(mockedRequestClaim).toHaveBeenCalledWith({ deviceId: 'device-1' });
     expect(mockedGetClaimStatus).toHaveBeenCalledWith('claim-confirmed-1');
     expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
@@ -1494,11 +1479,11 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
       resolveSave?.();
     });
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
       deviceId: 'device-1',
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-confirmed-1',
-    }));
+    })));
     expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
     expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
   });

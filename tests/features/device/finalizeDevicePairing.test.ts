@@ -79,30 +79,26 @@ beforeEach(() => {
 });
 
 describe('finalizeDevicePairing', () => {
-  it.each(['DEVICE_AUTH_NOT_VERIFIED', 'PROVISIONING_ATTEMPT_NOT_READY'])('recovers %s through the simple local-BLE confirmation path', async (code) => {
-    mockedComplete
-      .mockRejectedValueOnce(Object.assign(new Error('robot is initializing'), { code }))
-      .mockResolvedValueOnce(COMPLETE_OK);
-    const reset = jest.fn();
+  it.each(['DEVICE_AUTH_NOT_VERIFIED', 'PROVISIONING_ATTEMPT_NOT_READY'])('waits for firmware authentication after %s without authenticating from the phone', async (code) => {
+    jest.useFakeTimers();
+    try {
+      mockedComplete
+        .mockRejectedValueOnce(Object.assign(new Error('robot is initializing'), { code }))
+        .mockResolvedValueOnce(COMPLETE_OK);
+      const reset = jest.fn();
 
-    await expect(finalizeDevicePairing({ reset }, CONTEXT, 'child-9')).resolves.toBeUndefined();
+      const finalizing = finalizeDevicePairing({ reset }, CONTEXT, 'child-9');
+      await jest.advanceTimersByTimeAsync(3_000);
+      await expect(finalizing).resolves.toBeUndefined();
 
-    const recoveryCode = mockedConfirmLocalBlePaired.mock.calls[0]?.[0].code;
-    expect(recoveryCode).toMatch(/^\d{6}$/);
-    expect(mockedConfirmLocalBlePaired).toHaveBeenCalledWith({
-      deviceId: CONTEXT.deviceId,
-      provisioningAttemptId: CONTEXT.provisioningAttemptId,
-      serialNumber: CONTEXT.serialNumber,
-      code: recoveryCode,
-    });
-    expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: CONTEXT.provisioningAttemptId });
-    expect(mockedReportProvisioningDeviceAuthenticated).toHaveBeenCalledWith({
-      deviceId: CONTEXT.deviceId,
-      code: recoveryCode,
-      bootstrapToken: 'bootstrap-token',
-    });
-    expect(mockedComplete).toHaveBeenCalledTimes(2);
-    expect(reset).toHaveBeenCalledTimes(1);
+      expect(mockedConfirmLocalBlePaired).not.toHaveBeenCalled();
+      expect(mockedMintBootstrapToken).not.toHaveBeenCalled();
+      expect(mockedReportProvisioningDeviceAuthenticated).not.toHaveBeenCalled();
+      expect(mockedComplete).toHaveBeenCalledTimes(2);
+      expect(reset).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('bounds the authentication wait and returns a retryable DEVICE_AUTH_TIMEOUT', async () => {
@@ -220,12 +216,7 @@ describe('finalizeDevicePairing', () => {
   });
 
   it.each([
-    Object.assign(new Error('already claimed'), { code: 'DEVICE_ALREADY_CLAIMED' }),
-    Object.assign(new Error('already assigned'), { code: 'DEVICE_ALREADY_ASSIGNED' }),
     Object.assign(new Error('already completed'), { code: 'PROVISIONING_ATTEMPT_ALREADY_COMPLETED' }),
-    Object.assign(new Error('claim already confirmed'), { code: 'CLAIM_ALREADY_CONFIRMED' }),
-    { response: { data: { code: 'DEVICE_ALREADY_CLAIMED' } } },
-    { response: { data: { error: { code: 'DEVICE_ALREADY_ASSIGNED' } } } },
   ])('treats an already-finalized rejection as idempotent success', async (err) => {
     mockedComplete.mockRejectedValue(err);
     const reset = jest.fn();
@@ -242,6 +233,21 @@ describe('finalizeDevicePairing', () => {
         },
       ],
     });
+  });
+
+  it.each([
+    Object.assign(new Error('already claimed'), { code: 'DEVICE_ALREADY_CLAIMED' }),
+    Object.assign(new Error('already assigned'), { code: 'DEVICE_ALREADY_ASSIGNED' }),
+    Object.assign(new Error('claim already confirmed'), { code: 'CLAIM_ALREADY_CONFIRMED' }),
+    { response: { data: { code: 'DEVICE_ALREADY_CLAIMED' } } },
+    { response: { data: { error: { code: 'DEVICE_ALREADY_ASSIGNED' } } } },
+  ])('does not turn device-wide ownership conflicts into success for the current attempt', async (err) => {
+    mockedComplete.mockRejectedValue(err);
+    const reset = jest.fn();
+
+    await expect(finalizeDevicePairing({ reset }, CONTEXT, 'child-9')).rejects.toBe(err);
+    expect(mockedMarkLocal).not.toHaveBeenCalled();
+    expect(reset).not.toHaveBeenCalled();
   });
 
   it('propagates an unrelated completeDeviceProvisioning rejection and does NOT mark paired or reset', async () => {
