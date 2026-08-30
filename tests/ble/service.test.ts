@@ -655,7 +655,7 @@ describe('BLE service', () => {
     await Promise.resolve();
     expect(discoverAllServicesAndCharacteristics).toHaveBeenCalled();
 
-    await jest.advanceTimersByTimeAsync(10000);
+    await jest.advanceTimersByTimeAsync(15000);
 
     expect(observed).toHaveBeenCalledWith(expect.objectContaining({ code: 'BLE_PROVISIONING_GATT_ERROR' }));
     expect(cancelConnection).toHaveBeenCalled();
@@ -1380,7 +1380,7 @@ describe('BLE service', () => {
     expect(firstDiscover).toHaveBeenCalled();
 
     const scanExpectation = expect(scan).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
-    await jest.advanceTimersByTimeAsync(10000);
+    await jest.advanceTimersByTimeAsync(15000);
     await jest.advanceTimersByTimeAsync(300);
     await jest.advanceTimersByTimeAsync(0);
     await scanExpectation;
@@ -1395,6 +1395,46 @@ describe('BLE service', () => {
     );
     expect(secondCancel).toHaveBeenCalled();
 
+    jest.useRealTimers();
+  });
+
+  test('allows Android service discovery to complete after the generic 10-second GATT bound', async () => {
+    jest.useFakeTimers();
+
+    const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: (error: Error | null, characteristic: { value: string | null } | null) => void) => {
+      listener(null, { value: encodeBase64([0x45, 0x04, 0x00, 0x06, 0x05, 0xc9, ...asciiBytes('Casa')]) });
+      return { remove };
+    });
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const discovered = {
+      writeCharacteristicWithResponseForService,
+      monitorCharacteristicForService,
+      cancelConnection,
+    };
+    const discoverAllServicesAndCharacteristics = jest.fn(() => new Promise((resolve) => {
+      setTimeout(() => resolve(discovered), 10500);
+    }));
+    const connect = jest.fn()
+      .mockResolvedValueOnce({
+        discoverAllServicesAndCharacteristics,
+        cancelConnection,
+      })
+      .mockRejectedValueOnce(new Error('second connection should not occur'));
+
+    const scan = scanRobotWifiNetworks({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      connectDevice: connect,
+    });
+    const expectation = expect(scan).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
+
+    await jest.advanceTimersByTimeAsync(10500);
+    await expectation;
+
+    expect(connect).toHaveBeenCalledTimes(1);
+    expect(writeCharacteristicWithResponseForService).toHaveBeenCalled();
+    expect(cancelConnection).toHaveBeenCalled();
     jest.useRealTimers();
   });
 
