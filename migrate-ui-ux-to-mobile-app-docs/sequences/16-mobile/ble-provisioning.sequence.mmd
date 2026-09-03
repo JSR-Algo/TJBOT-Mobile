@@ -74,12 +74,12 @@ sequenceDiagram
                 loop poll every 3s up to 5 minutes
                     ParentApp->>Gateway: GET /v1/devices/provision/:provisioningAttemptId/status
                     Gateway->>DeviceService: forward
-                    DeviceService-->>Gateway: {status: started | ble_paired | device_authenticated | completed | failed | expired}
+                    DeviceService-->>Gateway: {status: started | ble_paired | device_authenticated | completed | failed | expired, deviceLastSeenAt: ISO string | null}
                     Gateway-->>ParentApp: 200
                 end
                 alt status failed or expired or poll timeout
                     ParentApp-->>ParentApp: surface retry-Wi-Fi-credentials prompt
-                else device_authenticated or completed
+                else device_authenticated or completed AND deviceLastSeenAt >= BLE handoff boundary
                     ParentApp->>Gateway: POST /v1/devices/provision/complete {provisioningAttemptId, deviceId, assignChildProfileId, displayName}
                     Gateway->>DeviceService: forward
                     alt provision_not_ready

@@ -133,12 +133,12 @@ describe('PairConnectingScreen US-005 invariants', () => {
     });
   });
 
-  it('[MB6] after wifi_credentials_sent, code-based pairing waits for a fresh heartbeat without an auth poll', async () => {
+  it('[MB6] after wifi_credentials_sent, code-based pairing waits for a fresh attempt heartbeat', async () => {
     seedSecrets('claim-1');
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'ble_paired',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
 
@@ -158,8 +158,8 @@ describe('PairConnectingScreen US-005 invariants', () => {
       bleDeviceId: 'ble-device-1',
       provisioningTransport: 'ble_claim',
     }));
-    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
-    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-1');
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen);
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.DeviceHomeScreen, expect.anything());
@@ -170,7 +170,7 @@ describe('PairConnectingScreen US-005 invariants', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
 
@@ -197,7 +197,7 @@ describe('PairConnectingScreen US-005 invariants', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'completed',
+      status: 'completed', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
 
@@ -235,9 +235,10 @@ describe('PairConnectingScreen US-005 invariants', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
-    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'DEVICE_AUTH_NOT_VERIFIED' }),
+    ));
   });
 
   it('[MB10] getDeviceStatus({online:true}) ALONE does not complete the BLE provisioning claim', async () => {

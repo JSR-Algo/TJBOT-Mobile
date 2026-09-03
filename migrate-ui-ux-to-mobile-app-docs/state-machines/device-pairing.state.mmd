@@ -25,8 +25,10 @@ stateDiagram-v2
 
     note right of BackendConfirmation
       Backend owns claim, ownership, token, status, and heartbeat.
-      A reconnect timeout is recoverable only when online=true and
-      lastSeenAt is valid and not older than the current handoff.
+      New-device pairing completes only after the attempt status is
+      device_authenticated or completed and deviceLastSeenAt is valid and
+      at or after the current BLE handoff boundary. Reconnect timeout is
+      recoverable only when owned-device online=true and lastSeenAt is fresh.
       Stale or missing heartbeat timestamps remain failures.
       ESP server is contacted only after firmware is online.
     end note

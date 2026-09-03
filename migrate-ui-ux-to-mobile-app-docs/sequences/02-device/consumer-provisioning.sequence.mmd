@@ -55,6 +55,11 @@ sequenceDiagram
         DeviceService-->>Device: 204
     end
 
+    ParentApp->>Gateway: GET /v1/devices/provision/:provisioningAttemptId/status
+    Gateway->>DeviceService: authorize attempt owner and household
+    DeviceService->>PostgreSQL: SELECT attempt status + devices.last_seen_at only
+    DeviceService-->>ParentApp: 200 {provisioningAttemptId, deviceId, status, deviceLastSeenAt: ISO string | null}
+
     ParentApp->>Gateway: POST /v1/devices/provision/complete {provisioningAttemptId, deviceId, assignChildProfileId, displayName}
     Gateway->>DeviceService: forward
     alt provisioning_attempt_not_ready
@@ -69,4 +74,4 @@ sequenceDiagram
         DeviceService-->>ParentApp: 200 {device: {status=active, lifecycleState=assigned, …}}
     end
 
-    Note over ParentApp,PostgreSQL: timeout 5s p99 · provisioningAttemptId guards re-submit · attempt-status state machine enforces transitions per spec §7.3
+    Note over ParentApp,PostgreSQL: status proof is attempt-scoped and does not assign ownership · timeout 5s p99 · provisioningAttemptId guards re-submit · attempt-status state machine enforces transitions per spec §7.3

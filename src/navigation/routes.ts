@@ -134,7 +134,7 @@ export type RootStackParamList = {
   PairWifiScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairWifiPasswordScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport };
   PairOfflineScreen: undefined;
-  PairFailedScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport; deliveryUnknown?: boolean };
+  PairFailedScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string; code?: string; ssid?: string; errorCode?: string; bleDeviceId?: string; provisioningTransport?: PairingProvisioningTransport; deliveryUnknown?: boolean; handoffStartedAtMs?: number };
   PairSuccessScreen: undefined | { deviceId?: string; serialNumber?: string; provisioningAttemptId?: string };
   PairFirstLessonScreen: undefined;
 

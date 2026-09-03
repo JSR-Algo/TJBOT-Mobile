@@ -23,6 +23,7 @@ import {
   isRetryablePairingStatusPollError,
 } from '../claimStatus';
 import { buildPairSearchRetryParams } from '../routeParams';
+import { hasFreshProvisioningOnlineProof } from '../provisioningOnlineProof';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFailedScreen'>;
 
@@ -237,6 +238,7 @@ function canRecoverLatePairing(params: Props['route']['params']): params is Fail
     && params.provisioningAttemptId
     && params.deliveryUnknown === true
     && params.provisioningTransport !== 'ble_reconnect'
+    && (!params.code || Number.isFinite(params.handoffStartedAtMs))
     && params.errorCode !== 'WIFI_CONNECT_FAILED'
     && params.errorCode !== 'WIFI_AUTH_FAILED'
   );
@@ -255,8 +257,12 @@ async function pollLatePairingStatus(
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
       if (params.code) {
+        const handoffStartedAtMs = params.handoffStartedAtMs;
+        if (typeof handoffStartedAtMs !== 'number' || !Number.isFinite(handoffStartedAtMs)) {
+          return { kind: 'failed', deviceId: params.deviceId };
+        }
         const status = await getProvisioningAttemptStatus(params.provisioningAttemptId);
-        if (status.status === 'device_authenticated' || status.status === 'completed') {
+        if (hasFreshProvisioningOnlineProof(status, handoffStartedAtMs)) {
           return { kind: 'authenticated', deviceId: status.deviceId || params.deviceId };
         }
         if (status.status === 'failed' || status.status === 'expired') {
