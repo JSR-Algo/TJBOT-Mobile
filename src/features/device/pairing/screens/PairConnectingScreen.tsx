@@ -42,6 +42,7 @@ type ProvisioningRunResult = {
   provisioningAttemptId: string;
   completionMode: 'device_authenticated' | 'claim_confirmed' | 'device_online';
   claimExpiresAt?: string | null;
+  handoffStartedAtMs: number;
 };
 type ActiveProvisioningContext = {
   deviceId: string;
@@ -145,7 +146,6 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       });
       return;
     }
-    const handoffStartedAtMs = Date.now();
     const run = runLocalBleProvisioning({
       deviceId,
       serialNumber,
@@ -173,6 +173,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         recoveryAttemptId = result.provisioningAttemptId;
       }
       if (cancelled) return;
+      const handoffStartedAtMs = result.handoffStartedAtMs;
       setI(PAIRING_STEP_COUNT - 1);
       if (result.completionMode === 'device_online') {
         await waitForDeviceOnline(
@@ -254,6 +255,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       const errorRecord = asRecord(error);
       recoveryAttemptId = readString(errorRecord, 'provisioningAttemptId') ?? recoveryAttemptId;
       recoveryDeviceId = readString(errorRecord, 'deviceId') ?? recoveryDeviceId;
+      const handoffStartedAtMs = readNumber(errorRecord, 'handoffStartedAtMs') ?? Date.now();
       let resolvedError = error;
       const deliveryUnknown = isDeliveryUnknown(error);
       if (
@@ -419,19 +421,32 @@ async function runLocalBleProvisioning(params: {
     hasBootstrapToken: !!params.bootstrapToken,
   });
   if (params.credentialOnly) {
-    await provisionWifiViaLocalBle({
-      device: {
-        id: params.bleDeviceId,
-        name: params.serialNumber,
-        localName: params.serialNumber,
-        serviceUUIDs: [],
-      },
-      ssid: params.ssid,
-      password: params.password,
-      allowCredentialOnly: true,
-    });
+    const handoffStartedAtMs = Date.now();
+    try {
+      await provisionWifiViaLocalBle({
+        device: {
+          id: params.bleDeviceId,
+          name: params.serialNumber,
+          localName: params.serialNumber,
+          serviceUUIDs: [],
+        },
+        ssid: params.ssid,
+        password: params.password,
+        allowCredentialOnly: true,
+      });
+    } catch (error: unknown) {
+      throw Object.assign(
+        withProvisioningAttemptContext(error, params.provisioningAttemptId, params.deviceId),
+        { handoffStartedAtMs },
+      );
+    }
 
-    return { deviceId: params.deviceId, provisioningAttemptId: params.provisioningAttemptId, completionMode: 'device_online' };
+    return {
+      deviceId: params.deviceId,
+      provisioningAttemptId: params.provisioningAttemptId,
+      completionMode: 'device_online',
+      handoffStartedAtMs,
+    };
   }
 
   let token: string | undefined;
@@ -454,7 +469,7 @@ async function runLocalBleProvisioning(params: {
     claimId = active.provisioningAttemptId;
     completionMode = 'device_authenticated';
     if (active.skipBleHandoff) {
-      return { deviceId: activeDeviceId, provisioningAttemptId: claimId, completionMode };
+      return { deviceId: activeDeviceId, provisioningAttemptId: claimId, completionMode, handoffStartedAtMs: Date.now() };
     }
   }
 
@@ -466,31 +481,43 @@ async function runLocalBleProvisioning(params: {
     claimId = claimed.claimId;
     claimExpiresAt = claimed.expiresAt || null;
     if (claimed.status === 'CLAIM_CONFIRMED' || claimed.status === 'CLAIMED') {
-      return { deviceId: claimed.deviceId || activeDeviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+      return {
+        deviceId: claimed.deviceId || activeDeviceId,
+        provisioningAttemptId: claimId,
+        completionMode,
+        claimExpiresAt,
+        handoffStartedAtMs: Date.now(),
+      };
     }
   }
 
+  let handoffStartedAtMs = Date.now();
   try {
     // Bootstrap tokens are single-use and expire quickly. A token cached before
     // Wi-Fi selection may already be expired or consumed by a previous delivery-
     // unknown attempt, so mint exactly at the BLE handoff boundary every time.
     const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimId });
     token = bootstrap.token;
-    await provisionWifiViaLocalBle({
-      device: {
-        id: params.bleDeviceId,
-        name: params.serialNumber,
-        localName: params.serialNumber,
-        serviceUUIDs: [],
-      },
-      ssid: params.ssid,
-      password: params.password,
-      code: handoffCode,
-      token,
-      // Push the backend device_id (the id the claim attempt was created under) so
-      // the robot claims/confirms under it instead of its random Board UUID.
-      deviceId: activeDeviceId,
-    });
+    handoffStartedAtMs = Date.now();
+    try {
+      await provisionWifiViaLocalBle({
+        device: {
+          id: params.bleDeviceId,
+          name: params.serialNumber,
+          localName: params.serialNumber,
+          serviceUUIDs: [],
+        },
+        ssid: params.ssid,
+        password: params.password,
+        code: handoffCode,
+        token,
+        // Push the backend device_id (the id the claim attempt was created under) so
+        // the robot claims/confirms under it instead of its random Board UUID.
+        deviceId: activeDeviceId,
+      });
+    } catch (error: unknown) {
+      throw Object.assign(withProvisioningAttemptContext(error, claimId, activeDeviceId), { handoffStartedAtMs });
+    }
     // Firmware owns the single-use device-authentication report after joining
     // Wi-Fi. A second phone-side POST races the robot and turns the successful
     // handoff into a false 401 when the robot consumes the token first.
@@ -504,7 +531,7 @@ async function runLocalBleProvisioning(params: {
     completionMode,
   });
 
-  return { deviceId: activeDeviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt };
+  return { deviceId: activeDeviceId, provisioningAttemptId: claimId, completionMode, claimExpiresAt, handoffStartedAtMs };
 }
 
 async function confirmLocalBlePairedWithNotReadyRecovery(params: {
@@ -780,6 +807,7 @@ function withProvisioningAttemptContext(error: unknown, provisioningAttemptId: s
   deviceId?: string;
   provisioningAttemptId: string;
   deliveryUnknown?: boolean;
+  handoffStartedAtMs?: number;
 } {
   const wrapped = new Error(error instanceof Error ? error.message : 'Pairing operation failed.') as Error & {
     code: string;
@@ -790,6 +818,8 @@ function withProvisioningAttemptContext(error: unknown, provisioningAttemptId: s
   wrapped.code = errorCodeFrom(error, 'PAIRING_CONNECT_FAILED');
   wrapped.deviceId = readString(asRecord(error), 'deviceId') ?? deviceId;
   wrapped.provisioningAttemptId = readString(asRecord(error), 'provisioningAttemptId') ?? provisioningAttemptId;
+  const handoffStartedAtMs = readNumber(asRecord(error), 'handoffStartedAtMs');
+  if (handoffStartedAtMs !== undefined) Object.assign(wrapped, { handoffStartedAtMs });
   if (isDeliveryUnknown(error)) wrapped.deliveryUnknown = true;
   Object.defineProperty(wrapped, 'cause', { value: error, configurable: true });
   return wrapped;

@@ -403,6 +403,50 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     }
   });
 
+  it('rejects a heartbeat emitted during API preparation before the credential write', async () => {
+    jest.useFakeTimers();
+    seedSecrets('claim-1');
+    let nowMs = Date.parse('2026-09-03T04:05:06.000Z');
+    const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => nowMs);
+    try {
+      mockedConfirmLocalBlePaired.mockImplementation(async () => {
+        nowMs += 1000;
+        return { deviceId: 'device-1', provisioningAttemptId: 'claim-1', status: 'ble_paired' };
+      });
+      mockedMintBootstrapToken.mockImplementation(async () => {
+        nowMs += 1000;
+        return { token: BOOTSTRAP_TOKEN, expiresAt: '2099-01-01T00:00:00.000Z', ttlSeconds: 300 };
+      });
+      mockedGetProvisioningAttemptStatus
+        .mockResolvedValueOnce({
+          provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated',
+          deviceLastSeenAt: '2026-09-03T04:05:07.500Z',
+        })
+        .mockResolvedValueOnce({
+          provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated',
+          deviceLastSeenAt: '2026-09-03T04:05:08.000Z',
+        });
+      const navigate = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+
+      await flushProvisioningHandoff();
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+      await advancePairingPolls(3000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
+    } finally {
+      nowSpy.mockRestore();
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
   it.each([
     ['missing', undefined],
     ['null', null],

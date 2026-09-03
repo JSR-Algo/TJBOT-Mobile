@@ -681,6 +681,11 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
     expect(mockedGetClaimStatus).not.toHaveBeenCalled();
   });
 
+  it('does not arm code recovery when the handoff boundary is missing', async () => {
+    renderScreen(lateBleClaimParams({ code: '123456', handoffStartedAtMs: undefined }));
+    await waitFor(() => expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled());
+  });
+
   it('does NOT call getClaimStatus when deviceId is missing', async () => {
     renderScreen(lateBleClaimParams({ deviceId: undefined }));
     await waitFor(() => expect(true).toBe(true));
