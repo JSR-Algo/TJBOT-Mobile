@@ -627,7 +627,7 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
     try {
       mockedGetProvisioningAttemptStatus
         .mockRejectedValueOnce({ status: 429, code: 'RATE_LIMIT_EXCEEDED' })
-        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated' });
+        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z' });
       const { nav } = renderScreen(lateBleClaimParams({ code: '123456' }));
 
       await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));

@@ -104,7 +104,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     apiMocks.getProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'attempt-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     apiMocks.completeDeviceProvisioning.mockResolvedValue({
       device: {
@@ -584,7 +584,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     });
     expect(apiMocks.mintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'attempt-1' });
     expect(screen.queryByText('Robot authenticated')).toBeNull();
-    expect(apiMocks.getProvisioningAttemptStatus).not.toHaveBeenCalled();
+    expect(apiMocks.getProvisioningAttemptStatus).toHaveBeenCalledWith('attempt-1');
     expect(localDeviceMocks.markLocalDevicePaired).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
@@ -782,11 +782,11 @@ describe('mobile UX redesign accessibility coverage', () => {
     });
   });
 
-  it('does not block the code-based BLE handoff on a stale provisioning status payload', async () => {
+  it('rejects a malformed provisioning status payload after the BLE handoff', async () => {
     apiMocks.getProvisioningAttemptStatus.mockResolvedValueOnce({
       provisioningAttemptId: 'attempt-bad-status',
       deviceId: '',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     putPairingWifiPassword('attempt-bad-status', 'secret123');
 
@@ -797,16 +797,7 @@ describe('mobile UX redesign accessibility coverage', () => {
       />,
     );
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, {
-      deviceId: 'device-1',
-      serialNumber: 'TJBot-001',
-      provisioningAttemptId: 'attempt-1',
-      ssid: 'Casa Wi-Fi',
-      bleDeviceId: 'ble-device-1',
-      provisioningTransport: 'ble',
-    }));
-    expect(apiMocks.getProvisioningAttemptStatus).not.toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.objectContaining({ errorCode: 'PROVISIONING_STATUS_MALFORMED' })));
   });
 
   it('translates pairing connection dynamic copy in Vietnamese', async () => {

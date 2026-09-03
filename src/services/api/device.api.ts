@@ -36,6 +36,7 @@ export interface ProvisioningAttemptStatusResult {
   deviceId: string;
   status: ProvisioningAttemptStatus;
   failureCode?: string;
+  deviceLastSeenAt?: string | null;
 }
 
 export interface CompleteDeviceProvisioningParams {

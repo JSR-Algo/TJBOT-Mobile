@@ -85,6 +85,12 @@ async function advancePairingPolls(ms: number): Promise<void> {
   });
 }
 
+async function flushProvisioningHandoff(): Promise<void> {
+  await act(async () => {
+    for (let index = 0; index < 8; index += 1) await Promise.resolve();
+  });
+}
+
 // Opaque fixtures. These are passed INTO mocked encoders/requests as the screen
 // would; they are never logged or asserted as substrings against any rendered /
 // navigated payload (that anti-leak check is the point of several tests below).
@@ -385,7 +391,10 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
         ROUTES.PairRenameScreen,
         expect.objectContaining({ provisioningAttemptId: 'claim-1' }),
       ));
+      expect(navigate.mock.calls.filter(([route]) => route === ROUTES.PairRenameScreen)).toHaveLength(1);
       expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenNthCalledWith(1, 'claim-1');
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenNthCalledWith(2, 'claim-1');
       expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
     } finally {
       nowSpy.mockRestore();
@@ -418,8 +427,14 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
         />,
       );
 
-      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
-      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+      await flushProvisioningHandoff();
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+      await advancePairingPolls(303000);
+      expect(navigate.mock.calls.filter(([route]) => route === ROUTES.PairRenameScreen)).toHaveLength(0);
+      expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'PROVISIONING_TIMEOUT' }),
+      );
       expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
     } finally {
       nowSpy.mockRestore();
@@ -479,7 +494,8 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
           route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
         />,
       );
-      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      await flushProvisioningHandoff();
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
       await advancePairingPolls(3000);
       await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2));
       expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
@@ -566,7 +582,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       ));
       mockedGetProvisioningAttemptStatus
         .mockRejectedValueOnce({ status: 503, code: 'SERVICE_UNAVAILABLE' })
-        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated' });
+        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z' });
       const navigate = jest.fn();
 
       render(
@@ -599,7 +615,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
 
@@ -624,7 +640,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
     render(
@@ -661,7 +677,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       mockedGetProvisioningAttemptStatus.mockResolvedValue({
         provisioningAttemptId: 'claim-1',
         deviceId: 'device-1',
-        status: 'device_authenticated',
+        status: 'device_authenticated', deviceLastSeenAt: '2026-08-29T05:59:59.999Z',
       });
       mockedGetDeviceStatus.mockResolvedValue({
         id: 'device-1',
@@ -696,7 +712,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       mockedGetProvisioningAttemptStatus.mockResolvedValue({
         provisioningAttemptId: 'claim-1',
         deviceId: 'device-1',
-        status: 'device_authenticated',
+        status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
       });
       mockedGetDeviceStatus.mockResolvedValue({
         id: 'device-1',
@@ -718,7 +734,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
         ROUTES.PairRenameScreen,
         expect.objectContaining({ deviceId: 'device-1' }),
       ));
-      expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-1');
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
     } finally {
       nowSpy.mockRestore();
     }
@@ -732,7 +748,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'completed',
+      status: 'completed', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
     render(
@@ -759,7 +775,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
     render(
@@ -782,7 +798,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     );
   });
 
-  it('moves to rename immediately after wifi_credentials_sent while backend authentication continues', async () => {
+  it('waits for attempt authentication after wifi_credentials_sent', async () => {
     seedSecrets('claim-1');
     mockedGetProvisioningAttemptStatus.mockReturnValue(new Promise(() => undefined));
     const navigate = jest.fn();
@@ -794,21 +810,17 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     );
 
     await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalled());
-    await waitFor(() => expect(mockedSavePendingPairingContext).toHaveBeenCalledWith({
-      deviceId: 'device-1',
-      serialNumber: SERIAL,
-      provisioningAttemptId: 'claim-1',
-    }));
-    expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.objectContaining({
-      deviceId: 'device-1',
-      serialNumber: SERIAL,
-      provisioningAttemptId: 'claim-1',
-    }));
-    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+    expect(mockedSavePendingPairingContext).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
   });
 
-  it('does not claim backend authentication on the handoff screen before navigating to rename', async () => {
+  it('uses backend attempt authentication before navigating to rename', async () => {
     seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated',
+      deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
+    });
     const navigate = jest.fn();
     const screen = render(
       <PairConnectingScreen
@@ -819,7 +831,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything()));
     expect(screen.queryByText('Robot authenticated')).toBeNull();
-    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
   });
 
   it('[STA_CONN_FAIL] a WIFI_CONNECT_FAILED from the BLE handoff routes to PairFailed with that code', async () => {
@@ -875,7 +887,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
 
@@ -891,7 +903,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-1',
     })));
-    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
     expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledWith('claim-1');
     expect(mockedStartDeviceProvisioning).not.toHaveBeenCalled();
     expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
@@ -910,10 +922,14 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
         status: 'ble_paired',
       };
     });
-    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+    mockedGetProvisioningAttemptStatus.mockResolvedValueOnce({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
       status: 'expired',
+    });
+    mockedGetProvisioningAttemptStatus.mockResolvedValueOnce({
+      provisioningAttemptId: 'claim-replacement', deviceId: 'device-replacement', status: 'device_authenticated',
+      deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     mockedStartDeviceProvisioning.mockResolvedValue({
       provisioningAttemptId: 'claim-replacement',
@@ -967,11 +983,15 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
         status: 'ble_paired',
       };
     });
-    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+    mockedGetProvisioningAttemptStatus.mockResolvedValueOnce({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
       status: 'failed',
       failureCode: 'EXPIRED_PAIRING_CODE',
+    });
+    mockedGetProvisioningAttemptStatus.mockResolvedValueOnce({
+      provisioningAttemptId: 'claim-replacement', deviceId: 'device-replacement', status: 'device_authenticated',
+      deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     mockedStartDeviceProvisioning.mockResolvedValue({
       provisioningAttemptId: 'claim-replacement',
@@ -993,7 +1013,7 @@ describe('PairConnectingScreen — BLE claim path (code present)', () => {
       serialNumber: SERIAL,
       provisioningAttemptId: 'claim-replacement',
     })));
-    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
     expect(mockedStartDeviceProvisioning).toHaveBeenCalledTimes(1);
     expect(mockedConfirmLocalBlePaired).toHaveBeenCalledTimes(2);
     expect(mockedMintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-replacement' });
@@ -2017,7 +2037,7 @@ describe('PairConnectingScreen — secret lifecycle and anti-leak', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
     render(
@@ -2059,7 +2079,7 @@ describe('PairConnectingScreen — secret lifecycle and anti-leak', () => {
     mockedGetProvisioningAttemptStatus.mockResolvedValue({
       provisioningAttemptId: 'claim-1',
       deviceId: 'device-1',
-      status: 'device_authenticated',
+      status: 'device_authenticated', deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
     render(

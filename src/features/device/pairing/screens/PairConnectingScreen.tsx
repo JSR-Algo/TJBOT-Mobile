@@ -27,6 +27,7 @@ import {
   CLAIM_POLL_INTERVAL_MS,
   isRetryablePairingStatusPollError,
 } from '../claimStatus';
+import { hasFreshProvisioningOnlineProof } from '../provisioningOnlineProof';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairConnectingScreen'>;
 type RuntimeProvisioningStatusResult = {
@@ -34,6 +35,7 @@ type RuntimeProvisioningStatusResult = {
   deviceId: string;
   status: ProvisioningAttemptStatus;
   failureCode?: string;
+  deviceLastSeenAt?: string | null;
 };
 type ProvisioningRunResult = {
   deviceId: string;
@@ -230,25 +232,19 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         return;
       }
 
-      await waitForDeviceOnline(
-        result.deviceId,
-        poll,
-        'PAIRING_DEVICE_OFFLINE_TIMEOUT',
-        DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
-        handoffStartedAtMs,
-      );
+      const authenticated = await waitForDeviceAuthenticated(result.provisioningAttemptId, poll, handoffStartedAtMs);
       if (cancelled) return;
-      clearPairingBootstrapToken(result.provisioningAttemptId);
+      clearPairingBootstrapToken(authenticated.provisioningAttemptId);
       setI(PAIRING_STEP_COUNT);
       await savePendingPairingContext({
-        deviceId: result.deviceId,
+        deviceId: authenticated.deviceId,
         serialNumber,
-        provisioningAttemptId: result.provisioningAttemptId,
+        provisioningAttemptId: authenticated.provisioningAttemptId,
       });
       navigation.navigate(ROUTES.PairRenameScreen, {
-        deviceId: result.deviceId,
+        deviceId: authenticated.deviceId,
         serialNumber,
-        provisioningAttemptId: result.provisioningAttemptId,
+        provisioningAttemptId: authenticated.provisioningAttemptId,
         ssid,
         bleDeviceId,
         provisioningTransport: transport,
@@ -284,16 +280,18 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       }
       if (deliveryUnknown && (transport === 'ble' || transport === 'ble_claim')) {
         try {
-        const authenticated = code
-          ? await waitForDeviceAuthenticated(recoveryAttemptId, poll)
-          : await waitForClaimConfirmed(recoveryAttemptId, poll);
-          await waitForDeviceOnline(
-            authenticated.deviceId,
-            poll,
-            'PAIRING_DEVICE_OFFLINE_TIMEOUT',
-            DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
-            handoffStartedAtMs,
-          );
+          const authenticated = code
+            ? await waitForDeviceAuthenticated(recoveryAttemptId, poll, handoffStartedAtMs)
+            : await waitForClaimConfirmed(recoveryAttemptId, poll);
+          if (!code) {
+            await waitForDeviceOnline(
+              authenticated.deviceId,
+              poll,
+              'PAIRING_DEVICE_OFFLINE_TIMEOUT',
+              DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+              handoffStartedAtMs,
+            );
+          }
           if (cancelled) return;
           clearPairingBootstrapToken(authenticated.provisioningAttemptId);
           setI(PAIRING_STEP_COUNT);
@@ -335,6 +333,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         bleDeviceId,
         provisioningTransport: params?.provisioningTransport,
         ...(deliveryUnknown ? { deliveryUnknown: true } : {}),
+        ...(deliveryUnknown ? { handoffStartedAtMs } : {}),
         errorCode,
       });
     }).finally(() => {
@@ -678,14 +677,14 @@ function isRetryableClaimStatusPollError(error: unknown): boolean {
   return isRetryablePairingStatusPollError(error);
 }
 
-async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: PollController): Promise<{
+async function waitForDeviceAuthenticated(provisioningAttemptId: string, poll: PollController, notBeforeMs?: number): Promise<{
   deviceId: string;
   provisioningAttemptId: string;
 }> {
   for (let attempt = 0; attempt < PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS; attempt += 1) {
     try {
       const status = parseProvisioningStatus(await getProvisioningAttemptStatus(provisioningAttemptId));
-      if (status.status === 'device_authenticated' || status.status === 'completed') {
+      if (hasFreshProvisioningOnlineProof(status, notBeforeMs ?? 0)) {
         return { deviceId: status.deviceId, provisioningAttemptId: status.provisioningAttemptId };
       }
       if (status.status === 'failed' || status.status === 'expired') {
@@ -721,11 +720,15 @@ function parseProvisioningStatus(value: unknown): RuntimeProvisioningStatusResul
   if (!isProvisioningStatus(status) || !deviceId || !provisioningAttemptId) {
     throw Object.assign(new Error('Malformed provisioning status'), { code: 'PROVISIONING_STATUS_MALFORMED' });
   }
+  const rawDeviceLastSeenAt = record?.deviceLastSeenAt;
   return {
     deviceId,
     provisioningAttemptId,
     status,
     failureCode: readString(record, 'failureCode'),
+    deviceLastSeenAt: typeof rawDeviceLastSeenAt === 'string' || rawDeviceLastSeenAt === null
+      ? rawDeviceLastSeenAt
+      : undefined,
   };
 }
 

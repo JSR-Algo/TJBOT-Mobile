@@ -23,6 +23,7 @@ import {
   isRetryablePairingStatusPollError,
 } from '../claimStatus';
 import { buildPairSearchRetryParams } from '../routeParams';
+import { hasFreshProvisioningOnlineProof } from '../provisioningOnlineProof';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PairFailedScreen'>;
 
@@ -256,7 +257,7 @@ async function pollLatePairingStatus(
     try {
       if (params.code) {
         const status = await getProvisioningAttemptStatus(params.provisioningAttemptId);
-        if (status.status === 'device_authenticated' || status.status === 'completed') {
+        if (hasFreshProvisioningOnlineProof(status, params.handoffStartedAtMs ?? Number.POSITIVE_INFINITY)) {
           return { kind: 'authenticated', deviceId: status.deviceId || params.deviceId };
         }
         if (status.status === 'failed' || status.status === 'expired') {
