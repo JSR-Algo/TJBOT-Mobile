@@ -590,6 +590,7 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
         serialNumber: 'TBT-2026-004217',
         provisioningAttemptId: 'claim-1',
       }));
+      expect(nav.navigate.mock.calls.filter(([route]) => route === ROUTES.PairRenameScreen)).toHaveLength(1);
       expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
       expect(mockedGetClaimStatus).not.toHaveBeenCalled();
     } finally {

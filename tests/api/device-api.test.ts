@@ -343,12 +343,14 @@ describe('device API client', () => {
     jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
     const { getProvisioningAttemptStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
-    await expect(getProvisioningAttemptStatus('attempt-1')).resolves.toMatchObject({
+    const result = await getProvisioningAttemptStatus('attempt-1');
+    expect(result).toMatchObject({
       provisioningAttemptId: 'attempt-1',
       deviceLastSeenAt: null,
     });
     expect(get).toHaveBeenCalledWith('/devices/provision/attempt-1/status');
     expect(get.mock.calls[0]).toHaveLength(1);
+    expect(JSON.stringify({ result, calls: get.mock.calls })).not.toMatch(/secret|password|token|ssid/i);
   });
 
   it('mints a bootstrap token via the bootstrap-token endpoint', async () => {
