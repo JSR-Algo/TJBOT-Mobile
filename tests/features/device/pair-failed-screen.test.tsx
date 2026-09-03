@@ -74,6 +74,7 @@ function lateBleClaimParams(overrides: Record<string, unknown> = {}) {
     provisioningAttemptId: 'claim-1',
     provisioningTransport: 'ble',
     deliveryUnknown: true,
+    handoffStartedAtMs: Date.parse('2026-09-03T04:05:06.000Z'),
     ...overrides,
   };
 }
@@ -564,15 +565,22 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
     }
   });
 
-  it('polls a code attempt until the robot becomes device-authenticated', async () => {
+  it('requires a fresh heartbeat before late recovery of a code attempt', async () => {
     jest.useFakeTimers();
     try {
       mockedGetProvisioningAttemptStatus
-        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'ble_paired' })
-        .mockResolvedValueOnce({ provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated' });
+        .mockResolvedValueOnce({
+          provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated',
+          deviceLastSeenAt: '2026-09-03T04:05:05.999Z',
+        })
+        .mockResolvedValueOnce({
+          provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated',
+          deviceLastSeenAt: '2026-09-03T04:05:06.001Z',
+        });
       const { nav } = renderScreen(lateBleClaimParams({ code: '123456' }));
 
       await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
       await act(async () => {
         await jest.advanceTimersByTimeAsync(3000);
       });
@@ -584,6 +592,29 @@ describe('PairFailedScreen late-BLE-claim recovery effect', () => {
       }));
       expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
       expect(mockedGetClaimStatus).not.toHaveBeenCalled();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it.each([
+    ['null', null],
+    ['invalid', 'not-a-date'],
+    ['stale', '2026-09-03T04:05:05.999Z'],
+  ] as const)('does not late-recover from a %s heartbeat before timeout', async (_label, deviceLastSeenAt) => {
+    jest.useFakeTimers();
+    try {
+      mockedGetProvisioningAttemptStatus.mockResolvedValue({
+        provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated', deviceLastSeenAt,
+      });
+      const { nav } = renderScreen(lateBleClaimParams({ code: '123456' }));
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(303000);
+      });
+      expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+      expect(nav.navigate).not.toHaveBeenCalledWith(ROUTES.PairSuccessScreen, expect.anything());
     } finally {
       jest.runOnlyPendingTimers();
       jest.useRealTimers();

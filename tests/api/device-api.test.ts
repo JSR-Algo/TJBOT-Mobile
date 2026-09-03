@@ -307,6 +307,7 @@ describe('device API client', () => {
         provisioningAttemptId: 'attempt-1',
         deviceId: 'device-4',
         status: 'device_authenticated',
+        deviceLastSeenAt: '2026-09-03T04:05:06.789Z',
       },
     });
 
@@ -317,13 +318,37 @@ describe('device API client', () => {
 
     const { getProvisioningAttemptStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
 
-    await expect(getProvisioningAttemptStatus('attempt-1')).resolves.toEqual({
+    const response = {
       provisioningAttemptId: 'attempt-1',
       deviceId: 'device-4',
       status: 'device_authenticated',
+      deviceLastSeenAt: '2026-09-03T04:05:06.789Z',
+    };
+    await expect(getProvisioningAttemptStatus('attempt-1')).resolves.toEqual(response);
+    expect(get).toHaveBeenCalledWith('/devices/provision/attempt-1/status');
+    expect(get.mock.calls[0]).toHaveLength(1);
+    expect(JSON.stringify(get.mock.calls)).not.toMatch(/secret|password|token|ssid/i);
+  });
+
+  it('passes through a null heartbeat timestamp without adding request data', async () => {
+    jest.resetModules();
+    const get = jest.fn().mockResolvedValueOnce({
+      data: {
+        provisioningAttemptId: 'attempt-1',
+        deviceId: 'device-4',
+        status: 'device_authenticated',
+        deviceLastSeenAt: null,
+      },
+    });
+    jest.doMock('@/services/http/client', () => ({ __esModule: true, default: { get } }));
+    const { getProvisioningAttemptStatus } = require('@/services/api/device.api') as typeof import('@/services/api/device.api');
+
+    await expect(getProvisioningAttemptStatus('attempt-1')).resolves.toMatchObject({
+      provisioningAttemptId: 'attempt-1',
+      deviceLastSeenAt: null,
     });
     expect(get).toHaveBeenCalledWith('/devices/provision/attempt-1/status');
-    expect(JSON.stringify(get.mock.calls)).not.toContain('secret');
+    expect(get.mock.calls[0]).toHaveLength(1);
   });
 
   it('mints a bootstrap token via the bootstrap-token endpoint', async () => {

@@ -349,6 +349,190 @@ describe('PairConnectingScreen — pre-flight guards', () => {
 // 2. BLE *claim* path (code present): confirm -> mint -> handoff -> auth poll.
 // ===========================================================================
 describe('PairConnectingScreen — BLE claim path (code present)', () => {
+  it('uses fresh attempt-scoped heartbeat proof and never reads the unowned device', async () => {
+    jest.useFakeTimers();
+    const handoffStartedAtMs = Date.parse('2026-09-03T04:05:06.000Z');
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(handoffStartedAtMs);
+    try {
+      seedSecrets('claim-1');
+      mockedGetDeviceStatus.mockRejectedValue({ response: { status: 403 }, code: 'DEVICE_NOT_OWNED' });
+      mockedGetProvisioningAttemptStatus
+        .mockResolvedValueOnce({
+          provisioningAttemptId: 'claim-1',
+          deviceId: 'device-1',
+          status: 'device_authenticated',
+          deviceLastSeenAt: '2026-09-03T04:05:05.999Z',
+        })
+        .mockResolvedValueOnce({
+          provisioningAttemptId: 'claim-1',
+          deviceId: 'device-1',
+          status: 'device_authenticated',
+          deviceLastSeenAt: '2026-09-03T04:05:06.001Z',
+        });
+      const navigate = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+      await advancePairingPolls(3000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairRenameScreen,
+        expect.objectContaining({ provisioningAttemptId: 'claim-1' }),
+      ));
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2);
+      expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    } finally {
+      nowSpy.mockRestore();
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['null', null],
+    ['invalid', 'not-a-date'],
+    ['stale', '2026-09-03T04:05:05.999Z'],
+  ] as const)('does not complete with a %s attempt heartbeat', async (_label, deviceLastSeenAt) => {
+    jest.useFakeTimers();
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-03T04:05:06.000Z'));
+    try {
+      seedSecrets('claim-1');
+      mockedGetProvisioningAttemptStatus.mockResolvedValue({
+        provisioningAttemptId: 'claim-1',
+        deviceId: 'device-1',
+        status: 'device_authenticated',
+        deviceLastSeenAt,
+      });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+      expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    } finally {
+      nowSpy.mockRestore();
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it.each(['failed', 'expired'] as const)('treats %s attempt status as terminal', async (status) => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockResolvedValue({
+      provisioningAttemptId: 'claim-1', deviceId: 'device-1', status, failureCode: 'PROVISIONING_FAILED',
+    });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'PROVISIONING_FAILED' }),
+    ));
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+  });
+
+  it.each([401, 403])('treats attempt status HTTP %s as terminal', async (status) => {
+    seedSecrets('claim-1');
+    mockedGetProvisioningAttemptStatus.mockRejectedValue({ response: { status } });
+    const navigate = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate } as never}
+        route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+      />,
+    );
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything()));
+    expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([408, 429, 500, 503])('retries attempt status HTTP %s', async (status) => {
+    jest.useFakeTimers();
+    try {
+      seedSecrets('claim-1');
+      mockedGetProvisioningAttemptStatus
+        .mockRejectedValueOnce({ response: { status } })
+        .mockResolvedValueOnce({
+          provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated',
+          deviceLastSeenAt: '2099-01-01T00:00:00.000Z',
+        });
+      const navigate = jest.fn();
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      await advancePairingPolls(3000);
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(2));
+      expect(navigate).toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('cancels a pending attempt-proof delay on unmount', async () => {
+    jest.useFakeTimers();
+    try {
+      seedSecrets('claim-1');
+      mockedGetProvisioningAttemptStatus.mockResolvedValue({
+        provisioningAttemptId: 'claim-1', deviceId: 'device-1', status: 'device_authenticated',
+        deviceLastSeenAt: null,
+      });
+      const navigate = jest.fn();
+      const screen = render(
+        <PairConnectingScreen
+          navigation={{ navigate } as never}
+          route={{ params: bleClaimParams({ code: PROVISIONING_CODE }) } as never}
+        />,
+      );
+      await waitFor(() => expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1));
+      screen.unmount();
+      await advancePairingPolls(6000);
+      expect(mockedGetProvisioningAttemptStatus).toHaveBeenCalledTimes(1);
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairRenameScreen, expect.anything());
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('keeps BLE reconnect isolated from attempt-scoped proof polling', async () => {
+    seedSecrets('attempt-rc-1');
+    const navigate = jest.fn();
+    const reset = jest.fn();
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate, reset } as never}
+        route={{ params: bleReconnectParams() } as never}
+      />,
+    );
+    await waitFor(() => expect(reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: ROUTES.DeviceHomeScreen }],
+    }));
+    expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-1');
+    expect(mockedGetProvisioningAttemptStatus).not.toHaveBeenCalled();
+  });
+
   it('does not retry an HTTP 401 while reconciling a code attempt', async () => {
     seedSecrets('claim-1');
     mockedProvisionWifiViaLocalBle.mockRejectedValue(Object.assign(
