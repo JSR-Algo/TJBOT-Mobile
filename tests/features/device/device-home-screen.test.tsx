@@ -308,7 +308,36 @@ describe('DeviceHomeScreen', () => {
 
     await waitFor(() => expect(localDeviceMocks.clearLocalPairedDevice).toHaveBeenCalled());
     await waitFor(() => expect(apiMocks.unpairDevice).toHaveBeenCalledWith('device-1'));
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairIntroScreen);
     await expect(screen.findByText('No Robot connected')).resolves.toBeTruthy();
+  });
+
+  it('does not clear local pairing or navigate until unpair succeeds', async () => {
+    localDeviceMocks.getLocalPairedDeviceId.mockResolvedValue('device-1');
+    apiMocks.getDeviceStatus.mockResolvedValue({
+      id: 'device-1',
+      name: 'TJBot-0001',
+      online: true,
+      batteryPercent: 87,
+      lastSeenAt: new Date().toISOString(),
+    });
+    let resolveUnpair!: () => void;
+    apiMocks.unpairDevice.mockReturnValue(new Promise<void>((resolve) => { resolveUnpair = resolve; }));
+    const navigation = { navigate: jest.fn() };
+
+    const screen = renderWithQuery(
+      <DeviceHomeScreen navigation={navigation as never} route={{ params: undefined } as never} />,
+    );
+
+    await expect(screen.findByText('TJBot-0001')).resolves.toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Unpair this Robot. Return this Robot to setup mode'));
+    await waitFor(() => expect(apiMocks.unpairDevice).toHaveBeenCalledWith('device-1'));
+    expect(localDeviceMocks.clearLocalPairedDevice).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
+
+    await act(async () => resolveUnpair());
+    await waitFor(() => expect(localDeviceMocks.clearLocalPairedDevice).toHaveBeenCalled());
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairIntroScreen);
   });
 
   it('keeps the Robot visible when backend unpair fails', async () => {

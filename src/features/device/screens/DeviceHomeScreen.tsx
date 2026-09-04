@@ -53,6 +53,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       await clearLocalPairedDevice();
       queryClient.setQueryData(['devices', 'local-paired-id'], null);
       queryClient.removeQueries({ queryKey: ['devices', 'paired'] });
+      navigation.navigate(ROUTES.PairIntroScreen);
     },
   });
   const wifiSetupMutation = useMutation({
