@@ -361,7 +361,7 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
     case 'BLE_UNAVAILABLE':
       return {
         heading: "Bluetooth can't be used here",
-        body: 'Check Bluetooth permissions, double-click BOOT, move Robot within 1–2 m, then try again.',
+        body: 'Check Bluetooth permissions, then keep Robot within 1–2 m while this phone searches.',
       };
     case 'BLE_POWERED_OFF':
       return {
@@ -381,7 +381,7 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
     case 'BLE_SCAN_TIMEOUT':
       return {
         heading: "We couldn't see Robot nearby",
-        body: 'Double-click the BOOT button to change Wi-Fi without unpairing Robot.',
+        body: 'Robot should already be in setup mode. Keep it within 1–2 m while this phone searches.',
       };
     case 'BLE_SCAN_THROTTLED':
       return {
@@ -413,7 +413,7 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
     case 'PAIRING_CONNECT_FAILED':
       return {
         heading: "Robot didn't accept setup over Bluetooth",
-        body: 'Double-click BOOT, keep Robot within 1–2 m, then retry Bluetooth setup.',
+        body: 'Robot should already be in setup mode. Keep it within 1–2 m while this phone searches.',
       };
     case 'ESP_SERVER_UNAVAILABLE':
       return {
@@ -438,7 +438,7 @@ function copyForError(errorCode: string | undefined): { heading: string; body: s
     case 'OFFLINE_DEVICE_NOT_REGISTERED':
       return {
         heading: 'Wi-Fi worked, but Robot is not on your account',
-        body: 'Robot joined Wi-Fi, but account pairing did not finish. Double-click the BOOT button to change Wi-Fi without unpairing Robot, then try again so the phone can claim it to your account.',
+        body: 'Robot joined Wi-Fi, but account pairing did not finish. Robot should already be in setup mode; try again so the phone can claim it to your account.',
       };
     case 'WIFI_CONNECT_TIMEOUT':
       return {

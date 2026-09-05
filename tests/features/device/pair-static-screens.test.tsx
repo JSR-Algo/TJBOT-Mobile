@@ -254,7 +254,8 @@ describe('PairOfflineScreen', () => {
     expect(utils.getByText('Check Robot is plugged in')).toBeTruthy();
     expect(utils.getByText('Or has at least 20% battery')).toBeTruthy();
     const updateWifi = utils.getByLabelText('Update Wi-Fi for offline Robot');
-    expect(within(updateWifi).getByText('Double-click the BOOT button to change Wi-Fi without unpairing Robot.')).toBeTruthy();
+    expect(within(updateWifi).getByText('Robot will open setup mode automatically.')).toBeTruthy();
+    expect(within(updateWifi).queryByText(/Double-click.*BOOT/i)).toBeNull();
     expect(within(updateWifi).queryByText('Hold BOOT for 5 seconds only if you want to reset pairing and saved Wi-Fi.')).toBeNull();
     expect(utils.getByText('Pair again (last resort)')).toBeTruthy();
     expect(utils.getByText('Hold BOOT for 5 seconds only if you want to reset pairing and saved Wi-Fi.')).toBeTruthy();
