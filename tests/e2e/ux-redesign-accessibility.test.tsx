@@ -126,6 +126,7 @@ describe('mobile UX redesign accessibility coverage', () => {
       online: true,
       batteryPercent: 0,
       wifiRssi: -55,
+      wifiSsid: 'Casa Wi-Fi',
       lastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     apiMocks.mintBootstrapToken.mockResolvedValue({

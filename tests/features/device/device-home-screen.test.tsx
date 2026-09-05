@@ -109,6 +109,7 @@ describe('DeviceHomeScreen', () => {
   });
 
   it('changes Wi-Fi without unpairing through reconnect search', async () => {
+    await setAppLanguage('vi');
     apiMocks.getDeviceStatus.mockResolvedValue({
       id: 'seed-device',
       name: 'Seed Robot',
@@ -124,8 +125,8 @@ describe('DeviceHomeScreen', () => {
     );
 
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
-    const changeWifi = screen.getByLabelText('Change Wi‑Fi. Robot will open setup mode automatically.');
-    expect(screen.getByText('Robot will open setup mode automatically.')).toBeTruthy();
+    const changeWifi = screen.getByLabelText('Đổi Wi‑Fi. Robot sẽ tự động mở chế độ thiết lập.');
+    expect(screen.getByText('Robot sẽ tự động mở chế độ thiết lập.')).toBeTruthy();
     fireEvent.press(changeWifi);
 
     await waitFor(() => expect(apiMocks.startDeviceWifiSetup).toHaveBeenCalledWith('seed-device'));
@@ -139,7 +140,7 @@ describe('DeviceHomeScreen', () => {
   it.each([
     ['missing', undefined],
     ['stale', new Date(Date.now() - 5 * 60 * 1000 - 1).toISOString()],
-  ])('blocks Wi-Fi setup when the heartbeat is %s', async (_case, lastSeenAt) => {
+  ])('falls back to BLE reconnect when the heartbeat is %s', async (_case, lastSeenAt) => {
     await setAppLanguage('vi');
     apiMocks.getDeviceStatus.mockResolvedValue({
       id: 'seed-device',
@@ -156,11 +157,15 @@ describe('DeviceHomeScreen', () => {
     await expect(screen.findByText('Seed Robot')).resolves.toBeTruthy();
     expect(screen.getByText('Ngoại tuyến')).toBeTruthy();
     expect(screen.queryByText('Trực tuyến')).toBeNull();
-    expect(screen.getByText('Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('Đổi Wi‑Fi. Robot cần trực tuyến và vừa gửi tín hiệu trạng thái.'));
+    expect(screen.getByText('Tìm Robot đang ở chế độ thiết lập qua Bluetooth.')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Đổi Wi‑Fi. Tìm Robot đang ở chế độ thiết lập qua Bluetooth.'));
 
     expect(apiMocks.startDeviceWifiSetup).not.toHaveBeenCalled();
-    expect(navigation.navigate).not.toHaveBeenCalledWith(ROUTES.PairSearchScreen, expect.anything());
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.PairSearchScreen, {
+      reconnectMode: true,
+      reconnectDeviceId: 'seed-device',
+      reconnectSerialNumber: undefined,
+    });
   });
 
   it('keeps a backend Wi-Fi setup conflict visible without navigating', async () => {

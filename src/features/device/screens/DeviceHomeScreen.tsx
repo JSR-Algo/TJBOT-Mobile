@@ -131,7 +131,7 @@ export default function DeviceHomeScreen({ navigation }: Props) {
     ? 'Opening setup mode...'
     : canStartWifiSetup
       ? 'Robot will open setup mode automatically.'
-      : 'Robot must be online with a recent heartbeat.';
+      : 'Find Robot in setup mode over Bluetooth.';
 
   return (
     <DeviceShell title="Devices">
@@ -169,6 +169,12 @@ export default function DeviceHomeScreen({ navigation }: Props) {
             onClick={() => {
               if (canStartWifiSetup && !wifiSetupMutation.isPending) {
                 wifiSetupMutation.mutate(device.id);
+              } else if (!wifiSetupMutation.isPending) {
+                navigation.navigate(ROUTES.PairSearchScreen, {
+                  reconnectMode: true,
+                  reconnectDeviceId: device.id,
+                  reconnectSerialNumber: device.serialNumber,
+                });
               }
             }}
           />

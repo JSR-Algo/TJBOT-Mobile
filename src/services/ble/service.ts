@@ -239,9 +239,6 @@ const BLUFI_STA_CONNECTING = 2;
 // a silent robot does not block that path; STA_CONNECTING is treated as
 // "keep waiting" until this bound elapses.
 const BLUFI_CONN_REPORT_TIMEOUT_MS = 15000;
-// Credential-only (offline / reconnect) has no backend authority — Wi-Fi join
-// itself is the success signal. Firmware waits up to 60s for STA connect.
-const BLUFI_CREDENTIAL_ONLY_CONN_REPORT_TIMEOUT_MS = 55000;
 
 export async function provisionWifiViaLocalBle(params: {
   device: BleDeviceCandidate;
@@ -352,12 +349,12 @@ export async function provisionWifiViaLocalBle(params: {
     // Attach conn-report waiter only after security is up — same shared hub,
     // no second GATT notify subscription.
     const credentialOnly = params.allowCredentialOnly === true;
-    const connReportTimeoutMs = params.connReportTimeoutMs
-      ?? (credentialOnly ? BLUFI_CREDENTIAL_ONLY_CONN_REPORT_TIMEOUT_MS : BLUFI_CONN_REPORT_TIMEOUT_MS);
+    const connReportTimeoutMs = params.connReportTimeoutMs ?? BLUFI_CONN_REPORT_TIMEOUT_MS;
     // Pass session so encrypted WIFI_REP bodies (post SET_SEC_MODE) decrypt
-    // correctly — plaintext parse of ciphertext yields garbage connState (e.g. 87)
-    // and falsely fails credential-only provisioning after a real Wi-Fi join.
-    connReport = waitForBluFiConnReportFromHub(notifyHub, connReportTimeoutMs, session);
+    // correctly; plaintext parsing of ciphertext yields a garbage connState.
+    connReport = credentialOnly
+      ? null
+      : waitForBluFiConnReportFromHub(notifyHub, connReportTimeoutMs, session);
 
     let startSequence = security.endSequence;
     if (params.token) {
@@ -378,6 +375,7 @@ export async function provisionWifiViaLocalBle(params: {
     }
 
     logBleProvision('write_station_credentials', { startSequence, credentialOnly, connReportTimeoutMs });
+    if (credentialOnly) deliveryStarted = true;
     await writeBluFiFrames(writer.bind(target), buildBluFiStationProvisioningFrames({ ssid, password, startSequence, session }), {
       timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
       timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
@@ -387,8 +385,6 @@ export async function provisionWifiViaLocalBle(params: {
       // STA_CONN_FAIL → wrong password / join failed.
       // Claim path (has backend poll): STA_CONN_SUCCESS is an early signal only;
       // timeout falls through so backend can still confirm (DD4).
-      // Credential-only (offline/reconnect): there is no backend authority for
-      // this handoff, so STA_CONN_SUCCESS is required before we report success.
       const result = await connReport.result;
       logBleProvision('conn_report', {
         connState: result?.connState ?? null,
@@ -397,15 +393,7 @@ export async function provisionWifiViaLocalBle(params: {
       if (result?.connState === BLUFI_STA_CONN_FAIL) {
         throw codedError('WIFI_CONNECT_FAILED', 'Robot could not join the Wi-Fi network. Check the password and try again.');
       }
-      if (credentialOnly) {
-        // Reconnect/offline flows have no claim-state transition that can prove
-        // these particular credentials were accepted. A stale backend "online"
-        // value must not turn a lost report into false provisioning success.
-        if (result?.connState !== BLUFI_STA_CONN_SUCCESS) {
-          throw codedError('WIFI_CONNECT_TIMEOUT', 'Robot did not confirm that it joined the Wi-Fi network.');
-        }
-        logBleProvision('wifi_join_confirmed', { deviceId: params.device.id });
-      } else if (result?.connState === BLUFI_STA_CONN_SUCCESS) {
+      if (result?.connState === BLUFI_STA_CONN_SUCCESS) {
         logBleProvision('wifi_join_early_signal', { deviceId: params.device.id });
       }
     }

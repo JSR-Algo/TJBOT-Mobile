@@ -175,6 +175,7 @@ beforeEach(() => {
     name: SERIAL,
     online: true,
     batteryPercent: 90,
+    wifiSsid: SSID,
     lastSeenAt: '2099-01-01T00:00:00.000Z',
   });
   mockedStartDeviceProvisioning.mockResolvedValue({
@@ -1846,6 +1847,125 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
 // 5. BLE reconnect path (credential-only): device_online via getDeviceStatus.
 // ===========================================================================
 describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => {
+  it('shows a one-minute upper-bound instead of promising about 30 seconds', () => {
+    putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+    mockedProvisionWifiViaLocalBle.mockReturnValue(new Promise(() => undefined));
+    const screen = render(
+      <PairConnectingScreen
+        navigation={{ navigate: jest.fn(), reset: jest.fn() } as never}
+        route={{ params: bleReconnectParams() } as never}
+      />,
+    );
+
+    expect(screen.getByText('Hang tight — up to 1 minute')).toBeTruthy();
+    expect(screen.queryByText('Hang tight — about 30 seconds')).toBeNull();
+  });
+
+  it('bounds lost-report reconciliation by the original one-minute Wi-Fi handoff window', async () => {
+    jest.useFakeTimers();
+    try {
+      putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+      mockedProvisionWifiViaLocalBle.mockImplementation(() => new Promise((_resolve, reject) => {
+        setTimeout(() => reject(
+          Object.assign(new Error('Robot did not confirm Wi-Fi join'), { code: 'WIFI_CONNECT_TIMEOUT' }),
+        ), 55000);
+      }));
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: 'device-1',
+        name: SERIAL,
+        online: true,
+        batteryPercent: 90,
+        lastSeenAt: '2000-01-01T00:00:00.000Z',
+      });
+      const navigate = jest.fn();
+      const reset = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate, reset } as never}
+          route={{ params: bleReconnectParams() } as never}
+        />,
+      );
+
+      await advancePairingPolls(55000);
+      await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledTimes(1));
+      await advancePairingPolls(3000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'WIFI_CONNECT_TIMEOUT' }),
+      ));
+      expect(mockedGetDeviceStatus).toHaveBeenCalledTimes(2);
+      expect(reset).not.toHaveBeenCalled();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('ends reconciliation at the one-minute deadline when a status request hangs', async () => {
+    jest.useFakeTimers();
+    try {
+      putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+      mockedProvisionWifiViaLocalBle.mockImplementation(() => new Promise((_resolve, reject) => {
+        setTimeout(() => reject(
+          Object.assign(new Error('Robot did not confirm Wi-Fi join'), { code: 'WIFI_CONNECT_TIMEOUT' }),
+        ), 55000);
+      }));
+      mockedGetDeviceStatus.mockReturnValue(new Promise(() => undefined));
+      const navigate = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate, reset: jest.fn() } as never}
+          route={{ params: bleReconnectParams() } as never}
+        />,
+      );
+
+      await advancePairingPolls(55000);
+      await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledTimes(1));
+      await advancePairingPolls(5000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'WIFI_CONNECT_TIMEOUT' }),
+      ));
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('bounds retry backoff by the absolute reconnect deadline', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(Date.parse('2026-08-11T04:00:00.000Z'));
+    try {
+      putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+      mockedGetDeviceStatus.mockImplementation(() => new Promise((_resolve, reject) => {
+        setTimeout(() => reject({ response: { status: 503 } }), 59000);
+      }));
+      const navigate = jest.fn();
+      const reset = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate, reset } as never}
+          route={{ params: bleReconnectParams() } as never}
+        />,
+      );
+
+      await advancePairingPolls(59000);
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+      await advancePairingPolls(1000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT' }),
+      ));
+      expect(reset).not.toHaveBeenCalled();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
   it('recovers a lost BluFi success report when a fresh online heartbeat arrives after the handoff started', async () => {
     const attemptStartedAtMs = Date.parse('2026-08-11T04:00:00.000Z');
     const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(attemptStartedAtMs);
@@ -1859,6 +1979,7 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
         name: SERIAL,
         online: true,
         batteryPercent: 90,
+        wifiSsid: SSID,
         lastSeenAt: '2026-08-11T04:00:01.000Z',
       });
       const navigate = jest.fn();
@@ -1881,6 +2002,107 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
     }
   });
 
+  it('reconciles an ambiguous credential-only station write with fresh exact-SSID backend proof', async () => {
+    const attemptStartedAtMs = Date.parse('2026-08-11T04:00:00.000Z');
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(attemptStartedAtMs);
+    try {
+      putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+      mockedProvisionWifiViaLocalBle.mockRejectedValue(Object.assign(
+        new Error('Device disconnected during station write'),
+        { code: 'BLE_PROVISIONING_DISCONNECTED', deliveryUnknown: true },
+      ));
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: 'device-1',
+        name: SERIAL,
+        online: true,
+        batteryPercent: 90,
+        wifiSsid: SSID,
+        lastSeenAt: '2026-08-11T04:00:01.000Z',
+      });
+      const navigate = jest.fn();
+      const reset = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate, reset } as never}
+          route={{ params: bleReconnectParams() } as never}
+        />,
+      );
+
+      await waitFor(() => expect(reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] }));
+      expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, expect.anything());
+    } finally {
+      nowSpy.mockRestore();
+    }
+  });
+
+  it('does not reconcile a definitive credential-only Wi-Fi failure', async () => {
+    putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+    mockedProvisionWifiViaLocalBle.mockRejectedValue(
+      Object.assign(new Error('Robot rejected the Wi-Fi credentials'), { code: 'WIFI_CONNECT_FAILED' }),
+    );
+    const navigate = jest.fn();
+    const reset = jest.fn();
+
+    render(
+      <PairConnectingScreen
+        navigation={{ navigate, reset } as never}
+        route={{ params: bleReconnectParams() } as never}
+      />,
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairFailedScreen,
+      expect.objectContaining({ errorCode: 'WIFI_CONNECT_FAILED' }),
+    ));
+    expect(mockedGetDeviceStatus).not.toHaveBeenCalled();
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a different SSID', 'Previous network'],
+    ['a missing SSID', undefined],
+  ])('does not report reconnect success from a fresh heartbeat on %s', async (_case, wifiSsid) => {
+    jest.useFakeTimers();
+    const attemptStartedAtMs = Date.parse('2026-08-11T04:00:00.000Z');
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(attemptStartedAtMs);
+    try {
+      putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+      mockedProvisionWifiViaLocalBle.mockRejectedValue(
+        Object.assign(new Error('Robot did not confirm Wi-Fi join'), { code: 'WIFI_CONNECT_TIMEOUT' }),
+      );
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: 'device-1',
+        name: SERIAL,
+        online: true,
+        batteryPercent: 90,
+        ...(wifiSsid ? { wifiSsid } : {}),
+        lastSeenAt: '2026-08-11T04:00:01.000Z',
+      });
+      const navigate = jest.fn();
+      const reset = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate, reset } as never}
+          route={{ params: bleReconnectParams() } as never}
+        />,
+      );
+
+      await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledTimes(1));
+      await advancePairingPolls(60000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'WIFI_CONNECT_TIMEOUT' }),
+      ));
+      expect(reset).not.toHaveBeenCalled();
+    } finally {
+      nowSpy.mockRestore();
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
   it.each([
     ['stale', '2026-08-11T03:59:59.999Z'],
     ['missing', undefined],
@@ -1898,6 +2120,7 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
         name: SERIAL,
         online: true,
         batteryPercent: 90,
+        wifiSsid: SSID,
         ...(lastSeenAt ? { lastSeenAt } : {}),
       });
       const navigate = jest.fn();
@@ -1935,6 +2158,7 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
         .mockRejectedValueOnce({ response: { status: 503 } })
         .mockResolvedValueOnce({
           id: 'device-1', name: SERIAL, online: true, batteryPercent: 90,
+          wifiSsid: SSID,
           lastSeenAt: '2099-01-01T00:00:00.000Z',
         });
       const navigate = jest.fn();
@@ -1999,6 +2223,7 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
         .mockRejectedValueOnce({ response: { status: 503 } })
         .mockResolvedValueOnce({
           id: 'device-1', name: SERIAL, online: true, batteryPercent: 90,
+          wifiSsid: SSID,
           lastSeenAt: '2099-01-01T00:00:00.000Z',
         });
       const navigate = jest.fn();
@@ -2026,6 +2251,7 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
       name: SERIAL,
       online: true,
       batteryPercent: 90,
+      wifiSsid: SSID,
       lastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();
@@ -2047,6 +2273,87 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
     expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledWith(
       expect.objectContaining({ allowCredentialOnly: true, ssid: SSID, password: WIFI_PASSWORD }),
     );
+  });
+
+  it('does not accept a fresh online heartbeat for a different SSID after immediate credential handoff', async () => {
+    jest.useFakeTimers();
+    try {
+      putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: 'device-1',
+        name: SERIAL,
+        online: true,
+        batteryPercent: 90,
+        wifiSsid: 'Previous network',
+        lastSeenAt: '2099-01-01T00:00:00.000Z',
+      });
+      const navigate = jest.fn();
+      const reset = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate, reset } as never}
+          route={{ params: bleReconnectParams() } as never}
+        />,
+      );
+
+      await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledTimes(1));
+      expect(reset).not.toHaveBeenCalled();
+      await advancePairingPolls(60000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT' }),
+      ));
+      expect(reset).not.toHaveBeenCalled();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+
+  it('rejects a same-SSID heartbeat emitted during a slow BLE credential handoff', async () => {
+    jest.useFakeTimers();
+    const handoffStartedAtMs = Date.parse('2026-08-11T04:00:00.000Z');
+    jest.setSystemTime(handoffStartedAtMs);
+    try {
+      putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+      mockedProvisionWifiViaLocalBle.mockImplementation(() => new Promise((resolve) => {
+        setTimeout(() => resolve({
+          deviceId: 'ble-device-1',
+          status: 'wifi_credentials_sent',
+          transport: 'ble-blufi',
+        }), 10000);
+      }));
+      mockedGetDeviceStatus.mockResolvedValue({
+        id: 'device-1',
+        name: SERIAL,
+        online: true,
+        batteryPercent: 90,
+        wifiSsid: SSID,
+        lastSeenAt: '2026-08-11T04:00:05.000Z',
+      });
+      const navigate = jest.fn();
+      const reset = jest.fn();
+
+      render(
+        <PairConnectingScreen
+          navigation={{ navigate, reset } as never}
+          route={{ params: bleReconnectParams() } as never}
+        />,
+      );
+
+      await advancePairingPolls(10000);
+      await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledTimes(1));
+      expect(reset).not.toHaveBeenCalled();
+      await advancePairingPolls(50000);
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith(
+        ROUTES.PairFailedScreen,
+        expect.objectContaining({ errorCode: 'RECONNECT_DEVICE_OFFLINE_TIMEOUT' }),
+      ));
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
   });
 
   it('[reconnect waiting] before getDeviceStatus online, the screen stays waiting (no premature home nav)', async () => {
@@ -2103,6 +2410,7 @@ describe('PairConnectingScreen — secret lifecycle and anti-leak', () => {
       name: SERIAL,
       online: true,
       batteryPercent: 90,
+      wifiSsid: SSID,
       lastSeenAt: '2099-01-01T00:00:00.000Z',
     });
     const navigate = jest.fn();

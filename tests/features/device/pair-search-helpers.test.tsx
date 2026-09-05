@@ -801,7 +801,7 @@ describe('cancelSearchToIntro (back-to-intro)', () => {
     expect(screen.getByText('Make sure Robot is in setup mode and within 3 meters of your phone.')).toBeTruthy();
   });
 
-  it('tells reconnect users to double-click BOOT and stay nearby while scanning', async () => {
+  it('tells reconnect users Robot should already be in setup mode without claiming a command was delivered', async () => {
     mockedScan.mockReturnValue(new Promise(() => {}));
     const navigate = jest.fn();
     const screen = renderSearch(navigate, { reconnectMode: true });
@@ -809,7 +809,7 @@ describe('cancelSearchToIntro (back-to-intro)', () => {
     await waitFor(() => expect(screen.getByText('Looking nearby…')).toBeTruthy());
 
     expect(
-      screen.getByText('Double-click BOOT, then keep Robot within 1–2 m while this phone searches.'),
+      screen.getByText('Robot should already be in setup mode. Keep it within 1–2 m while this phone searches.'),
     ).toBeTruthy();
   });
 

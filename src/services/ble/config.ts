@@ -74,8 +74,9 @@ export function normalizeBleUuid(uuid: string): string {
 function rawAdvertMatchesAllowlist(value?: string | null): boolean {
   if (!value) return false;
 
-  const bytes = decodeBase64(value);
-  if (bytes && (advertisementBytesMatch(bytes) || rawBytesContainRobotIdentity(bytes))) return true;
+  for (const bytes of [decodeBase64(value), decodeHex(value)]) {
+    if (bytes && (advertisementBytesMatch(bytes) || rawBytesContainRobotIdentity(bytes))) return true;
+  }
 
   const normalizedText = value.trim().toUpperCase();
   return matchesAllowlistPrefix(normalizedText) || normalizedText.includes('TBOT-');
@@ -133,5 +134,13 @@ function decodeBase64(value: string): number[] | undefined {
     if (clean[i + 2] !== '=') bytes.push((triplet >> 8) & 0xff);
     if (clean[i + 3] !== '=') bytes.push(triplet & 0xff);
   }
+  return bytes;
+}
+
+function decodeHex(value: string): number[] | undefined {
+  const clean = value.trim();
+  if (clean.length === 0 || clean.length % 2 !== 0 || !/^[0-9A-Fa-f]+$/.test(clean)) return undefined;
+  const bytes: number[] = [];
+  for (let i = 0; i < clean.length; i += 2) bytes.push(Number.parseInt(clean.slice(i, i + 2), 16));
   return bytes;
 }

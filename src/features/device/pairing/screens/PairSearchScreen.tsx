@@ -342,7 +342,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         <Text fontWeight="600" style={styles.heading}>Looking nearby…</Text>
         <Text style={styles.sub}>
           {reconnectMode
-            ? 'Double-click BOOT, then keep Robot within 1–2 m while this phone searches.'
+            ? 'Robot should already be in setup mode. Keep it within 1–2 m while this phone searches.'
             : 'Make sure Robot is in setup mode and within 3 meters of your phone.'}
         </Text>
         <TouchableOpacity onPress={cancelSearchToFailed} style={{ marginTop: 20 }}>

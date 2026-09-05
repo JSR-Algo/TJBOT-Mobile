@@ -43,6 +43,7 @@ type ProvisioningRunResult = {
   completionMode: 'device_authenticated' | 'claim_confirmed' | 'device_online';
   claimExpiresAt?: string | null;
   handoffStartedAtMs: number;
+  onlineProofNotBeforeMs?: number;
 };
 type ActiveProvisioningContext = {
   deviceId: string;
@@ -52,6 +53,7 @@ type ActiveProvisioningContext = {
 
 const DEVICE_STATUS_POLL_INTERVAL_MS = CLAIM_POLL_INTERVAL_MS;
 const DEVICE_ONLINE_MAX_POLL_ATTEMPTS = 20;
+const RECONNECT_HANDOFF_DEADLINE_MS = 60000;
 const PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS = Math.ceil(CLAIM_CONFIRM_TIMEOUT_MS / DEVICE_STATUS_POLL_INTERVAL_MS) + 1;
 
 const PROVISIONING_STATUSES = [
@@ -181,7 +183,9 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           poll,
           'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
           DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
-          handoffStartedAtMs,
+          result.onlineProofNotBeforeMs ?? handoffStartedAtMs,
+          handoffStartedAtMs + RECONNECT_HANDOFF_DEADLINE_MS,
+          ssid,
         );
         if (cancelled) return;
         clearPairingBootstrapToken(result.provisioningAttemptId);
@@ -256,19 +260,22 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       recoveryAttemptId = readString(errorRecord, 'provisioningAttemptId') ?? recoveryAttemptId;
       recoveryDeviceId = readString(errorRecord, 'deviceId') ?? recoveryDeviceId;
       const handoffStartedAtMs = readNumber(errorRecord, 'handoffStartedAtMs') ?? Date.now();
+      const onlineProofNotBeforeMs = readNumber(errorRecord, 'onlineProofNotBeforeMs') ?? handoffStartedAtMs;
       let resolvedError = error;
       const deliveryUnknown = isDeliveryUnknown(error);
       if (
         transport === 'ble_reconnect'
-        && errorCodeFrom(error, '') === 'WIFI_CONNECT_TIMEOUT'
+        && (errorCodeFrom(error, '') === 'WIFI_CONNECT_TIMEOUT' || deliveryUnknown)
       ) {
         try {
           await waitForDeviceOnline(
             recoveryDeviceId,
             poll,
             'WIFI_CONNECT_TIMEOUT',
-            DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
-            handoffStartedAtMs,
+            reconnectReconciliationAttempts(handoffStartedAtMs),
+            onlineProofNotBeforeMs,
+            handoffStartedAtMs + RECONNECT_HANDOFF_DEADLINE_MS,
+            ssid,
           );
           if (cancelled) return;
           clearPairingBootstrapToken(recoveryAttemptId);
@@ -357,7 +364,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
     ? t('Robot authenticated')
     : status === 'failed'
       ? t('Pairing failed')
-      : t('Hang tight — about 30 seconds');
+      : t(credentialOnlySteps ? 'Hang tight — up to 1 minute' : 'Hang tight — about 30 seconds');
 
   return (
     <DeviceShell title={t('Connecting Robot…')}>
@@ -399,6 +406,14 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
 
 const PAIRING_STEP_COUNT = 4;
 
+function reconnectReconciliationAttempts(handoffStartedAtMs: number): number {
+  const remainingMs = Math.max(0, handoffStartedAtMs + RECONNECT_HANDOFF_DEADLINE_MS - Date.now());
+  return Math.min(
+    DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
+    Math.floor(remainingMs / DEVICE_STATUS_POLL_INTERVAL_MS) + 1,
+  );
+}
+
 async function runLocalBleProvisioning(params: {
   deviceId: string;
   serialNumber: string;
@@ -422,6 +437,7 @@ async function runLocalBleProvisioning(params: {
   });
   if (params.credentialOnly) {
     const handoffStartedAtMs = Date.now();
+    let onlineProofNotBeforeMs: number;
     try {
       await provisionWifiViaLocalBle({
         device: {
@@ -434,10 +450,11 @@ async function runLocalBleProvisioning(params: {
         password: params.password,
         allowCredentialOnly: true,
       });
+      onlineProofNotBeforeMs = Date.now();
     } catch (error: unknown) {
       throw Object.assign(
         withProvisioningAttemptContext(error, params.provisioningAttemptId, params.deviceId),
-        { handoffStartedAtMs },
+        { handoffStartedAtMs, onlineProofNotBeforeMs: Date.now() },
       );
     }
 
@@ -446,6 +463,7 @@ async function runLocalBleProvisioning(params: {
       provisioningAttemptId: params.provisioningAttemptId,
       completionMode: 'device_online',
       handoffStartedAtMs,
+      onlineProofNotBeforeMs,
     };
   }
 
@@ -608,13 +626,20 @@ async function waitForDeviceOnline(
   timeoutCode = 'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
   maxAttempts = DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
   notBeforeMs?: number,
+  deadlineMs?: number,
+  expectedWifiSsid?: string,
 ): Promise<Awaited<ReturnType<typeof getDeviceStatus>>> {
   let lastStatus: Awaited<ReturnType<typeof getDeviceStatus>> | undefined;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
-      const status = await getDeviceStatus(deviceId);
+      const status = await waitUntilDeadline(
+        getDeviceStatus(deviceId),
+        deadlineMs,
+        timeoutCode,
+        poll,
+      );
       lastStatus = status;
-      if (isAcceptableOnlineStatus(status, notBeforeMs)) return status;
+      if (isAcceptableOnlineStatus(status, notBeforeMs, expectedWifiSsid)) return status;
     } catch (error: unknown) {
       // 404 / DEVICE_NOT_FOUND / transient network while the robot is still
       // joining Wi-Fi must not abort the wait — only the timeout is terminal.
@@ -624,9 +649,15 @@ async function waitForDeviceOnline(
       return lastStatus ?? { id: deviceId, name: deviceId, online: false, batteryPercent: 0 };
     }
     if (attempt === maxAttempts - 1) break;
-    await sleep(DEVICE_STATUS_POLL_INTERVAL_MS, poll);
+    const retryDelayMs = deadlineMs === undefined
+      ? DEVICE_STATUS_POLL_INTERVAL_MS
+      : Math.min(DEVICE_STATUS_POLL_INTERVAL_MS, Math.max(0, deadlineMs - Date.now()));
+    await sleep(retryDelayMs, poll);
     if (poll.cancelled) {
       return lastStatus ?? { id: deviceId, name: deviceId, online: false, batteryPercent: 0 };
+    }
+    if (deadlineMs !== undefined && Date.now() >= deadlineMs) {
+      throw Object.assign(new Error('Device online check exceeded its deadline'), { code: timeoutCode });
     }
   }
   throw Object.assign(new Error('Device did not come online'), {
@@ -634,11 +665,40 @@ async function waitForDeviceOnline(
   });
 }
 
+async function waitUntilDeadline<T>(
+  operation: Promise<T>,
+  deadlineMs: number | undefined,
+  timeoutCode: string,
+  poll: PollController,
+): Promise<T> {
+  if (deadlineMs === undefined) return operation;
+  const remainingMs = Math.max(0, deadlineMs - Date.now());
+  const deadline = new Promise<never>((_resolve, reject) => {
+    poll.timer = setTimeout(() => {
+      poll.timer = undefined;
+      poll.resolveSleep = undefined;
+      reject(Object.assign(new Error('Device online check exceeded its deadline'), { code: timeoutCode }));
+    }, remainingMs);
+    poll.resolveSleep = () => reject(Object.assign(new Error('Device online check cancelled'), { code: timeoutCode }));
+  });
+  try {
+    return await Promise.race([operation, deadline]);
+  } finally {
+    if (poll.timer !== undefined) {
+      clearTimeout(poll.timer);
+      poll.timer = undefined;
+    }
+    poll.resolveSleep = undefined;
+  }
+}
+
 function isAcceptableOnlineStatus(
   status: Awaited<ReturnType<typeof getDeviceStatus>>,
   notBeforeMs?: number,
+  expectedWifiSsid?: string,
 ): boolean {
   if (!status.online) return false;
+  if (expectedWifiSsid !== undefined && status.wifiSsid !== expectedWifiSsid) return false;
   if (notBeforeMs === undefined) return true;
   if (!status.lastSeenAt) return false;
   const lastSeenAtMs = Date.parse(status.lastSeenAt);

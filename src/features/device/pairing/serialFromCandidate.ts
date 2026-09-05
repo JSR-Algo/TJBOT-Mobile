@@ -17,7 +17,7 @@ function candidateSerialSources(candidate: BleDeviceCandidate): string[] {
   return [...values, candidate.manufacturerData, candidate.rawScanRecord, ...serviceDataValues]
     .flatMap((value) => {
       if (!value) return [];
-      return [value, decodeBase64Text(value)];
+      return [value, decodeBase64Text(value), decodeHexText(value)];
     })
     .filter((value): value is string => typeof value === 'string' && value.length > 0);
 }
@@ -25,6 +25,14 @@ function candidateSerialSources(candidate: BleDeviceCandidate): string[] {
 function decodeBase64Text(value: string): string | undefined {
   const bytes = decodeBase64(value);
   if (!bytes) return undefined;
+  return decodeUtf8(bytes);
+}
+
+function decodeHexText(value: string): string | undefined {
+  const clean = value.trim();
+  if (clean.length === 0 || clean.length % 2 !== 0 || !/^[0-9A-Fa-f]+$/.test(clean)) return undefined;
+  const bytes: number[] = [];
+  for (let i = 0; i < clean.length; i += 2) bytes.push(Number.parseInt(clean.slice(i, i + 2), 16));
   return decodeUtf8(bytes);
 }
 

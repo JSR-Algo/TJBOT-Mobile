@@ -191,6 +191,23 @@ describe('BLE service', () => {
     expect(result.blocked.map((d) => d.id)).toEqual(['ZZ:00:11:22:33:44']);
   });
 
+  test('scans Android hexadecimal raw advertisements', async () => {
+    mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => {
+      listener(null, {
+        id: 'AA:BB:CC:DD:EE:FF',
+        name: null,
+        localName: null,
+        serviceUUIDs: [],
+        rawScanRecord: '0201060303ffff120954424f542d313443313946443141433230',
+      });
+    });
+
+    await expect(scanForTJBotDevices(1)).resolves.toMatchObject({
+      allowed: [{ id: 'AA:BB:CC:DD:EE:FF' }],
+      blocked: [],
+    });
+  });
+
   test('rejects BLE_SCAN_ERROR when the native discovery callback reports a scan failure', async () => {
     mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => {
       listener(Object.assign(new Error('Adapter unavailable'), { errorCode: 1 }), null);
@@ -1177,6 +1194,29 @@ describe('BLE service', () => {
     expect(customFramesWritten).toBe(2);
   });
 
+  test('marks a credential-only station-frame disconnect as delivery-unknown', async () => {
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
+    writeCharacteristicWithResponseForService.mockImplementation(
+      (_serviceUuid: string, _characteristicUuid: string, value: string) => {
+        if (decodeBase64(value)[0] === 0x08) {
+          return Promise.reject(Object.assign(new Error('Device disconnected'), { code: 'DeviceDisconnected' }));
+        }
+        return Promise.resolve({});
+      },
+    );
+
+    await expect(provisionWifiViaLocalBle({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      ssid: 'Casa',
+      password: 'secret-pass',
+      allowCredentialOnly: true,
+      connectDevice: connect,
+    })).rejects.toMatchObject({
+      code: 'BLE_PROVISIONING_DISCONNECTED',
+      deliveryUnknown: true,
+    });
+  });
+
   test('an older overlapping provision run does not cancel the newer session', async () => {
     let rejectOldDiscovery: (error: Error) => void = () => undefined;
     const oldCancel = jest.fn().mockResolvedValue(undefined);
@@ -1705,13 +1745,13 @@ describe('BLE service', () => {
     expect(allWrites.some((frame) => frame[0] === 0x0d && (frame[1] & 0x03) === 0x03)).toBe(true); // STA_PASSWORD
   });
 
-  test('credential-only rejects when no STA_CONN_SUCCESS report arrives', async () => {
+  test('credential-only resolves immediately after all protected station frames are written', async () => {
     jest.useFakeTimers();
     try {
       const writeCharacteristicWithResponseForService = jest.fn().mockResolvedValue({});
       const remove = jest.fn();
-      // Security OK, but no Wi-Fi conn-report. Existing backend online state can
-      // be stale, so this handoff must not report success without firmware proof.
+      // Security is established, then firmware intentionally releases BLE after
+      // accepting the station frames so it can reserve RAM for the Wi-Fi join.
       const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: (error: Error | null, characteristic: { value: string | null } | null) => void) => {
         listener(null, { value: mockSecurityResponseFrame() });
         return { remove };
@@ -1737,11 +1777,15 @@ describe('BLE service', () => {
         connReportTimeoutMs: 1000,
         connectDevice: connect,
       });
-      const assertion = expect(provisioning).rejects.toMatchObject({ code: 'WIFI_CONNECT_TIMEOUT' });
-      await jest.advanceTimersByTimeAsync(1000);
-      await assertion;
+      const resolved = jest.fn();
+      void provisioning.then(resolved);
+      await jest.advanceTimersByTimeAsync(0);
+
+      expect(resolved).toHaveBeenCalledWith(expect.objectContaining({ status: 'wifi_credentials_sent' }));
+      expect(writeCharacteristicWithResponseForService).toHaveBeenCalled();
       expect(cancelConnection).toHaveBeenCalled();
     } finally {
+      jest.runOnlyPendingTimers();
       jest.useRealTimers();
     }
   });

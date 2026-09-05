@@ -85,6 +85,14 @@ describe('device pairing Wi-Fi route params', () => {
       serviceUUIDs: [],
       manufacturerData: encodeBase64(asciiBytes('serial=TJBot-001')),
     })).toBe('TJBot-001');
+
+    expect(serialFromCandidate({
+      id: 'ble-device-3',
+      name: null,
+      localName: null,
+      serviceUUIDs: [],
+      rawScanRecord: '020106120954424f542d313443313946443141433230',
+    })).toBe('TBOT-14C19FD1AC20');
   });
 
   it('validates missing, blank, and control-character SSIDs at runtime', () => {

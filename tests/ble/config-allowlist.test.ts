@@ -119,6 +119,16 @@ describe('isAllowlistedCandidate — Android raw advertisement fallback', () => 
     })).toBe(true);
   });
 
+  test('admits a robot when Android exposes a hexadecimal raw scan record', () => {
+    expect(isAllowlistedCandidate({
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: null,
+      localName: null,
+      serviceUUIDs: [],
+      rawScanRecord: '0201060303ffff120954424f542d313443313946443141433230',
+    })).toBe(true);
+  });
+
   test('blocks a peripheral when Android exposes only the generic BluFi UUID', () => {
     expect(isAllowlistedCandidate({
       id: 'AA:BB:CC:DD:EE:FF',

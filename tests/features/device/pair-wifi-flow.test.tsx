@@ -5,6 +5,7 @@ import PairWifiPasswordScreen from '@/features/device/pairing/screens/PairWifiPa
 import { ROUTES } from '@/navigation/routes';
 import { scanRobotWifiNetworks } from '@/services/ble/service';
 import type { RobotWifiNetwork } from '@/services/ble/types';
+import { setAppLanguage } from '@/services/i18n/i18n';
 import {
   consumePairingWifiPassword,
   putPairingWifiPassword,
@@ -276,6 +277,19 @@ describe('PairWifiScreen — robot Wi-Fi scan over BLE', () => {
     await drainScanRetries();
     expect(screen.getByText('Second')).toBeTruthy();
     expect(mockedScanRobotWifi).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows the robot rescan action in Vietnamese', async () => {
+    mockedScanRobotWifi.mockResolvedValue([net('HomeNet', -55)]);
+    await act(async () => { await setAppLanguage('vi'); });
+    try {
+      const screen = renderWifi(jest.fn(), BLE_PARAMS);
+
+      await drainScanRetries();
+      expect(screen.getByText('Quét lại mạng Wi-Fi từ Robot')).toBeTruthy();
+    } finally {
+      await act(async () => { await setAppLanguage('en'); });
+    }
   });
 
   it('does NOT pass the SSID list to any navigation param (the list never escapes the screen)', async () => {
