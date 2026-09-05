@@ -43,7 +43,7 @@ type ProvisioningRunResult = {
   completionMode: 'device_authenticated' | 'claim_confirmed' | 'device_online';
   claimExpiresAt?: string | null;
   handoffStartedAtMs: number;
-  onlineProofNotBeforeMs?: number;
+  onlineProofBaselineLastSeenAtMs?: number;
 };
 type ActiveProvisioningContext = {
   deviceId: string;
@@ -54,6 +54,7 @@ type ActiveProvisioningContext = {
 const DEVICE_STATUS_POLL_INTERVAL_MS = CLAIM_POLL_INTERVAL_MS;
 const DEVICE_ONLINE_MAX_POLL_ATTEMPTS = 20;
 const RECONNECT_HANDOFF_DEADLINE_MS = 60000;
+const BACKEND_BASELINE_TIMEOUT_MS = 2000;
 const PROVISIONING_CONFIRM_MAX_POLL_ATTEMPTS = Math.ceil(CLAIM_CONFIRM_TIMEOUT_MS / DEVICE_STATUS_POLL_INTERVAL_MS) + 1;
 
 const PROVISIONING_STATUSES = [
@@ -148,18 +149,39 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       });
       return;
     }
-    const run = runLocalBleProvisioning({
-      deviceId,
-      serialNumber,
-      provisioningAttemptId,
-      code,
-      ssid,
-      password,
-      bleDeviceId,
-      bootstrapToken,
-      credentialOnly: transport === 'ble_reconnect',
-      claimBased: transport === 'ble_claim',
-    });
+    const run = (async (): Promise<ProvisioningRunResult> => {
+      const preHandoffBaselineLastSeenAtMs = transport === 'ble_reconnect'
+        ? await readBackendHeartbeatBaseline(deviceId, poll)
+        : undefined;
+      if (poll.cancelled) {
+        throw Object.assign(new Error('Pairing cancelled'), { code: 'PAIRING_CANCELLED' });
+      }
+      try {
+        const result = await runLocalBleProvisioning({
+          deviceId,
+          serialNumber,
+          provisioningAttemptId,
+          code,
+          ssid,
+          password,
+          bleDeviceId,
+          bootstrapToken,
+          credentialOnly: transport === 'ble_reconnect',
+          claimBased: transport === 'ble_claim',
+        });
+        const onlineProofBaselineLastSeenAtMs = transport === 'ble_reconnect'
+          ? await readBackendHeartbeatBaseline(deviceId, poll)
+          : preHandoffBaselineLastSeenAtMs;
+        return { ...result, onlineProofBaselineLastSeenAtMs };
+      } catch (error: unknown) {
+        const needsReconnectReconciliation = transport === 'ble_reconnect'
+          && (errorCodeFrom(error, '') === 'WIFI_CONNECT_TIMEOUT' || isDeliveryUnknown(error));
+        const onlineProofBaselineLastSeenAtMs = needsReconnectReconciliation
+          ? await readBackendHeartbeatBaseline(deviceId, poll)
+          : preHandoffBaselineLastSeenAtMs;
+        throw Object.assign(asRecord(error) ?? {}, { onlineProofBaselineLastSeenAtMs });
+      }
+    })();
 
     // The zero-code BLE run may MINT A NEW claim id (it re-runs requestClaim when
     // no claim/token is in hand). The success path surfaces it via
@@ -183,9 +205,11 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           poll,
           'RECONNECT_DEVICE_OFFLINE_TIMEOUT',
           DEVICE_ONLINE_MAX_POLL_ATTEMPTS,
-          result.onlineProofNotBeforeMs ?? handoffStartedAtMs,
+          undefined,
           handoffStartedAtMs + RECONNECT_HANDOFF_DEADLINE_MS,
           ssid,
+          true,
+          result.onlineProofBaselineLastSeenAtMs,
         );
         if (cancelled) return;
         clearPairingBootstrapToken(result.provisioningAttemptId);
@@ -260,7 +284,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       recoveryAttemptId = readString(errorRecord, 'provisioningAttemptId') ?? recoveryAttemptId;
       recoveryDeviceId = readString(errorRecord, 'deviceId') ?? recoveryDeviceId;
       const handoffStartedAtMs = readNumber(errorRecord, 'handoffStartedAtMs') ?? Date.now();
-      const onlineProofNotBeforeMs = readNumber(errorRecord, 'onlineProofNotBeforeMs') ?? handoffStartedAtMs;
+      const onlineProofBaselineLastSeenAtMs = readNumber(errorRecord, 'onlineProofBaselineLastSeenAtMs');
       let resolvedError = error;
       const deliveryUnknown = isDeliveryUnknown(error);
       if (
@@ -273,9 +297,11 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
             poll,
             'WIFI_CONNECT_TIMEOUT',
             reconnectReconciliationAttempts(handoffStartedAtMs),
-            onlineProofNotBeforeMs,
+            undefined,
             handoffStartedAtMs + RECONNECT_HANDOFF_DEADLINE_MS,
             ssid,
+            true,
+            onlineProofBaselineLastSeenAtMs,
           );
           if (cancelled) return;
           clearPairingBootstrapToken(recoveryAttemptId);
@@ -323,6 +349,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           resolvedError = reconciliationError;
         }
       }
+      if (cancelled) return;
       const errorCode = errorCodeFrom(resolvedError, 'PAIRING_CONNECT_FAILED');
       logDevPairConnectingEvent('failed', {
         errorCode,
@@ -437,7 +464,6 @@ async function runLocalBleProvisioning(params: {
   });
   if (params.credentialOnly) {
     const handoffStartedAtMs = Date.now();
-    let onlineProofNotBeforeMs: number;
     try {
       await provisionWifiViaLocalBle({
         device: {
@@ -450,11 +476,10 @@ async function runLocalBleProvisioning(params: {
         password: params.password,
         allowCredentialOnly: true,
       });
-      onlineProofNotBeforeMs = Date.now();
     } catch (error: unknown) {
       throw Object.assign(
         withProvisioningAttemptContext(error, params.provisioningAttemptId, params.deviceId),
-        { handoffStartedAtMs, onlineProofNotBeforeMs: Date.now() },
+        { handoffStartedAtMs },
       );
     }
 
@@ -463,7 +488,6 @@ async function runLocalBleProvisioning(params: {
       provisioningAttemptId: params.provisioningAttemptId,
       completionMode: 'device_online',
       handoffStartedAtMs,
-      onlineProofNotBeforeMs,
     };
   }
 
@@ -628,9 +652,13 @@ async function waitForDeviceOnline(
   notBeforeMs?: number,
   deadlineMs?: number,
   expectedWifiSsid?: string,
+  requireLaterBackendHeartbeat = false,
+  initialBaselineLastSeenAtMs?: number,
 ): Promise<Awaited<ReturnType<typeof getDeviceStatus>>> {
   let lastStatus: Awaited<ReturnType<typeof getDeviceStatus>> | undefined;
+  let baselineLastSeenAtMs = initialBaselineLastSeenAtMs;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    let establishedBaseline = false;
     try {
       const status = await waitUntilDeadline(
         getDeviceStatus(deviceId),
@@ -639,7 +667,23 @@ async function waitForDeviceOnline(
         poll,
       );
       lastStatus = status;
-      if (isAcceptableOnlineStatus(status, notBeforeMs, expectedWifiSsid)) return status;
+      if (requireLaterBackendHeartbeat) {
+        const observedLastSeenAtMs = parseLastSeenAtMs(status.lastSeenAt);
+        if (baselineLastSeenAtMs === undefined) {
+          if (observedLastSeenAtMs !== undefined) {
+            baselineLastSeenAtMs = observedLastSeenAtMs;
+            establishedBaseline = true;
+          }
+        } else if (
+          observedLastSeenAtMs !== undefined
+          && observedLastSeenAtMs > baselineLastSeenAtMs
+          && isAcceptableOnlineStatus(status, undefined, expectedWifiSsid)
+        ) {
+          return status;
+        }
+      } else if (isAcceptableOnlineStatus(status, notBeforeMs, expectedWifiSsid)) {
+        return status;
+      }
     } catch (error: unknown) {
       // 404 / DEVICE_NOT_FOUND / transient network while the robot is still
       // joining Wi-Fi must not abort the wait — only the timeout is terminal.
@@ -649,6 +693,9 @@ async function waitForDeviceOnline(
       return lastStatus ?? { id: deviceId, name: deviceId, online: false, batteryPercent: 0 };
     }
     if (attempt === maxAttempts - 1) break;
+    // The baseline read itself is not a retry. Check once more immediately so
+    // a heartbeat that raced the baseline response is not hidden for 3 seconds.
+    if (establishedBaseline) continue;
     const retryDelayMs = deadlineMs === undefined
       ? DEVICE_STATUS_POLL_INTERVAL_MS
       : Math.min(DEVICE_STATUS_POLL_INTERVAL_MS, Math.max(0, deadlineMs - Date.now()));
@@ -703,6 +750,31 @@ function isAcceptableOnlineStatus(
   if (!status.lastSeenAt) return false;
   const lastSeenAtMs = Date.parse(status.lastSeenAt);
   return Number.isFinite(lastSeenAtMs) && lastSeenAtMs >= notBeforeMs;
+}
+
+function parseLastSeenAtMs(lastSeenAt?: string): number | undefined {
+  if (!lastSeenAt) return undefined;
+  const value = Date.parse(lastSeenAt);
+  return Number.isFinite(value) ? value : undefined;
+}
+
+async function readBackendHeartbeatBaseline(
+  deviceId: string,
+  poll: PollController,
+): Promise<number | undefined> {
+  try {
+    const status = await waitUntilDeadline(
+      getDeviceStatus(deviceId),
+      Date.now() + BACKEND_BASELINE_TIMEOUT_MS,
+      'BACKEND_BASELINE_TIMEOUT',
+      poll,
+    );
+    return parseLastSeenAtMs(status.lastSeenAt);
+  } catch {
+    // Baseline proof is fail-safe: provisioning may continue, but the first
+    // valid post-handoff observation becomes a baseline rather than success.
+    return undefined;
+  }
 }
 
 function isRetryableDeviceOnlinePollError(error: unknown): boolean {

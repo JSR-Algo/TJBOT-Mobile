@@ -65,6 +65,14 @@ export default function DeviceHomeScreen({ navigation }: Props) {
         reconnectSerialNumber: device?.serialNumber,
       });
     },
+    onError: (error, deviceId) => {
+      if (errorCodeFrom(error) !== 'DEVICE_NOT_ONLINE') return;
+      navigation.navigate(ROUTES.PairSearchScreen, {
+        reconnectMode: true,
+        reconnectDeviceId: deviceId,
+        reconnectSerialNumber: device?.serialNumber,
+      });
+    },
   });
   const device = deviceQuery.data;
 
@@ -167,14 +175,8 @@ export default function DeviceHomeScreen({ navigation }: Props) {
             title="Change Wi‑Fi"
             body={wifiSetupBody}
             onClick={() => {
-              if (canStartWifiSetup && !wifiSetupMutation.isPending) {
+              if (!wifiSetupMutation.isPending) {
                 wifiSetupMutation.mutate(device.id);
-              } else if (!wifiSetupMutation.isPending) {
-                navigation.navigate(ROUTES.PairSearchScreen, {
-                  reconnectMode: true,
-                  reconnectDeviceId: device.id,
-                  reconnectSerialNumber: device.serialNumber,
-                });
               }
             }}
           />
@@ -213,6 +215,11 @@ export default function DeviceHomeScreen({ navigation }: Props) {
       <Box height={30} />
     </DeviceShell>
   );
+}
+
+function errorCodeFrom(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object' || !('code' in error)) return undefined;
+  return typeof error.code === 'string' ? error.code : undefined;
 }
 
 const styles = StyleSheet.create({

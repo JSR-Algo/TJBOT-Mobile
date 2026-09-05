@@ -14,7 +14,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PairOfflineScreen'>;
 
 const TIPS = [
   { ic: '🔌', t: 'Check Robot is plugged in', b: 'Or has at least 20% battery' },
-  { ic: '📶', t: 'Update Wi-Fi', b: 'Robot will open setup mode automatically.' },
+  { ic: '📶', t: 'Update Wi-Fi', b: 'Robot will open setup mode automatically within one minute.' },
 ] as const;
 
 export default function PairOfflineScreen({ navigation }: Props) {
@@ -28,7 +28,7 @@ export default function PairOfflineScreen({ navigation }: Props) {
         <RobotDevice emotion="reconnect" size={170} accent="#FF6F61" />
         <Text fontWeight="600" style={styles.heading}>Robot needs a reconnect</Text>
         <Text style={styles.sub}>
-          Pairing is safe. Robot will open setup mode automatically.
+          Pairing is safe. Robot will open setup mode automatically within one minute.
         </Text>
       </Box>
       <Box paddingHorizontal={16} paddingTop={22}>

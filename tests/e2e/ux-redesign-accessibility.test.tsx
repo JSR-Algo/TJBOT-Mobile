@@ -120,14 +120,18 @@ describe('mobile UX redesign accessibility coverage', () => {
       provisioningAttemptId: 'attempt-1',
       status: 'ble_paired',
     });
-    apiMocks.getDeviceStatus.mockResolvedValue({
-      id: 'device-1',
-      name: 'TJBot-001',
-      online: true,
-      batteryPercent: 0,
-      wifiRssi: -55,
-      wifiSsid: 'Casa Wi-Fi',
-      lastSeenAt: '2099-01-01T00:00:00.000Z',
+    let statusCall = 0;
+    apiMocks.getDeviceStatus.mockImplementation(async () => {
+      statusCall += 1;
+      return {
+        id: 'device-1',
+        name: 'TJBot-001',
+        online: true,
+        batteryPercent: 0,
+        wifiRssi: -55,
+        wifiSsid: 'Casa Wi-Fi',
+        lastSeenAt: new Date(Date.parse('2099-01-01T00:00:00.000Z') + statusCall).toISOString(),
+      };
     });
     apiMocks.mintBootstrapToken.mockResolvedValue({
       token: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
