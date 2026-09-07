@@ -309,6 +309,24 @@ describe('BLE service', () => {
     expect(hasByteSequence(passwordFrame ?? [], asciiBytes(' pass '))).toBe(false);
   });
 
+  test('preserves exact SSID bytes, including a trailing space, for local BLE provisioning', async () => {
+    const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
+
+    await provisionWifiViaLocalBle({
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [BLE_CONFIG.BLUFI_SERVICE_UUID] },
+      ssid: 'XUAN LAN ',
+      password: 'secret-pass',
+      code: '123456',
+      connectDevice: connect,
+    });
+
+    const ssidFrame = writeCharacteristicWithResponseForService.mock.calls
+      .map((call) => decodeBase64(call[2] as string))
+      .find((frame) => frame[0] === 0x09);
+    expect(ssidFrame?.slice(0, 2)).toEqual([0x09, 0x03]);
+    expect(ssidFrame?.[3]).toBe(9);
+  });
+
   test('writes custom-data TLV frame before SSID/PASSWD frames when token is present', async () => {
     const { writeCharacteristicWithResponseForService, connect } = createSecureProvisioningMocks();
 
@@ -1310,7 +1328,7 @@ describe('BLE service', () => {
     const remove = jest.fn();
     const monitorCharacteristicForService = jest.fn((_serviceUuid: string, _characteristicUuid: string, listener: (error: Error | null, characteristic: { value: string | null } | null) => void) => {
       setTimeout(() => {
-        listener(null, { value: encodeBase64([0x45, 0x04, 0x00, 0x06, 0x05, 0xc9, ...asciiBytes('Casa')]) });
+        listener(null, { value: encodeBase64([0x45, 0x04, 0x00, 0x0b, 0x0a, 0xc9, ...asciiBytes('XUAN LAN ')]) });
       }, 6000);
       return { remove };
     });
@@ -1336,7 +1354,7 @@ describe('BLE service', () => {
     expect(monitorCharacteristicForService).toHaveBeenCalled();
 
     await jest.advanceTimersByTimeAsync(6000);
-    await expect(scan).resolves.toEqual([{ ssid: 'Casa', rssi: -55 }]);
+    await expect(scan).resolves.toEqual([{ ssid: 'XUAN LAN ', rssi: -55 }]);
     expect(remove).toHaveBeenCalled();
     expect(cancelConnection).toHaveBeenCalled();
 

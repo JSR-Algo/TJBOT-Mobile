@@ -46,12 +46,11 @@ function sanitizeSsid(value: string | undefined): string {
     return FALLBACK_SSID;
   }
 
-  const trimmed = value.trim();
-  if (!trimmed || hasControlCharacter(trimmed)) {
+  if (!value.trim() || hasControlCharacter(value)) {
     return FALLBACK_SSID;
   }
 
-  return trimmed.slice(0, 32);
+  return value.slice(0, 32);
 }
 
 function hasControlCharacter(value: string): boolean {

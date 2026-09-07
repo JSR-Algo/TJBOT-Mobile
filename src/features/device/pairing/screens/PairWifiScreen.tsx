@@ -161,8 +161,7 @@ function signalLabel(rssi: number): string {
 
 function normalizeRobotWifiNetworks(networks: RobotWifiNetwork[]): RobotWifiNetwork[] {
   return networks
-    .map((network) => ({ ...network, ssid: network.ssid.trim() }))
-    .filter((network) => network.ssid.length > 0)
+    .filter((network) => network.ssid.trim().length > 0)
     .sort((a, b) => {
       const signalDelta = signalScore(b.rssi) - signalScore(a.rssi);
       if (signalDelta !== 0) return signalDelta;

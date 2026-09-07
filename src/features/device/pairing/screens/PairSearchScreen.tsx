@@ -33,6 +33,8 @@ interface RobotCandidate {
 
 type SearchState = 'searching' | 'choosing' | 'provisioning';
 const MAX_BLE_DISCOVERY_ATTEMPTS = 3;
+const RECONNECT_BLE_DISCOVERY_ATTEMPTS = 2;
+const RECONNECT_BLE_SCAN_TIMEOUT_MS = 40_000;
 
 export default function PairSearchScreen({ navigation, route }: Props) {
   const isFocused = useIsFocused();
@@ -203,8 +205,14 @@ export default function PairSearchScreen({ navigation, route }: Props) {
 
       let resolved: RobotCandidate[] = [];
       let lastScanFailureCode: string | undefined;
-      for (let attempt = 1; attempt <= MAX_BLE_DISCOVERY_ATTEMPTS; attempt += 1) {
-        const scan = await scanForTJBotDevices().catch((error: unknown) => {
+      const maxDiscoveryAttempts = reconnectMode
+        ? RECONNECT_BLE_DISCOVERY_ATTEMPTS
+        : MAX_BLE_DISCOVERY_ATTEMPTS;
+      for (let attempt = 1; attempt <= maxDiscoveryAttempts; attempt += 1) {
+        const scanPromise = reconnectMode
+          ? scanForTJBotDevices(RECONNECT_BLE_SCAN_TIMEOUT_MS)
+          : scanForTJBotDevices();
+        const scan = await scanPromise.catch((error: unknown) => {
           lastScanFailureCode = errorCodeFrom(error, 'BLE_SCAN_ERROR');
           logDevPairSearchEvent('ble scan failed', { scanAttempt: attempt, ...devErrorSummary(error) });
           return undefined;
@@ -267,7 +275,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
     return () => {
       if (activeSearchRunRef.current === runId) activeSearchRunRef.current += 1;
     };
-  }, [isFocused, isSearchRunCurrent, navigation, routeResolvedCandidate]);
+  }, [isFocused, isSearchRunCurrent, navigation, reconnectMode, routeResolvedCandidate]);
 
   const chooseCandidate = React.useCallback(
     (item: RobotCandidate): void => {

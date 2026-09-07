@@ -59,8 +59,13 @@ describe('device pairing Wi-Fi route params', () => {
     expect(source('src/features/device/pairing/screens/PairSearchScreen.tsx')).not.toContain("provisioningTransport: 'ble_offline'");
   });
 
-  it('builds typed password params and trims selected SSIDs', () => {
-    expect(buildPairWifiPasswordParams(' Casa-Familia ')).toEqual({ ssid: 'Casa-Familia' });
+  it('builds typed password params without changing the exact selected SSID', () => {
+    expect(buildPairWifiPasswordParams(' Casa-Familia ')).toEqual({ ssid: ' Casa-Familia ' });
+  });
+
+  it('preserves meaningful trailing spaces in scanned SSIDs', () => {
+    expect(buildPairWifiPasswordParams('XUAN LAN ')).toEqual({ ssid: 'XUAN LAN ' });
+    expect(getPairWifiPasswordSsid({ ssid: 'XUAN LAN ' })).toBe('XUAN LAN ');
   });
 
   it('extracts only real serial-bearing BLE advertisement values', () => {

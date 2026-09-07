@@ -253,7 +253,7 @@ export async function provisionWifiViaLocalBle(params: {
   connReportTimeoutMs?: number;
   connectDevice?: ConnectDevice;
 }): Promise<LocalBleProvisioningResult> {
-  const ssid = sanitizeWifiText(params.ssid, WIFI_SSID_MAX_BYTES, 'WIFI_SSID_INVALID');
+  const ssid = sanitizeWifiText(params.ssid, WIFI_SSID_MAX_BYTES, 'WIFI_SSID_INVALID', { trim: false });
   const password = sanitizeWifiText(params.password, WIFI_PASSWORD_MAX_BYTES, 'WIFI_PASSWORD_INVALID', { trim: false });
   if (params.code !== undefined && !/^\d{6}$/.test(params.code)) {
     throw codedError('INVALID_BLE_CODE', 'Pairing code must be 6 digits.');
@@ -1301,8 +1301,8 @@ function parseBluFiWifiListPayload(payload: number[]): RobotWifiNetwork[] {
       continue;
     }
     const rssi = signedByte(payload[offset + 1]);
-    const ssid = decodeUtf8(payload.slice(offset + 2, offset + 1 + entryLength)).trim();
-    if (ssid) networks.push({ ssid, rssi });
+    const ssid = decodeUtf8(payload.slice(offset + 2, offset + 1 + entryLength));
+    if (ssid.trim().length > 0) networks.push({ ssid, rssi });
     offset += 1 + entryLength;
   }
   return networks;

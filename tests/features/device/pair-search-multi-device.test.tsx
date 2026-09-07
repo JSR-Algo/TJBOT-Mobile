@@ -237,6 +237,26 @@ describe('PairSearchScreen multi-device picker', () => {
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
   });
 
+  it('keeps reconnect discovery open through the firmware BLE fallback window', async () => {
+    mockedScan
+      .mockResolvedValueOnce({ allowed: [], blocked: [] })
+      .mockResolvedValueOnce({ allowed: [candidate('ble-owned', 'TBOT-OWNED')], blocked: [] });
+    const navigate = jest.fn();
+    renderSearch(navigate, { reconnectMode: true });
+
+    await waitFor(() => expect(mockedScan).toHaveBeenCalledTimes(2));
+    expect(mockedScan).toHaveBeenNthCalledWith(1, 40_000);
+    expect(mockedScan).toHaveBeenNthCalledWith(2, 40_000);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairWifiScreen, {
+      deviceId: 'device-owned',
+      serialNumber: 'TBOT-OWNED',
+      provisioningAttemptId: 'reconnect:device-owned',
+      bleDeviceId: 'ble-owned',
+      provisioningTransport: 'ble_reconnect',
+    }));
+    expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
+  });
+
   it('de-duplicates the same robot seen under multiple BLE ids (no false multi-device picker)', async () => {
     mockedScan.mockResolvedValue({
       allowed: [candidate('ble-a', 'TBOT-0001'), candidate('ble-a2', 'TBOT-0001')],

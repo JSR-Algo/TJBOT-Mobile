@@ -248,6 +248,20 @@ describe('PairWifiScreen — robot Wi-Fi scan over BLE', () => {
     );
   });
 
+  it('preserves trailing spaces in a robot-scanned SSID when selecting the network', async () => {
+    mockedScanRobotWifi.mockResolvedValue([net('XUAN LAN ', -55)]);
+    const navigate = jest.fn();
+    const screen = renderWifi(navigate, BLE_PARAMS);
+
+    await drainScanRetries();
+    fireEvent.press(screen.getByText('XUAN LAN '));
+
+    expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairWifiPasswordScreen,
+      expect.objectContaining({ ssid: 'XUAN LAN ' }),
+    );
+  });
+
   it('"Other network…" routes to the password screen in manual-entry mode (ssid "Other network")', async () => {
     mockedScanRobotWifi.mockResolvedValue([net('HomeNet', -55)]);
     const navigate = jest.fn();
@@ -477,7 +491,7 @@ describe('PairWifiPasswordScreen — password handoff is transient + BLE-bound',
     expect(navigate).toHaveBeenCalledWith(ROUTES.PairConnectingScreen, expect.objectContaining({ ssid: 'HomeNet' }));
   });
 
-  it('manual-entry mode: requires the typed SSID and forwards the trimmed custom SSID', () => {
+  it('manual-entry mode: requires the typed SSID and forwards it exactly', () => {
     const navigate = jest.fn();
     const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'Other network' });
 
@@ -491,9 +505,23 @@ describe('PairWifiPasswordScreen — password handoff is transient + BLE-bound',
 
     expect(navigate).toHaveBeenCalledWith(
       ROUTES.PairConnectingScreen,
-      expect.objectContaining({ ssid: 'MyHiddenNet' }),
+      expect.objectContaining({ ssid: '  MyHiddenNet  ' }),
     );
     expect(mockedPutPassword).toHaveBeenCalledWith('claim-1', WIFI_PASSWORD);
+  });
+
+  it('manual-entry mode preserves a trailing space because it is part of the SSID', () => {
+    const navigate = jest.fn();
+    const screen = renderPassword(navigate, { ...BLE_PARAMS, ssid: 'Other network' });
+
+    fireEvent.changeText(screen.getByLabelText('Wi-Fi network name'), 'XUAN LAN ');
+    fireEvent.changeText(screen.getByLabelText('Wi-Fi password'), WIFI_PASSWORD);
+    fireEvent.press(screen.getByText('Connect Robot'));
+
+    expect(navigate).toHaveBeenCalledWith(
+      ROUTES.PairConnectingScreen,
+      expect.objectContaining({ ssid: 'XUAN LAN ' }),
+    );
   });
 
   it('manual-entry mode: changing the SSID clears its prior password and blocks reuse', () => {

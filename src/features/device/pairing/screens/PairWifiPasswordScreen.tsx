@@ -23,7 +23,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   const manualSsid = routeSsid === 'Other network';
   const [customSsidEntry, setCustomSsidEntry] = React.useState({ scope: routeSsid, value: '' });
   const customSsid = customSsidEntry.scope === routeSsid ? customSsidEntry.value : '';
-  const ssid = manualSsid ? customSsid.trim() : routeSsid;
+  const ssid = manualSsid ? customSsid : routeSsid;
   const passwordScope = `${manualSsid ? 'manual' : 'selected'}:${ssid}`;
   const [passwordEntry, setPasswordEntry] = React.useState({ scope: passwordScope, value: '' });
   const password = passwordEntry.scope === passwordScope ? passwordEntry.value : '';
@@ -37,7 +37,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   }, [passwordEntry.scope, passwordScope]);
 
   const updateCustomSsid = (value: string): void => {
-    const nextSsid = value.trim();
+    const nextSsid = value;
     const nextScope = `manual:${nextSsid}`;
     setCustomSsidEntry({ scope: routeSsid, value });
     setPasswordEntry((current) => {
@@ -48,7 +48,7 @@ export default function PairWifiPasswordScreen({ navigation, route }: Props) {
   };
 
   const submit = () => {
-    if (!ssid || !password) return;
+    if (!ssid.trim() || !password) return;
     const provisioningAttemptId = getProvisioningAttemptId(params);
     if (provisioningAttemptId) {
       putPairingWifiPassword(provisioningAttemptId, password);
