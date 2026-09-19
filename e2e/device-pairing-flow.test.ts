@@ -13,6 +13,7 @@ import {
   openRouteToId,
   tapLabel,
   tapText,
+  tapTextIfVisible,
   waitForText,
 } from './helpers/ui';
 
@@ -36,9 +37,10 @@ describe('device pairing: connect/reconnect entry flow', () => {
     await openRouteToId('device/pair-add', 'pairAddScreen');
     await tapLabel('Pair a new Robot');
     await waitForText('Power on your Robot');
+    await element(by.id('deviceShellScroll')).scrollTo('bottom');
     await tapText('My Robot is on');
     await expectFirstVisibleText([
-      'Looking for your Robot',
+      'Looking for Robot…',
       "Bluetooth can't be used here",
       'Turn on Bluetooth first',
       "We couldn't see Robot nearby",
@@ -48,13 +50,16 @@ describe('device pairing: connect/reconnect entry flow', () => {
     await openRoute('device/pair-offline', 'Robot needs a reconnect');
     await tapLabel('Update Wi-Fi for offline Robot');
     await expectFirstVisibleText([
-      'Looking for your Robot',
+      'Looking for Robot…',
       "Bluetooth can't be used here",
       'Turn on Bluetooth first',
       "We couldn't see Robot nearby",
       "Bluetooth scan didn't start",
     ], 30000);
 
-    await expectFirstVisibleText(['Open Bluetooth settings', 'Try again', 'Search again']);
+    await tapTextIfVisible("I don't see my Robot");
+    await waitForText("Pairing didn't work");
+    await element(by.id('deviceShellScroll')).scrollTo('bottom');
+    await waitForText('Try Bluetooth setup again');
   }, 180000);
 });
