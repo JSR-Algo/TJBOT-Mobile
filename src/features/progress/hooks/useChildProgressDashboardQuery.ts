@@ -13,7 +13,10 @@ export interface ChildProgressDashboard {
   completedLessons: number;
   totalLessons: number;
   completedSessions: number;
+  /** Only sessions the backend terminated as `FAILED`. Never an interrupted one. */
   failedSessions: number;
+  /** Sessions that stopped before the end without failing — the parent-facing "Didn't finish". */
+  interruptedSessions: number;
   recentDurationSec: number;
   todayLessonsCompleted: number;
   todayActiveSec: number;
@@ -46,6 +49,26 @@ function coursesByKey(courses: ParentCourseProgress[]): ParentCourseProgress[] {
   return [...unique.values()];
 }
 
+/**
+ * D11 — a transport disconnect is not a failure by the child.
+ *
+ * The backend terminal vocabulary a parent can receive is `COMPLETED` | `FAILED` |
+ * `ABANDONED` (`parent-learning-progress.service.ts` masks assignment `CANCELLED` to
+ * `ABANDONED` before it leaves the server). A robot that loses its network now ends its
+ * assignment `CANCELLED` (owner decision D8), so it arrives here as `ABANDONED`. Counting
+ * `terminalState !== 'COMPLETED'` as failed therefore told a parent their child had failed a
+ * lesson because the Wi-Fi dropped.
+ *
+ * `failedSessions` is now only what the backend actually called a failure; everything else
+ * that did not complete is `interruptedSessions`. Anything outside the three known values is
+ * deliberately counted as interrupted rather than failed: the safe direction is never to
+ * attribute an unrecognised outcome to the child. The three buckets are exhaustive, so
+ * `completedSessions + failedSessions + interruptedSessions === sessions.length` always holds.
+ *
+ * No new parent-facing string is introduced: the existing copy in `parentLearningCopy.ts`
+ * already words both `FAILED` and `ABANDONED` as "Didn't finish", which is what a parent
+ * should read for an interrupted session.
+ */
 export function buildCanonicalProgressDashboard(
   status: ParentLearningStatus,
   history?: ParentSessionSummary[],
@@ -62,7 +85,8 @@ export function buildCanonicalProgressDashboard(
     completedLessons: courses.reduce((sum, course) => sum + course.completedLessonCount, 0),
     totalLessons: courses.reduce((sum, course) => sum + course.totalLessonCount, 0),
     completedSessions: sessions.filter(session => session.terminalState === 'COMPLETED').length,
-    failedSessions: sessions.filter(session => session.terminalState !== 'COMPLETED').length,
+    failedSessions: sessions.filter(session => session.terminalState === 'FAILED').length,
+    interruptedSessions: sessions.filter(session => session.terminalState !== 'COMPLETED' && session.terminalState !== 'FAILED').length,
     recentDurationSec: sessions.reduce((sum, session) => sum + session.durationSec, 0),
     todayLessonsCompleted: todaySessions.filter(session => session.terminalState === 'COMPLETED').length,
     todayActiveSec: todaySessions.reduce((sum, session) => sum + session.durationSec, 0),
