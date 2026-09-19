@@ -1,18 +1,6 @@
-// Parity test — mobile TypeScript projections must match the authoritative JS
-// contracts in TJBot-infra/contracts/. Any drift fails this test.
-//
-// Plan: expressive-robot-companion-rewrite §6 RM-02 (AC: "unit tests for all
-// 10 states + invalid transitions").
-//
-// Why this test matters:
-//   - The mobile app bundles its own TypeScript projections of the 10-state
-//     FSM, the 14-expression enum, the 12-motion enum, and the realtime-event
-//     shape. Metro cannot ingest the `.js` files at ../../TJBot-infra/contracts/
-//     without a monorepo build step, so drift would be silent.
-//   - This test requires() the authoritative JS modules at runtime via Node's
-//     resolver and compares every load-bearing constant byte-for-byte.
-
-import * as path from "path";
+// Mobile projections are compared with the backend's canonical @tbot/contracts.
+// See README.md for explicit TBOT_BACKEND_DIR selection and native loader scope.
+import { loadCanonicalContracts } from './load-canonical-contracts';
 
 import {
   ALL_STATES,
@@ -44,44 +32,10 @@ import {
   isRealtimeEvent,
 } from "../../src/contracts/realtime-events";
 
-const CONTRACTS_DIR = path.resolve(
-  __dirname,
-  "..",
-  "..",
-  "..",
-  "TJBot-infra",
-  "contracts",
-);
+const { canonicalRobotState, canonicalExpression, canonicalMotion, canonicalRealtime } =
+  loadCanonicalContracts(ALL_STATES);
 
-// The canonical JS modules live outside the mobile project root, which means
-// jest-babel cannot transform them under the mobile preset without also
-// reaching their own `node_modules`. We therefore load them with Node's raw
-// `require` inside a try/catch; when resolution fails (missing @babel/runtime,
-// missing zod, etc.) the suite skips its assertions instead of failing hard.
-// The mobile contract projections have their own self-contained unit tests
-// so coverage is preserved regardless.
-
-function tryRequire(modulePath: string): any | null {
-  try {
-    return require(modulePath);
-  } catch (err) {
-
-    console.warn(
-      `[parity.test] skipping canonical module ${modulePath}: ${(err as Error).message}`,
-    );
-    return null;
-  }
-}
-
-const canonicalRobotState = tryRequire(path.join(CONTRACTS_DIR, "robot-state.js"));
-const canonicalExpression = tryRequire(path.join(CONTRACTS_DIR, "expression.js"));
-const canonicalMotion = tryRequire(path.join(CONTRACTS_DIR, "motion.js"));
-const canonicalRealtime = tryRequire(path.join(CONTRACTS_DIR, "realtime-events.js"));
-
-const canonicalsLoaded = !!(canonicalRobotState && canonicalExpression && canonicalMotion);
-const describeWhenCanonicals = canonicalsLoaded ? describe : describe.skip;
-
-describeWhenCanonicals("contracts/robot-state parity", () => {
+describe("contracts/robot-state parity", () => {
   test("RobotInteractionState enum matches canonical", () => {
     expect({ ...RobotInteractionState }).toEqual({
       ...canonicalRobotState.RobotInteractionState,
@@ -127,7 +81,7 @@ describeWhenCanonicals("contracts/robot-state parity", () => {
   });
 });
 
-describeWhenCanonicals("contracts/expression parity", () => {
+describe("contracts/expression parity", () => {
   test("Expression enum matches canonical", () => {
     expect({ ...Expression }).toEqual({ ...canonicalExpression.Expression });
   });
@@ -155,7 +109,7 @@ describeWhenCanonicals("contracts/expression parity", () => {
   });
 });
 
-describeWhenCanonicals("contracts/motion parity", () => {
+describe("contracts/motion parity", () => {
   test("Motion enum matches canonical", () => {
     expect({ ...Motion }).toEqual({ ...canonicalMotion.Motion });
   });
@@ -190,10 +144,8 @@ describeWhenCanonicals("contracts/motion parity", () => {
   });
 });
 
-const describeWhenRealtime = canonicalRealtime ? describe : describe.skip;
-describeWhenRealtime("contracts/realtime-events parity (best effort)", () => {
+describe("contracts/realtime-events parity", () => {
   test("event type literals match canonical set", () => {
-    if (!canonicalRealtime) return;
     expect({ ...RealtimeEventType }).toEqual({
       ...canonicalRealtime.RealtimeEventType,
     });
@@ -201,7 +153,6 @@ describeWhenRealtime("contracts/realtime-events parity (best effort)", () => {
   });
 
   test("isRealtimeEvent narrows a canonical-constructed event", () => {
-    if (!canonicalRealtime) return;
     const evt = canonicalRealtime.createExpression({
       session_id: "s1",
       turn_id: "t1",

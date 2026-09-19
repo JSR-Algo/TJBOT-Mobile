@@ -69,4 +69,31 @@ describe('parent progress diagnostics', () => {
       stepId: 's8',
     }));
   });
+
+  it('run15 A6: opted-in public logger with truly absent expiry emits nothing', () => {
+    const keys = ['EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS', 'EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL'] as const;
+    const snapshots = [process.env, bundledEnv].map(env => ({ env, saved: keys.map(key => ({ key, present: Object.prototype.hasOwnProperty.call(env, key), value: env[key] })) }));
+    try {
+      setParentProgressDiagnosticsEnabledForTest(null);
+      for (const { env } of snapshots) {
+        env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS = 'true';
+        delete env.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL;
+      }
+      logParentProgressDiagnostic({ source: 'ws', decision: 'receive', childId: 'child-secret' });
+      expect(info).not.toHaveBeenCalled();
+      bundledEnv.EXPO_PUBLIC_PARENT_PROGRESS_DIAGNOSTICS_UNTIL = String(Date.now() + 60_000);
+      logParentProgressDiagnostic({ source: 'ws', decision: 'receive', childId: 'child-secret' });
+      expect(info).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(info.mock.calls)).not.toContain('child-secret');
+    } finally {
+      for (const { env, saved } of snapshots) {
+        for (const { key, present, value } of saved) {
+          if (present) env[key] = value;
+          else delete env[key];
+        }
+      }
+      setParentProgressDiagnosticsEnabledForTest(null);
+    }
+  });
+
 });

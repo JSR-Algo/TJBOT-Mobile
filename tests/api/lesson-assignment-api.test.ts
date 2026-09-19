@@ -174,7 +174,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
           lessonTitle: '',
           lessonVersion: 1,
           manifestChecksum: null,
-          profile: 'espTft',
+          profile: '',
           state: 'PRELOADING',
         },
       });
@@ -200,7 +200,7 @@ describe('US-006 S11 — lesson assignment API (M1/M2/M5)', () => {
         lessonTitle: '',
         lessonVersion: 2,
         manifestChecksum: null,
-        profile: 'espTft',
+        profile: '',
         state: 'PRELOADING',
       });
     });

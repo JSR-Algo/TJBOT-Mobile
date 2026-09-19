@@ -29,7 +29,7 @@ export default function ParentHistoryScreen({ navigation }: Props) {
   const query = useParentLearningHistoryQuery(activeChild?.id);
   const back = () => navigation.navigate(ROUTES.ParentSummaryScreen);
 
-  if (query.isLoading) return <ParentScroll title="Lesson history" onBack={back}><Message text="Loading lesson history" /></ParentScroll>;
+  if (query.isLoading || (!query.data && !query.isError)) return <ParentScroll title="Lesson history" onBack={back}><Message text="Loading lesson history" /></ParentScroll>;
   if (query.isError) return <ParentScroll title="Lesson history" onBack={back}><ErrorState retry={() => { void query.refetch(); }} /></ParentScroll>;
   const items = query.data?.items ?? [];
   if (items.length === 0) return <ParentScroll title="Lesson history" onBack={back}><Message text="No completed lessons yet" /></ParentScroll>;

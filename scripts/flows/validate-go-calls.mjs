@@ -16,8 +16,9 @@ import {
   PROJECT_ROOT, NAV_GRAPH_PATH, FEATURES_DIR, DOCS_FLOWS_DIR, SCHEMA_DIR,
   listDomains, readNavGraph, readJsonFile, walkFiles, sha256OfFile,
   generatedHeader, mermaidGeneratedHeader, EDGE_CASE_TEMPLATES, HAPPY_PATH_EXEMPTIONS,
-  buildPageMaps, gitHeadShortBranch, gitStagedFiles, projectPrefixWithinGit,
+  buildPageMaps,
 } from './lib/repo.mjs';
+import { singleWriterDiagnostic } from './lib/single-writer-diagnostic.mjs';
 import { validate } from './lib/json-validate.mjs';
 
 const FLAGS = new Set(process.argv.slice(2));
@@ -27,7 +28,7 @@ const QUIET = FLAGS.has('--quiet');
 
 const errors = [];
 function fail(check, msg) { errors.push(`[${check}] ${msg}`); }
-function ok(check) { if (!QUIET) console.log(`[validate] ${check}: OK`); }
+function ok(check) { if (!QUIET) console.info(`[validate] ${check}: OK`); }
 
 const navGraph = readNavGraph();
 const navGraphSha = sha256OfFile(NAV_GRAPH_PATH).slice(0, 12);
@@ -264,49 +265,14 @@ if (ALL || FLAGS.has('--check-backend-leak')) {
 // suggests lane-A/B/C/D authorship, warn. Still warn-only; trunk safety is
 // Phase 1.5 re-extract.
 if (ALL) {
-  const branch = gitHeadShortBranch();
-  const laneWarnings = [];
-  const prefix = projectPrefixWithinGit();
-  const guardedTargets = [
-    `${prefix}nav-graph-data.json`,
-    `${prefix}docs/flows/domains/`,
-    `${prefix}docs/flows/global.generated.mmd`,
-    `${prefix}docs/flows/shared/cross-domain.flow.mmd`,
-    `${prefix}docs/flows/user-flow.md`,
-    `${prefix}docs/flows/user-flow.html`,
-  ];
-  // Trigger if branch matches lane-* OR commit message subject mentions lane-<letter>.
-  // Reads .git/COMMIT_EDITMSG if present (post-`git commit -m` pre-finalize) or
-  // inspects HEAD message if amending. Best-effort; warn-only.
-  let suspectsLaneCommit = /^lane-[A-Da-d]-/.test(branch);
-  try {
-    const editMsgPath = path.join(PROJECT_ROOT, '..', '.git', 'COMMIT_EDITMSG');
-    if (fs.existsSync(editMsgPath)) {
-      const subj = (fs.readFileSync(editMsgPath, 'utf8').split(/\r?\n/)[0] || '');
-      if (/\blane-[a-d]\b|\(lane-[a-d]\b/i.test(subj)) suspectsLaneCommit = true;
-    }
-  } catch { /* best-effort */ }
-  if (suspectsLaneCommit) {
-    const staged = gitStagedFiles();
-    for (const f of staged) {
-      // Generated files inside docs/flows/domains/<d>/ are flow.generated.mmd
-      // and calls.generated.json only; README.md is hand-curated and IS allowed
-      // on lane commits.
-      if (f.startsWith(`${prefix}docs/flows/domains/`)) {
-        const base = path.basename(f);
-        if (base === 'README.md') continue;
-      }
-      if (f === guardedTargets[0] || f.startsWith(guardedTargets[1]) ||
-          guardedTargets.slice(2).includes(f)) {
-        laneWarnings.push(`lane commit staging "${f}" — Lane Z exclusive. Unstage before push (process discipline; Phase 1.5 will overwrite if not unstaged).`);
-      }
-    }
-  }
-  if (laneWarnings.length) {
+  const diagnostic = singleWriterDiagnostic(PROJECT_ROOT);
+  if (diagnostic.status === 'unavailable') {
+    console.error(`[validate] single-writer UNAVAILABLE (WARN-ONLY, nonblocking): ${diagnostic.reason}`);
+  } else if (diagnostic.warnings.length) {
     console.error('[validate] lane-write WARNINGS (process-discipline only; not blocking):');
-    for (const w of laneWarnings) console.error('  ' + w);
-  } else {
-    ok(`single-writer(branch=${branch || 'unknown'}${suspectsLaneCommit ? ', lane-commit-detected' : ''})`);
+    for (const warning of diagnostic.warnings) console.error('  ' + warning);
+  } else if (!QUIET) {
+    console.info(`[validate] single-writer WARN-ONLY: ${diagnostic.status} (branch=${diagnostic.branch}; not full ownership proof)`);
   }
 }
 
@@ -315,5 +281,5 @@ if (errors.length) {
   for (const e of errors) console.error('  ' + e);
   process.exit(1);
 } else {
-  console.log('[validate] ALL CHECKS PASSED');
+  console.info('[validate] CONTENT CHECKS PASSED (single-writer provenance is a separate WARN-ONLY diagnostic)');
 }

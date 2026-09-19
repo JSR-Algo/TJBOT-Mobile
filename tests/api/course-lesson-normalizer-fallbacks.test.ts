@@ -360,7 +360,7 @@ describe('course-library.api normalizer fallback branches', () => {
     expect(c).not.toBeNull();
     expect(c!.assignmentId).toBe('cur1');
     expect(c!.lessonTitle).toBe('Live');
-    expect(c!.profile).toBe('espTft');
+    expect(c!.profile).toBe('');
   });
 
   // preload status: assets non-array → [] + errorCode omitted (414-431 + 437)
@@ -369,7 +369,7 @@ describe('course-library.api normalizer fallback branches', () => {
     expect(p.assets).toEqual([]);
     expect(p.errorCode).toBeUndefined();
     expect(p.state).toBe('PRELOADING');
-    expect(p.profile).toBe('espTft');
+    expect(p.profile).toBe('');
   });
 
   it('preload status maps assets (snake+camel checksum) and surfaces errorCode', () => {
@@ -441,7 +441,7 @@ describe('course-library.api normalizer fallback branches', () => {
 
   it('assignmentRef payload defaults profile/state/checksum', () => {
     const r = normalizeAssignmentRefPayload({});
-    expect(r.profile).toBe('espTft');
+    expect(r.profile).toBe('');
     expect(r.state).toBe('UNASSIGNED');
     expect(r.manifestChecksum).toBeNull();
   });

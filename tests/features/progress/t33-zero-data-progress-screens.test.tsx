@@ -54,7 +54,7 @@ const emptyDashboard = {
 describe('T3.3 — a child with no lesson history sees honest empty states', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockDashboard.mockReturnValue({ data: emptyDashboard, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
+    mockDashboard.mockReturnValue({ hasCompleteProjection: true, data: emptyDashboard, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
     mockInbox.mockReturnValue({ data: { rewards: [], count: 0 }, isError: false, refetch: jest.fn() } as never);
     mockAcknowledge.mockReturnValue({ mutate: jest.fn() } as never);
     mockSeenQueued.mockResolvedValue(false);

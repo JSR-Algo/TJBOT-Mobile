@@ -20,6 +20,8 @@ import {
   type PreloadStatus,
 } from '@/services/api/course-library.api';
 import { formatLessonCopy, getErrorMessage } from '@/utils/errors';
+import { matchesActive, readyAssignment } from '../assignmentReconciliation';
+import { useScreenActivity } from '../useScreenActivity';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RobotReadyScreen'>;
 
@@ -38,6 +40,14 @@ const MAX_PRELOAD_SETTLING_POLLS = 18;
 export default function RobotReadyScreen({ navigation, route }: Props) {
   const childId = route.params?.childId;
   const deviceId = route.params?.deviceId;
+  const { assignmentId, assignmentVersion, manifestChecksum, profile } = route.params ?? {};
+  const selection = { deviceId, childId, assignmentId, assignmentVersion, manifestChecksum, profile };
+  const activity = useScreenActivity(JSON.stringify(selection));
+  const { active: screenActive, key: activityKey, isCurrent } = activity;
+  const selectionKey = activityKey;
+  const selectedKey = React.useRef(selectionKey);
+  selectedKey.current = selectionKey;
+  const [resultKey, setResultKey] = React.useState(selectionKey);
   const missingDeviceId = !deviceId;
   const [preload, setPreload] = React.useState<PreloadStatus | null>(null);
   const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
@@ -45,11 +55,14 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
   const [retryNonce, setRetryNonce] = React.useState(0);
 
   React.useEffect(() => {
-    if (!deviceId) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let settlingPolls = 0;
+    setPreload(null);
+    setAssignment(null);
+    setResultKey(selectionKey);
     setPreloadStalled(false);
+    if (!deviceId || !screenActive) return;
 
     const poll = async () => {
       try {
@@ -57,13 +70,25 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
           getPreloadStatus(deviceId),
           getCurrentAssignment(deviceId),
         ]);
-        if (!active) return;
+        if (!active || !isCurrent(activityKey) || selectedKey.current !== selectionKey) return;
         setPreload(status);
-        setAssignment(current);
+        setAssignment(current && matchesActive({ deviceId, childId, assignmentId, assignmentVersion, profile }, current) ? current : null);
+        if (current?.state === 'RUNNING' && childId && !status.errorCode &&
+            (status.state === 'READY' || status.state === 'RUNNING') &&
+            matchesActive({ deviceId, childId, assignmentId, assignmentVersion, profile }, current) &&
+            status.assignmentId === current.assignmentId && status.profile === current.profile &&
+            current.profile?.trim() && current.manifestChecksum?.trim() && (manifestChecksum == null || manifestChecksum === current.manifestChecksum)) {
+          navigation.navigate(ROUTES.RunningScreen, {
+            deviceId, childId: current.childId, assignmentId: current.assignmentId,
+            assignmentVersion: current.assignmentVersion, sessionId: current.sessionId ?? undefined,
+            lessonTitle: current.lessonTitle,
+          });
+          return;
+        }
         // Server is the timeout/READY authority — keep polling only while the
         // assignment is still settling and no terminal error has surfaced.
         const settling =
-          status.state !== 'READY' &&
+          !readyAssignment({ deviceId, childId, assignmentId, assignmentVersion, manifestChecksum, profile }, current, status) &&
           status.state !== 'FAILED' &&
           status.state !== 'COMPLETED' &&
           !status.errorCode;
@@ -76,7 +101,7 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
           timer = setTimeout(poll, POLL_INTERVAL_MS);
         }
       } catch {
-        if (!active) return;
+        if (!active || !isCurrent(activityKey) || selectedKey.current !== selectionKey) return;
         settlingPolls += 1;
         if (settlingPolls >= MAX_PRELOAD_SETTLING_POLLS) {
           setPreloadStalled(true);
@@ -91,7 +116,7 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [deviceId, retryNonce]);
+  }, [deviceId, childId, assignmentId, assignmentVersion, manifestChecksum, profile, selectionKey, retryNonce, screenActive, activityKey, isCurrent, navigation]);
 
   const retryPreloadCheck = React.useCallback(() => {
     setPreload(null);
@@ -100,22 +125,20 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
     setRetryNonce((value) => value + 1);
   }, []);
 
-  const manifestChecksum = assignment?.manifestChecksum ?? route.params?.manifestChecksum;
-  const hasManifestChecksum = typeof manifestChecksum === 'string' && manifestChecksum.trim().length > 0;
-  const assignmentId = assignment?.assignmentId ?? route.params?.assignmentId;
-  const sessionId = assignment?.sessionId ?? undefined;
-  const preloadMatchesAssignment = Boolean(preload && assignmentId && preload.assignmentId === assignmentId);
-  const ready = !missingDeviceId && preload && !preloadStalled
-    ? isPreloadReady(preload) && hasManifestChecksum && preloadMatchesAssignment
-    : false;
-  const lessonTitle = assignment?.lessonTitle?.trim() ? assignment.lessonTitle : "Today's lesson";
-  const presentation = preload ? presentAssignmentState(preload.state) : null;
-  const errorCopy = preload?.errorCode ? formatLessonCopy(getErrorMessage(preload.errorCode)) : null;
+  const selectedAssignment = resultKey === selectionKey ? assignment : null;
+  const selectedPreload = resultKey === selectionKey ? preload : null;
+  const matched = readyAssignment(selection, selectedAssignment, selectedPreload);
+  const ready = Boolean(screenActive && matched && selectedPreload && isPreloadReady(selectedPreload) && !preloadStalled);
+  const lessonTitle = selectedAssignment?.lessonTitle?.trim() ? selectedAssignment.lessonTitle : "Today's lesson";
+  const preloadMatchesAssignment = Boolean(selectedPreload && selectedAssignment && selectedPreload.assignmentId === selectedAssignment.assignmentId);
+  const presentation = preloadMatchesAssignment && selectedPreload && (selectedPreload.state !== 'READY' || ready)
+    ? presentAssignmentState(selectedPreload.state) : null;
+  const errorCopy = preloadMatchesAssignment && selectedPreload?.errorCode ? formatLessonCopy(getErrorMessage(selectedPreload.errorCode)) : null;
   const statusCopy = missingDeviceId
     ? "We can't prepare Robot because no device was selected."
     : preloadStalled
     ? 'Robot is taking longer than expected.'
-    : hasManifestChecksum && preloadMatchesAssignment && presentation
+    : presentation && selectedAssignment?.manifestChecksum
       ? formatLessonCopy(presentation.copy, { lesson: lessonTitle })
       : 'Getting things ready…';
 
@@ -182,12 +205,15 @@ export default function RobotReadyScreen({ navigation, route }: Props) {
                 retryPreloadCheck();
                 return;
               }
+              const verified = readyAssignment(selection, selectedAssignment, selectedPreload);
+              if (!ready || !verified || !isCurrent(activityKey) || selectedKey.current !== selectionKey) return;
               navigation.navigate(ROUTES.RunningScreen, {
-                childId,
+                childId: verified.childId,
                 deviceId,
-                assignmentId,
-                sessionId,
-                lessonTitle,
+                assignmentId: verified.assignmentId,
+                assignmentVersion: verified.assignmentVersion,
+                sessionId: verified.sessionId ?? undefined,
+                lessonTitle: verified.lessonTitle,
               });
             }}
           >

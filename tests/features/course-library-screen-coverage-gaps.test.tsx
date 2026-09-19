@@ -24,8 +24,14 @@ jest.mock('@/services/api/course-library.api', () => {
     ...actual,
     getPreloadStatus: jest.fn(),
     getCurrentAssignment: jest.fn(),
+    getAssignmentReadback: jest.fn(() => Promise.resolve({ kind: 'none' })),
   };
 });
+
+jest.mock('@/services/ws/realtime', () => ({ openRealtime: jest.fn(() => Promise.resolve({ close: jest.fn(), send: jest.fn(), url: 'inert' })) }));
+jest.mock('@/features/fallback/recoveryCheckpointStore', () => ({
+  writeRecoveryCheckpoint: jest.fn(() => Promise.resolve()), clearRecoveryCheckpoint: jest.fn(() => Promise.resolve()),
+}));
 
 const mockedGetPreloadStatus = getPreloadStatus as jest.MockedFunction<typeof getPreloadStatus>;
 const mockedGetCurrentAssignment = getCurrentAssignment as jest.MockedFunction<typeof getCurrentAssignment>;
@@ -157,13 +163,15 @@ describe('CourseAddedScreen — assignment handoff integrity', () => {
     );
 
     await act(async () => {
-      fireEvent.press(screen.getByText("Open today's lesson"));
+      fireEvent.press(screen.getByText("Try again"));
     });
 
     expect(navigation.navigate).not.toHaveBeenCalledWith(
       ROUTES.RobotReadyScreen,
       expect.objectContaining({ assignmentId: 'asg-1' }),
     );
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByRole('button', { name: 'Pick a different lesson' }));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.SendToRobotScreen, { courseId: 'c_food' });
   });
 });
@@ -188,11 +196,12 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
 
   it('reconnect → READY preload: navigates to CourseAddedScreen with the route courseId', async () => {
     mockedGetPreloadStatus.mockResolvedValue(preloadStatus('READY'));
+    mockedGetCurrentAssignment.mockResolvedValue(current('READY'));
     const navigation = navigationFor();
     render(
       <NeedsSyncScreen
         navigation={navigation as never}
-        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_zoo', deviceId: 'dev-1' } } as never}
+        route={{ key: 'ns', name: ROUTES.NeedsSyncScreen, params: { courseId: 'c_zoo', deviceId: 'dev-1', childId: 'ch-1', assignmentId: 'asg-1', assignmentVersion: 1, profile: 'espTft', manifestChecksum: 'sha256:w01-d01' } } as never}
       />,
     );
 
@@ -201,7 +210,7 @@ describe('NeedsSyncScreen — reconnect handler + render', () => {
     });
 
     await waitFor(() => expect(mockedGetPreloadStatus).toHaveBeenCalledWith('dev-1'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_zoo' });
+    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_zoo', deviceId: 'dev-1', childId: 'ch-1', assignmentId: 'asg-1', assignmentVersion: 1, profile: 'espTft', manifestChecksum: 'sha256:w01-d01' });
     // No failure copy on the success path.
     expect(screen.queryByText(/hasn't finished downloading/i)).toBeNull();
   });
@@ -302,7 +311,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
           {
             key: 'rr',
             name: ROUTES.RobotReadyScreen,
-            params: { deviceId: 'dev-9', assignmentId: 'asg-1' },
+            params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' },
           } as never
         }
       />,
@@ -313,6 +322,8 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
       deviceId: 'dev-9',
       assignmentId: 'asg-1',
+      assignmentVersion: 1,
+      childId: 'ch-1',
       sessionId: 'sess-1',
       lessonTitle: 'This Is a Barn',
     });
@@ -325,7 +336,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     render(
       <RobotReadyScreen
         navigation={navigation as never}
-        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9' } } as never}
+        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -334,6 +345,8 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
       deviceId: 'dev-9',
       assignmentId: 'asg-1',
+      assignmentVersion: 1,
+      childId: 'ch-1',
       sessionId: undefined,
       lessonTitle: 'This Is a Barn',
     });
@@ -347,7 +360,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     render(
       <RobotReadyScreen
         navigation={navigation as never}
-        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9' } } as never}
+        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -386,7 +399,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
       <RobotReadyScreen
         navigation={navigation as never}
         route={
-          { key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9' } } as never
+          { key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never
         }
       />,
     );
@@ -403,7 +416,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     render(
       <RobotReadyScreen
         navigation={navigation as never}
-        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9' } } as never}
+        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -437,7 +450,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     const { unmount } = render(
       <RobotReadyScreen
         navigation={navigation as never}
-        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9' } } as never}
+        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -478,7 +491,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
     const { unmount } = render(
       <RobotReadyScreen
         navigation={navigation as never}
-        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9' } } as never}
+        route={{ key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -525,7 +538,7 @@ describe('RobotReadyScreen — poll-error retry + ready CTA', () => {
         <RobotReadyScreen
           navigation={navigation as never}
           route={
-            { key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9' } } as never
+            { key: 'rr', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-9', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never
           }
         />,
       );
@@ -572,7 +585,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
       render(
         <RunningScreen
           navigation={navigation as never}
-          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
         />,
       );
 
@@ -609,7 +622,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
       render(
         <RunningScreen
           navigation={navigation as never}
-          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
         />,
       );
 
@@ -641,7 +654,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -650,6 +663,8 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CompanionScreen, {
       deviceId: 'dev-7',
       assignmentId: 'asg-1',
+      assignmentVersion: 1,
+      childId: 'ch-1',
       sessionId: 'sess-1',
       lessonTitle: 'This Is a Barn',
     });
@@ -661,7 +676,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -670,6 +685,8 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CompanionScreen, {
       deviceId: 'dev-7',
       assignmentId: 'asg-1',
+      assignmentVersion: 1,
+      childId: 'ch-1',
       sessionId: undefined,
       lessonTitle: 'This Is a Barn',
     });
@@ -681,7 +698,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -702,7 +719,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     const { unmount } = render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -732,7 +749,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     const { unmount } = render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -793,7 +810,7 @@ describe('RunningScreen — read-after-write race + companion CTA', () => {
     render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-7', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1' } } as never}
       />,
     );
 
@@ -824,7 +841,7 @@ describe('CompanionScreen — read-after-write race', () => {
           route={{
             key: 'comp',
             name: ROUTES.CompanionScreen,
-            params: { deviceId: 'dev-1', lessonTitle: 'Counting Sheep' },
+            params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1', lessonTitle: 'Counting Sheep' },
           } as never}
         />,
       );
@@ -895,7 +912,7 @@ describe('CompanionScreen — read-after-write race', () => {
           route={{
             key: 'comp',
             name: ROUTES.CompanionScreen,
-            params: { deviceId: 'dev-1', lessonTitle: 'Counting Sheep' },
+            params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1', lessonTitle: 'Counting Sheep' },
           } as never}
         />,
       );

@@ -6,6 +6,7 @@ import {
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
+  getPreloadStatus,
   type CurrentAssignment,
 } from '@/services/api/course-library.api';
 
@@ -16,6 +17,7 @@ jest.mock('@/services/api/course-library.api', () => {
     getCourses: jest.fn(),
     getCourseLessons: jest.fn(),
     getCurrentAssignment: jest.fn(),
+    getPreloadStatus: jest.fn(),
   };
 });
 
@@ -68,13 +70,14 @@ beforeEach(() => {
   mockedGetCourses.mockResolvedValue([{ courseId: COURSE_KEY, title: 'Barn Farm Place Words', lessonCount: 1 }]);
   mockedGetCourseLessons.mockResolvedValue([]);
   mockedGetCurrentAssignment.mockResolvedValue(null);
+  jest.mocked(getPreloadStatus).mockResolvedValue({ assignmentId: 'a-1', state: 'ASSIGNED', profile: 'espTft', assets: [], criticalTotal: 1, criticalReady: 0 });
 });
 
 describe('CourseAddedScreen — "On Robot now" reflects the real seat', () => {
   it('renders the lesson actually seated on the device, not a hardcoded one', async () => {
     mockedGetCurrentAssignment.mockResolvedValue(seatedAssignment('This Is a Barn'));
 
-    renderAdded({ courseId: COURSE_KEY, deviceId: DEVICE_ID, assignmentId: 'a-1' });
+    renderAdded({ courseId: COURSE_KEY, deviceId: DEVICE_ID, assignmentId: 'a-1', childId: 'c-1', assignmentVersion: 1, profile: 'espTft', manifestChecksum: 'a'.repeat(64) });
 
     await waitFor(() => expect(screen.getByText('This Is a Barn')).toBeTruthy());
     // The literal that used to render under "On Robot now" for every course.
@@ -94,14 +97,14 @@ describe('CourseAddedScreen — "On Robot now" reflects the real seat', () => {
   it('does not claim Robot alternates between two hardcoded courses', async () => {
     renderAdded({ courseId: COURSE_KEY, deviceId: DEVICE_ID });
 
-    await waitFor(() => expect(screen.getByText('Barn Farm Place Words is on Robot')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Barn Farm Place Words')).toBeTruthy());
     expect(screen.queryByText('Robot will alternate between Hello Friends and Yummy Words')).toBeNull();
   });
 
   it('does not borrow the static catalog course for a backend course_key', async () => {
     renderAdded({ courseId: COURSE_KEY, deviceId: DEVICE_ID });
 
-    await waitFor(() => expect(screen.getByText('Barn Farm Place Words is on Robot')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Barn Farm Place Words')).toBeTruthy());
     expect(screen.queryByText('Yummy Words is on Robot')).toBeNull();
   });
 });

@@ -22,3 +22,25 @@ Production navigation for `tbot-mobile` lives under `src/navigation`.
 Route names come from `src/navigation/routes.ts`.
 Feature screens register in exactly one owning `navigation.ts`.
 Deep links, route ownership, and generated artifacts derive from the same feature route registry.
+
+
+## Selected lesson navigation
+
+RunningScreen and CompanionScreen accept optional `assignmentVersion` alongside
+existing assignment, device, child and session parameters. RobotReadyScreen passes
+its verified current version and child; Running forwards that identity to
+Companion, and LessonResume forwards its verified version. Legacy routes learn a
+missing version only from a matching active assignment ID. Ready additionally
+requires the selected child. Terminal readback cannot supply missing selected
+identity. See [assignment QA scope](../qa/2026-09-14-t17-assignment-reconciliation.md).
+
+## Mounted course screen refresh
+
+Ready, CourseDetail and SendToRobot share `useScreenActivity`: focus, AppState,
+account/household and route context define a monotonically fenced read lifetime.
+Inactive screens cannot use cached READY or catalog eligibility; foreground/focus
+refreshes existing public APIs. A matching RUNNING read opens its existing monitor
+without activating it. Explicit lesson choices include version and profile; a
+missing exact choice requires reselection. Pending writes keep their submitted
+identity and cannot navigate after their context changes. See
+[lifecycle QA scope](../qa/2026-09-14-t17-lifecycle-refresh.md).

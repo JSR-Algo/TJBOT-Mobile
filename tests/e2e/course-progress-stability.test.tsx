@@ -48,6 +48,7 @@ jest.mock('@react-navigation/native', () => {
   const ReactInner = require('react') as typeof import('react');
   return {
     ...actual,
+    useIsFocused: () => true,
     useFocusEffect: (cb: () => undefined | (() => void)) => {
       ReactInner.useEffect(() => {
         const cleanup = cb();
@@ -400,13 +401,9 @@ describe('course, course-library, and progress stable screen states', () => {
         manifestChecksum: null, profile: 'espTft', state: 'ASSIGNED',
       },
     });
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, {
-      courseId: 'course-open',
-      deviceId: 'device-1',
-      assignmentId: 'assignment-1',
-      assignmentVersion: 1,
-      manifestChecksum: null,
-    }));
+    await waitFor(() => expect(screen.getByText('Could not verify the added lesson. Check Robot or pick a lesson again.')).toBeTruthy());
+    expect(navigation.replace).not.toHaveBeenCalled();
+    expect(mockEnrollCourse).toHaveBeenCalledTimes(1);
   });
 
   it('renders the latest lesson with real step counts', async () => {

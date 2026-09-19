@@ -19,6 +19,7 @@ export interface ParentProgressRealtimeCallbacks {
 export interface ParentProgressRealtimeOptions extends Omit<CreateReconnectingSocketOptions, 'onClose' | 'onMessage' | 'onOpen' | 'onReconnect' | 'onReconnectExhausted' | 'shouldReconnect'> { readonly baseUrl?: string }
 
 let activeChildConnection: { childId: string; connection: RealtimeConnection } | null = null;
+let selectedChild: { childId: string } | null = null;
 
 export async function openParentProgressRealtime(
   childId: string,
@@ -27,6 +28,11 @@ export async function openParentProgressRealtime(
   options: ParentProgressRealtimeOptions = {},
 ): Promise<RealtimeConnection> {
   const normalizedChildId = childId.trim();
+  const url = parentProgressUrl(options.baseUrl ?? Config.API_BASE_URL);
+  // Record selection before credentials resolve; A -> B -> A must invalidate the first A.
+  if (selectedChild?.childId !== normalizedChildId) selectedChild = { childId: normalizedChildId };
+  const selection = selectedChild;
+  const isSelected = () => selectedChild === selection;
   const initialRevision = normalizeRevision(lastProjectionRevision);
   let currentRevision = initialRevision;
   let connection: RealtimeConnection | null = null;
@@ -44,21 +50,26 @@ export async function openParentProgressRealtime(
     });
   };
   if (activeChildConnection && activeChildConnection.childId !== normalizedChildId) activeChildConnection.connection.close(1000, 'child switched');
-  connection = await createReconnectingSocket(parentProgressUrl(options.baseUrl ?? Config.API_BASE_URL), {
+  connection = await createReconnectingSocket(url, {
     ...options,
     continueAfterReconnectExhausted: true,
     onOpen: () => {
+      if (!isSelected()) return;
       subscribe();
       callbacks.onHealthy?.();
     },
+    // Selecting another child closes this connection (below or on resolution), and
+    // a closed reconnecting socket never reports reconnects or exhaustion.
     onReconnect: () => { callbacks.onReconnect?.(); callbacks.onInvalidate(); },
-    onReconnectExhausted: callbacks.onReconnectExhausted,
+    onReconnectExhausted: () => { callbacks.onReconnectExhausted(); },
     onClose: (event) => {
+      if (!isSelected()) return;
       if (event.code === 4401) callbacks.onAuthExpired();
       if (event.code === 4403) callbacks.onAccessRevoked();
     },
-    shouldReconnect: (event) => event.code !== 4403,
+    shouldReconnect: (event) => isSelected() && event.code !== 4403,
     onMessage: (event) => {
+      if (!isSelected()) return;
       let raw: unknown;
       try { raw = JSON.parse(event.data) as unknown; } catch {
         logParentProgressDiagnostic({ source: 'ws', decision: 'drop_bad_json', childId: normalizedChildId });
@@ -133,8 +144,11 @@ export async function openParentProgressRealtime(
     },
     reconnect: options.reconnect ?? { maxAttempts: 3 },
   });
-  if (subscribePending) subscribe();
-  activeChildConnection = { childId: normalizedChildId, connection };
+  if (!isSelected()) connection.close(1000, 'child switched');
+  else {
+    if (subscribePending) subscribe();
+    activeChildConnection = { childId: normalizedChildId, connection };
+  }
   const originalClose = connection.close.bind(connection);
   return { ...connection, close(code?: number, reason?: string) { if (activeChildConnection?.connection === connection) activeChildConnection = null; originalClose(code, reason); } };
 }

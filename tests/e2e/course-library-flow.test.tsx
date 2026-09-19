@@ -191,6 +191,7 @@ describe('course-library flow guards', () => {
     // "enrollment does not go through unlock" is now structural, not asserted.
     expect(navigation.replace).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, {
       courseId: 'c_food',
+      childId: 'ch-1', profile: 'espTft',
       deviceId: 'dev-1',
       assignmentId: 'asg-1',
       assignmentVersion: 1,
@@ -217,6 +218,8 @@ describe('course-library flow guards', () => {
   });
 
   it('opens the already-created lesson assignment from the added screen without re-sending', async () => {
+    mockedGetCurrentAssignment.mockResolvedValue({ assignmentId: 'asg-1', assignmentVersion: 1, childId: 'ch-1', profile: 'espTft', manifestChecksum: 'sha256:lesson-1', lessonId: 'lesson-1', lessonTitle: 'Lesson', lessonVersion: 1, state: 'READY', sessionId: null });
+    mockedGetPreloadStatus.mockResolvedValue({ assignmentId: 'asg-1', state: 'READY', profile: 'espTft', assets: [], criticalTotal: 1, criticalReady: 1 });
     const navigation = navigationFor();
     render(
       <CourseAddedScreen
@@ -225,7 +228,7 @@ describe('course-library flow guards', () => {
           key: 'added',
           name: ROUTES.CourseAddedScreen,
           params: {
-            courseId: 'c_food',
+            courseId: 'c_food', childId: 'ch-1', profile: 'espTft',
             deviceId: 'dev-1',
             assignmentId: 'asg-1',
             assignmentVersion: 1,
@@ -235,9 +238,10 @@ describe('course-library flow guards', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText("Open today's lesson"));
+    fireEvent.press(await screen.findByText("Open today's lesson"));
 
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RobotReadyScreen, {
+      courseId: 'c_food', childId: 'ch-1', profile: 'espTft',
       deviceId: 'dev-1',
       assignmentId: 'asg-1',
       assignmentVersion: 1,

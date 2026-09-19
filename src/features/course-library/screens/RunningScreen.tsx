@@ -9,211 +9,18 @@ import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import { ROUTES } from '@/navigation/routes';
-import {
-  getCurrentAssignment,
-  presentAssignmentState,
-  type CurrentAssignment,
-} from '@/services/api/course-library.api';
-import { openRealtime, type RealtimeConnection } from '@/services/ws/realtime';
-import { captureError } from '@/services/observability/sentry';
+import { presentAssignmentState } from '@/services/api/course-library.api';
 import { formatLessonCopy } from '@/utils/errors';
-import {
-  clearRecoveryCheckpoint,
-  writeRecoveryCheckpoint,
-} from '@/features/fallback/recoveryCheckpointStore';
-import {
-  checkpointFromCurrentAssignment,
-  lessonObserverTerminalOutcome,
-  lessonPhaseFromObserverFrame,
-  type LessonPhase,
-} from '@/features/fallback/recoveryTypes';
+import { useAssignmentMonitor } from '../useAssignmentMonitor';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RunningScreen'>;
-
-const POLL_INTERVAL_MS = 2500;
-const MAX_CURRENT_ASSIGNMENT_SETTLING_POLLS = 18;
 
 export default function RunningScreen({ navigation, route }: Props) {
   const deviceId = route.params?.deviceId;
   const missingDeviceId = !deviceId;
-  const [assignment, setAssignment] = React.useState<CurrentAssignment | null>(null);
-  // Completion projection. The current-assignment endpoint only returns rows in
-  // an ACTIVE state (ASSIGNED/PRELOADING/READY/RUNNING/PAUSED); the instant a
-  // lesson finishes the backend drops it from that set and the read returns
-  // null. So "we previously saw a live assignment, now we see null" is the
-  // real terminal signal — we must NOT wait for a COMPLETED object the endpoint
-  // can never emit (the progress_events stream is the authoritative completion
-  // source; this is its live projection, plan M3).
-  const [finished, setFinished] = React.useState(false);
-  const [observerTerminalUnsuccessful, setObserverTerminalUnsuccessful] = React.useState(false);
-  const [assignmentStale, setAssignmentStale] = React.useState(false);
-  const [retryNonce, setRetryNonce] = React.useState(0);
-  const sawLiveRef = React.useRef(false);
-  const assignmentRef = React.useRef<CurrentAssignment | null>(null);
-  const observerPhaseRef = React.useRef<LessonPhase | null>(null);
-  const terminalRef = React.useRef(false);
-  const checkpointQueueRef = React.useRef<Promise<void>>(Promise.resolve());
-  const checkpointStateRef = React.useRef<string | null>(null);
-  const routeAssignmentId = route.params?.assignmentId?.trim() || null;
-  const routeSessionId = route.params?.sessionId?.trim() || null;
-  const assignmentSessionId = assignment?.sessionId?.trim() || null;
-  const observerSessionId = assignmentSessionId ?? (
-    assignment && routeAssignmentId === assignment.assignmentId ? routeSessionId : null
-  );
-  const sessionId = observerSessionId;
-
-  const queueCheckpointOperation = React.useCallback((stateKey: string, operation: () => Promise<void>) => {
-    if (checkpointStateRef.current === stateKey) return;
-    checkpointStateRef.current = stateKey;
-    const settledTail = checkpointQueueRef.current.catch((error) => {
-      captureError(error);
-    });
-    checkpointQueueRef.current = settledTail.then(async () => {
-      try {
-        await operation();
-      } catch (error) {
-        if (checkpointStateRef.current === stateKey) checkpointStateRef.current = null;
-        captureError(error);
-      }
-    });
-  }, []);
-
-  const persistLiveCheckpoint = React.useCallback((current: CurrentAssignment, phase?: LessonPhase | null) => {
-    const checkpointAssignment = current.sessionId?.trim() || !routeSessionId || routeAssignmentId !== current.assignmentId
-      ? current
-      : { ...current, sessionId: routeSessionId };
-    const checkpoint = checkpointFromCurrentAssignment(checkpointAssignment, deviceId, phase);
-    if (!checkpoint) return;
-    queueCheckpointOperation(`write:${JSON.stringify(checkpoint)}`, () => writeRecoveryCheckpoint(checkpoint));
-  }, [deviceId, queueCheckpointOperation, routeAssignmentId, routeSessionId]);
-
-  const clearCheckpoint = React.useCallback(() => {
-    queueCheckpointOperation('clear', clearRecoveryCheckpoint);
-  }, [queueCheckpointOperation]);
-
-  React.useEffect(() => {
-    if (!deviceId) return;
-    let active = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let settlingPolls = 0;
-    setAssignmentStale(false);
-
-    const poll = async () => {
-      if (!active || terminalRef.current) return;
-      try {
-        const current = await getCurrentAssignment(deviceId);
-        if (!active || terminalRef.current) return;
-        const live = current && current.state !== 'COMPLETED' && current.state !== 'FAILED' && current.state !== 'CANCELLED';
-        if (live) {
-          sawLiveRef.current = true;
-          settlingPolls = 0;
-          if (assignmentRef.current?.assignmentId !== current.assignmentId) observerPhaseRef.current = null;
-          assignmentRef.current = current.sessionId?.trim() || !routeSessionId || routeAssignmentId !== current.assignmentId
-            ? current
-            : { ...current, sessionId: routeSessionId };
-          setAssignment(current);
-          persistLiveCheckpoint(current, observerPhaseRef.current);
-          timer = setTimeout(poll, POLL_INTERVAL_MS);
-          return;
-        }
-        // Terminal: explicit failure/cancel stops polling but must not render
-        // completion. Only COMPLETED or live->null means success.
-        if (current) setAssignment(current);
-        const successfulTerminal = current?.state === 'COMPLETED' || (current === null && sawLiveRef.current);
-        if (successfulTerminal) {
-          terminalRef.current = true;
-          assignmentRef.current = null;
-          clearCheckpoint();
-          setObserverTerminalUnsuccessful(false);
-          setFinished(true);
-          return;
-        }
-        if (current?.state === 'FAILED' || current?.state === 'CANCELLED') {
-          terminalRef.current = true;
-          assignmentRef.current = null;
-          clearCheckpoint();
-          return;
-        }
-        // Non-terminal: most importantly current===null && !sawLiveRef.current,
-        // the read-after-write race right after createAssignment where the
-        // assignment isn't visible yet. Keep polling — stopping here would
-        // freeze the UI on 'Lesson playing' forever.
-        settlingPolls += 1;
-        if (settlingPolls >= MAX_CURRENT_ASSIGNMENT_SETTLING_POLLS) {
-          setAssignmentStale(true);
-          return;
-        }
-        timer = setTimeout(poll, POLL_INTERVAL_MS);
-      } catch {
-        if (!active) return;
-        settlingPolls += 1;
-        if (settlingPolls >= MAX_CURRENT_ASSIGNMENT_SETTLING_POLLS) {
-          setAssignmentStale(true);
-          return;
-        }
-        timer = setTimeout(poll, POLL_INTERVAL_MS);
-      }
-    };
-
-    poll();
-    return () => {
-      active = false;
-      if (timer) clearTimeout(timer);
-    };
-  }, [clearCheckpoint, deviceId, persistLiveCheckpoint, retryNonce, routeAssignmentId, routeSessionId]);
-
-  React.useEffect(() => {
-    if (!observerSessionId) return;
-    let active = true;
-    let connection: RealtimeConnection | null = null;
-
-    void openRealtime(observerSessionId, {
-      onFrame: (frame) => {
-        if (!active) return;
-        const terminalOutcome = lessonObserverTerminalOutcome(frame);
-        if (terminalOutcome) {
-          terminalRef.current = true;
-          assignmentRef.current = null;
-          clearCheckpoint();
-          setFinished(terminalOutcome === 'completed');
-          setObserverTerminalUnsuccessful(terminalOutcome === 'unsuccessful');
-          return;
-        }
-        const phase = lessonPhaseFromObserverFrame(frame);
-        if (!phase || !assignmentRef.current) return;
-        observerPhaseRef.current = phase;
-        persistLiveCheckpoint(assignmentRef.current, phase);
-      },
-    }).then(
-      (nextConnection) => {
-        if (!active) {
-          nextConnection.close(1000, 'screen unmounted');
-          return;
-        }
-        connection = nextConnection;
-      },
-      (error) => {
-        captureError(toError(error));
-      },
-    );
-
-    return () => {
-      active = false;
-      connection?.close(1000, 'screen unmounted');
-    };
-  }, [clearCheckpoint, observerSessionId, persistLiveCheckpoint]);
-
-  const retryCurrentAssignment = React.useCallback(() => {
-    setAssignment(null);
-    setFinished(false);
-    setObserverTerminalUnsuccessful(false);
-    setAssignmentStale(false);
-    sawLiveRef.current = false;
-    assignmentRef.current = null;
-    observerPhaseRef.current = null;
-    terminalRef.current = false;
-    setRetryNonce((value) => value + 1);
-  }, []);
+  const { assignment, finished, unsuccessful: observerTerminalUnsuccessful,
+    stale: assignmentStale, retry: retryCurrentAssignment } = useAssignmentMonitor(route.params ?? {});
+  const sessionId = assignment?.sessionId;
 
   const lessonTitle =
     assignment?.lessonTitle?.trim()
@@ -225,8 +32,6 @@ export default function RunningScreen({ navigation, route }: Props) {
   const terminalUnsuccessful = observerTerminalUnsuccessful || assignment?.state === 'FAILED' || assignment?.state === 'CANCELLED';
   const statusUnavailable = assignmentStale || missingDeviceId || terminalUnsuccessful;
   const completed = !statusUnavailable && (finished || assignment?.state === 'COMPLETED');
-  // When completion was inferred from the live terminal→null transition the
-  // polled object is not COMPLETED, so resolve the completion copy explicitly.
   const presentation = completed
     ? presentAssignmentState('COMPLETED')
     : assignment
@@ -273,7 +78,7 @@ export default function RunningScreen({ navigation, route }: Props) {
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30} gap={10}>
         {completed && assignmentId && deviceId && assignment?.lessonId ? (
           <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.LessonSummaryScreen, {
-            childId: route.params?.childId,
+            childId: assignment?.childId ?? route.params?.childId,
             assignmentId,
             deviceId,
             lessonId: assignment.lessonId,
@@ -283,7 +88,7 @@ export default function RunningScreen({ navigation, route }: Props) {
           </DeviceBigBtn>
         ) : null}
         {!completed && !statusUnavailable && (
-          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { childId: route.params?.childId, deviceId, assignmentId, sessionId: sessionId ?? undefined, lessonTitle })}>
+          <DeviceBigBtn onClick={() => navigation.navigate(ROUTES.CompanionScreen, { childId: assignment?.childId ?? route.params?.childId, deviceId, assignmentId, assignmentVersion: assignment?.assignmentVersion ?? route.params?.assignmentVersion, sessionId: sessionId ?? undefined, lessonTitle })}>
             See what's happening
           </DeviceBigBtn>
         )}
@@ -292,10 +97,6 @@ export default function RunningScreen({ navigation, route }: Props) {
       </Box>
     </DeviceShell>
   );
-}
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error));
 }
 
 const styles = StyleSheet.create({

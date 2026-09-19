@@ -106,6 +106,7 @@ export function useChildProgressDashboardQuery(childId: string | undefined) {
   return {
     ...statusQuery,
     data,
+    hasCompleteProjection: statusQuery.data !== undefined && historyQuery.data !== undefined,
     isLoading: statusQuery.isLoading || (!historyQuery.data && historyQuery.isLoading),
     isError: statusQuery.isError && !statusQuery.data,
     isFetching: statusQuery.isFetching || historyQuery.isFetching,

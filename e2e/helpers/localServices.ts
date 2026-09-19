@@ -222,7 +222,7 @@ async function startMockAi(): Promise<void> {
   if (mockAi) return;
   const root = new URL(aiServiceRoot());
   const port = Number(root.port || '80');
-  const host = root.hostname === '127.0.0.1' || root.hostname === 'localhost' ? '0.0.0.0' : root.hostname;
+  const host = process.env.E2E_MOCK_BIND_HOST ?? (root.hostname === '127.0.0.1' || root.hostname === 'localhost' ? '0.0.0.0' : root.hostname);
 
   const server = http.createServer((req, res) => {
     const path = (req.url ?? '').split('?')[0] ?? '';
@@ -354,7 +354,7 @@ async function startMockBackend(): Promise<void> {
   if (mockBackend) return;
   const root = new URL(apiRoot());
   const port = Number(root.port || '80');
-  const host = root.hostname === '127.0.0.1' || root.hostname === 'localhost' ? '0.0.0.0' : root.hostname;
+  const host = process.env.E2E_MOCK_BIND_HOST ?? (root.hostname === '127.0.0.1' || root.hostname === 'localhost' ? '0.0.0.0' : root.hostname);
   const users = new Map<string, { id: string; email: string; name: string; password: string }>();
   const tokens = new Map<string, string>();
   const households = new Map<string, { id: string; name: string; ownerEmail: string }>();

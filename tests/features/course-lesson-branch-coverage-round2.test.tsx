@@ -44,6 +44,7 @@ jest.mock('@react-navigation/native', () => {
   const ReactInner = require('react') as typeof import('react');
   return {
     ...actual,
+    useIsFocused: () => true,
     useFocusEffect: (cb: () => undefined | (() => void)) => {
       ReactInner.useEffect(() => {
         const cleanup = cb();
@@ -112,7 +113,7 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
 
     // The c_food static catalog entry (COURSES[2]) drives the LCD + title, so the
     // default-arm courseId produced a real, non-crashing render.
-    expect(screen.getByText('Yummy Words is on Robot')).toBeTruthy();
+    expect(screen.getByText('Yummy Words')).toBeTruthy();
     // Default-arm courseId reached the send CTA payload (hasAssignment=false copy).
     expect(screen.getByText("Send today's lesson now")).toBeTruthy();
   });
@@ -129,7 +130,7 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
       />,
     );
 
-    await waitFor(() => expect(screen.getByText('Snack Words (Authored) is on Robot')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Snack Words (Authored)')).toBeTruthy());
   });
 
   it('published course with a blank/whitespace title falls back to the static title (line 58 falsy arm)', async () => {
@@ -144,7 +145,7 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
       />,
     );
 
-    await waitFor(() => expect(screen.getByText('Yummy Words is on Robot')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Yummy Words')).toBeTruthy());
   });
 
   it('a courseId absent from the published list resolves to ?? null (line 45) and renders the static catalog title', async () => {
@@ -159,7 +160,7 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
       />,
     );
 
-    await waitFor(() => expect(screen.getByText('Hello Friends is on Robot')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Hello Friends')).toBeTruthy());
   });
 
   it('a courseId in NEITHER published nor static catalog borrows NO other course (line 55 ?? null arm)', async () => {
@@ -196,7 +197,7 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
       />,
     );
 
-    await waitFor(() => expect(screen.getByText('Brand New Authored is on Robot')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Brand New Authored')).toBeTruthy());
   });
 
   it('unmount before getCourses resolves: the `if (active)` guard drops the setState (lines 45/48)', async () => {
@@ -276,7 +277,7 @@ describe('CourseAddedScreen — default courseId + published overlay branch arms
       await Promise.resolve();
     });
     // catch → setPublished(null) → static c_food title ("Yummy Words").
-    expect(screen.getByText('Yummy Words is on Robot')).toBeTruthy();
+    expect(screen.getByText('Yummy Words')).toBeTruthy();
   });
 });
 

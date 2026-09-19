@@ -7,6 +7,7 @@ import RunningScreen from '@/features/course-library/screens/RunningScreen';
 import CompanionScreen from '@/features/course-library/screens/CompanionScreen';
 import {
   getCurrentAssignment,
+  getAssignmentReadback,
   getPreloadStatus,
   type CurrentAssignment,
   type PreloadStatus,
@@ -23,7 +24,7 @@ import { lessonPhaseFromObserverFrame } from '@/features/fallback/recoveryTypes'
 // real, mock ONLY the two network reads.
 jest.mock('@/services/api/course-library.api', () => {
   const actual = jest.requireActual('@/services/api/course-library.api');
-  return { ...actual, getPreloadStatus: jest.fn(), getCurrentAssignment: jest.fn() };
+  return { ...actual, getPreloadStatus: jest.fn(), getCurrentAssignment: jest.fn(), getAssignmentReadback: jest.fn() };
 });
 
 jest.mock('@/services/ws/realtime', () => ({ openRealtime: jest.fn() }));
@@ -83,7 +84,7 @@ type ProductionLessonScreen = 'RunningScreen' | 'CompanionScreen';
 
 function renderProductionLessonScreen(
   screenName: ProductionLessonScreen,
-  params: { deviceId?: string; assignmentId?: string; sessionId?: string; childId?: string; lessonTitle?: string } = { deviceId: 'dev-1' },
+  params: { deviceId?: string; assignmentId?: string; sessionId?: string; assignmentVersion?: number; childId?: string; lessonTitle?: string } = { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 },
 ) {
   const navigation = navigationFor();
   const rendered = screenName === 'RunningScreen'
@@ -132,6 +133,7 @@ async function advancePolls(count: number): Promise<void> {
 describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
+    jest.mocked(getAssignmentReadback).mockResolvedValue({ kind: 'none' });
     realtimeAttaches.length = 0;
     mockedOpenRealtime.mockImplementation((sessionId, options = {}) => {
       const close = jest.fn<void, [number?, string?]>();
@@ -212,9 +214,8 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
         sessionId: 'stale-session',
       });
 
-      const { sessionId: omittedSessionId, ...checkpointWithoutSession } = liveCheckpoint;
-      void omittedSessionId;
-      await waitFor(() => expect(mockedWriteRecoveryCheckpoint).toHaveBeenCalledWith(checkpointWithoutSession));
+      await act(async () => { await Promise.resolve(); });
+      expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalled();
       expect(mockedWriteRecoveryCheckpoint).not.toHaveBeenCalledWith(expect.objectContaining({
         sessionId: 'stale-session',
       }));
@@ -259,7 +260,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   );
 
   it.each(['RunningScreen', 'CompanionScreen'] as const)(
-    '%s clears the checkpoint when a live assignment disappears',
+    '%s retains the checkpoint when a live assignment disappears without terminal confirmation',
     async (screenName) => {
       jest.useFakeTimers();
       try {
@@ -276,7 +277,8 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
 
         await advancePolls(1);
 
-        expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1);
+        expect(mockedClearRecoveryCheckpoint).not.toHaveBeenCalled();
+        expect(screen.queryByText(/Finished!/)).toBeNull();
       } finally {
         jest.useRealTimers();
       }
@@ -290,7 +292,8 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
         jest.clearAllMocks();
         mockedWriteRecoveryCheckpoint.mockResolvedValue(undefined);
         mockedClearRecoveryCheckpoint.mockResolvedValue(undefined);
-        mockedGetCurrentAssignment.mockResolvedValue(current(state));
+        mockedGetCurrentAssignment.mockResolvedValue(null);
+        jest.mocked(getAssignmentReadback).mockResolvedValue({ kind: 'terminal', terminal: { assignmentId: 'asg-1', assignmentVersion: 1, state } });
 
         const { rendered } = renderProductionLessonScreen(screenName);
         await waitFor(() => expect(mockedClearRecoveryCheckpoint).toHaveBeenCalledTimes(1));
@@ -560,7 +563,8 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     '%s reports checkpoint clear rejection without changing terminal UI',
     async (screenName) => {
       const storageError = new Error('secure storage clear unavailable');
-      mockedGetCurrentAssignment.mockResolvedValue(current('COMPLETED'));
+      mockedGetCurrentAssignment.mockResolvedValue(null);
+      jest.mocked(getAssignmentReadback).mockResolvedValue({ kind: 'terminal', terminal: { assignmentId: 'asg-1', assignmentVersion: 1, state: 'COMPLETED' } });
       mockedClearRecoveryCheckpoint.mockRejectedValue(storageError);
       renderProductionLessonScreen(screenName);
 
@@ -578,7 +582,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     render(
       <RobotReadyScreen
         navigation={navigation as never}
-        route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1' } } as never}
+        route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', childId: 'ch-1', assignmentVersion: 1 } } as never}
       />,
     );
 
@@ -598,7 +602,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     render(
       <RobotReadyScreen
         navigation={navigation as never}
-        route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1' } } as never}
+        route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', childId: 'ch-1', assignmentVersion: 1 } } as never}
       />,
     );
 
@@ -616,7 +620,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       render(
         <RobotReadyScreen
           navigation={navigation as never}
-          route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1' } } as never}
+          route={{ key: 'r', name: ROUTES.RobotReadyScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', childId: 'ch-1', assignmentVersion: 1 } } as never}
         />,
       );
 
@@ -655,15 +659,9 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     expect(screen.queryByText('Preparing…')).toBeNull();
   });
 
-  // §10.4 — Progress surface: "Finished!" terminal state.
-  //
-  // REGRESSION GUARD (MOB-1): the real GET /devices/:id/assignment/current only
-  // returns rows in an ACTIVE state — ACTIVE_ASSIGNMENT_STATES excludes
-  // COMPLETED — so the endpoint returns NULL the instant the lesson finishes; it
-  // can NEVER hand back a COMPLETED object. Drive completion the way prod does:
-  // a live RUNNING poll, then null on the next poll. The screen must read that
-  // live→null transition as completion and render "Finished!".
-  it('RunningScreen renders "Finished!" on the live RUNNING→null transition (real backend contract)', async () => {
+  // Active absence is ambiguous; only matching terminal readback establishes completion.
+  it('RunningScreen renders completion after matching terminal readback', async () => {
+    jest.mocked(getAssignmentReadback).mockResolvedValue({ kind: 'terminal', terminal: { assignmentId: 'asg-1', assignmentVersion: 1, state: 'COMPLETED' } });
     jest.useFakeTimers();
     try {
       mockedGetCurrentAssignment
@@ -673,7 +671,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       render(
         <RunningScreen
           navigation={navigation as never}
-          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+          route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 } } as never}
         />,
       );
 
@@ -683,7 +681,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       });
       expect(screen.queryByText('Finished! 🎉')).toBeNull();
 
-      // Advance to the next poll, which returns null → completion.
+      // The next active read is absent; the matching opt-in terminal confirms completion.
       await act(async () => {
         jest.advanceTimersByTime(2500);
         await Promise.resolve();
@@ -697,6 +695,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       fireEvent.press(screen.getByText('See lesson reward'));
       expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen, {
         assignmentId: 'asg-1',
+        childId: 'ch-1',
         deviceId: 'dev-1',
         lessonId: 'w01-d01-barn-say-it',
         sessionId: undefined,
@@ -730,7 +729,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 } } as never}
       />,
     );
 
@@ -745,6 +744,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     fireEvent.press(screen.getByText('See lesson reward'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen, {
       assignmentId: 'asg-1',
+      childId: 'ch-1',
       deviceId: 'dev-1',
       lessonId: 'w01-d01-barn-say-it',
       sessionId: 'session-current-1',
@@ -802,12 +802,13 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   });
 
   it.each(['FAILED', 'CANCELLED'] as const)('RunningScreen does not render %s as lesson success', async (state) => {
-    mockedGetCurrentAssignment.mockResolvedValue(current(state));
+    mockedGetCurrentAssignment.mockResolvedValue(null);
+        jest.mocked(getAssignmentReadback).mockResolvedValue({ kind: 'terminal', terminal: { assignmentId: 'asg-1', assignmentVersion: 1, state } });
     const navigation = navigationFor();
     render(
       <RunningScreen
         navigation={navigation as never}
-        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1' } } as never}
+        route={{ key: 'run', name: ROUTES.RunningScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 } } as never}
       />,
     );
 
@@ -819,7 +820,8 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     expect(screen.queryByText("See what's happening")).toBeNull();
   });
 
-  it('CompanionScreen switches the face to happy on the live RUNNING→null transition (MOB-1)', async () => {
+  it('CompanionScreen switches the face to happy after matching terminal readback', async () => {
+    jest.mocked(getAssignmentReadback).mockResolvedValue({ kind: 'terminal', terminal: { assignmentId: 'asg-1', assignmentVersion: 1, state: 'COMPLETED' } });
     jest.useFakeTimers();
     try {
       mockedGetCurrentAssignment
@@ -829,7 +831,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
       render(
         <CompanionScreen
           navigation={navigation as never}
-          route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1' } } as never}
+          route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 } } as never}
         />,
       );
 
@@ -878,7 +880,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     render(
       <CompanionScreen
         navigation={navigation as never}
-        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1' } } as never}
+        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 } } as never}
       />,
     );
 
@@ -893,6 +895,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     fireEvent.press(screen.getByText('See lesson reward'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.LessonSummaryScreen, {
       assignmentId: 'asg-1',
+      childId: 'ch-1',
       deviceId: 'dev-1',
       lessonId: 'w01-d01-barn-say-it',
       sessionId: 'session-current-2',
@@ -926,12 +929,13 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
   });
 
   it.each(['FAILED', 'CANCELLED'] as const)('CompanionScreen does not render %s as lesson success', async (state) => {
-    mockedGetCurrentAssignment.mockResolvedValue(current(state));
+    mockedGetCurrentAssignment.mockResolvedValue(null);
+        jest.mocked(getAssignmentReadback).mockResolvedValue({ kind: 'terminal', terminal: { assignmentId: 'asg-1', assignmentVersion: 1, state } });
     const navigation = navigationFor();
     render(
       <CompanionScreen
         navigation={navigation as never}
-        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1' } } as never}
+        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 } } as never}
       />,
     );
 
@@ -948,7 +952,7 @@ describe('US-006 S11 — lesson screens render real data (M2/M3)', () => {
     render(
       <CompanionScreen
         navigation={navigation as never}
-        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1' } } as never}
+        route={{ key: 'comp', name: ROUTES.CompanionScreen, params: { deviceId: 'dev-1', assignmentId: 'asg-1', assignmentVersion: 1 } } as never}
       />,
     );
 

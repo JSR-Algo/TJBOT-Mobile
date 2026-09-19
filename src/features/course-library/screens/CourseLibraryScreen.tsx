@@ -29,7 +29,7 @@ export default function CourseLibraryScreen({ navigation }: Props) {
   // on (unmount, or a newer load()). Bumping the ref invalidates in-flight runs.
   const reqIdRef = React.useRef(0);
 
-  const load = React.useCallback((mode: 'initial' | 'retry' = 'initial') => {
+  const load = React.useCallback((mode: 'initial' | 'retry') => {
     const myId = ++reqIdRef.current;
     if (mode === 'retry') setRefreshing(true);
     else setState({ kind: 'loading' });
@@ -85,7 +85,7 @@ export default function CourseLibraryScreen({ navigation }: Props) {
         {state.kind === 'ready' && state.courses.length === 0 ? (
           <Text style={styles.message}>No library courses yet</Text>
         ) : null}
-        {state.kind === 'ready' && state.courses.map((course, index) => {
+        {state.kind === 'ready' && state.courses.map((course) => {
           const locked = course.locked === true || !course.owned;
           const title = course.title || t('Untitled course');
           const languageLabel = LANGUAGE_LABEL[course.language]
@@ -93,13 +93,10 @@ export default function CourseLibraryScreen({ navigation }: Props) {
             : course.language;
           return (
             <TouchableOpacity
-              key={course.courseId || `course-${index}`}
-              onPress={() => {
-                // Never navigate with a blank id — CourseDetail's `?? fallback`
-                // would silently open an unrelated course.
-                if (!course.courseId) return;
-                navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.courseId });
-              }}
+              // listLibrary drops rows without an id before they reach this
+              // screen, so the id is a stable key and a safe CourseDetail target.
+              key={course.courseId}
+              onPress={() => navigation.navigate(ROUTES.CourseDetailScreen, { courseId: course.courseId })}
               style={styles.courseCard}
               accessibilityRole="button"
               accessibilityLabel={translateTemplate(

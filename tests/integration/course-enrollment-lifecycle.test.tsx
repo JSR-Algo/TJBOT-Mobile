@@ -53,7 +53,7 @@ describe('course enrollment lifecycle integration with mocked HTTP adapter', () 
         return { data: { data: { enrollments: [{ id: 'enr-1', child_id: 'ch-1', course_id: 'c_food', device_id: 'dev-1', status: 'paused' }] } } };
       }
       if (path === '/devices/household/me') {
-        return { data: { data: [{ id: 'dev-1', name: 'Casa Robot', status: 'active', battery_level: 80, assigned_child_profile_id: 'ch-1' }] } };
+        return { data: { data: [{ id: 'dev-1', name: 'Casa Robot', status: 'online', battery_level: 80, assigned_child_profile_id: 'ch-1' }] } };
       }
       throw new Error(`unexpected GET ${path}`);
     });

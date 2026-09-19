@@ -315,7 +315,7 @@ export function isRenderableLessonProfile(value: string | null | undefined): val
   return value === 'espTft';
 }
 
-export function isAssignablePublishedLesson(lesson: Pick<PublishedLesson, 'manifestReady' | 'profile' | 'lessonVersion'>): boolean {
+export function isAssignablePublishedLesson<T extends Pick<PublishedLesson, 'manifestReady' | 'profile' | 'lessonVersion'>>(lesson: T): lesson is T & { profile: 'espTft' } {
   return lesson.manifestReady && isRenderableLessonProfile(lesson.profile) && Number.isInteger(lesson.lessonVersion) && lesson.lessonVersion > 0;
 }
 
@@ -402,7 +402,7 @@ export function normalizeCurrentAssignmentPayload(payload: unknown): CurrentAssi
     manifestChecksum: (r.manifest_checksum ?? r.manifestChecksum ?? null) as string | null,
     state: toAssignmentState(r.state),
     childId: (r.child_id ?? r.childId ?? '') as string,
-    profile: (r.profile ?? 'espTft') as string,
+    profile: typeof r.profile === 'string' ? r.profile : '',
   };
 }
 
@@ -425,7 +425,7 @@ export function normalizePreloadStatusPayload(payload: unknown): PreloadStatus {
   return {
     assignmentId: (r.assignment_id ?? r.assignmentId ?? '') as string,
     state: toAssignmentState(r.state),
-    profile: (r.profile ?? 'espTft') as string,
+    profile: typeof r.profile === 'string' ? r.profile : '',
     criticalTotal: Number(r.critical_total ?? r.criticalTotal ?? 0),
     criticalReady: Number(r.critical_ready ?? r.criticalReady ?? 0),
     assets,
@@ -466,6 +466,61 @@ export async function getPreloadStatus(deviceId: string): Promise<PreloadStatus>
 export async function getCurrentAssignment(deviceId: string): Promise<CurrentAssignment | null> {
   const response = await client.get(`/devices/${deviceId}/assignment/current`);
   return normalizeCurrentAssignmentPayload(response.data);
+}
+
+export type TerminalAssignment = Readonly<{
+  assignmentId: string;
+  assignmentVersion: number;
+  state: 'COMPLETED' | 'FAILED' | 'CANCELLED';
+}>;
+
+export type AssignmentReadback =
+  | { kind: 'none' }
+  | { kind: 'active'; assignment: CurrentAssignment }
+  | { kind: 'terminal'; terminal: TerminalAssignment };
+
+function readbackRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Invalid assignment readback');
+  }
+  return value as Record<string, unknown>;
+}
+
+export function parseAssignmentReadback(payload: unknown): AssignmentReadback {
+  const data = readbackRecord(readbackRecord(payload).data);
+  if (data.assignment === null) return { kind: 'none' };
+  const row = readbackRecord(data.assignment);
+  if (typeof row.assignmentId !== 'string' || !row.assignmentId.trim() ||
+      typeof row.assignmentVersion !== 'number' || !Number.isSafeInteger(row.assignmentVersion) || row.assignmentVersion <= 0) {
+    throw new Error('Invalid assignment identity');
+  }
+  if (row.state === 'COMPLETED' || row.state === 'FAILED' || row.state === 'CANCELLED') {
+    return { kind: 'terminal', terminal: {
+      assignmentId: row.assignmentId, assignmentVersion: row.assignmentVersion, state: row.state,
+    } };
+  }
+  if (!(row.state === 'ASSIGNED' || row.state === 'PRELOADING' || row.state === 'READY' || row.state === 'RUNNING' || row.state === 'PAUSED') ||
+      typeof row.childId !== 'string' || !row.childId.trim() ||
+      typeof row.lessonId !== 'string' || !row.lessonId.trim() ||
+      typeof row.lessonTitle !== 'string' || !row.lessonTitle.trim() ||
+      typeof row.profile !== 'string' || !row.profile.trim() ||
+      typeof row.lessonVersion !== 'number' || !Number.isSafeInteger(row.lessonVersion) || row.lessonVersion <= 0 ||
+      !(row.sessionId === null || (typeof row.sessionId === 'string' && row.sessionId.trim())) ||
+      !(row.manifestChecksum === null || (typeof row.manifestChecksum === 'string' && row.manifestChecksum.trim()))) {
+    throw new Error('Invalid active assignment readback');
+  }
+  // Consume the validated canonical fields; legacy aliases must not replace them.
+  return { kind: 'active', assignment: {
+    assignmentId: row.assignmentId, assignmentVersion: row.assignmentVersion,
+    childId: row.childId, lessonId: row.lessonId, lessonTitle: row.lessonTitle,
+    lessonVersion: row.lessonVersion, profile: row.profile, state: row.state,
+    sessionId: row.sessionId, manifestChecksum: row.manifestChecksum,
+  } };
+}
+
+export async function getAssignmentReadback(deviceId: string): Promise<AssignmentReadback> {
+  const response = await client.get(`/devices/${deviceId}/assignment/current`, { params: { includeTerminal: 'true' } });
+  return parseAssignmentReadback(response.data);
 }
 
 // M2 — DIV-MOBILE-FAKEREADY kill: readiness is computed from the real server
@@ -569,7 +624,7 @@ export function normalizeAssignmentRefPayload(payload: unknown): AssignmentRef {
     lessonTitle: (r.lesson_title ?? r.lessonTitle ?? '') as string,
     lessonVersion: Number(r.lesson_version ?? r.lessonVersion ?? 0), // NUMBER (D-LV)
     manifestChecksum: (r.manifest_checksum ?? r.manifestChecksum ?? null) as string | null,
-    profile: (r.profile ?? 'espTft') as string,
+    profile: typeof r.profile === 'string' ? r.profile : '',
     state: toAssignmentState(r.state),
   };
 }

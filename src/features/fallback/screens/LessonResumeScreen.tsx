@@ -172,6 +172,7 @@ export default function LessonResumeScreen({ navigation, route }: Props) {
     navigation.navigate(ROUTES.RunningScreen, {
       deviceId: resumableCheckpoint.deviceId,
       assignmentId: assignment.assignmentId,
+      assignmentVersion: assignment.assignmentVersion,
       ...(sessionId ? { sessionId } : {}),
       childId: assignment.childId,
       lessonTitle: assignment.lessonTitle,

@@ -9,6 +9,7 @@ import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
+import { useScreenActivity } from '../useScreenActivity';
 import LCDPreview from '../components/LCDPreview';
 import {
   createAssignment,
@@ -17,7 +18,6 @@ import {
   getCourses,
   getCurrentAssignment,
   isAssignablePublishedLesson,
-  isLessonProfile,
   type CurrentAssignment,
   type PublishedCourse,
   type PublishedLesson,
@@ -42,15 +42,22 @@ type CatalogState =
 
 type AssignmentMode = 'lesson' | 'course';
 
+// What one enabled Send press is allowed to write. The plan is derived from the
+// same public selection state that enables the CTA, so a press never re-checks
+// the child, course, lesson or readiness it was rendered with.
+type SendPlan =
+  | { kind: 'course'; childId: string; courseId: string }
+  | { kind: 'lesson'; childId: string; lesson: PublishedLesson & { profile: 'espTft' } };
+
 function currentMatchesLesson(current: CurrentAssignment, childId: string, lesson: PublishedLesson): boolean {
   return current.childId === childId &&
     current.lessonId === lesson.lessonId &&
-    current.lessonVersion === lesson.lessonVersion;
+    current.lessonVersion === lesson.lessonVersion && current.profile === lesson.profile;
 }
 
 function currentMatchesCourse(current: CurrentAssignment, childId: string, courseLessons: PublishedLesson[]): boolean {
   return current.childId === childId &&
-    courseLessons.some((lesson) => current.lessonId === lesson.lessonId && current.lessonVersion === lesson.lessonVersion);
+    courseLessons.some((lesson) => current.lessonId === lesson.lessonId && current.lessonVersion === lesson.lessonVersion && current.profile === lesson.profile);
 }
 
 function isValidAssignmentVersion(value: unknown): value is number {
@@ -92,6 +99,8 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   const mountedRef = React.useRef(true);
   const resumeSeqRef = React.useRef(0);
   const resumeKeyRef = React.useRef('');
+  const attemptedResumeRef = React.useRef('');
+  const selectionRevisionRef = React.useRef(0);
   const childrenList = React.useMemo(
     () => household?.children ?? [],
     [household?.children],
@@ -106,10 +115,12 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     });
   }, [queryClient, setActiveChild]);
 
-  const [catalog, setCatalog] = React.useState<CatalogState>({ kind: 'loading' });
+  const [catalogState, setCatalog] = React.useState<CatalogState>({ kind: 'loading' });
   const [assignmentMode, setAssignmentMode] = React.useState<AssignmentMode>('lesson');
   const [selectedCourseId, setSelectedCourseId] = React.useState<string | null>(null);
-  const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
+  const [lessonPick, setLessonPick] = React.useState<{
+    courseId: string; lessonId: string; lessonVersion: number; profile: PublishedLesson['profile'];
+  } | null>(null);
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [assignmentTarget, setAssignmentTarget] = React.useState<{
@@ -125,6 +136,9 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
 
   const preferredCourseId = route.params?.courseId;
   const resumeContext = route.params?.resumeContext;
+  const { active: screenActive, key: activityKey, isCurrent: isActivityCurrent } = useScreenActivity(JSON.stringify([childId, preferredCourseId, resumeContext]));
+  const [catalogKey, setCatalogKey] = React.useState(activityKey);
+  const catalog = React.useMemo<CatalogState>(() => screenActive && catalogKey === activityKey ? catalogState : { kind: 'loading' }, [screenActive, catalogKey, activityKey, catalogState]);
   const resumeKey = resumeContext
     ? [
       resumeContext.courseId,
@@ -137,25 +151,28 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   resumeKeyRef.current = resumeKey;
 
   React.useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
 
   const isCurrentResume = React.useCallback((seq: number, key: string): boolean => (
-    mountedRef.current && resumeSeqRef.current === seq && resumeKeyRef.current === key
-  ), []);
+    mountedRef.current && isActivityCurrent(activityKey) && resumeSeqRef.current === seq && resumeKeyRef.current === key
+  ), [activityKey, isActivityCurrent]);
 
-  // Fetch the published catalog + each course's lessons once on mount. Lessons
+  // Refresh the published catalog on active focus/foreground. Lessons
   // are fetched eagerly per course so switching the course selection never shows
   // a sub-spinner — the slice catalog is small.
   React.useEffect(() => {
     let active = true;
     setCatalog({ kind: 'loading' });
+    setCatalogKey(activityKey);
+    if (!screenActive) return;
     (async () => {
       try {
         const courses = await getCourses();
-        if (!active) return;
+        if (!active || !isActivityCurrent(activityKey)) return;
         if (courses.length === 0) {
           setCatalog({ kind: 'empty' });
           return;
@@ -167,7 +184,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         const lessonLists = await Promise.allSettled(
           courses.map((course) => getCourseLessons(course.courseId, childId ? { childId } : undefined)),
         );
-        if (!active) return;
+        if (!active || !isActivityCurrent(activityKey)) return;
         const lessonsByCourse: Record<string, PublishedLesson[]> = {};
         courses.forEach((course, i) => {
           const settled = lessonLists[i];
@@ -175,13 +192,13 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         });
         setCatalog({ kind: 'ready', courses, lessonsByCourse });
       } catch (err) {
-        if (active) setCatalog({ kind: 'error', message: getErrorMessage(normalizeError(err).code) });
+        if (active && isActivityCurrent(activityKey)) setCatalog({ kind: 'error', message: getErrorMessage(normalizeError(err).code) });
       }
     })();
     return () => {
       active = false;
     };
-  }, [childId, catalogNonce]);
+  }, [childId, catalogNonce, activityKey, screenActive, isActivityCurrent]);
 
   const reloadCatalog = React.useCallback(() => {
     setCatalogNonce((value) => value + 1);
@@ -192,8 +209,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
     if (boundChildId !== undefined && boundChildId !== null) {
       return childrenList.find((child) => child.id === boundChildId) ?? null;
     }
-    return childrenList.find((child) => child.id === childId) ?? null;
-  }, [childId, childrenList]);
+    // The household resolves its active child from its own children list, so an
+    // unbound robot is routed to that child directly.
+    return household?.activeChild;
+  }, [childrenList, household?.activeChild]);
 
   // Resolve the active course: an explicit user pick wins, then the course passed
   // in via route params (deep-link from the library), then the first published
@@ -204,27 +223,29 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
   );
   const activeCourseId = React.useMemo(() => {
     if (catalog.kind !== 'ready') return null;
-    const pick = selectedCourseId ?? preferredCourseId ?? courses[0]?.courseId ?? null;
-    return courses.some((course) => course.courseId === pick) ? pick : courses[0]?.courseId ?? null;
+    // A ready catalog is never empty (an empty course list is the `empty` state).
+    const pick = selectedCourseId ?? preferredCourseId ?? courses[0].courseId;
+    return courses.some((course) => course.courseId === pick) ? pick : null;
   }, [catalog.kind, selectedCourseId, preferredCourseId, courses]);
 
   const lessons = React.useMemo(() => {
     if (catalog.kind !== 'ready' || !activeCourseId) return [];
-    return catalog.lessonsByCourse[activeCourseId] ?? [];
+    // The fan-out above maps every ready course, and activeCourseId is one of them.
+    return catalog.lessonsByCourse[activeCourseId];
   }, [catalog, activeCourseId]);
 
   // Default the lesson selection to the first lesson of the active course; an
   // explicit user pick (in this course) wins.
-  const activeLessonId = React.useMemo(() => {
-    if (lessons.length === 0) return null;
-    const pick = selectedLessonId;
-    return pick && lessons.some((lesson) => lesson.lessonId === pick) ? pick : lessons[0]!.lessonId;
-  }, [lessons, selectedLessonId]);
-
-  const selectedLesson = React.useMemo(
-    () => lessons.find((lesson) => lesson.lessonId === activeLessonId) ?? null,
-    [lessons, activeLessonId],
-  );
+  const selectedLesson = React.useMemo(() => {
+    if (!lessonPick) return lessons[0] ?? null;
+    return lessons.find(lesson => lessonPick.courseId === activeCourseId &&
+      lesson.lessonId === lessonPick.lessonId && lesson.lessonVersion === lessonPick.lessonVersion &&
+      lesson.profile === lessonPick.profile) ?? null;
+  }, [lessons, lessonPick, activeCourseId]);
+  const actionKey = JSON.stringify([activityKey, catalogNonce, catalog.kind, assignmentMode, activeCourseId, selectedLesson]);
+  const actionKeyRef = React.useRef(actionKey);
+  actionKeyRef.current = actionKey;
+  const actionIsCurrent = () => mountedRef.current && isActivityCurrent(activityKey) && actionKeyRef.current === actionKey;
 
   const selectedLessonReady = Boolean(selectedLesson && isAssignablePublishedLesson(selectedLesson));
 
@@ -235,18 +256,31 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
 
   // Gate send on the catalog's readiness hint: a lesson with no renderable
   // espTft bundle (manifestReady=false / profile!=espTft) is not sendable. The
-  // server READY gate remains authoritative for the actual preload.
-  const canSend = assignmentMode === 'course'
-    ? hasChild && !!activeCourseId && courseReady && !sending
-    : hasChild &&
-      !!selectedLesson &&
-      selectedLessonReady &&
-      !sending;
+  // server READY gate remains authoritative for the actual preload. Without a
+  // child there is nothing to send to: never send childId: undefined.
+  const sendPlan = React.useMemo<SendPlan | null>(() => {
+    if (!childId) return null;
+    if (assignmentMode === 'course') {
+      return activeCourseId && courseReady ? { kind: 'course', childId, courseId: activeCourseId } : null;
+    }
+    return selectedLesson && isAssignablePublishedLesson(selectedLesson)
+      ? { kind: 'lesson', childId, lesson: selectedLesson }
+      : null;
+  }, [activeCourseId, assignmentMode, childId, courseReady, selectedLesson]);
+  const canSend = sendPlan !== null && !sending;
 
   React.useEffect(() => {
-    if (!resumeContext?.courseId || !resumeContext.childId) return;
+    if (!resumeContext?.courseId || !resumeContext.childId) {
+      attemptedResumeRef.current = '';
+      return;
+    }
+    if (!screenActive || sendingRef.current || attemptedResumeRef.current === resumeKey) return;
+    // A focus refresh is a read, not permission to repeat a single-slot write.
+    attemptedResumeRef.current = resumeKey;
     const actionSeq = ++resumeSeqRef.current;
     const actionKey = resumeKey;
+    const revision = selectionRevisionRef.current;
+    const isCurrentAttempt = () => isCurrentResume(actionSeq, actionKey) && selectionRevisionRef.current === revision;
     setError(null);
     // Share the in-flight ref with handleSend: a resume enroll and a manual send
     // are the same single-slot write, so one must never overlap the other.
@@ -257,12 +291,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         const device = resumeContext.deviceId
           ? await getDeviceStatus(resumeContext.deviceId)
           : await getDeviceStatus('primary', resumeContext.childId, { allowBoundChildFallback: true });
-        if (!isCurrentResume(actionSeq, actionKey)) return;
+        if (!isCurrentAttempt()) return;
         const deviceId = device.id;
         if (!deviceId || device.online !== true) {
-          if (isCurrentResume(actionSeq, actionKey)) {
-            setError(formatLessonCopy(getErrorMessage('ROBOT_OFFLINE'), { robot: device.name }));
-          }
+          setError(formatLessonCopy(getErrorMessage('ROBOT_OFFLINE'), { robot: device.name }));
           return;
         }
         const effectiveChild = resolveEffectiveChild(device);
@@ -272,7 +304,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         }
         const effectiveChildId = effectiveChild.id;
         const { assignment } = await enrollCourse(resumeContext.courseId, { childId: effectiveChildId, deviceId });
-        if (!isCurrentResume(actionSeq, actionKey)) return;
+        if (!isCurrentAttempt()) return;
         if (!assignment.id || !isValidAssignmentVersion(assignment.assignmentVersion)) {
           throw new Error('Invalid resume assignment');
         }
@@ -288,59 +320,41 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           manifestChecksum: assignment.manifestChecksum ?? resumeContext.manifestChecksum ?? null,
         });
       } catch (err) {
-        if (isCurrentResume(actionSeq, actionKey)) {
+        if (isCurrentAttempt()) {
           setError(getErrorMessage(normalizeError(err).code));
         }
       } finally {
-        if (isCurrentResume(actionSeq, actionKey)) {
-          sendingRef.current = false;
-          setSending(false);
-        }
+        sendingRef.current = false;
+        if (mountedRef.current) setSending(false);
       }
     })();
-  }, [activateAssignmentChild, isCurrentResume, navigation, resolveEffectiveChild, resumeContext, resumeKey]);
+  }, [activateAssignmentChild, isCurrentResume, navigation, resolveEffectiveChild, resumeContext, resumeKey, screenActive, sending]);
 
   const handleSelectMode = (mode: AssignmentMode) => {
+    selectionRevisionRef.current += 1;
     setError(null);
     setAssignmentMode(mode);
   };
 
   const handleSelectCourse = (courseId: string) => {
+    selectionRevisionRef.current += 1;
     setError(null);
     setSelectedCourseId(courseId);
-    setSelectedLessonId(null); // reset lesson when course changes
+    setLessonPick(null);
   };
 
-  const handleSelectLesson = (lessonId: string) => {
+  const handleSelectLesson = (courseId: string, lesson: PublishedLesson) => {
+    selectionRevisionRef.current += 1;
     setError(null);
-    setSelectedLessonId(lessonId);
+    setLessonPick({ courseId, lessonId: lesson.lessonId, lessonVersion: lesson.lessonVersion, profile: lesson.profile });
   };
 
-  const handleSend = async () => {
-    if (sendingRef.current) return;
+  const handleSend = async (plan: SendPlan) => {
+    if (sendingRef.current || !isActivityCurrent(activityKey)) return;
+    const revision = selectionRevisionRef.current;
+    const isCurrentSend = () => actionIsCurrent() && selectionRevisionRef.current === revision;
     setError(null);
     setAssignmentTarget(null);
-    // Empty children → explicit "add a child first" state; never send childId: undefined.
-    if (!childId) {
-      setError('Add a child to this household before sending a lesson.');
-      return;
-    }
-    if (assignmentMode === 'course' && !activeCourseId) {
-      setError('Pick a course to assign to Robot.');
-      return;
-    }
-    if (assignmentMode === 'course' && !courseReady) {
-      setError('This course is still preparing on the server. Try again in a moment.');
-      return;
-    }
-    if (assignmentMode === 'lesson' && !selectedLesson) {
-      setError('Pick a lesson to send to Robot.');
-      return;
-    }
-    if (assignmentMode === 'lesson' && selectedLesson && !isAssignablePublishedLesson(selectedLesson)) {
-      setError('This lesson is still preparing on the server. Try again in a moment.');
-      return;
-    }
     sendingRef.current = true;
     setSending(true);
     try {
@@ -350,7 +364,8 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       // When that child has no bound robot, resolveHouseholdDevice returns an
       // empty device — it deliberately does NOT fall back to devices[0], so a
       // lesson can never land on a sibling's robot. The guard below catches it.
-      const device = await getDeviceStatus('primary', childId, { allowBoundChildFallback: true });
+      const device = await getDeviceStatus('primary', plan.childId, { allowBoundChildFallback: true });
+      if (!isCurrentSend()) return;
       const deviceId = device.id;
       // Gate on `online !== true`, matching the resume path above and
       // CourseDetailScreen. Assigning to a robot we already know is unreachable
@@ -366,10 +381,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         return;
       }
       const effectiveChildId = effectiveChild.id;
-      if (assignmentMode === 'course') {
-        if (!activeCourseId) return;
+      if (plan.kind === 'course') {
         try {
-          const { assignment } = await enrollCourse(activeCourseId, { childId: effectiveChildId, deviceId });
+          const { assignment } = await enrollCourse(plan.courseId, { childId: effectiveChildId, deviceId });
+          if (!isCurrentSend()) return;
           setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
           activateAssignmentChild(effectiveChildId);
           navigation.navigate(ROUTES.RobotReadyScreen, {
@@ -380,9 +395,11 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
             manifestChecksum: assignment.manifestChecksum,
           });
         } catch (err) {
+          if (!isCurrentSend()) return;
           const normalized = normalizeError(err);
           if (isConflictCode(normalized.code)) {
             const current = await getCurrentAssignment(deviceId).catch(() => null);
+            if (!isCurrentSend()) return;
             if (current && currentMatchesCourse(current, effectiveChildId, lessons)) {
               setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
               activateAssignmentChild(effectiveChildId);
@@ -405,19 +422,20 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         }
         return;
       }
-      if (!selectedLesson) return;
+      const { lesson } = plan;
       try {
         // The REAL lesson the parent picked drives the assignment + idempotency key.
         const assignment = await createAssignment({
           deviceId,
           childId: effectiveChildId,
-          lessonId: selectedLesson.lessonId,
-          lessonVersion: selectedLesson.lessonVersion, // NUMBER (D-LV)
-          // Forward the lesson's REAL profile (gated non-null + recognized by
-          // canSend / the guard above), so a piTft/mobile lesson is no longer
+          lessonId: lesson.lessonId,
+          lessonVersion: lesson.lessonVersion, // NUMBER (D-LV)
+          // Forward the lesson's REAL profile: the plan only admits a lesson whose
+          // published profile is renderable, so a piTft/mobile lesson is never
           // mis-sent as espTft (MOB-3).
-          profile: isLessonProfile(selectedLesson.profile) ? selectedLesson.profile : undefined,
+          profile: lesson.profile,
         });
+        if (!isCurrentSend()) return;
         setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
         // The new assignment is now the child's in-flight lesson. Invalidate the
         // shared progress cache (SAME key ParentToday/History/TodayProgress read)
@@ -431,12 +449,14 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           manifestChecksum: assignment.manifestChecksum,
         });
       } catch (err) {
+        if (!isCurrentSend()) return;
         const normalized = normalizeError(err);
         // Conflict → refetch the current assignment and proceed from the fresh
         // assignment_version; never blind-retry a stale create.
         if (isConflictCode(normalized.code)) {
           const current = await getCurrentAssignment(deviceId).catch(() => null);
-          if (current && currentMatchesLesson(current, effectiveChildId, selectedLesson)) {
+          if (!isCurrentSend()) return;
+          if (current && currentMatchesLesson(current, effectiveChildId, lesson)) {
             setAssignmentTarget({ childName: effectiveChild.name, robotName: device.name });
             activateAssignmentChild(effectiveChildId);
             navigation.navigate(ROUTES.RobotReadyScreen, {
@@ -455,10 +475,10 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
         setError(formatLessonCopy(getErrorMessage(normalized.code), { robot: device.name }));
       }
     } catch (err) {
-      setError(formatLessonCopy(getErrorMessage(normalizeError(err).code)));
+      if (isCurrentSend()) setError(formatLessonCopy(getErrorMessage(normalizeError(err).code)));
     } finally {
       sendingRef.current = false;
-      setSending(false);
+      if (mountedRef.current) setSending(false);
     }
   };
 
@@ -504,7 +524,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
               return (
                 <TouchableOpacity
                   key={child.id}
-                  onPress={() => setActiveChild?.(child.id)}
+                  onPress={() => { selectionRevisionRef.current += 1; setActiveChild?.(child.id); }}
                   style={[styles.pickRow, i < childrenList.length - 1 && styles.pickBorder, sel && styles.pickRowSel]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: sel }}
@@ -553,7 +573,9 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
 
       {catalog.kind === 'ready' && (
         <>
-          {courses.length > 1 && (
+          {!activeCourseId && <Text style={styles.errorText}>Your selected course is no longer available. Pick a course again.</Text>}
+          {lessonPick && !selectedLesson && assignmentMode === 'lesson' && <Text style={styles.errorText}>Your selected lesson version is no longer available. Pick a lesson again.</Text>}
+          {(courses.length > 1 || !activeCourseId) && (
             <Box paddingHorizontal={16} paddingTop={18}>
               <Text fontWeight="700" style={styles.sectionLabel}>Course</Text>
               <Box style={styles.rowCard}>
@@ -583,19 +605,19 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
           {assignmentMode === 'lesson' && (
           <Box paddingHorizontal={16} paddingTop={18}>
             <Text fontWeight="700" style={styles.sectionLabel}>Lesson</Text>
-            {lessons.length === 0 ? (
+            {activeCourseId === null || lessons.length === 0 ? (
               <Box paddingHorizontal={4} paddingTop={4}>
                 <Text style={styles.hintText}>This course has no lessons ready yet.</Text>
               </Box>
             ) : (
               <Box style={styles.rowCard}>
                 {lessons.map((lesson, i) => {
-                  const sel = lesson.lessonId === activeLessonId;
+                  const sel = lesson === selectedLesson;
                   const fitCopy = lessonFitCopy(lesson);
                   return (
                     <TouchableOpacity
                       key={lesson.lessonId}
-                      onPress={() => handleSelectLesson(lesson.lessonId)}
+                      onPress={() => handleSelectLesson(activeCourseId, lesson)}
                       style={[styles.pickRow, i < lessons.length - 1 && styles.pickBorder, sel && styles.pickRowSel]}
                       accessibilityRole="button"
                       accessibilityState={{ selected: sel }}
@@ -651,7 +673,7 @@ export default function SendToRobotScreen({ navigation, route }: Props) {
       )}
 
       <Box paddingHorizontal={20} paddingTop={24} paddingBottom={30}>
-        <DeviceBigBtn disabled={!canSend} onClick={handleSend} accessibilityLabel={assignmentMode === 'course' ? 'Assign course' : 'Send to Robot'}>
+        <DeviceBigBtn disabled={!canSend} onClick={sendPlan ? () => { void handleSend(sendPlan); } : undefined} accessibilityLabel={assignmentMode === 'course' ? 'Assign course' : 'Send to Robot'}>
           {sending ? 'Sending…' : assignmentMode === 'course' ? 'Assign course' : 'Send to Robot'}
         </DeviceBigBtn>
       </Box>

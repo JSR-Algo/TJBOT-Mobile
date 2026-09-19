@@ -12,8 +12,11 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import CLChip from '../components/CLChip';
 import LCDPreview from '../components/LCDPreview';
-import { getPreloadStatus, isPreloadReady } from '@/services/api/course-library.api';
+import { getCurrentAssignment, getPreloadStatus, isPreloadReady } from '@/services/api/course-library.api';
 import { getDeviceStatus } from '@/services/api/device.api';
+import { useOptionalHousehold } from '@/contexts/HouseholdContext';
+import { useScreenActivity } from '../useScreenActivity';
+import { entryAssignment } from '../assignmentReconciliation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NeedsSyncScreen'>;
 
@@ -24,6 +27,13 @@ const UNREACHABLE_MSG = "We couldn't reach Robot just now. Check Wi-Fi and try a
 export default function NeedsSyncScreen({ navigation, route }: Props) {
   const courseId = route.params?.courseId ?? 'c_food';
   const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
+  const household = useOptionalHousehold();
+  const { active, key, isCurrent } = useScreenActivity(JSON.stringify([route.params, household?.activeChild?.id]));
+  const leaving = React.useRef(false);
+  React.useEffect(() => { leaving.current = false; setSyncMsg(null); }, [key]);
+  const current = () => !leaving.current && isCurrent(key);
+  const goHome = () => { leaving.current = true; navigation.navigate(ROUTES.DeviceHomeScreen); };
+  const goBack = () => { leaving.current = true; navigation.navigate(ROUTES.CourseLibraryScreen); };
   // Guards the retry against a double-tap firing two preload reads.
   const checking = React.useRef(false);
 
@@ -31,34 +41,45 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
   // /course-library/:id/sync-status route is retired server-side (410
   // ENDPOINT_RETIRED), so asking it could never report a synced robot.
   const handleReconnect = async () => {
-    if (checking.current) return;
+    if (checking.current || !active || !current()) return;
     checking.current = true;
     setSyncMsg(null);
     try {
       let deviceId = route.params?.deviceId;
       if (!deviceId) {
         const device = await getDeviceStatus('primary', route.params?.childId);
+        if (!current()) return;
         deviceId = device?.id;
       }
       if (!deviceId) {
         setSyncMsg(NO_DEVICE_MSG);
         return;
       }
-      const preload = await getPreloadStatus(deviceId);
-      if (isPreloadReady(preload)) {
-        navigation.navigate(ROUTES.CourseAddedScreen, { courseId });
+      const [preload, assignment] = await Promise.all([getPreloadStatus(deviceId), getCurrentAssignment(deviceId)]);
+      if (!current()) return;
+      const matched = entryAssignment({ ...route.params, deviceId }, assignment);
+      const canContinue = matched?.state === 'RUNNING'
+        ? preload.state === 'READY' || preload.state === 'RUNNING'
+        : matched?.state === 'READY' && isPreloadReady(preload);
+      if (matched && canContinue && !preload.errorCode &&
+          preload.assignmentId === matched.assignmentId && preload.profile === matched.profile) {
+        leaving.current = true;
+        navigation.navigate(ROUTES.CourseAddedScreen, {
+          courseId, deviceId, childId: matched.childId, assignmentId: matched.assignmentId,
+          assignmentVersion: matched.assignmentVersion, profile: matched.profile, manifestChecksum: matched.manifestChecksum,
+        });
       } else {
         setSyncMsg(NOT_READY_MSG);
       }
     } catch {
-      setSyncMsg(UNREACHABLE_MSG);
+      if (current()) setSyncMsg(UNREACHABLE_MSG);
     } finally {
       checking.current = false;
     }
   };
 
   return (
-    <DeviceShell title="Robot needs to catch up" onBack={() => navigation.navigate(ROUTES.CourseLibraryScreen)}>
+    <DeviceShell title="Robot needs to catch up" onBack={goBack}>
       <Box paddingTop={30} paddingHorizontal={24} alignItems="center">
         <RobotDevice emotion="reconnect" size={170} accent="#FF6F61" />
         <Box style={styles.chipWrap}><CLChip state="needs_sync" /></Box>
@@ -92,7 +113,7 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
         <Text fontWeight="700" style={styles.sectionLabel}>Try this</Text>
         <Box style={styles.rowCard}>
           <DeviceRow icon="🔌" title="Check Robot is plugged in" body="Or has at least 20% battery" />
-          <DeviceRow icon="📶" title="Check Robot connection" body="If your network changed or password rotated" onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)} />
+          <DeviceRow icon="📶" title="Check Robot connection" body="If your network changed or password rotated" onClick={goHome} />
           <DeviceRow icon="🔄" title="Restart Robot" body="Hold the top button for 5 seconds" />
         </Box>
       </Box>
@@ -107,7 +128,11 @@ export default function NeedsSyncScreen({ navigation, route }: Props) {
 
       <Box paddingHorizontal={20} paddingTop={20} paddingBottom={30} gap={10}>
         <DeviceBigBtn onClick={handleReconnect}>Reconnect Robot now</DeviceBigBtn>
-        <DeviceBigBtn secondary onClick={() => navigation.navigate(ROUTES.DeviceHomeScreen)}>I'll do it later</DeviceBigBtn>
+        {syncMsg && <DeviceBigBtn secondary onClick={() => {
+          leaving.current = true;
+          navigation.navigate(ROUTES.SendToRobotScreen, { courseId });
+        }}>Pick a different lesson</DeviceBigBtn>}
+        <DeviceBigBtn secondary onClick={goHome}>I'll do it later</DeviceBigBtn>
       </Box>
     </DeviceShell>
   );

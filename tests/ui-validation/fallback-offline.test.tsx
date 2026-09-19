@@ -290,6 +290,7 @@ describe('fallback and offline UI stability', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
       deviceId: 'device-1',
       assignmentId: 'assignment-1',
+      assignmentVersion: 2,
       sessionId: 'session-1',
       childId: 'child-1',
       lessonTitle: 'How are you?',
@@ -329,6 +330,7 @@ describe('fallback and offline UI stability', () => {
       courseId: 'c_food',
       deviceId: 'device-1',
       assignmentId: 'asg-old',
+      assignmentVersion: 2,
       sessionId: 'session-1',
       childId: 'child-1',
       lessonTitle: 'Food Words',

@@ -1,9 +1,9 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, userEvent, waitFor } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
 import LCDLessonTurnScreen from '@/features/device/screens/LCDLessonTurnScreen';
 import LessonResumeScreen from '@/features/fallback/screens/LessonResumeScreen';
-import { fallbackCheckpoint } from '@/features/fallback/recoveryTypes';
+import { checkpointFromCurrentAssignment, fallbackCheckpoint } from '@/features/fallback/recoveryTypes';
 import BuyCourseScreen from '@/features/course-library/screens/BuyCourseScreen';
 import CourseLockedScreen from '@/features/course-library/screens/CourseLockedScreen';
 import CourseDetailScreen from '@/features/course-library/screens/CourseDetailScreen';
@@ -11,6 +11,9 @@ import {
   getCourseLessons,
   getCourses,
   getCurrentAssignment,
+  parseAssignmentReadback,
+  createAssignment,
+  enrollCourse,
   type CurrentAssignment,
   type PublishedCourse,
 } from '@/services/api/course-library.api';
@@ -29,6 +32,8 @@ jest.mock('@/services/api/course-library.api', () => {
     listChildEnrollments: jest.fn(() => Promise.resolve({ enrollments: [] })),
     cancelCourseEnrollment: jest.fn(),
     getCurrentAssignment: jest.fn(() => Promise.resolve(null)),
+    createAssignment: jest.fn(),
+    enrollCourse: jest.fn(),
   };
 });
 
@@ -136,6 +141,34 @@ describe('LCDLessonTurnScreen — lesson-turn LCD gallery render', () => {
 // checkpoints fail closed to the ended path.
 // ───────────────────────────────────────────────────────────────────────────
 describe('LessonResumeScreen — resume routing + render', () => {
+  it('C8: resumes parser-produced sessionless READY without inventing a session', async () => {
+    const readback = parseAssignmentReadback({ data: {
+      assignment: liveAssignment({ state: 'READY', sessionId: null }),
+    } });
+    expect(readback.kind).toBe('active');
+    if (readback.kind !== 'active') throw new Error('Expected a valid active READY assignment');
+    const checkpoint = checkpointFromCurrentAssignment(readback.assignment, 'device-1');
+    expect(checkpoint).not.toBeNull();
+    expect(Object.prototype.hasOwnProperty.call(checkpoint, 'sessionId')).toBe(false);
+    mockedGetCurrentAssignment.mockResolvedValueOnce(readback.assignment);
+    const navigation = navigationFor();
+    render(<LessonResumeScreen navigation={navigation as never}
+      route={routeFor(ROUTES.LessonResumeScreen, { checkpoint })} />);
+    const keepGoing = await screen.findByRole('button', { name: 'Keep going' });
+    expect(screen.getByText('Colors at the Park')).toBeOnTheScreen();
+    const user = userEvent.setup();
+    await user.press(keepGoing);
+    expect(mockedGetCurrentAssignment.mock.calls).toEqual([['device-1']]);
+    expect(navigation.navigate.mock.calls).toEqual([[ROUTES.RunningScreen, {
+      deviceId: 'device-1', assignmentId: 'assignment-1', assignmentVersion: 2,
+      childId: 'child-1', lessonTitle: 'Colors at the Park',
+    }]]);
+    expect(Object.prototype.hasOwnProperty.call(navigation.navigate.mock.calls[0][1], 'sessionId')).toBe(false);
+    expect(createAssignment).not.toHaveBeenCalled();
+    expect(enrollCourse).not.toHaveBeenCalled();
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
+
   it('fails closed to ended copy when no checkpoint is present', () => {
     const navigation = navigationFor();
     render(
@@ -179,6 +212,7 @@ describe('LessonResumeScreen — resume routing + render', () => {
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
       deviceId: 'device-1',
       assignmentId: 'assignment-1',
+        assignmentVersion: 2,
       sessionId: 'session-1',
       childId: 'child-1',
       lessonTitle: 'Colors at the Park',
@@ -568,4 +602,41 @@ describe('CourseDetailScreen — published overlay + CTAs', () => {
     fireEvent.press(screen.getByLabelText('Go back'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseLibraryScreen);
   });
+});
+
+
+it.each(['reauth', 'error', 'ready', 'ended'] as const)('run15 A1: settled %s TopBar returns home without resuming', async state => {
+  if (state === 'error') mockedGetCurrentAssignment.mockRejectedValueOnce(new Error('read failed'));
+  if (state === 'ready') mockedGetCurrentAssignment.mockResolvedValueOnce(liveAssignment());
+  if (state === 'ended') mockedGetCurrentAssignment.mockResolvedValueOnce(null);
+  const navigation = navigationFor();
+  const checkpoint = { ...fallbackCheckpoint(), authState: state === 'reauth' ? 'expired' as const : 'authenticated' as const };
+  const view = render(<LessonResumeScreen navigation={navigation as never} route={routeFor(ROUTES.LessonResumeScreen, { checkpoint })} />);
+  if (state === 'reauth') expect(screen.getByText(/Session expired/)).toBeOnTheScreen();
+  if (state === 'error') expect(await screen.findByText("We can't confirm this lesson yet")).toBeOnTheScreen();
+  if (state === 'ready') expect(await screen.findByRole('button', { name: 'Keep going' })).toBeEnabled();
+  if (state === 'ended') expect(await screen.findByText(/Lesson ended/)).toBeOnTheScreen();
+  await userEvent.setup().press(screen.getByRole('button', { name: 'Back to home' }));
+  view.unmount();
+  expect(navigation.navigate.mock.calls).toEqual([[ROUTES.HomeHubScreen]]);
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(mockedGetCurrentAssignment.mock.calls).toEqual(state === 'reauth' ? [] : [['device-1']]);
+});
+
+it('run15 A3: old checkpoint rejection cannot erase the new verified lesson', async () => {
+  let rejectOld!: (reason: unknown) => void;
+  const old = new Promise<CurrentAssignment | null>((_resolve, reject) => { rejectOld = reject; });
+  mockedGetCurrentAssignment.mockReturnValueOnce(old).mockResolvedValueOnce(liveAssignment({ assignmentId: 'assignment-2', sessionId: 'session-2', lessonTitle: 'New lesson' }));
+  const navigation = navigationFor();
+  const component = (assignmentId: string) => <LessonResumeScreen navigation={navigation as never} route={routeFor(ROUTES.LessonResumeScreen, { checkpoint: { ...fallbackCheckpoint(), assignmentId, lessonTitle: assignmentId === 'assignment-2' ? 'New lesson' : 'Old lesson' } })} />;
+  const view = render(component('assignment-1'));
+  view.rerender(component('assignment-2'));
+  expect(await screen.findByText('New lesson')).toBeOnTheScreen();
+  await act(async () => rejectOld(new Error('old rejected')));
+  expect(screen.getByText('New lesson')).toBeOnTheScreen();
+  expect(screen.queryByText("We can't confirm this lesson yet")).not.toBeOnTheScreen();
+  expect(navigation.navigate).not.toHaveBeenCalled();
+  await userEvent.setup().press(screen.getByRole('button', { name: 'Keep going' }));
+  expect(navigation.navigate.mock.calls).toEqual([[ROUTES.RunningScreen, { deviceId: 'device-1', assignmentId: 'assignment-2', assignmentVersion: 2, sessionId: 'session-2', childId: 'child-1', lessonTitle: 'New lesson' }]]);
+  expect(mockedGetCurrentAssignment.mock.calls).toEqual([['device-1'], ['device-1']]);
 });

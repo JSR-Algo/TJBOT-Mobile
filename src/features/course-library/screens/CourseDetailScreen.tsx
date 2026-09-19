@@ -13,6 +13,7 @@ import { Text } from '@/design-system/primitives/Text';
 import CL from '../components/CL';
 import COURSES from '../components/courses';
 import CLChip from '../components/CLChip';
+import { useScreenActivity } from '../useScreenActivity';
 import RobotConnectionPrompt from '../components/RobotConnectionPrompt';
 import {
   getCourseLessons,
@@ -50,12 +51,14 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
   const household = useOptionalHousehold();
   const queryClient = React.useContext(QueryClientContext);
   const childId = household?.activeChild?.id;
+  const { active: screenActive, key: activityKey, isCurrent: isActivityCurrent } = useScreenActivity(JSON.stringify([courseId, childId]));
   const mountedRef = React.useRef(true);
   const courseIdRef = React.useRef(courseId);
   const childIdRef = React.useRef(childId);
   const actionSeqRef = React.useRef(0);
   const enrollmentLoadSeqRef = React.useRef(0);
   const cancellingRef = React.useRef(false);
+  const checkingRobotRef = React.useRef(false);
   const [checkingRobot, setCheckingRobot] = React.useState(false);
   const [cancelling, setCancelling] = React.useState(false);
   const [lifecycleError, setLifecycleError] = React.useState<string | null>(null);
@@ -70,6 +73,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
   childIdRef.current = childId;
 
   React.useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
@@ -77,11 +81,12 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
 
   const canWriteEnrollmentLoad = React.useCallback((loadSeq: number, courseIdForLoad: string, childIdForLoad: string | undefined, expectedActionSeq?: number): boolean => (
     mountedRef.current &&
+    isActivityCurrent(activityKey) &&
     enrollmentLoadSeqRef.current === loadSeq &&
     courseIdRef.current === courseIdForLoad &&
     childIdRef.current === childIdForLoad &&
     (expectedActionSeq === undefined || actionSeqRef.current === expectedActionSeq)
-  ), []);
+  ), [activityKey, isActivityCurrent]);
 
   const isSameAction = React.useCallback((actionSeq: number): boolean => (
     mountedRef.current && actionSeqRef.current === actionSeq
@@ -89,18 +94,20 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
 
   const isCurrentAction = React.useCallback((actionSeq: number, courseIdForAction: string, childIdForAction: string): boolean => (
     mountedRef.current &&
+    isActivityCurrent(activityKey) &&
     actionSeqRef.current === actionSeq &&
     courseIdRef.current === courseIdForAction &&
     childIdRef.current === childIdForAction
-  ), []);
+  ), [activityKey, isActivityCurrent]);
 
-  const loadEnrollment = React.useCallback(async (courseIdForLoad = courseId, expectedActionSeq?: number, childIdForLoad = childId): Promise<Enrollment | null | undefined> => {
-    if (courseIdRef.current !== courseIdForLoad || childIdRef.current !== childIdForLoad) return;
+  // Every caller names the course and child it is loading for, so the identity
+  // guard above is the only gate a child-less load needs: the load sequence was
+  // taken synchronously and no action sequence is expected without a child.
+  const loadEnrollment = React.useCallback(async (courseIdForLoad: string, expectedActionSeq: number | undefined, childIdForLoad: string | undefined): Promise<Enrollment | null | undefined> => {
+    if (!isActivityCurrent(activityKey) || courseIdRef.current !== courseIdForLoad || childIdRef.current !== childIdForLoad) return;
     const loadSeq = ++enrollmentLoadSeqRef.current;
     if (!childIdForLoad) {
-      if (canWriteEnrollmentLoad(loadSeq, courseIdForLoad, childIdForLoad, expectedActionSeq)) {
-        setEnrollmentState({ kind: 'idle', enrollment: null });
-      }
+      setEnrollmentState({ kind: 'idle', enrollment: null });
       return null;
     }
     setEnrollmentState({ kind: 'loading', enrollment: null });
@@ -118,9 +125,12 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
       setEnrollmentState({ kind: 'error', enrollment: null, message: 'Course status unavailable right now' });
       return undefined;
     }
-  }, [canWriteEnrollmentLoad, childId, courseId]);
+  }, [canWriteEnrollmentLoad, activityKey, isActivityCurrent]);
 
   React.useEffect(() => {
+    setEnrollmentState({ kind: 'idle', enrollment: null });
+    setLifecycleError(null);
+    setRobotConnectionModalVisible(false);
     void loadEnrollment(courseId, undefined, childId);
   }, [childId, courseId, loadEnrollment]);
 
@@ -138,44 +148,46 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
 
   // The lesson list is the point of this screen — the stat grid's count alone
   // told a parent "6 lessons" and then showed none of them.
-  const [lessons, setLessons] = React.useState<LessonsState>({ kind: 'loading' });
+  const [lessonsState, setLessons] = React.useState<LessonsState>({ kind: 'loading' });
+  const [publishedState, setPublished] = React.useState<PublishedCourse | null>(null);
+  const [catalogKey, setCatalogKey] = React.useState(activityKey);
   const [lessonsNonce, setLessonsNonce] = React.useState(0);
+  const lessons: LessonsState = screenActive && catalogKey === activityKey ? lessonsState : { kind: 'loading' };
+  const published = screenActive && catalogKey === activityKey ? publishedState : null;
   React.useEffect(() => {
     let active = true;
     setLessons({ kind: 'loading' });
-    void getCourseLessons(courseId)
-      .then((list) => {
-        if (active) setLessons({ kind: 'ready', lessons: list });
-      })
-      .catch(() => {
-        if (active) setLessons({ kind: 'error' });
+    setPublished(null);
+    setCatalogKey(activityKey);
+    if (!screenActive) return;
+    void Promise.allSettled([getCourses(), getCourseLessons(courseId)])
+      .then(([courses, list]) => {
+        if (!active || !isActivityCurrent(activityKey)) return;
+        setPublished(courses.status === 'fulfilled' ? courses.value.find(course => course.courseId === courseId) ?? null : null);
+        setLessons(courses.status === 'fulfilled' && list.status === 'fulfilled'
+          ? { kind: 'ready', lessons: list.value } : { kind: 'error' });
       });
-    return () => {
-      active = false;
-    };
-  }, [courseId, lessonsNonce]);
+    return () => { active = false; };
+  }, [courseId, lessonsNonce, activityKey, screenActive, isActivityCurrent]);
 
-  // The lesson list is the point of this screen; a dropped connection left
-  // "Lessons unavailable right now" with no way back short of leaving.
   const reloadLessons = React.useCallback(() => {
-    setLessonsNonce((value) => value + 1);
+    setLessonsNonce(value => value + 1);
   }, []);
 
-  const handleResumeCourse = React.useCallback(async () => {
-    if (checkingRobot) return;
+  // Resume only renders for a loaded child enrollment; the render passes that
+  // child in, so a Resume press never has to re-derive one.
+  const handleResumeCourse = React.useCallback(async (childId: string) => {
+    if (checkingRobotRef.current || !isActivityCurrent(activityKey)) return;
     setLifecycleError(null);
-    if (!childId) {
-      showRobotConnectionModal();
-      return;
-    }
     const actionSeq = ++actionSeqRef.current;
+    checkingRobotRef.current = true;
     setCheckingRobot(true);
     try {
       const robot = await getDeviceStatus('primary', childId);
       if (!isCurrentAction(actionSeq, courseId, childId)) return;
       const deviceId = robot.id;
       if (!deviceId || robot.online !== true) {
-        if (isCurrentAction(actionSeq, courseId, childId)) showRobotConnectionModal();
+        showRobotConnectionModal();
         return;
       }
       try {
@@ -214,63 +226,43 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
             return;
           }
         }
-        if (isCurrentAction(actionSeq, courseId, childId)) {
-          setLifecycleError(formatLessonCopy(getErrorMessage(normalized.code), { robot: robot.name }));
-        }
+        setLifecycleError(formatLessonCopy(getErrorMessage(normalized.code), { robot: robot.name }));
       }
     } catch (err) {
       if (isCurrentAction(actionSeq, courseId, childId)) {
         setLifecycleError(formatLessonCopy(getErrorMessage(normalizeError(err).code)));
       }
     } finally {
+      checkingRobotRef.current = false;
       if (isSameAction(actionSeq)) setCheckingRobot(false);
     }
-  }, [checkingRobot, childId, courseId, isCurrentAction, isSameAction, navigateToRobotReady, queryClient, showRobotConnectionModal]);
+  }, [activityKey, isActivityCurrent, courseId, isCurrentAction, isSameAction, navigateToRobotReady, queryClient, showRobotConnectionModal]);
 
   const handleAddToRobot = React.useCallback(async () => {
-    if (checkingRobot) return;
-    if (enrollmentState.kind === 'ready' && enrollmentState.enrollment && enrollmentState.enrollment.status !== 'COMPLETED') {
-      await handleResumeCourse();
-      return;
-    }
+    if (checkingRobotRef.current || !isActivityCurrent(activityKey)) return;
     if (!childId) {
       showRobotConnectionModal();
       return;
     }
 
+    const actionSeq = ++actionSeqRef.current;
+    checkingRobotRef.current = true;
     setCheckingRobot(true);
     try {
       const robot = await getDeviceStatus('primary', childId);
+      if (!isCurrentAction(actionSeq, courseId, childId)) return;
       if (!robot.id || robot.online !== true) {
         showRobotConnectionModal();
         return;
       }
       navigation.navigate(ROUTES.UnlockConfirmScreen, { courseId });
     } catch {
-      showRobotConnectionModal();
+      if (isCurrentAction(actionSeq, courseId, childId)) showRobotConnectionModal();
     } finally {
-      setCheckingRobot(false);
+      checkingRobotRef.current = false;
+      if (isSameAction(actionSeq)) setCheckingRobot(false);
     }
-  }, [checkingRobot, childId, courseId, enrollmentState, handleResumeCourse, navigation, showRobotConnectionModal]);
-
-  // Static catalog supplies the rich UI metadata (blurb / lcd / teaches) the
-  // published endpoints don't return. The dynamic published catalog overlays the
-  // REAL title + lessonCount for authored courses.
-  const [published, setPublished] = React.useState<PublishedCourse | null>(null);
-  React.useEffect(() => {
-    let active = true;
-    void getCourses()
-      .then((list) => {
-        if (active) setPublished(list.find((course) => course.courseId === courseId) ?? null);
-      })
-      .catch(() => {
-        // Published catalog unavailable → fall back to static metadata only.
-        if (active) setPublished(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, [courseId]);
+  }, [activityKey, isActivityCurrent, childId, courseId, navigation, showRobotConnectionModal, isCurrentAction, isSameAction]);
 
   const enrollment = enrollmentState.enrollment;
   const lifecycleLabel = enrollment ? `Course ${enrollment.status.toLowerCase()}` : null;
@@ -283,7 +275,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
     : 'Add to Robot';
 
   const handleConfirmCancel = React.useCallback(() => {
-    if (!childId || !canCancel || cancellingRef.current) return;
+    if (!childId || !canCancel || cancellingRef.current || !isActivityCurrent(activityKey)) return;
     Alert.alert(
       'Cancel course?',
       'This removes the course from Robot for now; progress stays saved if you resume later.',
@@ -293,7 +285,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
           text: 'Cancel course',
           style: 'destructive',
           onPress: () => {
-            if (cancellingRef.current) return;
+            if (cancellingRef.current || !isActivityCurrent(activityKey)) return;
             cancellingRef.current = true;
             const actionSeq = ++actionSeqRef.current;
             setLifecycleError(null);
@@ -306,7 +298,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
                 }
               })
               .catch((err) => {
-                if (!mountedRef.current || actionSeq !== actionSeqRef.current || courseIdRef.current !== courseId || childIdRef.current !== childId) return;
+                if (!isCurrentAction(actionSeq, courseId, childId)) return;
                 setLifecycleError(getErrorMessage(normalizeError(err).code));
               })
               .finally(() => {
@@ -317,9 +309,13 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
         },
       ],
     );
-  }, [canCancel, childId, courseId, loadEnrollment]);
+  }, [canCancel, childId, courseId, loadEnrollment, activityKey, isActivityCurrent, isCurrentAction]);
 
-  const primaryAction = canResume ? handleResumeCourse : handleAddToRobot;
+  // A resumable enrollment without a selected child (the child was removed
+  // while this screen stayed mounted) falls back to the Add path, whose
+  // connection prompt is the same recovery Resume would offer.
+  const resumeChildId = canResume ? childId : undefined;
+  const primaryAction = resumeChildId ? () => handleResumeCourse(resumeChildId) : handleAddToRobot;
 
   // Authored courses carry backend UUIDs, which never match a static catalog id.
   // Resolving to an arbitrary hardcoded course would print ANOTHER course's
@@ -506,5 +502,5 @@ const styles = StyleSheet.create({
 
 function currentMatchesCourse(current: CurrentAssignment, childId: string, courseLessons: PublishedLesson[]): boolean {
   return current.childId === childId &&
-    courseLessons.some((lesson) => current.lessonId === lesson.lessonId && current.lessonVersion === lesson.lessonVersion);
+    courseLessons.some((lesson) => current.lessonId === lesson.lessonId && current.lessonVersion === lesson.lessonVersion && current.profile === lesson.profile);
 }

@@ -655,6 +655,7 @@ describe('authoritative lesson resume', () => {
       expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.RunningScreen, {
         deviceId: 'device-1',
         assignmentId: 'assignment-1',
+        assignmentVersion: 3,
         sessionId: 'session-1',
         childId: 'child-1',
         lessonTitle: 'Authoritative Greetings',

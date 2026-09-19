@@ -26,7 +26,7 @@ describe('TodayProgressScreen canonical aggregate', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockHousehold.mockReturnValue({ activeChild: { id: 'child-1', name: 'Mai' } } as never);
-    mockDashboard.mockReturnValue({ data: canonical, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
+    mockDashboard.mockReturnValue({ hasCompleteProjection: true, data: canonical, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
   });
 
   it('renders canonical course, session, and active lesson facts', () => {
@@ -44,7 +44,7 @@ describe('TodayProgressScreen canonical aggregate', () => {
     ['RUNNING', 'In progress'],
     ['LISTENING', 'Listening'],
   ])('renders %s as parent-facing copy instead of a raw enum', (state, label) => {
-    mockDashboard.mockReturnValue({ data: { ...canonical, activeLearning: { ...canonical.activeLearning, state } }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
+    mockDashboard.mockReturnValue({ hasCompleteProjection: true, data: { ...canonical, activeLearning: { ...canonical.activeLearning, state } }, isLoading: false, isError: false, isFetching: false, refetch: jest.fn() } as never);
     const screen = renderScreen();
     expect(screen.getByText(label)).toBeTruthy();
     expect(screen.queryByText(state)).toBeNull();
@@ -53,18 +53,18 @@ describe('TodayProgressScreen canonical aggregate', () => {
   it('drops stale totals as soon as canonical adapter data updates', () => {
     const screen = renderScreen();
     expect(screen.getByText('4 of 10 lessons')).toBeTruthy();
-    mockDashboard.mockReturnValue({ data: { ...canonical, completedLessons: 5, courses: [{ ...canonical.courses[0], completedLessonCount: 5, positionPercent: 50 }] }, isLoading: false, isError: false, refetch: jest.fn() } as never);
+    mockDashboard.mockReturnValue({ hasCompleteProjection: true, data: { ...canonical, completedLessons: 5, courses: [{ ...canonical.courses[0], completedLessonCount: 5, positionPercent: 50 }] }, isLoading: false, isError: false, refetch: jest.fn() } as never);
     act(() => screen.rerender(<TodayProgressScreen navigation={{ navigate: jest.fn() } as never} route={{ key: 't', name: 'TodayProgressScreen' } as never} />));
     expect(screen.queryByText('4 of 10 lessons')).toBeNull();
     expect(screen.getByText('5 of 10 lessons')).toBeTruthy();
   });
 
   it('renders loading, empty, and offline states', () => {
-    mockDashboard.mockReturnValue({ data: undefined, isLoading: true } as never);
+    mockDashboard.mockReturnValue({ hasCompleteProjection: false, data: undefined, isLoading: true } as never);
     expect(renderScreen().getByText('Loading progress')).toBeTruthy();
-    mockDashboard.mockReturnValue({ data: { ...canonical, activeLearning: null, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false } as never);
+    mockDashboard.mockReturnValue({ hasCompleteProjection: true, data: { ...canonical, activeLearning: null, sessions: [], courses: [], completedLessons: 0, totalLessons: 0, completedSessions: 0, recentDurationSec: 0 }, isLoading: false, isError: false } as never);
     expect(renderScreen().getByText('No practice yet')).toBeTruthy();
-    mockDashboard.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch: jest.fn() } as never);
+    mockDashboard.mockReturnValue({ hasCompleteProjection: false, data: undefined, isLoading: false, isError: true, refetch: jest.fn() } as never);
     expect(renderScreen().getByText('Progress unavailable')).toBeTruthy();
   });
 });

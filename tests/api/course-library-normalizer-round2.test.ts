@@ -26,12 +26,13 @@ import {
   normalizePreloadStatusPayload,
   normalizeEnrollmentPayload,
   enrollCourse,
+  cancelCourseEnrollment,
   listChildEnrollments,
 } from '@/services/api/course-library.api';
 
 jest.mock('@/services/http/client', () => ({
   __esModule: true,
-  default: { get: jest.fn(), post: jest.fn() },
+  default: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
 }));
 
 const mockedClient = client as jest.Mocked<typeof client>;
@@ -176,7 +177,7 @@ describe('assignment / current / preload — pickEnvelope ?? {} and alt-key arms
     const p = normalizePreloadStatusPayload('nope' as unknown);
     expect(p.assignmentId).toBe('');
     expect(p.state).toBe('UNASSIGNED');
-    expect(p.profile).toBe('espTft');
+    expect(p.profile).toBe('');
     expect(p.criticalTotal).toBe(0);
     expect(p.assets).toEqual([]);
   });
@@ -246,7 +247,7 @@ describe('normalizers — terminal default arms when every alt-key is absent', (
       manifestChecksum: null,
       state: 'UNASSIGNED',
       childId: '',
-      profile: 'espTft',
+      profile: '',
     });
   });
 
@@ -313,4 +314,16 @@ describe('enrollCourse / listChildEnrollments — pickEnvelope ?? {} fallbacks (
     expect(result.enrollments).toHaveLength(1);
     expect(result.enrollments[0].courseId).toBe('c_food');
   });
+});
+
+
+it('run15 A5: null cancel receipt rejects with exact request and valid boolean controls', async () => {
+  mockedClient.delete.mockResolvedValueOnce({ data: null });
+  await expect(cancelCourseEnrollment('course-a', 'child-a')).rejects.toThrow('Invalid cancel enrollment payload');
+  for (const cancelled of [false, true]) {
+    mockedClient.delete.mockResolvedValueOnce({ data: { data: { cancelled } } });
+    await expect(cancelCourseEnrollment('course-a', 'child-a')).resolves.toEqual({ cancelled });
+  }
+  expect(mockedClient.delete.mock.calls).toEqual(Array.from({ length: 3 }, () => ['/courses/course-a/enroll/child-a']));
+  expect(mockedClient.get).not.toHaveBeenCalled();
 });

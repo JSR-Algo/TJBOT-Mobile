@@ -48,18 +48,18 @@ export type RootStackParamList = {
   CourseLibraryScreen: undefined;
   CourseDetailScreen: undefined | { courseId?: string };
   BuyCourseScreen: undefined | { courseId?: string };
-  CourseAddedScreen: undefined | { courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; manifestChecksum?: string | null };
+  CourseAddedScreen: undefined | { childId?: string; profile?: string; courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; manifestChecksum?: string | null };
   CourseCompleteScreen: undefined | { courseId?: string };
   CourseLockedScreen: undefined | { courseId?: string };
-  NeedsSyncScreen: undefined | { courseId?: string; deviceId?: string; childId?: string };
+  NeedsSyncScreen: undefined | { courseId?: string; deviceId?: string; childId?: string; assignmentId?: string; assignmentVersion?: number; profile?: string; manifestChecksum?: string | null };
   // US-006 Slice-01 (LANE-MOBILE): the lesson-assignment happy path is re-keyed
   // from courseId to deviceId (DIV-MOBILE-DEVICEKEY). assignmentId/Version thread
   // forward for the ASSIGNMENT_CONFLICT refresh-and-retry; courseId stays for
   // back-compat with the existing browse entry.
   SendToRobotScreen: undefined | { courseId?: string; resumeContext?: CourseResumeContext };
-  RobotReadyScreen: undefined | { childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; lessonTitle?: string; manifestChecksum?: string | null };
-  RunningScreen: undefined | { childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
-  CompanionScreen: undefined | { childId?: string; deviceId?: string; assignmentId?: string; sessionId?: string; lessonTitle?: string };
+  RobotReadyScreen: undefined | { profile?: string; childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; lessonTitle?: string; manifestChecksum?: string | null };
+  RunningScreen: undefined | { childId?: string; courseId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; sessionId?: string; lessonTitle?: string };
+  CompanionScreen: undefined | { childId?: string; deviceId?: string; assignmentId?: string; assignmentVersion?: number; sessionId?: string; lessonTitle?: string };
 
   // purchase
   PurchaseIntroScreen: undefined;

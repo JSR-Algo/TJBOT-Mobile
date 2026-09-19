@@ -14,7 +14,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CourseScreen'>;
 type LoadState =
   | { kind: 'loading' }
   | { kind: 'ready'; courses: CourseCatalogItem[] }
-  | { kind: 'error'; title: string; detail?: string; retryLabel?: string };
+  | { kind: 'error'; title: string; detail?: string; retryLabel: string };
 
 export default function CourseScreen({ navigation }: Props) {
   const [state, setState] = React.useState<LoadState>({ kind: 'loading' });
@@ -45,16 +45,14 @@ export default function CourseScreen({ navigation }: Props) {
           <Box gap={8}>
             <Text fontWeight="800" style={styles.message}>{state.title}</Text>
             {state.detail ? <Text style={styles.detail}>{state.detail}</Text> : null}
-            {state.retryLabel ? (
-              <TouchableOpacity
-                onPress={load}
-                style={styles.retry}
-                accessibilityRole="button"
-                accessibilityLabel={state.retryLabel}
-              >
-                <Text fontWeight="700" style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
-            ) : null}
+            <TouchableOpacity
+              onPress={load}
+              style={styles.retry}
+              accessibilityRole="button"
+              accessibilityLabel={state.retryLabel}
+            >
+              <Text fontWeight="700" style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
           </Box>
         ) : null}
         {state.kind === 'ready' && state.courses.length === 0 ? (

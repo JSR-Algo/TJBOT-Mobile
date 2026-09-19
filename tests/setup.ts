@@ -1,3 +1,8 @@
+import { AppState } from 'react-native';
+
+// RN 0.83's preset uses a function for this value; mounted screens start active.
+AppState.currentState = 'active';
+
 // Silence React Navigation warnings in tests
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');

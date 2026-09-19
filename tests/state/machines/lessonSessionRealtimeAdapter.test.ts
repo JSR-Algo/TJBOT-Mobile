@@ -88,3 +88,15 @@ describe('lessonSessionEventFromRealtimeFrame', () => {
     });
   });
 });
+
+
+it('run15 A5: malformed fallback is rejected with explicit boolean and omitted controls', () => {
+  const frame = { type: 'TURN_COMPLETE', sessionId: LIVE.sessionId, turnId: 'turn-1', responseText: 'Try again.' };
+  for (const fallback of ['true', 'false', 0, 1, null, {}, []]) {
+    expect(lessonSessionEventFromRealtimeFrame({ ...frame, fallback }, LIVE)).toBeNull();
+  }
+  for (const fallback of [false, true]) {
+    expect(lessonSessionEventFromRealtimeFrame({ ...frame, fallback }, LIVE)).toEqual({ type: 'TURN_COMPLETE', turnId: 'turn-1', responseText: 'Try again.', fallback });
+  }
+  expect(lessonSessionEventFromRealtimeFrame(frame, LIVE)).toEqual({ type: 'TURN_COMPLETE', turnId: 'turn-1', responseText: 'Try again.' });
+});

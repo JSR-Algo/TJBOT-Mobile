@@ -39,7 +39,16 @@ const DEVICE: DeviceStatus = {
   name: 'Casa Robot',
   online: true,
   batteryPercent: 80,
+  assignedChildProfileId: 'child-1',
 } as DeviceStatus;
+
+const selection = { childId: 'child-1', assignmentId: 'asg-1', assignmentVersion: 1, profile: 'espTft', manifestChecksum: 'hash-1' };
+function currentPayload() {
+  return { data: { data: { assignment: {
+    assignmentId: 'asg-1', assignmentVersion: 1, childId: 'child-1', profile: 'espTft',
+    manifestChecksum: 'hash-1', lessonId: 'lesson-1', lessonVersion: 1, lessonTitle: 'Lesson', state: 'READY', sessionId: null,
+  } } } };
+}
 
 function navigationFor() {
   return {
@@ -93,11 +102,12 @@ describe('NeedsSyncScreen reconnect uses live device preload status', () => {
   it('never calls the retired /course-library/:id/sync-status endpoint', async () => {
     mockedClient.get.mockImplementation(async (path: string) => {
       if (path === '/devices/household/me') return { data: { data: [DEVICE] } } as never;
+      if (path === '/devices/dev-1/assignment/current') return currentPayload() as never;
       if (path === '/devices/dev-1/preload-status') return preload('READY') as never;
       throw new Error(`unexpected GET ${path}`);
     });
 
-    renderScreen({ courseId: 'c_zoo', deviceId: 'dev-1' });
+    renderScreen({ ...selection, courseId: 'c_zoo', deviceId: 'dev-1' });
     await act(async () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
@@ -107,30 +117,32 @@ describe('NeedsSyncScreen reconnect uses live device preload status', () => {
     expect(requestedPaths().some((path) => path.includes('/course-library/'))).toBe(false);
   });
 
-  it('READY preload advances to CourseAddedScreen', async () => {
+  it('matching READY current and preload advance with exact identity', async () => {
     mockedClient.get.mockImplementation(async (path: string) => {
+      if (path === '/devices/dev-1/assignment/current') return currentPayload() as never;
       if (path === '/devices/dev-1/preload-status') return preload('READY') as never;
       throw new Error(`unexpected GET ${path}`);
     });
 
-    const navigation = renderScreen({ courseId: 'c_zoo', deviceId: 'dev-1' });
+    const navigation = renderScreen({ ...selection, courseId: 'c_zoo', deviceId: 'dev-1' });
     await act(async () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
 
     await waitFor(() =>
-      expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_zoo' }),
+      expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { ...selection, courseId: 'c_zoo', deviceId: 'dev-1' }),
     );
     expect(screen.queryByText(/hasn't finished downloading/i)).toBeNull();
   });
 
   it('non-READY preload keeps the parent on the screen with actionable guidance', async () => {
     mockedClient.get.mockImplementation(async (path: string) => {
+      if (path === '/devices/dev-1/assignment/current') return currentPayload() as never;
       if (path === '/devices/dev-1/preload-status') return preload('PRELOADING') as never;
       throw new Error(`unexpected GET ${path}`);
     });
 
-    const navigation = renderScreen({ courseId: 'c_zoo', deviceId: 'dev-1' });
+    const navigation = renderScreen({ ...selection, courseId: 'c_zoo', deviceId: 'dev-1' });
     await act(async () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
@@ -142,17 +154,18 @@ describe('NeedsSyncScreen reconnect uses live device preload status', () => {
   it('resolves the household device when no deviceId is routed in', async () => {
     mockedClient.get.mockImplementation(async (path: string) => {
       if (path === '/devices/household/me') return { data: { data: [DEVICE] } } as never;
+      if (path === '/devices/dev-1/assignment/current') return currentPayload() as never;
       if (path === '/devices/dev-1/preload-status') return preload('READY') as never;
       throw new Error(`unexpected GET ${path}`);
     });
 
-    const navigation = renderScreen({ courseId: 'c_zoo' });
+    const navigation = renderScreen({ ...selection, courseId: 'c_zoo' });
     await act(async () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
 
     await waitFor(() => expect(requestedPaths()).toContain('/devices/household/me'));
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { courseId: 'c_zoo' });
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.CourseAddedScreen, { ...selection, courseId: 'c_zoo', deviceId: 'dev-1' }));
   });
 
   it('surfaces a distinct message when no robot is paired yet (no dead end)', async () => {
@@ -161,7 +174,7 @@ describe('NeedsSyncScreen reconnect uses live device preload status', () => {
       throw new Error(`unexpected GET ${path}`);
     });
 
-    const navigation = renderScreen({ courseId: 'c_zoo' });
+    const navigation = renderScreen({ ...selection, courseId: 'c_zoo' });
     await act(async () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
@@ -173,7 +186,7 @@ describe('NeedsSyncScreen reconnect uses live device preload status', () => {
   it('a network failure is reported as a retryable connection problem', async () => {
     mockedClient.get.mockRejectedValue(new Error('offline'));
 
-    const navigation = renderScreen({ courseId: 'c_zoo', deviceId: 'dev-1' });
+    const navigation = renderScreen({ ...selection, courseId: 'c_zoo', deviceId: 'dev-1' });
     await act(async () => {
       fireEvent.press(screen.getByText('Reconnect Robot now'));
     });
@@ -185,6 +198,7 @@ describe('NeedsSyncScreen reconnect uses live device preload status', () => {
   it('double-tap issues a single preload check (no duplicate in-flight requests)', async () => {
     let resolvePreload: ((value: unknown) => void) | undefined;
     mockedClient.get.mockImplementation((path: string) => {
+      if (path === '/devices/dev-1/assignment/current') return currentPayload() as never;
       if (path === '/devices/dev-1/preload-status') {
         return new Promise((resolve) => {
           resolvePreload = resolve;
@@ -193,7 +207,7 @@ describe('NeedsSyncScreen reconnect uses live device preload status', () => {
       throw new Error(`unexpected GET ${path}`);
     });
 
-    renderScreen({ courseId: 'c_zoo', deviceId: 'dev-1' });
+    renderScreen({ ...selection, courseId: 'c_zoo', deviceId: 'dev-1' });
     const button = screen.getByText('Reconnect Robot now');
     await act(async () => {
       fireEvent.press(button);

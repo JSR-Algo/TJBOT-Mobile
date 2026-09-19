@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, userEvent, waitFor } from '@testing-library/react-native';
 import { ROUTES } from '@/navigation/routes';
 import CourseAddedScreen from '@/features/course-library/screens/CourseAddedScreen';
 import CourseLibraryScreen from '@/features/course-library/screens/CourseLibraryScreen';
@@ -21,6 +21,7 @@ jest.mock('@react-navigation/native', () => {
   const ReactInner = require('react') as typeof import('react');
   return {
     ...actual,
+    useIsFocused: () => true,
     useFocusEffect: (cb: () => undefined | (() => void)) => {
       ReactInner.useEffect(() => {
         const cleanup = cb();
@@ -273,4 +274,16 @@ describe('LessonListScreen — back nav undefined params arm (line 49)', () => {
     fireEvent.press(screen.getByLabelText('Back'));
     expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.UnitScreen, { unitId: 'u-9' });
   });
+});
+
+
+it('run15 A1: Course Back returns through the navigation stack', async () => {
+  const navigation = navigationFor();
+  render(<CourseScreen navigation={navigation as never} route={{ key: 'course', name: ROUTES.CourseScreen } as never} />);
+  await act(async () => { await Promise.resolve(); });
+  await userEvent.setup().press(screen.getByRole('button', { name: 'Back' }));
+  expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  expect(navigation.navigate).not.toHaveBeenCalled();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(mockedGetLessonList).not.toHaveBeenCalled();
 });

@@ -1,75 +1,19 @@
 #!/usr/bin/env node
-/**
- * Verifies screen components typed with NativeStackScreenProps use the correct
- * route name from RootStackParamList. Uses TypeScript Compiler API — no external parser.
- * Exits 1 and lists violations if any are found.
- */
-import { createRequire } from 'module';
-import { readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
-import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { analyzeScreenProps } from './_lib/screen-prop-analysis.mjs';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const root = join(__dirname, '..');
-const require = createRequire(import.meta.url);
-
-let ts;
+const args = process.argv.slice(2);
 try {
-  ts = require(join(root, 'node_modules', 'typescript'));
-} catch {
-  console.error('check-screen-prop-types: typescript not found in node_modules');
-  process.exit(1);
+  if (args.length && (args.length !== 2 || args[0] !== '--root')) throw new Error('Usage: check-screen-prop-types.mjs [--root mobile-root]');
+  const root = args.length ? resolve(args[1]) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const result = analyzeScreenProps(root);
+  console.info(`check-screen-prop-types: scanned=${result.scanned} typed=${result.typed} registered=${result.registered} unregistered=${result.unregistered.length} violations=${result.violations.length}`);
+  for (const file of result.unregistered) console.info(`  unregistered (no runtime registration inferred): ${file}`);
+  for (const message of result.violations) console.error(`  ${message}`);
+  if (result.violations.length) process.exitCode = 1;
+  else console.info('check-screen-prop-types: PASS component prop/registration identities');
+} catch (error) {
+  console.error('check-screen-prop-types: FAILED required input/analysis:', error);
+  process.exitCode = 1;
 }
-
-function walkScreens(dir) {
-  const results = [];
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    const st = statSync(full);
-    if (st.isDirectory()) {
-      results.push(...walkScreens(full));
-    } else if (entry.endsWith('Screen.tsx') || entry.endsWith('Modal.tsx') || entry.endsWith('Overlay.tsx')) {
-      results.push(full);
-    }
-  }
-  return results;
-}
-
-const featuresDir = join(root, 'src', 'features');
-const screenFiles = walkScreens(featuresDir);
-
-const violations = [];
-
-for (const file of screenFiles) {
-  const src = ts.createSourceFile(
-    file,
-    require('fs').readFileSync(file, 'utf8'),
-    ts.ScriptTarget.Latest,
-    true,
-  );
-
-  // Look for NativeStackScreenProps<RootStackParamList, 'RouteName'> usage
-  function visit(node) {
-    if (ts.isTypeReferenceNode(node)) {
-      const name = node.typeName && (node.typeName.text || (node.typeName.right && node.typeName.right.text));
-      if (name === 'NativeStackScreenProps' && node.typeArguments && node.typeArguments.length >= 2) {
-        const routeArg = node.typeArguments[1];
-        if (ts.isLiteralTypeNode(routeArg) && ts.isStringLiteral(routeArg.literal)) {
-          // valid typed screen
-        } else if (node.typeArguments.length === 1) {
-          // missing route name — not necessarily a violation if undefined params
-        }
-      }
-    }
-    ts.forEachChild(node, visit);
-  }
-  visit(src);
-}
-
-if (violations.length > 0) {
-  console.error('check-screen-prop-types: violations found:');
-  for (const v of violations) console.error('  -', v);
-  process.exit(1);
-}
-
-console.log(`check-screen-prop-types: OK — ${screenFiles.length} screen files checked`);

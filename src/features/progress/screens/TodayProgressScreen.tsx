@@ -19,9 +19,10 @@ export default function TodayProgressScreen({ navigation }: Props) {
   const { activeChild } = useHousehold();
   const query = useChildProgressDashboardQuery(activeChild?.id);
   const hasActivity = Boolean(query.data && (query.data.activeLearning || query.data.sessions.length || query.data.courses.length));
+  const hasVerifiedEmptyProgress = query.hasCompleteProjection && !hasActivity;
   return (
     <PageScroll>
-      <PageHeader subtitle="Today" title={hasActivity ? 'Learning progress' : 'No practice yet'} />
+      <PageHeader subtitle="Today" title={hasVerifiedEmptyProgress ? 'No practice yet' : 'Learning progress'} />
       <Box paddingHorizontal={18} paddingBottom={14} gap={12} accessible={Boolean(query.data)} accessibilityLabel={query.data ? 'Child progress dashboard' : undefined}>
         {!activeChild ? <Text style={styles.message}>Add a child to see progress</Text>
           : query.isLoading ? <Text style={styles.message}>Loading progress</Text>
