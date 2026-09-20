@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import PairConnectingScreen from '@/features/device/pairing/screens/PairConnectingScreen';
 import PairFailedScreen from '@/features/device/pairing/screens/PairFailedScreen';
 import { ROUTES } from '@/navigation/routes';
@@ -1779,6 +1779,22 @@ describe('PairConnectingScreen — BLE zero-code claim path', () => {
     expect(mockedProvisionWifiViaLocalBle).not.toHaveBeenCalled();
   });
 
+  it('does not navigate after cancellation while confirmed pairing storage is pending', async () => {
+    putPairingWifiPassword('attempt-zc-1', WIFI_PASSWORD);
+    let resolveSave!: () => void;
+    mockedSavePendingPairingContext.mockReturnValueOnce(new Promise<void>((resolve) => { resolveSave = resolve; }));
+    mockedRequestClaim.mockResolvedValue({ claimId: 'claim-confirmed-1', deviceId: 'device-1', status: 'CLAIM_CONFIRMED', message: 'Confirmed', expiresAt: '2099-01-01T00:00:00.000Z' });
+    mockedGetClaimStatus.mockResolvedValue({ claimId: 'claim-confirmed-1', deviceId: 'device-1', status: 'CLAIM_CONFIRMED', online: true, expiresAt: null, failureCode: null });
+    const navigate = jest.fn();
+    const reset = jest.fn();
+    const view = render(<PairConnectingScreen navigation={{ navigate, reset } as never} route={{ params: bleClaimParams({ provisioningAttemptId: 'attempt-zc-1' }) } as never} />);
+    await waitFor(() => expect(mockedSavePendingPairingContext).toHaveBeenCalled());
+    fireEvent.press(view.getByRole('button', { name: 'Cancel' }));
+    await act(async () => { resolveSave(); });
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('persists the confirmed pairing context before navigating to Rename', async () => {
     putPairingWifiPassword('attempt-zc-1', WIFI_PASSWORD); // password only, no token
     let resolveSave: (() => void) | undefined;
@@ -1898,6 +1914,33 @@ describe('PairConnectingScreen — BLE reconnect (credential-only) path', () => 
     });
     await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalled());
     screen.unmount();
+  });
+
+  it('cancels the BLE handoff before leaving and ignores a late success', async () => {
+    putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+    let finishHandoff!: (result: Awaited<ReturnType<typeof provisionWifiViaLocalBle>>) => void;
+    mockedProvisionWifiViaLocalBle.mockImplementationOnce(() => new Promise((resolve) => { finishHandoff = resolve; }));
+    const reset = jest.fn();
+    const navigate = jest.fn();
+    const view = render(<PairConnectingScreen navigation={{ navigate, reset } as never} route={{ params: bleReconnectParams() } as never} />);
+    await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledTimes(1));
+    const handoff = mockedProvisionWifiViaLocalBle.mock.calls[0][0];
+    fireEvent.press(view.getByRole('button', { name: 'Cancel' }));
+    expect(handoff.signal?.aborted).toBe(true);
+    expect(reset).toHaveBeenCalledTimes(1);
+    await act(async () => { finishHandoff({ deviceId: 'ble-device-1', status: 'wifi_credentials_sent', transport: 'ble-blufi' }); });
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('aborts the BLE handoff when the connecting screen unmounts', async () => {
+    putPairingWifiPassword('attempt-rc-1', WIFI_PASSWORD);
+    mockedProvisionWifiViaLocalBle.mockReturnValueOnce(new Promise(() => undefined));
+    const view = render(<PairConnectingScreen navigation={{ navigate: jest.fn(), reset: jest.fn() } as never} route={{ params: bleReconnectParams() } as never} />);
+    await waitFor(() => expect(mockedProvisionWifiViaLocalBle).toHaveBeenCalledTimes(1));
+    const handoff = mockedProvisionWifiViaLocalBle.mock.calls[0][0];
+    view.unmount();
+    expect(handoff.signal?.aborted).toBe(true);
   });
 
   it('shows a one-minute upper-bound instead of promising about 30 seconds', () => {

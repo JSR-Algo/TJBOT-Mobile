@@ -44,6 +44,11 @@ export default function PairSearchScreen({ navigation, route }: Props) {
   const reconnectMode = route.params?.reconnectMode === true;
   const reconnectDeviceId = route.params?.reconnectDeviceId;
   const reconnectSerialNumber = route.params?.reconnectSerialNumber;
+  const reconnectFailureContext = React.useMemo(() => reconnectMode ? {
+    provisioningTransport: 'ble_reconnect' as const,
+    ...(reconnectDeviceId ? { deviceId: reconnectDeviceId } : {}),
+    ...(reconnectSerialNumber ? { serialNumber: reconnectSerialNumber } : {}),
+  } : {}, [reconnectMode, reconnectDeviceId, reconnectSerialNumber]);
   const isSearchRunCurrent = React.useCallback(
     (runId: number): boolean => activeSearchRunRef.current === runId,
     [],
@@ -151,12 +156,12 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         });
       } catch (error) {
         if (!isSearchRunCurrent(runId)) return;
-        navigation.navigate(ROUTES.PairFailedScreen, {
+        navigation.navigate(ROUTES.PairFailedScreen, { ...reconnectFailureContext,
           errorCode: errorCodeFrom(error, 'RECONNECT_DEVICE_LOOKUP_FAILED'),
         });
       }
     },
-    [isSearchRunCurrent, navigation, reconnectDeviceId, reconnectSerialNumber],
+    [isSearchRunCurrent, navigation, reconnectDeviceId, reconnectSerialNumber, reconnectFailureContext],
   );
 
   const routeResolvedCandidate = React.useCallback(
@@ -185,7 +190,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       const phoneOnline = await isPhoneOnline();
       if (!isSearchRunCurrent(runId)) return;
       if (!phoneOnline) {
-        navigation.navigate(ROUTES.PairFailedScreen, { errorCode: 'WIFI_UNAVAILABLE' });
+        navigation.navigate(ROUTES.PairFailedScreen, { ...reconnectFailureContext, errorCode: 'WIFI_UNAVAILABLE' });
         return;
       }
 
@@ -197,7 +202,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
       });
       if (!isSearchRunCurrent(runId)) return;
       if (!bootstrap?.available) {
-        navigation.navigate(ROUTES.PairFailedScreen, {
+        navigation.navigate(ROUTES.PairFailedScreen, { ...reconnectFailureContext,
           errorCode: bleBootstrapErrorCode(bootstrap, bleBootstrapFailed),
         });
         return;
@@ -219,7 +224,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
         });
         if (!isSearchRunCurrent(runId)) return;
         if (lastScanFailureCode === 'BLE_SCAN_THROTTLED') {
-          navigation.navigate(ROUTES.PairFailedScreen, { errorCode: lastScanFailureCode });
+          navigation.navigate(ROUTES.PairFailedScreen, { ...reconnectFailureContext, errorCode: lastScanFailureCode });
           return;
         }
         if (scan) lastScanFailureCode = undefined;
@@ -236,7 +241,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
 
       if (resolved.length === 0 && lastScanFailureCode) {
         if (!isSearchRunCurrent(runId)) return;
-        navigation.navigate(ROUTES.PairFailedScreen, { errorCode: lastScanFailureCode });
+        navigation.navigate(ROUTES.PairFailedScreen, { ...reconnectFailureContext, errorCode: lastScanFailureCode });
         return;
       }
 
@@ -251,7 +256,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
 
       if (resolved.length === 0) {
         if (!isSearchRunCurrent(runId)) return;
-        navigation.navigate(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
+        navigation.navigate(ROUTES.PairFailedScreen, { ...reconnectFailureContext, errorCode: 'BLE_SCAN_TIMEOUT' });
         return;
       }
 
@@ -275,7 +280,7 @@ export default function PairSearchScreen({ navigation, route }: Props) {
     return () => {
       if (activeSearchRunRef.current === runId) activeSearchRunRef.current += 1;
     };
-  }, [isFocused, isSearchRunCurrent, navigation, reconnectMode, routeResolvedCandidate]);
+  }, [isFocused, isSearchRunCurrent, navigation, reconnectMode, routeResolvedCandidate, reconnectFailureContext]);
 
   const chooseCandidate = React.useCallback(
     (item: RobotCandidate): void => {
@@ -291,8 +296,8 @@ export default function PairSearchScreen({ navigation, route }: Props) {
 
   const cancelSearchToFailed = React.useCallback(() => {
     activeSearchRunRef.current += 1;
-    navigation.navigate(ROUTES.PairFailedScreen, { errorCode: 'BLE_SCAN_TIMEOUT' });
-  }, [navigation]);
+    navigation.navigate(ROUTES.PairFailedScreen, { ...reconnectFailureContext, errorCode: 'BLE_SCAN_TIMEOUT' });
+  }, [navigation, reconnectFailureContext]);
 
   if (searchState === 'choosing') {
     return (

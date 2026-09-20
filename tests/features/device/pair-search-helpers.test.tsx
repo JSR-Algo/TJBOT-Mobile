@@ -253,6 +253,16 @@ it('keeps pairingCode out of the PairSearch diagnostics allowlist', () => {
 // candidate's serial is forwarded but the deviceId comes from getDeviceStatus.
 // ---------------------------------------------------------------------------
 describe('reconnectAndGoToWifi (reconnect route)', () => {
+  it('preserves the owned robot reconnect context after Bluetooth is turned off', async () => {
+    mockedInitializeBle.mockResolvedValue({ permission: 'granted', available: false, reason: 'Bluetooth is off.' });
+    const navigate = jest.fn();
+    renderSearch(navigate, { reconnectMode: true, reconnectDeviceId: 'device-owned', reconnectSerialNumber: 'TBOT-OWNED' });
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
+      errorCode: 'BLE_POWERED_OFF', deviceId: 'device-owned', serialNumber: 'TBOT-OWNED', provisioningTransport: 'ble_reconnect',
+    }));
+    expect(mockedStartProvisioning).not.toHaveBeenCalled();
+  });
+
   it('fails closed when neither route nor backend provides a trustworthy target serial', async () => {
     mockedGetDeviceStatus.mockResolvedValue({
       id: 'device-selected-2',
@@ -266,6 +276,8 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'RECONNECT_DEVICE_IDENTITY_MISSING',
+      provisioningTransport: 'ble_reconnect',
+      deviceId: 'device-selected-2',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
   });
@@ -289,6 +301,8 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
     await waitFor(() => expect(mockedGetDeviceStatus).toHaveBeenCalledWith('device-selected-2'));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'RECONNECT_DEVICE_MISMATCH',
+      provisioningTransport: 'ble_reconnect',
+      deviceId: 'device-selected-2', serialNumber: 'TBOT-SELECTED',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
   });
@@ -332,6 +346,7 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'RECONNECT_DEVICE_NOT_FOUND',
+      provisioningTransport: 'ble_reconnect',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
     expect(mockedStartProvisioning).not.toHaveBeenCalled();
@@ -345,6 +360,7 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'RECONNECT_DEVICE_LOOKUP_FAILED',
+      provisioningTransport: 'ble_reconnect',
     }));
     expect(navigate).not.toHaveBeenCalledWith(ROUTES.PairWifiScreen, expect.anything());
   });
@@ -357,6 +373,7 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'PRIMARY_TIMEOUT',
+      provisioningTransport: 'ble_reconnect',
     }));
   });
 
@@ -368,6 +385,7 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'DEVICE_REVOKED',
+      provisioningTransport: 'ble_reconnect',
     }));
   });
 
@@ -385,6 +403,7 @@ describe('reconnectAndGoToWifi (reconnect route)', () => {
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(ROUTES.PairFailedScreen, {
       errorCode: 'DEVICE_ALREADY_ASSIGNED',
+      provisioningTransport: 'ble_reconnect',
     }));
   });
 

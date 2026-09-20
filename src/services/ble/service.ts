@@ -252,6 +252,7 @@ export async function provisionWifiViaLocalBle(params: {
   allowCredentialOnly?: boolean;
   connReportTimeoutMs?: number;
   connectDevice?: ConnectDevice;
+  signal?: AbortSignal;
 }): Promise<LocalBleProvisioningResult> {
   const ssid = sanitizeWifiText(params.ssid, WIFI_SSID_MAX_BYTES, 'WIFI_SSID_INVALID', { trim: false });
   const password = sanitizeWifiText(params.password, WIFI_PASSWORD_MAX_BYTES, 'WIFI_PASSWORD_INVALID', { trim: false });
@@ -265,6 +266,15 @@ export async function provisionWifiViaLocalBle(params: {
     throw codedError('CLAIM_BOOTSTRAP_TOKEN_INVALID', 'Claim token is invalid.');
   }
   const provisionSessionEpoch = beginBleGattSession(params.device.id);
+  const ensureActive = (): void => {
+    if (params.signal?.aborted || currentBleGattSessionEpoch(params.device.id) !== provisionSessionEpoch) {
+      throw codedError('BLE_PROVISIONING_CANCELLED', 'Robot Wi-Fi setup was cancelled.');
+    }
+  };
+  const runOperation = <T,>(operation: () => Promise<T>, onLateResolve?: (value: T) => void): Promise<T> => {
+    ensureActive();
+    return withBleAbort(operation(), params.signal, onLateResolve, 'BLE_PROVISIONING_CANCELLED');
+  };
 
   logBleProvision('start', {
     deviceId: params.device.id,
@@ -276,7 +286,11 @@ export async function provisionWifiViaLocalBle(params: {
     passwordBytes: utf8ByteLength(password),
   });
 
-  const connectDevice = params.connectDevice ?? connectBleDevice;
+  const connectDevice = params.connectDevice ?? ((id: string) => connectBleDevice(id, {
+    signal: params.signal,
+    ensureActive,
+    ownsSession: () => currentBleGattSessionEpoch(id) === provisionSessionEpoch,
+  }));
   let connected: LocalProvisioningDevice | undefined;
   let securityResponse: SecurityResponseWait | null = null;
   let connReport: ConnReportWait | null = null;
@@ -288,24 +302,30 @@ export async function provisionWifiViaLocalBle(params: {
     // pre-scan refresh + >10s to complete; the old 10s wrap mapped that to a
     // false BLE_PROVISIONING_DISCONNECTED ("Operation was cancelled").
     connected = await withBleOperationTimeout(
-      connectDevice(params.device.id),
+      runOperation(() => connectDevice(params.device.id), (lateConnection) => {
+        if (currentBleGattSessionEpoch(params.device.id) === provisionSessionEpoch) {
+          void lateConnection.cancelConnection?.().catch(() => undefined);
+        }
+      }),
       'BLE_PROVISIONING_GATT_ERROR',
       BLE_PROVISIONING_STATIC_MESSAGE,
       BLE_CONNECT_OPERATION_TIMEOUT_MS,
     );
     logBleProvision('connected', { deviceId: params.device.id });
     const discovered = await withBleOperationTimeout(
-      connected.discoverAllServicesAndCharacteristics(),
+      runOperation(() => connected!.discoverAllServicesAndCharacteristics()),
       'BLE_PROVISIONING_GATT_ERROR',
       BLE_PROVISIONING_STATIC_MESSAGE,
       BLE_SERVICE_DISCOVERY_TIMEOUT_MS,
     );
     logBleProvision('services_discovered', { deviceId: params.device.id });
+    ensureActive();
     const { writer, target } = resolveBluFiWriter(discovered, connected);
     if (!writer) {
       logBleProvision('writer_missing', { deviceId: params.device.id });
       throw codedError('BLE_PROVISIONING_UNSUPPORTED', 'Robot BLE provisioning characteristic is unavailable.');
     }
+    const guardedWriter: BluFiWriter = (...args) => runOperation(() => writer.apply(target, args));
 
     // Subscribe to the notify char BEFORE writing protected frames: encrypted
     // BluFi needs the robot DH public key, and conn-report can arrive early.
@@ -323,7 +343,7 @@ export async function provisionWifiViaLocalBle(params: {
 
     // Best-effort MTU bump. Never fail provisioning on MTU — many stacks omit
     // requestMTU and Xiaomi can reject the exchange without breaking BluFi.
-    await requestBleMtu(connected, discovered).catch((error) => {
+    await runOperation(() => requestBleMtu(connected!, discovered)).catch((error) => {
       logBleProvision('mtu_skipped', {
         message: error instanceof Error ? error.message : String(error),
       });
@@ -333,15 +353,15 @@ export async function provisionWifiViaLocalBle(params: {
     const setSecurityFrame = security.frames[security.frames.length - 1];
     const negotiateFrames = security.frames.slice(0, -1);
     logBleProvision('write_security_negotiate', { frames: negotiateFrames.length });
-    await writeBluFiFrames(writer.bind(target), negotiateFrames, {
+    await writeBluFiFrames(guardedWriter, negotiateFrames, {
       timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
       timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
     });
     logBleProvision('await_security_response', { timeoutMs: BLUFI_SECURITY_RESPONSE_TIMEOUT_MS });
-    const peerPublicKey = await securityResponse.result;
+    const peerPublicKey = await runOperation(() => securityResponse!.result);
     const session = deriveBluFiSession({ privateKey: security.privateKey, peerPublicKey: new Uint8Array(peerPublicKey) });
     logBleProvision('security_response_received', { publicKeyBytes: peerPublicKey.length });
-    await writeBluFiFrames(writer.bind(target), setSecurityFrame ? [setSecurityFrame] : [], {
+    await writeBluFiFrames(guardedWriter, setSecurityFrame ? [setSecurityFrame] : [], {
       timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
       timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
     });
@@ -367,7 +387,7 @@ export async function provisionWifiViaLocalBle(params: {
       // The robot may consume any encrypted fragment before Android receives
       // its write response, so ambiguity starts with the first custom frame.
       deliveryStarted = true;
-      await writeBluFiFrames(writer.bind(target), frames, {
+      await writeBluFiFrames(guardedWriter, frames, {
         timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
         timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
       });
@@ -376,7 +396,7 @@ export async function provisionWifiViaLocalBle(params: {
 
     logBleProvision('write_station_credentials', { startSequence, credentialOnly, connReportTimeoutMs });
     if (credentialOnly) deliveryStarted = true;
-    await writeBluFiFrames(writer.bind(target), buildBluFiStationProvisioningFrames({ ssid, password, startSequence, session }), {
+    await writeBluFiFrames(guardedWriter, buildBluFiStationProvisioningFrames({ ssid, password, startSequence, session }), {
       timeoutCode: 'BLE_PROVISIONING_WRITE_TIMEOUT',
       timeoutMessage: BLE_PROVISIONING_STATIC_MESSAGE,
     });
@@ -385,7 +405,7 @@ export async function provisionWifiViaLocalBle(params: {
       // STA_CONN_FAIL → wrong password / join failed.
       // Claim path (has backend poll): STA_CONN_SUCCESS is an early signal only;
       // timeout falls through so backend can still confirm (DD4).
-      const result = await connReport.result;
+      const result = await runOperation(() => connReport!.result);
       logBleProvision('conn_report', {
         connState: result?.connState ?? null,
         credentialOnly,
@@ -398,6 +418,7 @@ export async function provisionWifiViaLocalBle(params: {
       }
     }
 
+    ensureActive();
     logBleProvision('handoff_complete', { deviceId: params.device.id, credentialOnly });
     return { deviceId: params.device.id, status: 'wifi_credentials_sent', transport: 'ble-blufi' };
   } catch (error) {
@@ -563,7 +584,7 @@ export async function scanRobotWifiNetworks(params: {
   connectDevice?: ConnectDevice;
   signal?: AbortSignal;
 }): Promise<RobotWifiNetwork[]> {
-  const connectDevice = params.connectDevice ?? connectBleDeviceForWifiScan;
+  const connectDevice = params.connectDevice;
   let lastError: unknown;
 
   throwIfBleScanAborted(params.signal);
@@ -591,17 +612,25 @@ export async function scanRobotWifiNetworks(params: {
 
 async function scanRobotWifiNetworksOnce(
   device: BleDeviceCandidate,
-  connectDevice: ConnectDevice,
+  connectDevice: ConnectDevice | undefined,
   attempt: number,
   signal?: AbortSignal,
 ): Promise<RobotWifiNetwork[]> {
   let connected: LocalProvisioningDevice | undefined;
   const ownedSessionEpoch = beginBleGattSession(device.id);
+  const ownsSession = (): boolean => ownedSessionEpoch === currentBleGattSessionEpoch(device.id);
+  const ensureActive = (): void => {
+    throwIfBleScanAborted(signal);
+    if (!ownsSession()) throw codedError('BLE_WIFI_SCAN_CANCELLED', 'Robot Wi-Fi scan was superseded.');
+  };
+  const connect = connectDevice ?? ((id: string) => connectBleDevice(id, {
+    stopActiveScanBeforePrescan: false, signal, ensureActive, ownsSession,
+  }));
   try {
     throwIfBleScanAborted(signal);
     logBleWifiScan('connect_start', { attempt, deviceId: device.id, name: device.name ?? device.localName ?? null });
     connected = await withBleOperationTimeout(
-      withBleAbort(connectDevice(device.id), signal, (lateConnection) => {
+      withBleAbort(connect(device.id), signal, (lateConnection) => {
         if (ownedSessionEpoch === currentBleGattSessionEpoch(device.id)) {
           void lateConnection.cancelConnection?.().catch(() => undefined);
         }
@@ -611,6 +640,7 @@ async function scanRobotWifiNetworksOnce(
       BLE_CONNECT_OPERATION_TIMEOUT_MS,
     );
     logBleWifiScan('connected', { attempt, deviceId: device.id });
+    ensureActive();
     const discovered = await withBleOperationTimeout(
       withBleAbort(connected.discoverAllServicesAndCharacteristics(), signal),
       'BLE_WIFI_SCAN_FAILED',
@@ -618,6 +648,7 @@ async function scanRobotWifiNetworksOnce(
       BLE_SERVICE_DISCOVERY_TIMEOUT_MS,
     );
     logBleWifiScan('services_discovered', { attempt, deviceId: device.id });
+    ensureActive();
     const { writer, target } = resolveBluFiWriter(discovered, connected);
     const { monitor, target: monitorTarget } = resolveBluFiMonitor(discovered, connected);
     if (!writer || !monitor) {
@@ -631,17 +662,20 @@ async function scanRobotWifiNetworksOnce(
     // the previous session's larger fragment size while running at the 23-byte
     // default MTU, so every robot->phone frame is truncated by GATT and the list
     // never arrives. Every BluFi session must negotiate the same MTU.
-    await requestBleMtu(connected, discovered).catch((error) => {
-      logBleWifiScan('mtu_skipped', { attempt, message: errorMessage(error) });
-    });
-    logBleWifiScan('write_scan_request', { attempt });
-    const writeResult = withBleAbort(
-      writeBluFiFrames(writer.bind(target), buildBluFiWifiScanFrames(), {
-        timeoutCode: 'BLE_WIFI_SCAN_FAILED',
-        timeoutMessage: 'Robot BLE Wi-Fi scan notification failed.',
-      }),
-      signal,
-    );
+    const writeResult = (async () => {
+      await withBleAbort(requestBleMtu(connected!, discovered), signal).catch((error) => {
+        logBleWifiScan('mtu_skipped', { attempt, message: errorMessage(error) });
+      });
+      ensureActive();
+      logBleWifiScan('write_scan_request', { attempt });
+      await withBleAbort(
+        writeBluFiFrames(writer.bind(target), buildBluFiWifiScanFrames(), {
+          timeoutCode: 'BLE_WIFI_SCAN_FAILED',
+          timeoutMessage: 'Robot BLE Wi-Fi scan notification failed.',
+        }),
+        signal,
+      );
+    })();
     const [, networks] = await Promise.all([writeResult, scanResult]);
     logBleWifiScan('scan_result', { attempt, count: networks.length });
     return networks;
@@ -716,6 +750,7 @@ function withBleAbort<T>(
   operation: Promise<T>,
   signal?: AbortSignal,
   onLateResolve?: (value: T) => void,
+  cancellationCode = 'BLE_WIFI_SCAN_CANCELLED',
 ): Promise<T> {
   if (!signal) return operation;
 
@@ -725,7 +760,7 @@ function withBleAbort<T>(
       if (settled) return;
       settled = true;
       signal.removeEventListener('abort', onAbort);
-      reject(codedError('BLE_WIFI_SCAN_CANCELLED', 'Robot BLE Wi-Fi scan was cancelled.'));
+      reject(codedError(cancellationCode, 'Robot BLE operation was cancelled.'));
     };
 
     signal.addEventListener('abort', onAbort, { once: true });
@@ -761,35 +796,47 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'unknown';
 }
 
-async function connectBleDeviceForWifiScan(deviceId: string): Promise<LocalProvisioningDevice> {
-  return connectBleDevice(deviceId, { stopActiveScanBeforePrescan: false });
-}
-
 async function connectBleDevice(
   deviceId: string,
-  options: { stopActiveScanBeforePrescan?: boolean } = {},
+  options: { stopActiveScanBeforePrescan?: boolean; signal?: AbortSignal; ensureActive?: () => void; ownsSession?: () => boolean } = {},
 ): Promise<LocalProvisioningDevice> {
   const manager = getBleManager();
   let lastError: unknown;
   for (let attempt = 1; attempt <= BLE_CONNECT_ATTEMPTS; attempt += 1) {
     try {
+      options.ensureActive?.();
       // Drop any leftover GATT link from an earlier Wi-Fi-list scan (common when
       // the robot is already on STA and the list scan hangs / is abandoned). A
       // second connectToDevice while that link is half-open fails immediately
       // with "Operation was cancelled" → BLE_PROVISIONING_DISCONNECTED.
-      await forceReleaseBleDevice(manager, deviceId, options.stopActiveScanBeforePrescan !== false);
+      await forceReleaseBleDevice(manager, deviceId, options.stopActiveScanBeforePrescan !== false, options.ownsSession);
+      options.ensureActive?.();
       // Android 12+/Xiaomi: connecting by address without a recent scan often
       // never reaches onClientConnectionState(connected=true). Refresh first.
-      await refreshBleDeviceBeforeConnect(manager, deviceId, BLE_CONNECT_PRESCAN_TIMEOUT_MS);
+      await refreshBleDeviceBeforeConnect(manager, deviceId, BLE_CONNECT_PRESCAN_TIMEOUT_MS, options.signal);
+      options.ensureActive?.();
       logBleProvision('connect_attempt', {
         deviceId,
         attempt,
         prescanMs: BLE_CONNECT_PRESCAN_TIMEOUT_MS,
         sessionEpoch: currentBleGattSessionEpoch(deviceId),
       });
-      const device = await manager.connectToDevice(deviceId, { timeout: BLE_CONNECT_TIMEOUT_MS });
+      const cancelPending = (): void => {
+        if (options.ownsSession && !options.ownsSession()) return;
+        void manager.cancelDeviceConnection(deviceId).catch((error: unknown) => {
+          logBleProvision('cancel_pending_failed', { code: errorCode(error) });
+        });
+      };
+      options.signal?.addEventListener('abort', cancelPending, { once: true });
+      let device: Device;
+      try {
+        device = await manager.connectToDevice(deviceId, { timeout: BLE_CONNECT_TIMEOUT_MS });
+      } finally {
+        options.signal?.removeEventListener('abort', cancelPending);
+      }
       return device as LocalProvisioningDevice;
     } catch (error) {
+      options.ensureActive?.();
       lastError = error;
       logBleProvision('connect_attempt_failed', {
         deviceId,
@@ -798,7 +845,7 @@ async function connectBleDevice(
         code: hasCode(error) ? error.code : undefined,
       });
       if (attempt >= BLE_CONNECT_ATTEMPTS) break;
-      await forceReleaseBleDevice(manager, deviceId, options.stopActiveScanBeforePrescan !== false);
+      await forceReleaseBleDevice(manager, deviceId, options.stopActiveScanBeforePrescan !== false, options.ownsSession);
       await delay(BLE_CONNECT_RETRY_DELAY_MS);
     }
   }
@@ -812,7 +859,9 @@ async function forceReleaseBleDevice(
   manager: ReturnType<typeof getBleManager>,
   deviceId: string,
   stopActiveScan: boolean = true,
+  ownsSession?: () => boolean,
 ): Promise<void> {
+  if (ownsSession && !ownsSession()) return;
   if (stopActiveScan) {
     try {
       manager.stopDeviceScan();
@@ -822,6 +871,7 @@ async function forceReleaseBleDevice(
   }
   try {
     const connected = await manager.isDeviceConnected(deviceId).catch(() => false);
+    if (ownsSession && !ownsSession()) return;
     if (connected) {
       await manager.cancelDeviceConnection(deviceId).catch(() => undefined);
       logBleProvision('stale_gatt_released', { deviceId });
@@ -841,6 +891,7 @@ async function refreshBleDeviceBeforeConnect(
   manager: ReturnType<typeof getBleManager>,
   deviceId: string,
   timeoutMs: number,
+  signal?: AbortSignal,
 ): Promise<void> {
   const target = deviceId.trim().toUpperCase();
   await new Promise<void>((resolve) => {
@@ -848,6 +899,8 @@ async function refreshBleDeviceBeforeConnect(
     const finish = () => {
       if (settled) return;
       settled = true;
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', finish);
       try {
         manager.stopDeviceScan();
       } catch {
@@ -856,6 +909,8 @@ async function refreshBleDeviceBeforeConnect(
       resolve();
     };
     const timer = setTimeout(finish, timeoutMs);
+    signal?.addEventListener('abort', finish, { once: true });
+    if (signal?.aborted) { finish(); return; }
     try {
       manager.startDeviceScan(
         null,
@@ -1379,6 +1434,7 @@ function hasCode(error: unknown): error is { code: string } {
 // from the provisioning catch block; any other coded error (notably native BLE
 // codes such as DeviceDisconnected) is normalized to a static-message sub-code.
 const PROVISIONING_SERVICE_ERROR_CODES = new Set<string>([
+  'BLE_PROVISIONING_CANCELLED',
   'BLE_PROVISIONING_FAILED',
   'BLE_PROVISIONING_DISCONNECTED',
   'BLE_PROVISIONING_GATT_ERROR',

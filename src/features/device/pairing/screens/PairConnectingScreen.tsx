@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { RobotDevice } from '@/design-system/components/LCDFace';
 import DeviceShell from '@/components/DeviceShell';
+import DeviceBigBtn from '@/components/DeviceBigBtn';
 import { Box } from '@/design-system/primitives/Box';
 import { Text } from '@/design-system/primitives/Text';
 import { DV } from '@/components/Device-tokens';
@@ -72,6 +73,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
   const [i, setI] = React.useState(0);
   const [status, setStatus] = React.useState<'pairing' | 'authenticated' | 'failed'>('pairing');
   const submittedParams = React.useRef<Props['route']['params'] | null>(null);
+  const cancelRun = React.useRef<(() => void) | undefined>(undefined);
   const params = route.params;
   const ssid = getParamString(params, 'ssid');
   const transport = params?.provisioningTransport;
@@ -135,11 +137,23 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       return;
     }
     let cancelled = false;
+    const controller = new AbortController();
     // Polling loops below back off with sleep() between attempts. On unmount we
     // must both stop the loop AND clear any pending sleep timer, or that timer
     // leaks (keeping the Jest worker / RN event loop alive after the screen is
     // gone — the "worker failed to exit gracefully" symptom).
     const poll: PollController = { cancelled: false, timer: undefined };
+    const cancel = (): void => {
+      cancelled = true;
+      poll.cancelled = true;
+      controller.abort();
+      password = '';
+      if (poll.timer !== undefined) clearTimeout(poll.timer);
+      poll.timer = undefined;
+      poll.resolveSleep?.();
+      poll.resolveSleep = undefined;
+    };
+    cancelRun.current = cancel;
     const supportedBleTransport = transport === 'ble' || transport === 'ble_claim' || transport === 'ble_reconnect';
     if (!supportedBleTransport || !bleDeviceId) {
       setStatus('failed');
@@ -168,6 +182,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           bootstrapToken,
           credentialOnly: transport === 'ble_reconnect',
           claimBased: transport === 'ble_claim',
+          signal: controller.signal,
         });
         const onlineProofBaselineLastSeenAtMs = transport === 'ble_reconnect'
           ? await readBackendHeartbeatBaseline(deviceId, poll)
@@ -250,6 +265,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           serialNumber,
           provisioningAttemptId: authenticated.provisioningAttemptId,
         });
+        if (cancelled) return;
         navigation.navigate(ROUTES.PairRenameScreen, {
           deviceId: authenticated.deviceId,
           serialNumber,
@@ -270,6 +286,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
         serialNumber,
         provisioningAttemptId: authenticated.provisioningAttemptId,
       });
+      if (cancelled) return;
       navigation.navigate(ROUTES.PairRenameScreen, {
         deviceId: authenticated.deviceId,
         serialNumber,
@@ -336,6 +353,7 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
             serialNumber,
             provisioningAttemptId: authenticated.provisioningAttemptId,
           });
+          if (cancelled) return;
           navigation.navigate(ROUTES.PairRenameScreen, {
             deviceId: authenticated.deviceId,
             serialNumber,
@@ -376,14 +394,8 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
       password = '';
     });
     return () => {
-      cancelled = true;
-      poll.cancelled = true;
-      if (poll.timer !== undefined) {
-        clearTimeout(poll.timer);
-        poll.timer = undefined;
-      }
-      poll.resolveSleep?.();
-      poll.resolveSleep = undefined;
+      cancel();
+      if (cancelRun.current === cancel) cancelRun.current = undefined;
     };
   }, [navigation, params, ssid]);
 
@@ -427,6 +439,14 @@ export default function PairConnectingScreen({ navigation, route }: Props) {
           );
         })}
       </Box>
+      <Box paddingHorizontal={20} paddingTop={24} paddingBottom={24}>
+        <DeviceBigBtn secondary accessibilityLabel="Cancel" onClick={() => {
+          cancelRun.current?.();
+          navigation.reset({ index: 0, routes: [{ name: ROUTES.DeviceHomeScreen }] });
+        }}>
+          Cancel
+        </DeviceBigBtn>
+      </Box>
     </DeviceShell>
   );
 }
@@ -452,7 +472,12 @@ async function runLocalBleProvisioning(params: {
   bootstrapToken?: string;
   credentialOnly?: boolean;
   claimBased?: boolean;
+  signal: AbortSignal;
 }): Promise<ProvisioningRunResult> {
+  const ensureActive = (): void => {
+    if (params.signal.aborted) throw Object.assign(new Error('Pairing cancelled'), { code: 'PAIRING_CANCELLED' });
+  };
+  ensureActive();
   logDevPairConnectingEvent('local_ble_start', {
     deviceId: params.deviceId,
     serialNumber: params.serialNumber,
@@ -475,6 +500,7 @@ async function runLocalBleProvisioning(params: {
         ssid: params.ssid,
         password: params.password,
         allowCredentialOnly: true,
+        signal: params.signal,
       });
     } catch (error: unknown) {
       throw Object.assign(
@@ -506,7 +532,9 @@ async function runLocalBleProvisioning(params: {
       provisioningAttemptId: claimId,
       serialNumber: params.serialNumber,
       code: handoffCode,
+      ensureActive,
     });
+    ensureActive();
     activeDeviceId = active.deviceId;
     claimId = active.provisioningAttemptId;
     completionMode = 'device_authenticated';
@@ -517,6 +545,7 @@ async function runLocalBleProvisioning(params: {
 
   if (params.claimBased && !params.code && !token && !isLikelyClaimId(claimId)) {
     const claimed = await requestClaim({ deviceId: activeDeviceId });
+    ensureActive();
     if (!claimed.claimId) {
       throw Object.assign(new Error('Claim request did not return a claim id'), { code: 'CLAIM_REQUEST_MALFORMED' });
     }
@@ -539,6 +568,7 @@ async function runLocalBleProvisioning(params: {
     // Wi-Fi selection may already be expired or consumed by a previous delivery-
     // unknown attempt, so mint exactly at the BLE handoff boundary every time.
     const bootstrap = await mintBootstrapToken({ provisioningAttemptId: claimId });
+    ensureActive();
     token = bootstrap.token;
     handoffStartedAtMs = Date.now();
     try {
@@ -556,6 +586,7 @@ async function runLocalBleProvisioning(params: {
         // Push the backend device_id (the id the claim attempt was created under) so
         // the robot claims/confirms under it instead of its random Board UUID.
         deviceId: activeDeviceId,
+        signal: params.signal,
       });
     } catch (error: unknown) {
       throw Object.assign(withProvisioningAttemptContext(error, claimId, activeDeviceId), { handoffStartedAtMs });
@@ -581,20 +612,29 @@ async function confirmLocalBlePairedWithNotReadyRecovery(params: {
   provisioningAttemptId: string;
   serialNumber: string;
   code: string;
+  ensureActive: () => void;
 }): Promise<ActiveProvisioningContext> {
+  params.ensureActive();
   try {
-    const confirmed = await confirmLocalBlePaired(params);
+    const confirmed = await confirmLocalBlePaired({
+      deviceId: params.deviceId,
+      provisioningAttemptId: params.provisioningAttemptId,
+      serialNumber: params.serialNumber,
+      code: params.code,
+    });
     return {
       deviceId: confirmed.deviceId,
       provisioningAttemptId: confirmed.provisioningAttemptId,
       skipBleHandoff: false,
     };
   } catch (error: unknown) {
+    params.ensureActive();
     if (errorCodeFrom(error, '') !== 'PROVISIONING_ATTEMPT_NOT_READY') {
       throw error;
     }
 
     const status = parseProvisioningStatus(await getProvisioningAttemptStatus(params.provisioningAttemptId));
+    params.ensureActive();
     if (status.status === 'device_authenticated' || status.status === 'completed') {
       return {
         deviceId: status.deviceId,
@@ -607,6 +647,7 @@ async function confirmLocalBlePairedWithNotReadyRecovery(params: {
     }
 
     const replacement = await startDeviceProvisioning({ serialNumber: params.serialNumber });
+    params.ensureActive();
     try {
       const confirmed = await confirmLocalBlePaired({
         deviceId: replacement.deviceId,

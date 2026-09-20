@@ -850,6 +850,51 @@ describe('BLE service', () => {
     expect(cancelConnection).toHaveBeenCalledTimes(1);
   });
 
+  test('cancellation during Wi-Fi scan MTU settles without an unhandled rejection or a scan write', async () => {
+    const controller = new AbortController();
+    let finishMtu!: () => void;
+    const requestMTU = jest.fn(() => new Promise<void>((resolve) => { finishMtu = resolve; }));
+    const write = jest.fn().mockResolvedValue({});
+    const remove = jest.fn();
+    const cancelConnection = jest.fn().mockResolvedValue(undefined);
+    const connected = { requestMTU, writeCharacteristicWithResponseForService: write, monitorCharacteristicForService: jest.fn(() => ({ remove })), cancelConnection };
+    const connectDevice = jest.fn().mockResolvedValue({ ...connected, discoverAllServicesAndCharacteristics: jest.fn().mockResolvedValue(connected) });
+    const run = scanRobotWifiNetworks({ device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [] }, signal: controller.signal, connectDevice });
+    let settled = false;
+    const outcome = run.catch((error: unknown) => { settled = true; return error; });
+    await flushPromises();
+    expect(requestMTU).toHaveBeenCalled();
+    controller.abort();
+    await flushPromises();
+    const settledBeforeMtu = settled;
+    finishMtu();
+    await expect(outcome).resolves.toMatchObject({ code: 'BLE_WIFI_SCAN_CANCELLED' });
+    expect(settledBeforeMtu).toBe(true);
+    expect(write).not.toHaveBeenCalled();
+    expect(cancelConnection).toHaveBeenCalledTimes(1);
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  test('cancelling a native Wi-Fi prescan prevents a later GATT connection', async () => {
+    jest.useFakeTimers();
+    try {
+      const controller = new AbortController();
+      mockIsDeviceConnected.mockResolvedValue(false);
+      mockStartDeviceScan.mockImplementation(() => undefined);
+      const outcome = scanRobotWifiNetworks({
+        device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [] },
+        signal: controller.signal,
+      }).catch((error: unknown) => error);
+      await jest.advanceTimersByTimeAsync(200);
+      expect(mockStartDeviceScan).toHaveBeenCalledTimes(1);
+      controller.abort();
+      await expect(outcome).resolves.toMatchObject({ code: 'BLE_WIFI_SCAN_CANCELLED' });
+      await jest.advanceTimersByTimeAsync(6000);
+      expect(mockConnectToDevice).not.toHaveBeenCalled();
+      expect(mockStopDeviceScan).toHaveBeenCalledTimes(1);
+    } finally { jest.useRealTimers(); }
+  });
+
   test('stops the native pre-scan exactly once on the default Wi-Fi scan path', async () => {
     requestBlePermissions.mockResolvedValue('granted');
     await initializeBle();
@@ -1233,6 +1278,77 @@ describe('BLE service', () => {
       code: 'BLE_PROVISIONING_DISCONNECTED',
       deliveryUnknown: true,
     });
+  });
+
+  test('a late native connection-status lookup cannot release a newer session', async () => {
+    jest.useFakeTimers();
+    try {
+      let finishStatus!: (connected: boolean) => void;
+      mockIsDeviceConnected.mockImplementationOnce(() => new Promise<boolean>((resolve) => { finishStatus = resolve; }));
+      mockCancelDeviceConnection.mockResolvedValue(undefined);
+      const params = { device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [] }, ssid: 'Casa', password: 'secret-pass', allowCredentialOnly: true };
+      const old = provisionWifiViaLocalBle(params).catch((error: unknown) => error);
+      await jest.advanceTimersByTimeAsync(0);
+      const newer = createSecureProvisioningMocks();
+      await provisionWifiViaLocalBle({ ...params, connectDevice: newer.connect });
+      finishStatus(true);
+      await jest.advanceTimersByTimeAsync(200);
+      await expect(old).resolves.toMatchObject({ code: 'BLE_PROVISIONING_CANCELLED' });
+      expect(mockCancelDeviceConnection).not.toHaveBeenCalled();
+    } finally { jest.useRealTimers(); }
+  });
+
+  test('aborting an old native connection cannot disconnect a newer provisioning session', async () => {
+    jest.useFakeTimers();
+    try {
+      const controller = new AbortController();
+      let rejectNative!: (error: Error) => void;
+      mockIsDeviceConnected.mockResolvedValue(false);
+      mockCancelDeviceConnection.mockResolvedValue(undefined);
+      mockConnectToDevice.mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectNative = reject; }));
+      mockStartDeviceScan.mockImplementation((_uuids, _options, listener) => { listener(null, { id: 'ble-device-1' }); });
+      const params = { device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [] }, ssid: 'Casa', password: 'secret-pass', allowCredentialOnly: true };
+      const old = provisionWifiViaLocalBle({ ...params, signal: controller.signal }).catch((error: unknown) => error);
+      await jest.advanceTimersByTimeAsync(200);
+      expect(mockConnectToDevice).toHaveBeenCalledTimes(1);
+      const newer = createSecureProvisioningMocks();
+      await provisionWifiViaLocalBle({ ...params, connectDevice: newer.connect });
+      controller.abort();
+      await expect(old).resolves.toMatchObject({ code: 'BLE_PROVISIONING_CANCELLED' });
+      expect(mockCancelDeviceConnection).not.toHaveBeenCalled();
+      rejectNative(new Error('Old connection cancelled'));
+      await jest.advanceTimersByTimeAsync(6000);
+      expect(mockConnectToDevice).toHaveBeenCalledTimes(1);
+    } finally { jest.useRealTimers(); }
+  });
+
+  test('cancelled provisioning cannot send credentials after pending discovery resolves', async () => {
+    const controller = new AbortController();
+    const old = createSecureProvisioningMocks();
+    let finishDiscovery = () => {};
+    const connect = jest.fn(async () => ({
+      ...await old.connect(),
+      discoverAllServicesAndCharacteristics: () => new Promise<Awaited<ReturnType<typeof old.connect>>>((resolve) => {
+        finishDiscovery = () => { void old.connect().then(resolve); };
+      }),
+    }));
+    const params = {
+      device: { id: 'ble-device-1', name: 'TBot-Blufi', localName: 'TBot-Blufi', serviceUUIDs: [] },
+      ssid: 'Casa', password: 'secret-pass', allowCredentialOnly: true,
+      connectDevice: connect, signal: controller.signal,
+    };
+    const outcome = provisionWifiViaLocalBle(params).catch((error: unknown) => error);
+    await flushPromises();
+    controller.abort();
+    await flushPromises();
+    finishDiscovery();
+    expect(await outcome).toMatchObject({ code: 'BLE_PROVISIONING_CANCELLED' });
+    expect(old.writeCharacteristicWithResponseForService).not.toHaveBeenCalled();
+    expect(old.cancelConnection).toHaveBeenCalledTimes(1);
+
+    const next = createSecureProvisioningMocks();
+    await expect(provisionWifiViaLocalBle({ ...params, signal: new AbortController().signal, connectDevice: next.connect }))
+      .resolves.toMatchObject({ status: 'wifi_credentials_sent' });
   });
 
   test('an older overlapping provision run does not cancel the newer session', async () => {

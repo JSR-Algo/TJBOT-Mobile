@@ -569,6 +569,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     );
 
     await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      signal: expect.any(AbortSignal),
       device: {
         id: 'ble-device-1',
         name: 'TJBot-001',
@@ -622,6 +623,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     );
 
     await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      signal: expect.any(AbortSignal),
       device: {
         id: 'ble-device-1',
         name: 'TJBot-001',
@@ -661,6 +663,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     );
 
     await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      signal: expect.any(AbortSignal),
       device: {
         id: 'ble-device-1',
         name: 'TJBot-001',
@@ -709,6 +712,7 @@ describe('mobile UX redesign accessibility coverage', () => {
 
     await waitFor(() => expect(apiMocks.mintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'claim-refresh' }));
     await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      signal: expect.any(AbortSignal),
       device: {
         id: 'ble-device-1',
         name: 'TJBot-001',
@@ -764,6 +768,7 @@ describe('mobile UX redesign accessibility coverage', () => {
     });
     await waitFor(() => expect(apiMocks.mintBootstrapToken).toHaveBeenCalledWith({ provisioningAttemptId: 'attempt-1' }));
     await waitFor(() => expect(bleMocks.provisionWifiViaLocalBle).toHaveBeenCalledWith({
+      signal: expect.any(AbortSignal),
       device: {
         id: 'ble-device-1',
         name: 'TJBot-001',
