@@ -32,6 +32,30 @@ import {
 let account: SeededAccount;
 let homeSessionReady = false;
 
+async function waitForStopButtonToSettle(): Promise<void> {
+  if (device.getPlatform() !== 'ios') return;
+  const target = element(by.id('reconnectingStopHomeCta'));
+  const deadline = Date.now() + 5000;
+  let previousFrame = '';
+  let stableSince = Date.now();
+  // Synchronization is disabled for the looping robot animation; wait for the
+  // native sheet transition before sending a tap to its moving button.
+  while (Date.now() < deadline) {
+    const attributes = await target.getAttributes();
+    if (!('frame' in attributes)) throw new Error('Stop button has no native frame');
+    const { x, y, width, height } = attributes.frame;
+    const frame = JSON.stringify([x, y, width, height]);
+    if (frame !== previousFrame) {
+      previousFrame = frame;
+      stableSince = Date.now();
+    } else if (Date.now() - stableSince >= 500) {
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw new Error('Stop button did not settle after modal presentation');
+}
+
 describe('module matrix: local native E2E', () => {
   beforeAll(async () => {
     await assertLocalBackendReady();
@@ -144,6 +168,7 @@ describe('module matrix: local native E2E', () => {
       await disableDetoxSync();
       await tapId('networkErrorRetryCta');
       await waitForId('reconnectingOverlay');
+      await waitForStopButtonToSettle();
       await tapId('reconnectingStopHomeCta');
     } finally {
       await disableDetoxSync();

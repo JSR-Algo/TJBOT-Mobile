@@ -18,9 +18,14 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
   const failureTarget = route.params?.failureTarget ?? ROUTES.HelpFaqScreen;
   const reconnectDelayMs = route.params?.reconnectDelayMs ?? 2400;
   const checkpoint = route.params?.checkpoint;
+  const retryTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const cancelRetry = React.useCallback(() => {
+    clearTimeout(retryTimer.current);
+    retryTimer.current = undefined;
+  }, []);
 
   React.useEffect(() => {
-    const t = setTimeout(() => {
+    retryTimer.current = setTimeout(() => {
       if (attempt >= maxAttempts) {
         if (failureTarget === ROUTES.HomeHubScreen) {
           navigation.navigate(ROUTES.HomeHubScreen);
@@ -35,8 +40,8 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
         });
       }
     }, reconnectDelayMs);
-    return () => clearTimeout(t);
-  }, [attempt, checkpoint, failureTarget, maxAttempts, navigation, reconnectDelayMs]);
+    return cancelRetry;
+  }, [attempt, checkpoint, failureTarget, maxAttempts, navigation, reconnectDelayMs, cancelRetry]);
 
   return (
     <ScreenShell testID="reconnectingOverlay">
@@ -58,7 +63,10 @@ export default function ReconnectingOverlay({ navigation, route }: Props) {
         </Box>
         <TouchableOpacity
           testID="reconnectingStopHomeCta"
-          onPress={() => navigation.navigate(ROUTES.HomeHubScreen)}
+          onPress={() => {
+            cancelRetry();
+            navigation.reset({ index: 0, routes: [{ name: ROUTES.HomeHubScreen }] });
+          }}
           style={styles.homeBtn}
           activeOpacity={0.7}
           accessibilityRole="button"

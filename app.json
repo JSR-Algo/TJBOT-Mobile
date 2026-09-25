@@ -4,10 +4,10 @@
   "expo": {
     "name": "TJBotMobile",
     "slug": "TJBot-mobile",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "ios": {
       "bundleIdentifier": "tjbot",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "infoPlist": {
         "NSCameraUsageDescription": "TJBot uses the camera to scan setup codes when pairing your child's device."
       }

@@ -1,6 +1,6 @@
 import React from 'react';
 import NetInfo, { type NetInfoNoConnectionState, type NetInfoState } from '@react-native-community/netinfo';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, userEvent } from '@testing-library/react-native';
 import { OfflineBanner } from '../../src/components/OfflineBanner';
 import AppErrorScreen from '../../src/features/fallback/screens/AppErrorScreen';
 import AudioRecoveryScreen from '../../src/features/fallback/screens/AudioRecoveryScreen';
@@ -483,8 +483,80 @@ describe('fallback and offline UI stability', () => {
 
     fireEvent.press(screen.getByLabelText('Stop reconnecting and go home'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith(ROUTES.HomeHubScreen);
+    expect(navigation.reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: ROUTES.HomeHubScreen }] });
     jest.useRealTimers();
+  });
+
+  it.each([1, 3])('cancels pending retry navigation when stopping attempt %i', async (attempt) => {
+    jest.useFakeTimers();
+    try {
+      const navigation = createNavigation();
+      const user = userEvent.setup();
+      render(
+        <ReconnectingOverlay
+          navigation={navigation as never}
+          route={{
+            key: ROUTES.ReconnectingOverlay,
+            name: ROUTES.ReconnectingOverlay,
+            params: { attempt, maxAttempts: 3, failureTarget: ROUTES.HelpFaqScreen },
+          } as never}
+        />,
+      );
+
+      await user.press(screen.getByRole('button', { name: 'Stop reconnecting and go home' }));
+      expect(navigation.reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: ROUTES.HomeHubScreen }] });
+      navigation.navigate.mockClear();
+
+      act(() => {
+        jest.advanceTimersByTime(3000);
+      });
+
+      expect(navigation.navigate).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it.each([false, true])('removes reconnect history on stop (deep link: %s)', async (deepLink) => {
+    jest.useFakeTimers();
+    try {
+      const { StackRouter, CommonActions } = jest.requireActual<typeof import('@react-navigation/routers')>(
+        '@react-navigation/routers',
+      );
+      const router = StackRouter({});
+      const options = {
+        routeNames: [ROUTES.HomeHubScreen, ROUTES.NetworkErrorScreen, ROUTES.ReconnectingOverlay],
+        routeParamList: {},
+        routeGetIdList: {},
+      };
+      let state = router.getRehydratedState({
+        stale: true,
+        index: deepLink ? 0 : 2,
+        routes: deepLink
+          ? [{ name: ROUTES.ReconnectingOverlay }]
+          : options.routeNames.map(name => ({ name })),
+      }, options);
+      const navigation = createNavigation();
+      navigation.navigate.mockImplementation((name: string) => {
+        const nextState = router.getStateForAction(state, CommonActions.navigate(name), options);
+        if (nextState) state = router.getRehydratedState(nextState, options);
+      });
+      navigation.reset.mockImplementation((next: Parameters<typeof CommonActions.reset>[0]) => {
+        const resetState = router.getStateForAction(state, CommonActions.reset(next), options);
+        if (resetState) state = router.getRehydratedState(resetState, options);
+      });
+      render(
+        <ReconnectingOverlay
+          navigation={navigation as never}
+          route={{ key: 'reconnect', name: ROUTES.ReconnectingOverlay, params: {} } as never}
+        />,
+      );
+      await userEvent.setup().press(screen.getByRole('button', { name: 'Stop reconnecting and go home' }));
+      expect(state.routes.map(route => route.name)).toEqual([ROUTES.HomeHubScreen]);
+      expect(router.getStateForAction(state, CommonActions.goBack(), options)).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('routes pairing recovery screens to support without trapping the parent', () => {
